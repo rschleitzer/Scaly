@@ -8,26 +8,26 @@ function count_to(k: int) returns int
 {
     var c 0
     for i in k
-        set c: c + 1
+        c := c + 1
     c
 }
 
 let n 4
 var a 0
 for t in n * n
-    set a: a + 1
+    a := a + 1
 var b 0
 for t in n + 3
-    set b: b + t
+    b := b + t
 var c 0
 for t in count_to(3) * 2 - 1
-    set c: c + 1
+    c := c + 1
 var d Vector[int]((n * n) as size_t)
 for t in n * n
     d.put(t as size_t, t / n + t % n)
 var s 0
 for x in d
-    set s: s + x
+    s := s + x
 if a = 16 and b = 21 and c = 5 and s = 48
     print("PASS")
 else

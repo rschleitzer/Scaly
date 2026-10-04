@@ -56,7 +56,7 @@ define HeaderList
         {
             if this.name(i).equals(name)
                 return this.value(i)
-            set i: i + 1
+            i := i + 1
         }
         bytes.bytes().slice_to(0)
     }
@@ -77,7 +77,7 @@ define HeaderList
             let n this.name(i)
             if n.length > 0 and n[0] <> 58 and equals_lower(n, lname)
                 return trim(this.value(i))
-            set i: i + 1
+            i := i + 1
         }
         lname.slice_to(0)
     }
@@ -105,7 +105,7 @@ define HeaderList
             let a v.data as size_t
             if v.length > 0 and a >= old_at and a < old_end
                 views.put(i, bytes.data.subslice(a - old_at, a - old_at + v.length))
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -132,7 +132,7 @@ define HeaderList
             var w start
             if huffman_decode_into(raw, bytes.data, &w, true) = false
                 return false
-            set bytes.length: w
+            bytes.length := w
         }
         else
         {
@@ -140,7 +140,7 @@ define HeaderList
                 return false
             bytes.append(raw)
         }
-        set s: bytes.bytes().slice_from(start)
+        s := bytes.bytes().slice_from(start)
         true
     }
 
@@ -157,13 +157,13 @@ define HeaderList
             let v views[i]
             let a v.data as size_t
             if v.length > 0 and a >= lo and a < hi
-                set need: need + v.length
-            set i: i + 1
+                need := need + v.length
+            i := i + 1
         }
         if need = 0
             return
         this.room(need)
-        set i: 0
+        i := 0
         while i < views.length
         {
             let v views[i]
@@ -174,7 +174,7 @@ define HeaderList
                 bytes.append(v)
                 views.put(i, bytes.bytes().subslice(at, at + v.length))
             }
-            set i: i + 1
+            i := i + 1
         }
     }
 }
@@ -215,7 +215,7 @@ procedure decode_integer(block: Slice[u8], mutable at: ref[size_t], prefix_bits:
         return 0 - 1
     let mask ((1 as u64) << prefix_bits) - 1
     var v (block[at] as u64) & mask
-    set at: at + 1
+    at := at + 1
     if v < mask
         return v as i64
     var shift: u64 0
@@ -224,9 +224,9 @@ procedure decode_integer(block: Slice[u8], mutable at: ref[size_t], prefix_bits:
         if at >= block.length or shift > 28
             return 0 - 1
         let b block[at] as u64
-        set at: at + 1
-        set v: v + ((b & 127) << shift)
-        set shift: shift + 7
+        at := at + 1
+        v := v + ((b & 127) << shift)
+        shift := shift + 7
         if (b & 128) = 0
             break
     }
@@ -241,7 +241,7 @@ procedure huffman_decode(src: Slice[u8], mutable out: ref[ByteBuf]) returns bool
     out.reserve((src.length * 8) / 5 + 1)
     var w out.length
     let ok huffman_decode_into(src, out.data, &w, false)
-    set out.length: w
+    out.length := w
     ok
 }
 
@@ -274,9 +274,9 @@ procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w
     {
         while bits <= 56 and i < input.length
         {
-            set acc: (acc << 8) | (input[i] as u64)
-            set bits: bits + 8
-            set i: i + 1
+            acc := (acc << 8) | (input[i] as u64)
+            bits := bits + 8
+            i := i + 1
         }
         if bits >= 11
         {
@@ -285,8 +285,8 @@ procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w
             {
                 out.put(at, (e & 255) as u8)
                 out.put(at + 1, ((e >> 8) & 255) as u8)
-                set at: at + ((e >> 24) & 3)
-                set bits: bits - ((e >> 20) & 15)
+                at := at + ((e >> 24) & 3)
+                bits := bits - ((e >> 20) & 15)
                 continue
             }
         }
@@ -302,15 +302,15 @@ procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w
                 {
                     out.put(at, (e & 255) as u8)
                     out.put(at + 1, ((e >> 8) & 255) as u8)
-                    set at: at + ((e >> 24) & 3)
-                    set bits: bits - total
+                    at := at + ((e >> 24) & 3)
+                    bits := bits - total
                     continue
                 }
                 if first <= bits
                 {
                     out.put(at, (e & 255) as u8)
-                    set at: at + 1
-                    set bits: bits - first
+                    at := at + 1
+                    bits := bits - first
                     continue
                 }
             }
@@ -327,21 +327,21 @@ procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w
                 let symbol HUFF_SYMBOLS[(HUFF_OFFSET[length as size_t] as size_t) + ((code - first) as size_t)]
                 if symbol = 256 or (field_only and (symbol = 0 or symbol = 10 or symbol = 13))
                 {
-                    set w: at
+                    w := at
                     return false
                 }
                 out.put(at, symbol as u8)
-                set at: at + 1
-                set bits: bits - length
-                set found: true
+                at := at + 1
+                bits := bits - length
+                found := true
                 break
             }
-            set length: length + 1
+            length := length + 1
         }
         if found
             continue
         ; no whole code left: the end, padded with fewer than 8 one bits
-        set w: at
+        w := at
         if i < input.length
             return false
         return bits < 8 and (acc & (((1 as u64) << bits) - 1)) = ((1 as u64) << bits) - 1
@@ -359,7 +359,7 @@ function field_bytes_ok(s: Slice[u8]) returns bool
         let c s[i]
         if c = 13 or c = 10 or c = 0
             return false
-        set i: i + 1
+        i := i + 1
     }
     true
 }
@@ -398,10 +398,10 @@ define HpackDecoder
     procedure evict_oldest(mutable this)
     {
         let s (head + DYN_ENTRIES - count) % DYN_ENTRIES
-        set size: size - (ring_name[s] as size_t) - (ring_value[s] as size_t) - 32
-        set count: count - 1
+        size := size - (ring_name[s] as size_t) - (ring_value[s] as size_t) - 32
+        count := count - 1
         if count = 0
-            set used: 0
+            used := 0
     }
 
     ; Evict until the table fits `limit` less `room`.
@@ -418,16 +418,16 @@ define HpackDecoder
         var d count
         while d > 0
         {
-            set d: d - 1
+            d := d - 1
             let s this.slot(d)
             let from ring_start[s] as size_t
             let n (ring_name[s] as size_t) + (ring_value[s] as size_t)
             if n > 0 and from <> to
                 memmove(data.slice_from(to).data as pointer[void], data.slice_from(from).data as pointer[void], n)
             ring_start.put(s, to as u32)
-            set to: to + n
+            to := to + n
         }
-        set used: to
+        used := to
     }
 
     procedure insert(mutable this, name: Slice[u8], value: Slice[u8])
@@ -450,10 +450,10 @@ define HpackDecoder
         ring_start.put(head, at as u32)
         ring_name.put(head, name.length as u32)
         ring_value.put(head, value.length as u32)
-        set head: (head + 1) % DYN_ENTRIES
-        set count: count + 1
-        set size: size + cost
-        set used: at + name.length + value.length
+        head := (head + 1) % DYN_ENTRIES
+        count := count + 1
+        size := size + cost
+        used := at + name.length + value.length
     }
 
     ; Entry `index` of the combined table (1..61 static, then dynamic): views
@@ -465,8 +465,8 @@ define HpackDecoder
             return false
         if index <= 61
         {
-            set name: static_name(index)
-            set value: static_value(index)
+            name := static_name(index)
+            value := static_value(index)
             return true
         }
         let d (index - 62) as size_t
@@ -475,8 +475,8 @@ define HpackDecoder
         let s this.slot(d)
         let at ring_start[s] as size_t
         let nl ring_name[s] as size_t
-        set name: data.subslice(at, at + nl)
-        set value: data.subslice(at + nl, at + nl + (ring_value[s] as size_t))
+        name := data.subslice(at, at + nl)
+        value := data.subslice(at + nl, at + nl + (ring_value[s] as size_t))
         true
     }
 
@@ -503,7 +503,7 @@ define HpackDecoder
                 let new_limit decode_integer(block, &at, 5)
                 if new_limit < 0 or (new_limit as size_t) > HPACK_TABLE_SIZE
                     return false
-                set limit: new_limit as size_t
+                limit := new_limit as size_t
                 this.evict_to(0)
             }
             else
@@ -513,7 +513,7 @@ define HpackDecoder
                 let indexing (b & 192) = 64
                 var prefix: u64 4
                 if indexing
-                    set prefix: 6
+                    prefix := 6
                 let index decode_integer(block, &at, prefix)
                 if index < 0
                     return false
@@ -551,7 +551,7 @@ procedure hpack_string(block: Slice[u8], mutable at: ref[size_t], mutable list: 
     if n < 0 or at + (n as size_t) > block.length
         return false
     let raw block.subslice(at, at + (n as size_t))
-    set at: at + (n as size_t)
+    at := at + (n as size_t)
     list.literal(raw, huffman, s)
 }
 
@@ -569,7 +569,7 @@ procedure encode_integer(mutable out: ref[ByteBuf], flags: u8, prefix_bits: u64,
     while v >= 128
     {
         out.append_byte(((v & 127) | 128) as u8)
-        set v: v >> 7
+        v := v >> 7
     }
     out.append_byte(v as u8)
 }
@@ -666,9 +666,9 @@ procedure encode_header_field(mutable out: ref[ByteBuf], name: Slice[u8], value:
     {
         var c name[i]
         if c >= 65 and c <= 90
-            set c: c + 32
+            c := c + 32
         lower.put(i, c)
-        set i: i + 1
+        i := i + 1
     }
     if lower.equals("connection") or lower.equals("keep-alive") or lower.equals("transfer-encoding")
         return
@@ -683,9 +683,9 @@ procedure decimal_into(mutable out: Slice[u8], v: u64) returns size_t
     var x v
     repeat
     {
-        set rev[n]: ((x % 10) as u8) + 48
-        set n: n + 1
-        set x: x / 10
+        rev[n] := ((x % 10) as u8) + 48
+        n := n + 1
+        x := x / 10
         if x = 0
             break
     }
@@ -693,7 +693,7 @@ procedure decimal_into(mutable out: Slice[u8], v: u64) returns size_t
     while k < n
     {
         out.put(k, rev[n - 1 - k])
-        set k: k + 1
+        k := k + 1
     }
     n
 }

@@ -6,11 +6,11 @@ function show(n: int) returns int
     var r 0
     match n
         case 1
-            set r: 1
+            r := 1
         case 2
-            set r: 2
+            r := 2
         else
-            set r: 99
+            r := 99
     r
 }
 

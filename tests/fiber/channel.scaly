@@ -25,10 +25,10 @@ procedure producer() mutable chan
     {
         let mp Page.allocate_page()
         let m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
-        set m.value: i
+        m.value := i
         Console.print "s "
         Channel.send(c, m as pointer[void])
-        set i: i + 1
+        i := i + 1
     }
     Channel.close_sender(c)
 }
@@ -43,12 +43,12 @@ procedure consumer() mutable chan
         let raw Channel.receive(c)
         if raw = null
         {
-            set running: false
+            running := false
         }
         else
         {
             let m raw as pointer[Msg]
-            set sum: sum + m.value
+            sum := sum + m.value
             Console.print "r "
             let mp Page.get(raw)
             mp.deallocate_extensions()
@@ -63,7 +63,7 @@ procedure consumer() mutable chan
 let page Page.allocate_page()
 let sched Scheduler.create(page)
 let ch Channel.create()
-set chan: ch as pointer[void]
+chan := ch as pointer[void]
 let tp Scheduler.spawn(&producer)
 let tc Scheduler.spawn(&consumer)
 Scheduler.run()

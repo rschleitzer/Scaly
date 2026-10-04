@@ -3,7 +3,7 @@
 ; mode: run
 ; expect: 10
 var x 10
-while x < 5 : set x : x + 1
+while x < 5 : x := x + 1
 let literate_result (x)
 if literate_result = (10)
     print("PASS")

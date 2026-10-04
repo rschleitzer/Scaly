@@ -97,9 +97,9 @@ if a &gt; b : a else b</programlisting></entry>
 {
     var adj 7
     if dmin &gt; 100
-        set adj: 0
+        adj := 0
     else if dmin &gt; 50
-        set adj: dmin + 1
+        adj := dmin + 1
     adj
 }
 clamp(200) * 10000 + clamp(60) * 100 + clamp(10)</programlisting></entry>
@@ -132,14 +132,14 @@ clamp(200) * 10000 + clamp(60) * 100 + clamp(10)</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>var x 0
-while x &lt; 3 : set x : x + 1
+while x &lt; 3 : x := x + 1
 x</programlisting></entry>
               <entry><literal>3
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>var x 10
-while x &lt; 5 : set x : x + 1
+while x &lt; 5 : x := x + 1
 x</programlisting></entry>
               <entry><literal>10
 
@@ -167,7 +167,7 @@ x</programlisting></entry>
             <row>
               <entry><programlisting>var sum 0
 var i 1
-while i &lt;= 3 : { set sum : sum + i: set i : i + 1 }
+while i &lt;= 3 : { sum := sum + i: i := i + 1 }
 sum</programlisting></entry>
               <entry><literal>6
         </literal></entry>
@@ -175,7 +175,7 @@ sum</programlisting></entry>
             <row>
               <entry><programlisting>var result 1
 var n 5
-while n &gt; 0 : { set result : result * n: set n : n - 1 }
+while n &gt; 0 : { result := result * n: n := n - 1 }
 result</programlisting></entry>
               <entry><literal>120
 </literal></entry>
@@ -206,14 +206,14 @@ result</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>var count 0
-for i in 3 : set count : count + 1
+for i in 3 : count := count + 1
 count</programlisting></entry>
               <entry><literal>3
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>var x 42
-for i in 0 : set x : 0
+for i in 0 : x := 0
 x</programlisting></entry>
               <entry><literal>42
 
@@ -240,14 +240,14 @@ x</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>var sum 0
-for i in 5 : set sum : sum + i
+for i in 5 : sum := sum + i
 sum</programlisting></entry>
               <entry><literal>10
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>var prod 1
-for i in 4 : set prod : prod * (i + 1)
+for i in 4 : prod := prod * (i + 1)
 prod</programlisting></entry>
               <entry><literal>24
 </literal></entry>
@@ -278,14 +278,14 @@ prod</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>var sum 0
-for i in 10 : { if i = 3 : break else set sum : sum + i }
+for i in 10 : { if i = 3 : break else sum := sum + i }
 sum</programlisting></entry>
               <entry><literal>3
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>var x 0
-while x &lt; 100 : { set x : x + 1: if x = 5 : break }
+while x &lt; 100 : { x := x + 1: if x = 5 : break }
 x</programlisting></entry>
               <entry><literal>5
 
@@ -312,7 +312,7 @@ x</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>var sum 0
-for i in 6 : { if i % 2 = 1 : continue else set sum : sum + i }
+for i in 6 : { if i % 2 = 1 : continue else sum := sum + i }
 sum</programlisting></entry>
               <entry><literal>6
         </literal></entry>
@@ -320,7 +320,7 @@ sum</programlisting></entry>
             <row>
               <entry><programlisting>var sum 0
 var i 0
-while i &lt; 10 : { let current i: set i : i + 1: if current % 2 = 1 : continue else set sum : sum + current }
+while i &lt; 10 : { let current i: i := i + 1: if current % 2 = 1 : continue else sum := sum + current }
 sum</programlisting></entry>
               <entry><literal>20
 
@@ -347,14 +347,14 @@ sum</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>var count 0
-for i in 3 : { for j in 10 : { if j = 2 : break else set count : count + 1 } }
+for i in 3 : { for j in 10 : { if j = 2 : break else count := count + 1 } }
 count</programlisting></entry>
               <entry><literal>6
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>var count 0
-for i in 3 : { for j in 5 : { if j % 2 = 1 : continue else set count : count + 1 } }
+for i in 3 : { for j in 5 : { if j % 2 = 1 : continue else count := count + 1 } }
 count</programlisting></entry>
               <entry><literal>9
 
@@ -384,14 +384,14 @@ count</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>var count 0
-for i in 3 : label outer { for j in 5 : { if j = 2 : break loop outer else set count : count + 1 } }
+for i in 3 : label outer { for j in 5 : { if j = 2 : break loop outer else count := count + 1 } }
 count</programlisting></entry>
               <entry><literal>2
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>var count 0
-for i in 3 : label outer { for j in 5 : { if j = 0 : continue loop outer else set count : count + 100 } }
+for i in 3 : label outer { for j in 5 : { if j = 0 : continue loop outer else count := count + 100 } }
 count</programlisting></entry>
               <entry><literal>0
 </literal></entry>
@@ -425,14 +425,14 @@ count</programlisting></entry>
           <tbody>
             <row>
               <entry><programlisting>var i 0
-let answer repeat { if i = 5 : break i + 100 else set i : i + 1 }
+let answer repeat { if i = 5 : break i + 100 else i := i + 1 }
 answer</programlisting></entry>
               <entry><literal>105
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>var i 0
-repeat { if i = 3 : break else set i : i + 1 }
+repeat { if i = 3 : break else i := i + 1 }
 i</programlisting></entry>
               <entry><literal>3
 </literal></entry>
@@ -469,14 +469,14 @@ x</programlisting></entry>
             </row>
             <row>
               <entry><programlisting>var x 5
-set x : 10
+x := 10
 x</programlisting></entry>
               <entry><literal>10
         </literal></entry>
             </row>
             <row>
               <entry><programlisting>var x 3
-set x : x + 1
+x := x + 1
 x</programlisting></entry>
               <entry><literal>4
         </literal></entry>
@@ -484,7 +484,7 @@ x</programlisting></entry>
             <row>
               <entry><programlisting>var a 2
 var b 3
-set a : a * b
+a := a * b
 a</programlisting></entry>
               <entry><literal>6
 </literal></entry>

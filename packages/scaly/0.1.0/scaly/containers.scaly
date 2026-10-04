@@ -24,7 +24,7 @@ define containers
     function test_vector() returns int
     {
         var vector Vector[int](2)
-        set *(vector.get 0): 1
+        *(vector.get 0) := 1
         vector.put(1, 2)
         if *(vector.get 0) <> 1
             return -1
@@ -46,7 +46,7 @@ define containers
             while i <= huge_number
             {
                 array.add i
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -58,7 +58,7 @@ define containers
                 if *(buffer + i - 1) <> i
                     return -6
 
-                set i: i + 1
+                i := i + 1
             }
         }
         0
@@ -141,7 +141,7 @@ define containers
             while i <= huge_number
             {
                 list.add i
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -157,7 +157,7 @@ define containers
                 if *p <> i
                     return -18
 
-                set i: i + 1
+                i := i + 1
             }
         }
         0
@@ -297,13 +297,13 @@ define containers
                                 map.add(sb.to_string(), (i * j * k * l) as size_t)
                                 hash_set.add(sb.to_string())
 
-                                set l: l + 1
+                                l := l + 1
                             }
-                            set k: k + 1
+                            k := k + 1
                         }
-                        set j: j + 1
+                        j := j + 1
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
 
@@ -341,13 +341,13 @@ define containers
                                 if *((*map)[theString]) <> ((i * j * k * l) as size_t)
                                     return -45
 
-                                set l: l + 1
+                                l := l + 1
                             }
-                            set k: k + 1
+                            k := k + 1
                         }
-                        set j: j + 1
+                        j := j + 1
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -358,11 +358,11 @@ define containers
     {
         ; Test Vector slice
         var vector Vector[int](5)
-        set *vector.get(0): 10
-        set *vector.get(1): 20
-        set *vector.get(2): 30
-        set *vector.get(3): 40
-        set *vector.get(4): 50
+        *vector.get(0) := 10
+        *vector.get(1) := 20
+        *vector.get(2) := 30
+        *vector.get(3) := 40
+        *vector.get(4) := 50
 
         let slice vector.as_slice()
         if slice.length <> 5
@@ -423,35 +423,35 @@ define containers
         if result <> 0
             return result
 
-        set result: test_string_simple()
+        result := test_string_simple()
         if result <> 0
             return result
 
-        set result: test_vector()
+        result := test_vector()
         if result <> 0
             return result
 
-        set result: test_array()
+        result := test_array()
         if result <> 0
             return result
 
-        set result: test_string()
+        result := test_string()
         if result <> 0
             return result
 
-        set result: test_string_builder()
+        result := test_string_builder()
         if result <> 0
             return result
 
-        set result: test_list()
+        result := test_list()
         if result <> 0
             return result
 
-        set result: test_hash_set()
+        result := test_hash_set()
         if result <> 0
             return result
 
-        set result: test_hash_map()
+        result := test_hash_map()
         if result <> 0
             return result
 
@@ -466,7 +466,7 @@ define containers
         ; {
         ;     return result
         ; }
-        set result: test_string_operations()
+        result := test_string_operations()
         if result <> 0
             return result
 

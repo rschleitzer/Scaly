@@ -23,20 +23,20 @@ function run() returns bool
     {
         if f1(x) | f2(x)
         {
-            set opts.flag1: true
+            opts.flag1 := true
         }
         else if f3(x)
         {
-            set opts.flag2: true
+            opts.flag2 := true
         }
         else
         {
-            set opts.flag3: true
+            opts.flag3 := true
         }
     }
     else
     {
-        set opts.flag2: true
+        opts.flag2 := true
     }
 
     opts.flag1

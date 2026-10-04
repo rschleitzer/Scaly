@@ -21,7 +21,7 @@ procedure echo_once(l: TcpListener, mutable host: String) returns bool
         let n c.read(Slice[u8](8 - got, &buf[got]))
         if n <= 0
             break
-        set got: got + (n as size_t)
+        got := got + (n as size_t)
     }
     c.write(Slice[u8](got, &buf[0]))
     var back u8[8]
@@ -31,7 +31,7 @@ procedure echo_once(l: TcpListener, mutable host: String) returns bool
         let n s.read(Slice[u8](8 - have, &back[have]))
         if n <= 0
             break
-        set have: have + (n as size_t)
+        have := have + (n as size_t)
     }
     c.close()
     s.close()

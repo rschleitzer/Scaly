@@ -16,11 +16,11 @@ procedure child_one()
         while k < 20
         {
             let s String("child one payload child one payload")
-            set k: k + 1
+            k := k + 1
         }
         Console.print "c1 "
         Scheduler.yield()
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -33,11 +33,11 @@ procedure child_two()
         while k < 20
         {
             let s String("child two payload child two payload")
-            set k: k + 1
+            k := k + 1
         }
         Console.print "c2 "
         Scheduler.yield()
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -47,7 +47,7 @@ procedure parent()
     while k < 20
     {
         let s String("parent payload parent payload parent payload")
-        set k: k + 1
+        k := k + 1
     }
     Console.print "p1 "
     let b0 Fiber.freed_bucket_count()

@@ -61,24 +61,24 @@ function or_minus(o: Option[int]) returns int
 
 var ok true
 if reply_tag(reply(7)) <> 7
-    set ok: false
+    ok := false
 if reply_tag(reply(200)) <> 0 - 200
-    set ok: false
+    ok := false
 if is_blue(shade()) = false
-    set ok: false
+    ok := false
 if or_minus(maybe(1)) <> 0 - 1
-    set ok: false
+    ok := false
 if or_minus(maybe(0)) <> 0
-    set ok: false
+    ok := false
 let t: Reply Hit(9)
 if reply_tag(t) <> 9
-    set ok: false
+    ok := false
 var o: Option[int] None
 if or_minus(o) <> 0 - 1
-    set ok: false
-set o: Some(41)
+    ok := false
+o := Some(41)
 if or_minus(o) <> 41
-    set ok: false
+    ok := false
 if ok
     print "PASS"
 else

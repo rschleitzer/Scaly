@@ -22,9 +22,9 @@ function kind(n: String) returns int
 
 var ok: bool true
 if is_paren(40 as u8) = false or is_paren(0x5D as u8) = false or is_paren(65 as u8)
-    set ok: false
+    ok := false
 if kind(String("b")) <> 1 or kind(String("d")) <> 2 or kind(String("e")) <> 0
-    set ok: false
+    ok := false
 if ok
     print("PASS")
 else

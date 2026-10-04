@@ -9,8 +9,8 @@ define Tracker
 {
     procedure increment(mutable this)
     {
-        set value: value + 1
-        set steps: steps + 1
+        value := value + 1
+        steps := steps + 1
     }
 
     procedure run_sibling(mutable this)

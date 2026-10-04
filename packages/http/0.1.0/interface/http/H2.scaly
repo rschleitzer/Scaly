@@ -264,7 +264,7 @@ procedure self_block_start(mutable block: ref[ByteBuf], fragment: Slice[u8]) @re
 procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], mutable inb: ref[ByteBuf], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
 {
     var h H2Conn.create(host)
-    set res.hpack: true
+    res.hpack := true
     h.greet()
     var preface_done false
     repeat
@@ -274,7 +274,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
             if inb.bytes().slice_to(24).equals(h2_preface()) = false
                 break
             inb.consume(24)
-            set preface_done: true
+            preface_done := true
         }
         ; the frames that arrived, a round at a time while frames_in stops at
         ; the output budget: each round's output is written before the next
@@ -292,7 +292,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
                 break
             if c.write(h.frames.bytes()) = false
             {
-                set failed: true
+                failed := true
                 break
             }
             h.frames.clear()
@@ -328,14 +328,14 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
         let s h.streams.at(i)
         s.page.deallocate_extensions()
         Page.release_page(s.page)
-        set i: i + 1
+        i := i + 1
     }
-    set i: 0
+    i := 0
     while i < h.pending.length
     {
         let p h.pending.at(i)
         p.page.deallocate_extensions()
         Page.release_page(p.page)
-        set i: i + 1
+        i := i + 1
     }
 }

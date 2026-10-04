@@ -13,26 +13,26 @@ define Box (let fixed: int  var count: int  tag: int)
 {
     init(f: int)
     {
-        set fixed: f
-        set count: 0
-        set tag: 1
+        fixed := f
+        count := 0
+        tag := 1
     }
 
     procedure bump(mutable this)
-        set count: count + 1
+        count := count + 1
 }
 
 procedure bump_twice(mutable b: ref[Box])
 {
-    set b.count: b.count + 1
-    set b.count: b.count + 1
+    b.count := b.count + 1
+    b.count := b.count + 1
 }
 
 procedure build() returns int
 {
     var b Box(1)
-    set b.fixed: 2
-    set b.tag: 3
+    b.fixed := 2
+    b.tag := 3
     b.bump()
     bump_twice(&b)
     b.fixed + b.count + b.tag

@@ -21,7 +21,7 @@ procedure parse_into(mutable buf: Slice[u8], mutable req: ref[Request], text: Sl
     while i < text.length
     {
         buf.put(i, text[i])
-        set i: i + 1
+        i := i + 1
     }
     parse_request(buf.slice_to(text.length), req) > 0
 }
@@ -42,13 +42,13 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var ok true
     if coding_quality("gzip, br", "gzip") <> 1000 or coding_quality("br;q=0.8, GZIP;q=0.5", "gzip") <> 500
-        set ok: false
+        ok := false
     if coding_quality("gzip;q=0", "gzip") <> 0 or coding_quality("gzip;q=0.000", "gzip") <> 0 or coding_quality("gzip; Q=1.0", "gzip") <> 1000
-        set ok: false
+        ok := false
     if coding_quality("br", "gzip") <> (0 - 1) or coding_quality("", "gzip") <> (0 - 1) or coding_quality("x-gzip", "gzip") <> (0 - 1)
-        set ok: false
+        ok := false
     if coding_quality("gzip;level=1;q=0.25", "gzip") <> 250
-        set ok: false
+        ok := false
     if ok = false
         return 1
     Console.print "quality "

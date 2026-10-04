@@ -23,7 +23,7 @@ shared worker_token: u64 0
 
 procedure token_of_worker(mutable arg: pointer[void]) returns pointer[void] mutable worker_token
 {
-    set worker_token: heap_owner_token()
+    worker_token := heap_owner_token()
     null
 }
 
@@ -35,9 +35,9 @@ procedure sender(mutable arg: pointer[void]) returns pointer[void]
     {
         let mp Page.allocate_page()
         let m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
-        set m.value: 1
+        m.value := 1
         Channel.send(c, m as pointer[void])
-        set i: i + 1
+        i := i + 1
     }
     Channel.close_sender(c)
     null
@@ -70,22 +70,22 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             let raw Channel.receive(ch)
             if raw = null
             {
-                set open: false
+                open := false
                 break
             }
             wave.put(n, raw as size_t)
-            set n: n + 1
+            n := n + 1
         }
         var k: size_t 0
         while k < n
         {
             let raw wave[k] as pointer[void]
             let m raw as pointer[Msg]
-            set got: got + m.value
+            got := got + m.value
             let mp Page.get(raw)
             mp.deallocate_extensions()
             Page.release_page(mp)
-            set k: k + 1
+            k := k + 1
         }
     }
     Thread.join(th)

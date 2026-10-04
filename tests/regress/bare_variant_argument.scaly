@@ -57,18 +57,18 @@ function is_blue(s: Shade) returns bool
 
 var ok true
 if tag(Hit(6)) <> 6
-    set ok: false
+    ok := false
 if tag(Fail(Big(1, 2, 3, 4))) <> 4
-    set ok: false
+    ok := false
 if opt(None) <> 0 - 1
-    set ok: false
+    ok := false
 if opt(Some(8)) <> 8
-    set ok: false
+    ok := false
 if is_blue(Blue) = false
-    set ok: false
+    ok := false
 let b Box(100)
 if b.tag(Hit(5)) <> 105
-    set ok: false
+    ok := false
 if ok
     print "PASS"
 else

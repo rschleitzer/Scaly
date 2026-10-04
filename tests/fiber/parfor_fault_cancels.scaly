@@ -65,7 +65,7 @@ while k < n
 {
     src.put(k, (k as int))
     tab.put(k, k)
-    set k: k + 1
+    k := k + 1
 }
 tab.put(trip, n)
 
@@ -79,34 +79,34 @@ repeat
     while j < n
     {
         acc.put(j, 0 - 1)
-        set j: j + 1
+        j := j + 1
     }
     let subs_before TaskPool.submit_count(pl)
     var caught false
     try fill(&acc, &src, &tab, n)
     else
-        set caught: true
+        caught := true
     let subs_after TaskPool.submit_count(pl)
     let submitted subs_after > subs_before
     var written: size_t 0
-    set j: 0
+    j := 0
     while j < n
     {
         if acc[j] <> (0 - 1)
-            set written: written + 1
-        set j: j + 1
+            written := written + 1
+        j := j + 1
     }
-    set rounds: rounds + 1
+    rounds := rounds + 1
     if not caught
     {
-        set verdict: 2
+        verdict := 2
         break
     }
     if submitted
     {
         if written <= bar
         {
-            set verdict: 1
+            verdict := 1
             break
         }
     }

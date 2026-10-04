@@ -33,7 +33,7 @@ mutable gzip_decompressor: LibdeflateDecompressor null
 procedure gzip_compressor_of_thread() returns LibdeflateCompressor mutable gzip_compressor
 {
     if gzip_compressor = null
-        set gzip_compressor: libdeflate_alloc_compressor(GZIP_LEVEL)
+        gzip_compressor := libdeflate_alloc_compressor(GZIP_LEVEL)
     gzip_compressor
 }
 
@@ -63,7 +63,7 @@ procedure gzip_compress(input: Slice[u8], mutable output: Slice[u8]) returns siz
 procedure gzip_decompress(input: Slice[u8], mutable output: Slice[u8]) returns i64 mutable gzip_decompressor
 {
     if gzip_decompressor = null
-        set gzip_decompressor: libdeflate_alloc_decompressor()
+        gzip_decompressor := libdeflate_alloc_decompressor()
     if gzip_decompressor = null
         return 0 - 1
     var got: size_t 0

@@ -129,10 +129,10 @@ define tasklens
         var ka: size_t 0
         while kp < plan_len
         {
-            set kp: tasklens.next_for_site(plan_text, kp)
+            kp := tasklens.next_for_site(plan_text, kp)
             if kp >= plan_len
                 break
-            set ka: tasklens.next_for_site(anchor_text, ka)
+            ka := tasklens.next_for_site(anchor_text, ka)
 
             let verdict tasklens.verdict_at(tp, path, kp)
 
@@ -145,7 +145,7 @@ define tasklens
             ; this file's membership: say nothing instead.
             var emit true
             if verdict.get_length() = 0 and has_diag
-                set emit: false
+                emit := false
 
             if emit
             {
@@ -153,13 +153,13 @@ define tasklens
                     sb.append("," as char)
                 let title tasklens.title_for verdict
                 sb.append(symbols.lens_object(anchor_text, ka, 3, title, "", ""))
-                set first: false
+                first := false
             }
 
             ; 3 == length of "for": step past the keyword so the next search
             ; cannot answer this site again.
-            set kp: kp + 3
-            set ka: ka + 3
+            kp := kp + 3
+            ka := ka + 3
         }
 
         sb.to_string()
@@ -192,8 +192,8 @@ define tasklens
                             {
                                 if have = false
                                 {
-                                    set found: (*vp)
-                                    set have: true
+                                    found := (*vp)
+                                    have := true
                                 }
                                 else
                                 {
@@ -202,14 +202,14 @@ define tasklens
                                     ; blocked wins.
                                     let v (*vp)
                                     if v.starts_with("blocked")
-                                        set found: v
+                                        found := v
                                 }
                             }
                         }
                     }
                 }
             }
-            set i: i + 1
+            i := i + 1
         }
         found
     }
@@ -235,7 +235,7 @@ define tasklens
             while k < n
             {
                 sb.append(verdict.get(k) as char)
-                set k: k + 1
+                k := k + 1
             }
             return sb.to_string()
         }
@@ -267,7 +267,7 @@ define tasklens
             {
                 ; skip_noncode always advances past an opener, so this cannot
                 ; spin.
-                set k: symbols.skip_noncode(source, k, len)
+                k := symbols.skip_noncode(source, k, len)
                 continue
             }
             if c = ("f" as char)
@@ -275,7 +275,7 @@ define tasklens
                 if tasklens.is_for_token(source, k, len)
                     return k
             }
-            set k: k + 1
+            k := k + 1
         }
         len
     }
@@ -287,11 +287,11 @@ define tasklens
         var k: size_t 0
         while k < len
         {
-            set k: tasklens.next_for_site(source, k)
+            k := tasklens.next_for_site(source, k)
             if k >= len
                 return n
-            set n: n + 1
-            set k: k + 3
+            n := n + 1
+            k := k + 3
         }
         n
     }

@@ -33,16 +33,16 @@ function use_param(b: Box) returns int
 
 var ok true
 if use_it() <> 105
-    set ok: false
+    ok := false
 let b Box(100)
 if use_param(b) <> 105
-    set ok: false
+    ok := false
 if b.tag(5) <> 105
-    set ok: false
+    ok := false
 if tag(6) <> 6
-    set ok: false
+    ok := false
 if util.helper(2) <> 20
-    set ok: false
+    ok := false
 if ok
     print "PASS"
 else

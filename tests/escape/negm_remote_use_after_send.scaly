@@ -16,7 +16,7 @@ procedure producer()
     let p the_peer as pointer[NodePeer]
     let mp Page.allocate_page()
     let m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
-    set m.value: 42 as i64
+    m.value := 42 as i64
     Cluster.send(p, 1 as u64, m as pointer[void])
     let v m.value
 }

@@ -14,16 +14,16 @@ procedure producer() mutable chan
     let c chan as pointer[Channel]
     let mp Page.allocate_page()
     var m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
-    set m.value: 7
+    m.value := 7
     Channel.send(c, m as pointer[void])
     let mp2 Page.allocate_page()
-    set m: mp2.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
-    set m.value: 8
+    m := mp2.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+    m.value := 8
     Channel.send(c, m as pointer[void])
 }
 
 let page Page.allocate_page()
 let sched Scheduler.create(page)
 let ch Channel.create()
-set chan: ch as pointer[void]
+chan := ch as pointer[void]
 producer()

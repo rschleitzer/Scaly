@@ -29,15 +29,15 @@ function close_enough(a: float, b: float, atol: float, rtol: float) returns bool
 {
     var d a - b
     if d < 0.0
-        set d: 0.0 - d
+        d := 0.0 - d
     var m a
     if m < 0.0
-        set m: 0.0 - m
+        m := 0.0 - m
     var mb b
     if mb < 0.0
-        set mb: 0.0 - mb
+        mb := 0.0 - mb
     if mb > m
-        set m: mb
+        m := mb
     if d <= atol + rtol * m
         return true
     false
@@ -67,16 +67,16 @@ procedure check_leaf(mutable tape: Tape, out: int, id: int, count: int, h: float
         let ga tape.grad_at(id, i)
         let gn num_grad(tape, out, id, i, h)
         if close_enough(ga, gn, atol, rtol) = false
-            set good: false
+            good := false
         var mag ga
         if mag < 0.0
-            set mag: 0.0 - mag
+            mag := 0.0 - mag
         if mag > maxabs
-            set maxabs: mag
-        set i: i + 1
+            maxabs := mag
+        i := i + 1
     }
     if maxabs < 0.0005
-        set good: false
+        good := false
     good
 }
 
@@ -91,7 +91,7 @@ var ok true
     {
         let v tval(i)
         tape.set_value(x, i, v)
-        set i: i + 1
+        i := i + 1
     }
     var w Vector[float](6)
     var j 0
@@ -99,7 +99,7 @@ var ok true
     {
         let v wval(j)
         w.put(j as size_t, v)
-        set j: j + 1
+        j := j + 1
     }
     let s tape.wsum(x, w)
     tape.backward s
@@ -110,13 +110,13 @@ var ok true
         let ga tape.grad_at(x, k)
         let we wval(k)
         if close_enough(ga, we, 0.000001, 0.000001) = false
-            set good: false
-        set k: k + 1
+            good := false
+        k := k + 1
     }
     if good = false
     {
         print("FAIL wsum")
-        set ok: false
+        ok := false
     }
 }
 
@@ -132,7 +132,7 @@ var ok true
         tape.set_value(x, i, vx)
         let vy tval(i + 4)
         tape.set_value(y, i, vy)
-        set i: i + 1
+        i := i + 1
     }
     let z tape.matmul(x, y)
     var w Vector[float](4)
@@ -141,17 +141,17 @@ var ok true
     {
         let v wval(j)
         w.put(j as size_t, v)
-        set j: j + 1
+        j := j + 1
     }
     let s tape.wsum(z, w)
     tape.backward s
     var good check_leaf(tape, s, x, 6, 0.02, 0.005, 0.02)
     if check_leaf(tape, s, y, 6, 0.02, 0.005, 0.02) = false
-        set good: false
+        good := false
     if good = false
     {
         print("FAIL matmul")
-        set ok: false
+        ok := false
     }
 }
 
@@ -164,7 +164,7 @@ var ok true
     {
         let v tval(i)
         tape.set_value(x, i, v)
-        set i: i + 1
+        i := i + 1
     }
     let g tape.gelu(x)
     var w Vector[float](6)
@@ -173,14 +173,14 @@ var ok true
     {
         let v wval(j)
         w.put(j as size_t, v)
-        set j: j + 1
+        j := j + 1
     }
     let s tape.wsum(g, w)
     tape.backward s
     if check_leaf(tape, s, x, 6, 0.02, 0.005, 0.02) = false
     {
         print("FAIL gelu")
-        set ok: false
+        ok := false
     }
 }
 
@@ -193,7 +193,7 @@ var ok true
     {
         let v tval(i)
         tape.set_value(x, i, v)
-        set i: i + 1
+        i := i + 1
     }
     let sm tape.softmax(x)
     var w Vector[float](6)
@@ -202,14 +202,14 @@ var ok true
     {
         let v wval(j)
         w.put(j as size_t, v)
-        set j: j + 1
+        j := j + 1
     }
     let s tape.wsum(sm, w)
     tape.backward s
     if check_leaf(tape, s, x, 6, 0.02, 0.005, 0.02) = false
     {
         print("FAIL softmax")
-        set ok: false
+        ok := false
     }
 }
 
@@ -222,7 +222,7 @@ var ok true
     {
         let v tval(i)
         tape.set_value(x, i, v)
-        set i: i + 1
+        i := i + 1
     }
     let gamma tape.leaf(1, 4)
     let beta tape.leaf(1, 4)
@@ -233,7 +233,7 @@ var ok true
         tape.set_value(gamma, j, vg)
         let vb tval(j + 3) * 0.5
         tape.set_value(beta, j, vb)
-        set j: j + 1
+        j := j + 1
     }
     let ln tape.layernorm(x, gamma, beta, 0.00001)
     var w Vector[float](8)
@@ -242,19 +242,19 @@ var ok true
     {
         let v wval(k)
         w.put(k as size_t, v)
-        set k: k + 1
+        k := k + 1
     }
     let s tape.wsum(ln, w)
     tape.backward s
     var good check_leaf(tape, s, x, 8, 0.02, 0.008, 0.03)
     if check_leaf(tape, s, gamma, 4, 0.02, 0.008, 0.03) = false
-        set good: false
+        good := false
     if check_leaf(tape, s, beta, 4, 0.02, 0.008, 0.03) = false
-        set good: false
+        good := false
     if good = false
     {
         print("FAIL layernorm")
-        set ok: false
+        ok := false
     }
 }
 
@@ -267,7 +267,7 @@ var ok true
     {
         let v tval(i)
         tape.set_value(table, i, v)
-        set i: i + 1
+        i := i + 1
     }
     var ids Vector[i64](4)
     ids.put(0, 2 as i64)
@@ -281,14 +281,14 @@ var ok true
     {
         let v wval(j)
         w.put(j as size_t, v)
-        set j: j + 1
+        j := j + 1
     }
     let s tape.wsum(emb, w)
     tape.backward s
     if check_leaf(tape, s, table, 12, 0.02, 0.005, 0.02) = false
     {
         print("FAIL embedding")
-        set ok: false
+        ok := false
     }
 }
 
@@ -301,7 +301,7 @@ var ok true
     {
         let v tval(i)
         tape.set_value(x, i, v)
-        set i: i + 1
+        i := i + 1
     }
     var tg Vector[i64](3)
     tg.put(0, 2 as i64)
@@ -313,11 +313,11 @@ var ok true
     ; the loss itself must be a positive NLL
     let lv tape.value_at(s, 0)
     if lv <= 0.0
-        set good: false
+        good := false
     if good = false
     {
         print("FAIL crossentropy")
-        set ok: false
+        ok := false
     }
 }
 
@@ -335,7 +335,7 @@ var ok true
         tape.set_value(x, i, vx)
         let vy tval(i + 3)
         tape.set_value(y, i, vy)
-        set i: i + 1
+        i := i + 1
     }
     let z tape.add(x, y)
     var w Vector[float](6)
@@ -344,7 +344,7 @@ var ok true
     {
         let v wval(j)
         w.put(j as size_t, v)
-        set j: j + 1
+        j := j + 1
     }
     let s tape.wsum(z, w)
     tape.backward s
@@ -355,17 +355,17 @@ var ok true
         let we wval(k)
         let gx tape.grad_at(x, k)
         if close_enough(gx, we, 0.000001, 0.000001) = false
-            set good: false
+            good := false
         let gy tape.grad_at(y, k)
         if close_enough(gy, we, 0.000001, 0.000001) = false
-            set good: false
+            good := false
         ; the sum itself must be exact
         let zv tape.value_at(z, k)
         let xv tape.value_at(x, k)
         let yv tape.value_at(y, k)
         if close_enough(zv, xv + yv, 0.000001, 0.000001) = false
-            set good: false
-        set k: k + 1
+            good := false
+        k := k + 1
     }
     ; self-add: both adjoint paths land on the same leaf
     let z2 tape.add(x, x)
@@ -378,13 +378,13 @@ var ok true
         let we2 wval(k2) * 2.0
         let gx2 tape.grad_at(x, k2)
         if close_enough(gx2, we2, 0.000001, 0.000001) = false
-            set good: false
-        set k2: k2 + 1
+            good := false
+        k2 := k2 + 1
     }
     if good = false
     {
         print("FAIL add")
-        set ok: false
+        ok := false
     }
 }
 

@@ -7,8 +7,8 @@ define Counter (var n: int)
 {
     procedure steal(mutable this, other: ref[Counter])
     {
-        set n: n + other.n
-        set other.n: 0
+        n := n + other.n
+        other.n := 0
     }
 }
 

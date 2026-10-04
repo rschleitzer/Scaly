@@ -215,7 +215,7 @@ define worker
         ; by a flag (a call WITH args is not accepted as a while condition).
         var keep_going true
         while keep_going
-            set keep_going: worker.serve_one(in_fd, out_fd)
+            keep_going := worker.serve_one(in_fd, out_fd)
         0
     }
 
@@ -281,7 +281,7 @@ define worker
         let path diagnostics.strip_uri uri
         var source doctext
         if source.get_length() = 0
-            set source: File.read_to_string(path)
+            source := File.read_to_string(path)
 
         ; PARSE REPAIR (symbols.repaired_source#): every parse-based walk answers
         ; nothing on a source that does not parse, so ONE unfinished line — the
@@ -518,9 +518,9 @@ define worker
         var from_worker: i32 0
         if scaly_proc_spawn_self("--scalyls-worker", &pid as pointer[i64], &to_worker as pointer[i32], &from_worker as pointer[i32]) <> 0
             return
-        set worker_pid: pid
-        set worker_in:  to_worker
-        set worker_out: from_worker
+        worker_pid := pid
+        worker_in := to_worker
+        worker_out := from_worker
     }
 
     procedure ensure() mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
@@ -541,9 +541,9 @@ define worker
             close worker_in
         if worker_out > 0
             close worker_out
-        set worker_pid: 0
-        set worker_in:  0
-        set worker_out: 0
+        worker_pid := 0
+        worker_in := 0
+        worker_out := 0
     }
 
     ; Analyze (uri,text) in the worker. Returns the publishDiagnostics
@@ -777,8 +777,8 @@ define worker
                 return 0
             if c > 0x39
                 return 0
-            set value: value * 10 + ((c - 0x30) as i32)
-            set i: i + 1
+            value := value * 10 + ((c - 0x30) as i32)
+            i := i + 1
         }
         value
     }
@@ -829,7 +829,7 @@ define worker
         var attempts: int 0
         while attempts < 2
         {
-            set attempts: attempts + 1
+            attempts := attempts + 1
             worker.ensure()
             ; No live worker (spawn failed): nothing to do -> fallback.
             if worker_pid <= 0

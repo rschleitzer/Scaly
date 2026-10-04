@@ -12,7 +12,7 @@ function braced(n: int) returns int
     match n
         case 1:
         {
-            set r: 7
+            r := 7
         }
     r
 }
@@ -21,7 +21,7 @@ function plain(n: int) returns int
     var r 0
     match n
         case 1:
-            set r: 7
+            r := 7
     r
 }
 function two(n: int) returns int
@@ -30,7 +30,7 @@ function two(n: int) returns int
     match n
         case 1 case 2:
         {
-            set r: 7
+            r := 7
         }
     r
 }
@@ -38,7 +38,7 @@ function one_line(n: int) returns int
 {
     var r 0
     match n
-        case 1: set r: 7
+        case 1: r := 7
     r
 }
 function no_colon(n: int) returns int
@@ -47,7 +47,7 @@ function no_colon(n: int) returns int
     match n
         case 1
         {
-            set r: 7
+            r := 7
         }
     r
 }

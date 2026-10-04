@@ -63,9 +63,9 @@ function parse_int(e: pointer[const_char], dflt: int) returns int
     {
         if c > 57
             break
-        set v: v * 10 + (c - 48)
-        set i: i + 1
-        set c: e[i] as int
+        v := v * 10 + (c - 48)
+        i := i + 1
+        c := e[i] as int
     }
     if v = 0
         return dflt
@@ -82,13 +82,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -101,7 +101,7 @@ function fixed3(f: float) returns String
     var ok false
     if f >= 0.0
         if f < 100000.0
-            set ok: true
+            ok := true
     if ok = false
         return "nan"
     let m ((f * 1000.0) + 0.5) as int
@@ -153,11 +153,11 @@ procedure fill(mutable tape: Tape, id: int, count: int, s0: int) returns int
     var i 0
     while i < count
     {
-        set s: lcg(s)
+        s := lcg(s)
         let r pmod(s, 2001) - 1000
         let rv (r as float) * 0.0001
         tape.set_value(id, i, rv)
-        set i: i + 1
+        i := i + 1
     }
     s
 }
@@ -168,7 +168,7 @@ procedure fill_const(mutable tape: Tape, id: int, count: int, v: float)
     while i < count
     {
         tape.set_value(id, i, v)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -202,7 +202,7 @@ var vused 0
 var vp 0
 while vp < vlen
 {
-    set vb[V]: vused
+    vb[V] := vused
     var n 0
     while vp < vlen
     {
@@ -210,14 +210,14 @@ while vp < vlen
             break
         let hi hexval(vtb[vp] as int)
         let lo hexval(vtb[vp + 1] as int)
-        set vf[vused]: hi * 16 + lo
-        set vused: vused + 1
-        set n: n + 1
-        set vp: vp + 2
+        vf[vused] := hi * 16 + lo
+        vused := vused + 1
+        n := n + 1
+        vp := vp + 2
     }
-    set vl[V]: n
-    set V: V + 1
-    set vp: vp + 1        ; skip the newline
+    vl[V] := n
+    V := V + 1
+    vp := vp + 1        ; skip the newline
 }
 
 ; --- load the token stream: decimal ids, space-separated ---
@@ -244,17 +244,17 @@ while ti2 < ttlen
                     break
                 if b2 > 57
                     break
-                set v: v * 10 + (b2 - 48)
-                set ti2: ti2 + 1
+                v := v * 10 + (b2 - 48)
+                ti2 := ti2 + 1
             }
-            set tp[ntok]: v as i64
-            set ntok: ntok + 1
+            tp[ntok] := v as i64
+            ntok := ntok + 1
         }
         else
-            set ti2: ti2 + 1
+            ti2 := ti2 + 1
     }
     else
-        set ti2: ti2 + 1
+        ti2 := ti2 + 1
 }
 if ntok < 1000
 {
@@ -273,16 +273,16 @@ var B 8
 var mode_sync 0
 var use_msl 0
 if getenv("MGPU_SYNC") <> null
-    set mode_sync: 1
+    mode_sync := 1
 if getenv("MGPU_MSL") <> null
-    set use_msl: 1
+    use_msl := 1
 if getenv("MGPU_BIG") <> null
 {
-    set NLAYER: 4
-    set D: 512
-    set T: 256
-    set F: 2048
-    set B: 4
+    NLAYER := 4
+    D := 512
+    T := 256
+    F := 2048
+    B := 4
 }
 let TT B * T
 let se getenv("MGPU_STEPS")      ; smoke-test cap
@@ -319,7 +319,7 @@ while li < NLAYER
     lbb.put(sl, tape.leaf(1, D))
     lwf.put(sl, tape.leaf(D, F))
     lwp.put(sl, tape.leaf(F, D))
-    set li: li + 1
+    li := li + 1
 }
 let gf tape.leaf(1, D)
 let bf tape.leaf(1, D)
@@ -338,26 +338,26 @@ let lbbp lbb.data
 let lwfp lwf.data
 let lwpp lwp.data
 var s 42
-set s: fill(tape, table, V * D, s)
-set s: fill(tape, posemb, T * D, s)
+s := fill(tape, table, V * D, s)
+s := fill(tape, posemb, T * D, s)
 var fi 0
 while fi < NLAYER
 {
-    set s: fill(tape, lwqp[fi], D * D, s)
-    set s: fill(tape, lwkp[fi], D * D, s)
-    set s: fill(tape, lwvp[fi], D * D, s)
-    set s: fill(tape, lwop[fi], D * D, s)
-    set s: fill(tape, lwfp[fi], D * F, s)
-    set s: fill(tape, lwpp[fi], F * D, s)
-    set fi: fi + 1
+    s := fill(tape, lwqp[fi], D * D, s)
+    s := fill(tape, lwkp[fi], D * D, s)
+    s := fill(tape, lwvp[fi], D * D, s)
+    s := fill(tape, lwop[fi], D * D, s)
+    s := fill(tape, lwfp[fi], D * F, s)
+    s := fill(tape, lwpp[fi], F * D, s)
+    fi := fi + 1
 }
-set s: fill(tape, whead, D * V, s)
+s := fill(tape, whead, D * V, s)
 var gi 0
 while gi < NLAYER
 {
     fill_const(tape, lgap[gi], D, 1.0)
     fill_const(tape, lgbp[gi], D, 1.0)
-    set gi: gi + 1
+    gi := gi + 1
 }
 fill_const(tape, gf, D, 1.0)
 
@@ -381,8 +381,8 @@ while bi < NLAYER
     let h tape.matmul(nb, lwfp[bi])
     let e tape.gelu(h)
     let mm tape.matmul(e, lwpp[bi])
-    set x_cur: tape.add(x_res, mm)
-    set bi: bi + 1
+    x_cur := tape.add(x_res, mm)
+    bi := bi + 1
 }
 let nf tape.layernorm(x_cur, gf, bf, 0.00001)
 let logits tape.matmul(nf, whead)
@@ -393,28 +393,28 @@ let loss tape.crossentropy(logits, tgs)
 let NPARAM 2 + NLAYER * 10 + 3
 var pids Vector[int](NPARAM as size_t)
 let pp pids.data
-set pp[0]: table
-set pp[1]: posemb
+pp[0] := table
+pp[1] := posemb
 var pi0 2
 var pl 0
 while pl < NLAYER
 {
-    set pp[pi0]: lgap[pl]
-    set pp[pi0 + 1]: lbap[pl]
-    set pp[pi0 + 2]: lwqp[pl]
-    set pp[pi0 + 3]: lwkp[pl]
-    set pp[pi0 + 4]: lwvp[pl]
-    set pp[pi0 + 5]: lwop[pl]
-    set pp[pi0 + 6]: lgbp[pl]
-    set pp[pi0 + 7]: lbbp[pl]
-    set pp[pi0 + 8]: lwfp[pl]
-    set pp[pi0 + 9]: lwpp[pl]
-    set pi0: pi0 + 10
-    set pl: pl + 1
+    pp[pi0] := lgap[pl]
+    pp[pi0 + 1] := lbap[pl]
+    pp[pi0 + 2] := lwqp[pl]
+    pp[pi0 + 3] := lwkp[pl]
+    pp[pi0 + 4] := lwvp[pl]
+    pp[pi0 + 5] := lwop[pl]
+    pp[pi0 + 6] := lgbp[pl]
+    pp[pi0 + 7] := lbbp[pl]
+    pp[pi0 + 8] := lwfp[pl]
+    pp[pi0 + 9] := lwpp[pl]
+    pi0 := pi0 + 10
+    pl := pl + 1
 }
-set pp[pi0]: gf
-set pp[pi0 + 1]: bf
-set pp[pi0 + 2]: whead
+pp[pi0] := gf
+pp[pi0 + 1] := bf
+pp[pi0 + 2] := whead
 
 ; --- device residency, one call: redirect the whole tape into shared
 ; MTLBuffers + scratch slots + per-parameter Adam moment slots.
@@ -431,10 +431,10 @@ while mi < nnodes
     let node buf + mi
     let count node.rows * node.cols
     if count > 0
-        set orphaned: orphaned + ((count * 8) as i64)
-    set orphaned: orphaned + ((node.aux.length * 4) as i64)
-    set orphaned: orphaned + ((node.tok.length * 8) as i64)
-    set mi: mi + 1
+        orphaned := orphaned + ((count * 8) as i64)
+    orphaned := orphaned + ((node.aux.length * 4) as i64)
+    orphaned := orphaned + ((node.tok.length * 8) as i64)
+    mi := mi + 1
 }
 let att_t0 scaly_eio_now_ns()
 let g GpuTape.attach(tape, pids, loss, use_msl)
@@ -463,10 +463,10 @@ cfg.put(6, HEADS as i32)
 let ck getenv("MGPU_CKPT")
 var loaded 0
 if ck <> null
-    set loaded: g.load(ck, cfg)
+    loaded := g.load(ck, cfg)
 if loaded = 1
 {
-    set STEPS: 0
+    STEPS := 0
     Console.println("loaded checkpoint - skipping training")
 }
 
@@ -519,20 +519,20 @@ while step <= STEPS
     var bb 0
     while bb < B
     {
-        set s: lcg(s)
+        s := lcg(s)
         let p pmod(s, ntok - T - 1)
         var t 0
         while t < T
         {
             tape.set_token(emb, bb * T + t, tp[p + t])
             tape.set_token(loss, bb * T + t, tp[p + t + 1])
-            set t: t + 1
+            t := t + 1
         }
-        set bb: bb + 1
+        bb := bb + 1
     }
     var lr: float 0.0005
     if step * 4 > STEPS * 3
-        set lr: 0.0002
+        lr := 0.0002
     if mode_sync = 1
     {
         ; step 1 measurement: matmuls on the GPU, ONE command buffer +
@@ -550,13 +550,13 @@ while step <= STEPS
             }
             else
                 tape.run_node f
-            set f: f + 1
+            f := f + 1
         }
-        set win_sum: win_sum + tape.value_at(loss, 0)
+        win_sum := win_sum + tape.value_at(loss, 0)
         tape.zero_grads()
         let lnode buf + loss
         let lgp lnode.grad.data
-        set lgp[0]: 1.0
+        lgp[0] := 1.0
         var bw loss
         while bw >= 0
         {
@@ -569,13 +569,13 @@ while step <= STEPS
             }
             else
                 tape.bwd_node bw
-            set bw: bw - 1
+            bw := bw - 1
         }
         var pi 0
         while pi < NPARAM
         {
             tape.adam_step(pp[pi], lr, 0.9, 0.999, 0.00000001, step)
-            set pi: pi + 1
+            pi := pi + 1
         }
     }
     else
@@ -584,16 +584,16 @@ while step <= STEPS
         ; into ONE command buffer, one commit, one wait (fatal inside
         ; step if the command buffer fails).
         g.step(lr, 0.9, 0.999, 0.00000001, step)
-        set win_sum: win_sum + tape.value_at(loss, 0)
+        win_sum := win_sum + tape.value_at(loss, 0)
     }
-    set done_steps: step
+    done_steps := step
     if pmod(step, PROG) = 0
     {
         let now scaly_eio_now_ns()
         let ns now - win_t0
         var sps 0 as i64
         if ns > 0
-            set sps: ((PROG as i64) * 1000000000) / ns
+            sps := ((PROG as i64) * 1000000000) / ns
         var sb StringBuilder()
         sb.append "step "
         let ss num_to_string(step as i64)
@@ -611,12 +611,12 @@ while step <= STEPS
         sb.append " s"
         let line sb.to_string()
         Console.println(line.to_c_string())
-        set win_sum: 0.0
-        set win_t0: now
+        win_sum := 0.0
+        win_t0 := now
         if now - train_t0 > BUDGET_NS
-            set step: STEPS
+            step := STEPS
     }
-    set step: step + 1
+    step := step + 1
 }
 let train_t1 scaly_eio_now_ns()
 var tr StringBuilder()
@@ -655,7 +655,7 @@ if loaded = 0
 ; gate: same seed, same text).
 var gen1 0
 if getenv("MGPU_GEN1") <> null
-    set gen1: 1
+    gen1 := 1
 var tape2 Tape()
 let t2_table tape2.leaf(V, D)
 let t2_pos tape2.leaf(T, D)
@@ -672,7 +672,7 @@ while l2 < NLAYER
     tape2.leaf(1, D)
     tape2.leaf(D, F)
     tape2.leaf(F, D)
-    set l2: l2 + 1
+    l2 := l2 + 1
 }
 let g2base 2 + NLAYER * 10
 tape2.leaf(1, D)
@@ -697,8 +697,8 @@ while bl2 < NLAYER
     let h2 tape2.matmul(nb2, lb + 8)
     let e2 tape2.gelu(h2)
     let mm2 tape2.matmul(e2, lb + 9)
-    set xc2: tape2.add(xr2, mm2)
-    set bl2: bl2 + 1
+    xc2 := tape2.add(xr2, mm2)
+    bl2 := bl2 + 1
 }
 let nf2 tape2.layernorm(xc2, g2base, g2base + 1, 0.00001)
 let logits2 tape2.matmul(nf2, g2base + 2)
@@ -707,8 +707,8 @@ let pp2 pids2.data
 var p2 0
 while p2 < NPARAM
 {
-    set pp2[p2]: p2
-    set p2: p2 + 1
+    pp2[p2] := p2
+    p2 := p2 + 1
 }
 let g2 GpuTape.attach_gen(tape2, pids2, g, pids, use_msl)
 
@@ -730,7 +730,7 @@ if pe <> null
 {
     var plen 0
     while (pe[plen] as int) <> 0
-        set plen: plen + 1
+        plen := plen + 1
     var pos 0
     while pos < plen
     {
@@ -752,46 +752,46 @@ if pe <> null
                     {
                         var pb pe[pos + kb] as int
                         if pb < 0
-                            set pb: pb + 256
+                            pb := pb + 256
                         if pb <> vf[vb[id] + kb]
                         {
-                            set ok: 0
+                            ok := 0
                             break
                         }
-                        set kb: kb + 1
+                        kb := kb + 1
                     }
                     if ok = 1
                     {
-                        set best: id
-                        set bestlen: l
+                        best := id
+                        bestlen := l
                     }
                 }
             }
-            set id: id + 1
+            id := id + 1
         }
         if bestlen = 0
-            set pos: pos + 1
+            pos := pos + 1
         else
         {
-            set ptp[np]: best as i64
-            set np: np + 1
-            set pos: pos + bestlen
+            ptp[np] := best as i64
+            np := np + 1
+            pos := pos + bestlen
         }
     }
 }
 var P 24
 if np > 0
-    set P: np
+    P := np
 var hist Vector[i64]((P + GEN) as size_t)
 let hp hist.data
 var hi 0
 while hi < P
 {
     if np > 0
-        set hp[hi]: ptp[hi]
+        hp[hi] := ptp[hi]
     else
-        set hp[hi]: tp[100 + hi]
-    set hi: hi + 1
+        hp[hi] := tp[100 + hi]
+    hi := hi + 1
 }
 let gen_t0 scaly_eio_now_ns()
 var hlen P
@@ -799,7 +799,7 @@ while hlen < P + GEN
 {
     var vis hlen
     if vis > T
-        set vis: T
+        vis := T
     let start hlen - vis
     var t2 0
     while t2 < vis
@@ -808,25 +808,25 @@ while hlen < P + GEN
             tape.set_token(emb, t2, hp[start + t2])
         else
             tape2.set_token(emb2, t2, hp[start + t2])
-        set t2: t2 + 1
+        t2 := t2 + 1
     }
     if gen1 = 1
         g.fwd()
     else
         g2.fwd()
-    set s: lcg(s)
+    s := lcg(s)
     let u (pmod(s, 10000) as float) * 0.0001
     var pick 0
     if gen1 = 1
-        set pick: tape.sample(logits, vis - 1, temp, u)
+        pick := tape.sample(logits, vis - 1, temp, u)
     else
-        set pick: tape2.sample(logits2, vis - 1, temp, u)
+        pick := tape2.sample(logits2, vis - 1, temp, u)
     if pick < 0
-        set pick: 0
+        pick := 0
     if pick >= V
-        set pick: 0
-    set hp[hlen]: pick as i64
-    set hlen: hlen + 1
+        pick := 0
+    hp[hlen] := pick as i64
+    hlen := hlen + 1
 }
 let gen_t1 scaly_eio_now_ns()
 
@@ -843,9 +843,9 @@ while oi < P + GEN
     while kk < vl[id]
     {
         out.append(vf[vb[id] + kk] as char)
-        set kk: kk + 1
+        kk := kk + 1
     }
-    set oi: oi + 1
+    oi := oi + 1
 }
 let text_out out.to_string()
 Console.println("------------------------------------------------------------")

@@ -15,34 +15,34 @@ var fails 0
 
 var c: int n.kind
 if c <> 7
-    set fails: fails + 1
+    fails := fails + 1
 var cneg: int n.pos
 if cneg <> (0 - 3)
-    set fails: fails + 1
+    fails := fails + 1
 let s1: int n.kind + big
 if s1 <> 5000000007
-    set fails: fails + 1
+    fails := fails + 1
 let s2: int big + n.pos
 if s2 <> 4999999997
-    set fails: fails + 1
+    fails := fails + 1
 let s3: int one + n.u
 if s3 <> 4000000001
-    set fails: fails + 1
-set n.pos: (one + 10) as i32
+    fails := fails + 1
+n.pos := (one + 10) as i32
 if n.pos <> 11
-    set fails: fails + 1
+    fails := fails + 1
 var e: int 0
-set e: n.pos
+e := n.pos
 if e <> 11
-    set fails: fails + 1
+    fails := fails + 1
 var top: int 0 - 1
-set top: n.kind
+top := n.kind
 if top <> 7
-    set fails: fails + 1
-set top: 0 - 1
-set top: n.pos
+    fails := fails + 1
+top := 0 - 1
+top := n.pos
 if top <> 11
-    set fails: fails + 1
+    fails := fails + 1
 
 if fails = 0
     print("PASS\n")

@@ -14,7 +14,7 @@ define Holder
 )
 {
     procedure stash(mutable this, p: pointer[Box])
-        set this.b: p
+        this.b := p
 }
 
 procedure forward(mutable c: Holder, p: pointer[Box])

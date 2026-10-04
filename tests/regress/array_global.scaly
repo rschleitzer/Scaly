@@ -44,8 +44,8 @@ function check() returns int
     var i: int 0
     while i < 4
     {
-        set sum: sum + *(TBL + i)
-        set i: i + 1
+        sum := sum + *(TBL + i)
+        i := i + 1
     }
     if sum <> 42
         return 3

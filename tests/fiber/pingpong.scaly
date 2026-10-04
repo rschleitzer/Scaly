@@ -14,7 +14,7 @@ procedure fiber_main(mutable first_ctx: pointer[void])
     repeat
     {
         Console.print "pong "
-        set mctx: scaly_jump_context(mctx)
+        mctx := scaly_jump_context(mctx)
     }
 }
 
@@ -26,7 +26,7 @@ var i: int 0
 while i < 3
 {
     Console.print "ping "
-    set fctx: scaly_jump_context(fctx)
-    set i: i + 1
+    fctx := scaly_jump_context(fctx)
+    i := i + 1
 }
 Console.println "done"

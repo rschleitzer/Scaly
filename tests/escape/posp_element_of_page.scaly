@@ -5,7 +5,7 @@ define Box (var v: int)
 define Holder (var kept: ref[Box]?)
 
 procedure keep_first(mutable h: ref[Holder], list: ref[Array[ref[Box]?]])
-    set h.kept: list[0]
+    h.kept := list[0]
 
 procedure make(host: ref[Page], mutable h: ref[Holder])
 {

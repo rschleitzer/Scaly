@@ -4,7 +4,7 @@
 ; expect: 120
 var result 1
 var n 5
-while n > 0 : { set result : result * n: set n : n - 1 }
+while n > 0 : { result := result * n: n := n - 1 }
 let literate_result (result)
 if literate_result = (120)
     print("PASS")

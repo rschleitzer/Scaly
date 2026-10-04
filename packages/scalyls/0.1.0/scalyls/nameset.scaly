@@ -65,8 +65,8 @@ define nameset
             ; FNV-1a XOR step via the `xor` word operator (`^` is the
             ; lifetime sigil; the legacy `h // value` used an unknown
             ; operator the self-hosted emitter dropped — length-only hash).
-            set h: (h xor value) * prime
-            set i: i + 1
+            h := (h xor value) * prime
+            i := i + 1
         }
         h
     }
@@ -94,7 +94,7 @@ define nameset
         {
             if a[k] <> b[k]
                 return false
-            set k: k + 1
+            k := k + 1
         }
         true
     }
@@ -111,11 +111,11 @@ define nameset
         while i < cap
         {
             let s slots + i
-            set s.used: false
-            set s.name.data: null
-            set s.name.length: 0
-            set s.kind: 0 - 1
-            set i: i + 1
+            s.used := false
+            s.name.data := null
+            s.name.length := 0
+            s.kind := 0 - 1
+            i := i + 1
         }
         slots
     }
@@ -142,20 +142,20 @@ define nameset
                 let s slots + idx
                 if s.used = false
                 {
-                    set s.name: name
-                    set s.kind: kind
-                    set s.used: true
+                    s.name := name
+                    s.kind := kind
+                    s.used := true
                     return
                 }
                 if s.name.length = name.length
                     if nameset.eq_ptr(s.name, name)
                     {
                         if kind > s.kind
-                            set s.kind: kind
+                            s.kind := kind
                         return
                     }
-                set idx: (idx + 1) & mask
-                set probes: probes + 1
+                idx := (idx + 1) & mask
+                probes := probes + 1
             }
         }
     }
@@ -176,7 +176,7 @@ define nameset
                 {
                     if list.get(i) = 10
                     {
-                        set i: i + 1
+                        i := i + 1
                         continue
                     }
                     var j i
@@ -184,7 +184,7 @@ define nameset
                     {
                         if list.get(j) = 10
                             break
-                        set j: j + 1
+                        j := j + 1
                     }
                     let seglen j - i
                     if seglen > 0
@@ -193,7 +193,7 @@ define nameset
                         let h nameset.hash_ptr(seg)
                         nameset.insert(slots, cap, seg, h, kind)
                     }
-                    set i: j
+                    i := j
                 }
             }
         }
@@ -222,8 +222,8 @@ define nameset
                             return (0 - 1) as i64
                         if s.name.length = tlen and nameset.eq_ptr(s.name, sp)
                             return s.kind
-                        set idx: (idx + 1) & mask
-                        set probes: probes + 1
+                        idx := (idx + 1) & mask
+                        probes := probes + 1
                     }
                 }
             }

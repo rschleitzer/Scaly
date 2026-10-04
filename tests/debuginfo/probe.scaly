@@ -30,7 +30,7 @@ function shift(p: Point, dx: int, flag: bool) returns int
 {
     let inner p.x + dx
     var running inner
-    set running: running * 2
+    running := running * 2
     running
 }
 

@@ -21,14 +21,14 @@ define Msg
 mutable chk: u64 0
 
 procedure chk_reset() mutable chk
-    set chk: 0xcbf29ce484222325 as u64
+    chk := 0xcbf29ce484222325 as u64
 
 procedure chk_byte(b: u8) mutable chk
-    set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
+    chk := (chk xor (b as u64)) * (0x100000001b3 as u64)
 
 procedure chk_word(v: u64) mutable chk
 {
-    set chk: (chk xor v) * (0x100000001b3 as u64)
+    chk := (chk xor v) * (0x100000001b3 as u64)
 }
 
 procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
@@ -39,7 +39,7 @@ procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
         let r Io.read(fd, ((buf as size_t) + done) as pointer[void], count - done)
         if r <= (0 as i64)
             return false
-        set done: done + (r as size_t)
+        done := done + (r as size_t)
     }
     true
 }
@@ -93,14 +93,14 @@ while let item2 it2.next()
     {
         let b s.get(j)
         chk_byte b
-        set j: j + (1 as size_t)
+        j := j + (1 as size_t)
     }
     let vref hm2.get(s)
     if vref = null
         exit 6
     let v *vref
     chk_word(v as u64)
-    set count: count + (1 as size_t)
+    count := count + (1 as size_t)
 }
 var bv2 msg2.blob
 if bv2.length <> BLOB_LEN
@@ -113,19 +113,19 @@ while bi < BLOB_LEN
         exit 7
     let b *bref
     chk_byte b
-    set bi: bi + (1 as size_t)
+    bi := bi + (1 as size_t)
 }
 
 var verdict u8[8]
-set verdict[0]: 70 as u8
+verdict[0] := 70 as u8
 var pass true
 if count <> NAME_COUNT
-    set pass: false
+    pass := false
 if chk <> msg2.chk
-    set pass: false
+    pass := false
 if pass
 {
-    set verdict[0]: 80 as u8
+    verdict[0] := 80 as u8
     Console.println "R: verify PASS"
 }
 if pass = false

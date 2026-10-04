@@ -26,12 +26,12 @@ define N (kind: i32  pos: i32)
 define Box (var v: int)
 {
     procedure put(mutable this, x: int)
-        set v: x
+        v := x
 }
 define GBox[T] (var v: T)
 {
     procedure put(mutable this, x: T)
-        set v: x
+        v := x
 }
 function f_arg(x: int) returns int
     x
@@ -45,47 +45,47 @@ let host Page.get(anchor.get_buffer() as pointer[void])
 let n &N^host(3, 0 - 5)
 var fails 0
 if n.pos_tail() <> (0 - 5)
-    set fails: fails + 1
+    fails := fails + 1
 if n.pos_explicit() <> (0 - 5)
-    set fails: fails + 1
+    fails := fails + 1
 if n.pos_block_tail(false) <> (0 - 5)
-    set fails: fails + 1
+    fails := fails + 1
 if f_arg(n.pos) <> (0 - 5)
-    set fails: fails + 1
+    fails := fails + 1
 let b &Box^host(0)
 b.put(n.pos)
 if b.v <> (0 - 5)
-    set fails: fails + 1
+    fails := fails + 1
 let gb &GBox[int]^host(0)
 gb.put(n.pos)
 if gb.v <> (0 - 5)
-    set fails: fails + 1
+    fails := fails + 1
 let c n.pos as int
 if c <> (0 - 5)
-    set fails: fails + 1
+    fails := fails + 1
 let s "k=`n.pos`"
 if s.equals(String("k=-5")) = false
-    set fails: fails + 1
+    fails := fails + 1
 var arr Array[int]()
 arr.add(n.pos)
 if arr[0] <> (0 - 5)
-    set fails: fails + 1
+    fails := fails + 1
 if g(n.pos) <> 2
-    set fails: fails + 1
+    fails := fails + 1
 
 ; the mixed operator's result is the wider type, and a cast store keeps the
 ; neighbouring field intact
 let m &M^host(1, 7)
 var ctx: int 4
-set m.flags: (m.flags | ctx) as u32
+m.flags := (m.flags | ctx) as u32
 if m.flags <> 5
-    set fails: fails + 1
+    fails := fails + 1
 if m.pos <> 7
-    set fails: fails + 1
+    fails := fails + 1
 let wide m.flags | ctx
 var wide_check: int wide
 if wide_check <> 5
-    set fails: fails + 1
+    fails := fails + 1
 
 if fails = 0
     print("PASS\n")

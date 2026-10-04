@@ -16,7 +16,7 @@ define Echo
     {
         var n 0
         while *(s + n) <> (0 as char)
-            set n: n + 1
+            n := n + 1
         n
     }
 
@@ -28,21 +28,21 @@ var failures 0
 
 ; literal → static pointer[const_char] param
 if Echo.len_of("hello") <> 5
-    set failures: failures + 1
+    failures := failures + 1
 
 ; pointer variable → same param
 let p ("worlds!" as pointer[const_char])
 if Echo.len_of(p) <> 7
-    set failures: failures + 1
+    failures := failures + 1
 
 ; String LOCAL → same param (content pointer, not the record address)
 var s String("stringy!")
 if Echo.len_of(s) <> 8
-    set failures: failures + 1
+    failures := failures + 1
 
 ; char literal folds into a static char param ("x" = 120)
 if Echo.code_of("x") <> 120
-    set failures: failures + 1
+    failures := failures + 1
 
 if failures = 0
     print "PASS\n"

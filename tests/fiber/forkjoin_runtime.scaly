@@ -19,8 +19,8 @@ function leaf(lo: i64, hi: i64) returns i64
     var i lo
     while i < hi
     {
-        set acc: acc + (i * i) % 1000003
-        set i: i + 1
+        acc := acc + (i * i) % 1000003
+        i := i + 1
     }
     acc
 }
@@ -40,7 +40,7 @@ procedure rsum_task(mutable slot: pointer[void]) returns pointer[void]
     var ctx u64[2]
     let c ctx as pointer[u64]
     ForkJoin.begin_task(c)
-    set *w(cell, 2): rsum_fj((*w(cell, 0)) as i64, (*w(cell, 1)) as i64, ForkJoin.slot_depth(slot), c) as u64
+    *w(cell, 2) := rsum_fj((*w(cell, 0)) as i64, (*w(cell, 1)) as i64, ForkJoin.slot_depth(slot), c) as u64
     null
 }
 
@@ -54,8 +54,8 @@ procedure rsum_fj(lo: i64, hi: i64, depth: i64, mutable ctx: pointer[u64]) retur
     ForkJoin.beat(ctx)
     var cell u64[3]
     let cp cell as pointer[u64]
-    set *w(cp, 0): lo as u64
-    set *w(cp, 1): mid as u64
+    *w(cp, 0) := lo as u64
+    *w(cp, 1) := mid as u64
     let idx ForkJoin.push(ctx, &rsum_task, cp as pointer[void], depth + 1)
     if idx < 0
         return rsum_fj(lo, mid, depth + 1, ctx) + rsum_fj(mid, hi, depth + 1, ctx)
@@ -97,6 +97,6 @@ while j < 2000
         Console.println "small sum differs"
         exit 1
     }
-    set j: j + 1
+    j := j + 1
 }
 print "forkjoin-runtime-ok done"

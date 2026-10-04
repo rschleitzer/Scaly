@@ -10,39 +10,39 @@ var fail 0
 
 ; basic truth tables
 if true and false
-    set fail: 1
+    fail := 1
 if false and true
-    set fail: 2
+    fail := 2
 if (true and true) = false
-    set fail: 3
+    fail := 3
 if false or false
-    set fail: 4
+    fail := 4
 if (true or false) = false
-    set fail: 5
+    fail := 5
 if not true
-    set fail: 6
+    fail := 6
 if (not false) = false
-    set fail: 7
+    fail := 7
 
 ; precedence: `and`/`or` looser than `=`
 if (1 = 1 and 2 = 2) = false
-    set fail: 8
+    fail := 8
 if 1 = 2 and 2 = 2
-    set fail: 9
+    fail := 9
 ; `and` binds tighter than `or`: false or (true and true) => true
 if (false or true and true) = false
-    set fail: 10
+    fail := 10
 
 ; short-circuit: a false LHS of `and` must NOT evaluate the RHS deref of a
 ; null pointer (would SIGSEGV if both sides were evaluated).
 var p: pointer[int] null
 if (p <> null) and ((*p) > 0)
-    set fail: 11
+    fail := 11
 ; true LHS of `or` must NOT evaluate the RHS deref either.
 if (p = null) or ((*p) > 0)
-    set fail: 0
+    fail := 0
 else
-    set fail: 12
+    fail := 12
 
 if fail = 0
     print("PASS")

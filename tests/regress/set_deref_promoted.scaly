@@ -24,7 +24,7 @@ define probe
         out.put(1, 8)
         let adopted probe.pick(alt)
         if adopted <> null
-            set out: (*adopted)
+            out := (*adopted)
         &out
     }
 }
@@ -41,8 +41,8 @@ function churn(n: size_t) returns size_t
         junk.put(2, "zzzzz")
         let jp junk.get 0
         if jp <> null
-            set total: total + (*jp).get_length()
-        set i: i + 1
+            total := total + (*jp).get_length()
+        i := i + 1
     }
     total
 }

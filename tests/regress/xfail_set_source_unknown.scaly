@@ -11,7 +11,7 @@ define User
     procedure via_set() returns pointer[u32]
     {
         var p: pointer[u32] null
-        set p: TBL
+        p := TBL
         p
     }
 }

@@ -16,7 +16,7 @@ function civil_from_days(z0: i64) returns i64
     let z z0 + 719468
     var era z / 146097
     if z < 0
-        set era: (z - 146096) / 146097
+        era := (z - 146096) / 146097
     let doe z - era * 146097
     let yoe (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
     let doy doe - (365 * yoe + yoe / 4 - yoe / 100)
@@ -24,10 +24,10 @@ function civil_from_days(z0: i64) returns i64
     let d doy - (153 * mp + 2) / 5 + 1
     var m mp + 3
     if mp >= 10
-        set m: mp - 9
+        m := mp - 9
     var y yoe + era * 400
     if m <= 2
-        set y: y + 1
+        y := y + 1
     y * 10000 + m * 100 + d
 }
 
@@ -43,7 +43,7 @@ procedure put_text(mutable p: Slice[u8], at: size_t, t: Slice[u8])
     while i < t.length
     {
         p.put(at + i, t[i])
-        set i: i + 1
+        i := i + 1
     }
 }
 

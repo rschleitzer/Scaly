@@ -14,14 +14,14 @@
 
 define Other (n: int)
 {
-    init()  set n: 7
+    init()  n := 7
     function twice(this, k: int) returns int  k * 2
 }
 
 define Sink (var total: int)
 {
-    init()  set total: 0
-    procedure take(mutable this, v: int)  set total: total + v
+    init()  total := 0
+    procedure take(mutable this, v: int)  total := total + v
 }
 
 define U union
@@ -34,8 +34,8 @@ define Holder (other: pointer[Other]  sink: Sink)
 {
     init(o: pointer[Other])
     {
-        set other: o
-        set sink: Sink()
+        other := o
+        sink := Sink()
     }
 
     ; method hop of a field-rooted chain: `other.twice 4` must attach the 4
@@ -59,13 +59,13 @@ let o Other()
 let h Holder(&o)
 var ok: bool true
 if h.through_field() <> 8
-    set ok: false
+    ok := false
 if h.separated() <> 7
-    set ok: false
+    ok := false
 if h.with_tuple() <> 10
-    set ok: false
+    ok := false
 if h.via_this() <> 8
-    set ok: false
+    ok := false
 
 ; a variant hop is a construction, not a bare property read
 let u U.First(3)
@@ -75,7 +75,7 @@ let tag choose u
     else
         0
 if tag <> 3
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

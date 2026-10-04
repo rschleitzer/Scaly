@@ -10,7 +10,7 @@ define Box (var s: String)
 procedure fill(mutable out: ref[Box])
 {
     let pg Page.get(out)
-    set out.s: String^pg("filled")
+    out.s := String^pg("filled")
 }
 
 procedure make()

@@ -15,11 +15,11 @@ procedure worker_a(first_ctx: pointer[void])
         while k < 20
         {
             let s String("alpha payload alpha payload alpha payload")
-            set k: k + 1
+            k := k + 1
         }
         Console.print "a "
         Fiber.yield()
-        set i: i + 1
+        i := i + 1
     }
     Fiber.finish()
 }
@@ -34,11 +34,11 @@ procedure worker_b(first_ctx: pointer[void])
         while k < 20
         {
             let s String("beta payload beta payload beta payload")
-            set k: k + 1
+            k := k + 1
         }
         Console.print "b "
         Fiber.yield()
-        set i: i + 1
+        i := i + 1
     }
     Fiber.finish()
 }
@@ -49,11 +49,11 @@ let fb Fiber.create(page, &worker_b)
 var more true
 while more
 {
-    set more: false
+    more := false
     if Fiber.resume(fa)
-        set more: true
+        more := true
     if Fiber.resume(fb)
-        set more: true
+        more := true
 }
 Console.print "done "
 let na Fiber.dispose(fa)

@@ -233,52 +233,52 @@ define PointerCensus
     {
         init()
         {
-            set report_files: Array[String]^this()
-            set report_offsets: Array[size_t]^this()
-            set report_texts: Array[String]^this()
-            set n_extern: 0
-            set n_param: 0
-            set n_return: 0
-            set n_field: 0
-            set n_variant: 0
-            set n_local: 0
-            set n_deref: 0
-            set n_deref_arith: 0
-            set n_arith: 0
-            set n_cast: 0
-            set n_null_cast: 0
-            set n_null_test: 0
-            set n_store: 0
-            set n_arg: 0
-            set n_optref_deref: 0
-            set n_unfiled: 0
-            set current_file: String^this("")
-            set src_files: Array[String]^this()
-            set src_texts: Array[String]^this()
-            set src_loaded: Array[size_t]^this()
-            set handle_pointees: Array[String]^this()
-            set n_handle: 0
-            set n_stack_array: 0
-            set plan_functions: null
-            set fn_slots: Vector[size_t]^this(DD_CAP)
-            set plan_structures: null
-            set init_slots: Vector[size_t]^this(DD_CAP)
-            set extern_names: Array[String]^this()
-            set extern_writes: Array[u64]^this()
-            set extern_set: ConceptIndex()
-            set n_arg_extern: 0
-            set n_arg_unresolved: 0
-            set n_h_ptr_ref: 0
-            set n_h_slice_ptr: 0
-            set n_h_mixed: 0
-            set n_h_store_slot: 0
-            set cur_params: null
-            set loc_names: Array[String]^this()
-            set loc_kinds: Array[String]^this()
-            set dd_slots: Vector[size_t]^this(DD_CAP)
-            set dd_hashes: Array[size_t]^this()
-            set dd_offsets: Array[size_t]^this()
-            set dd_classes: Array[size_t]^this()
+            report_files := Array[String]^this()
+            report_offsets := Array[size_t]^this()
+            report_texts := Array[String]^this()
+            n_extern := 0
+            n_param := 0
+            n_return := 0
+            n_field := 0
+            n_variant := 0
+            n_local := 0
+            n_deref := 0
+            n_deref_arith := 0
+            n_arith := 0
+            n_cast := 0
+            n_null_cast := 0
+            n_null_test := 0
+            n_store := 0
+            n_arg := 0
+            n_optref_deref := 0
+            n_unfiled := 0
+            current_file := String^this("")
+            src_files := Array[String]^this()
+            src_texts := Array[String]^this()
+            src_loaded := Array[size_t]^this()
+            handle_pointees := Array[String]^this()
+            n_handle := 0
+            n_stack_array := 0
+            plan_functions := null
+            fn_slots := Vector[size_t]^this(DD_CAP)
+            plan_structures := null
+            init_slots := Vector[size_t]^this(DD_CAP)
+            extern_names := Array[String]^this()
+            extern_writes := Array[u64]^this()
+            extern_set := ConceptIndex()
+            n_arg_extern := 0
+            n_arg_unresolved := 0
+            n_h_ptr_ref := 0
+            n_h_slice_ptr := 0
+            n_h_mixed := 0
+            n_h_store_slot := 0
+            cur_params := null
+            loc_names := Array[String]^this()
+            loc_kinds := Array[String]^this()
+            dd_slots := Vector[size_t]^this(DD_CAP)
+            dd_hashes := Array[size_t]^this()
+            dd_offsets := Array[size_t]^this()
+            dd_classes := Array[size_t]^this()
         }
 
         ; ================================================================
@@ -294,10 +294,10 @@ define PointerCensus
                 let pkg model.packages.get pi
                 if pkg <> null
                     this.collect_externs_module((*pkg))
-                set pi: pi + 1
+                pi := pi + 1
             }
-            set plan_functions: plan.functions
-            set plan_structures: plan.structures
+            plan_functions := plan.functions
+            plan_structures := plan.structures
             this.index_functions()
             this.index_initializers()
             if plan.functions <> null
@@ -310,14 +310,14 @@ define PointerCensus
                             let home this.resolve_body_file(func)
                             if home.get_length() > 0
                             {
-                                set current_file: String^this(home)
-                                set cur_params: func.input
-                                set loc_names: Array[String]^this()
-                                set loc_kinds: Array[String]^this()
+                                current_file := String^this(home)
+                                cur_params := func.input
+                                loc_names := Array[String]^this()
+                                loc_kinds := Array[String]^this()
                                 this.find_action(action)
                             }
                             else
-                                set n_unfiled: n_unfiled + 1
+                                n_unfiled := n_unfiled + 1
                         }
                         else
                             0
@@ -325,10 +325,10 @@ define PointerCensus
             }
             if plan.statements <> null
             {
-                set current_file: String^this(entry_file)
-                set cur_params: null
-                set loc_names: Array[String]^this()
-                set loc_kinds: Array[String]^this()
+                current_file := String^this(entry_file)
+                cur_params := null
+                loc_names := Array[String]^this()
+                loc_kinds := Array[String]^this()
                 for stmt in plan.statements
                     this.find_statement(stmt)
             }
@@ -396,7 +396,7 @@ define PointerCensus
                 let h handle_pointees.get i
                 if h <> null and (*h) = pointee
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -441,9 +441,9 @@ define PointerCensus
             let fh current_file.hash()
             let mask (DD_CAP as size_t) - 1
             var h fh
-            set h: h xor (offset * 0x9E3779B97F4A7C15)
-            set h: h xor (cid * 0x100000001B3)
-            set h: h & mask
+            h := h xor (offset * 0x9E3779B97F4A7C15)
+            h := h xor (cid * 0x100000001B3)
+            h := h & mask
             var probes: size_t 0
             while probes < mask
             {
@@ -467,8 +467,8 @@ define PointerCensus
                 let pc dd_classes.get idx
                 if ph <> null and po <> null and pc <> null and (*ph) = fh and (*po) = offset and (*pc) = cid
                     return true
-                set h: (h + 1) & mask
-                set probes: probes + 1
+                h := (h + 1) & mask
+                probes := probes + 1
             }
             false
         }
@@ -525,52 +525,52 @@ define PointerCensus
         procedure bump(mutable this: PointerCensus, cid: size_t)
         {
             if cid = 1
-                set n_extern: n_extern + 1
+                n_extern := n_extern + 1
             if cid = 2
-                set n_param: n_param + 1
+                n_param := n_param + 1
             if cid = 3
-                set n_return: n_return + 1
+                n_return := n_return + 1
             if cid = 4
-                set n_field: n_field + 1
+                n_field := n_field + 1
             if cid = 5
-                set n_variant: n_variant + 1
+                n_variant := n_variant + 1
             if cid = 6
-                set n_local: n_local + 1
+                n_local := n_local + 1
             if cid = 7
-                set n_deref: n_deref + 1
+                n_deref := n_deref + 1
             if cid = 8
-                set n_deref_arith: n_deref_arith + 1
+                n_deref_arith := n_deref_arith + 1
             if cid = 9
-                set n_arith: n_arith + 1
+                n_arith := n_arith + 1
             if cid = 10
-                set n_cast: n_cast + 1
+                n_cast := n_cast + 1
             if cid = 11
-                set n_null_cast: n_null_cast + 1
+                n_null_cast := n_null_cast + 1
             if cid = 12
-                set n_null_test: n_null_test + 1
+                n_null_test := n_null_test + 1
             if cid = 13
-                set n_store: n_store + 1
+                n_store := n_store + 1
             if cid = 14
-                set n_arg: n_arg + 1
+                n_arg := n_arg + 1
             if cid = 15
-                set n_arg_extern: n_arg_extern + 1
+                n_arg_extern := n_arg_extern + 1
             if cid = 16
-                set n_arg_unresolved: n_arg_unresolved + 1
+                n_arg_unresolved := n_arg_unresolved + 1
             if cid = 17
-                set n_h_ptr_ref: n_h_ptr_ref + 1
+                n_h_ptr_ref := n_h_ptr_ref + 1
             if cid = 18
-                set n_h_slice_ptr: n_h_slice_ptr + 1
+                n_h_slice_ptr := n_h_slice_ptr + 1
             if cid = 19
-                set n_h_mixed: n_h_mixed + 1
+                n_h_mixed := n_h_mixed + 1
             if cid = 20
-                set n_h_store_slot: n_h_store_slot + 1
+                n_h_store_slot := n_h_store_slot + 1
         }
 
         procedure record_typed(mutable this: PointerCensus, offset: size_t, cls: String, t: PlannedType)
         {
             if this.is_handle(t)
             {
-                set n_handle: n_handle + 1
+                n_handle := n_handle + 1
                 return
             }
             var sb StringBuilder()
@@ -586,7 +586,7 @@ define PointerCensus
         {
             if this.is_handle(t)
             {
-                set n_handle: n_handle + 1
+                n_handle := n_handle + 1
                 return
             }
             var sb StringBuilder()
@@ -646,7 +646,7 @@ define PointerCensus
                 let seg t.name.get i
                 if seg <> null
                     sb.append((*seg))
-                set i: i + 1
+                i := i + 1
             }
             if t.generics <> null
             {
@@ -659,7 +659,7 @@ define PointerCensus
                     let gt t.generics.get g
                     if gt <> null
                         sb.append(PointerCensus.model_type_name((*gt)))
-                    set g: g + 1
+                    g := g + 1
                 }
                 sb.append "]"
             }
@@ -681,7 +681,7 @@ define PointerCensus
 
         procedure walk_model_module(mutable this: PointerCensus, m: Module)
         {
-            set current_file: String^this(m.file)
+            current_file := String^this(m.file)
             this.remember_file(m.file)
             this.walk_members(m.members)
             var i: size_t 0
@@ -690,11 +690,11 @@ define PointerCensus
                 let sub m.modules.get i
                 if sub <> null
                     this.walk_model_module((*sub))
-                set i: i + 1
+                i := i + 1
             }
             ; Restore: a sibling walked after this one belongs to ITS file,
             ; and the caller's remaining members to the caller's.
-            set current_file: String^this(m.file)
+            current_file := String^this(m.file)
         }
 
         procedure walk_members(mutable this: PointerCensus, members: Vector[Member])
@@ -716,7 +716,7 @@ define PointerCensus
                         else
                             0
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -725,7 +725,7 @@ define PointerCensus
             var is_extern false
             choose f.implementation
                 when e: Extern
-                    set is_extern: true
+                    is_extern := true
                 else
                     0
             if is_extern
@@ -742,13 +742,13 @@ define PointerCensus
             {
                 var ncap: size_t 1024
                 while ncap < (extern_names.length + 1) * 4
-                    set ncap: ncap * 2
-                set extern_set: ConceptIndex.create(ncap)
+                    ncap := ncap * 2
+                extern_set := ConceptIndex.create(ncap)
                 var i: size_t 0
                 while i < extern_names.length
                 {
                     extern_set.insert_if_absent(extern_names[i], i)
-                    set i: i + 1
+                    i := i + 1
                 }
                 return
             }
@@ -780,11 +780,11 @@ define PointerCensus
                     {
                         let a_ptr it.attributes.get k
                         if a_ptr <> null and (*a_ptr).name = "mutable" and i < 61
-                            set m: m | ((1 as u64) << (i as u64))
-                        set k: k + 1
+                            m := m | ((1 as u64) << (i as u64))
+                        k := k + 1
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             m
         }
@@ -810,7 +810,7 @@ define PointerCensus
                 let sub m.modules.get i
                 if sub <> null
                     this.collect_externs_module((*sub))
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -844,7 +844,7 @@ define PointerCensus
                                         let sub st.modules.get mi
                                         if sub <> null
                                             this.collect_externs_module((*sub))
-                                        set mi: mi + 1
+                                        mi := mi + 1
                                     }
                                 }
                                 when un: Union
@@ -858,7 +858,7 @@ define PointerCensus
                                         let sub ns.modules.get mi
                                         if sub <> null
                                             this.collect_externs_module((*sub))
-                                        set mi: mi + 1
+                                        mi := mi + 1
                                     }
                                 }
                                 else
@@ -867,7 +867,7 @@ define PointerCensus
                         else
                             0
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -911,7 +911,7 @@ define PointerCensus
                     if item.name <> null
                     {
                         if (*item.name) = "this"
-                            set is_this: true
+                            is_this := true
                     }
                     if is_this = false
                     {
@@ -919,13 +919,13 @@ define PointerCensus
                         {
                             let t (*item.type)
                             if PointerCensus.model_is_ref(t)
-                                set n_ref: n_ref + 1
+                                n_ref := n_ref + 1
                             if PointerCensus.model_is_pointer(t)
                             {
-                                set n_ptr: n_ptr + 1
+                                n_ptr := n_ptr + 1
                                 var pname String("")
                                 if item.name <> null
-                                    set pname: String((*item.name))
+                                    pname := String((*item.name))
                                 var sb StringBuilder()
                                 sb.append owner
                                 sb.append "("
@@ -944,7 +944,7 @@ define PointerCensus
                         }
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             ; The signpost of a half-converted routine: one campaign's verdict
             ; on one parameter and none on its neighbour.
@@ -999,7 +999,7 @@ define PointerCensus
                                 }
                             }
                         }
-                        set i: i + 1
+                        i := i + 1
                     }
                     var ii: size_t 0
                     while ii < s.initializers.length
@@ -1010,7 +1010,7 @@ define PointerCensus
                             let ini (*ini_ptr)
                             this.walk_model_signature(ini.input, null, false, c.name, ini.span.start)
                         }
-                        set ii: ii + 1
+                        ii := ii + 1
                     }
                     this.walk_members(s.members)
                     var mi: size_t 0
@@ -1019,7 +1019,7 @@ define PointerCensus
                         let sub s.modules.get mi
                         if sub <> null
                             this.walk_model_module((*sub))
-                        set mi: mi + 1
+                        mi := mi + 1
                     }
                 }
                 when u: Union
@@ -1045,7 +1045,7 @@ define PointerCensus
                                 }
                             }
                         }
-                        set i: i + 1
+                        i := i + 1
                     }
                     this.walk_members(u.members)
                 }
@@ -1078,7 +1078,7 @@ define PointerCensus
                         let sub ns.modules.get mi
                         if sub <> null
                             this.walk_model_module((*sub))
-                        set mi: mi + 1
+                        mi := mi + 1
                     }
                 }
                 else
@@ -1117,19 +1117,19 @@ define PointerCensus
                     while done = false
                     {
                         if probes >= mask
-                            set done: true
+                            done := true
                         if done = false
                         {
                             let slot_ptr fn_slots.get h
                             if slot_ptr = null
-                                set done: true
+                                done := true
                             if done = false
                             {
                                 let slot (*slot_ptr)
                                 if slot = 0
                                 {
                                     fn_slots.put(h, i + 1)
-                                    set done: true
+                                    done := true
                                 }
                                 else
                                 {
@@ -1141,20 +1141,20 @@ define PointerCensus
                                             ; Same symbol twice: a body beats a stub.
                                             if PointerCensus.fn_is_body(f)
                                                 fn_slots.put(h, i + 1)
-                                            set done: true
+                                            done := true
                                         }
                                     }
                                     if done = false
                                     {
-                                        set h: (h + 1) & mask
-                                        set probes: probes + 1
+                                        h := (h + 1) & mask
+                                        probes := probes + 1
                                     }
                                 }
                             }
                         }
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -1185,34 +1185,34 @@ define PointerCensus
                                 while done = false
                                 {
                                     if probes >= mask
-                                        set done: true
+                                        done := true
                                     if done = false
                                     {
                                         let slot_ptr init_slots.get h
                                         if slot_ptr = null
-                                            set done: true
+                                            done := true
                                         if done = false
                                         {
                                             if (*slot_ptr) = 0
                                             {
                                                 if si < 65536 and ii < 65536
                                                     init_slots.put(h, (si * 65536) + ii + 1)
-                                                set done: true
+                                                done := true
                                             }
                                             else
                                             {
-                                                set h: (h + 1) & mask
-                                                set probes: probes + 1
+                                                h := (h + 1) & mask
+                                                probes := probes + 1
                                             }
                                         }
                                     }
                                 }
                             }
-                            set ii: ii + 1
+                            ii := ii + 1
                         }
                     }
                 }
-                set si: si + 1
+                si := si + 1
             }
         }
 
@@ -1246,8 +1246,8 @@ define PointerCensus
                             return in_ptr
                     }
                 }
-                set h: (h + 1) & mask
-                set probes: probes + 1
+                h := (h + 1) & mask
+                probes := probes + 1
             }
             null
         }
@@ -1272,8 +1272,8 @@ define PointerCensus
                 let cand plan_functions.get(slot - 1)
                 if cand <> null and cand.unwrap().mangled_name = mangled
                     return cand
-                set h: (h + 1) & mask
-                set probes: probes + 1
+                h := (h + 1) & mask
+                probes := probes + 1
             }
             null
         }
@@ -1390,7 +1390,7 @@ define PointerCensus
                 let f src_files.get i
                 if f <> null and (*f) = file
                     return
-                set i: i + 1
+                i := i + 1
             }
             let copy String^this(file)
             src_files.add copy
@@ -1429,7 +1429,7 @@ define PointerCensus
             {
                 if src.get(off + i) <> lit.get(i)
                     return false
-                set i: i + 1
+                i := i + 1
             }
             true
         }
@@ -1443,13 +1443,13 @@ define PointerCensus
                 return true
             var kw_len: size_t 0
             if PointerCensus.text_at(src, off, "function")
-                set kw_len: 8
+                kw_len := 8
             if PointerCensus.text_at(src, off, "procedure")
-                set kw_len: 9
+                kw_len := 9
             if PointerCensus.text_at(src, off, "operator")
-                set kw_len: 8
+                kw_len := 8
             if PointerCensus.text_at(src, off, "init")
-                set kw_len: 4
+                kw_len := 4
             if kw_len = 0
                 return false
             if kw_len = 4
@@ -1461,7 +1461,7 @@ define PointerCensus
                 let c src.get p
                 if c <> 32 and c <> 9
                     break
-                set p: p + 1
+                p := p + 1
             }
             PointerCensus.text_at(src, p, name)
         }
@@ -1481,8 +1481,8 @@ define PointerCensus
             {
                 let f src_files.get i
                 if f <> null and (*f) = func.file
-                    set own: i
-                set i: i + 1
+                    own := i
+                i := i + 1
             }
             if own < src_files.length
             {
@@ -1490,7 +1490,7 @@ define PointerCensus
                 if src <> null and PointerCensus.header_at((*src), func.loc.start, func.name)
                     return String(func.file)
             }
-            set i: 0
+            i := 0
             while i < src_files.length
             {
                 if i <> own
@@ -1504,7 +1504,7 @@ define PointerCensus
                                 return String((*f))
                         }
                 }
-                set i: i + 1
+                i := i + 1
             }
             String("")
         }
@@ -1524,7 +1524,7 @@ define PointerCensus
                 let op_ptr ops.get i
                 if op_ptr <> null
                     this.find_operand(op_ptr.unwrap())
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -1551,7 +1551,7 @@ define PointerCensus
                 if head_ptr <> null
                 {
                     let head (*head_ptr)
-                    set handled: this.note_store_target(head)
+                    handled := this.note_store_target(head)
                 }
             }
             if handled = false
@@ -1644,8 +1644,8 @@ define PointerCensus
             var t: PlannedType PointerCensus.void_type()
             if binding.binding_item.item_type <> null
             {
-                set t: (*binding.binding_item.item_type)
-                set have_type: true
+                t := (*binding.binding_item.item_type)
+                have_type := true
             }
             if have_type = false
             {
@@ -1659,8 +1659,8 @@ define PointerCensus
                         let o_ptr binding.operation.get 0
                         if o_ptr <> null
                         {
-                            set t: o_ptr.unwrap().result_type
-                            set have_type: true
+                            t := o_ptr.unwrap().result_type
+                            have_type := true
                         }
                     }
                 }
@@ -1671,7 +1671,7 @@ define PointerCensus
                 return
             var pname String("")
             if binding.binding_item.name <> null
-                set pname: String((*binding.binding_item.name))
+                pname := String((*binding.binding_item.name))
             ; A fixed-size stack array (`var buf u8[64]`) is planned as a pointer
             ; with an array_size; its walk indexes in place and is the pure
             ; idiom (`tools/stackarray.py`'s class), so the kind names it.
@@ -1683,7 +1683,7 @@ define PointerCensus
                 kb.append "]"
                 loc_names.add(String^this(pname))
                 loc_kinds.add(String^this(kb.to_string()))
-                set n_stack_array: n_stack_array + 1
+                n_stack_array := n_stack_array + 1
                 return
             }
             this.note_local(pname, binding.operation)
@@ -1710,7 +1710,7 @@ define PointerCensus
             var i loc_names.length
             while i > 0
             {
-                set i: i - 1
+                i := i - 1
                 let n loc_names.get i
                 if n <> null
                     if (*n) = name
@@ -1739,7 +1739,7 @@ define PointerCensus
                     if item.name <> null and (*item.name) = name
                         return i as int
                 }
-                set i: i + 1
+                i := i + 1
             }
             0 - 1
         }
@@ -1779,9 +1779,9 @@ define PointerCensus
                 let it cur_params.get i
                 if it <> null and PointerCensus.item_is_integer(it.unwrap())
                     return PointerCensus.item_name(it.unwrap())
-                set i: i + 1
+                i := i + 1
             }
-            set i: 0
+            i := 0
             while i < cur_params.length
             {
                 if (i as int) <> idx
@@ -1796,7 +1796,7 @@ define PointerCensus
                             return sb.to_string()
                         }
                 }
-                set i: i + 1
+                i := i + 1
             }
             String("")
         }
@@ -1813,15 +1813,15 @@ define PointerCensus
                 let sp plan_structures.get i
                 if sp <> null and sp.unwrap().mangled_name = t.mangled_name
                     return sp
-                set i: i + 1
+                i := i + 1
             }
-            set i: 0
+            i := 0
             while i < plan_structures.length
             {
                 let sp plan_structures.get i
                 if sp <> null and sp.unwrap().name = t.name
                     return sp
-                set i: i + 1
+                i := i + 1
             }
             null
         }
@@ -1867,11 +1867,11 @@ define PointerCensus
                             return full
                         if first.get_length() = 0
                         {
-                            set first: "`full`?"
+                            first := "`full`?"
                         }
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             first
         }
@@ -2017,7 +2017,7 @@ define PointerCensus
                         let hop last.unwrap()
                         ; A field walk names its concept's length; a method
                         ; result (`x.get_buffer() + i` as a member hop) the same.
-                        set len: this.sibling_length(hop.parent_type)
+                        len := this.sibling_length(hop.parent_type)
                     }
                 }
             }
@@ -2028,7 +2028,7 @@ define PointerCensus
                     {
                         let idx this.param_index(v.name)
                         if idx >= 0
-                            set len: this.neighbour_length(idx)
+                            len := this.neighbour_length(idx)
                         else
                         {
                             let k this.local_kind(v.name)
@@ -2039,7 +2039,7 @@ define PointerCensus
                                 sb.append "<-"
                                 sb.append k
                                 sb.append ")"
-                                set kind_done: true
+                                kind_done := true
                             }
                         }
                     }
@@ -2061,7 +2061,7 @@ define PointerCensus
                                                 {
                                                     let g recv.generics.get 0
                                                     if g <> null
-                                                        set rt: g.unwrap()
+                                                        rt := g.unwrap()
                                                 }
                                         if recv.name = "ref"
                                             if recv.generics <> null
@@ -2069,14 +2069,14 @@ define PointerCensus
                                                 {
                                                     let g recv.generics.get 0
                                                     if g <> null
-                                                        set rt: g.unwrap()
+                                                        rt := g.unwrap()
                                                 }
                                         sb.append "call("
                                         sb.append call.name
                                         sb.append ") recv="
                                         sb.append rt.name
-                                        set kind_done: true
-                                        set len: this.sibling_length(rt)
+                                        kind_done := true
+                                        len := this.sibling_length(rt)
                                     }
                                 }
                     }
@@ -2099,12 +2099,12 @@ define PointerCensus
             let t base.result_type
             if this.is_handle(t)
             {
-                set n_handle: n_handle + 1
+                n_handle := n_handle + 1
                 return
             }
             if this.base_is_stack_array(base)
             {
-                set n_stack_array: n_stack_array + 1
+                n_stack_array := n_stack_array + 1
                 return
             }
             var sb StringBuilder()
@@ -2159,14 +2159,14 @@ define PointerCensus
                         {
                             var o at + name.get_length()
                             while o < src.get_length() and (src.get(o) = (" " as char) or src.get(o) = ("\t" as char))
-                                set o: o + 1
+                                o := o + 1
                             return o < src.get_length() and src.get(o) = ("[" as char)
                         }
-                        set at: at + 1
+                        at := at + 1
                     }
                     return false
                 }
-                set fi: fi + 1
+                fi := fi + 1
             }
             false
         }
@@ -2181,9 +2181,9 @@ define PointerCensus
                 {
                     var is_arith false
                     if call.name = "+"
-                        set is_arith: true
+                        is_arith := true
                     if call.name = "-"
-                        set is_arith: true
+                        is_arith := true
                     if is_arith = false
                         return null
                     if call.args = null
@@ -2211,9 +2211,9 @@ define PointerCensus
                 {
                     var is_arith false
                     if call.name = "+"
-                        set is_arith: true
+                        is_arith := true
                     if call.name = "-"
-                        set is_arith: true
+                        is_arith := true
                     if is_arith = false
                         return null
                     if call.args = null
@@ -2294,18 +2294,18 @@ define PointerCensus
                         let rv (*r)
                         var judge PointerCensus.is_pointer_shaped(as_expr.target_type)
                         if PointerCensus.operand_is_string_literal(rv)
-                            set judge: false
+                            judge := false
                         ; A `String` VALUE handed to a cstr parameter is wrapped
                         ; the same way (`fopen(path, ...)` with a String path):
                         ; the planner's conversion, not an author's cast.
                         if rv.result_type.name = "String"
-                            set judge: false
+                            judge := false
                         if judge
                         {
                             if this.is_handle(as_expr.target_type)
                             {
-                                set n_handle: n_handle + 1
-                                set judge: false
+                                n_handle := n_handle + 1
+                                judge := false
                             }
                         }
                         if judge
@@ -2355,7 +2355,7 @@ define PointerCensus
                             let c_ptr tp.components.get i
                             if c_ptr <> null
                                 this.find_operands(c_ptr.value)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -2369,7 +2369,7 @@ define PointerCensus
                             let s_ptr blk.statements.get i
                             if s_ptr <> null
                                 this.find_statement(s_ptr.unwrap())
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -2402,12 +2402,12 @@ define PointerCensus
                                             let cs (*cs_ptr)
                                             this.find_operands(cs.condition)
                                         }
-                                        set ci: ci + 1
+                                        ci := ci + 1
                                     }
                                 }
                                 this.find_statement_ref(br.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.find_statement_ref(mt.alternative)
@@ -2426,7 +2426,7 @@ define PointerCensus
                                 let w (*w_ptr)
                                 this.find_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.find_statement_ref(ch.alternative)
@@ -2457,7 +2457,7 @@ define PointerCensus
                                 let w (*w_ptr)
                                 this.find_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.find_statement_ref(tr.alternative)
@@ -2480,7 +2480,7 @@ define PointerCensus
                             let row_ptr mx.operations.get i
                             if row_ptr <> null
                                 this.find_operands(row_ptr)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -2531,7 +2531,7 @@ define PointerCensus
                         else
                         {
                             if PointerCensus.is_optional_ref(a.result_type)
-                                set n_optref_deref: n_optref_deref + 1
+                                n_optref_deref := n_optref_deref + 1
                         }
                     }
                     return false
@@ -2539,9 +2539,9 @@ define PointerCensus
             }
             var is_arith false
             if call.name = "+"
-                set is_arith: true
+                is_arith := true
             if call.name = "-"
-                set is_arith: true
+                is_arith := true
             if is_arith
             {
                 if argc = 2
@@ -2556,9 +2556,9 @@ define PointerCensus
             }
             var is_eq false
             if call.name = "="
-                set is_eq: true
+                is_eq := true
             if call.name = "<>"
-                set is_eq: true
+                is_eq := true
             if is_eq
             {
                 if argc = 2
@@ -2573,9 +2573,9 @@ define PointerCensus
                             let r (*r_ptr)
                             var tested: ref[PlannedOperand]? null
                             if PointerCensus.operand_is_null(r)
-                                set tested: l_ptr
+                                tested := l_ptr
                             if PointerCensus.operand_is_null(l)
-                                set tested: r_ptr
+                                tested := r_ptr
                             if tested <> null
                             {
                                 let t tested.unwrap().result_type
@@ -2607,49 +2607,49 @@ define PointerCensus
             var param_shift: size_t 0
             var callee_extern false
             if call.name = "init"
-                set is_init: true
+                is_init := true
             var callee_name String(call.name)
             if callee <> null
             {
                 let cf callee.unwrap()
-                set callee_name: String(cf.name)
-                set resolved: true
+                callee_name := String(cf.name)
+                resolved := true
                 ; An initializer is recorded in plan.functions too (named
                 ; `init`, with `this` first), so it resolves HERE before the
                 ; structure table is asked: the construction shape is decided
                 ; by the name, not by which table answered.
                 if cf.name = "init"
                 {
-                    set is_init: true
+                    is_init := true
                     ; Name the constructed type: `Source.init`, not `init`.
                     var nb StringBuilder()
                     nb.append call.result_type.name
                     nb.append ".init"
-                    set callee_name: nb.to_string()
+                    callee_name := nb.to_string()
                 }
                 if PointerCensus.fn_is_body(cf) = false
-                    set callee_extern: true
-                set params: cf.input
+                    callee_extern := true
+                params := cf.input
             }
             else
             {
                 let ini this.find_initializer(call.mangled_name)
                 if ini <> null
                 {
-                    set resolved: true
-                    set is_init: true
-                    set params: ini.unwrap().input
+                    resolved := true
+                    is_init := true
+                    params := ini.unwrap().input
                     var nb StringBuilder()
                     nb.append call.result_type.name
                     nb.append ".init"
-                    set callee_name: nb.to_string()
+                    callee_name := nb.to_string()
                 }
                 else
                 {
                     if this.is_extern_name(call.mangled_name)
                     {
-                        set resolved: true
-                        set callee_extern: true
+                        resolved := true
+                        callee_extern := true
                     }
                     else
                     {
@@ -2658,7 +2658,7 @@ define PointerCensus
                         ; constructed type so the line reads `String.init`.
                         if call.name = "init"
                         {
-                            set callee_name: "`call.result_type.name`.init"
+                            callee_name := "`call.result_type.name`.init"
                         }
                     }
                 }
@@ -2674,28 +2674,28 @@ define PointerCensus
                         ; The receiver item is `this`, or carries no name at
                         ; all (Array.reallocate's does, measured).
                         if fi.name = null
-                            set takes_this: true
+                            takes_this := true
                         else
                             if (*fi.name) = "this"
-                                set takes_this: true
+                                takes_this := true
                     }
                 }
             }
             if is_init
                 if takes_this
                 {
-                    set takes_this: false
-                    set param_shift: 1
+                    takes_this := false
+                    param_shift := 1
                 }
             var i: size_t 0
             while i < argc
             {
                 var skip false
                 if i = 0 and takes_this
-                    set skip: true
+                    skip := true
                 let a_ptr call.args.get i
                 if a_ptr = null
-                    set skip: true
+                    skip := true
                 if skip = false
                 {
                     let a (*a_ptr)
@@ -2713,11 +2713,11 @@ define PointerCensus
                                 let it it_ptr.unwrap()
                                 if it.item_type <> null
                                 {
-                                    set param_type: (*it.item_type)
-                                    set have_param: true
+                                    param_type := (*it.item_type)
+                                    have_param := true
                                 }
                                 if it.name <> null
-                                    set param_name: String((*it.name))
+                                    param_name := String((*it.name))
                             }
                         }
                     }
@@ -2740,30 +2740,30 @@ define PointerCensus
 
                     var judge PointerCensus.is_pointer_shaped(a.result_type)
                     if PointerCensus.operand_is_string_literal(a)
-                        set judge: false
+                        judge := false
                     if PointerCensus.operand_is_this(a)
-                        set judge: false
+                        judge := false
                     ; A bare `null` types as pointer[void]; into an Option
                     ; parameter it is the language's own spelling, not a site.
                     if PointerCensus.operand_is_null(a)
-                        set judge: false
+                        judge := false
                     if judge
                     {
                         if this.is_handle(a.result_type)
                         {
-                            set n_handle: n_handle + 1
-                            set judge: false
+                            n_handle := n_handle + 1
+                            judge := false
                         }
                     }
                     if judge
                     {
                         var cls String("arg")
                         if resolved = false
-                            set cls: String("arg-unresolved")
+                            cls := String("arg-unresolved")
                         if callee_extern
-                            set cls: String("arg-extern")
+                            cls := String("arg-extern")
                         if have_param and callee_extern = false and PointerCensus.is_ref_shaped(param_type)
-                            set cls: String("h-pointer-into-ref")
+                            cls := String("h-pointer-into-ref")
                         var sb StringBuilder()
                         sb.append cls
                         sb.append " "
@@ -2791,7 +2791,7 @@ define PointerCensus
                                 }
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             false
         }

@@ -13,7 +13,7 @@ define Holder
 procedure stash(this: Holder)
 {
     let bx Box(5)
-    set this.b: &bx
+    this.b := &bx
 }
 
 function main() returns int

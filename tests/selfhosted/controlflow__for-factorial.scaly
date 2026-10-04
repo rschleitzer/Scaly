@@ -3,7 +3,7 @@
 ; mode: run
 ; expect: 24
 var prod 1
-for i in 4 : set prod : prod * (i + 1)
+for i in 4 : prod := prod * (i + 1)
 let literate_result (prod)
 if literate_result = (24)
     print("PASS")

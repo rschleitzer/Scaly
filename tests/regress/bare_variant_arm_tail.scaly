@@ -50,19 +50,19 @@ function v(o: Option[int]) returns int
 
 var ok true
 if v(opt_of(Shape.Circle(4))) <> 5
-    set ok: false
+    ok := false
 if v(opt_of(Shape.Square(4))) <> 0 - 1
-    set ok: false
+    ok := false
 if v(by_match(0)) <> 0 - 1
-    set ok: false
+    ok := false
 if v(by_match(3)) <> 6
-    set ok: false
+    ok := false
 if v(nested(13)) <> 3
-    set ok: false
+    ok := false
 if v(nested(20)) <> 0 - 1
-    set ok: false
+    ok := false
 if v(nested(2)) <> 0 - 1
-    set ok: false
+    ok := false
 if ok
     print "PASS"
 else

@@ -11,14 +11,14 @@
 ; Expected: PASS
 define Inner (var v: int)
 {
-    procedure inc(mutable this, by: int) { set this.v: this.v + by }
+    procedure inc(mutable this, by: int) { this.v := this.v + by }
     function get(this) returns int
         v
 }
 
 define Box (var n: int, var inner: Inner)
 {
-    procedure inc(mutable this) { set this.n: this.n + 1 }
+    procedure inc(mutable this) { this.n := this.n + 1 }
     function twice(this) returns int
         n * 2
 }
@@ -38,13 +38,13 @@ procedure run() mutable gb, gp, ga
 {
     let host Page.allocate_page()
     let b Box^host(1, Inner(5))
-    set gb: &b
-    set gp: &b as pointer[Box]
+    gb := &b
+    gp := &b as pointer[Box]
     bump()
     let t gp.twice()
     let g gp.inner.get()
     let arr Array[int]^host()
-    set ga: &arr as pointer[Array[int]]
+    ga := &arr as pointer[Array[int]]
     ga.add(7)
     ga.add(8)
     if b.n = 3 and t = 6 and g = 15 and b.inner.v = 15 and arr.length = 2 and arr[1] = 8

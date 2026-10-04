@@ -32,12 +32,12 @@ function name() returns String
 
 var ok true
 if mk().inner.get(1) <> 6
-    set ok: false
+    ok := false
 if mk().get(1) <> 100 or mk().inner.v <> 5 or mk().twice <> 200
-    set ok: false
+    ok := false
 let n name().length
 if n <> 3 or name().length <> 3 or name().length() <> 3
-    set ok: false
+    ok := false
 if ok
     print "PASS"
 else

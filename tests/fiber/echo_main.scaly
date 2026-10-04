@@ -15,7 +15,7 @@ procedure writer()
 {
     let fd task_fd as i32
     var buf u8[1]
-    set *(buf + 0): (109 as u8)
+    *(buf + 0) := (109 as u8)
     Io.write(fd, buf as pointer[void], 1)
     Console.print "t "
 }
@@ -26,7 +26,7 @@ let sprc socketpair((1 as i32), (1 as i32), (0 as i32), svbuf)
 if sprc <> (0 as i32)
     exit 1
 let main_fd *(svbuf as pointer[i32]) as int
-set task_fd: *(((svbuf as size_t) + 4) as pointer[i32]) as int
+task_fd := *(((svbuf as size_t) + 4) as pointer[i32]) as int
 Io.set_nonblocking(main_fd as i32)
 Io.set_nonblocking(task_fd as i32)
 let sched Scheduler.create(page)

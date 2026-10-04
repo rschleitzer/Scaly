@@ -12,7 +12,7 @@ define Sink
 )
 {
     procedure store_fn(mutable this, f: IntFn)
-        set this.fn: f
+        this.fn := f
 }
 
 procedure forward_fn(mutable s: Sink, f: IntFn)

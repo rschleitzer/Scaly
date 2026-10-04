@@ -24,7 +24,7 @@ define probe
             let ap args.get i
             if ap <> null
                 out.put(i, (*ap))
-            set i: i + 1
+            i := i + 1
         }
         &out
     }
@@ -42,8 +42,8 @@ function churn(n: size_t) returns size_t
         junk.put(2, "zzzzz")
         let jp junk.get 0
         if jp <> null
-            set total: total + (*jp).get_length()
-        set i: i + 1
+            total := total + (*jp).get_length()
+        i := i + 1
     }
     total
 }

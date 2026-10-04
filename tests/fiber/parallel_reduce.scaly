@@ -18,8 +18,8 @@ function spin(seed: i64) returns i64
     var k 0 as i64
     while k < (40000 as i64)
     {
-        set acc: (acc * (31 as i64) + k) % (1000003 as i64)
-        set k: k + (1 as i64)
+        acc := (acc * (31 as i64) + k) % (1000003 as i64)
+        k := k + (1 as i64)
     }
     acc
 }
@@ -50,24 +50,24 @@ var j 0
 while j < n
 {
     let v spin(j as i64)
-    set r_sum: r_sum + v
-    set r_sub: r_sub - v
+    r_sum := r_sum + v
+    r_sub := r_sub - v
     if v > r_max
-        set r_max: v
+        r_max := v
     if v < r_min
-        set r_min: v
-    set r_xor: r_xor xor v
-    set r_and: r_and & (v | (0x10000 as i64))
-    set r_or: r_or | v
+        r_min := v
+    r_xor := r_xor xor v
+    r_and := r_and & (v | (0x10000 as i64))
+    r_or := r_or | v
     if (v as u64) > r_umax
-        set r_umax: v as u64
-    set j: j + 1
+        r_umax := v as u64
+    j := j + 1
 }
 
 var before TaskPool.submit_count(pool)
 var sum 0 as i64
 for i in n
-    set sum: sum + spin(i as i64)
+    sum := sum + spin(i as i64)
 check("sum", sum, r_sum)
 if TaskPool.submit_count(pool) = before
 {
@@ -75,10 +75,10 @@ if TaskPool.submit_count(pool) = before
     exit 1
 }
 
-set before: TaskPool.submit_count(pool)
+before := TaskPool.submit_count(pool)
 var sub 100 as i64
 for i in n
-    set sub: sub - spin(i as i64)
+    sub := sub - spin(i as i64)
 check("sub", sub, r_sub)
 
 var max 0 - (1 as i64)
@@ -86,7 +86,7 @@ for i in n
 {
     let v spin(i as i64)
     if v > max
-        set max: v
+        max := v
 }
 check("max", max, r_max)
 
@@ -95,23 +95,23 @@ for i in n
 {
     let v spin(i as i64)
     if min > v
-        set min: v
+        min := v
 }
 check("min", min, r_min)
 
 var x 0 as i64
 for i in n
-    set x: x xor spin(i as i64)
+    x := x xor spin(i as i64)
 check("xor", x, r_xor)
 
 var a 0 - (1 as i64)
 for i in n
-    set a: a & (spin(i as i64) | (0x10000 as i64))
+    a := a & (spin(i as i64) | (0x10000 as i64))
 check("and", a, r_and)
 
 var o 0 as i64
 for i in n
-    set o: o | spin(i as i64)
+    o := o | spin(i as i64)
 check("or", o, r_or)
 
 var umax 0 as u64
@@ -119,7 +119,7 @@ for i in n
 {
     let v spin(i as i64) as u64
     if v > umax
-        set umax: v
+        umax := v
 }
 check("umax", umax as i64, r_umax as i64)
 if TaskPool.submit_count(pool) = before
@@ -129,14 +129,14 @@ if TaskPool.submit_count(pool) = before
 }
 
 ; ---- Wave N: the accumulator is also read -- must stay sequential.
-set before: TaskPool.submit_count(pool)
+before := TaskPool.submit_count(pool)
 var seen 0 as i64
 var trace 0 as i64
 for i in n
 {
-    set seen: seen + spin(i as i64)
+    seen := seen + spin(i as i64)
     if seen > (0 as i64)
-        set trace: trace + (1 as i64)
+        trace := trace + (1 as i64)
 }
 check("read-sum", seen, r_sum)
 if TaskPool.submit_count(pool) <> before

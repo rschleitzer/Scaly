@@ -7,7 +7,7 @@ package scaly 0.1.0
 use scaly.containers.Vector
 
 procedure consume(p: pointer[int])
-    set *(p): 1
+    *(p) := 1
 
 function build() returns int
 {

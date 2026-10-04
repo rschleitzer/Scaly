@@ -21,7 +21,7 @@ procedure one() mutable finished, redis_pool
         return
     var c got as ref[RedisConn]
     if c.set_px("scaly:test:contention", "1", 1000)
-        set finished: finished + 1
+        finished := finished + 1
     redis_release(c)
 }
 
@@ -34,7 +34,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     while i < 200
     {
         Scheduler.spawn_arg(&one, null)
-        set i: i + 1
+        i := i + 1
     }
     Scheduler.run()
     print "`finished`"

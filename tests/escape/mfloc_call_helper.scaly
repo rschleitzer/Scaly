@@ -14,7 +14,7 @@ define Holder
 )
 {
     procedure stash(this, p: pointer[Box])
-        set this.b: p
+        this.b := p
 }
 
 procedure leak_call(c: Holder)

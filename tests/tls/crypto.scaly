@@ -25,7 +25,7 @@ procedure hex(b: Slice[u8]) returns String
             sb.append(((lo + 48) as char))
         else
             sb.append(((lo + 87) as char))
-        set i: i + 1
+        i := i + 1
     }
     sb.to_string()
 }
@@ -65,8 +65,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     while i < 32
     {
         if rs[i] <> 0
-            set any: true
-        set i: i + 1
+            any := true
+        i := i + 1
     }
     if any = false
         return 6

@@ -72,13 +72,13 @@ function optional_control(host: pointer[Page]) returns int
 
 var failures 0
 if boxes(Page.allocate_page()) <> 34
-    set failures: failures + 1
+    failures := failures + 1
 if nested(Page.allocate_page()) <> 267
-    set failures: failures + 2
+    failures := failures + 2
 if vector_put(Page.allocate_page()) <> 89
-    set failures: failures + 4
+    failures := failures + 4
 if optional_control(Page.allocate_page()) <> 1
-    set failures: failures + 8
+    failures := failures + 8
 if failures = 0
     print "PASS\n"
 if failures <> 0

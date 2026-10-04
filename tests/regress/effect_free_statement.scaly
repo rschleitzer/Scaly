@@ -61,7 +61,7 @@ if block_value <> 7
 var n 0
 let looped repeat
 {
-    set n: n + 1
+    n := n + 1
     if n = 3
         break n * 10
 }

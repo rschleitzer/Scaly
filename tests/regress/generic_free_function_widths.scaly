@@ -42,13 +42,13 @@ var w1 allocate_slice[u64](host, 4 as size_t)
 var w2 allocate_slice[u64](host, 4 as size_t)
 let gap (w2.data as size_t) - (w1.data as size_t)
 if gap < (32 as size_t)
-    set ok: false
+    ok := false
 
 w1.put(3 as size_t, 4444 as u64)
 if (w1[3 as size_t] as int) <> 4444
-    set ok: false
+    ok := false
 if (narrow[0 as size_t] as int) <> 3
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

@@ -8,8 +8,8 @@ define HashMapBuilder[K, V]
 {
     init (vec: Vector[KeyValuePair[K, V]])
     {
-        set length: 0
-        set slots: null
+        length := 0
+        slots := null
         if vec.length > 0
         {
             reallocate vec.length
@@ -42,7 +42,7 @@ define HashMapBuilder[K, V]
             }
             own_page.deallocate_exclusive_page(Page.get(slots))
         }
-        set slots: new_slots
+        slots := new_slots
     }
 
     procedure add(mutable this: HashMapBuilder[K, V], key: K, value: V) returns bool
@@ -70,7 +70,7 @@ define HashMapBuilder[K, V]
         let own_page Page.get(slots)
         slot_list.add_on(own_page, Slot[KeyValuePair[K, V]](KeyValuePair[K, V](key, value), hash_code))
 
-        set length: length + 1
+        length := length + 1
         return true
     }
 

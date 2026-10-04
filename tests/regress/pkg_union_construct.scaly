@@ -57,13 +57,13 @@ function res_error() returns int
 
 var ok true
 if opt_some() <> 7
-    set ok: false
+    ok := false
 if opt_none() <> 3
-    set ok: false
+    ok := false
 if res_ok() <> 11
-    set ok: false
+    ok := false
 if res_error() <> 9
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

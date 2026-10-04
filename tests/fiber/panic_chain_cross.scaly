@@ -29,7 +29,7 @@ Fiber.resume(f)                       ; runs to the yield, inside its own try
 
 Console.print "main:trapping"
 var buf int[2]
-set buf[0]: 7
+buf[0] := 7
 let v Slice[int](2, &buf[0])
 let x v[5]                            ; nobody on MAIN's stack is catching
 Console.println " main:NOT-REACHED"

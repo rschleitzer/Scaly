@@ -46,8 +46,8 @@ while i < (150000 as size_t)
 {
     let host Page.get(prev.c_data())
     let filler String^host(3900 as size_t)
-    set prev: filler
-    set i: i + (1 as size_t)
+    prev := filler
+    i := i + (1 as size_t)
 }
 
 ; One allocation hosted on the early page — the long walk.

@@ -16,20 +16,20 @@ define SC (data: pointer[u32](null), size: size_t(0))
 {
     init()
     {
-        set data: null
-        set size: 0
+        data := null
+        size := 0
     }
 
     init(n: size_t)
     {
-        set size: n
+        size := n
         let own_page Page.get(this)
-        set data: own_page.allocate(n * (4 as size_t), 4) as pointer[u32]
+        data := own_page.allocate(n * (4 as size_t), 4) as pointer[u32]
         var i: size_t 0
         while i < n
         {
-            set *(data + i): (65 + i) as u32
-            set i: i + 1
+            *(data + i) := (65 + i) as u32
+            i := i + 1
         }
     }
 
@@ -45,7 +45,7 @@ define Checker
     procedure via_ptr_member(pp: pointer[Parm]) returns size_t
     {
         var t SC()
-        set t: pp.token
+        t := pp.token
         t.get_size()
     }
 
@@ -53,7 +53,7 @@ define Checker
     procedure via_value_member(parm: Parm) returns size_t
     {
         var t SC()
-        set t: parm.token
+        t := parm.token
         t.get_size()
     }
 
@@ -61,7 +61,7 @@ define Checker
     procedure via_annotated(pp: pointer[Parm]) returns size_t
     {
         var t: SC SC()
-        set t: pp.token
+        t := pp.token
         t.get_size()
     }
 }
@@ -76,17 +76,17 @@ let pp &parm
 if Checker.via_ptr_member(pp) <> 3
 {
     print "FAIL ptr member\n"
-    set ok: false
+    ok := false
 }
 if Checker.via_value_member(parm) <> 3
 {
     print "FAIL value member\n"
-    set ok: false
+    ok := false
 }
 if Checker.via_annotated(pp) <> 3
 {
     print "FAIL annotated\n"
-    set ok: false
+    ok := false
 }
 
 if ok

@@ -85,9 +85,9 @@ define Router
                 let r routes.at(i)
                 if r.lead < 0 or r.lead = b
                     lead_routes.add(i)
-                set i: i + 1
+                i := i + 1
             }
-            set b: b + 1
+            b := b + 1
         }
         lead_start.add(lead_routes.length)
     }
@@ -106,7 +106,7 @@ define Router
         let prefix literal_prefix(pattern)
         var lead: i64 0 - 1
         if prefix >= 2
-            set lead: pattern[1] as i64
+            lead := pattern[1] as i64
         routes.add(Route(method, pattern, handler, literal_segments(pattern), false, prefix, prefix = pattern.length, lead))
         this.index_leads()
     }
@@ -142,8 +142,8 @@ define Router
         {
             var r routes.at(i)
             if r.pattern.equals(pattern)
-                set r.waits: true
-            set i: i + 1
+                r.waits := true
+            i := i + 1
         }
     }
 
@@ -158,7 +158,7 @@ define Router
             let r routes.at(lead_routes[k])
             if r.waits and route_matches(r, path) and (r.method.length = 0 or r.method.equals(method))
                 return true
-            set k: k + 1
+            k := k + 1
         }
         false
     }
@@ -187,17 +187,17 @@ define Router
             let r routes.at(lead_routes[k])
             if route_matches(r, req.path)
             {
-                set path_matched: true
+                path_matched := true
                 var fits r.method.length = 0 or req.method.equals(r.method)
                 if fits = false and head and r.method.equals("GET")
-                    set fits: true
+                    fits := true
                 if fits and r.literals > best_literals
                 {
-                    set best: r
-                    set best_literals: r.literals
+                    best := r
+                    best_literals := r.literals
                 }
             }
-            set k: k + 1
+            k := k + 1
         }
         best
     }
@@ -218,9 +218,9 @@ define Router
                     sb.append ", "
                 sb.append(String(r.method.data as pointer[const_char], r.method.length))
                 if r.method.equals("GET")
-                    set get: true
+                    get := true
             }
-            set i: i + 1
+            i := i + 1
         }
         if get
             sb.append ", HEAD"
@@ -247,7 +247,7 @@ define Router
                     return
                 }
             }
-            set i: i + 1
+            i := i + 1
         }
         var matched false
         let r this.find(req, &matched)
@@ -265,7 +265,7 @@ define Router
             this.run_after(req, res)
             return
         }
-        set req.pattern: r.pattern
+        req.pattern := r.pattern
         let f r.handler
         f(req, res)
         if res.sent = false
@@ -284,7 +284,7 @@ define Router
                 let f h.handler
                 f(req, res)
             }
-            set i: i + 1
+            i := i + 1
         }
     }
 }
@@ -333,18 +333,18 @@ function match_pattern(pattern: Slice[u8], path: Slice[u8]) returns bool
                 return true
             var e j
             while e < path.length and path[e] <> 47
-                set e: e + 1
+                e := e + 1
             if e = j
                 return false
-            set i: (close as size_t) + 1
-            set j: e
+            i := (close as size_t) + 1
+            j := e
         }
         else
         {
             if j >= path.length or path[j] <> pattern[i]
                 return false
-            set i: i + 1
-            set j: j + 1
+            i := i + 1
+            j := j + 1
         }
     }
     j = path.length
@@ -358,8 +358,8 @@ function literal_segments(pattern: Slice[u8]) returns int
     while i < pattern.length
     {
         if pattern[i] = 47 and i + 1 < pattern.length and pattern[i + 1] <> 123
-            set n: n + 1
-        set i: i + 1
+            n := n + 1
+        i := i + 1
     }
     n
 }
@@ -381,26 +381,26 @@ function pattern_param(pattern: Slice[u8], path: Slice[u8], name: Slice[u8]) ret
             var rest false
             if pname.ends_with("...")
             {
-                set pname: pname.slice_to(pname.length - 3)
-                set rest: true
+                pname := pname.slice_to(pname.length - 3)
+                rest := true
             }
             var e j
             if rest
-                set e: path.length
+                e := path.length
             else
             {
                 while e < path.length and path[e] <> 47
-                    set e: e + 1
+                    e := e + 1
             }
             if pname.equals(name)
                 return path.subslice(j, e)
-            set i: (close as size_t) + 1
-            set j: e
+            i := (close as size_t) + 1
+            j := e
         }
         else
         {
-            set i: i + 1
-            set j: j + 1
+            i := i + 1
+            j := j + 1
         }
     }
     path.slice_to(0)

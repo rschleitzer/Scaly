@@ -22,20 +22,20 @@ procedure check() returns int
 {
     var buf u64[2]
     let b buf as pointer[u64]
-    set *w(b, 0): 5 as u64
-    set *w(b, 1): 7 as u64
+    *w(b, 0) := 5 as u64
+    *w(b, 1) := 7 as u64
     let q w(b, 1)
     var hit 0
     if 6 <= *w(b, 0)
         return 1
     else
-        set hit: hit + 1
+        hit := hit + 1
     if *q >= *w(b, 0)
-        set hit: hit + 1
+        hit := hit + 1
     else
         return 2
     if *w(b, 1) >= *q
-        set hit: hit + 1
+        hit := hit + 1
     if hit <> 3
         return 3
     let d *w(b, 1) - *w(b, 0)
@@ -44,7 +44,7 @@ procedure check() returns int
     if 5 - -f(3) <> 11
         return 5
     var z 1
-    set z: z + -f(2)
+    z := z + -f(2)
     if z <> 0 - 3
         return 6
     let bx Box(10)

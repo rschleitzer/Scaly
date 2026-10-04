@@ -11,7 +11,7 @@
 function trapper(n: i64) returns i64
 {
     var buf int[2]
-    set buf[0]: 10
+    buf[0] := 10
     let v Slice[int](2, &buf[0])
     if n > 0
         return v[(n as size_t) + 4]        ; index 5 in a view of length 2
@@ -74,7 +74,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             print "FAIL: a later catch did not happen"
             return 6
         }
-        set i: i + 1
+        i := i + 1
     }
     if Region.panic_oob_count() - before <> 50
     {

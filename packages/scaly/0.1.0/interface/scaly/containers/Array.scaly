@@ -36,8 +36,8 @@ define ArrayIterator[T]
 {
     init (a: ref[Array[T]]?)
     {
-        set array: a
-        set position: 0
+        array := a
+        position := 0
     }
 
     procedure next(mutable this: ArrayIterator[T]) returns pointer[T]
@@ -48,7 +48,7 @@ define ArrayIterator[T]
         if position = array.length
             return null
 
-        set position: position + 1
+        position := position + 1
         return array.get_buffer() + (position - 1)
     }
 }
@@ -74,24 +74,24 @@ define Array[T]
 {
     init ()
     {
-        set length: 0
-        set capacity: 0
-        set buffer: null
+        length := 0
+        capacity := 0
+        buffer := null
     }
 
     init (size: size_t)
     {
-        set length: 0
-        set capacity: 0
-        set buffer: null
+        length := 0
+        capacity := 0
+        buffer := null
         if size > 0
         {
             let own_page Page.get(this)
-            set capacity: size
+            capacity := size
             if size * sizeof T <= 0x400
-                set buffer: own_page.allocate(size * sizeof T, alignof T) as pointer[T]
+                buffer := own_page.allocate(size * sizeof T, alignof T) as pointer[T]
             else
-                set buffer: own_page.allocate_exclusive_buffer(size * sizeof T, alignof T) as pointer[T]
+                buffer := own_page.allocate_exclusive_buffer(size * sizeof T, alignof T) as pointer[T]
         }
     }
 
@@ -110,9 +110,9 @@ define Array[T]
             this.reallocate()
 
         let location buffer + length
-        set *location: item
+        *location := item
 
-        set length: length + 1
+        length := length + 1
     }
 
     procedure add(mutable this: Array[T], items: Vector[T])
@@ -156,7 +156,7 @@ define Array[T]
         if n > 0
             memcpy(buffer + length, items_data, n * sizeof T)
 
-        set length: length + n
+        length := length + n
     }
 
     ; n more elements at the end, answered as a view for the caller to fill:
@@ -172,7 +172,7 @@ define Array[T]
             scaly_panic_size("Array.extend", n, at)
         if (buffer = null) || (new_length > capacity)
             this.grow_to(new_length)
-        set length: new_length
+        length := new_length
         Slice[T](n, buffer + at)
     }
 
@@ -195,10 +195,10 @@ define Array[T]
             let old_data buffer
             let old_small (capacity * size) <= 0x400
             if new_length * size <= 0x400
-                set buffer: own_page.allocate(new_length * size, alignof T) as pointer[T]
+                buffer := own_page.allocate(new_length * size, alignof T) as pointer[T]
             else
-                set buffer: own_page.allocate_exclusive_buffer(new_length * size, alignof T) as pointer[T]
-            set capacity: new_length
+                buffer := own_page.allocate_exclusive_buffer(new_length * size, alignof T) as pointer[T]
+            capacity := new_length
             if length > 0
                 memcpy(buffer, old_data, length * size)
             if old_small = false
@@ -269,7 +269,7 @@ define Array[T]
     ; package frees by region, so "cleared" means unreachable, exactly as it
     ; does when the whole Array goes out of use.
     procedure clear(mutable this: Array[T])
-        set length: 0
+        length := 0
 
     ; Bounds-checked element assign within the collected length (not
     ; the capacity). Growth goes through add only — an index at or past
@@ -279,7 +279,7 @@ define Array[T]
         if i >= length
             scaly_panic_oob("Array.put", i, length)
 
-        set *(buffer + i): item
+        *(buffer + i) := item
     }
 
     function get_iterator(this: Array[T]) returns ArrayIterator[T]
@@ -337,16 +337,16 @@ define Array[T]
             ; first buffer: small and bump-hosted (see the policy note above)
             var first_cap 0x20 / size
             if first_cap < 1
-                set first_cap: 1
+                first_cap := 1
             if first_cap * size <= 0x400
             {
-                set buffer: own_page.allocate(first_cap * size, alignof T) as pointer[T]
-                set capacity: first_cap
+                buffer := own_page.allocate(first_cap * size, alignof T) as pointer[T]
+                capacity := first_cap
                 return
             }
             ; one element already exceeds the small bound: a page of its own
-            set buffer: own_page.allocate_exclusive_buffer(first_cap * size, alignof T) as pointer[T]
-            set capacity: first_cap
+            buffer := own_page.allocate_exclusive_buffer(first_cap * size, alignof T) as pointer[T]
+            capacity := first_cap
             return
         }
         let old_small (capacity * size) <= 0x400
@@ -357,8 +357,8 @@ define Array[T]
         {
             ; still small: a fresh bump-hosted buffer; the old one is
             ; abandoned to the region (never an exclusive page).
-            set buffer: own_page.allocate(new_capacity * size, alignof T) as pointer[T]
-            set capacity: new_capacity
+            buffer := own_page.allocate(new_capacity * size, alignof T) as pointer[T]
+            capacity := new_capacity
             memcpy(buffer, old_data, old_capacity * size)
             return
         }
@@ -369,9 +369,9 @@ define Array[T]
         let page_room probe_page.get_capacity(alignof T)
         own_page.deallocate_exclusive_page probe_page
         if new_capacity < page_room / size
-            set new_capacity: page_room / size
-        set buffer: own_page.allocate_exclusive_buffer(new_capacity * size, alignof T) as pointer[T]
-        set capacity: new_capacity
+            new_capacity := page_room / size
+        buffer := own_page.allocate_exclusive_buffer(new_capacity * size, alignof T) as pointer[T]
+        capacity := new_capacity
         memcpy(buffer, old_data, old_capacity * size)
         if old_small = false
         {

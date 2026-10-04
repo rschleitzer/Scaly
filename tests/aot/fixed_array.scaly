@@ -6,9 +6,9 @@
 function fill() returns u8
 {
     var buffer u8[4]
-    set *(buffer + 0): (65 as u8)
-    set *(buffer + 1): (66 as u8)
-    set *(buffer + 2): (67 as u8)
+    *(buffer + 0) := (65 as u8)
+    *(buffer + 1) := (66 as u8)
+    *(buffer + 2) := (67 as u8)
     *(buffer + 2)
 }
 

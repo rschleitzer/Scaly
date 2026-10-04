@@ -13,14 +13,14 @@
 ;
 ; Expected: PASS
 
-define Leaf (n: int) { init(n: int) set this.n: n }
+define Leaf (n: int) { init(n: int) this.n := n }
 
 define Holder (host: pointer[Page], tag: int)
 {
     init(host: pointer[Page], tag: int)
     {
-        set this.host: host
-        set this.tag: tag
+        this.host := host
+        this.tag := tag
     }
 
     ; ^<field>: host is a property of the receiver

@@ -25,8 +25,8 @@ procedure file_open_worker(mutable arg: pointer[void]) returns pointer[void]
     scaly_eio_seek(file, 0, SEEK_END)
     let size scaly_eio_tell file
     rewind file
-    set *cell: file as size_t
-    set *(((cell as size_t) + 8) as pointer[size_t]): size as size_t
+    *cell := file as size_t
+    *(((cell as size_t) + 8) as pointer[size_t]) := size as size_t
     1 as pointer[void]
 }
 
@@ -122,7 +122,7 @@ define File
         let pc path.to_c_string()
         let p Page.allocate_page_traced("File.read_cell")
         let cell p.allocate(24, 8) as pointer[size_t]
-        set *cell: pc as size_t
+        *cell := pc as size_t
         let opened Io.offload(&file_open_worker, cell as pointer[void])
         if opened = null
         {
@@ -133,7 +133,7 @@ define File
         let size *(((cell as size_t) + 8) as pointer[size_t])
         var ret String(size)
         let buffer ret.get_buffer()
-        set *(((cell as size_t) + 16) as pointer[size_t]): buffer as size_t
+        *(((cell as size_t) + 16) as pointer[size_t]) := buffer as size_t
         Io.offload(&file_read_close_worker, cell as pointer[void])
         p.deallocate_extensions()
         Page.release_page_traced(p, "File.read_cell")
@@ -165,9 +165,9 @@ define File
         let len contents.get_length()
         let p Page.allocate_page_traced("File.write_cell")
         let cell p.allocate(24, 8) as pointer[size_t]
-        set *cell: pc as size_t
-        set *(((cell as size_t) + 8) as pointer[size_t]): buf as size_t
-        set *(((cell as size_t) + 16) as pointer[size_t]): len
+        *cell := pc as size_t
+        *(((cell as size_t) + 8) as pointer[size_t]) := buf as size_t
+        *(((cell as size_t) + 16) as pointer[size_t]) := len
         let res Io.offload(&file_write_worker, cell as pointer[void])
         p.deallocate_extensions()
         Page.release_page_traced(p, "File.write_cell")

@@ -24,19 +24,19 @@ function sign(c: int) returns int
 
 var ok: bool true
 if kind(String("i8")) <> 1
-    set ok: false
+    ok := false
 if kind(String("int")) <> 1
-    set ok: false
+    ok := false
 if kind(String("float")) <> 2
-    set ok: false
+    ok := false
 if kind(String("u8")) <> 0
-    set ok: false
+    ok := false
 if sign(0 - 1) <> 1
-    set ok: false
+    ok := false
 if sign(5) <> 2
-    set ok: false
+    ok := false
 if sign(1) <> 0
-    set ok: false
+    ok := false
 if ok
     print("PASS")
 else

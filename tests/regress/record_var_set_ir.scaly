@@ -13,7 +13,7 @@ procedure g(k: int) returns int
 {
     var r R(0, 2, false)
     if k > 3
-        set r: f(k)
+        r := f(k)
     r.a
 }
 

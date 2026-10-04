@@ -27,28 +27,28 @@ var failures 0
 if ret_implicit() = "]"
     0
 else
-    set failures: failures + 1
+    failures := failures + 1
 
 if ret_explicit() = "["
     0
 else
-    set failures: failures + 1
+    failures := failures + 1
 
 if ret_u8() = 65
     0
 else
-    set failures: failures + 1
+    failures := failures + 1
 
 if ret_newline() = 10
     0
 else
-    set failures: failures + 1
+    failures := failures + 1
 
 ; the cast form must keep working and agree with the fold
 if ret_implicit() = ("]" as char)
     0
 else
-    set failures: failures + 1
+    failures := failures + 1
 
 if failures = 0
     print "PASS\n"

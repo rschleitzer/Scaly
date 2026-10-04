@@ -23,7 +23,7 @@
 define Alpha (k: int)
 {
     init(k: int)
-        set this.k: k
+        this.k := k
 
     function taken(this: ref[Alpha], other: ref[Alpha]) returns int
         this.k

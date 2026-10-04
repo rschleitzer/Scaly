@@ -6,21 +6,21 @@ define Pt (x: int  y: int)
 procedure bump(n: int) returns int
 {
     var m n
-    set m: m + 10
+    m := m + 10
     m
 }
 
 procedure move(p: Pt) returns int
 {
     var q p
-    set q: Pt(100, 200)
+    q := Pt(100, 200)
     q.x
 }
 
 procedure keep() returns int
 {
     var x 5
-    set x: 6
+    x := 6
     x
 }
 

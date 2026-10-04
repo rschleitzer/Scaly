@@ -17,7 +17,7 @@ procedure handle()
         let n c.read(view.slice_from(got))
         if n <= 0
             break
-        set got: got + (n as size_t)
+        got := got + (n as size_t)
     }
     if got = 4
         c.write("pong")
@@ -52,11 +52,11 @@ while k < 200
         let n s.read(view.slice_from(got))
         if n <= 0
             break
-        set got: got + (n as size_t)
+        got := got + (n as size_t)
     }
     if got = 4 and buf[0] = 112 and buf[1] = 111 and buf[3] = 103
-        set pongs: pongs + 1
+        pongs := pongs + 1
     s.close()
-    set k: k + 1
+    k := k + 1
 }
 print "`pongs` pongs"

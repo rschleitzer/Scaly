@@ -23,7 +23,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     arr.add(2)
 
     var buf int[2]
-    set buf[0]: 7
+    buf[0] := 7
     let huge Vector[int]((0 as size_t) - (1 as size_t), &buf[0])
     arr.add(huge)
 

@@ -34,8 +34,8 @@ procedure check() returns int
         return 5
     let host Page.allocate_page()
     let p host.allocate(2 * sizeof P, alignof P) as pointer[P]
-    set *p: P(11, 12, Inner(13))
-    set *(p + 1): P(21, 22, Inner(23))
+    *p := P(11, 12, Inner(13))
+    *(p + 1) := P(21, 22, Inner(23))
     let total p[1].x + p[0].inner.w
     Page.release_page(host)
     if total <> 34

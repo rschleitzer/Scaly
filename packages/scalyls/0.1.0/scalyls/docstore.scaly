@@ -69,8 +69,8 @@ define docstore
     {
         if ws_root_data <> null
             free(ws_root_data as pointer[void])
-        set ws_root_data: null
-        set ws_root_len: 0
+        ws_root_data := null
+        ws_root_len := 0
 
         let len path.get_length()
         if len > 0
@@ -79,8 +79,8 @@ define docstore
             if dst <> null
             {
                 memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len)
-                set ws_root_data: dst
-                set ws_root_len: len
+                ws_root_data := dst
+                ws_root_len := len
             }
         }
     }
@@ -101,7 +101,7 @@ define docstore
         if doc_slots = null
         {
             let bytes (DOC_CAP as size_t) * sizeof DocSlot
-            set doc_slots: malloc(bytes) as pointer[DocSlot]
+            doc_slots := malloc(bytes) as pointer[DocSlot]
             if doc_slots = null
                 return
 
@@ -109,13 +109,13 @@ define docstore
             while i < DOC_CAP
             {
                 let s doc_slots + i
-                set s.used: false
-                set s.dirty: false
-                set s.uri_data: null
-                set s.uri_len: 0
-                set s.text_data: null
-                set s.text_len: 0
-                set i: i + 1
+                s.used := false
+                s.dirty := false
+                s.uri_data := null
+                s.uri_len := 0
+                s.text_data := null
+                s.text_len := 0
+                i := i + 1
             }
         }
     }
@@ -136,7 +136,7 @@ define docstore
                     if su = uri
                         return i
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         0 - 1
@@ -148,8 +148,8 @@ define docstore
     {
         if s.text_data <> null
             free(s.text_data as pointer[void])
-        set s.text_data: null
-        set s.text_len: 0
+        s.text_data := null
+        s.text_len := 0
 
         let len text.get_length()
         if len > 0
@@ -158,8 +158,8 @@ define docstore
             if dst <> null
             {
                 memcpy(dst as pointer[void], text.get_buffer() as pointer[void], len)
-                set s.text_data: dst
-                set s.text_len: len
+                s.text_data := dst
+                s.text_len := len
             }
         }
     }
@@ -170,8 +170,8 @@ define docstore
     {
         if s.uri_data <> null
             free(s.uri_data as pointer[void])
-        set s.uri_data: null
-        set s.uri_len: 0
+        s.uri_data := null
+        s.uri_len := 0
 
         let len uri.get_length()
         if len > 0
@@ -180,8 +180,8 @@ define docstore
             if dst <> null
             {
                 memcpy(dst as pointer[void], uri.get_buffer() as pointer[void], len)
-                set s.uri_data: dst
-                set s.uri_len: len
+                s.uri_data := dst
+                s.uri_len := len
             }
         }
     }
@@ -211,11 +211,11 @@ define docstore
             {
                 docstore.set_uri(s, uri)
                 docstore.set_text(s, text)
-                set s.used: true
-                set s.dirty: false
+                s.used := true
+                s.dirty := false
                 return
             }
-            set i: i + 1
+            i := i + 1
         }
         ; Table full: drop silently — navigation falls back to disk.
     }
@@ -231,12 +231,12 @@ define docstore
                 free(s.text_data as pointer[void])
             if s.uri_data <> null
                 free(s.uri_data as pointer[void])
-            set s.text_data: null
-            set s.text_len: 0
-            set s.uri_data: null
-            set s.uri_len: 0
-            set s.used: false
-            set s.dirty: false
+            s.text_data := null
+            s.text_len := 0
+            s.uri_data := null
+            s.uri_len := 0
+            s.used := false
+            s.dirty := false
         }
     }
 
@@ -255,7 +255,7 @@ define docstore
         if idx >= 0
         {
             let s doc_slots + idx
-            set s.dirty: true
+            s.dirty := true
         }
     }
 
@@ -266,7 +266,7 @@ define docstore
         if idx >= 0
         {
             let s doc_slots + idx
-            set s.dirty: false
+            s.dirty := false
         }
     }
 
@@ -282,7 +282,7 @@ define docstore
                 let s doc_slots + i
                 if s.used and s.dirty and s.uri_data <> null
                     return String(s.uri_data as pointer[const_char], s.uri_len)
-                set i: i + 1
+                i := i + 1
             }
         }
         ""

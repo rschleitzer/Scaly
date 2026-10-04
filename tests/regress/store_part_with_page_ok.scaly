@@ -11,7 +11,7 @@ procedure fill_rp(mutable out: ref[Holder], n: int)
     var sb StringBuilder()
     sb.append "hello-"
     sb.append n
-    set out: Holder(String#(sb.to_string()))
+    out := Holder(String#(sb.to_string()))
 }
 
 procedure fill_host(host: ref[Page], mutable out: ref[Holder], n: int)
@@ -19,7 +19,7 @@ procedure fill_host(host: ref[Page], mutable out: ref[Holder], n: int)
     var sb StringBuilder()
     sb.append "hello-"
     sb.append n
-    set out: Holder(String^host(sb.to_string()))
+    out := Holder(String^host(sb.to_string()))
 }
 
 procedure churn() returns int
@@ -29,8 +29,8 @@ procedure churn() returns int
     while i < 200
     {
         let x String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
-        set t: t + (x.get_length() as int)
-        set i: i + 1
+        t := t + (x.get_length() as int)
+        i := i + 1
     }
     t
 }

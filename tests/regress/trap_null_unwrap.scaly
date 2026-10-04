@@ -16,7 +16,7 @@
 function probe(n: size_t) returns int
 {
     var buf int[2]
-    set buf[0]: 10
+    buf[0] := 10
     let s Slice[int](2, &buf[0])
     let r s.get(n) as ref[int]         ; the claim, and it is false
     r

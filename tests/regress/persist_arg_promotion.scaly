@@ -27,7 +27,7 @@ define Log
         ; ^this gives the residency scan a signal so a bare Log()
         ; construction is page-resident (entries' lazy backing derives
         ; its page from Page.get(this)).
-        set entries: Array[String]^this()
+        entries := Array[String]^this()
     }
 
     procedure note(mutable this: Log, message: String)
@@ -55,8 +55,8 @@ function churn(n: size_t) returns size_t
         var csb StringBuilder()
         csb.append "recycle recycle recycle recycle recycle recycle"
         let junk csb.to_string()
-        set total: total + junk.get_length()
-        set i: i + 1
+        total := total + junk.get_length()
+        i := i + 1
     }
     total
 }

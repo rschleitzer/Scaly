@@ -54,9 +54,9 @@ define Parser
         ; its implicit `rp`/page param (which the body never used). Removing
         ; the `^this` re-introduces a stack-allocated Parser whose
         ; Page.get(this) reads a garbage page header (SIGBUS).
-        set lexer: Lexer^this(text)
-        set keywords_index: initialize_keywords_index()
-        set keywords: initialize_keywords()
+        lexer := Lexer^this(text)
+        keywords_index := initialize_keywords_index()
+        keywords := initialize_keywords()
     }
 
     function initialize_keywords_index(this: Parser) returns Vector[String]
@@ -92,19 +92,19 @@ define Parser
                 var ret_deep: Literal
                 choose literal.value
                     when il: IntegerLiteral
-                        set ret_deep: Literal.Integer(IntegerLiteral(String(il.value)))
+                        ret_deep := Literal.Integer(IntegerLiteral(String(il.value)))
                     when sl: StringLiteral
-                        set ret_deep: Literal.String(StringLiteral(String(sl.value)))
+                        ret_deep := Literal.String(StringLiteral(String(sl.value)))
                     when cl: CharacterLiteral
-                        set ret_deep: Literal.Character(CharacterLiteral(String(cl.value)))
+                        ret_deep := Literal.Character(CharacterLiteral(String(cl.value)))
                     when fl: FragmentLiteral
-                        set ret_deep: Literal.Fragment(FragmentLiteral(String(fl.value)))
+                        ret_deep := Literal.Fragment(FragmentLiteral(String(fl.value)))
                     when fp: FloatingPointLiteral
-                        set ret_deep: Literal.FloatingPoint(FloatingPointLiteral(String(fp.value)))
+                        ret_deep := Literal.FloatingPoint(FloatingPointLiteral(String(fp.value)))
                     when hl: HexLiteral
-                        set ret_deep: Literal.Hex(HexLiteral(String(hl.value)))
+                        ret_deep := Literal.Hex(HexLiteral(String(hl.value)))
                     else
-                        set ret_deep: literal.value
+                        ret_deep := literal.value
                 lexer.empty()
                 return ret_deep
             }
@@ -135,7 +135,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -199,7 +199,7 @@ define Parser
 "
             }
             when success: Success
-                set " prop ": "
+                " prop " := "
                                     (if (multiple? content)
                                         "success"
                                         (let ((target (element-with-id (link content))))
@@ -235,7 +235,7 @@ define Parser
                                         )
                                     )
 "            when success: Success
-                set " prop ": success
+                " prop " := success
 "
                                 )
                             )) "")  ; close (if optional), (let), else "", close (if property)
@@ -249,7 +249,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set " prop ": success
+                " prop " := success
 "
                             ))
                         )
@@ -373,12 +373,12 @@ define Parser
 "
         var skipping_separators true
         while skipping_separators
-            set skipping_separators: lexer.parse_colon()
+            skipping_separators := lexer.parse_colon()
         var trailing_ok lexer.is_at_end()
         choose lexer.token
             when e: Empty {}
             else
-                set trailing_ok: false
+                trailing_ok := false
         if trailing_ok = false
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, \"unexpected trailing input - the construct before this point did not parse\"))
 "
@@ -420,7 +420,7 @@ function test() returns int
         }
 
     ; Test 2: Parse an identifier expression
-    set parser: Parser(\"foo\")
+    parser := Parser(\"foo\")
     choose parser.parse_name()
         when err: Error
             return 3
@@ -431,7 +431,7 @@ function test() returns int
         }
 
     ; Test 3: Parse a function definition
-    set parser: Parser(\"function hello() returns int 42\")
+    parser := Parser(\"function hello() returns int 42\")
     choose parser.parse_function()
         when err: Error
             return 5
@@ -442,7 +442,7 @@ function test() returns int
         }
 
     ; Test 4: Parse a structure definition
-    set parser: Parser(\"define a ()\")
+    parser := Parser(\"define a ()\")
     choose parser.parse_definition()
         when err: Error
             return 7
@@ -453,7 +453,7 @@ function test() returns int
         }
 
     ; Test 5: Parse a structure with properties
-    set parser: Parser(\"define Point (x: int, y: int)\")
+    parser := Parser(\"define Point (x: int, y: int)\")
     choose parser.parse_definition()
         when err: Error
             return 9
@@ -464,7 +464,7 @@ function test() returns int
         }
 
     ; Test 6: Parse a union definition
-    set parser: Parser(\"define Option union (Some: int, None)\")
+    parser := Parser(\"define Option union (Some: int, None)\")
     choose parser.parse_definition()
         when err: Error
             return 11

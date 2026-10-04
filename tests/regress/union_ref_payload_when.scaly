@@ -20,8 +20,8 @@
 ;
 ; Expected: PASS
 
-define RecA (x: int) { init(x: int) set this.x: x }
-define RecB (y: int) { init(y: int) set this.y: y }
+define RecA (x: int) { init(x: int) this.x := x }
+define RecB (y: int) { init(y: int) this.y := y }
 
 define ByRef union
 (
@@ -46,10 +46,10 @@ function by_type() returns int
     var acc 0
     choose ua
         when a: RecA
-            set acc: acc + 1000 + a.x
+            acc := acc + 1000 + a.x
     choose ub
         when b: RecB
-            set acc: acc + 2000 + b.y
+            acc := acc + 2000 + b.y
     acc
 }
 
@@ -61,10 +61,10 @@ function by_field() returns int
     var acc 0
     choose ua
         when a: A
-            set acc: acc + 1000 + a.x
+            acc := acc + 1000 + a.x
     choose ub
         when b: B
-            set acc: acc + 2000 + b.y
+            acc := acc + 2000 + b.y
     acc
 }
 
@@ -76,10 +76,10 @@ function by_value() returns int
     var acc 0
     choose ua
         when a: RecA
-            set acc: acc + 1000 + a.x
+            acc := acc + 1000 + a.x
     choose ub
         when b: RecB
-            set acc: acc + 2000 + b.y
+            acc := acc + 2000 + b.y
     acc
 }
 

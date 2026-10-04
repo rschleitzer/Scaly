@@ -12,8 +12,8 @@ define Inner (arr: Array[u64]  var n: size_t)
 {
     init()
     {
-        set arr: Array[u64]^this()
-        set n: 0
+        arr := Array[u64]^this()
+        n := 0
     }
 }
 
@@ -21,14 +21,14 @@ define Outer (name: String  inner: ref[Inner])
 {
     init(nm: String)
     {
-        set name: String^this(nm)
+        name := String^this(nm)
         let st Inner^this()
-        set inner: &st
+        inner := &st
         var i: size_t 0
         while i < 40
         {
             inner.arr.add(i as u64)
-            set i: i + 1
+            i := i + 1
         }
     }
 

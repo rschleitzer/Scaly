@@ -34,24 +34,24 @@ procedure advance(mutable bodies: Vector[Body], dt: double)
             let mag dt / (d2 * d)
             let mj bj.mass * mag
             let mi bi.mass * mag
-            set bi.vx: bi.vx - dx * mj
-            set bi.vy: bi.vy - dy * mj
-            set bi.vz: bi.vz - dz * mj
-            set bj.vx: bj.vx + dx * mi
-            set bj.vy: bj.vy + dy * mi
-            set bj.vz: bj.vz + dz * mi
-            set j: j + 1
+            bi.vx := bi.vx - dx * mj
+            bi.vy := bi.vy - dy * mj
+            bi.vz := bi.vz - dz * mj
+            bj.vx := bj.vx + dx * mi
+            bj.vy := bj.vy + dy * mi
+            bj.vz := bj.vz + dz * mi
+            j := j + 1
         }
-        set i: i + 1
+        i := i + 1
     }
-    set i: 0
+    i := 0
     while i < nb
     {
         let b bodies.at(i)
-        set b.x: b.x + dt * b.vx
-        set b.y: b.y + dt * b.vy
-        set b.z: b.z + dt * b.vz
-        set i: i + 1
+        b.x := b.x + dt * b.vx
+        b.y := b.y + dt * b.vy
+        b.z := b.z + dt * b.vz
+        i := i + 1
     }
 }
 
@@ -63,7 +63,7 @@ function energy(bodies: Vector[Body]) returns double
     while i < nb
     {
         let bi bodies[i]
-        set e: e + 0.5 * bi.mass * (bi.vx * bi.vx + bi.vy * bi.vy + bi.vz * bi.vz)
+        e := e + 0.5 * bi.mass * (bi.vx * bi.vx + bi.vy * bi.vy + bi.vz * bi.vz)
         var j: size_t i + 1
         while j < nb
         {
@@ -71,10 +71,10 @@ function energy(bodies: Vector[Body]) returns double
             let dx bi.x - bj.x
             let dy bi.y - bj.y
             let dz bi.z - bj.z
-            set e: e - (bi.mass * bj.mass) / sqrt(dx * dx + dy * dy + dz * dz)
-            set j: j + 1
+            e := e - (bi.mass * bj.mass) / sqrt(dx * dx + dy * dy + dz * dz)
+            j := j + 1
         }
-        set i: i + 1
+        i := i + 1
     }
     e
 }
@@ -94,22 +94,22 @@ var k: size_t 0
 while k < 5
 {
     let b bodies[k]
-    set px: px + b.vx * b.mass
-    set py: py + b.vy * b.mass
-    set pz: pz + b.vz * b.mass
-    set k: k + 1
+    px := px + b.vx * b.mass
+    py := py + b.vy * b.mass
+    pz := pz + b.vz * b.mass
+    k := k + 1
 }
 let sun bodies.at(0)
-set sun.vx: (0.0 - px) / SOLAR_MASS
-set sun.vy: (0.0 - py) / SOLAR_MASS
-set sun.vz: (0.0 - pz) / SOLAR_MASS
+sun.vx := (0.0 - px) / SOLAR_MASS
+sun.vy := (0.0 - py) / SOLAR_MASS
+sun.vz := (0.0 - pz) / SOLAR_MASS
 
 let e0 energy(bodies)
 var step 0
 while step < 50000000
 {
     advance(bodies, 0.01)
-    set step: step + 1
+    step := step + 1
 }
 let e1 energy(bodies)
 print("n-body: `(e0 * 1000000000.0) as i64` -> `(e1 * 1000000000.0) as i64` (x 1e-9)")

@@ -28,7 +28,7 @@ procedure base64_encode(src: Slice[u8], mutable out: ref[PgBuf])
         out.append_byte(BASE64_ALPHABET[((v >> 12) & 63) as size_t])
         out.append_byte(BASE64_ALPHABET[((v >> 6) & 63) as size_t])
         out.append_byte(BASE64_ALPHABET[(v & 63) as size_t])
-        set i: i + 3
+        i := i + 3
     }
     let rest src.length - i
     if rest = 1
@@ -88,7 +88,7 @@ procedure base64_decode(src: Slice[u8], mutable out: ref[PgBuf]) returns bool
             if d < 64
                 out.append_byte((((c << 6) | d) & 255) as u8)
         }
-        set i: i + 4
+        i := i + 4
     }
     true
 }
@@ -102,10 +102,10 @@ function scram_attribute(msg: Slice[u8], name: u8) returns Slice[u8]
     {
         var end at
         while end < msg.length and msg[end] <> 44
-            set end: end + 1
+            end := end + 1
         if msg[at] = name and msg[at + 1] = 61
             return msg.subslice(at + 2, end)
-        set at: end + 1
+        at := end + 1
     }
     msg.slice_to(0)
 }
@@ -191,7 +191,7 @@ define ScramClient
         while i < 32
         {
             proof.put(i, client_key[i] xor signature[i])
-            set i: i + 1
+            i := i + 1
         }
         final_message.append(",p=")
         base64_encode(proof, &final_message)

@@ -19,8 +19,8 @@ function accumulate(n: int) returns int
     var k 0
     while k < 50
     {
-        set acc: acc + n + k
-        set k: k + 1
+        acc := acc + n + k
+        k := k + 1
     }
     acc
 }
@@ -42,7 +42,7 @@ for i in 32
     }
     var acc accumulate(i * 2 + bias)
     for k in 3
-        set acc: acc + (k as int)
+        acc := acc + (k as int)
     results.put(i, acc)
 }
 
@@ -52,23 +52,23 @@ while i < 32
 {
     let v results.get(i as size_t)
     if v <> null
-        set sum: sum + (*v)
-    set i: i + 1
+        sum := sum + (*v)
+    i := i + 1
 }
 ; Reference: recompute sequentially.
 var want 0
-set i: 0
+i := 0
 while i < 32
 {
     if i = 5
-        set want: want - bias
+        want := want - bias
     if i <> 5
     {
         var acc accumulate(i * 2 + bias)
-        set acc: acc + 3
-        set want: want + acc
+        acc := acc + 3
+        want := want + acc
     }
-    set i: i + 1
+    i := i + 1
 }
 if sum <> want
 {
@@ -86,7 +86,7 @@ var j: size_t 0
 while j < (16 as size_t)
 {
     items.put(j, Item(j, j as i64))
-    set j: j + 1
+    j := j + 1
 }
 var results2 Vector[i64](16)
 for item in items
@@ -96,13 +96,13 @@ for item in items
 }
 
 var sum2 0 as i64
-set j: 0 as size_t
+j := 0 as size_t
 while j < (16 as size_t)
 {
     let v results2.get j
     if v <> null
-        set sum2: sum2 + (*v)
-    set j: j + 1
+        sum2 := sum2 + (*v)
+    j := j + 1
 }
 if sum2 <> (14400 as i64)
 {

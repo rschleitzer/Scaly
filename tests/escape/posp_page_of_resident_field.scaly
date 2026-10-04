@@ -11,7 +11,7 @@ define Bag (var items: Array[int], var note: String)
 procedure fill(mutable out: ref[Bag])
 {
     let pg Page.get(out)
-    set out.note: String^pg("filled")
+    out.note := String^pg("filled")
     out.items.add(1)
     out.items.add(2)
 }

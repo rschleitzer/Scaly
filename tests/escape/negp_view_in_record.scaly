@@ -10,7 +10,7 @@ function wrap(s: Slice[int]) returns Box
     Box(s, 0)
 
 procedure keep(mutable k: ref[Keeper], b: Box)
-    set k.b: b
+    k.b := b
 
 procedure make(mutable k: ref[Keeper])
 {

@@ -37,13 +37,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -168,23 +168,23 @@ while pos < tlen
         {
             if tb[pos] as int <> 10
                 break
-            set nl: nl + 1
-            set pos: pos + 1
+            nl := nl + 1
+            pos := pos + 1
         }
         var kind 1
         if nl >= 2
-            set kind: 2
-        set sgk[nseg]: kind
-        set sgt[nseg]: 0
-        set nseg: nseg + 1
-        set pending_space: false
+            kind := 2
+        sgk[nseg] := kind
+        sgt[nseg] := 0
+        nseg := nseg + 1
+        pending_space := false
     }
     else
     {
         if b = 32
         {
-            set pending_space: true
-            set pos: pos + 1
+            pending_space := true
+            pos := pos + 1
         }
         else
         {
@@ -199,11 +199,11 @@ while pos < tlen
                     break
                 if byte_class(b2) <> cls
                     break
-                set pos: pos + 1
+                pos := pos + 1
             }
             if pending_space
-                set start: start - 1     ; include the leading space byte
-            set pending_space: false
+                start := start - 1     ; include the leading space byte
+            pending_space := false
             let wlen pos - start
             ; probe the type table
             var h 2166136261
@@ -211,8 +211,8 @@ while pos < tlen
             while hi < start + wlen
             {
                 let bi tb[hi] as int
-                set h: (h xor bi) * 16777619
-                set hi: hi + 1
+                h := (h xor bi) * 16777619
+                hi := hi + 1
             }
             var idx h & TMASK
             var tid 0 - 1
@@ -230,18 +230,18 @@ while pos < tlen
                     {
                         if tb[tst[cand] + ci] <> tb[start + ci]
                         {
-                            set same: false
+                            same := false
                             break
                         }
-                        set ci: ci + 1
+                        ci := ci + 1
                     }
                     if same
                     {
-                        set tid: cand
+                        tid := cand
                         break
                     }
                 }
-                set idx: (idx + 1) & TMASK
+                idx := (idx + 1) & TMASK
             }
             if tid < 0
             {
@@ -250,37 +250,37 @@ while pos < tlen
                     print("error: type table full\n")
                     exit(1)
                 }
-                set tid: ntype
-                set ntype: ntype + 1
-                set tst[tid]: start
-                set tln[tid]: wlen
-                set tct[tid]: 0
-                set tpb[idx]: tid + 1
+                tid := ntype
+                ntype := ntype + 1
+                tst[tid] := start
+                tln[tid] := wlen
+                tct[tid] := 0
+                tpb[idx] := tid + 1
             }
-            set tct[tid]: tct[tid] + 1
+            tct[tid] := tct[tid] + 1
             if nseg >= SEGCAP
             {
                 print("error: segment stream full\n")
                 exit(1)
             }
-            set sgk[nseg]: 0
-            set sgt[nseg]: tid
-            set nseg: nseg + 1
+            sgk[nseg] := 0
+            sgt[nseg] := tid
+            nseg := nseg + 1
         }
     }
 }
 
 ; --- base symbols: register "\n" and "\n\n", then every char of every
 ; type; build the per-type symbol sequences ---
-set sbo[0]: 0
-set sbl[0]: 1
-set sbf[0]: 10
-set sbo[1]: 1
-set sbl[1]: 2
-set sbf[1]: 10
-set sbf[2]: 10
-set nsym: 2
-set s_used: 3
+sbo[0] := 0
+sbl[0] := 1
+sbf[0] := 10
+sbo[1] := 1
+sbl[1] := 2
+sbf[1] := 10
+sbf[2] := 10
+nsym := 2
+s_used := 3
 let nl1_id 0
 let nl2_id 1
 
@@ -290,7 +290,7 @@ var sym_used 0
 var ti 0
 while ti < ntype
 {
-    set tso[ti]: sym_used
+    tso[ti] := sym_used
     var bi tst[ti]
     let bend tst[ti] + tln[ti]
     var slen 0
@@ -303,47 +303,47 @@ while ti < ntype
         {
             if b0 < 224
             {
-                set cp: (b0 - 192) * 64 + (tb[bi + 1] as int - 128)
-                set adv: 2
+                cp := (b0 - 192) * 64 + (tb[bi + 1] as int - 128)
+                adv := 2
             }
         }
         if b0 >= 224
         {
             if b0 < 240
             {
-                set cp: ((b0 - 224) * 64 + (tb[bi + 1] as int - 128)) * 64 + (tb[bi + 2] as int - 128)
-                set adv: 3
+                cp := ((b0 - 224) * 64 + (tb[bi + 1] as int - 128)) * 64 + (tb[bi + 2] as int - 128)
+                adv := 3
             }
         }
         if b0 >= 240
         {
-            set cp: 0
-            set adv: 4
+            cp := 0
+            adv := 4
         }
         if cp >= 16384
-            set cp: 0
+            cp := 0
         if cpm[cp] = 0
         {
             let sid nsym
-            set nsym: nsym + 1
-            set sbo[sid]: s_used
-            set sbl[sid]: adv
+            nsym := nsym + 1
+            sbo[sid] := s_used
+            sbl[sid] := adv
             var k 0
             while k < adv
             {
-                set sbf[s_used + k]: tb[bi + k] as int
-                set k: k + 1
+                sbf[s_used + k] := tb[bi + k] as int
+                k := k + 1
             }
-            set s_used: s_used + adv
-            set cpm[cp]: sid + 1
+            s_used := s_used + adv
+            cpm[cp] := sid + 1
         }
-        set syb[sym_used]: cpm[cp] - 1
-        set sym_used: sym_used + 1
-        set slen: slen + 1
-        set bi: bi + adv
+        syb[sym_used] := cpm[cp] - 1
+        sym_used := sym_used + 1
+        slen := slen + 1
+        bi := bi + adv
     }
-    set tsl[ti]: slen
-    set ti: ti + 1
+    tsl[ti] := slen
+    ti := ti + 1
 }
 let nbase nsym
 
@@ -385,22 +385,22 @@ while training
             {
                 if pkb[idx] = key + 1
                 {
-                    set pcb[idx]: pcb[idx] + c
+                    pcb[idx] := pcb[idx] + c
                     break
                 }
                 if pkb[idx] = 0
                 {
-                    set pkb[idx]: key + 1
-                    set pcb[idx]: c
-                    set pub[nused]: idx
-                    set nused: nused + 1
+                    pkb[idx] := key + 1
+                    pcb[idx] := c
+                    pub[nused] := idx
+                    nused := nused + 1
                     break
                 }
-                set idx: (idx + 1) & PMASK
+                idx := (idx + 1) & PMASK
             }
-            set i2: i2 + 1
+            i2 := i2 + 1
         }
-        set ci: ci + 1
+        ci := ci + 1
     }
     ; pick the top K pairs above the floor
     var nbest 0
@@ -413,9 +413,9 @@ while training
         {
             if nbest < KTOP
             {
-                set bkb[nbest]: pkb[idx] - 1
-                set bcb[nbest]: c
-                set nbest: nbest + 1
+                bkb[nbest] := pkb[idx] - 1
+                bcb[nbest] := c
+                nbest := nbest + 1
             }
             else
             {
@@ -424,36 +424,36 @@ while training
                 while bi2 < KTOP
                 {
                     if bcb[bi2] < bcb[mini]
-                        set mini: bi2
-                    set bi2: bi2 + 1
+                        mini := bi2
+                    bi2 := bi2 + 1
                 }
                 if c > bcb[mini]
                 {
-                    set bkb[mini]: pkb[idx] - 1
-                    set bcb[mini]: c
+                    bkb[mini] := pkb[idx] - 1
+                    bcb[mini] := c
                 }
             }
         }
-        set ui: ui + 1
+        ui := ui + 1
     }
     ; clear the touched pair slots for the next round
     var ci2 0
     while ci2 < nused
     {
-        set pkb[pub[ci2]]: 0
-        set pcb[pub[ci2]]: 0
-        set ci2: ci2 + 1
+        pkb[pub[ci2]] := 0
+        pcb[pub[ci2]] := 0
+        ci2 := ci2 + 1
     }
     if nbest = 0
-        set training: false
+        training := false
     if training
     {
         ; register the merged symbols; the round's merge map
         var mi 0
         while mi < 256
         {
-            set mkb[mi]: 0
-            set mi: mi + 1
+            mkb[mi] := 0
+            mi := mi + 1
         }
         var nreg 0
         var bi3 0
@@ -465,36 +465,36 @@ while training
                 let a key / 65536
                 let b key - a * 65536
                 let sid nsym
-                set nsym: nsym + 1
-                set sbo[sid]: s_used
-                set sbl[sid]: sbl[a] + sbl[b]
+                nsym := nsym + 1
+                sbo[sid] := s_used
+                sbl[sid] := sbl[a] + sbl[b]
                 var k2 0
                 while k2 < sbl[a]
                 {
-                    set sbf[s_used + k2]: sbf[sbo[a] + k2]
-                    set k2: k2 + 1
+                    sbf[s_used + k2] := sbf[sbo[a] + k2]
+                    k2 := k2 + 1
                 }
                 var k3 0
                 while k3 < sbl[b]
                 {
-                    set sbf[s_used + sbl[a] + k3]: sbf[sbo[b] + k3]
-                    set k3: k3 + 1
+                    sbf[s_used + sbl[a] + k3] := sbf[sbo[b] + k3]
+                    k3 := k3 + 1
                 }
-                set s_used: s_used + sbl[sid]
+                s_used := s_used + sbl[sid]
                 var midx (key * 2654435761) & 255
                 repeat
                 {
                     if mkb[midx] = 0
                     {
-                        set mkb[midx]: key + 1
-                        set mvb[midx]: sid
+                        mkb[midx] := key + 1
+                        mvb[midx] := sid
                         break
                     }
-                    set midx: (midx + 1) & 255
+                    midx := (midx + 1) & 255
                 }
-                set nreg: nreg + 1
+                nreg := nreg + 1
             }
-            set bi3: bi3 + 1
+            bi3 := bi3 + 1
         }
         ; apply the round's merges to every type sequence
         var ci3 0
@@ -515,29 +515,29 @@ while training
                     {
                         if mkb[midx2] = key + 1
                         {
-                            set syb[off + w]: mvb[midx2]
-                            set r: r + 2
-                            set merged: true
+                            syb[off + w] := mvb[midx2]
+                            r := r + 2
+                            merged := true
                             break
                         }
                         if mkb[midx2] = 0
                             break
-                        set midx2: (midx2 + 1) & 255
+                        midx2 := (midx2 + 1) & 255
                     }
                 }
                 if merged = false
                 {
-                    set syb[off + w]: syb[off + r]
-                    set r: r + 1
+                    syb[off + w] := syb[off + r]
+                    r := r + 1
                 }
-                set w: w + 1
+                w := w + 1
             }
-            set tsl[ci3]: w
-            set ci3: ci3 + 1
+            tsl[ci3] := w
+            ci3 := ci3 + 1
         }
-        set rounds: rounds + 1
+        rounds := rounds + 1
         if nsym >= VTARGET
-            set training: false
+            training := false
     }
 }
 let t_train1 scaly_eio_now_ns()
@@ -555,17 +555,17 @@ while vi < nsym
         let lo b - hi2 * 16
         var hc hi2 + 48
         if hi2 > 9
-            set hc: hi2 + 87
+            hc := hi2 + 87
         var lc lo + 48
         if lo > 9
-            set lc: lo + 87
+            lc := lo + 87
         vsb.append(hc as char)
         vsb.append(lc as char)
-        set k4: k4 + 1
+        k4 := k4 + 1
     }
     vsb.append("
 ")
-    set vi: vi + 1
+    vi := vi + 1
 }
 let vstr vsb.to_string()
 let vpath String("demo/build/bpe_vocab.txt")
@@ -586,21 +586,21 @@ while si < nseg
             let ids num_to_string(syb[off + k5] as i64)
             tsb.append ids
             tsb.append " "
-            set ntok: ntok + 1
-            set k5: k5 + 1
+            ntok := ntok + 1
+            k5 := k5 + 1
         }
     }
     else
     {
         var nid nl1_id
         if sgk[si] = 2
-            set nid: nl2_id
+            nid := nl2_id
         let ids2 num_to_string(nid as i64)
         tsb.append ids2
         tsb.append " "
-        set ntok: ntok + 1
+        ntok := ntok + 1
     }
-    set si: si + 1
+    si := si + 1
 }
 let tstr tsb.to_string()
 let tpath String("demo/build/bpe_tokens.txt")

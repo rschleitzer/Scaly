@@ -68,7 +68,7 @@ var i 0 as size_t
 while i < (300 as size_t)
 {
     let y mp.allocate(16 as size_t, 8 as size_t)
-    set i: i + (1 as size_t)
+    i := i + (1 as size_t)
 }
 let np mp.next_page
 let cp mp.current_page
@@ -90,13 +90,13 @@ if np.region <> mp
 
 ; Field STORES through the pointer work too (set + read-back).
 let saved mp.current_page
-set mp.current_page: null
+mp.current_page := null
 if mp.current_page <> null
 {
     Console.println "FAIL store null"
     exit 1
 }
-set mp.current_page: saved
+mp.current_page := saved
 if mp.current_page <> saved
 {
     Console.println "FAIL store restore"

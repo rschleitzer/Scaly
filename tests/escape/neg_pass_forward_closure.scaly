@@ -13,7 +13,7 @@ define Sink
 )
 {
     procedure store_fn(this, f: IntFn)
-        set this.fn: f
+        this.fn := f
 }
 
 ; Pure forwarder: relays the delegate on to store_fn, stores nothing itself.

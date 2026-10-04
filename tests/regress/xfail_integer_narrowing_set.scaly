@@ -9,5 +9,5 @@ let anchor String("probe")
 let host Page.get(anchor.get_buffer() as pointer[void])
 let n &N^host(0)
 var offset: int 5000000000
-set n.pos: offset
+n.pos := offset
 print("compiled\n")

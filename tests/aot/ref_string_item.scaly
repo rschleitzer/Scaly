@@ -19,7 +19,7 @@ function copy_name#(i: MyItem) returns ref[String]?
         let n (*i.name)
         var holder Vector[String]^rp(1)
         holder.put(0, String^rp(n))
-        set result: holder.get(0)
+        result := holder.get(0)
     }
     result
 }

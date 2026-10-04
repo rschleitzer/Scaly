@@ -22,8 +22,8 @@ function spin(seed: i64) returns i64
     var k 0 as i64
     while k < (20000 as i64)
     {
-        set acc: acc + k
-        set k: k + (1 as i64)
+        acc := acc + k
+        k := k + (1 as i64)
     }
     acc
 }
@@ -44,8 +44,8 @@ while i < 64
 {
     let v r1.get(i as size_t)
     if v <> null
-        set s1: s1 + (*v)
-    set i: i + 1
+        s1 := s1 + (*v)
+    i := i + 1
 }
 if s1 <> 6048
 {
@@ -78,7 +78,7 @@ var j: size_t 0
 while j < (32 as size_t)
 {
     items.put(j, Item(j, j as i64))
-    set j: j + 1
+    j := j + 1
 }
 var r3 Vector[i64](32)
 for item in items
@@ -87,13 +87,13 @@ for item in items
     r3.put(item.idx, n * 5)
 }
 var s3 0 as i64
-set j: 0 as size_t
+j := 0 as size_t
 while j < (32 as size_t)
 {
     let v r3.get j
     if v <> null
-        set s3: s3 + (*v)
-    set j: j + 1
+        s3 := s3 + (*v)
+    j := j + 1
 }
 if s3 <> (2480 as i64)
 {
@@ -128,30 +128,30 @@ for h in 256
     r4.put(h, v)
 }
 var s4 0 as i64
-set i: 0
+i := 0
 while i < 256
 {
     let v r4.get(i as size_t)
     if v <> null
-        set s4: s4 + (*v)
-    set i: i + 1
+        s4 := s4 + (*v)
+    i := i + 1
 }
 ; Reference: recompute sequentially.
 var w4 0 as i64
-set i: 0
+i := 0
 while i < 256
 {
     if i = 2
-        set w4: w4 - (7 as i64)
+        w4 := w4 - (7 as i64)
     if i = 200
-        set w4: w4 - (7 as i64)
+        w4 := w4 - (7 as i64)
     if i <> 2
         if i <> 200
         {
             let v spin(i as i64) + (7 as i64)
-            set w4: w4 + v
+            w4 := w4 + v
         }
-    set i: i + 1
+    i := i + 1
 }
 if s4 <> w4
 {
@@ -169,11 +169,11 @@ if subsD = (0 as u64)
 ; the rest into chunk cells; element pointers and the capture arrive
 ; on the workers.
 var items2 Vector[Item](256)
-set j: 0 as size_t
+j := 0 as size_t
 while j < (256 as size_t)
 {
     items2.put(j, Item(j, j as i64))
-    set j: j + 1
+    j := j + 1
 }
 var r5 Vector[i64](256)
 for item in items2
@@ -182,21 +182,21 @@ for item in items2
     r5.put(item.idx, v)
 }
 var s5 0 as i64
-set j: 0 as size_t
+j := 0 as size_t
 while j < (256 as size_t)
 {
     let v r5.get j
     if v <> null
-        set s5: s5 + (*v)
-    set j: j + 1
+        s5 := s5 + (*v)
+    j := j + 1
 }
 var w5 0 as i64
-set i: 0
+i := 0
 while i < 256
 {
     let v spin(i as i64) + (7 as i64)
-    set w5: w5 + v
-    set i: i + 1
+    w5 := w5 + v
+    i := i + 1
 }
 if s5 <> w5
 {

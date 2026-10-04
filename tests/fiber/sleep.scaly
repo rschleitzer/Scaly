@@ -55,7 +55,7 @@ procedure s10()
 procedure s10_quiet() mutable woken
 {
     Scheduler.sleep(10)
-    set woken: woken + 1
+    woken := woken + 1
 }
 
 ; no scheduler yet: the thread sleeps
@@ -82,7 +82,7 @@ var k 0
 while k < 5
 {
     Scheduler.spawn(&s100)
-    set k: k + 1
+    k := k + 1
 }
 Scheduler.run()
 let e1 scaly_eio_now_ns() - t1
@@ -105,7 +105,7 @@ var j 0
 while j < 1000
 {
     Scheduler.spawn(&s10_quiet)
-    set j: j + 1
+    j := j + 1
 }
 Scheduler.run()
 if woken <> 1000

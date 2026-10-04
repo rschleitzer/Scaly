@@ -52,16 +52,16 @@ define StackVectors
     {
         init()
         {
-            set cand_names: Array[String]^this()
-            set cand_locs: Array[size_t]^this()
-            set locs: Array[size_t]^this()
-            set self_name: String()
-            set tail_call: false
-            set cur: String()
-            set total: 0
-            set allowed: 0
-            set binds: 0
-            set opaque: false
+            cand_names := Array[String]^this()
+            cand_locs := Array[size_t]^this()
+            locs := Array[size_t]^this()
+            self_name := String()
+            tail_call := false
+            cur := String()
+            total := 0
+            allowed := 0
+            binds := 0
+            opaque := false
         }
 
         ; does the construction at `start` qualify?
@@ -72,7 +72,7 @@ define StackVectors
             {
                 if locs[i] = start
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -96,11 +96,11 @@ define StackVectors
 
         procedure scan(mutable this, func: PlannedFunction)
         {
-            set cand_names.length: 0
-            set cand_locs.length: 0
-            set locs.length: 0
-            set self_name: func.mangled_name
-            set tail_call: false
+            cand_names.length := 0
+            cand_locs.length := 0
+            locs.length := 0
+            self_name := func.mangled_name
+            tail_call := false
             choose func.impl
                 when a: Action
                 {
@@ -110,23 +110,23 @@ define StackVectors
                     var i: size_t 0
                     while i < cand_names.length
                     {
-                        set cur: cand_names[i]
-                        set total: 0
-                        set allowed: 0
-                        set binds: 0
-                        set opaque: false
+                        cur := cand_names[i]
+                        total := 0
+                        allowed := 0
+                        binds := 0
+                        opaque := false
                         if func.input <> null
                         {
                             for item in func.input
                             {
                                 if item.name <> null and item.name.unwrap().equals(cur)
-                                    set binds: binds + 1
+                                    binds := binds + 1
                             }
                         }
                         this.use_action(a)
                         if binds = 1 and total = allowed and opaque = false
                             locs.add(cand_locs[i])
-                        set i: i + 1
+                        i := i + 1
                     }
                 }
                 else
@@ -192,7 +192,7 @@ define StackVectors
                             when call: Call
                             {
                                 if call.mangled_name.equals(self_name)
-                                    set tail_call: true
+                                    tail_call := true
                             }
                             else
                                 0
@@ -284,7 +284,7 @@ define StackVectors
         procedure bind_name(mutable this, name: String)
         {
             if name.equals(cur)
-                set binds: binds + 1
+                binds := binds + 1
         }
 
         procedure use_action(mutable this, act: PlannedAction)
@@ -356,20 +356,20 @@ define StackVectors
                 {
                     if v.name.equals(cur)
                     {
-                        set total: total + 1
+                        total := total + 1
                         ; `cur.length`, and nothing chained after it
                         if op.member_access <> null and op.member_access.length = 1
                         {
                             let acc op.member_access.at(0)
                             if acc.is_method = false and acc.name = "length"
-                                set allowed: allowed + 1
+                                allowed := allowed + 1
                         }
                     }
                 }
                 when call: Call
                 {
                     if this.is_receiver(call)
-                        set allowed: allowed + 1
+                        allowed := allowed + 1
                     this.use_ops(call.args)
                 }
                 when tp: Tuple
@@ -491,7 +491,7 @@ define StackVectors
                         for c in lm.captures
                         {
                             if c.equals(cur)
-                                set opaque: true
+                                opaque := true
                         }
                     }
                     if lm.input <> null

@@ -30,13 +30,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -65,21 +65,21 @@ procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
         let r Io.read(fd, ((buf as size_t) + done) as pointer[void], count - done)
         if r <= (0 as i64)
             return false
-        set done: done + (r as size_t)
+        done := done + (r as size_t)
     }
     true
 }
 
 procedure chk_byte(b: u8) mutable chk
-    set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
+    chk := (chk xor (b as u64)) * (0x100000001b3 as u64)
 
 procedure add_entry(base: size_t, len: size_t) mutable pg_cnt, pg_len, pg_old
 {
     let po pg_old
     let pl pg_len
-    set po[pg_cnt]: base
-    set pl[pg_cnt]: len
-    set pg_cnt: pg_cnt + (1 as size_t)
+    po[pg_cnt] := base
+    pl[pg_cnt] := len
+    pg_cnt := pg_cnt + (1 as size_t)
 }
 
 ; RAW-OFFSET region walk. Typed Page field access (p.next_page etc.)
@@ -105,7 +105,7 @@ procedure walk_exclusives(p: size_t) mutable pg_cnt, pg_len, pg_old
         }
         if no <> (0 as size_t)
             walk_region(excl)
-        set nd: *((nd + (8 as size_t)) as pointer[size_t])
+        nd := *((nd + (8 as size_t)) as pointer[size_t])
     }
 }
 
@@ -118,7 +118,7 @@ procedure walk_region(p: size_t) mutable pg_cnt, pg_len, pg_old
     {
         add_entry(q, 4096 as size_t)
         walk_exclusives q
-        set q: *((q + (16 as size_t)) as pointer[size_t])
+        q := *((q + (16 as size_t)) as pointer[size_t])
     }
 }
 
@@ -128,8 +128,8 @@ procedure fill_content(mutable buf: pointer[u8], i: size_t) returns size_t
     var j 0 as size_t
     while j < len
     {
-        set buf[j]: ((97 as size_t) + ((i + j) % (26 as size_t))) as u8
-        set j: j + (1 as size_t)
+        buf[j] := ((97 as size_t) + ((i + j) % (26 as size_t))) as u8
+        j := j + (1 as size_t)
     }
     len
 }
@@ -138,8 +138,8 @@ procedure fill_content(mutable buf: pointer[u8], i: size_t) returns size_t
 
 let mp Page.allocate_page()
 let root mp.allocate(sizeof Root, alignof Root) as pointer[Root]
-set root.head: null
-set root.count: 0 as size_t
+root.head := null
+root.count := 0 as size_t
 
 var i 0 as size_t
 while i < (400 as size_t)
@@ -148,10 +148,10 @@ while i < (400 as size_t)
     let len fill_content(cbuf as pointer[u8], i)
     let nd mp.allocate(sizeof SNode, alignof SNode) as pointer[SNode]
     let s String^mp(cbuf as pointer[const_char], len)
-    set nd.content: s
-    set nd.next: root.head
-    set root.head: nd
-    set i: i + (1 as size_t)
+    nd.content := s
+    nd.next := root.head
+    root.head := nd
+    i := i + (1 as size_t)
 }
 
 ; One oversized payload: 100000 content bytes -> the String buffer
@@ -161,21 +161,21 @@ let bigbuf scaly_aligned_alloc(4096 as i64, 131072 as i64) as pointer[u8]
 var bi 0 as size_t
 while bi < (100000 as size_t)
 {
-    set bigbuf[bi]: ((65 as size_t) + (bi % (26 as size_t))) as u8
-    set bi: bi + (1 as size_t)
+    bigbuf[bi] := ((65 as size_t) + (bi % (26 as size_t))) as u8
+    bi := bi + (1 as size_t)
 }
 let bnd mp.allocate(sizeof SNode, alignof SNode) as pointer[SNode]
 let bs String^mp(bigbuf as pointer[const_char], 100000 as size_t)
-set bnd.content: bs
-set bnd.next: root.head
-set root.head: bnd
+bnd.content := bs
+bnd.next := root.head
+root.head := bnd
 scaly_aligned_free(bigbuf as pointer[void])
 
-set root.count: 401 as size_t
+root.count := 401 as size_t
 
 ; ==== checksum by the traversal the receiver will repeat ====
 
-set chk: 0xcbf29ce484222325 as u64
+chk := 0xcbf29ce484222325 as u64
 var items 0 as size_t
 var n root.head
 while n <> null
@@ -187,17 +187,17 @@ while n <> null
     {
         let b s.get(j)
         chk_byte b
-        set j: j + (1 as size_t)
+        j := j + (1 as size_t)
     }
     chk_byte((sl % (256 as size_t)) as u8)
-    set items: items + (1 as size_t)
-    set n: n.next
+    items := items + (1 as size_t)
+    n := n.next
 }
 
 ; ==== enumerate the region's pages ====
 
-set pg_old: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
-set pg_len: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+pg_old := scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+pg_len := scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
 walk_region(mp as size_t)
 report("S: pages ", pg_cnt as i64, "")
 report("S: items ", items as i64, "")
@@ -208,24 +208,24 @@ var fd Io.connect(47613 as i32)
 var tries 0
 while fd < (0 as i32)
 {
-    set tries: tries + 1
+    tries := tries + 1
     if tries > 100
         exit 3
     let t scaly_eio_now_ns()
     var burn 0 as i64
     while scaly_eio_now_ns() - t < (100000000 as i64)
-        set burn: burn + (1 as i64)
-    set fd: Io.connect(47613 as i32)
+        burn := burn + (1 as i64)
+    fd := Io.connect(47613 as i32)
 }
 
 ; ==== ship the frame: header, then each page verbatim ====
 
 let hdr scaly_aligned_alloc(8 as i64, 64 as i64) as pointer[u64]
-set hdr[0]: 0x53434c59 as u64
-set hdr[1]: pg_cnt as u64
-set hdr[2]: (root as size_t) as u64
-set hdr[3]: chk
-set hdr[4]: items as u64
+hdr[0] := 0x53434c59 as u64
+hdr[1] := pg_cnt as u64
+hdr[2] := (root as size_t) as u64
+hdr[3] := chk
+hdr[4] := items as u64
 Io.write_all(fd, hdr as pointer[void], 40 as size_t)
 
 var total 40 as size_t
@@ -234,12 +234,12 @@ let po pg_old
 let pl pg_len
 while pi < pg_cnt
 {
-    set hdr[0]: po[pi] as u64
-    set hdr[1]: pl[pi] as u64
+    hdr[0] := po[pi] as u64
+    hdr[1] := pl[pi] as u64
     Io.write_all(fd, hdr as pointer[void], 16 as size_t)
     Io.write_all(fd, po[pi] as pointer[void], pl[pi])
-    set total: total + (16 as size_t) + pl[pi]
-    set pi: pi + (1 as size_t)
+    total := total + (16 as size_t) + pl[pi]
+    pi := pi + (1 as size_t)
 }
 report("S: frame bytes ", total as i64, "")
 
@@ -269,12 +269,12 @@ let m0 scaly_eio_now_ns()
 while mi < (256 as i64)
 {
     let r memcpy(dst, src, 1048576 as size_t)
-    set mi: mi + (1 as i64)
+    mi := mi + (1 as i64)
 }
 let m1 scaly_eio_now_ns()
 var mms (m1 - m0) / (1000000 as i64)
 if mms = 0
-    set mms: 1 as i64
+    mms := 1 as i64
 report("S: memcpy ", ((256 as i64) * (1000 as i64)) / mms, " MiB/s")
 
 ; ==== throughput: 256 MiB through the socket ====
@@ -284,14 +284,14 @@ let t0 scaly_eio_now_ns()
 while ti < (256 as i64)
 {
     Io.write_all(fd, src, 1048576 as size_t)
-    set ti: ti + (1 as i64)
+    ti := ti + (1 as i64)
 }
 if read_exact(fd, ack as pointer[void], 1 as size_t) = false
     exit 4
 let t1 scaly_eio_now_ns()
 var tms (t1 - t0) / (1000000 as i64)
 if tms = 0
-    set tms: 1 as i64
+    tms := 1 as i64
 report("S: tcp ", ((256 as i64) * (1000 as i64)) / tms, " MiB/s")
 
 ; ==== latency: 2000 one-byte round trips ====
@@ -303,7 +303,7 @@ while li < (2000 as i64)
     Io.write_all(fd, ack as pointer[void], 1 as size_t)
     if read_exact(fd, ack as pointer[void], 1 as size_t) = false
         exit 4
-    set li: li + (1 as i64)
+    li := li + (1 as i64)
 }
 let l1 scaly_eio_now_ns()
 report("S: rtt ", (l1 - l0) / (2000 as i64), " ns/rt")

@@ -25,7 +25,7 @@ procedure flip(mutable p: pointer[Shape]) returns int
     choose *p
         when w: W
         {
-            set *p: Shape.S(Small(99))
+            *p := Shape.S(Small(99))
             return w.a + w.d
         }
         when s: S

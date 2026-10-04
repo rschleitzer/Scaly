@@ -90,26 +90,26 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
             {
                 if at + 4 > b.length
                     break
-                set n: ((b[at + 2] as size_t) << 8) | (b[at + 3] as size_t)
-                set head: 4
+                n := ((b[at + 2] as size_t) << 8) | (b[at + 3] as size_t)
+                head := 4
             }
             else if n = 127
             {
                 if at + 10 > b.length
                     break
-                set n: 0
+                n := 0
                 var k: size_t 0
                 while k < 8
                 {
-                    set n: (n << 8) | (b[at + 2 + k] as size_t)
-                    set k: k + 1
+                    n := (n << 8) | (b[at + 2 + k] as size_t)
+                    k := k + 1
                 }
-                set head: 10
+                head := 10
             }
             if masked = false or n > WS_MAX_MESSAGE
             {
                 ws.close(1002)
-                set open: false
+                open := false
                 break
             }
             if at + head + 4 + n > b.length
@@ -124,10 +124,10 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
             while i < n
             {
                 inb.data.put(start + i, b[start + i] xor b[key_at + (i & 3)])
-                set i: i + 1
+                i := i + 1
             }
             let payload inb.bytes().subslice(start, start + n)
-            set at: start + n
+            at := start + n
             if opcode = WS_OP_PING
                 ws.send(WS_OP_PONG, payload)
             else if opcode = WS_OP_CLOSE
@@ -137,7 +137,7 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
                     ws.close(((payload[0] as u64) << 8) | (payload[1] as u64))
                 else
                     ws.close(1000)
-                set open: false
+                open := false
                 break
             }
             else if opcode = WS_OP_CONTINUATION
@@ -161,18 +161,18 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
                 {
                     message.clear()
                     message.append(payload)
-                    set message_opcode: opcode
+                    message_opcode := opcode
                 }
             }
             else if opcode <> WS_OP_PONG
             {
                 ws.close(1002)
-                set open: false
+                open := false
                 break
             }
             if ws.closing
             {
-                set open: false
+                open := false
                 break
             }
         }

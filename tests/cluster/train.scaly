@@ -65,13 +65,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -84,7 +84,7 @@ function fixed3(f: float) returns String
     var ok false
     if f >= 0.0
         if f < 100000.0
-            set ok: true
+            ok := true
     if ok = false
         return "nan"
     let m ((f * 1000.0) + 0.5) as int
@@ -111,8 +111,8 @@ function parse_int(s: pointer[const_char]) returns int
     var i 0 as size_t
     if s[0] as int = 45
     {
-        set neg: true
-        set i: 1 as size_t
+        neg := true
+        i := 1 as size_t
     }
     var v 0
     var any false
@@ -123,9 +123,9 @@ function parse_int(s: pointer[const_char]) returns int
             break
         if c > 57
             break
-        set v: v * 10 + (c - 48)
-        set any: true
-        set i: i + (1 as size_t)
+        v := v * 10 + (c - 48)
+        any := true
+        i := i + (1 as size_t)
     }
     if any = false
         return 0 - 1
@@ -151,11 +151,11 @@ procedure fill(mutable tape: Tape, id: int, count: int, s0: int) returns int
     var i 0
     while i < count
     {
-        set s: lcg(s)
+        s := lcg(s)
         let r pmod(s, 2001) - 1000
         let rv (r as float) * 0.0001
         tape.set_value(id, i, rv)
-        set i: i + 1
+        i := i + 1
     }
     s
 }
@@ -166,7 +166,7 @@ procedure fill_const(mutable tape: Tape, id: int, count: int, v: float)
     while i < count
     {
         tape.set_value(id, i, v)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -179,7 +179,7 @@ let HEADS 4
 let STEPS env_int("TRAIN_STEPS", 60)
 var PROG STEPS / 6
 if PROG < 1
-    set PROG: 1
+    PROG := 1
 let NPARAM 15
 
 let N env_int("TRAIN_N", 2)
@@ -195,8 +195,8 @@ let tp toks.data
 var ci 0
 while ci < ntok
 {
-    set tp[ci]: (pmod(ci * 7 + 3, V)) as i64
-    set ci: ci + 1
+    tp[ci] := (pmod(ci * 7 + 3, V)) as i64
+    ci := ci + 1
 }
 
 ; --- model: one pre-LN transformer block + head ---
@@ -218,15 +218,15 @@ let bf tape.leaf(1, D)
 let whead tape.leaf(D, V)
 
 var s 42
-set s: fill(tape, table, V * D, s)
-set s: fill(tape, posemb, T * D, s)
-set s: fill(tape, wq1, D * D, s)
-set s: fill(tape, wk1, D * D, s)
-set s: fill(tape, wv1, D * D, s)
-set s: fill(tape, wo1, D * D, s)
-set s: fill(tape, wf1, D * F, s)
-set s: fill(tape, wp1, F * D, s)
-set s: fill(tape, whead, D * V, s)
+s := fill(tape, table, V * D, s)
+s := fill(tape, posemb, T * D, s)
+s := fill(tape, wq1, D * D, s)
+s := fill(tape, wk1, D * D, s)
+s := fill(tape, wv1, D * D, s)
+s := fill(tape, wo1, D * D, s)
+s := fill(tape, wf1, D * F, s)
+s := fill(tape, wp1, F * D, s)
+s := fill(tape, whead, D * V, s)
 fill_const(tape, g1a, D, 1.0)
 fill_const(tape, g1b, D, 1.0)
 fill_const(tape, gf, D, 1.0)
@@ -279,9 +279,9 @@ while qi < NPARAM
 {
     let pid pp[qi]
     let sz tape.node_rows(pid) * tape.node_cols(pid)
-    set szp[qi]: sz
-    set total: total + sz
-    set qi: qi + 1
+    szp[qi] := sz
+    total := total + sz
+    qi := qi + 1
 }
 
 ; a persistent averaging buffer (reused every step)
@@ -308,9 +308,9 @@ if RANK < 0
         var wi 0
         while wi < N
         {
-            set s: lcg(s)
-            set wp[wi]: pmod(s, ntok - T - 1)
-            set wi: wi + 1
+            s := lcg(s)
+            wp[wi] := pmod(s, ntok - T - 1)
+            wi := wi + 1
         }
         ; sum each window's gradient into acc IN WINDOW ORDER — a fresh
         ; zero_grads per window (backward accumulates into intermediate
@@ -326,11 +326,11 @@ if RANK < 0
             {
                 tape.set_token(emb, t, tp[p + t])
                 tape.set_token(loss, t, tp[p + t + 1])
-                set t: t + 1
+                t := t + 1
             }
             tape.recompute()
             if w = 0
-                set win_sum: win_sum + tape.value_at(loss, 0)
+                win_sum := win_sum + tape.value_at(loss, 0)
             tape.backward loss
             var idx 0
             var li 0
@@ -342,22 +342,22 @@ if RANK < 0
                 while j < sz
                 {
                     if w = 0
-                        set accp[idx]: tape.grad_at(pid, j)
+                        accp[idx] := tape.grad_at(pid, j)
                     else
-                        set accp[idx]: accp[idx] + tape.grad_at(pid, j)
-                    set idx: idx + 1
-                    set j: j + 1
+                        accp[idx] := accp[idx] + tape.grad_at(pid, j)
+                    idx := idx + 1
+                    j := j + 1
                 }
-                set li: li + 1
+                li := li + 1
             }
-            set w: w + 1
+            w := w + 1
         }
         ; average the summed gradient over the batch, inject, then step
         var ni 0
         while ni < total
         {
-            set accp[ni]: accp[ni] / (N as float)
-            set ni: ni + 1
+            accp[ni] := accp[ni] / (N as float)
+            ni := ni + 1
         }
         var gi 0
         var gl 0
@@ -369,16 +369,16 @@ if RANK < 0
             while gj < sz
             {
                 tape.set_grad(pid, gj, accp[gi])
-                set gi: gi + 1
-                set gj: gj + 1
+                gi := gi + 1
+                gj := gj + 1
             }
-            set gl: gl + 1
+            gl := gl + 1
         }
         var ai 0
         while ai < NPARAM
         {
             tape.adam_step(pp[ai], lr, 0.9, 0.999, 0.00000001, step)
-            set ai: ai + 1
+            ai := ai + 1
         }
         if pmod(step, PROG) = 0
         {
@@ -392,9 +392,9 @@ if RANK < 0
             sb.append fs
             let line sb.to_string()
             Console.println(line.to_c_string())
-            set win_sum: 0.0
+            win_sum := 0.0
         }
-        set step: step + 1
+        step := step + 1
     }
     let t1 scaly_eio_now_ns()
     var tb StringBuilder()
@@ -428,7 +428,7 @@ if RANK = 0
     let gcv gchs.data
     var live Vector[int](N as size_t)
     let lvv live.data
-    set lvv[0]: 1
+    lvv[0] := 1
 
     var accepted 0
     while accepted < N - 1
@@ -445,11 +445,11 @@ if RANK = 0
         hrr.fix_graph(hm)
         let wr hm.rank as int
         Cluster.dispose_message(hrr)
-        set pkv[wr]: peer
+        pkv[wr] := peer
         let gch Cluster.channel(peer, GRAD_ID)
-        set gcv[wr]: gch
-        set lvv[wr]: 1
-        set accepted: accepted + 1
+        gcv[wr] := gch
+        lvv[wr] := 1
+        accepted := accepted + 1
     }
     Console.println "R: linked"
 
@@ -464,9 +464,9 @@ if RANK = 0
         var wi 0
         while wi < N
         {
-            set s: lcg(s)
-            set wp[wi]: pmod(s, ntok - T - 1)
-            set wi: wi + 1
+            s := lcg(s)
+            wp[wi] := pmod(s, ntok - T - 1)
+            wi := wi + 1
         }
         ; rank 0's own window gradient
         let p0 wp[0]
@@ -476,10 +476,10 @@ if RANK = 0
         {
             tape.set_token(emb, t, tp[p0 + t])
             tape.set_token(loss, t, tp[p0 + t + 1])
-            set t: t + 1
+            t := t + 1
         }
         tape.recompute()
-        set win_sum: win_sum + tape.value_at(loss, 0)
+        win_sum := win_sum + tape.value_at(loss, 0)
         tape.backward loss
         ; flatten our gradient into acc (rank 0's contribution, first)
         var idx 0
@@ -491,11 +491,11 @@ if RANK = 0
             var j 0
             while j < sz
             {
-                set accp[idx]: tape.grad_at(pid, j)
-                set idx: idx + 1
-                set j: j + 1
+                accp[idx] := tape.grad_at(pid, j)
+                idx := idx + 1
+                j := j + 1
             }
-            set li: li + 1
+            li := li + 1
         }
         ; add each live worker's gradient IN RANK ORDER (null = it died)
         var r 1
@@ -506,8 +506,8 @@ if RANK = 0
                 let raw Channel.receive(gcv[r])
                 if raw = null
                 {
-                    set lvv[r]: 0
-                    set live_count: live_count - 1
+                    lvv[r] := 0
+                    live_count := live_count - 1
                     var db StringBuilder()
                     db.append "R: down "
                     let rs num_to_string(r as i64)
@@ -524,20 +524,20 @@ if RANK = 0
                     var ai 0
                     while ai < total
                     {
-                        set accp[ai]: accp[ai] + dp[ai]
-                        set ai: ai + 1
+                        accp[ai] := accp[ai] + dp[ai]
+                        ai := ai + 1
                     }
                     Cluster.dispose_message(rr)
                 }
             }
-            set r: r + 1
+            r := r + 1
         }
         ; average over the survivors
         var ni 0
         while ni < total
         {
-            set accp[ni]: accp[ni] / (live_count as float)
-            set ni: ni + 1
+            accp[ni] := accp[ni] / (live_count as float)
+            ni := ni + 1
         }
         ; broadcast the averaged gradient to every live worker
         var br 1
@@ -547,19 +547,19 @@ if RANK = 0
             {
                 let mp Page.allocate_page()
                 let mm mp.allocate(sizeof GradMsg, alignof GradMsg) as pointer[GradMsg]
-                set mm.rank: 0 as i64
+                mm.rank := 0 as i64
                 let dv Vector[float]^mp(total as size_t)
-                set mm.data: dv
+                mm.data := dv
                 let dp dv.data
                 var ci2 0
                 while ci2 < total
                 {
-                    set dp[ci2]: accp[ci2]
-                    set ci2: ci2 + 1
+                    dp[ci2] := accp[ci2]
+                    ci2 := ci2 + 1
                 }
                 Cluster.send(pkv[br], AVG_ID, mm as pointer[void])
             }
-            set br: br + 1
+            br := br + 1
         }
         ; inject the averaged gradient locally + step (identical everywhere)
         var ii 0
@@ -572,16 +572,16 @@ if RANK = 0
             while j2 < sz
             {
                 tape.set_grad(pid, j2, accp[ii])
-                set ii: ii + 1
-                set j2: j2 + 1
+                ii := ii + 1
+                j2 := j2 + 1
             }
-            set li2: li2 + 1
+            li2 := li2 + 1
         }
         var si 0
         while si < NPARAM
         {
             tape.adam_step(pp[si], lr, 0.9, 0.999, 0.00000001, step)
-            set si: si + 1
+            si := si + 1
         }
         if pmod(step, PROG) = 0
         {
@@ -595,9 +595,9 @@ if RANK = 0
             sb.append fs
             let line sb.to_string()
             Console.println(line.to_c_string())
-            set win_sum: 0.0
+            win_sum := 0.0
         }
-        set step: step + 1
+        step := step + 1
     }
     let t1 scaly_eio_now_ns()
     var r2 1
@@ -605,7 +605,7 @@ if RANK = 0
     {
         if lvv[r2] = 1
             Cluster.close(pkv[r2])
-        set r2: r2 + 1
+        r2 := r2 + 1
     }
     var tb StringBuilder()
     tb.append "R: PASS "
@@ -619,7 +619,7 @@ if RANK = 0
     {
         if lvv[r3] = 1
             Cluster.dispose_peer(pkv[r3])
-        set r3: r3 + 1
+        r3 := r3 + 1
     }
     exit 0
 }
@@ -629,17 +629,17 @@ var peer Cluster.connect("127.0.0.1", PORT)
 var tries 0
 while peer = null
 {
-    set tries: tries + 1
+    tries := tries + 1
     if tries > 200
         exit 3
     poll(null as pointer[pollfd], 0 as u64, 50 as i32)
-    set peer: Cluster.connect("127.0.0.1", PORT)
+    peer := Cluster.connect("127.0.0.1", PORT)
 }
 
 ; announce our rank
 let hp Page.allocate_page()
 let hmsg hp.allocate(sizeof RankMsg, alignof RankMsg) as pointer[RankMsg]
-set hmsg.rank: RANK as i64
+hmsg.rank := RANK as i64
 Cluster.send(peer, HELLO_ID, hmsg as pointer[void])
 
 let avg_ch Cluster.channel(peer, AVG_ID)
@@ -660,9 +660,9 @@ while running
     var wi 0
     while wi < N
     {
-        set s: lcg(s)
-        set wp[wi]: pmod(s, ntok - T - 1)
-        set wi: wi + 1
+        s := lcg(s)
+        wp[wi] := pmod(s, ntok - T - 1)
+        wi := wi + 1
     }
     let p wp[RANK]
     tape.zero_grads()
@@ -671,16 +671,16 @@ while running
     {
         tape.set_token(emb, t, tp[p + t])
         tape.set_token(loss, t, tp[p + t + 1])
-        set t: t + 1
+        t := t + 1
     }
     tape.recompute()
     tape.backward loss
     ; ship our gradient region to the reducer
     let mp Page.allocate_page()
     let mm mp.allocate(sizeof GradMsg, alignof GradMsg) as pointer[GradMsg]
-    set mm.rank: RANK as i64
+    mm.rank := RANK as i64
     let dv Vector[float]^mp(total as size_t)
-    set mm.data: dv
+    mm.data := dv
     let dp dv.data
     var idx 0
     var li 0
@@ -691,17 +691,17 @@ while running
         var j 0
         while j < sz
         {
-            set dp[idx]: tape.grad_at(pid, j)
-            set idx: idx + 1
-            set j: j + 1
+            dp[idx] := tape.grad_at(pid, j)
+            idx := idx + 1
+            j := j + 1
         }
-        set li: li + 1
+        li := li + 1
     }
     Cluster.send(peer, GRAD_ID, mm as pointer[void])
     ; receive the averaged gradient (null = reducer done/gone)
     let raw Channel.receive(avg_ch)
     if raw = null
-        set running: false
+        running := false
     else
     {
         let rr raw as pointer[ReceivedRegion]
@@ -718,19 +718,19 @@ while running
             while j2 < sz
             {
                 tape.set_grad(pid, j2, gdp[ii])
-                set ii: ii + 1
-                set j2: j2 + 1
+                ii := ii + 1
+                j2 := j2 + 1
             }
-            set li2: li2 + 1
+            li2 := li2 + 1
         }
         Cluster.dispose_message(rr)
         var si 0
         while si < NPARAM
         {
             tape.adam_step(pp[si], lr, 0.9, 0.999, 0.00000001, step)
-            set si: si + 1
+            si := si + 1
         }
-        set step: step + 1
+        step := step + 1
     }
 }
 Cluster.dispose_peer(peer)

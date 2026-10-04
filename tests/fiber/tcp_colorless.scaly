@@ -33,7 +33,7 @@ procedure read_exact(s: TcpStream, mutable buf: Slice[u8], want: size_t) returns
         let n s.read(buf.slice_from(got))
         if n <= 0
             return false
-        set got: got + (n as size_t)
+        got := got + (n as size_t)
     }
     true
 }
@@ -62,7 +62,7 @@ procedure server2()
         else
             Console.print "2:s2 "
         c.write(view.subslice(0, n as size_t))
-        set round: round + 1
+        round := round + 1
     }
     c.close()
 }
@@ -119,8 +119,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     let page Page.allocate_page()
     let sched Scheduler.create(page)
     var l2 TcpListener.listen(0)
-    set listener_fd2: l2.fd as int
-    set port2: l2.port()
+    listener_fd2 := l2.fd as int
+    port2 := l2.port()
     let ts Scheduler.spawn(&server2)
     let tc Scheduler.spawn(&client2)
     Scheduler.run()
@@ -130,7 +130,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
 
     ; 3. the main context under a scheduler
     var l3 TcpListener.listen(0)
-    set port3: l3.port()
+    port3 := l3.port()
     let t3 Scheduler.spawn(&client3)
     var c3 l3.accept()
     if read_exact(c3, view, 2) = false

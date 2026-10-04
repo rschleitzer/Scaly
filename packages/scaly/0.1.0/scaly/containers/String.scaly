@@ -16,7 +16,7 @@ define String (data: pointer[u8](null))
     ; Empty string - no allocation
     init()
     {
-        set data: null
+        data := null
     }
 
     init(length: size_t)
@@ -31,32 +31,32 @@ define String (data: pointer[u8](null))
         var counter: size_t 0
         while rest >= 0x80
         {
-            set rest: rest >> 7
-            set counter: counter + 1
+            rest := rest >> 7
+            counter := counter + 1
         }
 
         let overall_length counter + 1 + length
         ; Over-allocate by 1 byte so c_data() is safely null-terminated for
         ; C APIs. Keeps the logical content length unchanged.
         let own_page Page.get(this)
-        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
+        data := own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
         while wrest >= 0x80
         {
-            set *(data + wi): (wrest as u8) | 0x80
-            set wrest: wrest >> 7
-            set wi: wi + 1
+            *(data + wi) := (wrest as u8) | 0x80
+            wrest := wrest >> 7
+            wi := wi + 1
         }
-        set *(data + wi): wrest as u8
-        set *(data + overall_length): 0
+        *(data + wi) := wrest as u8
+        *(data + overall_length) := 0
     }
 
     init(other: pointer[const_char], length: size_t)
     {
         if length = 0
         {
-            set data: null
+            data := null
             return
         }
 
@@ -64,24 +64,24 @@ define String (data: pointer[u8](null))
         var counter: size_t 0
         while rest >= 0x80
         {
-            set rest: rest >> 7
-            set counter: counter + 1
+            rest := rest >> 7
+            counter := counter + 1
         }
 
         let overall_length counter + 1 + length
         let own_page Page.get(this)
-        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
+        data := own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
         while wrest >= 0x80
         {
-            set *(data + wi): (wrest as u8) | 0x80
-            set wrest: wrest >> 7
-            set wi: wi + 1
+            *(data + wi) := (wrest as u8) | 0x80
+            wrest := wrest >> 7
+            wi := wi + 1
         }
-        set *(data + wi): wrest as u8
+        *(data + wi) := wrest as u8
         memcpy((data + counter + 1) as pointer[void], other, length)
-        set *(data + overall_length): 0
+        *(data + overall_length) := 0
     }
 
     init(other: Vector[char])
@@ -91,25 +91,25 @@ define String (data: pointer[u8](null))
         var counter: size_t 0
         while rest >= 0x80
         {
-            set rest: rest >> 7
-            set counter: counter + 1
+            rest := rest >> 7
+            counter := counter + 1
         }
 
         let overall_length counter + 1 + other.length
         let own_page Page.get(this)
-        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
+        data := own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest other.length
         var wi: size_t 0
         while wrest >= 0x80
         {
-            set *(data + wi): (wrest as u8) | 0x80
-            set wrest: wrest >> 7
-            set wi: wi + 1
+            *(data + wi) := (wrest as u8) | 0x80
+            wrest := wrest >> 7
+            wi := wi + 1
         }
-        set *(data + wi): wrest as u8
+        *(data + wi) := wrest as u8
         if other.length > 0
             memcpy((data + counter + 1) as pointer[void], other.data, other.length)
-        set *(data + overall_length): 0
+        *(data + overall_length) := 0
 
     }
 
@@ -118,7 +118,7 @@ define String (data: pointer[u8](null))
         let length strlen c_string
         if length = 0
         {
-            set data: null
+            data := null
             return
         }
 
@@ -126,31 +126,31 @@ define String (data: pointer[u8](null))
         var counter: size_t 0
         while rest >= 0x80
         {
-            set rest: rest >> 7
-            set counter: counter + 1
+            rest := rest >> 7
+            counter := counter + 1
         }
 
         let overall_length counter + 1 + length
         let own_page Page.get(this)
-        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
+        data := own_page.allocate(overall_length + 1, 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
         while wrest >= 0x80
         {
-            set *(data + wi): (wrest as u8) | 0x80
-            set wrest: wrest >> 7
-            set wi: wi + 1
+            *(data + wi) := (wrest as u8) | 0x80
+            wrest := wrest >> 7
+            wi := wi + 1
         }
-        set *(data + wi): wrest as u8
+        *(data + wi) := wrest as u8
         memcpy((data + counter + 1) as pointer[void], c_string, length)
-        set *(data + overall_length): 0
+        *(data + overall_length) := 0
     }
 
     init(other: String)
     {
         if other.data = null
         {
-            set data: null
+            data := null
             return
         }
 
@@ -163,27 +163,27 @@ define String (data: pointer[u8](null))
                 scaly_panic_string("String.init", other.data as size_t)
 
             let byte *(other.data + index)
-            set length: length | ((byte & 0x7F) as size_t) << bit_count
+            length := length | ((byte & 0x7F) as size_t) << bit_count
             if (byte & 0x80) = 0
                 break
 
-            set bit_count: bit_count + 7
-            set index: index + 1
+            bit_count := bit_count + 7
+            index := index + 1
         }
         var overall_length index + 1 + length
         let own_page Page.get(this)
-        set data: own_page.allocate(overall_length + 1, 1) as pointer[u8]
+        data := own_page.allocate(overall_length + 1, 1) as pointer[u8]
         memcpy(data, other.data, overall_length)
-        set *(data + overall_length): 0
+        *(data + overall_length) := 0
     }
 
     init(character: u8)
     {
         let own_page Page.get(this)
-        set data: own_page.allocate(3, 1) as pointer[u8]
-        set *data: 1
-        set *(data + 1): character
-        set *(data + 2): 0
+        data := own_page.allocate(3, 1) as pointer[u8]
+        *data := 1
+        *(data + 1) := character
+        *(data + 2) := 0
     }
 
     function get_buffer(this: String) returns pointer[u8]
@@ -200,12 +200,12 @@ define String (data: pointer[u8](null))
                 scaly_panic_string("String.get_buffer", data as size_t)
 
             var byte: u8 *(data + index)
-            set length: length | ((byte & 0x7F) as size_t) << bit_count
+            length := length | ((byte & 0x7F) as size_t) << bit_count
             if (byte & 0x80) = 0
                 break
 
-            set bit_count: bit_count + 7
-            set index: index + 1
+            bit_count := bit_count + 7
+            index := index + 1
         }
 
         data + index + 1
@@ -241,12 +241,12 @@ define String (data: pointer[u8](null))
                 scaly_panic_string("String.get_length", data as size_t)
 
             var byte: u8 *(data + index)
-            set result: result | (((byte & 0x7F) as size_t)) << bit_count
+            result := result | (((byte & 0x7F) as size_t)) << bit_count
             if (byte & 0x80) = 0
                 break
 
-            set bit_count: bit_count + 7
-            set index: index + 1
+            bit_count := bit_count + 7
+            index := index + 1
         }
         result
     }
@@ -282,12 +282,12 @@ define String (data: pointer[u8](null))
                     scaly_panic_string("String.equals(String)", data as size_t)
 
                 var byte: u8 *(data + index)
-                set length: length | (((byte & 0x7F) as size_t)) << bit_count
+                length := length | (((byte & 0x7F) as size_t)) << bit_count
                 if (byte & 0x80) = 0
                     break
 
-                set bit_count: bit_count + 7
-                set index: index + 1
+                bit_count := bit_count + 7
+                index := index + 1
             }
         }
 
@@ -313,12 +313,12 @@ define String (data: pointer[u8](null))
                     scaly_panic_string("String.equals(cstring)", data as size_t)
 
                 var byte: u8 *(data + index)
-                set length: length | (((byte & 0x7F) as size_t)) << bit_count
+                length := length | (((byte & 0x7F) as size_t)) << bit_count
                 if (byte & 0x80) = 0
                     break
 
-                set bit_count: bit_count + 7
-                set index: index + 1
+                bit_count := bit_count + 7
+                index := index + 1
             }
         }
 
@@ -342,12 +342,12 @@ define String (data: pointer[u8](null))
                 scaly_panic_string("String.equals(Vector)", data as size_t)
 
             var byte: u8 *(data + index)
-            set length: length | (((byte & 0x7F) as size_t)) << bit_count
+            length := length | (((byte & 0x7F) as size_t)) << bit_count
             if (byte & 0x80) = 0
                 break
 
-            set bit_count: bit_count + 7
-            set index: index + 1
+            bit_count := bit_count + 7
+            index := index + 1
         }
 
         if length <> other.length
@@ -373,12 +373,12 @@ define String (data: pointer[u8](null))
                 scaly_panic_string("String.hash", data as size_t)
 
             var byte: u8 *(data + index)
-            set length: length | (((byte & 0x7F) as size_t)) << bit_count
+            length := length | (((byte & 0x7F) as size_t)) << bit_count
             if (byte & 0x80) = 0
                 break
 
-            set bit_count: bit_count + 7
-            set index: index + 1
+            bit_count := bit_count + 7
+            index := index + 1
         }
 
         hashing.hash(Slice[char](length, data + index + 1))
@@ -403,12 +403,12 @@ define String (data: pointer[u8](null))
                 scaly_panic_string("String.as_slice", data as size_t)
 
             var byte: u8 *(data + index)
-            set string_length: string_length | (((byte & 0x7F) as size_t)) << bit_count
+            string_length := string_length | (((byte & 0x7F) as size_t)) << bit_count
             if (byte & 0x80) = 0
                 break
 
-            set bit_count: bit_count + 7
-            set index: index + 1
+            bit_count := bit_count + 7
+            index := index + 1
         }
 
         Slice[u8](string_length, data + index + 1)
@@ -428,7 +428,7 @@ define String (data: pointer[u8](null))
             if *(buf + i) = c
                 return true
 
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -452,7 +452,7 @@ define String (data: pointer[u8](null))
             if memcmp(buf + i, other_buf, other_len) = 0
                 return true
 
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -533,7 +533,7 @@ define String (data: pointer[u8](null))
             if *(buf + i) = c
                 return i as int
 
-            set i: i + 1
+            i := i + 1
         }
         -1
     }
@@ -555,7 +555,7 @@ define String (data: pointer[u8](null))
             if *(buf + i) = c
                 return i as int
 
-            set i: i + 1
+            i := i + 1
         }
         -1
     }
@@ -580,7 +580,7 @@ define String (data: pointer[u8](null))
             if i = 0
                 break
 
-            set i: i - 1
+            i := i - 1
         }
         -1
     }

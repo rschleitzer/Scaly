@@ -8,19 +8,19 @@ define N (pos: i32  end: i32  tag: i32  guard: i32)
 let anchor String("probe")
 let host Page.get(anchor.get_buffer() as pointer[void])
 let n &N^host(1, 2, 3, 4)
-set n.tag: 3
-set n.end: 0 - 1
+n.tag := 3
+n.end := 0 - 1
 var fails 0
 if n.end <> (0 - 1)
-    set fails: fails + 1
+    fails := fails + 1
 if n.tag <> 3
-    set fails: fails + 1
-set n.guard: 5
-set n.tag: 2 * 21
+    fails := fails + 1
+n.guard := 5
+n.tag := 2 * 21
 if n.tag <> 42
-    set fails: fails + 1
+    fails := fails + 1
 if n.guard <> 5
-    set fails: fails + 1
+    fails := fails + 1
 if fails = 0
     print("PASS\n")
 else

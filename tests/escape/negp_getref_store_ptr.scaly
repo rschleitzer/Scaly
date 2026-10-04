@@ -15,7 +15,7 @@ procedure fill(c: Holder)
 {
     var h Vector[int](1)
     h.put(0, 5)
-    set c.b: h.get_ptr 0
+    c.b := h.get_ptr 0
 }
 
 function main() returns int

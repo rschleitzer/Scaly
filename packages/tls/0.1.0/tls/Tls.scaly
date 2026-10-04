@@ -109,26 +109,26 @@ define TlsOut
         if length + bytes.length > data.length
             this.grow(bytes.length)
         memcpy(data.slice_from(length).data as pointer[void], bytes.data as pointer[void], bytes.length)
-        set length: length + bytes.length
+        length := length + bytes.length
     }
 
     procedure grow(mutable this, n: size_t)
     {
         var cap data.length * 2
         if cap < length + n
-            set cap: length + n
+            cap := length + n
         let old data
         let old_owned owned
         if cap <= 0x400
         {
-            set data: allocate_slice[u8]^page(page, cap)
-            set owned: false
+            data := allocate_slice[u8]^page(page, cap)
+            owned := false
         }
         else
         {
             let fresh page.allocate_exclusive_buffer(cap, 1) as pointer[u8]
-            set data: Slice[u8](cap, fresh)
-            set owned: true
+            data := Slice[u8](cap, fresh)
+            owned := true
         }
         if length > 0
             memcpy(data.data as pointer[void], old.data as pointer[void], length)
@@ -142,7 +142,7 @@ procedure tls_out_write(mutable bio: BioRef, data: pointer[u8], dlen: size_t, mu
 {
     var out BIO_get_data(bio) as ref[TlsOut]
     out.append(Slice[u8](dlen, data))
-    set *written: dlen
+    *written := dlen
     1
 }
 
@@ -183,11 +183,11 @@ procedure alpn_pick(offered: pointer[u8], offered_length: u32, want: Slice[u8], 
             return false
         if list.subslice(at + 1, at + 1 + n).equals(want)
         {
-            set *selected: offered + (at + 1)
-            set *selected_length: n as u8
+            *selected := offered + (at + 1)
+            *selected_length := n as u8
             return true
         }
-        set at: at + 1 + n
+        at := at + 1 + n
     }
     false
 }
@@ -250,7 +250,7 @@ define TlsContext(var ctx: SslCtxRef)
     {
         if ctx <> null
             SSL_CTX_free(ctx)
-        set ctx: null
+        ctx := null
     }
 }
 
@@ -274,14 +274,14 @@ define TlsStream(var ssl: SslRef, var rbio: BioRef, var wbio: BioRef, var tcp: T
             s.close()
             return s
         }
-        set s.ssl: SSL_new(context.ctx)
-        set s.rbio: BIO_new(BIO_s_mem())
-        set s.method: BIO_meth_new(BIO_TYPE_SOURCE_SINK, "scaly-tls-out")
+        s.ssl := SSL_new(context.ctx)
+        s.rbio := BIO_new(BIO_s_mem())
+        s.method := BIO_meth_new(BIO_TYPE_SOURCE_SINK, "scaly-tls-out")
         if s.method <> null
         {
             BIO_meth_set_write_ex(s.method, &tls_out_write)
             BIO_meth_set_ctrl(s.method, &tls_out_ctrl)
-            set s.wbio: BIO_new(s.method)
+            s.wbio := BIO_new(s.method)
         }
         if s.ssl = null or s.rbio = null or s.wbio = null
         {
@@ -290,7 +290,7 @@ define TlsStream(var ssl: SslRef, var rbio: BioRef, var wbio: BioRef, var tcp: T
         }
         let page Page.allocate_page()
         let out &TlsOut^page(page, allocate_slice[u8]^page(page, 0), 0, false)
-        set s.out: out
+        s.out := out
         BIO_set_data(s.wbio, out as pointer[void])
         BIO_set_init(s.wbio, 1)
         ; the SSL owns both BIOs from here on and frees them with itself
@@ -373,13 +373,13 @@ define TlsStream(var ssl: SslRef, var rbio: BioRef, var wbio: BioRef, var tcp: T
         {
             var n data.length - at
             if n > TLS_WRITE_SLICE
-                set n: TLS_WRITE_SLICE
+                n := TLS_WRITE_SLICE
             var written: size_t 0
             if SSL_write_ex(ssl, data.slice_from(at).data as pointer[void], n, &written) <> 1
                 return false
             if this.flush() = false
                 return false
-            set at: at + n
+            at := at + n
         }
         true
     }
@@ -412,11 +412,11 @@ define TlsStream(var ssl: SslRef, var rbio: BioRef, var wbio: BioRef, var tcp: T
             page.deallocate_extensions()
             Page.release_page(page)
         }
-        set ssl: null
-        set rbio: null
-        set wbio: null
-        set method: null
-        set out: null
+        ssl := null
+        rbio := null
+        wbio := null
+        method := null
+        out := null
         tcp.close()
     }
 
@@ -431,7 +431,7 @@ define TlsStream(var ssl: SslRef, var rbio: BioRef, var wbio: BioRef, var tcp: T
         if o.length = 0
             return true
         let ok tcp.write(o.data.slice_to(o.length))
-        set o.length: 0
+        o.length := 0
         ok
     }
 

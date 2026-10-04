@@ -15,7 +15,7 @@ define Holder
 )
 {
     procedure stash(this, p: pointer[Box])
-        set this.b: p
+        this.b := p
 }
 
 ; Pure forwarder: no store of its own, just relays p on to stash.

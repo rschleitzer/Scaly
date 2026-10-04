@@ -3,6 +3,6 @@
 ; untouched. That is now a hard error.
 ; xfail: cannot assign to captured
 var count 0
-let bump \x: set count: count + x
+let bump \x: count := count + x
 let r bump(5)
 print("must not compile")

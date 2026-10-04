@@ -16,7 +16,7 @@ define Boxy
 )
 {
     init()
-        set k: 7
+        k := 7
 
     function twice(this: Boxy) returns int
         k * 2
@@ -24,8 +24,8 @@ define Boxy
 
 procedure fill(mutable q: pointer[char])
 {
-    set *(q + 0): "A" as char
-    set *(q + 1): "B" as char
+    *(q + 0) := "A" as char
+    *(q + 1) := "B" as char
 }
 
 procedure main() returns int

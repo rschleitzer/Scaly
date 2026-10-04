@@ -5,14 +5,14 @@ define Point(x: int, y: int)
 {
     init()
     {
-        set x: 10
-        set y: 20
+        x := 10
+        y := 20
     }
 
     init(a: int, b: int)
     {
-        set x: a
-        set y: b
+        x := a
+        y := b
     }
 }
 

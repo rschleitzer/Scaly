@@ -42,7 +42,7 @@ function count_down(n: int, hits: int) returns int
     {
         if n = 0
             return hits
-        set i: i + 1
+        i := i + 1
     }
     if n < 0
         return hits
@@ -208,10 +208,10 @@ if tri(100) <> 5050
     exit 9
 
 var buf u64[4]
-set buf[0]: 11 as u64
-set buf[1]: 22 as u64
-set buf[2]: 33 as u64
-set buf[3]: 0 as u64
+buf[0] := 11 as u64
+buf[1] := 22 as u64
+buf[2] := 33 as u64
+buf[3] := 0 as u64
 let steps walk(&buf[0], 0)
 if steps <> 3
     exit 10

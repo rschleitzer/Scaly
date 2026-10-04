@@ -19,31 +19,31 @@ tape.set_value(x, 7, 1.0)
 
 ; peaked row: argmax for any u at temp 1
 if tape.sample(x, 0, 1.0, 0.01) <> 2
-    set ok: false
+    ok := false
 if tape.sample(x, 0, 1.0, 0.5) <> 2
-    set ok: false
+    ok := false
 if tape.sample(x, 0, 1.0, 0.99) <> 2
-    set ok: false
+    ok := false
 ; low temperature sharpens further — still the argmax
 if tape.sample(x, 0, 0.1, 0.5) <> 2
-    set ok: false
+    ok := false
 ; uniform row: CDF quarters map to successive tokens
 if tape.sample(x, 1, 1.0, 0.1) <> 0
-    set ok: false
+    ok := false
 if tape.sample(x, 1, 1.0, 0.3) <> 1
-    set ok: false
+    ok := false
 if tape.sample(x, 1, 1.0, 0.6) <> 2
-    set ok: false
+    ok := false
 if tape.sample(x, 1, 1.0, 0.9) <> 3
-    set ok: false
+    ok := false
 ; high temperature flattens the peaked row to near-uniform
 if tape.sample(x, 0, 1000.0, 0.1) <> 0
-    set ok: false
+    ok := false
 if tape.sample(x, 0, 1000.0, 0.95) <> 3
-    set ok: false
+    ok := false
 ; u close to 1 lands on the last token
 if tape.sample(x, 1, 1.0, 0.9999) <> 3
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

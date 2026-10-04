@@ -17,8 +17,8 @@ procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[flo
         var j 0
         while j < n
         {
-            set sum: sum + xp[r * n + j]
-            set j: j + 1
+            sum := sum + xp[r * n + j]
+            j := j + 1
         }
         let mean sum / (n as float)
         var vsum: float 0.0
@@ -26,8 +26,8 @@ procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[flo
         while j2 < n
         {
             let d xp[r * n + j2] - mean
-            set vsum: vsum + d * d
-            set j2: j2 + 1
+            vsum := vsum + d * d
+            j2 := j2 + 1
         }
         let denom sqrtf(vsum / (n as float) + eps)
         let inv 1.0 / denom
@@ -36,7 +36,7 @@ procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[flo
         {
             let z (xp[r * n + j3] - mean) * inv
             out.put((r * n + j3) as size_t, z * gp[j3] + bp[j3])
-            set j3: j3 + 1
+            j3 := j3 + 1
         }
     }
 }
@@ -62,34 +62,34 @@ while i < 4
 {
     gamma.put(i as size_t, 1.0)
     beta.put(i as size_t, 0.0)
-    set i: i + 1
+    i := i + 1
 }
 var out Vector[float](8)
 layernorm_f32(x, gamma, beta, out, 2, 4, 0.00001)
 
 let p out.data
 if (p[0] > 0.0 - 1.3427) = false
-    set ok: false
+    ok := false
 if (p[0] < 0.0 - 1.3406) = false
-    set ok: false
+    ok := false
 if (p[1] > 0.0 - 0.4478) = false
-    set ok: false
+    ok := false
 if (p[1] < 0.0 - 0.4466) = false
-    set ok: false
+    ok := false
 if (p[2] > 0.4466) = false
-    set ok: false
+    ok := false
 if (p[2] < 0.4478) = false
-    set ok: false
+    ok := false
 if (p[3] > 1.3406) = false
-    set ok: false
+    ok := false
 if (p[3] < 1.3427) = false
-    set ok: false
+    ok := false
 
 ; Constant row: |value| must be tiny.
 if (p[4] > 0.001)
-    set ok: false
+    ok := false
 if (p[4] < 0.0 - 0.001)
-    set ok: false
+    ok := false
 
 ; gamma=2, beta=1 rescales: p3 * 2 + 1.
 var gamma2 Vector[float](4)
@@ -99,7 +99,7 @@ while i2 < 4
 {
     gamma2.put(i2 as size_t, 2.0)
     beta2.put(i2 as size_t, 1.0)
-    set i2: i2 + 1
+    i2 := i2 + 1
 }
 var out2 Vector[float](8)
 layernorm_f32(x, gamma2, beta2, out2, 2, 4, 0.00001)
@@ -108,9 +108,9 @@ let want p[3] * 2.0 + 1.0
 let got p2[3]
 let diff got - want
 if (diff > 0.001)
-    set ok: false
+    ok := false
 if (diff < 0.0 - 0.001)
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

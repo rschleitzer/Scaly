@@ -10,7 +10,7 @@
 ; xfail: null assigned to a non-optional reference
 
 procedure zero(out: ref[int])
-    set out: null
+    out := null
 
 var n 7
 zero(&n)

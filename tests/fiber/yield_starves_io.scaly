@@ -25,7 +25,7 @@ procedure reader() mutable got
     if c.read(view) <> 1
         exit 22
     Console.print "read "
-    set got: true
+    got := true
     c.close()
 }
 
@@ -48,8 +48,8 @@ procedure spinner()
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable listener_fd, port
 {
     let l TcpListener.listen(0)
-    set listener_fd: l.fd as int
-    set port: l.port()
+    listener_fd := l.fd as int
+    port := l.port()
     let page Page.allocate_page()
     Scheduler.create(page)
     Scheduler.spawn(&reader)

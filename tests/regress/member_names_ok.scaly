@@ -10,7 +10,7 @@
 define Holder (v: int)
 {
     init()
-        set v: 3
+        v := 3
 
     ; (1) a static of the field's name
     function v(x: int) returns int

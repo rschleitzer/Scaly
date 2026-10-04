@@ -17,32 +17,32 @@ var ok true
 
 var r R(1, 2, false)
 let q r
-set r: f(7)
+r := f(7)
 if q.a <> 1 or r.a <> 7
-    set ok: false
+    ok := false
 
 var s R(0, 0, false)
 var sum 0
 var i 0
 while i < 5
 {
-    set s: f(i)
-    set sum: sum + s.a
-    set i: i + 1
+    s := f(i)
+    sum := sum + s.a
+    i := i + 1
 }
 if sum <> 10 or s.a <> 4
-    set ok: false
+    ok := false
 
 var t R(0, 0, false)
 var j 0
 while j < 3
 {
-    set t: f(j)
+    t := f(j)
     let old t
-    set t: f(j + 100)
+    t := f(j + 100)
     if old.a <> j or t.a <> j + 100
-        set ok: false
-    set j: j + 1
+        ok := false
+    j := j + 1
 }
 
 if ok

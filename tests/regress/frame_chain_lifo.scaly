@@ -38,7 +38,7 @@ function own_then_caller(n: size_t) returns String
     while i < n
     {
         sb.append "ab"
-        set i: i + 1
+        i := i + 1
     }
     sb.to_string()
 }
@@ -78,8 +78,8 @@ function check() returns int
     while i < (200 as size_t)
     {
         let t drive_outer(i)
-        set total: total + t.get_length()
-        set i: i + 1
+        total := total + t.get_length()
+        i := i + 1
     }
     if total <> (40800 as size_t)
         return 2

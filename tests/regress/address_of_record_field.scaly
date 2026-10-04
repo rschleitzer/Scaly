@@ -16,7 +16,7 @@ define Outer(tag: i32, inner: Pair, name: String)
 
 procedure bump(mutable r: ref[int])
 {
-    set r: r + 1
+    r := r + 1
 }
 
 function read(r: ref[int]) returns int

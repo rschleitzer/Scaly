@@ -35,18 +35,18 @@ let raw mp.allocate((8 as size_t) * sizeof size_t, alignof size_t) as pointer[si
 var i: size_t 0
 while i < (8 as size_t)
 {
-    set *(raw + i): 0 as size_t
-    set i: i + 1
+    *(raw + i) := 0 as size_t
+    i := i + 1
 }
 
 let decoy_slot: size_t 6
-set *(raw + decoy_slot): 0xABC as size_t
+*(raw + decoy_slot) := 0xABC as size_t
 ; Page's fourth word (exclusive_pages, offset 24) points at the decoy, so
 ; a store THROUGH the field is observable instead of a null deref.
-set *(raw + (3 as size_t)): (raw + decoy_slot) as size_t
+*(raw + (3 as size_t)) := (raw + decoy_slot) as size_t
 
 let pg raw as pointer[Page]
-set pg.exclusive_pages.head: null
+pg.exclusive_pages.head := null
 
 ; Correct: the null landed IN the field at offset 24 ...
 if *(raw + (3 as size_t)) <> (0 as size_t)

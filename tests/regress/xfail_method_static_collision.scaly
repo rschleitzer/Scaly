@@ -9,7 +9,7 @@
 define Box3 (v: int)
 {
     init()
-        set v: 5
+        v := 5
 
     function pick(this, other: ref[Box3]) returns int
         v

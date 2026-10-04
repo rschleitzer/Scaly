@@ -19,72 +19,72 @@ var b: float 2.5
 ; Arithmetic on float vars.
 let s a + b
 if (s > 3.9) = false
-    set ok: false
+    ok := false
 if (s < 4.1) = false
-    set ok: false
+    ok := false
 
 ; Comparison of a float var against a literal.
 if (a < 1.4)
-    set ok: false
+    ok := false
 if (a > 1.6)
-    set ok: false
+    ok := false
 
 ; set into a float slot.
-set a: 4.5
+a := 4.5
 if (a > 4.4) = false
-    set ok: false
+    ok := false
 if (a < 4.6) = false
-    set ok: false
+    ok := false
 
 ; Float literal as call argument, float return value.
 let h fhalf(3.0)
 if (h > 1.4) = false
-    set ok: false
+    ok := false
 if (h < 1.6) = false
-    set ok: false
+    ok := false
 
 let t fsum(1.25, 2.25)
 if (t > 3.4) = false
-    set ok: false
+    ok := false
 if (t < 3.6) = false
-    set ok: false
+    ok := false
 
 ; Float BINARY EXPRESSION as call argument (5.1 follow-up): float
 ; arithmetic used to resolve to a fresh type var, so any expression-
 ; valued float argument failed the call match ("function not found").
 let u fhalf(a - 3.0)
 if (u > 0.7) = false
-    set ok: false
+    ok := false
 if (u < 0.8) = false
-    set ok: false
+    ok := false
 
 ; f64 expression into a float param: width-adapted via PlannedAs.
 let w64 1.5 + 1.5
 let v fhalf(w64)
 if (v > 1.4) = false
-    set ok: false
+    ok := false
 if (v < 1.6) = false
-    set ok: false
+    ok := false
 
 ; Float literal in return position.
 let c fconst()
 if (c > 1.2) = false
-    set ok: false
+    ok := false
 if (c < 1.3) = false
-    set ok: false
+    ok := false
 
 ; Mixed float/double comparison stays valid IR (emitter fpext net).
 let d 3.75
 if (d > a)
-    set ok: false
+    ok := false
 
 ; double still works alongside.
 var w: double 1.5
-set w: w + 2.5
+w := w + 2.5
 if (w > 3.9) = false
-    set ok: false
+    ok := false
 if (w < 4.1) = false
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

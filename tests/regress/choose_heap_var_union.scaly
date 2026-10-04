@@ -17,7 +17,7 @@ define Maker (var n: int)
 {
     procedure make(mutable this, k: int) returns Impl
     {
-        set this.n: this.n + 1
+        this.n := this.n + 1
         Impl.Act(Payload(k, String("abc")))
     }
     procedure alt(mutable this, k: int) returns ref[Impl]?
@@ -27,7 +27,7 @@ define Maker (var n: int)
         var u this.make(k)
         let r this.alt(k)
         if r <> null
-            set u: *r
+            u := *r
         choose u
             when p: Act
                 p.a + (p.name.get_length() as int)

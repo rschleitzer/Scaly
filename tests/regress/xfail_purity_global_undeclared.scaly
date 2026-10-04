@@ -5,7 +5,7 @@
 mutable total: int 0
 
 procedure add(n: int) mutable total
-    set total: total + n
+    total := total + n
 
 procedure outer(n: int)
     add(n)

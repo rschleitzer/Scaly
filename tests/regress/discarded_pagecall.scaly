@@ -21,7 +21,7 @@ define Reg
 {
     init()
     {
-        set names: Array[String]^this()
+        names := Array[String]^this()
     }
 
     ; Page-requiring (returns a guts-owning String). Side effect: a
@@ -64,8 +64,8 @@ function churn(n: size_t) returns size_t
         junk.put(2, "zzzzz")
         let jp junk.get 0
         if jp <> null
-            set total: total + (*jp).get_length()
-        set i: i + 1
+            total := total + (*jp).get_length()
+        i := i + 1
     }
     total
 }

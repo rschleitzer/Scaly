@@ -28,7 +28,7 @@ procedure one() mutable finished, pg_pool
     }
     c.start("one")
     if c.run() and c.next_row() and c.column_int(0) = 1
-        set finished: finished + 1
+        finished := finished + 1
     release(c)
 }
 
@@ -40,7 +40,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     while i < 200
     {
         Scheduler.spawn_arg(&one, null)
-        set i: i + 1
+        i := i + 1
     }
     Scheduler.run()
     print "`finished`"

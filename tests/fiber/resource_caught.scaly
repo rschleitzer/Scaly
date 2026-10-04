@@ -13,7 +13,7 @@ mutable ran: bool false
 procedure worker(first_ctx: pointer[void]) mutable ran
 {
     Fiber.started first_ctx
-    set ran: true
+    ran := true
     Fiber.finish()
 }
 
@@ -26,7 +26,7 @@ try let f Fiber.create_sized(page, &worker, huge)
     when e: ResourceExhausted
     {
         Console.print "caught "
-        set asked: e.requested
+        asked := e.requested
     }
 if asked = huge
     Console.print "size-reported "

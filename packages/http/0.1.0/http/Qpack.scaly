@@ -40,10 +40,10 @@ define QpackTable
     procedure create(host: ref[Page], offered: size_t) returns ref[QpackTable]
     {
         var d HpackDecoder.create(host)
-        set d.limit: 0
+        d.limit := 0
         var most offered
         if most > QPACK_TABLE_CAPACITY
-            set most: QPACK_TABLE_CAPACITY
+            most := QPACK_TABLE_CAPACITY
         &QpackTable^host(d, 0, 0, ByteBuf.create(host, 256), most)
     }
 
@@ -70,7 +70,7 @@ define QpackTable
                 return 0 - 1
             if r = 0
                 break
-            set done: r as size_t
+            done := r as size_t
         }
         done as i64
     }
@@ -89,7 +89,7 @@ define QpackTable
                 return 0
             if capacity < 0 or (capacity as size_t) > offered
                 return 0 - 1
-            set table.limit: capacity as size_t
+            table.limit := capacity as size_t
             table.evict_to(0)
             return pos as i64
         }
@@ -102,9 +102,9 @@ define QpackTable
             let insert (b & 128) <> 0
             var index: i64 0
             if insert
-                set index: qpack_integer(input, &pos, 6)
+                index := qpack_integer(input, &pos, 6)
             else
-                set index: qpack_integer(input, &pos, 5)
+                index := qpack_integer(input, &pos, 5)
             if index = 0 - 2
                 return 0
             if index < 0
@@ -115,7 +115,7 @@ define QpackTable
             {
                 if index > 98
                     return 0 - 1
-                set name: qpack_static_name(index as u64)
+                name := qpack_static_name(index as u64)
             }
             else
             {
@@ -124,7 +124,7 @@ define QpackTable
                     return 0 - 1
             }
             scratch.append(name)
-            set name_length: name.length
+            name_length := name.length
             if insert
             {
                 let r qpack_entry_string(input, &pos, 7, &scratch)
@@ -140,7 +140,7 @@ define QpackTable
             let r qpack_entry_string(input, &pos, 5, &scratch)
             if r <= 0
                 return r
-            set name_length: scratch.length
+            name_length := scratch.length
             let r2 qpack_entry_string(input, &pos, 7, &scratch)
             if r2 <= 0
                 return r2
@@ -149,7 +149,7 @@ define QpackTable
         if all.length + 32 > table.limit
             return 0 - 1
         table.insert(all.slice_to(name_length), all.slice_from(name_length))
-        set inserts: inserts + 1
+        inserts := inserts + 1
         pos as i64
     }
 
@@ -158,7 +158,7 @@ define QpackTable
     procedure increment(mutable this) returns u64
     {
         let n inserts - known
-        set known: inserts
+        known := inserts
         n
     }
 
@@ -166,7 +166,7 @@ define QpackTable
     procedure acknowledged(mutable this, ric: u64)
     {
         if ric > known
-            set known: ric
+            known := ric
     }
 }
 
@@ -183,7 +183,7 @@ procedure qpack_integer(input: Slice[u8], mutable at: ref[size_t], prefix_bits: 
             return 0 - 2
         return 0 - 1
     }
-    set at: pos
+    at := pos
     v
 }
 
@@ -212,7 +212,7 @@ procedure qpack_entry_string(input: Slice[u8], mutable at: ref[size_t], prefix_b
         var w out.length
         if huffman_decode_into(raw, out.data, &w, true) = false
             return 0 - 1
-        set out.length: w
+        out.length := w
     }
     else
     {
@@ -220,7 +220,7 @@ procedure qpack_entry_string(input: Slice[u8], mutable at: ref[size_t], prefix_b
             return 0 - 1
         out.append(raw)
     }
-    set at: pos + (n as size_t)
+    at := pos + (n as size_t)
     1
 }
 
@@ -254,18 +254,18 @@ procedure qpack_decode_table(block: Slice[u8], table: ref[QpackTable]?, mutable 
         if (encoded as u64) > full
             return false
         let max_value table.inserts + max_entries
-        set ric: (max_value / full) * full + (encoded as u64) - 1
+        ric := (max_value / full) * full + (encoded as u64) - 1
         if ric > max_value
         {
             if ric <= full
                 return false
-            set ric: ric - full
+            ric := ric - full
         }
         ; no blocked streams: every entry it names arrived before it
         if ric = 0 or ric > table.inserts
             return false
     }
-    set required: ric
+    required := ric
     if at >= block.length
         return false
     let negative (block[at] & 128) <> 0
@@ -277,7 +277,7 @@ procedure qpack_decode_table(block: Slice[u8], table: ref[QpackTable]?, mutable 
     {
         if (delta as u64) + 1 > ric
             return false
-        set base: ric - (delta as u64) - 1
+        base := ric - (delta as u64) - 1
     }
     while at < block.length
     {
@@ -295,8 +295,8 @@ procedure qpack_decode_table(block: Slice[u8], table: ref[QpackTable]?, mutable 
             {
                 if index > 98
                     return false
-                set name: qpack_static_name(index as u64)
-                set value: qpack_static_value(index as u64)
+                name := qpack_static_name(index as u64)
+                value := qpack_static_value(index as u64)
             }
             else if (index as u64) >= base or qpack_dynamic(table, ric, base - 1 - (index as u64), &name, &value) = false
                 return false
@@ -311,7 +311,7 @@ procedure qpack_decode_table(block: Slice[u8], table: ref[QpackTable]?, mutable 
             {
                 if index > 98
                     return false
-                set name: qpack_static_name(index as u64)
+                name := qpack_static_name(index as u64)
             }
             else if (index as u64) >= base or qpack_dynamic(table, ric, base - 1 - (index as u64), &name, &value) = false
                 return false
@@ -368,8 +368,8 @@ procedure qpack_string(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u
     if n < 0 or pos + (n as size_t) > block.length
         return false
     let raw block.subslice(pos, pos + (n as size_t))
-    set pos: pos + (n as size_t)
-    set at: pos
+    pos := pos + (n as size_t)
+    at := pos
     list.literal(raw, huffman, s)
 }
 
@@ -488,9 +488,9 @@ procedure qpack_header_field(mutable out: ref[ByteBuf], name: Slice[u8], value: 
     {
         var c name[i]
         if c >= 65 and c <= 90
-            set c: c + 32
+            c := c + 32
         lower.put(i, c)
-        set i: i + 1
+        i := i + 1
     }
     if connection_specific(lower)
         return

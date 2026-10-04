@@ -53,8 +53,8 @@ define Modeler
         while scan < len
         {
             if buf[scan] = 92
-                set has_escape: true
-            set scan: scan + 1
+                has_escape := true
+            scan := scan + 1
         }
         if has_escape = false
             return raw
@@ -67,7 +67,7 @@ define Modeler
             if b <> 92
             {
                 sb.append(b as char)
-                set i: i + 1
+                i := i + 1
             }
             else
             {
@@ -101,16 +101,16 @@ define Modeler
                         let h buf[i + 2 + k]
                         var d: size_t 0
                         if h <= 57
-                            set d: (h - 48) as size_t
+                            d := (h - 48) as size_t
                         if h >= 97
-                            set d: ((h - 97) as size_t) + 10
+                            d := ((h - 97) as size_t) + 10
                         if h >= 65
                         {
                             if h <= 70
-                                set d: ((h - 65) as size_t) + 10
+                                d := ((h - 65) as size_t) + 10
                         }
-                        set cp: cp * 16 + d
-                        set k: k + 1
+                        cp := cp * 16 + d
+                        k := k + 1
                     }
                     if cp < 128
                         sb.append(cp as char)
@@ -128,9 +128,9 @@ define Modeler
                             sb.append((128 + (cp - (cp / 64) * 64)) as char)
                         }
                     }
-                    set i: i + 4
+                    i := i + 4
                 }
-                set i: i + 2
+                i := i + 2
             }
         }
         sb.to_string()
@@ -155,8 +155,8 @@ define Modeler
                 while i < len
                 {
                     let byte buf[i]
-                    set value: value * 10 + ((byte - 48) as size_t)
-                    set i: i + 1
+                    value := value * 10 + ((byte - 48) as size_t)
+                    i := i + 1
                 }
                 Constant.Integer(IntegerConstant(loc, value))
             }
@@ -184,13 +184,13 @@ define Modeler
                     let byte buf[i]
                     var digit: size_t 0
                     if (byte >= 48) && (byte <= 57)
-                        set digit: (byte - 48) as size_t
+                        digit := (byte - 48) as size_t
                     if (byte >= 65) && (byte <= 70)
-                        set digit: (byte - 55) as size_t
+                        digit := (byte - 55) as size_t
                     if (byte >= 97) && (byte <= 102)
-                        set digit: (byte - 87) as size_t
-                    set value: value * 16 + digit
-                    set i: i + 1
+                        digit := (byte - 87) as size_t
+                    value := value * 16 + digit
+                    i := i + 1
                 }
                 Constant.Hex(HexConstant(loc, value))
             }
@@ -228,7 +228,7 @@ define Modeler
         ; Count extensions to determine path size
         var ext_count: size_t 0
         if syntax.name.extensions <> null
-            set ext_count: (*syntax.name.extensions).length
+            ext_count := (*syntax.name.extensions).length
 
         ; Create path with correct size
         var path Vector[String](1 + ext_count)
@@ -247,7 +247,7 @@ define Modeler
                     let ext (*ext_ptr)
                     path.put(1 + i, ext.name)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -271,11 +271,11 @@ define Modeler
                             gen_types.put(gi, *inner_type)
 
                     }
-                    set gi: gi + 1
+                    gi := gi + 1
                 }
                 var gens_holder Vector[Vector[Type]](1)
                 gens_holder.put(0, gen_types)
-                set generics: gens_holder.get(0)
+                generics := gens_holder.get(0)
             }
         }
 
@@ -321,7 +321,7 @@ define Modeler
     {
         var count: size_t 0
         if syntax.components <> null
-            set count: (*syntax.components).length
+            count := (*syntax.components).length
 
         var components Vector[Component](count)
         if syntax.components <> null
@@ -337,7 +337,7 @@ define Modeler
                     let component handle_component(comp_syntax)
                     components.put(i, component)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         Tuple(Span(syntax.start, syntax.end), components)
@@ -351,7 +351,7 @@ define Modeler
         if syntax.value <> null
         {
             let val_syntax (*syntax.value)
-            set operands: handle_operands(val_syntax.value)
+            operands := handle_operands(val_syntax.value)
 
             ; Extract name from operands if present
             if syntax.operands <> null
@@ -373,7 +373,7 @@ define Modeler
                         ; `Rec(gamma: 3, alpha: 1, beta: 2)` answered `3 1 2`.
                         choose name_op.expression
                             when name_expr: NameSyntax
-                                set name: String(name_expr.name)
+                                name := String(name_expr.name)
                             else {}
                     }
                 }
@@ -420,7 +420,7 @@ define Modeler
     {
         var count: size_t 0
         if syntax.elements <> null
-            set count: (*syntax.elements).length
+            count := (*syntax.elements).length
 
         var operations Vector[Vector[Operand]](count)
         if syntax.elements <> null
@@ -460,7 +460,7 @@ define Modeler
                     if element.optional <> null
                         operations.put(i, Modeler.wrap_row_in_option(ops, Span(syntax.start, syntax.end)))
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         let life handle_lifetime syntax.lifetime
@@ -496,9 +496,9 @@ define Modeler
             if b = 96
                 return true
             if b = 92
-                set i: i + 2
+                i := i + 2
             else
-                set i: i + 1
+                i := i + 1
         }
         false
     }
@@ -544,13 +544,13 @@ define Modeler
                 if in_expr
                 {
                     if seg_len = 0
-                        set empty_expr: true
-                    set in_expr: false
+                        empty_expr := true
+                    in_expr := false
                 }
                 else
-                    set in_expr: true
-                set seg_len: 0
-                set i: i + 1
+                    in_expr := true
+                seg_len := 0
+                i := i + 1
             }
             else
             {
@@ -561,21 +561,21 @@ define Modeler
                         let e buf[i + 1]
                         var ok_escape false
                         if e = 34
-                            set ok_escape: true
+                            ok_escape := true
                         if e = 92
-                            set ok_escape: true
+                            ok_escape := true
                         if e = 39
-                            set ok_escape: true
+                            ok_escape := true
                         if e = 96
-                            set ok_escape: true
+                            ok_escape := true
                         if ok_escape = false
-                            set bad_escape: true
+                            bad_escape := true
                     }
-                    set i: i + 2
+                    i := i + 2
                 }
                 else
-                    set i: i + 1
-                set seg_len: seg_len + 1
+                    i := i + 1
+                seg_len := seg_len + 1
             }
         }
         if in_expr
@@ -601,31 +601,31 @@ define Modeler
         src.append("let 'isb$' StringBuilder()\n")
 
         var seg_start: size_t 0
-        set in_expr: false
-        set i: 0
+        in_expr := false
+        i := 0
         var done false
         while done = false
         {
             var is_end false
             if i >= len
-                set is_end: true
+                is_end := true
             var is_tick false
             if is_end = false
             {
                 let b buf[i]
                 if b = 96
-                    set is_tick: true
+                    is_tick := true
                 else
                 {
                     if b = 92
-                        set i: i + 2
+                        i := i + 2
                     else
-                        set i: i + 1
+                        i := i + 1
                 }
             }
             var boundary is_end
             if is_tick
-                set boundary: true
+                boundary := true
             if boundary
             {
                 if in_expr
@@ -640,7 +640,7 @@ define Modeler
                             ; Validated above: decode so embedded string
                             ; literals arrive unescaped in the sub-source.
                             src.append((buf[k + 1]) as char)
-                            set k: k + 2
+                            k := k + 2
                         }
                         else
                         {
@@ -655,11 +655,11 @@ define Modeler
                                 else
                                     src.append(eb as char)
                             }
-                            set k: k + 1
+                            k := k + 1
                         }
                     }
                     src.append("))\n")
-                    set in_expr: false
+                    in_expr := false
                 }
                 else
                 {
@@ -670,7 +670,7 @@ define Modeler
                         while k < i
                         {
                             src.append((buf[k]) as char)
-                            set k: k + 1
+                            k := k + 1
                         }
                         ; ONE character (`/`, or one escape like `\n`) goes in
                         ; through the char overload, as a hand-written builder
@@ -678,22 +678,22 @@ define Modeler
                         ; is the slower one (2026-09-25)
                         var one_char false
                         if i - seg_start = 1 and buf[seg_start] <> 92
-                            set one_char: true
+                            one_char := true
                         if i - seg_start = 2 and buf[seg_start] = 92
-                            set one_char: true
+                            one_char := true
                         if one_char
                             src.append("\" as char)\n")
                         else
                             src.append("\")\n")
                     }
-                    set in_expr: true
+                    in_expr := true
                 }
                 if is_end
-                    set done: true
+                    done := true
                 else
                 {
-                    set i: i + 1
-                    set seg_start: i
+                    i := i + 1
+                    seg_start := i
                 }
             }
         }
@@ -749,7 +749,7 @@ define Modeler
                 ; Count extensions to determine path size
                 var ext_count: size_t 0
                 if name_syntax.extensions <> null
-                    set ext_count: (*name_syntax.extensions).length
+                    ext_count := (*name_syntax.extensions).length
 
                 var path Vector[String](1 + ext_count)
                 path.put(0, name_syntax.name)
@@ -766,7 +766,7 @@ define Modeler
                             let ext (*ext_ptr)
                             path.put(1 + i, ext.name)
                         }
-                        set i: i + 1
+                        i := i + 1
                     }
                 }
 
@@ -843,7 +843,7 @@ define Modeler
             Lifetime.Unspecified(Unspecified())
         )
         if target <> null
-            set target_ty: (*target)
+            target_ty := (*target)
 
         scaly.compiler.Model.As(
             Span(syntax.start, syntax.end),
@@ -859,7 +859,7 @@ define Modeler
         if syntax.input <> null
         {
             let ops (*syntax.input)
-            set input: Vector[Item](ops.length)
+            input := Vector[Item](ops.length)
             var i: size_t 0
             while i < ops.length
             {
@@ -870,9 +870,9 @@ define Modeler
                     var param_name: String ""
                     choose op.expression
                         when name_syn: NameSyntax
-                            set param_name: String(name_syn.name)
+                            param_name := String(name_syn.name)
                         else
-                            set param_name: ""
+                            param_name := ""
                     var name_holder Vector[String](1)
                     name_holder.put(0, String(param_name))
                     input.put(i, Item(
@@ -883,7 +883,7 @@ define Modeler
                         Vector[Attribute](0)
                     ))
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -901,7 +901,7 @@ define Modeler
         let body handle_action(syntax.action)
         var repeat_label: String ""
         if syntax.name <> null
-            set repeat_label: (*syntax.name).name
+            repeat_label := (*syntax.name).name
         Repeat(
             Span(syntax.start, syntax.end),
             body,
@@ -924,7 +924,7 @@ define Modeler
         {
             let else_syntax (*syntax.alternative)
             let alt_stmt handle_command(else_syntax.alternative)
-            set alternative: Statement(alt_stmt)
+            alternative := Statement(alt_stmt)
         }
 
         If(
@@ -942,7 +942,7 @@ define Modeler
 
         var branch_count: size_t 0
         if syntax.branches <> null
-            set branch_count: (*syntax.branches).length
+            branch_count := (*syntax.branches).length
 
         var branches Vector[Branch](branch_count)
         if syntax.branches <> null
@@ -958,7 +958,7 @@ define Modeler
                     let branch handle_branch(branch_syntax)
                     branches.put(i, branch)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -967,7 +967,7 @@ define Modeler
         {
             let else_syntax (*syntax.alternative)
             let alt_stmt handle_command(else_syntax.alternative)
-            set alternative: Statement(alt_stmt)
+            alternative := Statement(alt_stmt)
         }
 
         Match(
@@ -982,7 +982,7 @@ define Modeler
     {
         var case_count: size_t 0
         if syntax.cases <> null
-            set case_count: (*syntax.cases).length
+            case_count := (*syntax.cases).length
 
         var cases Vector[Case](case_count)
         if syntax.cases <> null
@@ -998,7 +998,7 @@ define Modeler
                     let case_ handle_case(case_syntax)
                     cases.put(i, case_)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -1018,7 +1018,7 @@ define Modeler
 
         var case_count: size_t 0
         if syntax.cases <> null
-            set case_count: (*syntax.cases).length
+            case_count := (*syntax.cases).length
 
         var cases Vector[When](case_count)
         if syntax.cases <> null
@@ -1034,7 +1034,7 @@ define Modeler
                     let when_ handle_when(when_syntax)
                     cases.put(i, when_)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -1043,7 +1043,7 @@ define Modeler
         {
             let else_syntax (*syntax.alternative)
             let alt_stmt handle_command(else_syntax.alternative)
-            set alternative: Statement(alt_stmt)
+            alternative := Statement(alt_stmt)
         }
 
         Choose(
@@ -1062,7 +1062,7 @@ define Modeler
         ; handleWhen (lines 903-909); same idiom as handle_type# above.
         var ext_count: size_t 0
         if syntax.variant.extensions <> null
-            set ext_count: (*syntax.variant.extensions).length
+            ext_count := (*syntax.variant.extensions).length
 
         var variant_path Vector[String](1 + ext_count)
         variant_path.put(0, syntax.variant.name)
@@ -1079,7 +1079,7 @@ define Modeler
                     let ext (*ext_ptr)
                     variant_path.put(1 + i, ext.name)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -1130,7 +1130,7 @@ define Modeler
         let body handle_action(syntax.action)
         var for_label: String ""
         if syntax.name <> null
-            set for_label: (*syntax.name).name
+            for_label := (*syntax.name).name
 
         For(
             Span(syntax.start, syntax.end),
@@ -1147,7 +1147,7 @@ define Modeler
         let body handle_action(syntax.action)
         var while_label: String ""
         if syntax.name <> null
-            set while_label: (*syntax.name).name
+            while_label := (*syntax.name).name
 
         While(
             Span(syntax.start, syntax.end),
@@ -1192,7 +1192,7 @@ define Modeler
 
         var catch_count: size_t 0
         if syntax.cases <> null
-            set catch_count: (*syntax.cases).length
+            catch_count := (*syntax.cases).length
 
         var catches Vector[When](catch_count)
         if syntax.cases <> null
@@ -1208,7 +1208,7 @@ define Modeler
                     let when_ handle_when(when_syntax)
                     catches.put(i, when_)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -1217,7 +1217,7 @@ define Modeler
         {
             let else_syntax (*syntax.dropper)
             let drop_stmt handle_command(else_syntax.alternative)
-            set dropper: Statement(drop_stmt)
+            dropper := Statement(drop_stmt)
         }
 
         Try(
@@ -1249,7 +1249,7 @@ define Modeler
         ; Count extensions
         var ext_count: size_t 0
         if syntax.name.extensions <> null
-            set ext_count: (*syntax.name.extensions).length
+            ext_count := (*syntax.name.extensions).length
 
         var name Vector[String](1 + ext_count)
         name.put(0, syntax.name.name)
@@ -1266,7 +1266,7 @@ define Modeler
                     let ext (*ext_ptr)
                     name.put(1 + i, ext.name)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         Is(Span(syntax.start, syntax.end), name)
@@ -1313,16 +1313,16 @@ define Modeler
                                 let ext (*ext_ptr)
                                 path_arr.add ext.name
                             }
-                            set ei: ei + 1
+                            ei := ei + 1
                         }
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             var path Vector[String](path_arr)
             var path_holder Vector[Vector[String]](1)
             path_holder.put(0, path)
-            set member_access: path_holder.get(0)
+            member_access := path_holder.get(0)
         }
 
         Operand(Span(syntax.start, syntax.end), expr, member_access)
@@ -1345,7 +1345,7 @@ define Modeler
                 let operand handle_operand(operand_syntax)
                 result.put(i, operand)
             }
-            set i: i + 1
+            i := i + 1
         }
         result
     }
@@ -1366,7 +1366,7 @@ define Modeler
         if syntax.annotation <> null
         {
             let annotation (*syntax.annotation)
-            set item_type: handle_binding_annotation(annotation)
+            item_type := handle_binding_annotation(annotation)
         }
 
         var name_holder Vector[String](1)
@@ -1429,14 +1429,14 @@ define Modeler
                 let result handle_operands(break_syntax.result)
                 var break_label: String ""
                 if break_syntax.name <> null
-                    set break_label: (*break_syntax.name).name
+                    break_label := (*break_syntax.name).name
                 Statement.Break(Break(Span(break_syntax.start, break_syntax.end), result, break_label))
             }
             when continue_syntax: ContinueSyntax
             {
                 var continue_label: String ""
                 if continue_syntax.name <> null
-                    set continue_label: (*continue_syntax.name).name
+                    continue_label := (*continue_syntax.name).name
                 Statement.Continue(Continue(Span(continue_syntax.start, continue_syntax.end), continue_label))
             }
             when return_syntax: ReturnSyntax
@@ -1497,9 +1497,9 @@ define Modeler
                                     {
                                         let oe (*op_ptr)
                                         if is_statement_like_expression(oe.expression)
-                                            set stmt_like_count: stmt_like_count + 1
+                                            stmt_like_count := stmt_like_count + 1
                                     }
-                                    set c: c + 1
+                                    c := c + 1
                                 }
                                 if stmt_like_count > 0
                                 {
@@ -1515,7 +1515,7 @@ define Modeler
                                             let modelled handle_operand(oe2)
                                             all_operands.put(ai, modelled)
                                         }
-                                        set ai: ai + 1
+                                        ai := ai + 1
                                     }
                                     ; Group: each stmt-like operand closes its
                                     ; group. Operands after the last stmt-like
@@ -1539,14 +1539,14 @@ define Modeler
                                                     let opp all_operands.get(group_start + gi)
                                                     if opp <> null
                                                         group_ops.put(gi, *opp)
-                                                    set gi: gi + 1
+                                                    gi := gi + 1
                                                 }
                                                 result.add(Statement.Action(Action(group_ops, Vector[Operand](0))))
-                                                set groups_emitted: groups_emitted + 1
-                                                set group_start: bi + 1
+                                                groups_emitted := groups_emitted + 1
+                                                group_start := bi + 1
                                             }
                                         }
-                                        set bi: bi + 1
+                                        bi := bi + 1
                                     }
                                     if group_start < ops_val.length
                                     {
@@ -1558,13 +1558,13 @@ define Modeler
                                             let opp2 all_operands.get(group_start + ti)
                                             if opp2 <> null
                                                 tail_ops.put(ti, *opp2)
-                                            set ti: ti + 1
+                                            ti := ti + 1
                                         }
                                         result.add(Statement.Action(Action(tail_ops, Vector[Operand](0))))
-                                        set groups_emitted: groups_emitted + 1
+                                        groups_emitted := groups_emitted + 1
                                     }
                                     if groups_emitted > 1
-                                        set did_split: true
+                                        did_split := true
                                 }
                             }
                         }
@@ -1580,7 +1580,7 @@ define Modeler
                         result.add stmt
                     }
             }
-            set i: i + 1
+            i := i + 1
         }
         Vector[Statement](result)
     }
@@ -1609,7 +1609,7 @@ define Modeler
         if syntax.annotation <> null
         {
             let annotation (*syntax.annotation)
-            set item_type: handle_type(annotation.type)
+            item_type := handle_type(annotation.type)
         }
 
         var name_holder Vector[String](1)
@@ -1649,7 +1649,7 @@ define Modeler
             let ops handle_operands(init_syntax.operands)
             var holder Vector[Vector[Operand]](1)
             holder.put(0, ops)
-            set initializer: holder.get(0)
+            initializer := holder.get(0)
         }
 
         ; `var` before a property (R2, 2026-09-20): the field may be written
@@ -1726,7 +1726,7 @@ define Modeler
         ; Count extensions
         var ext_count: size_t 0
         if syntax.name.extensions <> null
-            set ext_count: (*syntax.name.extensions).length
+            ext_count := (*syntax.name.extensions).length
 
         var path Vector[String](1 + ext_count)
         path.put(0, syntax.name.name)
@@ -1743,7 +1743,7 @@ define Modeler
                     let ext (*ext_ptr)
                     path.put(1 + i, ext.name)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -1778,19 +1778,19 @@ define Modeler
         if syntax.parameters <> null
         {
             let params (*syntax.parameters)
-            set input: handle_parameter_set(params)
+            input := handle_parameter_set(params)
         }
         var return_type: ref[Type]? null
         if syntax.result <> null
         {
             let returns_syntax (*syntax.result)
-            set return_type: handle_type(returns_syntax.type)
+            return_type := handle_type(returns_syntax.type)
         }
         var throws_type: ref[Type]? null
         if syntax.error <> null
         {
             let throws_syntax (*syntax.error)
-            set throws_type: handle_type(throws_syntax.type)
+            throws_type := handle_type(throws_syntax.type)
         }
         Delegate(loc, String(name), input, return_type, throws_type)
     }
@@ -1815,7 +1815,7 @@ define Modeler
                         let item handle_item(false, item_syn)
                         result.put(i, item)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
                 result
             }
@@ -1870,21 +1870,21 @@ define Modeler
                 if named.routine.parameters <> null
                 {
                     let params (*named.routine.parameters)
-                    set input: handle_parameter_set(params)
+                    input := handle_parameter_set(params)
                 }
 
                 var return_type: ref[Type]? null
                 if named.routine.returns_ <> null
                 {
                     let returns_syntax (*named.routine.returns_)
-                    set return_type: handle_type(returns_syntax.type)
+                    return_type := handle_type(returns_syntax.type)
                 }
 
                 var throws_type: ref[Type]? null
                 if named.routine.throws_ <> null
                 {
                     let throws_syntax (*named.routine.throws_)
-                    set throws_type: handle_type(throws_syntax.type)
+                    throws_type := handle_type(throws_syntax.type)
                 }
 
                 let life handle_lifetime named.routine.lifetime
@@ -1904,7 +1904,7 @@ define Modeler
                     {
                         var holder Vector[String](1)
                         holder.put(0, "_rp")
-                        set page_param: holder.get(0)
+                        page_param := holder.get(0)
                     }
                     else
                         0
@@ -1933,9 +1933,9 @@ define Modeler
                                     Vector[Attribute](0)
                                 ))
                             }
-                            set gi: gi + 1
+                            gi := gi + 1
                         }
-                        set gen_params: gp_arr
+                        gen_params := gp_arr
                     }
                 }
 
@@ -1947,15 +1947,15 @@ define Modeler
                 var writes Vector[String](0)
                 var n_io: size_t 0
                 if named.routine.io_mark <> null
-                    set n_io: 1
+                    n_io := 1
                 var n_named: size_t 0
                 var n_more: size_t 0
                 if named.routine.writes <> null
                 {
-                    set n_named: 1
+                    n_named := 1
                     let w_more (*named.routine.writes).more
                     if w_more <> null
-                        set n_more: w_more.length
+                        n_more := w_more.length
                 }
                 if n_io + n_named > 0
                 {
@@ -1972,10 +1972,10 @@ define Modeler
                             let wg_ptr w_syn.more.get wi
                             if wg_ptr <> null
                                 w_arr.put(n_io + wi + 1, String((*wg_ptr).name))
-                            set wi: wi + 1
+                            wi := wi + 1
                         }
                     }
-                    set writes: w_arr
+                    writes := w_arr
                 }
 
                 ; `@page true` and friends after the parameter list: the facts a
@@ -1984,7 +1984,7 @@ define Modeler
                 if named.routine.attributes <> null
                 {
                     let ra_vec (*named.routine.attributes)
-                    set routine_attrs: Vector[Attribute](ra_vec.length)
+                    routine_attrs := Vector[Attribute](ra_vec.length)
                     var rai: size_t 0
                     while rai < ra_vec.length
                     {
@@ -1994,7 +1994,7 @@ define Modeler
                             let ra_syntax (*ra_ptr)
                             routine_attrs.put(rai, handle_attribute(ra_syntax))
                         }
-                        set rai: rai + 1
+                        rai := rai + 1
                     }
                 }
 
@@ -2006,7 +2006,7 @@ define Modeler
                     let r_syn (*named.routine.reads_clause)
                     var r_more: size_t 0
                     if r_syn.more <> null
-                        set r_more: r_syn.more.length
+                        r_more := r_syn.more.length
                     var r_arr Vector[String](r_more + 1)
                     r_arr.put(0, String(r_syn.name))
                     var ri: size_t 0
@@ -2015,9 +2015,9 @@ define Modeler
                         let rg_ptr r_syn.more.get ri
                         if rg_ptr <> null
                             r_arr.put(ri + 1, String((*rg_ptr).name))
-                        set ri: ri + 1
+                        ri := ri + 1
                     }
-                    set read_list: r_arr
+                    read_list := r_arr
                 }
 
                 Function(
@@ -2069,21 +2069,21 @@ define Modeler
                 if named.routine.parameters <> null
                 {
                     let params (*named.routine.parameters)
-                    set input: handle_parameter_set(params)
+                    input := handle_parameter_set(params)
                 }
 
                 var return_type: ref[Type]? null
                 if named.routine.returns_ <> null
                 {
                     let returns_syntax (*named.routine.returns_)
-                    set return_type: handle_type(returns_syntax.type)
+                    return_type := handle_type(returns_syntax.type)
                 }
 
                 var throws_type: ref[Type]? null
                 if named.routine.throws_ <> null
                 {
                     let throws_syntax (*named.routine.throws_)
-                    set throws_type: handle_type(throws_syntax.type)
+                    throws_type := handle_type(throws_syntax.type)
                 }
 
                 let impl handle_implementation(named.routine.implementation)
@@ -2110,9 +2110,9 @@ define Modeler
                                     Vector[Attribute](0)
                                 ))
                             }
-                            set gi: gi + 1
+                            gi := gi + 1
                         }
-                        set op_gen_params: gp_arr
+                        op_gen_params := gp_arr
                     }
                 }
 
@@ -2134,21 +2134,21 @@ define Modeler
                 if routine.parameters <> null
                 {
                     let params (*routine.parameters)
-                    set input: handle_parameter_set(params)
+                    input := handle_parameter_set(params)
                 }
 
                 var return_type: ref[Type]? null
                 if routine.returns_ <> null
                 {
                     let returns_syntax (*routine.returns_)
-                    set return_type: handle_type(returns_syntax.type)
+                    return_type := handle_type(returns_syntax.type)
                 }
 
                 var throws_type: ref[Type]? null
                 if routine.throws_ <> null
                 {
                     let throws_syntax (*routine.throws_)
-                    set throws_type: handle_type(throws_syntax.type)
+                    throws_type := handle_type(throws_syntax.type)
                 }
 
                 let impl handle_implementation(routine.implementation)
@@ -2187,7 +2187,7 @@ define Modeler
         if syntax.parameters <> null
         {
             let params (*syntax.parameters)
-            set input: handle_parameter_set(params)
+            input := handle_parameter_set(params)
         }
 
         ; init# (Lifetime=Call): the implicit caller page `_rp`, and no
@@ -2202,7 +2202,7 @@ define Modeler
                 {
                     var holder Vector[String](1)
                     holder.put(0, "_rp")
-                    set page_param: holder.get(0)
+                    page_param := holder.get(0)
                 }
                 else
                     0
@@ -2239,7 +2239,7 @@ define Modeler
         if syntax.annotation <> null
         {
             let annotation (*syntax.annotation)
-            set variant_type: handle_type(annotation.type)
+            variant_type := handle_type(annotation.type)
         }
 
         Variant(
@@ -2261,7 +2261,7 @@ define Modeler
         ; Handle parts (fields/properties)
         var property_count: size_t 0
         if syntax.structure.parts <> null
-            set property_count: (*syntax.structure.parts).length
+            property_count := (*syntax.structure.parts).length
 
         var properties Vector[Property](property_count)
         if syntax.structure.parts <> null
@@ -2289,7 +2289,7 @@ define Modeler
                         }
                         else {}
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -2308,7 +2308,7 @@ define Modeler
             if body.uses <> null
             {
                 let use_syns (*body.uses)
-                set uses: Vector[Use](use_syns.length)
+                uses := Vector[Use](use_syns.length)
                 var i: size_t 0
                 while i < use_syns.length
                 {
@@ -2319,7 +2319,7 @@ define Modeler
                         let use_ handle_use(use_syntax)
                         uses.put(i, use_)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
 
@@ -2328,8 +2328,8 @@ define Modeler
             {
                 let member_syns (*body.members)
                 let total member_syns.length
-                set initializers: Vector[Initializer](total)
-                set members: Vector[Member](total)
+                initializers := Vector[Initializer](total)
+                members := Vector[Member](total)
                 var i: size_t 0
                 var init_idx: size_t 0
                 var member_idx: size_t 0
@@ -2344,18 +2344,18 @@ define Modeler
                             {
                                 let init_ handle_initializer(init_syntax, false)
                                 initializers.put(init_idx, init_)
-                                set init_idx: init_idx + 1
+                                init_idx := init_idx + 1
                             }
                             when deinit_syntax: DeInitSyntax
-                                set deinitializer: handle_deinitializer(deinit_syntax)
+                                deinitializer := handle_deinitializer(deinit_syntax)
                             else
                             {
                                 let member handle_constituent(path, member_syntax, &symbols_builder)
                                 members.put(member_idx, member)
-                                set member_idx: member_idx + 1
+                                member_idx := member_idx + 1
                             }
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
                 ; Both vectors were sized to the TOTAL member count — the split
                 ; between inits, the deinit and everything else is only known
@@ -2365,8 +2365,8 @@ define Modeler
                 ; real zero-argument init, so every concept without one got a
                 ; synthesized empty `C1Ev` and its constructions were diverted to
                 ; the ctor path (2026-08-02).
-                set initializers.length: init_idx
-                set members.length: member_idx
+                initializers.length := init_idx
+                members.length := member_idx
             }
         }
 
@@ -2450,12 +2450,12 @@ define Modeler
         let last_seg Path.get_file_name(path)
         var ns_path: String path
         if last_seg <> name
-            set ns_path: Path.join(path, name)
+            ns_path := Path.join(path, name)
 
         if syntax.declarations <> null
         {
             let decl_syns (*syntax.declarations)
-            set members: Vector[Member](decl_syns.length)
+            members := Vector[Member](decl_syns.length)
             var i: size_t 0
             var member_idx: size_t 0
             while i < decl_syns.length
@@ -2471,14 +2471,14 @@ define Modeler
                         {
                             let member handle_declaration(ns_path, decl_syntax, &symbols_builder)
                             members.put(member_idx, member)
-                            set member_idx: member_idx + 1
+                            member_idx := member_idx + 1
                         }
                 }
-                set i: i + 1
+                i := i + 1
             }
             ; sized to the declaration count, filled only with the non-module
             ; ones — cut back to what was written (see handle_structure).
-            set members.length: member_idx
+            members.length := member_idx
         }
 
         let symbols HashMap[String, Nameable](symbols_builder)
@@ -2545,7 +2545,7 @@ define Modeler
                 ; declaration — it used to be dropped here, rc 0.
                 var mg_type_ref: ref[Type]? null
                 if mut.binding.annotation <> null
-                    set mg_type_ref: handle_binding_annotation(*mut.binding.annotation)
+                    mg_type_ref := handle_binding_annotation(*mut.binding.annotation)
                 let mg_value handle_operands(mut.binding.operation)
                 let mg_global Global(Span(mut.start, mut.end), global_type_or_empty(mg_type_ref, Span(mut.start, mut.end)), mg_value, true, false, false, mut.linked_mark <> null)
                 let mg_concept Concept(
@@ -2567,11 +2567,11 @@ define Modeler
                 ; (initialize while single-threaded or mutate via scaly_atomic_*).
                 var sg_type_ref: ref[Type]? null
                 if sh.binding.annotation <> null
-                    set sg_type_ref: handle_binding_annotation(*sh.binding.annotation)
+                    sg_type_ref := handle_binding_annotation(*sh.binding.annotation)
                 let sg_value handle_operands(sh.binding.operation)
                 var sg_atomic false
                 if sh.atomic_mark <> null
-                    set sg_atomic: true
+                    sg_atomic := true
                 let sg_global Global(Span(sh.start, sh.end), global_type_or_empty(sg_type_ref, Span(sh.start, sh.end)), sg_value, true, true, sg_atomic, sh.linked_mark <> null)
                 let sg_concept Concept(
                     Span(sh.start, sh.end),
@@ -2637,7 +2637,7 @@ define Modeler
         ; Handle variants
         var variant_count: size_t 0
         if syntax.variants <> null
-            set variant_count: (*syntax.variants).length
+            variant_count := (*syntax.variants).length
 
         var variants Vector[Variant](variant_count)
         if syntax.variants <> null
@@ -2654,7 +2654,7 @@ define Modeler
                     symbols_builder.add(variant.name, Nameable.Variant variant)
                     variants.put(i, variant)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -2666,7 +2666,7 @@ define Modeler
             if body.members <> null
             {
                 let member_syns (*body.members)
-                set members: Vector[Member](member_syns.length)
+                members := Vector[Member](member_syns.length)
                 var i: size_t 0
                 while i < member_syns.length
                 {
@@ -2677,7 +2677,7 @@ define Modeler
                         let member handle_constituent(path, member_syntax, &symbols_builder)
                         members.put(i, member)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -2710,7 +2710,7 @@ define Modeler
             if params_syntax.parameters <> null
             {
                 let param_vec (*params_syntax.parameters)
-                set parameters: Vector[GenericParameter](param_vec.length)
+                parameters := Vector[GenericParameter](param_vec.length)
                 var i: size_t 0
                 while i < param_vec.length
                 {
@@ -2721,7 +2721,7 @@ define Modeler
                         let param handle_generic_parameter(param_syntax)
                         parameters.put(i, param)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -2731,7 +2731,7 @@ define Modeler
         if syntax.attributes <> null
         {
             let attr_vec (*syntax.attributes)
-            set attributes: Vector[Attribute](attr_vec.length)
+            attributes := Vector[Attribute](attr_vec.length)
             var i: size_t 0
             while i < attr_vec.length
             {
@@ -2742,7 +2742,7 @@ define Modeler
                     let attr handle_attribute(attr_syntax)
                     attributes.put(i, attr)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -2896,7 +2896,7 @@ define Modeler
                                 ; not a package
                             }
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
     }
@@ -2910,7 +2910,7 @@ define Modeler
         let pkg_name String#(pkg_syntax.name.name)
         var version_str "0.1.0"
         if pkg_syntax.version <> null
-            set version_str: format_version(pkg_syntax.version.unwrap())
+            version_str := format_version(pkg_syntax.version.unwrap())
 
         ; A package reached twice -- declared by the program and by a package
         ; it uses -- is loaded once. `versions` holds "name version" for every
@@ -2928,7 +2928,7 @@ define Modeler
                     report_load_error("error: package `pkg_name` is required in two versions, `v.substring(pkg_name.get_length() + 1, v.get_length() - pkg_name.get_length() - 1)` and `version_str`; one compilation takes one version of a package")
                 return
             }
-            set vi: vi + 1
+            vi := vi + 1
         }
         versions.add key
 
@@ -2969,7 +2969,7 @@ define Modeler
     ; Reset at the start of each program build (harmless in a fresh process; keeps
     ; the counter honest if build_program is ever called more than once).
     procedure reset_errors() mutable modeler_error_count
-        set modeler_error_count: 0
+        modeler_error_count := 0
 
     ; size_t -> decimal String (self-contained; the Planner has its own copy but
     ; the Modeler must not depend on the Planner).
@@ -2984,12 +2984,12 @@ define Modeler
         {
             let digit ((value % 10) as char) + ("0" as char)
             digits.add digit
-            set value: value / 10
+            value := value / 10
         }
         var i digits.length
         while i > 0
         {
-            set i: i - 1
+            i := i - 1
             let d digits.get i
             if d <> null
                 result.append(*d)
@@ -3007,25 +3007,25 @@ define Modeler
         let src_len source.get_length()
         var target offset
         if target > src_len
-            set target: src_len
+            target := src_len
         var off: size_t 0
         while off < target
         {
             let c source.get off
             if c = ("\n" as char)
             {
-                set line: line + 1
-                set col: 1
+                line := line + 1
+                col := 1
             }
             else
-                set col: col + 1
-            set off: off + 1
+                col := col + 1
+            off := off + 1
         }
         let line_str num_to_string(line)
         let col_str num_to_string(col)
         let msg_str "`file_path`:`line_str`:`col_str`: `message`"
         Console.println(msg_str.to_c_string())
-        set modeler_error_count: modeler_error_count + 1
+        modeler_error_count := modeler_error_count + 1
     }
 
     ; A required module file (the prelude, or a declared package's root) could not
@@ -3037,7 +3037,7 @@ define Modeler
     procedure report_load_error(message: String) mutable modeler_error_count
     {
         Console.println(message.to_c_string())
-        set modeler_error_count: modeler_error_count + 1
+        modeler_error_count := modeler_error_count + 1
     }
 
     ; Load and model a sibling module file at <path>/<name>.scaly. On a genuine
@@ -3088,7 +3088,7 @@ define Modeler
         var pairs Array[size_t]()
         if source_file.get_length() > 0
         {
-            set module_file: source_file
+            module_file := source_file
             interface_positions(file_path, &pairs)
             p.lexer.use_positions(pairs.as_slice())
         }
@@ -3101,7 +3101,7 @@ define Modeler
                 ; so downstream modeling doesn't crash. cli.run fails the compile.
                 var error_text contents
                 if source_file.get_length() > 0
-                    set error_text: File.read_to_string(source_file)
+                    error_text := File.read_to_string(source_file)
                 choose err
                     when inv: Invalid
                         report_module_error(module_file, error_text, inv.start, inv.message)
@@ -3110,7 +3110,7 @@ define Modeler
                 return empty_module
             }
             when prog: Success
-                set syntax: prog
+                syntax := prog
 
         ; Sub-path for nested modules: <path>/<name>
         var sub_sb StringBuilder()
@@ -3137,7 +3137,7 @@ define Modeler
         {
             if path.substring(i, k).equals(needle)
                 return i as int
-            set i: i + 1
+            i := i + 1
         }
         0 - 1
     }
@@ -3171,7 +3171,7 @@ define Modeler
         {
             var stop start
             while stop < m and table.get(stop) <> 10
-                set stop: stop + 1
+                stop := stop + 1
             let first table.get(start)
             if first >= 48 and first <= 57
             {
@@ -3181,15 +3181,15 @@ define Modeler
                     var a: size_t 0
                     while k < stop and table.get(k) <> 32
                     {
-                        set a: a * 10 + ((table.get(k) - 48) as size_t)
-                        set k: k + 1
+                        a := a * 10 + ((table.get(k) - 48) as size_t)
+                        k := k + 1
                     }
-                    set k: k + 1
+                    k := k + 1
                     var b: size_t 0
                     while k < stop
                     {
-                        set b: b * 10 + ((table.get(k) - 48) as size_t)
-                        set k: k + 1
+                        b := b * 10 + ((table.get(k) - 48) as size_t)
+                        k := k + 1
                     }
                     pairs.add a
                     pairs.add b
@@ -3199,9 +3199,9 @@ define Modeler
             {
                 if in_section
                     return
-                set in_section: table.substring(start, stop - start).equals(rel)
+                in_section := table.substring(start, stop - start).equals(rel)
             }
-            set start: stop + 1
+            start := stop + 1
         }
     }
 
@@ -3217,8 +3217,8 @@ define Modeler
         {
             let decl_syns (*syntax.declarations)
             let total decl_syns.length
-            set uses: Vector[Use](total)
-            set members: Vector[Member](total)
+            uses := Vector[Use](total)
+            members := Vector[Member](total)
             var i: size_t 0
             var use_idx: size_t 0
             var member_idx: size_t 0
@@ -3233,7 +3233,7 @@ define Modeler
                         {
                             let use_ handle_use(use_syntax)
                             uses.put(use_idx, use_)
-                            set use_idx: use_idx + 1
+                            use_idx := use_idx + 1
                         }
                         when mod_syntax: ModuleSyntax
                             handle_module_decl(path, mod_syntax, is_private, &modules)
@@ -3241,15 +3241,15 @@ define Modeler
                         {
                             let member handle_declaration(path, decl_syntax, &symbols_builder)
                             members.put(member_idx, member)
-                            set member_idx: member_idx + 1
+                            member_idx := member_idx + 1
                         }
                 }
-                set i: i + 1
+                i := i + 1
             }
             ; both sized to the declaration count, each filled with its own
             ; share — cut back to what was written (see handle_structure).
-            set uses.length: use_idx
-            set members.length: member_idx
+            uses.length := use_idx
+            members.length := member_idx
         }
 
         let symbols HashMap[String, Nameable](symbols_builder)
@@ -3293,7 +3293,7 @@ define Modeler
                             ; not a package
                         }
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -3327,10 +3327,10 @@ define Modeler
                     let mp initial_module.modules.get mi
                     if mp <> null
                         combined_modules.put(mi, *mp)
-                    set mi: mi + 1
+                    mi := mi + 1
                 }
                 combined_modules.put(init_mods_len, prelude_module)
-                set main_module: Module(
+                main_module := Module(
                     initial_module.private_,
                     initial_module.file,
                     initial_module.name,
@@ -3370,8 +3370,8 @@ define Modeler
             {
                 let pkp packages.get pk
                 if pkp <> null and pkp.name = "scaly"
-                    set has_scaly: true
-                set pk: pk + 1
+                    has_scaly := true
+                pk := pk + 1
             }
             if has_scaly = false
             {
@@ -3445,7 +3445,7 @@ define Modeler
             }
 
         ; Test 210: Integer literal - "42" maps to IntegerConstant
-        set parser: Parser("42")
+        parser := Parser("42")
         choose parser.parse_program()
             when err: Error
                 return 210
@@ -3482,7 +3482,7 @@ define Modeler
             }
 
         ; Test 220: String literal - "\"hello\"" maps to StringConstant
-        set parser: Parser("\"hello\"")
+        parser := Parser("\"hello\"")
         choose parser.parse_program()
             when err: Error
                 return 220
@@ -3519,7 +3519,7 @@ define Modeler
             }
 
         ; Test 230: Let binding - binding_type="const", item.name="x"
-        set parser: Parser("let x 42")
+        parser := Parser("let x 42")
         choose parser.parse_program()
             when err: Error
                 return 230
@@ -3552,7 +3552,7 @@ define Modeler
             }
 
         ; Test 240: Var binding with type - binding_type="var", name="y", type path=["int"]
-        set parser: Parser("var y: int 0")
+        parser := Parser("var y: int 0")
         choose parser.parse_program()
             when err: Error
                 return 240
@@ -3599,7 +3599,7 @@ define Modeler
             }
 
         ; Test 250: Name expression - "foo" maps to Expression.Type with path=["foo"]
-        set parser: Parser("foo")
+        parser := Parser("foo")
         choose parser.parse_program()
             when err: Error
                 return 250
@@ -3644,7 +3644,7 @@ define Modeler
             }
 
         ; Test 260: If expression - top-level if produces Expression.If
-        set parser: Parser("if true\n    1\nelse\n    0")
+        parser := Parser("if true\n    1\nelse\n    0")
         choose parser.parse_program()
             when err: Error
                 return 260
@@ -3677,7 +3677,7 @@ define Modeler
             }
 
         ; Test 270: Function definition - pure=true, name="answer"
-        set parser: Parser("function answer() returns int\n    42")
+        parser := Parser("function answer() returns int\n    42")
         choose parser.parse_program()
             when err: Error
                 return 270
@@ -3707,7 +3707,7 @@ define Modeler
             }
 
         ; Test 280: Procedure definition - pure=false, name="mutate"
-        set parser: Parser("procedure mutate(this)\n    0")
+        parser := Parser("procedure mutate(this)\n    0")
         choose parser.parse_program()
             when err: Error
                 return 280
@@ -3737,7 +3737,7 @@ define Modeler
             }
 
         ; Test 290: Structure definition - Concept with Definition.Structure
-        set parser: Parser("define Point(x: int, y: int)")
+        parser := Parser("define Point(x: int, y: int)")
         choose parser.parse_program()
             when err: Error
                 return 290
@@ -3773,7 +3773,7 @@ define Modeler
             }
 
         ; Test 297: Union definition - Concept with Definition.Union and 2 variants
-        set parser: Parser("define Option union(Some: int, None)")
+        parser := Parser("define Option union(Some: int, None)")
         choose parser.parse_program()
             when err: Error
                 return 297

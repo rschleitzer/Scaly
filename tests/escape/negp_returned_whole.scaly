@@ -22,13 +22,13 @@ define Lists
         while i < xs.length
         {
             c.add(xs.get(i) as ref[Leaf]?)
-            set i: i + 1
+            i := i + 1
         }
         c
     }
 
     procedure keep(this, mutable k: ref[Keeper], xs: ref[Array[ref[Leaf]?]])
-        set k.list: this.same(xs)
+        k.list := this.same(xs)
 }
 
 procedure make(host: ref[Page], lists: ref[Lists], mutable k: ref[Keeper])

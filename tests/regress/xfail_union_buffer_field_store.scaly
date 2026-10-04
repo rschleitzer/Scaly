@@ -14,13 +14,13 @@ define Maker (var n: int)
 {
     procedure impl(mutable this, k: int) returns Impl
     {
-        set this.n: this.n + 1
+        this.n := this.n + 1
         Impl.Act(Payload(k, String("abc")))
     }
     procedure store(mutable this, mutable h: ref[Holder])
     {
         let v this.impl(3)
-        set h.impl: v
+        h.impl := v
     }
 }
 print "x"

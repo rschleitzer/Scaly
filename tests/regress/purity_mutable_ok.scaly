@@ -8,12 +8,12 @@ define Counter (var n: int  var total: int)
 {
     procedure bump(mutable this, by: int)
     {
-        set n: n + by
-        set total: total + by
+        n := n + by
+        total := total + by
     }
 
     procedure give(this, mutable other: ref[Counter])
-        set other.n: other.n + n
+        other.n := other.n + n
 
     function read(this) returns int
         n

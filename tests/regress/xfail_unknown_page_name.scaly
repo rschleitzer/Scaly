@@ -14,7 +14,7 @@
 ;
 ; xfail: unknown page name: nosuchpage
 
-define RecA (x: int) { init(x: int) set this.x: x }
+define RecA (x: int) { init(x: int) this.x := x }
 
 function probe() returns int
 {

@@ -7,7 +7,7 @@
 function main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var buf int[4]
-    set buf[0]: 10
+    buf[0] := 10
     let s Slice[int](4, &buf[0])
     let r s.at((argc as size_t) + 3)
     r

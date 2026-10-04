@@ -15,7 +15,7 @@ define Counter
 {
     procedure bump(mutable this: Counter)
     {
-        set count: count + 1
+        count := count + 1
     }
 
     function get(this: Counter) returns int

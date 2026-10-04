@@ -35,7 +35,7 @@ procedure hex(b: Slice[u8]) returns String
         let digits: Slice[u8] "0123456789abcdef"
         sb.append(digits[(v / 16) as size_t] as char)
         sb.append(digits[(v % 16) as size_t] as char)
-        set i: i + 1
+        i := i + 1
     }
     sb.to_string()
 }
@@ -62,7 +62,7 @@ procedure client_frame(mutable out: ref[ByteBuf], first: u8, payload: Slice[u8])
             out.append_byte(((n >> shift) & 255) as u8)
             if shift = 0
                 break
-            set shift: shift - 8
+            shift := shift - 8
         }
     }
     out.append_byte(55)
@@ -75,11 +75,11 @@ procedure client_frame(mutable out: ref[ByteBuf], first: u8, payload: Slice[u8])
         var k: u8 55
         let lane i & 3
         match lane
-            case 1: set k: 66
-            case 2: set k: 77
-            case 3: set k: 88
+            case 1: k := 66
+            case 2: k := 77
+            case 3: k := 88
         out.append_byte(payload[i] xor k)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -135,10 +135,10 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         {
             if b[i] = 13 and b[i + 1] = 10 and b[i + 2] = 13 and b[i + 3] = 10
             {
-                set head_end: i + 4
+                head_end := i + 4
                 break
             }
-            set i: i + 1
+            i := i + 1
         }
     }
     let head String(inb.bytes().data as pointer[const_char], head_end)
@@ -159,7 +159,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     while i < 70000
     {
         big.put(i, (i % 253) as u8)
-        set i: i + 1
+        i := i + 1
     }
     client_frame(&out, 130, big.as_slice())
     client_frame(&out, 1, "hel")
@@ -191,33 +191,33 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             {
                 if at + 4 > b.length
                     break
-                set n: ((b[at + 2] as size_t) << 8) | (b[at + 3] as size_t)
-                set h: 4
+                n := ((b[at + 2] as size_t) << 8) | (b[at + 3] as size_t)
+                h := 4
             }
             else if n = 127
             {
                 if at + 10 > b.length
                     break
-                set n: 0
+                n := 0
                 var k: size_t 0
                 while k < 8
                 {
-                    set n: (n << 8) | (b[at + 2 + k] as size_t)
-                    set k: k + 1
+                    n := (n << 8) | (b[at + 2 + k] as size_t)
+                    k := k + 1
                 }
-                set h: 10
+                h := 10
             }
             if at + h + n > b.length
                 break
             let payload b.subslice(at + h, at + h + n)
-            set at: at + h + n
+            at := at + h + n
             if opcode = 1
             {
                 got.append(String(payload.data as pointer[const_char], payload.length))
                 got.append("|" as char)
             }
             if opcode = 2
-                set big_ok: payload.equals(big.as_slice())
+                big_ok := payload.equals(big.as_slice())
             if opcode = 10
             {
                 got.append("pong:")
@@ -226,7 +226,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             }
             if opcode = 8
             {
-                set closed: true
+                closed := true
                 if payload.length <> 2 or payload[0] <> 3 or payload[1] <> 232
                 {
                     print "close: code `hex(payload)`"

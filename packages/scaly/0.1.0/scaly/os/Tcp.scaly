@@ -96,7 +96,7 @@ procedure tcp_connect_worker(mutable arg: pointer[void]) returns pointer[void]
     let host (*cell) as pointer[const_char]
     let port *(((cell as size_t) + 8) as pointer[i64])
     let fd Io.connect_host(host, port as i32)
-    set *(((cell as size_t) + 16) as pointer[i64]): fd as i64
+    *(((cell as size_t) + 16) as pointer[i64]) := fd as i64
     1 as pointer[void]
 }
 
@@ -123,17 +123,17 @@ procedure tcp_make_cell(fd: i32, mutable handler: pointer[void], n: i64) returns
 {
     let p Page.allocate_page()
     let cell p.allocate(((5 + 2 * n) * 8) as size_t, 8) as pointer[i64]
-    set *cell: fd as i64
-    set *tcp_word(cell, 1): handler as i64
-    set *tcp_word(cell, 2): 0
-    set *tcp_word(cell, 3): n
-    set *tcp_word(cell, 4): 0
+    *cell := fd as i64
+    *tcp_word(cell, 1) := handler as i64
+    *tcp_word(cell, 2) := 0
+    *tcp_word(cell, 3) := n
+    *tcp_word(cell, 4) := 0
     var k: i64 0
     while k < n
     {
         let ch Channel.create()
-        set *tcp_word(cell, 5 + k): (ch as pointer[void]) as i64
-        set k: k + 1
+        *tcp_word(cell, 5 + k) := (ch as pointer[void]) as i64
+        k := k + 1
     }
     cell
 }
@@ -196,11 +196,11 @@ procedure tcp_acceptor()
             Io.set_nonblocking(c)
             let mp Page.allocate_page()
             let msg mp.allocate(8, 8) as pointer[i64]
-            set *msg: c as i64
+            *msg := c as i64
             Channel.send((*tcp_word(cell, 5 + next)) as pointer[Channel], msg as pointer[void])
-            set next: next + 1
+            next := next + 1
             if next = n
-                set next: 0
+                next := 0
         }
         else
         {
@@ -213,7 +213,7 @@ procedure tcp_acceptor()
     while k < n
     {
         Channel.close_sender((*tcp_word(cell, 5 + k)) as pointer[Channel])
-        set k: k + 1
+        k := k + 1
     }
 }
 
@@ -241,7 +241,7 @@ procedure tcp_dispatch()
 procedure tcp_serve_thread(mutable arg: pointer[void]) returns pointer[void] mutable tcp_current_serve
 {
     let cell arg as pointer[i64]
-    set tcp_current_serve: cell
+    tcp_current_serve := cell
     let idx scaly_atomic_add_u64(tcp_word(cell, 4) as pointer[u64], 1 as u64) as i64
     let page Page.allocate_page()
     let sched Scheduler.create(page)
@@ -268,16 +268,16 @@ define TcpStream(var fd: i32)
         {
             let p Page.allocate_page_traced("TcpStream.connect_cell")
             let cell p.allocate(24, 8) as pointer[i64]
-            set *cell: hc as i64
-            set *(((cell as size_t) + 8) as pointer[i64]): port as i64
-            set *(((cell as size_t) + 16) as pointer[i64]): 0 - 1
+            *cell := hc as i64
+            *(((cell as size_t) + 8) as pointer[i64]) := port as i64
+            *(((cell as size_t) + 16) as pointer[i64]) := 0 - 1
             Io.offload(&tcp_connect_worker, cell as pointer[void])
-            set fd: (*(((cell as size_t) + 16) as pointer[i64])) as i32
+            fd := (*(((cell as size_t) + 16) as pointer[i64])) as i32
             p.deallocate_extensions()
             Page.release_page_traced(p, "TcpStream.connect_cell")
         }
         else
-            set fd: Io.connect_host(hc, port as i32)
+            fd := Io.connect_host(hc, port as i32)
         if fd >= 0
             Io.set_nonblocking(fd)
         TcpStream(fd)
@@ -336,7 +336,7 @@ define TcpStream(var fd: i32)
         {
             Io.forget_watch(fd)
             tcp_close_fd(fd)
-            set fd: 0 - 1
+            fd := 0 - 1
         }
     }
 }
@@ -393,7 +393,7 @@ define TcpListener(var fd: i32)
         while i < n
         {
             threads.add(Thread.spawn(&tcp_serve_thread, cell as pointer[void]))
-            set i: i + 1
+            i := i + 1
         }
         tcp_serve_thread(cell as pointer[void])
         for t in threads
@@ -415,8 +415,8 @@ define TcpListener(var fd: i32)
         while i < n
         {
             let h Thread.spawn(&tcp_serve_thread, cell as pointer[void])
-            set *tcp_word(cell, 5 + n + i): h as i64
-            set i: i + 1
+            *tcp_word(cell, 5 + n + i) := h as i64
+            i := i + 1
         }
         TcpServer(cell)
     }
@@ -438,7 +438,7 @@ define TcpListener(var fd: i32)
         if fd >= 0
         {
             tcp_close_fd(fd)
-            set fd: 0 - 1
+            fd := 0 - 1
         }
     }
 }
@@ -495,7 +495,7 @@ define TcpServer(cell: pointer[i64])
         while i < n
         {
             Thread.join((*tcp_word(cell, 5 + n + i)) as size_t)
-            set i: i + 1
+            i := i + 1
         }
         Page.release_page(Page.get(cell))
     }

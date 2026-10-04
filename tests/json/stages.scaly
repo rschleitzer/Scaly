@@ -118,7 +118,7 @@ procedure tree_append(mutable sb: ref[StringBuilder], v: JsonValue)
             while i < a.items.length
             {
                 tree_append(sb, a.items[i])
-                set i: i + 1
+                i := i + 1
             }
             sb.append("]")
         }
@@ -132,7 +132,7 @@ procedure tree_append(mutable sb: ref[StringBuilder], v: JsonValue)
                 append_bytes(sb, o.members[i].key)
                 sb.append(">")
                 tree_append(sb, o.members[i].value)
-                set i: i + 1
+                i := i + 1
             }
             sb.append("}")
         }
@@ -175,7 +175,7 @@ procedure shifted(text: Slice[u8], by: size_t) returns String
     while i < by
     {
         sb.append(" ")
-        set i: i + 1
+        i := i + 1
     }
     append_bytes(&sb, text)
     sb.to_string()
@@ -197,13 +197,13 @@ procedure nested(n: size_t) returns String
     while i < n
     {
         sb.append("[")
-        set i: i + 1
+        i := i + 1
     }
-    set i: 0
+    i := 0
     while i < n
     {
         sb.append("]")
-        set i: i + 1
+        i := i + 1
     }
     sb.to_string()
 }
@@ -235,16 +235,16 @@ while let doc it.next()
     {
         let d shifted(doc.as_slice(), by)
         if agree(d.as_slice()) = false
-            set ok: false
-        set cases: cases + 1
-        set by: by + 1
+            ok := false
+        cases := cases + 1
+        by := by + 1
     }
 }
 if ok
     Console.print "shifted "
 
 ; every byte replaced, at the alignments 0 and 61
-set it: docs.get_iterator()
+it := docs.get_iterator()
 while let doc it.next()
 {
     var align: size_t 0
@@ -259,19 +259,19 @@ while let doc it.next()
             {
                 let d replaced(base.as_slice(), at, EVIL[e])
                 if agree(d.as_slice()) = false
-                    set ok: false
-                set e: e + 1
+                    ok := false
+                e := e + 1
             }
-            set at: at + 1
+            at := at + 1
         }
-        set align: align + 61
+        align := align + 61
     }
 }
 if ok
     Console.print "mutated "
 
 ; every prefix, at the alignments 0 and 61
-set it: docs.get_iterator()
+it := docs.get_iterator()
 while let doc it.next()
 {
     var align: size_t 0
@@ -282,10 +282,10 @@ while let doc it.next()
         while n <= base.length
         {
             if agree(base.as_slice().subslice(0, n)) = false
-                set ok: false
-            set n: n + 1
+                ok := false
+            n := n + 1
         }
-        set align: align + 61
+        align := align + 61
     }
 }
 if ok
@@ -295,7 +295,7 @@ let limit JsonReader.create("").max_depth
 let deep nested(limit)
 let too_deep nested(limit + 1)
 if agree(deep.as_slice()) = false or agree(too_deep.as_slice()) = false or JsonValue.parse(too_deep.as_slice()).ok()
-    set ok: false
+    ok := false
 if ok
     Console.print "deep "
 

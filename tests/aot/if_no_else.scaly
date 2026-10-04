@@ -9,10 +9,10 @@ function compute() returns int
 {
     var n 0
     if true
-        set n: n + 40
-    set n: n + 2        ; runs unconditionally — must not be slurped into the if
+        n := n + 40
+    n := n + 2        ; runs unconditionally — must not be slurped into the if
     if false
-        set n: n + 100  ; must not run; no else
+        n := n + 100  ; must not run; no else
     n
 }
 

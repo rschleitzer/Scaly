@@ -90,7 +90,7 @@ check "local from a call says local(p<-call(f))"      'printf "%s\n" "$got" | gr
 check "call-result walk names receiver and its length" 'printf "%s\n" "$got" | grep -q "fixture.scaly:149:16: deref-arith pointer\[u8\] base=call(get_buffer) recv=Array len=Array.length$"'
 check "Option slot store keeps its provenance"        'printf "%s\n" "$got" | grep -q "fixture.scaly:132:5: store-arith pointer\[Option\[ref\[Leaf\]\]\] base=param(obuf)$"'
 check "stack array walk says local(p<-stack[N])"       'printf "%s\n" "$got" | grep -q "fixture.scaly:157:5: store-arith pointer\[u8\] base=local(stack_buf<-stack\[4\])$"'
-check "fallback length (integer param before) is marked ?" 'printf "%s\n" "$got" | grep -q "fixture.scaly:157:25: deref-arith pointer\[u8\] base=param(src) len=n?$"'
+check "fallback length (integer param before) is marked ?" 'printf "%s\n" "$got" | grep -q "fixture.scaly:157:22: deref-arith pointer\[u8\] base=param(src) len=n?$"'
 check "an indexed stack array lists nothing"         '! printf "%s\n" "$got" | grep -q "idx_buf"'
 check "an array declaration is no local pointer site"  '! printf "%s\n" "$got" | grep -q "local pointer\[u8\] stack_buf"'
 check "stack arrays are counted, not listed"          'printf "%s\n" "$got" | head -1 | grep -q "stack arrays (not listed) 4$"'

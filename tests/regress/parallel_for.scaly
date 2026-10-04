@@ -13,7 +13,7 @@ for i in 10
 {
     let v results.get i
     if v <> null
-        set sum: sum + (*v)
+        sum := sum + (*v)
 }
 if sum = 90
     print "PASS\n"

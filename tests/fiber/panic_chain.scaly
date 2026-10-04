@@ -22,12 +22,12 @@ procedure worker(first_ctx: pointer[void])
 
     ; its own catch point does work, on its own stack
     var buf int[2]
-    set buf[0]: 7
+    buf[0] := 7
     let v Slice[int](2, &buf[0])
     var ok false
     try let x v[5]
     else
-        set ok: true
+        ok := true
     if ok
         Console.print "fiber:caught-own "
     else
@@ -57,11 +57,11 @@ else
 ; and main's own catch point still works for main's own trap
 var mine false
 var mbuf int[2]
-set mbuf[0]: 7
+mbuf[0] := 7
 let mv Slice[int](2, &mbuf[0])
 try let y mv[5]
 else
-    set mine: true
+    mine := true
 if mine
     Console.print "main:sees-own "
 else

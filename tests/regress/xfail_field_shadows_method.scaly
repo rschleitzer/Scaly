@@ -9,7 +9,7 @@
 define Box2 (v: int)
 {
     init()
-        set v: 3
+        v := 3
 
     function v(this, x: int) returns int
         x * 10

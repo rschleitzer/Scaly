@@ -19,14 +19,14 @@ function small(n: int) returns int
     while i < n
     {
         v.put(i as size_t, i * i)
-        set i: i + 1
+        i := i + 1
     }
     var s 0
-    set i: 0
+    i := 0
     while i < n
     {
-        set s: s + v[i as size_t]
-        set i: i + 1
+        s := s + v[i as size_t]
+        i := i + 1
     }
     s + (v.length as int)
 }
@@ -48,8 +48,8 @@ function zeroed(n: int) returns int
     var i: size_t 0
     while i < v.length
     {
-        set s: s + v[i]
-        set i: i + 1
+        s := s + v[i]
+        i := i + 1
     }
     s
 }
@@ -62,15 +62,15 @@ function records(n: int) returns int
     while i < n
     {
         v.put(i as size_t, Pt(i, 2 * i))
-        set i: i + 1
+        i := i + 1
     }
     var s 0
-    set i: 0
+    i := 0
     while i < n
     {
         let p v[i as size_t]
-        set s: s + p.x + p.y
-        set i: i + 1
+        s := s + p.x + p.y
+        i := i + 1
     }
     s
 }
@@ -83,7 +83,7 @@ function nested(d: int) returns int
     v.put(3, d * 10)
     var inner 0
     if d > 0
-        set inner: nested(d - 1)
+        inner := nested(d - 1)
     v[0] + v[3] + inner
 }
 
@@ -105,8 +105,8 @@ function in_loop(n: int) returns int
     {
         var v Vector[int](3)
         v.put(1, i)
-        set s: s + v[1] + v[0]
-        set i: i + 1
+        s := s + v[1] + v[0]
+        i := i + 1
     }
     s
 }
@@ -117,8 +117,8 @@ function sum_of(v: Vector[int]) returns int
     var i: size_t 0
     while i < v.length
     {
-        set s: s + v[i]
-        set i: i + 1
+        s := s + v[i]
+        i := i + 1
     }
     s
 }
@@ -134,47 +134,47 @@ var ok true
 if small(10) <> 295
 {
     print("FAIL small `small(10)`")
-    set ok: false
+    ok := false
 }
 if large(100) <> 328450
 {
     print("FAIL large `large(100)`")
-    set ok: false
+    ok := false
 }
 if empty() <> 0
 {
     print("FAIL empty")
-    set ok: false
+    ok := false
 }
 if zeroed(32) <> 0 or zeroed(40) <> 0
 {
     print("FAIL zeroed")
-    set ok: false
+    ok := false
 }
 if records(12) <> 198 or records(20) <> 570
 {
     print("FAIL records `records(12)` `records(20)`")
-    set ok: false
+    ok := false
 }
 if nested(5) <> 165
 {
     print("FAIL nested `nested(5)`")
-    set ok: false
+    ok := false
 }
 if tail(10, 0) <> 55
 {
     print("FAIL tail `tail(10, 0)`")
-    set ok: false
+    ok := false
 }
 if in_loop(10) <> 45
 {
     print("FAIL in_loop")
-    set ok: false
+    ok := false
 }
 if handed(5) <> 7
 {
     print("FAIL handed")
-    set ok: false
+    ok := false
 }
 if ok
     print("PASS")

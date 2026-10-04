@@ -30,13 +30,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -50,7 +50,7 @@ procedure fill(mutable v: Vector[double], n: size_t, x: double)
     while i < n
     {
         v.put(i, x)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -69,16 +69,16 @@ procedure matmul(a: Vector[double], b: Vector[double], mutable c: Vector[double]
                 var av: double 0.0
                 let ap a.get((i * kk + x) as size_t)
                 if ap <> null
-                    set av: (*ap)
+                    av := (*ap)
                 var bv: double 0.0
                 let bp b.get((x * n + j) as size_t)
                 if bp <> null
-                    set bv: (*bp)
-                set acc: acc + av * bv
-                set x: x + 1
+                    bv := (*bp)
+                acc := acc + av * bv
+                x := x + 1
             }
             c.put((i * n + j) as size_t, acc)
-            set j: j + 1
+            j := j + 1
         }
     }
 }
@@ -99,16 +99,16 @@ procedure matmul_seq(a: Vector[double], b: Vector[double], mutable c: Vector[dou
                 var av: double 0.0
                 let ap a.get((i * kk + x) as size_t)
                 if ap <> null
-                    set av: (*ap)
+                    av := (*ap)
                 var bv: double 0.0
                 let bp b.get((x * n + j) as size_t)
                 if bp <> null
-                    set bv: (*bp)
-                set acc: acc + av * bv
-                set x: x + 1
+                    bv := (*bp)
+                acc := acc + av * bv
+                x := x + 1
             }
             c.put((i * n + j) as size_t, acc)
-            set j: j + 1
+            j := j + 1
         }
     }
 }
@@ -131,11 +131,11 @@ procedure matmul_ptr(a: Vector[double], b: Vector[double], mutable c: Vector[dou
             var x 0
             while x < kk
             {
-                set acc: acc + ap[i * kk + x] * bp[x * n + j]
-                set x: x + 1
+                acc := acc + ap[i * kk + x] * bp[x * n + j]
+                x := x + 1
             }
             c.put((i * n + j) as size_t, acc)
-            set j: j + 1
+            j := j + 1
         }
     }
 }
@@ -155,11 +155,11 @@ procedure matmul_ptr_seq(a: Vector[double], b: Vector[double], mutable c: Vector
             var x 0
             while x < kk
             {
-                set acc: acc + ap[i * kk + x] * bp[x * n + j]
-                set x: x + 1
+                acc := acc + ap[i * kk + x] * bp[x * n + j]
+                x := x + 1
             }
             c.put((i * n + j) as size_t, acc)
-            set j: j + 1
+            j := j + 1
         }
     }
 }
@@ -203,7 +203,7 @@ procedure report(tag: pointer[const_char], m: int, kk: int, n: int, ns: i64)
     let flops (2 as i64) * (m as i64) * (kk as i64) * (n as i64)
     var mflops 0 as i64
     if ns > 0
-        set mflops: (flops * 1000) / ns
+        mflops := (flops * 1000) / ns
     let mfs num_to_string(mflops)
     sb.append mfs
     sb.append " mflop/s"

@@ -31,8 +31,8 @@ define Rec (a: int  b: int)
 {
     init(a: int, b: int)
     {
-        set this.a: a
-        set this.b: b
+        this.a := a
+        this.b := b
     }
 }
 
@@ -96,7 +96,7 @@ var i1 0
 while i1 < 200
 {
     let c1 String("012345678901234567890123456789012345678901234567890123456789")
-    set i1: i1 + 1
+    i1 := i1 + 1
 }
 let a1 p1.a
 let b1 p1.b
@@ -105,7 +105,7 @@ var i2 0
 while i2 < 200
 {
     let c2 String("012345678901234567890123456789012345678901234567890123456789")
-    set i2: i2 + 1
+    i2 := i2 + 1
 }
 let a2 p2.a
 let b2 p2.b
@@ -114,7 +114,7 @@ var i3 0
 while i3 < 200
 {
     let c3 String("012345678901234567890123456789012345678901234567890123456789")
-    set i3: i3 + 1
+    i3 := i3 + 1
 }
 let a3 p3.a
 let b3 p3.b
@@ -123,7 +123,7 @@ var i4 0
 while i4 < 200
 {
     let c4 String("012345678901234567890123456789012345678901234567890123456789")
-    set i4: i4 + 1
+    i4 := i4 + 1
 }
 let a4 p4.a
 let b4 p4.b
@@ -132,7 +132,7 @@ var i5 0
 while i5 < 200
 {
     let c5 String("012345678901234567890123456789012345678901234567890123456789")
-    set i5: i5 + 1
+    i5 := i5 + 1
 }
 let a5 p5.a
 let b5 p5.b
@@ -141,7 +141,7 @@ var i6 0
 while i6 < 200
 {
     let c6 String("012345678901234567890123456789012345678901234567890123456789")
-    set i6: i6 + 1
+    i6 := i6 + 1
 }
 let a6 p6.a
 let b6 p6.b
@@ -150,25 +150,25 @@ var i7 0
 while i7 < 200
 {
     let c7 String("012345678901234567890123456789012345678901234567890123456789")
-    set i7: i7 + 1
+    i7 := i7 + 1
 }
 let a7 p7.a
 let b7 p7.b
 var ok true
 if (a1 <> 7) || (b1 <> 8)
-    set ok: false
+    ok := false
 if (a2 <> 7) || (b2 <> 8)
-    set ok: false
+    ok := false
 if (a3 <> 7) || (b3 <> 8)
-    set ok: false
+    ok := false
 if (a4 <> 7) || (b4 <> 8)
-    set ok: false
+    ok := false
 if (a5 <> 7) || (b5 <> 8)
-    set ok: false
+    ok := false
 if (a6 <> 7) || (b6 <> 8)
-    set ok: false
+    ok := false
 if (a7 <> 7) || (b7 <> 8)
-    set ok: false
+    ok := false
 if ok
     print("PASS")
 else

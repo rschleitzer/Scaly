@@ -63,17 +63,17 @@ var ok true
 
 ; distinct storage: three calls, three objects
 if value_of(one) <> 1
-    set ok: false
+    ok := false
 if value_of(two) <> 2
-    set ok: false
+    ok := false
 if value_of(three) <> 3
-    set ok: false
+    ok := false
 
 ; and the storage is the PAGE we named, not a frame
 let p1 (Page.get(one) as size_t)
 let hp (rp as size_t)
 if p1 <> hp
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

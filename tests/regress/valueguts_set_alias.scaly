@@ -25,7 +25,7 @@ function build() returns Rec
     var holder Vector[Vector[String]](1)
     holder.put(0, parts)
     var alias: ref[Vector[String]]? null
-    set alias: holder.get(0)
+    alias := holder.get(0)
     Rec((*alias))
 }
 
@@ -41,8 +41,8 @@ function churn(n: size_t) returns size_t
         junk.put(2, "zzzzz")
         let jp junk.get 0
         if jp <> null
-            set total: total + (*jp).get_length()
-        set i: i + 1
+            total := total + (*jp).get_length()
+        i := i + 1
     }
     total
 }
@@ -51,25 +51,25 @@ let rec build()
 let c churn(50)
 var ok: bool true
 if rec.name.length <> 2
-    set ok: false
+    ok := false
 let n0 rec.name.get 0
 let n1 rec.name.get 1
 if n0 = null
-    set ok: false
+    ok := false
 if n1 = null
-    set ok: false
+    ok := false
 if n0 <> null
 {
     if (*n0).equals("hello") = false
-        set ok: false
+        ok := false
 }
 if n1 <> null
 {
     if (*n1).equals("world") = false
-        set ok: false
+        ok := false
 }
 if c = 0
-    set ok: false
+    ok := false
 if ok
     print("PASS")
 else

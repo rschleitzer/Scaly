@@ -22,7 +22,7 @@ var caught false
 try let raw Channel.receive(ch)
     when e: Deadlock
     {
-        set caught: true
+        caught := true
         Console.print "caught "
         let w String(e.what)
         Console.print "what:"
@@ -38,6 +38,6 @@ var i 0
 while i < 20
 {
     let s String("a payload built after the caught deadlock")
-    set i: i + 1
+    i := i + 1
 }
 Console.println "continued"

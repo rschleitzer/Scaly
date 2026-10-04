@@ -27,6 +27,6 @@ function main() returns int
     var n 0
     let c BadColl(0)
     for e in c
-        set n: n + 1
+        n := n + 1
     return n
 }

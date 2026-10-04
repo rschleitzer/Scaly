@@ -78,7 +78,7 @@ w.key("raw")
 w.raw("[1,2]")
 w.end_object()
 if same(&w, "{\"id\":7,\"name\":\"Widget\",\"tags\":[\"a\",\"b\"],\"empty\":{},\"none\":[],\"nested\":[{\"x\":true},{\"y\":null}],\"price\":1.50,\"raw\":[1,2]}") = false
-    set ok: false
+    ok := false
 if ok
     Console.print "build "
 
@@ -107,7 +107,7 @@ want.append(0x7F as char)
 want.append(" é\"]")
 let want_text want.to_string()
 if same(&w, want_text.as_slice()) = false
-    set ok: false
+    ok := false
 if ok
     Console.print "escape "
 
@@ -119,7 +119,7 @@ w.integer(9223372036854775807)
 w.integer((0 - 9223372036854775807) - 1)
 w.end_array()
 if same(&w, "[0,-1,9223372036854775807,-9223372036854775808]") = false
-    set ok: false
+    ok := false
 if ok
     Console.print "integer "
 
@@ -128,7 +128,7 @@ let parsed JsonValue.parse(canonical.as_slice())
 w.clear()
 w.value(parsed.value)
 if parsed.ok() = false or same(&w, canonical.as_slice()) = false
-    set ok: false
+    ok := false
 ; nesting, empty containers at every position, scalar documents
 var shapes List[String]()
 shapes.add(String("[[],{},[{}],{\"a\":[]},{\"a\":{\"b\":[1,[2,[]]]}},[[[[]]]]]"))
@@ -147,7 +147,7 @@ while let shape shape_it.next()
     if sp.ok() = false or same(&w, shape.as_slice()) = false
     {
         print "  round: `w.to_string()`"
-        set ok: false
+        ok := false
     }
 }
 ; a tree as an element among others, and as a member's value
@@ -159,7 +159,7 @@ w.integer(2)
 w.value(inner)
 w.end_array()
 if same(&w, "[{\"a\":[1,{}]},2,{\"a\":[1,{}]}]") = false
-    set ok: false
+    ok := false
 w.clear()
 w.begin_object()
 w.key("k")
@@ -168,7 +168,7 @@ w.key("z")
 w.value(inner)
 w.end_object()
 if same(&w, "{\"k\":{\"a\":[1,{}]},\"z\":{\"a\":[1,{}]}}") = false
-    set ok: false
+    ok := false
 if ok
     Console.print "round "
 
@@ -178,22 +178,22 @@ var i: i64 0
 while i < 1000
 {
     small.integer(i)
-    set i: i + 1
+    i := i + 1
 }
 small.end_array()
 let back JsonValue.parse(small.bytes())
 if back.ok() = false or back.value.length() <> 1000 or back.value.item(999).as_i64() <> 999
-    set ok: false
+    ok := false
 if small.to_string().length() <> 3891
-    set ok: false
+    ok := false
 if ok
     Console.print "grow "
 
 let quoted JsonWriter.quote(first.as_slice())
 if quoted.as_slice().equals(w_escape_first.as_slice()) = false
-    set ok: false
+    ok := false
 if JsonWriter.stringify(parsed.value).equals(canonical) = false
-    set ok: false
+    ok := false
 if ok
     Console.print "string "
 
@@ -221,7 +221,7 @@ while n <= 40
                 }
                 else
                     sb.append("b")
-                set j: j + 1
+                j := j + 1
             }
             let text sb.to_string()
             var w JsonWriter()
@@ -236,21 +236,21 @@ while n <= 40
             if w.to_string().equals(want.to_string()) = false
             {
                 print "  blocks: length `n`, special `k` at `at`: `w.to_string()`"
-                set blocks_ok: false
+                blocks_ok := false
             }
-            set k: k + 1
+            k := k + 1
         }
-        set at: at + 1
+        at := at + 1
     }
-    set n: n + 1
+    n := n + 1
 }
 if blocks_ok = false
-    set ok: false
+    ok := false
 if ok
     Console.print "blocks "
 
 var verbatim_ok true
-set n: 0
+n := 0
 while n <= 40
 {
     var body StringBuilder()
@@ -259,16 +259,16 @@ while n <= 40
     {
         ; bytes that differ, so a step that lands wrong shows
         body.append(((0x61 + (j % 26)) as u8) as char)
-        set j: j + 1
+        j := j + 1
     }
     let b body.to_string()
     ; n digits, none leading zero
     var digits StringBuilder()
-    set j: 0
+    j := 0
     while j < n
     {
         digits.append((((0x31 + (j % 9)) as u8) as char))
-        set j: j + 1
+        j := j + 1
     }
     let d digits.to_string()
     var k: size_t 0
@@ -287,7 +287,7 @@ while n <= 40
             doc.append("[`d`,`d`]")
         if n = 0 and k >= 3
         {
-            set k: k + 1
+            k := k + 1
             continue
         }
         let source doc.to_string()
@@ -297,14 +297,14 @@ while n <= 40
         if parsed.ok() = false or w.to_string().equals(source) = false
         {
             print "  verbatim: length `n` form `k`: `w.to_string()`"
-            set verbatim_ok: false
+            verbatim_ok := false
         }
-        set k: k + 1
+        k := k + 1
     }
-    set n: n + 1
+    n := n + 1
 }
 if verbatim_ok = false
-    set ok: false
+    ok := false
 if ok
     Console.print "verbatim "
 

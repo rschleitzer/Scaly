@@ -11,13 +11,13 @@
 define Holder (k: int)
 {
     init(k: int)
-        set this.k: k
+        this.k := k
 }
 
 define Keeper (n: int)
 {
     init()
-        set n: 0
+        n := 0
 
     function wants(this: ref[Keeper], h: ref[Holder]) returns int
         h.k
@@ -38,11 +38,11 @@ function drive() returns int
     var total 0
     ; (1) the unwrap, under the guard that makes it true
     if slot <> null
-        set total: total + kp.wants(slot as ref[Holder])
+        total := total + kp.wants(slot as ref[Holder])
     ; (2) the nullable parameter, answering for nothing ...
-    set total: total + kp.tolerates(empty)
+    total := total + kp.tolerates(empty)
     ; ... and for something, through the narrowing the guard proves
-    set total: total + kp.tolerates(slot)
+    total := total + kp.tolerates(slot)
     total
 }
 

@@ -21,8 +21,8 @@ function spin_big(seed: i64) returns i64
     var k 0 as i64
     while k < (40000 as i64)
     {
-        set acc: acc + k
-        set k: k + (1 as i64)
+        acc := acc + k
+        k := k + (1 as i64)
     }
     acc
 }
@@ -52,7 +52,7 @@ procedure wave_set_alias(acc: List[i64])
     {
         let v spin_big(i as i64)
         var t List[i64]()
-        set t: acc
+        t := acc
         t.add v
     }
 }
@@ -77,7 +77,7 @@ procedure wave_read(src: Vector[i64], mutable r: Vector[i64], n: int)
         var base 0 as i64
         let p src.get i
         if p <> null
-            set base: (*p)
+            base := (*p)
         let v spin_big(base)
         r.put(i, v)
     }
@@ -87,7 +87,7 @@ function lsum(l: List[i64]) returns i64
 {
     var s 0 as i64
     for x in l
-        set s: s + x
+        s := s + x
     s
 }
 
@@ -99,8 +99,8 @@ function vsum(r: Vector[i64], n: size_t) returns i64
     {
         let p r.get i
         if p <> null
-            set s: s + (*p)
-        set i: i + 1
+            s := s + (*p)
+        i := i + 1
     }
     s
 }
@@ -179,7 +179,7 @@ var si: size_t 0
 while si < (64 as size_t)
 {
     src.put(si, (si * 5) as i64)
-    set si: si + 1
+    si := si + 1
 }
 var re Vector[i64](64)
 wave_read(src, re, 64)

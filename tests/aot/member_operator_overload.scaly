@@ -28,19 +28,19 @@ var ok: bool true
 
 ; Facet 1: two overloads picked by argument type.
 if not (a == b)         ; Cell overload -> true
-    set ok: false
+    ok := false
 if a == d               ; Cell overload -> false (v differs)
-    set ok: false
+    ok := false
 if not (a == 65)        ; int overload -> true
-    set ok: false
+    ok := false
 if a == 9               ; int overload -> false
-    set ok: false
+    ok := false
 
 ; Facet 2: a bare char literal folds into the char overload.
 if not (a == "A")       ; char overload, "A" (65) folded -> true
-    set ok: false
+    ok := false
 if a == "B"             ; char overload, "B" (66) -> false
-    set ok: false
+    ok := false
 
 if ok
     print("ok")

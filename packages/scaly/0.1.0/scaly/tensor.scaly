@@ -89,23 +89,23 @@ procedure mm_tiled(a: Vector[float], b: Vector[float], mutable c: ref[Vector[flo
                 let c1 bp[x * n + j + 1]
                 let c2 bp[x * n + j + 2]
                 let c3 bp[x * n + j + 3]
-                set a00: a00 + r0 * c0
-                set a01: a01 + r0 * c1
-                set a02: a02 + r0 * c2
-                set a03: a03 + r0 * c3
-                set a10: a10 + r1 * c0
-                set a11: a11 + r1 * c1
-                set a12: a12 + r1 * c2
-                set a13: a13 + r1 * c3
-                set a20: a20 + r2 * c0
-                set a21: a21 + r2 * c1
-                set a22: a22 + r2 * c2
-                set a23: a23 + r2 * c3
-                set a30: a30 + r3 * c0
-                set a31: a31 + r3 * c1
-                set a32: a32 + r3 * c2
-                set a33: a33 + r3 * c3
-                set x: x + 1
+                a00 := a00 + r0 * c0
+                a01 := a01 + r0 * c1
+                a02 := a02 + r0 * c2
+                a03 := a03 + r0 * c3
+                a10 := a10 + r1 * c0
+                a11 := a11 + r1 * c1
+                a12 := a12 + r1 * c2
+                a13 := a13 + r1 * c3
+                a20 := a20 + r2 * c0
+                a21 := a21 + r2 * c1
+                a22 := a22 + r2 * c2
+                a23 := a23 + r2 * c3
+                a30 := a30 + r3 * c0
+                a31 := a31 + r3 * c1
+                a32 := a32 + r3 * c2
+                a33 := a33 + r3 * c3
+                x := x + 1
             }
             c.put(((it * 4 + 0) * n + j) as size_t, a00)
             c.put(((it * 4 + 0) * n + j + 1) as size_t, a01)
@@ -123,7 +123,7 @@ procedure mm_tiled(a: Vector[float], b: Vector[float], mutable c: ref[Vector[flo
             c.put(((it * 4 + 3) * n + j + 1) as size_t, a31)
             c.put(((it * 4 + 3) * n + j + 2) as size_t, a32)
             c.put(((it * 4 + 3) * n + j + 3) as size_t, a33)
-            set j: j + 4
+            j := j + 4
         }
     }
 }
@@ -168,23 +168,23 @@ procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], mutable ga: ref[Vecto
                 let k1 bp[(xt + 1) * n + j]
                 let k2 bp[(xt + 2) * n + j]
                 let k3 bp[(xt + 3) * n + j]
-                set a00: a00 + d0 * k0
-                set a01: a01 + d0 * k1
-                set a02: a02 + d0 * k2
-                set a03: a03 + d0 * k3
-                set a10: a10 + d1 * k0
-                set a11: a11 + d1 * k1
-                set a12: a12 + d1 * k2
-                set a13: a13 + d1 * k3
-                set a20: a20 + d2 * k0
-                set a21: a21 + d2 * k1
-                set a22: a22 + d2 * k2
-                set a23: a23 + d2 * k3
-                set a30: a30 + d3 * k0
-                set a31: a31 + d3 * k1
-                set a32: a32 + d3 * k2
-                set a33: a33 + d3 * k3
-                set j: j + 1
+                a00 := a00 + d0 * k0
+                a01 := a01 + d0 * k1
+                a02 := a02 + d0 * k2
+                a03 := a03 + d0 * k3
+                a10 := a10 + d1 * k0
+                a11 := a11 + d1 * k1
+                a12 := a12 + d1 * k2
+                a13 := a13 + d1 * k3
+                a20 := a20 + d2 * k0
+                a21 := a21 + d2 * k1
+                a22 := a22 + d2 * k2
+                a23 := a23 + d2 * k3
+                a30 := a30 + d3 * k0
+                a31 := a31 + d3 * k1
+                a32 := a32 + d3 * k2
+                a33 := a33 + d3 * k3
+                j := j + 1
             }
             ga.put(((it * 4 + 0) * kk + xt + 0) as size_t, gap[(it * 4 + 0) * kk + xt + 0] + a00)
             ga.put(((it * 4 + 0) * kk + xt + 1) as size_t, gap[(it * 4 + 0) * kk + xt + 1] + a01)
@@ -202,7 +202,7 @@ procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], mutable ga: ref[Vecto
             ga.put(((it * 4 + 3) * kk + xt + 1) as size_t, gap[(it * 4 + 3) * kk + xt + 1] + a31)
             ga.put(((it * 4 + 3) * kk + xt + 2) as size_t, gap[(it * 4 + 3) * kk + xt + 2] + a32)
             ga.put(((it * 4 + 3) * kk + xt + 3) as size_t, gap[(it * 4 + 3) * kk + xt + 3] + a33)
-            set xt: xt + 4
+            xt := xt + 4
         }
     }
 }
@@ -247,23 +247,23 @@ procedure mm_tiled_dB(a: Vector[float], gc: Vector[float], mutable gb: ref[Vecto
                 let d1 gcp[i * n + j + 1]
                 let d2 gcp[i * n + j + 2]
                 let d3 gcp[i * n + j + 3]
-                set a00: a00 + r0 * d0
-                set a01: a01 + r0 * d1
-                set a02: a02 + r0 * d2
-                set a03: a03 + r0 * d3
-                set a10: a10 + r1 * d0
-                set a11: a11 + r1 * d1
-                set a12: a12 + r1 * d2
-                set a13: a13 + r1 * d3
-                set a20: a20 + r2 * d0
-                set a21: a21 + r2 * d1
-                set a22: a22 + r2 * d2
-                set a23: a23 + r2 * d3
-                set a30: a30 + r3 * d0
-                set a31: a31 + r3 * d1
-                set a32: a32 + r3 * d2
-                set a33: a33 + r3 * d3
-                set i: i + 1
+                a00 := a00 + r0 * d0
+                a01 := a01 + r0 * d1
+                a02 := a02 + r0 * d2
+                a03 := a03 + r0 * d3
+                a10 := a10 + r1 * d0
+                a11 := a11 + r1 * d1
+                a12 := a12 + r1 * d2
+                a13 := a13 + r1 * d3
+                a20 := a20 + r2 * d0
+                a21 := a21 + r2 * d1
+                a22 := a22 + r2 * d2
+                a23 := a23 + r2 * d3
+                a30 := a30 + r3 * d0
+                a31 := a31 + r3 * d1
+                a32 := a32 + r3 * d2
+                a33 := a33 + r3 * d3
+                i := i + 1
             }
             gb.put(((xt * 4 + 0) * n + j) as size_t, gbp[(xt * 4 + 0) * n + j] + a00)
             gb.put(((xt * 4 + 0) * n + j + 1) as size_t, gbp[(xt * 4 + 0) * n + j + 1] + a01)
@@ -281,7 +281,7 @@ procedure mm_tiled_dB(a: Vector[float], gc: Vector[float], mutable gb: ref[Vecto
             gb.put(((xt * 4 + 3) * n + j + 1) as size_t, gbp[(xt * 4 + 3) * n + j + 1] + a31)
             gb.put(((xt * 4 + 3) * n + j + 2) as size_t, gbp[(xt * 4 + 3) * n + j + 2] + a32)
             gb.put(((xt * 4 + 3) * n + j + 3) as size_t, gbp[(xt * 4 + 3) * n + j + 3] + a33)
-            set j: j + 4
+            j := j + 4
         }
     }
 }
@@ -317,19 +317,19 @@ define TapeNode
 {
     init (kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int)
     {
-        set op: kind
-        set a: in_a
-        set b: in_b
-        set c: in_c
-        set rows: r
-        set cols: n
-        set heads: 1
-        set win: r
-        set eps: 0.0
-        set value: Vector[float]()
-        set grad: Vector[float]()
-        set aux: Vector[float]()
-        set tok: Vector[i64]()
+        op := kind
+        a := in_a
+        b := in_b
+        c := in_c
+        rows := r
+        cols := n
+        heads := 1
+        win := r
+        eps := 0.0
+        value := Vector[float]()
+        grad := Vector[float]()
+        aux := Vector[float]()
+        tok := Vector[i64]()
     }
 }
 
@@ -340,7 +340,7 @@ define Tape
 {
     init ()
     {
-        set nodes: Array[TapeNode]()
+        nodes := Array[TapeNode]()
     }
 
     procedure add_node(mutable this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) returns int
@@ -349,8 +349,8 @@ define Tape
         var node TapeNode(kind, in_a, in_b, in_c, r, n)
         let v Vector[float]^own_page((r * n) as size_t)
         let g Vector[float]^own_page((r * n) as size_t)
-        set node.value: v
-        set node.grad: g
+        node.value := v
+        node.grad := g
         let id nodes.get_length() as int
         nodes.add node
         id
@@ -450,7 +450,7 @@ define Tape
         let n nx.cols
         let id this.add_node(TAPE_LAYERNORM, x, gamma, beta, r, n)
         let node nodes.at(id)
-        set node.eps: e
+        node.eps := e
         this.run_node id
         id
     }
@@ -463,7 +463,7 @@ define Tape
         let own_page Page.get(this)
         let tk Vector[i64]^own_page(ids)
         let node nodes.at(id)
-        set node.tok: tk
+        node.tok := tk
         this.run_node id
         id
     }
@@ -474,7 +474,7 @@ define Tape
         let own_page Page.get(this)
         let ws Vector[float]^own_page(w)
         let node nodes.at(id)
-        set node.aux: ws
+        node.aux := ws
         this.run_node id
         id
     }
@@ -488,7 +488,7 @@ define Tape
         let own_page Page.get(this)
         let tk Vector[i64]^own_page(targets)
         let node nodes.at(id)
-        set node.tok: tk
+        node.tok := tk
         this.run_node id
         id
     }
@@ -547,9 +547,9 @@ define Tape
         let own_page Page.get(this)
         let scratch Vector[float]^own_page((2 * hs * t * win) as size_t)
         let node nodes.at(id)
-        set node.aux: scratch
-        set node.heads: hs
-        set node.win: win
+        node.aux := scratch
+        node.heads := hs
+        node.win := win
         this.run_node id
         id
     }
@@ -570,25 +570,25 @@ define Tape
         {
             let v xp[off + j]
             if v > mx
-                set mx: v
-            set j: j + 1
+                mx := v
+            j := j + 1
         }
         var sum: float 0.0
         var j2 0
         while j2 < n
         {
-            set sum: sum + expf((xp[off + j2] - mx) * itemp)
-            set j2: j2 + 1
+            sum := sum + expf((xp[off + j2] - mx) * itemp)
+            j2 := j2 + 1
         }
         let target u * sum
         var acc: float 0.0
         var j3 0
         while j3 < n
         {
-            set acc: acc + expf((xp[off + j3] - mx) * itemp)
+            acc := acc + expf((xp[off + j3] - mx) * itemp)
             if acc > target
                 return j3
-            set j3: j3 + 1
+            j3 := j3 + 1
         }
         n - 1
     }
@@ -603,8 +603,8 @@ define Tape
         var i 0
         while i < total
         {
-            set vp[i]: vp[i] - lr * gp[i]
-            set i: i + 1
+            vp[i] := vp[i] - lr * gp[i]
+            i := i + 1
         }
     }
 
@@ -621,7 +621,7 @@ define Tape
         if auxlen < total * 2
         {
             let mv Vector[float]^own_page((total * 2) as size_t)
-            set node.aux: mv
+            node.aux := mv
         }
         let vp node.value.data
         let gp node.grad.data
@@ -634,12 +634,12 @@ define Tape
             let g gp[i]
             let m b1 * mp[i] + (1.0 - b1) * g
             let v b2 * mp[total + i] + (1.0 - b2) * g * g
-            set mp[i]: m
-            set mp[total + i]: v
+            mp[i] := m
+            mp[total + i] := v
             let mhat m / bc1
             let vhat v / bc2
-            set vp[i]: vp[i] - lr * mhat / (sqrtf(vhat) + e)
-            set i: i + 1
+            vp[i] := vp[i] - lr * mhat / (sqrtf(vhat) + e)
+            i := i + 1
         }
     }
 
@@ -651,7 +651,7 @@ define Tape
         while i < count
         {
             this.run_node i
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -668,9 +668,9 @@ define Tape
             while j < total
             {
                 g.put(j as size_t, 0.0)
-                set j: j + 1
+                j := j + 1
             }
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -686,13 +686,13 @@ define Tape
         while s < total
         {
             g.put(s as size_t, 1.0)
-            set s: s + 1
+            s := s + 1
         }
         var i id
         while i >= 0
         {
             this.bwd_node i
-            set i: i - 1
+            i := i - 1
         }
     }
 
@@ -780,11 +780,11 @@ define Tape
                 var x 0
                 while x < kk
                 {
-                    set acc: acc + ap[i * kk + x] * bp[x * n + j]
-                    set x: x + 1
+                    acc := acc + ap[i * kk + x] * bp[x * n + j]
+                    x := x + 1
                 }
                 out.put((i * n + j) as size_t, acc)
-                set j: j + 1
+                j := j + 1
             }
         }
     }
@@ -817,7 +817,7 @@ define Tape
             if kk4
             {
                 mm_tiled_dA(node.grad, nb.value, &na.grad, m, kk, n)
-                set did_dA: true
+                did_dA := true
             }
         }
         if did_dA = false
@@ -831,11 +831,11 @@ define Tape
                     var j 0
                     while j < n
                     {
-                        set acc: acc + gp[i * n + j] * bp[x * n + j]
-                        set j: j + 1
+                        acc := acc + gp[i * n + j] * bp[x * n + j]
+                        j := j + 1
                     }
                     ga.put((i * kk + x) as size_t, gap[i * kk + x] + acc)
-                    set x: x + 1
+                    x := x + 1
                 }
             }
         }
@@ -847,7 +847,7 @@ define Tape
             if n4
             {
                 mm_tiled_dB(na.value, node.grad, &nb.grad, m, kk, n)
-                set did_dB: true
+                did_dB := true
             }
         }
         if did_dB = false
@@ -861,11 +861,11 @@ define Tape
                     var i2 0
                     while i2 < m
                     {
-                        set acc: acc + ap[i2 * kk + x2] * gp[i2 * n + j]
-                        set i2: i2 + 1
+                        acc := acc + ap[i2 * kk + x2] * gp[i2 * n + j]
+                        i2 := i2 + 1
                     }
                     gb.put((x2 * n + j) as size_t, gbp[x2 * n + j] + acc)
-                    set j: j + 1
+                    j := j + 1
                 }
             }
         }
@@ -889,7 +889,7 @@ define Tape
                 let t tanhf(inner)
                 let g 0.5 * v * (1.0 + t)
                 out.put((i * n + j) as size_t, g)
-                set j: j + 1
+                j := j + 1
             }
         }
     }
@@ -916,7 +916,7 @@ define Tape
                 let dinner 0.7978845608 * (1.0 + 0.134145 * v * v)
                 let dg 0.5 * (1.0 + t) + 0.5 * v * (1.0 - t * t) * dinner
                 ga.put((i * n + j) as size_t, gxp[i * n + j] + gp[i * n + j] * dg)
-                set j: j + 1
+                j := j + 1
             }
         }
     }
@@ -938,8 +938,8 @@ define Tape
             {
                 let v xp[i * n + j]
                 if v > mx
-                    set mx: v
-                set j: j + 1
+                    mx := v
+                j := j + 1
             }
             var sum: float 0.0
             var j2 0
@@ -947,8 +947,8 @@ define Tape
             {
                 let e expf(xp[i * n + j2] - mx)
                 out.put((i * n + j2) as size_t, e)
-                set sum: sum + e
-                set j2: j2 + 1
+                sum := sum + e
+                j2 := j2 + 1
             }
             let inv 1.0 / sum
             var j3 0
@@ -956,7 +956,7 @@ define Tape
             {
                 let scaled op[i * n + j3] * inv
                 out.put((i * n + j3) as size_t, scaled)
-                set j3: j3 + 1
+                j3 := j3 + 1
             }
         }
     }
@@ -978,15 +978,15 @@ define Tape
             var j 0
             while j < n
             {
-                set dot: dot + gp[i * n + j] * yp[i * n + j]
-                set j: j + 1
+                dot := dot + gp[i * n + j] * yp[i * n + j]
+                j := j + 1
             }
             var j2 0
             while j2 < n
             {
                 let d yp[i * n + j2] * (gp[i * n + j2] - dot)
                 ga.put((i * n + j2) as size_t, gxp[i * n + j2] + d)
-                set j2: j2 + 1
+                j2 := j2 + 1
             }
         }
     }
@@ -1010,8 +1010,8 @@ define Tape
             var j 0
             while j < n
             {
-                set sum: sum + xp[i * n + j]
-                set j: j + 1
+                sum := sum + xp[i * n + j]
+                j := j + 1
             }
             let mean sum / (n as float)
             var vsum: float 0.0
@@ -1019,8 +1019,8 @@ define Tape
             while j2 < n
             {
                 let d xp[i * n + j2] - mean
-                set vsum: vsum + d * d
-                set j2: j2 + 1
+                vsum := vsum + d * d
+                j2 := j2 + 1
             }
             let denom sqrtf(vsum / (n as float) + e)
             let inv 1.0 / denom
@@ -1030,7 +1030,7 @@ define Tape
                 let z (xp[i * n + j3] - mean) * inv
                 let scaled z * gp[j3] + bp[j3]
                 out.put((i * n + j3) as size_t, scaled)
-                set j3: j3 + 1
+                j3 := j3 + 1
             }
         }
     }
@@ -1058,8 +1058,8 @@ define Tape
             var j 0
             while j < n
             {
-                set sum: sum + xp[i * n + j]
-                set j: j + 1
+                sum := sum + xp[i * n + j]
+                j := j + 1
             }
             let mean sum / (n as float)
             var vsum: float 0.0
@@ -1067,8 +1067,8 @@ define Tape
             while j2 < n
             {
                 let d xp[i * n + j2] - mean
-                set vsum: vsum + d * d
-                set j2: j2 + 1
+                vsum := vsum + d * d
+                j2 := j2 + 1
             }
             let denom sqrtf(vsum / (n as float) + e)
             let inv 1.0 / denom
@@ -1081,24 +1081,24 @@ define Tape
             {
                 let xhat (xp[i * n + j3] - mean) * inv
                 let dyhat gp[i * n + j3] * gammap[j3]
-                set m1: m1 + dyhat
-                set m2: m2 + dyhat * xhat
-                set j3: j3 + 1
+                m1 := m1 + dyhat
+                m2 := m2 + dyhat * xhat
+                j3 := j3 + 1
             }
-            set m1: m1 / (n as float)
-            set m2: m2 / (n as float)
+            m1 := m1 / (n as float)
+            m2 := m2 / (n as float)
             var j4 0
             while j4 < n
             {
                 let xhat (xp[i * n + j4] - mean) * inv
                 let dyhat gp[i * n + j4] * gammap[j4]
                 let dx inv * (dyhat - m1 - xhat * m2)
-                set gxp[i * n + j4]: gxp[i * n + j4] + dx
+                gxp[i * n + j4] := gxp[i * n + j4] + dx
                 ; dgamma_j += dy_j * xhat_j; dbeta_j += dy_j — shared
                 ; across rows, so this loop stays sequential.
-                set ggammap[j4]: ggammap[j4] + gp[i * n + j4] * xhat
-                set gbetap[j4]: gbetap[j4] + gp[i * n + j4]
-                set j4: j4 + 1
+                ggammap[j4] := ggammap[j4] + gp[i * n + j4] * xhat
+                gbetap[j4] := gbetap[j4] + gp[i * n + j4]
+                j4 := j4 + 1
             }
         }
     }
@@ -1120,7 +1120,7 @@ define Tape
             {
                 let v tp[(tokid as int) * dim + j]
                 out.put((t * dim + j) as size_t, v)
-                set j: j + 1
+                j := j + 1
             }
         }
     }
@@ -1144,10 +1144,10 @@ define Tape
             while j < dim
             {
                 let row (tokid as int) * dim + j
-                set gtp[row]: gtp[row] + gp[t * dim + j]
-                set j: j + 1
+                gtp[row] := gtp[row] + gp[t * dim + j]
+                j := j + 1
             }
-            set t: t + 1
+            t := t + 1
         }
     }
 
@@ -1163,8 +1163,8 @@ define Tape
         var i 0
         while i < total
         {
-            set sum: sum + wp[i] * xp[i]
-            set i: i + 1
+            sum := sum + wp[i] * xp[i]
+            i := i + 1
         }
         out.put(0, sum)
     }
@@ -1181,8 +1181,8 @@ define Tape
         var i 0
         while i < total
         {
-            set gxp[i]: gxp[i] + wp[i] * g0
-            set i: i + 1
+            gxp[i] := gxp[i] + wp[i] * g0
+            i := i + 1
         }
     }
 
@@ -1206,20 +1206,20 @@ define Tape
             {
                 let v xp[i * n + j]
                 if v > mx
-                    set mx: v
-                set j: j + 1
+                    mx := v
+                j := j + 1
             }
             var sum: float 0.0
             var j2 0
             while j2 < n
             {
-                set sum: sum + expf(xp[i * n + j2] - mx)
-                set j2: j2 + 1
+                sum := sum + expf(xp[i * n + j2] - mx)
+                j2 := j2 + 1
             }
             let lse mx + logf(sum)
             let t tp[i] as int
-            set loss: loss + lse - xp[i * n + t]
-            set i: i + 1
+            loss := loss + lse - xp[i * n + t]
+            i := i + 1
         }
         out.put(0, loss / (r as float))
     }
@@ -1246,15 +1246,15 @@ define Tape
             {
                 let v xp[i * n + j]
                 if v > mx
-                    set mx: v
-                set j: j + 1
+                    mx := v
+                j := j + 1
             }
             var sum: float 0.0
             var j2 0
             while j2 < n
             {
-                set sum: sum + expf(xp[i * n + j2] - mx)
-                set j2: j2 + 1
+                sum := sum + expf(xp[i * n + j2] - mx)
+                j2 := j2 + 1
             }
             let inv 1.0 / sum
             let t tp[i] as int
@@ -1263,9 +1263,9 @@ define Tape
             {
                 var p expf(xp[i * n + j3] - mx) * inv
                 if j3 = t
-                    set p: p - 1.0
+                    p := p - 1.0
                 ga.put((i * n + j3) as size_t, gxp[i * n + j3] + scale * p)
-                set j3: j3 + 1
+                j3 := j3 + 1
             }
         }
     }
@@ -1286,7 +1286,7 @@ define Tape
             while j < n
             {
                 out.put((i * n + j) as size_t, xp[i * n + j] + yp[i * n + j])
-                set j: j + 1
+                j := j + 1
             }
         }
     }
@@ -1303,9 +1303,9 @@ define Tape
         var i 0
         while i < total
         {
-            set gxp[i]: gxp[i] + gp[i]
-            set gyp[i]: gyp[i] + gp[i]
-            set i: i + 1
+            gxp[i] := gxp[i] + gp[i]
+            gyp[i] := gyp[i] + gp[i]
+            i := i + 1
         }
     }
 
@@ -1327,7 +1327,7 @@ define Tape
             while j < n
             {
                 out.put((i * n + j) as size_t, xp[i * n + j] + yp[yb + j])
-                set j: j + 1
+                j := j + 1
             }
         }
     }
@@ -1350,11 +1350,11 @@ define Tape
             var j 0
             while j < n
             {
-                set gxp[i * n + j]: gxp[i * n + j] + gp[i * n + j]
-                set gyp[yb + j]: gyp[yb + j] + gp[i * n + j]
-                set j: j + 1
+                gxp[i * n + j] := gxp[i * n + j] + gp[i * n + j]
+                gyp[yb + j] := gyp[yb + j] + gp[i * n + j]
+                j := j + 1
             }
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -1395,16 +1395,16 @@ define Tape
                     var c 0
                     while c < dh
                     {
-                        set acc: acc + qp[i * d + h * dh + c] * kp[j * d + h * dh + c]
-                        set c: c + 1
+                        acc := acc + qp[i * d + h * dh + c] * kp[j * d + h * dh + c]
+                        c := c + 1
                     }
                     let sc acc * scale
                     px.put((h * t * w + i * w + (j - ws)) as size_t, sc)
                     if j = ws
-                        set mx: sc
+                        mx := sc
                     if sc > mx
-                        set mx: sc
-                    set j: j + 1
+                        mx := sc
+                    j := j + 1
                 }
                 ; softmax over the window, in place
                 var sum: float 0.0
@@ -1413,8 +1413,8 @@ define Tape
                 {
                     let e expf(pp[h * t * w + i * w + (j2 - ws)] - mx)
                     px.put((h * t * w + i * w + (j2 - ws)) as size_t, e)
-                    set sum: sum + e
-                    set j2: j2 + 1
+                    sum := sum + e
+                    j2 := j2 + 1
                 }
                 let inv 1.0 / sum
                 var j3 ws
@@ -1422,7 +1422,7 @@ define Tape
                 {
                     let scaled pp[h * t * w + i * w + (j3 - ws)] * inv
                     px.put((h * t * w + i * w + (j3 - ws)) as size_t, scaled)
-                    set j3: j3 + 1
+                    j3 := j3 + 1
                 }
                 ; out_i = sum_j p_ij * v_j over the head slice
                 var c2 0
@@ -1432,13 +1432,13 @@ define Tape
                     var j4 ws
                     while j4 <= i
                     {
-                        set acc2: acc2 + pp[h * t * w + i * w + (j4 - ws)] * vp[j4 * d + h * dh + c2]
-                        set j4: j4 + 1
+                        acc2 := acc2 + pp[h * t * w + i * w + (j4 - ws)] * vp[j4 * d + h * dh + c2]
+                        j4 := j4 + 1
                     }
                     out.put((i * d + h * dh + c2) as size_t, acc2)
-                    set c2: c2 + 1
+                    c2 := c2 + 1
                 }
-                set h: h + 1
+                h := h + 1
             }
         }
     }
@@ -1482,21 +1482,21 @@ define Tape
                     var c 0
                     while c < dh
                     {
-                        set dp: dp + gp[i * d + h * dh + c] * vp[j * d + h * dh + c]
-                        set c: c + 1
+                        dp := dp + gp[i * d + h * dh + c] * vp[j * d + h * dh + c]
+                        c := c + 1
                     }
-                    set pp[dsoff + h * t * w + i * w + (j - ws)]: dp
-                    set ci: ci + dp * pp[h * t * w + i * w + (j - ws)]
-                    set j: j + 1
+                    pp[dsoff + h * t * w + i * w + (j - ws)] := dp
+                    ci := ci + dp * pp[h * t * w + i * w + (j - ws)]
+                    j := j + 1
                 }
                 var j2 ws
                 while j2 <= i
                 {
                     let ds pp[h * t * w + i * w + (j2 - ws)] * (pp[dsoff + h * t * w + i * w + (j2 - ws)] - ci)
-                    set pp[dsoff + h * t * w + i * w + (j2 - ws)]: ds
-                    set j2: j2 + 1
+                    pp[dsoff + h * t * w + i * w + (j2 - ws)] := ds
+                    j2 := j2 + 1
                 }
-                set h: h + 1
+                h := h + 1
             }
         }
         ; pass 2: dQ_i += scale * sum_{j<=i} ds_ij k_j (rows disjoint)
@@ -1513,13 +1513,13 @@ define Tape
                     var j ws2
                     while j <= i2
                     {
-                        set acc: acc + pp[dsoff + h * t * w + i2 * w + (j - ws2)] * kp[j * d + h * dh + c]
-                        set j: j + 1
+                        acc := acc + pp[dsoff + h * t * w + i2 * w + (j - ws2)] * kp[j * d + h * dh + c]
+                        j := j + 1
                     }
-                    set gqp[i2 * d + h * dh + c]: gqp[i2 * d + h * dh + c] + scale * acc
-                    set c: c + 1
+                    gqp[i2 * d + h * dh + c] := gqp[i2 * d + h * dh + c] + scale * acc
+                    c := c + 1
                 }
-                set h: h + 1
+                h := h + 1
             }
         }
         ; pass 3: dK_j += scale * sum_{i>=j} ds_ij q_i and
@@ -1541,15 +1541,15 @@ define Tape
                     var i j5
                     while i < wej
                     {
-                        set acck: acck + pp[dsoff + h * t * w + i * w + jw] * qp[i * d + h * dh + c]
-                        set accv: accv + pp[h * t * w + i * w + jw] * gp[i * d + h * dh + c]
-                        set i: i + 1
+                        acck := acck + pp[dsoff + h * t * w + i * w + jw] * qp[i * d + h * dh + c]
+                        accv := accv + pp[h * t * w + i * w + jw] * gp[i * d + h * dh + c]
+                        i := i + 1
                     }
-                    set gkp[j5 * d + h * dh + c]: gkp[j5 * d + h * dh + c] + scale * acck
-                    set gvp[j5 * d + h * dh + c]: gvp[j5 * d + h * dh + c] + accv
-                    set c: c + 1
+                    gkp[j5 * d + h * dh + c] := gkp[j5 * d + h * dh + c] + scale * acck
+                    gvp[j5 * d + h * dh + c] := gvp[j5 * d + h * dh + c] + accv
+                    c := c + 1
                 }
-                set h: h + 1
+                h := h + 1
             }
         }
     }

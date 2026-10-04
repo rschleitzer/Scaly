@@ -7,7 +7,7 @@ define Holder[T]
     slot: pointer[T]
 )
 {
-    init(p: pointer[T])  set slot: p
+    init(p: pointer[T])  slot := p
 
     function fetch(this: Holder[T], i: size_t) returns ref[T]
     {

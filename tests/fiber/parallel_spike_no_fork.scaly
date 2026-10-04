@@ -30,8 +30,8 @@ function spike(seed: i64) returns i64
     var k 0 as i64
     while k < (200000 as i64)
     {
-        set acc: acc + k
-        set k: k + (1 as i64)
+        acc := acc + k
+        k := k + (1 as i64)
     }
     acc
 }
@@ -60,8 +60,8 @@ function vsum(r: Vector[i64], n: size_t) returns i64
     {
         let v r.get j
         if v <> null
-            set s: s + (*v)
-        set j: j + 1
+            s := s + (*v)
+        j := j + 1
     }
     s
 }
@@ -74,7 +74,7 @@ var e 0
 while e < 299
 {
     wave_spike(r, 0)
-    set e: e + 1
+    e := e + 1
 }
 
 ; spike(1) = 1 + (0+..+199999) = 19999900001, plus 0,6,9,12,15,18,21.

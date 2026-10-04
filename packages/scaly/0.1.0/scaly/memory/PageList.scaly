@@ -13,7 +13,7 @@ define PageList
     {
         let own_page Page.get(this)
         let new_node PageNode^own_page(element, head)
-        set head: new_node
+        head := new_node
     }
 
     procedure remove(mutable this: PageList, element: ref[Page]) returns bool
@@ -25,15 +25,15 @@ define PageList
             if node.page = element
             {
                 if previous_node <> null
-                    set previous_node.next: node.next
+                    previous_node.next := node.next
 
                 if node = head
-                    set head: node.next
+                    head := node.next
 
                 return true
             }
-            set previous_node: node
-            set node: node.next
+            previous_node := node
+            node := node.next
         }
 
         return false

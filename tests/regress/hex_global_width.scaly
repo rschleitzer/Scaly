@@ -14,7 +14,7 @@ define ALL_ONES: u32 0xFFFFFFFF
 
 var cell: u64 0x1122334455667788
 let p (&cell) as pointer[u32]
-set *p: ALL_ONES
+*p := ALL_ONES
 if cell = (0x11223344FFFFFFFF as u64)
     print "PASS\n"
 else

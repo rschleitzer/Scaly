@@ -26,13 +26,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -49,13 +49,13 @@ procedure run_steps(mutable tape: Tape, emb: int, loss: int, table: int, w1: int
         var b 0
         while b < 128
         {
-            set s: lcg(s)
+            s := lcg(s)
             let tok pmod(s, 96)
             tape.set_token(emb, b, tok as i64)
-            set s: lcg(s)
+            s := lcg(s)
             let tgt pmod(s, 96)
             tape.set_token(loss, b, tgt as i64)
-            set b: b + 1
+            b := b + 1
         }
         tape.recompute()
         tape.zero_grads()
@@ -64,7 +64,7 @@ procedure run_steps(mutable tape: Tape, emb: int, loss: int, table: int, w1: int
         tape.adam_step(table, 0.01, 0.9, 0.999, 0.00000001, t)
         tape.adam_step(w1, 0.01, 0.9, 0.999, 0.00000001, t)
         tape.adam_step(w2, 0.01, 0.9, 0.999, 0.00000001, t)
-        set step: step + 1
+        step := step + 1
     }
     count
 }
@@ -81,29 +81,29 @@ var s 42
 var i 0
 while i < V * D
 {
-    set s: lcg(s)
+    s := lcg(s)
     let r pmod(s, 2001) - 1000
     let rv (r as float) * 0.0001
     tape.set_value(table, i, rv)
-    set i: i + 1
+    i := i + 1
 }
 var i2 0
 while i2 < D * H
 {
-    set s: lcg(s)
+    s := lcg(s)
     let r pmod(s, 2001) - 1000
     let rv (r as float) * 0.0001
     tape.set_value(w1, i2, rv)
-    set i2: i2 + 1
+    i2 := i2 + 1
 }
 var i3 0
 while i3 < H * V
 {
-    set s: lcg(s)
+    s := lcg(s)
     let r pmod(s, 2001) - 1000
     let rv (r as float) * 0.0001
     tape.set_value(w2, i3, rv)
-    set i3: i3 + 1
+    i3 := i3 + 1
 }
 let bsz B as size_t
 var ids Vector[i64](bsz)
@@ -123,7 +123,7 @@ let t1 scaly_eio_now_ns()
 let ns t1 - t0
 var sps 0 as i64
 if ns > 0
-    set sps: ((timed as i64) * 1000000000) / ns
+    sps := ((timed as i64) * 1000000000) / ns
 var sb StringBuilder()
 sb.append "train_step B128 D32 H64 V96: "
 let str num_to_string(sps)

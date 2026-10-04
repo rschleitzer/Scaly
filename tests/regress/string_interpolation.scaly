@@ -14,7 +14,7 @@ let s1 "The answer is `n`!"
 if (s1.equals("The answer is 42!")) = false
 {
     print("FAIL s1\n")
-    set ok: false
+    ok := false
 }
 
 let who String("world")
@@ -22,14 +22,14 @@ let s2 "hello `who`"
 if (s2.equals("hello world")) = false
 {
     print("FAIL s2\n")
-    set ok: false
+    ok := false
 }
 
 let s3 "sum: `n + 8`"
 if (s3.equals("sum: 50")) = false
 {
     print("FAIL s3\n")
-    set ok: false
+    ok := false
 }
 
 let c: char "x"
@@ -37,35 +37,35 @@ let s4 "char `c` ok"
 if (s4.equals("char x ok")) = false
 {
     print("FAIL s4\n")
-    set ok: false
+    ok := false
 }
 
 let s5 "`n` at start"
 if (s5.equals("42 at start")) = false
 {
     print("FAIL s5\n")
-    set ok: false
+    ok := false
 }
 
 let s6 "at end `n`"
 if (s6.equals("at end 42")) = false
 {
     print("FAIL s6\n")
-    set ok: false
+    ok := false
 }
 
 let s7 "`n``n + 1`"
 if (s7.equals("4243")) = false
 {
     print("FAIL s7\n")
-    set ok: false
+    ok := false
 }
 
 let s8 "len: `who.get_length()`"
 if (s8.equals("len: 5")) = false
 {
     print("FAIL s8\n")
-    set ok: false
+    ok := false
 }
 
 let neg 0 - 7
@@ -73,14 +73,14 @@ let s9 "neg `neg`"
 if (s9.equals("neg -7")) = false
 {
     print("FAIL s9\n")
-    set ok: false
+    ok := false
 }
 
 let s10 "flag `n = 42`"
 if (s10.equals("flag true")) = false
 {
     print("FAIL s10\n")
-    set ok: false
+    ok := false
 }
 
 ; escaped backtick stays literal — compare against a built expectation so a
@@ -94,7 +94,7 @@ let expected11 esb.to_string()
 if (s11.equals(expected11)) = false
 {
     print("FAIL s11\n")
-    set ok: false
+    ok := false
 }
 
 ; embedded expression containing its own string literal (escaped quotes)
@@ -102,7 +102,7 @@ let s12 "outer `String(\"inner\").get_length()`"
 if (s12.equals("outer 5")) = false
 {
     print("FAIL s12\n")
-    set ok: false
+    ok := false
 }
 
 if ok

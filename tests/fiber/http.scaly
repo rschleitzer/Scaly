@@ -26,13 +26,13 @@ function head_complete(buf: pointer[u8], total: int) returns bool
         return false
     var ok true
     if (*(buf + (total - 4)) as int) <> 13
-        set ok: false
+        ok := false
     if (*(buf + (total - 3)) as int) <> 10
-        set ok: false
+        ok := false
     if (*(buf + (total - 2)) as int) <> 13
-        set ok: false
+        ok := false
     if (*(buf + (total - 1)) as int) <> 10
-        set ok: false
+        ok := false
     ok
 }
 
@@ -45,7 +45,7 @@ procedure write_all(fd: i32, data: size_t, len: size_t)
         let w Io.write(fd, (data + off) as pointer[void], len - off)
         if w < 0
             exit 5
-        set off: off + (w as size_t)
+        off := off + (w as size_t)
     }
 }
 
@@ -64,26 +64,26 @@ procedure handle_connection()
         let n Io.read(fd, ((buf as size_t) + (total as size_t)) as pointer[void], (512 - total) as size_t)
         if n <= 0
             exit 3
-        set total: total + (n as int)
+        total := total + (n as int)
     }
     var is_get false
     if total >= 4
     {
         var m 0
         if (*(buf + 0) as int) = 71
-            set m: m + 1
+            m := m + 1
         if (*(buf + 1) as int) = 69
-            set m: m + 1
+            m := m + 1
         if (*(buf + 2) as int) = 84
-            set m: m + 1
+            m := m + 1
         if (*(buf + 3) as int) = 32
-            set m: m + 1
+            m := m + 1
         if m = 4
-            set is_get: true
+            is_get := true
     }
     var resp String("HTTP/1.0 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
     if is_get
-        set resp: String("HTTP/1.0 200 OK\r\nContent-Length: 13\r\nConnection: close\r\n\r\nHello, Scaly!")
+        resp := String("HTTP/1.0 200 OK\r\nContent-Length: 13\r\nConnection: close\r\n\r\nHello, Scaly!")
     let data resp.c_data() as size_t
     let len resp.get_length()
     write_all(fd, data, len)
@@ -99,7 +99,7 @@ procedure acceptor()
         if cfd = ((0 - 1) as i32)
             exit 2
         Scheduler.spawn_arg(&handle_connection, (cfd as size_t) as pointer[void])
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -124,9 +124,9 @@ procedure converse(req: String, want_total: int, d1: int, d2: int, d3: int) retu
         if n < 0
             exit 6
         if n = 0
-            set open: false
+            open := false
         else
-            set total: total + (n as int)
+            total := total + (n as int)
     }
     close(fd)
     if total <> want_total
@@ -156,7 +156,7 @@ procedure client()
             if i = 3
                 Console.print "ok3 "
         }
-        set i: i + 1
+        i := i + 1
     }
     let bad String("BLURB / HTTP/1.0\r\n\r\n")
     let ok4 converse(bad, 66, 52, 48, 48)
@@ -168,11 +168,11 @@ let page Page.allocate_page()
 let lfd Io.listen(0 as i32)
 if lfd = ((0 - 1) as i32)
     exit 1
-set listen_fd: lfd as int
+listen_fd := lfd as int
 let port Io.local_port(lfd)
 if port = ((0 - 1) as i32)
     exit 1
-set server_port: port as int
+server_port := port as int
 let sched Scheduler.create(page)
 let r0 Fiber.freed_region_count()
 let ta Scheduler.spawn(&acceptor)

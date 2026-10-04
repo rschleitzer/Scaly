@@ -12,7 +12,7 @@ function current() returns ref[Box]
 function touch() returns int
 {
     let b current()
-    set b.v: 5
+    b.v := 5
     0
 }
 

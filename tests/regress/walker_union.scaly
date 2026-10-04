@@ -33,19 +33,19 @@ let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
 
 let s String^mp("union text payload")
 let pa Payload.Text(s)
-set msg.a: pa
+msg.a := pa
 
 let it mp.allocate(sizeof Item, alignof Item) as pointer[Item]
 let lab String^mp("item title")
-set it.title: lab
-set it.value: 77
+it.title := lab
+it.value := 77
 let pb Payload.Ref(it)
-set msg.b: pb
+msg.b := pb
 
 let pc Payload.Num(123)
-set msg.c: pc
+msg.c := pc
 let pd Payload.Nothing
-set msg.d: pd
+msg.d := pd
 
 let host Page.allocate_page()
 let frame Region.serialize(mp, msg as pointer[void], host)
@@ -65,37 +65,37 @@ choose m2.a
     when t: Text
     {
         if t.equals("union text payload") = false
-            set ok: false
+            ok := false
     }
     else
-        set ok: false
+        ok := false
 
 choose m2.b
     when r: Ref
     {
         let rl r.title
         if rl.equals("item title") = false
-            set ok: false
+            ok := false
         if r.value <> (77 as i64)
-            set ok: false
+            ok := false
     }
     else
-        set ok: false
+        ok := false
 
 choose m2.c
     when n: Num
     {
         if n <> (123 as i64)
-            set ok: false
+            ok := false
     }
     else
-        set ok: false
+        ok := false
 
 choose m2.d
     when u: Nothing
         0
     else
-        set ok: false
+        ok := false
 
 rr.release()
 

@@ -32,13 +32,13 @@ procedure flips_of(perm: Vector[int], mutable work: Vector[int], n: int) returns
     while k < n
     {
         work.put(k as size_t, perm[k as size_t])
-        set k: k + 1
+        k := k + 1
     }
     var flips 0
     var fv first
     repeat
     {
-        set flips: flips + 1
+        flips := flips + 1
         let nf work[fv as size_t]
         work.put(fv as size_t, fv)
         if fv > 2
@@ -50,13 +50,13 @@ procedure flips_of(perm: Vector[int], mutable work: Vector[int], n: int) returns
                 let t work[lo as size_t]
                 work.put(lo as size_t, work[hi as size_t])
                 work.put(hi as size_t, t)
-                set lo: lo + 1
-                set hi: hi - 1
+                lo := lo + 1
+                hi := hi - 1
             }
         }
         if nf = 0
             break
-        set fv: nf
+        fv := nf
     }
     flips
 }
@@ -77,9 +77,9 @@ function with_prefix(n: int, first: int, second: int) returns FlipResult
         if v <> first and v <> second
         {
             perm.put(p as size_t, v)
-            set p: p + 1
+            p := p + 1
         }
-        set v: v + 1
+        v := v + 1
     }
     let k n - 2
     var c Vector[int](n as size_t)
@@ -93,22 +93,22 @@ function with_prefix(n: int, first: int, second: int) returns FlipResult
         {
             var a 2
             if i % 2 = 1
-                set a: 2 + c[i as size_t]
+                a := 2 + c[i as size_t]
             let b 2 + i
             let t perm[a as size_t]
             perm.put(a as size_t, perm[b as size_t])
             perm.put(b as size_t, t)
             let f flips_of(perm, work, n)
-            set total: total + f
+            total := total + f
             if f > best
-                set best: f
+                best := f
             c.put(i as size_t, c[i as size_t] + 1)
-            set i: 0
+            i := 0
         }
         else
         {
             c.put(i as size_t, 0)
-            set i: i + 1
+            i := i + 1
         }
     }
     FlipResult(best, total)
@@ -124,7 +124,7 @@ var total 0
 for r in results
 {
     if r.max_flips > max_flips
-        set max_flips: r.max_flips
-    set total: total + r.total_flips
+        max_flips := r.max_flips
+    total := total + r.total_flips
 }
 print("fannkuch `n`: max `max_flips` flips, `total` in all")

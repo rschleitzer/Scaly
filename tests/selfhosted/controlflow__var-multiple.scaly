@@ -4,7 +4,7 @@
 ; expect: 6
 var a 2
 var b 3
-set a : a * b
+a := a * b
 let literate_result (a)
 if literate_result = (6)
     print("PASS")

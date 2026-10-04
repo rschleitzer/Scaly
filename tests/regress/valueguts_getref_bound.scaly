@@ -36,8 +36,8 @@ function churn(n: size_t) returns size_t
         junk.put(2, "sssss")
         let jp junk.get 0
         if jp <> null
-            set total: total + (*jp).get_length()
-        set i: i + 1
+            total := total + (*jp).get_length()
+        i := i + 1
     }
     total
 }
@@ -46,30 +46,30 @@ let w build_ref()
 let c churn(50)
 var ok: bool true
 if w = null
-    set ok: false
+    ok := false
 if w <> null
 {
     if (*w).items.length <> 2
-        set ok: false
+        ok := false
     let i0 (*w).items.get 0
     let i1 (*w).items.get 1
     if i0 = null
-        set ok: false
+        ok := false
     if i1 = null
-        set ok: false
+        ok := false
     if i0 <> null
     {
         if (*i0).equals("alpha") = false
-            set ok: false
+            ok := false
     }
     if i1 <> null
     {
         if (*i1).equals("beta") = false
-            set ok: false
+            ok := false
     }
 }
 if c = 0
-    set ok: false
+    ok := false
 if ok
     print("PASS")
 else

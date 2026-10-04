@@ -42,7 +42,7 @@ if ((b as size_t) - (q as size_t)) <> (40 as size_t)
 ; not whatever the slot held when it was declared.
 let r Page.allocate_page()
 var wp q
-set wp: r
+wp := r
 let c Vector[int]^wp(4)
 if ((c as size_t) - (r as size_t)) <> (40 as size_t)
 {
@@ -54,7 +54,7 @@ if ((c as size_t) - (r as size_t)) <> (40 as size_t)
 let s Page.allocate_page()
 var cp r
 if (4 as size_t) > (2 as size_t)
-    set cp: s
+    cp := s
 let d Vector[int]^cp(4)
 if ((d as size_t) - (s as size_t)) <> (40 as size_t)
 {

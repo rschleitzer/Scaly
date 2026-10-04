@@ -17,8 +17,8 @@ while i < 4
 {
     let v results.get(i as size_t)
     if v <> null
-        set sum: sum + ((*v) as int)
-    set i: i + 1
+        sum := sum + ((*v) as int)
+    i := i + 1
 }
 if sum = 60
     print "PASS"

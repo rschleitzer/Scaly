@@ -18,37 +18,37 @@ let p v.data
 ; Read in binding position.
 let a p[1]
 if (a > 2.4) = false
-    set ok: false
+    ok := false
 if (a < 2.6) = false
-    set ok: false
+    ok := false
 
 ; Read on a member-chain receiver.
 let b v.data[3]
 if (b > 4.4) = false
-    set ok: false
+    ok := false
 if (b < 4.6) = false
-    set ok: false
+    ok := false
 
 ; Expression index inside a loop accumulation.
 var acc: double 0.0
 var i 0
 while i < 4
 {
-    set acc: acc + p[i]
-    set i: i + 1
+    acc := acc + p[i]
+    i := i + 1
 }
 if (acc > 11.9) = false
-    set ok: false
+    ok := false
 if (acc < 12.1) = false
-    set ok: false
+    ok := false
 
 ; Write through the sugar, then read back with an expression index.
-set p[2]: 9.5
+p[2] := 9.5
 let c p[i - 2]
 if (c > 9.4) = false
-    set ok: false
+    ok := false
 if (c < 9.6) = false
-    set ok: false
+    ok := false
 
 ; Int elements: subscript read feeds integer arithmetic.
 var w Vector[i64](3)
@@ -58,7 +58,7 @@ w.put(2 as size_t, 30 as i64)
 let q w.data
 let s q[0] + q[1] + q[2]
 if s <> 60
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

@@ -92,7 +92,7 @@ define Page
     {
         ; Extension and exclusive pages come from the HeapBucket.
         if heap_head = null
-            set heap_head: create_heap_bucket()
+            heap_head := create_heap_bucket()
 
         let b heap_head
         ; The bucket lock (milestone 2.3) serializes the bitmap against
@@ -101,19 +101,19 @@ define Page
         ; bit stays set until WE clear it).
         bucket_lock b
         let slot ctz_u64 b.bitmap
-        set b.bitmap: b.bitmap & ~(1 << slot)
+        b.bitmap := b.bitmap & ~(1 << slot)
 
         if b.bitmap = 0
         {
             ; Bucket is now full — unlink from the free list. Still under
             ; the lock: a remote free into this bucket must observe either
             ; in-chain-and-not-full or unlinked-and-full, never the middle.
-            set heap_head: b.next
+            heap_head := b.next
             if heap_head <> null
-                set heap_head.prev: null
+                heap_head.prev := null
 
-            set b.next: null
-            set b.prev: null
+            b.next := null
+            b.prev := null
         }
         bucket_unlock b
 
@@ -150,10 +150,10 @@ define Page
             let keep_size Page.oversized_size(p)
             if oversized_kept_count < OVERSIZED_KEPT and oversized_kept_bytes + keep_size <= OVERSIZED_KEPT_BYTES
             {
-                set p.next_page: oversized_kept
-                set oversized_kept: p
-                set oversized_kept_count: oversized_kept_count + 1
-                set oversized_kept_bytes: oversized_kept_bytes + keep_size
+                p.next_page := oversized_kept
+                oversized_kept := p
+                oversized_kept_count := oversized_kept_count + 1
+                oversized_kept_bytes := oversized_kept_bytes + keep_size
                 return
             }
             scaly_aligned_free(p as pointer[void])
@@ -172,7 +172,7 @@ define Page
 
         bucket_lock b
         let was_full b.bitmap = 0
-        set b.bitmap: b.bitmap | (1 << slot)
+        b.bitmap := b.bitmap | (1 << slot)
 
         if was_full
         {
@@ -184,13 +184,13 @@ define Page
             ; heap_head is ours (TLS), and its bucket's next/prev are
             ; only ever written by us — chain buckets are never full, so
             ; no remote freer takes this branch on them.
-            set b.next: heap_head
-            set b.prev: null
+            b.next := heap_head
+            b.prev := null
             if heap_head <> null
-                set heap_head.prev: b
+                heap_head.prev := b
 
-            set heap_head: b
-            set b.owner: heap_owner_token()
+            heap_head := b
+            b.owner := heap_owner_token()
         }
         if was_full = false
         {
@@ -281,7 +281,7 @@ define Page
     ; single-threaded.
     procedure enable_poison()
     {
-        set page_poison: true
+        page_poison := true
     }
 
     procedure enable_statistics()
@@ -290,11 +290,11 @@ define Page
             return
         let pg Page.allocate_page()
         let st pg.allocate(sizeof PageStatistics, alignof PageStatistics) as pointer[PageStatistics]
-        set st.bytes_held: 0
-        set st.allocations: 0
-        set st.live: 0
-        set st.buckets: 0
-        set page_statistics: st
+        st.bytes_held := 0
+        st.allocations := 0
+        st.live := 0
+        st.buckets := 0
+        page_statistics := st
     }
 
     function allocate_root_page() returns pointer[Page]
@@ -309,10 +309,10 @@ define Page
             ; First-ever push: lazily create the first bucket if needed, then
             ; return its first usable slot.
             if stack_head = null
-                set stack_head: create_stack_bucket(null as pointer[StackBucketHeader])
+                stack_head := create_stack_bucket(null as pointer[StackBucketHeader])
 
             let p first_usable_page stack_head
-            set stack_top: p
+            stack_top := p
             reset_page p
             return p
         }
@@ -326,32 +326,32 @@ define Page
             ; Current bucket exhausted — walk to an existing next bucket or
             ; create one.
             if bucket.next = null
-                set bucket.next: create_stack_bucket(bucket)
+                bucket.next := create_stack_bucket(bucket)
 
             let fresh first_usable_page bucket.next
-            set stack_top: fresh
+            stack_top := fresh
             reset_page fresh
             return fresh
         }
 
-        set stack_top: next_addr
+        stack_top := next_addr
         reset_page next_addr
         next_addr
     }
 
     procedure reset(this: Page)
     {
-        set current_page: null
-        set next_page: null
-        set next_object: this + 1
+        current_page := null
+        next_page := null
+        next_object := this + 1
         ; Zero the field directly — no PageList() construction. The allocator
         ; must never region-allocate: residency inference would promote the
         ; construction to a local page, and a local page here recurses into
         ; allocate_root_page (allocator allocating from itself).
-        set exclusive_pages.head: null
+        exclusive_pages.head := null
         ; A fresh page is its own region until someone links it into one
         ; (allocate below, on the fresh tail it appends).
-        set region: (this as size_t) as pointer[Page]
+        region := (this as size_t) as pointer[Page]
     }
 
     procedure allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
@@ -427,10 +427,10 @@ define Page
             if tail = null
             {
                 let first allocate_page()
-                set first.region: head
-                set head.next_page: first
-                set head.current_page: first
-                set tail: first
+                first.region := head
+                head.next_page := first
+                head.current_page := first
+                tail := first
             }
 
             var serve_location tail.next_object as size_t
@@ -439,17 +439,17 @@ define Page
             {
                 ; Tail is full — append a fresh page and make IT the tail.
                 let fresh allocate_page()
-                set fresh.region: head
-                set tail.next_page: fresh
-                set head.current_page: fresh
-                set tail: fresh
-                set serve_location: fresh.next_object as size_t
-                set serve_aligned: (serve_location + align - 1) & (~(align - 1))
+                fresh.region := head
+                tail.next_page := fresh
+                head.current_page := fresh
+                tail := fresh
+                serve_location := fresh.next_object as size_t
+                serve_aligned := (serve_location + align - 1) & (~(align - 1))
             }
 
             if st <> null
                 scaly_atomic_add_u64(&st.live, ((serve_aligned + size) - serve_location) as u64)
-            set tail.next_object: (serve_aligned + size) as pointer[void]
+            tail.next_object := (serve_aligned + size) as pointer[void]
             return serve_aligned as pointer[void]
         }
 
@@ -457,7 +457,7 @@ define Page
         let next_location aligned_location + size
         if st <> null
             scaly_atomic_add_u64(&st.live, (next_location - location) as u64)
-        set next_object: next_location as pointer[void]
+        next_object := next_location as pointer[void]
         return aligned_location as pointer[void]
     }
 
@@ -476,20 +476,20 @@ define Page
             if kept_size >= rounded and kept_size <= rounded * 2
             {
                 if before = null
-                    set oversized_kept: kept.next_page
+                    oversized_kept := kept.next_page
                 else
-                    set before.next_page: kept.next_page
-                set oversized_kept_count: oversized_kept_count - 1
-                set oversized_kept_bytes: oversized_kept_bytes - kept_size
-                set rounded: kept_size
-                set address: kept as pointer[void]
+                    before.next_page := kept.next_page
+                oversized_kept_count := oversized_kept_count - 1
+                oversized_kept_bytes := oversized_kept_bytes - kept_size
+                rounded := kept_size
+                address := kept as pointer[void]
                 break
             }
-            set before: kept
-            set kept: kept.next_page
+            before := kept
+            kept := kept.next_page
         }
         if address = null
-            set address: scaly_aligned_alloc(PAGE_SIZE, rounded)
+            address := scaly_aligned_alloc(PAGE_SIZE, rounded)
         if address = null
             scaly_panic_oom("Page.allocate_oversized", rounded)
         let st page_statistics
@@ -518,11 +518,11 @@ define Page
         ; oversized page, which the capacity check above already gets
         ; wrong (next_object null ⇒ capacity measured from offset 0) —
         ; fail loudly instead of following garbage.
-        set page.next_object: null
-        set page.current_page: rounded as pointer[Page]
-        set page.next_page: null
-        set page.exclusive_pages.head: null
-        set page.region: null as pointer[Page]
+        page.next_object := null
+        page.current_page := rounded as pointer[Page]
+        page.next_page := null
+        page.exclusive_pages.head := null
+        page.region := null as pointer[Page]
 
         ; An oversized page is always exclusive
         exclusive_pages.add page
@@ -611,7 +611,7 @@ define Page
                 release_page(excl)
             }
             release_page(page)
-            set page: next_page
+            page := next_page
         }
     }
 
@@ -666,8 +666,8 @@ define Page
         {
             if p.exclusive_pages.head <> null
                 return false
-            set pages: pages + 1
-            set p: p.next_page
+            pages := pages + 1
+            p := p.next_page
         }
         if (now as size_t) = (mark as size_t)
         {
@@ -679,21 +679,21 @@ define Page
         {
             let following q.next_page
             release_page(q)
-            set q: following
+            q := following
         }
         ; the head records the end, and null means "the head IS the end" —
         ; the state `allocate` expects, it appends on demand
-        set mark_page.next_page: null
+        mark_page.next_page := null
         if (mark_page as size_t) = (this as size_t)
-            set current_page: null
+            current_page := null
         else
-            set current_page: mark_page
+            current_page := mark_page
         ; Poison mode: the rewound stretch of the mark page itself is not
         ; released, so overwrite it here — a dangling read into it survived
         ; SCALY_POISON otherwise (asked 2026-09-23, the dazzle frame mark)
         if page_poison and (now as size_t) > (mark as size_t)
             memset(mark, 0xDD, (now as size_t) - (mark as size_t))
-        set mark_page.next_object: mark
+        mark_page.next_object := mark
         true
     }
 

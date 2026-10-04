@@ -14,19 +14,19 @@ var s "Hello, World!"
 
 ; index_of has only u8 overloads → the bare literal folds to u8
 if s.index_of("H") <> 0
-    set failures: failures + 1
+    failures := failures + 1
 if s.index_of(",") <> 5
-    set failures: failures + 1
+    failures := failures + 1
 if s.index_of("X") <> -1
-    set failures: failures + 1
+    failures := failures + 1
 
 ; two-arg index_of(u8, start) selected by arity + char fold
 if s.index_of("o", 5) <> 8
-    set failures: failures + 1
+    failures := failures + 1
 
 ; free function with a char parameter, bare literal argument
 if first_is("H") = false
-    set failures: failures + 1
+    failures := failures + 1
 
 if failures = 0
     print "PASS\n"

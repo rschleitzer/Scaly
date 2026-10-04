@@ -21,7 +21,7 @@ define Holder(f: int)
 procedure field_roundtrip() returns int
 {
     var h Holder(5)
-    set h.f: NEG_EXPR
+    h.f := NEG_EXPR
     h.f
 }
 
@@ -35,13 +35,13 @@ let fr field_roundtrip()
 let ok_field fr = 0 - 1
 
 var all_ok true
-if ok_lit = false: set all_ok: false
-if ok_expr = false: set all_ok: false
-if ok_sum = false: set all_ok: false
-if ok_prod = false: set all_ok: false
-if ok_shift = false: set all_ok: false
-if ok_mask = false: set all_ok: false
-if ok_field = false: set all_ok: false
+if ok_lit = false: all_ok := false
+if ok_expr = false: all_ok := false
+if ok_sum = false: all_ok := false
+if ok_prod = false: all_ok := false
+if ok_shift = false: all_ok := false
+if ok_mask = false: all_ok := false
+if ok_field = false: all_ok := false
 
 if all_ok: print "PASS\n"
 if all_ok = false: print "FAIL\n"

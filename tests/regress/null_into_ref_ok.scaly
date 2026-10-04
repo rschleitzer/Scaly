@@ -16,7 +16,7 @@
 
 define Box (v: int  next: ref[Box]?)
 {
-    init(a: int) { set v: a  set next: null }
+    init(a: int) { v := a: next := null }
 }
 
 ; (1) a typed binding initialized with null
@@ -30,7 +30,7 @@ function walk(start: ref[Box]?, want: int) returns ref[Box]?
     {
         if cur.v = want
             return cur
-        set cur: cur.next
+        cur := cur.next
     }
     null
 }
@@ -47,7 +47,7 @@ function needs_plain(b: ref[Box]) returns int   b.v
 
 var b1 Box(1)
 var b2 Box(2)
-set b1.next: &b2
+b1.next := &b2
 
 let found walk(&b1, 2)
 if found = null

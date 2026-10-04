@@ -29,7 +29,7 @@ define List[T]
         var list_iterator get_iterator()
         var i: size_t 0
         while list_iterator.next() <> null
-            set i: i + 1
+            i := i + 1
         i
     }
 
@@ -67,9 +67,9 @@ define List[T]
     procedure link(mutable this: List[T], new_node: pointer[Node[T]])
     {
         if tail = null
-            set head: new_node
+            head := new_node
         else
-            set tail.next: new_node
-        set tail: new_node
+            tail.next := new_node
+        tail := new_node
     }
 }

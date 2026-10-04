@@ -117,13 +117,13 @@ define Interface
             {
                 var k: size_t 0
                 while k < files.length and files[k].equals(f.file) = false
-                    set k: k + 1
+                    k := k + 1
                 if k = files.length
                     files.add(f.file)
-                set last: k
+                last := k
                 file_of.add(k)
             }
-            set i: i + 1
+            i := i + 1
         }
         let prefix "`pkg_dir`/"
         var positions StringBuilder()
@@ -155,9 +155,9 @@ define Interface
                 }
                 if this.write_file(rel, out) = false
                     return 0 - 1
-                set written: written + 1
+                written := written + 1
             }
-            set fi: fi + 1
+            fi := fi + 1
         }
         ; the prelude is not a module of the stdlib's root: the modeler hangs it
         ; under every PROGRAM's main module, where its bodies are planned and
@@ -169,7 +169,7 @@ define Interface
             {
                 if this.write_file(String("scaly/prelude.scaly"), File.read_to_string(prelude)) = false
                     return 0 - 1
-                set written: written + 1
+                written := written + 1
             }
         }
         if this.write_file(String("positions"), positions.to_string()) = false
@@ -191,7 +191,7 @@ define Interface
                 if Directory.exists(dir) = false
                     Directory.create dir
             }
-            set i: i + 1
+            i := i + 1
         }
         if File.write_from_string(path, contents)
             return true
@@ -227,7 +227,7 @@ define Interface
                         {
                             var k m
                             while Interface.is_ws_nl(text.get(k))
-                                set k: k + 1
+                                k := k + 1
                             if f.inplace
                                 edits.add(InterfaceEdit(k, k, String("@resident true @inplace true ")))
                             else
@@ -245,7 +245,7 @@ define Interface
                     }
                 }
             }
-            set i: i + 1
+            i := i + 1
         }
         ; the edits in text order (the facts come nearly in it, so an insertion
         ; sort is nearly linear); they never overlap -- a method inside an
@@ -259,10 +259,10 @@ define Interface
             while j > 0 and Interface.edit_before(edits.at(e), edits.at(order[j - 1]))
             {
                 order.put(j, order[j - 1])
-                set j: j - 1
+                j := j - 1
             }
             order.put(j, e)
-            set e: e + 1
+            e := e + 1
         }
         ; after each replacement the rest of its line, and a position pair
         ; for the line after it (see the head of this file)
@@ -280,22 +280,22 @@ define Interface
             }
             sb.append(text.substring(pos, ed.start - pos))
             sb.append(ed.text)
-            set pos: ed.end
+            pos := ed.end
             var eol ed.end
             while eol < n and text.get(eol) <> 0x0A
-                set eol: eol + 1
+                eol := eol + 1
             ; a replacement that shares its line with the next one gets its
             ; pair after that one
             var next_start n
             if o + 1 < order.length
-                set next_start: edits.at(order[o + 1]).start
+                next_start := edits.at(order[o + 1]).start
             if eol + 1 < n and eol < next_start
             {
                 sb.append(text.substring(ed.end, eol + 1 - ed.end))
-                set pos: eol + 1
+                pos := eol + 1
                 pairs.append("`sb.get_length()` `pos`\n")
             }
-            set o: o + 1
+            o := o + 1
         }
         sb.append(text.substring(pos, text.get_length() - pos))
         sb.to_string()
@@ -313,11 +313,11 @@ define Interface
             ; the body-derived facts as routine attributes, right after the
             ; parameter list (the grammar's place for them)
             let rel h.close + 1 - s
-            set head: "`head.substring(0, rel)``f.text``head.substring(rel, head.get_length() - rel)`"
+            head := "`head.substring(0, rel)``f.text``head.substring(rel, head.get_length() - rel)`"
         }
         var off: size_t 0
         if h.has_close
-            set off: h.close - s
+            off := h.close - s
         ; I/O and reads are computed, never written in a source: `io` before
         ; a `mutable` clause, else at the end of the header
         if Interface.has_fact(facts, file_of, fi, "I" as char, s) and Interface.says_io(head) = false
@@ -326,14 +326,14 @@ define Interface
             if at >= 0
             {
                 let a at as size_t
-                set head: "`head.substring(0, a)` io`head.substring(a, head.get_length() - a)`"
+                head := "`head.substring(0, a)` io`head.substring(a, head.get_length() - a)`"
             }
             else
-                set head: "`Interface.rstrip(head)` io"
+                head := "`Interface.rstrip(head)` io"
         }
         let global_read Interface.reads_of(facts, file_of, fi, s)
         if global_read.get_length() > 0
-            set head: "`Interface.rstrip(head)` reads `global_read`"
+            head := "`Interface.rstrip(head)` reads `global_read`"
         InterfaceEdit(s, Interface.body_end(text, f.end), "`Interface.rstrip(head)` linked")
     }
 
@@ -357,7 +357,7 @@ define Interface
                 if f.tag = ("C" as char) and f.generic and f.start <= s and s < f.end
                     return true
             }
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -374,7 +374,7 @@ define Interface
                 if f.tag = tag and f.start = s
                     return true
             }
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -390,9 +390,9 @@ define Interface
             {
                 let f facts.at i
                 if f.tag = ("R" as char) and f.start = s
-                    set found: f.text
+                    found := f.text
             }
-            set i: i + 1
+            i := i + 1
         }
         found
     }
@@ -424,7 +424,7 @@ define Interface
     {
         var k i
         while k < t.get_length() and Interface.is_blank(t.get(k))
-            set k: k + 1
+            k := k + 1
         k
     }
 
@@ -432,7 +432,7 @@ define Interface
     {
         var k i
         while k < t.get_length() and Interface.is_space(t.get(k))
-            set k: k + 1
+            k := k + 1
         k
     }
 
@@ -443,7 +443,7 @@ define Interface
             return i
         var k i + 1
         while Interface.is_word_char(t.get(k))
-            set k: k + 1
+            k := k + 1
         k
     }
 
@@ -458,7 +458,7 @@ define Interface
         {
             if t.get(i + k) <> word[k]
                 return false
-            set k: k + 1
+            k := k + 1
         }
         true
     }
@@ -476,12 +476,12 @@ define Interface
         {
             let c t.get(k)
             if c = 0x5B                 ; [
-                set depth: depth + 1
+                depth := depth + 1
             else if c = 0x5D            ; ]
-                set depth: depth - 1
+                depth := depth - 1
             else if depth = 0 and (Interface.is_ws_nl(c) or c = 0x3B)
                 break
-            set k: k + 1
+            k := k + 1
         }
         k
     }
@@ -498,25 +498,25 @@ define Interface
             let c t.get(k)
             if c = 0x22                 ; " -- to the closing quote
             {
-                set k: k + 1
+                k := k + 1
                 while k < n and t.get(k) <> 0x22
-                    set k: k + 1
+                    k := k + 1
             }
             else if c = 0x3B            ; ; -- to the end of the line
             {
                 while k < n and t.get(k) <> 0x0A
-                    set k: k + 1
-                set k: k - 1
+                    k := k + 1
+                k := k - 1
             }
             else if c = open
-                set depth: depth + 1
+                depth := depth + 1
             else if c = close
             {
-                set depth: depth - 1
+                depth := depth - 1
                 if depth = 0
                     return k + 1
             }
-            set k: k + 1
+            k := k + 1
         }
         n
     }
@@ -535,21 +535,21 @@ define Interface
             if t.get(i) <> 0x28             ; ( -- a name, maybe operator symbols
             {
                 while i < n and Interface.is_name_end(t.get(i)) = false
-                    set i: i + 1
-                set i: Interface.skip_blanks(t, i)
+                    i := i + 1
+                i := Interface.skip_blanks(t, i)
             }
             if t.get(i) = 0x5B              ; [
-                set i: Interface.skip_blanks(t, Interface.skip_balanced(t, i, 0x5B, 0x5D))
+                i := Interface.skip_blanks(t, Interface.skip_balanced(t, i, 0x5B, 0x5D))
         }
         if kind = ("i" as char) and t.get(i) = 0x23       ; #
-            set i: Interface.skip_blanks(t, i + 1)
+            i := Interface.skip_blanks(t, i + 1)
         var close: size_t 0
         var has_close false
         if t.get(i) = 0x28                  ; (
         {
-            set i: Interface.skip_balanced(t, i, 0x28, 0x29)
-            set close: i - 1
-            set has_close: true
+            i := Interface.skip_balanced(t, i, 0x28, 0x29)
+            close := i - 1
+            has_close := true
         }
         while true
         {
@@ -560,24 +560,24 @@ define Interface
                 let k Interface.skip_blanks(t, j + 1)
                 if Interface.clause_at(t, k) = false
                     return InterfaceHeader(i, close, has_close)
-                set j: k
+                j := k
             }
             let c t.get(j)
             if c = 0x40                     ; @ -- an attribute and its value
-                set i: Interface.skip_type(t, Interface.skip_blanks(t, Interface.skip_word(t, j + 1)))
+                i := Interface.skip_type(t, Interface.skip_blanks(t, Interface.skip_word(t, j + 1)))
             else if Interface.word_at(t, j, "returns")
-                set i: Interface.skip_type(t, Interface.skip_blanks(t, j + 7))
+                i := Interface.skip_type(t, Interface.skip_blanks(t, j + 7))
             else if Interface.word_at(t, j, "throws")
-                set i: Interface.skip_type(t, Interface.skip_blanks(t, j + 6))
+                i := Interface.skip_type(t, Interface.skip_blanks(t, j + 6))
             else if Interface.word_at(t, j, "io")
-                set i: j + 2
+                i := j + 2
             else
             {
                 let list Interface.name_list_end(t, j)
                 if list > 0
-                    set i: list
+                    i := list
                 else if c = 0x3A            ; :
-                    set i: j + 1
+                    i := j + 1
                 else
                     return InterfaceHeader(i, close, has_close)
             }
@@ -600,17 +600,17 @@ define Interface
     {
         var k: size_t 0
         if Interface.bytes_at(t, j, "mutable")
-            set k: j + 7
+            k := j + 7
         else if Interface.bytes_at(t, j, "reads")
-            set k: j + 5
+            k := j + 5
         else
             return 0
         if Interface.is_space(t.get(k)) = false
             return 0
-        set k: Interface.skip_spaces(t, k)
+        k := Interface.skip_spaces(t, k)
         if Interface.is_word_start(t.get(k)) = false
             return 0
-        set k: Interface.skip_word(t, k)
+        k := Interface.skip_word(t, k)
         while true
         {
             let comma Interface.skip_spaces(t, k)
@@ -619,7 +619,7 @@ define Interface
             let next Interface.skip_spaces(t, comma + 1)
             if Interface.is_word_start(t.get(next)) = false
                 return k
-            set k: Interface.skip_word(t, next)
+            k := Interface.skip_word(t, next)
         }
         k
     }
@@ -634,15 +634,15 @@ define Interface
         {
             var k end
             while k > 0 and Interface.is_ws_nl(t.get(k - 1))
-                set k: k - 1
+                k := k - 1
             var line_start k
             while line_start > 0 and t.get(line_start - 1) <> 0x0A
-                set line_start: line_start - 1
+                line_start := line_start - 1
             var c line_start
             while c < k and Interface.is_space(t.get(c))
-                set c: c + 1
+                c := c + 1
             if c < k and t.get(c) = 0x3B    ; ; -- a whole-line comment
-                set end: line_start
+                end := line_start
             else
                 return k
         }
@@ -706,15 +706,15 @@ define Interface
         {
             let c head.get(i)
             if c = 0x29                     ; )
-                set after_paren: true
+                after_paren := true
             else if c = 0x3B                ; ;
-                set after_paren: false
+                after_paren := false
             else if after_paren and Interface.word_at(head, i, "io")
             {
                 if i = 0 or Interface.is_word_char(head.get(i - 1)) = false
                     return true
             }
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -729,7 +729,7 @@ define Interface
         {
             if Interface.is_space(head.get(i)) and Interface.bytes_at(head, i + 1, "mutable") and Interface.is_space(head.get(i + 8))
                 return i as int
-            set i: i + 1
+            i := i + 1
         }
         0 - 1
     }
@@ -739,7 +739,7 @@ define Interface
     {
         var n t.get_length()
         while n > 0 and Interface.is_space(t.get(n - 1))
-            set n: n - 1
+            n := n - 1
         t.substring(0, n)
     }
 
@@ -750,8 +750,8 @@ define Interface
         while i < to
         {
             if t.get(i) = 0x0A
-                set count: count + 1
-            set i: i + 1
+                count := count + 1
+            i := i + 1
         }
         count
     }

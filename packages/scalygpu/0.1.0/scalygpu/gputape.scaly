@@ -149,10 +149,10 @@ define GpuTape
                 if is_leaf
                     scaly_mgpu_slot_write((ri * 4) as i32, node.value.data as pointer[void], bytes)
                 let p scaly_mgpu_slot_contents((ri * 4) as i32) as pointer[float]
-                set node.value: Vector[float](count as size_t, p)
+                node.value := Vector[float](count as size_t, p)
                 scaly_mgpu_slot_alloc((ri * 4 + 1) as i32, bytes)
                 let g scaly_mgpu_slot_contents((ri * 4 + 1) as i32) as pointer[float]
-                set node.grad: Vector[float](count as size_t, g)
+                node.grad := Vector[float](count as size_t, g)
             }
             let auxlen node.aux.length as int
             if auxlen > 0
@@ -160,7 +160,7 @@ define GpuTape
                 let abytes (auxlen * 4) as size_t
                 scaly_mgpu_slot_alloc((ri * 4 + 2) as i32, abytes)
                 let ap scaly_mgpu_slot_contents((ri * 4 + 2) as i32) as pointer[float]
-                set node.aux: Vector[float](auxlen as size_t, ap)
+                node.aux := Vector[float](auxlen as size_t, ap)
             }
             let toklen node.tok.length as int
             if toklen > 0
@@ -169,24 +169,24 @@ define GpuTape
                 scaly_mgpu_slot_alloc((ri * 4 + 3) as i32, tbytes)
                 scaly_mgpu_slot_write((ri * 4 + 3) as i32, node.tok.data as pointer[void], tbytes)
                 let tkp scaly_mgpu_slot_contents((ri * 4 + 3) as i32) as pointer[i64]
-                set node.tok: Vector[i64](toklen as size_t, tkp)
+                node.tok := Vector[i64](toklen as size_t, tkp)
             }
             var xtra 0 - 1
             if node.op = 4
             {
                 scaly_mgpu_slot_alloc(nextslot as i32, (node.rows * 2 * 4) as size_t)
-                set xtra: nextslot
-                set nextslot: nextslot + 1
+                xtra := nextslot
+                nextslot := nextslot + 1
             }
             if node.op = 7
             {
                 let na t.nodes.at(node.a)
                 scaly_mgpu_slot_alloc(nextslot as i32, (na.rows * 4) as size_t)
-                set xtra: nextslot
-                set nextslot: nextslot + 1
+                xtra := nextslot
+                nextslot := nextslot + 1
             }
-            set xs[ri]: xtra
-            set ri: ri + 1
+            xs[ri] := xtra
+            ri := ri + 1
         }
         let mvp mv_v.data
         let psp ps_v.data
@@ -197,21 +197,21 @@ define GpuTape
             let node t.nodes.at(pp[ai])
             let total node.rows * node.cols
             scaly_mgpu_slot_alloc(nextslot as i32, (total * 2 * 4) as size_t)
-            set mvp[ai]: nextslot
-            set psp[ai]: pp[ai]
-            set nextslot: nextslot + 1
-            set ai: ai + 1
+            mvp[ai] := nextslot
+            psp[ai] := pp[ai]
+            nextslot := nextslot + 1
+            ai := ai + 1
         }
-        set g.tape: t
-        set g.loss: loss_id
-        set g.use_msl: msl
-        set g.nnodes: nn
-        set g.nparam: np
-        set g.base: 0
-        set g.fwd_only: 0
-        set g.xslot: xs_v
-        set g.mvslot: mv_v
-        set g.pids: ps_v
+        g.tape := t
+        g.loss := loss_id
+        g.use_msl := msl
+        g.nnodes := nn
+        g.nparam := np
+        g.base := 0
+        g.fwd_only := 0
+        g.xslot := xs_v
+        g.mvslot := mv_v
+        g.pids := ps_v
         g
     }
 
@@ -270,10 +270,10 @@ define GpuTape
             {
                 if lp[si] = ri
                 {
-                    set shared_of: plp[si]
+                    shared_of := plp[si]
                     break
                 }
-                set si: si + 1
+                si := si + 1
             }
             if count > 0
             {
@@ -287,7 +287,7 @@ define GpuTape
                         scaly_mgpu_slot_write((bs + ri * 4) as i32, node.value.data as pointer[void], bytes)
                 }
                 let p scaly_mgpu_slot_contents((bs + ri * 4) as i32) as pointer[float]
-                set node.value: Vector[float](count as size_t, p)
+                node.value := Vector[float](count as size_t, p)
             }
             let auxlen node.aux.length as int
             if auxlen > 0
@@ -295,7 +295,7 @@ define GpuTape
                 let abytes (auxlen * 4) as size_t
                 scaly_mgpu_slot_alloc((bs + ri * 4 + 2) as i32, abytes)
                 let ap scaly_mgpu_slot_contents((bs + ri * 4 + 2) as i32) as pointer[float]
-                set node.aux: Vector[float](auxlen as size_t, ap)
+                node.aux := Vector[float](auxlen as size_t, ap)
             }
             let toklen node.tok.length as int
             if toklen > 0
@@ -304,35 +304,35 @@ define GpuTape
                 scaly_mgpu_slot_alloc((bs + ri * 4 + 3) as i32, tbytes)
                 scaly_mgpu_slot_write((bs + ri * 4 + 3) as i32, node.tok.data as pointer[void], tbytes)
                 let tkp scaly_mgpu_slot_contents((bs + ri * 4 + 3) as i32) as pointer[i64]
-                set node.tok: Vector[i64](toklen as size_t, tkp)
+                node.tok := Vector[i64](toklen as size_t, tkp)
             }
             var xtra 0 - 1
             if node.op = 4
             {
                 scaly_mgpu_slot_alloc(nextslot as i32, (node.rows * 2 * 4) as size_t)
-                set xtra: nextslot
-                set nextslot: nextslot + 1
+                xtra := nextslot
+                nextslot := nextslot + 1
             }
             if node.op = 7
             {
                 let na t.nodes.at(node.a)
                 scaly_mgpu_slot_alloc(nextslot as i32, (na.rows * 4) as size_t)
-                set xtra: nextslot
-                set nextslot: nextslot + 1
+                xtra := nextslot
+                nextslot := nextslot + 1
             }
-            set xs[ri]: xtra
-            set ri: ri + 1
+            xs[ri] := xtra
+            ri := ri + 1
         }
-        set g.tape: t
-        set g.loss: 0 - 1
-        set g.use_msl: msl
-        set g.nnodes: nn
-        set g.nparam: 0
-        set g.base: bs
-        set g.fwd_only: 1
-        set g.xslot: xs_v
-        set g.mvslot: mv_v
-        set g.pids: ps_v
+        g.tape := t
+        g.loss := 0 - 1
+        g.use_msl := msl
+        g.nnodes := nn
+        g.nparam := 0
+        g.base := bs
+        g.fwd_only := 1
+        g.xslot := xs_v
+        g.mvslot := mv_v
+        g.pids := ps_v
         g
     }
 
@@ -351,7 +351,7 @@ define GpuTape
     ; 1 = the package's own MSL 4x4 kernels (single-encoder variant).
     procedure set_msl(mutable this: GpuTape, v: int)
     {
-        set use_msl: v
+        use_msl := v
     }
 
     ; Open a command buffer for manual encoding (per-op-sync mode).
@@ -505,7 +505,7 @@ define GpuTape
         while i < nnodes
         {
             this.encode_fwd(i)
-            set i: i + 1
+            i := i + 1
         }
         var z 0
         while z < nnodes
@@ -514,7 +514,7 @@ define GpuTape
             let count node.rows * node.cols
             if count > 0
                 scaly_mgpu_enc_fill((bb + z * 4 + 1) as i32, count as i32, 0.0)
-            set z: z + 1
+            z := z + 1
         }
         let lnode tape.nodes.at(loss)
         let lcount lnode.rows * lnode.cols
@@ -523,7 +523,7 @@ define GpuTape
         while j >= 0
         {
             this.encode_bwd(j)
-            set j: j - 1
+            j := j - 1
         }
     }
 
@@ -534,7 +534,7 @@ define GpuTape
         while i < nnodes
         {
             this.encode_fwd(i)
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -551,7 +551,7 @@ define GpuTape
             let node tape.nodes.at(pp[i])
             let total node.rows * node.cols
             scaly_mgpu_enc_adam((bb + pp[i] * 4) as i32, (bb + pp[i] * 4 + 1) as i32, mvp[i] as i32, total as i32, lr, b1, b2, eps, bc1, bc2)
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -624,7 +624,7 @@ define GpuTape
             let node tape.nodes.at(pp[i])
             let total node.rows * node.cols
             fwrite(node.value.data as pointer[void], 4, total as size_t, f)
-            set i: i + 1
+            i := i + 1
         }
         fclose(f)
         1
@@ -645,15 +645,15 @@ define GpuTape
         let got fread(hdr.data as pointer[void], 4, cfg.length, f)
         var ok 1
         if (got as int) <> clen
-            set ok: 0
+            ok := 0
         let hp hdr.data
         let cp cfg.data
         var i 0
         while i < clen
         {
             if hp[i] as int <> (cp[i] as int)
-                set ok: 0
-            set i: i + 1
+                ok := 0
+            i := i + 1
         }
         if ok = 0
         {
@@ -667,7 +667,7 @@ define GpuTape
             let node tape.nodes.at(pp[li])
             let total node.rows * node.cols
             fread(node.value.data as pointer[void], 4, total as size_t, f)
-            set li: li + 1
+            li := li + 1
         }
         fclose(f)
         1

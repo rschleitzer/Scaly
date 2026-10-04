@@ -12,8 +12,8 @@ procedure fill(mutable out: ref[Box])
 {
     let pg Page.get(out)
     let cell pg.allocate(8, 8) as pointer[int]
-    set *cell: 42
-    set out.p: cell
+    *cell := 42
+    out.p := cell
 }
 
 procedure make()

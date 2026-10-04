@@ -29,50 +29,50 @@ mutable after_calls: int 0
 
 procedure metadata(req: ref[Request], mutable res: ref[Response]) mutable handled
 {
-    set handled: 1
+    handled := 1
     res.send_text("capabilities")
 }
 
 procedure search_type(req: ref[Request], mutable res: ref[Response]) mutable handled
 {
-    set handled: 2
+    handled := 2
     res.send_empty()
 }
 
 procedure read_resource(req: ref[Request], mutable res: ref[Response]) mutable handled
 {
-    set handled: 3
+    handled := 3
     res.send_empty()
 }
 
 procedure search(req: ref[Request], mutable res: ref[Response]) mutable handled
 {
-    set handled: 4
+    handled := 4
     res.send_empty()
 }
 
 procedure vread(req: ref[Request], mutable res: ref[Response]) mutable handled, params_ok
 {
-    set handled: 5
-    set params_ok: req.param("type").equals("Patient") and req.param("id").equals("123") and req.param("vid").equals("2") and req.param("nope").length = 0
+    handled := 5
+    params_ok := req.param("type").equals("Patient") and req.param("id").equals("123") and req.param("vid").equals("2") and req.param("nope").length = 0
     res.send_empty()
 }
 
 procedure file(req: ref[Request], mutable res: ref[Response]) mutable handled, rest_ok
 {
-    set handled: 6
-    set rest_ok: req.param("path").equals("css/app.css")
+    handled := 6
+    rest_ok := req.param("path").equals("css/app.css")
     res.send_empty()
 }
 
 procedure update(req: ref[Request], mutable res: ref[Response]) mutable handled
 {
-    set handled: 7
+    handled := 7
     res.send_empty()
 }
 
 procedure count(req: ref[Request], mutable res: ref[Response]) mutable middleware_calls
-    set middleware_calls: middleware_calls + 1
+    middleware_calls := middleware_calls + 1
 
 procedure deny(req: ref[Request], mutable res: ref[Response])
 {
@@ -81,17 +81,17 @@ procedure deny(req: ref[Request], mutable res: ref[Response])
 }
 
 procedure after_all(req: ref[Request], mutable res: ref[Response]) mutable after_calls
-    set after_calls: after_calls + 1
+    after_calls := after_calls + 1
 
 ; Parse text into req and let the router answer it into out (cleared first).
 procedure answer(app: ref[Router], mutable buf: Slice[u8], mutable req: ref[Request], mutable res: ref[Response], mutable out: ref[ByteBuf], text: Slice[u8]) mutable handled
 {
-    set handled: 0
+    handled := 0
     var i: size_t 0
     while i < text.length
     {
         buf.put(i, text[i])
-        set i: i + 1
+        i := i + 1
     }
     out.clear()
     if parse_request(buf.slice_to(text.length), req) <= 0
@@ -115,7 +115,7 @@ function contains(out: ref[ByteBuf], needle: Slice[u8]) returns bool
     {
         if hay.subslice(i, i + needle.length).equals(needle)
             return true
-        set i: i + 1
+        i := i + 1
     }
     false
 }

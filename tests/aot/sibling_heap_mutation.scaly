@@ -7,7 +7,7 @@ define Inner
 )
 {
     procedure set_value(mutable this, v: int)
-        set value: v
+        value := v
 
     function get_value(this) returns int
         value

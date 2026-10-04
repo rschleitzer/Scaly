@@ -39,8 +39,8 @@ define Mk ()
         {
             let e *(buf + i)
             if e <> null
-                set s: s + e.v
-            set i: i + 1
+                s := s + e.v
+            i := i + 1
         }
         s
     }
@@ -55,9 +55,9 @@ function probe(host: pointer[Page]) returns int
     while k < 3
     {
         let g host.allocate(sizeof Leaf, alignof Leaf) as ref[Leaf]
-        set g: Leaf(((k + 1) * 10))
+        g := Leaf(((k + 1) * 10))
         a.add(g)
-        set k: k + 1
+        k := k + 1
     }
     ; a genuinely absent element -- the reason the element type must be optional
     var hole: ref[Leaf]? null
@@ -65,20 +65,20 @@ function probe(host: pointer[Page]) returns int
 
     var flags 0
     if a.get_length() <> (4 as size_t)
-        set flags: flags + 1
+        flags := flags + 1
     ; the sugar-built value satisfies the desugared parameter type
     if Mk.sum(a) <> 60
-        set flags: flags + 2
+        flags := flags + 2
 
     let buf a.get_buffer()
     let e3 *(buf + (3 as size_t))
     if e3 <> null
-        set flags: flags + 4
+        flags := flags + 4
     let e0 *(buf + (0 as size_t))
     if e0 = null
-        set flags: flags + 8
+        flags := flags + 8
     if e0.v <> 10
-        set flags: flags + 16
+        flags := flags + 16
     flags
 }
 

@@ -91,7 +91,7 @@ procedure refusal(source: Slice[u8], mutable offset: ref[size_t]) returns int
             else
                 0
     }
-    set offset: r.error_offset()
+    offset := r.error_offset()
     r.error
 }
 
@@ -120,7 +120,7 @@ procedure string_doc(n: size_t, at: size_t, special: Slice[u8]) returns String
             sb.append(special.data as pointer[char], special.length)
         else
             sb.append("a")
-        set i: i + 1
+        i := i + 1
     }
     sb.append(0x22 as char)
     sb.to_string()
@@ -133,13 +133,13 @@ procedure nested(n: size_t) returns String
     while i < n
     {
         sb.append("[")
-        set i: i + 1
+        i := i + 1
     }
-    set i: 0
+    i := 0
     while i < n
     {
         sb.append("]")
-        set i: i + 1
+        i := i + 1
     }
     sb.to_string()
 }
@@ -151,52 +151,52 @@ let got trace(doc.as_slice())
 if got.equals("{k<a>[n<1i>n<-2.5e+3>n<0i>s<x\ty>]k<b>{}k<c>[]k<d>tk<e>fk<f>0}$") = false
 {
     print "tokens: `got`"
-    set ok: false
+    ok := false
 }
 if trace("42").equals("n<42i>$") = false or trace("\"s\"").equals("s<s>$") = false
-    set ok: false
+    ok := false
 if ok
     Console.print "tokens "
 
 ; code, offset: 1 end, 2 trailing, 3 value, 4 key, 5 colon, 6 separator,
 ; 7 number, 8 control, 9 escape
 if refused("", 1, 0) = false or refused("   ", 1, 3) = false or refused("[1,2", 1, 4) = false
-    set ok: false
+    ok := false
 if refused("{\"a\":1", 1, 6) = false or refused("\"abc", 1, 4) = false
-    set ok: false
+    ok := false
 if refused("1 2", 2, 2) = false or refused("{} x", 2, 3) = false
-    set ok: false
+    ok := false
 if refused("[1,]", 3, 3) = false or refused("tru", 3, 0) = false or refused("[nul]", 3, 1) = false
-    set ok: false
+    ok := false
 if refused("{1:2}", 4, 1) = false or refused("{\"a\":1,}", 4, 7) = false
-    set ok: false
+    ok := false
 if refused("{\"a\" 1}", 5, 5) = false
-    set ok: false
+    ok := false
 if refused("[1 2]", 6, 3) = false or refused("{\"a\":1]", 6, 6) = false
-    set ok: false
+    ok := false
 if refused("01", 7, 1) = false or refused("-", 7, 1) = false or refused("1.", 7, 2) = false
-    set ok: false
+    ok := false
 if refused("1e", 7, 2) = false or refused(".5", 3, 0) = false or refused("+1", 3, 0) = false
-    set ok: false
+    ok := false
 if refused("\"a\tb\"", 8, 2) = false
-    set ok: false
+    ok := false
 if refused("\"\\x\"", 9, 2) = false or refused("\"\\u12g4\"", 9, 5) = false
-    set ok: false
+    ok := false
 if refused("[1e5, -0, 0.25, 1E-7]", 0, 0) = false
-    set ok: false
+    ok := false
 if ok
     Console.print "refuse "
 
 let deep_ok nested(256)
 let deep_bad nested(257)
 if refused(deep_ok.as_slice(), 0, 0) = false or refused(deep_bad.as_slice(), 10, 256) = false
-    set ok: false
+    ok := false
 var limited JsonReader.create_limited("[[[1]]]", 2)
 limited.next()
 limited.next()
 limited.next()
 if limited.error <> 10
-    set ok: false
+    ok := false
 if ok
     Console.print "depth "
 
@@ -205,37 +205,37 @@ r.next()                                    ; {
 r.next()                                    ; "skip"
 r.next()                                    ; {
 if r.skip() = false
-    set ok: false
+    ok := false
 r.next()                                    ; "keep"
 if r.string().equals("keep") = false
-    set ok: false
+    ok := false
 r.next()                                    ; 7
 if String(r.text().data as pointer[const_char], r.text().length).equals("7") = false
-    set ok: false
+    ok := false
 r.next()                                    ; "s"
 r.next()                                    ; 5
 if r.skip() = false                         ; a scalar: nothing to skip
-    set ok: false
+    ok := false
 choose r.next()
     when e: ObjectEnd
         0
     else
-        set ok: false
+        ok := false
 if ok
     Console.print "skip "
 
 ; \" \\ \/ \b \f \n \r \t, U+00E9, the pair for U+1F600, a lone high surrogate
 let esc trace("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\\u00e9\\ud83d\\ude00\\ud800x\"")
 if esc.length() <> 22
-    set ok: false
+    ok := false
 else
 {
     var i: size_t 0
     while i < 22
     {
         if esc.get(i) <> WANT_BYTES[i]
-            set ok: false
-        set i: i + 1
+            ok := false
+        i := i + 1
     }
 }
 if ok
@@ -260,24 +260,24 @@ while n <= 40
                 bad.append(0x0A as char)
             else
                 bad.append("a")
-            set k: k + 1
+            k := k + 1
         }
         let bad_text "\"`bad.to_string()`\""
         if refused(bad_text.as_slice(), 8, 1 + at) = false
-            set blocks_ok: false
+            blocks_ok := false
         var r JsonReader.create(control)
         choose r.next()
             when t: StringValue
             {
                 let d r.string()
                 if d.length() <> n or d.get(at) <> 0x0A
-                    set blocks_ok: false
+                    blocks_ok := false
             }
             else
-                set blocks_ok: false
-        set at: at + 1
+                blocks_ok := false
+        at := at + 1
     }
-    set n: n + 1
+    n := n + 1
 }
 var w: size_t 0
 while w <= 40
@@ -290,7 +290,7 @@ while w <= 40
             sb.append(0x0A as char)
         else
             sb.append(" ")
-        set k: k + 1
+        k := k + 1
     }
     sb.append("123 ")
     let doc sb.to_string()
@@ -299,14 +299,14 @@ while w <= 40
         when t: NumberValue
         {
             if String(r.text().data as pointer[const_char], r.text().length).equals("123") = false
-                set blocks_ok: false
+                blocks_ok := false
         }
         else
-            set blocks_ok: false
-    set w: w + 1
+            blocks_ok := false
+    w := w + 1
 }
 if blocks_ok = false
-    set ok: false
+    ok := false
 if ok
     Console.print "blocks "
 

@@ -815,7 +815,7 @@ src = ("; counter is mentioned in this comment\n"          # 0
        "\n"
        "function bump() returns int\n"                     # 3
        "{\n"
-       "    set counter: counter + 1\n"                    # 5
+       "    counter := counter + 1\n"                    # 5
        "    counter\n"                                     # 6
        "}\n"
        "\n"
@@ -824,7 +824,7 @@ src = ("; counter is mentioned in this comment\n"          # 0
        "    let s \"counter in a string\"\n"               # 11
        "    var total: int 0\n"
        "    for counter in 3\n"                            # 13
-       "        set total: total + counter\n"              # 14
+       "        total := total + counter\n"              # 14
        "    total\n"
        "}\n"
        "\n"
@@ -900,7 +900,7 @@ main = ("mutable counter: int 0\n"                      # 0
         "\n"
         "function bump() returns int\n"
         "{\n"
-        "    set counter: counter + 1\n"                # 4
+        "    counter := counter + 1\n"                # 4
         "}\n")
 sibling = ("function reader() returns int\n"
            "{\n"
@@ -1646,12 +1646,12 @@ def fix(name, src, marker):
 titles, fixed, gone, _ = fix("assign",
     "function demo() returns int\n{\n"
     "    var buffer u8[4]\n"
-    "    set buffer[0]: 111\n"
+    "    buffer[0] := 111\n"
     "    buffer[0] = 222\n"
     "    return 1\n}\n", "it does not assign")
-check(titles == ["Assign: set buffer[0]: ..."], "`=` statement offers the set fix -- %s" % (titles,))
-check(line_of(fixed, 4) == "    set buffer[0]: 222",
-      "the edit writes `set buffer[0]: 222`, indentation kept")
+check(titles == ["Assign: buffer[0] := ..."], "`=` statement offers the set fix -- %s" % (titles,))
+check(line_of(fixed, 4) == "    buffer[0] := 222",
+      "the edit writes `buffer[0] := 222`, indentation kept")
 check(gone is True, "and re-analysing the fixed file no longer reports it")
 
 # 2. a parenless head that swallowed its argument's own call.
@@ -1673,7 +1673,7 @@ SPELL = ("function twice(v: int) returns int\n    v + v\n\n"
          "    return counter\n}\n")
 for label, stmt, want in [
         ("in an operand",      "let b 1 + countr",  "    let b 1 + counter"),
-        ("as a `set` target",  "set countr: 5",     "    set counter: 5"),
+        ("as a `set` target",  "countr := 5",     "    counter := 5"),
         ("as a call argument", "let c twice(countr)", "    let c twice(counter)")]:
     titles, fixed, gone, _ = fix("spell_" + label.split()[-1], SPELL % stmt, "countr")
     check(titles == ["Change to counter"], "a typo %s offers the near name -- %s" % (label, titles))
@@ -1684,7 +1684,7 @@ for label, stmt, want in [
 for label, src, marker in [
         ("two `=` on one line",
          "function demo() returns int\n{\n    var counter 3\n"
-         "    set counter: 1\n    counter = 2: counter = 3\n    return counter\n}\n",
+         "    counter := 1\n    counter = 2: counter = 3\n    return counter\n}\n",
          "it does not assign"),
         ("a comment the parens would swallow",
          "function helper(v: int) returns int\n    v + 1\n\n"
@@ -3537,9 +3537,9 @@ src = ("; A file banner that must NOT reach any hover.\n"                  # 0
        "{\n"                                                              # 10
        "    init()\n"                                                     # 11
        "    {\n"                                                          # 12
-       "        set width: 3\n"                                           # 13
-       "        set height: 4\n"                                          # 14
-       "        set secret: 5\n"                                          # 15
+       "        width := 3\n"                                           # 13
+       "        height := 4\n"                                          # 14
+       "        secret := 5\n"                                          # 15
        "    }\n"                                                          # 16
        "\n"                                                               # 17
        "    function area(this) returns int\n"                            # 18
@@ -3605,7 +3605,7 @@ check(val(7) == "struct Box",
       "an offset PAST the body answers the concept, not the last property")
 loc = g.get(8) or []
 check(sorted((r["range"]["start"]["line"], r["range"]["start"]["character"]) for r in loc)
-      == [(wl, wc), (13, 12), (20, 15)],
+      == [(wl, wc), (13, 8), (20, 15)],
       "findReferences on the declaration is unchanged (3 hits)")
 sys.exit(1 if failures else 0)
 PY
@@ -3641,8 +3641,8 @@ src = ("function height(x: int) returns int\n"         # 0  DECOY: a free functi
        "{\n"                                           # 10
        "    init()\n"                                  # 11
        "    {\n"                                       # 12
-       "        set width: 3\n"                        # 13
-       "        set height: 4\n"                       # 14
+       "        width := 3\n"                        # 13
+       "        height := 4\n"                       # 14
        "    }\n"                                       # 15
        "\n"                                            # 16
        "    function area(this) returns int\n"         # 17
@@ -3719,9 +3719,9 @@ python3 - <<'PY'
 import sys, json, subprocess, os, shutil
 BIN = "/tmp/scalyls"
 ws = "/tmp/lsp_ws/hover_chain"; shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
-src = ("define Leaf\n(\n    v: int\n)\n{\n    init()\n    {\n        set v: 1\n    }\n}\n"          # 0-9
-       "\ndefine Mid\n(\n    leaf: Leaf\n)\n{\n    init()\n    {\n        set leaf: Leaf()\n    }\n}\n"   # 10-20
-       "\ndefine Top\n(\n    mid: Mid\n)\n{\n    init()\n    {\n        set mid: Mid()\n    }\n"     # 21-30
+src = ("define Leaf\n(\n    v: int\n)\n{\n    init()\n    {\n        v := 1\n    }\n}\n"          # 0-9
+       "\ndefine Mid\n(\n    leaf: Leaf\n)\n{\n    init()\n    {\n        leaf := Leaf()\n    }\n}\n"   # 10-20
+       "\ndefine Top\n(\n    mid: Mid\n)\n{\n    init()\n    {\n        mid := Mid()\n    }\n"     # 21-30
        "    function depth(this) returns int\n    {\n        return 3\n    }\n}\n"                   # 31-35
        "\nfunction f(t: Top) returns int\n"                                                          # 36-37
        "{\n"                                                                                         # 38
@@ -3808,8 +3808,8 @@ box = ("define Box\n"                                  # 0
        "{\n"                                           # 5
        "    init()\n"                                  # 6
        "    {\n"                                       # 7
-       "        set width: 3\n"                        # 8
-       "        set height: 4\n"                       # 9
+       "        width := 3\n"                        # 8
+       "        height := 4\n"                       # 9
        "    }\n"                                       # 10
        "\n"                                            # 11
        "    function area(this) returns int\n"         # 12
@@ -4790,8 +4790,8 @@ probes = [
     (line_of("define Vector[T]"),        "Vector",  "Vector"),
     (line_of("length: size_t"),          "length",  "property length: size_t"),
     (line_of("define VectorIterator[T]"), "VectorIterator", "VectorIterator"),
-    (line_of("set length: len"),         "len",     "size_t"),
-    (line_of("set position: position + 1"), "position", "size_t"),
+    (line_of("length := len"),         "len",     "size_t"),
+    (line_of("position := position + 1"), "position", "size_t"),
 ]
 
 inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
@@ -4869,7 +4869,7 @@ def line_of(needle):
     return next(i for i, l in enumerate(lines) if l.strip() == needle)
 
 bind = line_of("let own_page Page.get(this)")
-alloc = line_of("set data: own_page.allocate(len * sizeof T, alignof T) as pointer[T]")
+alloc = line_of("data := own_page.allocate(len * sizeof T, alignof T) as pointer[T]")
 cond = line_of("if len > 0")
 
 # (line, token, occurrence index, expected type)
@@ -5201,7 +5201,7 @@ open(doc, "w").write(
     "{\n"
     "    var t 0\n"
     "    for x in n\n"                                  # 10: writes t (the LAST x --
-    "        set t: x\n"                                #   a sum would be a reduction)
+    "        t := x\n"                                #   a sum would be a reduction)
     "    t\n"
     "}\n"
     "\n"
@@ -5241,7 +5241,7 @@ open(nc, "w").write(
     "    let text_for \"for a in b\"\n"
     "    var t 0\n"
     "    for i in n\n"                                  # 8: the only real one
-    "        set t: i\n"
+    "        t := i\n"
     "    t\n"
     "}\n"
     "\n"
@@ -5262,7 +5262,7 @@ body = ("define a\n"
         "    {\n"
         "        var t 0\n"
         "        for i in n\n"                           # 6
-        "            set t: i\n"
+        "            t := i\n"
         "        t\n"
         "    }\n"
         "}\n")
@@ -5279,7 +5279,7 @@ check(rows(ls) == [(8, "runs sequentially: writes loop-external t")],
 # Unsaved edit that ADDS a `for`: no pairing is honest, so the lenses vanish
 # until the file is saved (a visibly absent lens beats a plausible wrong one).
 caps, ls = lenses(member, body.replace("        var t 0\n",
-                                       "        var t 0\n        for q in n\n            set t: t + q\n"))
+                                       "        var t 0\n        for q in n\n            t := t + q\n"))
 check(verdict_lenses(ls) == [], "a buffer whose `for` structure differs from disk answers no verdict")
 
 # ---- the reachable "no verdict": a file the root does not declare -------
@@ -5739,7 +5739,7 @@ src = ("mutable counter: int 7\n"                    # 1  thread-local
        "    shared outer: int 4\n"                   # 13 process-global, in a namespace
        "}\n"
        "\n"
-       "set counter: counter + 1\n")
+       "counter := counter + 1\n")
 path = ws + "/storage.scaly"
 open(path, "w").write(src)
 
@@ -5914,7 +5914,7 @@ BODY = ("define Holder (name: String)\n"
         "procedure fill(mutable out: pointer[Holder], n: int) returns bool\n"
         "{\n"
         "    let s String%s(\"hello\")\n"
-        "    set *out: Holder(s)\n"                      # 6 - the store
+        "    *out := Holder(s)\n"                      # 6 - the store
         "    true\n"
         "}\n"
         "\n"
@@ -5925,8 +5925,8 @@ BODY = ("define Holder (name: String)\n"
         "    while i < k\n"
         "    {\n"
         "        let junk String(\"XXXXXXXXXXXXXXXX\")\n"
-        "        set acc: acc + (junk.get_length() as int)\n"
-        "        set i: i + 1\n"
+        "        acc := acc + (junk.get_length() as int)\n"
+        "        i := i + 1\n"
         "    }\n"
         "    acc\n"
         "}\n"
@@ -5978,26 +5978,26 @@ quiet = ("define Holder (name: String)\n"
          "\n"
          "procedure scalar_out(mutable ok: pointer[bool], n: int) returns int\n"
          "{\n"
-         "    set *ok: true\n"                                    # 6  no buffer in a bool
+         "    *ok := true\n"                                    # 6  no buffer in a bool
          "    n\n"
          "}\n"
          "\n"
          "procedure empty_ctor(mutable out: pointer[Holder], n: int) returns int\n"
          "{\n"
-         "    set *out: Holder(String())\n"                       # 12 nothing allocated
+         "    *out := Holder(String())\n"                       # 12 nothing allocated
          "    n\n"
          "}\n"
          "\n"
          "procedure pinned(mutable out: pointer[String], host: pointer[Page], n: int) returns int\n"
          "{\n"
-         "    set *out: String^host(\"x\")\n"                     # 18 decided on the line
+         "    *out := String^host(\"x\")\n"                     # 18 decided on the line
          "    n\n"
          "}\n"
          "\n"
          "function local_only(n: int) returns int\n"
          "{\n"
          "    var acc 0\n"
-         "    set acc: acc + n\n"                                 # 25 no pointer parameter
+         "    acc := acc + n\n"                                 # 25 no pointer parameter
          "    acc\n"
          "}\n"
          "\n"
@@ -6056,9 +6056,9 @@ for f in sweep:
         if not m:
             wrong.append((f, ln, "title names no parameter", title[:40])); continue
         param = m.group(1)
-        if not re.match(r"\s*set\s", line):
-            wrong.append((f, ln, "not a set", line.strip()[:50])); continue
-        target = line.split(":")[0]
+        if ":=" not in line:
+            wrong.append((f, ln, "not an assignment", line.strip()[:50])); continue
+        target = line.split(":=")[0]
         if not re.search(r"\b%s\b" % re.escape(param), target):
             wrong.append((f, ln, "param %s not in the target" % param, target.strip()[:50])); continue
         head = routine_head(src, ln)
@@ -6519,7 +6519,7 @@ src = ("mutable counter: int 0\n"                    # 0
        "{\n"
        "    let fixed 3\n"                           # 9
        "    var moving 4\n"                          # 10
-       "    set moving: fixed + counter\n"           # 11
+       "    moving := fixed + counter\n"           # 11
        "    let s String(\"hi\")\n"                  # 12
        "    return moving + fixed + s.get_length()\n"  # 13
        "}\n")

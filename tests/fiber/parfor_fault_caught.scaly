@@ -32,7 +32,7 @@ var k 0 as size_t
 while k < n
 {
     src.put(k, (k as int))
-    set k: k + 1
+    k := k + 1
 }
 
 var idx: size_t 0
@@ -41,8 +41,8 @@ try fill(&acc, &src, n, 1 as size_t)
     when e: OutOfBounds
     {
         Console.print "caught "
-        set idx: e.index
-        set len: e.length
+        idx := e.index
+        len := e.length
     }
 if idx = n
     Console.print "index=n "
@@ -57,6 +57,6 @@ var j 0
 while j < 20
 {
     let s String("a payload built after the caught parallel fault")
-    set j: j + 1
+    j := j + 1
 }
 Console.println "continued"

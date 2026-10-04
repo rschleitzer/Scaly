@@ -32,8 +32,8 @@ define NoInit (a: int, b: int)
 function make(host: ref[Page], x: int) returns ref[NoInit]
 {
     let n &NoInit^host()
-    set n.a: x
-    set n.b: x * 10
+    n.a := x
+    n.b := x * 10
     n
 }
 
@@ -48,23 +48,23 @@ var ok true
 
 ; distinct storage: three calls, three objects
 if one.a <> 1
-    set ok: false
+    ok := false
 if one.b <> 10
-    set ok: false
+    ok := false
 if two.a <> 2
-    set ok: false
+    ok := false
 if two.b <> 20
-    set ok: false
+    ok := false
 if three.a <> 3
-    set ok: false
+    ok := false
 if three.b <> 30
-    set ok: false
+    ok := false
 
 ; and the storage is the PAGE we named, not a frame
 let p1 (Page.get(one) as size_t)
 let hp (rp as size_t)
 if p1 <> hp
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

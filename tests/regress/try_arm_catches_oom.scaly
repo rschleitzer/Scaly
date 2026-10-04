@@ -57,7 +57,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     while i < 20
     {
         let s String("a payload on a region built after the caught fault")
-        set i: i + 1
+        i := i + 1
     }
 
     ; (4) the else form
@@ -65,7 +65,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     scaly_alloc_fail_after(0)
     try let r host.allocate(1048576 as size_t, 8 as size_t)
     else
-        set caught_else: true
+        caught_else := true
     if caught_else = false
     {
         print "FAIL: the else form did not catch the failure"

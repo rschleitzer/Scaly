@@ -3,7 +3,7 @@
 ; mode: run
 ; expect: 42
 var x 42
-for i in 0 : set x : 0
+for i in 0 : x := 0
 let literate_result (x)
 if literate_result = (42)
     print("PASS")

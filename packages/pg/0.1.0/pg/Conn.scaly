@@ -91,10 +91,10 @@ define PgConn
         {
             var end at + 1
             while end < e.length and e[end] <> 0
-                set end: end + 1
+                end := end + 1
             if e[at] = 77
                 return e.subslice(at + 1, end)
-            set at: end + 1
+            at := end + 1
         }
         e.slice_to(0)
     }
@@ -108,7 +108,7 @@ define PgConn
             outb.finish(at)
             tcp.write(outb.bytes())
         }
-        set open: false
+        open := false
         tcp.close()
         host.deallocate_extensions()
         Page.release_page(host)
@@ -121,7 +121,7 @@ define PgConn
             return false
         if tcp.write(outb.bytes()) = false
         {
-            set open: false
+            open := false
             return false
         }
         outb.clear()
@@ -139,7 +139,7 @@ define PgConn
             let got tcp.read(inb.spare())
             if got <= 0
             {
-                set open: false
+                open := false
                 return false
             }
             inb.advance(got as size_t)
@@ -157,14 +157,14 @@ define PgConn
         let len be_i32(inb.bytes(), rpos + 1)
         if len < 4
         {
-            set open: false
+            open := false
             return 0
         }
         if this.need(1 + (len as size_t)) = false
             return 0
-        set msg_start: rpos + 5
-        set msg_length: (len as size_t) - 4
-        set rpos: rpos + 1 + (len as size_t)
+        msg_start := rpos + 5
+        msg_length := (len as size_t) - 4
+        rpos := rpos + 1 + (len as size_t)
         t
     }
 
@@ -175,9 +175,9 @@ define PgConn
     procedure reset_input(mutable this)
     {
         inb.clear()
-        set rpos: 0
-        set error_at: 0
-        set error_length: 0
+        rpos := 0
+        error_at := 0
+        error_length := 0
     }
 
     ; Read up to ReadyForQuery; false when an ErrorResponse came (kept for
@@ -192,9 +192,9 @@ define PgConn
                 return false
             if t = 69
             {
-                set ok: false
-                set error_at: msg_start
-                set error_length: msg_length
+                ok := false
+                error_at := msg_start
+                error_length := msg_length
             }
             if t = 90
                 return ok
@@ -223,8 +223,8 @@ define PgConn
                 return false
             if t = 69
             {
-                set error_at: msg_start
-                set error_length: msg_length
+                error_at := msg_start
+                error_length := msg_length
                 return false
             }
             if t = 90
@@ -279,7 +279,7 @@ define PgConn
         {
             if prepared.at(i).as_slice().equals(name)
                 return true
-            set i: i + 1
+            i := i + 1
         }
         this.reset_input()
         outb.clear()
@@ -301,20 +301,20 @@ define PgConn
     procedure start(mutable this, name: Slice[u8])
     {
         outb.clear()
-        set bind_at: outb.begin(66)
+        bind_at := outb.begin(66)
         outb.append_byte(0)
         outb.append_cstr(name)
         outb.append_i16(0)
-        set param_count_at: outb.length
+        param_count_at := outb.length
         outb.append_i16(0)
-        set param_count: 0
+        param_count := 0
     }
 
     procedure param_text(mutable this, v: Slice[u8])
     {
         outb.append_i32(v.length as i64)
         outb.append(v)
-        set param_count: param_count + 1
+        param_count := param_count + 1
     }
 
     procedure param_int(mutable this, v: i64)
@@ -323,7 +323,7 @@ define PgConn
         outb.append_i32(0)
         outb.append_decimal(v)
         outb.put_i32(at, (outb.length - at - 4) as i64)
-        set param_count: param_count + 1
+        param_count := param_count + 1
     }
 
     ; Send the query and read its whole answer; false on an error. The rows
@@ -343,7 +343,7 @@ define PgConn
         this.reset_input()
         if this.flush() = false or this.drain() = false
             return false
-        set walk: 0
+        walk := 0
         true
     }
 
@@ -356,10 +356,10 @@ define PgConn
             let t b[walk]
             let len be_i32(b, walk + 1) as size_t
             let at walk + 5
-            set walk: walk + 1 + len
+            walk := walk + 1 + len
             if t = 68
             {
-                set row_start: at
+                row_start := at
                 this.index_row(b)
                 return true
             }
@@ -385,10 +385,10 @@ define PgConn
                 let tag b.subslice(at + 5, at + 1 + len)
                 var i tag.length
                 while i > 0 and tag[i - 1] <> 32
-                    set i: i - 1
+                    i := i - 1
                 return decimal_of(tag.slice_from(i))
             }
-            set at: at + 1 + len
+            at := at + 1 + len
         }
         0
     }
@@ -398,7 +398,7 @@ define PgConn
     {
         var n be_u16(b, row_start) as size_t
         if n > col_start.length
-            set n: col_start.length
+            n := col_start.length
         var at row_start + 2
         var k: size_t 0
         while k < n
@@ -406,12 +406,12 @@ define PgConn
             let len be_i32(b, at)
             col_start.put(k, (at + 4) as u32)
             col_len.put(k, len as i32)
-            set at: at + 4
+            at := at + 4
             if len > 0
-                set at: at + (len as size_t)
-            set k: k + 1
+                at := at + (len as size_t)
+            k := k + 1
         }
-        set col_count: n
+        col_count := n
     }
 
     ; Column i of the current row as text; empty for NULL.
@@ -434,10 +434,10 @@ define PgConn
         while k < i
         {
             let len be_i32(b, at)
-            set at: at + 4
+            at := at + 4
             if len > 0
-                set at: at + (len as size_t)
-            set k: k + 1
+                at := at + (len as size_t)
+            k := k + 1
         }
         let len be_i32(b, at)
         if len < 0

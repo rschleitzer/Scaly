@@ -23,10 +23,10 @@
 define Item (v: int)
 
 procedure fill(mutable c: ref[ref[Item]?], p: ref[Item])
-    set c: p
+    c := p
 
 procedure clear(mutable c: ref[ref[Item]?])
-    set c: null
+    c := null
 
 ; The cell is READ through a typed binding: the transparent read fires at a
 ; declared-type position, and the reference itself is never null.

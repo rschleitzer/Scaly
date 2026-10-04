@@ -18,7 +18,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
         sb.append "{\"id\":"
         sb.append i
         sb.append ",\"name\":\"widget\",\"tags\":[\"a\",\"b\"]},"
-        set i: i + 1
+        i := i + 1
     }
     let text sb.to_string()
     let input text.as_slice()

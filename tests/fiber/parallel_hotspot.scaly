@@ -23,8 +23,8 @@ function spin(seed: i64) returns i64
     var k 0 as i64
     while k < (2000 as i64)
     {
-        set acc: acc + k
-        set k: k + (1 as i64)
+        acc := acc + k
+        k := k + (1 as i64)
     }
     acc
 }
@@ -36,8 +36,8 @@ function spin_big(seed: i64) returns i64
     var k 0 as i64
     while k < (40000 as i64)
     {
-        set acc: acc + k
-        set k: k + (1 as i64)
+        acc := acc + k
+        k := k + (1 as i64)
     }
     acc
 }
@@ -85,8 +85,8 @@ function vsum(r: Vector[i64], n: size_t) returns i64
     {
         let v r.get j
         if v <> null
-            set s: s + (*v)
-        set j: j + 1
+            s := s + (*v)
+        j := j + 1
     }
     s
 }
@@ -101,7 +101,7 @@ var e 0
 while e < 300
 {
     wave_tiny(r1)
-    set e: e + 1
+    e := e + 1
 }
 if vsum(r1, 32 as size_t) <> (1488 as i64)
 {
@@ -117,11 +117,11 @@ if TaskPool.submit_count(pool) <> (0 as u64)
 ; ---- Wave 2: short-but-hot site — crosses the volume threshold,
 ; calibrates, promotes to zero-clock sequential; still zero submits.
 var r2 Vector[i64](8)
-set e: 0
+e := 0
 while e < 3000
 {
     wave_hot(r2)
-    set e: e + 1
+    e := e + 1
 }
 if vsum(r2, 8 as size_t) <> (15992028 as i64)
 {
@@ -173,7 +173,7 @@ var j: size_t 0
 while j < (512 as size_t)
 {
     items.put(j, Item(j, j as i64))
-    set j: j + 1
+    j := j + 1
 }
 var r4 Vector[i64](512)
 wave_iter(r4, items, bias)
@@ -189,11 +189,11 @@ if subs4 = subs3
     exit 1
 }
 var items2 Vector[Item](16)
-set j: 0 as size_t
+j := 0 as size_t
 while j < (16 as size_t)
 {
     items2.put(j, Item(j, j as i64))
-    set j: j + 1
+    j := j + 1
 }
 var r4b Vector[i64](16)
 wave_iter(r4b, items2, bias)

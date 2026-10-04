@@ -240,110 +240,110 @@ define WriteCensus
     {
         init()
         {
-            set report_files: Array[String]^this()
-            set report_offsets: Array[size_t]^this()
-            set report_texts: Array[String]^this()
-            set pc: null
-            set plan_functions: null
-            set plan_structures: null
-            set struct_by_mangled: ConceptIndex()
-            set struct_by_name: ConceptIndex()
-            set let_probe: false
-            set n_let_sites: 0
-            set let_offsets: Array[size_t]^this()
-            set let_texts: Array[String]^this()
-            set let_fns: Array[size_t]^this()
-            set cur_let_bad: Array[String]^this()
-            set cur_let_offsets: Array[size_t]^this()
-            set cur_addr_taken: Array[String]^this()
-            set cur_file_hint: String^this("")
-            set masks: Array[u64]^this()
-            set cur_input: null
-            set cur_page: String^this("")
-            set cur_name: String^this("")
-            set cur_pure: false
-            set cur_substrate: false
-            set body_mask: 0
-            set body_direct: false
-            set reporting: false
-            set current_file: String^this("")
-            set loc_names: Array[String]^this()
-            set loc_masks: Array[u64]^this()
-            set loc_is: Array[u64]^this()
-            set n_bodies: 0
-            set n_pure: 0
-            set n_pure_writing: 0
-            set n_pure_direct: 0
-            set n_proc: 0
-            set n_proc_writing: 0
-            set n_unfiled: 0
-            set n_misaligned: 0
-            set n_rounds: 0
-            set n_sites: 0
-            set summaries_path: String^this("")
-            set sum_names: Array[String]^this()
-            set sum_masks: Array[u64]^this()
-            set sum_inputs: Array[size_t]^this()
-            set sum_globals: Array[String]^this()
-            set sum_slots: Vector[size_t]^this(262144)
-            set n_stub_known: 0
-            set n_stub_unknown: 0
-            set frozen_mode: false
-            set frozen_names: Array[String]^this()
-            set entry_names: Array[String]^this()
-            set reach: Array[u64]^this()
-            set queue: Array[size_t]^this()
-            set edge_mode: false
-            set lock_depth: 0
-            set n_reachable: 0
-            set n_frozen_sites: 0
-            set n_locked_sites: 0
-            set param_frozen: Array[u64]^this()
-            set returns_fresh: Array[u64]^this()
-            set frozen_pass: false
-            set fz_changed: false
-            set cur_fn: 0
-            set n_fz_rounds: 0
-            set check_mode: false
-            set cur_page_mask: 0
-            set cur_allowed: 0
-            set diagnostics: false
-            set n_violations: 0
-            set gnames: Array[String]^this()
-            set gwords: Array[u64]^this()
-            set cur_g: Array[u64]^this()
-            set g_changed: false
-            set loc_globals: Array[String]^this()
-            set pending_global: String^this("")
-            set ambient_names: Array[String]^this()
-            set cur_allowed_g: null
-            set atomic_names: Array[String]^this()
-            set in_atomic_op: false
-            set cur_atomic_bad: Array[String]^this()
-            set mutable_names: Array[String]^this()
-            set cur_reads: Array[String]^this()
-            set read_pass: false
-            set read_index: 0
-            set body_reads: Array[String]^this()
-            set body_io: Array[String]^this()
-            set edge_from: Array[size_t]^this()
-            set edge_to: Array[size_t]^this()
-            set decl_read_keys: Array[String]^this()
-            set decl_read_vals: Array[String]^this()
-            set decl_io_keys: Array[String]^this()
-            set ret_globals: Array[String]^this()
-            set cur_ret_global: String^this("")
-            set ret_params: Array[u64]^this()
-            set cur_ret_params: 0
-            set rp_changed: false
-            set n_rp_rounds: 0
-            set rp_pass: false
-            set rp_from: Array[size_t]^this()
-            set rp_to: Array[size_t]^this()
-            set rp_grew: Array[u64]^this()
-            set rp_dirty: Array[u64]^this()
-            set ret_is: Array[u64]^this()
-            set cur_ret_is: 0
+            report_files := Array[String]^this()
+            report_offsets := Array[size_t]^this()
+            report_texts := Array[String]^this()
+            pc := null
+            plan_functions := null
+            plan_structures := null
+            struct_by_mangled := ConceptIndex()
+            struct_by_name := ConceptIndex()
+            let_probe := false
+            n_let_sites := 0
+            let_offsets := Array[size_t]^this()
+            let_texts := Array[String]^this()
+            let_fns := Array[size_t]^this()
+            cur_let_bad := Array[String]^this()
+            cur_let_offsets := Array[size_t]^this()
+            cur_addr_taken := Array[String]^this()
+            cur_file_hint := String^this("")
+            masks := Array[u64]^this()
+            cur_input := null
+            cur_page := String^this("")
+            cur_name := String^this("")
+            cur_pure := false
+            cur_substrate := false
+            body_mask := 0
+            body_direct := false
+            reporting := false
+            current_file := String^this("")
+            loc_names := Array[String]^this()
+            loc_masks := Array[u64]^this()
+            loc_is := Array[u64]^this()
+            n_bodies := 0
+            n_pure := 0
+            n_pure_writing := 0
+            n_pure_direct := 0
+            n_proc := 0
+            n_proc_writing := 0
+            n_unfiled := 0
+            n_misaligned := 0
+            n_rounds := 0
+            n_sites := 0
+            summaries_path := String^this("")
+            sum_names := Array[String]^this()
+            sum_masks := Array[u64]^this()
+            sum_inputs := Array[size_t]^this()
+            sum_globals := Array[String]^this()
+            sum_slots := Vector[size_t]^this(262144)
+            n_stub_known := 0
+            n_stub_unknown := 0
+            frozen_mode := false
+            frozen_names := Array[String]^this()
+            entry_names := Array[String]^this()
+            reach := Array[u64]^this()
+            queue := Array[size_t]^this()
+            edge_mode := false
+            lock_depth := 0
+            n_reachable := 0
+            n_frozen_sites := 0
+            n_locked_sites := 0
+            param_frozen := Array[u64]^this()
+            returns_fresh := Array[u64]^this()
+            frozen_pass := false
+            fz_changed := false
+            cur_fn := 0
+            n_fz_rounds := 0
+            check_mode := false
+            cur_page_mask := 0
+            cur_allowed := 0
+            diagnostics := false
+            n_violations := 0
+            gnames := Array[String]^this()
+            gwords := Array[u64]^this()
+            cur_g := Array[u64]^this()
+            g_changed := false
+            loc_globals := Array[String]^this()
+            pending_global := String^this("")
+            ambient_names := Array[String]^this()
+            cur_allowed_g := null
+            atomic_names := Array[String]^this()
+            in_atomic_op := false
+            cur_atomic_bad := Array[String]^this()
+            mutable_names := Array[String]^this()
+            cur_reads := Array[String]^this()
+            read_pass := false
+            read_index := 0
+            body_reads := Array[String]^this()
+            body_io := Array[String]^this()
+            edge_from := Array[size_t]^this()
+            edge_to := Array[size_t]^this()
+            decl_read_keys := Array[String]^this()
+            decl_read_vals := Array[String]^this()
+            decl_io_keys := Array[String]^this()
+            ret_globals := Array[String]^this()
+            cur_ret_global := String^this("")
+            ret_params := Array[u64]^this()
+            cur_ret_params := 0
+            rp_changed := false
+            n_rp_rounds := 0
+            rp_pass := false
+            rp_from := Array[size_t]^this()
+            rp_to := Array[size_t]^this()
+            rp_grew := Array[u64]^this()
+            rp_dirty := Array[u64]^this()
+            ret_is := Array[u64]^this()
+            cur_ret_is := 0
         }
 
         ; ================================================================
@@ -351,7 +351,7 @@ define WriteCensus
         ; ================================================================
         procedure analyze(mutable this: WriteCensus, plan: Plan, model: ref[Program], mutable census: ref[PointerCensus])
         {
-            set pc: census
+            pc := census
             this.load_summaries()
             this.load_frozen()
             census.walk_model_module(model.module_)
@@ -361,13 +361,13 @@ define WriteCensus
                 let pkg model.packages.get pi
                 if pkg <> null
                     census.collect_externs_module((*pkg))
-                set pi: pi + 1
+                pi := pi + 1
             }
-            set census.plan_functions: plan.functions
-            set census.plan_structures: plan.structures
+            census.plan_functions := plan.functions
+            census.plan_structures := plan.structures
             census.index_functions()
-            set plan_functions: plan.functions
-            set plan_structures: plan.structures
+            plan_functions := plan.functions
+            plan_structures := plan.structures
             this.index_structures()
             if plan.functions = null
                 return
@@ -385,9 +385,9 @@ define WriteCensus
                 while w < WC_GW
                 {
                     gwords.add(0)
-                    set w: w + 1
+                    w := w + 1
                 }
-                set i: i + 1
+                i := i + 1
             }
             ; a call's result aliases the arguments its callee's returns reach
             this.learn_returned_params()
@@ -396,9 +396,9 @@ define WriteCensus
             var changed true
             while changed
             {
-                set changed: false
-                set n_rounds: n_rounds + 1
-                set i: 0
+                changed := false
+                n_rounds := n_rounds + 1
+                i := 0
                 while i < fns.length
                 {
                     let f_ptr fns.get i
@@ -407,20 +407,20 @@ define WriteCensus
                         let before masks[i]
                         ; a body without an Action never enters: no globals
                         this.clear_globals()
-                        set cur_fn: i
+                        cur_fn := i
                         let after before | (this.walk_body((*f_ptr)) & (0 - (WC_FROZEN + (1 as u64))))
                         if after <> before
                         {
                             masks.put(i, after)
-                            set changed: true
+                            changed := true
                         }
                         if this.merge_globals_into(i)
-                            set changed: true
+                            changed := true
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
                 if n_rounds >= 100
-                    set changed: false
+                    changed := false
             }
             this.save_summaries()
             if frozen_mode
@@ -428,17 +428,17 @@ define WriteCensus
                 this.report_frozen()
                 return
             }
-            set reporting: true
-            set i: 0
+            reporting := true
+            i := 0
             while i < fns.length
             {
                 let f_ptr fns.get i
                 if f_ptr <> null
                 {
-                    set cur_fn: i
+                    cur_fn := i
                     this.report_body((*f_ptr), masks[i])
                 }
-                set i: i + 1
+                i := i + 1
             }
             this.report_globals()
         }
@@ -477,31 +477,31 @@ define WriteCensus
 
         procedure enter_body(mutable this: WriteCensus, func: PlannedFunction)
         {
-            set cur_input: func.input
-            set cur_page: String^this("_rp")
+            cur_input := func.input
+            cur_page := String^this("_rp")
             if func.page_parameter <> null
-                set cur_page: String^this((*func.page_parameter))
-            set cur_name: String^this(func.name)
-            set cur_file_hint: String^this(func.file)
-            set cur_addr_taken.length: 0
-            set cur_pure: func.pure
-            set cur_substrate: WriteCensus.in_substrate(func.file)
-            set body_mask: 0
-            set body_direct: false
-            set lock_depth: 0
+                cur_page := String^this((*func.page_parameter))
+            cur_name := String^this(func.name)
+            cur_file_hint := String^this(func.file)
+            cur_addr_taken.length := 0
+            cur_pure := func.pure
+            cur_substrate := WriteCensus.in_substrate(func.file)
+            body_mask := 0
+            body_direct := false
+            lock_depth := 0
             this.clear_globals()
-            set cur_page_mask: 0
+            cur_page_mask := 0
             if check_mode
-                set cur_page_mask: this.page_param_mask() | cur_allowed
-            set loc_names: Array[String]^this()
-            set loc_masks: Array[u64]^this()
-            set loc_is: Array[u64]^this()
-            set loc_globals: Array[String]^this()
-            set cur_atomic_bad: Array[String]^this()
-            set cur_reads: Array[String]^this()
-            set cur_ret_global: String^this("")
-            set cur_ret_params: 0
-            set cur_ret_is: 0
+                cur_page_mask := this.page_param_mask() | cur_allowed
+            loc_names := Array[String]^this()
+            loc_masks := Array[u64]^this()
+            loc_is := Array[u64]^this()
+            loc_globals := Array[String]^this()
+            cur_atomic_bad := Array[String]^this()
+            cur_reads := Array[String]^this()
+            cur_ret_global := String^this("")
+            cur_ret_params := 0
+            cur_ret_is := 0
         }
 
         ; The last walk: sites, and one `fn` line per writing pure function.
@@ -512,7 +512,7 @@ define WriteCensus
             var is_body false
             choose func.impl
                 when action: Action
-                    set is_body: true
+                    is_body := true
                 else
                     0
             if is_body = false
@@ -521,31 +521,31 @@ define WriteCensus
             let home census.resolve_body_file(func)
             if home.get_length() = 0
             {
-                set n_unfiled: n_unfiled + 1
+                n_unfiled := n_unfiled + 1
                 return
             }
-            set current_file: String^this(home)
-            set n_bodies: n_bodies + 1
+            current_file := String^this(home)
+            n_bodies := n_bodies + 1
             ; an initializer writes its own NEW object (`this`, input 0)
             var mask whole_mask
             var kind: String "fn "
             if func.name = "init"
             {
-                set mask: mask & ((0 as u64) - (2 as u64))
-                set kind: "init "
+                mask := mask & ((0 as u64) - (2 as u64))
+                kind := "init "
             }
             else
             {
                 if func.pure = false
-                    set kind: "proc "
+                    kind := "proc "
             }
             if func.pure
             {
                 if func.name <> "init"
-                    set n_pure: n_pure + 1
+                    n_pure := n_pure + 1
             }
             else
-                set n_proc: n_proc + 1
+                n_proc := n_proc + 1
             this.enter_body(func)
             var sb StringBuilder()
             sb.append kind
@@ -561,7 +561,7 @@ define WriteCensus
             sb.append(this.mask_names(mask))
             if func.pure = false
             {
-                set n_proc_writing: n_proc_writing + 1
+                n_proc_writing := n_proc_writing + 1
                 let proc_text sb.to_string()
                 this.record(func.loc.start, String^this(proc_text))
                 ; SCALYC_WRITE_PROC_SITES=1: the sites of the procedures too,
@@ -573,9 +573,9 @@ define WriteCensus
             this.walk_body(func)
             if func.name <> "init"
             {
-                set n_pure_writing: n_pure_writing + 1
+                n_pure_writing := n_pure_writing + 1
                 if body_direct
-                    set n_pure_direct: n_pure_direct + 1
+                    n_pure_direct := n_pure_direct + 1
             }
             if body_direct
                 sb.append " direct"
@@ -597,7 +597,7 @@ define WriteCensus
                 while w < WC_GW
                 {
                     cur_g.add(0)
-                    set w: w + 1
+                    w := w + 1
                 }
                 return
             }
@@ -605,7 +605,7 @@ define WriteCensus
             while i < WC_GW
             {
                 cur_g.put(i, 0)
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -643,7 +643,7 @@ define WriteCensus
                     this.note_global_id(i)
                     return
                 }
-                set i: i + 1
+                i := i + 1
             }
             if gnames.length >= WC_GW * 64 - 2
             {
@@ -660,7 +660,7 @@ define WriteCensus
             while w < WC_GW
             {
                 cur_g.put(w, cur_g[w] | gwords[row * WC_GW + w])
-                set w: w + 1
+                w := w + 1
             }
         }
 
@@ -676,9 +676,9 @@ define WriteCensus
                 if nw <> old
                 {
                     gwords.put(row * WC_GW + w, nw)
-                    set grew: true
+                    grew := true
                 }
-                set w: w + 1
+                w := w + 1
             }
             grew
         }
@@ -718,9 +718,9 @@ define WriteCensus
                 {
                     let r this.global_root_m(last)
                     if r.get_length() > 0
-                        set cur_ret_global: String^this(r)
-                    set cur_ret_params: cur_ret_params | this.ret_alias_of_operands(ops, false)
-                    set cur_ret_is: cur_ret_is | this.ret_alias_of_operands(ops, true)
+                        cur_ret_global := String^this(r)
+                    cur_ret_params := cur_ret_params | this.ret_alias_of_operands(ops, false)
+                    cur_ret_is := cur_ret_is | this.ret_alias_of_operands(ops, true)
                 }
         }
 
@@ -739,8 +739,8 @@ define WriteCensus
             {
                 let op_ptr ops.get i
                 if op_ptr <> null
-                    set m: m | this.ret_alias_of(op_ptr.unwrap(), narrow)
-                set i: i + 1
+                    m := m | this.ret_alias_of(op_ptr.unwrap(), narrow)
+                i := i + 1
             }
             m
         }
@@ -787,8 +787,8 @@ define WriteCensus
                         {
                             let c_ptr tp.components.get i
                             if c_ptr <> null
-                                set m: m | this.ret_alias_of_operands(c_ptr.value, narrow)
-                            set i: i + 1
+                                m := m | this.ret_alias_of_operands(c_ptr.value, narrow)
+                            i := i + 1
                         }
                     }
                     return m
@@ -813,8 +813,8 @@ define WriteCensus
                         {
                             let w_ptr ch.cases.get i
                             if w_ptr <> null
-                                set m: m | this.ret_alias_of_statement(w_ptr.consequent, narrow)
-                            set i: i + 1
+                                m := m | this.ret_alias_of_statement(w_ptr.consequent, narrow)
+                            i := i + 1
                         }
                     }
                     return m
@@ -829,8 +829,8 @@ define WriteCensus
                         {
                             let b_ptr mt.branches.get i
                             if b_ptr <> null
-                                set m: m | this.ret_alias_of_statement(b_ptr.consequent, narrow)
-                            set i: i + 1
+                                m := m | this.ret_alias_of_statement(b_ptr.consequent, narrow)
+                            i := i + 1
                         }
                     }
                     return m
@@ -883,14 +883,14 @@ define WriteCensus
                                     let callee callee_ptr.unwrap()
                                     var n_in: size_t 0
                                     if callee.input <> null
-                                        set n_in: callee.input.length
+                                        n_in := callee.input.length
                                     if callee.name <> "init"
                                         if n_in = c.args.length
                                         {
                                             if narrow
-                                                set rp: ret_is[slot - 1]
+                                                rp := ret_is[slot - 1]
                                             else
-                                                set rp: ret_params[slot - 1]
+                                                rp := ret_params[slot - 1]
                                         }
                                 }
                             }
@@ -903,19 +903,19 @@ define WriteCensus
             {
                 var bit: u64 WC_OVERFLOW
                 if i < 61
-                    set bit: (1 as u64) << (i as u64)
+                    bit := (1 as u64) << (i as u64)
                 if (rp & bit) <> (0 as u64)
                 {
                     let a_ptr c.args.get i
                     if a_ptr <> null
                     {
                         if narrow
-                            set m: m | this.is_of(a_ptr.unwrap())
+                            m := m | this.is_of(a_ptr.unwrap())
                         else
-                            set m: m | this.mask_of(a_ptr.unwrap())
+                            m := m | this.mask_of(a_ptr.unwrap())
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             m
         }
@@ -936,28 +936,28 @@ define WriteCensus
                 {
                     choose f_ptr.unwrap().impl
                         when action: Action
-                            set start: 0
+                            start := 0
                         else
                             0
                 }
                 ret_params.add start
                 ret_is.add start
-                set i: i + 1
+                i := i + 1
             }
-            set i: 0
+            i := 0
             while i < fns.length
             {
                 rp_grew.add 0
                 rp_dirty.add 1
-                set i: i + 1
+                i := i + 1
             }
-            set rp_pass: true
-            set rp_changed: true
+            rp_pass := true
+            rp_changed := true
             while rp_changed
             {
-                set rp_changed: false
-                set n_rp_rounds: n_rp_rounds + 1
-                set i: 0
+                rp_changed := false
+                n_rp_rounds := n_rp_rounds + 1
+                i := 0
                 while i < fns.length
                 {
                     rp_grew.put(i, 0)
@@ -966,7 +966,7 @@ define WriteCensus
                         if rp_dirty[i] <> 0
                             if ret_params[i] <> WC_PARAMS
                             {
-                                set cur_fn: i
+                                cur_fn := i
                                 this.clear_globals()
                                 this.walk_body(f_ptr.unwrap())
                                 let grown ret_params[i] | cur_ret_params
@@ -974,35 +974,35 @@ define WriteCensus
                                 {
                                     ret_params.put(i, grown)
                                     rp_grew.put(i, 1)
-                                    set rp_changed: true
+                                    rp_changed := true
                                 }
                                 let grown_is ret_is[i] | cur_ret_is
                                 if grown_is <> ret_is[i]
                                 {
                                     ret_is.put(i, grown_is)
                                     rp_grew.put(i, 1)
-                                    set rp_changed: true
+                                    rp_changed := true
                                 }
                             }
-                    set i: i + 1
+                    i := i + 1
                 }
-                set rp_pass: false
+                rp_pass := false
                 ; the next round re-walks the callers of what grew
-                set i: 0
+                i := 0
                 while i < fns.length
                 {
                     rp_dirty.put(i, 0)
-                    set i: i + 1
+                    i := i + 1
                 }
                 var e: size_t 0
                 while e < rp_from.length
                 {
                     if rp_grew[rp_to[e]] <> 0
                         rp_dirty.put(rp_from[e], 1)
-                    set e: e + 1
+                    e := e + 1
                 }
                 if n_rp_rounds >= 60
-                    set rp_changed: false
+                    rp_changed := false
             }
         }
 
@@ -1014,21 +1014,21 @@ define WriteCensus
             while i < fns.length
             {
                 ret_globals.add(String^this(""))
-                set i: i + 1
+                i := i + 1
             }
-            set i: 0
+            i := 0
             while i < fns.length
             {
                 let f_ptr fns.get i
                 if f_ptr <> null
                 {
                     this.clear_globals()
-                    set cur_ret_global: String^this("")
+                    cur_ret_global := String^this("")
                     this.walk_body(f_ptr.unwrap())
                     if cur_ret_global.get_length() > 0
                         ret_globals.put(i, String^this(cur_ret_global))
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -1038,7 +1038,7 @@ define WriteCensus
             var li loc_names.length
             while li > 0
             {
-                set li: li - 1
+                li := li - 1
                 if loc_names[li] = name
                     return String(loc_globals[li])
             }
@@ -1055,7 +1055,7 @@ define WriteCensus
                     var li loc_names.length
                     while li > 0
                     {
-                        set li: li - 1
+                        li := li - 1
                         if loc_names[li] = v.name
                             return String(loc_globals[li])
                     }
@@ -1096,11 +1096,11 @@ define WriteCensus
                                                 return r
                                         }
                                     }
-                                    set vi: vi + 1
+                                    vi := vi + 1
                                 }
                             }
                         }
-                        set ti: ti + 1
+                        ti := ti + 1
                     }
                     return String("")
                 }
@@ -1138,7 +1138,7 @@ define WriteCensus
                                     return r
                             }
                         }
-                        set ai: ai + 1
+                        ai := ai + 1
                     }
                     return String("")
                 }
@@ -1159,7 +1159,7 @@ define WriteCensus
                 {
                     if any
                         sb.append ","
-                    set any: true
+                    any := true
                     if id = WC_GW * 64 - 1
                         sb.append "?alias"
                     else if id = WC_GW * 64 - 2
@@ -1167,7 +1167,7 @@ define WriteCensus
                     else
                         sb.append(gnames[id])
                 }
-                set id: id + 1
+                id := id + 1
             }
             sb.to_string()
         }
@@ -1185,9 +1185,9 @@ define WriteCensus
                     if c = 44
                         break
                     nb.append(c as char)
-                    set i: i + 1
+                    i := i + 1
                 }
-                set i: i + 1
+                i := i + 1
                 let one nb.to_string()
                 if one.get_length() > 0
                 {
@@ -1215,9 +1215,9 @@ define WriteCensus
                     if c = 44
                         break
                     nb.append(c as char)
-                    set i: i + 1
+                    i := i + 1
                 }
-                set i: i + 1
+                i := i + 1
                 let one nb.to_string()
                 if one = "?alias"
                     this.note_global_id(WC_GW * 64 - 1)
@@ -1236,14 +1236,14 @@ define WriteCensus
             while i < fns.length
             {
                 let f_ptr fns.get i
-                set i: i + 1
+                i := i + 1
                 if f_ptr = null
                     continue
                 let func f_ptr.unwrap()
                 var is_body false
                 choose func.impl
                     when action: Action
-                        set is_body: true
+                        is_body := true
                     else
                         0
                 if is_body = false
@@ -1261,7 +1261,7 @@ define WriteCensus
                     {
                         if any
                             sb.append ","
-                        set any: true
+                        any := true
                         if id = WC_GW * 64 - 1
                             sb.append "?alias"
                         else if id = WC_GW * 64 - 2
@@ -1269,7 +1269,7 @@ define WriteCensus
                         else
                             sb.append(gnames[id])
                     }
-                    set id: id + 1
+                    id := id + 1
                 }
                 if any
                 {
@@ -1277,7 +1277,7 @@ define WriteCensus
                     let home census.resolve_body_file(func)
                     if home.get_length() > 0
                     {
-                        set current_file: String^this(home)
+                        current_file := String^this(home)
                         let text sb.to_string()
                         this.record(func.loc.start, String^this(text))
                     }
@@ -1334,25 +1334,25 @@ define WriteCensus
                 {
                     if first = false
                         sb.append ","
-                    set first: false
+                    first := false
                     sb.append(this.param_name(i))
                     sb.append ":"
                     sb.append(this.param_type_name(i))
                 }
-                set i: i + 1
+                i := i + 1
             }
             if (mask & WC_OVERFLOW) <> (0 as u64)
             {
                 if first = false
                     sb.append ","
-                set first: false
+                first := false
                 sb.append "param>61"
             }
             if (mask & WC_FROZEN) <> (0 as u64)
             {
                 if first = false
                     sb.append ","
-                set first: false
+                first := false
                 sb.append "frozen"
             }
             if (mask & WC_GLOBAL) <> (0 as u64)
@@ -1380,7 +1380,7 @@ define WriteCensus
             var li loc_names.length
             while li > 0
             {
-                set li: li - 1
+                li := li - 1
                 let n loc_names.get li
                 if n <> null and (*n) = name
                     return loc_masks[li]
@@ -1398,12 +1398,12 @@ define WriteCensus
                 {
                     var fz: u64 0
                     if this.param_is_frozen(i)
-                        set fz: WC_FROZEN
+                        fz := WC_FROZEN
                     if i >= 61
                         return WC_OVERFLOW | fz
                     return ((1 as u64) << (i as u64)) | fz
                 }
-                set i: i + 1
+                i := i + 1
             }
             0
         }
@@ -1436,7 +1436,7 @@ define WriteCensus
             var li loc_names.length
             while li > 0
             {
-                set li: li - 1
+                li := li - 1
                 let n loc_names.get li
                 if n <> null and (*n) = name
                     return loc_is[li]
@@ -1533,7 +1533,7 @@ define WriteCensus
                 let hp hops.get i
                 if hp <> null and WriteCensus.is_reference_name((*hp).result_type.name)
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -1548,8 +1548,8 @@ define WriteCensus
             {
                 let op_ptr ops.get i
                 if op_ptr <> null
-                    set m: m | this.mask_of(op_ptr.unwrap())
-                set i: i + 1
+                    m := m | this.mask_of(op_ptr.unwrap())
+                i := i + 1
             }
             m
         }
@@ -1565,13 +1565,13 @@ define WriteCensus
             {
                 var loaded false
                 if op.member_access <> null and op.member_access.length > 0
-                    set loaded: true
+                    loaded := true
                 ; a reference read out of a field is whatever that field holds;
                 ; anything else is frozen by its PROVENANCE (value_frozen)
                 if loaded
-                    set fz: WC_FROZEN
+                    fz := WC_FROZEN
                 else
-                    set fz: fz | this.value_frozen(op)
+                    fz := fz | this.value_frozen(op)
             }
             fz | this.mask_of_base(op)
         }
@@ -1655,7 +1655,7 @@ define WriteCensus
                             {
                                 let rg ret_globals[slot - 1]
                                 if rg.get_length() > 0
-                                    set getter: WC_GLOBAL
+                                    getter := WC_GLOBAL
                             }
                     }
                     if c.args = null
@@ -1684,8 +1684,8 @@ define WriteCensus
                         {
                             let c_ptr tp.components.get i
                             if c_ptr <> null
-                                set m: m | this.mask_of_operands(c_ptr.value)
-                            set i: i + 1
+                                m := m | this.mask_of_operands(c_ptr.value)
+                            i := i + 1
                         }
                     }
                     return m
@@ -1706,11 +1706,11 @@ define WriteCensus
             {
                 ; its own `this` -- and so the frozen mark that came with it
                 if (mask & (1 as u64)) <> (0 as u64)
-                    set mask: mask & (0 - (WC_FROZEN + (1 as u64)))
-                set mask: mask & ((0 as u64) - (2 as u64))
+                    mask := mask & (0 - (WC_FROZEN + (1 as u64)))
+                mask := mask & ((0 as u64) - (2 as u64))
             }
             if cur_substrate
-                set mask: mask & (WC_GLOBAL - (1 as u64))
+                mask := mask & (WC_GLOBAL - (1 as u64))
             ; a global reached through an alias: written, but not by name (a
             ; direct store and a call name theirs at the site)
             if (mask & WC_GLOBAL) <> (0 as u64)
@@ -1723,23 +1723,23 @@ define WriteCensus
                             this.note_global_id(WC_GW * 64 - 1)
                         this.note_global_site(offset, pending_global, String(""))
                     }
-            set pending_global: String^this("")
+            pending_global := String^this("")
             if check_mode
-                set mask: mask & (0 - (cur_page_mask + (1 as u64)))
+                mask := mask & (0 - (cur_page_mask + (1 as u64)))
             if mask = 0
                 return
-            set body_mask: body_mask | mask
+            body_mask := body_mask | mask
             if cls <> "w-call"
-                set body_direct: true
+                body_direct := true
             if reporting = false
                 return
             if frozen_mode
             {
                 if (mask & WC_FROZEN) = 0
                     return
-                set n_frozen_sites: n_frozen_sites + 1
+                n_frozen_sites := n_frozen_sites + 1
                 if lock_depth > 0
-                    set n_locked_sites: n_locked_sites + 1
+                    n_locked_sites := n_locked_sites + 1
             }
             var sb StringBuilder()
             if diagnostics
@@ -1769,7 +1769,7 @@ define WriteCensus
                 sb.append " locked"
             let text sb.to_string()
             this.record(offset, String^this(text))
-            set n_sites: n_sites + 1
+            n_sites := n_sites + 1
         }
 
         ; The page a Reference lifetime names, as a mask.
@@ -1778,7 +1778,7 @@ define WriteCensus
             choose life
                 when r: Reference
                 {
-                    set pending_global: this.local_global(r.location)
+                    pending_global := this.local_global(r.location)
                     this.hit(offset, cls, this.name_mask(r.location), WriteCensus.join("^", r.location))
                 }
                 else
@@ -1808,8 +1808,8 @@ define WriteCensus
                 let cand plan_functions.get(slot - 1)
                 if cand <> null and cand.unwrap().mangled_name = mangled
                     return slot
-                set h: (h + 1) & mask
-                set probes: probes + 1
+                h := (h + 1) & mask
+                probes := probes + 1
             }
             0
         }
@@ -1819,9 +1819,9 @@ define WriteCensus
         procedure note_call(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall)
         {
             if call.name = "enter_shared"
-                set lock_depth: lock_depth + 1
+                lock_depth := lock_depth + 1
             if call.name = "leave_shared"
-                set lock_depth: lock_depth - 1
+                lock_depth := lock_depth - 1
             this.note_life(op.loc.start, call.life, String("a-construct"))
             let slot this.callee_index(call.mangled_name)
             if rp_pass
@@ -1863,7 +1863,7 @@ define WriteCensus
                 {
                     choose stub_ptr.unwrap().impl
                         when e: Extern
-                            set stub: true
+                            stub := true
                         else
                             0
                 }
@@ -1878,7 +1878,7 @@ define WriteCensus
                     let callee callee_ptr.unwrap()
                     var n_in: size_t 0
                     if callee.input <> null
-                        set n_in: callee.input.length
+                        n_in := callee.input.length
                     this.apply_callee(op, call, masks[slot - 1], callee.name, n_in, slot)
                     return
                 }
@@ -1902,10 +1902,10 @@ define WriteCensus
             if row = 0
             {
                 if stub
-                    set n_stub_unknown: n_stub_unknown + 1
+                    n_stub_unknown := n_stub_unknown + 1
                 return
             }
-            set n_stub_known: n_stub_known + 1
+            n_stub_known := n_stub_known + 1
             if (sum_masks[row - 1] & WC_GLOBAL) <> (0 as u64) and cur_substrate = false
                 this.note_global_list(sum_globals[row - 1])
             this.apply_callee(op, call, sum_masks[row - 1], call.name, sum_inputs[row - 1], WC_NOTED)
@@ -1932,10 +1932,10 @@ define WriteCensus
             ; to anything the caller holds
             var shift: size_t 0
             if callee_name = "init" and n_in = call.args.length + 1
-                set shift: 1
+                shift := 1
             if n_in <> call.args.length + shift
             {
-                set n_misaligned: n_misaligned + 1
+                n_misaligned := n_misaligned + 1
                 if reporting
                     this.record(op.loc.start, String^this(WriteCensus.join("misaligned -> ", callee_name)))
             }
@@ -1946,19 +1946,19 @@ define WriteCensus
                 let pi i + shift
                 var bit: u64 WC_OVERFLOW
                 if pi < 61
-                    set bit: (1 as u64) << (pi as u64)
+                    bit := (1 as u64) << (pi as u64)
                 if (callee_mask & bit) <> (0 as u64)
                 {
                     let a_ptr call.args.get i
                     if a_ptr <> null
                     {
                         let am this.mask_of(a_ptr.unwrap())
-                        set m: m | am
+                        m := m | am
                         if (am & WC_GLOBAL) <> (0 as u64) and cur_substrate = false
                             this.note_global_named(this.global_root_m(a_ptr.unwrap()))
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             this.hit(op.loc.start, String("w-call"), m, WriteCensus.join("-> ", callee_name))
         }
@@ -1984,19 +1984,19 @@ define WriteCensus
             {
                 var cut false
                 if i = n
-                    set cut: true
+                    cut := true
                 else
                 {
                     if text.get(i) = 44
-                        set cut: true
+                        cut := true
                 }
                 if cut
                 {
                     if i > start
                         into.add(String^this(text.substring(start, i - start)))
-                    set start: i + 1
+                    start := i + 1
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -2010,7 +2010,7 @@ define WriteCensus
                 return
             this.split_list(String(fz), &frozen_names)
             this.split_list(String(en), &entry_names)
-            set frozen_mode: true
+            frozen_mode := true
         }
 
         ; The concept a (possibly Option/ref/pointer-wrapped) type names,
@@ -2031,15 +2031,15 @@ define WriteCensus
                             let g_ptr cur.generics.get 0
                             if g_ptr <> null
                             {
-                                set cur: g_ptr.unwrap()
-                                set peeled: true
+                                cur := g_ptr.unwrap()
+                                peeled := true
                             }
                         }
                     }
                 }
                 if peeled = false
                     break
-                set depth: depth + 1
+                depth := depth + 1
             }
             let dot cur.name.last_index_of(46)
             if dot < 0
@@ -2058,7 +2058,7 @@ define WriteCensus
                 return false
             var cur t
             if cur.name = "Option"
-                set cur: WriteCensus.first_generic(cur)
+                cur := WriteCensus.first_generic(cur)
             if (cur.name <> "ref") and (cur.name <> "pointer")
                 return false
             let inner WriteCensus.first_generic(cur)
@@ -2108,7 +2108,7 @@ define WriteCensus
                             return true
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -2128,17 +2128,17 @@ define WriteCensus
                 when v: Variable
                 {
                     if this.is_by_value_local(v)
-                        set i: 1
+                        i := 1
                     else
                     {
                         if (this.name_mask(v.name) & WC_FROZEN) = 0
-                            set i: 1
+                            i := 1
                     }
                 }
                 when c: Call
                 {
                     if this.value_frozen(op) = 0
-                        set i: 1
+                        i := 1
                 }
                 else
                     0
@@ -2147,7 +2147,7 @@ define WriteCensus
                 let h_ptr op.member_access.get i
                 if h_ptr <> null and this.is_frozen_record(h_ptr.unwrap().parent_type)
                     return WC_FROZEN
-                set i: i + 1
+                i := i + 1
             }
             0
         }
@@ -2167,7 +2167,7 @@ define WriteCensus
             var li loc_names.length
             while li > 0
             {
-                set li: li - 1
+                li := li - 1
                 let n loc_names.get li
                 if n <> null and (*n) = v.name
                     return true
@@ -2188,7 +2188,7 @@ define WriteCensus
                         let it it_ptr.unwrap()
                         var is_this true
                         if it.name <> null
-                            set is_this: (*it.name) = "this"
+                            is_this := (*it.name) = "this"
                         if is_this
                         {
                             if it.item_type <> null
@@ -2214,7 +2214,7 @@ define WriteCensus
             {
                 if entry_names[i] = key
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -2226,7 +2226,7 @@ define WriteCensus
             if returns_fresh[cur_fn] = 0
                 return
             returns_fresh.put(cur_fn, 0)
-            set fz_changed: true
+            fz_changed := true
         }
 
         ; Is the value a body ends with (its tail expression) frozen? Follows a
@@ -2290,10 +2290,10 @@ define WriteCensus
             let callee callee_ptr.unwrap()
             var n_in: size_t 0
             if callee.input <> null
-                set n_in: callee.input.length
+                n_in := callee.input.length
             var shift: size_t 0
             if callee.name = "init" and n_in = call.args.length + 1
-                set shift: 1
+                shift := 1
             let idx slot - 1
             if idx >= param_frozen.length
                 return
@@ -2309,16 +2309,16 @@ define WriteCensus
                         let pi i + shift
                         var bit: u64 WC_OVERFLOW
                         if pi < 61
-                            set bit: (1 as u64) << (pi as u64)
-                        set bits: bits | bit
+                            bit := (1 as u64) << (pi as u64)
+                        bits := bits | bit
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             if bits <> param_frozen[idx]
             {
                 param_frozen.put(idx, bits)
-                set fz_changed: true
+                fz_changed := true
             }
         }
 
@@ -2340,13 +2340,13 @@ define WriteCensus
                         if this.is_frozen_type((*it.item_type))
                         {
                             if i < 61
-                                set bits: bits | ((1 as u64) << (i as u64))
+                                bits := bits | ((1 as u64) << (i as u64))
                             else
-                                set bits: bits | WC_OVERFLOW
+                                bits := bits | WC_OVERFLOW
                         }
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             bits
         }
@@ -2369,59 +2369,59 @@ define WriteCensus
                         queue.add i
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
-            set edge_mode: true
+            edge_mode := true
             var head: size_t 0
             while head < queue.length
             {
                 let idx queue[head]
-                set head: head + 1
-                set cur_fn: idx
+                head := head + 1
+                cur_fn := idx
                 let f_ptr fns.get idx
                 if f_ptr <> null
                     this.walk_body(f_ptr.unwrap())
             }
-            set edge_mode: false
+            edge_mode := false
             ; provenance: parameters by their callers, results by their returns
-            set i: 0
+            i := 0
             while i < fns.length
             {
                 var bits: u64 0
                 let f_ptr fns.get i
                 if f_ptr <> null and this.is_entry(f_ptr.unwrap())
-                    set bits: this.entry_param_bits(f_ptr.unwrap())
+                    bits := this.entry_param_bits(f_ptr.unwrap())
                 param_frozen.add bits
                 returns_fresh.add 1
-                set i: i + 1
+                i := i + 1
             }
-            set frozen_pass: true
-            set fz_changed: true
+            frozen_pass := true
+            fz_changed := true
             while fz_changed
             {
-                set fz_changed: false
-                set n_fz_rounds: n_fz_rounds + 1
+                fz_changed := false
+                n_fz_rounds := n_fz_rounds + 1
                 var r: size_t 0
                 while r < queue.length
                 {
                     let idx queue[r]
-                    set r: r + 1
-                    set cur_fn: idx
+                    r := r + 1
+                    cur_fn := idx
                     let f_ptr fns.get idx
                     if f_ptr <> null
                         this.walk_body(f_ptr.unwrap())
                 }
                 if n_fz_rounds >= 60
-                    set fz_changed: false
+                    fz_changed := false
             }
-            set frozen_pass: false
-            set reporting: true
-            set n_reachable: queue.length
+            frozen_pass := false
+            reporting := true
+            n_reachable := queue.length
             var q: size_t 0
             while q < queue.length
             {
                 let idx queue[q]
-                set q: q + 1
+                q := q + 1
                 let f_ptr fns.get idx
                 if f_ptr <> null
                 {
@@ -2430,12 +2430,12 @@ define WriteCensus
                     let home census.resolve_body_file(func)
                     if home.get_length() > 0
                     {
-                        set current_file: String^this(home)
-                        set cur_fn: idx
+                        current_file := String^this(home)
+                        cur_fn := idx
                         this.walk_body(func)
                     }
                     else
-                        set n_unfiled: n_unfiled + 1
+                        n_unfiled := n_unfiled + 1
                 }
             }
         }
@@ -2463,7 +2463,7 @@ define WriteCensus
                 let sub m.modules.get i
                 if sub <> null
                     this.collect_purity_module_in((*sub), owner)
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -2488,14 +2488,14 @@ define WriteCensus
                             var linked_decl false
                             choose f.implementation
                                 when lk: Linked
-                                    set linked_decl: true
+                                    linked_decl := true
                                 else
                                     0
                             if linked_decl
                             {
                                 var key WriteCensus.purity_key(f.name, f.input.length)
                                 if owner.get_length() > 0
-                                    set key: WriteCensus.owned_key(owner, f.name, f.input.length)
+                                    key := WriteCensus.owned_key(owner, f.name, f.input.length)
                                 if f.read_globals.length > 0
                                 {
                                     let first f.read_globals[0]
@@ -2507,8 +2507,8 @@ define WriteCensus
                                 while wi < f.writes.length
                                 {
                                     if f.writes[wi] = "io"
-                                        set says_io: true
-                                    set wi: wi + 1
+                                        says_io := true
+                                    wi := wi + 1
                                 }
                                 if says_io
                                     decl_io_keys.add(String^this(key))
@@ -2526,7 +2526,7 @@ define WriteCensus
                                         let sub st.modules.get mi
                                         if sub <> null
                                             this.collect_purity_module_in((*sub), c.name)
-                                        set mi: mi + 1
+                                        mi := mi + 1
                                     }
                                 }
                                 when un: Union
@@ -2540,7 +2540,7 @@ define WriteCensus
                                         let sub ns.modules.get mi
                                         if sub <> null
                                             this.collect_purity_module_in((*sub), c.name)
-                                        set mi: mi + 1
+                                        mi := mi + 1
                                     }
                                 }
                                 else
@@ -2549,7 +2549,7 @@ define WriteCensus
                         else
                             0
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -2559,7 +2559,7 @@ define WriteCensus
         {
             var state: u64 1
             if pure = false
-                set state: 2
+                state := 2
             let row this.summary_index(name)
             if row > 0
             {
@@ -2592,7 +2592,7 @@ define WriteCensus
                 if i > 0
                     sb.append ","
                 sb.append(names[i])
-                set i: i + 1
+                i := i + 1
             }
             sb.to_string()
         }
@@ -2603,13 +2603,13 @@ define WriteCensus
         {
             var here inside
             if m.file.contains(String("/scaly/memory/"))
-                set here: true
+                here := true
             if m.file.contains(String("/scaly/fiber"))
-                set here: true
+                here := true
             if m.file.contains(String("/scaly/os"))
-                set here: true
+                here := true
             if m.file.contains(String("/scaly/cluster"))
-                set here: true
+                here := true
             this.collect_ambient_members(m.members, here)
             var k: size_t 0
             while k < m.modules.length
@@ -2617,7 +2617,7 @@ define WriteCensus
                 let sub m.modules.get k
                 if sub <> null
                     this.collect_ambient_module((*sub), here)
-                set k: k + 1
+                k := k + 1
             }
         }
 
@@ -2656,7 +2656,7 @@ define WriteCensus
                                         let sub ns.modules.get k
                                         if sub <> null
                                             this.collect_ambient_module((*sub), here)
-                                        set k: k + 1
+                                        k := k + 1
                                     }
                                 }
                                 when st: Structure
@@ -2668,7 +2668,7 @@ define WriteCensus
                                         let sub st.modules.get k
                                         if sub <> null
                                             this.collect_ambient_module((*sub), here)
-                                        set k: k + 1
+                                        k := k + 1
                                     }
                                 }
                                 else
@@ -2682,13 +2682,13 @@ define WriteCensus
                                 let sub pk.get k
                                 if sub <> null
                                     this.collect_ambient_module((*sub), here)
-                                set k: k + 1
+                                k := k + 1
                             }
                         }
                         else
                             0
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -2699,7 +2699,7 @@ define WriteCensus
             {
                 if atomic_names[i] = name
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -2713,7 +2713,7 @@ define WriteCensus
             {
                 if ambient_names[i] = name
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -2728,7 +2728,7 @@ define WriteCensus
             {
                 if al[i] = name
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -2750,7 +2750,7 @@ define WriteCensus
                 {
                     if in_atomic_op
                         return
-                    set atomic_write: true
+                    atomic_write := true
                 }
                 else
                 {
@@ -2800,26 +2800,26 @@ define WriteCensus
                     var bad true
                     if id < gnames.length
                     {
-                        set name: gnames[id]
+                        name := gnames[id]
                         if this.is_ambient(name)
-                            set bad: false
+                            bad := false
                         if this.global_allowed(name)
-                            set bad: false
+                            bad := false
                         if name = "io"
-                            set bad: false
+                            bad := false
                     }
                     if bad
                     {
                         if any
                             sb.append ", "
-                        set any: true
+                        any := true
                         if name.get_length() > 0
                             sb.append name
                         else
                             sb.append "(a global reached through an alias)"
                     }
                 }
-                set id: id + 1
+                id := id + 1
             }
             sb.to_string()
         }
@@ -2841,7 +2841,7 @@ define WriteCensus
                         return false
                     return this.global_allowed(String("io")) = false
                 }
-                set id: id + 1
+                id := id + 1
             }
             false
         }
@@ -2875,7 +2875,7 @@ define WriteCensus
             while i < fns.length
             {
                 let f_ptr fns.get i
-                set i: i + 1
+                i := i + 1
                 if f_ptr = null
                     continue
                 let f f_ptr.unwrap()
@@ -2884,7 +2884,7 @@ define WriteCensus
                 var stub false
                 choose f.impl
                     when e: Extern
-                        set stub: true
+                        stub := true
                     else
                         0
                 if stub = false
@@ -2893,19 +2893,19 @@ define WriteCensus
                     continue
                 var n_in: size_t 0
                 if f.input <> null
-                    set n_in: f.input.length
+                    n_in := f.input.length
                 var row: size_t 0
                 let owner WriteCensus.mangled_owner(f.mangled_name)
                 if owner.get_length() > 0
-                    set row: this.summary_index(WriteCensus.owned_key(owner, f.name, n_in))
+                    row := this.summary_index(WriteCensus.owned_key(owner, f.name, n_in))
                 if row = 0
-                    set row: this.summary_index(WriteCensus.purity_key(f.name, n_in))
+                    row := this.summary_index(WriteCensus.purity_key(f.name, n_in))
                 if row = 0
                     continue
                 if sum_masks[row - 1] <> (1 as u64)
                     continue
                 var g f
-                set g.pure: true
+                g.pure := true
                 fns.put(i - 1, g)
             }
         }
@@ -2950,8 +2950,8 @@ define WriteCensus
                         let d m.get i
                         if (d < 48) or (d > 57)
                             break
-                        set len: len * 10 + ((d - 48) as size_t)
-                        set i: i + 1
+                        len := len * 10 + ((d - 48) as size_t)
+                        i := i + 1
                     }
                     var sb StringBuilder()
                     var k: size_t 0
@@ -2959,17 +2959,17 @@ define WriteCensus
                     {
                         if i + k < n
                             sb.append(m.get(i + k) as char)
-                        set k: k + 1
+                        k := k + 1
                     }
-                    set i: i + len
-                    set prev: last
-                    set last: sb.to_string()
+                    i := i + len
+                    prev := last
+                    last := sb.to_string()
                 }
                 else if c = 73
                 {
                     ; template arguments: skip, length-prefixed names included
                     var depth: size_t 1
-                    set i: i + 1
+                    i := i + 1
                     while i < n
                     {
                         if depth = 0
@@ -2983,18 +2983,18 @@ define WriteCensus
                                 let e m.get i
                                 if (e < 48) or (e > 57)
                                     break
-                                set len: len * 10 + ((e - 48) as size_t)
-                                set i: i + 1
+                                len := len * 10 + ((e - 48) as size_t)
+                                i := i + 1
                             }
-                            set i: i + len
+                            i := i + len
                         }
                         else
                         {
                             if d = 73
-                                set depth: depth + 1
+                                depth := depth + 1
                             if d = 69
-                                set depth: depth - 1
-                            set i: i + 1
+                                depth := depth - 1
+                            i := i + 1
                         }
                     }
                 }
@@ -3031,11 +3031,11 @@ define WriteCensus
                     {
                         let a_ptr it.attributes.get k
                         if a_ptr <> null and (*a_ptr).name = "mutable" and i < 61
-                            set m: m | ((1 as u64) << (i as u64))
-                        set k: k + 1
+                            m := m | ((1 as u64) << (i as u64))
+                        k := k + 1
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             m
         }
@@ -3060,12 +3060,12 @@ define WriteCensus
                         {
                             let a_ptr attrs.get k
                             if a_ptr <> null and a_ptr.unwrap().name = "mutable" and i < 61
-                                set m: m | ((1 as u64) << (i as u64))
-                            set k: k + 1
+                                m := m | ((1 as u64) << (i as u64))
+                            k := k + 1
                         }
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             m
         }
@@ -3082,9 +3082,9 @@ define WriteCensus
                 if i < 61
                 {
                     if WriteCensus.core_name_is_page(this.param_type_name(i))
-                        set m: m | ((1 as u64) << (i as u64))
+                        m := m | ((1 as u64) << (i as u64))
                 }
-                set i: i + 1
+                i := i + 1
             }
             m
         }
@@ -3132,15 +3132,15 @@ define WriteCensus
                     var declared false
                     choose f.impl
                         when action: Action
-                            set declared: true
+                            declared := true
                         else
-                            set declared: false
+                            declared := false
                     if declared
                     {
-                        set known: true
-                        set trusted: f.pure
-                        set writable: WriteCensus.planned_writable_mask(f.input)
-                        set callee_writes: f.writes
+                        known := true
+                        trusted := f.pure
+                        writable := WriteCensus.planned_writable_mask(f.input)
+                        callee_writes := f.writes
                     }
                 }
             }
@@ -3155,12 +3155,12 @@ define WriteCensus
                 if row > 0
                 {
                     if sum_masks[row - 1] = (1 as u64)
-                        set trusted: true
-                    set writable: sum_inputs[row - 1] as u64
-                    set stub_globals: sum_globals[row - 1]
+                        trusted := true
+                    writable := sum_inputs[row - 1] as u64
+                    stub_globals := sum_globals[row - 1]
                 }
                 else
-                    set n_stub_unknown: n_stub_unknown + 1
+                    n_stub_unknown := n_stub_unknown + 1
             }
             if trusted
                 return
@@ -3173,7 +3173,7 @@ define WriteCensus
                 {
                     this.note_global_named(cw[ci])
                     this.note_global_site(op.loc.start, cw[ci], call.name)
-                    set ci: ci + 1
+                    ci := ci + 1
                 }
             }
             if stub_globals.get_length() > 0
@@ -3182,19 +3182,19 @@ define WriteCensus
             ; root cannot name (an indirect call) may write every argument
             var conservative false
             if known = false and this.stub_row(call) = 0
-                set conservative: true
+                conservative := true
             var m: u64 0
             var i: size_t 0
             ; an indirect call's args[0] is the callee pointer: calling it
             ; writes nothing through it
             if call.is_indirect
-                set i: 1
+                i := 1
             while i < call.args.length
             {
                 let a_ptr call.args.get i
                 var counts conservative
                 if conservative = false and i < 61
-                    set counts: (writable & ((1 as u64) << (i as u64))) <> (0 as u64)
+                    counts := (writable & ((1 as u64) << (i as u64))) <> (0 as u64)
                 if a_ptr <> null
                 {
                     let a a_ptr.unwrap()
@@ -3203,7 +3203,7 @@ define WriteCensus
                             if this.is_local_value(a) = false
                             {
                                 let am this.mask_of(a)
-                                set m: m | am
+                                m := m | am
                                 ; a global handed to a written position
                                 if (am & WC_GLOBAL) <> (0 as u64)
                                 {
@@ -3213,7 +3213,7 @@ define WriteCensus
                                 }
                             }
                 }
-                set i: i + 1
+                i := i + 1
             }
             this.hit(op.loc.start, String("w-call"), m, WriteCensus.join("-> ", call.name))
         }
@@ -3262,32 +3262,32 @@ define WriteCensus
                 let f_ptr0 fns.get i
                 if f_ptr0 <> null
                 {
-                    set declared: this.declared_reads(f_ptr0.unwrap())
+                    declared := this.declared_reads(f_ptr0.unwrap())
                     if this.stub_declares_io(f_ptr0.unwrap())
-                        set declared_io: String("its declaration")
+                        declared_io := String("its declaration")
                 }
                 body_reads.add(String^this(declared))
                 body_io.add(String^this(declared_io))
-                set i: i + 1
+                i := i + 1
             }
-            set read_pass: true
-            set i: 0
+            read_pass := true
+            i := 0
             while i < fns.length
             {
                 let f_ptr fns.get i
                 if f_ptr <> null
                 {
-                    set read_index: i
-                    set cur_fn: i
+                    read_index := i
+                    cur_fn := i
                     this.walk_body(f_ptr.unwrap())
                 }
-                set i: i + 1
+                i := i + 1
             }
-            set read_pass: false
+            read_pass := false
             var changed true
             while changed
             {
-                set changed: false
+                changed := false
                 var e: size_t 0
                 while e < edge_from.length
                 {
@@ -3300,7 +3300,7 @@ define WriteCensus
                         if rb.get_length() > 0
                         {
                             body_reads.put(a, String^this(rb))
-                            set changed: true
+                            changed := true
                         }
                     }
                     let ia body_io[a]
@@ -3312,10 +3312,10 @@ define WriteCensus
                             let callee_name fns.get b
                             if callee_name <> null
                                 body_io.put(a, String^this(callee_name.unwrap().name))
-                            set changed: true
+                            changed := true
                         }
                     }
-                    set e: e + 1
+                    e := e + 1
                 }
             }
         }
@@ -3335,7 +3335,7 @@ define WriteCensus
                     break
                 let r body_reads[i]
                 let f_ptr fns.get i
-                set i: i + 1
+                i := i + 1
                 if f_ptr = null
                     continue
                 if r.get_length() = 0
@@ -3346,7 +3346,7 @@ define WriteCensus
                 var body false
                 choose f.impl
                     when a: Action
-                        set body: true
+                        body := true
                     else
                         0
                 if body = false
@@ -3354,14 +3354,14 @@ define WriteCensus
                 facts.add(WriteCensus.fact("R" as char, f.file, f.loc.start, r))
             }
             ; and whether it reaches I/O
-            set i: 0
+            i := 0
             while i < fns.length
             {
                 if i >= body_io.length
                     break
                 let io_how body_io[i]
                 let g_ptr fns.get i
-                set i: i + 1
+                i := i + 1
                 if g_ptr = null
                     continue
                 if io_how.get_length() = 0
@@ -3372,7 +3372,7 @@ define WriteCensus
                 var gbody false
                 choose g.impl
                     when a: Action
-                        set gbody: true
+                        gbody := true
                     else
                         0
                 if gbody = false
@@ -3390,7 +3390,7 @@ define WriteCensus
             var stub false
             choose f.impl
                 when e: Extern
-                    set stub: true
+                    stub := true
                 else
                     0
             if stub = false
@@ -3404,7 +3404,7 @@ define WriteCensus
                 let k decl_io_keys[i]
                 if k = key
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -3415,7 +3415,7 @@ define WriteCensus
         {
             var n_in: size_t 0
             if f.input <> null
-                set n_in: f.input.length
+                n_in := f.input.length
             let owner WriteCensus.mangled_owner(f.mangled_name)
             if owner.get_length() > 0
                 return WriteCensus.owned_key(owner, f.name, n_in)
@@ -3436,7 +3436,7 @@ define WriteCensus
                     let c list.get(stop)
                     if c = 44                   ; ','
                         break
-                    set stop: stop + 1
+                    stop := stop + 1
                 }
                 if stop - start = k
                 {
@@ -3447,13 +3447,13 @@ define WriteCensus
                         let lc list.get(start + j)
                         let nc name.get(j)
                         if nc <> null and lc <> ((*nc) as u8)
-                            set same: false
-                        set j: j + 1
+                            same := false
+                        j := j + 1
                     }
                     if same
                         return true
                 }
-                set start: stop + 1
+                start := stop + 1
             }
             false
         }
@@ -3464,7 +3464,7 @@ define WriteCensus
             var stub false
             choose f.impl
                 when e: Extern
-                    set stub: true
+                    stub := true
                 else
                     0
             if stub = false
@@ -3473,7 +3473,7 @@ define WriteCensus
                 return String("")
             var n_in: size_t 0
             if f.input <> null
-                set n_in: f.input.length
+                n_in := f.input.length
             let key this.stub_key(f)
             var i: size_t 0
             while i < decl_read_keys.length
@@ -3481,7 +3481,7 @@ define WriteCensus
                 let k decl_read_keys[i]
                 if k = key
                     return decl_read_vals[i]
-                set i: i + 1
+                i := i + 1
             }
             String("")
         }
@@ -3509,7 +3509,7 @@ define WriteCensus
                 let apkg model.packages.get ai
                 if apkg <> null
                     this.collect_ambient_module((*apkg), false)
-                set ai: ai + 1
+                ai := ai + 1
             }
             this.collect_purity_module(model.module_)
             var pi: size_t 0
@@ -3518,7 +3518,7 @@ define WriteCensus
                 let pkg model.packages.get pi
                 if pkg <> null
                     this.collect_purity_module((*pkg))
-                set pi: pi + 1
+                pi := pi + 1
             }
             this.wc_mark("E0b-collected-ambient-purity")
             this.learn_returned_params()
@@ -3528,12 +3528,12 @@ define WriteCensus
             let fns plan_functions as ref[Vector[PlannedFunction]]
             this.learn_reads(fns)
             this.wc_mark("E0e-learn-reads")
-            set reporting: true
+            reporting := true
             var i: size_t 0
             while i < fns.length
             {
                 let f_ptr fns.get i
-                set i: i + 1
+                i := i + 1
                 if f_ptr = null
                     continue
                 let func f_ptr.unwrap()
@@ -3545,7 +3545,7 @@ define WriteCensus
                 var is_body false
                 choose func.impl
                     when action: Action
-                        set is_body: true
+                        is_body := true
                     else
                         0
                 if is_body = false
@@ -3554,39 +3554,39 @@ define WriteCensus
                 let home census.resolve_body_file(func)
                 if home.get_length() = 0
                 {
-                    set n_unfiled: n_unfiled + 1
+                    n_unfiled := n_unfiled + 1
                     continue
                 }
-                set current_file: String^this(home)
-                set n_pure: n_pure + 1
+                current_file := String^this(home)
+                n_pure := n_pure + 1
                 ; globals are judged by NAME (cur_g against the declaration),
                 ; never by the parameter mask
-                set cur_allowed: WC_GLOBAL
-                set cur_allowed_g: null
+                cur_allowed := WC_GLOBAL
+                cur_allowed_g := null
                 if func.pure = false
                 {
-                    set cur_allowed: marked | WC_GLOBAL
-                    set cur_allowed_g: func.writes
+                    cur_allowed := marked | WC_GLOBAL
+                    cur_allowed_g := func.writes
                 }
                 if is_init
                 {
-                    set cur_allowed: 0 - (1 as u64)
-                    set cur_allowed_g: null
+                    cur_allowed := 0 - (1 as u64)
+                    cur_allowed_g := null
                 }
                 let before n_sites
-                set cur_let_bad: Array[String]^this()
-                set cur_let_offsets: Array[size_t]^this()
+                cur_let_bad := Array[String]^this()
+                cur_let_offsets := Array[size_t]^this()
                 ; as a gate: judge first, then walk the violating body again to
                 ; place a note at every write, after its error
                 if diagnostics
-                    set reporting: false
+                    reporting := false
                 let mask this.walk_body(func)
                 var violated n_sites > before
                 if diagnostics
-                    set violated: mask <> 0
+                    violated := mask <> 0
                 if cur_atomic_bad.length > 0
                 {
-                    set n_violations: n_violations + 1
+                    n_violations := n_violations + 1
                     var ab StringBuilder()
                     if diagnostics
                     {
@@ -3607,19 +3607,19 @@ define WriteCensus
                     this.record(func.loc.start, String^this(atext))
                     if diagnostics
                     {
-                        set reporting: true
+                        reporting := true
                         this.walk_body(func)
-                        set reporting: false
+                        reporting := false
                     }
                     ; the walk above reset the body state; walk once more so
                     ; the verdicts below read this body's own sets
-                    set reporting: false
+                    reporting := false
                     this.walk_body(func)
                 }
                 let bad this.bad_globals()
                 if bad.get_length() > 0
                 {
-                    set n_violations: n_violations + 1
+                    n_violations := n_violations + 1
                     var gb StringBuilder()
                     if diagnostics
                     {
@@ -3663,16 +3663,16 @@ define WriteCensus
                     {
                         if diagnostics
                         {
-                            set reporting: true
+                            reporting := true
                             this.walk_body(func)
-                            set reporting: false
+                            reporting := false
                         }
                     }
                 }
                 ; R2: a `let` field of a published object was written
                 if cur_let_bad.length > 0
                 {
-                    set n_violations: n_violations + 1
+                    n_violations := n_violations + 1
                     var lb StringBuilder()
                     if diagnostics
                     {
@@ -3705,13 +3705,13 @@ define WriteCensus
                         {
                             let ntext "note: and `cur_let_bad[li]`"
                             this.record(cur_let_offsets[li], String^this(ntext))
-                            set li: li + 1
+                            li := li + 1
                         }
                     }
                 }
                 if cur_reads.length > 0
                 {
-                    set n_violations: n_violations + 1
+                    n_violations := n_violations + 1
                     var rb StringBuilder()
                     if diagnostics
                     {
@@ -3741,14 +3741,14 @@ define WriteCensus
                     this.record(func.loc.start, String^this(rtext))
                     if diagnostics
                     {
-                        set reporting: true
+                        reporting := true
                         this.walk_body(func)
-                        set reporting: false
+                        reporting := false
                     }
                 }
                 if this.bad_io()
                 {
-                    set n_violations: n_violations + 1
+                    n_violations := n_violations + 1
                     var ib StringBuilder()
                     if diagnostics
                     {
@@ -3780,16 +3780,16 @@ define WriteCensus
                         {
                             if diagnostics
                             {
-                                set reporting: true
+                                reporting := true
                                 this.walk_body(func)
-                                set reporting: false
+                                reporting := false
                             }
                         }
                     }
                 }
                 if violated
                 {
-                    set n_violations: n_violations + 1
+                    n_violations := n_violations + 1
                     let names this.mask_names(mask & (0 - (cur_page_mask + (1 as u64))))
                     var sb StringBuilder()
                     if diagnostics
@@ -3831,9 +3831,9 @@ define WriteCensus
                     this.record(func.loc.start, String^this(text))
                     if diagnostics
                     {
-                        set reporting: true
+                        reporting := true
                         this.walk_body(func)
-                        set reporting: false
+                        reporting := false
                     }
                 }
             }
@@ -3860,8 +3860,8 @@ define WriteCensus
                     return 0
                 if sum_names[slot - 1] = mangled
                     return slot
-                set h: (h + 1) & mask
-                set probes: probes + 1
+                h := (h + 1) & mask
+                probes := probes + 1
             }
             0
         }
@@ -3882,7 +3882,7 @@ define WriteCensus
             let mask (262144 as size_t) - 1
             var h mangled.hash() & mask
             while sum_slots[h] <> 0
-                set h: (h + 1) & mask
+                h := (h + 1) & mask
             sum_slots.put(h, sum_names.length)
         }
 
@@ -3891,7 +3891,7 @@ define WriteCensus
             let env getenv("SCALYC_WRITE_SUMMARIES")
             if env = null
                 return
-            set summaries_path: String^this(env)
+            summaries_path := String^this(env)
             if File.exists(summaries_path) = false
                 return
             let text File.read_to_string(summaries_path)
@@ -3906,27 +3906,27 @@ define WriteCensus
                     if c = 9
                         break
                     name.append(c as char)
-                    set i: i + 1
+                    i := i + 1
                 }
-                set i: i + 1
+                i := i + 1
                 var m: u64 0
                 while i < n
                 {
                     let c text.get i
                     if (c < 48) or (c > 57)
                         break
-                    set m: (m * 10) + ((c - 48) as u64)
-                    set i: i + 1
+                    m := (m * 10) + ((c - 48) as u64)
+                    i := i + 1
                 }
-                set i: i + 1
+                i := i + 1
                 var k: size_t 0
                 while i < n
                 {
                     let c text.get i
                     if (c < 48) or (c > 57)
                         break
-                    set k: (k * 10) + ((c - 48) as size_t)
-                    set i: i + 1
+                    k := (k * 10) + ((c - 48) as size_t)
+                    i := i + 1
                 }
                 ; an optional fourth field: the globals the body writes
                 var gl StringBuilder()
@@ -3934,21 +3934,21 @@ define WriteCensus
                 {
                     if text.get(i) = 9
                     {
-                        set i: i + 1
+                        i := i + 1
                         while i < n
                         {
                             let c text.get i
                             if c = 10
                                 break
                             gl.append(c as char)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
                 while i < n
                 {
                     let c text.get i
-                    set i: i + 1
+                    i := i + 1
                     if c = 10
                         break
                 }
@@ -3976,19 +3976,19 @@ define WriteCensus
                     var is_body false
                     choose f.impl
                         when action: Action
-                            set is_body: true
+                            is_body := true
                         else
                             0
                     if is_body
                     {
                         var n_in: size_t 0
                         if f.input <> null
-                            set n_in: f.input.length
+                            n_in := f.input.length
                         let gl_text this.globals_text(i)
                         this.add_summary(String^this(f.mangled_name), masks[i], n_in, String^this(gl_text))
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             var sb StringBuilder()
             var r: size_t 0
@@ -4002,7 +4002,7 @@ define WriteCensus
                 sb.append("\t" as char)
                 sb.append(sum_globals[r])
                 sb.append("\n" as char)
-                set r: r + 1
+                r := r + 1
             }
             let out_text sb.to_string()
             File.write_from_string(summaries_path, out_text)
@@ -4038,7 +4038,7 @@ define WriteCensus
                     var body false
                     choose f_ptr.unwrap().impl
                         when action: Action
-                            set body: true
+                            body := true
                         else
                             0
                     if body
@@ -4079,7 +4079,7 @@ define WriteCensus
             this.note_global_named(String("io"))
             this.note_global_site(offset, String("io"), how)
             if check_mode = false and frozen_mode = false
-                set body_mask: body_mask | WC_GLOBAL
+                body_mask := body_mask | WC_GLOBAL
         }
 
         ; check mode: a FUNCTION reads no global that can change -- it is an
@@ -4117,8 +4117,8 @@ define WriteCensus
             while i < mutable_names.length
             {
                 if mutable_names[i] = name
-                    set changeable: true
-                set i: i + 1
+                    changeable := true
+                i := i + 1
             }
             if changeable = false
                 return false
@@ -4127,7 +4127,7 @@ define WriteCensus
             {
                 if ambient_names[j] = name
                     return false
-                set j: j + 1
+                j := j + 1
             }
             true
         }
@@ -4140,8 +4140,8 @@ define WriteCensus
             while k < cur_reads.length
             {
                 if cur_reads[k] = name
-                    set known: true
-                set k: k + 1
+                    known := true
+                k := k + 1
             }
             if known = false
                 cur_reads.add(String^this(name))
@@ -4333,18 +4333,18 @@ define WriteCensus
         {
             if call.args = null
                 return
-            set in_atomic_op: call.name.starts_with(String("scaly_atomic_"))
+            in_atomic_op := call.name.starts_with(String("scaly_atomic_"))
             let census pc as ref[PointerCensus]
             var written census.extern_declared_writes(call.name)
             if written = EXTERN_UNDECLARED
-                set written: WriteCensus.extern_writes(call.name)
+                written := WriteCensus.extern_writes(call.name)
             var m: u64 0
             var i: size_t 0
             while i < call.args.length
             {
                 var bit: u64 WC_OVERFLOW
                 if i < 61
-                    set bit: (1 as u64) << (i as u64)
+                    bit := (1 as u64) << (i as u64)
                 let a_ptr call.args.get i
                 if a_ptr <> null
                 {
@@ -4353,15 +4353,15 @@ define WriteCensus
                         if WriteCensus.is_scalar(a.result_type) = false
                         {
                             let am this.mask_of(a)
-                            set m: m | am
+                            m := m | am
                             if (am & WC_GLOBAL) <> (0 as u64)
-                                set pending_global: this.global_root_m(a)
+                                pending_global := this.global_root_m(a)
                         }
                 }
-                set i: i + 1
+                i := i + 1
             }
             this.hit(op.loc.start, String("w-extern"), m, WriteCensus.join("-> ", call.name))
-            set in_atomic_op: false
+            in_atomic_op := false
         }
 
         ; ================================================================
@@ -4378,7 +4378,7 @@ define WriteCensus
                 let op_ptr ops.get i
                 if op_ptr <> null
                     this.find_operand(op_ptr.unwrap())
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -4444,7 +4444,7 @@ define WriteCensus
                 let np cur_addr_taken.get i
                 if np <> null and (*np) = name
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -4474,9 +4474,9 @@ define WriteCensus
                 return
             var published false
             if (base_mask & (WC_GLOBAL | WC_FROZEN | WC_OVERFLOW)) <> (0 as u64)
-                set published: true
+                published := true
             if (base_mask & (WC_GLOBAL - (1 as u64)) & (0 - (WC_FROZEN + (1 as u64))) & (0 - (WC_OVERFLOW + (1 as u64)))) <> (0 as u64)
-                set published: true
+                published := true
             ; a local whose address this body took EARLIER is published from
             ; there on: `var b Box(1)  keep(&b)  set b.fixed: 2` writes a let
             ; field of an object somebody else may hold. Program order, as the
@@ -4489,8 +4489,8 @@ define WriteCensus
                     when hv: Variable
                         if this.addr_taken(hv.name)
                         {
-                            set published: true
-                            set via_local: String^this(hv.name)
+                            published := true
+                            via_local := String^this(hv.name)
                         }
                     else
                         0
@@ -4501,8 +4501,8 @@ define WriteCensus
             {
                 let hp hops.get i
                 if hp <> null and WriteCensus.is_reference_name((*hp).result_type.name)
-                    set published: true
-                set i: i + 1
+                    published := true
+                i := i + 1
             }
             if published = false
                 return
@@ -4533,7 +4533,7 @@ define WriteCensus
             if this.let_site_seen(head.loc.start)
                 return
             let_offsets.add(head.loc.start)
-            set n_let_sites: n_let_sites + 1
+            n_let_sites := n_let_sites + 1
             var sb StringBuilder()
             sb.append "w-let "
             sb.append cur_name
@@ -4557,9 +4557,9 @@ define WriteCensus
             ; resolution runs only for the summary lines, and a walk that
             ; fires first would otherwise file the site under the wrong body
             let saved_file String^this(current_file)
-            set current_file: String^this(cur_file_hint)
+            current_file := String^this(cur_file_hint)
             this.record(head.loc.start, String^this(text))
-            set current_file: saved_file
+            current_file := saved_file
         }
 
         ; The let-sites of one body, emitted where its file is known.
@@ -4574,7 +4574,7 @@ define WriteCensus
                     if t <> null
                         this.record(let_offsets[i], (*t))
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -4586,15 +4586,15 @@ define WriteCensus
         ; the first of each winning (field_is_var#'s scan stopped at the first).
         procedure index_structures(mutable this: WriteCensus)
         {
-            set let_probe: getenv("SCALYC_LET_PROBE") <> null
+            let_probe := getenv("SCALYC_LET_PROBE") <> null
             if plan_structures = null
                 return
             let structs plan_structures
             var cap: size_t 1024
             while cap < (structs.length + 1) * 2
-                set cap: cap * 2
-            set struct_by_mangled: ConceptIndex.create(cap)
-            set struct_by_name: ConceptIndex.create(cap)
+                cap := cap * 2
+            struct_by_mangled := ConceptIndex.create(cap)
+            struct_by_name := ConceptIndex.create(cap)
             var i: size_t 0
             while i < structs.length
             {
@@ -4605,7 +4605,7 @@ define WriteCensus
                         struct_by_mangled.insert_if_absent(sp.mangled_name, i)
                     struct_by_name.insert_if_absent(sp.name, i)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -4622,7 +4622,7 @@ define WriteCensus
             var peeled true
             while peeled
             {
-                set peeled: false
+                peeled := false
                 if WriteCensus.is_reference_name(record.name)
                     if record.generics <> null
                     {
@@ -4632,8 +4632,8 @@ define WriteCensus
                             let g0 gens.get 0
                             if g0 <> null
                             {
-                                set record: (*g0)
-                                set peeled: true
+                                record := (*g0)
+                                peeled := true
                             }
                         }
                     }
@@ -4661,9 +4661,9 @@ define WriteCensus
             ; generics -- the name decides where the mangled name is empty.
             var at: i64 0 - 1
             if record.mangled_name.get_length() > 0
-                set at: struct_by_mangled.lookup(record.mangled_name)
+                at := struct_by_mangled.lookup(record.mangled_name)
             else
-                set at: struct_by_name.lookup(record.name)
+                at := struct_by_name.lookup(record.name)
             if at < 0
                 return false
             let sp structs.get(at as size_t)
@@ -4702,14 +4702,14 @@ define WriteCensus
                                         scaly_eputs(aq.name.to_c_string())
                                         scaly_eputs ","
                                     }
-                                    set q: q + 1
+                                    q := q + 1
                                 }
                             }
                             scaly_eputs "\n"
                         }
                         return WriteCensus.attributes_have_var(pp.attributes)
                     }
-                set j: j + 1
+                j := j + 1
             }
             false
         }
@@ -4721,7 +4721,7 @@ define WriteCensus
             {
                 if cur_let_offsets[i] = offset
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -4733,7 +4733,7 @@ define WriteCensus
             {
                 if let_offsets[i] = offset
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -4749,7 +4749,7 @@ define WriteCensus
                 let ap a.get i
                 if ap <> null and ap.name = "var"
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -4767,7 +4767,7 @@ define WriteCensus
                     let head (*head_ptr)
                     var has_members false
                     if head.member_access <> null and head.member_access.length > 0
-                        set has_members: true
+                        has_members := true
                     choose head.expr
                         when c: Call
                         {
@@ -4779,7 +4779,7 @@ define WriteCensus
                                 ; hop before the last loads a held object
                                 var base_mask this.mask_of_operands(c.args) & (0 - (WC_FROZEN + (1 as u64)))
                                 if WriteCensus.loads_before_last(head) = false
-                                    set base_mask: this.is_of_base(head) & (0 - (WC_FROZEN + (1 as u64)))
+                                    base_mask := this.is_of_base(head) & (0 - (WC_FROZEN + (1 as u64)))
                                 this.note_let_store(head, base_mask)
                                 this.hit(head.loc.start, String("w-field"), base_mask | this.hops_frozen(head), String(""))
                             }
@@ -4787,7 +4787,7 @@ define WriteCensus
                             {
                                 if c.name = "*"
                                 {
-                                    set pending_global: this.global_root_m(head)
+                                    pending_global := this.global_root_m(head)
                                     this.hit(head.loc.start, String("w-deref"), this.mask_of_operands(c.args), String(""))
                                 }
                             }
@@ -4796,10 +4796,10 @@ define WriteCensus
                         {
                             if has_members
                             {
-                                set pending_global: this.global_root_m(head)
+                                pending_global := this.global_root_m(head)
                                 var base_mask this.name_mask(v.name)
                                 if WriteCensus.loads_before_last(head) = false
-                                    set base_mask: this.name_is(v.name)
+                                    base_mask := this.name_is(v.name)
                                 this.note_let_store(head, base_mask)
                                 this.hit(head.loc.start, String("w-field"), base_mask | this.hops_frozen(head), String(""))
                             }
@@ -4817,7 +4817,7 @@ define WriteCensus
                             {
                                 var base_mask this.mask_of(head)
                                 if WriteCensus.loads_before_last(head) = false
-                                    set base_mask: this.is_of_base(head)
+                                    base_mask := this.is_of_base(head)
                                 this.note_let_store(head, base_mask)
                                 this.hit(head.loc.start, String("w-field"), base_mask | this.hops_frozen(head), String(""))
                             }
@@ -4858,7 +4858,7 @@ define WriteCensus
             let name (*binding.binding_item.name)
             var scalar false
             if binding.binding_item.item_type <> null
-                set scalar: WriteCensus.is_scalar((*binding.binding_item.item_type))
+                scalar := WriteCensus.is_scalar((*binding.binding_item.item_type))
             else
             {
                 if binding.operation <> null
@@ -4867,7 +4867,7 @@ define WriteCensus
                     {
                         let o_ptr binding.operation.get 0
                         if o_ptr <> null
-                            set scalar: WriteCensus.is_scalar(o_ptr.unwrap().result_type)
+                            scalar := WriteCensus.is_scalar(o_ptr.unwrap().result_type)
                     }
                 }
             }
@@ -4875,8 +4875,8 @@ define WriteCensus
             var mi: u64 0
             if scalar = false
             {
-                set m: this.mask_of_operands(binding.operation)
-                set mi: this.is_of_operands(binding.operation)
+                m := this.mask_of_operands(binding.operation)
+                mi := this.is_of_operands(binding.operation)
             }
             ; a frozen RECORD bound by value is a copy
             if binding.binding_item.item_type <> null
@@ -4885,8 +4885,8 @@ define WriteCensus
                 if WriteCensus.is_reference_name(bt.name) = false
                     if this.is_frozen_record(bt)
                     {
-                        set m: m & (0 - (WC_FROZEN + (1 as u64)))
-                        set mi: mi & (0 - (WC_FROZEN + (1 as u64)))
+                        m := m & (0 - (WC_FROZEN + (1 as u64)))
+                        mi := mi & (0 - (WC_FROZEN + (1 as u64)))
                     }
             }
             ; a local bound to (a part of) a global writes that global
@@ -4897,7 +4897,7 @@ define WriteCensus
                     {
                         let g_ptr binding.operation.get 0
                         if g_ptr <> null
-                            set g: this.global_root_m(g_ptr.unwrap())
+                            g := this.global_root_m(g_ptr.unwrap())
                     }
             this.remember_local_of(name, m, mi, g)
         }
@@ -4946,7 +4946,7 @@ define WriteCensus
                             let c_ptr tp.components.get i
                             if c_ptr <> null
                                 this.find_operands(c_ptr.value)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -4960,7 +4960,7 @@ define WriteCensus
                             let s_ptr blk.statements.get i
                             if s_ptr <> null
                                 this.find_statement(s_ptr.unwrap())
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -4984,7 +4984,7 @@ define WriteCensus
                                 let br (*br_ptr)
                                 this.find_statement_ref(br.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.find_statement_ref(mt.alternative)
@@ -5004,14 +5004,14 @@ define WriteCensus
                                 let w (*w_ptr)
                                 var m: u64 0
                                 if WriteCensus.is_scalar(w.variant_type) = false
-                                    set m: subject
+                                    m := subject
                                 if WriteCensus.is_reference_name(w.variant_type.name) = false
                                     if this.is_frozen_record(w.variant_type)
-                                        set m: m & (0 - (WC_FROZEN + (1 as u64)))
+                                        m := m & (0 - (WC_FROZEN + (1 as u64)))
                                 this.remember_local(w.name, m)
                                 this.find_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.find_statement_ref(ch.alternative)
@@ -5043,7 +5043,7 @@ define WriteCensus
                                 let w (*w_ptr)
                                 this.find_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.find_statement_ref(tr.alternative)
@@ -5069,7 +5069,7 @@ define WriteCensus
                             let row_ptr mx.operations.get i
                             if row_ptr <> null
                                 this.find_operands(row_ptr)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }

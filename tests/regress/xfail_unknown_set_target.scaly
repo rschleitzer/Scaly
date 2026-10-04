@@ -8,7 +8,7 @@ mutable counter: i64 0
 
 procedure bump()
 {
-    set countre: counter + (1 as i64)
+    countre := counter + (1 as i64)
 }
 
 bump()

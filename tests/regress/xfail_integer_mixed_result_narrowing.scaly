@@ -13,5 +13,5 @@ let anchor String("probe")
 let host Page.get(anchor.get_buffer() as pointer[void])
 let n &N^host(1, 7)
 var ctx: int 4
-set n.flags: n.flags | ctx
+n.flags := n.flags | ctx
 print("compiled\n")

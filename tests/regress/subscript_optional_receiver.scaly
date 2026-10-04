@@ -40,21 +40,21 @@ let b Box(arr)
 
 var ok true
 if b.pick(1 as size_t) <> 22
-    set ok: false
+    ok := false
 if b.pick(2 as size_t) <> 33
-    set ok: false
+    ok := false
 if Box.ends(arr) <> 44
-    set ok: false
+    ok := false
 
 ; the non-optional spellings must keep working
 let plain arr
 if plain[1 as size_t] <> 22
-    set ok: false
+    ok := false
 
 ; and the NPO presence test must NOT have become a concept operator
 var empty: ref[Array[int]]? null
 if empty <> null
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

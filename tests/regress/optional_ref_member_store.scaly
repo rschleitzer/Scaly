@@ -22,20 +22,20 @@ define Box (var v: int  var w: int)
 
 ; The two forms that crashed.
 procedure store_ref_opt(mutable r: ref[Box]?)
-    set r.v: 99
+    r.v := 99
 
 procedure store_ptr_opt(mutable r: pointer[Box]?)
-    set r.v: 98
+    r.v := 98
 
 procedure store_w_opt(mutable r: ref[Box]?)
-    set r.w: 42
+    r.w := 42
 
 ; The two that always worked -- controls, so a fix that breaks them is caught.
 procedure store_ref(mutable r: ref[Box])
-    set r.v: 97
+    r.v := 97
 
 procedure store_ptr(mutable r: pointer[Box])
-    set r.v: 96
+    r.v := 96
 
 ; Reading through the hull was never broken; pin it so the fix stays two-sided.
 function read_ref_opt(r: ref[Box]?) returns int
@@ -110,7 +110,7 @@ items.put(0, b0)
 items.put(1, b1)
 
 let e items.get(0)
-set e.v: 55
+e.v := 55
 
 let c0 items.get(0)
 if c0.v <> 55

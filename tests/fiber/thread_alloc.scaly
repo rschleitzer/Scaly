@@ -14,15 +14,15 @@
 procedure alloc_entry(mutable arg: pointer[void]) returns pointer[void]
 {
     let cell arg as pointer[i64]
-    set *cell: 0 as i64
+    *cell := 0 as i64
     var k 0
     while k < 40
     {
         let s String("0123456789")
         let n s.get_length()
         let cur *cell
-        set *cell: cur + (n as i64)
-        set k: k + 1
+        *cell := cur + (n as i64)
+        k := k + 1
     }
     null
 }
@@ -41,13 +41,13 @@ Thread.join(t2)
 Thread.join(t3)
 var ok true
 if *(cell0 as pointer[i64]) <> (400 as i64)
-    set ok: false
+    ok := false
 if *(cell1 as pointer[i64]) <> (400 as i64)
-    set ok: false
+    ok := false
 if *(cell2 as pointer[i64]) <> (400 as i64)
-    set ok: false
+    ok := false
 if *(cell3 as pointer[i64]) <> (400 as i64)
-    set ok: false
+    ok := false
 if ok
     Console.print "sums-ok "
 Console.println "done"

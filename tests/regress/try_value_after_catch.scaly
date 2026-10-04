@@ -15,8 +15,8 @@
 function element(n: i64) returns i64
 {
     var buf int[2]
-    set buf[0]: 7
-    set buf[1]: 9
+    buf[0] := 7
+    buf[1] := 9
     let v Slice[int](2, &buf[0])
     v[n as size_t]
 }

@@ -46,7 +46,7 @@ define os
             return -11
 
         ; Read the file back
-        set file: fopen(test_path, "rb")
+        file := fopen(test_path, "rb")
         if file = null
             return -12
 
@@ -153,27 +153,27 @@ define os
         if result <> 0
             return result
 
-        set result: test_console()
+        result := test_console()
         if result <> 0
             return result
 
-        set result: test_file_raw()
+        result := test_file_raw()
         if result <> 0
             return result
 
-        set result: test_file_string()
+        result := test_file_string()
         if result <> 0
             return result
 
-        set result: test_file_exists()
+        result := test_file_exists()
         if result <> 0
             return result
 
-        set result: test_directory()
+        result := test_directory()
         if result <> 0
             return result
 
-        set result: test_path()
+        result := test_path()
         if result <> 0
             return result
 

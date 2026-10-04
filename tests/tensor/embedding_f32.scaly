@@ -15,7 +15,7 @@ procedure embedding_f32(table: Vector[float], ids: Vector[i64], mutable out: Vec
         while j < dim
         {
             out.put((t * dim + j) as size_t, tp[(id as int) * dim + j])
-            set j: j + 1
+            j := j + 1
         }
     }
 }
@@ -31,9 +31,9 @@ while r < 5
     while cvar < 4
     {
         table.put((r * 4 + cvar) as size_t, ((r * 10 + cvar) as float))
-        set cvar: cvar + 1
+        cvar := cvar + 1
     }
-    set r: r + 1
+    r := r + 1
 }
 
 var ids Vector[i64](4)
@@ -48,21 +48,21 @@ embedding_f32(table, ids, out, 4, 4)
 let p out.data
 ; Token 0 -> row 3: [30,31,32,33]; token 2 -> row 4: [40,41,42,43].
 if p[0] <> 30.0
-    set ok: false
+    ok := false
 if p[3] <> 33.0
-    set ok: false
+    ok := false
 if p[4] <> 0.0
-    set ok: false
+    ok := false
 if p[7] <> 3.0
-    set ok: false
+    ok := false
 if p[8] <> 40.0
-    set ok: false
+    ok := false
 if p[11] <> 43.0
-    set ok: false
+    ok := false
 if p[12] <> 10.0
-    set ok: false
+    ok := false
 if p[15] <> 13.0
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

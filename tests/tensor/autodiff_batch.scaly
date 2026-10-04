@@ -29,15 +29,15 @@ function close_enough(a: float, b: float, atol: float, rtol: float) returns bool
 {
     var d a - b
     if d < 0.0
-        set d: 0.0 - d
+        d := 0.0 - d
     var m a
     if m < 0.0
-        set m: 0.0 - m
+        m := 0.0 - m
     var mb b
     if mb < 0.0
-        set mb: 0.0 - mb
+        mb := 0.0 - mb
     if mb > m
-        set m: mb
+        m := mb
     if d <= atol + rtol * m
         return true
     false
@@ -67,16 +67,16 @@ procedure check_leaf(mutable tape: Tape, out: int, id: int, count: int, h: float
         let ga tape.grad_at(id, i)
         let gn num_grad(tape, out, id, i, h)
         if close_enough(ga, gn, atol, rtol) = false
-            set good: false
+            good := false
         var mag ga
         if mag < 0.0
-            set mag: 0.0 - mag
+            mag := 0.0 - mag
         if mag > maxabs
-            set maxabs: mag
-        set i: i + 1
+            maxabs := mag
+        i := i + 1
     }
     if maxabs < 0.0005
-        set good: false
+        good := false
     good
 }
 
@@ -94,7 +94,7 @@ var ok true
         tape.set_value(q, i, tval(i + 1))
         tape.set_value(k, i, tval(i + 4))
         tape.set_value(v, i, tval(i + 8))
-        set i: i + 1
+        i := i + 1
     }
     let att tape.attention_windowed(q, k, v, 2, 2)
     var w Vector[float](16)
@@ -102,15 +102,15 @@ var ok true
     while j < 16
     {
         w.put(j as size_t, wval(j + 1))
-        set j: j + 1
+        j := j + 1
     }
     let s tape.wsum(att, w)
     tape.backward s
     var good check_leaf(tape, s, q, 16, 0.02, 0.005, 0.02)
     if check_leaf(tape, s, k, 16, 0.02, 0.005, 0.02) = false
-        set good: false
+        good := false
     if check_leaf(tape, s, v, 16, 0.02, 0.005, 0.02) = false
-        set good: false
+        good := false
     ; window boundary: row 0 and row 2 each open a window, so each sees
     ; only its own key -> out row == v row
     var c 0
@@ -119,17 +119,17 @@ var ok true
         let ov0 tape.value_at(att, 0 * 4 + c)
         let vv0 tape.value_at(v, 0 * 4 + c)
         if close_enough(ov0, vv0, 0.00001, 0.00001) = false
-            set good: false
+            good := false
         let ov2 tape.value_at(att, 2 * 4 + c)
         let vv2 tape.value_at(v, 2 * 4 + c)
         if close_enough(ov2, vv2, 0.00001, 0.00001) = false
-            set good: false
-        set c: c + 1
+            good := false
+        c := c + 1
     }
     if good = false
     {
         print("FAIL windowed")
-        set ok: false
+        ok := false
     }
 }
 
@@ -142,13 +142,13 @@ var ok true
     while i < 12
     {
         tape.set_value(x, i, tval(i + 2))
-        set i: i + 1
+        i := i + 1
     }
     var i2 0
     while i2 < 6
     {
         tape.set_value(y, i2, tval(i2 + 9))
-        set i2: i2 + 1
+        i2 := i2 + 1
     }
     let sumn tape.add_bcast(x, y)
     var w Vector[float](12)
@@ -156,13 +156,13 @@ var ok true
     while j < 12
     {
         w.put(j as size_t, wval(j + 3))
-        set j: j + 1
+        j := j + 1
     }
     let s tape.wsum(sumn, w)
     tape.backward s
     var good check_leaf(tape, s, x, 12, 0.02, 0.005, 0.02)
     if check_leaf(tape, s, y, 6, 0.02, 0.005, 0.02) = false
-        set good: false
+        good := false
     ; value check: out row i equals x row i + y row (i mod 2)
     var r 0
     while r < 4
@@ -174,15 +174,15 @@ var ok true
             let xv tape.value_at(x, r * 3 + c)
             let yv tape.value_at(y, pmod(r, 2) * 3 + c)
             if close_enough(ov, xv + yv, 0.00001, 0.00001) = false
-                set good: false
-            set c: c + 1
+                good := false
+            c := c + 1
         }
-        set r: r + 1
+        r := r + 1
     }
     if good = false
     {
         print("FAIL bcast")
-        set ok: false
+        ok := false
     }
 }
 

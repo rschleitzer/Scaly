@@ -51,7 +51,7 @@ procedure run()
     var mode String("")
     let raw_mode getenv "SCALYLS_FMT_MODE"
     if raw_mode <> null
-        set mode: String(raw_mode)
+        mode := String(raw_mode)
 
     if mode = "i"
     {

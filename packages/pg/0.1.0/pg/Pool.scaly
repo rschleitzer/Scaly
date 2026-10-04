@@ -54,39 +54,39 @@ procedure parse_database_url(host: ref[Page], url: Slice[u8]) returns PgConfig
     var s url
     var i: size_t 0
     while i + 2 < s.length and (s[i] <> 58 or s[i + 1] <> 47 or s[i + 2] <> 47)
-        set i: i + 1
+        i := i + 1
     if i + 2 < s.length
-        set s: s.slice_from(i + 3)
+        s := s.slice_from(i + 3)
     var at: size_t 0
     while at < s.length and s[at] <> 64
-        set at: at + 1
+        at := at + 1
     var userinfo s.slice_to(0)
     if at < s.length
     {
-        set userinfo: s.slice_to(at)
-        set s: s.slice_from(at + 1)
+        userinfo := s.slice_to(at)
+        s := s.slice_from(at + 1)
     }
     var colon: size_t 0
     while colon < userinfo.length and userinfo[colon] <> 58
-        set colon: colon + 1
+        colon := colon + 1
     let user userinfo.slice_to(colon)
     var password userinfo.slice_to(0)
     if colon < userinfo.length
-        set password: userinfo.slice_from(colon + 1)
+        password := userinfo.slice_from(colon + 1)
     var slash: size_t 0
     while slash < s.length and s[slash] <> 47
-        set slash: slash + 1
+        slash := slash + 1
     let hostport s.slice_to(slash)
     var database s.slice_to(0)
     if slash < s.length
-        set database: s.slice_from(slash + 1)
+        database := s.slice_from(slash + 1)
     var pc: size_t 0
     while pc < hostport.length and hostport[pc] <> 58
-        set pc: pc + 1
+        pc := pc + 1
     let host_name hostport.slice_to(pc)
     var port 5432
     if pc < hostport.length
-        set port: decimal_of(hostport.slice_from(pc + 1)) as int
+        port := decimal_of(hostport.slice_from(pc + 1)) as int
     PgConfig(
         String^host(host_name.data as pointer[const_char], host_name.length),
         port,
@@ -117,14 +117,14 @@ procedure pool() returns ref[PgPool] mutable pg_pool
     let config parse_database_url(host, env_bytes("DATABASE_URL"))
     var max decimal_of(env_bytes("DATABASE_MAX_CONN"))
     if max <= 0
-        set max: 32
+        max := 32
     var per max / (TaskPool.ncpu() as i64)
     if per > PG_PER_THREAD_MAX
-        set per: PG_PER_THREAD_MAX
+        per := PG_PER_THREAD_MAX
     if per < 1
-        set per: 1
+        per := 1
     let made &PgPool^host(config, Array[ref[PgConn]]^host(), 0, per as int, Array[ref[SchedTask]]^host(), 0, Array[ref[PgConn]?]^host(), 0)
-    set pg_pool: made
+    pg_pool := made
     made
 }
 
@@ -135,7 +135,7 @@ procedure open_one(mutable p: ref[PgPool]) returns ref[PgConn]?
     var h String(p.config.host)
     let c PgConn.connect(h, p.config.port, p.config.user.as_slice(), p.config.password.as_slice(), p.config.database.as_slice())
     if c = null
-        set p.open_count: p.open_count - 1
+        p.open_count := p.open_count - 1
     c
 }
 
@@ -152,12 +152,12 @@ procedure acquire() returns ref[PgConn]? mutable pg_pool
         if p.idle.length > 0
         {
             let c p.idle.at(p.idle.length - 1)
-            set p.idle.length: p.idle.length - 1
+            p.idle.length := p.idle.length - 1
             return c
         }
         if p.open_count < p.limit
         {
-            set p.open_count: p.open_count + 1
+            p.open_count := p.open_count + 1
             return open_one(p)
         }
         let me Scheduler.running()
@@ -172,11 +172,11 @@ procedure acquire() returns ref[PgConn]? mutable pg_pool
         ; release handed this task a connection, or a counted place to
         ; open one in (null)
         let got: ref[PgConn]? p.handed.at(p.handed_head)
-        set p.handed_head: p.handed_head + 1
+        p.handed_head := p.handed_head + 1
         if p.handed_head = p.handed.length
         {
-            set p.handed.length: 0
-            set p.handed_head: 0
+            p.handed.length := 0
+            p.handed_head := 0
         }
         if got <> null
             return got
@@ -192,17 +192,17 @@ procedure release(mutable c: ref[PgConn]) mutable pg_pool
     let p pool()
     var keep: ref[PgConn]? null
     if c.is_open()
-        set keep: c
+        keep := c
     else
         c.close()
     if p.waiter_head < p.waiters.length
     {
         let t p.waiters.at(p.waiter_head)
-        set p.waiter_head: p.waiter_head + 1
+        p.waiter_head := p.waiter_head + 1
         if p.waiter_head = p.waiters.length
         {
-            set p.waiters.length: 0
-            set p.waiter_head: 0
+            p.waiters.length := 0
+            p.waiter_head := 0
         }
         p.handed.add(keep)
         Scheduler.resume(t)
@@ -213,5 +213,5 @@ procedure release(mutable c: ref[PgConn]) mutable pg_pool
         p.idle.add(keep)
         return
     }
-    set p.open_count: p.open_count - 1
+    p.open_count := p.open_count - 1
 }

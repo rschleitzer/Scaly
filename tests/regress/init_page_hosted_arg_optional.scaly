@@ -35,8 +35,8 @@ define Plain (o: ref[Array[pointer[Leaf]]], cursor: int)
 {
     init(o: ref[Array[pointer[Leaf]]])
     {
-        set this.o: o
-        set this.cursor: 7
+        this.o := o
+        this.cursor := 7
     }
 }
 
@@ -45,8 +45,8 @@ define Opt (o: ref[Array[pointer[Leaf]]]?, cursor: int)
 {
     init(o: ref[Array[pointer[Leaf]]]?)
     {
-        set this.o: o
-        set this.cursor: 9
+        this.o := o
+        this.cursor := 9
     }
 }
 
@@ -56,7 +56,7 @@ define Mk ()
     {
         let o Array[pointer[Leaf]]^host()
         let g host.allocate(sizeof Plain, alignof Plain) as pointer[Plain]
-        set *g: Plain(o)
+        *g := Plain(o)
         g
     }
 
@@ -64,7 +64,7 @@ define Mk ()
     {
         let o Array[pointer[Leaf]]^host()
         let g host.allocate(sizeof Opt, alignof Opt) as pointer[Opt]
-        set *g: Opt(o)
+        *g := Opt(o)
         g
     }
 
@@ -77,8 +77,8 @@ define Mk ()
         var i 0
         while i < 32
         {
-            set pw[i]: 0x5A5A5A5A5A5A5A5A as u64
-            set i: i + 1
+            pw[i] := 0x5A5A5A5A5A5A5A5A as u64
+            i := i + 1
         }
         pw[7]
     }
@@ -92,13 +92,13 @@ function probe(host: pointer[Page]) returns int
         return 16
     let n Mk.build_n(host)
     if n.cursor <> 7
-        set flags: flags + 1
+        flags := flags + 1
     let junk2 Mk.scribble()
     if junk2 = (0 as u64)
         return 32
     let o Mk.build_o(host)
     if o.cursor <> 9
-        set flags: flags + 2
+        flags := flags + 2
     flags
 }
 

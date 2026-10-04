@@ -12,7 +12,7 @@
 function null_trap(n: size_t) returns int
 {
     var buf int[2]
-    set buf[0]: 7
+    buf[0] := 7
     let v Slice[int](2, &buf[0])
     let r v.get(n) as ref[int]
     r
@@ -21,7 +21,7 @@ function null_trap(n: size_t) returns int
 function oob_trap(n: size_t) returns int
 {
     var buf int[2]
-    set buf[0]: 7
+    buf[0] := 7
     let v Slice[int](2, &buf[0])
     v[n]
 }
@@ -43,9 +43,9 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var else_ran false
     try let a null_trap(bad)
         when e: OutOfBounds
-            set wrong_arm: true
+            wrong_arm := true
     else
-        set else_ran: true
+        else_ran := true
     if wrong_arm
     {
         print "FAIL: the OutOfBounds arm caught a null panic"
@@ -62,9 +62,9 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var else_ran2 false
     try let b oob_trap(bad)
         when e2: NullReference
-            set wrong_arm2: true
+            wrong_arm2 := true
     else
-        set else_ran2: true
+        else_ran2 := true
     if wrong_arm2
     {
         print "FAIL: the NullReference arm caught a bounds panic"
@@ -82,7 +82,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         when e3: OutOfBounds
             if e3.index = (5 as size_t)
                 if e3.length = (2 as size_t)
-                    set oob_ok: true
+                    oob_ok := true
     if oob_ok = false
     {
         print "FAIL: the OutOfBounds arm stayed out or lied"
@@ -93,7 +93,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     try let d null_trap(bad)
         when e4: NullReference
             if e4.where <> null
-                set null_ok: true
+                null_ok := true
     if null_ok = false
     {
         print "FAIL: the NullReference arm stayed out or lied"
@@ -105,15 +105,15 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var pick1 0
     try let e5 oob_trap(bad)
         when e6: OutOfBounds
-            set pick1: 1
+            pick1 := 1
         when e7: NullReference
-            set pick1: 2
+            pick1 := 2
     var pick2 0
     try let e8 null_trap(bad)
         when e9: OutOfBounds
-            set pick2: 1
+            pick2 := 1
         when e10: NullReference
-            set pick2: 2
+            pick2 := 2
     if pick1 <> 1
     {
         print "FAIL: with two arms the bounds panic took the wrong one"
@@ -134,15 +134,15 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     arr.add(1)
     arr.add(2)
     var sbuf int[2]
-    set sbuf[0]: 7
+    sbuf[0] := 7
     var wrong_oob false
     var size_ok false
     try size_trap(&arr, &sbuf[0])
         when e11: OutOfBounds
-            set wrong_oob: true
+            wrong_oob := true
         when e12: SizeOverflow
             if e12.length = (2 as size_t)
-                set size_ok: true
+                size_ok := true
     if wrong_oob
     {
         print "FAIL: the OutOfBounds arm caught a size overflow"

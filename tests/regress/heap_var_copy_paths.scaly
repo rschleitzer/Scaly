@@ -46,17 +46,17 @@ define Maker (var n: int, cell: pointer[int])
 {
     procedure payload(mutable this, k: int) returns Payload
     {
-        set this.n: this.n + 1
+        this.n := this.n + 1
         Payload(k, k + 1, k + 2)
     }
     procedure single(mutable this) returns Single
     {
-        set this.n: this.n + 1
+        this.n := this.n + 1
         Single(cell)
     }
     procedure impl(mutable this, k: int) returns Impl
     {
-        set this.n: this.n + 1
+        this.n := this.n + 1
         Impl.Act(Payload(k, k + 1, k + 2))
     }
     procedure no_payload(mutable this) returns ref[Payload]?
@@ -74,22 +74,22 @@ define Maker (var n: int, cell: pointer[int])
         var u this.impl(2)
         let rp this.no_payload()
         if rp <> null
-            set p: *rp
+            p := *rp
         let rs this.no_single()
         if rs <> null
-            set s: *rs
+            s := *rs
         let ru this.no_impl()
         if ru <> null
-            set u: *ru
+            u := *ru
         let p2 p
         let s2 s
         let u2 u
         var p3 this.payload(0)
         var s3 this.single()
         var u3 this.impl(0)
-        set p3: p
-        set s3: s
-        set u3: u
+        p3 := p
+        s3 := s
+        u3 := u
         ; 6 + 77 + 9 + 6 + 77 + 9 = 184
         pay_sum(p2) + *s2.p + impl_val(u2) + pay_sum(p3) + *s3.p + impl_val(u3)
     }
@@ -101,10 +101,10 @@ define Maker (var n: int, cell: pointer[int])
         var s this.single()
         let rp this.no_payload()
         if rp <> null
-            set p: *rp
+            p := *rp
         let rs this.no_single()
         if rs <> null
-            set s: *rs
+            s := *rs
         let w Wrap(5, s, p)
         let v Impl.Act(p)
         let b Box1.One(s)
@@ -118,7 +118,7 @@ define Maker (var n: int, cell: pointer[int])
 procedure run(host: ref[Page])
 {
     let cell host.allocate(8, 8) as pointer[int]
-    set *cell: 77
+    *cell := 77
     var m Maker^host(0, cell)
     if m.copies() = 184 and m.builds(host) = 335
         print "PASS"

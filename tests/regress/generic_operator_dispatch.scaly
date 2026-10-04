@@ -34,15 +34,15 @@ let c Pair[int](1, 9)
 
 ; == dispatches and returns the right value (equal case).
 if (a == b) = false
-    set ok: false
+    ok := false
 ; == on unequal pairs is false (differ in second).
 if a == c
-    set ok: false
+    ok := false
 ; <> dispatches independently.
 if (a <> c) = false
-    set ok: false
+    ok := false
 if a <> b
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

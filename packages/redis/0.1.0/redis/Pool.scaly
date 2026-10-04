@@ -50,35 +50,35 @@ procedure redis_pool_of_thread() returns ref[RedisPool] mutable redis_pool
     var s redis_env("REDIS_URL")
     var i: size_t 0
     while i + 2 < s.length and (s[i] <> 58 or s[i + 1] <> 47 or s[i + 2] <> 47)
-        set i: i + 1
+        i := i + 1
     if i + 2 < s.length
-        set s: s.slice_from(i + 3)
+        s := s.slice_from(i + 3)
     var at: size_t 0
     while at < s.length and s[at] <> 64
-        set at: at + 1
+        at := at + 1
     if at < s.length
-        set s: s.slice_from(at + 1)
+        s := s.slice_from(at + 1)
     var slash: size_t 0
     while slash < s.length and s[slash] <> 47
-        set slash: slash + 1
+        slash := slash + 1
     let hostport s.slice_to(slash)
     var pc: size_t 0
     while pc < hostport.length and hostport[pc] <> 58
-        set pc: pc + 1
+        pc := pc + 1
     var name hostport.slice_to(pc)
     if name.length = 0
-        set name: "127.0.0.1"
+        name := "127.0.0.1"
     var port 6379
     if pc < hostport.length
-        set port: resp_decimal(hostport.slice_from(pc + 1)) as int
+        port := resp_decimal(hostport.slice_from(pc + 1)) as int
     var max resp_decimal(redis_env("REDIS_MAX_CONN"))
     if max <= 0
-        set max: 256
+        max := 256
     var per max / (TaskPool.ncpu() as i64)
     if per < 1
-        set per: 1
+        per := 1
     let made &RedisPool^host(String^host(name.data as pointer[const_char], name.length), port, Array[ref[RedisConn]]^host(), 0, per as int, Array[ref[SchedTask]]^host(), 0, Array[ref[RedisConn]?]^host(), 0)
-    set redis_pool: made
+    redis_pool := made
     made
 }
 
@@ -89,7 +89,7 @@ procedure redis_open_one(mutable p: ref[RedisPool]) returns ref[RedisConn]?
     var h String(p.host_name)
     let c RedisConn.connect(h, p.port)
     if c = null
-        set p.open_count: p.open_count - 1
+        p.open_count := p.open_count - 1
     c
 }
 
@@ -106,12 +106,12 @@ procedure redis_acquire() returns ref[RedisConn]? mutable redis_pool
         if p.idle.length > 0
         {
             let c p.idle.at(p.idle.length - 1)
-            set p.idle.length: p.idle.length - 1
+            p.idle.length := p.idle.length - 1
             return c
         }
         if p.open_count < p.limit
         {
-            set p.open_count: p.open_count + 1
+            p.open_count := p.open_count + 1
             return redis_open_one(p)
         }
         let me Scheduler.running()
@@ -126,11 +126,11 @@ procedure redis_acquire() returns ref[RedisConn]? mutable redis_pool
         ; redis_release handed this task a connection, or a counted place to
         ; open one in (null)
         let got: ref[RedisConn]? p.handed.at(p.handed_head)
-        set p.handed_head: p.handed_head + 1
+        p.handed_head := p.handed_head + 1
         if p.handed_head = p.handed.length
         {
-            set p.handed.length: 0
-            set p.handed_head: 0
+            p.handed.length := 0
+            p.handed_head := 0
         }
         if got <> null
             return got
@@ -146,17 +146,17 @@ procedure redis_release(mutable c: ref[RedisConn]) mutable redis_pool
     let p redis_pool_of_thread()
     var keep: ref[RedisConn]? null
     if c.is_open()
-        set keep: c
+        keep := c
     else
         c.close()
     if p.waiter_head < p.waiters.length
     {
         let t p.waiters.at(p.waiter_head)
-        set p.waiter_head: p.waiter_head + 1
+        p.waiter_head := p.waiter_head + 1
         if p.waiter_head = p.waiters.length
         {
-            set p.waiters.length: 0
-            set p.waiter_head: 0
+            p.waiters.length := 0
+            p.waiter_head := 0
         }
         p.handed.add(keep)
         Scheduler.resume(t)
@@ -167,5 +167,5 @@ procedure redis_release(mutable c: ref[RedisConn]) mutable redis_pool
         p.idle.add(keep)
         return
     }
-    set p.open_count: p.open_count - 1
+    p.open_count := p.open_count - 1
 }

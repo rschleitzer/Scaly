@@ -13,7 +13,7 @@ mutable shift: int 0
 procedure burn(depth: int) returns int
 {
     var pad u8[512]
-    set *(pad + 0): (depth as u8)
+    *(pad + 0) := (depth as u8)
     if depth > 1000000
         return depth
     let r burn(depth + 1)
@@ -43,10 +43,10 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
         var i 0
         while *(digits + i) >= 48 and *(digits + i) <= 57
         {
-            set k: k * 10 + ((*(digits + i)) as int) - 48
-            set i: i + 1
+            k := k * 10 + ((*(digits + i)) as int) - 48
+            i := i + 1
         }
-        set shift: k
+        shift := k
     }
     let page Page.allocate_page()
     let sched Scheduler.create(page)

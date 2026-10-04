@@ -10,7 +10,7 @@ define Msg union
 define Box (var host: ref[Page]  var kept: Msg)
 {
     procedure keep(mutable this, m: Msg)
-        set kept: m
+        kept := m
     ; reuse the released frame page so the dangling read is visible even
     ; without SCALY_POISON
     procedure churn(mutable this)
@@ -20,7 +20,7 @@ define Box (var host: ref[Page]  var kept: Msg)
         while i < 2000
         {
             junk.add(String("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"))
-            set i: i + 1
+            i := i + 1
         }
     }
     procedure work(mutable this)

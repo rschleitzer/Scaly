@@ -39,13 +39,13 @@ function head_complete(buf: pointer[u8], total: int) returns bool
         return false
     var ok true
     if (*(buf + (total - 4)) as int) <> 13
-        set ok: false
+        ok := false
     if (*(buf + (total - 3)) as int) <> 10
-        set ok: false
+        ok := false
     if (*(buf + (total - 2)) as int) <> 13
-        set ok: false
+        ok := false
     if (*(buf + (total - 1)) as int) <> 10
-        set ok: false
+        ok := false
     ok
 }
 
@@ -58,7 +58,7 @@ procedure write_all(fd: i32, data: size_t, len: size_t)
         let w Io.write(fd, (data + off) as pointer[void], len - off)
         if w < 0
             exit 5
-        set off: off + (w as size_t)
+        off := off + (w as size_t)
     }
 }
 
@@ -76,7 +76,7 @@ procedure handle_connection()
         let n Io.read(fd, ((buf as size_t) + (total as size_t)) as pointer[void], (256 - total) as size_t)
         if n <= 0
             exit 3
-        set total: total + (n as int)
+        total := total + (n as int)
     }
     let resp String("HTTP/1.0 200 OK\r\nContent-Length: 13\r\nConnection: close\r\n\r\nHello, Scaly!")
     let data resp.c_data() as size_t
@@ -96,7 +96,7 @@ procedure driver()
     while i < conn_count
     {
         write_all(cfd_at(i), data, len)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -104,14 +104,14 @@ let page Page.allocate_page()
 let lfd Io.listen(0 as i32)
 if lfd = ((0 - 1) as i32)
     exit 1
-set listen_fd: lfd as int
+listen_fd := lfd as int
 let port Io.local_port(lfd)
 if port = ((0 - 1) as i32)
     exit 1
 let sched Scheduler.create(page)
 let n 10000
-set conn_count: n
-set cfds: page.allocate((n * 4) as size_t, 4 as size_t)
+conn_count := n
+cfds := page.allocate((n * 4) as size_t, 4 as size_t)
 
 ; Pair up all connections: connect, accept, hand the fd to a fresh
 ; handler task (which stays queued — nothing dispatches during setup).
@@ -122,12 +122,12 @@ while i < n
     if cfd = ((0 - 1) as i32)
         exit 4
     Io.set_nonblocking(cfd)
-    set *(((cfds as size_t) + ((i * 4) as size_t)) as pointer[i32]): cfd
+    *(((cfds as size_t) + ((i * 4) as size_t)) as pointer[i32]) := cfd
     let sfd Io.accept(lfd)
     if sfd = ((0 - 1) as i32)
         exit 2
     Scheduler.spawn_arg(&handle_connection, (sfd as size_t) as pointer[void])
-    set i: i + 1
+    i := i + 1
 }
 
 let r0 Fiber.freed_region_count()
@@ -150,23 +150,23 @@ while j < n
         if r < 0
             exit 6
         if r = 0
-            set open: false
+            open := false
         else
-            set total: total + (r as int)
+            total := total + (r as int)
     }
     close(fd)
     var good true
     if total <> 71
-        set good: false
+        good := false
     if (*(buf + 9) as int) <> 50
-        set good: false
+        good := false
     if (*(buf + 10) as int) <> 48
-        set good: false
+        good := false
     if (*(buf + 11) as int) <> 48
-        set good: false
+        good := false
     if good
-        set ok_count: ok_count + 1
-    set j: j + 1
+        ok_count := ok_count + 1
+    j := j + 1
 }
 if ok_count = n
     Console.print "10000 ok "

@@ -18,7 +18,7 @@ define Sink
 procedure fwd(mutable this: Sink, b: pointer[Box])
 {
     let h Holder(b)
-    set this.p: h.p
+    this.p := h.p
 }
 
 function main() returns int

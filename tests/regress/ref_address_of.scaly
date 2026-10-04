@@ -57,7 +57,7 @@ if r.v <> 9
     Console.println "FAIL read through &x"
     exit 1
 }
-set r.v: 41
+r.v := 41
 if b.v <> 41
 {
     Console.println "FAIL store through &x"

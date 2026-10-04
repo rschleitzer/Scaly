@@ -7,25 +7,25 @@ define Counter (var n: int  var total: int)
     ; annotated: writes only its `mutable` receiver
     procedure bump(mutable this, by: int)
     {
-        set n: n + by
-        set total: total + by
+        n := n + by
+        total := total + by
     }
 
     ; annotated, but writes a parameter it did not mark
     procedure steal(mutable this, other: ref[Counter])
     {
-        set n: n + other.n
-        set other.n: 0
+        n := n + other.n
+        other.n := 0
     }
 
     ; annotated on the SECOND position: writes it and nothing else
     procedure give(this, mutable other: ref[Counter])
-        set other.n: other.n + n
+        other.n := other.n + n
 
     ; writes its receiver without declaring it: the violation is HERE, and a
     ; call into it reads what it is handed
     procedure reset(this)
-        set n: 0
+        n := 0
 
     function read(this) returns int
         n

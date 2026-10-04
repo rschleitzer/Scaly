@@ -50,13 +50,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -70,7 +70,7 @@ function fixed1(f: float) returns String
     var ok false
     if f >= 0.0
         if f < 1000000.0
-            set ok: true
+            ok := true
     if ok = false
         return "nan"
     let m ((f * 10.0) + 0.5) as int
@@ -91,7 +91,7 @@ function fixed6(f: float) returns String
     var ok false
     if f >= 0.0
         if f < 1000.0
-            set ok: true
+            ok := true
     if ok = false
         return "nan"
     let m ((f * 1000000.0) + 0.5) as int
@@ -107,7 +107,7 @@ function fixed6(f: float) returns String
         let d fr / scale % 10
         let dstr num_to_string(d as i64)
         sb.append dstr
-        set scale: scale / 10
+        scale := scale / 10
     }
     sb.to_string()
 }
@@ -118,11 +118,11 @@ procedure fill_random(mutable v: Vector[float], count: int, s0: int) returns int
     var i 0
     while i < count
     {
-        set s: lcg(s)
+        s := lcg(s)
         let r pmod(s, 2001) - 1000
         let rv (r as float) * 0.0001
         v.put(i as size_t, rv)
-        set i: i + 1
+        i := i + 1
     }
     s
 }
@@ -167,23 +167,23 @@ procedure mm_cpu(a: Vector[float], b: Vector[float], mutable c: Vector[float], m
                 let c1 bp[x * n + j + 1]
                 let c2 bp[x * n + j + 2]
                 let c3 bp[x * n + j + 3]
-                set a00: a00 + r0 * c0
-                set a01: a01 + r0 * c1
-                set a02: a02 + r0 * c2
-                set a03: a03 + r0 * c3
-                set a10: a10 + r1 * c0
-                set a11: a11 + r1 * c1
-                set a12: a12 + r1 * c2
-                set a13: a13 + r1 * c3
-                set a20: a20 + r2 * c0
-                set a21: a21 + r2 * c1
-                set a22: a22 + r2 * c2
-                set a23: a23 + r2 * c3
-                set a30: a30 + r3 * c0
-                set a31: a31 + r3 * c1
-                set a32: a32 + r3 * c2
-                set a33: a33 + r3 * c3
-                set x: x + 1
+                a00 := a00 + r0 * c0
+                a01 := a01 + r0 * c1
+                a02 := a02 + r0 * c2
+                a03 := a03 + r0 * c3
+                a10 := a10 + r1 * c0
+                a11 := a11 + r1 * c1
+                a12 := a12 + r1 * c2
+                a13 := a13 + r1 * c3
+                a20 := a20 + r2 * c0
+                a21 := a21 + r2 * c1
+                a22 := a22 + r2 * c2
+                a23 := a23 + r2 * c3
+                a30 := a30 + r3 * c0
+                a31 := a31 + r3 * c1
+                a32 := a32 + r3 * c2
+                a33 := a33 + r3 * c3
+                x := x + 1
             }
             c.put(((it * 4 + 0) * n + j) as size_t, a00)
             c.put(((it * 4 + 0) * n + j + 1) as size_t, a01)
@@ -201,7 +201,7 @@ procedure mm_cpu(a: Vector[float], b: Vector[float], mutable c: Vector[float], m
             c.put(((it * 4 + 3) * n + j + 1) as size_t, a31)
             c.put(((it * 4 + 3) * n + j + 2) as size_t, a32)
             c.put(((it * 4 + 3) * n + j + 3) as size_t, a33)
-            set j: j + 4
+            j := j + 4
         }
     }
 }
@@ -217,10 +217,10 @@ procedure max_abs_diff(got: Vector[float], want: Vector[float], count: int) retu
     {
         var d gp[i] - wp[i]
         if d < 0.0
-            set d: 0.0 - d
+            d := 0.0 - d
         if d > md
-            set md: d
-        set i: i + 1
+            md := d
+        i := i + 1
     }
     md
 }
@@ -234,7 +234,7 @@ procedure report(txt: String, flops: i64, reps: int, ns: i64)
     if ns > 0
     {
         let total (flops * (reps as i64)) as float
-        set gfs: total / (ns as float)
+        gfs := total / (ns as float)
     }
     let gstr fixed1(gfs)
     sb.append gstr
@@ -251,7 +251,7 @@ procedure report_gpu_only(txt: String, flops: i64, reps: int)
     {
         let total (flops * (reps as i64)) as float
         let ns (gms as float) * 1000000.0
-        set gfs: total / ns
+        gfs := total / ns
     }
     var sb StringBuilder()
     sb.append "  "
@@ -288,8 +288,8 @@ procedure bench_shape(m: int, kk: int, n: int, seed: int)
     var c Vector[float]((m * n) as size_t)
     var g Vector[float]((m * n) as size_t)
     var s seed
-    set s: fill_random(a, m * kk, s)
-    set s: fill_random(b, kk * n, s)
+    s := fill_random(a, m * kk, s)
+    s := fill_random(b, kk * n, s)
 
     ; --- CPU baseline: warm 3x (deferred driver + HotSpot promotion),
     ; then a timed loop ---
@@ -298,13 +298,13 @@ procedure bench_shape(m: int, kk: int, n: int, seed: int)
     mm_cpu(a, b, c, m, kk, n)
     var rc ((4000000000 / flops) as int) + 1
     if rc < 4
-        set rc: 4
+        rc := 4
     let ct0 scaly_eio_now_ns()
     var i 0
     while i < rc
     {
         mm_cpu(a, b, c, m, kk, n)
-        set i: i + 1
+        i := i + 1
     }
     let ct1 scaly_eio_now_ns()
     report(String("cpu tiled                "), flops, rc, ct1 - ct0)
@@ -323,18 +323,18 @@ procedure bench_shape(m: int, kk: int, n: int, seed: int)
     ; transfer bandwidth: host->device write of A+B, device->host read of C
     var rt 10
     let wt0 scaly_eio_now_ns()
-    set i: 0
+    i := 0
     while i < rt
     {
         scaly_mgpu_write(ga, ap, abytes)
         scaly_mgpu_write(gb, bp, bbytes)
-        set i: i + 1
+        i := i + 1
     }
     let wt1 scaly_eio_now_ns()
     let wbytes ((abytes + bbytes) as i64) * (rt as i64)
     var wgbs: float 0.0
     if wt1 > wt0
-        set wgbs: (wbytes as float) / ((wt1 - wt0) as float)
+        wgbs := (wbytes as float) / ((wt1 - wt0) as float)
     var wsb StringBuilder()
     wsb.append "  h2d memcpy             "
     let wstr fixed1(wgbs)
@@ -345,16 +345,16 @@ procedure bench_shape(m: int, kk: int, n: int, seed: int)
 
     var rg ((16000000000 / flops) as int) + 1
     if rg < 8
-        set rg: 8
+        rg := 8
 
     ; --- MPS: warm, per-dispatch, batched, incl-transfer ---
     scaly_mgpu_mps_sgemm(ga, gb, gc, m as i32, kk as i32, n as i32, 1 as i32)
     let mt0 scaly_eio_now_ns()
-    set i: 0
+    i := 0
     while i < rg
     {
         scaly_mgpu_mps_sgemm(ga, gb, gc, m as i32, kk as i32, n as i32, 1 as i32)
-        set i: i + 1
+        i := i + 1
     }
     let mt1 scaly_eio_now_ns()
     report(String("mps per-dispatch         "), flops, rg, mt1 - mt0)
@@ -364,14 +364,14 @@ procedure bench_shape(m: int, kk: int, n: int, seed: int)
     report(String("mps batched              "), flops, rg, mb1 - mb0)
     report_gpu_only(String("mps gpu-only             "), flops, rg)
     let mx0 scaly_eio_now_ns()
-    set i: 0
+    i := 0
     while i < rg
     {
         scaly_mgpu_write(ga, ap, abytes)
         scaly_mgpu_write(gb, bp, bbytes)
         scaly_mgpu_mps_sgemm(ga, gb, gc, m as i32, kk as i32, n as i32, 1 as i32)
         scaly_mgpu_read(gc, gp, cbytes)
-        set i: i + 1
+        i := i + 1
     }
     let mx1 scaly_eio_now_ns()
     report(String("mps per-op + transfer    "), flops, rg, mx1 - mx0)
@@ -388,11 +388,11 @@ procedure bench_shape(m: int, kk: int, n: int, seed: int)
     scaly_mgpu_read(gc, gp, cbytes)
     let sdiff max_abs_diff(g, c, m * n)
     let st0 scaly_eio_now_ns()
-    set i: 0
+    i := 0
     while i < rg
     {
         scaly_mgpu_msl_matmul(ga, gb, gc, m as i32, kk as i32, n as i32, 1 as i32)
-        set i: i + 1
+        i := i + 1
     }
     let st1 scaly_eio_now_ns()
     report(String("msl 4x4 per-dispatch     "), flops, rg, st1 - st0)
@@ -414,9 +414,9 @@ procedure bench_shape(m: int, kk: int, n: int, seed: int)
     var tol: float 0.002
     var verdict String(" PASS")
     if mdiff > tol
-        set verdict: String(" FAIL")
+        verdict := String(" FAIL")
     if sdiff > tol
-        set verdict: String(" FAIL")
+        verdict := String(" FAIL")
     vsb.append verdict
     let vline vsb.to_string()
     Console.println(vline.to_c_string())

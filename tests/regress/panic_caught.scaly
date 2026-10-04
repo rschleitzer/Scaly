@@ -12,7 +12,7 @@ function deep3(n: i64) returns i64
 {
     let s String("etwas auf der lokalen Region")
     var buf int[2]
-    set buf[0]: 10
+    buf[0] := 10
     let v Slice[int](2, &buf[0])
     if n > 0
         return v[(n as size_t) + 4]        ; Index 5 in einer Sicht der Laenge 2
@@ -97,7 +97,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             print "FAIL: ein spaeterer Fang blieb aus"
             return 7
         }
-        set i: i + 1
+        i := i + 1
     }
     if scaly_panic_mark() <> mark_before
     {

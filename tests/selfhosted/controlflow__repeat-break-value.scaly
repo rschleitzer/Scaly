@@ -3,7 +3,7 @@
 ; mode: run
 ; expect: 105
 var i 0
-let answer repeat { if i = 5 : break i + 100 else set i : i + 1 }
+let answer repeat { if i = 5 : break i + 100 else i := i + 1 }
 let literate_result (answer)
 if literate_result = (105)
     print("PASS")

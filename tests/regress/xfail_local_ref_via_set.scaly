@@ -11,7 +11,7 @@ procedure pick(n: int) returns ref[Payload]?
     let a Payload(String("hello"), n)
     var r: ref[Payload]? null
     if n > 0
-        set r: &a
+        r := &a
     r
 }
 

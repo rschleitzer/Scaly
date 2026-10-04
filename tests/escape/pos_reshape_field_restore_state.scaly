@@ -27,7 +27,7 @@ define Machine
         State(this.ptr, this.pos)
 
     procedure restore(mutable this, s: State)
-        set this.ptr: s.ptr
+        this.ptr := s.ptr
 
     procedure roundtrip(mutable this)
     {

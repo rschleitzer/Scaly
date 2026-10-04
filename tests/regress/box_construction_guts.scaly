@@ -34,8 +34,8 @@ function churn#() returns size_t
     while i < 200
     {
         let t String#("ZZZZZZZZZZZZZZZZZZZZZZZZ")
-        set acc: acc + t.get_length()
-        set i: i + 1
+        acc := acc + t.get_length()
+        i := i + 1
     }
     return acc
 }

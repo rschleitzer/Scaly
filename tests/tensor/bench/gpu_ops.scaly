@@ -42,13 +42,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -62,7 +62,7 @@ function fixed6(f: float) returns String
     var ok false
     if f >= 0.0
         if f < 1000.0
-            set ok: true
+            ok := true
     if ok = false
         return "nan"
     let m ((f * 1000000.0) + 0.5) as int
@@ -78,7 +78,7 @@ function fixed6(f: float) returns String
         let d fr / scale % 10
         let dstr num_to_string(d as i64)
         sb.append dstr
-        set scale: scale / 10
+        scale := scale / 10
     }
     sb.to_string()
 }
@@ -89,11 +89,11 @@ procedure fill(mutable tape: Tape, id: int, count: int, s0: int) returns int
     var i 0
     while i < count
     {
-        set s: lcg(s)
+        s := lcg(s)
         let r pmod(s, 2001) - 1000
         let rv (r as float) * 0.0001
         tape.set_value(id, i, rv)
-        set i: i + 1
+        i := i + 1
     }
     s
 }
@@ -104,7 +104,7 @@ procedure fill_const(mutable tape: Tape, id: int, count: int, v: float)
     while i < count
     {
         tape.set_value(id, i, v)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -116,10 +116,10 @@ function maxdiff_ptr(a: pointer[float], b: pointer[float], count: int) returns f
     {
         var d a[i] - b[i]
         if d < 0.0
-            set d: 0.0 - d
+            d := 0.0 - d
         if d > md
-            set md: d
-        set i: i + 1
+            md := d
+        i := i + 1
     }
     md
 }
@@ -158,15 +158,15 @@ let bf tape.leaf(1, D)
 let whead tape.leaf(D, V)
 
 var s 42
-set s: fill(tape, table, V * D, s)
-set s: fill(tape, posemb, T * D, s)
-set s: fill(tape, wq, D * D, s)
-set s: fill(tape, wk, D * D, s)
-set s: fill(tape, wv, D * D, s)
-set s: fill(tape, wo, D * D, s)
-set s: fill(tape, wf, D * F, s)
-set s: fill(tape, wp, F * D, s)
-set s: fill(tape, whead, D * V, s)
+s := fill(tape, table, V * D, s)
+s := fill(tape, posemb, T * D, s)
+s := fill(tape, wq, D * D, s)
+s := fill(tape, wk, D * D, s)
+s := fill(tape, wv, D * D, s)
+s := fill(tape, wo, D * D, s)
+s := fill(tape, wf, D * F, s)
+s := fill(tape, wp, F * D, s)
+s := fill(tape, whead, D * V, s)
 fill_const(tape, g1, D, 1.0)
 fill_const(tape, g2, D, 1.0)
 fill_const(tape, gf, D, 1.0)
@@ -177,7 +177,7 @@ var tt 0
 while tt < TT
 {
     ids.put(tt as size_t, pmod(tt * 7, V) as i64)
-    set tt: tt + 1
+    tt := tt + 1
 }
 let emb tape.embedding(table, ids, TT)
 let x0 tape.add_bcast(emb, posemb)
@@ -200,7 +200,7 @@ var t2 0
 while t2 < TT
 {
     tgs.put(t2 as size_t, pmod(t2 * 5 + 3, V) as i64)
-    set t2: t2 + 1
+    t2 := t2 + 1
 }
 let loss tape.crossentropy(logits, tgs)
 
@@ -218,8 +218,8 @@ while ci < nnodes
 {
     let node buf + ci
     offv.put(ci as size_t, total)
-    set total: total + node.rows * node.cols
-    set ci: ci + 1
+    total := total + node.rows * node.cols
+    ci := ci + 1
 }
 var sval Vector[float](total as size_t)
 var sgrad Vector[float](total as size_t)
@@ -236,11 +236,11 @@ while ci2 < nnodes
     var j 0
     while j < count
     {
-        set svp[ofp[ci2] + j]: vp[j]
-        set sgp[ofp[ci2] + j]: gp[j]
-        set j: j + 1
+        svp[ofp[ci2] + j] := vp[j]
+        sgp[ofp[ci2] + j] := gp[j]
+        j := j + 1
     }
-    set ci2: ci2 + 1
+    ci2 := ci2 + 1
 }
 
 ; --- attach: redirect to MTLBuffer slots + scratch, through the
@@ -274,14 +274,14 @@ while variant < 2
         let vd maxdiff_ptr(node.value.data, svp + ofp[mi], count)
         let gd maxdiff_ptr(node.grad.data, sgp + ofp[mi], count)
         if vd > maxv
-            set maxv: vd
+            maxv := vd
         if gd > maxg
-            set maxg: gd
+            maxg := gd
         if vd > 0.001
-            set failed: 1
+            failed := 1
         if gd > 0.001
-            set failed: 1
-        set mi: mi + 1
+            failed := 1
+        mi := mi + 1
     }
     ; non-triviality: the GPU wrote real values (op outputs started
     ; zeroed; a no-op walk would leave the loss at 0, far from the CPU)
@@ -290,7 +290,7 @@ while variant < 2
     let gpu_loss lp[0]
     let cpu_loss svp[ofp[loss]]
     if gpu_loss < 0.1
-        set failed: 1
+        failed := 1
     var sb StringBuilder()
     if variant = 0
         sb.append "hybrid (MPS gemm + MSL ops):  "
@@ -310,7 +310,7 @@ while variant < 2
     sb.append gls
     let line sb.to_string()
     Console.println(line.to_c_string())
-    set variant: variant + 1
+    variant := variant + 1
 }
 
 ; --- Adam parity: CPU adam_step on tape A; on tape B the package's
@@ -322,7 +322,7 @@ var tape_a Tape()
 let xa tape_a.leaf(4, 8)
 let ga tape_a.gelu(xa)
 var sa 77
-set sa: fill(tape_a, xa, 32, sa)
+sa := fill(tape_a, xa, 32, sa)
 tape_a.recompute()
 tape_a.zero_grads()
 tape_a.backward ga
@@ -333,7 +333,7 @@ var tape_b Tape()
 let xb tape_b.leaf(4, 8)
 let gb tape_b.gelu(xb)
 var sb2 77
-set sb2: fill(tape_b, xb, 32, sb2)
+sb2 := fill(tape_b, xb, 32, sb2)
 var bparams Vector[int](1)
 bparams.put(0, xb)
 let gpu_b GpuTape.attach(tape_b, bparams, gb, 0)
@@ -354,7 +354,7 @@ asb.append astr
 let aline asb.to_string()
 Console.println(aline.to_c_string())
 if adiff > 0.0001
-    set failed: 1
+    failed := 1
 
 if failed = 1
 {

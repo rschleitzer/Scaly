@@ -4,7 +4,7 @@
 define Holder (var kept: ref[Array[int]]?)
 
 procedure store(mutable h: ref[Holder], a: ref[Array[int]]?)
-    set h.kept: a
+    h.kept := a
 
 procedure forward(mutable h: ref[Holder], a: ref[Array[int]]?)
     store(h, a)

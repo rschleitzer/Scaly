@@ -61,7 +61,7 @@ define rpc
             if got > (n - total)            ; (size_t)-1 error wraps high
                 return
 
-            set total: total + got
+            total := total + got
         }
     }
 
@@ -82,7 +82,7 @@ define rpc
                 let b rpc.read_byte()
                 if b < 0                    ; EOF mid-stream
                 {
-                    set eof: true
+                    eof := true
                     break
                 }
 
@@ -101,7 +101,7 @@ define rpc
                 break
 
             if line_str.starts_with("Content-Length:")
-                set content_length: rpc.parse_header_size line_str
+                content_length := rpc.parse_header_size line_str
         }
 
         ; ---- body ----
@@ -126,13 +126,13 @@ define rpc
 
         ; skip leading spaces
         while (i < len) && (line.get(i) = 0x20)
-            set i: i + 1
+            i := i + 1
 
         var value: size_t 0
         while (i < len) && (line.get(i) >= 0x30) && (line.get(i) <= 0x39)
         {
-            set value: (value * 10) + ((line.get(i) - 0x30) as size_t)
-            set i: i + 1
+            value := (value * 10) + ((line.get(i) - 0x30) as size_t)
+            i := i + 1
         }
         value
     }
@@ -177,7 +177,7 @@ define rpc
             if w > (len - total)        ; (size_t)-1 error wraps high
                 return
 
-            set total: total + w
+            total := total + w
         }
     }
 
@@ -193,13 +193,13 @@ define rpc
         {
             let digit ((value % 10) as char) + ("0" as char)
             digits.add digit
-            set value: value / 10
+            value := value / 10
         }
 
         var i digits.length
         while i > 0
         {
-            set i: i - 1
+            i := i - 1
             let d digits.get i
             if d <> null
                 sb.append(*d)
@@ -246,7 +246,7 @@ define rpc
             if got > (n - total)
                 return
 
-            set total: total + got
+            total := total + got
         }
     }
 
@@ -264,7 +264,7 @@ define rpc
                 let b rpc.read_byte_fd fd
                 if b < 0
                 {
-                    set eof: true
+                    eof := true
                     break
                 }
 
@@ -283,7 +283,7 @@ define rpc
                 break
 
             if line_str.starts_with("Content-Length:")
-                set content_length: rpc.parse_header_size line_str
+                content_length := rpc.parse_header_size line_str
         }
 
         if content_length = 0
@@ -319,7 +319,7 @@ define rpc
             if w = 0
                 return
 
-            set total: total + w
+            total := total + w
         }
     }
 

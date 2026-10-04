@@ -75,8 +75,8 @@ if sizeof pointer[Page] <> (8 as size_t)
 ; sizeof feeds allocation sizes — the whole point of getting it right.
 let mp Page.allocate_page()
 let p mp.allocate(sizeof Page, alignof Page) as pointer[Page]
-set p.next_object: null
-set p.region: p
+p.next_object := null
+p.region := p
 if p.region <> p
 {
     Console.println "FAIL page-sized allocation"

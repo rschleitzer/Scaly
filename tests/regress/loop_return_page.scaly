@@ -13,7 +13,7 @@ define Maker (var n: int)
 {
     procedure mk(mutable this, v: int) returns ref[Leaf]
     {
-        set n: n + 1
+        n := n + 1
         &Leaf#(v)
     }
 
@@ -25,7 +25,7 @@ define Maker (var n: int)
             let child this.mk(i)
             if i = stop
                 return child
-            set i: i + 1
+            i := i + 1
             if i > 100
                 break
         }
@@ -40,7 +40,7 @@ function churn() returns size_t
     while i < 500
     {
         junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
-        set i: i + 1
+        i := i + 1
     }
     junk.length
 }

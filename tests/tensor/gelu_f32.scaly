@@ -24,7 +24,7 @@ procedure gelu_f32(x: Vector[float], mutable out: Vector[float], rows: int, n: i
         {
             let g gelu_scalar(xp[r * n + j])
             out.put((r * n + j) as size_t, g)
-            set j: j + 1
+            j := j + 1
         }
     }
 }
@@ -44,34 +44,34 @@ gelu_f32(x, out, 2, 3)
 let p out.data
 ; gelu(0) = 0 exactly.
 if (p[0] > 0.000001)
-    set ok: false
+    ok := false
 if (p[0] < 0.0 - 0.000001)
-    set ok: false
+    ok := false
 ; gelu(1) ~ 0.841192
 if (p[1] > 0.8405) = false
-    set ok: false
+    ok := false
 if (p[1] < 0.8419) = false
-    set ok: false
+    ok := false
 ; gelu(-1) ~ -0.158808
 if (p[2] > 0.0 - 0.1595) = false
-    set ok: false
+    ok := false
 if (p[2] < 0.0 - 0.1581) = false
-    set ok: false
+    ok := false
 ; gelu(2) ~ 1.954598
 if (p[3] > 1.9535) = false
-    set ok: false
+    ok := false
 if (p[3] < 1.9557) = false
-    set ok: false
+    ok := false
 ; gelu(-2) ~ -0.045402
 if (p[4] > 0.0 - 0.0465) = false
-    set ok: false
+    ok := false
 if (p[4] < 0.0 - 0.0443) = false
-    set ok: false
+    ok := false
 ; gelu(3) ~ 2.996363
 if (p[5] > 2.9948) = false
-    set ok: false
+    ok := false
 if (p[5] < 2.9979) = false
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

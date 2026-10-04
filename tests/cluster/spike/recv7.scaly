@@ -27,13 +27,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -62,13 +62,13 @@ procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
         let r Io.read(fd, ((buf as size_t) + done) as pointer[void], count - done)
         if r <= (0 as i64)
             return false
-        set done: done + (r as size_t)
+        done := done + (r as size_t)
     }
     true
 }
 
 procedure chk_byte(b: u8) mutable chk
-    set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
+    chk := (chk xor (b as u64)) * (0x100000001b3 as u64)
 
 ; Map an OLD address into the received copies; 0 = unmapped.
 ; Range-based on purpose: an interior pointer into an oversized page
@@ -89,7 +89,7 @@ procedure map_addr(a: size_t) returns size_t
             if a < o[i] + ln[i]
                 return nw[i] + (a - o[i])
         }
-        set i: i + (1 as size_t)
+        i := i + (1 as size_t)
     }
     0 as size_t
 }
@@ -108,7 +108,7 @@ procedure fix_ptr(addr: size_t)
         Console.println "R: MAPFAIL"
         exit 5
     }
-    set *slot: mapped
+    *slot := mapped
 }
 
 ; ==== accept ====
@@ -136,9 +136,9 @@ let root_old hdr[2] as size_t
 let want_chk hdr[3]
 let want_items hdr[4] as size_t
 
-set po: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
-set pn: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
-set pl: scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+po := scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+pn := scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
+pl := scaly_aligned_alloc(8 as i64, 32768 as i64) as pointer[size_t]
 
 var pi 0 as size_t
 while pi < page_count
@@ -153,12 +153,12 @@ while pi < page_count
     let o po
     let nw pn
     let ln pl
-    set o[pi]: obase
-    set nw[pi]: buf as size_t
-    set ln[pi]: len
-    set pi: pi + (1 as size_t)
+    o[pi] := obase
+    nw[pi] := buf as size_t
+    ln[pi] := len
+    pi := pi + (1 as size_t)
 }
-set pg_cnt: page_count
+pg_cnt := page_count
 report("R: pages ", page_count as i64, "")
 
 ; ==== swizzle the page headers ====
@@ -178,7 +178,7 @@ while fi < pg_cnt
     let no_old *no_slot
     if no_old <> (0 as size_t)
     {
-        set *no_slot: base + (no_old - obase)
+        *no_slot := base + (no_old - obase)
         fix_ptr(base + (8 as size_t))
         fix_ptr(base + (16 as size_t))
         fix_ptr(base + (24 as size_t))
@@ -187,10 +187,10 @@ while fi < pg_cnt
         {
             fix_ptr(nd)
             fix_ptr(nd + (8 as size_t))
-            set nd: *((nd + (8 as size_t)) as pointer[size_t])
+            nd := *((nd + (8 as size_t)) as pointer[size_t])
         }
     }
-    set fi: fi + (1 as size_t)
+    fi := fi + (1 as size_t)
 }
 
 ; ==== swizzle the typed graph: Root {head@0} -> SNode {data@0 next@8} ====
@@ -207,12 +207,12 @@ while sn <> (0 as size_t)
 {
     fix_ptr(sn)
     fix_ptr(sn + (8 as size_t))
-    set sn: *((sn + (8 as size_t)) as pointer[size_t])
+    sn := *((sn + (8 as size_t)) as pointer[size_t])
 }
 
 ; ==== verify through the normal String API ====
 
-set chk: 0xcbf29ce484222325 as u64
+chk := 0xcbf29ce484222325 as u64
 var items 0 as size_t
 let rp root_new as pointer[Root]
 var n rp.head
@@ -225,25 +225,25 @@ while n <> null
     {
         let b s.get(j)
         chk_byte b
-        set j: j + (1 as size_t)
+        j := j + (1 as size_t)
     }
     chk_byte((sl % (256 as size_t)) as u8)
-    set items: items + (1 as size_t)
-    set n: n.next
+    items := items + (1 as size_t)
+    n := n.next
 }
 
 var verdict u8[8]
-set verdict[0]: 70 as u8
+verdict[0] := 70 as u8
 var pass true
 if chk <> want_chk
-    set pass: false
+    pass := false
 if items <> want_items
-    set pass: false
+    pass := false
 if rp.count <> want_items
-    set pass: false
+    pass := false
 if pass
 {
-    set verdict[0]: 80 as u8
+    verdict[0] := 80 as u8
     Console.println "R: verify PASS"
 }
 if pass = false
@@ -258,9 +258,9 @@ while ti < (256 as i64)
 {
     if read_exact(fd, scratch, 1048576 as size_t) = false
         exit 4
-    set ti: ti + (1 as i64)
+    ti := ti + (1 as i64)
 }
-set verdict[0]: 84 as u8
+verdict[0] := 84 as u8
 Io.write_all(fd, verdict as pointer[void], 1 as size_t)
 
 ; ==== echo the latency phase ====
@@ -271,7 +271,7 @@ while li < (2000 as i64)
     if read_exact(fd, verdict as pointer[void], 1 as size_t) = false
         exit 4
     Io.write_all(fd, verdict as pointer[void], 1 as size_t)
-    set li: li + (1 as i64)
+    li := li + (1 as i64)
 }
 
 Console.println "R: done"

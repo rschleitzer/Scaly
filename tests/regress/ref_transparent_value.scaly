@@ -34,12 +34,12 @@ function r_argument(r: ref[int]) returns int
 
 procedure w_scalar(mutable r: ref[int], x: int)
 {
-    set r: x
+    r := x
 }
 
 procedure w_struct(mutable r: ref[Cell], c: Cell)
 {
-    set r: c
+    r := c
 }
 
 ; ★ The star spelling is GONE: `*r` on a non-optional reference is a hard rc-4
@@ -50,7 +50,7 @@ procedure w_struct(mutable r: ref[Cell], c: Cell)
 function rebinds(a: ref[int], b: ref[int]) returns int
 {
     var r: ref[int] a
-    set r: b
+    r := b
     r
 }
 
@@ -90,7 +90,7 @@ function r_condition(r: ref[bool]) returns int
 procedure alias_and_store(mutable r: ref[int])
 {
     let q r
-    set q: 7
+    q := 7
 }
 
 
@@ -99,13 +99,13 @@ procedure alias_and_store(mutable r: ref[int])
 ; a `let` cannot, so there the only reading left is the store.
 procedure stores_construction(mutable out: ref[Cell])
 {
-    set out: Cell^this(5)
+    out := Cell^this(5)
 }
 
 function rebinds_construction(a: ref[Cell]) returns int
 {
     var t: ref[Cell] a
-    set t: Cell^this(8)
+    t := Cell^this(8)
     t.v
 }
 
@@ -129,82 +129,82 @@ function r_shift(r: ref[int], n: int) returns int
 ; copies the pointee, which is what `set *a: *b` meant.
 procedure copies_between_refs(mutable a: ref[int], b: ref[int])
 {
-    set a: b
+    a := b
 }
 
 var ok: bool true
 
 var a: int 7
 if r_return(&a) <> 7
-    set ok: false
+    ok := false
 if r_tail(&a) <> 7
-    set ok: false
+    ok := false
 if r_binding(&a) <> 7
-    set ok: false
+    ok := false
 if r_argument(&a) <> 107
-    set ok: false
+    ok := false
 
 var s: int 0
 w_scalar(&s, 42)
 if s <> 42
-    set ok: false
+    ok := false
 
 
 var c Cell(1)
 var c2 Cell(9)
 w_struct(&c, c2)
 if c.v <> 9
-    set ok: false
+    ok := false
 
 var x: int 3
 var y: int 4
 if rebinds(&x, &y) <> 4
-    set ok: false
+    ok := false
 
 if r_compare(&a) = false
-    set ok: false
+    ok := false
 var u: u32 9
 if r_compare_u32(&u) = false
-    set ok: false
+    ok := false
 var other: int 1
 if r_cast_keeps_address(&a, &other) = false
-    set ok: false
+    ok := false
 var no: bool false
 if r_condition(&no) <> 0
-    set ok: false
+    ok := false
 var yes: bool true
 if r_condition(&yes) <> 1
-    set ok: false
+    ok := false
 var al: int 1
 alias_and_store(&al)
 if al <> 7
-    set ok: false
+    ok := false
 
 var sc Cell(0)
 stores_construction(&sc)
 if sc.v <> 5
-    set ok: false
+    ok := false
 var rc Cell(1)
 if rebinds_construction(&rc) <> 8
-    set ok: false
+    ok := false
 if rc.v <> 1
-    set ok: false
+    ok := false
 
 if r_add(&a, 2) <> 9
-    set ok: false
+    ok := false
 var sz: size_t 3
 if r_sub(10 as size_t, &sz) <> (7 as size_t)
-    set ok: false
+    ok := false
 if r_shift(&a, 1) <> 14
-    set ok: false
+    ok := false
 
 var ca: int 1
 var cb: int 99
 copies_between_refs(&ca, &cb)
 if ca <> 99
-    set ok: false
+    ok := false
 if cb <> 99
-    set ok: false
+    ok := false
 
 if ok
     println "PASS"

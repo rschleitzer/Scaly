@@ -20,9 +20,9 @@ let fr 1.5 </> 2.25          ; 3.75, both exactly representable in f32
 
 var ok: bool true
 if ci <> 131
-    set ok: false
+    ok := false
 if fr <> 3.75
-    set ok: false
+    ok := false
 if ok
     print("ok")
 else

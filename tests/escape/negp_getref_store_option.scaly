@@ -17,7 +17,7 @@ procedure fill(c: Keeper)
 {
     var h Vector[int](1)
     h.put(0, 5)
-    set c.r: h.get 0
+    c.r := h.get 0
 }
 
 function main() returns int

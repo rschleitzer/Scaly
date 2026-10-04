@@ -15,7 +15,7 @@ define Holder
 procedure stash(this: Holder)
 {
     let g: IntFn \x: x + 1
-    set this.fn: g
+    this.fn := g
 }
 
 function main() returns int

@@ -11,14 +11,14 @@ mutable keeper: ref[Box]? null
 
 procedure keep(b: ref[Box]) mutable keeper
 {
-    set keeper: b
+    keeper := b
 }
 
 procedure after(host: ref[Page]) mutable keeper
 {
     var b Box^host(1, 0)
     keep(&b)
-    set b.fixed: 2
+    b.fixed := 2
 }
 
 print "x"

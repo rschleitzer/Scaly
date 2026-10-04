@@ -52,7 +52,7 @@ procedure big(req: ref[Request], mutable res: ref[Response])
     while i < 100000
     {
         body.put(i, (i % 251) as u8)
-        set i: i + 1
+        i := i + 1
     }
     res.send("application/octet-stream", body.as_slice())
 }
@@ -94,7 +94,7 @@ procedure c_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64,
                 u.response.append(Slice[u8](datalen, data))
                 return 0
             }
-            set k: k + 1
+            k := k + 1
         }
         let page Page.allocate_page()
         var u &CStream^page(stream_id, ByteBuf.create(page, 16), 0, true, ByteBuf.create(page, 256), false, false)
@@ -111,9 +111,9 @@ procedure c_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64,
             if datalen > 0
                 s.response.append(Slice[u8](datalen, data))
             if (flags & NGTCP2_STREAM_DATA_FLAG_FIN) <> 0
-                set s.done: true
+                s.done := true
         }
-        set i: i + 1
+        i := i + 1
     }
     0
 }
@@ -124,7 +124,7 @@ procedure c_stream_close(mutable conn: pointer[void], flags: u32, stream_id: i64
 procedure c_handshake(mutable conn: pointer[void], mutable user_data: pointer[void]) returns i32
 {
     var c user_data as ref[Client]
-    set c.handshake: true
+    c.handshake := true
     0
 }
 
@@ -155,9 +155,9 @@ procedure request_frame(mutable out: ref[ByteBuf], path: Slice[u8])
 ; count (-1 before the stream came, or when an instruction is foreign).
 procedure decoder_said(c: ref[Client], mutable increments: ref[u64], mutable acks: ref[u64], mutable ack_ids: ref[u64]) returns bool
 {
-    set increments: 0
-    set acks: 0
-    set ack_ids: 0
+    increments := 0
+    acks := 0
+    ack_ids := 0
     var k: size_t 0
     while k < c.uni.length
     {
@@ -174,8 +174,8 @@ procedure decoder_said(c: ref[Client], mutable increments: ref[u64], mutable ack
                     let id decode_integer(bytes, &at, 7)
                     if id < 0
                         return true
-                    set acks: acks + 1
-                    set ack_ids: ack_ids + (id as u64)
+                    acks := acks + 1
+                    ack_ids := ack_ids + (id as u64)
                 }
                 else if (b & 64) <> 0
                     return false
@@ -184,12 +184,12 @@ procedure decoder_said(c: ref[Client], mutable increments: ref[u64], mutable ack
                     let n decode_integer(bytes, &at, 6)
                     if n < 0
                         return true
-                    set increments: increments + (n as u64)
+                    increments := increments + (n as u64)
                 }
             }
             return true
         }
-        set k: k + 1
+        k := k + 1
     }
     true
 }
@@ -221,12 +221,12 @@ procedure response_of(bytes: Slice[u8], mutable body: ref[ByteBuf]) returns i64
         if kind < 0 or length < 0 or at + (length as size_t) > bytes.length
             return 0
         let payload bytes.subslice(at, at + (length as size_t))
-        set at: at + (length as size_t)
+        at := at + (length as size_t)
         if kind = 1
         {
             if qpack_decode(payload, &fields) = false
                 return 0
-            set status: parse_int_prefix(fields.get(":status"))
+            status := parse_int_prefix(fields.get(":status"))
         }
         if kind = 0
             body.append(payload)
@@ -304,16 +304,16 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             {
                 var path: Slice[u8] "/sum?a=1&b=2"
                 if k = 1
-                    set path: "/big"
+                    path := "/big"
                 if k = 2
-                    set path: "/nope"
+                    path := "/nope"
                 var id: i64 0
                 ngtcp2_conn_open_bidi_stream(conn, &id, null)
                 let page Page.allocate_page()
                 var s &CStream^page(id, ByteBuf.create(page, 256), 0, false, ByteBuf.create(page, 1024), false, true)
                 request_frame(&s.request, path)
                 client.streams.add(s)
-                set k: k + 1
+                k := k + 1
             }
             ; the encoder stream: type 2, capacity 220, x-test: dyn (a
             ; literal name), :authority localhost (static name 0), a
@@ -335,7 +335,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             e.request.append("localhost")
             e.request.append_byte(1)
             client.streams.add(e)
-            set opened: true
+            opened := true
         }
         var increments: u64 0
         var acks: u64 0
@@ -366,8 +366,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             block.append_byte(3)
             block.append("two")
             open_request(conn, client, block.bytes())
-            set dynamic_id: client.streams[client.streams.length - 1].id
-            set dynamic_sent: true
+            dynamic_id := client.streams[client.streams.length - 1].id
+            dynamic_sent := true
         }
         ; write: every stream's request with its FIN, then what else is due
         repeat
@@ -383,25 +383,25 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
                 let s: ref[CStream] client.streams[i]
                 if s.fin_sent = false
                 {
-                    set chosen: s
-                    set stream_id: s.id
+                    chosen := s
+                    stream_id := s.id
                     let rest s.request.bytes().slice_from(s.queued)
-                    set data: rest.data
-                    set length: rest.length
+                    data := rest.data
+                    length := rest.length
                     if s.fin
-                        set flags: flags | NGTCP2_WRITE_STREAM_FLAG_FIN
+                        flags := flags | NGTCP2_WRITE_STREAM_FLAG_FIN
                     break
                 }
-                set i: i + 1
+                i := i + 1
             }
             var consumed: i64 0 - 1
             let n scaly_quic_write(conn, tx.data, 1500, &consumed, flags, stream_id, data, length, now)
             if chosen <> null and consumed >= 0
             {
                 var s chosen as ref[CStream]
-                set s.queued: s.queued + (consumed as size_t)
+                s.queued := s.queued + (consumed as size_t)
                 if s.queued = s.request.length
-                    set s.fin_sent: true
+                    s.fin_sent := true
             }
             if n = NGTCP2_ERR_WRITE_MORE
                 continue
@@ -421,24 +421,24 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         let now2 scaly_eio_now_ns() as u64
         if ngtcp2_conn_get_expiry(conn) <= now2
             ngtcp2_conn_handle_expiry(conn, now2)
-        set finished: opened and dynamic_sent
+        finished := opened and dynamic_sent
         var j: size_t 0
         while j < client.streams.length
         {
             let s: ref[CStream] client.streams[j]
             if s.done = false and s.fin
-                set finished: false
-            set j: j + 1
+                finished := false
+            j := j + 1
         }
         ; the section acknowledgment may come after the response
         if finished and decoder_said(client, &increments, &acks, &ack_ids) and acks = 0
-            set finished: false
+            finished := false
         if finished and quiet_sent = false
         {
-            set finished: false
+            finished := false
             let t scaly_eio_now_ns()
             if calm_at = 0
-                set calm_at: t
+                calm_at := t
             else if t - calm_at > 300000000
             {
                 var qid: i64 0
@@ -447,12 +447,12 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
                 var q &CStream^qp(qid, ByteBuf.create(qp, 256), 0, false, ByteBuf.create(qp, 1024), false, true)
                 request_frame(&q.request, "/sum?a=2&b=3")
                 client.streams.add(q)
-                set quiet_sent: true
-                set quiet_sent_at: t
+                quiet_sent := true
+                quiet_sent_at := t
             }
         }
         if finished and quiet_took = 0
-            set quiet_took: scaly_eio_now_ns() - quiet_sent_at
+            quiet_took := scaly_eio_now_ns() - quiet_sent_at
         if finished = false
             Scheduler.sleep(1)
     }
@@ -476,8 +476,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     while i < big_body.length
     {
         if big_body.bytes()[i] <> ((i % 251) as u8)
-            set pattern: false
-        set i: i + 1
+            pattern := false
+        i := i + 1
     }
     if sum_status <> 200 or sum_body.bytes().equals("3") = false or big_status <> 200 or big_body.length <> 100000 or pattern = false or nope_status <> 404 or nope_body.length <> 0
     {

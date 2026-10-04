@@ -12,7 +12,7 @@ function sum_values() returns int
     v.put(2 as size_t, 30)
     var sum 0
     for x in v
-        set sum: sum + x
+        sum := sum + x
     sum
 }
 
@@ -30,7 +30,7 @@ function scatter_by_index() returns int
         out.put(x, 7)
     var total 0
     for y in out
-        set total: total + y
+        total := total + y
     total
 }
 

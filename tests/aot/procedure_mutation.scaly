@@ -4,7 +4,7 @@
 define Counter(var value: int)
 {
     procedure increment(mutable this)
-        set value: value + 1
+        value := value + 1
 
     function get_value(this) returns int
         value

@@ -13,7 +13,7 @@
 function slice_local(other: pointer[double]) returns double
 {
     var src double[3]
-    set src[1]: 8.5
+    src[1] := 8.5
     let s Slice[double](3, &src[0])
     let data other
     s[1]
@@ -22,7 +22,7 @@ function slice_local(other: pointer[double]) returns double
 function slice_param(data: pointer[double]) returns double
 {
     var src double[3]
-    set src[1]: 8.5
+    src[1] := 8.5
     let s Slice[double](3, &src[0])
     s[1]
 }
@@ -30,7 +30,7 @@ function slice_param(data: pointer[double]) returns double
 function slice_ref(data: ref[double]) returns double
 {
     var src double[3]
-    set src[1]: 8.5
+    src[1] := 8.5
     let s Slice[double](3, &src[0])
     s[1]
 }
@@ -58,8 +58,8 @@ function hash_of(data: Slice[char]) returns int
     var i: size_t 0
     while i < data.length
     {
-        set h: h * 31 + (data[i] as int)
-        set i: i + 1
+        h := h * 31 + (data[i] as int)
+        i := i + 1
     }
     h
 }

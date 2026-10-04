@@ -19,7 +19,7 @@ define Leaf
 {
     init(v: int)
     {
-        set k: v
+        k := v
     }
 
     function doubled(this) returns int
@@ -36,8 +36,8 @@ define Other
 {
     init(l: pointer[Leaf])
     {
-        set n: 7
-        set leaf: l
+        n := 7
+        leaf := l
     }
 
     function get(this) returns int
@@ -54,8 +54,8 @@ define Holder
 {
     init(o: pointer[Other], r: ref[Other])
     {
-        set other: o
-        set aliased: r
+        other := o
+        aliased := r
     }
 
     ; a METHOD through a pointer field
@@ -90,16 +90,16 @@ let h Holder(&o, &o)
 var ok: bool true
 
 if h.via_method() <> 7
-    set ok: false
+    ok := false
 
 if h.via_property() <> 7
-    set ok: false
+    ok := false
 
 if h.via_chain() <> 20
-    set ok: false
+    ok := false
 
 if h.via_ref() <> 7
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

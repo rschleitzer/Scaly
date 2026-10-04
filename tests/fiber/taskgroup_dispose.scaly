@@ -18,7 +18,7 @@ use scaly.memory.Page
 procedure tick_task(mutable arg: pointer[void]) returns pointer[void]
 {
     let cp arg as pointer[i64]
-    set *cp: *cp + (1 as i64)
+    *cp := *cp + (1 as i64)
     null
 }
 
@@ -26,7 +26,7 @@ let waves 60000
 let pool TaskPool.create(TaskPool.ncpu())
 var cell u8[8]
 let cp cell as pointer[i64]
-set *cp: 0 as i64
+*cp := 0 as i64
 var w 0
 while w < waves
 {
@@ -34,7 +34,7 @@ while w < waves
     TaskPool.submit(pool, &tick_task, cell as pointer[void], g)
     TaskGroup.wait(g)
     TaskGroup.dispose(g)
-    set w: w + 1
+    w := w + 1
 }
 TaskPool.shutdown(pool)
 if *cp = (waves as i64)

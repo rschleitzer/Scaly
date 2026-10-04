@@ -30,17 +30,17 @@ var ok true
 
 let s String("hi")
 if s.get_length() <> 2
-    set ok: false
+    ok := false
 
 let v Vector[int](3)
 if v.length <> 3
-    set ok: false
+    ok := false
 
 if opt_roundtrip() <> 7
-    set ok: false
+    ok := false
 
 if res_roundtrip() <> 11
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

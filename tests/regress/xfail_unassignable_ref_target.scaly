@@ -17,7 +17,7 @@ define Box (v: int)
 
 procedure wrong(r: ref[Box], n: int)
 {
-    set r: n
+    r := n
 }
 
 var b Box(1)

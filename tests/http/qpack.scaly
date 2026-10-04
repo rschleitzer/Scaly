@@ -38,7 +38,7 @@ procedure unhex(host: ref[Page], hex: Slice[u8]) returns ByteBuf
     while i + 1 < hex.length
     {
         out.append_byte(hex_value(hex[i]) * 16 + hex_value(hex[i + 1]))
-        set i: i + 2
+        i := i + 2
     }
     out
 }
@@ -57,7 +57,7 @@ procedure fields(list: ref[HeaderList]) returns String
         sb.append(String(n.data as pointer[const_char], n.length))
         sb.append("=" as char)
         sb.append(String(v.data as pointer[const_char], v.length))
-        set i: i + 1
+        i := i + 1
     }
     sb.to_string()
 }
@@ -169,7 +169,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         }
         page.deallocate_extensions()
         Page.release_page(page)
-        set k: k + 1
+        k := k + 1
     }
     Console.print "split "
 

@@ -58,7 +58,7 @@ while i < 400
 {
     let th Thread.spawn(&thread_entry, null)
     Thread.join(th)
-    set i: i + 1
+    i := i + 1
 }
 Console.print "threads-ok "
 unlink(path.to_c_string())

@@ -16,11 +16,11 @@ procedure worker(first_ctx: pointer[void])
         while k < 40
         {
             let s String("region payload region payload region payload region payload")
-            set k: k + 1
+            k := k + 1
         }
         Console.print "work "
         Fiber.yield()
-        set i: i + 1
+        i := i + 1
     }
     Fiber.finish()
 }
@@ -34,11 +34,11 @@ Console.print "done "
 let freed Fiber.dispose(f)
 var ok true
 if freed < 1
-    set ok: false
+    ok := false
 if Fiber.freed_bucket_count() < (1 as i64)
-    set ok: false
+    ok := false
 if Fiber.freed_page_count() < (1 as i64)
-    set ok: false
+    ok := false
 if ok
     Console.println "region-freed"
 Page.release_page(page)

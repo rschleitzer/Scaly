@@ -9,17 +9,17 @@ procedure bump(mutable arg: pointer[void]) returns pointer[void]
 {
     let cell arg as pointer[i64]
     let v *cell
-    set *cell: v + (1 as i64)
+    *cell := v + (1 as i64)
     arg
 }
 
 var cell u8[8]
-set *(cell as pointer[i64]): 41 as i64
+*(cell as pointer[i64]) := 41 as i64
 let r scaly_call_ptr(&bump, cell as pointer[void])
 var ok true
 if r <> (cell as pointer[void])
-    set ok: false
+    ok := false
 if *(cell as pointer[i64]) <> (42 as i64)
-    set ok: false
+    ok := false
 if ok
     print "PASS\n"

@@ -12,12 +12,12 @@ function empty() returns Box
 function wrap(s: Slice[int]) returns Box
 {
     var b empty()
-    set b.s: s
+    b.s := s
     b
 }
 
 procedure keep(mutable k: ref[Keeper], b: Box)
-    set k.b: b
+    k.b := b
 
 procedure make(mutable k: ref[Keeper])
 {

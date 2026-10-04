@@ -26,7 +26,7 @@ procedure bump(mutable rows: ref[Array[Rec]], i: size_t)
 {
     ; the ports' shape: a ref[Array] parameter, a record reference out of it
     let node rows.at(i)
-    set node.a: node.a + 100
+    node.a := node.a + 100
 }
 
 var arr Array[Rec]()
@@ -42,7 +42,7 @@ if n1.b <> 4
     exit 31
 
 ; write through it — the store must land in the OWNER's buffer, not in a copy
-set n1.a: 7
+n1.a := 7
 let e1 arr[1]
 if e1.a <> 7
     exit 32
@@ -57,7 +57,7 @@ if e2.a <> 105
 ; through it is visible in the array it was taken from
 let s arr.as_slice()
 let n0 s.at(0)
-set n0.b: 42
+n0.b := 42
 let e0 arr[0]
 if e0.b <> 42
     exit 34
@@ -67,7 +67,7 @@ let tail s.slice_from(1)
 let t0 tail.at(0)
 if t0.a <> 7
     exit 35
-set t0.b: 77
+t0.b := 77
 let e1b arr[1]
 if e1b.b <> 77
     exit 36
@@ -80,7 +80,7 @@ let vec Vector[Rec](va)
 let v1 vec.at(1)
 if v1.a <> 10
     exit 37
-set v1.b: 55
+v1.b := 55
 let ve1 vec[1]
 if ve1.b <> 55
     exit 38

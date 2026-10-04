@@ -9,7 +9,7 @@ define FileError (
 {
     init (code: int, name: String)
     {
-        set error_code: code
-        set file_name: name
+        error_code := code
+        file_name := name
     }
 }

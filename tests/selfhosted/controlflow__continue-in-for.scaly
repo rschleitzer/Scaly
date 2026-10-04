@@ -3,7 +3,7 @@
 ; mode: run
 ; expect: 6
 var sum 0
-for i in 6 : { if i % 2 = 1 : continue else set sum : sum + i }
+for i in 6 : { if i % 2 = 1 : continue else sum := sum + i }
 let literate_result (sum)
 if literate_result = (6)
     print("PASS")

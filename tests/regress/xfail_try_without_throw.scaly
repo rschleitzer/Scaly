@@ -16,7 +16,7 @@ define Detail(index: size_t)
 function main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var buf int[2]
-    set buf[0]: 10
+    buf[0] := 10
     let s Slice[int](2, &buf[0])
 
     try let x s[(argc as size_t) + 4]

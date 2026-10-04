@@ -17,11 +17,11 @@ define scaly
         if result <> 0
             return result - 100
 
-        set result: containers.test()
+        result := containers.test()
         if result <> 0
             return result - 200
 
-        set result: os.test()
+        result := os.test()
         if result <> 0
             return result - 300
 

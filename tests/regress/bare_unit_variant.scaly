@@ -32,12 +32,12 @@ function tag(s: Shade) returns int
 
 var ok true
 if tag(pick(1)) <> 3
-    set ok: false
+    ok := false
 if tag(pick(0)) <> 1
-    set ok: false
+    ok := false
 let direct Blue
 if tag(direct) <> 3
-    set ok: false
+    ok := false
 if ok
     print "PASS"
 else

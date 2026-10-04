@@ -42,7 +42,7 @@ procedure grpc_reply(mutable res: ref[Response], message: Slice[u8])
     while i < message.length
     {
         framed.put(5 + i, message[i])
-        set i: i + 1
+        i := i + 1
     }
     res.trailer("grpc-status", "0")
     res.send("application/grpc", framed.as_slice())
@@ -58,16 +58,16 @@ procedure proto_read_varint(msg: Slice[u8], mutable at: ref[size_t]) returns u64
     while pos < msg.length and shift < 64
     {
         let b msg[pos] as u64
-        set pos: pos + 1
-        set v: v | ((b & 127) << shift)
+        pos := pos + 1
+        v := v | ((b & 127) << shift)
         if (b & 128) = 0
         {
-            set at: pos
+            at := pos
             return v
         }
-        set shift: shift + 7
+        shift := shift + 7
     }
-    set at: msg.length + 1
+    at := msg.length + 1
     0
 }
 
@@ -91,18 +91,18 @@ function proto_varint(msg: Slice[u8], field: u64) returns i64
             if at > msg.length
                 return 0
             if number = field
-                set found: v
+                found := v
         }
         else if wire = 1
-            set at: at + 8
+            at := at + 8
         else if wire = 5
-            set at: at + 4
+            at := at + 4
         else if wire = 2
         {
             let n proto_read_varint(msg, &at)
             if at > msg.length
                 return 0
-            set at: at + (n as size_t)
+            at := at + (n as size_t)
         }
         else
             return 0
@@ -119,17 +119,17 @@ procedure proto_put_varint(mutable out: Slice[u8], at: size_t, field: u64, value
     while v >= 128
     {
         out.put(pos, ((v & 127) | 128) as u8)
-        set pos: pos + 1
-        set v: v >> 7
+        pos := pos + 1
+        v := v >> 7
     }
     out.put(pos, v as u8)
-    set pos: pos + 1
-    set v: value as u64
+    pos := pos + 1
+    v := value as u64
     while v >= 128
     {
         out.put(pos, ((v & 127) | 128) as u8)
-        set pos: pos + 1
-        set v: v >> 7
+        pos := pos + 1
+        v := v >> 7
     }
     out.put(pos, v as u8)
     pos + 1

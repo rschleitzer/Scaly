@@ -7,7 +7,7 @@ function line_end(buf: Slice[u8], i: size_t) returns size_t
 {
     var j i
     while j < buf.length and buf[j] <> 10
-        set j: j + 1
+        j := j + 1
     if j > i and j <= buf.length and buf[j - 1] = 13
     {
         if j < buf.length
@@ -21,7 +21,7 @@ function line_end_or_none(buf: Slice[u8], i: size_t) returns i64
 {
     var j i
     while j < buf.length and buf[j] <> 10
-        set j: j + 1
+        j := j + 1
     if j >= buf.length
         return 0 - 1
     if j > i and buf[j - 1] = 13
@@ -73,7 +73,7 @@ function has_space(s: Slice[u8]) returns bool
     {
         if is_space(s[i])
             return true
-        set i: i + 1
+        i := i + 1
     }
     false
 }
@@ -84,9 +84,9 @@ function trim(s: Slice[u8]) returns Slice[u8]
     var a: size_t 0
     var b s.length
     while a < b and is_space(s[a])
-        set a: a + 1
+        a := a + 1
     while b > a and is_space(s[b - 1])
-        set b: b - 1
+        b := b - 1
     s.subslice(a, b)
 }
 
@@ -100,7 +100,7 @@ function equals_lower(s: Slice[u8], lit: Slice[u8]) returns bool
     {
         if lower(s[i]) <> lit[i]
             return false
-        set i: i + 1
+        i := i + 1
     }
     true
 }
@@ -128,10 +128,10 @@ function contains_token_lower(s: Slice[u8], lit: Slice[u8]) returns bool
     {
         var e i
         while e < s.length and s[e] <> 44
-            set e: e + 1
+            e := e + 1
         if equals_lower(trim(s.subslice(i, e)), lit)
             return true
-        set i: e + 1
+        i := e + 1
     }
     false
 }
@@ -147,14 +147,14 @@ function coding_quality(value: Slice[u8], coding: Slice[u8]) returns int
     {
         var e i
         while e < value.length and value[e] <> 44          ; ','
-            set e: e + 1
+            e := e + 1
         let element value.subslice(i, e)
         var semi: size_t 0
         while semi < element.length and element[semi] <> 59  ; ';'
-            set semi: semi + 1
+            semi := semi + 1
         if equals_lower(trim(element.slice_to(semi)), coding)
             return quality_of(element.slice_from(semi))
-        set i: e + 1
+        i := e + 1
     }
     0 - 1
 }
@@ -169,7 +169,7 @@ function quality_of(params: Slice[u8]) returns int
         ; one parameter: from after a ';' to the next
         var e i + 1
         while e < params.length and params[e] <> 59
-            set e: e + 1
+            e := e + 1
         let p trim(params.subslice(i + 1, e))
         if p.length >= 2 and lower(p[0]) = 113 and p[1] = 61      ; 'q='
         {
@@ -183,13 +183,13 @@ function quality_of(params: Slice[u8]) returns int
             var k: size_t 2
             while k < v.length and scale > 0 and v[k] >= 48 and v[k] <= 57
             {
-                set q: q + ((v[k] - 48) as int) * scale
-                set scale: scale / 10
-                set k: k + 1
+                q := q + ((v[k] - 48) as int) * scale
+                scale := scale / 10
+                k := k + 1
             }
             return q
         }
-        set i: e
+        i := e
     }
     1000
 }
@@ -215,31 +215,31 @@ function percent_decode(s: Slice[u8], plus_is_space: bool) returns String
     while i < s.length
     {
         if s[i] = 37 and i + 2 < s.length and hex_value(s[i + 1]) >= 0 and hex_value(s[i + 2]) >= 0
-            set i: i + 3
+            i := i + 3
         else
-            set i: i + 1
-        set n: n + 1
+            i := i + 1
+        n := n + 1
     }
     var out String(n)
     let d out.get_buffer()
-    set i: 0
+    i := 0
     var k: size_t 0
     while i < s.length
     {
         var c s[i]
         if c = 37 and i + 2 < s.length and hex_value(s[i + 1]) >= 0 and hex_value(s[i + 2]) >= 0
         {
-            set c: ((hex_value(s[i + 1]) * 16 + hex_value(s[i + 2])) as u8)
-            set i: i + 3
+            c := ((hex_value(s[i + 1]) * 16 + hex_value(s[i + 2])) as u8)
+            i := i + 3
         }
         else
         {
             if c = 43 and plus_is_space
-                set c: 32
-            set i: i + 1
+                c := 32
+            i := i + 1
         }
-        set *(d + k): c
-        set k: k + 1
+        *(d + k) := c
+        k := k + 1
     }
     out
 }
@@ -257,8 +257,8 @@ function parse_decimal(s: Slice[u8]) returns i64
         let c s[i]
         if c < 48 or c > 57
             return 0 - 1
-        set v: v * 10 + ((c - 48) as i64)
-        set i: i + 1
+        v := v * 10 + ((c - 48) as i64)
+        i := i + 1
     }
     v
 }
@@ -271,14 +271,14 @@ function parse_int_prefix(s: Slice[u8]) returns i64
     var neg false
     if s.length > 0 and s[0] = 45
     {
-        set neg: true
-        set i: 1
+        neg := true
+        i := 1
     }
     var v: i64 0
     while i < s.length and s[i] >= 48 and s[i] <= 57
     {
-        set v: v * 10 + ((s[i] - 48) as i64)
-        set i: i + 1
+        v := v * 10 + ((s[i] - 48) as i64)
+        i := i + 1
     }
     if neg
         return 0 - v
@@ -297,17 +297,17 @@ function parse_hex_prefix(s: Slice[u8]) returns i64
         let c s[i]
         var d: i64 0 - 1
         if c >= 48 and c <= 57
-            set d: (c - 48) as i64
+            d := (c - 48) as i64
         if c >= 97 and c <= 102
-            set d: (c - 87) as i64
+            d := (c - 87) as i64
         if c >= 65 and c <= 70
-            set d: (c - 55) as i64
+            d := (c - 55) as i64
         if d < 0
             break
         if i >= 15
             return 0 - 1
-        set v: v * 16 + d
-        set i: i + 1
+        v := v * 16 + d
+        i := i + 1
     }
     if i = 0
         return 0 - 1

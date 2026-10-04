@@ -84,7 +84,7 @@ define codelens
         if head.get_length() > 0
         {
             symbols.append_fragment(&sb, head)
-            set first: false
+            first := false
         }
 
         let decls codelens.declaration_fragment(text, path)
@@ -93,7 +93,7 @@ define codelens
             if first = false
                 sb.append("," as char)
             symbols.append_fragment(&sb, decls)
-            set first: false
+            first := false
         }
 
         let planned codelens.planned_fragment(path, text)
@@ -102,7 +102,7 @@ define codelens
             if first = false
                 sb.append("," as char)
             symbols.append_fragment(&sb, planned)
-            set first: false
+            first := false
         }
 
         sb.append("]" as char)
@@ -163,7 +163,7 @@ define codelens
                 diagnostics.register_packages(&planner, &model)
                 let plan planner.plan_program model
                 if plan <> null
-                    set result: codelens.families(plan, planner.has_diagnostics(), root, path, plan_text, text)
+                    result := codelens.families(plan, planner.has_diagnostics(), root, path, plan_text, text)
             }
         result
     }
@@ -191,7 +191,7 @@ define codelens
                 diagnostics.register_packages(&planner, &model)
                 let plan planner.plan_program model
                 if plan <> null
-                    set result: codelens.families(plan, planner.has_diagnostics(), path, path, text, text)
+                    result := codelens.families(plan, planner.has_diagnostics(), path, path, text, text)
             }
         result
     }
@@ -206,7 +206,7 @@ define codelens
         if loops.get_length() > 0
         {
             symbols.append_fragment(&sb, loops)
-            set first: false
+            first := false
         }
 
         let insts instlens.fragment(plan, has_diag, plan_text, anchor_text)
@@ -215,7 +215,7 @@ define codelens
             if first = false
                 sb.append("," as char)
             symbols.append_fragment(&sb, insts)
-            set first: false
+            first := false
         }
 
         ; No `has_diag` here, deliberately: this family marks a SHAPE, so a
@@ -227,7 +227,7 @@ define codelens
             if first = false
                 sb.append("," as char)
             symbols.append_fragment(&sb, stores)
-            set first: false
+            first := false
         }
 
         sb.to_string()
@@ -250,7 +250,7 @@ define codelens
         if banner.get_length() > 0
         {
             symbols.append_fragment(&sb, banner)
-            set first: false
+            first := false
         }
 
         if codelens.has_top_level_statements text
@@ -258,7 +258,7 @@ define codelens
             if first = false
                 sb.append("," as char)
             symbols.append_fragment(&sb, symbols.lens_object(text, 0, 3, "Run (scalyc --jit)", "scaly.runFile", path))
-            set first: false
+            first := false
         }
 
         sb.to_string()
@@ -406,7 +406,7 @@ define codelens
                 ; diagnostic, not a lens.
             }
             when program: Success
-                set result: codelens.declarations_fragment(text, path, dir, dir, program.file.declarations)
+                result := codelens.declarations_fragment(text, path, dir, dir, program.file.declarations)
         result
     }
 
@@ -430,10 +430,10 @@ define codelens
                     if first = false
                         sb.append("," as char)
                     symbols.append_fragment(&sb, piece)
-                    set first: false
+                    first := false
                 }
             }
-            set i: i + 1
+            i := i + 1
         }
         sb.to_string()
     }
@@ -457,7 +457,7 @@ define codelens
                         var child base
                         let last codelens.file_name base
                         if last <> def.name
-                            set child: codelens.join(base, def.name)
+                            child := codelens.join(base, def.name)
                         return codelens.declarations_fragment(text, path, child, dir, n.declarations)
                     }
                     when c: ClassSyntax
@@ -682,13 +682,13 @@ define codelens
             let c text.get k
             var ok false
             if c = ("." as char)
-                set ok: true
+                ok := true
             if c >= 0x30
                 if c <= 0x39
-                    set ok: true
+                    ok := true
             if ok = false
                 break
-            set k: k + 1
+            k := k + 1
         }
         if k <= offset
             return ""
@@ -729,8 +729,8 @@ define codelens
                 return ""
             if up.get_length() <= 1
                 return ""
-            set dir: up
-            set depth: depth + 1
+            dir := up
+            depth := depth + 1
         }
         ""
     }

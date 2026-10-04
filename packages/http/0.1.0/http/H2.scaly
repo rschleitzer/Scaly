@@ -55,7 +55,7 @@ function starts_h2(bytes: Slice[u8]) returns bool
     let p h2_preface()
     var n bytes.length
     if n > p.length
-        set n: p.length
+        n := p.length
     n > 0 and bytes.slice_to(n).equals(p.slice_to(n))
 }
 
@@ -82,7 +82,7 @@ procedure frame_head(mutable out: ref[ByteBuf], length: size_t, kind: u8, flags:
     d.put(at + 6, ((stream >> 16) & 255) as u8)
     d.put(at + 7, ((stream >> 8) & 255) as u8)
     d.put(at + 8, (stream & 255) as u8)
-    set out.length: at + H2_FRAME_HEAD
+    out.length := at + H2_FRAME_HEAD
 }
 
 procedure append_u32(mutable out: ref[ByteBuf], v: u64)
@@ -151,7 +151,7 @@ procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf
             text.append(fields.value(i))
             text.append("\r\n")
         }
-        set i: i + 1
+        i := i + 1
     }
     if has_body = false
         text.append("\r\n")
@@ -182,11 +182,11 @@ procedure request_from_fields(fields: ref[HeaderList], mutable req: ref[Request]
             return false
         let kind pseudo_field(name)
         if kind = 1
-            set method: value
+            method := value
         else if kind = 2
-            set target: value
-        set head: head + name.length + value.length + 4
-        set i: i + 1
+            target := value
+        head := head + name.length + value.length + 4
+        i := i + 1
     }
     if method.length = 0 or target.length = 0 or head > MAX_HEAD
         return false
@@ -195,32 +195,32 @@ procedure request_from_fields(fields: ref[HeaderList], mutable req: ref[Request]
     {
         if method[k] = 32
             return false
-        set k: k + 1
+        k := k + 1
     }
     ; one pass over the target: no space, and where the query begins
     var q target.length
-    set k: 0
+    k := 0
     while k < target.length
     {
         let c target[k]
         if c = 32
             return false
         if c = 63 and q = target.length
-            set q: k
-        set k: k + 1
+            q := k
+        k := k + 1
     }
-    set req.method: method
-    set req.target: target
-    set req.path: target.slice_to(q)
+    req.method := method
+    req.target := target
+    req.path := target.slice_to(q)
     if q < target.length
-        set req.query: target.slice_from(q + 1)
+        req.query := target.slice_from(q + 1)
     else
-        set req.query: target.slice_from(q)
-    set req.fields: target.slice_to(0)
-    set req.list: fields
-    set req.body: target.slice_to(0)
-    set req.minor: 1
-    set req.keep_alive: true
+        req.query := target.slice_from(q)
+    req.fields := target.slice_to(0)
+    req.list := fields
+    req.body := target.slice_to(0)
+    req.minor := 1
+    req.keep_alive := true
     true
 }
 
@@ -239,7 +239,7 @@ function response_fields_at(response: Slice[u8]) returns size_t
 {
     var at: size_t 0
     while at + 1 < response.length and (response[at] <> 13 or response[at + 1] <> 10)
-        set at: at + 1
+        at := at + 1
     at + 2
 }
 
@@ -252,10 +252,10 @@ procedure next_field(lines: Slice[u8], at: size_t, mutable name: ref[ByteBuf], m
         return 0
     var colon at
     while colon < lines.length and lines[colon] <> 58
-        set colon: colon + 1
+        colon := colon + 1
     var eol colon
     while eol + 1 < lines.length and (lines[eol] <> 13 or lines[eol + 1] <> 10)
-        set eol: eol + 1
+        eol := eol + 1
     if colon >= eol
         return 0
     name.clear()
@@ -264,15 +264,15 @@ procedure next_field(lines: Slice[u8], at: size_t, mutable name: ref[ByteBuf], m
     {
         var ch lines[k]
         if ch >= 65 and ch <= 90
-            set ch: ch + 32
+            ch := ch + 32
         name.append_byte(ch)
-        set k: k + 1
+        k := k + 1
     }
     var vstart colon + 1
     while vstart < eol and lines[vstart] = 32
-        set vstart: vstart + 1
-    set value_start: vstart
-    set value_end: eol
+        vstart := vstart + 1
+    value_start := vstart
+    value_end := eol
     eol + 2
 }
 
@@ -308,11 +308,11 @@ procedure h2_job()
     let r parse_request(job.text.bytes(), req)
     if r > 0
     {
-        set job.parsed: true
+        job.parsed := true
         dispatch(job.router, req, job.res as ref[Response])
     }
     let left job.outstanding as ref[size_t]
-    set left: left - 1
+    left := left - 1
 }
 
 ; The method and the path (without its query) of HTTP/1.1 request text.
@@ -320,7 +320,7 @@ function request_method(text: Slice[u8]) returns Slice[u8]
 {
     var i: size_t 0
     while i < text.length and text[i] <> 32
-        set i: i + 1
+        i := i + 1
     text.slice_to(i)
 }
 
@@ -328,11 +328,11 @@ function request_path(text: Slice[u8]) returns Slice[u8]
 {
     var i: size_t 0
     while i < text.length and text[i] <> 32
-        set i: i + 1
+        i := i + 1
     let start i + 1
     var end start
     while end < text.length and text[end] <> 32 and text[end] <> 63
-        set end: end + 1
+        end := end + 1
     if start > text.length
         return text.slice_to(0)
     text.subslice(start, end)
@@ -404,7 +404,7 @@ define H2Conn
         frame_head(&frames, 8, 7, 0, 0)
         append_u32(&frames, last_stream)
         append_u32(&frames, code)
-        set closing: true
+        closing := true
     }
 
     procedure reset_stream(mutable this, stream: u64, code: u64)
@@ -433,7 +433,7 @@ define H2Conn
             let s streams.at(i)
             if s.id = id
                 return s
-            set i: i + 1
+            i := i + 1
         }
         null
     }
@@ -449,10 +449,10 @@ define H2Conn
                 s.page.deallocate_extensions()
                 Page.release_page(s.page)
                 streams.put(i, streams.at(streams.length - 1))
-                set streams.length: streams.length - 1
+                streams.length := streams.length - 1
                 return
             }
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -474,23 +474,23 @@ define H2Conn
         {
             var n body.length - sent
             if n > peer_max_frame
-                set n: peer_max_frame
+                n := peer_max_frame
             if (n as i64) > send_window
-                set n: send_window as size_t
+                n := send_window as size_t
             ; typed: `window as size_t` would cast the reference, an address
             let stream_window: i64 window
             if (n as i64) > stream_window
-                set n: stream_window as size_t
+                n := stream_window as size_t
             if n = 0
                 return false
             var flags: u8 0
             if sent + n = body.length and end_stream
-                set flags: 1
+                flags := 1
             frame_head(&frames, n, 0, flags, id)
             frames.append(body.subslice(sent, sent + n))
-            set sent: sent + n
-            set send_window: send_window - (n as i64)
-            set window: window - (n as i64)
+            sent := sent + n
+            send_window := send_window - (n as i64)
+            window := window - (n as i64)
         }
         true
     }
@@ -517,12 +517,12 @@ define H2Conn
                 while j + 1 < pending.length
                 {
                     pending.put(j, pending.at(j + 1))
-                    set j: j + 1
+                    j := j + 1
                 }
-                set pending.length: pending.length - 1
+                pending.length := pending.length - 1
             }
             else
-                set i: i + 1
+                i := i + 1
         }
     }
 
@@ -539,16 +539,16 @@ define H2Conn
                 return at + 2
             var colon at
             while colon < lines.length and lines[colon] <> 58
-                set colon: colon + 1
+                colon := colon + 1
             var eol colon
             while eol + 1 < lines.length and (lines[eol] <> 13 or lines[eol + 1] <> 10)
-                set eol: eol + 1
+                eol := eol + 1
             if colon >= eol
                 return lines.length
             let name_raw lines.subslice(at, colon)
             var vstart colon + 1
             while vstart < eol and lines[vstart] = 32
-                set vstart: vstart + 1
+                vstart := vstart + 1
             let value lines.subslice(vstart, eol)
             text.clear()
             var k: size_t 0
@@ -556,14 +556,14 @@ define H2Conn
             {
                 var ch name_raw[k]
                 if ch >= 65 and ch <= 90
-                    set ch: ch + 32
+                    ch := ch + 32
                 text.append_byte(ch)
-                set k: k + 1
+                k := k + 1
             }
             let name text.bytes()
             if name.equals("connection") = false and name.equals("keep-alive") = false and name.equals("transfer-encoding") = false
                 encode_field(&frames, name, value)
-            set at: eol + 2
+            at := eol + 2
         }
         lines.length
     }
@@ -574,7 +574,7 @@ define H2Conn
     {
         let head_at frames.length
         frames.reserve(H2_FRAME_HEAD)
-        set frames.length: frames.length + H2_FRAME_HEAD
+        frames.length := frames.length + H2_FRAME_HEAD
         if status <> 0
             encode_status(&frames, status)
         let after this.encode_lines(lines, from)
@@ -583,11 +583,11 @@ define H2Conn
         {
             var flags: u8 4
             if end_stream
-                set flags: 5
+                flags := 5
             let save frames.length
-            set frames.length: head_at
+            frames.length := head_at
             frame_head(&frames, block_length, 1, flags, stream)
-            set frames.length: save
+            frames.length := save
             return after
         }
         ; larger than a frame: HEADERS, then CONTINUATION frames, the last
@@ -595,26 +595,26 @@ define H2Conn
         ; an incoming block is decoded before its request is answered)
         block.clear()
         block.append(frames.bytes().subslice(head_at + H2_FRAME_HEAD, head_at + H2_FRAME_HEAD + block_length))
-        set frames.length: head_at
+        frames.length := head_at
         var off: size_t 0
         while off < block_length
         {
             var n block_length - off
             if n > peer_max_frame
-                set n: peer_max_frame
+                n := peer_max_frame
             var kind: u8 9
             var flags: u8 0
             if off = 0
             {
-                set kind: 1
+                kind := 1
                 if end_stream
-                    set flags: 1
+                    flags := 1
             }
             if off + n = block_length
-                set flags: flags | 4
+                flags := flags | 4
             frame_head(&frames, n, kind, flags, stream)
             frames.append(block.bytes().subslice(off, off + n))
-            set off: off + n
+            off := off + n
         }
         after
     }
@@ -628,20 +628,20 @@ define H2Conn
         {
             var n block.length - off
             if n > peer_max_frame
-                set n: peer_max_frame
+                n := peer_max_frame
             var kind: u8 9
             var flags: u8 0
             if off = 0
             {
-                set kind: 1
+                kind := 1
                 if end_stream
-                    set flags: 1
+                    flags := 1
             }
             if off + n = block.length
-                set flags: flags | 4
+                flags := flags | 4
             frame_head(&frames, n, kind, flags, stream)
             frames.append(block.subslice(off, off + n))
-            set off: off + n
+            off := off + n
             if off >= block.length
                 break
         }
@@ -655,9 +655,9 @@ define H2Conn
         var block_at res.block_at
         var body_at res.body_at
         if body_at > out.length
-            set body_at: out.length
+            body_at := out.length
         if block_at > body_at
-            set block_at: body_at
+            block_at := body_at
         let trailers res.trailers.bytes()
         let has_trailers trailers.length > 0
         let body out.slice_from(body_at)
@@ -757,20 +757,20 @@ define H2Conn
             var job: ref[H2Job] jobs.at(i)
             let page job.page
             let own_out &ByteBuf^page(page, allocate_slice[u8]^page(page, 4096), 0, false)
-            set job.outb: own_out
-            set job.req: &Request^page(null, null, null, null, null, null, 1, true, null, null)
+            job.outb := own_out
+            job.req := &Request^page(null, null, null, null, null, null, 1, true, null, null)
             let jres Response.create(page, own_out)
-            set jres.hpack: true
-            set job.res: jres
-            set job.waiting: true
-            set job.outstanding: &outstanding
-            set outstanding: outstanding + 1
+            jres.hpack := true
+            job.res := jres
+            job.waiting := true
+            job.outstanding := &outstanding
+            outstanding := outstanding + 1
             Scheduler.spawn_detached(&h2_job, job as pointer[void])
-            set i: i + 1
+            i := i + 1
         }
         while outstanding > 0
             Scheduler.sleep(1)
-        set i: 0
+        i := 0
         while i < jobs.length
         {
             let job jobs.at(i)
@@ -785,7 +785,7 @@ define H2Conn
                 else
                     this.reset_stream(job.id, 1)
             }
-            set i: i + 1
+            i := i + 1
         }
         var k: size_t 0
         while k < jobs.length
@@ -793,7 +793,7 @@ define H2Conn
             let job jobs.at(k)
             job.page.deallocate_extensions()
             Page.release_page(job.page)
-            set k: k + 1
+            k := k + 1
         }
         jobs.clear()
     }
@@ -806,7 +806,7 @@ define H2Conn
         if decoder.decode(block_bytes, &fields) = false
             return false
         if stream > last_stream
-            set last_stream: stream
+            last_stream := stream
         if end_stream
         {
             this.answer_fields(stream, router, req, res, outb)
@@ -861,7 +861,7 @@ define H2Conn
             let flags input[at + 4]
             let stream be31(input, at + 5)
             var payload input.subslice(at + H2_FRAME_HEAD, at + H2_FRAME_HEAD + length)
-            set at: at + H2_FRAME_HEAD + length
+            at := at + H2_FRAME_HEAD + length
             if block_stream <> 0 and (kind <> 9 or stream <> block_stream)
             {
                 this.goaway(1)
@@ -875,7 +875,7 @@ define H2Conn
                     this.goaway(1)
                     return at
                 }
-                set payload: payload.subslice(1, payload.length - (payload[0] as size_t))
+                payload := payload.subslice(1, payload.length - (payload[0] as size_t))
             }
             match kind
                 case 0:
@@ -905,7 +905,7 @@ define H2Conn
                             this.goaway(1)
                             return at
                         }
-                        set block: block.slice_from(5)
+                        block := block.slice_from(5)
                     }
                     if (flags & 4) <> 0
                     {
@@ -918,8 +918,8 @@ define H2Conn
                     else
                     {
                         self_block_start(&this.block, block)
-                        set block_stream: stream
-                        set block_end_stream: (flags & 1) <> 0
+                        block_stream := stream
+                        block_end_stream := (flags & 1) <> 0
                     }
                 }
                 case 9:
@@ -928,7 +928,7 @@ define H2Conn
                     if (flags & 4) <> 0
                     {
                         let id block_stream
-                        set block_stream: 0
+                        block_stream := 0
                         if this.headers_done(id, this.block.bytes(), block_end_stream, router, req, res, outb) = false
                         {
                             this.goaway(9)
@@ -960,13 +960,13 @@ define H2Conn
                                     return at
                                 }
                                 let delta (value as i64) - peer_window
-                                set peer_window: value as i64
+                                peer_window := value as i64
                                 var i: size_t 0
                                 while i < pending.length
                                 {
                                     var p pending.at(i)
-                                    set p.window: p.window + delta
-                                    set i: i + 1
+                                    p.window := p.window + delta
+                                    i := i + 1
                                 }
                             }
                             if id = 5
@@ -976,9 +976,9 @@ define H2Conn
                                     this.goaway(1)
                                     return at
                                 }
-                                set peer_max_frame: value as size_t
+                                peer_max_frame := value as size_t
                             }
-                            set k: k + 6
+                            k := k + 6
                         }
                         frame_head(&frames, 0, 4, 1, 0)
                         this.push_pending()
@@ -993,7 +993,7 @@ define H2Conn
                     }
                 }
                 case 7:
-                    set closing: true
+                    closing := true
                 case 8:
                 {
                     if length <> 4
@@ -1003,7 +1003,7 @@ define H2Conn
                     }
                     let increment be31(payload, 0) as i64
                     if stream = 0
-                        set send_window: send_window + increment
+                        send_window := send_window + increment
                     else
                     {
                         var i: size_t 0
@@ -1011,8 +1011,8 @@ define H2Conn
                         {
                             var p pending.at(i)
                             if p.id = stream
-                                set p.window: p.window + increment
-                            set i: i + 1
+                                p.window := p.window + increment
+                            i := i + 1
                         }
                     }
                     this.push_pending()
@@ -1035,7 +1035,7 @@ procedure self_block_start(mutable block: ref[ByteBuf], fragment: Slice[u8])
 procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], mutable inb: ref[ByteBuf], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
 {
     var h H2Conn.create(host)
-    set res.hpack: true
+    res.hpack := true
     h.greet()
     var preface_done false
     repeat
@@ -1045,7 +1045,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
             if inb.bytes().slice_to(24).equals(h2_preface()) = false
                 break
             inb.consume(24)
-            set preface_done: true
+            preface_done := true
         }
         ; the frames that arrived, a round at a time while frames_in stops at
         ; the output budget: each round's output is written before the next
@@ -1063,7 +1063,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
                 break
             if c.write(h.frames.bytes()) = false
             {
-                set failed: true
+                failed := true
                 break
             }
             h.frames.clear()
@@ -1099,14 +1099,14 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
         let s h.streams.at(i)
         s.page.deallocate_extensions()
         Page.release_page(s.page)
-        set i: i + 1
+        i := i + 1
     }
-    set i: 0
+    i := 0
     while i < h.pending.length
     {
         let p h.pending.at(i)
         p.page.deallocate_extensions()
         Page.release_page(p.page)
-        set i: i + 1
+        i := i + 1
     }
 }

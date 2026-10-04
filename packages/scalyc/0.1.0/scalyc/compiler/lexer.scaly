@@ -75,16 +75,16 @@ define lexer
     {
         init (src: String)
         {
-            set source: src
-            set current: null
-            set end: null
-            set position: 0
-            set previous_position: 0
-            set marks.data: null
-            set marks.length: 0
-            set mark: 0
-            set mark_at: null
-            set token: Token.Empty(EmptyToken())
+            source := src
+            current := null
+            end := null
+            position := 0
+            previous_position := 0
+            marks.data := null
+            marks.length := 0
+            mark := 0
+            mark_at := null
+            token := Token.Empty(EmptyToken())
             ; s157: stage-1 drops the original two-armed `if src.length = 0
             ; {...} else {...}` block entirely (current/end never stored →
             ; current=null → advance# bails → 0 tokens → 0 declarations).
@@ -92,8 +92,8 @@ define lexer
             ; emits correctly. Defaults (null) are set unconditionally above.
             if src.length() > 0
             {
-                set current: src.get_buffer()
-                set end: src.get_buffer() + src.length()
+                current := src.get_buffer()
+                end := src.get_buffer() + src.length()
                 skip_whitespace true
             }
         }
@@ -103,10 +103,10 @@ define lexer
             if current = null
                 return
 
-            set current: current + 1
-            set position: position + 1
+            current := current + 1
+            position := position + 1
             if current >= end
-                set current: null
+                current := null
             else if current = mark_at
                 this.take_mark()
         }
@@ -115,23 +115,23 @@ define lexer
         ; before the cursor is behind the scan already.
         procedure use_positions(mutable this, pairs: Slice[size_t])
         {
-            set marks: pairs
-            set mark: 0
+            marks := pairs
+            mark := 0
             if current <> null
             {
                 let at (current as size_t) - (source.get_buffer() as size_t)
                 while mark * 2 + 1 < marks.length and marks[mark * 2] < at
-                    set mark: mark + 1
+                    mark := mark + 1
             }
-            set mark_at: this.mark_pointer()
+            mark_at := this.mark_pointer()
         }
 
         ; The scan reached the next pair's line: take the source's position.
         procedure take_mark(mutable this)
         {
-            set position: marks[mark * 2 + 1]
-            set mark: mark + 1
-            set mark_at: this.mark_pointer()
+            position := marks[mark * 2 + 1]
+            mark := mark + 1
+            mark_at := this.mark_pointer()
         }
 
         ; Where the next pair's line starts in the text, or null.
@@ -144,7 +144,7 @@ define lexer
 
         procedure empty(mutable this)
         {
-            set token: Token.Empty(EmptyToken())
+            token := Token.Empty(EmptyToken())
         }
 
         function is_at_end(this) returns bool
@@ -152,7 +152,7 @@ define lexer
 
         procedure advance(mutable this)
         {
-            set previous_position: position
+            previous_position := position
 
             if current = null
                 return
@@ -162,7 +162,7 @@ define lexer
             ; Identifier: starts with letter
             if ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90))  ; a-z, A-Z
             {
-                set token: scan_identifier()
+                token := scan_identifier()
                 skip_whitespace false
                 return
             }
@@ -170,7 +170,7 @@ define lexer
             ; Number: starts with 1-9
             if (c >= 49) && (c <= 57)  ; '1'-'9'
             {
-                set token: scan_integer_literal(current, 0)
+                token := scan_integer_literal(current, 0)
                 skip_whitespace false
                 return
             }
@@ -178,7 +178,7 @@ define lexer
             ; Operators: + - * / = % & | ~ < >
             if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 126) || (c = 60) || (c = 62)
             {
-                set token: scan_operator()
+                token := scan_operator()
                 skip_whitespace false
                 return
             }
@@ -189,7 +189,7 @@ define lexer
             ; lex as Invalid so it fails loudly instead of orphaning tokens.
             if (c = 125) || (c = 41) || (c = 93) || (c = 46) || (c = 63) || (c = 33) || (c = 35) || (c = 94) || (c = 92)
             {
-                set token: Token.Punctuation(PunctuationToken(c as u8))
+                token := Token.Punctuation(PunctuationToken(c as u8))
                 read_character()
                 skip_whitespace false
                 return
@@ -198,7 +198,7 @@ define lexer
             ; Punctuation (with linefeed skip): { ( [ ,
             if (c = 123) || (c = 40) || (c = 91) || (c = 44)
             {
-                set token: Token.Punctuation(PunctuationToken(c as u8))
+                token := Token.Punctuation(PunctuationToken(c as u8))
                 read_character()
                 skip_whitespace true
                 return
@@ -207,7 +207,7 @@ define lexer
             ; Newline
             if c = 10  ; '\n'
             {
-                set token: scan_line_feed()
+                token := scan_line_feed()
                 skip_whitespace false
                 return
             }
@@ -225,7 +225,7 @@ define lexer
                 if current <> null and *current = 61
                 {
                     read_character()
-                    set token: Token.Colon(ColonToken(false, true))
+                    token := Token.Colon(ColonToken(false, true))
                     skip_whitespace true
                     return
                 }
@@ -239,7 +239,7 @@ define lexer
                 skip_whitespace false
                 if current <> null and *current = 10
                     scan_line_feed()
-                set token: Token.Colon(ColonToken(false, false))
+                token := Token.Colon(ColonToken(false, false))
                 skip_whitespace false
                 return
             }
@@ -247,7 +247,7 @@ define lexer
             ; Numeric literal starting with 0
             if c = 48  ; '0'
             {
-                set token: scan_numeric_literal()
+                token := scan_numeric_literal()
                 skip_whitespace false
                 return
             }
@@ -256,7 +256,7 @@ define lexer
             if c = 64  ; '@'
             {
                 read_character()
-                set token: scan_attribute()
+                token := scan_attribute()
                 skip_whitespace false
                 return
             }
@@ -264,7 +264,7 @@ define lexer
             ; String literal
             if c = 34  ; '"'
             {
-                set token: scan_string_literal()
+                token := scan_string_literal()
                 skip_whitespace false
                 return
             }
@@ -272,7 +272,7 @@ define lexer
             ; String identifier (freeform identifier)
             if c = 39  ; '\''
             {
-                set token: scan_string_identifier()
+                token := scan_string_identifier()
                 skip_whitespace false
                 return
             }
@@ -280,13 +280,13 @@ define lexer
             ; Fragment literal
             if c = 96  ; '`'
             {
-                set token: scan_fragment_literal()
+                token := scan_fragment_literal()
                 skip_whitespace false
                 return
             }
 
             ; Invalid token
-            set token: Token.Invalid(InvalidToken())
+            token := Token.Invalid(InvalidToken())
             skip_whitespace false
         }
 
@@ -346,7 +346,7 @@ define lexer
                 if ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90)) || ((c >= 48) && (c <= 57)) || (c = 95)
                 {
                     read_character()
-                    set length: length + 1
+                    length := length + 1
                 }
                 else
                     return Token.Identifier(IdentifierToken(String^this(start, length)))
@@ -372,7 +372,7 @@ define lexer
                 if ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90)) || ((c >= 48) && (c <= 57)) || (c = 95)
                 {
                     read_character()
-                    set length: length + 1
+                    length := length + 1
                 }
                 else
                     return Token.Attribute(AttributeToken(String^this(start, length)))
@@ -387,7 +387,7 @@ define lexer
             while true
             {
                 read_character()
-                set length: length + 1
+                length := length + 1
 
                 if current = null
                 {
@@ -418,7 +418,7 @@ define lexer
             while true
             {
                 read_character()
-                set length: length + 1
+                length := length + 1
 
                 if current = null
                     return Token.Invalid(InvalidToken())
@@ -434,7 +434,7 @@ define lexer
                 if c = 92  ; '\\' - escape sequence
                 {
                     read_character()
-                    set length: length + 1
+                    length := length + 1
                     if current = null
                         return Token.Invalid(InvalidToken())
 
@@ -450,7 +450,7 @@ define lexer
                         while i < 4
                         {
                             read_character()
-                            set length: length + 1
+                            length := length + 1
                             if current = null
                                 return Token.Invalid(InvalidToken())
 
@@ -458,7 +458,7 @@ define lexer
                             if ~(((h >= 48) && (h <= 57)) || ((h >= 97) && (h <= 102)) || ((h >= 65) && (h <= 70)))
                                 return Token.Invalid(InvalidToken())
 
-                            set i: i + 1
+                            i := i + 1
                         }
                         continue
                     }
@@ -477,7 +477,7 @@ define lexer
             while true
             {
                 read_character()
-                set length: length + 1
+                length := length + 1
 
                 if current = null
                     return Token.Invalid(InvalidToken())
@@ -493,7 +493,7 @@ define lexer
                 if c = 92  ; '\\' - escape sequence
                 {
                     read_character()
-                    set length: length + 1
+                    length := length + 1
                     if current = null
                         return Token.Invalid(InvalidToken())
 
@@ -508,7 +508,7 @@ define lexer
                         while i < 4
                         {
                             read_character()
-                            set length: length + 1
+                            length := length + 1
                             if current = null
                                 return Token.Invalid(InvalidToken())
 
@@ -516,7 +516,7 @@ define lexer
                             if ~(((h >= 48) && (h <= 57)) || ((h >= 97) && (h <= 102)) || ((h >= 65) && (h <= 70)))
                                 return Token.Invalid(InvalidToken())
 
-                            set i: i + 1
+                            i := i + 1
                         }
                         continue
                     }
@@ -534,7 +534,7 @@ define lexer
             while true
             {
                 read_character()
-                set length: length + 1
+                length := length + 1
 
                 if current = null
                     return Token.Invalid(InvalidToken())
@@ -550,7 +550,7 @@ define lexer
                 if c = 92  ; '\\' - escape sequence
                 {
                     read_character()
-                    set length: length + 1
+                    length := length + 1
                     if current = null
                         return Token.Invalid(InvalidToken())
 
@@ -570,7 +570,7 @@ define lexer
             var length: size_t 0
 
             read_character()
-            set length: length + 1
+            length := length + 1
 
             if current = null
                 return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String^this(start, length)))))
@@ -602,7 +602,7 @@ define lexer
             while true
             {
                 read_character()
-                set length: length + 1
+                length := length + 1
 
                 if current = null
                     return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String^this(start, length)))))
@@ -629,7 +629,7 @@ define lexer
             while true
             {
                 read_character()
-                set length: length + 1
+                length := length + 1
 
                 if current = null
                     return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String^this(start, length)))))
@@ -653,7 +653,7 @@ define lexer
             while true
             {
                 read_character()
-                set length: length + 1
+                length := length + 1
 
                 if current = null
                     return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String^this(start, length)))))
@@ -674,7 +674,7 @@ define lexer
             while true
             {
                 read_character()
-                set length: length + 1
+                length := length + 1
 
                 if current = null
                     return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String^this(start, length)))))
@@ -992,12 +992,12 @@ define lexer
 
         procedure restore_state(mutable this, s: LexerState)
         {
-            set current: s.current
-            set position: s.position
-            set previous_position: s.previous_position
-            set token: s.token
-            set mark: s.mark
-            set mark_at: this.mark_pointer()
+            current := s.current
+            position := s.position
+            previous_position := s.previous_position
+            token := s.token
+            mark := s.mark
+            mark_at := this.mark_pointer()
         }
     }
 

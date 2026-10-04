@@ -20,17 +20,17 @@ function av_row(i: int, v: Vector[double], n: int) returns double
         let s1 s0 + 4.0
         let a0 s0 * (s0 + 1.0) * 0.5 + (fi + 1.0)
         let a1 s1 * (s1 + 1.0) * 0.5 + (fi + 1.0)
-        set acc0: acc0 + f64x4.load(v, j as size_t) / a0
-        set acc1: acc1 + f64x4.load(v, (j + 4) as size_t) / a1
-        set jv: jv + 8.0
-        set j: j + 8
+        acc0 := acc0 + f64x4.load(v, j as size_t) / a0
+        acc1 := acc1 + f64x4.load(v, (j + 4) as size_t) / a1
+        jv := jv + 8.0
+        j := j + 8
     }
     var sum (acc0 + acc1).sum()
     while j < n
     {
         let s ((i + j) as double)
-        set sum: sum + v[j as size_t] / (s * (s + 1.0) * 0.5 + (fi + 1.0))
-        set j: j + 1
+        sum := sum + v[j as size_t] / (s * (s + 1.0) * 0.5 + (fi + 1.0))
+        j := j + 1
     }
     sum
 }
@@ -48,17 +48,17 @@ function atv_row(i: int, v: Vector[double], n: int) returns double
         let s1 s0 + 4.0
         let a0 s0 * (s0 + 1.0) * 0.5 + (jv + 1.0)
         let a1 s1 * (s1 + 1.0) * 0.5 + (jv + 5.0)
-        set acc0: acc0 + f64x4.load(v, j as size_t) / a0
-        set acc1: acc1 + f64x4.load(v, (j + 4) as size_t) / a1
-        set jv: jv + 8.0
-        set j: j + 8
+        acc0 := acc0 + f64x4.load(v, j as size_t) / a0
+        acc1 := acc1 + f64x4.load(v, (j + 4) as size_t) / a1
+        jv := jv + 8.0
+        j := j + 8
     }
     var sum (acc0 + acc1).sum()
     while j < n
     {
         let s ((i + j) as double)
-        set sum: sum + v[j as size_t] / (s * (s + 1.0) * 0.5 + ((j + 1) as double))
-        set j: j + 1
+        sum := sum + v[j as size_t] / (s * (s + 1.0) * 0.5 + ((j + 1) as double))
+        j := j + 1
     }
     sum
 }
@@ -89,23 +89,23 @@ var k 0
 while k < n
 {
     u.put(k as size_t, 1.0)
-    set k: k + 1
+    k := k + 1
 }
 var step 0
 while step < 10
 {
     mul_atav(u, v, tmp, n)
     mul_atav(v, u, tmp, n)
-    set step: step + 1
+    step := step + 1
 }
 var vbv: double 0.0
 var vv: double 0.0
-set k: 0
+k := 0
 while k < n
 {
-    set vbv: vbv + u[k as size_t] * v[k as size_t]
-    set vv: vv + v[k as size_t] * v[k as size_t]
-    set k: k + 1
+    vbv := vbv + u[k as size_t] * v[k as size_t]
+    vv := vv + v[k as size_t] * v[k as size_t]
+    k := k + 1
 }
 let norm sqrt(vbv / vv)
 let scaled (norm * 1000000000.0) as i64

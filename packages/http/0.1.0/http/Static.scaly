@@ -69,7 +69,7 @@ function media_type(name: Slice[u8]) returns Slice[u8]
 {
     var dot name.length
     while dot > 0 and name[dot - 1] <> 46 and name[dot - 1] <> 47
-        set dot: dot - 1
+        dot := dot - 1
     if dot = 0 or name[dot - 1] <> 46
         return "application/octet-stream"
     let ext name.slice_from(dot)
@@ -123,9 +123,9 @@ function safe_relative(rel: Slice[u8]) returns bool
             let seg rel.subslice(start, i)
             if seg.equals("..")
                 return false
-            set start: i + 1
+            start := i + 1
         }
-        set i: i + 1
+        i := i + 1
     }
     true
 }
@@ -140,11 +140,11 @@ function coding_quality(accept: Slice[u8], name: Slice[u8]) returns i64
     {
         var end at
         while end < accept.length and accept[end] <> 44
-            set end: end + 1
+            end := end + 1
         let item trim(accept.subslice(at, end))
         var semi: size_t 0
         while semi < item.length and item[semi] <> 59
-            set semi: semi + 1
+            semi := semi + 1
         let coding trim(item.slice_to(semi))
         var q: i64 1000
         var p semi
@@ -152,16 +152,16 @@ function coding_quality(accept: Slice[u8], name: Slice[u8]) returns i64
         {
             if item[p] = 113 and p + 1 < item.length and item[p + 1] = 61
             {
-                set q: quality_value(item.slice_from(p + 2))
+                q := quality_value(item.slice_from(p + 2))
                 break
             }
-            set p: p + 1
+            p := p + 1
         }
         if coding.equals(name)
             return q
         if coding.equals("*")
-            set star: q
-        set at: end + 1
+            star := q
+        at := end + 1
     }
     if star < 0
         return 0
@@ -182,9 +182,9 @@ function quality_value(s: Slice[u8]) returns i64
     var i: size_t 2
     while i < s.length and scale > 0 and s[i] >= 48 and s[i] <= 57
     {
-        set v: v + ((s[i] - 48) as i64) * scale
-        set scale: scale / 10
-        set i: i + 1
+        v := v + ((s[i] - 48) as i64) * scale
+        scale := scale / 10
+        i := i + 1
     }
     v
 }
@@ -197,7 +197,7 @@ procedure static_cache_here() returns ref[StaticCache] mutable static_cache
         return existing as ref[StaticCache]
     let host Page.allocate_page()
     let made &StaticCache^host(host, Array[ref[StaticEntry]]^host())
-    set static_cache: made
+    static_cache := made
     made
 }
 
@@ -214,17 +214,17 @@ procedure static_entry(path: Slice[u8]) returns ref[StaticEntry] mutable static_
         let e cache.entries.at(i)
         if e.path.as_slice().equals(path)
         {
-            set found: e
+            found := e
             break
         }
-        set i: i + 1
+        i := i + 1
     }
     if found = null
     {
         let host cache.host
         let made &StaticEntry^host(String^host(path.data as pointer[const_char], path.length), host, String^host(), false, 0, 0 - 1, 0, 0, false, false)
         cache.entries.add(made)
-        set found: made
+        found := made
     }
     var e found as ref[StaticEntry]
     ; the path's String was written by a content init, which ends it with a
@@ -235,9 +235,9 @@ procedure static_entry(path: Slice[u8]) returns ref[StaticEntry] mutable static_
     var inode: i64 0
     if scaly_eio_stat(e.path.c_data(), 0 - 1, &st[0]) = 0
     {
-        set size: st[0]
-        set mtime: st[1]
-        set inode: st[2]
+        size := st[0]
+        mtime := st[1]
+        inode := st[2]
     }
     if e.loading = false and (e.loaded_at = 0 or size <> e.size or mtime <> e.mtime or inode <> e.inode)
         load_entry(e, size, mtime, inode)
@@ -251,29 +251,29 @@ procedure static_entry(path: Slice[u8]) returns ref[StaticEntry] mutable static_
 ; the next request); a file that is not there reads as absent.
 procedure load_entry(mutable e: ref[StaticEntry], size: i64, mtime: i64, inode: i64)
 {
-    set e.loading: true
+    e.loading := true
     let fresh Page.allocate_page()
     var p String^fresh(e.path)
     let present File.exists(p)
     var content String^fresh()
     if present
-        set content: File.read_to_string^fresh(p)
+        content := File.read_to_string^fresh(p)
     let old e.page
     let had_own e.owns_page
-    set e.page: fresh
-    set e.owns_page: true
-    set e.content: content
-    set e.present: present
-    set e.size: size
+    e.page := fresh
+    e.owns_page := true
+    e.content := content
+    e.present := present
+    e.size := size
     ; a racy file (STATIC_RACY_NS) keeps a stamp no file has, so the next
     ; request reads it again -- until it has been quiet for that long
     var kept mtime
     if size >= 0 and scaly_eio_wall_ns() - mtime < STATIC_RACY_NS
-        set kept: 0 - 1
-    set e.mtime: kept
-    set e.inode: inode
-    set e.loaded_at: scaly_eio_now_ns()
-    set e.loading: false
+        kept := 0 - 1
+    e.mtime := kept
+    e.inode := inode
+    e.loaded_at := scaly_eio_now_ns()
+    e.loading := false
     ; with what grew from it: the content read onto it is an oversized block
     ; of its own, which release_page alone kept (2026-09-30)
     if had_own
@@ -307,22 +307,22 @@ procedure serve_file(req: ref[Request], mutable res: ref[Response], root: Slice[
     var second: Slice[u8] ""
     if q_br > 0 and q_br >= q_gzip
     {
-        set first: "br"
+        first := "br"
         if q_gzip > 0
-            set second: "gzip"
+            second := "gzip"
     }
     else if q_gzip > 0
     {
-        set first: "gzip"
+        first := "gzip"
         if q_br > 0
-            set second: "br"
+            second := "br"
     }
     let media media_type(rel)
     if first.length > 0 and try_variant(res, &path, base, first, media)
         return
     if second.length > 0 and try_variant(res, &path, base, second, media)
         return
-    set path.length: base
+    path.length := base
     let e static_entry(path.as_slice())
     if e.present = false
     {
@@ -339,10 +339,10 @@ procedure serve_file(req: ref[Request], mutable res: ref[Response], root: Slice[
 ; Send the twin of the file at path[0, base) in `coding` if it exists.
 procedure try_variant(mutable res: ref[Response], mutable path: ref[Array[u8]], base: size_t, coding: Slice[u8], media: Slice[u8]) returns bool mutable static_cache
 {
-    set path.length: base
+    path.length := base
     var suffix: Slice[u8] ".gz"
     if coding.equals("br")
-        set suffix: ".br"
+        suffix := ".br"
     path.add(suffix)
     let e static_entry(path.as_slice())
     if e.present = false

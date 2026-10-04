@@ -9,7 +9,7 @@ define L1Table(var hits: int)
 
 procedure touch(mutable t: ref[L1Table]) returns int
 {
-    set t.hits: t.hits + 1
+    t.hits := t.hits + 1
     t.hits * 10
 }
 

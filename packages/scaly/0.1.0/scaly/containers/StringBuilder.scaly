@@ -13,29 +13,29 @@ define StringBuilder
 
     init ()
     {
-        set buffer: Array[char]^this()
+        buffer := Array[char]^this()
     }
 
     init (size: size_t)
     {
-        set buffer: Array[char]^this(size)
+        buffer := Array[char]^this(size)
     }
 
     init (character: char)
     {
-        set buffer: Array[char]^this()
+        buffer := Array[char]^this()
         append character
     }
 
     init (string: String)
     {
-        set buffer: Array[char]^this()
+        buffer := Array[char]^this()
         append string
     }
 
     init (c_string: pointer[const_char])
     {
-        set buffer: Array[char]^this()
+        buffer := Array[char]^this()
         append c_string
     }
 
@@ -75,13 +75,13 @@ define StringBuilder
         {
             let digit ((v % 10) as char) + ("0" as char)
             digits.add digit
-            set v: v / 10
+            v := v / 10
         }
 
         var i digits.length
         while i > 0
         {
-            set i: i - 1
+            i := i - 1
             let d digits.get i
             if d <> null
                 append(*d)

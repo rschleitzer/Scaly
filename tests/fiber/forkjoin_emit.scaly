@@ -22,8 +22,8 @@ function leaf(lo: int, hi: int) returns int
     var i lo
     while i < hi
     {
-        set acc: acc + (i * i) % 1000003
-        set i: i + 1
+        acc := acc + (i * i) % 1000003
+        i := i + 1
     }
     acc
 }
@@ -49,8 +49,8 @@ function area(a: double, b: double, depth: int) returns double
         while k < 4096
         {
             let x a + h * (k as double)
-            set s: s + x * x * h
-            set k: k + 1
+            s := s + x * x * h
+            k := k + 1
         }
         return s
     }
@@ -68,8 +68,8 @@ function maxof(p: pointer[int], lo: int, hi: int) returns int
         while i < hi
         {
             if *(p + i) > best
-                set best: *(p + i)
-            set i: i + 1
+                best := *(p + i)
+            i := i + 1
         }
         return best
     }
@@ -108,9 +108,9 @@ var k 0
 while k < 32
 {
     let t fa + fb
-    set fa: fb
-    set fb: t
-    set k: k + 1
+    fa := fb
+    fb := t
+    k := k + 1
 }
 check("fib", fib(32) = fa)
 
@@ -119,14 +119,14 @@ var want 0
 var j 0
 while j < big
 {
-    set want: want + (j * j) % 1000003
-    set j: j + 1
+    want := want + (j * j) % 1000003
+    j := j + 1
 }
 check("rsum", rsum(0, big) = want)
 if two and ForkJoin.steal_count() = before
     check("rsum-stolen", false)
 
-set before: ForkJoin.steal_count()
+before := ForkJoin.steal_count()
 let a1 area(0.0, 3.0, 12)
 check("area", a1 > 8.99 and a1 < 9.01)
 check("area-repeat", area(0.0, 3.0, 12) = a1)
@@ -137,27 +137,27 @@ let buf host.allocate((n as size_t) * 8, 8) as pointer[int]
 var i 0
 while i < n
 {
-    set *(buf + i): (i * 7919) % 1000003
-    set i: i + 1
+    *(buf + i) := (i * 7919) % 1000003
+    i := i + 1
 }
-set *(buf + 2345678): 2000000
+*(buf + 2345678) := 2000000
 check("maxof", maxof(buf, 0, n) = 2000000)
 check("balanced", balanced(30))
 
 ; many small executions stay cheap and right
 var small 0
-set i: 0
+i := 0
 while i < 2000
 {
-    set small: small + rsum(0, 5000 + i)
-    set i: i + 1
+    small := small + rsum(0, 5000 + i)
+    i := i + 1
 }
 var small_want 0
-set i: 0
+i := 0
 while i < 2000
 {
-    set small_want: small_want + leaf(0, 5000 + i)
-    set i: i + 1
+    small_want := small_want + leaf(0, 5000 + i)
+    i := i + 1
 }
 check("small", small = small_want)
 print "forkjoin-emit-ok done"

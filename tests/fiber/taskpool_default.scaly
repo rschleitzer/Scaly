@@ -44,24 +44,24 @@ procedure run_wave(mutable arg: pointer[void]) returns pointer[void]
     while i < (20 as size_t)
     {
         let c ((cbase as size_t) + (i * (24 as size_t))) as pointer[size_t]
-        set *c: i
-        set *(((c as size_t) + (8 as size_t)) as pointer[size_t]): results.data as size_t
-        set *(((c as size_t) + (16 as size_t)) as pointer[size_t]): results.length
+        *c := i
+        *(((c as size_t) + (8 as size_t)) as pointer[size_t]) := results.data as size_t
+        *(((c as size_t) + (16 as size_t)) as pointer[size_t]) := results.length
         TaskPool.submit(pool, &square_task, c as pointer[void], g)
-        set i: i + (1 as size_t)
+        i := i + (1 as size_t)
     }
     TaskGroup.wait(g)
     var sum 0 as i64
-    set i: 0 as size_t
+    i := 0 as size_t
     while i < (20 as size_t)
     {
         let v results.get i
         if v <> null
-            set sum: sum + (*v)
-        set i: i + (1 as size_t)
+            sum := sum + (*v)
+        i := i + (1 as size_t)
     }
     TaskGroup.dispose(g)
-    set *out: sum as size_t
+    *out := sum as size_t
     null
 }
 
@@ -74,7 +74,7 @@ if TaskPool.ncpu() < (1 as i64)
 ; down again entirely within the thread's lifetime.
 var child_cell u8[8]
 let ccp child_cell as pointer[size_t]
-set *ccp: 0 as size_t
+*ccp := 0 as size_t
 let t Thread.spawn(&run_wave, child_cell as pointer[void])
 Thread.join(t)
 if (*ccp) <> (2470 as size_t)
@@ -86,7 +86,7 @@ if (*ccp) <> (2470 as size_t)
 ; Main's own wave through main's own default pool.
 var main_cell u8[8]
 let mcp main_cell as pointer[size_t]
-set *mcp: 0 as size_t
+*mcp := 0 as size_t
 let r run_wave(main_cell as pointer[void])
 if (*mcp) <> (2470 as size_t)
 {

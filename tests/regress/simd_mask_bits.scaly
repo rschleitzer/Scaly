@@ -12,9 +12,9 @@ var seen: u64 0
 var order: u64 0
 while bits <> 0
 {
-    set order: (order * 100) + trailing_zeros(bits)
-    set bits: bits & (bits - 1)
-    set seen: seen + 1
+    order := (order * 100) + trailing_zeros(bits)
+    bits := bits & (bits - 1)
+    seen := seen + 1
 }
 let wide u8x32.splat(1) = u8x32.splat(1)
 if order = 205 and seen = 2 and trailing_zeros(0) = 64 and leading_zeros(1) = 63 and count_ones(0xF0F0) = 8 and wide.bits() = 0xFFFFFFFF

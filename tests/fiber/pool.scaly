@@ -19,13 +19,13 @@ while i < 100
 {
     Scheduler.spawn(&nop)
     Scheduler.run()
-    set i: i + 1
+    i := i + 1
 }
 var ok true
 if Fiber.reused_stack_count() < (99 as i64)
-    set ok: false
+    ok := false
 if Fiber.pooled_stack_count() <> (1 as i64)
-    set ok: false
+    ok := false
 if ok
     Console.print "reused "
 
@@ -34,9 +34,9 @@ let ts Scheduler.spawn_sized(&nop, null, 0x10000 as size_t)
 Scheduler.run()
 var sized_ok true
 if Fiber.reused_stack_count() <> r0
-    set sized_ok: false
+    sized_ok := false
 if Fiber.pooled_stack_count() <> (1 as i64)
-    set sized_ok: false
+    sized_ok := false
 if sized_ok
     Console.print "sized "
 

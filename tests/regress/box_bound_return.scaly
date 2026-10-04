@@ -20,7 +20,7 @@ function boxed_label#() returns pointer[String]
 {
     let r &^rp make_label#()
     var n: size_t 0
-    set n: n + 1
+    n := n + 1
     return r
 }
 

@@ -73,7 +73,7 @@ define Box
     {
         var n: int 0
         while (*(s + n)) <> 0
-            set n: n + 1
+            n := n + 1
         n
     }
 
@@ -95,24 +95,24 @@ let other Box(35)
 var ok: bool true
 
 if b.take(21) <> 42
-    set ok: false
+    ok := false
 
 if b.cstr_len("abcde") <> 5
-    set ok: false
+    ok := false
 
 if b.borrow(other) <> 35
-    set ok: false
+    ok := false
 
 if b.combine(35) <> 42
-    set ok: false
+    ok := false
 
 let h Holder[int](3)
 if h.put(9) <> 7
-    set ok: false
+    ok := false
 
 let o Outer[int](Holder[Slot2[int]](Slot2[int](1)))
 if o.feed(5) <> 7
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

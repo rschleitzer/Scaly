@@ -62,19 +62,19 @@ let b Box(7)
 var ok: bool true
 
 if b.scaled(6) <> 42
-    set ok: false
+    ok := false
 
 if b.combine(35) <> 42
-    set ok: false
+    ok := false
 
 if b.only() <> 7
-    set ok: false
+    ok := false
 
 if b.via_sibling() <> 42
-    set ok: false
+    ok := false
 
 if Box.bump(41) <> 42
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

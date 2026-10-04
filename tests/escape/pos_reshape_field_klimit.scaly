@@ -20,7 +20,7 @@ define Sink
 )
 {
     procedure stash(mutable this, pr: pointer[Node])
-        set this.slot: (*pr).next.val
+        this.slot := (*pr).next.val
 }
 
 procedure trigger(mutable sink: Sink, n: pointer[Node])

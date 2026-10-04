@@ -8,18 +8,18 @@ procedure sum_local(n: int) returns int
 {
     let a Payload(String("hello"), n)
     var r: ref[Payload]? null
-    set r: &a
+    r := &a
     let t: ref[Payload] &a
     var s 0
     if r <> null
-        set s: r.n
+        s := r.n
     s + t.n
 }
 
 procedure pass_on(p: ref[Payload]) returns ref[Payload]?
 {
     var r: ref[Payload]? null
-    set r: p
+    r := p
     r
 }
 
@@ -29,7 +29,7 @@ var ok: bool false
 if q <> null
     if q.n = 5
         if sum_local(21) = 42
-            set ok: true
+            ok := true
 if ok
     print("PASS")
 else

@@ -14,7 +14,7 @@ define Point
 {
     init(a: int)
     {
-        set x: a
+        x := a
     }
 }
 

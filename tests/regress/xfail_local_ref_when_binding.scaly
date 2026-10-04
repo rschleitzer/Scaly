@@ -12,7 +12,7 @@ procedure pick(n: int) returns ref[Payload]?
     var r: ref[Payload]? null
     choose u
         when a: A
-            set r: &a
+            r := &a
         else
             0
     r

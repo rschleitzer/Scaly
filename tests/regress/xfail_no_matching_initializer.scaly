@@ -24,8 +24,8 @@ define Box
 {
     init(c: Cfg)
     {
-        set cfg: c
-        set n: 7
+        cfg := c
+        n := 7
     }
 }
 

@@ -11,12 +11,12 @@ define Holder (var sb: pointer[StringBuilder])
 procedure build(host: ref[Page]) returns String
 {
     let p host.allocate(sizeof StringBuilder, 8) as pointer[StringBuilder]
-    set *p: StringBuilder()
+    *p := StringBuilder()
     var i: int 0
     while i < 300
     {
         (*p).append "abcdefghij"
-        set i: i + 1
+        i := i + 1
     }
     (*p).to_string()
 }

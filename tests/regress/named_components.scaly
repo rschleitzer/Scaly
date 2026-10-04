@@ -32,23 +32,23 @@ let c &Rec^host(beta: 2, gamma: 3, alpha: 1)
 
 var ok true
 if a.alpha <> 1
-    set ok: false
+    ok := false
 if a.beta <> 2
-    set ok: false
+    ok := false
 if a.gamma <> 3
-    set ok: false
+    ok := false
 if b.alpha <> 1
-    set ok: false
+    ok := false
 if b.beta <> 2
-    set ok: false
+    ok := false
 if b.gamma <> 3
-    set ok: false
+    ok := false
 if c.alpha <> 1
-    set ok: false
+    ok := false
 if c.beta <> 2
-    set ok: false
+    ok := false
 if c.gamma <> 3
-    set ok: false
+    ok := false
 
 ; a TRAILING field may still be left out where it carries a default
 if ok

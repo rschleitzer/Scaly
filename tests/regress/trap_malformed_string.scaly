@@ -25,14 +25,14 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var i 0
     while i < 16
     {
-        set *(buf + i): 0x80 as u8   ; continuation bit set, forever
-        set i: i + 1
+        *(buf + i) := 0x80 as u8   ; continuation bit set, forever
+        i := i + 1
     }
 
     var s String()
     ; String.data is the stdlib's (report_string_data_read#): write the one
     ; pointer field through the record's address, which says what it is
-    set *(&s as pointer[pointer[u8]]): buf
+    *(&s as pointer[pointer[u8]]) := buf
     let n s.get_length()
 
     print "FAIL: the malformed string was read"

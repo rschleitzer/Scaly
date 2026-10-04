@@ -14,11 +14,11 @@ define Widget
 {
     init(flag: bool, v: int)
     {
-        set a: v
+        a := v
         if flag
-            set b: 1
+            b := 1
         else
-            set b: 2
+            b := 2
     }
 }
 

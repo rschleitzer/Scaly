@@ -12,7 +12,7 @@
 let keep Page.allocate_page()
 let p Page.allocate_page()
 let raw p as pointer[u8]
-set *(raw + 100): 7
+*(raw + 100) := 7
 Page.release_page(p)
 if *(raw + 100) = 0xDD
     print "PASS"

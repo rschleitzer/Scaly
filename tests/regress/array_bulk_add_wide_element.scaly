@@ -18,7 +18,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     while k < 20
     {
         src.put(k, (k as int) + 1)
-        set k: k + 1
+        k := k + 1
     }
 
     var a Array[int]()
@@ -35,8 +35,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var sum: int 0
     while i < a.get_length()
     {
-        set sum: sum + a[i]
-        set i: i + 1
+        sum := sum + a[i]
+        i := i + 1
     }
     ; 2 * (1 + ... + 20) = 420
     if sum <> 420

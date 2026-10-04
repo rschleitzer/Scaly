@@ -16,9 +16,9 @@
 ; Expected: PASS
 
 var arr u64[4]
-set arr[0]: 111
-set arr[1]: 222
-set arr[2]: 333
+arr[0] := 111
+arr[1] := 222
+arr[2] := 333
 
 ; The values themselves were never the problem — guard them anyway so a future
 ; change to fixed-array storage cannot make the rest of this test vacuous.
@@ -59,7 +59,7 @@ let r1: u64 p1
 if r1 <> (222 as u64)
     exit 7
 
-set p1: 999 as u64
+p1 := 999 as u64
 let after arr[1] as size_t
 if after <> (999 as size_t)
     exit 8

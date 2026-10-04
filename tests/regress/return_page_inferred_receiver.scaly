@@ -42,8 +42,8 @@ define Rec (a: int  b: int)
 {
     init(a: int, b: int)
     {
-        set this.a: a
-        set this.b: b
+        this.a := a
+        this.b := b
     }
 }
 
@@ -52,7 +52,7 @@ define Maker (tag: int)
 {
     init()
     {
-        set this.tag: 1
+        this.tag := 1
     }
     function make#(this: Maker) returns pointer[Rec]
         Rec#(7, 8)
@@ -63,7 +63,7 @@ define Borrow (r: Rec)
 {
     init()
     {
-        set this.r: Rec(1, 2)
+        this.r := Rec(1, 2)
     }
     function make(this: Borrow) returns pointer[Rec]
         &this.r
@@ -73,8 +73,8 @@ define Holder (mk: Maker  bw: Borrow)
 {
     init()
     {
-        set this.mk: Maker()
-        set this.bw: Borrow()
+        this.mk := Maker()
+        this.bw := Borrow()
     }
     function get_maker(this: Holder) returns pointer[Maker]
         &this.mk
@@ -145,7 +145,7 @@ define HostB (mk: Borrow)
 {
     init()
     {
-        set this.mk: Borrow()
+        this.mk := Borrow()
     }
     function shadow_to_maker(this: HostB) returns pointer[Rec]
     {
@@ -167,7 +167,7 @@ define HostM (mk: Maker)
 {
     init()
     {
-        set this.mk: Maker()
+        this.mk := Maker()
     }
     ; (the borrowed object comes in as a parameter — a Borrow built as a LOCAL
     ; would hand out a pointer into this frame, which is a different bug)
@@ -220,7 +220,7 @@ var i 0
 while i < 200
 {
     let c String("012345678901234567890123456789012345678901234567890123456789")
-    set i: i + 1
+    i := i + 1
 }
 let a1 p1.a
 let b1 p1.b
@@ -250,31 +250,31 @@ let a13 p13.a
 let b13 p13.b
 var ok true
 if (a1 <> 7) || (b1 <> 8)
-    set ok: false
+    ok := false
 if (a2 <> 7) || (b2 <> 8)
-    set ok: false
+    ok := false
 if (a3 <> 1) || (b3 <> 2)
-    set ok: false
+    ok := false
 if (a4 <> 7) || (b4 <> 8)
-    set ok: false
+    ok := false
 if (a5 <> 7) || (b5 <> 8)
-    set ok: false
+    ok := false
 if (a6 <> 1) || (b6 <> 2)
-    set ok: false
+    ok := false
 if (a7 <> 7) || (b7 <> 8)
-    set ok: false
+    ok := false
 if (a8 <> 7) || (b8 <> 8)
-    set ok: false
+    ok := false
 if (a9 <> 1) || (b9 <> 2)
-    set ok: false
+    ok := false
 if (a10 <> 1) || (b10 <> 2)
-    set ok: false
+    ok := false
 if (a11 <> 7) || (b11 <> 8)
-    set ok: false
+    ok := false
 if (a12 <> 7) || (b12 <> 8)
-    set ok: false
+    ok := false
 if (a13 <> 7) || (b13 <> 8)
-    set ok: false
+    ok := false
 if ok
     print("PASS")
 else

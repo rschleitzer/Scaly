@@ -3,7 +3,7 @@
 ; mode: run
 ; expect: 9
 var count 0
-for i in 3 : { for j in 5 : { if j % 2 = 1 : continue else set count : count + 1 } }
+for i in 3 : { for j in 5 : { if j % 2 = 1 : continue else count := count + 1 } }
 let literate_result (count)
 if literate_result = (9)
     print("PASS")

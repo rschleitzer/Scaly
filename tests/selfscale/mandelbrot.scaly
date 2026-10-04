@@ -18,15 +18,15 @@ function row_count(y: int, n: int) returns int
         while i < 50 and inside
         {
             let tr zr * zr - zi * zi + cr
-            set zi: 2.0 * zr * zi + ci
-            set zr: tr
+            zi := 2.0 * zr * zi + ci
+            zr := tr
             if zr * zr + zi * zi > 4.0
-                set inside: false
-            set i: i + 1
+                inside := false
+            i := i + 1
         }
         if inside
-            set count: count + 1
-        set x: x + 1
+            count := count + 1
+        x := x + 1
     }
     count
 }
@@ -38,5 +38,5 @@ for y in n
 
 var total 0
 for c in counts
-    set total: total + c
+    total := total + c
 print("mandelbrot `n`: `total` points inside")

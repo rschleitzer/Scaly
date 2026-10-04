@@ -20,13 +20,13 @@
 define Alpha (k: int)
 {
     init(k: int)
-        set this.k: k
+        this.k := k
 }
 
 define Rec (a: ref[Alpha])
 {
     init(a: ref[Alpha])
-        set this.a: a
+        this.a := a
 }
 
 function free_fn(a: ref[Alpha]) returns int

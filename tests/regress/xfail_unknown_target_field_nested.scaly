@@ -11,7 +11,7 @@ procedure run()
 {
     var i Inner(1)
     var o Outer(2, &i)
-    set o.inner.nosuch: 8
+    o.inner.nosuch := 8
     if i.x = 1
         print("PASS")
     else

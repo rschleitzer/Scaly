@@ -8,15 +8,15 @@ mutable keeper: ref[Box]? null
 
 procedure keep(b: ref[Box]) mutable keeper
 {
-    set keeper: b
+    keeper := b
 }
 
 procedure before(host: ref[Page]) returns int mutable keeper
 {
     var b Box^host(1, 0)
-    set b.fixed: 2
+    b.fixed := 2
     keep(&b)
-    set b.count: 5
+    b.count := 5
     b.fixed + b.count
 }
 

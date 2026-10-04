@@ -18,13 +18,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -43,7 +43,7 @@ procedure report(tag: pointer[const_char], work: i64, unit: pointer[const_char],
     sb.append " ns  "
     var rate 0 as i64
     if ns > 0
-        set rate: (work * 1000) / ns
+        rate := (work * 1000) / ns
     let rs num_to_string(rate)
     sb.append rs
     var us String(unit)
@@ -58,7 +58,7 @@ procedure fill_f32(mutable v: Vector[float], n: size_t, x: float)
     while i < n
     {
         v.put(i, x)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -100,23 +100,23 @@ procedure mm_f32(a: Vector[float], b: Vector[float], mutable c: Vector[float], m
                 let b1 bp[x * n + j + 1]
                 let b2 bp[x * n + j + 2]
                 let b3 bp[x * n + j + 3]
-                set acc00: acc00 + a0 * b0
-                set acc01: acc01 + a0 * b1
-                set acc02: acc02 + a0 * b2
-                set acc03: acc03 + a0 * b3
-                set acc10: acc10 + a1 * b0
-                set acc11: acc11 + a1 * b1
-                set acc12: acc12 + a1 * b2
-                set acc13: acc13 + a1 * b3
-                set acc20: acc20 + a2 * b0
-                set acc21: acc21 + a2 * b1
-                set acc22: acc22 + a2 * b2
-                set acc23: acc23 + a2 * b3
-                set acc30: acc30 + a3 * b0
-                set acc31: acc31 + a3 * b1
-                set acc32: acc32 + a3 * b2
-                set acc33: acc33 + a3 * b3
-                set x: x + 1
+                acc00 := acc00 + a0 * b0
+                acc01 := acc01 + a0 * b1
+                acc02 := acc02 + a0 * b2
+                acc03 := acc03 + a0 * b3
+                acc10 := acc10 + a1 * b0
+                acc11 := acc11 + a1 * b1
+                acc12 := acc12 + a1 * b2
+                acc13 := acc13 + a1 * b3
+                acc20 := acc20 + a2 * b0
+                acc21 := acc21 + a2 * b1
+                acc22 := acc22 + a2 * b2
+                acc23 := acc23 + a2 * b3
+                acc30 := acc30 + a3 * b0
+                acc31 := acc31 + a3 * b1
+                acc32 := acc32 + a3 * b2
+                acc33 := acc33 + a3 * b3
+                x := x + 1
             }
             c.put(((it * 4 + 0) * n + j) as size_t, acc00)
             c.put(((it * 4 + 0) * n + j + 1) as size_t, acc01)
@@ -134,7 +134,7 @@ procedure mm_f32(a: Vector[float], b: Vector[float], mutable c: Vector[float], m
             c.put(((it * 4 + 3) * n + j + 1) as size_t, acc31)
             c.put(((it * 4 + 3) * n + j + 2) as size_t, acc32)
             c.put(((it * 4 + 3) * n + j + 3) as size_t, acc33)
-            set j: j + 4
+            j := j + 4
         }
     }
 }
@@ -152,8 +152,8 @@ procedure softmax_f32(x: Vector[float], mutable out: Vector[float], rows: int, n
         {
             let v xp[r * n + j]
             if v > mx
-                set mx: v
-            set j: j + 1
+                mx := v
+            j := j + 1
         }
         var sum: float 0.0
         var j2 0
@@ -161,15 +161,15 @@ procedure softmax_f32(x: Vector[float], mutable out: Vector[float], rows: int, n
         {
             let e expf(xp[r * n + j2] - mx)
             out.put((r * n + j2) as size_t, e)
-            set sum: sum + e
-            set j2: j2 + 1
+            sum := sum + e
+            j2 := j2 + 1
         }
         let inv 1.0 / sum
         var j3 0
         while j3 < n
         {
             out.put((r * n + j3) as size_t, op[r * n + j3] * inv)
-            set j3: j3 + 1
+            j3 := j3 + 1
         }
     }
 }
@@ -186,8 +186,8 @@ procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[flo
         var j 0
         while j < n
         {
-            set sum: sum + xp[r * n + j]
-            set j: j + 1
+            sum := sum + xp[r * n + j]
+            j := j + 1
         }
         let mean sum / (n as float)
         var vsum: float 0.0
@@ -195,8 +195,8 @@ procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[flo
         while j2 < n
         {
             let d xp[r * n + j2] - mean
-            set vsum: vsum + d * d
-            set j2: j2 + 1
+            vsum := vsum + d * d
+            j2 := j2 + 1
         }
         let denom sqrtf(vsum / (n as float) + eps)
         let inv 1.0 / denom
@@ -205,7 +205,7 @@ procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[flo
         {
             let z (xp[r * n + j3] - mean) * inv
             out.put((r * n + j3) as size_t, z * gp[j3] + bp[j3])
-            set j3: j3 + 1
+            j3 := j3 + 1
         }
     }
 }
@@ -228,7 +228,7 @@ procedure gelu_f32(x: Vector[float], mutable out: Vector[float], rows: int, n: i
         {
             let g gelu_scalar(xp[r * n + j])
             out.put((r * n + j) as size_t, g)
-            set j: j + 1
+            j := j + 1
         }
     }
 }
@@ -245,7 +245,7 @@ procedure embedding_f32(table: Vector[float], ids: Vector[i64], mutable out: Vec
         while j < dim
         {
             out.put((t * dim + j) as size_t, tp[(id as int) * dim + j])
-            set j: j + 1
+            j := j + 1
         }
     }
 }
@@ -342,7 +342,7 @@ procedure bench_embedding(tokens: int, dim: int, vocab: int)
     while t < tokens
     {
         ids.put(t as size_t, (t % vocab) as i64)
-        set t: t + 1
+        t := t + 1
     }
     var out Vector[float]((tokens * dim) as size_t)
     ; bytes moved: read + write of tokens*dim f32

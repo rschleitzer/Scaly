@@ -41,9 +41,9 @@ function drive() returns String
     var kept Payload(String("x"))
     choose produce()
         when ok: Ok
-            set kept: ok
+            kept := ok
         when e: Err
-            set kept: Payload(String("err"))
+            kept := Payload(String("err"))
     finish(kept.text)
 }
 
@@ -56,8 +56,8 @@ function churn(n: size_t) returns size_t
         var csb StringBuilder()
         csb.append "recycle recycle recycle recycle recycle recycle"
         let junk csb.to_string()
-        set total: total + junk.get_length()
-        set i: i + 1
+        total := total + junk.get_length()
+        i := i + 1
     }
     total
 }

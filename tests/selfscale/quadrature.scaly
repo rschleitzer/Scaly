@@ -15,8 +15,8 @@ function g(x: double) returns double
     {
         let c (k as double) * 0.01461 + 0.05
         let d x - c
-        set y: y + 1.0 / (d * d + 0.00001 * ((k % 7 + 1) as double))
-        set k: k + 1
+        y := y + 1.0 / (d * d + 0.00001 * ((k % 7 + 1) as double))
+        k := k + 1
     }
     y
 }
@@ -40,8 +40,8 @@ var k 0
 while k < 12
 {
     let lo (k as double) * 0.25
-    set total: total + adapt(lo, lo + 0.25, simpson(lo, lo + 0.25), 0.000000000001, 60)
-    set k: k + 1
+    total := total + adapt(lo, lo + 0.25, simpson(lo, lo + 0.25), 0.000000000001, 60)
+    k := k + 1
 }
 let scaled (total * 1000000.0) as i64
 print("quadrature: `scaled` (x 1e-6)")

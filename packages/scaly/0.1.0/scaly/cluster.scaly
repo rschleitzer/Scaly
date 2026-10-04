@@ -202,9 +202,9 @@ define Cluster
     {
         var pre u8[24]
         let pw pre as pointer[u64]
-        set pw[0]: NODE_WIRE_MAGIC
-        set pw[1]: NODE_PROTO_VERSION
-        set pw[2]: scaly_build_stamp()
+        pw[0] := NODE_WIRE_MAGIC
+        pw[1] := NODE_PROTO_VERSION
+        pw[2] := scaly_build_stamp()
         if Io.tcp_write_all(fd, pre as pointer[void], 24) = false
         {
             close(fd)
@@ -220,7 +220,7 @@ define Cluster
                 close(fd)
                 return null
             }
-            set got: got + (r as size_t)
+            got := got + (r as size_t)
         }
         let iw inb as pointer[u64]
         let magic iw[0]
@@ -259,7 +259,7 @@ define Cluster
         let np &NodePeer^p(0, fd, true, theirs, p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[u64], p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]], 0, p.allocate(NODE_MAX_CHANNELS * 8, 8) as pointer[pointer[Channel]], 0, 0, scaly_eio_now_ns(), 0, 0)
         Io.set_nonblocking(fd)
         let handle Thread.spawn(&node_reader_entry, np as pointer[void])
-        set np.reader: handle
+        np.reader := handle
         np
     }
 
@@ -286,7 +286,7 @@ define Cluster
                 Cluster.release(p)
                 return c0
             }
-            set i: i + 1
+            i := i + 1
         }
         if p.chan_count >= NODE_MAX_CHANNELS
         {
@@ -301,9 +301,9 @@ define Cluster
             return c1
         }
         let c Channel.create()
-        set ids[p.chan_count]: id
-        set chs[p.chan_count]: c
-        set p.chan_count: p.chan_count + 1
+        ids[p.chan_count] := id
+        chs[p.chan_count] := c
+        p.chan_count := p.chan_count + 1
         Cluster.release(p)
         c
     }
@@ -328,8 +328,8 @@ define Cluster
             scaly_panic_resource("node: monitor table full", NODE_MAX_CHANNELS, 113 as i32)
         }
         let ms p.monitors
-        set ms[p.monitor_count]: c
-        set p.monitor_count: p.monitor_count + 1
+        ms[p.monitor_count] := c
+        p.monitor_count := p.monitor_count + 1
         Cluster.release(p)
         c
     }
@@ -363,9 +363,9 @@ define Cluster
         Page.release_page(region)
         var hdr u8[24]
         let hw hdr as pointer[u64]
-        set hw[0]: NODE_FRAME_DATA
-        set hw[1]: id
-        set hw[2]: flen as u64
+        hw[0] := NODE_FRAME_DATA
+        hw[1] := id
+        hw[2] := flen as u64
         Cluster.wacquire(p)
         if p.alive
         {
@@ -390,9 +390,9 @@ define Cluster
             Cluster.wacquire(p)
         var hdr u8[24]
         let hw hdr as pointer[u64]
-        set hw[0]: kind
-        set hw[1]: 0
-        set hw[2]: 0
+        hw[0] := kind
+        hw[1] := 0
+        hw[2] := 0
         if p.alive
             Io.tcp_write_all(p.fd, hdr as pointer[void], 24)
         Cluster.wrelease(p)
@@ -412,8 +412,8 @@ define Cluster
             Cluster.release(p)
             return
         }
-        set p.alive: false
-        set p.down_reason: reason
+        p.alive := false
+        p.down_reason := reason
         let nc p.chan_count
         let nm p.monitor_count
         Cluster.release(p)
@@ -422,14 +422,14 @@ define Cluster
         while i < nc
         {
             Channel.close_sender(chs[i])
-            set i: i + 1
+            i := i + 1
         }
         var j: size_t 0
         let ms p.monitors
         while j < nm
         {
             Cluster.deliver_down(ms[j], reason)
-            set j: j + 1
+            j := j + 1
         }
     }
 
@@ -470,9 +470,9 @@ define Cluster
     procedure poll_in(fd: i32, ms: i32)
     {
         var pfd u8[8]
-        set *(pfd as pointer[i32]): fd
+        *(pfd as pointer[i32]) := fd
         ; POLLIN=1 on both OSes (inlined like Io.wait_ready).
-        set *(((pfd as size_t) + 4) as pointer[u16]): 1
+        *(((pfd as size_t) + 4) as pointer[u16]) := 1
         poll(pfd as pointer[pollfd], 1 as u64, ms)
     }
 
@@ -499,8 +499,8 @@ define Cluster
             {
                 if r <= 0
                     return false
-                set done: done + (r as size_t)
-                set p.last_rx: scaly_eio_now_ns()
+                done := done + (r as size_t)
+                p.last_rx := scaly_eio_now_ns()
             }
         }
         true
@@ -521,11 +521,11 @@ define Cluster
         let len h[2] as size_t
         var bad false
         if kind <> NODE_FRAME_DATA
-            set bad: true
+            bad := true
         if len < 32
-            set bad: true
+            bad := true
         if len > NODE_MAX_FRAME
-            set bad: true
+            bad := true
         if bad
         {
             ; Framing violation — the rule-8 trust boundary: treat as
@@ -574,7 +574,7 @@ define Cluster
             if t - last_hb >= (NODE_HEARTBEAT_MS * 1000000)
             {
                 Cluster.send_control(p, NODE_FRAME_HEARTBEAT, true)
-                set last_hb: t
+                last_hb := t
             }
             if t - p.last_rx > (NODE_SUSPECT_MS * 1000000)
             {
@@ -591,11 +591,11 @@ define Cluster
                     Cluster.teardown(p, NODE_DOWN_SUSPECT)
                     break
                 }
-                set got: got + (r as size_t)
-                set p.last_rx: scaly_eio_now_ns()
+                got := got + (r as size_t)
+                p.last_rx := scaly_eio_now_ns()
                 if got = 24
                 {
-                    set got: 0
+                    got := 0
                     if Cluster.dispatch(p, hdr as pointer[u64]) = false
                         break
                 }

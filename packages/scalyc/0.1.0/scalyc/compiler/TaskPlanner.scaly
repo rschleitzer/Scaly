@@ -171,50 +171,50 @@ define TaskPlanner
     {
         init()
         {
-            set report_files: Array[String]^this()
-            set report_offsets: Array[size_t]^this()
-            set report_verdicts: Array[String]^this()
-            set loops_total: 0
-            set loops_parallel: 0
-            set plan_functions: null
-            set plan_globals: null
-            set current_file: String^this("")
-            set cls_locals: Array[String]^this()
-            set cls_aliased: Array[String]^this()
-            set cls_blocked: false
-            set cls_reason: String^this("")
-            set cls_loop_var: String^this("")
-            set cls_depth: 0
-            set pure_memo_names: Array[String]^this()
-            set pure_memo_flags: Array[size_t]^this()
-            set pure_stack: Array[String]^this()
-            set pw_impure: false
-            set wm_memo_names: Array[String]^this()
-            set wm_memo_vals: Array[size_t]^this()
-            set wm_stack: Array[String]^this()
-            set wr_mask: 0
-            set wr_names: Array[String]^this()
-            set wr_masks: Array[size_t]^this()
-            set wr_base: 0
-            set census_while: false
-            set while_files: Array[String]^this()
-            set while_offsets: Array[size_t]^this()
-            set while_verdicts: Array[String]^this()
-            set whiles_total: 0
-            set whiles_counted: 0
-            set whiles_parallel: 0
-            set cls_counter_mode: false
-            set cls_counter_writes: 0
-            set cls_counter_steps: 0
-            set cls_step_first: false
-            set cls_continue_skips: false
-            set cls_keeps: false
-            set cls_takes_address: false
-            set red_names: Array[String]^this()
-            set red_ops: Array[int]^this()
-            set red_counts: Array[size_t]^this()
-            set cls_own_label: String^this("")
-            set cls_inner_labels: Array[String]^this()
+            report_files := Array[String]^this()
+            report_offsets := Array[size_t]^this()
+            report_verdicts := Array[String]^this()
+            loops_total := 0
+            loops_parallel := 0
+            plan_functions := null
+            plan_globals := null
+            current_file := String^this("")
+            cls_locals := Array[String]^this()
+            cls_aliased := Array[String]^this()
+            cls_blocked := false
+            cls_reason := String^this("")
+            cls_loop_var := String^this("")
+            cls_depth := 0
+            pure_memo_names := Array[String]^this()
+            pure_memo_flags := Array[size_t]^this()
+            pure_stack := Array[String]^this()
+            pw_impure := false
+            wm_memo_names := Array[String]^this()
+            wm_memo_vals := Array[size_t]^this()
+            wm_stack := Array[String]^this()
+            wr_mask := 0
+            wr_names := Array[String]^this()
+            wr_masks := Array[size_t]^this()
+            wr_base := 0
+            census_while := false
+            while_files := Array[String]^this()
+            while_offsets := Array[size_t]^this()
+            while_verdicts := Array[String]^this()
+            whiles_total := 0
+            whiles_counted := 0
+            whiles_parallel := 0
+            cls_counter_mode := false
+            cls_counter_writes := 0
+            cls_counter_steps := 0
+            cls_step_first := false
+            cls_continue_skips := false
+            cls_keeps := false
+            cls_takes_address := false
+            red_names := Array[String]^this()
+            red_ops := Array[int]^this()
+            red_counts := Array[size_t]^this()
+            cls_own_label := String^this("")
+            cls_inner_labels := Array[String]^this()
         }
 
         ; ================================================================
@@ -223,13 +223,13 @@ define TaskPlanner
         ; ================================================================
         procedure analyze(mutable this: TaskPlanner, plan: Plan, entry_file: String)
         {
-            set plan_functions: plan.functions
-            set plan_globals: plan.globals
+            plan_functions := plan.functions
+            plan_globals := plan.globals
             if plan.functions <> null
             {
                 for func in plan.functions
                 {
-                    set current_file: String^this(func.file)
+                    current_file := String^this(func.file)
                     choose func.impl
                         when action: Action
                             this.find_action(action)
@@ -239,7 +239,7 @@ define TaskPlanner
             }
             if plan.statements <> null
             {
-                set current_file: String^this(entry_file)
+                current_file := String^this(entry_file)
                 for stmt in plan.statements
                     this.find_statement(stmt)
             }
@@ -263,7 +263,7 @@ define TaskPlanner
                 let op_ptr ops.get i
                 if op_ptr <> null
                     this.find_operand(op_ptr.unwrap())
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -314,7 +314,7 @@ define TaskPlanner
                             let c_ptr tp.components.get i
                             if c_ptr <> null
                                 this.find_operands(c_ptr.value)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -328,7 +328,7 @@ define TaskPlanner
                             let s_ptr blk.statements.get i
                             if s_ptr <> null
                                 this.find_statement(s_ptr.unwrap())
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -361,12 +361,12 @@ define TaskPlanner
                                             let cs (*cs_ptr)
                                             this.find_operands(cs.condition)
                                         }
-                                        set ci: ci + 1
+                                        ci := ci + 1
                                     }
                                 }
                                 this.find_statement_ref(br.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.find_statement_ref(mt.alternative)
@@ -385,7 +385,7 @@ define TaskPlanner
                                 let w (*w_ptr)
                                 this.find_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.find_statement_ref(ch.alternative)
@@ -419,7 +419,7 @@ define TaskPlanner
                                 let w (*w_ptr)
                                 this.find_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.find_statement_ref(tr.alternative)
@@ -458,7 +458,7 @@ define TaskPlanner
                             let row_ptr mx.operations.get i
                             if row_ptr <> null
                                 this.find_operands(row_ptr)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -483,7 +483,7 @@ define TaskPlanner
         procedure classify_for(mutable this: TaskPlanner, fr: PlannedFor)
         {
             this.classify_body(fr)
-            set loops_total: loops_total + 1
+            loops_total := loops_total + 1
             ; Report strings must live on the TaskPlanner's own page —
             ; a default-local copy dangles by print time (the use-vis
             ; report's `String^this` + bound-local-add idiom).
@@ -501,7 +501,7 @@ define TaskPlanner
             }
             if cls_blocked = false
             {
-                set loops_parallel: loops_parallel + 1
+                loops_parallel := loops_parallel + 1
                 let par_copy String^this("parallel")
                 report_verdicts.add par_copy
             }
@@ -512,16 +512,16 @@ define TaskPlanner
         ; the Emitter's per-site promotion query.
         procedure classify_body(mutable this: TaskPlanner, fr: PlannedFor)
         {
-            set cls_locals.length: 0
-            set cls_aliased.length: 0
-            set cls_blocked: false
-            set cls_reason: String^this("")
-            set cls_loop_var: String^this(fr.identifier)
-            set cls_own_label: String^this(fr.loop_label)
-            set cls_inner_labels.length: 0
-            set cls_depth: 0
-            set cls_keeps: false
-            set cls_takes_address: false
+            cls_locals.length := 0
+            cls_aliased.length := 0
+            cls_blocked := false
+            cls_reason := String^this("")
+            cls_loop_var := String^this(fr.identifier)
+            cls_own_label := String^this(fr.loop_label)
+            cls_inner_labels.length := 0
+            cls_depth := 0
+            cls_keeps := false
+            cls_takes_address := false
             this.reset_reductions()
             if file_is_foundation(current_file)
                 this.block("engine foundation module")
@@ -562,16 +562,16 @@ define TaskPlanner
             {
                 if cls_inner_labels[i] = label_name
                     return false
-                set i: i + 1
+                i := i + 1
             }
             true
         }
 
         procedure reset_reductions(mutable this: TaskPlanner)
         {
-            set red_names.length: 0
-            set red_ops.length: 0
-            set red_counts.length: 0
+            red_names.length := 0
+            red_ops.length := 0
+            red_counts.length := 0
         }
 
         ; float / double
@@ -610,7 +610,7 @@ define TaskPlanner
                     red_counts.put(i, red_counts[i] + uses)
                     return
                 }
-                set i: i + 1
+                i := i + 1
             }
             let n_copy String^this(name)
             red_names.add n_copy
@@ -664,16 +664,16 @@ define TaskPlanner
                         ; floating point: a sum (with differences) or a product;
                         ; the order is fixed per iteration by the Emitter
                         match nm
-                            case "+" case "-": set op: 20
-                            case "*": set op: 21
+                            case "+" case "-": op := 20
+                            case "*": op := 21
                     }
                     else
                     {
                         match nm
-                            case "+" case "-": set op: 1
-                            case "&": set op: 3
-                            case "|": set op: 5
-                            case "xor": set op: 6
+                            case "+" case "-": op := 1
+                            case "&": op := 3
+                            case "|": op := 5
+                            case "xor": op := 6
                     }
                     if op = 0
                         return false
@@ -738,9 +738,9 @@ define TaskPlanner
                             let tp_ tt.get 0
                             if tp_ <> null
                             {
-                                set target: this.bare_variable_name(tp_.unwrap())
-                                set t_kind: TaskPlanner.red_int_kind(tp_.unwrap().result_type)
-                                set value: a.source
+                                target := this.bare_variable_name(tp_.unwrap())
+                                t_kind := TaskPlanner.red_int_kind(tp_.unwrap().result_type)
+                                value := a.source
                             }
                         }
                     }
@@ -777,8 +777,8 @@ define TaskPlanner
                     let nm call.name
                     var greater 0
                     match nm
-                        case ">" case ">=": set greater: 1
-                        case "<" case "<=": set greater: 2
+                        case ">" case ">=": greater := 1
+                        case "<" case "<=": greater := 2
                     if greater = 0
                         return false
                     ; which side is v, which is e -- and is the stored value e?
@@ -786,15 +786,15 @@ define TaskPlanner
                     var e_ptr: ref[PlannedOperand]? null
                     if this.bare_variable_name(y) = target
                     {
-                        set is_max: greater = 1
-                        set e_ptr: x_ptr
+                        is_max := greater = 1
+                        e_ptr := x_ptr
                     }
                     else
                     {
                         if this.bare_variable_name(x) = target
                         {
-                            set is_max: greater = 2
-                            set e_ptr: y_ptr
+                            is_max := greater = 2
+                            e_ptr := y_ptr
                         }
                     }
                     if e_ptr = null
@@ -804,9 +804,9 @@ define TaskPlanner
                         return false
                     var op 8
                     if is_max
-                        set op: 7
+                        op := 7
                     if t_kind = 2
-                        set op: op + 2
+                        op := op + 2
                     this.cls_operand(e)
                     this.note_reduction(target, op, 2)
                     return true
@@ -823,22 +823,22 @@ define TaskPlanner
             var bn ""
             choose a.expr
                 when v: Variable
-                    set an: v.name
+                    an := v.name
                 else
                     return false
             choose b.expr
                 when w: Variable
-                    set bn: w.name
+                    bn := w.name
                 else
                     return false
             if an <> bn
                 return false
             var al: size_t 0
             if a.member_access <> null
-                set al: a.member_access.length
+                al := a.member_access.length
             var bl: size_t 0
             if b.member_access <> null
-                set bl: b.member_access.length
+                bl := b.member_access.length
             if al <> bl
                 return false
             if al = 0
@@ -858,7 +858,7 @@ define TaskPlanner
                     return false
                 if ah.is_method or bh.is_method
                     return false
-                set i: i + 1
+                i := i + 1
             }
             true
         }
@@ -876,13 +876,13 @@ define TaskPlanner
             {
                 let nm red_names[i]
                 var seen this.count_in_action(body, nm)
-                set seen: seen + this.count_in_ops(cond, nm)
+                seen := seen + this.count_in_ops(cond, nm)
                 if seen <> red_counts[i]
                 {
                     this.block_named("reduction variable used outside its update: ", nm)
                     return
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -899,8 +899,8 @@ define TaskPlanner
             {
                 let op_ptr ops.get i
                 if op_ptr <> null
-                    set n: n + this.count_in_op(op_ptr.unwrap(), name)
-                set i: i + 1
+                    n := n + this.count_in_op(op_ptr.unwrap(), name)
+                i := i + 1
             }
             n
         }
@@ -966,8 +966,8 @@ define TaskPlanner
                         {
                             let c_ptr tp.components.get i
                             if c_ptr <> null
-                                set n: n + this.count_in_ops(c_ptr.value, name)
-                            set i: i + 1
+                                n := n + this.count_in_ops(c_ptr.value, name)
+                            i := i + 1
                         }
                     }
                     return n
@@ -982,8 +982,8 @@ define TaskPlanner
                         {
                             let row_ptr mx.operations.get i
                             if row_ptr <> null
-                                set n: n + this.count_in_ops(row_ptr, name)
-                            set i: i + 1
+                                n := n + this.count_in_ops(row_ptr, name)
+                            i := i + 1
                         }
                     }
                     return n
@@ -998,8 +998,8 @@ define TaskPlanner
                         {
                             let s_ptr blk.statements.get i
                             if s_ptr <> null
-                                set n: n + this.count_in_stmt(s_ptr.unwrap(), name)
-                            set i: i + 1
+                                n := n + this.count_in_stmt(s_ptr.unwrap(), name)
+                            i := i + 1
                         }
                     }
                     return n
@@ -1025,13 +1025,13 @@ define TaskPlanner
                                     {
                                         let cs_ptr br.cases.get ci
                                         if cs_ptr <> null
-                                            set n: n + this.count_in_ops((*cs_ptr).condition, name)
-                                        set ci: ci + 1
+                                            n := n + this.count_in_ops((*cs_ptr).condition, name)
+                                        ci := ci + 1
                                     }
                                 }
-                                set n: n + this.count_in_stmt_ref(br.consequent, name)
+                                n := n + this.count_in_stmt_ref(br.consequent, name)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     return n + this.count_in_stmt_ref(mt.alternative, name)
@@ -1046,8 +1046,8 @@ define TaskPlanner
                         {
                             let w_ptr ch.cases.get i
                             if w_ptr <> null
-                                set n: n + this.count_in_stmt_ref((*w_ptr).consequent, name)
-                            set i: i + 1
+                                n := n + this.count_in_stmt_ref((*w_ptr).consequent, name)
+                            i := i + 1
                         }
                     }
                     return n + this.count_in_stmt_ref(ch.alternative, name)
@@ -1068,8 +1068,8 @@ define TaskPlanner
                         {
                             let w_ptr tr.catches.get i
                             if w_ptr <> null
-                                set n: n + this.count_in_stmt_ref((*w_ptr).consequent, name)
-                            set i: i + 1
+                                n := n + this.count_in_stmt_ref((*w_ptr).consequent, name)
+                            i := i + 1
                         }
                     }
                     return n + this.count_in_stmt_ref(tr.alternative, name)
@@ -1125,11 +1125,11 @@ define TaskPlanner
 
         procedure classify_while(mutable this: TaskPlanner, wh: PlannedWhile)
         {
-            set whiles_total: whiles_total + 1
+            whiles_total := whiles_total + 1
             let file_copy String^this(current_file)
             while_files.add file_copy
             while_offsets.add(wh.loc.start)
-            set cls_step_first: false
+            cls_step_first := false
             if this.find_counter(wh) = false
             {
                 let nc "not counted: `cls_reason`"
@@ -1137,7 +1137,7 @@ define TaskPlanner
                 while_verdicts.add nc_copy
                 return
             }
-            set whiles_counted: whiles_counted + 1
+            whiles_counted := whiles_counted + 1
             this.classify_counted_body(wh)
             if cls_blocked
             {
@@ -1146,7 +1146,7 @@ define TaskPlanner
                 while_verdicts.add bl_copy
                 return
             }
-            set whiles_parallel: whiles_parallel + 1
+            whiles_parallel := whiles_parallel + 1
             let par_copy String^this("parallel")
             while_verdicts.add par_copy
         }
@@ -1156,19 +1156,19 @@ define TaskPlanner
         ; condition is walked too: the bound is read every iteration.
         procedure classify_counted_body(mutable this: TaskPlanner, wh: PlannedWhile)
         {
-            set cls_locals.length: 0
-            set cls_aliased.length: 0
-            set cls_blocked: false
-            set cls_reason: String^this("")
-            set cls_depth: 0
-            set cls_counter_mode: true
-            set cls_counter_writes: 0
-            set cls_counter_steps: 0
-            set cls_continue_skips: false
-            set cls_own_label: String^this(wh.loop_label)
-            set cls_inner_labels.length: 0
-            set cls_keeps: false
-            set cls_takes_address: false
+            cls_locals.length := 0
+            cls_aliased.length := 0
+            cls_blocked := false
+            cls_reason := String^this("")
+            cls_depth := 0
+            cls_counter_mode := true
+            cls_counter_writes := 0
+            cls_counter_steps := 0
+            cls_continue_skips := false
+            cls_own_label := String^this(wh.loop_label)
+            cls_inner_labels.length := 0
+            cls_keeps := false
+            cls_takes_address := false
             this.reset_reductions()
             if file_is_foundation(current_file)
                 this.block("engine foundation module")
@@ -1177,7 +1177,7 @@ define TaskPlanner
                 this.cls_action(wh.body)
             this.check_kept_values()
             this.check_reductions(wh.body, wh.cond.operation)
-            set cls_counter_mode: false
+            cls_counter_mode := false
             if cls_counter_writes > cls_counter_steps
                 this.block("counter written besides its step")
             if cls_continue_skips
@@ -1206,12 +1206,12 @@ define TaskPlanner
             if tname <> cls_loop_var
                 return
             if this.is_step_of(act.source, cls_loop_var)
-                set cls_counter_steps: cls_counter_steps + 1
+                cls_counter_steps := cls_counter_steps + 1
         }
 
         procedure not_counted(mutable this: TaskPlanner, reason: String) returns bool
         {
-            set cls_reason: String^this(reason)
+            cls_reason := String^this(reason)
             false
         }
 
@@ -1243,13 +1243,13 @@ define TaskPlanner
             let lk this.counter_steps(stmts, lname)
             if lk = 1
             {
-                set cls_loop_var: String^this(lname)
+                cls_loop_var := String^this(lname)
                 return true
             }
             let rk this.counter_steps(stmts, rname)
             if rk = 1
             {
-                set cls_loop_var: String^this(rname)
+                cls_loop_var := String^this(rname)
                 return true
             }
             if lk = 3 or rk = 3
@@ -1363,20 +1363,20 @@ define TaskPlanner
                     let k this.step_kind(s_ptr.unwrap(), name)
                     if k = 1
                     {
-                        set steps: steps + 1
+                        steps := steps + 1
                         if i = 0
-                            set first: true
+                            first := true
                     }
                     if k = 2
-                        set others: others + 1
+                        others := others + 1
                 }
-                set i: i + 1
+                i := i + 1
             }
             if steps + others > 1
                 return 3
             if steps = 1
             {
-                set cls_step_first: first
+                cls_step_first := first
                 return 1
             }
             if others = 1
@@ -1462,9 +1462,9 @@ define TaskPlanner
         ; sites on one instance.
         procedure loop_promotable(mutable this: TaskPlanner, plan: Plan, file: String, fr: PlannedFor) returns bool
         {
-            set plan_functions: plan.functions
-            set plan_globals: plan.globals
-            set current_file: String^this(file)
+            plan_functions := plan.functions
+            plan_globals := plan.globals
+            current_file := String^this(file)
             this.classify_body(fr)
             if cls_blocked
                 return false
@@ -1491,8 +1491,8 @@ define TaskPlanner
         {
             if cls_blocked
                 return
-            set cls_blocked: true
-            set cls_reason: String^this(reason)
+            cls_blocked := true
+            cls_reason := String^this(reason)
         }
 
         procedure block_named(mutable this: TaskPlanner, prefix: String, name: String)
@@ -1500,8 +1500,8 @@ define TaskPlanner
             if cls_blocked
                 return
             let msg "`prefix``name`"
-            set cls_blocked: true
-            set cls_reason: String^this(msg)
+            cls_blocked := true
+            cls_reason := String^this(msg)
         }
 
         ; Is name bound inside the classified loop body? The loop variable
@@ -1517,7 +1517,7 @@ define TaskPlanner
                 let ap cls_aliased.get ai
                 if ap <> null and (*ap) = name
                     return false
-                set ai: ai + 1
+                ai := ai + 1
             }
             if name = cls_loop_var
                 return true
@@ -1527,7 +1527,7 @@ define TaskPlanner
                 let p cls_locals.get i
                 if p <> null and (*p) = name
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -1570,7 +1570,7 @@ define TaskPlanner
                 let op_ptr ops.get i
                 if op_ptr <> null and this.op_aliases_external(op_ptr.unwrap())
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -1604,7 +1604,7 @@ define TaskPlanner
                             let c_ptr tp.components.get i
                             if c_ptr <> null and this.ops_alias_external(c_ptr.value)
                                 return true
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     false
@@ -1673,7 +1673,7 @@ define TaskPlanner
                 let op_ptr ops.get i
                 if op_ptr <> null and this.operand_reads_name(op_ptr.unwrap(), name)
                     return true
-                set i: i + 1
+                i := i + 1
             }
             false
         }
@@ -1696,7 +1696,7 @@ define TaskPlanner
                             let ap call.args.get i
                             if ap <> null and this.operand_reads_name(ap.unwrap(), name)
                                 return true
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -1722,7 +1722,7 @@ define TaskPlanner
                             let c_ptr tp.components.get i
                             if c_ptr <> null and this.operands_read_name(c_ptr.value, name)
                                 return true
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -1745,7 +1745,7 @@ define TaskPlanner
                 let op_ptr ops.get i
                 if op_ptr <> null
                     this.cls_operand(op_ptr.unwrap())
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -1827,7 +1827,7 @@ define TaskPlanner
                 when v: Variable
                 {
                     if cls_counter_mode and v.name = cls_loop_var
-                        set cls_counter_writes: cls_counter_writes + 1
+                        cls_counter_writes := cls_counter_writes + 1
                     if this.is_local(v.name) = false
                         this.block_named("writes loop-external ", v.name)
                 }
@@ -1881,9 +1881,9 @@ define TaskPlanner
                     if cls_counter_mode and cls_step_first = false
                     {
                         if cls_depth = 0
-                            set cls_continue_skips: true
+                            cls_continue_skips := true
                         if cont.loop_label.get_length() > 0
-                            set cls_continue_skips: true
+                            cls_continue_skips := true
                     }
                 }
         }
@@ -1910,7 +1910,7 @@ define TaskPlanner
                             let c_ptr tp.components.get i
                             if c_ptr <> null
                                 this.cls_operands(c_ptr.value)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -1924,7 +1924,7 @@ define TaskPlanner
                             let s_ptr blk.statements.get i
                             if s_ptr <> null
                                 this.cls_statement(s_ptr.unwrap())
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -1965,12 +1965,12 @@ define TaskPlanner
                                             let cs (*cs_ptr)
                                             this.cls_operands(cs.condition)
                                         }
-                                        set ci: ci + 1
+                                        ci := ci + 1
                                     }
                                 }
                                 this.cls_statement_ref(br.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.cls_statement_ref(mt.alternative)
@@ -1992,7 +1992,7 @@ define TaskPlanner
                                 this.add_body_name(w.name, ch_alias)
                                 this.cls_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.cls_statement_ref(ch.alternative)
@@ -2008,9 +2008,9 @@ define TaskPlanner
                     let fe_alias this.ops_alias_external(fr.expr)
                     this.add_body_name(fr.identifier, fe_alias)
                     this.note_inner_label(fr.loop_label)
-                    set cls_depth: cls_depth + 1
+                    cls_depth := cls_depth + 1
                     this.cls_action(fr.body)
-                    set cls_depth: cls_depth - 1
+                    cls_depth := cls_depth - 1
                 }
                 when wh: While
                 {
@@ -2021,16 +2021,16 @@ define TaskPlanner
                         this.add_body_name((*wh.cond.binding_item.name), wc_alias)
                     }
                     this.note_inner_label(wh.loop_label)
-                    set cls_depth: cls_depth + 1
+                    cls_depth := cls_depth + 1
                     this.cls_action(wh.body)
-                    set cls_depth: cls_depth - 1
+                    cls_depth := cls_depth - 1
                 }
                 when rp: Repeat
                 {
                     this.note_inner_label(rp.loop_label)
-                    set cls_depth: cls_depth + 1
+                    cls_depth := cls_depth + 1
                     this.cls_action(rp.body)
-                    set cls_depth: cls_depth - 1
+                    cls_depth := cls_depth - 1
                 }
                 when tr: Try
                 {
@@ -2053,7 +2053,7 @@ define TaskPlanner
                                 cls_locals.add cn_copy
                                 this.cls_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.cls_statement_ref(tr.alternative)
@@ -2093,7 +2093,7 @@ define TaskPlanner
                             let row_ptr mx.operations.get i
                             if row_ptr <> null
                                 this.cls_operands(row_ptr)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -2233,7 +2233,7 @@ define TaskPlanner
             pure_memo_names.add m_copy
             var flag: size_t 0
             if is_pure
-                set flag: 1
+                flag := 1
             pure_memo_flags.add flag
         }
 
@@ -2253,7 +2253,7 @@ define TaskPlanner
                         return false
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             var j: size_t 0
             while j < pure_stack.length
@@ -2261,7 +2261,7 @@ define TaskPlanner
                 let sp pure_stack.get j
                 if sp <> null and (*sp) = mangled
                     return true
-                set j: j + 1
+                j := j + 1
             }
             if plan_functions = null
                 return false
@@ -2289,21 +2289,21 @@ define TaskPlanner
                             let sm_copy String^this(mangled)
                             pure_stack.add sm_copy
                             let saved pw_impure
-                            set pw_impure: false
+                            pw_impure := false
                             this.pw_action(action)
                             var is_pure true
                             if pw_impure
-                                set is_pure: false
-                            set pw_impure: saved
-                            set pure_stack.length: pure_stack.length - 1
+                                is_pure := false
+                            pw_impure := saved
+                            pure_stack.length := pure_stack.length - 1
                             this.memo_purity(mangled, is_pure)
                             return is_pure
                         }
                         when e: Extern
                         {
-                            set saw_extern: true
+                            saw_extern := true
                             if this.extern_is_benign(func.name)
-                                set extern_benign: true
+                                extern_benign := true
                         }
                         else
                         {
@@ -2338,7 +2338,7 @@ define TaskPlanner
                 let op_ptr ops.get i
                 if op_ptr <> null
                     this.pw_operand(op_ptr.unwrap())
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -2376,12 +2376,12 @@ define TaskPlanner
                             when g: GlobalRef
                             {
                                 if this.global_is_sanctioned(g.name) = false
-                                    set pw_impure: true
+                                    pw_impure := true
                             }
                             else
                                 this.pw_operand(top)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -2416,7 +2416,7 @@ define TaskPlanner
                 if global.mangled_name = g.mangled_name
                 {
                     if global.is_mutable and this.global_is_sanctioned(global.name) = false
-                        set pw_impure: true
+                        pw_impure := true
                     return
                 }
             }
@@ -2431,13 +2431,13 @@ define TaskPlanner
                 return
             if call.is_indirect
             {
-                set pw_impure: true
+                pw_impure := true
                 return
             }
             ; a SIMD store writes through its container: not effect-free
             if call.is_intrinsic and TaskPlanner.is_simd_store(call.name)
             {
-                set pw_impure: true
+                pw_impure := true
                 return
             }
             if call.is_intrinsic
@@ -2457,7 +2457,7 @@ define TaskPlanner
             if call.name.starts_with("scaly_panic_")
                 return
             if this.effectively_pure(call.mangled_name) = false
-                set pw_impure: true
+                pw_impure := true
         }
 
         procedure pw_operand(mutable this: TaskPlanner, op: PlannedOperand)
@@ -2479,7 +2479,7 @@ define TaskPlanner
                             let c_ptr tp.components.get i
                             if c_ptr <> null
                                 this.pw_operands(c_ptr.value)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -2493,7 +2493,7 @@ define TaskPlanner
                             let s_ptr blk.statements.get i
                             if s_ptr <> null
                                 this.pw_statement(s_ptr.unwrap())
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -2526,12 +2526,12 @@ define TaskPlanner
                                             let cs (*cs_ptr)
                                             this.pw_operands(cs.condition)
                                         }
-                                        set ci: ci + 1
+                                        ci := ci + 1
                                     }
                                 }
                                 this.pw_statement_ref(br.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.pw_statement_ref(mt.alternative)
@@ -2550,7 +2550,7 @@ define TaskPlanner
                                 let w (*w_ptr)
                                 this.pw_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.pw_statement_ref(ch.alternative)
@@ -2581,7 +2581,7 @@ define TaskPlanner
                                 let w (*w_ptr)
                                 this.pw_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.pw_statement_ref(tr.alternative)
@@ -2620,16 +2620,16 @@ define TaskPlanner
                             let row_ptr mx.operations.get i
                             if row_ptr <> null
                                 this.pw_operands(row_ptr)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
                 when lm: Lambda
-                    set pw_impure: true
+                    pw_impure := true
                 when cl: Closure
-                    set pw_impure: true
+                    pw_impure := true
                 when fref: FunctionRef
-                    set pw_impure: true
+                    pw_impure := true
                 when bx: Box
                 {
                     if bx.value <> null
@@ -2655,7 +2655,7 @@ define TaskPlanner
                 return
             }
             if call.is_operator and call.name = "&" and call.args <> null and call.args.length = 1
-                set cls_takes_address: true
+                cls_takes_address := true
             ; a SIMD store's lanes are not proven disjoint across iterations
             if call.is_intrinsic and TaskPlanner.is_simd_store(call.name)
             {
@@ -2708,8 +2708,8 @@ define TaskPlanner
             while i < n
             {
                 if name.get(i) = ("." as char)
-                    set start: i + 1
-                set i: i + 1
+                    start := i + 1
+                i := i + 1
             }
             if start >= n
                 return false
@@ -2735,7 +2735,7 @@ define TaskPlanner
                 {
                     let ma (*recv.member_access)
                     if ma.length > 0
-                        set recv_bare: false
+                        recv_bare := false
                 }
                 if recv_bare
                     choose recv.expr
@@ -2769,7 +2769,7 @@ define TaskPlanner
             ; reference, which could point anywhere, the chunk's stack included.
             if TaskPlanner.type_is_reference_shaped(vt)
                 return false
-            set cls_keeps: true
+            cls_keeps := true
             true
         }
 
@@ -2833,7 +2833,7 @@ define TaskPlanner
                         return wm_all()
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             ; Recursion among walked functions: optimistic 0 — a concrete
             ; write elsewhere in the cycle still surfaces in the caller's
@@ -2844,7 +2844,7 @@ define TaskPlanner
                 let sp wm_stack.get j
                 if sp <> null and (*sp) = mangled
                     return 0
-                set j: j + 1
+                j := j + 1
             }
             if plan_functions = null
                 return wm_all()
@@ -2863,7 +2863,7 @@ define TaskPlanner
                             {
                                 let input_ref func.input.unwrap()
                                 let input input_ref
-                                set pcount: input.length
+                                pcount := input.length
                             }
                             if pcount > 62
                             {
@@ -2875,8 +2875,8 @@ define TaskPlanner
                             let saved_mask wr_mask
                             let saved_base wr_base
                             let saved_len wr_names.length
-                            set wr_mask: 0
-                            set wr_base: wr_names.length
+                            wr_mask := 0
+                            wr_base := wr_names.length
                             ; Seed the params, each with its own bit.
                             if func.input <> null
                             {
@@ -2892,24 +2892,24 @@ define TaskPlanner
                                         if item.name <> null
                                             this.wr_add_name((*item.name), 1 << pi)
                                     }
-                                    set pi: pi + 1
+                                    pi := pi + 1
                                 }
                             }
                             this.wr_action(action)
                             let result wr_mask
-                            set wr_mask: saved_mask
-                            set wr_base: saved_base
-                            set wr_names.length: saved_len
-                            set wr_masks.length: saved_len
-                            set wm_stack.length: wm_stack.length - 1
+                            wr_mask := saved_mask
+                            wr_base := saved_base
+                            wr_names.length := saved_len
+                            wr_masks.length := saved_len
+                            wm_stack.length := wm_stack.length - 1
                             this.memo_written(mangled, result)
                             return result
                         }
                         when e: Extern
                         {
-                            set saw_extern: true
+                            saw_extern := true
                             let em this.extern_written_mask(func.name)
-                            set extern_mask: (extern_mask | em)
+                            extern_mask := (extern_mask | em)
                         }
                         else
                         {
@@ -3017,7 +3017,7 @@ define TaskPlanner
             var i wr_names.length
             while i > wr_base
             {
-                set i: i - 1
+                i := i - 1
                 let p wr_names.get i
                 if p <> null
                 {
@@ -3046,8 +3046,8 @@ define TaskPlanner
             {
                 let op_ptr ops.get i
                 if op_ptr <> null
-                    set acc: (acc | this.wr_mask_of_op(op_ptr.unwrap()))
-                set i: i + 1
+                    acc := (acc | this.wr_mask_of_op(op_ptr.unwrap()))
+                i := i + 1
             }
             acc
         }
@@ -3077,8 +3077,8 @@ define TaskPlanner
                         {
                             let c_ptr tp.components.get i
                             if c_ptr <> null
-                                set acc: (acc | this.wr_mask_of_ops(c_ptr.value))
-                            set i: i + 1
+                                acc := (acc | this.wr_mask_of_ops(c_ptr.value))
+                            i := i + 1
                         }
                     }
                     return acc
@@ -3098,7 +3098,7 @@ define TaskPlanner
                 let op_ptr ops.get i
                 if op_ptr <> null
                     this.wr_operand(op_ptr.unwrap())
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -3119,7 +3119,7 @@ define TaskPlanner
                 let t (*act.target)
                 if t.length <> 1
                 {
-                    set wr_mask: wm_all()
+                    wr_mask := wm_all()
                     return
                 }
                 let tp_ t.get 0
@@ -3132,7 +3132,7 @@ define TaskPlanner
                         ; The write lands wherever the root reaches; and
                         ; storing an aliasing value INTO a name widens
                         ; what later writes through it can reach.
-                        set wr_mask: (wr_mask | this.wr_lookup(v.name))
+                        wr_mask := (wr_mask | this.wr_lookup(v.name))
                         let smask this.wr_mask_of_ops(act.source)
                         if smask <> 0
                         {
@@ -3143,7 +3143,7 @@ define TaskPlanner
                     when g: GlobalRef
                         0
                     else
-                        set wr_mask: wm_all()
+                        wr_mask := wm_all()
             }
         }
 
@@ -3186,7 +3186,7 @@ define TaskPlanner
                             let s_ptr blk.statements.get i
                             if s_ptr <> null
                                 this.wr_statement(s_ptr.unwrap())
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
@@ -3224,12 +3224,12 @@ define TaskPlanner
                                             let cs (*cs_ptr)
                                             this.wr_operands(cs.condition)
                                         }
-                                        set ci: ci + 1
+                                        ci := ci + 1
                                     }
                                 }
                                 this.wr_statement_ref(br.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.wr_statement_ref(mt.alternative)
@@ -3250,7 +3250,7 @@ define TaskPlanner
                                 this.wr_add_name(w.name, chmask)
                                 this.wr_statement_ref(w.consequent)
                             }
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     this.wr_statement_ref(ch.alternative)
@@ -3293,16 +3293,16 @@ define TaskPlanner
                             let c_ptr tp.components.get i
                             if c_ptr <> null
                                 this.wr_operands(c_ptr.value)
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                 }
                 when lm: Lambda
-                    set wr_mask: wm_all()
+                    wr_mask := wm_all()
                 when cl: Closure
-                    set wr_mask: wm_all()
+                    wr_mask := wm_all()
                 when fref: FunctionRef
-                    set wr_mask: wm_all()
+                    wr_mask := wm_all()
                 else
                     0
         }
@@ -3321,14 +3321,14 @@ define TaskPlanner
             this.wr_operands(call.args)
             if call.is_indirect
             {
-                set wr_mask: wm_all()
+                wr_mask := wm_all()
                 return
             }
             if call.is_intrinsic and TaskPlanner.is_simd_store(call.name) and call.args <> null and call.args.length > 1
             {
                 let sp call.args.get 1
                 if sp <> null
-                    set wr_mask: (wr_mask | this.wr_mask_of_op(sp.unwrap()))
+                    wr_mask := (wr_mask | this.wr_mask_of_op(sp.unwrap()))
                 return
             }
             if call.is_intrinsic
@@ -3347,18 +3347,18 @@ define TaskPlanner
             {
                 var written false
                 if sub = wm_all()
-                    set written: true
+                    written := true
                 if i > 62
-                    set written: true
+                    written := true
                 if written = false and ((sub >> i) & 1) <> 0
-                    set written: true
+                    written := true
                 if written
                 {
                     let ap call.args.get i
                     if ap <> null
-                        set wr_mask: (wr_mask | this.wr_mask_of_op(ap.unwrap()))
+                        wr_mask := (wr_mask | this.wr_mask_of_op(ap.unwrap()))
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -3397,7 +3397,7 @@ define TaskPlanner
                         var stub_fn false
                         choose func.impl
                             when e: Extern
-                                set stub_fn: true
+                                stub_fn := true
                             else
                                 0
                         if stub_fn
@@ -3431,7 +3431,7 @@ define TaskPlanner
                             ; keeps the body walk.
                             var wm this.declared_mask(func)
                             if func.name = "init"
-                                set wm: this.written_mask(call.mangled_name)
+                                wm := this.written_mask(call.mangled_name)
                             if wm = 0
                                 return
                             if this.masked_args_local(call, wm) = false
@@ -3440,9 +3440,9 @@ define TaskPlanner
                         }
                         when e: Extern
                         {
-                            set saw_extern: true
+                            saw_extern := true
                             if this.extern_is_benign(func.name)
-                                set extern_benign: true
+                                extern_benign := true
                         }
                         else
                             return
@@ -3493,20 +3493,20 @@ define TaskPlanner
                         {
                             let a_ptr attrs.get k
                             if a_ptr <> null and a_ptr.unwrap().name = "mutable"
-                                set written: true
-                            set k: k + 1
+                                written := true
+                            k := k + 1
                         }
                     }
                     if it.item_type <> null and TaskPlanner.is_page_type((*it.item_type))
-                        set written: true
+                        written := true
                     if written
                     {
                         if i > 62
                             return wm_all()
-                        set m: m | ((1 as size_t) << (i as size_t))
+                        m := m | ((1 as size_t) << (i as size_t))
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
             m
         }
@@ -3521,9 +3521,9 @@ define TaskPlanner
                 return false
             var wraps false
             if t.name = "ref"
-                set wraps: true
+                wraps := true
             if t.name = "pointer"
-                set wraps: true
+                wraps := true
             if wraps
             {
                 let g_ptr t.generics.get 0
@@ -3546,18 +3546,18 @@ define TaskPlanner
             {
                 var written false
                 if mask = wm_all()
-                    set written: true
+                    written := true
                 if i > 62
-                    set written: true
+                    written := true
                 if written = false and ((mask >> i) & 1) <> 0
-                    set written: true
+                    written := true
                 if written
                 {
                     let ap call.args.get i
                     if ap <> null and this.arg_root_local(ap.unwrap()) = false
                         return false
                 }
-                set i: i + 1
+                i := i + 1
             }
             true
         }
@@ -3595,7 +3595,7 @@ define TaskPlanner
                             let ap inner.args.get i
                             if ap <> null and this.arg_root_local(ap.unwrap()) = false
                                 return false
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
                     return true

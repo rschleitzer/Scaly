@@ -28,14 +28,14 @@ define Pair[X, Y] (x: X  y: Y)
 function check() returns int
 {
     var p P(3, 1)
-    set p.a: 4
+    p.a := 4
     if p.a <> 4
         return 1
-    set p: P(5, 1)
+    p := P(5, 1)
     if p.a <> 5
         return 2
     var r R(1)
-    set r.a: 2
+    r.a := 2
     if r.a <> 2
         return 3
     let t T(6, 0)

@@ -121,7 +121,7 @@ function scaly_fmt_scratch_ptr() returns pointer[char]
     ; ...) returns NULL on macOS/Apple libc (and is UB per C11), which made a
     ; deref of this scratch buffer SIGSEGV. 16 is safe; 32 is a multiple of it.
     if fmt_scratch = null
-        set fmt_scratch: scaly_aligned_alloc(16, 32) as pointer[char]
+        fmt_scratch := scaly_aligned_alloc(16, 32) as pointer[char]
     fmt_scratch
 }
 
@@ -139,7 +139,7 @@ procedure scaly_eputnl()
     ; it to pointer[void] and writing 1 byte emitted the struct's first byte
     ; (garbage), not the newline. Write the LF byte from the scratch buffer.
     let buf scaly_fmt_scratch_ptr()
-    set *buf: ("\n" as char)
+    *buf := ("\n" as char)
     write(2 as int, buf as pointer[void], 1 as size_t)
 }
 
@@ -154,15 +154,15 @@ procedure scaly_eputu(n: u64)
     var val n
     if val = 0
     {
-        set pos: pos - 1
-        set *(buf + pos): "0" as char
+        pos := pos - 1
+        *(buf + pos) := "0" as char
     }
     while val > 0
     {
-        set pos: pos - 1
+        pos := pos - 1
         let digit val - (val / 10) * 10
-        set *(buf + pos): ((digit as i64) + 48) as char
-        set val: val / 10
+        *(buf + pos) := ((digit as i64) + 48) as char
+        val := val / 10
     }
     let len 31 - pos
     write(2 as int, (buf + pos) as pointer[void], len as size_t)
@@ -176,28 +176,28 @@ procedure scaly_eputi(n: i64)
     var negative false
     if val < 0
     {
-        set negative: true
-        set val: 0 - val
+        negative := true
+        val := 0 - val
     }
     ; A zero value produces no digits in the loop below, so emit the single
     ; '0' here. The guard was inverted (val <> 0), which appended a spurious
     ; trailing '0' to every nonzero value and printed nothing for 0.
     if val = 0
     {
-        set pos: pos - 1
-        set *(buf + pos): "0" as char
+        pos := pos - 1
+        *(buf + pos) := "0" as char
     }
     while val > 0
     {
-        set pos: pos - 1
+        pos := pos - 1
         let digit val - (val / 10) * 10
-        set *(buf + pos): (digit + 48) as char
-        set val: val / 10
+        *(buf + pos) := (digit + 48) as char
+        val := val / 10
     }
     if negative
     {
-        set pos: pos - 1
-        set *(buf + pos): "-" as char
+        pos := pos - 1
+        *(buf + pos) := "-" as char
     }
     let len 31 - pos
     write(2 as int, (buf + pos) as pointer[void], len as size_t)
@@ -288,7 +288,7 @@ procedure scaly_panic_oob(mutable what: pointer[const_char], index: size_t, leng
     ; Count BEFORE the jump: scaly_panic_jump does not return when a catch
     ; point is installed, so a bump behind it would count only the traps that
     ; kill the process -- the ones nobody needs a counter for.
-    set panic_oob_count: panic_oob_count + 1
+    panic_oob_count := panic_oob_count + 1
 
     ; A catch point on the stack takes it: the jump ends the guarded CALL, and
     ; the caller decides what that means. Without one this returns 0 and the
@@ -350,7 +350,7 @@ function scaly_panic_null_count() returns i64
 
 procedure scaly_panic_null(mutable where: pointer[const_char])
 {
-    set panic_null_count: panic_null_count + 1
+    panic_null_count := panic_null_count + 1
 
     ; A catch point on the stack takes it, exactly as it takes a bounds
     ; violation: the jump ends the guarded work and the catcher decides what
@@ -399,7 +399,7 @@ function scaly_panic_region_count() returns i64
 
 procedure scaly_panic_region(mutable what: pointer[const_char], address: size_t)
 {
-    set panic_region_count: panic_region_count + 1
+    panic_region_count := panic_region_count + 1
 
     scaly_panic_region_jump(what, address, 18 as i32)
 
@@ -442,7 +442,7 @@ function scaly_panic_size_count() returns i64
 
 procedure scaly_panic_size(mutable what: pointer[const_char], added: size_t, length: size_t)
 {
-    set panic_size_count: panic_size_count + 1
+    panic_size_count := panic_size_count + 1
 
     scaly_panic_size_jump(what, added, length, 22 as i32)
 
@@ -498,7 +498,7 @@ function scaly_panic_string_count() returns i64
 
 procedure scaly_panic_string(what: pointer[const_char], address: size_t)
 {
-    set panic_string_count: panic_string_count + 1
+    panic_string_count := panic_string_count + 1
 
     scaly_eputs(what)
     scaly_eputs(": malformed string length prefix at ")
@@ -533,7 +533,7 @@ function scaly_panic_oom_count() returns i64
 
 procedure scaly_panic_oom(mutable what: pointer[const_char], bytes: size_t)
 {
-    set panic_oom_count: panic_oom_count + 1
+    panic_oom_count := panic_oom_count + 1
 
     scaly_panic_oom_jump(what, bytes, 23 as i32)
 
@@ -582,7 +582,7 @@ function scaly_panic_resource_count() returns i64
 
 procedure scaly_panic_resource(mutable what: pointer[const_char], requested: size_t, code: i32)
 {
-    set panic_resource_count: panic_resource_count + 1
+    panic_resource_count := panic_resource_count + 1
 
     scaly_panic_resource_jump(what, requested, code)
 
@@ -614,7 +614,7 @@ function scaly_panic_deadlock_count() returns i64
 
 procedure scaly_panic_deadlock(mutable what: pointer[const_char], code: i32)
 {
-    set panic_deadlock_count: panic_deadlock_count + 1
+    panic_deadlock_count := panic_deadlock_count + 1
 
     scaly_panic_deadlock_jump(what, code)
 
@@ -639,16 +639,16 @@ function hex_digit(nibble: i64) returns char
 procedure scaly_eputp(p: pointer[void])
 {
     let buf scaly_fmt_scratch_ptr()
-    set *(buf + 0): "0" as char
-    set *(buf + 1): "x" as char
+    *(buf + 0) := "0" as char
+    *(buf + 1) := "x" as char
     var val p as u64
     var i: i64 17
     while i >= 2
     {
         let nibble (val & 15) as i64
-        set *(buf + i): hex_digit(nibble)
-        set val: val >> 4
-        set i: i - 1
+        *(buf + i) := hex_digit(nibble)
+        val := val >> 4
+        i := i - 1
     }
     write(2 as int, buf as pointer[void], 18 as size_t)
 }
@@ -715,7 +715,7 @@ procedure drain_dead_bucket(mutable b: pointer[HeapBucketHeader]) returns bool
     if b.bitmap <> BITMAP_ALL_FREE
         return false
     bucket_unlock b
-    set dead_buckets_reclaimed: dead_buckets_reclaimed + 1
+    dead_buckets_reclaimed := dead_buckets_reclaimed + 1
     count_bucket_freed()
     scaly_aligned_free(b as pointer[void])
     true
@@ -770,17 +770,17 @@ procedure release_idle_bucket(mutable b: pointer[HeapBucketHeader]) returns bool
     while c <> null and idle < IDLE_BUCKETS_KEPT
     {
         if c <> b and c.bitmap = BITMAP_ALL_FREE
-            set idle: idle + 1
-        set c: c.next as pointer[HeapBucketHeader]
+            idle := idle + 1
+        c := c.next as pointer[HeapBucketHeader]
     }
     if idle < IDLE_BUCKETS_KEPT
         return false
     if p = null
-        set heap_head: n as pointer[HeapBucketHeader]
+        heap_head := n as pointer[HeapBucketHeader]
     else
-        set p.next: n
+        p.next := n
     if n <> null
-        set n.prev: p
+        n.prev := p
     bucket_unlock b
     count_bucket_freed()
     scaly_aligned_free(b as pointer[void])
@@ -808,10 +808,10 @@ procedure scaly_thread_release_buckets()
     {
         let nxt sb.next
         scaly_aligned_free(sb as pointer[void])
-        set sb: nxt
+        sb := nxt
     }
-    set stack_head: null
-    set stack_top: null
+    stack_head := null
+    stack_top := null
 
     ; the oversized blocks kept for reuse (Page.release_page)
     var ob oversized_kept
@@ -819,11 +819,11 @@ procedure scaly_thread_release_buckets()
     {
         let onext ob.next_page
         scaly_aligned_free(ob as pointer[void])
-        set ob: onext
+        ob := onext
     }
-    set oversized_kept: null
-    set oversized_kept_count: 0
-    set oversized_kept_bytes: 0
+    oversized_kept := null
+    oversized_kept_count := 0
+    oversized_kept_bytes := 0
 
     var hb heap_head
     while hb <> null
@@ -833,9 +833,9 @@ procedure scaly_thread_release_buckets()
         let empty hb.bitmap = BITMAP_ALL_FREE
         if empty = false
         {
-            set hb.owner: BUCKET_DEAD
-            set hb.next: null
-            set hb.prev: null
+            hb.owner := BUCKET_DEAD
+            hb.next := null
+            hb.prev := null
         }
         bucket_unlock hb
         if empty
@@ -843,9 +843,9 @@ procedure scaly_thread_release_buckets()
             count_bucket_freed()
             scaly_aligned_free(hb as pointer[void])
         }
-        set hb: nxt
+        hb := nxt
     }
-    set heap_head: null
+    heap_head := null
 }
 
 function first_usable_page(bucket: pointer[void]) returns pointer[Page]
@@ -861,19 +861,19 @@ function last_usable_page(bucket: pointer[void]) returns pointer[Page]
 
 procedure reset_page(p: ref[Page])
 {
-    set p.next_object: (p as size_t + sizeof Page) as pointer[void]
-    set p.current_page: null
-    set p.next_page: null
+    p.next_object := (p as size_t + sizeof Page) as pointer[void]
+    p.current_page := null
+    p.next_page := null
     ; Zero the field directly — no PageList() construction. The allocator
     ; must never region-allocate: residency inference would promote the
     ; construction to a local page, and a local page here recurses into
     ; Page.allocate_root_page (allocator allocating from itself).
-    set p.exclusive_pages.head: null
+    p.exclusive_pages.head := null
     ; Every page hands out its region's head, and a fresh page heads its
     ; own — root pages, exclusive pages and the hand-paired alloc/release
     ; pages in fiber.scaly/File.scaly all stay their own region for good.
     ; Page.allocate re-points this on the extension pages it appends.
-    set p.region: p
+    p.region := p
 }
 
 ; --------------------------------------------------------------------------
@@ -895,9 +895,9 @@ procedure poison_from_env()
 {
     if poison_env_read
         return
-    set poison_env_read: true
+    poison_env_read := true
     if getenv("SCALY_POISON") <> null
-        set page_poison: true
+        page_poison := true
 }
 
 procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader]
@@ -908,10 +908,10 @@ procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns 
         scaly_panic_oom("Page.create_stack_bucket", BUCKET_SIZE)
 
     let sb mem as pointer[StackBucketHeader]
-    set sb.prev: prev
-    set sb.next: null
+    sb.prev := prev
+    sb.next := null
     if prev <> null
-        set prev.next: sb
+        prev.next := sb
 
     sb
 }
@@ -924,11 +924,11 @@ function create_heap_bucket() returns ref[HeapBucketHeader]
         scaly_panic_oom("Page.create_heap_bucket", BUCKET_SIZE)
 
     let hb mem as pointer[HeapBucketHeader]
-    set hb.prev: null
-    set hb.next: null
-    set hb.bitmap: BITMAP_ALL_FREE
-    set hb.lock: 0
-    set hb.owner: heap_owner_token()
+    hb.prev := null
+    hb.next := null
+    hb.bitmap := BITMAP_ALL_FREE
+    hb.lock := 0
+    hb.owner := heap_owner_token()
     let st page_statistics
     if st <> null
         scaly_atomic_add_u64(&st.buckets, 1 as u64)
@@ -961,31 +961,31 @@ function ctz_u64(x: u64) returns i32
     var v x
     if (v & 0xFFFFFFFF) = 0
     {
-        set n: n + 32
-        set v: v >> 32
+        n := n + 32
+        v := v >> 32
     }
     if (v & 0xFFFF) = 0
     {
-        set n: n + 16
-        set v: v >> 16
+        n := n + 16
+        v := v >> 16
     }
     if (v & 0xFF) = 0
     {
-        set n: n + 8
-        set v: v >> 8
+        n := n + 8
+        v := v >> 8
     }
     if (v & 0xF) = 0
     {
-        set n: n + 4
-        set v: v >> 4
+        n := n + 4
+        v := v >> 4
     }
     if (v & 0x3) = 0
     {
-        set n: n + 2
-        set v: v >> 2
+        n := n + 2
+        v := v >> 2
     }
     if (v & 0x1) = 0
-        set n: n + 1
+        n := n + 1
     n as i32
 }
 
@@ -1023,7 +1023,7 @@ procedure scaly_release_root_page(p: pointer[Page])
 
     if p <> first
     {
-        set stack_top: (p as size_t - PAGE_SIZE) as pointer[Page]
+        stack_top := (p as size_t - PAGE_SIZE) as pointer[Page]
         return
     }
 
@@ -1031,11 +1031,11 @@ procedure scaly_release_root_page(p: pointer[Page])
     ; usable slot, or clear the stack entirely if this was the first bucket.
     if bucket.prev = null
     {
-        set stack_top: null
+        stack_top := null
         return
     }
 
-    set stack_top: last_usable_page(bucket.prev)
+    stack_top := last_usable_page(bucket.prev)
 }
 
 ; Full teardown of a function-local root page at scope exit (the blocker-C
@@ -1063,11 +1063,11 @@ procedure scaly_release_root_page_full(p: pointer[Page])
     let fresh_next (p as size_t + sizeof Page) as pointer[void]
     var used false
     if p.next_object <> fresh_next
-        set used: true
+        used := true
     if p.next_page <> null
-        set used: true
+        used := true
     if p.exclusive_pages.head <> null
-        set used: true
+        used := true
     if used
         p.deallocate_extensions()
     scaly_release_root_page p
@@ -1152,7 +1152,7 @@ procedure scaly_force_frame(mutable f: pointer[Frame]) returns pointer[Page]
         ; name is written out as a string literal in the Emitter.
         scaly_force_frame(parent as pointer[Frame])
     let fresh Page.allocate_root_page()
-    set f.page: fresh
+    f.page := fresh
     fresh
 }
 
@@ -1165,7 +1165,7 @@ procedure scaly_release_frame(mutable f: pointer[Frame])
     let p f.page
     if p = null
         return
-    set f.page: null as pointer[Page]
+    f.page := null as pointer[Page]
     scaly_release_root_page_full p
 }
 
@@ -1203,11 +1203,11 @@ procedure scaly_region_adopt_push(mutable head: pointer[u64], region: ref[Page])
         return
     }
     let node region.allocate(16, 8) as pointer[u64]
-    set *(node + 1): region as u64
+    *(node + 1) := region as u64
     repeat
     {
         let old scaly_atomic_load_u64(head)
-        set *node: old
+        *node := old
         if scaly_atomic_cas_u64(head, old, node as u64) = old
             break
     }
@@ -1218,13 +1218,13 @@ procedure scaly_region_adopt_push(mutable head: pointer[u64], region: ref[Page])
 procedure scaly_region_adopt_drain(mutable host: ref[Page], mutable head: pointer[u64])
 {
     var node (*head) as pointer[u64]
-    set *head: 0
+    *head := 0
     while node <> null
     {
         let next (*node) as pointer[u64]
         let region (*(node + 1)) as ref[Page]
         host.exclusive_pages.add(region)
-        set node: next
+        node := next
     }
 }
 
@@ -1277,7 +1277,7 @@ procedure scaly_panic_unwind_to(mark: pointer[Page])
         if top = null
             return
         scaly_release_root_page_full top
-        set panic_pages_unwound: panic_pages_unwound + 1
+        panic_pages_unwound := panic_pages_unwound + 1
     }
 }
 
@@ -1308,9 +1308,9 @@ procedure scaly_trace_dump()
             scaly_eputs " leak="
             scaly_eputi(pushes - pops)
             scaly_eputnl()
-            set any: true
+            any := true
         }
-        set i: i + 1
+        i := i + 1
     }
     if any
         return
@@ -1323,15 +1323,15 @@ procedure scaly_rt_register_trace()
     ; Already armed — nothing to do.
     if trace_atexit_registered <> 0
         return
-    set trace_atexit_registered: 1
+    trace_atexit_registered := 1
     ; Env var not set — leave trace disabled.
     if getenv("SCALY_TRACE_ROOT") = null
         return
-    set trace_enabled: 1
+    trace_enabled := 1
     ; Lazy-allocate the trace table. Scaly can't express a fixed-size
     ; array at module-global scope, so we heap-allocate on first arm.
     let bytes TRACE_MAX * (sizeof TraceEntry)
-    set trace_entries: scaly_aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
+    trace_entries := scaly_aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
     atexit(&scaly_trace_dump)
 }
 
@@ -1343,7 +1343,7 @@ function scaly_trace_find_or_add(name: pointer[const_char]) returns ref[TraceEnt
         let e trace_entries + i
         if strcmp(e.name, name) = 0
             return e
-        set i: i + 1
+        i := i + 1
     }
     ; Table full — give up rather than corrupting.
     if trace_count >= (TRACE_MAX as i64)
@@ -1365,10 +1365,10 @@ function scaly_trace_find_or_add(name: pointer[const_char]) returns ref[TraceEnt
     ; instrumentation the retired C++ stage-0 used to emit), so this
     ; code path never ran until SCALY_TRACE_HEAP below made someone
     ; actually call it for the first time.
-    set new_entry.name: strdup(name) as pointer[const_char]
-    set new_entry.push_count: 0
-    set new_entry.pop_count: 0
-    set trace_count: trace_count + 1
+    new_entry.name := strdup(name) as pointer[const_char]
+    new_entry.push_count := 0
+    new_entry.pop_count := 0
+    trace_count := trace_count + 1
     new_entry
 }
 
@@ -1379,7 +1379,7 @@ procedure scaly_trace_push(mutable name: pointer[const_char])
         return
     let e scaly_trace_find_or_add name
     if e <> null
-        set e.push_count: e.push_count + 1
+        e.push_count := e.push_count + 1
 }
 
 procedure scaly_trace_pop(mutable name: pointer[const_char])
@@ -1389,7 +1389,7 @@ procedure scaly_trace_pop(mutable name: pointer[const_char])
         return
     let e scaly_trace_find_or_add name
     if e <> null
-        set e.pop_count: e.pop_count + 1
+        e.pop_count := e.pop_count + 1
 }
 
 ; --------------------------------------------------------------------------
@@ -1449,9 +1449,9 @@ procedure scaly_heap_trace_dump()
             scaly_eputs " leak="
             scaly_eputi(allocs - releases)
             scaly_eputnl()
-            set any: true
+            any := true
         }
-        set i: i + 1
+        i := i + 1
     }
     if any
         return
@@ -1469,16 +1469,16 @@ procedure scaly_rt_register_heap_trace()
     ; Env var not set — leave trace disabled.
     if getenv("SCALY_TRACE_HEAP") = null
     {
-        set heap_trace_state: 1
+        heap_trace_state := 1
         return
     }
     let hdr scaly_aligned_alloc(8, (sizeof HeapTraceHeader) as i64) as pointer[HeapTraceHeader]
-    set hdr.lock: 0
-    set hdr.count: 0
+    hdr.lock := 0
+    hdr.count := 0
     let bytes TRACE_MAX * (sizeof TraceEntry)
-    set hdr.entries: scaly_aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
-    set heap_trace: hdr
-    set heap_trace_state: 2
+    hdr.entries := scaly_aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
+    heap_trace := hdr
+    heap_trace_state := 2
     atexit(&scaly_heap_trace_dump)
 }
 
@@ -1510,7 +1510,7 @@ procedure scaly_heap_trace_find_or_add(mutable hdr: ref[HeapTraceHeader], name: 
         let e hdr.entries + i
         if strcmp(e.name, name) = 0
             return e
-        set i: i + 1
+        i := i + 1
     }
     ; Table full — give up rather than corrupting.
     if hdr.count >= (TRACE_MAX as i64)
@@ -1520,10 +1520,10 @@ procedure scaly_heap_trace_find_or_add(mutable hdr: ref[HeapTraceHeader], name: 
     ; name strings don't survive module disposal between test runs.
     ; Plain `.` field access — see scaly_trace_find_or_add's comment on
     ; why `(*new_entry).field` is the wrong idiom here.
-    set new_entry.name: strdup(name) as pointer[const_char]
-    set new_entry.push_count: 0
-    set new_entry.pop_count: 0
-    set hdr.count: hdr.count + 1
+    new_entry.name := strdup(name) as pointer[const_char]
+    new_entry.push_count := 0
+    new_entry.pop_count := 0
+    hdr.count := hdr.count + 1
     new_entry
 }
 
@@ -1536,7 +1536,7 @@ procedure scaly_heap_trace_alloc(mutable site: pointer[const_char])
     heap_trace_lock hdr
     let e scaly_heap_trace_find_or_add(hdr, site)
     if e <> null
-        set e.push_count: e.push_count + 1
+        e.push_count := e.push_count + 1
     heap_trace_unlock hdr
 }
 
@@ -1549,7 +1549,7 @@ procedure scaly_heap_trace_release(mutable site: pointer[const_char])
     heap_trace_lock hdr
     let e scaly_heap_trace_find_or_add(hdr, site)
     if e <> null
-        set e.pop_count: e.pop_count + 1
+        e.pop_count := e.pop_count + 1
     heap_trace_unlock hdr
 }
 

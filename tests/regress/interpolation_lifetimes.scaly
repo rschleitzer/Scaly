@@ -27,7 +27,7 @@ function churn() returns size_t
     while i < 500
     {
         junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
-        set i: i + 1
+        i := i + 1
     }
     junk.length
 }
@@ -41,7 +41,7 @@ procedure run() returns bool
     churn()
     var stored: String ""
     for s in r.names
-        set stored: s
+        stored := s
     x.equals(String("dir/name")) and y.equals(String("tail!")) and stored.equals(String("left-right"))
 }
 

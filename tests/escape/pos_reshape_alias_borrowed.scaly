@@ -9,7 +9,7 @@ define Holder ( var b: pointer[Box] )
     procedure stash(mutable this, p: pointer[Box])
     {
         let q p
-        set this.b: q
+        this.b := q
     }
 }
 procedure fill(mutable c: Holder, bx: pointer[Box])

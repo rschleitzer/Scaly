@@ -20,7 +20,7 @@ procedure fill(mutable h: ref[Holder])
     while i < 1000
     {
         h.push(i)
-        set i: i + 1
+        i := i + 1
     }
 }
 

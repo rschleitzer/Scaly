@@ -36,11 +36,11 @@ define ByteBuf
         data.slice_from(length)
 
     procedure clear(mutable this)
-        set length: 0
+        length := 0
 
     ; n more bytes are filled (a read wrote them into spare()).
     procedure advance(mutable this, n: size_t)
-        set length: length + n
+        length := length + n
 
     ; Make room for n more bytes: at least double on growth. The test stays
     ; small enough to inline into every append; the growth is out of line.
@@ -54,19 +54,19 @@ define ByteBuf
     {
         var cap data.length * 2
         if cap < length + n
-            set cap: length + n
+            cap := length + n
         let old data
         let old_owned owned
         if cap <= 0x400
         {
-            set data: allocate_slice[u8]^host(host, cap)
-            set owned: false
+            data := allocate_slice[u8]^host(host, cap)
+            owned := false
         }
         else
         {
             let fresh host.allocate_exclusive_buffer(cap, 1) as pointer[u8]
-            set data: Slice[u8](cap, fresh)
-            set owned: true
+            data := Slice[u8](cap, fresh)
+            owned := true
         }
         if length > 0
             memcpy(data.data as pointer[void], old.data as pointer[void], length)
@@ -81,12 +81,12 @@ define ByteBuf
             return
         if n >= length
         {
-            set length: 0
+            length := 0
             return
         }
         let rest length - n
         memmove(data.data as pointer[void], data.slice_from(n).data as pointer[void], rest)
-        set length: rest
+        length := rest
     }
 
     procedure append(mutable this, s: Slice[u8])
@@ -95,14 +95,14 @@ define ByteBuf
             return
         this.reserve(s.length)
         memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length)
-        set length: length + s.length
+        length := length + s.length
     }
 
     procedure append_byte(mutable this, b: u8)
     {
         this.reserve(1)
         data.put(length, b)
-        set length: length + 1
+        length := length + 1
     }
 
     ; An unsigned number in decimal, written backwards into its place.
@@ -112,21 +112,21 @@ define ByteBuf
         var t v / 10
         while t > 0
         {
-            set n: n + 1
-            set t: t / 10
+            n := n + 1
+            t := t / 10
         }
         this.reserve(n)
         var at length + n
         var x v
         repeat
         {
-            set at: at - 1
+            at := at - 1
             data.put(at, ((x % 10) as u8) + 48)
-            set x: x / 10
+            x := x / 10
             if x = 0
                 break
         }
-        set length: length + n
+        length := length + n
     }
 
     ; A signed number in decimal.

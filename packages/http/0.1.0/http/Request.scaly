@@ -87,7 +87,7 @@ define Request
                 if equals_lower(name, lname)
                     return trim(line.slice_from((colon as size_t) + 1))
             }
-            set i: next_line(fields, e)
+            i := next_line(fields, e)
         }
         fields.slice_to(0)
     }
@@ -113,20 +113,20 @@ define Request
         {
             var e i
             while e < query.length and query[e] <> 38
-                set e: e + 1
+                e := e + 1
             let pair query.subslice(i, e)
             let eq index_of(pair, 61)
             if eq >= 0
             {
                 if pair.slice_to(eq as size_t).equals(name)
-                    set n: n + 1
+                    n := n + 1
             }
             else
             {
                 if pair.equals(name)
-                    set n: n + 1
+                    n := n + 1
             }
-            set i: e + 1
+            i := e + 1
         }
         n
     }
@@ -141,7 +141,7 @@ define Request
         {
             var e i
             while e < query.length and query[e] <> 38
-                set e: e + 1
+                e := e + 1
             let pair query.subslice(i, e)
             let eq index_of(pair, 61)
             var hit false
@@ -150,22 +150,22 @@ define Request
             {
                 if pair.slice_to(eq as size_t).equals(name)
                 {
-                    set hit: true
-                    set value: pair.slice_from((eq as size_t) + 1)
+                    hit := true
+                    value := pair.slice_from((eq as size_t) + 1)
                 }
             }
             else
             {
                 if pair.equals(name)
-                    set hit: true
+                    hit := true
             }
             if hit
             {
                 if seen = nth
                     return value
-                set seen: seen + 1
+                seen := seen + 1
             }
-            set i: e + 1
+            i := e + 1
         }
         query.slice_to(0)
     }
@@ -182,7 +182,7 @@ define Request
         {
             var k: size_t 0
             while k < name.length and i + k < query.length and query[i + k] = name[k]
-                set k: k + 1
+                k := k + 1
             if k = name.length
             {
                 ; the pair is the name, or the name and '='
@@ -193,14 +193,14 @@ define Request
                 {
                     var e after + 1
                     while e < query.length and query[e] <> 38
-                        set e: e + 1
+                        e := e + 1
                     return query.subslice(after + 1, e)
                 }
             }
             var e i
             while e < query.length and query[e] <> 38
-                set e: e + 1
-            set i: e + 1
+                e := e + 1
+            i := e + 1
         }
         query.slice_to(0)
     }
@@ -221,7 +221,7 @@ function head_end(buf: Slice[u8]) returns size_t
             if i + 2 < buf.length and buf[i + 1] = 13 and buf[i + 2] = 10
                 return i + 3
         }
-        set i: i + 1
+        i := i + 1
     }
     0
 }
@@ -250,7 +250,7 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
     ; RFC 9112 2.2: empty lines before the request line are ignored.
     var start: size_t 0
     while start < buf.length and (buf[start] = 13 or buf[start] = 10)
-        set start: start + 1
+        start := start + 1
 
     ; the request line: method SP target SP HTTP/1.x
     let lf0 find_byte(buf, start, 10)
@@ -258,7 +258,7 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
         return head_incomplete(buf.length - start)
     var le lf0 as size_t
     if le > start and buf[le - 1] = 13
-        set le: le - 1
+        le := le - 1
     let line buf.subslice(start, le)
     let sp1 index_of(line, 32)
     if sp1 <= 0
@@ -273,20 +273,20 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
     let mc version[7]
     if mc < 48 or mc > 57
         return PARSE_BAD
-    set req.list: null
-    set req.method: line.slice_to(sp1 as size_t)
-    set req.target: rest.slice_to(sp2 as size_t)
-    set req.minor: (mc - 48) as int
+    req.list := null
+    req.method := line.slice_to(sp1 as size_t)
+    req.target := rest.slice_to(sp2 as size_t)
+    req.minor := (mc - 48) as int
     let q index_of(req.target, 63)
     if q >= 0
     {
-        set req.path: req.target.slice_to(q as size_t)
-        set req.query: req.target.slice_from((q as size_t) + 1)
+        req.path := req.target.slice_to(q as size_t)
+        req.query := req.target.slice_from((q as size_t) + 1)
     }
     else
     {
-        set req.path: req.target
-        set req.query: req.target.slice_from(req.target.length)
+        req.path := req.target
+        req.query := req.target.slice_from(req.target.length)
     }
 
     ; the header fields, a line at a time: the ones framing the message are
@@ -306,10 +306,10 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
             return head_incomplete(buf.length - start)
         var e lf as size_t
         if e > p and buf[e - 1] = 13
-            set e: e - 1
+            e := e - 1
         if e = p
         {
-            set he: (lf as size_t) + 1
+            he := (lf as size_t) + 1
             break
         }
         let fl buf.subslice(p, e)
@@ -330,8 +330,8 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
                         return PARSE_BAD
                     if has_length and content_length <> (n as u64)
                         return PARSE_BAD
-                    set content_length: n as u64
-                    set has_length: true
+                    content_length := n as u64
+                    has_length := true
                 }
             }
             case 17:
@@ -339,7 +339,7 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
                 if equals_lower(name, "transfer-encoding")
                 {
                     if ends_with_lower(trim(fl.slice_from((colon as size_t) + 1)), "chunked")
-                        set chunked: true
+                        chunked := true
                     else
                         return PARSE_NOT_IMPLEMENTED
                 }
@@ -350,22 +350,22 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
                 {
                     let value trim(fl.slice_from((colon as size_t) + 1))
                     if contains_token_lower(value, "close")
-                        set close: true
+                        close := true
                     if contains_token_lower(value, "keep-alive")
-                        set keep: true
+                        keep := true
                 }
             }
-        set p: (lf as size_t) + 1
+        p := (lf as size_t) + 1
         if p - start > MAX_HEAD
             return PARSE_HEAD_TOO_LARGE
     }
     if he - start > MAX_HEAD
         return PARSE_HEAD_TOO_LARGE
-    set req.fields: buf.subslice(first, p)
+    req.fields := buf.subslice(first, p)
     if req.minor = 0
-        set req.keep_alive: keep and not close
+        req.keep_alive := keep and not close
     else
-        set req.keep_alive: not close
+        req.keep_alive := not close
 
     ; the body
     if chunked
@@ -374,7 +374,7 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
         let n decode_chunked(buf, he, &blen)
         if n <= 0
             return n
-        set req.body: buf.subslice(he, he + blen)
+        req.body := buf.subslice(he, he + blen)
         return n
     }
     if content_length > (MAX_BODY as u64)
@@ -382,7 +382,7 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
     let total he + (content_length as size_t)
     if total > buf.length
         return PARSE_INCOMPLETE
-    set req.body: buf.subslice(he, total)
+    req.body := buf.subslice(he, total)
     total as i64
 }
 
@@ -416,14 +416,14 @@ procedure decode_chunked(mutable buf: Slice[u8], at: size_t, mutable body_len: r
                 if te < 0
                     return PARSE_INCOMPLETE
                 let tl buf.subslice(t, te as size_t)
-                set t: next_line(buf, te as size_t)
+                t := next_line(buf, te as size_t)
                 if tl.length = 0
                     break
             }
-            set p: t
+            p := t
             break
         }
-        set body: body + (size as u64)
+        body := body + (size as u64)
         if body > (MAX_BODY as u64)
             return PARSE_BODY_TOO_LARGE
         let after data + (size as size_t)
@@ -436,13 +436,13 @@ procedure decode_chunked(mutable buf: Slice[u8], at: size_t, mutable body_len: r
                 return PARSE_INCOMPLETE
             if buf[after + 1] <> 10
                 return PARSE_BAD
-            set p: after + 2
+            p := after + 2
         }
         else
         {
             if buf[after] <> 10
                 return PARSE_BAD
-            set p: after + 1
+            p := after + 1
         }
     }
     let total p
@@ -459,13 +459,13 @@ procedure decode_chunked(mutable buf: Slice[u8], at: size_t, mutable body_len: r
             break
         if w <> data
             memmove(buf.slice_from(w).data as pointer[void], buf.slice_from(data).data as pointer[void], size)
-        set w: w + size
-        set r: data + size
+        w := w + size
+        r := data + size
         if buf[r] = 13
-            set r: r + 2
+            r := r + 2
         else
-            set r: r + 1
+            r := r + 1
     }
-    set body_len: w - at
+    body_len := w - at
     total as i64
 }

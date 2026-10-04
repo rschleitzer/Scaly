@@ -12,14 +12,14 @@
 mutable hit: int 0
 
 procedure read(a: int, b: int) mutable hit
-    set hit: a + b
+    hit := a + b
 
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable hit
 {
     read(1, 2)
     if hit <> 3
         return 1
-    set hit: 0
+    hit := 0
     let f &read
     f(40, 2)
     if hit <> 42

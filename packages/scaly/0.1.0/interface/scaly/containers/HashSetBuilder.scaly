@@ -6,8 +6,8 @@ define HashSetBuilder[T]
 {
     init (vec: Vector[T])
     {
-        set length: 0
-        set slots: null
+        length := 0
+        slots := null
         if vec.length > 0
         {
             reallocate vec.length
@@ -40,7 +40,7 @@ define HashSetBuilder[T]
             }
             own_page.deallocate_exclusive_page(Page.get(slots))
         }
-        set slots: new_slots
+        slots := new_slots
     }
 
     procedure add(mutable this: HashSetBuilder[T], value: T) returns bool
@@ -68,7 +68,7 @@ define HashSetBuilder[T]
         let own_page Page.get(slots)
         slot_list.add_on(own_page, Slot[T](value, hash_code))
 
-        set length: length + 1
+        length := length + 1
         return true
     }
 

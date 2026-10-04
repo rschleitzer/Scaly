@@ -19,27 +19,27 @@ mutable head: pointer[Node] null
 procedure hang(n: pointer[Node]) mutable head
 {
     if head <> null
-        set head.prev: n
+        head.prev := n
 }
 
 let a scaly_aligned_alloc(16 as i64, 16 as i64) as pointer[Node]
-set a.prev: null
-set a.next: null
+a.prev := null
+a.next := null
 let b scaly_aligned_alloc(16 as i64, 16 as i64) as pointer[Node]
-set b.prev: null
-set b.next: null
+b.prev := null
+b.next := null
 
-set head: a
+head := a
 hang b
 
 var ok true
 ; Read back through the global member chain.
 if head.prev <> b
-    set ok: false
+    ok := false
 ; The store went through the POINTED-TO node, not the global slot.
 if head <> a
-    set ok: false
+    ok := false
 if a.prev <> b
-    set ok: false
+    ok := false
 if ok
     print "PASS\n"

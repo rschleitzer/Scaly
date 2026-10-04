@@ -19,7 +19,7 @@
 define Alpha (k: int)
 {
     init(k: int)
-        set this.k: k
+        this.k := k
 
     function opt_taken(this: ref[Alpha], other: ref[Alpha]?) returns int
         this.k
@@ -34,7 +34,7 @@ define Alpha (k: int)
 define OptRec (a: ref[Alpha]?)
 {
     init(a: ref[Alpha]?)
-        set this.a: a
+        this.a := a
 }
 
 function free_opt(a: ref[Alpha]?) returns int
@@ -58,7 +58,7 @@ function drive() returns int
     ; it was handed, so dereferencing it would be the bug this file is about.
     var built 0
     if four.a = null
-        set built: 1
+        built := 1
     ((one + two) + (three + five)) + (six + built)
 }
 

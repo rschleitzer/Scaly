@@ -29,15 +29,15 @@ function close_enough(a: float, b: float, atol: float, rtol: float) returns bool
 {
     var d a - b
     if d < 0.0
-        set d: 0.0 - d
+        d := 0.0 - d
     var m a
     if m < 0.0
-        set m: 0.0 - m
+        m := 0.0 - m
     var mb b
     if mb < 0.0
-        set mb: 0.0 - mb
+        mb := 0.0 - mb
     if mb > m
-        set m: mb
+        m := mb
     if d <= atol + rtol * m
         return true
     false
@@ -67,16 +67,16 @@ procedure check_leaf(mutable tape: Tape, out: int, id: int, count: int, h: float
         let ga tape.grad_at(id, i)
         let gn num_grad(tape, out, id, i, h)
         if close_enough(ga, gn, atol, rtol) = false
-            set good: false
+            good := false
         var mag ga
         if mag < 0.0
-            set mag: 0.0 - mag
+            mag := 0.0 - mag
         if mag > maxabs
-            set maxabs: mag
-        set i: i + 1
+            maxabs := mag
+        i := i + 1
     }
     if maxabs < minmax
-        set good: false
+        good := false
     good
 }
 
@@ -89,7 +89,7 @@ while i < 32
 {
     let v tval(i)
     tape.set_value(x, i, v)
-    set i: i + 1
+    i := i + 1
 }
 let w1 tape.leaf(8, 16)
 var i2 0
@@ -97,7 +97,7 @@ while i2 < 128
 {
     let v tval(i2 + 5) * 0.5
     tape.set_value(w1, i2, v)
-    set i2: i2 + 1
+    i2 := i2 + 1
 }
 let w2 tape.leaf(16, 8)
 var i3 0
@@ -105,7 +105,7 @@ while i3 < 128
 {
     let v tval(i3 + 11) * 0.35
     tape.set_value(w2, i3, v)
-    set i3: i3 + 1
+    i3 := i3 + 1
 }
 let gamma tape.leaf(1, 8)
 let beta tape.leaf(1, 8)
@@ -116,7 +116,7 @@ while i4 < 8
     tape.set_value(gamma, i4, vg)
     let vb tval(i4 + 7) * 0.3
     tape.set_value(beta, i4, vb)
-    set i4: i4 + 1
+    i4 := i4 + 1
 }
 
 let h1 tape.matmul(x, w1)
@@ -130,7 +130,7 @@ while i5 < 32
 {
     let v wval(i5)
     w.put(i5 as size_t, v)
-    set i5: i5 + 1
+    i5 := i5 + 1
 }
 let s tape.wsum(sm, w)
 tape.backward s
@@ -138,27 +138,27 @@ tape.backward s
 if check_leaf(tape, s, x, 32, 0.02, 0.003, 0.05, 0.0005) = false
 {
     print("FAIL block x")
-    set ok: false
+    ok := false
 }
 if check_leaf(tape, s, w1, 128, 0.02, 0.003, 0.05, 0.0001) = false
 {
     print("FAIL block w1")
-    set ok: false
+    ok := false
 }
 if check_leaf(tape, s, w2, 128, 0.02, 0.003, 0.05, 0.0001) = false
 {
     print("FAIL block w2")
-    set ok: false
+    ok := false
 }
 if check_leaf(tape, s, gamma, 8, 0.02, 0.003, 0.05, 0.0005) = false
 {
     print("FAIL block gamma")
-    set ok: false
+    ok := false
 }
 if check_leaf(tape, s, beta, 8, 0.02, 0.003, 0.05, 0.0005) = false
 {
     print("FAIL block beta")
-    set ok: false
+    ok := false
 }
 
 if ok

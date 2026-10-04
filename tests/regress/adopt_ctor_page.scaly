@@ -27,7 +27,7 @@ define Owner
 {
     init(n: String)
     {
-        set named: Named^this(1, String(n))
+        named := Named^this(1, String(n))
     }
 
     function read_back(this: Owner) returns size_t
@@ -46,8 +46,8 @@ function churn(n: size_t) returns size_t
         junk.put(2, "zzzzz")
         let jp junk.get 0
         if jp <> null
-            set total: total + (*jp).get_length()
-        set i: i + 1
+            total := total + (*jp).get_length()
+        i := i + 1
     }
     total
 }

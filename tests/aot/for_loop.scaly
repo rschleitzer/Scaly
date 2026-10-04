@@ -3,7 +3,7 @@
 
 var sum: int 0
 for i in 4
-    set sum: sum + i
+    sum := sum + i
 if sum = 6
     print("6")
 else

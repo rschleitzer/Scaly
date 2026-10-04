@@ -21,7 +21,7 @@ function inner(n: size_t) returns int
 {
     let s String("a region on this frame")
     var buf int[2]
-    set buf[0]: 7
+    buf[0] := 7
     let v Slice[int](2, &buf[0])
     let r v.get(n) as ref[int]        ; for n >= 2 the claim is false
     r + ((s.get_length() as int) / 22)
@@ -33,7 +33,7 @@ function outer(n: size_t) returns int
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var before_local 100
-    set before_local: before_local + argc
+    before_local := before_local + argc
     let mark0 scaly_panic_mark()
     let before Region.panic_null_count()
 
@@ -78,7 +78,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             var caught_else false
             try let b outer((argc as size_t) + 4)
             else
-                set caught_else: true
+                caught_else := true
             if caught_else = false
             {
                 print "FAIL: the else form did not catch the null unwrap"

@@ -62,13 +62,13 @@ function num_to_string(n: i64) returns String
     {
         let digit ((value % 10) as char) + (48 as char)
         digits.add digit
-        set value: value / 10
+        value := value / 10
     }
     var sb StringBuilder()
     var i digits.length
     while i > 0
     {
-        set i: i - 1
+        i := i - 1
         let d digits.get i
         if d <> null
             sb.append(*d)
@@ -81,7 +81,7 @@ function fixed3(f: float) returns String
     var ok false
     if f >= 0.0
         if f < 100000.0
-            set ok: true
+            ok := true
     if ok = false
         return "nan"
     let m ((f * 1000.0) + 0.5) as int
@@ -124,8 +124,8 @@ function parse_int(s: pointer[const_char]) returns int
     var i 0 as size_t
     if s[0] as int = 45
     {
-        set neg: true
-        set i: 1 as size_t
+        neg := true
+        i := 1 as size_t
     }
     var v 0
     var any false
@@ -136,9 +136,9 @@ function parse_int(s: pointer[const_char]) returns int
             break
         if c > 57
             break
-        set v: v * 10 + (c - 48)
-        set any: true
-        set i: i + (1 as size_t)
+        v := v * 10 + (c - 48)
+        any := true
+        i := i + (1 as size_t)
     }
     if any = false
         return 0 - 1
@@ -164,11 +164,11 @@ procedure fill(mutable tape: Tape, id: int, count: int, s0: int) returns int
     var i 0
     while i < count
     {
-        set s: lcg(s)
+        s := lcg(s)
         let r pmod(s, 2001) - 1000
         let rv (r as float) * 0.0001
         tape.set_value(id, i, rv)
-        set i: i + 1
+        i := i + 1
     }
     s
 }
@@ -179,7 +179,7 @@ procedure fill_const(mutable tape: Tape, id: int, count: int, v: float)
     while i < count
     {
         tape.set_value(id, i, v)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -227,8 +227,8 @@ while pos < tlen
                             if text.get((pos + 4) as size_t) as int = 97
                                 if text.get((pos + 5) as size_t) as int = 118
                                 {
-                                    set ptok: ntok
-                                    set have_prompt: true
+                                    ptok := ntok
+                                    have_prompt := true
                                 }
     }
     var cp b0
@@ -238,8 +238,8 @@ while pos < tlen
         if b0 < 224
         {
             let b1 text.get((pos + 1) as size_t) as int
-            set cp: (b0 - 192) * 64 + (b1 - 128)
-            set adv: 2
+            cp := (b0 - 192) * 64 + (b1 - 128)
+            adv := 2
         }
     }
     if b0 >= 224
@@ -248,37 +248,37 @@ while pos < tlen
         {
             let b1 text.get((pos + 1) as size_t) as int
             let b2 text.get((pos + 2) as size_t) as int
-            set cp: ((b0 - 224) * 64 + (b1 - 128)) * 64 + (b2 - 128)
-            set adv: 3
+            cp := ((b0 - 224) * 64 + (b1 - 128)) * 64 + (b2 - 128)
+            adv := 3
         }
     }
     if b0 >= 240
     {
-        set cp: 0
-        set adv: 4
+        cp := 0
+        adv := 4
     }
     if cp >= 16384
-        set cp: 0
+        cp := 0
     if mp[cp] = 0
     {
-        set vocab: vocab + 1
-        set mp[cp]: vocab
+        vocab := vocab + 1
+        mp[cp] := vocab
         let nid vocab - 1
         if nid < 256
         {
-            set rl[nid]: adv
+            rl[nid] := adv
             var k 0
             while k < adv
             {
-                set rb[nid * 4 + k]: text.get((pos + k) as size_t) as int
-                set k: k + 1
+                rb[nid * 4 + k] := text.get((pos + k) as size_t) as int
+                k := k + 1
             }
         }
     }
     let tid mp[cp] - 1
-    set tp[ntok]: tid as i64
-    set ntok: ntok + 1
-    set pos: pos + adv
+    tp[ntok] := tid as i64
+    ntok := ntok + 1
+    pos := pos + adv
 }
 if ntok < 1000
 {
@@ -323,21 +323,21 @@ let bf tape.leaf(1, D)
 let whead tape.leaf(D, V)
 
 var s 42
-set s: fill(tape, table, V * D, s)
-set s: fill(tape, posemb, T * D, s)
-set s: fill(tape, wq1, D * D, s)
-set s: fill(tape, wk1, D * D, s)
-set s: fill(tape, wv1, D * D, s)
-set s: fill(tape, wo1, D * D, s)
-set s: fill(tape, wf1, D * F, s)
-set s: fill(tape, wp1, F * D, s)
-set s: fill(tape, wq2, D * D, s)
-set s: fill(tape, wk2, D * D, s)
-set s: fill(tape, wv2, D * D, s)
-set s: fill(tape, wo2, D * D, s)
-set s: fill(tape, wf2, D * F, s)
-set s: fill(tape, wp2, F * D, s)
-set s: fill(tape, whead, D * V, s)
+s := fill(tape, table, V * D, s)
+s := fill(tape, posemb, T * D, s)
+s := fill(tape, wq1, D * D, s)
+s := fill(tape, wk1, D * D, s)
+s := fill(tape, wv1, D * D, s)
+s := fill(tape, wo1, D * D, s)
+s := fill(tape, wf1, D * F, s)
+s := fill(tape, wp1, F * D, s)
+s := fill(tape, wq2, D * D, s)
+s := fill(tape, wk2, D * D, s)
+s := fill(tape, wv2, D * D, s)
+s := fill(tape, wo2, D * D, s)
+s := fill(tape, wf2, D * F, s)
+s := fill(tape, wp2, F * D, s)
+s := fill(tape, whead, D * V, s)
 fill_const(tape, g1a, D, 1.0)
 fill_const(tape, g1b, D, 1.0)
 fill_const(tape, g2a, D, 1.0)
@@ -413,9 +413,9 @@ while qi < NPARAM
 {
     let pid pp[qi]
     let sz tape.node_rows(pid) * tape.node_cols(pid)
-    set szp[qi]: sz
-    set total: total + sz
-    set qi: qi + 1
+    szp[qi] := sz
+    total := total + sz
+    qi := qi + 1
 }
 
 let accpage Page.allocate_page()
@@ -469,9 +469,9 @@ if RANK < 0
         var wi 0
         while wi < N
         {
-            set s: lcg(s)
-            set wpv[wi]: pmod(s, ntok - T - 1)
-            set wi: wi + 1
+            s := lcg(s)
+            wpv[wi] := pmod(s, ntok - T - 1)
+            wi := wi + 1
         }
         var w 0
         while w < N
@@ -483,11 +483,11 @@ if RANK < 0
             {
                 tape.set_token(emb, t, tp[p + t])
                 tape.set_token(loss, t, tp[p + t + 1])
-                set t: t + 1
+                t := t + 1
             }
             tape.recompute()
             if w = 0
-                set win_sum: win_sum + tape.value_at(loss, 0)
+                win_sum := win_sum + tape.value_at(loss, 0)
             tape.backward loss
             var idx 0
             var li 0
@@ -499,21 +499,21 @@ if RANK < 0
                 while j < sz
                 {
                     if w = 0
-                        set accp[idx]: tape.grad_at(pid, j)
+                        accp[idx] := tape.grad_at(pid, j)
                     else
-                        set accp[idx]: accp[idx] + tape.grad_at(pid, j)
-                    set idx: idx + 1
-                    set j: j + 1
+                        accp[idx] := accp[idx] + tape.grad_at(pid, j)
+                    idx := idx + 1
+                    j := j + 1
                 }
-                set li: li + 1
+                li := li + 1
             }
-            set w: w + 1
+            w := w + 1
         }
         var ni 0
         while ni < total
         {
-            set accp[ni]: accp[ni] / (N as float)
-            set ni: ni + 1
+            accp[ni] := accp[ni] / (N as float)
+            ni := ni + 1
         }
         var gi 0
         var gl 0
@@ -525,19 +525,19 @@ if RANK < 0
             while gj < sz
             {
                 tape.set_grad(pid, gj, accp[gi])
-                set gi: gi + 1
-                set gj: gj + 1
+                gi := gi + 1
+                gj := gj + 1
             }
-            set gl: gl + 1
+            gl := gl + 1
         }
         var lr: float 0.003
         if step * 4 > STEPS * 3
-            set lr: 0.001
+            lr := 0.001
         var ai 0
         while ai < NPARAM
         {
             tape.adam_step(pp[ai], lr, 0.9, 0.999, 0.00000001, step)
-            set ai: ai + 1
+            ai := ai + 1
         }
         if pmod(step, PROG) = 0
         {
@@ -545,7 +545,7 @@ if RANK < 0
             let ns now - win_t0
             var sps 0 as i64
             if ns > 0
-                set sps: ((PROG as i64) * 1000000000) / ns
+                sps := ((PROG as i64) * 1000000000) / ns
             var sb StringBuilder()
             sb.append "step "
             let ss num_to_string(step as i64)
@@ -563,12 +563,12 @@ if RANK < 0
             sb.append " steps/s"
             let line sb.to_string()
             Console.println(line.to_c_string())
-            set win_sum: 0.0
-            set win_t0: now
+            win_sum := 0.0
+            win_t0 := now
             if now - train_t0 > 40000000000
-                set step: STEPS
+                step := STEPS
         }
-        set step: step + 1
+        step := step + 1
     }
 }
 else
@@ -599,7 +599,7 @@ else
         let gcv gchs.data
         var live Vector[int](N as size_t)
         let lvv live.data
-        set lvv[0]: 1
+        lvv[0] := 1
 
         var accepted 0
         while accepted < N - 1
@@ -616,11 +616,11 @@ else
             hrr.fix_graph(hm)
             let wr hm.rank as int
             Cluster.dispose_message(hrr)
-            set pkv[wr]: peer
+            pkv[wr] := peer
             let gch Cluster.channel(peer, GRAD_ID)
-            set gcv[wr]: gch
-            set lvv[wr]: 1
-            set accepted: accepted + 1
+            gcv[wr] := gch
+            lvv[wr] := 1
+            accepted := accepted + 1
         }
         Console.println("all nodes linked - training...")
 
@@ -636,9 +636,9 @@ else
             var wi 0
             while wi < N
             {
-                set s: lcg(s)
-                set wpv[wi]: pmod(s, ntok - T - 1)
-                set wi: wi + 1
+                s := lcg(s)
+                wpv[wi] := pmod(s, ntok - T - 1)
+                wi := wi + 1
             }
             let p0 wpv[0]
             tape.zero_grads()
@@ -647,10 +647,10 @@ else
             {
                 tape.set_token(emb, t, tp[p0 + t])
                 tape.set_token(loss, t, tp[p0 + t + 1])
-                set t: t + 1
+                t := t + 1
             }
             tape.recompute()
-            set win_sum: win_sum + tape.value_at(loss, 0)
+            win_sum := win_sum + tape.value_at(loss, 0)
             tape.backward loss
             var idx 0
             var li 0
@@ -661,11 +661,11 @@ else
                 var j 0
                 while j < sz
                 {
-                    set accp[idx]: tape.grad_at(pid, j)
-                    set idx: idx + 1
-                    set j: j + 1
+                    accp[idx] := tape.grad_at(pid, j)
+                    idx := idx + 1
+                    j := j + 1
                 }
-                set li: li + 1
+                li := li + 1
             }
             var r 1
             while r < N
@@ -675,8 +675,8 @@ else
                     let raw Channel.receive(gcv[r])
                     if raw = null
                     {
-                        set lvv[r]: 0
-                        set live_count: live_count - 1
+                        lvv[r] := 0
+                        live_count := live_count - 1
                         var db StringBuilder()
                         db.append "  [worker "
                         let rs num_to_string(r as i64)
@@ -697,19 +697,19 @@ else
                         var aidx 0
                         while aidx < total
                         {
-                            set accp[aidx]: accp[aidx] + dp[aidx]
-                            set aidx: aidx + 1
+                            accp[aidx] := accp[aidx] + dp[aidx]
+                            aidx := aidx + 1
                         }
                         Cluster.dispose_message(rr)
                     }
                 }
-                set r: r + 1
+                r := r + 1
             }
             var ni 0
             while ni < total
             {
-                set accp[ni]: accp[ni] / (live_count as float)
-                set ni: ni + 1
+                accp[ni] := accp[ni] / (live_count as float)
+                ni := ni + 1
             }
             var br 1
             while br < N
@@ -718,19 +718,19 @@ else
                 {
                     let mpg Page.allocate_page()
                     let mm mpg.allocate(sizeof GradMsg, alignof GradMsg) as pointer[GradMsg]
-                    set mm.rank: 0 as i64
+                    mm.rank := 0 as i64
                     let dv Vector[float]^mpg(total as size_t)
-                    set mm.data: dv
+                    mm.data := dv
                     let dp dv.data
                     var ci2 0
                     while ci2 < total
                     {
-                        set dp[ci2]: accp[ci2]
-                        set ci2: ci2 + 1
+                        dp[ci2] := accp[ci2]
+                        ci2 := ci2 + 1
                     }
                     Cluster.send(pkv[br], AVG_ID, mm as pointer[void])
                 }
-                set br: br + 1
+                br := br + 1
             }
             var ii 0
             var li2 0
@@ -742,19 +742,19 @@ else
                 while j2 < sz
                 {
                     tape.set_grad(pid, j2, accp[ii])
-                    set ii: ii + 1
-                    set j2: j2 + 1
+                    ii := ii + 1
+                    j2 := j2 + 1
                 }
-                set li2: li2 + 1
+                li2 := li2 + 1
             }
             var lr: float 0.003
             if step * 4 > STEPS * 3
-                set lr: 0.001
+                lr := 0.001
             var si 0
             while si < NPARAM
             {
                 tape.adam_step(pp[si], lr, 0.9, 0.999, 0.00000001, step)
-                set si: si + 1
+                si := si + 1
             }
             if pmod(step, PROG) = 0
             {
@@ -762,7 +762,7 @@ else
                 let ns now - win_t0
                 var sps 0 as i64
                 if ns > 0
-                    set sps: ((PROG as i64) * 1000000000) / ns
+                    sps := ((PROG as i64) * 1000000000) / ns
                 var sb StringBuilder()
                 sb.append "step "
                 let ss num_to_string(step as i64)
@@ -783,12 +783,12 @@ else
                 sb.append " windows/s)"
                 let line sb.to_string()
                 Console.println(line.to_c_string())
-                set win_sum: 0.0
-                set win_t0: now
+                win_sum := 0.0
+                win_t0 := now
                 if now - train_t0 > 40000000000
-                    set step: STEPS
+                    step := STEPS
             }
-            set step: step + 1
+            step := step + 1
         }
         ; done training: say goodbye so the workers stop
         var r2 1
@@ -796,7 +796,7 @@ else
         {
             if lvv[r2] = 1
                 Cluster.close(pkv[r2])
-            set r2: r2 + 1
+            r2 := r2 + 1
         }
     }
     else
@@ -806,15 +806,15 @@ else
         var tries 0
         while peer = null
         {
-            set tries: tries + 1
+            tries := tries + 1
             if tries > 400
                 exit 3
             poll(null as pointer[pollfd], 0 as u64, 50 as i32)
-            set peer: Cluster.connect("127.0.0.1", PORT)
+            peer := Cluster.connect("127.0.0.1", PORT)
         }
         let hp Page.allocate_page()
         let hmsg hp.allocate(sizeof RankMsg, alignof RankMsg) as pointer[RankMsg]
-        set hmsg.rank: RANK as i64
+        hmsg.rank := RANK as i64
         Cluster.send(peer, HELLO_ID, hmsg as pointer[void])
         let avg_ch Cluster.channel(peer, AVG_ID)
 
@@ -827,9 +827,9 @@ else
             var wi 0
             while wi < N
             {
-                set s: lcg(s)
-                set wpv[wi]: pmod(s, ntok - T - 1)
-                set wi: wi + 1
+                s := lcg(s)
+                wpv[wi] := pmod(s, ntok - T - 1)
+                wi := wi + 1
             }
             let p wpv[RANK]
             tape.zero_grads()
@@ -838,15 +838,15 @@ else
             {
                 tape.set_token(emb, t, tp[p + t])
                 tape.set_token(loss, t, tp[p + t + 1])
-                set t: t + 1
+                t := t + 1
             }
             tape.recompute()
             tape.backward loss
             let mpg Page.allocate_page()
             let mm mpg.allocate(sizeof GradMsg, alignof GradMsg) as pointer[GradMsg]
-            set mm.rank: RANK as i64
+            mm.rank := RANK as i64
             let dv Vector[float]^mpg(total as size_t)
-            set mm.data: dv
+            mm.data := dv
             let dp dv.data
             var idx 0
             var li 0
@@ -857,16 +857,16 @@ else
                 var j 0
                 while j < sz
                 {
-                    set dp[idx]: tape.grad_at(pid, j)
-                    set idx: idx + 1
-                    set j: j + 1
+                    dp[idx] := tape.grad_at(pid, j)
+                    idx := idx + 1
+                    j := j + 1
                 }
-                set li: li + 1
+                li := li + 1
             }
             Cluster.send(peer, GRAD_ID, mm as pointer[void])
             let raw Channel.receive(avg_ch)
             if raw = null
-                set running: false
+                running := false
             else
             {
                 let rr raw as pointer[ReceivedRegion]
@@ -883,22 +883,22 @@ else
                     while j2 < sz
                     {
                         tape.set_grad(pid, j2, gdp[ii])
-                        set ii: ii + 1
-                        set j2: j2 + 1
+                        ii := ii + 1
+                        j2 := j2 + 1
                     }
-                    set li2: li2 + 1
+                    li2 := li2 + 1
                 }
                 Cluster.dispose_message(rr)
                 var lr: float 0.003
                 if step * 4 > STEPS * 3
-                    set lr: 0.001
+                    lr := 0.001
                 var si 0
                 while si < NPARAM
                 {
                     tape.adam_step(pp[si], lr, 0.9, 0.999, 0.00000001, step)
-                    set si: si + 1
+                    si := si + 1
                 }
-                set step: step + 1
+                step := step + 1
             }
         }
         Cluster.dispose_peer(peer)
@@ -918,8 +918,8 @@ let hp2 hist.data
 var hi 0
 while hi < P
 {
-    set hp2[hi]: tp[ptok + hi]
-    set hi: hi + 1
+    hp2[hi] := tp[ptok + hi]
+    hi := hi + 1
 }
 let gen_t0 scaly_eio_now_ns()
 var hlen P
@@ -927,24 +927,24 @@ while hlen < P + GEN
 {
     var vis hlen
     if vis > T
-        set vis: T
+        vis := T
     let start hlen - vis
     var t2 0
     while t2 < vis
     {
         tape.set_token(emb, t2, hp2[start + t2])
-        set t2: t2 + 1
+        t2 := t2 + 1
     }
     tape.recompute()
-    set s: lcg(s)
+    s := lcg(s)
     let u (pmod(s, 10000) as float) * 0.0001
     var pick tape.sample(logits, vis - 1, 0.8, u)
     if pick < 0
-        set pick: 0
+        pick := 0
     if pick >= V
-        set pick: 0
-    set hp2[hlen]: pick as i64
-    set hlen: hlen + 1
+        pick := 0
+    hp2[hlen] := pick as i64
+    hlen := hlen + 1
 }
 let gen_t1 scaly_eio_now_ns()
 
@@ -963,10 +963,10 @@ while oi < P + GEN
         while k2 < n
         {
             out.append(rb[id * 4 + k2] as char)
-            set k2: k2 + 1
+            k2 := k2 + 1
         }
     }
-    set oi: oi + 1
+    oi := oi + 1
 }
 let text_out out.to_string()
 Console.println("------------------------------------------------------------")

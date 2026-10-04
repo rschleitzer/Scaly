@@ -5,6 +5,6 @@
 shared atomic counter: u64 0
 
 procedure reset()
-    set counter: 0 as u64
+    counter := 0 as u64
 
 reset()

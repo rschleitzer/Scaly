@@ -19,12 +19,12 @@
 
 define Other (n: int)
 {
-    init()  set n: 7
+    init()  n := 7
 }
 
 define Holder (other: pointer[Other])
 {
-    init(o: pointer[Other])  set other: o
+    init(o: pointer[Other])  other := o
     procedure p_local(this) returns int   { let p other  p.n }
 }
 

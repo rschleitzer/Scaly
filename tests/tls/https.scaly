@@ -26,7 +26,7 @@ procedure sum(req: ref[Request], mutable res: ref[Response])
 {
     var total parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b"))
     if req.body.length > 0
-        set total: total + parse_int_prefix(trim(req.body))
+        total := total + parse_int_prefix(trim(req.body))
     res.send_int(total)
 }
 
@@ -47,7 +47,7 @@ procedure responses(mutable s: ref[TlsStream], want: int) returns String
         if e > 0
         {
             var head Request.empty()
-            set head.fields: buf.subslice(at, at + e)
+            head.fields := buf.subslice(at, at + e)
             let n parse_decimal(head.header("content-length"))
             if n >= 0 and at + e + (n as size_t) <= have
             {
@@ -58,15 +58,15 @@ procedure responses(mutable s: ref[TlsStream], want: int) returns String
                 out.append(":" as char)
                 let body buf.subslice(at + e, at + e + (n as size_t))
                 out.append(String(body.data as pointer[const_char], body.length))
-                set at: at + e + (n as size_t)
-                set got: got + 1
+                at := at + e + (n as size_t)
+                got := got + 1
                 continue
             }
         }
         let r s.read(buf.slice_from(have))
         if r <= 0
             break
-        set have: have + (r as size_t)
+        have := have + (r as size_t)
     }
     out.to_string()
 }

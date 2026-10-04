@@ -31,13 +31,13 @@ while got < (2 as i64)
     let n Io.read(cfd, ((buf as size_t) + (got as size_t)) as pointer[void], (8 as size_t) - (got as size_t))
     if n <= (0 as i64)
         exit 3
-    set got: got + n
+    got := got + n
 }
 var ok true
 if (*(buf as pointer[u8]) as int) <> 104
-    set ok: false
+    ok := false
 if (*(((buf as size_t) + (1 as size_t)) as pointer[u8]) as int) <> 105
-    set ok: false
+    ok := false
 if ok
     Console.print "got-hi "
 Thread.join(t)

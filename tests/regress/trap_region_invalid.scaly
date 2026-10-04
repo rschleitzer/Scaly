@@ -23,8 +23,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     let mp Page.allocate_page()
     let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
-    set msg.n: 42
-    set msg.more: mp.allocate(16 as size_t, 8 as size_t) as pointer[u8]
+    msg.n := 42
+    msg.more := mp.allocate(16 as size_t, 8 as size_t) as pointer[u8]
 
     let host Page.allocate_page()
     let frame Region.serialize(mp, msg as pointer[void], host)
@@ -32,7 +32,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     Page.release_page(mp)
 
     let h frame as pointer[u64]
-    set *(h + 3): 0x1000 as u64
+    *(h + 3) := 0x1000 as u64
 
     let rr Region.deserialize(frame, host)
     print "FAIL: the invalid frame went through"

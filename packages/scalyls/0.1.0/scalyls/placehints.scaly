@@ -118,10 +118,10 @@ define placehints
         let h text.hash()
         var blob String("")
         if placehints.cache_hit(path, h)
-            set blob: placehints.cached_blob()
+            blob := placehints.cached_blob()
         else
         {
-            set blob: placehints.build(path, text)
+            blob := placehints.build(path, text)
             placehints.cache_put(path, h, blob)
         }
         blob
@@ -156,16 +156,16 @@ define placehints
         {
             let c packed.get i
             if c = 0x20
-                set seen_space: true
+                seen_space := true
             else
             {
                 let digit (c - 0x30) as size_t
                 if seen_space
-                    set character: character * 10 + digit
+                    character := character * 10 + digit
                 else
-                    set line: line * 10 + digit
+                    line := line * 10 + digit
             }
-            set i: i + 1
+            i := i + 1
         }
         let len text.get_length()
         let off symbols.position_to_offset(text, line, character)
@@ -198,9 +198,9 @@ define placehints
             return len
         var k off
         while k > 0 and placehints.is_name_byte(source.get(k - 1))
-            set k: k - 1
+            k := k - 1
         while k < len and placehints.is_name_byte(source.get k)
-            set k: k + 1
+            k := k + 1
         ; Generic arguments, balanced, on one line.
         if k < len and source.get(k) = 0x5B
         {
@@ -211,27 +211,27 @@ define placehints
                 if c = 0x0A
                     return len
                 if c = 0x5B
-                    set depth: depth + 1
+                    depth := depth + 1
                 if c = 0x5D
                 {
-                    set depth: depth - 1
+                    depth := depth - 1
                     if depth = 0
                     {
-                        set k: k + 1
+                        k := k + 1
                         break
                     }
                 }
-                set k: k + 1
+                k := k + 1
             }
         }
         ; A page sigil: `#`, or `^name`.
         if k < len and source.get(k) = 0x23
-            set k: k + 1
+            k := k + 1
         if k < len and source.get(k) = 0x5E
         {
-            set k: k + 1
+            k := k + 1
             while k < len and symbols.is_ident_byte(source.get k)
-                set k: k + 1
+                k := k + 1
         }
         if k < len and source.get(k) = 0x28
             return k
@@ -252,20 +252,20 @@ define placehints
                 let c blob.get k
                 if c = 0x09
                     break
-                set off: off * 10 + ((c - 0x30) as size_t)
-                set k: k + 1
+                off := off * 10 + ((c - 0x30) as size_t)
+                k := k + 1
             }
-            set k: k + 1
+            k := k + 1
             let lstart k
             while k < bn
             {
                 if blob.get(k) = 0x0A
                     break
-                set k: k + 1
+                k := k + 1
             }
             if off = offset and k > lstart
                 return blob.substring(lstart, k - lstart)
-            set k: k + 1
+            k := k + 1
         }
         ""
     }
@@ -308,7 +308,7 @@ define placehints
         while i < bn - 1
         {
             sb.append(base.get(i) as char)
-            set i: i + 1
+            i := i + 1
         }
         if bn > 2
             sb.append("," as char)
@@ -401,7 +401,7 @@ define placehints
                     if semantic.is_routine_start(file, fn.loc.start)
                         placehints.collect_impl(sb, fn.page_parameter <> null, fn.impl)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         if plan.structures <> null
@@ -413,7 +413,7 @@ define placehints
                 let sp sts.get i
                 if sp <> null
                     placehints.collect_structure(sb, (*sp), file)
-                set i: i + 1
+                i := i + 1
             }
         }
         if plan.unions <> null
@@ -425,7 +425,7 @@ define placehints
                 let up uns.get i
                 if up <> null
                     placehints.collect_union(sb, (*up), file)
-                set i: i + 1
+                i := i + 1
             }
         }
         if plan.globals <> null
@@ -441,7 +441,7 @@ define placehints
                     if g.value <> null and semantic.is_routine_start(file, g.loc.start)
                         placehints.collect_operands_opt(sb, false, g.value)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         if own_statements
@@ -455,7 +455,7 @@ define placehints
                     let sp stmts.get i
                     if sp <> null
                         placehints.collect_statement(sb, false, (*sp))
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -476,7 +476,7 @@ define placehints
                     if semantic.is_routine_start(file, m.loc.start)
                         placehints.collect_impl(sb, m.page_parameter <> null, m.impl)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         if st.initializers <> null
@@ -492,7 +492,7 @@ define placehints
                     if semantic.is_routine_start(file, it.loc.start)
                         placehints.collect_impl(sb, it.page_parameter <> null, it.impl)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         if st.operators <> null
@@ -508,7 +508,7 @@ define placehints
                     if semantic.is_routine_start(file, o.loc.start)
                         placehints.collect_impl(sb, false, o.impl)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         if st.deinitializer <> null
@@ -535,7 +535,7 @@ define placehints
                     if semantic.is_routine_start(file, m.loc.start)
                         placehints.collect_impl(sb, m.page_parameter <> null, m.impl)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         if un.operators <> null
@@ -551,7 +551,7 @@ define placehints
                     if semantic.is_routine_start(file, o.loc.start)
                         placehints.collect_impl(sb, false, o.impl)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
     }
@@ -618,7 +618,7 @@ define placehints
             let op ops.get i
             if op <> null
                 placehints.collect_operand(sb, has_page, (*op))
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -677,7 +677,7 @@ define placehints
                             let comp (*cp)
                             placehints.collect_operands_opt(sb, has_page, comp.value)
                         }
-                        set i: i + 1
+                        i := i + 1
                     }
                 }
             }
@@ -694,7 +694,7 @@ define placehints
                         let sp stmts.get i
                         if sp <> null
                             placehints.collect_statement(sb, has_page, (*sp))
-                        set i: i + 1
+                        i := i + 1
                     }
                 }
             }
@@ -719,7 +719,7 @@ define placehints
                             let br (*bp)
                             placehints.collect_statement_opt(sb, has_page, br.consequent)
                         }
-                        set i: i + 1
+                        i := i + 1
                     }
                 }
                 placehints.collect_statement_opt(sb, has_page, m.alternative)
@@ -739,7 +739,7 @@ define placehints
                             let w (*wp)
                             placehints.collect_statement_opt(sb, has_page, w.consequent)
                         }
-                        set i: i + 1
+                        i := i + 1
                     }
                 }
                 placehints.collect_statement_opt(sb, has_page, ch.alternative)
@@ -773,7 +773,7 @@ define placehints
                             let w (*wp)
                             placehints.collect_statement_opt(sb, has_page, w.consequent)
                         }
-                        set i: i + 1
+                        i := i + 1
                     }
                 }
                 placehints.collect_statement_opt(sb, has_page, tr.alternative)
@@ -925,10 +925,10 @@ define placehints
             {
                 if blob.get(k) = 0x0A
                     break
-                set k: k + 1
+                k := k + 1
             }
             let line_end k
-            set k: k + 1
+            k := k + 1
             if line_end > line_start
             {
                 ; The offset is the digits before the tab.
@@ -937,7 +937,7 @@ define placehints
                 {
                     if blob.get(tab) = 0x09
                         break
-                    set tab: tab + 1
+                    tab := tab + 1
                 }
                 let digits blob.substring(line_start, tab - line_start)
                 let kept out.to_string()
@@ -947,7 +947,7 @@ define placehints
                     while i < line_end
                     {
                         out.append(blob.get(i) as char)
-                        set i: i + 1
+                        i := i + 1
                     }
                     out.append("\n" as char)
                 }
@@ -973,15 +973,15 @@ define placehints
             {
                 if k + i >= kn
                 {
-                    set same: false
+                    same := false
                     break
                 }
                 if kept.get(k + i) <> digits.get(i)
                 {
-                    set same: false
+                    same := false
                     break
                 }
-                set i: i + 1
+                i := i + 1
             }
             if same and k + dn < kn and kept.get(k + dn) = 0x09
                 return true
@@ -990,9 +990,9 @@ define placehints
             {
                 if kept.get(k) = 0x0A
                     break
-                set k: k + 1
+                k := k + 1
             }
-            set k: k + 1
+            k := k + 1
         }
         false
     }
@@ -1016,15 +1016,15 @@ define placehints
             {
                 if have
                     nums.add cur
-                set cur: 0
-                set have: false
+                cur := 0
+                have := false
             }
             else
             {
-                set cur: cur * 10 + ((c - 0x30) as size_t)
-                set have: true
+                cur := cur * 10 + ((c - 0x30) as size_t)
+                have := true
             }
-            set i: i + 1
+            i := i + 1
         }
         if have
             nums.add cur
@@ -1058,16 +1058,16 @@ define placehints
                 let c blob.get k
                 if c = 0x09
                     break
-                set off: off * 10 + ((c - 0x30) as size_t)
-                set k: k + 1
+                off := off * 10 + ((c - 0x30) as size_t)
+                k := k + 1
             }
-            set k: k + 1
+            k := k + 1
             let lstart k
             while k < bn
             {
                 if blob.get(k) = 0x0A
                     break
-                set k: k + 1
+                k := k + 1
             }
             if k > lstart
             {
@@ -1079,11 +1079,11 @@ define placehints
                         if first = false
                             sb.append("," as char)
                         symbols.append_fragment(&sb, symbols.inlay_note_hint_object(source, off, note))
-                        set first: false
+                        first := false
                     }
                 }
             }
-            set k: k + 1
+            k := k + 1
         }
         sb.to_string()
     }
@@ -1105,7 +1105,7 @@ define placehints
             let a ph_path_data
             if (*(a + i)) <> path.get(i)
                 return false
-            set i: i + 1
+            i := i + 1
         }
         true
     }
@@ -1126,7 +1126,7 @@ define placehints
         {
             free(ph_path_data as pointer[void])
             free(ph_blob_data as pointer[void])
-            set ph_used: false
+            ph_used := false
         }
         let pn path.get_length()
         let bn blob.get_length()
@@ -1141,11 +1141,11 @@ define placehints
         }
         memcpy(pd as pointer[void], path.get_buffer() as pointer[void], pn)
         memcpy(bd as pointer[void], blob.get_buffer() as pointer[void], bn)
-        set ph_path_data: pd
-        set ph_path_len: pn
-        set ph_blob_data: bd
-        set ph_blob_len: bn
-        set ph_hash: hash
-        set ph_used: true
+        ph_path_data := pd
+        ph_path_len := pn
+        ph_blob_data := bd
+        ph_blob_len := bn
+        ph_hash := hash
+        ph_used := true
     }
 }

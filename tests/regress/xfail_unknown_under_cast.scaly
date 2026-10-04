@@ -19,7 +19,7 @@ mutable seen: i64 7
 
 procedure probe() mutable seen
 {
-    set seen: nosuchname as i64
+    seen := nosuchname as i64
     print "inside"
 }
 

@@ -22,12 +22,12 @@
 
 define Inner (n: int)
 {
-    init(a: int) set n: a
+    init(a: int) n := a
     function twice(this) returns int   n * 2
 }
 
-define Deep (n: int) { init(a: int) set n: a }
-define Mid (d: Deep)  { init(a: Deep) set d: a }
+define Deep (n: int) { init(a: int) n := a }
+define Mid (d: Deep)  { init(a: Deep) d := a }
 
 define Box (k: int  ip: pointer[Inner]  m: Mid)
 {

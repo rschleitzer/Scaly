@@ -83,16 +83,16 @@ define semantic
         {
             let c packed.get i
             if c = 0x20
-                set seen_space: true
+                seen_space := true
             if c <> 0x20
             {
                 let digit (c - 0x30) as size_t
                 if seen_space = false
-                    set line: line * 10 + digit
+                    line := line * 10 + digit
                 if seen_space
-                    set character: character * 10 + digit
+                    character := character * 10 + digit
             }
-            set i: i + 1
+            i := i + 1
         }
         let offset semantic.position_to_offset(source, line, character)
         ; Only resolve when the cursor sits on a real token. Hovering
@@ -180,9 +180,9 @@ define semantic
             if cp = 2
                 return ""
             if cp = 1
-                set m: 2
+                m := 2
             if cp = 3
-                set m: 3
+                m := 3
         }
         var p parser.Parser(source)
         var result ""
@@ -205,10 +205,10 @@ define semantic
                     ; keeps a foreign file's span out of the answer.
                     let rr semantic.walk_plan(pl, m, offset, program.file, path)
                     if rr.found
-                        set result: String(rr.type_name)
+                        result := String(rr.type_name)
                 }
                 if result.get_length() = 0
-                    set result: semantic.resolve_through_root(source, path, m, offset, program.file)
+                    result := semantic.resolve_through_root(source, path, m, offset, program.file)
             }
         result
     }
@@ -274,7 +274,7 @@ define semantic
                     let pl (*plan)
                     let rr semantic.walk_plan(pl, mode, offset, file, path)
                     if rr.found
-                        set result: String(rr.type_name)
+                        result := String(rr.type_name)
                 }
             }
         result
@@ -317,21 +317,21 @@ define semantic
                 return 0
             if semantic.is_ident_byte(source.get(at - 1)) = false
                 return 0
-            set at: at - 1
+            at := at - 1
         }
         var start at
         while start > 0
         {
             if semantic.is_ident_byte(source.get(start - 1)) = false
                 break
-            set start: start - 1
+            start := start - 1
         }
         var end at + 1
         while end < n
         {
             if semantic.is_ident_byte(source.get end) = false
                 break
-            set end: end + 1
+            end := end + 1
         }
         ; Forward: a dot means more links follow; a `(`/`[` means the neighbour
         ; test cannot see past this link, so leave the question to mode 0.
@@ -341,7 +341,7 @@ define semantic
             let c source.get j
             if c <> 0x20
                 break
-            set j: j + 1
+            j := j + 1
         }
         if j >= n
             return 0
@@ -352,18 +352,18 @@ define semantic
             return 0
         var more true
         if after <> 0x2E
-            set more: false
+            more := false
         ; Backward: a dot means this token is itself a member.
         var i start
         while i > 0
         {
             if source.get(i - 1) <> 0x20
                 break
-            set i: i - 1
+            i := i - 1
         }
         var member false
         if i > 0 and source.get(i - 1) = 0x2E
-            set member: true
+            member := true
         if member
         {
             if more
@@ -456,7 +456,7 @@ define semantic
             let dptr decls.get i
             if dptr <> null and semantic.decl_has_start(*dptr, start)
                 return true
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -533,7 +533,7 @@ define semantic
             let dptr decls.get i
             if dptr <> null and semantic.decl_has_start(*dptr, start)
                 return true
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -557,7 +557,7 @@ define semantic
             let mptr members.get i
             if mptr <> null and semantic.member_has_start(*mptr, start)
                 return true
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -602,9 +602,9 @@ define semantic
             if off >= len
                 return off
             let c source.get off
-            set off: off + 1
+            off := off + 1
             if c = ("\n" as char)
-                set cur_line: cur_line + 1
+                cur_line := cur_line + 1
         }
         var col: size_t 0
         while col < character
@@ -614,8 +614,8 @@ define semantic
             let c source.get off
             if c = ("\n" as char)
                 return off
-            set off: off + 1
-            set col: col + 1
+            off := off + 1
+            col := col + 1
         }
         off
     }
@@ -648,7 +648,7 @@ define semantic
         var result semantic.none()
 
         if plan.statements <> null
-            set result: semantic.walk_statements(*plan.statements, mode, offset)
+            result := semantic.walk_statements(*plan.statements, mode, offset)
 
         if result.found = false
         {
@@ -662,9 +662,9 @@ define semantic
                     {
                         let fp fns.get i
                         if fp <> null and semantic.owns_routine(file, path, (*fp).file, (*fp).loc.start)
-                            set result: semantic.walk_impl((*fp).impl, mode, offset)
+                            result := semantic.walk_impl((*fp).impl, mode, offset)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -681,9 +681,9 @@ define semantic
                     {
                         let sp sts.get i
                         if sp <> null
-                            set result: semantic.walk_structure(*sp, mode, offset, file, path)
+                            result := semantic.walk_structure(*sp, mode, offset, file, path)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -700,9 +700,9 @@ define semantic
                     {
                         let up uns.get i
                         if up <> null
-                            set result: semantic.walk_union(*up, mode, offset, file, path)
+                            result := semantic.walk_union(*up, mode, offset, file, path)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -722,10 +722,10 @@ define semantic
                         {
                             let g (*gp)
                             if g.value <> null and semantic.is_routine_start(file, g.loc.start)
-                                set result: semantic.walk_operands(*g.value, mode, offset)
+                                result := semantic.walk_operands(*g.value, mode, offset)
                         }
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -747,9 +747,9 @@ define semantic
                 {
                     let mp ms.get i
                     if mp <> null and semantic.owns_routine(file, path, (*mp).file, (*mp).loc.start)
-                        set result: semantic.walk_impl((*mp).impl, mode, offset)
+                        result := semantic.walk_impl((*mp).impl, mode, offset)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -765,9 +765,9 @@ define semantic
                     {
                         let ip inits.get i
                         if ip <> null and semantic.is_routine_start(file, (*ip).loc.start)
-                            set result: semantic.walk_impl((*ip).impl, mode, offset)
+                            result := semantic.walk_impl((*ip).impl, mode, offset)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -784,9 +784,9 @@ define semantic
                     {
                         let op ops.get i
                         if op <> null and semantic.is_routine_start(file, (*op).loc.start)
-                            set result: semantic.walk_impl((*op).impl, mode, offset)
+                            result := semantic.walk_impl((*op).impl, mode, offset)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -794,7 +794,7 @@ define semantic
         if result.found = false
         {
             if st.deinitializer <> null and semantic.is_routine_start(file, (*st.deinitializer).loc.start)
-                set result: semantic.walk_impl((*st.deinitializer).impl, mode, offset)
+                result := semantic.walk_impl((*st.deinitializer).impl, mode, offset)
         }
 
         result
@@ -814,9 +814,9 @@ define semantic
                 {
                     let mp ms.get i
                     if mp <> null and semantic.owns_routine(file, path, (*mp).file, (*mp).loc.start)
-                        set result: semantic.walk_impl((*mp).impl, mode, offset)
+                        result := semantic.walk_impl((*mp).impl, mode, offset)
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
 
@@ -832,9 +832,9 @@ define semantic
                     {
                         let op ops.get i
                         if op <> null and semantic.is_routine_start(file, (*op).loc.start)
-                            set result: semantic.walk_impl((*op).impl, mode, offset)
+                            result := semantic.walk_impl((*op).impl, mode, offset)
                     }
-                    set i: i + 1
+                    i := i + 1
                 }
             }
         }
@@ -859,11 +859,11 @@ define semantic
     {
         var result semantic.none()
         if act.source <> null
-            set result: semantic.walk_operands(*act.source, mode, offset)
+            result := semantic.walk_operands(*act.source, mode, offset)
         if act.target <> null
         {
             let t semantic.walk_operands(*act.target, mode, offset)
-            set result: semantic.tighter(result, t)
+            result := semantic.tighter(result, t)
         }
         result
     }
@@ -881,9 +881,9 @@ define semantic
             if sp <> null
             {
                 let r semantic.walk_statement(*sp, mode, offset)
-                set result: semantic.tighter(result, r)
+                result := semantic.tighter(result, r)
             }
-            set i: i + 1
+            i := i + 1
         }
         result
     }
@@ -909,7 +909,7 @@ define semantic
     {
         var op_result semantic.none()
         if bnd.operation <> null
-            set op_result: semantic.walk_operands(*bnd.operation, mode, offset)
+            op_result := semantic.walk_operands(*bnd.operation, mode, offset)
         let bi bnd.binding_item
         var on_name semantic.contains(bi.loc, offset)
         ; MEMBER mode (3): the cursor is on a field token and so is never on the
@@ -919,7 +919,7 @@ define semantic
         ; the field written inside the argument. Both name answers below must
         ; therefore stay out of that mode.
         if mode = 3
-            set on_name: false
+            on_name := false
         if on_name
         {
             ; Cursor on the binding NAME -> the binding item's declared type.
@@ -978,9 +978,9 @@ define semantic
             if op <> null
             {
                 let r semantic.walk_operand(*op, mode, offset)
-                set result: semantic.tighter(result, r)
+                result := semantic.tighter(result, r)
             }
-            set i: i + 1
+            i := i + 1
         }
         result
     }
@@ -1040,7 +1040,7 @@ define semantic
         ; relying on the type it happens to hold.
         var self_type semantic.operand_final_type op
         if semantic.is_block op.expr
-            set self_type: ""
+            self_type := ""
         ; MEMBER mode (3): the cursor is on a plain field at the end of a chain,
         ; so only an operand that HAS a chain may answer for it. Without this an
         ; operand whose chain the planner could not type contributes "" and the
@@ -1051,7 +1051,7 @@ define semantic
         ; here falls through to the lexical hover, which says where the cursor
         ; sits rather than naming a type it does not know.
         if mode = 3 and semantic.ends_in_field(op.member_access) = false
-            set self_type: ""
+            self_type := ""
         ; A strictly-tighter deeper match wins (genuine nesting f(g x)).
         if child.found
         {
@@ -1184,10 +1184,10 @@ define semantic
                     if comp.value <> null
                     {
                         let r semantic.walk_operands(*comp.value, mode, offset)
-                        set result: semantic.tighter(result, r)
+                        result := semantic.tighter(result, r)
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         result
@@ -1204,16 +1204,16 @@ define semantic
     {
         var result semantic.none()
         if iff.condition <> null
-            set result: semantic.walk_operands(*iff.condition, mode, offset)
+            result := semantic.walk_operands(*iff.condition, mode, offset)
         if iff.consequent <> null
         {
             let c semantic.walk_statement(*iff.consequent, mode, offset)
-            set result: semantic.tighter(result, c)
+            result := semantic.tighter(result, c)
         }
         if iff.alternative <> null
         {
             let a semantic.walk_statement(*iff.alternative, mode, offset)
-            set result: semantic.tighter(result, a)
+            result := semantic.tighter(result, a)
         }
         result
     }
@@ -1222,7 +1222,7 @@ define semantic
     {
         var result semantic.none()
         if m.condition <> null
-            set result: semantic.walk_operands(*m.condition, mode, offset)
+            result := semantic.walk_operands(*m.condition, mode, offset)
         if m.branches <> null
         {
             let brs (*m.branches)
@@ -1236,16 +1236,16 @@ define semantic
                     if br.consequent <> null
                     {
                         let r semantic.walk_statement(*br.consequent, mode, offset)
-                        set result: semantic.tighter(result, r)
+                        result := semantic.tighter(result, r)
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         if m.alternative <> null
         {
             let a semantic.walk_statement(*m.alternative, mode, offset)
-            set result: semantic.tighter(result, a)
+            result := semantic.tighter(result, a)
         }
         result
     }
@@ -1254,7 +1254,7 @@ define semantic
     {
         var result semantic.none()
         if ch.condition <> null
-            set result: semantic.walk_operands(*ch.condition, mode, offset)
+            result := semantic.walk_operands(*ch.condition, mode, offset)
         if ch.cases <> null
         {
             let cs (*ch.cases)
@@ -1268,16 +1268,16 @@ define semantic
                     if wh.consequent <> null
                     {
                         let r semantic.walk_statement(*wh.consequent, mode, offset)
-                        set result: semantic.tighter(result, r)
+                        result := semantic.tighter(result, r)
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         if ch.alternative <> null
         {
             let a semantic.walk_statement(*ch.alternative, mode, offset)
-            set result: semantic.tighter(result, a)
+            result := semantic.tighter(result, a)
         }
         result
     }
@@ -1286,7 +1286,7 @@ define semantic
     {
         var result semantic.none()
         if fr.expr <> null
-            set result: semantic.walk_operands(*fr.expr, mode, offset)
+            result := semantic.walk_operands(*fr.expr, mode, offset)
         let body semantic.walk_action(fr.body, mode, offset)
         semantic.tighter(result, body)
     }
@@ -1314,16 +1314,16 @@ define semantic
                     if wh.consequent <> null
                     {
                         let r semantic.walk_statement(*wh.consequent, mode, offset)
-                        set result: semantic.tighter(result, r)
+                        result := semantic.tighter(result, r)
                     }
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         if tr.alternative <> null
         {
             let a semantic.walk_statement(*tr.alternative, mode, offset)
-            set result: semantic.tighter(result, a)
+            result := semantic.tighter(result, a)
         }
         result
     }

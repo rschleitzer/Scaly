@@ -51,7 +51,7 @@ let slot &pr.p
 ; pointee here IS a `pointer[i64]`, and a pointer keeps its deref.
 ; The cast is the honest half: the SLOT holds a `pointer[i64]` while `&`
 ; yields a `ref[i64]`, and the conformance gate wants them named alike.
-set slot: &pr.x as pointer[i64]
+slot := &pr.x as pointer[i64]
 let sp: pointer[i64] slot
 let ok_store (*sp) = 0
 
@@ -70,13 +70,13 @@ arr.add(b1)
 arr.add(b2)
 var arr_sum: i64 0
 for e in arr
-    set arr_sum: arr_sum + e.v
+    arr_sum := arr_sum + e.v
 let ok_array = arr_sum = 33
 
 let vec Vector[pointer[Box]]^host(arr)
 var vec_sum: i64 0
 for e in vec
-    set vec_sum: vec_sum + e.v
+    vec_sum := vec_sum + e.v
 let ok_vector = vec_sum = 33
 
 var lst List[pointer[Box]]^host()
@@ -84,14 +84,14 @@ lst.add(b1)
 lst.add(b2)
 var lst_sum: i64 0
 for e in lst
-    set lst_sum: lst_sum + e.v
+    lst_sum := lst_sum + e.v
 let ok_list = lst_sum = 33
 
 ; --- Vector-from-List copies the elements, not what they point at ------------
 let frozen Vector[pointer[Box]]^host(lst)
 var frozen_sum: i64 0
 for e in frozen
-    set frozen_sum: frozen_sum + e.v
+    frozen_sum := frozen_sum + e.v
 let ok_frozen = frozen_sum = 33
 
 ; --- get_head hands back a ref TO the element --------------------------------
@@ -102,7 +102,7 @@ let h lst.get_head()
 if h <> null
 {
     let hb *h
-    set ok_head: hb.v = 11
+    ok_head := hb.v = 11
 }
 
 if ok_offsets

@@ -39,17 +39,17 @@ define Maker (var n: int, cell: pointer[int])
 {
     procedure pair(mutable this, k: int) returns Pair
     {
-        set this.n: this.n + 1
+        this.n := this.n + 1
         Pair(k, k + 1)
     }
     procedure single(mutable this) returns Single
     {
-        set this.n: this.n + 1
+        this.n := this.n + 1
         Single(cell)
     }
     procedure impl(mutable this, k: int) returns Impl
     {
-        set this.n: this.n + 1
+        this.n := this.n + 1
         Impl.Act(Payload(k, k + 1, k + 2))
     }
     procedure no_pair(mutable this) returns ref[Pair]?
@@ -65,7 +65,7 @@ define Maker (var n: int, cell: pointer[int])
         var v this.pair(10)
         let r this.no_pair()
         if r <> null
-            set v: *r
+            v := *r
         sum_pair(v)
     }
     procedure pair_ret(mutable this) returns Pair
@@ -73,7 +73,7 @@ define Maker (var n: int, cell: pointer[int])
         var v this.pair(20)
         let r this.no_pair()
         if r <> null
-            set v: *r
+            v := *r
         v
     }
     procedure pair_store(mutable this, mutable h: ref[Holder]) returns int
@@ -81,8 +81,8 @@ define Maker (var n: int, cell: pointer[int])
         var v this.pair(30)
         let r this.no_pair()
         if r <> null
-            set v: *r
-        set h.pair: v
+            v := *r
+        h.pair := v
         h.pair.a + h.pair.b
     }
     procedure pair_read(mutable this) returns int
@@ -90,7 +90,7 @@ define Maker (var n: int, cell: pointer[int])
         var v this.pair(40)
         let r this.no_pair()
         if r <> null
-            set v: *r
+            v := *r
         v.a + v.b
     }
 
@@ -100,7 +100,7 @@ define Maker (var n: int, cell: pointer[int])
         var v this.single()
         let r this.no_single()
         if r <> null
-            set v: *r
+            v := *r
         read_single(v)
     }
     procedure single_ret(mutable this) returns Single
@@ -108,7 +108,7 @@ define Maker (var n: int, cell: pointer[int])
         var v this.single()
         let r this.no_single()
         if r <> null
-            set v: *r
+            v := *r
         v
     }
     procedure single_store(mutable this, mutable h: ref[Holder]) returns int
@@ -116,8 +116,8 @@ define Maker (var n: int, cell: pointer[int])
         var v this.single()
         let r this.no_single()
         if r <> null
-            set v: *r
-        set h.single: v
+            v := *r
+        h.single := v
         *h.single.p
     }
     procedure single_read(mutable this) returns int
@@ -125,7 +125,7 @@ define Maker (var n: int, cell: pointer[int])
         var v this.single()
         let r this.no_single()
         if r <> null
-            set v: *r
+            v := *r
         *v.p
     }
 
@@ -135,7 +135,7 @@ define Maker (var n: int, cell: pointer[int])
         var v this.impl(1)
         let r this.no_impl()
         if r <> null
-            set v: *r
+            v := *r
         impl_val(v)
     }
     procedure impl_ret(mutable this) returns Impl
@@ -143,7 +143,7 @@ define Maker (var n: int, cell: pointer[int])
         var v this.impl(2)
         let r this.no_impl()
         if r <> null
-            set v: *r
+            v := *r
         v
     }
     procedure impl_store(mutable this, mutable h: ref[Holder]) returns int
@@ -151,8 +151,8 @@ define Maker (var n: int, cell: pointer[int])
         var v this.impl(3)
         let r this.no_impl()
         if r <> null
-            set v: *r
-        set h.impl: v
+            v := *r
+        h.impl := v
         impl_val(h.impl)
     }
     procedure impl_choose(mutable this) returns int
@@ -160,7 +160,7 @@ define Maker (var n: int, cell: pointer[int])
         var v this.impl(4)
         let r this.no_impl()
         if r <> null
-            set v: *r
+            v := *r
         choose v
             when p: Act
                 p.a + p.b + p.c
@@ -174,7 +174,7 @@ define Maker (var n: int, cell: pointer[int])
 procedure run(host: ref[Page])
 {
     let cell host.allocate(8, 8) as pointer[int]
-    set *cell: 77
+    *cell := 77
     var m Maker^host(0, cell)
     var h Holder^host(Pair(0, 0), Single(cell), Impl.Ext(0))
     let pr m.pair_ret()
@@ -182,9 +182,9 @@ procedure run(host: ref[Page])
     let ir m.impl_ret()
     var ok m.pair_pass() = 21 and sum_pair(pr) = 41 and m.pair_store(&h) = 61 and m.pair_read() = 81
     if m.single_pass() <> 77 or read_single(sr) <> 77 or m.single_store(&h) <> 77 or m.single_read() <> 77
-        set ok: false
+        ok := false
     if m.impl_pass() <> 6 or impl_val(ir) <> 9 or m.impl_store(&h) <> 12 or m.impl_choose() <> 15
-        set ok: false
+        ok := false
     if ok
         print "PASS"
     else

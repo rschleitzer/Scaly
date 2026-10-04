@@ -13,7 +13,7 @@
 mutable ran: int 0
 
 procedure note() mutable ran
-    set ran: ran + 1
+    ran := ran + 1
 
 procedure busy() mutable ran
 {
@@ -21,7 +21,7 @@ procedure busy() mutable ran
     Scheduler.yield()
     Scheduler.sleep(1)
     if s.length() > 0
-        set ran: ran + 1
+        ran := ran + 1
 }
 
 ; The next free address on page, by allocating a word there.
@@ -47,21 +47,21 @@ var k 0
 while k < 100
 {
     Scheduler.spawn_detached(&note, null)
-    set k: k + 1
+    k := k + 1
 }
 Scheduler.run()
 let b0 probe(page)
 var round 0
 while round < 1000
 {
-    set k: 0
+    k := 0
     while k < 100
     {
         Scheduler.spawn_detached(&note, null)
-        set k: k + 1
+        k := k + 1
     }
     Scheduler.run()
-    set round: round + 1
+    round := round + 1
 }
 let b1 probe(page)
 if ran <> 100102
@@ -71,12 +71,12 @@ if b1 - b0 <> 8
 Console.print "bounded "
 
 ; detached tasks that yield, sleep and allocate, beside a joined one
-set ran: 0
+ran := 0
 var i 0
 while i < 50
 {
     Scheduler.spawn_detached(&busy, null)
-    set i: i + 1
+    i := i + 1
 }
 let joined Scheduler.spawn(&busy)
 Scheduler.join(joined)

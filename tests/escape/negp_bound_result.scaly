@@ -19,7 +19,7 @@ define Box (var host: ref[Page]  var diags: ref[Array[Diag]])
         while i < 2000
         {
             junk.add(String("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"))
-            set i: i + 1
+            i := i + 1
         }
     }
     procedure work(mutable this)
@@ -33,7 +33,7 @@ define Box (var host: ref[Page]  var diags: ref[Array[Diag]])
         while i < 200
         {
             junk.add(String("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"))
-            set i: i + 1
+            i := i + 1
         }
     }
 }

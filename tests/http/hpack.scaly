@@ -39,7 +39,7 @@ procedure unhex(hex: Slice[u8], mutable out: ref[ByteBuf])
     while i + 1 < hex.length
     {
         out.append_byte(hex_value(hex[i]) * 16 + hex_value(hex[i + 1]))
-        set i: i + 2
+        i := i + 2
     }
 }
 
@@ -57,7 +57,7 @@ procedure fields(list: ref[HeaderList]) returns String
         sb.append(String(n.data as pointer[const_char], n.length))
         sb.append("=" as char)
         sb.append(String(v.data as pointer[const_char], v.length))
-        set i: i + 1
+        i := i + 1
     }
     sb.to_string()
 }
@@ -97,12 +97,12 @@ procedure huffman_code(symbol: u64, mutable code_length: ref[u64]) returns u64
         {
             if (HUFF_SYMBOLS[off + k] as u64) = symbol
             {
-                set code_length: length as u64
+                code_length := length as u64
                 return (HUFF_FIRST[length] as u64) + (k as u64)
             }
-            set k: k + 1
+            k := k + 1
         }
-        set length: length + 1
+        length := length + 1
     }
     0
 }
@@ -117,14 +117,14 @@ procedure huffman_encode(s: Slice[u8], mutable out: ref[ByteBuf])
     {
         var length: u64 0
         let code huffman_code(s[i] as u64, &length)
-        set acc: (acc << length) | code
-        set bits: bits + length
+        acc := (acc << length) | code
+        bits := bits + length
         while bits >= 8
         {
             out.append_byte(((acc >> (bits - 8)) & 255) as u8)
-            set bits: bits - 8
+            bits := bits - 8
         }
-        set i: i + 1
+        i := i + 1
     }
     if bits > 0
     {
@@ -170,7 +170,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     while v < 256
     {
         all.put(v, v as u8)
-        set v: v + 1
+        v := v + 1
     }
     var coded ByteBuf.create(hh, 1024)
     var plain ByteBuf.create(hh, 1024)
@@ -180,7 +180,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         print "huffman: all 256 values, `plain.length` decoded"
         return 20
     }
-    set v: 0
+    v := 0
     while v < 256
     {
         coded.clear()
@@ -192,18 +192,18 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             print "huffman: value `v` alone"
             return 21
         }
-        set v: v + 1
+        v := v + 1
     }
     Console.print "huffman "
 
     ; a literal field with incremental indexing (a literal name)
     var b1 ByteBuf.create(hh, 4096)
     var big Vector[u8](3000)
-    set v: 0
+    v := 0
     while v < 3000
     {
         big.put(v, ((v % 26) + 97) as u8)
-        set v: v + 1
+        v := v + 1
     }
     encode_integer(&b1, 64, 6, 0)
     encode_string(&b1, "x-big")
@@ -223,11 +223,11 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     encode_integer(&b2, 128, 7, 62)
     encode_integer(&b2, 128, 7, 62)
     var fresh Vector[u8](1100)
-    set v: 0
+    v := 0
     while v < 1100
     {
         fresh.put(v, 110)
-        set v: v + 1
+        v := v + 1
     }
     encode_integer(&b2, 64, 6, 0)
     encode_string(&b2, "x-new")
@@ -251,7 +251,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             print "views: field `f`"
             return 33
         }
-        set f: f + 1
+        f := f + 1
     }
     var b3 ByteBuf.create(hh, 64)
     encode_integer(&b3, 128, 7, 62)
@@ -287,7 +287,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             print "fields: a Huffman-coded byte `raw.bytes()[1]` passed"
             return 40
         }
-        set bad: bad + 1
+        bad := bad + 1
     }
     var fb ByteBuf.create(hh, 128)
     encode_field(&fb, ":authority", "example.org")

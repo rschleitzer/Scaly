@@ -16,7 +16,7 @@ procedure bump(mutable h: ref[Holder])
 {
     choose h.data
         when a: A
-            set a.x: a.x + 100
+            a.x := a.x + 100
         else
             0
 }

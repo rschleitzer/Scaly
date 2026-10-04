@@ -41,50 +41,50 @@ procedure sha1_block(mutable h: Slice[u32], block: Slice[u8], mutable w: Slice[u
     while t < 16
     {
         w.put(t, ((block[4 * t] as u32) << 24) | ((block[4 * t + 1] as u32) << 16) | ((block[4 * t + 2] as u32) << 8) | (block[4 * t + 3] as u32))
-        set t: t + 1
+        t := t + 1
     }
     while t < 80
     {
         w.put(t, rotl(w[t - 3] xor w[t - 8] xor w[t - 14] xor w[t - 16], 1))
-        set t: t + 1
+        t := t + 1
     }
     var a h[0]
     var b h[1]
     var c h[2]
     var d h[3]
     var e h[4]
-    set t: 0
+    t := 0
     while t < 80
     {
         var f: u32 0
         var k: u32 0
         if t < 20
         {
-            set f: (b & c) | ((b xor (0xFFFFFFFF as u32)) & d)
-            set k: 0x5A827999 as u32
+            f := (b & c) | ((b xor (0xFFFFFFFF as u32)) & d)
+            k := 0x5A827999 as u32
         }
         else if t < 40
         {
-            set f: b xor c xor d
-            set k: 0x6ED9EBA1 as u32
+            f := b xor c xor d
+            k := 0x6ED9EBA1 as u32
         }
         else if t < 60
         {
-            set f: (b & c) | (b & d) | (c & d)
-            set k: 0x8F1BBCDC as u32
+            f := (b & c) | (b & d) | (c & d)
+            k := 0x8F1BBCDC as u32
         }
         else
         {
-            set f: b xor c xor d
-            set k: 0xCA62C1D6 as u32
+            f := b xor c xor d
+            k := 0xCA62C1D6 as u32
         }
         let temp rotl(a, 5) + f + e + k + w[t]
-        set e: d
-        set d: c
-        set c: rotl(b, 30)
-        set b: a
-        set a: temp
-        set t: t + 1
+        e := d
+        d := c
+        c := rotl(b, 30)
+        b := a
+        a := temp
+        t := t + 1
     }
     h.put(0, h[0] + a)
     h.put(1, h[1] + b)
@@ -109,7 +109,7 @@ procedure sha1(data: Slice[u8], mutable out: Slice[u8])
     while at + 64 <= data.length
     {
         sha1_block(h, data.subslice(at, at + 64), w)
-        set at: at + 64
+        at := at + 64
     }
     ; the rest, the 0x80, zeros and the bit length, in one or two blocks
     var tail u8[128]
@@ -118,30 +118,30 @@ procedure sha1(data: Slice[u8], mutable out: Slice[u8])
     while i < 128
     {
         last.put(i, 0)
-        set i: i + 1
+        i := i + 1
     }
     let rest data.length - at
-    set i: 0
+    i := 0
     while i < rest
     {
         last.put(i, data[at + i])
-        set i: i + 1
+        i := i + 1
     }
     last.put(rest, 128)
     var n: size_t 64
     if rest >= 56
-        set n: 128
+        n := 128
     let bits (data.length as u64) * 8
-    set i: 0
+    i := 0
     while i < 8
     {
         last.put(n - 1 - i, ((bits >> (8 * (i as u64))) & 255) as u8)
-        set i: i + 1
+        i := i + 1
     }
     sha1_block(h, last.subslice(0, 64), w)
     if n = 128
         sha1_block(h, last.subslice(64, 128), w)
-    set i: 0
+    i := 0
     while i < 5
     {
         let v h[i]
@@ -149,7 +149,7 @@ procedure sha1(data: Slice[u8], mutable out: Slice[u8])
         out.put(4 * i + 1, ((v >> 16) & 255) as u8)
         out.put(4 * i + 2, ((v >> 8) & 255) as u8)
         out.put(4 * i + 3, (v & 255) as u8)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -166,20 +166,20 @@ procedure websocket_accept(key: Slice[u8], mutable out: Slice[u8])
     while i < key.length
     {
         j.put(i, key[i])
-        set i: i + 1
+        i := i + 1
     }
     var g: size_t 0
     while g < guid.length
     {
         j.put(i + g, guid[g])
-        set g: g + 1
+        g := g + 1
     }
     var digest u8[20]
     let d Slice[u8](20, &digest[0])
     sha1(j.slice_to(key.length + guid.length), d)
     ; 20 bytes: six groups of three, then two bytes and one '='
     var o: size_t 0
-    set i: 0
+    i := 0
     while i < 18
     {
         let v ((d[i] as u64) << 16) | ((d[i + 1] as u64) << 8) | (d[i + 2] as u64)
@@ -187,8 +187,8 @@ procedure websocket_accept(key: Slice[u8], mutable out: Slice[u8])
         out.put(o + 1, WS_BASE64[((v >> 12) & 63) as size_t])
         out.put(o + 2, WS_BASE64[((v >> 6) & 63) as size_t])
         out.put(o + 3, WS_BASE64[(v & 63) as size_t])
-        set o: o + 4
-        set i: i + 3
+        o := o + 4
+        i := i + 3
     }
     let v ((d[18] as u64) << 16) | ((d[19] as u64) << 8)
     out.put(o, WS_BASE64[((v >> 18) & 63) as size_t])
@@ -206,7 +206,7 @@ function has_token(value: Slice[u8], token: Slice[u8]) returns bool
     {
         var end at
         while end < value.length and value[end] <> 44
-            set end: end + 1
+            end := end + 1
         let item trim(value.subslice(at, end))
         if item.length = token.length
         {
@@ -216,15 +216,15 @@ function has_token(value: Slice[u8], token: Slice[u8]) returns bool
             {
                 var c item[i]
                 if c >= 65 and c <= 90
-                    set c: c + 32
+                    c := c + 32
                 if c <> token[i]
-                    set same: false
-                set i: i + 1
+                    same := false
+                i := i + 1
             }
             if same
                 return true
         }
-        set at: end + 1
+        at := end + 1
     }
     false
 }
@@ -261,7 +261,7 @@ define WebSocket
                 out.append_byte(((n >> shift) & 255) as u8)
                 if shift = 0
                     break
-                set shift: shift - 8
+                shift := shift - 8
             }
         }
         out.append(payload)
@@ -280,7 +280,7 @@ define WebSocket
         b.put(0, ((code >> 8) & 255) as u8)
         b.put(1, (code & 255) as u8)
         this.send(WS_OP_CLOSE, b)
-        set closing: true
+        closing := true
     }
 }
 
@@ -310,26 +310,26 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
             {
                 if at + 4 > b.length
                     break
-                set n: ((b[at + 2] as size_t) << 8) | (b[at + 3] as size_t)
-                set head: 4
+                n := ((b[at + 2] as size_t) << 8) | (b[at + 3] as size_t)
+                head := 4
             }
             else if n = 127
             {
                 if at + 10 > b.length
                     break
-                set n: 0
+                n := 0
                 var k: size_t 0
                 while k < 8
                 {
-                    set n: (n << 8) | (b[at + 2 + k] as size_t)
-                    set k: k + 1
+                    n := (n << 8) | (b[at + 2 + k] as size_t)
+                    k := k + 1
                 }
-                set head: 10
+                head := 10
             }
             if masked = false or n > WS_MAX_MESSAGE
             {
                 ws.close(1002)
-                set open: false
+                open := false
                 break
             }
             if at + head + 4 + n > b.length
@@ -344,10 +344,10 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
             while i < n
             {
                 inb.data.put(start + i, b[start + i] xor b[key_at + (i & 3)])
-                set i: i + 1
+                i := i + 1
             }
             let payload inb.bytes().subslice(start, start + n)
-            set at: start + n
+            at := start + n
             if opcode = WS_OP_PING
                 ws.send(WS_OP_PONG, payload)
             else if opcode = WS_OP_CLOSE
@@ -357,7 +357,7 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
                     ws.close(((payload[0] as u64) << 8) | (payload[1] as u64))
                 else
                     ws.close(1000)
-                set open: false
+                open := false
                 break
             }
             else if opcode = WS_OP_CONTINUATION
@@ -381,18 +381,18 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
                 {
                     message.clear()
                     message.append(payload)
-                    set message_opcode: opcode
+                    message_opcode := opcode
                 }
             }
             else if opcode <> WS_OP_PONG
             {
                 ws.close(1002)
-                set open: false
+                open := false
                 break
             }
             if ws.closing
             {
-                set open: false
+                open := false
                 break
             }
         }

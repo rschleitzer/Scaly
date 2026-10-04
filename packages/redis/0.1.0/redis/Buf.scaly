@@ -24,11 +24,11 @@ define RespBuf
         data.slice_from(length)
 
     procedure clear(mutable this)
-        set length: 0
+        length := 0
 
     ; n more bytes are filled (a read wrote them into spare()).
     procedure advance(mutable this, n: size_t)
-        set length: length + n
+        length := length + n
 
     ; Room for n more bytes: at least double on growth.
     procedure reserve(mutable this, n: size_t)
@@ -37,11 +37,11 @@ define RespBuf
             return
         var cap data.length * 2
         if cap < length + n
-            set cap: length + n
+            cap := length + n
         let fresh allocate_slice[u8]^host(host, cap)
         if length > 0
             memcpy(fresh.data as pointer[void], data.data as pointer[void], length)
-        set data: fresh
+        data := fresh
     }
 
     procedure append(mutable this, s: Slice[u8])
@@ -50,14 +50,14 @@ define RespBuf
             return
         this.reserve(s.length)
         memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length)
-        set length: length + s.length
+        length := length + s.length
     }
 
     procedure append_byte(mutable this, b: u8)
     {
         this.reserve(1)
         data.put(length, b)
-        set length: length + 1
+        length := length + 1
     }
 
     ; A decimal integer.
@@ -74,15 +74,15 @@ define RespBuf
         var x v
         repeat
         {
-            set digits[n]: ((x % 10) as u8) + 48
-            set n: n + 1
-            set x: x / 10
+            digits[n] := ((x % 10) as u8) + 48
+            n := n + 1
+            x := x / 10
             if x = 0
                 break
         }
         while n > 0
         {
-            set n: n - 1
+            n := n - 1
             this.append_byte(digits[n])
         }
     }
@@ -95,14 +95,14 @@ function resp_decimal(s: Slice[u8]) returns i64
     var negative false
     if s.length > 0 and s[0] = 45
     {
-        set negative: true
-        set i: 1
+        negative := true
+        i := 1
     }
     var v: i64 0
     while i < s.length and s[i] >= 48 and s[i] <= 57
     {
-        set v: v * 10 + ((s[i] - 48) as i64)
-        set i: i + 1
+        v := v * 10 + ((s[i] - 48) as i64)
+        i := i + 1
     }
     if negative
         return (0 as i64) - v

@@ -62,8 +62,8 @@ procedure churn() returns int
     while i < 200
     {
         let x String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
-        set t: t + (x.get_length() as int)
-        set i: i + 1
+        t := t + (x.get_length() as int)
+        i := i + 1
     }
     t
 }
@@ -87,17 +87,17 @@ procedure run()
     churn()
     var ok: bool true
     if ok_bytes(a) = false
-        set ok: false
+        ok := false
     if ok_bytes(b) = false
-        set ok: false
+        ok := false
     if ok_bytes(c) = false
-        set ok: false
+        ok := false
     if ok_bytes(d) = false
-        set ok: false
+        ok := false
     if e.length <> 5
-        set ok: false
+        ok := false
     if e[4] <> ("5" as char)
-        set ok: false
+        ok := false
     if ok
         print("PASS")
     else

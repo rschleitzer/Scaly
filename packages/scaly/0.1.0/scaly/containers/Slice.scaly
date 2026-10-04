@@ -32,8 +32,8 @@ define Slice[T](var length: size_t, var data: pointer[T])
     ; Empty slice
     init ()
     {
-        set data: null
-        set length: 0
+        data := null
+        length := 0
     }
 
     ; Get element at index (returns None if out of bounds)
@@ -89,7 +89,7 @@ define Slice[T](var length: size_t, var data: pointer[T])
         if index >= length
             scaly_panic_oob("Slice.put", index, length)
 
-        set *(data + index): value
+        *(data + index) := value
     }
 
     ; Check if empty
@@ -102,13 +102,13 @@ define Slice[T](var length: size_t, var data: pointer[T])
         var from start
         var to end
         if from > length
-            set from: length
+            from := length
 
         if to > length
-            set to: length
+            to := length
 
         if from > to
-            set from: to
+            from := to
 
         Slice[T](to - from, data + from)
     }
@@ -152,7 +152,7 @@ define Slice[T](var length: size_t, var data: pointer[T])
         {
             if *(a_bytes + i) <> *(b_bytes + i)
                 return false
-            set i: i + 1
+            i := i + 1
         }
         true
     }
@@ -169,7 +169,7 @@ define Slice[T](var length: size_t, var data: pointer[T])
         {
             if *(a_bytes + i) <> *(b_bytes + i)
                 return true
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -201,8 +201,8 @@ define SliceIterator[T](slice: Slice[T], var position: size_t(0))
 {
     init (s: Slice[T])
     {
-        set slice: s
-        set position: 0
+        slice := s
+        position := 0
     }
 
     procedure next(mutable this) returns pointer[T]
@@ -211,7 +211,7 @@ define SliceIterator[T](slice: Slice[T], var position: size_t(0))
             return null
 
         let result slice.data + position
-        set position: position + 1
+        position := position + 1
         result
     }
 }

@@ -47,11 +47,11 @@ check "frozen fixture compiles rc=0 (got $rc)" '[ $rc -eq 0 ]'
 got=$(printf '%s\n' "$out" | grep '^write-report: tests/write-report/frozen.scaly:')
 src=tests/write-report/frozen.scaly
 line_of() { grep -n -- "$1" "$src" | head -1 | cut -d: -f1; }
-check "a frozen parameter's field"             'has ":$(line_of "set n.flags: 7"):9: w-field check writes n:ref\[TreeNode\],frozen$"'
+check "a frozen parameter's field"             'has ":$(line_of "n.flags := 7"):9: w-field check writes n:ref\[TreeNode\],frozen$"'
 check "a container held in a frozen record"    'has ":$(line_of "s.decls.add(3)"):9: w-call check writes s:ref\[Sym\],frozen -> add$"'
 check "a callee handed frozen data"            'has ":$(line_of "this.helper(n)"):9: w-call check writes n:ref\[TreeNode\],frozen -> helper$"'
 check "a local alias inside the callee"        'has ":$(line_of "kids.add(4)"):9: w-call helper writes n:ref\[TreeNode\],frozen -> add$"'
-check "a write under enter_shared is tagged"   'has ":$(line_of "set s.id: 9"):9: w-field check writes s:ref\[Sym\],frozen locked$"'
+check "a write under enter_shared is tagged"   'has ":$(line_of "s.id := 9"):9: w-field check writes s:ref\[Sym\],frozen locked$"'
 check "a field load is frozen"                 'has ":$(line_of "set_flags_of(r, 4)"):13: w-call check_fresh"'
 check "a setter reached with frozen data"      'has ": w-field set_flags_of writes t:ref\[TreeNode\],frozen$"'
 # negative controls
@@ -87,8 +87,8 @@ out=$("$STAGE" --plan --purity-check tests/write-report/letvar.scaly 2>&1); rc=$
 check "letvar fixture compiles rc=0 (got $rc)" '[ $rc -eq 0 ]'
 got=$(printf '%s\n' "$out" | grep '^purity-check: tests/write-report/letvar.scaly:')
 src=tests/write-report/letvar.scaly
-check "a let field written through this outside init" 'has ":$(line_of "set tag: t"):9: violation let retag Box.tag through this:Box$"'
-check "a let field written through a parameter"       'has ":$(line_of "set b.fixed: f"):5: violation let refix Box.fixed through b:ref\[Box\]$"'
+check "a let field written through this outside init" 'has ":$(line_of "tag := t"):9: violation let retag Box.tag through this:Box$"'
+check "a let field written through a parameter"       'has ":$(line_of "b.fixed := f"):5: violation let refix Box.fixed through b:ref\[Box\]$"'
 # negative controls
 check "a var field through this is not listed"         '! has " bump "'
 check "init writing its own let fields is not listed"  '! has " init "'

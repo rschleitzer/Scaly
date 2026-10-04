@@ -11,7 +11,7 @@ procedure say(loud: bool) io mutable lines
 {
     if loud
         print "said\n"
-    set lines: lines + 1
+    lines := lines + 1
 }
 
 procedure twice(loud: bool) returns int io mutable lines

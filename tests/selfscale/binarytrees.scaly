@@ -18,10 +18,10 @@ function check(t: ref[Tree]) returns int
     var n 1
     let l t.left
     if l <> null
-        set n: n + check(l)
+        n := n + check(l)
     let r t.right
     if r <> null
-        set n: n + check(r)
+        n := n + check(r)
     n
 }
 
@@ -35,8 +35,8 @@ function depth_total(depth: int, iterations: int) returns int
     var i 0
     while i < iterations
     {
-        set total: total + check_one(depth)
-        set i: i + 1
+        total := total + check_one(depth)
+        i := i + 1
     }
     total
 }
@@ -55,5 +55,5 @@ for k in n_depths
 
 var sum stretch
 for t in totals
-    set sum: sum + t
+    sum := sum + t
 print("binary-trees `max_depth`: `sum` nodes checked, long-lived `check(long_lived)`")

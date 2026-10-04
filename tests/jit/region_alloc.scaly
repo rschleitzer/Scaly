@@ -19,7 +19,7 @@ define Box
 {
     init(a: int)
     {
-        set v: a
+        v := a
     }
     function twice(this) returns int
         this.v * 2

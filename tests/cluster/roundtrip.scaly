@@ -24,27 +24,27 @@ define Msg
 mutable chk: u64 0
 
 procedure chk_reset() mutable chk
-    set chk: 0xcbf29ce484222325 as u64
+    chk := 0xcbf29ce484222325 as u64
 
 procedure chk_byte(b: u8) mutable chk
-    set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
+    chk := (chk xor (b as u64)) * (0x100000001b3 as u64)
 
 procedure chk_word(v: u64) mutable chk
 {
-    set chk: (chk xor v) * (0x100000001b3 as u64)
+    chk := (chk xor v) * (0x100000001b3 as u64)
 }
 
 ; Distinct deterministic name content: the first two chars encode i.
 procedure fill_name(mutable buf: pointer[u8], i: size_t) returns size_t
 {
     let len (8 as size_t) + (i % (40 as size_t))
-    set buf[0]: ((97 as size_t) + (i % (26 as size_t))) as u8
-    set buf[1]: ((97 as size_t) + ((i / (26 as size_t)) % (26 as size_t))) as u8
+    buf[0] := ((97 as size_t) + (i % (26 as size_t))) as u8
+    buf[1] := ((97 as size_t) + ((i / (26 as size_t)) % (26 as size_t))) as u8
     var j 2 as size_t
     while j < len
     {
-        set buf[j]: ((97 as size_t) + ((i * (3 as size_t) + j) % (26 as size_t))) as u8
-        set j: j + (1 as size_t)
+        buf[j] := ((97 as size_t) + ((i * (3 as size_t) + j) % (26 as size_t))) as u8
+        j := j + (1 as size_t)
     }
     len
 }
@@ -59,8 +59,8 @@ while round < 2
     let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
 
     let names mp.allocate(sizeof List[String], alignof List[String]) as pointer[List[String]]
-    set names.head: null
-    set names.tail: null
+    names.head := null
+    names.tail := null
     var builder HashMapBuilder[String, i64]()
     var i 0 as size_t
     while i < NAME_COUNT
@@ -70,11 +70,11 @@ while round < 2
         let s String^mp(nbuf as pointer[const_char], len)
         names.add s
         builder.add(s, i as i64)
-        set i: i + (1 as size_t)
+        i := i + (1 as size_t)
     }
-    set msg.names: names
+    msg.names := names
     let hm HashMap[String, i64]^mp(builder)
-    set msg.index: hm
+    msg.index := hm
 
     let bv Vector[u8]^mp(BLOB_LEN)
     var bi 0 as size_t
@@ -82,9 +82,9 @@ while round < 2
     {
         let bval ((bi * (31 as size_t) + (7 as size_t)) % (251 as size_t)) as u8
         bv.put(bi, bval)
-        set bi: bi + (1 as size_t)
+        bi := bi + (1 as size_t)
     }
-    set msg.blob: bv
+    msg.blob := bv
 
     ; ---- checksum by the traversal the receiver will repeat ----
     chk_reset()
@@ -98,7 +98,7 @@ while round < 2
         {
             let b s.get(j)
             chk_byte b
-            set j: j + (1 as size_t)
+            j := j + (1 as size_t)
         }
         let vref hm.get(s)
         if vref = null
@@ -106,7 +106,7 @@ while round < 2
         let v *vref
         chk_word(v as u64)
     }
-    set bi: 0 as size_t
+    bi := 0 as size_t
     while bi < BLOB_LEN
     {
         let bref bv.get(bi)
@@ -114,9 +114,9 @@ while round < 2
             exit 3
         let b *bref
         chk_byte b
-        set bi: bi + (1 as size_t)
+        bi := bi + (1 as size_t)
     }
-    set msg.chk: chk
+    msg.chk := chk
 
     ; ---- serialize, then free the ORIGINAL region ----
     let host Page.allocate_page()
@@ -146,19 +146,19 @@ while round < 2
         {
             let b s.get(j)
             chk_byte b
-            set j: j + (1 as size_t)
+            j := j + (1 as size_t)
         }
         let vref hm2.get(s)
         if vref = null
             exit 5
         let v *vref
         chk_word(v as u64)
-        set count: count + (1 as size_t)
+        count := count + (1 as size_t)
     }
     var bv2 msg2.blob
     if bv2.length <> BLOB_LEN
         exit 6
-    set bi: 0 as size_t
+    bi := 0 as size_t
     while bi < BLOB_LEN
     {
         let bref bv2.get(bi)
@@ -166,7 +166,7 @@ while round < 2
             exit 6
         let b *bref
         chk_byte b
-        set bi: bi + (1 as size_t)
+        bi := bi + (1 as size_t)
     }
 
     if count <> NAME_COUNT
@@ -183,5 +183,5 @@ while round < 2
         Console.println "R1 PASS"
     if round = 1
         Console.println "R2 PASS"
-    set round: round + 1
+    round := round + 1
 }

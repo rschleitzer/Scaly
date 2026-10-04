@@ -43,9 +43,9 @@ define Parser
         ; its implicit `rp`/page param (which the body never used). Removing
         ; the `^this` re-introduces a stack-allocated Parser whose
         ; Page.get(this) reads a garbage page header (SIGBUS).
-        set lexer: Lexer^this(text)
-        set keywords_index: initialize_keywords_index()
-        set keywords: initialize_keywords()
+        lexer := Lexer^this(text)
+        keywords_index := initialize_keywords_index()
+        keywords := initialize_keywords()
     }
 
     function initialize_keywords_index(this: Parser) returns Vector[String]
@@ -129,19 +129,19 @@ define Parser
                 var ret_deep: Literal
                 choose literal.value
                     when il: IntegerLiteral
-                        set ret_deep: Literal.Integer(IntegerLiteral(String(il.value)))
+                        ret_deep := Literal.Integer(IntegerLiteral(String(il.value)))
                     when sl: StringLiteral
-                        set ret_deep: Literal.String(StringLiteral(String(sl.value)))
+                        ret_deep := Literal.String(StringLiteral(String(sl.value)))
                     when cl: CharacterLiteral
-                        set ret_deep: Literal.Character(CharacterLiteral(String(cl.value)))
+                        ret_deep := Literal.Character(CharacterLiteral(String(cl.value)))
                     when fl: FragmentLiteral
-                        set ret_deep: Literal.Fragment(FragmentLiteral(String(fl.value)))
+                        ret_deep := Literal.Fragment(FragmentLiteral(String(fl.value)))
                     when fp: FloatingPointLiteral
-                        set ret_deep: Literal.FloatingPoint(FloatingPointLiteral(String(fp.value)))
+                        ret_deep := Literal.FloatingPoint(FloatingPointLiteral(String(fp.value)))
                     when hl: HexLiteral
-                        set ret_deep: Literal.Hex(HexLiteral(String(hl.value)))
+                        ret_deep := Literal.Hex(HexLiteral(String(hl.value)))
                     else
-                        set ret_deep: literal.value
+                        ret_deep := literal.value
                 lexer.empty()
                 return ret_deep
             }
@@ -159,7 +159,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set file: success
+                file := success
 
         let statements_start lexer.position
         var statements: ref[Vector[StatementSyntax]]? null
@@ -172,16 +172,16 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set statements: success
+                statements := success
 
         var skipping_separators true
         while skipping_separators
-            set skipping_separators: lexer.parse_colon()
+            skipping_separators := lexer.parse_colon()
         var trailing_ok lexer.is_at_end()
         choose lexer.token
             when e: Empty {}
             else
-                set trailing_ok: false
+                trailing_ok := false
         if trailing_ok = false
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "unexpected trailing input - the construct before this point did not parse"))
 
@@ -205,7 +205,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set declarations: success
+                declarations := success
 
         let end lexer.position
 
@@ -232,7 +232,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -405,7 +405,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set export_: success
+                export_ := success
 
         let end lexer.position
 
@@ -497,7 +497,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -643,7 +643,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set parameters: GenericParametersSyntax(success.start, success.end, success.parameters)
+                parameters := GenericParametersSyntax(success.start, success.end, success.parameters)
 
         lexer.parse_colon()
 
@@ -658,7 +658,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let concept__start lexer.position
         var concept_: ConceptSyntax
@@ -672,7 +672,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set concept_: success
+                concept_ := success
 
         let end lexer.position
 
@@ -698,7 +698,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set parameters: success
+                parameters := success
 
         if ~lexer.parse_punctuation("]")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ']'"))
@@ -728,7 +728,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -756,7 +756,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         lexer.parse_punctuation(",")
 
@@ -840,7 +840,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set structure: success
+                structure := success
 
         lexer.parse_colon()
 
@@ -855,7 +855,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set body: BodySyntax(success.start, success.end, success.uses, success.members)
+                body := BodySyntax(success.start, success.end, success.uses, success.members)
 
         let end lexer.position
 
@@ -880,7 +880,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set uses: success
+                uses := success
 
         let members_start lexer.position
         var members: ref[Vector[MemberSyntax]]? null
@@ -893,7 +893,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set members: success
+                members := success
 
         if ~lexer.parse_punctuation("}")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
@@ -921,7 +921,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set uses: success
+                uses := success
 
         let declarations_start lexer.position
         var declarations: ref[Vector[DeclarationSyntax]]? null
@@ -934,7 +934,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set declarations: success
+                declarations := success
 
         if ~lexer.parse_punctuation("}")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
@@ -968,7 +968,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set variants: success
+                variants := success
 
         if ~lexer.parse_punctuation(")")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
@@ -986,7 +986,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set body: BodySyntax(success.start, success.end, success.uses, success.members)
+                body := BodySyntax(success.start, success.end, success.uses, success.members)
 
         let end lexer.position
 
@@ -1013,7 +1013,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -1041,7 +1041,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
@@ -1054,7 +1054,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set annotation: TypeAnnotationSyntax(success.start, success.end, success.type)
+                annotation := TypeAnnotationSyntax(success.start, success.end, success.type)
 
         lexer.parse_punctuation(",")
 
@@ -1075,7 +1075,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set type: success
+                type := success
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]? null
@@ -1088,7 +1088,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set operation: success
+                operation := success
 
         let end lexer.position
 
@@ -1113,7 +1113,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set parameters: ParameterSetSyntax(success)
+                parameters := ParameterSetSyntax(success)
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
@@ -1126,7 +1126,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let result_start lexer.position
         var result: ref[ReturnsSyntax]? null
@@ -1139,7 +1139,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set result: ReturnsSyntax(success.start, success.end, success.type, success.attributes)
+                result := ReturnsSyntax(success.start, success.end, success.type, success.attributes)
 
         let error_start lexer.position
         var error: ref[ThrowsSyntax]? null
@@ -1152,7 +1152,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set error: ThrowsSyntax(success.start, success.end, success.type, success.attributes)
+                error := ThrowsSyntax(success.start, success.end, success.type, success.attributes)
 
         let end lexer.position
 
@@ -1177,7 +1177,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set generics: success
+                generics := success
 
         if ~lexer.parse_punctuation("]")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ']'"))
@@ -1207,7 +1207,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -1226,7 +1226,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set type: success
+                type := success
 
         lexer.parse_punctuation(",")
 
@@ -1290,7 +1290,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set items: success
+                items := success
 
         if ~lexer.parse_punctuation(")")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
@@ -1320,7 +1320,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -1344,7 +1344,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set writable: WritableSyntax(success.start, success.end)
+                writable := WritableSyntax(success.start, success.end)
 
         let name lexer.parse_identifier(keywords)
         if name.length() = 0
@@ -1365,7 +1365,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set annotation: TypeAnnotationSyntax(success.start, success.end, success.type)
+                annotation := TypeAnnotationSyntax(success.start, success.end, success.type)
 
         lexer.parse_punctuation(",")
 
@@ -1382,7 +1382,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let end lexer.position
 
@@ -1435,7 +1435,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set more: success
+                more := success
 
         let end lexer.position
 
@@ -1462,7 +1462,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -1509,7 +1509,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set more: success
+                more := success
 
         let end lexer.position
 
@@ -1536,7 +1536,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -1580,7 +1580,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set type: success
+                type := success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
@@ -1593,7 +1593,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let end lexer.position
 
@@ -1619,7 +1619,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set type: success
+                type := success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
@@ -1632,7 +1632,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let end lexer.position
 
@@ -1659,7 +1659,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -1687,7 +1687,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: success
+                name := success
 
         lexer.parse_colon()
 
@@ -1715,7 +1715,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set type: success
+                type := success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
@@ -1728,7 +1728,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         lexer.parse_colon()
 
@@ -1746,7 +1746,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set uses: success
+                uses := success
 
         let methods_start lexer.position
         var methods: ref[Vector[MethodSyntax]]? null
@@ -1759,7 +1759,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set methods: success
+                methods := success
 
         if ~lexer.parse_punctuation("}")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
@@ -1788,7 +1788,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: success
+                name := success
 
         let extension_start lexer.position
         var extension: ref[ExtendsSyntax]? null
@@ -1801,7 +1801,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set extension: ExtendsSyntax(success.start, success.end, success.extensions)
+                extension := ExtendsSyntax(success.start, success.end, success.extensions)
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
@@ -1814,7 +1814,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         if ~lexer.parse_punctuation("{")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '{'"))
@@ -1830,7 +1830,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set uses: success
+                uses := success
 
         let functions_start lexer.position
         var functions: ref[Vector[MethodSyntax]]? null
@@ -1843,7 +1843,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set functions: success
+                functions := success
 
         if ~lexer.parse_punctuation("}")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
@@ -1873,7 +1873,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -1937,7 +1937,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -1964,7 +1964,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set lifetime: LifetimeSyntax(success)
+                lifetime := LifetimeSyntax(success)
 
         let parameters_start lexer.position
         var parameters: ref[ParameterSetSyntax]? null
@@ -1977,7 +1977,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set parameters: ParameterSetSyntax(success)
+                parameters := ParameterSetSyntax(success)
 
         lexer.parse_colon()
 
@@ -1993,7 +1993,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set implementation: success
+                implementation := success
 
         lexer.parse_colon()
 
@@ -2023,7 +2023,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set implementation: success
+                implementation := success
 
         lexer.parse_colon()
 
@@ -2051,7 +2051,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set target: success
+                target := success
 
         let end lexer.position
 
@@ -2077,7 +2077,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set target: success
+                target := success
 
         let end lexer.position
 
@@ -2103,7 +2103,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set target: success
+                target := success
 
         let end lexer.position
 
@@ -2155,7 +2155,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set routine: success
+                routine := success
 
         let end lexer.position
 
@@ -2177,7 +2177,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set generics: GenericArgumentsSyntax(success.start, success.end, success.generics)
+                generics := GenericArgumentsSyntax(success.start, success.end, success.generics)
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
@@ -2190,7 +2190,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set lifetime: LifetimeSyntax(success)
+                lifetime := LifetimeSyntax(success)
 
         let parameters_start lexer.position
         var parameters: ref[ParameterSetSyntax]? null
@@ -2203,7 +2203,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set parameters: ParameterSetSyntax(success)
+                parameters := ParameterSetSyntax(success)
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
@@ -2216,7 +2216,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let returns__start lexer.position
         var returns_: ref[ReturnsSyntax]? null
@@ -2229,7 +2229,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set returns_: ReturnsSyntax(success.start, success.end, success.type, success.attributes)
+                returns_ := ReturnsSyntax(success.start, success.end, success.type, success.attributes)
 
         lexer.parse_colon()
 
@@ -2244,7 +2244,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set throws_: ThrowsSyntax(success.start, success.end, success.type, success.attributes)
+                throws_ := ThrowsSyntax(success.start, success.end, success.type, success.attributes)
 
         lexer.parse_colon()
 
@@ -2259,7 +2259,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set io_mark: IoSyntax(success.start, success.end)
+                io_mark := IoSyntax(success.start, success.end)
 
         let writes_start lexer.position
         var writes: ref[GlobalWritesSyntax]? null
@@ -2272,7 +2272,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set writes: GlobalWritesSyntax(success.start, success.end, success.name, success.more)
+                writes := GlobalWritesSyntax(success.start, success.end, success.name, success.more)
 
         lexer.parse_colon()
 
@@ -2287,7 +2287,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set reads_clause: GlobalReadsSyntax(success.start, success.end, success.name, success.more)
+                reads_clause := GlobalReadsSyntax(success.start, success.end, success.name, success.more)
 
         lexer.parse_colon()
 
@@ -2303,7 +2303,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set implementation: success
+                implementation := success
 
         let end lexer.position
 
@@ -2431,7 +2431,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set extensions: success
+                extensions := success
 
         let end lexer.position
 
@@ -2458,7 +2458,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -2477,7 +2477,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set type: success
+                type := success
 
         lexer.parse_punctuation(",")
 
@@ -2509,7 +2509,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set model: success
+                model := success
 
         let rule_start lexer.position
         var rule: ref[Vector[OperandSyntax]]?
@@ -2523,7 +2523,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set rule: success
+                rule := success
 
         let end lexer.position
 
@@ -2550,7 +2550,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -2579,7 +2579,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set model: success
+                model := success
 
         let end lexer.position
 
@@ -2667,7 +2667,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -2695,7 +2695,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: success
+                name := success
 
         let version_start lexer.position
         var version: ref[VersionSyntax]? null
@@ -2708,7 +2708,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set version: VersionSyntax(success.start, success.end, success.majorMinor, success.patch)
+                version := VersionSyntax(success.start, success.end, success.majorMinor, success.patch)
 
         lexer.parse_colon()
 
@@ -2739,7 +2739,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set more: success
+                more := success
 
         lexer.parse_colon()
 
@@ -2768,7 +2768,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -2802,7 +2802,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set majorMinor: success
+                majorMinor := success
 
         if ~lexer.parse_punctuation(".")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '.'"))
@@ -2812,7 +2812,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set patch: success
+                patch := success
 
         let end lexer.position
 
@@ -2838,7 +2838,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set operands: success
+                operands := success
 
         if ~lexer.parse_punctuation(")")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
@@ -2868,7 +2868,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -2887,7 +2887,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set expression: success
+                expression := success
 
         let members_start lexer.position
         var members: ref[Vector[MemberAccessSyntax]]? null
@@ -2900,7 +2900,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set members: success
+                members := success
 
         let end lexer.position
 
@@ -2927,7 +2927,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -2955,7 +2955,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: success
+                name := success
 
         let end lexer.position
 
@@ -3156,7 +3156,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set literal: success
+                literal := success
 
         let end lexer.position
 
@@ -3181,7 +3181,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set components: success
+                components := success
 
         if ~lexer.parse_punctuation(")")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
@@ -3211,7 +3211,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -3230,7 +3230,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set operands: success
+                operands := success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
@@ -3243,7 +3243,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let value_start lexer.position
         var value: ref[ValueSyntax]? null
@@ -3255,7 +3255,7 @@ define Parser
                     when i: Invalid {}
             }
             when success: Success
-                set value: ValueSyntax(success.start, success.end, success.value, success.attributes)
+                value := ValueSyntax(success.start, success.end, success.value, success.attributes)
 
         lexer.parse_punctuation(",")
 
@@ -3283,7 +3283,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set value: success
+                value := success
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
@@ -3296,7 +3296,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let end lexer.position
 
@@ -3322,7 +3322,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set elements: success
+                elements := success
 
         if ~lexer.parse_punctuation("]")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ']'"))
@@ -3338,7 +3338,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set lifetime: LifetimeSyntax(success)
+                lifetime := LifetimeSyntax(success)
 
         let end lexer.position
 
@@ -3365,7 +3365,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -3384,7 +3384,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set operation: success
+                operation := success
 
         let optional_start lexer.position
         var optional: ref[OptionalSyntax]? null
@@ -3397,7 +3397,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set optional: OptionalSyntax(success.start, success.end)
+                optional := OptionalSyntax(success.start, success.end)
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
@@ -3410,7 +3410,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         lexer.parse_punctuation(",")
 
@@ -3438,7 +3438,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set condition: success
+                condition := success
 
         if ~lexer.parse_colon()
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
@@ -3455,7 +3455,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set consequent: success
+                consequent := success
 
         let alternative_start lexer.position
         var alternative: ref[ElseSyntax]? null
@@ -3468,7 +3468,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set alternative: ElseSyntax(success.start, success.end, success.alternative)
+                alternative := ElseSyntax(success.start, success.end, success.alternative)
 
         let end lexer.position
 
@@ -3485,7 +3485,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set statement: success
+                statement := success
 
         let end lexer.position
 
@@ -3518,7 +3518,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set alternative: success
+                alternative := success
 
         let end lexer.position
 
@@ -3544,7 +3544,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set scrutinee: success
+                scrutinee := success
 
         if ~lexer.parse_colon()
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
@@ -3561,7 +3561,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set branches: success
+                branches := success
 
         let alternative_start lexer.position
         var alternative: ref[ElseSyntax]? null
@@ -3574,7 +3574,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set alternative: ElseSyntax(success.start, success.end, success.alternative)
+                alternative := ElseSyntax(success.start, success.end, success.alternative)
 
         let end lexer.position
 
@@ -3601,7 +3601,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -3620,7 +3620,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set cases: success
+                cases := success
 
         if ~lexer.parse_colon()
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
@@ -3637,7 +3637,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set consequent: success
+                consequent := success
 
         let end lexer.position
 
@@ -3664,7 +3664,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -3697,7 +3697,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set condition: success
+                condition := success
 
         let end lexer.position
 
@@ -3723,7 +3723,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set condition: success
+                condition := success
 
         if ~lexer.parse_colon()
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
@@ -3739,7 +3739,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: LabelSyntax(success.start, success.end, success.name)
+                name := LabelSyntax(success.start, success.end, success.name)
 
         lexer.parse_colon()
 
@@ -3755,7 +3755,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set action: success
+                action := success
 
         let end lexer.position
 
@@ -3781,7 +3781,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set condition: success
+                condition := success
 
         if ~lexer.parse_colon()
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
@@ -3797,7 +3797,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set cases: success
+                cases := success
 
         let alternative_start lexer.position
         var alternative: ref[ElseSyntax]? null
@@ -3810,7 +3810,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set alternative: ElseSyntax(success.start, success.end, success.alternative)
+                alternative := ElseSyntax(success.start, success.end, success.alternative)
 
         let end lexer.position
 
@@ -3835,7 +3835,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set lifetime: LifetimeSyntax(success)
+                lifetime := LifetimeSyntax(success)
 
         let condition_start lexer.position
         var condition: ConditionSyntax
@@ -3849,7 +3849,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set condition: success
+                condition := success
 
         if ~lexer.parse_colon()
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
@@ -3865,7 +3865,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set cases: success
+                cases := success
 
         let dropper_start lexer.position
         var dropper: ref[ElseSyntax]? null
@@ -3878,7 +3878,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set dropper: ElseSyntax(success.start, success.end, success.alternative)
+                dropper := ElseSyntax(success.start, success.end, success.alternative)
 
         let end lexer.position
 
@@ -3930,7 +3930,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -3970,7 +3970,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set variant: success
+                variant := success
 
         lexer.parse_colon()
 
@@ -3986,7 +3986,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set statement: success
+                statement := success
 
         let end lexer.position
 
@@ -4013,7 +4013,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -4146,7 +4146,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set binding: success
+                binding := success
 
         let end lexer.position
 
@@ -4172,7 +4172,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set binding: success
+                binding := success
 
         let end lexer.position
 
@@ -4198,7 +4198,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set binding: success
+                binding := success
 
         let linked_mark_start lexer.position
         var linked_mark: ref[LinkedSyntax]? null
@@ -4211,7 +4211,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set linked_mark: LinkedSyntax(success.start, success.end)
+                linked_mark := LinkedSyntax(success.start, success.end)
 
         let end lexer.position
 
@@ -4236,7 +4236,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set atomic_mark: AtomicSyntax(success.start, success.end)
+                atomic_mark := AtomicSyntax(success.start, success.end)
 
         let binding_start lexer.position
         var binding: BindingSyntax
@@ -4250,7 +4250,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set binding: success
+                binding := success
 
         let linked_mark_start lexer.position
         var linked_mark: ref[LinkedSyntax]? null
@@ -4263,7 +4263,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set linked_mark: LinkedSyntax(success.start, success.end)
+                linked_mark := LinkedSyntax(success.start, success.end)
 
         let end lexer.position
 
@@ -4300,7 +4300,7 @@ define Parser
                     when i: Invalid {}
             }
             when success: Success
-                set annotation: BindingAnnotationSyntax(success.start, success.end, success.spec)
+                annotation := BindingAnnotationSyntax(success.start, success.end, success.spec)
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]? null
@@ -4313,7 +4313,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set operation: success
+                operation := success
 
         let end lexer.position
 
@@ -4339,7 +4339,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set spec: success
+                spec := success
 
         let end lexer.position
 
@@ -4366,7 +4366,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -4428,7 +4428,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set members: success
+                members := success
 
         if ~lexer.parse_punctuation("]")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ']'"))
@@ -4456,7 +4456,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set parts: success
+                parts := success
 
         if ~lexer.parse_punctuation(")")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
@@ -4486,7 +4486,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -4539,7 +4539,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set property: success
+                property := success
 
         let end lexer.position
 
@@ -4566,7 +4566,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -4590,7 +4590,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set mutability: MutabilitySyntax(success)
+                mutability := MutabilitySyntax(success)
 
         let name lexer.parse_identifier(keywords)
         if name.length() = 0
@@ -4612,7 +4612,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set annotation: success
+                annotation := success
 
         let initializer_start lexer.position
         var initializer: ref[InitializerSyntax]? null
@@ -4625,7 +4625,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set initializer: InitializerSyntax(success.start, success.end, success.operands)
+                initializer := InitializerSyntax(success.start, success.end, success.operands)
 
         lexer.parse_punctuation(",")
 
@@ -4642,7 +4642,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set attributes: success
+                attributes := success
 
         let end lexer.position
 
@@ -4668,7 +4668,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set type: success
+                type := success
 
         let end lexer.position
 
@@ -4742,7 +4742,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: LoopSyntax(success.start, success.end, success.name)
+                name := LoopSyntax(success.start, success.end, success.name)
 
         let end lexer.position
 
@@ -4767,7 +4767,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: LoopSyntax(success.start, success.end, success.name)
+                name := LoopSyntax(success.start, success.end, success.name)
 
         let result_start lexer.position
         var result: ref[Vector[OperandSyntax]]? null
@@ -4780,7 +4780,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set result: success
+                result := success
 
         let end lexer.position
 
@@ -4821,7 +4821,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set result: success
+                result := success
 
         let end lexer.position
 
@@ -4846,7 +4846,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set result: success
+                result := success
 
         let end lexer.position
 
@@ -4872,7 +4872,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set input: success
+                input := success
 
         if ~lexer.parse_colon()
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
@@ -4889,7 +4889,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set block: success
+                block := success
 
         let end lexer.position
 
@@ -4918,7 +4918,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set annotation: TypeAnnotationSyntax(success.start, success.end, success.type)
+                annotation := TypeAnnotationSyntax(success.start, success.end, success.type)
 
         if ~lexer.parse_keyword("in")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected 'in'"))
@@ -4935,7 +4935,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set operation: success
+                operation := success
 
         if ~lexer.parse_colon()
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
@@ -4951,7 +4951,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: LabelSyntax(success.start, success.end, success.name)
+                name := LabelSyntax(success.start, success.end, success.name)
 
         lexer.parse_colon()
 
@@ -4967,7 +4967,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set action: success
+                action := success
 
         let end lexer.position
 
@@ -5008,7 +5008,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: LabelSyntax(success.start, success.end, success.name)
+                name := LabelSyntax(success.start, success.end, success.name)
 
         lexer.parse_colon()
 
@@ -5024,7 +5024,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set action: success
+                action := success
 
         let end lexer.position
 
@@ -5051,7 +5051,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -5105,7 +5105,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set operands: success
+                operands := success
 
         let becomes_start lexer.position
         var becomes: ref[BecomesSyntax]? null
@@ -5118,7 +5118,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set becomes: BecomesSyntax(success.start, success.end, success.source)
+                becomes := BecomesSyntax(success.start, success.end, success.source)
 
         let end lexer.position
 
@@ -5144,7 +5144,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set source: success
+                source := success
 
         let end lexer.position
 
@@ -5170,7 +5170,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set target: success
+                target := success
 
         if ~lexer.parse_colon()
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
@@ -5187,7 +5187,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set source: success
+                source := success
 
         let end lexer.position
 
@@ -5212,7 +5212,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set uses: success
+                uses := success
 
         let statements_start lexer.position
         var statements: ref[Vector[StatementSyntax]]? null
@@ -5225,7 +5225,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set statements: success
+                statements := success
 
         if ~lexer.parse_punctuation("}")
             throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
@@ -5254,7 +5254,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set type: success
+                type := success
 
         let end lexer.position
 
@@ -5280,7 +5280,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set type: success
+                type := success
 
         let end lexer.position
 
@@ -5306,7 +5306,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set name: success
+                name := success
 
         let end lexer.position
 
@@ -5332,7 +5332,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set type: success
+                type := success
 
         let end lexer.position
 
@@ -5359,7 +5359,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -5378,7 +5378,7 @@ define Parser
             when err: Error
                 throw err
             when success: Success
-                set name: success
+                name := success
 
         let generics_start lexer.position
         var generics: ref[GenericArgumentsSyntax]? null
@@ -5391,7 +5391,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set generics: GenericArgumentsSyntax(success.start, success.end, success.generics)
+                generics := GenericArgumentsSyntax(success.start, success.end, success.generics)
 
         let optional_start lexer.position
         var optional: ref[OptionalSyntax]? null
@@ -5404,7 +5404,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set optional: OptionalSyntax(success.start, success.end)
+                optional := OptionalSyntax(success.start, success.end)
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
@@ -5417,7 +5417,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set lifetime: LifetimeSyntax(success)
+                lifetime := LifetimeSyntax(success)
 
         let end lexer.position
 
@@ -5443,7 +5443,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set extensions: success
+                extensions := success
 
         let end lexer.position
 
@@ -5470,7 +5470,7 @@ define Parser
                         {
                             if acc.head = null
                                 throw err
-                            set parsing: false
+                            parsing := false
                         }
                 }
                 when node: Success
@@ -5600,7 +5600,7 @@ function test() returns int
         }
 
     ; Test 2: Parse an identifier expression
-    set parser: Parser("foo")
+    parser := Parser("foo")
     choose parser.parse_name()
         when err: Error
             return 3
@@ -5611,7 +5611,7 @@ function test() returns int
         }
 
     ; Test 3: Parse a function definition
-    set parser: Parser("function hello() returns int 42")
+    parser := Parser("function hello() returns int 42")
     choose parser.parse_function()
         when err: Error
             return 5
@@ -5622,7 +5622,7 @@ function test() returns int
         }
 
     ; Test 4: Parse a structure definition
-    set parser: Parser("define a ()")
+    parser := Parser("define a ()")
     choose parser.parse_definition()
         when err: Error
             return 7
@@ -5633,7 +5633,7 @@ function test() returns int
         }
 
     ; Test 5: Parse a structure with properties
-    set parser: Parser("define Point (x: int, y: int)")
+    parser := Parser("define Point (x: int, y: int)")
     choose parser.parse_definition()
         when err: Error
             return 9
@@ -5644,7 +5644,7 @@ function test() returns int
         }
 
     ; Test 6: Parse a union definition
-    set parser: Parser("define Option union (Some: int, None)")
+    parser := Parser("define Option union (Some: int, None)")
     choose parser.parse_definition()
         when err: Error
             return 11

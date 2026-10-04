@@ -17,14 +17,14 @@ procedure producer()
     var i 0
     while i < 2
     {
-        set m.value: i
+        m.value := i
         Channel.send(c, m as pointer[void])
-        set i: i + 1
+        i := i + 1
     }
 }
 
 let page Page.allocate_page()
 let sched Scheduler.create(page)
 let ch Channel.create()
-set chan: ch as pointer[void]
+chan := ch as pointer[void]
 producer()

@@ -29,7 +29,7 @@ function make_alpha(host: ref[Page], x: int) returns ref[Thing]
 
 procedure fill(mutable h: ref[Holder], host: ref[Page], x: int)
 {
-    set h.slot: &Thing.Beta^host(x)
+    h.slot := &Thing.Beta^host(x)
 }
 
 function value_of(t: ref[Thing]) returns int
@@ -52,14 +52,14 @@ fill(&h, host, 3)
 
 var ok true
 if value_of(one) <> 1 or value_of(two) <> 2
-    set ok: false
+    ok := false
 let s h.slot
 if s = null
-    set ok: false
+    ok := false
 else if value_of(s as ref[Thing]) <> 3
-    set ok: false
+    ok := false
 if (Page.get(one) as size_t) <> (rp as size_t)
-    set ok: false
+    ok := false
 if ok
     print "PASS"
 else

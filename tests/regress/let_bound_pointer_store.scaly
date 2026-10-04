@@ -30,14 +30,14 @@ var b Box(9, 2)
 
 ; The ref that plain address-of yields.
 let r &b
-set r.v: 11
+r.v := 11
 if b.v <> 11
 {
     Console.println "FAIL store through a let-bound ref"
     exit 1
 }
 ; Second field, so a wrong offset cannot pass as a right one.
-set r.w: 22
+r.w := 22
 if b.w <> 22
 {
     Console.println "FAIL store through a let-bound ref, field 1"
@@ -46,13 +46,13 @@ if b.w <> 22
 
 ; The explicit pointer spelling.
 let p (&b as pointer[Box])
-set p.v: 33
+p.v := 33
 if b.v <> 33
 {
     Console.println "FAIL store through a let-bound pointer"
     exit 1
 }
-set p.w: 44
+p.w := 44
 if b.w <> 44
 {
     Console.println "FAIL store through a let-bound pointer, field 1"
@@ -73,7 +73,7 @@ if p.w <> 44
 
 ; The `var` spelling, which was the working one -- it must not regress.
 var q &b
-set q.v: 55
+q.v := 55
 if b.v <> 55
 {
     Console.println "FAIL store through a var-bound ref"
@@ -84,7 +84,7 @@ if b.v <> 55
 ; Its slot is an SSA value, so no load may be emitted for it either.
 var other Box(0, 0)
 let o2 (&other as pointer[Box])
-set o2.v: 66
+o2.v := 66
 if other.v <> 66
 {
     Console.println "FAIL store through a second let-bound pointer"

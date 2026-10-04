@@ -20,25 +20,25 @@ var ok true
 let a = 42
 var b = a + 1
 if a <> 42 or b <> 43
-    set ok: false
+    ok := false
 
-set b: = 7
+b := 7
 if b <> 7
-    set ok: false
+    ok := false
 
 let eq = a = 42
 if eq = false
-    set ok: false
+    ok := false
 
 let p Pair(= 1, = 2)
 if p.a <> 1 or p.b <> 2
-    set ok: false
+    ok := false
 
 if twice(= 4) <> 8
-    set ok: false
+    ok := false
 
 if same(3, 3) = false or same(3, 4)
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

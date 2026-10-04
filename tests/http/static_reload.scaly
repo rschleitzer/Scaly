@@ -25,7 +25,7 @@ procedure reload(times: int) mutable static_cache
     while i < times
     {
         load_entry(e, 0, 0, 0)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -38,7 +38,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     while k < 1024
     {
         sb.append("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\n")
-        set k: k + 1
+        k := k + 1
     }
     File.write_from_string(String("scaly_http_reload/big.txt"), sb.to_string())
     reload(1)

@@ -62,7 +62,7 @@ define tool
         }
         var home getenv "HOME"
         if home = null
-            set home: getenv("USERPROFILE")
+            home := getenv("USERPROFILE")
         if home = null
             return String(".scaly-cache")
         let h String(home)
@@ -84,7 +84,7 @@ define tool
                 if Directory.is_directory(prefix) = false
                     Directory.create(prefix)
             }
-            set i: i + 1
+            i := i + 1
         }
         Directory.create(path)
         Directory.is_directory(path)
@@ -101,7 +101,7 @@ define tool
         while i < entries.length
         {
             let e entries.at i
-            set i: i + 1
+            i := i + 1
             let c e.name.get(0)
             if c = 95 or c = 46
                 continue
@@ -123,8 +123,8 @@ define tool
         var i: size_t 0
         while i < n
         {
-            set r: (r xor (s.get(i) as u64)) * 0x100000001b3
-            set i: i + 1
+            r := (r xor (s.get(i) as u64)) * 0x100000001b3
+            i := i + 1
         }
         r
     }
@@ -135,9 +135,9 @@ define tool
     procedure package_key(mutable dir: String, files: ref[Array[String]], triple: String, flavour: String) returns u64
     {
         var h: u64 0xcbf29ce484222325
-        set h: (h xor scaly_package_stamp) * 0x100000001b3
-        set h: tool.fnv_string(h, triple)
-        set h: tool.fnv_string(h, flavour)
+        h := (h xor scaly_package_stamp) * 0x100000001b3
+        h := tool.fnv_string(h, triple)
+        h := tool.fnv_string(h, flavour)
         var sum: u64 0
         var i: size_t 0
         while i < files.length
@@ -145,9 +145,9 @@ define tool
             let f files.at i
             let content File.read_to_string("`dir`/`f`")
             var fh tool.fnv_string(0xcbf29ce484222325, f)
-            set fh: tool.fnv_string(fh * 0x100000001b3, content)
-            set sum: sum + fh
-            set i: i + 1
+            fh := tool.fnv_string(fh * 0x100000001b3, content)
+            sum := sum + fh
+            i := i + 1
         }
         (h xor sum) * 0x100000001b3
     }
@@ -163,7 +163,7 @@ define tool
                 sb.append((48 + d) as char)
             else
                 sb.append((87 + d) as char)
-            set i: i + 1
+            i := i + 1
         }
         sb.to_string()
     }
@@ -179,43 +179,43 @@ define tool
         var again true
         while again
         {
-            set again: false
+            again := false
             let n base.get_length()
             if os.get_length() = 0 and base.ends_with("_windows")
             {
-                set os: String("windows")
-                set base: base.substring(0, n - 8)
-                set again: true
+                os := String("windows")
+                base := base.substring(0, n - 8)
+                again := true
             }
             else if os.get_length() = 0 and base.ends_with("_linux")
             {
-                set os: String("linux")
-                set base: base.substring(0, n - 6)
-                set again: true
+                os := String("linux")
+                base := base.substring(0, n - 6)
+                again := true
             }
             else if os.get_length() = 0 and base.ends_with("_darwin")
             {
-                set os: String("darwin")
-                set base: base.substring(0, n - 7)
-                set again: true
+                os := String("darwin")
+                base := base.substring(0, n - 7)
+                again := true
             }
             else if arch.get_length() = 0 and base.ends_with("_x86_64")
             {
-                set arch: String("x86_64")
-                set base: base.substring(0, n - 7)
-                set again: true
+                arch := String("x86_64")
+                base := base.substring(0, n - 7)
+                again := true
             }
             else if arch.get_length() = 0 and base.ends_with("_arm64")
             {
-                set arch: String("arm64")
-                set base: base.substring(0, n - 6)
-                set again: true
+                arch := String("arm64")
+                base := base.substring(0, n - 6)
+                again := true
             }
             else if arch.get_length() = 0 and base.ends_with("_aarch64")
             {
-                set arch: String("arm64")
-                set base: base.substring(0, n - 8)
-                set again: true
+                arch := String("arm64")
+                base := base.substring(0, n - 8)
+                again := true
             }
         }
         NativeName(base, os, arch)
@@ -255,10 +255,10 @@ define tool
         while i < files.length
         {
             let f files.at i
-            set i: i + 1
+            i := i + 1
             var ext: size_t 0
             if f.ends_with(".c") or f.ends_with(".S") or f.ends_with(".s")
-                set ext: 2
+                ext := 2
             if ext = 0
                 continue
             let nn tool.native_name(f.substring(0, f.get_length() - ext))
@@ -268,9 +268,9 @@ define tool
                 continue
             var score 0
             if nn.os.get_length() > 0
-                set score: score + 1
+                score := score + 1
             if nn.arch.get_length() > 0
-                set score: score + 1
+                score := score + 1
             var found false
             var j: size_t 0
             while j < bases.length
@@ -278,7 +278,7 @@ define tool
                 let b bases.at j
                 if b.equals(nn.base)
                 {
-                    set found: true
+                    found := true
                     let s scores.at j
                     if score > s
                     {
@@ -286,7 +286,7 @@ define tool
                         picks.put(j, String(f))
                     }
                 }
-                set j: j + 1
+                j := j + 1
             }
             if found = false
             {
@@ -300,7 +300,7 @@ define tool
         {
             let p picks.at k
             chosen.add(String(p))
-            set k: k + 1
+            k := k + 1
         }
     }
 
@@ -345,7 +345,7 @@ define tool
         {
             let rp roots.at i
             let np names.at i
-            set i: i + 1
+            i := i + 1
             let root String(rp)
             let slash root.last_index_of(47)
             if slash < 0
@@ -354,7 +354,7 @@ define tool
             let vslash dir.last_index_of(47)
             var version String("0")
             if vslash >= 0
-                set version: dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
+                version := dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
             var files Array[String]()
             tool.package_files(dir, "", &files)
             ; -mcpu is part of what a package is compiled for: it reaches the
@@ -372,14 +372,14 @@ define tool
                 {
                     let btmp "`bc`.`getpid() as int`.tmp"
                     var bo Options()
-                    set bo.input_file: String(root)
-                    set bo.output_file: String(btmp)
-                    set bo.compile_only: true
-                    set bo.bitcode: true
-                    set bo.no_prelude: true
-                    set bo.no_tests: true
-                    set bo.target_triple: String(given_triple)
-                    set bo.target_cpu: String(cpu)
+                    bo.input_file := String(root)
+                    bo.output_file := String(btmp)
+                    bo.compile_only := true
+                    bo.bitcode := true
+                    bo.no_prelude := true
+                    bo.no_tests := true
+                    bo.target_triple := String(given_triple)
+                    bo.target_cpu := String(cpu)
                     if cli.run(bo) <> 0
                     {
                         Console.println("Error: package `np` did not build")
@@ -397,15 +397,15 @@ define tool
             {
                 let tmp "`obj`.`getpid() as int`.tmp"
                 var o Options()
-                set o.input_file: String(root)
-                set o.output_file: String(tmp)
-                set o.compile_only: true
-                set o.no_prelude: true
-                set o.no_tests: true
-                set o.opt_level: 2
-                set o.library: true
-                set o.target_triple: String(given_triple)
-                set o.target_cpu: String(cpu)
+                o.input_file := String(root)
+                o.output_file := String(tmp)
+                o.compile_only := true
+                o.no_prelude := true
+                o.no_tests := true
+                o.opt_level := 2
+                o.library := true
+                o.target_triple := String(given_triple)
+                o.target_cpu := String(cpu)
                 if cli.run(o) <> 0
                 {
                     Console.println("Error: package `np` did not build")
@@ -442,7 +442,7 @@ define tool
         while k < natives.length
         {
             let nf natives.at k
-            set k: k + 1
+            k := k + 1
             var flat StringBuilder()
             var fi: size_t 0
             while fi < nf.get_length()
@@ -452,13 +452,13 @@ define tool
                     flat.append("-" as char)
                 else
                     flat.append(fc as char)
-                set fi: fi + 1
+                fi := fi + 1
             }
             ; the include flags are part of what was compiled: a header
             ; directory that moves names another object
             var tag String()
             if includes.get_length() > 0
-                set tag: "-i`tool.hex16(tool.fnv_string(0xcbf29ce484222325, includes))`"
+                tag := "-i`tool.hex16(tool.fnv_string(0xcbf29ce484222325, includes))`"
             let nobj "`base`-`flat.to_string()``tag`.o"
             let ready "`ready_dir`/`flat.to_string()`.o"
             if includes.get_length() = 0 and File.exists(ready)
@@ -537,7 +537,7 @@ define tool
         {
             let rp roots.at i
             let np names.at i
-            set i: i + 1
+            i := i + 1
             let root String(rp)
             let slash root.last_index_of(47)
             if slash < 0
@@ -546,7 +546,7 @@ define tool
             let vslash dir.last_index_of(47)
             var version String("0")
             if vslash >= 0
-                set version: dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
+                version := dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
             var files Array[String]()
             tool.package_files(dir, "", &files)
             let key tool.package_key(dir, &files, triple, "jit")
@@ -570,7 +570,7 @@ define tool
                     let b built.at bi
                     text.append(b)
                     text.append("\n" as char)
-                    set bi: bi + 1
+                    bi := bi + 1
                 }
                 File.write_from_string(stmp, text.to_string())
                 tool.publish(stmp, syms)
@@ -589,9 +589,9 @@ define tool
                         let sym_page Page.get(symbols)
                         symbols.add(String^sym_page(list.substring(from, at - from)))
                     }
-                    set from: at + 1
+                    from := at + 1
                 }
-                set at: at + 1
+                at := at + 1
             }
             let obj_page Page.get(objects)
             objects.add(String^obj_page(obj))
@@ -621,7 +621,7 @@ define tool
             let l libs.at i
             if l.equals(name)
                 return
-            set i: i + 1
+            i := i + 1
         }
         let page Page.get(libs)
         libs.add(String^page(name))
@@ -648,7 +648,7 @@ define tool
                 while i < decls.length
                 {
                     let dp decls.get i
-                    set i: i + 1
+                    i := i + 1
                     if dp = null
                         continue
                     choose (*dp)
@@ -664,7 +664,7 @@ define tool
                                     let mp more.get k
                                     if mp <> null
                                         tool.add_library(libs, mp.name)
-                                    set k: k + 1
+                                    k := k + 1
                                 }
                             }
                         }
@@ -703,9 +703,9 @@ define tool
                         if tool.dir_has_library(d, name)
                             return String(d)
                     }
-                    set from: at + 1
+                    from := at + 1
                 }
-                set at: at + 1
+                at := at + 1
             }
         }
         var bases Array[String]()
@@ -715,7 +715,7 @@ define tool
         while bi < bases.length
         {
             let b bases.at bi
-            set bi: bi + 1
+            bi := bi + 1
             var best String()
             var best_formula String()
             let entries Directory.list("`b`/opt")
@@ -723,12 +723,12 @@ define tool
             while ei < entries.length
             {
                 let e entries.at ei
-                set ei: ei + 1
+                ei := ei + 1
                 let candidate "`b`/opt/`e.name`/lib"
                 if tool.dir_has_library(candidate, name) and tool.name_after(e.name, best_formula)
                 {
-                    set best: String(candidate)
-                    set best_formula: String(e.name)
+                    best := String(candidate)
+                    best_formula := String(e.name)
                 }
             }
             if best.get_length() > 0
@@ -752,7 +752,7 @@ define tool
         {
             if a.get(i) <> b.get(i)
                 return a.get(i) > b.get(i)
-            set i: i + 1
+            i := i + 1
         }
         n > m
     }
@@ -766,7 +766,7 @@ define tool
         while i < libs.length
         {
             let l libs.at i
-            set i: i + 1
+            i := i + 1
             let d tool.find_library(l)
             if d.get_length() > 0 and cli.contains_string(&dirs, d) = false
             {
@@ -799,7 +799,7 @@ define tool
         var i roots.length
         while i > 0
         {
-            set i: i - 1
+            i := i - 1
             let rp roots.at i
             var root String(rp)
             tool.declared_libraries(root, &libs)
@@ -816,7 +816,7 @@ define tool
         while i < libs.length
         {
             let l libs.at i
-            set i: i + 1
+            i := i + 1
             let d tool.find_library(l)
             var loaded false
             var candidates Array[String]()
@@ -833,9 +833,9 @@ define tool
             while k < candidates.length and loaded = false
             {
                 let c candidates.at k
-                set k: k + 1
+                k := k + 1
                 if scaly_eio_load_library(c.to_c_string()) = 0
-                    set loaded: true
+                    loaded := true
             }
             if loaded = false
                 Console.println("warning: C library `l` could not be loaded")

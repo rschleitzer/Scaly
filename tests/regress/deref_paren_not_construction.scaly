@@ -67,8 +67,8 @@ function churn(n: size_t) returns size_t
         junk.put(2, "zzzzz")
         let jp junk.get 0
         if jp <> null
-            set total: total + (*jp).get_length()
-        set i: i + 1
+            total := total + (*jp).get_length()
+        i := i + 1
     }
     total
 }
@@ -79,8 +79,8 @@ function check() returns int
     var k: size_t 0
     while k < 4
     {
-        set (raw as pointer[Elem] + k).v: (k as int) + 1
-        set k: k + 1
+        (raw as pointer[Elem] + k).v := (k as int) + 1
+        k := k + 1
     }
     let h Holder(raw as pointer[Elem], 4)
 

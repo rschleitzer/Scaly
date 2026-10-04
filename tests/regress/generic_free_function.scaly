@@ -45,22 +45,22 @@ var a make_of[u64](host, 4 as size_t)
 a.put(0 as size_t, 11 as u64)
 a.put(3 as size_t, 44 as u64)
 if (a[0 as size_t] as int) <> 11
-    set ok: false
+    ok := false
 if (a[3 as size_t] as int) <> 44
-    set ok: false
+    ok := false
 
 ; 32-bit element: a different stride, which the folded `sizeof T` gets wrong
 var b make_of[u32](host, 4 as size_t)
 b.put(0 as size_t, 7 as u32)
 b.put(3 as size_t, 9 as u32)
 if (b[0 as size_t] as int) <> 7
-    set ok: false
+    ok := false
 if (b[3 as size_t] as int) <> 9
-    set ok: false
+    ok := false
 
 ; the inferable form still works
 if (first_of[u64](a) as int) <> 11
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

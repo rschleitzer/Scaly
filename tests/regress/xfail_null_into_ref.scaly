@@ -19,5 +19,5 @@ define Box (v: int)
 
 var b Box(7)
 var r: ref[Box] &b
-set r: null
+r := null
 Console.println "unreachable"

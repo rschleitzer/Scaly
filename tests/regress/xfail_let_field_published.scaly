@@ -11,13 +11,13 @@ define Box (fixed: int  var count: int)
 {
     init(f: int)
     {
-        set fixed: f
-        set count: 0
+        fixed := f
+        count := 0
     }
 }
 
 procedure refix(mutable b: ref[Box], f: int)
-    set b.fixed: f
+    b.fixed := f
 
 var b Box(1)
 refix(&b, 2)

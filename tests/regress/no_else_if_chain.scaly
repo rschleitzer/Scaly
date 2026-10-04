@@ -16,19 +16,19 @@ function clamp(dmin: int) returns int
 {
     var adj 7
     if dmin > 100
-        set adj: 0
+        adj := 0
     else if dmin > 50
-        set adj: dmin + 1
+        adj := dmin + 1
     adj
 }
 
 var ok true
 if clamp(200) <> 0
-    set ok: false
+    ok := false
 if clamp(60) <> 61
-    set ok: false
+    ok := false
 if clamp(10) <> 7
-    set ok: false
+    ok := false
 
 if ok
     print("PASS")

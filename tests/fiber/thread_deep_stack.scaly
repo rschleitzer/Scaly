@@ -19,12 +19,12 @@ define Job
 procedure descend(depth: int, mutable acc: pointer[int]) returns int
 {
     var pin u8[128]
-    set pin[0]: (depth & 0xFF) as u8
-    set pin[127]: 1 as u8
+    pin[0] := (depth & 0xFF) as u8
+    pin[127] := 1 as u8
     if depth = 0
         return pin[0] as int
     let below descend(depth - 1, acc)
-    set *acc: *acc + 1
+    *acc := *acc + 1
     below + (pin[127] as int)
 }
 
@@ -33,7 +33,7 @@ procedure worker(mutable arg: pointer[void]) returns pointer[void]
     let job arg as pointer[Job]
     var count 0
     descend(job.depth, &count)
-    set job.frames: count
+    job.frames := count
     null
 }
 

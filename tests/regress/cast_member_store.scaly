@@ -8,10 +8,10 @@
 define Info (var arity: int)
 
 procedure reset_cast(mutable p: pointer[void])
-    set (p as ref[Info]).arity: 0
+    (p as ref[Info]).arity := 0
 
 procedure reset_ref(mutable p: pointer[Info])
-    set (p as ref[Info]).arity: 5
+    (p as ref[Info]).arity := 5
 
 function check() returns int
 {

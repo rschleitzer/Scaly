@@ -89,7 +89,7 @@ procedure h3_offer_qpack_table(capacity: size_t)
 {
     var c capacity
     if c > QPACK_TABLE_CAPACITY
-        set c: QPACK_TABLE_CAPACITY
+        c := QPACK_TABLE_CAPACITY
     scaly_atomic_store_u64(&h3_qpack_capacity, c as u64)
 }
 
@@ -112,10 +112,10 @@ procedure quic_varint(s: Slice[u8], mutable at: ref[size_t]) returns i64
     var k: size_t 1
     while k < n
     {
-        set v: (v << 8) | (s[pos + k] as u64)
-        set k: k + 1
+        v := (v << 8) | (s[pos + k] as u64)
+        k := k + 1
     }
-    set at: pos + n
+    at := pos + n
     v as i64
 }
 
@@ -144,7 +144,7 @@ procedure append_quic_varint(mutable out: ref[ByteBuf], v: u64)
             out.append_byte(((v >> shift) & 255) as u8)
             if shift = 0
                 break
-            set shift: shift - 8
+            shift := shift - 8
         }
     }
 }
@@ -288,7 +288,7 @@ procedure h3_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64
         s.input.append(Slice[u8](datalen, data))
     if (flags & NGTCP2_STREAM_DATA_FLAG_FIN) <> 0 and s.complete = false
     {
-        set s.complete: true
+        s.complete := true
         var c user_data as ref[QConn]
         c.readyq.add(s)
     }
@@ -311,7 +311,7 @@ procedure h3_uni_data(mutable c: ref[QConn], mutable s: ref[QStream], bytes: Sli
         let kind quic_varint(s.input.bytes(), &at)
         if kind < 0
             return 0
-        set s.kind: kind
+        s.kind := kind
         s.input.consume(at)
         let offered h3_table_capacity()
         if kind <> 2 or offered = 0
@@ -321,7 +321,7 @@ procedure h3_uni_data(mutable c: ref[QConn], mutable s: ref[QStream], bytes: Sli
         }
         if c.table <> null
             return NGTCP2_ERR_CALLBACK_FAILURE
-        set c.table: QpackTable.create(c.page, offered)
+        c.table := QpackTable.create(c.page, offered)
     }
     var found: ref[QpackTable]? c.table
     if found = null
@@ -343,12 +343,12 @@ procedure h3_acked(mutable conn: pointer[void], stream_id: i64, offset: u64, dat
     if stream_user_data = null
         return 0
     var s stream_user_data as ref[QStream]
-    set s.acked: s.acked + (datalen as size_t)
+    s.acked := s.acked + (datalen as size_t)
     if s.answered
     {
         let c user_data as ref[QConn]
         var l c.listener as ref[QListener]
-        set l.pending: l.pending - (datalen as size_t)
+        l.pending := l.pending - (datalen as size_t)
     }
     0
 }
@@ -398,7 +398,7 @@ procedure h3_handshake_completed(mutable conn: pointer[void], mutable user_data:
     append_quic_varint(&setting, offered as u64)
     append_quic_varint(&control.output, setting.length as u64)
     control.output.append(setting.bytes())
-    set c.decoder: h3_open_uni(conn, c, 3)
+    c.decoder := h3_open_uni(conn, c, 3)
     0
 }
 
@@ -412,8 +412,8 @@ procedure h3_open_uni(mutable conn: pointer[void], mutable c: ref[QConn], kind: 
     var s h3_new_stream(c, id)
     ngtcp2_conn_set_stream_user_data(conn, id, s as pointer[void])
     s.output.append_byte(kind)
-    set s.finish: false
-    set s.in_sendq: true
+    s.finish := false
+    s.in_sendq := true
     c.sendq.add(s)
     s
 }
@@ -437,20 +437,20 @@ procedure h3_decoder_move(mutable c: ref[QConn])
     if d.acked = d.output.length and d.queued = d.output.length
     {
         d.output.clear()
-        set d.queued: 0
-        set d.acked: 0
+        d.queued := 0
+        d.acked := 0
     }
     var n c.backlog.length
     let room d.output.capacity() - d.output.length
     if n > room
-        set n: room
+        n := room
     if n = 0
         return
     d.output.append(c.backlog.bytes().slice_to(n))
     c.backlog.consume(n)
     if d.in_sendq = false
     {
-        set d.in_sendq: true
+        d.in_sendq := true
         c.sendq.add(d)
     }
 }
@@ -473,18 +473,18 @@ procedure h3_drop_stream(mutable c: ref[QConn], s: ref[QStream])
 {
     let decoder: ref[QStream]? c.decoder
     if decoder <> null and (decoder as pointer[void]) = (s as pointer[void])
-        set c.decoder: null
+        c.decoder := null
     if s.answered
     {
         var l c.listener as ref[QListener]
-        set l.pending: l.pending - (s.output.length - s.acked)
+        l.pending := l.pending - (s.output.length - s.acked)
     }
     ; out of streams by its index, out of the queues only when it is in one
     ; (a search of all three was 4 % of the samples in baseline-h3)
     var last: ref[QStream] c.streams[c.streams.length - 1]
     c.streams.put(s.index, last)
-    set last.index: s.index
-    set c.streams.length: c.streams.length - 1
+    last.index := s.index
+    c.streams.length := c.streams.length - 1
     if s.in_sendq
         h3_remove(&c.sendq, s)
     if s.complete and s.answered = false
@@ -502,10 +502,10 @@ procedure h3_remove(mutable list: ref[Array[ref[QStream]]], s: ref[QStream])
         if (t as pointer[void]) = (s as pointer[void])
         {
             list.put(i, list[list.length - 1])
-            set list.length: list.length - 1
+            list.length := list.length - 1
             return
         }
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -518,8 +518,8 @@ procedure h3_remove(mutable list: ref[Array[ref[QStream]]], s: ref[QStream])
 ; direction, which was a fifth of the samples in baseline-h3 (2026-09-30).
 procedure h3_answer(mutable w: ref[H3Work], mutable c: ref[QConn], mutable s: ref[QStream])
 {
-    set s.answered: true
-    set s.finish: true
+    s.answered := true
+    s.finish := true
     let input s.input.bytes()
     w.fields.clear()
     w.body.clear()
@@ -532,7 +532,7 @@ procedure h3_answer(mutable w: ref[H3Work], mutable c: ref[QConn], mutable s: re
         if kind < 0 or length < 0 or at + (length as size_t) > input.length
             return
         let payload input.subslice(at, at + (length as size_t))
-        set at: at + (length as size_t)
+        at := at + (length as size_t)
         if kind = 1 and headers_seen = false
         {
             var ric: u64 0
@@ -546,7 +546,7 @@ procedure h3_answer(mutable w: ref[H3Work], mutable c: ref[QConn], mutable s: re
                 if t <> null
                     t.acknowledged(ric)
             }
-            set headers_seen: true
+            headers_seen := true
         }
         if kind = 0
             w.body.append(payload)
@@ -574,10 +574,10 @@ procedure h3_answer(mutable w: ref[H3Work], mutable c: ref[QConn], mutable s: re
     let out w.outb.bytes()
     var body_at: size_t w.res.body_at
     if body_at > out.length
-        set body_at: out.length
+        body_at := out.length
     var block_at: size_t w.res.block_at
     if block_at > body_at
-        set block_at: body_at
+        block_at := body_at
     let block out.subslice(block_at, body_at)
     append_quic_varint(&s.output, 1)
     append_quic_varint(&s.output, block.length as u64)
@@ -614,7 +614,7 @@ procedure h3_route(l: ref[QListener], dcid: Slice[u8]) returns ref[QConn]?
         let c: ref[QConn]? l.conns[i]
         if c <> null and c.first_dcid.slice_to(c.first_dcid_length).equals(dcid)
             return c
-        set i: i + 1
+        i := i + 1
     }
     null
 }
@@ -632,10 +632,10 @@ procedure h3_open(mutable l: ref[QListener], pkt: Slice[u8], addr: Slice[u8], no
     ; a free slot, or a new one
     var slot: size_t 0
     while slot < l.conns.length and l.conns[slot] <> null
-        set slot: slot + 1
+        slot := slot + 1
     if slot = l.conns.length
         l.conns.add(null)
-    set l.generation: l.generation + 1
+    l.generation := l.generation + 1
     let page Page.allocate_page()
     var own allocate_slice[u8]^page(page, CID_LENGTH)
     RAND_bytes(own.data, CID_LENGTH as i32)
@@ -646,14 +646,14 @@ procedure h3_open(mutable l: ref[QListener], pkt: Slice[u8], addr: Slice[u8], no
     while k < addr.length
     {
         remote.put(k, addr[k])
-        set k: k + 1
+        k := k + 1
     }
     var first allocate_slice[u8]^page(page, 20)
-    set k: 0
+    k := 0
     while k < dcid_length
     {
         first.put(k, dcid[k])
-        set k: k + 1
+        k := k + 1
     }
     var c &QConn^page(page, l as pointer[void], slot as u32, l.generation, null, null, null, remote, addr.length, first, dcid_length, Array[ref[QStream]]^page(), Array[ref[QStream]]^page(), Array[ref[QStream]]^page(), false, null, null, ByteBuf.create(page, 64))
     var conn: pointer[void] null
@@ -663,7 +663,7 @@ procedure h3_open(mutable l: ref[QListener], pkt: Slice[u8], addr: Slice[u8], no
         Page.release_page(page)
         return null
     }
-    set c.conn: conn
+    c.conn := conn
     var ssl: pointer[void] null
     var octx: pointer[void] null
     if scaly_quic_tls_new(l.ctx as pointer[void], conn, &ssl, &octx) <> 0
@@ -673,8 +673,8 @@ procedure h3_open(mutable l: ref[QListener], pkt: Slice[u8], addr: Slice[u8], no
         Page.release_page(page)
         return null
     }
-    set c.ssl: ssl
-    set c.octx: octx
+    c.ssl := ssl
+    c.octx := octx
     l.conns.put(slot, c)
     c
 }
@@ -712,7 +712,7 @@ procedure h3_receive(mutable l: ref[QListener], pkt: Slice[u8], addr: Slice[u8],
         return
     var found h3_route(l, Slice[u8](dcid_length, dcid))
     if found = null
-        set found: h3_open(l, pkt, addr, now)
+        found := h3_open(l, pkt, addr, now)
     if found = null
         return
     var c found as ref[QConn]
@@ -747,12 +747,12 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
             var q: ref[QStream] c.sendq[i]
             if q.queued < q.output.length or (q.finish and q.fin_sent = false)
             {
-                set s: q
+                s := q
                 break
             }
             c.sendq.put(i, c.sendq[c.sendq.length - 1])
-            set c.sendq.length: c.sendq.length - 1
-            set q.in_sendq: false
+            c.sendq.length := c.sendq.length - 1
+            q.in_sendq := false
         }
         var stream_id: i64 0 - 1
         var flags: u32 NGTCP2_WRITE_STREAM_FLAG_MORE
@@ -761,12 +761,12 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
         if s <> null
         {
             let t s as ref[QStream]
-            set stream_id: t.id
+            stream_id := t.id
             let rest t.output.bytes().slice_from(t.queued)
-            set data: rest.data
-            set length: rest.length
+            data := rest.data
+            length := rest.length
             if t.finish
-                set flags: flags | NGTCP2_WRITE_STREAM_FLAG_FIN
+                flags := flags | NGTCP2_WRITE_STREAM_FLAG_FIN
         }
         var consumed: i64 0 - 1
         let dest l.train.slice_from(train_length)
@@ -774,16 +774,16 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
         if s <> null and consumed >= 0
         {
             var t s as ref[QStream]
-            set t.queued: t.queued + (consumed as size_t)
+            t.queued := t.queued + (consumed as size_t)
             if t.finish and t.queued = t.output.length
-                set t.fin_sent: true
+                t.fin_sent := true
         }
         if n = NGTCP2_ERR_WRITE_MORE
             continue
         if n = NGTCP2_ERR_STREAM_DATA_BLOCKED or n = NGTCP2_ERR_STREAM_SHUT_WR or n = NGTCP2_ERR_STREAM_NOT_FOUND
         {
             ; this stream waits for credit: the next one
-            set i: i + 1
+            i := i + 1
             continue
         }
         if n < 0
@@ -800,25 +800,25 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
             ; goes, and this packet begins the next one
             h3_send_train(l, c, train_length, segment)
             memmove(l.train.data as pointer[void], dest.data as pointer[void], size)
-            set train_length: 0
-            set segments: 0
+            train_length := 0
+            segments := 0
         }
         if train_length = 0
-            set segment: size
-        set train_length: train_length + size
-        set segments: segments + 1
+            segment := size
+        train_length := train_length + size
+        segments := segments + 1
         if size < segment or segments >= TRAIN_SEGMENTS or train_length + TX_SIZE > TRAIN_BYTES
         {
             h3_send_train(l, c, train_length, segment)
-            set train_length: 0
-            set segments: 0
+            train_length := 0
+            segments := 0
         }
-        set sent: true
-        set packets: packets + 1
+        sent := true
+        packets := packets + 1
         if packets >= PACKETS_PER_ROUND
             break
         ; a new packet: every stream may have room again
-        set i: 0
+        i := 0
     }
     if train_length > 0
         h3_send_train(l, c, train_length, segment)
@@ -833,12 +833,12 @@ procedure h3_answer_ready(mutable l: ref[QListener], mutable c: ref[QConn])
     {
         var s: ref[QStream] c.readyq[0]
         c.readyq.put(0, c.readyq[c.readyq.length - 1])
-        set c.readyq.length: c.readyq.length - 1
+        c.readyq.length := c.readyq.length - 1
         h3_answer(l.work, c, s)
-        set l.pending: l.pending + s.output.length
+        l.pending := l.pending + s.output.length
         if s.in_sendq = false
         {
-            set s.in_sendq: true
+            s.in_sendq := true
             c.sendq.add(s)
         }
     }
@@ -866,7 +866,7 @@ procedure h3_idle(fd: i32, l: ref[QListener], mutable armed: ref[bool], busy_at:
     if scaly_eio_now_ns() - busy_at < H3_BUSY_NS
     {
         Scheduler.sleep(1)
-        set armed: false
+        armed := false
         return
     }
     if armed = false
@@ -876,7 +876,7 @@ procedure h3_idle(fd: i32, l: ref[QListener], mutable armed: ref[bool], busy_at:
             Scheduler.sleep(1)
             return
         }
-        set armed: true
+        armed := true
     }
     var deadline: u64 (scaly_eio_now_ns() + 1000000000) as u64
     var i: size_t 0
@@ -887,12 +887,12 @@ procedure h3_idle(fd: i32, l: ref[QListener], mutable armed: ref[bool], busy_at:
         {
             let e ngtcp2_conn_get_expiry(found.conn)
             if e < deadline
-                set deadline: e
+                deadline := e
         }
-        set i: i + 1
+        i := i + 1
     }
     if Scheduler.poll_io_by(deadline as i64)
-        set armed: false
+        armed := false
 }
 
 ; The h3 loop of a thread, on its main context: every connection, round
@@ -904,12 +904,12 @@ procedure h3_loop(fd: i32)
     let host Page.allocate_page()
     let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, 16384), 0, false)
     var res Response.create(host, outb)
-    set res.qpack: true
+    res.qpack := true
     let w &H3Work^host(router, HeaderList.create(host), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 64), &Request^host(null, null, null, null, null, null, 1, true, null, null), res, outb)
     var l &QListener^host(host, fd, ctx, allocate_slice[u8]^host(host, ADDR_CAP), 0, Array[ref[QConn]?]^host(), 0, 0, allocate_slice[u8]^host(host, RX_SIZE), allocate_slice[u8]^host(host, TX_SIZE), allocate_slice[u8]^host(host, TX_SIZE * (TRAIN_SEGMENTS as size_t)), allocate_slice[u8]^host(host, ADDR_CAP), w)
     var local_length: size_t 0
     scaly_eio_sockname(fd, l.local.data as pointer[void], ADDR_CAP, &local_length)
-    set l.local_length: local_length
+    l.local_length := local_length
     var armed false
     var busy_at: i64 0
     repeat
@@ -921,7 +921,7 @@ procedure h3_loop(fd: i32)
             let n scaly_eio_udp_recv(fd, l.rx.data as pointer[void], l.rx.length, l.addr.data as pointer[void], l.addr.length, &addr_length)
             if n < 0
                 break
-            set got: got + 1
+            got := got + 1
             h3_receive(l, l.rx.slice_to(n as size_t), l.addr.slice_to(addr_length), scaly_eio_now_ns() as u64)
             if got >= 256
                 break
@@ -943,16 +943,16 @@ procedure h3_loop(fd: i32)
                     if rv <> 0
                     {
                         h3_close(l, c, rv = NGTCP2_ERR_IDLE_CLOSE, now)
-                        set alive: false
+                        alive := false
                     }
                 }
                 if alive and h3_flush(l, c, now)
-                    set active: true
+                    active := true
             }
-            set i: i + 1
+            i := i + 1
         }
         if got > 0 or active
-            set busy_at: now as i64
+            busy_at := now as i64
         else
             h3_idle(fd, l, &armed, busy_at)
     }
@@ -997,8 +997,8 @@ procedure start_h3(router: ref[Router], port: int, cert_file: String, key_file: 
     if first < 0 and spread
     {
         ; no SO_REUSEPORT (Windows): one socket
-        set first: quic_socket(port, false)
-        set spread: false
+        first := quic_socket(port, false)
+        spread := false
     }
     if first < 0
         return false
@@ -1012,7 +1012,7 @@ procedure start_h3(router: ref[Router], port: int, cert_file: String, key_file: 
         if more < 0
             break
         Thread.spawn(&h3_thread, ((more as i64) as size_t) as pointer[void])
-        set k: k + 1
+        k := k + 1
     }
     true
 }

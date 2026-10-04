@@ -97,13 +97,13 @@ define instlens
         var kq: size_t 0
         while kq < plan_text.get_length()
         {
-            set kq: instlens.next_routine_site(plan_text, kq)
+            kq := instlens.next_routine_site(plan_text, kq)
             if kq >= plan_text.get_length()
                 break
             let qname instlens.routine_name_at(plan_text, kq)
             if qname.get_length() > 0 and instlens.is_planned_at(plan, kq, qname)
-                set any_planned: true
-            set kq: kq + 1
+                any_planned := true
+            kq := kq + 1
         }
         if any_planned = false
         {
@@ -121,10 +121,10 @@ define instlens
         var ka: size_t 0
         while kp < plan_len
         {
-            set kp: instlens.next_routine_site(plan_text, kp)
+            kp := instlens.next_routine_site(plan_text, kp)
             if kp >= plan_len
                 break
-            set ka: instlens.next_routine_site(anchor_text, ka)
+            ka := instlens.next_routine_site(anchor_text, ka)
 
             let name instlens.routine_name_at(plan_text, kp)
             if name.get_length() > 0
@@ -138,14 +138,14 @@ define instlens
                     ; editor draws the lens above the line, not inside it), so
                     ; one constant covers `procedure` too.
                     symbols.append_fragment(&sb, symbols.lens_object(anchor_text, ka, 8, title, "", ""))
-                    set first: false
+                    first := false
                 }
             }
 
             ; One byte past the keyword's first letter is enough to leave this
             ; site; the scan re-checks token boundaries anyway.
-            set kp: kp + 1
-            set ka: ka + 1
+            kp := kp + 1
+            ka := ka + 1
         }
         sb.to_string()
     }
@@ -203,11 +203,11 @@ define instlens
                         ; sharing a start AND a name would disagree on the END.
                         if have_end = false
                         {
-                            set end_seen: fn.loc.end
-                            set have_end: true
+                            end_seen := fn.loc.end
+                            have_end := true
                         }
                         if fn.loc.end <> end_seen
-                            set ambiguous: true
+                            ambiguous := true
 
                         let mangled fn.mangled_name
                         if instlens.contains_name(&seen, mangled) = false
@@ -236,7 +236,7 @@ define instlens
                     }
                 }
             }
-            set i: i + 1
+            i := i + 1
         }
         if ambiguous
             return ""
@@ -284,7 +284,7 @@ define instlens
                 if fn.loc.start = start and fn.name = name
                     return true
             }
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -315,7 +315,7 @@ define instlens
             let sp seen.get i
             if sp <> null and (*sp) = name
                 return true
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -343,7 +343,7 @@ define instlens
             let c source.get k
             if symbols.is_noncode_start c
             {
-                set k: symbols.skip_noncode(source, k, len)
+                k := symbols.skip_noncode(source, k, len)
                 continue
             }
             if c = ("f" as char)
@@ -356,7 +356,7 @@ define instlens
                 if instlens.is_keyword_at(source, k, len, "procedure")
                     return k
             }
-            set k: k + 1
+            k := k + 1
         }
         len
     }
@@ -368,11 +368,11 @@ define instlens
         var k: size_t 0
         while k < len
         {
-            set k: instlens.next_routine_site(source, k)
+            k := instlens.next_routine_site(source, k)
             if k >= len
                 return n
-            set n: n + 1
-            set k: k + 1
+            n := n + 1
+            k := k + 1
         }
         n
     }
@@ -391,7 +391,7 @@ define instlens
             let b word.get i
             if a <> b
                 return false
-            set i: i + 1
+            i := i + 1
         }
         let after source.get(k + wn)
         if symbols.is_ident_byte after
@@ -417,14 +417,14 @@ define instlens
             let c source.get k
             if symbols.is_ident_byte(c) = false
                 break
-            set k: k + 1
+            k := k + 1
         }
         while k < n
         {
             let c source.get k
             if c <> 0x20 and c <> 0x09
                 break
-            set k: k + 1
+            k := k + 1
         }
         let start k
         while k < n
@@ -432,7 +432,7 @@ define instlens
             let c source.get k
             if symbols.is_ident_byte(c) = false
                 break
-            set k: k + 1
+            k := k + 1
         }
         if k <= start
             return ""

@@ -66,7 +66,7 @@ function opaque(x: ref[Alpha]?) returns pointer[void]
 function pointee_slot(n: int) returns int
 {
     var slot: ref[Alpha]? null
-    set slot: Alpha(n)
+    slot := Alpha(n)
     if slot = null
         return 0 - 1
     slot.a
@@ -77,7 +77,7 @@ function widths(c: char) returns size_t
 {
     var out: char c
     let lit: pointer[const_char] "x"
-    set out: *lit
+    out := *lit
     let n: size_t 7
     n
 }

@@ -21,7 +21,7 @@ procedure worker(arg: pointer[void]) returns pointer[void]
     poll(null as pointer[pollfd], 0 as u64, 150 as i32)
     let mp Page.allocate_page()
     let m mp.allocate(sizeof TMsg, alignof TMsg) as pointer[TMsg]
-    set m.value: 7
+    m.value := 7
     Channel.send(ch, m as pointer[void])
     Channel.close_sender(ch)
     null
@@ -41,10 +41,10 @@ Console.print "timeout "
 
 let cp Page.allocate_page()
 let cell cp.allocate(8 as size_t, 8 as size_t) as pointer[size_t]
-set *cell: ch as size_t
+*cell := ch as size_t
 let th Thread.spawn(&worker, cell as pointer[void])
 
-set timed: false
+timed := false
 let r1 Channel.receive_timeout(ch, 5000 as i32, &timed)
 if r1 = null
     exit 2
@@ -57,7 +57,7 @@ let pp Page.get(r1)
 pp.deallocate_extensions()
 Page.release_page(pp)
 
-set timed: false
+timed := false
 let r2 Channel.receive_timeout(ch, 5000 as i32, &timed)
 if r2 <> null
     exit 3

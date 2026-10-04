@@ -17,8 +17,8 @@ define VectorIterator[T]
 {
     init (v: ref[Vector[T]]?)
     {
-        set vector: v
-        set position: 0
+        vector := v
+        position := 0
     }
 
     procedure next(mutable this: VectorIterator[T]) returns pointer[T]
@@ -29,7 +29,7 @@ define VectorIterator[T]
         if position = vector.length
             return null
 
-        set position: position + 1
+        position := position + 1
         return vector.get_ptr(position - 1)
     }
 }
@@ -58,8 +58,8 @@ define Vector[T]
 {
     init ()
     {
-        set length: 0
-        set data: null
+        length := 0
+        data := null
     }
 
     ; NOTE: each allocating init derives its page FIRST, at the top of the
@@ -69,59 +69,59 @@ define Vector[T]
     init (len: size_t)
     {
         let own_page Page.get(this)
-        set length: len
+        length := len
         if len > 0
         {
-            set data: own_page.allocate(len * sizeof T, alignof T) as pointer[T]
+            data := own_page.allocate(len * sizeof T, alignof T) as pointer[T]
             memset(data, 0, len * sizeof T)
         }
         else
-            set data: null
+            data := null
     }
 
     init (other: Vector[T])
     {
         let own_page Page.get(this)
-        set length: other.length
+        length := other.length
         if length > 0
         {
-            set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
+            data := own_page.allocate(length * sizeof T, alignof T) as pointer[T]
             memcpy(data, other.data, length * sizeof T)
         }
         else
-            set data: null
+            data := null
     }
 
     init (array: Array[T])
     {
         let own_page Page.get(this)
-        set length: array.length
+        length := array.length
         if length > 0
         {
-            set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
+            data := own_page.allocate(length * sizeof T, alignof T) as pointer[T]
             memcpy(data, array.get_buffer(), length * sizeof T)
         }
         else
-            set data: null
+            data := null
     }
 
     init (list: List[T])
     {
         let own_page Page.get(this)
-        set length: list.count()
+        length := list.count()
         if length > 0
         {
-            set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
+            data := own_page.allocate(length * sizeof T, alignof T) as pointer[T]
             var list_iterator list.get_iterator()
             var i: size_t 0
             while let item list_iterator.next()
             {
-                set *(data + i): *item
-                set i: i + 1
+                *(data + i) := *item
+                i := i + 1
             }
         }
         else
-            set data: null
+            data := null
     }
 
     function get(this: Vector[T], i: size_t) returns ref[T]?
@@ -161,7 +161,7 @@ define Vector[T]
         if i >= length
             scaly_panic_oob("Vector.put", i, length)
 
-        set *(data + i): item
+        *(data + i) := item
     }
 
 

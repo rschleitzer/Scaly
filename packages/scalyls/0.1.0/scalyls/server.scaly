@@ -85,7 +85,7 @@ define server
             server.publish_for(uri, text)
             if worker.stdin_has_input()
                 return
-            set uri: docstore.dirty_uri()
+            uri := docstore.dirty_uri()
         }
     }
 
@@ -102,7 +102,7 @@ define server
         let id_val msg.get("id")
         var has_id true
         if id_val.is_null()
-            set has_id: false
+            has_id := false
         let id id_val.as_i64()
 
         if method = "initialize"
@@ -353,8 +353,8 @@ define server
         while i < n
         {
             let change changes.item(i)
-            set text: server.apply_change(text, change)
-            set i: i + 1
+            text := server.apply_change(text, change)
+            i := i + 1
         }
         ; Store the rebuilt buffer so navigation sees this (unsaved) edit, and
         ; only MARK the analysis as owed — see docstore.mark_dirty# for why
@@ -392,21 +392,21 @@ define server
         while i < s_off
         {
             sb.append(text.get(i) as char)
-            set i: i + 1
+            i := i + 1
         }
         var j: size_t 0
         let nn new_text.get_length()
         while j < nn
         {
             sb.append(new_text.get(j) as char)
-            set j: j + 1
+            j := j + 1
         }
         let tlen text.get_length()
         var k e_off
         while k < tlen
         {
             sb.append(text.get(k) as char)
-            set k: k + 1
+            k := k + 1
         }
         sb.to_string()
     }
@@ -517,11 +517,11 @@ define server
                         sb.append(" " as char)
                     if c <> 0x0A
                         sb.append(c as char)
-                    set k: k + 1
+                    k := k + 1
                 }
                 sb.append("\n" as char)
             }
-            set i: i + 1
+            i := i + 1
         }
         sb.to_string()
     }
@@ -544,14 +544,14 @@ define server
             {
                 if hay.get(i + k) <> needle.get(k)
                 {
-                    set same: false
+                    same := false
                     break
                 }
-                set k: k + 1
+                k := k + 1
             }
             if same
                 return i
-            set i: i + 1
+            i := i + 1
         }
         hn
     }
@@ -590,7 +590,7 @@ define server
         while ri < rn
         {
             pb.append(root.get(ri) as char)
-            set ri: ri + 1
+            ri := ri + 1
         }
         pb.append("\n" as char)
         var ni: size_t 0
@@ -598,7 +598,7 @@ define server
         while ni < nn
         {
             pb.append(name.get(ni) as char)
-            set ni: ni + 1
+            ni := ni + 1
         }
         let text docstore.get uri
         let result worker.incoming_calls(uri, text, pb.to_string())
@@ -662,7 +662,7 @@ define server
             pb.append(" " as char)
             pb.append(pos.get("character").as_i64())
             pb.append("\n" as char)
-            set i: i + 1
+            i := i + 1
         }
         let text docstore.get uri
         let result worker.selection_ranges(uri, text, pb.to_string())
@@ -734,12 +734,12 @@ define server
         let sem worker.semantic_type(uri, text, packed)
         var value server.semantic_hover_from_framed sem
         if value.get_length() = 0
-            set value: worker.hover(uri, text, packed)
+            value := worker.hover(uri, text, packed)
         ; Where the construction under the cursor is allocated — the
         ; information the placement inlay hints used to weave into the code.
         let place worker.placement(uri, text, packed)
         if place.get_length() > 0
-            set value: server.hover_with_paragraph(value, place)
+            value := server.hover_with_paragraph(value, place)
         rpc.write_message(server.hover_response(id, value))
     }
 
@@ -749,11 +749,11 @@ define server
     {
         var text String("")
         if hover.get_length() > 0
-            set text: JsonValue.parse(hover.as_slice()).value.get("contents").get("value").as_string()
+            text := JsonValue.parse(hover.as_slice()).value.get("contents").get("value").as_string()
         if text.get_length() > 0
-            set text: "`text`\n\n---\n\n`paragraph`"
+            text := "`text`\n\n---\n\n`paragraph`"
         else
-            set text: paragraph
+            text := paragraph
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(server.key("contents"))
@@ -882,7 +882,7 @@ define server
         while ri < rn
         {
             pb.append(root.get(ri) as char)
-            set ri: ri + 1
+            ri := ri + 1
         }
         pb.append("\n" as char)                    ; \n  (root / position separator)
         pb.append(line)
@@ -973,7 +973,7 @@ define server
             if data.get_length() > 0
             {
                 let text docstore.get data
-                set doc: worker.completion_resolve(data, text, item_label)
+                doc := worker.completion_resolve(data, text, item_label)
             }
 
         if doc.get_length() = 0
@@ -998,7 +998,7 @@ define server
         while i < n - 1                          ; everything but the final '}'
         {
             sb.append(serialized.get(i) as char)
-            set i: i + 1
+            i := i + 1
         }
         ; `{}` would leave a leading comma behind; anything else has a member.
         if n > 2
@@ -1009,7 +1009,7 @@ define server
         while di < dn
         {
             sb.append(doc.get(di) as char)
-            set di: di + 1
+            di := di + 1
         }
         sb.append("}" as char)
         sb.to_string()
@@ -1060,7 +1060,7 @@ define server
         while ri < rn
         {
             pb.append(root.get(ri) as char)
-            set ri: ri + 1
+            ri := ri + 1
         }
         pb.append("\n" as char)                    ; \n  (root / position separator)
         pb.append(line)
@@ -1074,7 +1074,7 @@ define server
         while ni < nn
         {
             pb.append(new_name.get(ni) as char)
-            set ni: ni + 1
+            ni := ni + 1
         }
         let packed pb.to_string()
 
@@ -1189,11 +1189,11 @@ define server
                 if i > start
                 {
                     server.write_notification(payload.substring(start, i - start), line)
-                    set line: line + 1
+                    line := line + 1
                 }
-                set start: i + 1
+                start := i + 1
             }
-            set i: i + 1
+            i := i + 1
         }
         if len > start
             server.write_notification(payload.substring(start, len - start), line)
@@ -1450,7 +1450,7 @@ define server
         while ci < cn
         {
             sb.append(result.get(ci) as char)
-            set ci: ci + 1
+            ci := ci + 1
         }
         sb.append("}" as char)
         sb.to_string()

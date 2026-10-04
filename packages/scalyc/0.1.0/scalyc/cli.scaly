@@ -107,50 +107,50 @@ define Options
 {
     init()
     {
-        set input_file: String()
-        set output_file: String()
-        set verbose: false
-        set emit_ir: false
-        set compile_only: false
-        set lex_only: false
-        set parse_only: false
-        set model_only: false
-        set plan_only: false
-        set show_help: false
-        set no_prelude: false
-        set no_tests: false
-        set use_vis: false
-        set no_use_vis: false
-        set task_plan: false
-        set loop_census: false
-        set pointer_report: false
-        set write_report: false
-        set host_report: false
-        set purity_check: false
-        set emit_interface: false
-        set debug: false
-        set run_mode: false
-        set run_function: String()
-        set jit_program: false
-        set error_message: String()
-        set library_paths: Array[String]()
-        set libraries: Array[String]()
-        set extra_objects: Array[String]()
-        set target_triple: String()
-        set target_cpu: String()
-        set opt_level: 0
-        set portable_simd: false
-        set library: false
-        set tool_build: false
-        set release: false
-        set bitcode: false
-        set pgo_train: false
-        set pgo_profile: String()
-        set export_symbols: false
-        set program_argc: 0
-        set program_argv: null
-        set test_mode: false
-        set test_filter: String()
+        input_file := String()
+        output_file := String()
+        verbose := false
+        emit_ir := false
+        compile_only := false
+        lex_only := false
+        parse_only := false
+        model_only := false
+        plan_only := false
+        show_help := false
+        no_prelude := false
+        no_tests := false
+        use_vis := false
+        no_use_vis := false
+        task_plan := false
+        loop_census := false
+        pointer_report := false
+        write_report := false
+        host_report := false
+        purity_check := false
+        emit_interface := false
+        debug := false
+        run_mode := false
+        run_function := String()
+        jit_program := false
+        error_message := String()
+        library_paths := Array[String]()
+        libraries := Array[String]()
+        extra_objects := Array[String]()
+        target_triple := String()
+        target_cpu := String()
+        opt_level := 0
+        portable_simd := false
+        library := false
+        tool_build := false
+        release := false
+        bitcode := false
+        pgo_train := false
+        pgo_profile := String()
+        export_symbols := false
+        program_argc := 0
+        program_argv := null
+        test_mode := false
+        test_filter := String()
     }
 
     function has_error(this) returns bool
@@ -184,161 +184,161 @@ define cli
                 ; Option flag
                 if arg = "-h" | arg = "--help"
                 {
-                    set opts.show_help: true
+                    opts.show_help := true
                 }
                 else if arg = "-v" | arg = "--verbose"
                 {
-                    set opts.verbose: true
+                    opts.verbose := true
                 }
                 else if arg = "-S"
                 {
-                    set opts.emit_ir: true
+                    opts.emit_ir := true
                 }
                 else if arg = "-c"
                 {
-                    set opts.compile_only: true
+                    opts.compile_only := true
                 }
                 else if arg = "-g"
                 {
-                    set opts.debug: true
+                    opts.debug := true
                 }
                 else if arg = "--lex"
                 {
-                    set opts.lex_only: true
+                    opts.lex_only := true
                 }
                 else if arg = "--parse"
                 {
-                    set opts.parse_only: true
+                    opts.parse_only := true
                 }
                 else if arg = "--model"
                 {
-                    set opts.model_only: true
+                    opts.model_only := true
                 }
                 else if arg = "--plan"
                 {
-                    set opts.plan_only: true
+                    opts.plan_only := true
                 }
                 else if arg = "--no-prelude"
                 {
-                    set opts.no_prelude: true
+                    opts.no_prelude := true
                 }
                 else if arg = "--no-tests"
                 {
-                    set opts.no_tests: true
+                    opts.no_tests := true
                 }
                 else if arg = "--use-vis"
                 {
-                    set opts.use_vis: true
+                    opts.use_vis := true
                 }
                 else if arg = "--no-use-vis"
                 {
-                    set opts.no_use_vis: true
+                    opts.no_use_vis := true
                 }
                 else if arg = "--task-plan"
                 {
-                    set opts.task_plan: true
+                    opts.task_plan := true
                 }
                 else if arg = "--loop-census"
                 {
-                    set opts.loop_census: true
+                    opts.loop_census := true
                 }
                 else if arg = "--pointer-report"
                 {
-                    set opts.pointer_report: true
+                    opts.pointer_report := true
                 }
                 else if arg = "--write-report"
                 {
-                    set opts.write_report: true
+                    opts.write_report := true
                 }
                 else if arg = "--host-report"
                 {
-                    set opts.host_report: true
+                    opts.host_report := true
                 }
                 else if arg = "--purity-check"
                 {
-                    set opts.purity_check: true
+                    opts.purity_check := true
                 }
                 else if arg = "--emit-interface"
                 {
-                    set opts.emit_interface: true
+                    opts.emit_interface := true
                 }
                 else if arg = "-O0"
                 {
-                    set opts.opt_level: 0
+                    opts.opt_level := 0
                 }
                 else if arg = "-O1"
                 {
-                    set opts.opt_level: 1
+                    opts.opt_level := 1
                 }
                 else if arg = "-O2"
                 {
-                    set opts.opt_level: 2
+                    opts.opt_level := 2
                 }
                 else if arg = "-O3"
                 {
-                    set opts.opt_level: 3
+                    opts.opt_level := 3
                 }
                 else if arg = "--release"
                 {
                     ; -O2; under `scaly build` the whole program as one module
-                    set opts.opt_level: 2
-                    set opts.release: true
+                    opts.opt_level := 2
+                    opts.release := true
                 }
                 else if arg = "--pgo-train"
                 {
-                    set opts.opt_level: 2
-                    set opts.release: true
-                    set opts.pgo_train: true
+                    opts.opt_level := 2
+                    opts.release := true
+                    opts.pgo_train := true
                 }
                 else if arg = "--export"
                 {
-                    set opts.export_symbols: true
+                    opts.export_symbols := true
                 }
                 else if arg = "--pgo"
                 {
-                    set i: i + 1
+                    i := i + 1
                     if i < argc
                     {
-                        set opts.opt_level: 2
-                        set opts.release: true
-                        set opts.pgo_profile: String(*(argv + i))
+                        opts.opt_level := 2
+                        opts.release := true
+                        opts.pgo_profile := String(*(argv + i))
                     }
                     else
                     {
-                        set opts.error_message: "--pgo requires a profile (.profdata, or the .profraw a --pgo-train binary wrote)"
+                        opts.error_message := "--pgo requires a profile (.profdata, or the .profraw a --pgo-train binary wrote)"
                     }
                 }
                 else if arg = "--jit"
                 {
-                    set opts.jit_program: true
+                    opts.jit_program := true
                 }
                 else if arg = "-o"
                 {
                     ; Output file - next argument is the filename
-                    set i: i + 1
+                    i := i + 1
                     if i < argc
                     {
                         let out_ptr *(argv + i)
-                        set opts.output_file: String(out_ptr)
+                        opts.output_file := String(out_ptr)
                     }
                     else
                     {
-                        set opts.error_message: "-o requires a filename"
+                        opts.error_message := "-o requires a filename"
                     }
                 }
                 else if arg = "--run"
                 {
                     ; JIT mode - next argument is the function name to execute
-                    set i: i + 1
+                    i := i + 1
                     if i < argc
                     {
                         let fn_ptr *(argv + i)
-                        set opts.run_function: String(fn_ptr)
-                        set opts.run_mode: true
+                        opts.run_function := String(fn_ptr)
+                        opts.run_mode := true
                     }
                     else
                     {
-                        set opts.error_message: "--run requires a function name"
+                        opts.error_message := "--run requires a function name"
                     }
                 }
                 else if arg = "--target"
@@ -347,15 +347,15 @@ define cli
                     ; Object emission (-c) uses it instead of the host default;
                     ; both AArch64 and X86 backends are initialized, so any of
                     ; the LP64 "fabulous four" (arm64/x86_64, darwin/linux) works.
-                    set i: i + 1
+                    i := i + 1
                     if i < argc
                     {
                         let triple_ptr *(argv + i)
-                        set opts.target_triple: String(triple_ptr)
+                        opts.target_triple := String(triple_ptr)
                     }
                     else
                     {
-                        set opts.error_message: "--target requires a triple"
+                        opts.error_message := "--target requires a triple"
                     }
                 }
                 else if arg = "--portable-simd"
@@ -364,7 +364,7 @@ define cli
                     ; ROADMAP-simd.md phase 6) takes its target-neutral one: the
                     ; seed is emitted this way, since one seed serves every
                     ; target.
-                    set opts.portable_simd: true
+                    opts.portable_simd := true
                 }
                 else if arg.starts_with("-mcpu=")
                 {
@@ -377,9 +377,9 @@ define cli
                     ; emitted without it.
                     let cpu arg.substring(6, arg.get_length() - 6)
                     if cpu.get_length() = 0
-                        set opts.error_message: "-mcpu= requires a CPU name, or native"
+                        opts.error_message := "-mcpu= requires a CPU name, or native"
                     else
-                        set opts.target_cpu: cpu
+                        opts.target_cpu := cpu
                 }
                 else if arg.starts_with("-L") & arg.get_length() > 2
                 {
@@ -395,7 +395,7 @@ define cli
                 else
                 {
                     ; Unknown option
-                    set opts.error_message: "Unknown option: `arg`"
+                    opts.error_message := "Unknown option: `arg`"
                 }
             }
             else
@@ -408,25 +408,25 @@ define cli
                 }
                 else if opts.has_input()
                 {
-                    set opts.error_message: "Multiple input files not yet supported"
+                    opts.error_message := "Multiple input files not yet supported"
                 }
                 else
                 {
-                    set opts.input_file: String(arg_ptr)
+                    opts.input_file := String(arg_ptr)
                     ; --jit: the program's argv[0] is its file, and what
                     ; follows it is its own (as `scaly run file args` hands
                     ; it); main got (0, null) before -- on every host
-                    set opts.program_argc: argc - i
-                    set opts.program_argv: argv + i
+                    opts.program_argc := argc - i
+                    opts.program_argv := argv + i
                 }
             }
 
-            set i: i + 1
+            i := i + 1
         }
 
         ; `native` names THIS machine: a cross target needs its CPU named
         if opts.target_cpu = "native" and opts.target_triple.get_length() > 0 and opts.has_error() = false
-            set opts.error_message: "-mcpu=native describes this machine; with --target, name the target's CPU"
+            opts.error_message := "-mcpu=native describes this machine; with --target, name the target's CPU"
         opts
     }
 
@@ -494,7 +494,7 @@ define cli
     {
         var dir getenv "TMP"
         if dir = null
-            set dir: getenv("TEMP")
+            dir := getenv("TEMP")
         if dir = null
             return "."
         var s String(dir)
@@ -521,11 +521,11 @@ define cli
     {
         var leaf "/libscaly.a"
         if coff
-            set leaf: "/libscaly.lib"
+            leaf := "/libscaly.lib"
         let home getenv "SCALY_HOME"
         var base "/tmp"
         if coff
-            set base: windows_scratch_dir()
+            base := windows_scratch_dir()
         if home <> null
         {
             var home_str String(home)
@@ -546,7 +546,7 @@ define cli
     {
         var name getenv "SCALY_CC"
         if name = null
-            set name: getenv("CC")
+            name := getenv("CC")
         if name = null
             return "clang"
         var s String(name)
@@ -569,7 +569,7 @@ define cli
     {
         var name getenv "SCALY_CC"
         if name = null
-            set name: getenv("CC")
+            name := getenv("CC")
         if name = null
             return false
         let s String(name)
@@ -588,19 +588,19 @@ define cli
             var x: size_t 0
             while i < la and a.get(i) <> 46
             {
-                set x: x * 10 + (a.get(i) as size_t) - 48
-                set i: i + 1
+                x := x * 10 + (a.get(i) as size_t) - 48
+                i := i + 1
             }
             var y: size_t 0
             while j < lb and b.get(j) <> 46
             {
-                set y: y * 10 + (b.get(j) as size_t) - 48
-                set j: j + 1
+                y := y * 10 + (b.get(j) as size_t) - 48
+                j := j + 1
             }
             if x <> y
                 return x > y
-            set i: i + 1
-            set j: j + 1
+            i := i + 1
+            j := j + 1
         }
         false
     }
@@ -616,13 +616,13 @@ define cli
         while i < entries.length
         {
             let e entries.at i
-            set i: i + 1
+            i := i + 1
             let c e.name.get(0)
             if e.is_directory = false or c < 48 or c > 57
                 continue
             let candidate "`dir`/`e.name`/`probe`"
             if File.exists(candidate) and (best.get_length() = 0 or version_newer(e.name, best))
-                set best: String(e.name)
+                best := String(e.name)
         }
         String(best)
     }
@@ -633,7 +633,7 @@ define cli
     {
         var n path.get_length()
         while n > 0 and (path.get(n - 1) = 92 or path.get(n - 1) = 47)
-            set n: n - 1
+            n := n - 1
         var sb StringBuilder()
         var i: size_t 0
         while i < n
@@ -643,7 +643,7 @@ define cli
                 sb.append("\\" as char)
             else
                 sb.append(c as char)
-            set i: i + 1
+            i := i + 1
         }
         sb.to_string()
     }
@@ -660,14 +660,14 @@ define cli
         let program_files String(pf)
         var arch "x64"
         if triple.contains(String("aarch64")) or triple.contains(String("arm64"))
-            set arch: "arm64"
+            arch := "arm64"
         if triple.contains(String("i686")) or triple.contains(String("i386"))
-            set arch: "x86"
+            arch := "x86"
 
         var tools String()
         let named getenv "VCToolsInstallDir"
         if named <> null
-            set tools: windows_path(String(named))
+            tools := windows_path(String(named))
         if tools.get_length() = 0
         {
             let vswhere "`program_files`\\Microsoft Visual Studio\\Installer\\vswhere.exe"
@@ -687,16 +687,16 @@ define cli
             {
                 var stop start
                 while stop < total and found.get(stop) <> 10 and found.get(stop) <> 13
-                    set stop: stop + 1
+                    stop := stop + 1
                 if stop > start
                 {
                     let vs found.substring(start, stop - start)
                     let msvc_dir "`vs`\\VC\\Tools\\MSVC"
                     let version newest_version(msvc_dir, cmt)
                     if version.get_length() > 0
-                        set tools: "`msvc_dir`\\`version`"
+                        tools := "`msvc_dir`\\`version`"
                 }
-                set start: stop + 1
+                start := stop + 1
             }
         }
         if tools.get_length() = 0
@@ -710,7 +710,7 @@ define cli
         {
             let arm_link "`tools`\\bin\\Hostarm64\\`arch`\\link.exe"
             if File.exists(arm_link)
-                set link: String(arm_link)
+                link := String(arm_link)
         }
         if File.exists(link) = false
             return String()
@@ -718,7 +718,7 @@ define cli
         var kits "`program_files`\\Windows Kits\\10"
         let sdk_named getenv "WindowsSdkDir"
         if sdk_named <> null
-            set kits: windows_path(String(sdk_named))
+            kits := windows_path(String(sdk_named))
         let kits_lib "`kits`\\Lib"
         let kernel "um/`arch`/kernel32.lib"
         let sdk newest_version(kits_lib, kernel)
@@ -739,23 +739,23 @@ define cli
             if i + 2 < n and flags.get(i) = 34 and flags.get(i + 1) = 45 and flags.get(i + 2) = 76
             {
                 sb.append("\"-libpath:")
-                set i: i + 3
+                i := i + 3
                 continue
             }
             if i + 2 < n and flags.get(i) = 32 and flags.get(i + 1) = 45 and flags.get(i + 2) = 108
             {
                 sb.append(" ")
-                set i: i + 3
+                i := i + 3
                 while i < n and flags.get(i) <> 32
                 {
                     sb.append(flags.get(i) as char)
-                    set i: i + 1
+                    i := i + 1
                 }
                 sb.append(".lib")
                 continue
             }
             sb.append(flags.get(i) as char)
-            set i: i + 1
+            i := i + 1
         }
         sb.to_string()
     }
@@ -770,7 +770,7 @@ define cli
         {
             var cc getenv "SCALY_CC"
             if cc = null
-                set cc: getenv("CC")
+                cc := getenv("CC")
             if cc <> null
             {
                 let s String(cc)
@@ -818,7 +818,7 @@ define cli
         let host tool.target_triple(String())
         var wrap ""
         if host.contains(String("windows"))
-            set wrap: "\""
+            wrap := "\""
         let cmd "`wrap`\"`profdata`\" merge -o \"`merged`\" \"`given`\"`wrap`"
         if system(cmd.to_c_string()) <> 0
         {
@@ -913,7 +913,7 @@ define cli
             }
             when program: Success
             {
-                set syntax: program
+                syntax := program
             }
 
         if opts.verbose
@@ -956,13 +956,13 @@ define cli
 
         var planner Planner.Planner(opts.input_file)
         if opts.host_report
-            set planner.host_report: true
+            planner.host_report := true
         if opts.emit_interface
-            set planner.gate.deep_facts: true
+            planner.gate.deep_facts := true
         if opts.use_vis
-            set planner.use_vis_measure: true
+            planner.use_vis_measure := true
         if opts.no_use_vis
-            set planner.use_vis_enforce: false
+            planner.use_vis_enforce := false
         ; --jit / --run: dependency-package bodies are NOT planned into the
         ; program module (the old jit_dep_bodies path mis-planned large
         ; dependency bodies into corrupt plans — both the escape walker and the
@@ -1020,7 +1020,7 @@ define cli
         {
             var pcensus PointerCensus.PointerCensus()
             var purity WriteCensus.WriteCensus()
-            set purity.check_mode: true
+            purity.check_mode := true
             purity.analyze(plan, &model, &pcensus)
             cli.print_purity_check(&purity)
         }
@@ -1046,8 +1046,8 @@ define cli
             {
                 var gate_census PointerCensus.PointerCensus()
                 var purity_gate WriteCensus.WriteCensus()
-                set purity_gate.check_mode: true
-                set purity_gate.diagnostics: true
+                purity_gate.check_mode := true
+                purity_gate.diagnostics := true
                 planner.phase_mark("E0-before-purity-gate")
                 purity_gate.analyze(plan, &model, &gate_census)
                 planner.phase_mark("E0z-purity-analyze-done")
@@ -1073,7 +1073,7 @@ define cli
         if opts.task_plan or opts.loop_census
         {
             var task_planner TaskPlanner.TaskPlanner()
-            set task_planner.census_while: opts.loop_census
+            task_planner.census_while := opts.loop_census
             task_planner.analyze(plan, opts.input_file)
             if opts.task_plan
                 cli.print_task_plan(&task_planner)
@@ -1109,7 +1109,7 @@ define cli
                     if pslash > 0
                         package_dirs.add(pdp.file.substring(0, (pslash + 1) as size_t))
                 }
-                set pdi: pdi + 1
+                pdi := pdi + 1
             }
             if plan.functions <> null
             {
@@ -1128,7 +1128,7 @@ define cli
                 return 0
             }
             var test_config EmitterConfig()
-            set test_config.emit_debug_info: false
+            test_config.emit_debug_info := false
             var test_emitter Emitter.Emitter(test_config)
             var test_dep_objs Array[String]()
             var test_dep_syms Array[String]()
@@ -1165,7 +1165,7 @@ define cli
                     if f.name = opts.run_function
                     {
                         if target_mangled.get_length() = 0
-                            set target_mangled: f.mangled_name
+                            target_mangled := f.mangled_name
                     }
                 }
             }
@@ -1176,7 +1176,7 @@ define cli
             }
 
             var jit_config EmitterConfig()
-            set jit_config.emit_debug_info: false
+            jit_config.emit_debug_info := false
             var jit_emitter Emitter.Emitter(jit_config)
             var run_dep_objs Array[String]()
             var run_dep_syms Array[String]()
@@ -1195,7 +1195,7 @@ define cli
         if opts.jit_program
         {
             var prog_config EmitterConfig()
-            set prog_config.emit_debug_info: false
+            prog_config.emit_debug_info := false
             var prog_emitter Emitter.Emitter(prog_config)
             var prog_dep_objs Array[String]()
             var prog_dep_syms Array[String]()
@@ -1210,24 +1210,24 @@ define cli
         ; ================================================================
 
         var config EmitterConfig()
-        set config.emit_debug_info: opts.debug
-        set config.skip_tests: opts.no_tests
-        set config.target_triple: opts.target_triple
-        set config.target_cpu: opts.target_cpu
-        set config.opt_level: opts.opt_level
-        set config.portable_simd: opts.portable_simd
-        set config.page_size: planner.page_size_constant()
-        set config.library_linkage: opts.library
+        config.emit_debug_info := opts.debug
+        config.skip_tests := opts.no_tests
+        config.target_triple := opts.target_triple
+        config.target_cpu := opts.target_cpu
+        config.opt_level := opts.opt_level
+        config.portable_simd := opts.portable_simd
+        config.page_size := planner.page_size_constant()
+        config.library_linkage := opts.library
         ; --release: the program and its packages are optimised as one module
         if opts.release and opts.tool_build
         {
-            set config.release: true
-            set config.opt_level: 2
-            set config.pgo_train: opts.pgo_train
-            set config.export_symbols: opts.export_symbols
+            config.release := true
+            config.opt_level := 2
+            config.pgo_train := opts.pgo_train
+            config.export_symbols := opts.export_symbols
             if opts.pgo_profile.get_length() > 0
             {
-                set config.pgo_profile: cli.indexed_profile(opts.pgo_profile)
+                config.pgo_profile := cli.indexed_profile(opts.pgo_profile)
                 if config.pgo_profile.get_length() = 0
                     return 9
             }
@@ -1275,9 +1275,9 @@ define cli
             }
             var obj_ok false
             if opts.bitcode
-                set obj_ok: emitter.write_bitcode_to_file(opts.output_file)
+                obj_ok := emitter.write_bitcode_to_file(opts.output_file)
             else
-                set obj_ok: emitter.write_object_to_file(opts.output_file)
+                obj_ok := emitter.write_object_to_file(opts.output_file)
             if obj_ok = false
             {
                 Console.println "Error: Could not write object file"
@@ -1313,7 +1313,7 @@ define cli
                     pkg_names.add(String(pkp.name))
                     pkg_roots.add(String(pkp.file))
                 }
-                set pi: pi + 1
+                pi := pi + 1
             }
             ; the runtime is every program's, whether it loaded the stdlib
             ; (--no-prelude and no `package scaly` loads nothing)
@@ -1333,7 +1333,7 @@ define cli
             var bi package_bitcode.length
             while bi > 0
             {
-                set bi: bi - 1
+                bi := bi - 1
                 let bc package_bitcode.at bi
                 if emitter.link_bitcode(bc) = false
                 {
@@ -1377,7 +1377,7 @@ define cli
         var msvc_head String()
         let instrumented opts.pgo_train and opts.tool_build
         if coff and instrumented = false and compiler_named() = false
-            set msvc_head: msvc_link_head(tool.target_triple(opts.target_triple))
+            msvc_head := msvc_link_head(tool.target_triple(opts.target_triple))
         let msvc msvc_head.get_length() > 0
 
         var cmd_builder StringBuilder()
@@ -1433,7 +1433,7 @@ define cli
                 cmd_builder.append((*e_ptr))
                 cmd_builder.append "\""
             }
-            set ei: ei + 1
+            ei := ei + 1
         }
 
         ; Runtime archive AFTER the user's extra objects: a left-to-right
@@ -1450,7 +1450,7 @@ define cli
             var oi package_objects.length
             while oi > 0
             {
-                set oi: oi - 1
+                oi := oi - 1
                 let op package_objects.get oi
                 ; quoted: the cache lives under the home directory, and a
                 ; home directory may carry a space
@@ -1489,7 +1489,7 @@ define cli
                 cmd_builder.append((*l_ptr))
                 cmd_builder.append "\""
             }
-            set li: li + 1
+            li := li + 1
         }
 
         ; Forward -l<name> entries.
@@ -1511,7 +1511,7 @@ define cli
                     cmd_builder.append((*b_ptr))
                 }
             }
-            set bi: bi + 1
+            bi := bi + 1
         }
 
         ; the C libraries the program's packages declare (`extern ssl,
@@ -1631,7 +1631,7 @@ define cli
                 planner.register_loaded_package(pkg_ptr.name, *pkg_ptr)
                 planner.register_module_concepts(*pkg_ptr)
             }
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -1656,7 +1656,7 @@ define cli
                 names.add(String(pkg_ptr.name))
                 roots.add(String(pkg_ptr.file))
             }
-            set i: i + 1
+            i := i + 1
         }
         tool.jit_package_objects(&names, &roots, program_file, dep_objs, dep_syms)
     }
@@ -1680,7 +1680,7 @@ define cli
             let d package_dirs.at i
             if f.file.starts_with(d)
                 return false
-            set i: i + 1
+            i := i + 1
         }
         filter.get_length() = 0 or cli.label_of_test(f.mangled_name).contains(filter)
     }
@@ -1693,7 +1693,7 @@ define cli
             let n names.at i
             if n.equals(s)
                 return true
-            set i: i + 1
+            i := i + 1
         }
         false
     }
@@ -1707,8 +1707,8 @@ define cli
         var nested false
         if n > 2 and mangled.get(2) = 78
         {
-            set nested: true
-            set i: 3
+            nested := true
+            i := 3
         }
         var sb StringBuilder()
         var first true
@@ -1720,14 +1720,14 @@ define cli
             var len: size_t 0
             while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
             {
-                set len: len * 10 + ((mangled.get(i) - 48) as size_t)
-                set i: i + 1
+                len := len * 10 + ((mangled.get(i) - 48) as size_t)
+                i := i + 1
             }
             if first = false
                 sb.append("." as char)
             sb.append(mangled.substring(i, len))
-            set i: i + len
-            set first: false
+            i := i + len
+            first := false
             if nested = false
                 break
         }
@@ -1772,7 +1772,7 @@ define cli
             when err: Error
                 return false
             when program: Success
-                set syntax: program
+                syntax := program
         let dep_name cli.extract_program_name(entry_file)
         let dep_model Modeler.build_program(entry_file, dep_name, syntax, false)
         if Modeler.had_errors()
@@ -1785,7 +1785,7 @@ define cli
         if dep_planner.has_diagnostics()
             return false
         var dep_config EmitterConfig()
-        set dep_config.emit_debug_info: false
+        dep_config.emit_debug_info := false
         var dep_emitter Emitter.Emitter(dep_config)
         let dep_emit_ok dep_emitter.emit(dep_plan, dep_name)
         if dep_emit_ok = false
@@ -1835,19 +1835,19 @@ define cli
         let src_len source.get_length()
         var target offset
         if target > src_len
-            set target: src_len
+            target := src_len
         var off: size_t 0
         while off < target
         {
             let c source.get off
             if c = ("\n" as char)
             {
-                set line: line + 1
-                set col: 1
+                line := line + 1
+                col := 1
             }
             else
-                set col: col + 1
-            set off: off + 1
+                col := col + 1
+            off := off + 1
         }
         let msg_str "`file_path`:`cli.format_size(line)`:`cli.format_size(col)`: `message`"
         Console.println(msg_str.to_c_string())
@@ -1870,15 +1870,15 @@ define cli
                 var dsrc: String source
                 if d_ptr.file.get_length() > 0
                 {
-                    set dpath: d_ptr.file
-                    set dsrc: File.read_to_string(d_ptr.file)
+                    dpath := d_ptr.file
+                    dsrc := File.read_to_string(d_ptr.file)
                 }
                 var line: size_t 1
                 var col: size_t 1
                 let src_len dsrc.get_length()
                 var target d_ptr.start
                 if target > src_len
-                    set target: src_len
+                    target := src_len
                 var off: size_t 0
                 while off < target
                 {
@@ -1888,14 +1888,14 @@ define cli
                     let c dsrc.get off
                     if c = ("\n" as char)
                     {
-                        set line: line + 1
-                        set col: 1
+                        line := line + 1
+                        col := 1
                     }
                     else
                     {
-                        set col: col + 1
+                        col := col + 1
                     }
-                    set off: off + 1
+                    off := off + 1
                 }
                 var msg StringBuilder()
                 msg.append(dpath)
@@ -1908,7 +1908,7 @@ define cli
                 let msg_str msg.to_string()
                 Console.println(msg_str.to_c_string())
             }
-            set di: di + 1
+            di := di + 1
         }
     }
 
@@ -1959,7 +1959,7 @@ define cli
                 let msg_str msg.to_string()
                 Console.println(msg_str.to_c_string())
             }
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -2164,23 +2164,23 @@ define cli
             {
                 var need_read false
                 if have_src = false
-                    set need_read: true
+                    need_read := true
                 if cur_path <> (*fp)
-                    set need_read: true
+                    need_read := true
                 if need_read
                 {
-                    set cur_path: String((*fp))
-                    set cur_src: File.read_to_string((*fp))
-                    set have_src: true
+                    cur_path := String((*fp))
+                    cur_src := File.read_to_string((*fp))
+                    have_src := true
                 }
                 var line: size_t 1
                 var col: size_t 1
                 let src_len cur_src.get_length()
                 var target: size_t 0
                 if op_ <> null
-                    set target: (*op_)
+                    target := (*op_)
                 if target > src_len
-                    set target: src_len
+                    target := src_len
                 var off: size_t 0
                 while off < target
                 {
@@ -2188,14 +2188,14 @@ define cli
                     let c cur_src.get off
                     if c = ("\n" as char)
                     {
-                        set line: line + 1
-                        set col: 1
+                        line := line + 1
+                        col := 1
                     }
                     else
                     {
-                        set col: col + 1
+                        col := col + 1
                     }
-                    set off: off + 1
+                    off := off + 1
                 }
                 var msg StringBuilder()
                 msg.append prefix
@@ -2210,7 +2210,7 @@ define cli
                 let msg_str msg.to_string()
                 Console.println(msg_str.to_c_string())
             }
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -2225,7 +2225,7 @@ define cli
         let pkg_dir Path.get_directory_name(root_path)
         var out_dir output
         if out_dir.get_length() = 0
-            set out_dir: "`pkg_dir`/interface"
+            out_dir := "`pkg_dir`/interface"
         let writer Interface(pkg_dir, out_dir)
         let n writer.write(root, &facts)
         if n < 0
@@ -2247,13 +2247,13 @@ define cli
         {
             let digit ((value % 10) as char) + ("0" as char)
             digits.add digit
-            set value: value / 10
+            value := value / 10
         }
         var sb StringBuilder()
         var i digits.length
         while i > 0
         {
-            set i: i - 1
+            i := i - 1
             let d digits.get i
             if d <> null
                 sb.append(*d)
@@ -2270,27 +2270,27 @@ define cli
         {
             let c file_path.get(i as size_t)
             if c = "/"
-                set start: i + 1
+                start := i + 1
 
             if c = "\\"
-                set start: i + 1
+                start := i + 1
 
-            set i: i + 1
+            i := i + 1
         }
 
         ; Find last '.'
         var end file_path.get_length() as int
-        set i: end - 1
+        i := end - 1
         while i >= start
         {
             let c file_path.get(i as size_t)
             if c = "."
             {
-                set end: i
+                end := i
                 ; break - just use assignment for now
-                set i: -1
+                i := -1
             }
-            set i: i - 1
+            i := i - 1
         }
 
         ; Extract substring
@@ -2336,10 +2336,10 @@ define cli
         var cut: int 0
         while end > 0 and cut < 2
         {
-            set end: end - 1
+            end := end - 1
             let c path.get(end)
             if c = 92 or c = 47
-                set cut: cut + 1
+                cut := cut + 1
         }
         if cut < 2
             return false
@@ -2370,7 +2370,7 @@ define cli
         let text File.read_to_string(named)
         var n text.get_length()
         while n > 0 and text.get(n - 1) <= 32
-            set n: n - 1
+            n := n - 1
         if n = 0
             return false
         let cc text.substring(0, n)
@@ -2407,11 +2407,11 @@ define cli
                 return 1
             }
             var run_opts Options()
-            set run_opts.input_file: String(*(argv + 2))
-            set run_opts.jit_program: true
+            run_opts.input_file := String(*(argv + 2))
+            run_opts.jit_program := true
             ; the program's argv[0] is its file, as a shell would give it
-            set run_opts.program_argc: argc - 2
-            set run_opts.program_argv: argv + 2
+            run_opts.program_argc := argc - 2
+            run_opts.program_argv := argv + 2
             return cli.run(run_opts)
         }
         if command.equals("test")
@@ -2422,18 +2422,18 @@ define cli
                 return 1
             }
             var test_opts Options()
-            set test_opts.input_file: String(*(argv + 2))
-            set test_opts.test_mode: true
+            test_opts.input_file := String(*(argv + 2))
+            test_opts.test_mode := true
             if argc > 3
-                set test_opts.test_filter: String(*(argv + 3))
+                test_opts.test_filter := String(*(argv + 3))
             return cli.run(test_opts)
         }
         if command.equals("build")
         {
             var build_opts cli.parse_args(argc - 1, argv + 1)
-            set build_opts.tool_build: true
+            build_opts.tool_build := true
             if build_opts.output_file.get_length() = 0 and build_opts.has_input()
-                set build_opts.output_file: cli.extract_program_name(build_opts.input_file)
+                build_opts.output_file := cli.extract_program_name(build_opts.input_file)
             return cli.run(build_opts)
         }
         if command.equals("-h") or command.equals("--help") or command.equals("help")
@@ -2480,7 +2480,7 @@ define cli
             return result - 100
 
         ; Test 4: Test pipeline on hello.scaly from disk
-        set result: cli.test_hello_scaly()
+        result := cli.test_hello_scaly()
         if result <> 0
             return result - 200
 
@@ -2509,7 +2509,7 @@ define cli
             }
             when program: Success
             {
-                set syntax: program
+                syntax := program
             }
 
         ; Stage 2: Build model
@@ -2524,7 +2524,7 @@ define cli
 
         ; Stage 4: Emit
         var config EmitterConfig()
-        set config.emit_debug_info: false
+        config.emit_debug_info := false
         var emitter Emitter.Emitter(config)
         let emit_result emitter.emit(plan, program_name)
         if emit_result = false
@@ -2550,7 +2550,7 @@ define cli
             }
             when program: Success
             {
-                set syntax: program
+                syntax := program
             }
 
         ; Stage 2: Build model
@@ -2566,7 +2566,7 @@ define cli
 
         ; Stage 4: Emit (just verify it doesn't crash)
         var config EmitterConfig()
-        set config.emit_debug_info: false
+        config.emit_debug_info := false
         var emitter Emitter.Emitter(config)
         let emit_result emitter.emit(plan, program_name)
         if emit_result = false

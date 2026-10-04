@@ -55,7 +55,7 @@ define ReceivedRegion
                 if address < base + ln[i]
                     return nb[i] + (address - base)
             }
-            set i: i + 1
+            i := i + 1
         }
         0 as size_t
     }
@@ -72,7 +72,7 @@ define ReceivedRegion
         let mapped map(old)
         if mapped = 0
             scaly_panic_region("ReceivedRegion.fix: pointer outside the received region", old)
-        set *s: mapped
+        *s := mapped
     }
 
     ; Map one pointer VALUE instead of a slot — the 7.2 compiler-generated
@@ -113,7 +113,7 @@ define ReceivedRegion
             release_pages()
             scaly_panic_region("ReceivedRegion.fix: pointer outside the received region", old)
         }
-        set *s: mapped
+        *s := mapped
     }
 
     ; Give back every page this record allocated, through the TABLE.
@@ -134,7 +134,7 @@ define ReceivedRegion
             let pg nb[i] as pointer[Page]
             if pg <> null
                 Page.release_page(pg)
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -159,11 +159,11 @@ define Region
         {
             let excl nd.page
             if excl.next_object = null
-                set n: n + 1
+                n := n + 1
             else
-                set n: n + count_pages(excl)
+                n := n + count_pages(excl)
 
-            set nd: nd.next
+            nd := nd.next
         }
         n
     }
@@ -174,8 +174,8 @@ define Region
         var q region.next_page
         while q <> null
         {
-            set n: n + 1 + count_exclusives(q)
-            set q: q.next_page
+            n := n + 1 + count_exclusives(q)
+            q := q.next_page
         }
         n
     }
@@ -191,16 +191,16 @@ define Region
             let excl nd.page
             if excl.next_object = null
             {
-                set table[w]: excl as size_t
-                set w: w + 1
+                table[w] := excl as size_t
+                w := w + 1
                 let len Page.oversized_size(excl)
-                set table[w]: len
-                set w: w + 1
+                table[w] := len
+                w := w + 1
             }
             else
-                set w: fill_pages(excl, table, w)
+                w := fill_pages(excl, table, w)
 
-            set nd: nd.next
+            nd := nd.next
         }
         w
     }
@@ -208,20 +208,20 @@ define Region
     procedure fill_pages(region: ref[Page], mutable table: pointer[size_t], index: size_t) returns size_t
     {
         var w index
-        set table[w]: region as size_t
-        set w: w + 1
-        set table[w]: PAGE_SIZE
-        set w: w + 1
-        set w: fill_exclusives(region, table, w)
+        table[w] := region as size_t
+        w := w + 1
+        table[w] := PAGE_SIZE
+        w := w + 1
+        w := fill_exclusives(region, table, w)
         var q region.next_page
         while q <> null
         {
-            set table[w]: q as size_t
-            set w: w + 1
-            set table[w]: PAGE_SIZE
-            set w: w + 1
-            set w: fill_exclusives(q, table, w)
-            set q: q.next_page
+            table[w] := q as size_t
+            w := w + 1
+            table[w] := PAGE_SIZE
+            w := w + 1
+            w := fill_exclusives(q, table, w)
+            q := q.next_page
         }
         w
     }
@@ -240,16 +240,16 @@ define Region
         var w: size_t 1
         while w < n * 2
         {
-            set total: total + table[w]
-            set w: w + 2
+            total := total + table[w]
+            w := w + 2
         }
 
         let frame host.allocate(total, 8) as pointer[u8]
         let h frame as pointer[u64]
-        set h[0]: REGION_WIRE_MAGIC
-        set h[1]: total as u64
-        set h[2]: n as u64
-        set h[3]: (root as size_t) as u64
+        h[0] := REGION_WIRE_MAGIC
+        h[1] := total as u64
+        h[2] := n as u64
+        h[3] := (root as size_t) as u64
         memcpy(((frame as size_t) + 32) as pointer[void], table as pointer[void], n * 16)
 
         var off 32 + n * 16
@@ -257,11 +257,11 @@ define Region
         while r < n * 2
         {
             let base table[r]
-            set r: r + 1
+            r := r + 1
             let len table[r]
-            set r: r + 1
+            r := r + 1
             memcpy(((frame as size_t) + off) as pointer[void], base as pointer[void], len)
-            set off: off + len
+            off := off + len
         }
         frame
     }
@@ -309,7 +309,7 @@ define Region
             if (len % PAGE_SIZE) <> 0
                 return null
 
-            set v: v + 2
+            v := v + 2
         }
 
         ; Land every page in its real home: bucket pages for PAGE_SIZE
@@ -321,36 +321,36 @@ define Region
         while i < n
         {
             let base table[r]
-            set r: r + 1
+            r := r + 1
             let len table[r]
-            set r: r + 1
+            r := r + 1
             var np: pointer[Page] null
             if len = PAGE_SIZE
-                set np: Page.allocate_page()
+                np := Page.allocate_page()
             else
             {
                 let a scaly_aligned_alloc(PAGE_SIZE as i64, len as i64)
                 if a = null
                     scaly_panic_oom("Region.deserialize", len)
 
-                set np: a as pointer[Page]
+                np := a as pointer[Page]
             }
             memcpy(np as pointer[void], ((frame as size_t) + off) as pointer[void], len)
-            set ob[i]: base
-            set nb[i]: np as size_t
-            set ln[i]: len
-            set off: off + len
-            set i: i + 1
+            ob[i] := base
+            nb[i] := np as size_t
+            ln[i] := len
+            off := off + len
+            i := i + 1
         }
 
         let rr host.allocate(sizeof ReceivedRegion, alignof ReceivedRegion) as pointer[ReceivedRegion]
         let root_page nb[0]
-        set rr.region: root_page as pointer[Page]
-        set rr.root: null
-        set rr.page_count: n
-        set rr.old_bases: ob
-        set rr.new_bases: nb
-        set rr.lengths: ln
+        rr.region := root_page as pointer[Page]
+        rr.root := null
+        rr.page_count := n
+        rr.old_bases := ob
+        rr.new_bases := nb
+        rr.lengths := ln
 
         ; Swizzle the page headers. Oversized pages are skipped whole:
         ; next_object is null, current_page RECORDS THE BLOCK LENGTH (a
@@ -367,7 +367,7 @@ define Region
         ; own base on a head page, the head's on an extension page — so
         ; it maps like any other page pointer, and a received region's
         ; head keeps pointing at itself.
-        set i: 0
+        i := 0
         while i < n
         {
             let np nb[i] as pointer[Page]
@@ -375,7 +375,7 @@ define Region
             if no <> 0
             {
                 let obase ob[i]
-                set np.next_object: (nb[i] + (no - obase)) as pointer[void]
+                np.next_object := (nb[i] + (no - obase)) as pointer[void]
                 let cp_slot ((np as size_t) + 8) as pointer[void]
                 rr.fix_owned(cp_slot)
                 let npg_slot ((np as size_t) + 16) as pointer[void]
@@ -390,10 +390,10 @@ define Region
                     rr.fix_owned(nd as pointer[void])
                     let next_slot ((nd as size_t) + 8) as pointer[void]
                     rr.fix_owned(next_slot)
-                    set nd: nd.next
+                    nd := nd.next
                 }
             }
-            set i: i + 1
+            i := i + 1
         }
 
         let root_new rr.map(root_old)
@@ -411,7 +411,7 @@ define Region
             rr.release_pages()
             scaly_panic_region("Region.deserialize: root outside the received region", root_old)
         }
-        set rr.root: root_new as pointer[void]
+        rr.root := root_new as pointer[void]
         rr
     }
 

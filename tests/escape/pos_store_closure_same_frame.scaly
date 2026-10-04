@@ -14,7 +14,7 @@ function build() returns int
 {
     let g: IntFn \x: x + 1
     var h Holder(g)
-    set h.fn: g
+    h.fn := g
     0
 }
 

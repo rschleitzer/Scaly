@@ -7,22 +7,22 @@ a.add 5
 let r a.get(0 as size_t)
 var ok true
 if r = null
-    set ok: false
+    ok := false
 else
 {
     if (*r) <> 5
-        set ok: false
+        ok := false
 }
 
 var v Vector[int](2)
 v.put(0 as size_t, 9)
 let p v.data
 if (*(p + 0)) <> 9
-    set ok: false
+    ok := false
 
 ; and the subscript itself needs no star any more
 if a[0] <> 5
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

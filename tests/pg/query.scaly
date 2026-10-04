@@ -48,7 +48,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
             print "row `rows`: price `price`"
             return 4
         }
-        set rows: rows + 1
+        rows := rows + 1
     }
     if rows <> 5
     {
@@ -73,8 +73,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     while c.next_row()
     {
         if c.column_int(0) = 11 and c.column(1).starts_with("<script>")
-            set script: true
-        set n: n + 1
+            script := true
+        n := n + 1
     }
     if n <> 200 or script = false
     {

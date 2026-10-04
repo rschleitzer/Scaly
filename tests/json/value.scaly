@@ -21,65 +21,65 @@ var ok true
 let msg_text "{\"jsonrpc\":\"2.0\",\"id\":17,\"method\":\"textDocument/hover\",\"params\":{\"textDocument\":{\"uri\":\"file:///a.scaly\"},\"position\":{\"line\":3,\"character\":14}},\"flags\":[true,false,null]}"
 let parsed JsonValue.parse(msg_text.as_slice())
 if parsed.ok() = false
-    set ok: false
+    ok := false
 let msg parsed.value
 if msg.get("id").as_i64() <> 17 or msg.get("method").as_string().equals("textDocument/hover") = false
-    set ok: false
+    ok := false
 if msg.get("params").get("textDocument").get("uri").as_string().equals("file:///a.scaly") = false
-    set ok: false
+    ok := false
 let pos msg.get("params").get("position")
 if pos.get("line").as_i64() <> 3 or pos.get("character").as_i64() <> 14
-    set ok: false
+    ok := false
 ; missing members and wrong kinds
 if msg.get("nope").is_null() = false or msg.get("nope").get("deeper").as_string().length <> 0
-    set ok: false
+    ok := false
 if msg.get("id").as_string().length <> 0 or msg.get("method").as_i64() <> 0 or msg.get("id").length() <> 0
-    set ok: false
+    ok := false
 let flags msg.get("flags")
 if flags.is_array() = false or flags.length() <> 3 or flags.item(0).as_bool() = false
-    set ok: false
+    ok := false
 if flags.item(1).is_bool() = false or flags.item(1).as_bool() or flags.item(2).is_null() = false or flags.item(3).is_null() = false
-    set ok: false
+    ok := false
 if msg.has("params") = false or msg.has("nope") or msg.is_object() = false
-    set ok: false
+    ok := false
 if ok
     Console.print "access "
 
 let nums JsonValue.parse("[1.50, -0, 9223372036854775807, -9223372036854775808, 9223372036854775808, -9223372036854775809, 1e3, 2.5, 12345678901234567890123]").value
 if nums.item(0).number_text().equals("1.50") = false or nums.item(0).is_integer()
-    set ok: false
+    ok := false
 if nums.item(1).is_integer() = false or nums.item(1).as_i64() <> 0
-    set ok: false
+    ok := false
 if nums.item(2).is_integer() = false or nums.item(2).as_i64() <> 9223372036854775807
-    set ok: false
+    ok := false
 if nums.item(3).is_integer() = false or nums.item(3).as_i64() + 1 <> 0 - 9223372036854775807
-    set ok: false
+    ok := false
 if nums.item(4).is_integer() or nums.item(4).as_i64() <> 0 or nums.item(5).is_integer()
-    set ok: false
+    ok := false
 if nums.item(6).is_integer() or nums.item(6).as_f64() <> 1000.0 or nums.item(7).as_f64() <> 2.5
-    set ok: false
+    ok := false
 if nums.item(8).number_text().equals("12345678901234567890123") = false or nums.item(8).is_integer()
-    set ok: false
+    ok := false
 if nums.item(0).as_f64() <> 1.5 or nums.item(0).is_number() = false or nums.item(0).is_text()
-    set ok: false
+    ok := false
 if ok
     Console.print "numbers "
 
 let obj JsonValue.parse("{\"z\":1,\"a\":2,\"m\":3,\"a\":4}").value
 if obj.length() <> 4 or obj.key_at(0).equals(String("z").as_slice()) = false or obj.key_at(3).equals(String("a").as_slice()) = false
-    set ok: false
+    ok := false
 if obj.value_at(2).as_i64() <> 3 or obj.get("a").as_i64() <> 2 or obj.key_at(9).length <> 0
-    set ok: false
+    ok := false
 if ok
     Console.print "order "
 
 let bad JsonValue.parse("{\"a\": [1, 2,, 3]}")
 if bad.ok() or bad.error <> 3 or bad.offset <> 12 or bad.value.is_null() = false
-    set ok: false
+    ok := false
 if bad.message().equals("a value was expected") = false
-    set ok: false
+    ok := false
 if JsonValue.parse("[1] [2]").ok() or JsonValue.parse("").ok() or JsonValue.parse(" null ").ok() = false
-    set ok: false
+    ok := false
 if ok
     Console.print "refuse "
 
@@ -95,25 +95,25 @@ while i < 2000
     sb.append(",\"name\":\"item ")
     sb.append(i)
     sb.append("\",\"tags\":[\"a\",\"b\"]}")
-    set i: i + 1
+    i := i + 1
 }
 sb.append("]")
 let big_text sb.to_string()
 let big JsonValue.parse(big_text.as_slice())
 if big.ok() = false or big.value.length() <> 2000
-    set ok: false
+    ok := false
 else
 {
-    set i: 0
+    i := 0
     while i < 2000
     {
         let it big.value.item(i)
         if it.get("id").as_i64() <> (i as i64) or it.get("tags").item(1).as_string().equals(String("b")) = false
-            set ok: false
-        set i: i + 1
+            ok := false
+        i := i + 1
     }
     if big.value.item(1999).get("name").as_string().equals("item 1999") = false
-        set ok: false
+        ok := false
 }
 if ok
     Console.print "big "
@@ -121,18 +121,18 @@ if ok
 let host Page.allocate_page()
 let src_text "{\"k\\u00e9y\":\"a\\nb\\\"c\",\"n\":-12.5e3,\"plain\":\"xyz\"}"
 var src allocate_slice[u8]^host(host, src_text.length())
-set i: 0
+i := 0
 while i < src.length
 {
     src.put(i, src_text.as_slice()[i])
-    set i: i + 1
+    i := i + 1
 }
 let owned JsonValue.parse(src)
-set i: 0
+i := 0
 while i < src.length
 {
     src.put(i, 0x58)
-    set i: i + 1
+    i := i + 1
 }
 let ov owned.value
 var want_key StringBuilder()
@@ -142,9 +142,9 @@ want_key.append(0xA9 as char)
 want_key.append("y")
 let wk want_key.to_string()
 if owned.ok() = false or ov.key_at(0).equals(wk.as_slice()) = false or ov.get(wk.as_slice()).as_string().equals("a\nb\"c") = false
-    set ok: false
+    ok := false
 if ov.get("n").number_text().equals("-12.5e3") = false or ov.get("plain").text().equals("xyz") = false
-    set ok: false
+    ok := false
 if ok
     Console.print "owned "
 

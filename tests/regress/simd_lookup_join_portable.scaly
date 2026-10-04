@@ -22,10 +22,10 @@ while i < 16
     let ix index[i]
     var want: u8 0
     if ix < 16
-        set want: table[ix as size_t]
+        want := table[ix as size_t]
     if got[i] <> want
-        set ok: false
-    set i: i + 1
+        ok := false
+    i := i + 1
 }
 
 ; a pattern with every class of byte in it
@@ -34,7 +34,7 @@ var j: size_t 0
 while j < 400
 {
     data.add((((j * 37) + (j / 7)) % 97) as u8)
-    set j: j + 1
+    j := j + 1
 }
 var w: size_t 0
 while w + 64 <= data.length
@@ -51,34 +51,34 @@ while w + 64 <= data.length
     let joined mask16.join(m0, m1, m2, m3)
     let composed m0.bits() | (m1.bits() << 16) | (m2.bits() << 32) | (m3.bits() << 48)
     if joined <> composed
-        set ok: false
-    set w: w + 1
+        ok := false
+    w := w + 1
 }
 if mask16.join(mask16.none_set(), mask16.all_set(), mask16.none_set(), mask16.all_set()) <> 0xFFFF0000FFFF0000
-    set ok: false
+    ok := false
 
 ; thirty-two lanes: the lookup lane by lane, the join against two bits()
 var wide Array[u8]()
-set j: 0
+j := 0
 while j < 32
 {
     wide.add(((j * 7) + 3) as u8)
-    set j: j + 1
+    j := j + 1
 }
 let index32 u8x32.load(wide, 0)
 let got32 u8x32.lookup(table, index32)
-set i: 0
+i := 0
 while i < 32
 {
     let ix index32[i]
     var want: u8 0
     if ix < 16
-        set want: table[ix as size_t]
+        want := table[ix as size_t]
     if got32[i] <> want
-        set ok: false
-    set i: i + 1
+        ok := false
+    i := i + 1
 }
-set w: 0
+w := 0
 while w + 64 <= data.length
 {
     let a0 u8x32.load(data, w)
@@ -87,8 +87,8 @@ while w + 64 <= data.length
     let n0 a0 < key32
     let n1 a1 >= key32
     if mask32.join(n0, n1) <> (n0.bits() | (n1.bits() << 32))
-        set ok: false
-    set w: w + 3
+        ok := false
+    w := w + 3
 }
 if ok
     print "PASS"

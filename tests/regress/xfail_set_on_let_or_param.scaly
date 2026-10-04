@@ -12,20 +12,20 @@ define Pt (x: int  y: int)
 
 procedure bump(n: int) returns int
 {
-    set n: n + 10
+    n := n + 10
     n
 }
 
 procedure move(mutable p: Pt) returns int
 {
-    set p: Pt(100, 200)
+    p := Pt(100, 200)
     p.x
 }
 
 procedure keep() returns int
 {
     let x 5
-    set x: 6
+    x := 6
     x
 }
 

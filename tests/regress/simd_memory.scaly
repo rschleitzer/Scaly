@@ -13,7 +13,7 @@ procedure scale_into(mutable out: Slice[double], xs: Slice[double], k: double)
     {
         let v f64x4.load(xs, i)
         (v * k).store(out, i)
-        set i: i + 4
+        i := i + 4
     }
 }
 
@@ -23,8 +23,8 @@ function dot(a: Slice[double], b: Slice[double]) returns double
     var i: size_t 0
     while i + 4 <= a.length
     {
-        set acc: f64x4.load(a, i).fma(f64x4.load(b, i), acc)
-        set i: i + 4
+        acc := f64x4.load(a, i).fma(f64x4.load(b, i), acc)
+        i := i + 4
     }
     acc.sum()
 }
@@ -35,7 +35,7 @@ procedure fill_array(mutable arr: ref[Array[i32]], n: int)
     while i < n
     {
         arr.add((i * 3) as i32)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -47,7 +47,7 @@ procedure check() returns int
     while i < 8
     {
         xs.put(i, (i as double) + 1.0)
-        set i: i + 1
+        i := i + 1
     }
     let first f64x4.load(xs, 0)
     let second f64x4.load(xs, 4)
@@ -62,11 +62,11 @@ procedure check() returns int
         return 3
     ; the dot product through fma and an ordered sum
     var ones Vector[double](8)
-    set i: 0
+    i := 0
     while i < 8
     {
         ones.put(i, 1.0)
-        set i: i + 1
+        i := i + 1
     }
     if dot(out.as_slice(), ones.as_slice()) <> 72.0
         return 4

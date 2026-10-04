@@ -18,7 +18,7 @@ procedure remember(mutable history: ref[Array[String]], line: String)
 procedure read_line(n: int, mutable history: ref[Array[String]]) returns bool
 {
     var line String()
-    set line: "entry`n`"
+    line := "entry`n`"
     remember(history, line)
     true
 }
@@ -37,8 +37,8 @@ procedure churn() returns int
     while j < 200
     {
         let s "noise`j`noise`j`"
-        set total: total + (s.get_length() as int)
-        set j: j + 1
+        total := total + (s.get_length() as int)
+        j := j + 1
     }
     total
 }

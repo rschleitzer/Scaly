@@ -6,7 +6,7 @@ define Box ( v: int )
 define Holder ( var b: pointer[Box] )
 {
     procedure stash(this, p: pointer[Box])
-        set this.b: p
+        this.b := p
 }
 procedure forward_it(c: Holder, p: pointer[Box])
 {

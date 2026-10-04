@@ -4,7 +4,7 @@
 define Box(var value: int)
 {
     procedure set_value(mutable this, new_value: int)
-        set value: new_value
+        value := new_value
 
     function get_value(this) returns int
         value

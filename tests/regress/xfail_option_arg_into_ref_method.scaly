@@ -27,13 +27,13 @@
 define Holder (k: int)
 {
     init(k: int)
-        set this.k: k
+        this.k := k
 }
 
 define Keeper (n: int)
 {
     init()
-        set n: 0
+        n := 0
 
     function taken(this: ref[Keeper], h: ref[Holder]) returns int
         h.k

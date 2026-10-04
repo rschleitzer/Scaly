@@ -12,7 +12,7 @@ define Foo
     {
         init(v: int)
         {
-            set value: v
+            value := v
         }
 
         function get(this: Foo) returns int

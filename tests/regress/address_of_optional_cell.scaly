@@ -30,7 +30,7 @@ define Holder (k: i64)
     ; writes the reference it is handed back through the out-parameter
     procedure fill(this: Holder, mutable out: pointer[pointer[Box]], b: ref[Box]) returns i64
     {
-        set *out: &b
+        *out := &b
         1
     }
 }

@@ -8,7 +8,7 @@ define Lexer
 )
 {
     procedure advance#(mutable this)
-        set current: null
+        current := null
 
     function is_at_end(this) returns bool
         current = null

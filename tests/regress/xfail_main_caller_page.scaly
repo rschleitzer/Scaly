@@ -10,7 +10,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var name String("fallback")
     if argc > 1
-        set name: String#(*(argv + 1))
+        name := String#(*(argv + 1))
     print name
     0
 }

@@ -29,8 +29,8 @@ define Holder
 {
     init(b: ref[Box])
     {
-        set this.b: b
-        set this.n: 1
+        this.b := b
+        this.n := 1
     }
 }
 
@@ -86,7 +86,7 @@ procedure run(host: ref[Page]) returns bool
     let o: ref[Box]? &b
     var top 0
     if o <> null
-        set top: value_of(o)
+        top := value_of(o)
     early(o) = 4 and early(null) = 0 and branch(o) = 4 and block(o) = 4 and chain(o, 1) = 1 and chain(null, 1) = 0 and overload(o) = 2 and pick(&b) = 1 and top = 4 and held(o) = 5 and held(null) = 0
 }
 

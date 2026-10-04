@@ -37,7 +37,7 @@ define Other
 {
     init()
     {
-        set n: 7
+        n := 7
     }
 
     function get(this) returns int
@@ -53,7 +53,7 @@ define Holder
 {
     init(o: pointer[Other])
     {
-        set other: o
+        other := o
     }
 
     procedure via_field(this) returns int

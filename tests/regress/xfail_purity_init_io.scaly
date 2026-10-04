@@ -7,7 +7,7 @@ function getenv(name: pointer[const_char]) returns pointer[const_char] extern
 define Config (verbose: bool)
 {
     init()
-        set verbose: getenv("VERBOSE") <> null
+        verbose := getenv("VERBOSE") <> null
 }
 
 let c Config()

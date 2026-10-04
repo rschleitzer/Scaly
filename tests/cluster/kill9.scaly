@@ -22,16 +22,16 @@ procedure run_victim()
     var tries 0
     while peer = null
     {
-        set tries: tries + 1
+        tries := tries + 1
         if tries > 100
             exit 3
         poll(null as pointer[pollfd], 0 as u64, 100 as i32)
-        set peer: Cluster.connect("127.0.0.1", PORT)
+        peer := Cluster.connect("127.0.0.1", PORT)
     }
 
     let mp Page.allocate_page()
     let m mp.allocate(sizeof KMsg, alignof KMsg) as pointer[KMsg]
-    set m.value: 7 as i64
+    m.value := 7 as i64
     Cluster.send(peer, 1 as u64, m as pointer[void])
     Console.println "V: sent"
 

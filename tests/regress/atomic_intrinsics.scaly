@@ -17,30 +17,30 @@ scaly_atomic_store_u64(p, 0x0F as u64)
 var ok true
 
 if scaly_atomic_load_u64(p) <> (0x0F as u64)
-    set ok: false
+    ok := false
 if scaly_atomic_or_u64(p, 0xF0 as u64) <> (0x0F as u64)
-    set ok: false
+    ok := false
 if scaly_atomic_load_u64(p) <> (0xFF as u64)
-    set ok: false
+    ok := false
 if scaly_atomic_and_u64(p, 0x3C as u64) <> (0xFF as u64)
-    set ok: false
+    ok := false
 if scaly_atomic_load_u64(p) <> (0x3C as u64)
-    set ok: false
+    ok := false
 if scaly_atomic_add_u64(p, 6 as u64) <> (0x3C as u64)
-    set ok: false
+    ok := false
 if scaly_atomic_load_u64(p) <> (0x42 as u64)
-    set ok: false
+    ok := false
 
 ; CAS failure: expected mismatches, value unchanged, returns current
 if scaly_atomic_cas_u64(p, 1 as u64, 7 as u64) <> (0x42 as u64)
-    set ok: false
+    ok := false
 if scaly_atomic_load_u64(p) <> (0x42 as u64)
-    set ok: false
+    ok := false
 ; CAS success: returns old, stores desired
 if scaly_atomic_cas_u64(p, 0x42 as u64, 7 as u64) <> (0x42 as u64)
-    set ok: false
+    ok := false
 if scaly_atomic_load_u64(p) <> (7 as u64)
-    set ok: false
+    ok := false
 
 if ok
     print "PASS\n"

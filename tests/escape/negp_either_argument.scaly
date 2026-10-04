@@ -14,7 +14,7 @@ function pick(a: Slice[int], b: Slice[int], first: bool) returns Slice[int]
 }
 
 procedure keep(mutable k: ref[Keeper], s: Slice[int])
-    set k.kept: s
+    k.kept := s
 
 procedure make(host: ref[Page], mutable k: ref[Keeper])
 {

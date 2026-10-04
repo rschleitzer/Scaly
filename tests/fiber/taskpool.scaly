@@ -39,7 +39,7 @@ procedure churn_task(arg: pointer[void]) returns pointer[void]
     {
         let p Page.allocate_page()
         Page.release_page(p)
-        set k: k + 1
+        k := k + 1
     }
     let s String("task-local region")
     var v Vector[i64](len, dp)
@@ -59,22 +59,22 @@ var i: size_t 0
 while i < (100 as size_t)
 {
     let c ((cbase as size_t) + (i * (24 as size_t))) as pointer[size_t]
-    set *c: i
-    set *(((c as size_t) + (8 as size_t)) as pointer[size_t]): results.data as size_t
-    set *(((c as size_t) + (16 as size_t)) as pointer[size_t]): results.length
+    *c := i
+    *(((c as size_t) + (8 as size_t)) as pointer[size_t]) := results.data as size_t
+    *(((c as size_t) + (16 as size_t)) as pointer[size_t]) := results.length
     TaskPool.submit(pool, &square_task, c as pointer[void], g)
-    set i: i + (1 as size_t)
+    i := i + (1 as size_t)
 }
 TaskGroup.wait(g)
 
 var sum 0 as i64
-set i: 0 as size_t
+i := 0 as size_t
 while i < (100 as size_t)
 {
     let v results.get i
     if v <> null
-        set sum: sum + (*v)
-    set i: i + (1 as size_t)
+        sum := sum + (*v)
+    i := i + (1 as size_t)
 }
 if sum <> (328350 as i64)
 {
@@ -86,26 +86,26 @@ if sum <> (328350 as i64)
 var results2 Vector[i64](40 as size_t)
 var cells2 u8[960]
 let cbase2 cells2 as pointer[size_t]
-set i: 0 as size_t
+i := 0 as size_t
 while i < (40 as size_t)
 {
     let c ((cbase2 as size_t) + (i * (24 as size_t))) as pointer[size_t]
-    set *c: i
-    set *(((c as size_t) + (8 as size_t)) as pointer[size_t]): results2.data as size_t
-    set *(((c as size_t) + (16 as size_t)) as pointer[size_t]): results2.length
+    *c := i
+    *(((c as size_t) + (8 as size_t)) as pointer[size_t]) := results2.data as size_t
+    *(((c as size_t) + (16 as size_t)) as pointer[size_t]) := results2.length
     TaskPool.submit(pool, &churn_task, c as pointer[void], g)
-    set i: i + (1 as size_t)
+    i := i + (1 as size_t)
 }
 TaskGroup.wait(g)
 
 var sum2 0 as i64
-set i: 0 as size_t
+i := 0 as size_t
 while i < (40 as size_t)
 {
     let v results2.get i
     if v <> null
-        set sum2: sum2 + (*v)
-    set i: i + (1 as size_t)
+        sum2 := sum2 + (*v)
+    i := i + (1 as size_t)
 }
 if sum2 <> (2340 as i64)
 {

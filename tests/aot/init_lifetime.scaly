@@ -10,7 +10,7 @@ define Page(buffer: pointer[void], var offset: size_t)
     function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
         let aligned (offset + align - (1 as size_t)) & (~(align - (1 as size_t)))
-        set offset: aligned + size
+        offset := aligned + size
         buffer + aligned
     }
 }
@@ -22,8 +22,8 @@ define Data(ptr: pointer[int])
 {
     init(host: pointer[Page], value: int)
     {
-        set ptr: host.allocate(sizeof int, alignof int) as pointer[int]
-        set *ptr: value
+        ptr := host.allocate(sizeof int, alignof int) as pointer[int]
+        *ptr := value
     }
 
     function get_value(this) returns int

@@ -22,7 +22,7 @@
 ; because substituting under such a binding grows the type on every pass.
 define Elem (n: int)
 {
-    init(n: int) { set this.n: n }
+    init(n: int) { this.n := n }
 }
 
 define Outer[T]
@@ -30,7 +30,7 @@ define Outer[T]
     dummy: T
 )
 {
-    init(dummy: T) { set this.dummy: dummy }
+    init(dummy: T) { this.dummy := dummy }
 
     ; Outer's own T is bound to int at every call site below. The Vector
     ; constructed here declares its OWN T, which must bind to Elem.

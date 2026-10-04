@@ -25,11 +25,11 @@ procedure walk(this: Holder, mutable raw: pointer[u8], r: ref[Leaf], n: size_t) 
     let first *raw                          ; deref
     let third *(raw + 2)                    ; deref-arith
     let tail raw + n                        ; arith
-    set *raw: 7                             ; store
-    set *(raw + 1): 8                       ; store-arith
+    *raw := 7                             ; store
+    *(raw + 1) := 8                       ; store-arith
     var p: pointer[u8] null                 ; local (typed)
     if raw <> null                          ; null-test
-        set p: raw
+        p := raw
     let q raw as pointer[void]              ; local (inferred) + cast
     let z null as pointer[Leaf]             ; local + null-cast
     memcpy(q, raw as pointer[void], n)      ; arg x2 (q, cast) -- the cast is listed as cast too
@@ -104,15 +104,15 @@ define Source (origin: ref[Origin]?, contents: pointer[u8], length: size_t)
 {
     init(origin: ref[Origin]?, contents: pointer[u8], length: size_t)
     {
-        set this.origin: origin
-        set this.contents: contents
-        set this.length: length
+        this.origin := origin
+        this.contents := contents
+        this.length := length
     }
 }
 define Anchor (target: ref[Origin])
 {
     init(target: ref[Origin])
-        set this.target: target
+        this.target := target
 }
 procedure build_sources(o: pointer[Origin], raw: pointer[u8]) returns int
 {
@@ -126,10 +126,10 @@ procedure build_sources(o: pointer[Origin], raw: pointer[u8]) returns int
 ; reference REBINDS the slot (2026-09-14), as the Option element always did.
 procedure fill_slots(host: ref[Page], lr: ref[Leaf], v: Leaf, mutable buf: pointer[ref[Leaf]], mutable obuf: pointer[ref[Leaf]?], mutable cell: pointer[ref[Leaf]])
 {
-    set *(buf + 0): v                               ; h-store-through-ref-slot (arith)
-    set *cell: v                                    ; h-store-through-ref-slot (plain)
-    set *(buf + 1): lr                              ; store-arith: the ref rebinds the slot
-    set *(obuf + 0): lr                             ; store-arith: the Option slot rebinds
+    *(buf + 0) := v                               ; h-store-through-ref-slot (arith)
+    *cell := v                                    ; h-store-through-ref-slot (plain)
+    *(buf + 1) := lr                              ; store-arith: the ref rebinds the slot
+    *(obuf + 0) := lr                             ; store-arith: the Option slot rebinds
 }
 
 ; Provenance of a buffer walk's base, and the length in reach: a field walk
@@ -143,7 +143,7 @@ define Grid (cells: pointer[int], count: size_t, title: String)
 procedure provenance(host: ref[Page], src: pointer[u8], n: size_t, arr: ref[Array[u8]]) returns int
 {
     let buf host.allocate(n, 1) as pointer[u8]      ; local; the walks on it say base=local(buf<-alloc)
-    set *(buf + 0): *(src + 1)                      ; store-arith base=local(buf<-alloc); deref-arith base=param(src) len=n
+    *(buf + 0) := *(src + 1)                      ; store-arith base=local(buf<-alloc); deref-arith base=param(src) len=n
     let view arr.get_buffer()                       ; local; base=local(view<-call(...))
     let w *(view + 2)                               ; deref-arith base=local(view<-call(...))
     let direct *(arr.get_buffer() + 3)              ; deref-arith base=call(get_buffer) recv=Array len=Array.length
@@ -154,7 +154,7 @@ procedure provenance(host: ref[Page], src: pointer[u8], n: size_t, arr: ref[Arra
 procedure fallbacks(n: size_t, src: pointer[u8]) returns int
 {
     var stack_buf u8[4]
-    set *(stack_buf + 1): *(src + 0)                ; store-arith base=local(stack_buf<-stack[4]); deref-arith base=param(src) len=n?
+    *(stack_buf + 1) := *(src + 0)                ; store-arith base=local(stack_buf<-stack[4]); deref-arith base=param(src) len=n?
     *(stack_buf + 1) as int
 }
 ; A stack array INDEXED is no pointer site at all: the declaration and both
@@ -162,6 +162,6 @@ procedure fallbacks(n: size_t, src: pointer[u8]) returns int
 procedure indexed(n: size_t) returns int
 {
     var idx_buf u8[8]
-    set idx_buf[1]: 7 as u8
+    idx_buf[1] := 7 as u8
     idx_buf[1] as int
 }

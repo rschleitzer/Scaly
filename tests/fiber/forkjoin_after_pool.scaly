@@ -15,8 +15,8 @@ function spin(seed: int) returns int
     var k 0
     while k < 40000
     {
-        set acc: acc + k % 7
-        set k: k + 1
+        acc := acc + k % 7
+        k := k + 1
     }
     acc
 }
@@ -27,8 +27,8 @@ function leaf(lo: int, hi: int) returns int
     var i lo
     while i < hi
     {
-        set acc: acc + (i * i) % 1000003
-        set i: i + 1
+        acc := acc + (i * i) % 1000003
+        i := i + 1
     }
     acc
 }
@@ -53,8 +53,8 @@ var want 0
 var j 0
 while j < big
 {
-    set want: want + (j * j) % 1000003
-    set j: j + 1
+    want := want + (j * j) % 1000003
+    j := j + 1
 }
 if rsum(0, big) <> want
 {

@@ -11,8 +11,8 @@ define Box (var v: int  items: Array[int])
 {
     init()
     {
-        set v: 0
-        set items: Array[int]()
+        v := 0
+        items := Array[int]()
     }
 
     ; clean: reads only
@@ -22,7 +22,7 @@ define Box (var v: int  items: Array[int])
     ; w-field (implicit this)
     function bump_field(this, x: int) returns int
     {
-        set v: v + x
+        v := v + x
         v
     }
 
@@ -47,21 +47,21 @@ define Box (var v: int  items: Array[int])
     ; procedure: counted, not listed
     procedure set_v(this, x: int)
     {
-        set v: x
+        v := x
     }
 }
 
 ; w-deref through a pointer parameter
 function poke(p: pointer[int]) returns int
 {
-    set *p: 5
+    *p := 5
     0
 }
 
 ; w-global
 function tick() returns int
 {
-    set counter: counter + 1
+    counter := counter + 1
     counter
 }
 

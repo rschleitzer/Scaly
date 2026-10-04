@@ -3,7 +3,7 @@
 ; mode: run
 ; expect: 2
 var count 0
-for i in 3 : label outer { for j in 5 : { if j = 2 : break loop outer else set count : count + 1 } }
+for i in 3 : label outer { for j in 5 : { if j = 2 : break loop outer else count := count + 1 } }
 let literate_result (count)
 if literate_result = (2)
     print("PASS")

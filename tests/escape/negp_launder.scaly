@@ -11,8 +11,8 @@ procedure fill(mutable t: ref[Ty], insts: ref[Array[int]])
         when i: Inner
         {
             var d i
-            set d.list: insts
-            set t.data: Data.Inner(d)
+            d.list := insts
+            t.data := Data.Inner(d)
         }
         else
             0

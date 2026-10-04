@@ -40,8 +40,8 @@ define Holder (var slot: ref[Item]?)
 procedure fill_both(host: pointer[Page], mutable v_cell: ref[ref[Item]?], mutable a_cell: ref[ref[Item]?])
 {
     let it Item^host(41)
-    set v_cell: it
-    set a_cell: &it
+    v_cell := it
+    a_cell := &it
 }
 
 function addr_of(c: ref[ref[Item]?]) returns size_t
@@ -66,7 +66,7 @@ function peek(c: ref[ref[Item]?]) returns int
 procedure fill_field(host: pointer[Page], mutable h: ref[Holder])
 {
     let it Item^host(7)
-    set h.slot: it
+    h.slot := it
 }
 
 function via_binding(host: pointer[Page]) returns int

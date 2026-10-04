@@ -30,7 +30,7 @@ procedure handle()
             let n c.read(view.slice_from(got))
             if n <= 0
                 break
-            set got: got + (n as size_t)
+            got := got + (n as size_t)
         }
         if got < 4
             break
@@ -56,7 +56,7 @@ procedure ping(s: TcpStream) returns bool
         let n s.read(view.slice_from(got))
         if n <= 0
             return false
-        set got: got + (n as size_t)
+        got := got + (n as size_t)
     }
     buf[1] = 111
 }
@@ -65,7 +65,7 @@ procedure serve_entry(arg: pointer[void]) returns pointer[void] mutable served_d
 {
     let l TcpListener((arg as size_t) as i32)
     l.serve(&handle)
-    set served_done: true
+    served_done := true
     null
 }
 

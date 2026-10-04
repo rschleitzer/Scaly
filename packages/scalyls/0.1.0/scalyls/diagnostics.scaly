@@ -119,12 +119,12 @@ define diagnostics
                     when i: Invalid
                     {
                         sb.append(diagnostics.diag_object(text, i.start, i.message))
-                        set first: false
+                        first := false
                     }
                     when d: Different
                     {
                         sb.append(diagnostics.diag_object(text, 0, "unexpected top-level construct"))
-                        set first: false
+                        first := false
                     }
 
                 let report diagnostics.broken_buffer_report(path, text)
@@ -134,9 +134,9 @@ define diagnostics
                     if first = false
                         sb.append("," as char)
                     sb.append body
-                    set first: false
+                    first := false
                 }
-                set extra: diagnostics.report_tail report
+                extra := diagnostics.report_tail report
             }
             when program: Success
             {
@@ -165,9 +165,9 @@ define diagnostics
                         if first = false
                             sb.append("," as char)
                         sb.append body
-                        set first: false
+                        first := false
                     }
-                    set extra: diagnostics.report_tail report
+                    extra := diagnostics.report_tail report
                 }
                 if root.get_length() = 0
                 {
@@ -199,13 +199,13 @@ define diagnostics
                                     sb.append("," as char)
 
                                 sb.append(diagnostics.diag_object(text, dp.start, dp.message))
-                                set first: false
+                                first := false
                             }
                         }
-                        set di: di + 1
+                        di := di + 1
                     }
 
-                    set extra: diagnostics.sibling_notifications(&model.module_, path, path, &planner)
+                    extra := diagnostics.sibling_notifications(&model.module_, path, path, &planner)
                 }
             }
 
@@ -278,9 +278,9 @@ define diagnostics
             if File.exists(candidate) = false
                 return found
 
-            set found: candidate
-            set current: candidate
-            set depth: depth + 1
+            found := candidate
+            current := candidate
+            depth := depth + 1
         }
         found
     }
@@ -306,7 +306,7 @@ define diagnostics
         {
             let tail base.substring(len - 6, 6)
             if tail = ".scaly"
-                set cut: len - 6
+                cut := len - 6
         }
         if cut = 0
             return base
@@ -386,10 +386,10 @@ define diagnostics
                                 sb.append("," as char)
 
                             sb.append(diagnostics.diag_object(disk, dp.start, dp.message))
-                            set first: false
+                            first := false
                         }
                     }
-                    set di: di + 1
+                    di := di + 1
                 }
 
                 extra.append(diagnostics.sibling_notifications(&model.module_, root, path, &planner))
@@ -446,9 +446,9 @@ define diagnostics
                     if f <> path and diagnostics.owns_file(entry, prefix, f)
                         sb.append(diagnostics.sibling_notification(f, planner))
                 }
-                set fstart: fi + 1
+                fstart := fi + 1
             }
-            set fi: fi + 1
+            fi := fi + 1
         }
         sb.to_string()
     }
@@ -471,8 +471,8 @@ define diagnostics
         {
             let dp planner.diagnostics.get di
             if dp <> null and dp.file = file
-                set count: count + 1
-            set di: di + 1
+                count := count + 1
+            di := di + 1
         }
 
         var body StringBuilder()
@@ -493,9 +493,9 @@ define diagnostics
                         if first = false
                             body.append("," as char)
                         body.append(diagnostics.diag_object(text, dp.start, dp.message))
-                        set first: false
+                        first := false
                     }
-                set dj: dj + 1
+                dj := dj + 1
             }
         }
 
@@ -545,7 +545,7 @@ define diagnostics
         {
             let tail entry.substring(len - 6, 6)
             if tail = ".scaly"
-                set cut: len - 6
+                cut := len - 6
         }
 
         "`entry.substring(0, cut)`/"
@@ -585,7 +585,7 @@ define diagnostics
             let sub m.modules.get i
             if sub <> null
                 sb.append(diagnostics.module_files(sub))
-            set i: i + 1
+            i := i + 1
         }
 
         var j: size_t 0
@@ -594,7 +594,7 @@ define diagnostics
             let mem m.members.get j
             if mem <> null
                 sb.append(diagnostics.member_module_files(mem))
-            set j: j + 1
+            j := j + 1
         }
         sb.to_string()
     }
@@ -628,7 +628,7 @@ define diagnostics
                     let sub ns.modules.get i
                     if sub <> null
                         sb.append(diagnostics.module_files(sub))
-                    set i: i + 1
+                    i := i + 1
                 }
 
                 var j: size_t 0
@@ -637,7 +637,7 @@ define diagnostics
                     let mem ns.members.get j
                     if mem <> null
                         sb.append(diagnostics.member_module_files(mem))
-                    set j: j + 1
+                    j := j + 1
                 }
             }
             else
@@ -677,7 +677,7 @@ define diagnostics
             let c s.get i
             if c = ("\n" as char)
                 return i
-            set i: i + 1
+            i := i + 1
         }
         len
     }
@@ -773,10 +773,10 @@ define diagnostics
                                     sb.append("," as char)
 
                                 sb.append(diagnostics.diag_object(text, dp.start, dp.message))
-                                set first: false
+                                first := false
                             }
                     }
-                    set di: di + 1
+                    di := di + 1
                 }
             }
 
@@ -796,7 +796,7 @@ define diagnostics
                 planner.register_loaded_package(pkg_ptr.name, *pkg_ptr)
                 planner.register_module_concepts(*pkg_ptr)
             }
-            set i: i + 1
+            i := i + 1
         }
     }
 
@@ -811,19 +811,19 @@ define diagnostics
         let src_len source.get_length()
         var target offset
         if target > src_len
-            set target: src_len
+            target := src_len
         var off: size_t 0
         while off < target
         {
             let c source.get off
             if c = ("\n" as char)
             {
-                set line: line + 1
-                set col: 0
+                line := line + 1
+                col := 0
             }
             else
-                set col: col + 1
-            set off: off + 1
+                col := col + 1
+            off := off + 1
         }
 
         var sb StringBuilder()

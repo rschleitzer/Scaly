@@ -17,7 +17,7 @@ procedure pick_implicit(host: ref[Page], mutable rows: ref[Array[ref[Row]?]], li
 {
     var specifier Slice[char]()
     if (list.get_length() as int) > 0
-        set specifier: list[0]
+        specifier := list[0]
     let memo &Row^host(1, specifier)
     rows.add(memo)
     specifier
@@ -27,7 +27,7 @@ procedure pick_explicit(host: ref[Page], mutable rows: ref[Array[ref[Row]?]], li
 {
     var specifier Slice[char]()
     if (list.get_length() as int) > 0
-        set specifier: list[0]
+        specifier := list[0]
     let memo &Row^host(2, specifier)
     rows.add(memo)
     return specifier
@@ -39,10 +39,10 @@ define Picker (var seen: int)
     {
         var specifier Slice[char]()
         if (list.get_length() as int) > 0
-            set specifier: list[0]
+            specifier := list[0]
         let memo &Row^host(3, specifier)
         rows.add(memo)
-        set this.seen: seen + 1
+        this.seen := seen + 1
         specifier
     }
 
@@ -50,10 +50,10 @@ define Picker (var seen: int)
     {
         var specifier Slice[char]()
         if (list.get_length() as int) > 0
-            set specifier: list[0]
+            specifier := list[0]
         let memo &Row^host(4, specifier)
         rows.add(memo)
-        set this.seen: seen + 1
+        this.seen := seen + 1
         return specifier
     }
 }
@@ -69,17 +69,17 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var bad 0
     let a pick_implicit(host, rows, list)
     if a.length <> 8
-        set bad: bad + 1
+        bad := bad + 1
     let b pick_explicit(host, rows, list)
     if b.length <> 8
-        set bad: bad + 1
+        bad := bad + 1
     var p Picker^host(0)
     let c p.pick(host, rows, list)
     if c.length <> 8
-        set bad: bad + 1
+        bad := bad + 1
     let d p.pick_return(host, rows, list)
     if d.length <> 8
-        set bad: bad + 1
+        bad := bad + 1
     if bad = 0
         Console.println "PASS"
     else

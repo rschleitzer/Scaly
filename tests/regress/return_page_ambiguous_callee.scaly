@@ -40,8 +40,8 @@ define Rec (a: int  b: int)
 {
     init(a: int, b: int)
     {
-        set this.a: a
-        set this.b: b
+        this.a := a
+        this.b := b
     }
 }
 
@@ -50,7 +50,7 @@ define Maker (tag: int)
 {
     init()
     {
-        set this.tag: 1
+        this.tag := 1
     }
     function make#(this: Maker) returns pointer[Rec]
         Rec#(7, 8)
@@ -61,7 +61,7 @@ define Borrow (r: Rec)
 {
     init()
     {
-        set this.r: Rec(1, 2)
+        this.r := Rec(1, 2)
     }
     function make(this: Borrow) returns pointer[Rec]
         &this.r
@@ -85,8 +85,8 @@ define Host (mk: Maker  bw: Borrow)
 {
     init()
     {
-        set this.mk: Maker()
-        set this.bw: Borrow()
+        this.mk := Maker()
+        this.bw := Borrow()
     }
     ; receiver resolved through a PROPERTY of the enclosing concept
     function via_field(this: Host) returns pointer[Rec]
@@ -152,7 +152,7 @@ var i 0
 while i < 200
 {
     let c String("012345678901234567890123456789012345678901234567890123456789")
-    set i: i + 1
+    i := i + 1
 }
 let a1 p1.a
 let b1 p1.b
@@ -172,21 +172,21 @@ let a8 p8.a
 let b8 p8.b
 var ok true
 if (a1 <> 7) || (b1 <> 8)
-    set ok: false
+    ok := false
 if (a2 <> 1) || (b2 <> 2)
-    set ok: false
+    ok := false
 if (a3 <> 7) || (b3 <> 8)
-    set ok: false
+    ok := false
 if (a4 <> 7) || (b4 <> 8)
-    set ok: false
+    ok := false
 if (a5 <> 1) || (b5 <> 2)
-    set ok: false
+    ok := false
 if (a6 <> 3) || (b6 <> 4)
-    set ok: false
+    ok := false
 if (a7 <> 5) || (b7 <> 6)
-    set ok: false
+    ok := false
 if (a8 <> 9) || (b8 <> 10)
-    set ok: false
+    ok := false
 if ok
     print("PASS")
 else

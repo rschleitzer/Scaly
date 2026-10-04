@@ -20,7 +20,7 @@ procedure copies() returns bool
 {
     var a Point(1, 2)
     let l Line(&a, &a, 3)
-    set a.x: 50
+    a.x := 50
     l.from.x = 1 and l.to.y = 2
 }
 
@@ -28,7 +28,7 @@ procedure keeps_ref() returns bool
 {
     var a Point(1, 2)
     let w Watch(&a, 0)
-    set a.x: 50
+    a.x := 50
     w.at.x = 50
 }
 

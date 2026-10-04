@@ -14,12 +14,12 @@ procedure thread_entry(mutable arg: pointer[void]) returns pointer[void]
     Console.print "hello from thread "
     let cell arg as pointer[i64]
     let v *cell
-    set *cell: v + (1 as i64)
+    *cell := v + (1 as i64)
     null
 }
 
 var cell u8[8]
-set *(cell as pointer[i64]): 41 as i64
+*(cell as pointer[i64]) := 41 as i64
 let t Thread.spawn(&thread_entry, cell as pointer[void])
 Thread.join(t)
 let v *(cell as pointer[i64])

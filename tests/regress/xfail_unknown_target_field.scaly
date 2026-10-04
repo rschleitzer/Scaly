@@ -10,7 +10,7 @@ define Box (var a: int  var y: int)
 procedure run()
 {
     var o Box(1, 2)
-    set o.nosuch: 7
+    o.nosuch := 7
     if o.a = 1
         print("PASS")
     else

@@ -19,7 +19,7 @@ procedure run() returns size_t
     while i < 300
     {
         b.inner.note(String("x"))
-        set i: i + 1
+        i := i + 1
     }
     b.inner.names.length
 }

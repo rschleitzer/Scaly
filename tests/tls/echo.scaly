@@ -45,7 +45,7 @@ procedure read_all(mutable s: ref[TlsStream], mutable back: Slice[u8], want: siz
         let n s.read(back.slice_from(got))
         if n <= 0
             break
-        set got: got + (n as size_t)
+        got := got + (n as size_t)
     }
     got
 }
@@ -91,7 +91,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     while i < big.length
     {
         big.put(i, ((i * 7) % 251) as u8)
-        set i: i + 1
+        i := i + 1
     }
     s.write(big)
     if read_all(&s, back, 60000) <> 60000 or back.equals(big) = false

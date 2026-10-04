@@ -12,7 +12,7 @@ mutable saved_fn: IntFn null
 
 procedure stash_global(f: IntFn)
 {
-    set saved_fn: f
+    saved_fn := f
 }
 
 function main() returns int

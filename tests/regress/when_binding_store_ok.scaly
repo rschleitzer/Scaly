@@ -17,8 +17,8 @@ procedure bump_writeback(mutable h: ref[Holder])
         when a: A
         {
             var d a
-            set d.x: d.x + 100
-            set h.data: Data.A(d)
+            d.x := d.x + 100
+            h.data := Data.A(d)
         }
         else
             0
@@ -37,7 +37,7 @@ procedure bump_held(mutable s: Slot)
 {
     choose s
         when c: Held
-            set c.n: c.n + 1
+            c.n := c.n + 1
         else
             0
 }

@@ -40,7 +40,7 @@ function make_bundle() returns Bundle
         sb.append "packet payload that must survive the frame"
         let text sb.to_string()
         items.add(Packet(text))
-        set count: count + 1
+        count := count + 1
     }
     ; the buffer on the caller's page: `#` gives this function that page
     ; (the page used to be a declared `rp` parameter, 2026-09-25)
@@ -50,8 +50,8 @@ function make_bundle() returns Bundle
     var i count
     while let m it.next()
     {
-        set i: i - 1
-        set *(buf + i): *m
+        i := i - 1
+        *(buf + i) := *m
     }
     Bundle(count, buf)
 }
@@ -76,8 +76,8 @@ function churn(n: size_t) returns size_t
         var csb StringBuilder()
         csb.append "recycle recycle recycle recycle recycle recycle"
         let junk csb.to_string()
-        set total: total + junk.get_length()
-        set i: i + 1
+        total := total + junk.get_length()
+        i := i + 1
     }
     total
 }

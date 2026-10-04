@@ -30,8 +30,8 @@ define Holder (leaf: ref[Leaf]?  n: int)
     ; the parameter does NOT mirror the field: `ref[Leaf]` against `ref[Leaf]?`
     init(l: ref[Leaf], k: int)
     {
-        set leaf: l
-        set n: k * 10
+        leaf := l
+        n := k * 10
     }
 }
 

@@ -14,11 +14,11 @@ let mp Page.allocate_page()
 let c1 mp.allocate(sizeof Cell, alignof Cell) as pointer[Cell]
 let c2 mp.allocate(sizeof Cell, alignof Cell) as pointer[Cell]
 let n1 String^mp("one")
-set c1.name: n1
-set c1.next: c2
+c1.name := n1
+c1.next := c2
 let n2 String^mp("two")
-set c2.name: n2
-set c2.next: null
+c2.name := n2
+c2.next := null
 
 let host Page.allocate_page()
 let frame Region.serialize(mp, c1 as pointer[void], host)
@@ -35,15 +35,15 @@ rr.fix_graph(r1)
 var ok true
 let rn1 r1.name
 if rn1.equals("one") = false
-    set ok: false
+    ok := false
 if r1.next = null
     exit 5
 let r2 r1.next
 let rn2 r2.name
 if rn2.equals("two") = false
-    set ok: false
+    ok := false
 if r2.next <> null
-    set ok: false
+    ok := false
 
 rr.release()
 

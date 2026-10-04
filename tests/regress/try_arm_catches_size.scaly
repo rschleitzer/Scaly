@@ -19,7 +19,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     arr.add(2)
 
     var buf int[2]
-    set buf[0]: 7
+    buf[0] := 7
     ; a Vector that lies about its length (see trap_size_overflow.scaly)
     let huge Vector[int]((0 as size_t) - (1 as size_t), &buf[0])
 
@@ -71,7 +71,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var caught_else false
     try arr.add(huge)
     else
-        set caught_else: true
+        caught_else := true
     if caught_else = false
     {
         print "FAIL: the else form did not catch the overflow"

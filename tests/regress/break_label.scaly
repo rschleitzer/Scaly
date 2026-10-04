@@ -17,7 +17,7 @@ function run() returns int
         {
             if j = 1
                 break loop outer
-            set counter: counter + 1
+            counter := counter + 1
         }
     }
     return counter

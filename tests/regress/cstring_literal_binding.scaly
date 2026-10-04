@@ -34,7 +34,7 @@ let ok_let strlen(t) = 8
 var s: pointer[const_char] "xyz"
 let ok_var_init strlen(s) = 3
 
-set s: "0123456789"
+s := "0123456789"
 let ok_var_set strlen(s) = 10
 
 let u: pointer[const_char] "wxyz"

@@ -9,7 +9,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     {
         sb.append " "
         sb.append(String(*(argv + i)))
-        set i: i + 1
+        i := i + 1
     }
     print(sb.to_string())
     0

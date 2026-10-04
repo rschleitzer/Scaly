@@ -34,9 +34,9 @@ function probe(host: pointer[Page]) returns int
     while i < 3
     {
         let g host.allocate(sizeof Leaf, alignof Leaf) as ref[Leaf]
-        set g: Leaf(i + 1)
+        g := Leaf(i + 1)
         a.add(g)
-        set i: i + 1
+        i := i + 1
     }
     ; a genuinely absent element: the loop must SEE it as null
     a.add(null)
@@ -47,18 +47,18 @@ function probe(host: pointer[Page]) returns int
     var sum 0
     for x in a
     {
-        set n: n + 1
+        n := n + 1
         if x = null
-            set nulls: nulls + 1
+            nulls := nulls + 1
         if x <> null
-            set sum: sum + x.v
+            sum := sum + x.v
     }
     if n <> 4
-        set flags: flags + 1
+        flags := flags + 1
     if nulls <> 1
-        set flags: flags + 2
+        flags := flags + 2
     if sum <> 6
-        set flags: flags + 4
+        flags := flags + 4
 
     ; the same container read through the buffer must agree
     let buf a.get_buffer()
@@ -68,11 +68,11 @@ function probe(host: pointer[Page]) returns int
     {
         let e *(buf + bi)
         if e <> null
-            set bsum: bsum + e.v
-        set bi: bi + 1
+            bsum := bsum + e.v
+        bi := bi + 1
     }
     if bsum <> 6
-        set flags: flags + 8
+        flags := flags + 8
 
     flags
 }

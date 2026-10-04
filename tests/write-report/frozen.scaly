@@ -5,8 +5,8 @@ define TreeNode (var flags: int  kids: Array[int])
 {
     init()
     {
-        set flags: 0
-        set kids: Array[int]()
+        flags := 0
+        kids := Array[int]()
     }
 }
 
@@ -14,8 +14,8 @@ define Sym (var id: int  decls: Array[int])
 {
     init()
     {
-        set id: 0
-        set decls: Array[int]()
+        id := 0
+        decls := Array[int]()
     }
 }
 
@@ -30,16 +30,16 @@ procedure leave_shared()
 ; a setter: frozen only where a caller hands it frozen data
 procedure set_flags_of(t: ref[TreeNode], f: int)
 {
-    set t.flags: f
+    t.flags := f
 }
 
 define Checker (var count: int  seen: Array[int]  root: ref[TreeNode]?)
 {
     init()
     {
-        set count: 0
-        set seen: Array[int]()
-        set root: null
+        count := 0
+        seen := Array[int]()
+        root := null
     }
 
     ; fresh: a construction on the checker's page
@@ -53,7 +53,7 @@ define Checker (var count: int  seen: Array[int]  root: ref[TreeNode]?)
     procedure check_fresh(this)
     {
         let t this.make_node()
-        set t.flags: 2
+        t.flags := 2
         set_flags_of(t, 3)
         if root <> null
         {
@@ -65,13 +65,13 @@ define Checker (var count: int  seen: Array[int]  root: ref[TreeNode]?)
     ; entry: own state is allowed, frozen state is not
     procedure check(this, n: ref[TreeNode], s: ref[Sym])
     {
-        set count: count + 1
+        count := count + 1
         seen.add(1)
-        set n.flags: 7
+        n.flags := 7
         s.decls.add(3)
         this.helper(n)
         enter_shared()
-        set s.id: 9
+        s.id := 9
         leave_shared()
     }
 
@@ -85,7 +85,7 @@ define Checker (var count: int  seen: Array[int]  root: ref[TreeNode]?)
     ; not reachable from the entry: must not be listed
     procedure unrelated(this, n: ref[TreeNode])
     {
-        set n.flags: 1
+        n.flags := 1
     }
 }
 

@@ -9,7 +9,7 @@ define Box (var host: ref[Page]  var count: int)
 {
     procedure mk(mutable this, params: ref[Array[int]]) returns ref[Sig]?
     {
-        set count: count + 1
+        count := count + 1
         let s &Sig^host(params, count)
         s
     }
@@ -17,14 +17,14 @@ define Box (var host: ref[Page]  var count: int)
     {
         let p &Array[int]()
         p.add(1)
-        set links.resolved: this.mk(p)
+        links.resolved := this.mk(p)
     }
     procedure fill2(mutable this, mutable links: ref[Link])
     {
         let q &Array[int]()
         q.add(2)
         let made this.mk(q)
-        set links.resolved: made
+        links.resolved := made
     }
 }
 let root_anchor String("probe")

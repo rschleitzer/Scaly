@@ -25,7 +25,7 @@ procedure churn_entry(arg: pointer[void]) returns pointer[void]
         let slot (cells as size_t + i * (8 as size_t)) as pointer[size_t]
         let v *slot
         Page.release_page(v as pointer[Page])
-        set i: i + (1 as size_t)
+        i := i + (1 as size_t)
     }
 
     ; Local churn on the (partly adopted) chain: allocate and free.
@@ -39,18 +39,18 @@ procedure churn_entry(arg: pointer[void]) returns pointer[void]
         {
             let q Page.allocate_page()
             let slot (own_cells as size_t + k * (8 as size_t)) as pointer[size_t]
-            set *slot: q as size_t
-            set k: k + (1 as size_t)
+            *slot := q as size_t
+            k := k + (1 as size_t)
         }
-        set k: 0 as size_t
+        k := 0 as size_t
         while k < (60 as size_t)
         {
             let slot (own_cells as size_t + k * (8 as size_t)) as pointer[size_t]
             let v *slot
             Page.release_page(v as pointer[Page])
-            set k: k + (1 as size_t)
+            k := k + (1 as size_t)
         }
-        set round: round + 1
+        round := round + 1
     }
     null
 }
@@ -63,8 +63,8 @@ while i < (189 as size_t)
 {
     let p Page.allocate_page()
     let slot (page_cells as size_t + i * (8 as size_t)) as pointer[size_t]
-    set *slot: p as size_t
-    set i: i + (1 as size_t)
+    *slot := p as size_t
+    i := i + (1 as size_t)
 }
 
 ; Interleave: worker A frees even indices, worker B odd — both threads
@@ -75,27 +75,27 @@ let cells_a half_a as pointer[size_t]
 let cells_b half_b as pointer[size_t]
 var na: size_t 0
 var nb: size_t 0
-set i: 0 as size_t
+i := 0 as size_t
 while i < (189 as size_t)
 {
     let slot (page_cells as size_t + i * (8 as size_t)) as pointer[size_t]
     let v *slot
     if (i & (1 as size_t)) = (0 as size_t)
     {
-        set na: na + (1 as size_t)
+        na := na + (1 as size_t)
         let dst (cells_a as size_t + na * (8 as size_t)) as pointer[size_t]
-        set *dst: v
+        *dst := v
     }
     if (i & (1 as size_t)) <> (0 as size_t)
     {
-        set nb: nb + (1 as size_t)
+        nb := nb + (1 as size_t)
         let dst (cells_b as size_t + nb * (8 as size_t)) as pointer[size_t]
-        set *dst: v
+        *dst := v
     }
-    set i: i + (1 as size_t)
+    i := i + (1 as size_t)
 }
-set *cells_a: na
-set *cells_b: nb
+*cells_a := na
+*cells_b := nb
 
 let ta Thread.spawn(&churn_entry, half_a as pointer[void])
 let tb Thread.spawn(&churn_entry, half_b as pointer[void])
@@ -104,21 +104,21 @@ Thread.join(tb)
 
 ; The freelist must still work: run three buckets' worth of
 ; allocate/release through main's chain again.
-set i: 0 as size_t
+i := 0 as size_t
 while i < (189 as size_t)
 {
     let p Page.allocate_page()
     let slot (page_cells as size_t + i * (8 as size_t)) as pointer[size_t]
-    set *slot: p as size_t
-    set i: i + (1 as size_t)
+    *slot := p as size_t
+    i := i + (1 as size_t)
 }
-set i: 0 as size_t
+i := 0 as size_t
 while i < (189 as size_t)
 {
     let slot (page_cells as size_t + i * (8 as size_t)) as pointer[size_t]
     let v *slot
     Page.release_page(v as pointer[Page])
-    set i: i + (1 as size_t)
+    i := i + (1 as size_t)
 }
 
 Console.print "churn-ok "

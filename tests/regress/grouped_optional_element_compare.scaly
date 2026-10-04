@@ -26,42 +26,42 @@ vec.put(0, ra)
 
 var eq_same false
 if (arr[0]) = ra
-    set eq_same: true
+    eq_same := true
 var eq_other false
 if (arr[0]) = rb
-    set eq_other: true
+    eq_other := true
 var ne_other false
 if (arr[0]) <> rb
-    set ne_other: true
+    ne_other := true
 var ne_same false
 if (arr[0]) <> ra
-    set ne_same: true
+    ne_same := true
 var veq_same false
 if (vec[0]) = ra
-    set veq_same: true
+    veq_same := true
 var veq_other false
 if (vec[0]) = rb
-    set veq_other: true
+    veq_other := true
 ; the paren-free spelling stays what it was
 var plain false
 if arr[0] = ra
-    set plain: true
+    plain := true
 
 var ok true
 if eq_same = false
-    set ok: false
+    ok := false
 if eq_other
-    set ok: false
+    ok := false
 if ne_other = false
-    set ok: false
+    ok := false
 if ne_same
-    set ok: false
+    ok := false
 if veq_same = false
-    set ok: false
+    ok := false
 if veq_other
-    set ok: false
+    ok := false
 if plain = false
-    set ok: false
+    ok := false
 
 if ok
     print "PASS"

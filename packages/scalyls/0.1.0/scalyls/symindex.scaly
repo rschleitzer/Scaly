@@ -115,7 +115,7 @@ define symindex
         if idx_slots = null
         {
             let bytes (IDX_CAP as size_t) * sizeof IdxSlot
-            set idx_slots: malloc(bytes) as pointer[IdxSlot]
+            idx_slots := malloc(bytes) as pointer[IdxSlot]
             if idx_slots = null
                 return
 
@@ -123,14 +123,14 @@ define symindex
             while i < IDX_CAP
             {
                 let s idx_slots + i
-                set s.used: false
-                set s.path_data: null
-                set s.path_len: 0
-                set s.chash: 0
-                set s.blob_data: null
-                set s.blob_len: 0
-                set s.epoch: 0
-                set i: i + 1
+                s.used := false
+                s.path_data := null
+                s.path_len := 0
+                s.chash := 0
+                s.blob_data := null
+                s.blob_len := 0
+                s.epoch := 0
+                i := i + 1
             }
         }
     }
@@ -139,7 +139,7 @@ define symindex
     ; makes `fresh` mean "already validated in THIS request" — see idx_epoch.
     procedure begin_request() mutable idx_epoch
     {
-        set idx_epoch: idx_epoch + 1
+        idx_epoch := idx_epoch + 1
     }
 
     ; True when `path`'s cached blob was already validated during this request,
@@ -165,7 +165,7 @@ define symindex
         if idx < 0
             return
         let s idx_slots + idx
-        set s.epoch: idx_epoch
+        s.epoch := idx_epoch
     }
 
     ; Index of the live slot whose path matches, or -1.
@@ -183,7 +183,7 @@ define symindex
                     if sp = path
                         return i
                 }
-                set i: i + 1
+                i := i + 1
             }
         }
         0 - 1
@@ -224,8 +224,8 @@ define symindex
     {
         if s.blob_data <> null
             free(s.blob_data as pointer[void])
-        set s.blob_data: null
-        set s.blob_len: 0
+        s.blob_data := null
+        s.blob_len := 0
 
         let len blob.get_length()
         if len > 0
@@ -234,8 +234,8 @@ define symindex
             if dst <> null
             {
                 memcpy(dst as pointer[void], blob.get_buffer() as pointer[void], len)
-                set s.blob_data: dst
-                set s.blob_len: len
+                s.blob_data := dst
+                s.blob_len := len
             }
         }
     }
@@ -246,8 +246,8 @@ define symindex
     {
         if s.path_data <> null
             free(s.path_data as pointer[void])
-        set s.path_data: null
-        set s.path_len: 0
+        s.path_data := null
+        s.path_len := 0
 
         let len path.get_length()
         if len > 0
@@ -256,8 +256,8 @@ define symindex
             if dst <> null
             {
                 memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len)
-                set s.path_data: dst
-                set s.path_len: len
+                s.path_data := dst
+                s.path_len := len
             }
         }
     }
@@ -275,7 +275,7 @@ define symindex
         {
             let s symindex.idx_view().at(idx as size_t)
             symindex.set_blob(s, blob)
-            set s.chash: chash
+            s.chash := chash
             return
         }
 
@@ -288,11 +288,11 @@ define symindex
             {
                 symindex.set_path(s, path)
                 symindex.set_blob(s, blob)
-                set s.chash: chash
-                set s.used: true
+                s.chash := chash
+                s.used := true
                 return
             }
-            set i: i + 1
+            i := i + 1
         }
         ; Table full: drop silently — that file is re-parsed every query.
     }
@@ -314,20 +314,20 @@ define symindex
         if dir_slots = null
         {
             let bytes (DIR_CAP as size_t) * sizeof DirSlot
-            set dir_slots: malloc(bytes) as pointer[DirSlot]
+            dir_slots := malloc(bytes) as pointer[DirSlot]
             if dir_slots = null
                 return
             var i 0
             while i < DIR_CAP
             {
                 let s dir_slots + i
-                set s.used: false
-                set s.path_data: null
-                set s.path_len: 0
-                set s.list_data: null
-                set s.list_len: 0
-                set s.epoch: 0
-                set i: i + 1
+                s.used := false
+                s.path_data := null
+                s.path_len := 0
+                s.list_data := null
+                s.list_len := 0
+                s.epoch := 0
+                i := i + 1
             }
         }
     }
@@ -348,7 +348,7 @@ define symindex
                     if sp = dir
                         return i
                 }
-            set i: i + 1
+            i := i + 1
         }
         0 - 1
     }
@@ -387,26 +387,26 @@ define symindex
         {
             let s dir_slots + i
             if s.used = false and target < 0
-                set target: i
+                target := i
             if s.used and s.epoch <> idx_epoch and target < 0
-                set target: i
-            set i: i + 1
+                target := i
+            i := i + 1
         }
         if target < 0
-            set target: 0
+            target := 0
         let s symindex.dir_view().at(target as size_t)
         symindex.set_dir_path(s, dir)
         symindex.set_dir_list(s, listing)
-        set s.used: true
-        set s.epoch: idx_epoch
+        s.used := true
+        s.epoch := idx_epoch
     }
 
     procedure set_dir_path(mutable s: ref[DirSlot], dir: String)
     {
         if s.path_data <> null
             free(s.path_data as pointer[void])
-        set s.path_data: null
-        set s.path_len: 0
+        s.path_data := null
+        s.path_len := 0
         let len dir.get_length()
         if len > 0
         {
@@ -414,8 +414,8 @@ define symindex
             if dst <> null
             {
                 memcpy(dst as pointer[void], dir.get_buffer() as pointer[void], len)
-                set s.path_data: dst
-                set s.path_len: len
+                s.path_data := dst
+                s.path_len := len
             }
         }
     }
@@ -424,8 +424,8 @@ define symindex
     {
         if s.list_data <> null
             free(s.list_data as pointer[void])
-        set s.list_data: null
-        set s.list_len: 0
+        s.list_data := null
+        s.list_len := 0
         let len listing.get_length()
         if len > 0
         {
@@ -433,8 +433,8 @@ define symindex
             if dst <> null
             {
                 memcpy(dst as pointer[void], listing.get_buffer() as pointer[void], len)
-                set s.list_data: dst
-                set s.list_len: len
+                s.list_data := dst
+                s.list_len := len
             }
         }
     }

@@ -10,7 +10,7 @@ define Page(buffer: pointer[void], var offset: size_t)
     procedure allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
         let aligned (offset + align - (1 as size_t)) & (~(align - (1 as size_t)))
-        set offset: aligned + size
+        offset := aligned + size
         buffer + aligned
     }
 }
@@ -20,24 +20,24 @@ define Container[T](data: pointer[T], length: size_t)
 {
     init ()
     {
-        set data: null
-        set length: 0
+        data := null
+        length := 0
     }
 
     init(host: pointer[Page], size: size_t)
     {
-        set length: size
+        length := size
         if size > 0
-            set data: host.allocate(size * sizeof T, alignof T) as pointer[T]
+            data := host.allocate(size * sizeof T, alignof T) as pointer[T]
         else
-            set data: null
+            data := null
     }
 
     function get(this, index: size_t) returns T
         *(data + index)
 
     procedure set_item(mutable this, index: size_t, value: T)
-        set *(data + index): value
+        *(data + index) := value
 }
 
 ; Test generic with ^page lifetime

@@ -10,7 +10,7 @@
 procedure burn(depth: int) returns int
 {
     var pad u8[512]
-    set *(pad + 0): (depth as u8)
+    *(pad + 0) := (depth as u8)
     if depth > 1000000
         return depth
     let r burn(depth + 1)

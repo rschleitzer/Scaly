@@ -21,26 +21,26 @@ define Msg
 mutable chk: u64 0
 
 procedure chk_reset() mutable chk
-    set chk: 0xcbf29ce484222325 as u64
+    chk := 0xcbf29ce484222325 as u64
 
 procedure chk_byte(b: u8) mutable chk
-    set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
+    chk := (chk xor (b as u64)) * (0x100000001b3 as u64)
 
 procedure chk_word(v: u64) mutable chk
 {
-    set chk: (chk xor v) * (0x100000001b3 as u64)
+    chk := (chk xor v) * (0x100000001b3 as u64)
 }
 
 procedure fill_name(mutable buf: pointer[u8], i: size_t) returns size_t
 {
     let len (8 as size_t) + (i % (40 as size_t))
-    set buf[0]: ((97 as size_t) + (i % (26 as size_t))) as u8
-    set buf[1]: ((97 as size_t) + ((i / (26 as size_t)) % (26 as size_t))) as u8
+    buf[0] := ((97 as size_t) + (i % (26 as size_t))) as u8
+    buf[1] := ((97 as size_t) + ((i / (26 as size_t)) % (26 as size_t))) as u8
     var j 2 as size_t
     while j < len
     {
-        set buf[j]: ((97 as size_t) + ((i * (3 as size_t) + j) % (26 as size_t))) as u8
-        set j: j + (1 as size_t)
+        buf[j] := ((97 as size_t) + ((i * (3 as size_t) + j) % (26 as size_t))) as u8
+        j := j + (1 as size_t)
     }
     len
 }
@@ -53,7 +53,7 @@ procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
         let r Io.read(fd, ((buf as size_t) + done) as pointer[void], count - done)
         if r <= (0 as i64)
             return false
-        set done: done + (r as size_t)
+        done := done + (r as size_t)
     }
     true
 }
@@ -64,8 +64,8 @@ let mp Page.allocate_page()
 let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
 
 let names mp.allocate(sizeof List[String], alignof List[String]) as pointer[List[String]]
-set names.head: null
-set names.tail: null
+names.head := null
+names.tail := null
 var builder HashMapBuilder[String, i64]()
 var i 0 as size_t
 while i < NAME_COUNT
@@ -75,11 +75,11 @@ while i < NAME_COUNT
     let s String^mp(nbuf as pointer[const_char], len)
     names.add s
     builder.add(s, i as i64)
-    set i: i + (1 as size_t)
+    i := i + (1 as size_t)
 }
-set msg.names: names
+msg.names := names
 let hm HashMap[String, i64]^mp(builder)
-set msg.index: hm
+msg.index := hm
 
 let bv Vector[u8]^mp(BLOB_LEN)
 var bi 0 as size_t
@@ -87,9 +87,9 @@ while bi < BLOB_LEN
 {
     let bval ((bi * (31 as size_t) + (7 as size_t)) % (251 as size_t)) as u8
     bv.put(bi, bval)
-    set bi: bi + (1 as size_t)
+    bi := bi + (1 as size_t)
 }
-set msg.blob: bv
+msg.blob := bv
 
 chk_reset()
 var it names.get_iterator()
@@ -102,7 +102,7 @@ while let item it.next()
     {
         let b s.get(j)
         chk_byte b
-        set j: j + (1 as size_t)
+        j := j + (1 as size_t)
     }
     let vref hm.get(s)
     if vref = null
@@ -110,7 +110,7 @@ while let item it.next()
     let v *vref
     chk_word(v as u64)
 }
-set bi: 0 as size_t
+bi := 0 as size_t
 while bi < BLOB_LEN
 {
     let bref bv.get(bi)
@@ -118,9 +118,9 @@ while bi < BLOB_LEN
         exit 3
     let b *bref
     chk_byte b
-    set bi: bi + (1 as size_t)
+    bi := bi + (1 as size_t)
 }
-set msg.chk: chk
+msg.chk := chk
 
 ; ---- serialize ----
 
@@ -134,14 +134,14 @@ var fd Io.connect(PORT)
 var tries 0
 while fd < (0 as i32)
 {
-    set tries: tries + 1
+    tries := tries + 1
     if tries > 100
         exit 4
     let t scaly_eio_now_ns()
     var burn 0 as i64
     while scaly_eio_now_ns() - t < (100000000 as i64)
-        set burn: burn + (1 as i64)
-    set fd: Io.connect(PORT)
+        burn := burn + (1 as i64)
+    fd := Io.connect(PORT)
 }
 
 ; ---- ship the frame, then free the region before the verdict ----

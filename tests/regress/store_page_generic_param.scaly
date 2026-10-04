@@ -11,7 +11,7 @@ define Rec (var name: String)
 define Filler (unused: int)
 {
     procedure fill(this, mutable r: ref[Rec], t: String)
-        set r.name: String(t)
+        r.name := String(t)
 }
 
 define Box[T] (var inner: T)
@@ -27,7 +27,7 @@ function churn() returns size_t
     while i < 500
     {
         junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
-        set i: i + 1
+        i := i + 1
     }
     junk.length
 }

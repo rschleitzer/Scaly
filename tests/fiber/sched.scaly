@@ -16,11 +16,11 @@ procedure worker_a()
         while k < 20
         {
             let s String("alpha payload alpha payload alpha payload")
-            set k: k + 1
+            k := k + 1
         }
         Console.print "a "
         Scheduler.yield()
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -33,11 +33,11 @@ procedure worker_b()
         while k < 20
         {
             let s String("beta payload beta payload beta payload")
-            set k: k + 1
+            k := k + 1
         }
         Console.print "b "
         Scheduler.yield()
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -50,11 +50,11 @@ procedure worker_c()
         while k < 20
         {
             let s String("gamma payload gamma payload gamma payload")
-            set k: k + 1
+            k := k + 1
         }
         Console.print "c "
         Scheduler.yield()
-        set i: i + 1
+        i := i + 1
     }
 }
 

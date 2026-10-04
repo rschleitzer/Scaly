@@ -20,7 +20,7 @@ function deep(n: i64) returns i64
 {
     let s String("eine Region auf diesem Rahmen")
     var buf int[2]
-    set buf[0]: 7
+    buf[0] := 7
     let v Slice[int](2, &buf[0])
     if n > 0
         return v[(n as size_t) + 4]
@@ -30,7 +30,7 @@ function deep(n: i64) returns i64
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var vor 100
-    set vor: vor + argc
+    vor := vor + argc
     let mark0 scaly_panic_mark()
 
     ; (1) Arm bindet typisiert, (2) Locals ueberleben

@@ -41,8 +41,8 @@ while pos < tlen
         if b0 < 224
         {
             let b1 text.get((pos + 1) as size_t) as int
-            set cp: (b0 - 192) * 64 + (b1 - 128)
-            set adv: 2
+            cp := (b0 - 192) * 64 + (b1 - 128)
+            adv := 2
         }
     }
     if b0 >= 224
@@ -51,26 +51,26 @@ while pos < tlen
         {
             let b1 text.get((pos + 1) as size_t) as int
             let b2 text.get((pos + 2) as size_t) as int
-            set cp: ((b0 - 224) * 64 + (b1 - 128)) * 64 + (b2 - 128)
-            set adv: 3
+            cp := ((b0 - 224) * 64 + (b1 - 128)) * 64 + (b2 - 128)
+            adv := 3
         }
     }
     if b0 >= 240
     {
-        set cp: 0
-        set adv: 4
+        cp := 0
+        adv := 4
     }
     if cp >= 16384
-        set cp: 0
+        cp := 0
     if mp[cp] = 0
     {
-        set vocab: vocab + 1
-        set mp[cp]: vocab
+        vocab := vocab + 1
+        mp[cp] := vocab
     }
     let tid mp[cp] - 1
-    set tp[ntok]: tid as i64
-    set ntok: ntok + 1
-    set pos: pos + adv
+    tp[ntok] := tid as i64
+    ntok := ntok + 1
+    pos := pos + adv
 }
 
 ; --- model: bigram MLP, all state on one tape ---
@@ -86,29 +86,29 @@ var s 42
 var i 0
 while i < V * D
 {
-    set s: lcg(s)
+    s := lcg(s)
     let r pmod(s, 2001) - 1000
     let rv (r as float) * 0.0001
     tape.set_value(table, i, rv)
-    set i: i + 1
+    i := i + 1
 }
 var i2 0
 while i2 < D * H
 {
-    set s: lcg(s)
+    s := lcg(s)
     let r pmod(s, 2001) - 1000
     let rv (r as float) * 0.0001
     tape.set_value(w1, i2, rv)
-    set i2: i2 + 1
+    i2 := i2 + 1
 }
 var i3 0
 while i3 < H * V
 {
-    set s: lcg(s)
+    s := lcg(s)
     let r pmod(s, 2001) - 1000
     let rv (r as float) * 0.0001
     tape.set_value(w2, i3, rv)
-    set i3: i3 + 1
+    i3 := i3 + 1
 }
 let bsz B as size_t
 var ids Vector[i64](bsz)
@@ -129,21 +129,21 @@ while step <= 330
     var b 0
     while b < B
     {
-        set s: lcg(s)
+        s := lcg(s)
         let p pmod(s, ntok - 1)
         tape.set_token(emb, b, tp[p])
         tape.set_token(loss, b, tp[p + 1])
-        set b: b + 1
+        b := b + 1
     }
     tape.recompute()
     let lv tape.value_at(loss, 0)
     if step <= 10
-        set first_sum: first_sum + lv
+        first_sum := first_sum + lv
     if step > 20
         if step <= 30
-            set sgd_sum: sgd_sum + lv
+            sgd_sum := sgd_sum + lv
     if step > 310
-        set last_sum: last_sum + lv
+        last_sum := last_sum + lv
     tape.zero_grads()
     tape.backward loss
     if step <= 30
@@ -159,7 +159,7 @@ while step <= 330
         tape.adam_step(w1, 0.01, 0.9, 0.999, 0.00000001, t)
         tape.adam_step(w2, 0.01, 0.9, 0.999, 0.00000001, t)
     }
-    set step: step + 1
+    step := step + 1
 }
 let first_avg first_sum / 10.0
 let sgd_avg sgd_sum / 10.0
@@ -172,31 +172,31 @@ var corpus_ok false
 if ntok >= 100000
     if vocab >= 60
         if vocab <= 200
-            set corpus_ok: true
+            corpus_ok := true
 ; the untrained model must start at the uniform baseline ln(V)
 var start_ok false
 if first_avg > 4.0
     if first_avg < 6.0
-        set start_ok: true
+        start_ok := true
 ; 30 SGD steps must descend measurably
 var sgd_ok false
 if sgd_avg > 0.5
     if sgd_avg < first_avg - 0.05
-        set sgd_ok: true
+        sgd_ok := true
 ; Adam must land in bigram territory, far below the baseline
 var adam_ok false
 if last_avg > 0.5
     if last_avg < 3.4
-        set adam_ok: true
+        adam_ok := true
 var ok true
 if corpus_ok = false
-    set ok: false
+    ok := false
 if start_ok = false
-    set ok: false
+    ok := false
 if sgd_ok = false
-    set ok: false
+    ok := false
 if adam_ok = false
-    set ok: false
+    ok := false
 if ok
     print("PASS")
 else

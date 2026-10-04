@@ -32,7 +32,7 @@ function qq_zero() returns int
 ; A pointer argument and a pointer result — the shape a runtime helper has.
 procedure qq_bump(mutable cell: pointer[i64], by: i64) returns pointer[i64]
 {
-    set *cell: (*cell) + by
+    *cell := (*cell) + by
     cell
 }
 
@@ -72,7 +72,7 @@ if r3c <> 8
 ; indirect-call contract is i64), so compare it as one.
 var cell u8[8]
 let cp cell as pointer[i64]
-set *cp: 40 as i64
+*cp := 40 as i64
 let fb &qq_bump
 let got fb(cp, 2 as i64)
 if got <> (cp as i64)

@@ -34,7 +34,7 @@ procedure forward(mutable xs: ref[Array[String]])
     while i < 3
     {
         keep(xs, i)
-        set i: i + 1
+        i := i + 1
     }
 }
 
@@ -45,8 +45,8 @@ procedure churn() returns int
     while j < 200
     {
         let s "noise`j`noise`j`"
-        set total: total + (s.get_length() as int)
-        set j: j + 1
+        total := total + (s.get_length() as int)
+        j := j + 1
     }
     total
 }
@@ -57,11 +57,11 @@ forward_one(&a)
 let c churn()
 var ok true
 if a.length <> 4
-    set ok: false
+    ok := false
 if a.length = 4
 {
     if a[0].equals("key0") = false or a[2].equals("key2") = false or a[3].equals("one") = false
-        set ok: false
+        ok := false
 }
 if ok
     print "PASS"

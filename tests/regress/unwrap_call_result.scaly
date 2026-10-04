@@ -14,13 +14,13 @@
 define Holder (k: int)
 {
     init(k: int)
-        set this.k: k
+        this.k := k
 }
 
 define Box (h: ref[Holder]?)
 {
     init(h: ref[Holder]?)
-        set this.h: h
+        this.h := h
 }
 
 function takes_plain(h: ref[Holder]) returns int

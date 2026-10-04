@@ -12,11 +12,11 @@ var s "Hello, World!"
 
 ; bare literals → contains(String) (String overload wins over contains(u8))
 if s.contains("Hello") = false
-    set failures: failures + 1
+    failures := failures + 1
 if s.contains("World") = false
-    set failures: failures + 1
+    failures := failures + 1
 if s.contains("xyz")
-    set failures: failures + 1
+    failures := failures + 1
 
 if failures = 0
     print "PASS\n"

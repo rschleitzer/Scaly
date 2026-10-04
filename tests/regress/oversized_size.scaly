@@ -71,8 +71,8 @@ let bytes buf2 as pointer[u8]
 var i 0 as size_t
 while i < (100000 as size_t)
 {
-    set bytes[i]: (i % (251 as size_t)) as u8
-    set i: i + (256 as size_t)
+    bytes[i] := (i % (251 as size_t)) as u8
+    i := i + (256 as size_t)
 }
 if Page.oversized_size(op2) <> (102400 as size_t)
 {

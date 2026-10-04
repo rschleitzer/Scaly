@@ -3,7 +3,7 @@
 ; the lambda body, so `set acc:` is legal.
 ; Expected: PASS
 let inc \x: { var acc x
-set acc: acc + 1
+acc := acc + 1
 acc }
 if inc(41) <> 42
 {

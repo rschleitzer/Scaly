@@ -31,20 +31,20 @@ function count8(x: int, y: int, n: int) returns int
             let r0 zr0 * zr0
             let i0 zi0 * zi0
             let ri0 zr0 * zi0
-            set s0: r0 + i0
-            set zr0: r0 - i0 + cr0
-            set zi0: ri0 + ri0 + ci
+            s0 := r0 + i0
+            zr0 := r0 - i0 + cr0
+            zi0 := ri0 + ri0 + ci
             let r1 zr1 * zr1
             let i1 zi1 * zi1
             let ri1 zr1 * zi1
-            set s1: r1 + i1
-            set zr1: r1 - i1 + cr1
-            set zi1: ri1 + ri1 + ci
-            set k: k + 1
+            s1 := r1 + i1
+            zr1 := r1 - i1 + cr1
+            zi1 := ri1 + ri1 + ci
+            k := k + 1
         }
         if ((s0 <= 4.0) or (s1 <= 4.0)).any() = false
             return 0
-        set block: block + 1
+        block := block + 1
     }
     var k 0
     while k < 2
@@ -52,16 +52,16 @@ function count8(x: int, y: int, n: int) returns int
         let r0 zr0 * zr0
         let i0 zi0 * zi0
         let ri0 zr0 * zi0
-        set s0: r0 + i0
-        set zr0: r0 - i0 + cr0
-        set zi0: ri0 + ri0 + ci
+        s0 := r0 + i0
+        zr0 := r0 - i0 + cr0
+        zi0 := ri0 + ri0 + ci
         let r1 zr1 * zr1
         let i1 zi1 * zi1
         let ri1 zr1 * zi1
-        set s1: r1 + i1
-        set zr1: r1 - i1 + cr1
-        set zi1: ri1 + ri1 + ci
-        set k: k + 1
+        s1 := r1 + i1
+        zr1 := r1 - i1 + cr1
+        zi1 := ri1 + ri1 + ci
+        k := k + 1
     }
     (s0 <= 4.0).count() + (s1 <= 4.0).count()
 }
@@ -72,8 +72,8 @@ function row_count(y: int, n: int) returns int
     var x 0
     while x < n
     {
-        set count: count + count8(x, y, n)
-        set x: x + 8
+        count := count + count8(x, y, n)
+        x := x + 8
     }
     count
 }
@@ -85,5 +85,5 @@ for y in n
 
 var total 0
 for c in counts
-    set total: total + c
+    total := total + c
 print("mandelbrot `n`: `total` points inside")

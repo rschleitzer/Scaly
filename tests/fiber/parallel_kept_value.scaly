@@ -28,8 +28,8 @@ function spin_big(seed: i64) returns i64
     var k 0 as i64
     while k < (40000 as i64)
     {
-        set acc: acc + k
-        set k: k + (1 as i64)
+        acc := acc + k
+        k := k + (1 as i64)
     }
     acc
 }
@@ -76,8 +76,8 @@ procedure keep_wave(n: int) returns int
         let want label_of(j)
         let got out[j as size_t]
         if got.equals(want) = false
-            set bad: bad + 1
-        set j: j + 1
+            bad := bad + 1
+        j := j + 1
     }
     bad
 }
@@ -98,7 +98,7 @@ function lsum(l: List[i64]) returns i64
 {
     var s 0 as i64
     for x in l
-        set s: s + x
+        s := s + x
     s
 }
 
@@ -138,8 +138,8 @@ while j < 64
     let want label_of(j)
     let got rb[j as size_t]
     if got.equals(want) = false
-        set bad: bad + 1
-    set j: j + 1
+        bad := bad + 1
+    j := j + 1
 }
 if bad <> 0
 {
@@ -164,7 +164,7 @@ while w < 30
         Console.println "waveK-values-bad"
         exit 1
     }
-    set w: w + 1
+    w := w + 1
 }
 if TaskPool.submit_count(pool) = before_k
 {

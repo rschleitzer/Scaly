@@ -21,6 +21,6 @@ function main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var a Array[int]()
     a.add(1)
     a.add(2)
-    set a[1]: 42
+    a[1] := 42
     0
 }

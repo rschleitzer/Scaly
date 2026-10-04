@@ -19,7 +19,7 @@
 ; xfail: the result of operator '=' is discarded
 
 var arr int[4]
-set arr[0]: 111
+arr[0] := 111
 arr[0] = 222
 if arr[0] <> 222
     exit 1

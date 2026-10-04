@@ -51,8 +51,8 @@ if k.items.length = 1
     {
         var arr Array[int]()
         var sbuf int[2]
-        set sbuf[0]: 5
-        set sbuf[1]: 6
+        sbuf[0] := 5
+        sbuf[1] := 6
         borrow(&arr, &sbuf[0])
         if arr.length = 2
             print "PASS"

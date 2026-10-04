@@ -48,7 +48,7 @@ define RedisConn
 
     procedure close(mutable this)
     {
-        set open: false
+        open := false
         tcp.close()
         host.deallocate_extensions()
         Page.release_page(host)
@@ -83,14 +83,14 @@ define RedisConn
         var negative false
         if x < 0
         {
-            set negative: true
-            set x: (0 as i64) - x
+            negative := true
+            x := (0 as i64) - x
         }
         repeat
         {
-            set digits[n]: ((x % 10) as u8) + 48
-            set n: n + 1
-            set x: x / 10
+            digits[n] := ((x % 10) as u8) + 48
+            n := n + 1
+            x := x / 10
             if x = 0
                 break
         }
@@ -98,14 +98,14 @@ define RedisConn
         var k: size_t 0
         if negative
         {
-            set text[0]: 45
-            set k: 1
+            text[0] := 45
+            k := 1
         }
         while n > 0
         {
-            set n: n - 1
-            set text[k]: digits[n]
-            set k: k + 1
+            n := n - 1
+            text[k] := digits[n]
+            k := k + 1
         }
         this.arg(Slice[u8](k, &text[0]))
     }
@@ -121,7 +121,7 @@ define RedisConn
             let got tcp.read(inb.spare())
             if got <= 0
             {
-                set open: false
+                open := false
                 return false
             }
             inb.advance(got as size_t)
@@ -143,7 +143,7 @@ define RedisConn
             {
                 if b[at] = 13 and b[at + 1] = 10
                     return at
-                set at: at + 1
+                at := at + 1
             }
         }
     }
@@ -156,32 +156,32 @@ define RedisConn
             return false
         if tcp.write(outb.bytes()) = false
         {
-            set open: false
+            open := false
             return false
         }
         inb.clear()
-        set nil: false
+        nil := false
         let cr this.line_end(0)
         if cr = 0
             return false
         let b inb.bytes()
-        set kind: b[0]
-        set span_start: 1
-        set span_length: cr - 1
+        kind := b[0]
+        span_start := 1
+        span_length := cr - 1
         if kind = 36
         {
             let n resp_decimal(b.subslice(1, cr))
             if n < 0
             {
-                set nil: true
-                set span_length: 0
+                nil := true
+                span_length := 0
                 return true
             }
             let start cr + 2
             if this.need(start + (n as size_t) + 2) = false
                 return false
-            set span_start: start
-            set span_length: n as size_t
+            span_start := start
+            span_length := n as size_t
         }
         ; an array reply (none of the commands here send one) is not walked
         true

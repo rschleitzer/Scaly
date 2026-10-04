@@ -14,7 +14,7 @@ define Holder
 
 procedure set_fn(mutable h: pointer[Holder], f: IntFn)
 {
-    set h.fn: f
+    h.fn := f
 }
 
 function main() returns int

@@ -23,7 +23,7 @@ function make(s: int) returns Car
 procedure from_call() returns int
 {
     let c make(50)
-    set c.speed: 60
+    c.speed := 60
     c.speed
 }
 
@@ -34,9 +34,9 @@ procedure in_loop() returns int
     while i < 3
     {
         let c make(i)
-        set c.speed: c.speed + 10
-        set sum: sum + c.speed
-        set i: i + 1
+        c.speed := c.speed + 10
+        sum := sum + c.speed
+        i := i + 1
     }
     sum
 }
@@ -45,7 +45,7 @@ procedure field_copy() returns int
 {
     let p Pair(Car(1), Car(2))
     let a p.a
-    set a.speed: 60
+    a.speed := 60
     a.speed + p.a.speed
 }
 
@@ -53,8 +53,8 @@ procedure name_copy() returns int
 {
     var p Car(1)
     let q p
-    set q.speed: 7
-    set p.speed: p.speed + 2
+    q.speed := 7
+    p.speed := p.speed + 2
     q.speed * 10 + p.speed
 }
 
@@ -62,35 +62,35 @@ procedure snapshot() returns int
 {
     var p Car(1)
     let q p
-    set p.speed: 5
+    p.speed := 5
     q.speed * 10 + p.speed
 }
 
 var ok true
 
 let top Car(50)
-set top.speed: 60
+top.speed := 60
 if top.speed <> 60
-    set ok: false
+    ok := false
 
 if from_call() <> 60
-    set ok: false
+    ok := false
 if in_loop() <> 33
-    set ok: false
+    ok := false
 if field_copy() <> 61
-    set ok: false
+    ok := false
 if name_copy() <> 73
-    set ok: false
+    ok := false
 if snapshot() <> 15
-    set ok: false
+    ok := false
 
 let n 3
 if n > 2
 {
     let pair Pair(Car(1), Car(2))
-    set pair.b.speed: 9
+    pair.b.speed := 9
     if pair.a.speed <> 1 or pair.b.speed <> 9
-        set ok: false
+        ok := false
 }
 
 if ok

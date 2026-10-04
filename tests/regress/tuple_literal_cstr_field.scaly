@@ -30,8 +30,8 @@ define HolderInit (data: pointer[char], n: size_t)
 {
     init(d: pointer[char], k: size_t)
     {
-        set data: d
-        set n: k
+        data := d
+        n := k
     }
     function first(this) returns int
         *data as int
@@ -41,13 +41,13 @@ var ok true
 
 ; the tuple path, plain records
 if Holder("as", 2).first() <> 97
-    set ok: false
+    ok := false
 if HolderCC("as", 2).first() <> 97
-    set ok: false
+    ok := false
 
 ; the same record with a matching init# — the arm that was always right
 if HolderInit("as", 2).first() <> 97
-    set ok: false
+    ok := false
 
 ; Slice, every VALUE element type, from a literal.
 ;
@@ -65,9 +65,9 @@ if HolderInit("as", 2).first() <> 97
 ; restoring them re-breaks the build, and the cstr-FIELD coverage that is this
 ; file's actual subject lives in HolderCC/HolderInit above.
 if (Slice[char](2, "as")[0] as int) <> 97
-    set ok: false
+    ok := false
 if (Slice[u8](2, "as")[0] as int) <> 97
-    set ok: false
+    ok := false
 
 ; and from a real buffer — the direction that was never broken, kept as the
 ; control so a fix that breaks it cannot pass
@@ -81,18 +81,18 @@ if (Slice[u8](2, "as")[0] as int) <> 97
 let s String("as")
 let d s.c_data()
 if (Slice[char](2, d as pointer[char])[0] as int) <> 97
-    set ok: false
+    ok := false
 if (Slice[u8](2, d)[0] as int) <> 97
-    set ok: false
+    ok := false
 
 ; the length field is untouched by the coercion
 if Slice[char](2, "as").length <> (2 as size_t)
-    set ok: false
+    ok := false
 
 ; a multi-character literal still reads its SECOND byte correctly — the
 ; varint form would have shifted every index by one
 if (Slice[char](2, "as")[1] as int) <> 115
-    set ok: false
+    ok := false
 
 if ok
     println "PASS"

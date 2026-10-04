@@ -94,9 +94,9 @@ procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
             serve_h2[S](c, router, host, &inb, req, res, outb)
             break
         }
-        set first: false
+        first := false
         if TcpServer.current().stopping()
-            set open: false
+            open := false
         ; answer every complete request in the buffer
         var done: size_t 0
         repeat
@@ -110,23 +110,23 @@ procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
             if r < 0
             {
                 refuse(res, refusal_status(r))
-                set open: false
+                open := false
                 break
             }
             dispatch(router, req, res)
-            set done: done + (r as size_t)
+            done := done + (r as size_t)
             if res.websocket <> null
                 break
             if req.keep_alive = false
             {
-                set open: false
+                open := false
                 break
             }
         }
         if outb.length > 0
         {
             if c.write(outb.bytes()) = false
-                set open: false
+                open := false
             outb.clear()
         }
         inb.consume(done)

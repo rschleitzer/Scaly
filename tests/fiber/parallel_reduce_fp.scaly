@@ -17,8 +17,8 @@ function spin(seed: i64) returns i64
     var k 0 as i64
     while k < (40000 as i64)
     {
-        set acc: (acc * (31 as i64) + k) % (1000003 as i64)
-        set k: k + (1 as i64)
+        acc := (acc * (31 as i64) + k) % (1000003 as i64)
+        k := k + (1 as i64)
     }
     acc
 }
@@ -31,8 +31,8 @@ function term(i: int) returns double
     var k 0
     while k < i % 13
     {
-        set scale: scale * 10.0
-        set k: k + 1
+        scale := scale * 10.0
+        k := k + 1
     }
     v * scale
 }
@@ -59,23 +59,23 @@ var r_f32: float 0.5
 var j 0
 while j < n
 {
-    set r_sum: r_sum + term(j)
-    set r_sub: r_sub - term(j)
-    set r_prod: r_prod * (1.0 + term(j) * 0.0000001)
+    r_sum := r_sum + term(j)
+    r_sub := r_sub - term(j)
+    r_prod := r_prod * (1.0 + term(j) * 0.0000001)
     ; the per-iteration fold, written out: three contributions summed first
     var part: double 0.0 * (0.0 - 1.0)
-    set part: part + term(j)
-    set part: part + term(j + 1) * 0.5
-    set part: part - term(j + 2) * 0.25
-    set r_multi: r_multi + part
-    set r_f32: r_f32 + (term(j) as float)
-    set j: j + 1
+    part := part + term(j)
+    part := part + term(j + 1) * 0.5
+    part := part - term(j + 2) * 0.25
+    r_multi := r_multi + part
+    r_f32 := r_f32 + (term(j) as float)
+    j := j + 1
 }
 
 var before TaskPool.submit_count(pool)
 var sum: double 0.25
 for i in n
-    set sum: sum + term(i)
+    sum := sum + term(i)
 check("sum", sum, r_sum)
 if TaskPool.submit_count(pool) = before
 {
@@ -83,29 +83,29 @@ if TaskPool.submit_count(pool) = before
     exit 1
 }
 
-set before: TaskPool.submit_count(pool)
+before := TaskPool.submit_count(pool)
 var sub: double 1000.0
 for i in n
-    set sub: sub - term(i)
+    sub := sub - term(i)
 check("sub", sub, r_sub)
 
 var prod: double 1.0
 for i in n
-    set prod: prod * (1.0 + term(i) * 0.0000001)
+    prod := prod * (1.0 + term(i) * 0.0000001)
 check("prod", prod, r_prod)
 
 var multi: double 0.0
 for i in n
 {
-    set multi: multi + term(i)
-    set multi: multi + term(i + 1) * 0.5
-    set multi: multi - term(i + 2) * 0.25
+    multi := multi + term(i)
+    multi := multi + term(i + 1) * 0.5
+    multi := multi - term(i + 2) * 0.25
 }
 check("multi", multi, r_multi)
 
 var f: float 0.5
 for i in n
-    set f: f + (term(i) as float)
+    f := f + (term(i) as float)
 check("f32", f as double, r_f32 as double)
 if TaskPool.submit_count(pool) = before
 {
