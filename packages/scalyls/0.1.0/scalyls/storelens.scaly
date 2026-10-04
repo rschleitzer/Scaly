@@ -113,11 +113,11 @@
 ; ANCHORING is tasklens.scaly's rule: the plan's offsets index the text the plan
 ; was built from (disk, for a package member) while the lens is drawn in the
 ; BUFFER, so the two `set`-keyword site sets are paired IN ORDER and a count
-; mismatch answers NOTHING. `set` is a keyword with exactly one use, like `for`,
-; so a `set` token in code always opens an assignment. A PlannedAction carries
+; mismatch answers NOTHING. The assignment sign `:=` has exactly one use,
+; so a `:=` in code always marks an assignment. A PlannedAction carries
 ; the span of its SOURCE's first operand (Planner.scaly's `action_loc`, chosen
-; there for -g line info) and never of the keyword, so each flagged offset is
-; mapped to the `set` site that PRECEDES it.
+; there for -g line info) and never of the sign, so each flagged offset is
+; mapped to the `:=` site that PRECEDES it.
 ;
 ; ASCII ONLY in the titles, and no command id — there is nothing to click.
 ;
@@ -908,11 +908,8 @@ define storelens
         title.append param
         title.append "' - no page parameter here, so its buffer cannot be pinned"
         let t title.to_string()
-        ; the lens sits on the assignment sign: `:=`, or the older `set`
-        var width: size_t 3
-        if anchor_text.get(at) = (":" as char)
-            width := 2
-        symbols.lens_object(anchor_text, at, width, t, "", "")
+        ; the lens sits on the assignment sign `:=`
+        symbols.lens_object(anchor_text, at, 2, t, "", "")
     }
 
     ; The n-th TAB-separated field of `line`, or "".
@@ -967,12 +964,12 @@ define storelens
     }
 
     ; ====================================================================
-    ; The `set`-site scanner. `set` is a keyword with exactly one use in the
-    ; language, so a `set` TOKEN in code always opens an assignment — no parse
+    ; The assignment-site scanner. The sign `:=` has exactly one use in the
+    ; language, so a `:=` in code always marks an assignment — no parse
     ; needed, which is what keeps the pairing usable on a buffer that does not
     ; parse. Comments and string literals are skipped wholesale
     ; (symbols.skip_noncode#), exactly as tasklens.scaly's `for` scan does, and
-    ; for the same reason: a "set" inside a comment would shift every later
+    ; for the same reason: a ":=" inside a comment would shift every later
     ; index by one.
     ; ====================================================================
 
@@ -988,13 +985,7 @@ define storelens
                 k := symbols.skip_noncode(source, k, len)
                 continue
             }
-            if c = ("s" as char)
-            {
-                if storelens.is_set_token(source, k, len)
-                    return k
-            }
-            ; the assignment sign `:=` (the spelling since 2026-10-04; `set`
-            ; is read beside it until it has left the grammar)
+            ; the assignment sign `:=`
             if c = (":" as char) and k + 1 < len and source.get(k + 1) = ("=" as char)
                 return k
             k := k + 1
@@ -1056,29 +1047,5 @@ define storelens
             k := k + 3
         }
         len
-    }
-
-    ; Is source[k..] the keyword `set` on both token boundaries? A bare `set` at
-    ; EOF is not an assignment (it needs a target), so k+3 must exist.
-    function is_set_token(source: String, k: size_t, len: size_t) returns bool
-    {
-        if k + 3 >= len
-            return false
-        let c1 source.get(k + 1)
-        if c1 <> ("e" as char)
-            return false
-        let c2 source.get(k + 2)
-        if c2 <> ("t" as char)
-            return false
-        let c3 source.get(k + 3)
-        if symbols.is_ident_byte c3
-            return false
-        if k > 0
-        {
-            let c0 source.get(k - 1)
-            if symbols.is_ident_byte c0
-                return false
-        }
-        true
     }
 }

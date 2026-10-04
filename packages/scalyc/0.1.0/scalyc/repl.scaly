@@ -470,15 +470,13 @@ define repl
                 when e: EmptySyntax
                     0
                 when o: OperationSyntax
-                    out.add(ReplStatement(o.start, o.end, String(), true))
+                    out.add(ReplStatement(o.start, o.end, String(), o.becomes = null))
                 when l: LetSyntax
                     out.add(ReplStatement(l.start, l.end, String(l.binding.name), false))
                 when v: VarSyntax
                     out.add(ReplStatement(v.start, v.end, String(v.binding.name), false))
                 when m: MutableSyntax
                     out.add(ReplStatement(m.start, m.end, String(), false))
-                when st: SetSyntax
-                    out.add(ReplStatement(st.start, st.end, String(), false))
                 when c: ContinueSyntax
                     out.add(ReplStatement(c.start, c.end, String(), false))
                 when b: BreakSyntax

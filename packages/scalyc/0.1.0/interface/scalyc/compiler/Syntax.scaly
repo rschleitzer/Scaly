@@ -123,14 +123,6 @@ define BlockSyntax
     statements: ref[Vector[StatementSyntax]]?
 )
 
-define SetSyntax
-(
-    start: size_t
-    end: size_t
-    target: ref[Vector[OperandSyntax]]?
-    source: ref[Vector[OperandSyntax]]?
-)
-
 define BecomesSyntax
 (
     start: size_t
@@ -148,7 +140,6 @@ define OperationSyntax
 
 define ActionSyntax union (
     Operation: OperationSyntax
-    Set: SetSyntax
     Block: BlockSyntax
 )
 
@@ -348,7 +339,6 @@ define StatementSyntax union (
     Let: LetSyntax
     Var: VarSyntax
     Mutable: MutableSyntax
-    Set: SetSyntax
     Continue: ContinueSyntax
     Break: BreakSyntax
     Return: ReturnSyntax

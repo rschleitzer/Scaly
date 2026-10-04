@@ -1093,8 +1093,8 @@ define Modeler
     }
 
     ; An operation as a statement or an action: `target := source` is the
-    ; assignment (2026-10-04, the Algol tradition; `set target: source` is the
-    ; older spelling of the same Action and runs out).
+    ; assignment (2026-10-04, the Algol tradition; the keyword `set` it
+    ; replaced left the grammar the same day).
     procedure operation_action(mutable op: OperationSyntax) returns Action mutable modeler_error_count
     {
         if op.becomes <> null
@@ -1118,8 +1118,6 @@ define Modeler
         choose syntax
             when op: OperationSyntax
                 operation_action(op)
-            when set_syntax: SetSyntax
-                Action(handle_operands(set_syntax.source), handle_operands(set_syntax.target))
             else
                 Action(Vector[Operand](0), Vector[Operand](0))
     }
@@ -1417,12 +1415,6 @@ define Modeler
                     item,
                     operation
                 ))
-            }
-            when set_syntax: SetSyntax
-            {
-                let target handle_operands(set_syntax.target)
-                let source handle_operands(set_syntax.source)
-                Statement.Action(Action(source, target))
             }
             when break_syntax: BreakSyntax
             {

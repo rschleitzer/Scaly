@@ -467,7 +467,6 @@
     <content link = Let
     <content link = Var
     <content link = Mutable
-    <content link = Set
     <content link = Continue
     <content link = Break
     <content link = Return
@@ -600,7 +599,6 @@
 
 <syntax id = Action                       multiple abstract
     <content link = Operation
-    <content link = Set
     <content link = Block
 
 <syntax id = Operation
@@ -609,12 +607,6 @@
 
 <syntax id = Becomes
     <content link = becomes
-    <content link = Operand               multiple          property = source
-
-<syntax id = Set
-    <content link = set
-    <content link = Operand               multiple          property = target
-    <content colon
     <content link = Operand               multiple          property = source
 
 <syntax id = Block
@@ -709,7 +701,6 @@
 <keyword id = repeat
 <keyword id = return
 <keyword id = returns
-<keyword id = set
 <keyword id = sizeof
 <keyword id = throw
 <keyword id = throws

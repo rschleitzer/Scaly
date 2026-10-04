@@ -2,7 +2,7 @@
 let x 40
 x + 2
 var n 1
-set n: n * 10
+n := n * 10
 n
 define Point(x: int, y: int)
 let p Point(3, 4)

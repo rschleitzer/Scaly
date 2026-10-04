@@ -23562,7 +23562,7 @@ define Emitter
             }
 
         ; Test 150: End-to-end with while loop
-        parser := Parser("var i: int 0\nwhile i < 10\n    set i: i + 1")
+        parser := Parser("var i: int 0\nwhile i < 10\n    i := i + 1")
         choose parser.parse_program()
             when err: Error
                 return 150
@@ -23705,7 +23705,7 @@ define Emitter
 
         ; Test 210: Complex program with struct, method, and mutation
         ; This mimics lexer-like code patterns
-        parser := Parser("define Scanner(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        set pos: pos + 1\n}\nvar lex Scanner(\"test\", 0)\nlet ch lex.current_char()")
+        parser := Parser("define Scanner(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        pos := pos + 1\n}\nvar lex Scanner(\"test\", 0)\nlet ch lex.current_char()")
         choose parser.parse_program()
             when err: Error
                 return 210

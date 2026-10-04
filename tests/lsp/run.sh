@@ -2621,7 +2621,7 @@ python3 - <<'PY'
 import sys, json, subprocess, os, select, time
 src = ("define Point\n(\n    x: int\n)\n{\n"
        "    function get_x(this: Point) returns int\n    {\n"
-       "        set this.\n"                     # line 7: unfinished
+       "        this.\n"                     # line 7: unfinished
        "        return x\n    }\n}\n")
 import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/midedit_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
 path = _ws + "/lsp_midedit_test.scaly"
@@ -2630,7 +2630,7 @@ uri = "file://" + path
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
 lines = src.split("\n")
-bl = next(i for i, l in enumerate(lines) if l.strip() == "set this.")
+bl = next(i for i, l in enumerate(lines) if l.strip() == "this.")
 bc = len(lines[bl])                                  # cursor right after the dot
 gl = next(i for i, l in enumerate(lines) if "function get_x" in l)
 gc = lines[gl].index("get_x") + 1
@@ -2692,7 +2692,7 @@ hv = res(4)
 check(hv is not None and hv.get("contents", {}).get("value") == "method get_x(this: Point) returns int",
       "hover survives an unfinished line")
 labels = [it["label"] for it in (res(5) or [])]
-check(labels == ["x","get_x"], "completion at `set this.|` -> the enclosing concept's members")
+check(labels == ["x","get_x"], "completion at `this.|` -> the enclosing concept's members")
 diags = next((f["params"]["diagnostics"] for f in frames
               if f.get("method") == "textDocument/publishDiagnostics"), None)
 check(diags is not None and len(diags) == 1,
@@ -2785,7 +2785,7 @@ src = ("function helper() returns int\n"
        "\n"
        "function broken() returns int\n"
        "{\n"
-       "    set this.\n"                       # line 7: unfinished
+       "    this.\n"                       # line 7: unfinished
        "    return 1\n"
        "}\n"
        "\n"
@@ -2820,7 +2820,7 @@ disk = ("define member\n{\n"
         "    }\n}\n")
 open(member, "w").write(disk)
 lines = disk.split("\n")
-lines.insert(8, "        set this.")            # buffer-only broken line, line 8
+lines.insert(8, "        this.")            # buffer-only broken line, line 8
 d = diagnose("file://" + member, "\n".join(lines)) or []
 check(any("expected" in m for m in at(d, 8)),
       "package member: the parse error comes from the live BUFFER")
@@ -3024,7 +3024,7 @@ OPEN_SIB = "file://" + ws2 + "/app/good.scaly"
 s = Session()
 s.open(ws2 + "/app.scaly")
 # good.scaly is opened with an unfinished line that is NEVER saved.
-buf = open(ws2 + "/app/good.scaly").read().replace("        7\n", "        7\n    set this.\n")
+buf = open(ws2 + "/app/good.scaly").read().replace("        7\n", "        7\n    this.\n")
 s.send({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
     "textDocument":{"uri":OPEN_SIB,"languageId":"scaly","version":1,"text":buf}}})
 d = s.collect()
@@ -3267,7 +3267,7 @@ def frame(o):
 lines = src.split("\n")
 # type "\n        set this." at the start of the `return x` line
 ln = next(i for i, l in enumerate(lines) if l.strip() == "return x")
-typed = "\n        set this."
+typed = "\n        this."
 
 p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
 fd = p.stdout.fileno()

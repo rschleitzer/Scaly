@@ -88,8 +88,6 @@ define grammar
             return true
         if word = "returns"
             return true
-        if word = "set"
-            return true
         if word = "sizeof"
             return true
         if word = "throw"

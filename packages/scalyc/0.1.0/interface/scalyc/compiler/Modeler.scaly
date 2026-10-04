@@ -149,8 +149,8 @@ define Modeler
     procedure handle_when(mutable syntax: WhenSyntax) @page true @direct true @deep true returns When io mutable modeler_error_count reads modeler_error_count linked
 
     ; An operation as a statement or an action: `target := source` is the
-    ; assignment (2026-10-04, the Algol tradition; `set target: source` is the
-    ; older spelling of the same Action and runs out).
+    ; assignment (2026-10-04, the Algol tradition; the keyword `set` it
+    ; replaced left the grammar the same day).
     procedure operation_action(mutable op: OperationSyntax) @page true @direct true @ret_caller true @deep true returns Action io mutable modeler_error_count reads modeler_error_count linked
 
     ; ... and anywhere else an assignment cannot stand (a condition, a `for`

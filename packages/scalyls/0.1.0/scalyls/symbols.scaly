@@ -6922,8 +6922,6 @@ define symbols
         choose action
             when op: OperationSyntax
                 return op.start
-            when st: SetSyntax
-                return st.start
             when blk: BlockSyntax
                 return blk.start
     }
@@ -10246,23 +10244,6 @@ define symbols
         false
     }
 
-    ; True when source[k,j) is the keyword `set`. `set name: value` WRITES an
-    ; already-bound name, so the `name:` after it is not a binding — see the
-    ; colon rule in range_binds_name#.
-    function token_is_set_kw(source: String, k: size_t, j: size_t) returns bool
-    {
-        if (j - k) <> 3
-            return false
-        let c0 source.get k
-        let c1 source.get(k + 1)
-        let c2 source.get(k + 2)
-        if c0 = 0x73                     ; 's'
-            if c1 = 0x65                 ; 'e'
-                if c2 = 0x74             ; 't'
-                    return true
-        false
-    }
-
     ; True when the token starting at `k` is reached through a member access —
     ; the nearest non-blank byte before it is a `.`. `set r.field: v` writes a
     ; FIELD, so `field:` there is not a binding of `field` either.
@@ -10309,7 +10290,6 @@ define symbols
         if bound > len
             bound := len
         var prev_is_binder false
-        var prev_is_set false
         var k lo
         while k < bound
         {
@@ -10335,10 +10315,7 @@ define symbols
             {
                 if prev_is_binder
                     return true
-                ; `set name:` / `set r.name:` write an already-bound name.
                 var colon_binds true
-                if prev_is_set
-                    colon_binds := false
                 if symbols.preceded_by_dot(source, k)
                     colon_binds := false
                 if colon_binds
@@ -10367,7 +10344,6 @@ define symbols
                 }
             }
             prev_is_binder := symbols.token_is_binder_kw(source, k, j)
-            prev_is_set := symbols.token_is_set_kw(source, k, j)
             k := j
         }
         false

@@ -1,0 +1,17 @@
+; `set` is no keyword any more (2026-10-04): the assignment is `x := y`, and
+; the word is an ordinary name -- of a binding, a parameter, a function.
+; Expected: PASS
+
+function set(n: int) returns int
+    n + 1
+
+function size(set: int) returns int
+    set * 2
+
+var ok true
+if set(41) <> 42
+    ok := false
+if size(4) <> 8
+    ok := false
+if ok
+    print "PASS"

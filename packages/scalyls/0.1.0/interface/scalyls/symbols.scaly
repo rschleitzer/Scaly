@@ -2257,11 +2257,6 @@ define symbols
     ; compare, no allocation — usable from a non-# scanner.
     function token_is_binder_kw(source: String, k: size_t, j: size_t) @ret_nonlocal true @deep true returns bool linked
 
-    ; True when source[k,j) is the keyword `set`. `set name: value` WRITES an
-    ; already-bound name, so the `name:` after it is not a binding — see the
-    ; colon rule in range_binds_name#.
-    function token_is_set_kw(source: String, k: size_t, j: size_t) @ret_nonlocal true @deep true returns bool linked
-
     ; True when the token starting at `k` is reached through a member access —
     ; the nearest non-blank byte before it is a `.`. `set r.field: v` writes a
     ; FIELD, so `field:` there is not a binding of `field` either.

@@ -1,0 +1,8 @@
+; `set x: 2` was the assignment until 2026-10-04; it is `x := 2` now, and
+; `set` an ordinary name -- the old statement reads as a call of a function
+; `set` nobody declared, a hard diagnostic at its line.
+; xfail: function not found: set
+
+var x 1
+set x: 2
+print "PASS"

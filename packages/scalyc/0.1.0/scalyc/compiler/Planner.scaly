@@ -30467,7 +30467,7 @@ define Planner
 
             var sb StringBuilder()
             ; NO backticks in these literals -- see report_ref_arithmetic#.
-            sb.append "cannot assign through this reference: a set on a "
+            sb.append "cannot assign through this reference: an assignment to a "
             sb.append "non-var reference writes its POINTEE, and this value "
             sb.append "is neither the pointee nor a reference of the same "
             sb.append "type. Only a var local may be rebound"

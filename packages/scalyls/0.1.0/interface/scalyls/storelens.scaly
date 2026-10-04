@@ -113,11 +113,11 @@
 ; ANCHORING is tasklens.scaly's rule: the plan's offsets index the text the plan
 ; was built from (disk, for a package member) while the lens is drawn in the
 ; BUFFER, so the two `set`-keyword site sets are paired IN ORDER and a count
-; mismatch answers NOTHING. `set` is a keyword with exactly one use, like `for`,
-; so a `set` token in code always opens an assignment. A PlannedAction carries
+; mismatch answers NOTHING. The assignment sign `:=` has exactly one use,
+; so a `:=` in code always marks an assignment. A PlannedAction carries
 ; the span of its SOURCE's first operand (Planner.scaly's `action_loc`, chosen
-; there for -g line info) and never of the keyword, so each flagged offset is
-; mapped to the `set` site that PRECEDES it.
+; there for -g line info) and never of the sign, so each flagged offset is
+; mapped to the `:=` site that PRECEDES it.
 ;
 ; ASCII ONLY in the titles, and no command id — there is nothing to click.
 ;
@@ -285,12 +285,12 @@ define storelens
     function parse_size(digits: String) @ret_nonlocal true @deep true returns size_t linked
 
     ; ====================================================================
-    ; The `set`-site scanner. `set` is a keyword with exactly one use in the
-    ; language, so a `set` TOKEN in code always opens an assignment — no parse
+    ; The assignment-site scanner. The sign `:=` has exactly one use in the
+    ; language, so a `:=` in code always marks an assignment — no parse
     ; needed, which is what keeps the pairing usable on a buffer that does not
     ; parse. Comments and string literals are skipped wholesale
     ; (symbols.skip_noncode#), exactly as tasklens.scaly's `for` scan does, and
-    ; for the same reason: a "set" inside a comment would shift every later
+    ; for the same reason: a ":=" inside a comment would shift every later
     ; index by one.
     ; ====================================================================
 
@@ -303,8 +303,4 @@ define storelens
     function set_index_at(source: String, offset: size_t) @ret_nonlocal true @deep true returns int linked
 
     function set_site_at_index(source: String, idx: int) @ret_nonlocal true @deep true returns size_t linked
-
-    ; Is source[k..] the keyword `set` on both token boundaries? A bare `set` at
-    ; EOF is not an assignment (it needs a target), so k+3 must exist.
-    function is_set_token(source: String, k: size_t, len: size_t) @ret_nonlocal true @deep true returns bool linked
 }
