@@ -1,0 +1,9 @@
+; A binding's colon announces its TYPE. `let a: 42` swallowed the parser's
+; "expected BindingSpec" and bound 42 -- the optional annotation opened with
+; any colon and its failure was dropped. It opens with the colon SIGN now
+; (scaly.sgm, BindingAnnotation), so the error stands. 2026-10-04.
+; xfail: expected BindingSpec
+
+let a: 42
+if a = 42
+    print "PASS"

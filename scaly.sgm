@@ -453,7 +453,7 @@
     <content link = Operand               multiple optional property = operation
 
 <syntax id = BindingAnnotation
-    <content colon
+    <content link = colon_sign
     <content link = BindingSpec                                property = spec
 
 <syntax id = BindingSpec                  multiple abstract

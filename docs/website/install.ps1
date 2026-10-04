@@ -235,8 +235,17 @@ function Install-Scaly {
             if (($env:Path -split ';') -notcontains $bin) { $env:Path = "$env:Path;$bin" }
             Say "installed into $toolchain; scaly, scalyc and scalyls are on PATH (new terminals see it)"
         }
-        Say "try:  scaly            (the REPL)"
-        Say "      scaly run hello.scaly"
+        # the same first steps install.sh prints (they were missing here until
+        # 2026-10-04: two lines, and no word of how a program is built)
+        Write-Host ""
+        Write-Host "scaly-install: done. Scaly $version is installed in $prefix."
+        Write-Host "  Try it, in a NEW terminal:"
+        Write-Host "    'print(`"Hello, World!`")' | Set-Content hello.scaly"
+        Write-Host "    scaly run hello.scaly                  run it"
+        Write-Host "    scaly build hello.scaly -o hello.exe   build a program"
+        Write-Host "    .\hello.exe"
+        Write-Host "    scaly                                  the REPL (:help, :quit)"
+        Write-Host "  Uninstall:  Remove-Item -Recurse `"$prefix`"  (and remove its libexec directory from PATH)"
         $ok = $true
         $script:scalyInstalled = $true
     } finally {

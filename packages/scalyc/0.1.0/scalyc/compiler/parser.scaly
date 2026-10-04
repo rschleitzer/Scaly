@@ -3911,7 +3911,8 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
             }
             when success: Success
                 annotation := BindingAnnotationSyntax(success.start, success.end, success.spec)
@@ -3938,7 +3939,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        if ~lexer.parse_colon()
+        if ~lexer.parse_punctuation(":")
             throw ParserError.Different(DifferentSyntax())
 
         let spec_start lexer.position

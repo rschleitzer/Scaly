@@ -134,8 +134,12 @@
 ;; The type ("colon"/"keyword"/"punctuation"/"literal"/"syntax"/...) of a
 ;; syntax's first content child -- i.e. the token a parse_X commits on. A
 ;; separator newline lexes as a Colon, so a colon-opened optional field
-;; (TypeAnnotation, BindingAnnotation, Value) false-commits on a separator and
-;; must backtrack by swallowing its Invalid. Every other opener ([ { ( keyword
+;; (Value) false-commits on a separator and must backtrack by swallowing its
+;; Invalid. TypeAnnotation and BindingAnnotation open with the SIGN ':'
+;; (colon_sign, a colon written in the source) and are no longer of this
+;; kind: `let a: 42` swallowed its "expected BindingSpec" and bound 42, and a
+;; binding's name followed by a line feed took the next line for its type
+;; (2026-10-04). Every other opener ([ { ( keyword
 ;; literal ^ ?) is unambiguous, so a committed Invalid is a real syntax error
 ;; and must propagate -- otherwise class/union/trait bodies silently swallow
 ;; inner errors (and re-surface as a bogus outer "expected '}'").

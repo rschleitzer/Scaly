@@ -15040,6 +15040,10 @@ define Planner
                                 if vis_hint.get_length() > 0
                                     dsb.append vis_hint
                                 dsb.append(this.bare_variant_arg_hint(call_args_holder))
+                                ; `set target: value` was the assignment
+                                ; until 2026-10-04; the word is a name now
+                                if fn_name = "set"
+                                    dsb.append " - an assignment is written 'target := value'"
                                 this.add_diagnostic(result.loc, dsb.to_string())
                             }
                         }
@@ -46839,6 +46843,31 @@ define Planner
                     0
         }
 
+        ; A NON-LAST statement that is only a VALUE -- a name, a constant --
+        ; does nothing, and nobody writes one on purpose. The way to it since
+        ; the assignment is `target := value`: `a: 42`, the old `set a: 42`
+        ; without its keyword, is the two statements `a` and `42` (the colon
+        ; separates), compiled at rc 0 with a unchanged (2026-10-04, met in
+        ; the REPL on a fresh Windows). A last statement is its block's value
+        ; and is not judged; a template's body is judged at its instantiation.
+        procedure report_value_statement(mutable this: Planner, op: PlannedOperand)
+        {
+            if this.planning_template or op.member_access <> null
+                return
+            var bare false
+            choose op.expr
+                when v: Variable
+                    bare := true
+                when k: scalyc.compiler.Plan.PlannedConstant
+                    bare := true
+                when g: GlobalRef
+                    bare := true
+                else
+                    0
+            if bare
+                this.add_diagnostic(op.loc, String^this("this statement is only a value and does nothing - an assignment is written 'target := value' (a ':' after a name ends the statement)"))
+        }
+
         procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement, last: bool)
         {
             choose stmt
@@ -46855,6 +46884,8 @@ define Planner
                                 if s0_ptr <> null
                                 {
                                     let s0 (*s0_ptr)
+                                    if last = false and src.length = 1
+                                        this.report_value_statement(s0)
                                     choose s0.expr
                                         when oc: PlannedCall
                                         {

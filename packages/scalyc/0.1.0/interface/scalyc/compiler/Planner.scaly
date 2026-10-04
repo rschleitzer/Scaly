@@ -7361,6 +7361,15 @@ define Planner
         ; carrying the function's name, and r held nothing at rc 0.
         procedure report_function_as_operator(mutable this: Planner, op: PlannedOperand) @deep true linked
 
+        ; A NON-LAST statement that is only a VALUE -- a name, a constant --
+        ; does nothing, and nobody writes one on purpose. The way to it since
+        ; the assignment is `target := value`: `a: 42`, the old `set a: 42`
+        ; without its keyword, is the two statements `a` and `42` (the colon
+        ; separates), compiled at rc 0 with a unchanged (2026-10-04, met in
+        ; the REPL on a fresh Windows). A last statement is its block's value
+        ; and is not judged; a template's body is judged at its instantiation.
+        procedure report_value_statement(mutable this: Planner, op: PlannedOperand) @deep true linked
+
         procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement, last: bool) @ret_nonlocal true @deep true linked
 
         ; plan_statements: batch plan_statement over a Model.Block's statements.

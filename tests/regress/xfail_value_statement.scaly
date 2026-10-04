@@ -1,0 +1,12 @@
+; A NON-LAST statement that is only a value does nothing, and since the
+; assignment is `target := value` there is a short way to one: `a: 42` -- the
+; old `set a: 42` without its keyword -- is the two statements `a` and `42`
+; (the colon separates). It compiled at rc 0 and left `a` as it was; a lost
+; `set` of that kind sat in tscaly's printer (`written: true`). Planner.
+; report_value_statement#, 2026-10-04.
+; xfail: this statement is only a value and does nothing
+
+var a 1
+a: 42
+if a = 42
+    print "PASS"
