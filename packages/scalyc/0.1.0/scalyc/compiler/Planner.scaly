@@ -13119,6 +13119,31 @@ define Planner
                 }
             }
 
+            ; The application of the first thing to the tuple after it
+            ; (collapse_application#), and what is left goes by the table
+            ; (collapse_operators#): the two parts are routines of their own
+            ; since 2026-10-04, so the operation driver can take a step
+            ; without the pre-passes above (ROADMAP-operation.md).
+            var fell false
+            let applied this.collapse_application(ops, result, &fell)
+            if fell = false
+                return applied
+            this.collapse_operators(ops, applied)
+        }
+
+        ; The application part of collapse_operand_sequence#: the first thing
+        ; of ops (handed in as planned so far) and the tuple after it -- a
+        ; call, a construction, a method on a chain. `fell` says that it was
+        ; none: the answer is then the first thing, for collapse_operators#.
+        procedure collapse_application(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable fell: ref[bool]
+        ) returns PlannedOperand
+        {
+            var result: PlannedOperand first
+
             ; Call detection: first operand followed by a Tuple. Two
             ; shapes accepted:
             ;   - free function: first operand's expr is a Type (name
@@ -16042,6 +16067,20 @@ define Planner
                     }
                 }
             }
+            set fell: true
+            result
+        }
+
+        ; The operator part of collapse_operand_sequence#: `first` is the
+        ; value so far (ops[0], or what collapse_application# made of it), and
+        ; from ops[1] on operators and their right sides follow, by the table.
+        procedure collapse_operators(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand
+        ) returns PlannedOperand
+        {
+            var result: PlannedOperand first
 
             ; s176: parenless zero-arg method call as the lhs of a binary
             ; operator (`when_case.name.length > 0`) or before a postfix
@@ -26305,6 +26344,7 @@ define Planner
                 this.operation_census_line("driver-step-call-chain", 41)
                 this.operation_census_line("driver-step-postfix", 42)
                 this.operation_census_line("driver-step-table", 43)
+                this.operation_census_line("driver-own-application", 44)
             }
         }
 
@@ -26467,6 +26507,50 @@ define Planner
             this.operation_step(vec, slot)
         }
 
+        ; Is the tuple after cur applied by collapse_application# alone? Not
+        ; where one of the pair pre-passes of the old collapse owns it: a
+        ; lambda bound to a name, a delegate value, a pointer local (the
+        ; indirect call of the JIT).
+        procedure operation_call_is_plain(mutable this: Planner, cur: PlannedOperand) returns bool
+        {
+            if this.lambda_head_name(cur).get_length() > 0
+                return false
+            choose cur.expr
+                when v: Variable
+                {
+                    if cur.member_access = null and this.is_delegate_type(v.variable_type.name)
+                        return false
+                    ; pointer[void]: the indirect call
+                    if v.variable_type.name = "pointer" and v.variable_type.generics <> null
+                    {
+                        let gens (*v.variable_type.generics)
+                        if gens.length = 1 and gens[0].name = "void"
+                            return false
+                    }
+                }
+                else
+                    0
+            true
+        }
+
+        ; The step of a current value and its tuple, in a routine of its own:
+        ; the application part of the old collapse without its pre-passes,
+        ; and its operator part where the pair is no application.
+        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) returns PlannedOperand
+        {
+            this.operation_count(slot)
+            this.operation_count(44)
+            var arr Array[PlannedOperand]()
+            arr.add cur
+            arr.add next
+            var vec Vector[PlannedOperand](arr)
+            var fell false
+            let applied this.collapse_application(vec, cur, &fell)
+            if fell = false
+                return applied
+            this.collapse_operators(vec, applied)
+        }
+
         ; a tuple or a vector literal with a member hop riding on it
         ; (`a.b(1).c`, `files[k].equals`)
         function thing_carries_hop(op: PlannedOperand) returns bool
@@ -26534,7 +26618,10 @@ define Planner
                         if kind = 5
                             set slot: 37
                     }
-                    set cur: this.operation_pair(cur, next, slot)
+                    if kind = 4 and this.operation_call_is_plain(cur)
+                        set cur: this.operation_call(cur, next, slot)
+                    else
+                        set cur: this.operation_pair(cur, next, slot)
                     set k: k + 1
                 }
             }

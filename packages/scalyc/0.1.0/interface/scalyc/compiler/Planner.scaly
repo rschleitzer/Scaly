@@ -3417,6 +3417,26 @@ define Planner
             mutable ops: Vector[PlannedOperand]
         ) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
+        ; The application part of collapse_operand_sequence#: the first thing
+        ; of ops (handed in as planned so far) and the tuple after it -- a
+        ; call, a construction, a method on a chain. `fell` says that it was
+        ; none: the answer is then the first thing, for collapse_operators#.
+        procedure collapse_application(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable fell: ref[bool]
+        ) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+        ; The operator part of collapse_operand_sequence#: `first` is the
+        ; value so far (ops[0], or what collapse_application# made of it), and
+        ; from ops[1] on operators and their right sides follow, by the table.
+        procedure collapse_operators(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand
+        ) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
         ; check_operator_match: test a single Operator candidate against
         ; argument types. Same shape as check_function_match.
         procedure check_operator_match(
@@ -4453,6 +4473,17 @@ define Planner
 
         ; the step of a current value and the ONE thing after it
         procedure operation_pair(mutable this: Planner, cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+        ; Is the tuple after cur applied by collapse_application# alone? Not
+        ; where one of the pair pre-passes of the old collapse owns it: a
+        ; lambda bound to a name, a delegate value, a pointer local (the
+        ; indirect call of the JIT).
+        procedure operation_call_is_plain(mutable this: Planner, cur: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+        ; The step of a current value and its tuple, in a routine of its own:
+        ; the application part of the old collapse without its pre-passes,
+        ; and its operator part where the pair is no application.
+        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
 
         ; a tuple or a vector literal with a member hop riding on it
         ; (`a.b(1).c`, `files[k].equals`)
