@@ -242,8 +242,8 @@ function Install-Scaly {
         Write-Host "  Try it, in a NEW terminal:"
         Write-Host "    'print(`"Hello, World!`")' | Set-Content hello.scaly"
         Write-Host "    scaly run hello.scaly                  run it"
-        Write-Host "    scaly build hello.scaly -o hello.exe   build a program"
-        Write-Host "    .\hello.exe"
+        Write-Host "    scaly build hello.scaly -o hello.exe   build a program ..."
+        Write-Host "    .\hello.exe                            ... and run that"
         Write-Host "    scaly                                  the REPL (:help, :quit)"
         Write-Host "  Uninstall:  Remove-Item -Recurse `"$prefix`"  (and remove its libexec directory from PATH)"
         $ok = $true

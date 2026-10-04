@@ -212,11 +212,13 @@
     <div class="section-label">First steps</div>
     <pre class="steps" data-os="macos linux">printf 'print("Hello, World!")\n' &gt; hello.scaly
 scaly run hello.scaly              <span class="comment"># run it</span>
-scaly build hello.scaly -o hello   <span class="comment"># build a program</span>
+scaly build hello.scaly -o hello   <span class="comment"># build a program ...</span>
+./hello                            <span class="comment"># ... and run that</span>
 scaly                              <span class="comment"># the REPL (:help, :quit)</span></pre>
     <pre class="steps" data-os="windows">'print("Hello, World!")' | Set-Content hello.scaly
 scaly run hello.scaly                  <span class="comment"># run it</span>
-scaly build hello.scaly -o hello.exe   <span class="comment"># build a program</span>
+scaly build hello.scaly -o hello.exe   <span class="comment"># build a program ...</span>
+.\hello.exe                            <span class="comment"># ... and run that</span>
 scaly                                  <span class="comment"># the REPL (:help, :quit)</span></pre>
     <p class="muted" style="margin-top:16px">Then: the <a href="../lang/tutorial.htm">tutorial</a>, the <a href="../lang/">language reference</a>, and the <a href="../downloads/scaly-vscode.vsix">VS Code extension</a>.</p>
 

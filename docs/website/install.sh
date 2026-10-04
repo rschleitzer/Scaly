@@ -440,7 +440,8 @@ scaly-install: done. Scaly $VERSION is installed in $PREFIX.
   Try it:
     printf 'print("Hello, World!")\\n' > hello.scaly
     scaly run hello.scaly              run it
-    scaly build hello.scaly -o hello   build a program
+    scaly build hello.scaly -o hello   build a program ...
+    ./hello                            ... and run that
     scaly                              the REPL (:help, :quit)
   Uninstall:  rm -rf "$PREFIX"  (and remove the PATH line above)
 EOF
