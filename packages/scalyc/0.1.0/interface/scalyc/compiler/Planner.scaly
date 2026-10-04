@@ -3471,7 +3471,32 @@ define Planner
             mutable ops: Vector[PlannedOperand],
             mutable first: PlannedOperand,
             mutable fell: ref[bool]
-        ) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+        ) @page true @direct true @stores true @deep true @deep_this_4 true returns PlannedOperand io linked
+
+        ; A type applied to a tuple, of collapse_application#: the construction
+        ; -- through the `init` the arguments match, else by position. ops[0]
+        ; is the type (handed in as `first`), `second` its tuple; what follows
+        ; in ops is collapsed behind the constructed value.
+        procedure collapse_construction(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable second: PlannedOperand,
+            mutable fn_name: String,
+            mutable ctor_struct_type: PlannedType
+        ) @page true @direct true @stores true @deep true @deep_this_32 true returns PlannedOperand io linked
+
+        ; A union's variant applied to a tuple, of collapse_application#: the
+        ; variant construction, its payload the tuple's one component.
+        procedure collapse_variant(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable second: PlannedOperand,
+            mutable ctor_union_type: PlannedType,
+            ctor_variant_name: String,
+            ctor_variant_tag: size_t
+        ) @page true @direct true @stores true @deep true @deep_this_62 true returns PlannedOperand io linked
 
         ; The operator part of collapse_operand_sequence#: `first` is the
         ; value so far (ops[0], or what collapse_application# made of it), and
@@ -4541,26 +4566,26 @@ define Planner
         ; A step taken without the pre-passes of the old collapse: its
         ; application part, and its operator part where the things are no
         ; application. `first` is things[0].
-        procedure operation_apply(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable first: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+        procedure operation_apply(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable first: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_4 true returns PlannedOperand io linked
 
         ; A step with a vector literal or a sigil in it, by the pair
         ; pre-passes of the old collapse in their order -- generic arguments,
         ; sigil, subscript --, and its application part where none of them
         ; takes it.
-        procedure operation_merge(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable first: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+        procedure operation_merge(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable first: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_4 true returns PlannedOperand io linked
 
         ; the pair of a current value and its vector literal or sigil
-        procedure operation_merge_pair(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+        procedure operation_merge_pair(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
         ; the prefix and its term, by the prefix part of the old collapse
-        procedure operation_prefix(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable sign: PlannedOperand) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+        procedure operation_prefix(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable sign: PlannedOperand) @page true @direct true @stores true @deep true @deep_this_4 true returns PlannedOperand io linked
 
         ; the call without parentheses, by its part of the old collapse
-        procedure operation_parenless(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+        procedure operation_parenless(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
         ; The step of a current value and its tuple, or of the operation so
         ; far and a postfix, in a routine of its own (operation_apply#).
-        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
         ; a tuple or a vector literal with a member hop riding on it
         ; (`a.b(1).c`, `files[k].equals`)

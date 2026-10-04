@@ -13517,503 +13517,14 @@ define Planner
                             }
                         }
 
+                        ; the construction and the variant are routines of their
+                        ; own since 2026-10-04 (ROADMAP-operation.md): what a
+                        ; tuple is applied to decides the step
                         if is_struct_ctor
-                        {
-                            ; A CROSS-PACKAGE struct constructed here (e.g. the
-                            ; dazzle package building an opensp MessageType) is
-                            ; never reached by the module walk that lays out
-                            ; in-package structs; lay it out on demand — the
-                            ; same treatment the is_variant_ctor branch below
-                            ; gives generic union ctors. Without it, map_type
-                            ; falls to the s114 { ptr } placeholder and the
-                            ; construction (plus every dependent statement)
-                            ; drops silently. ensure_member_layout recurses
-                            ; into by-value field types, so nested structs and
-                            ; union fields (MessageFragment, Severity)
-                            ; materialize too. No-op for in-package/planned/
-                            ; opaque-stdlib/generic concepts.
-                            this.ensure_layout_by_name(fn_name)
-                            ; s81: ctor-call diversion. When find_initializer#
-                            ; matches an init# overload (page_parameter set),
-                            ; build a PlannedCall with C1 mangling and divert
-                            ; to emit_constructor_call (Page::allocate + ctor
-                            ; call). Without this, every T/T#/T^ goes
-                            ; through the stack-alloc reshape below, which
-                            ; only works for "data class" structs without
-                            ; custom init# logic. Heavy users like String,
-                            ; Vector, StringBuilder rely on init# for proper
-                            ; internal state (varint length, etc.). The
-                            ; init# bodies are emitted by the synthesized
-                            ; PlannedFunction wrapper in plan_initializer#.
-                            let ctor_arg_types Planner.extract_arg_types(second)
-                            ; Match the initializers in the CONSTRUCTED
-                            ; concept's own generic scope — see
-                            ; enter_concept_generic_scope#.
-                            let ctor_scope this.enter_concept_generic_scope(fn_name, ctor_struct_type)
-                            let init_match this.find_initializer(fn_name, ctor_arg_types)
-                            this.leave_concept_generic_scope(ctor_scope)
-                            if init_match <> null
-                            {
-                                let ini_match (*init_match)
-                                ; s84: the page_parameter if was load-bearing
-                                ; under s81 because the `requires_page_param=true`
-                                ; field below was hard-coded — without page on the
-                                ; init, emit_constructor_call would still pass an
-                                ; extra page arg, mismatching the C1 ABI.
-                                ; Now we propagate `init# vs init` into
-                                ; `requires_page_param`, enabling `Options()`
-                                ; (where Options has only `init()` (no #)) to
-                                ; route through emit_constructor_call: heap-
-                                ; allocate via Page::allocate, call C1 with
-                                ; `this` only. Mirrors stage-0's
-                                ; cli.test() IR for `var opts Options()`.
-                                {
-                                    let has_page_param ini_match.page_parameter <> null
-                                    ; The C1 symbol encodes the init's declared
-                                    ; parameter types, so they must be planned
-                                    ; in the same scope they were MATCHED in —
-                                    ; the concept's own. This used to append
-                                    ; the bindings to the ambient stack, which
-                                    ; a stale binding of the same name silently
-                                    ; won over (first entry wins), mangling a
-                                    ; foreign type into the symbol.
-                                    let mangle_scope this.enter_concept_generic_scope(fn_name, ctor_struct_type)
-                                    let init_input_items this.plan_items(ini_match.input)
-                                    this.leave_concept_generic_scope(mangle_scope)
-                                    var init_input_holder Vector[PlannedItem](init_input_items)
-
-                                    let parent_ref &^this ctor_struct_type
-
-                                    let c1_mangled Planner.mangle_function(
-                                        "init", &init_input_holder, parent_ref, has_page_param
-                                    )
-
-                                    var ctor_call_args Array[PlannedOperand]()
-                                    choose second.expr
-                                        when tp_args: PlannedTuple
-                                        {
-                                            if tp_args.components <> null
-                                            {
-                                                let comps_args (*tp_args.components)
-                                                var ai: size_t 0
-                                                while ai < comps_args.length
-                                                {
-                                                    let cap_ptr comps_args.get ai
-                                                    if cap_ptr <> null
-                                                    {
-                                                        let cap (*cap_ptr)
-                                                        if cap.value <> null
-                                                        {
-                                                            let cvals (*cap.value)
-                                                            let collapsed_arg this.collapse_operand_sequence(cvals)
-                                                            ctor_call_args.add collapsed_arg
-                                                        }
-                                                    }
-                                                    set ai: ai + 1
-                                                }
-                                            }
-                                        }
-                                        else
-                                            0
-                                    var ctor_args_vec Vector[PlannedOperand](ctor_call_args)
-
-                                    ; Coerce String-literal args bound to a
-                                    ; pointer[const_char]-like init parameter to a
-                                    ; raw c_data pointer (and fold single-char
-                                    ; literals to char) — the SAME lowering regular
-                                    ; calls get (coerce_string_args_to_cstr#). A
-                                    ; constructor call skipped this, so
-                                    ; `StringC("AB")` (whose only 1-arg init takes
-                                    ; pointer[const_char]) passed the String { ptr }
-                                    ; record where the init wanted a NUL-terminated
-                                    ; cstring — strlen/deref then read the pointer
-                                    ; bytes as text (garbage size). param_types come
-                                    ; from the matched init's items; the length-
-                                    ; guard inside makes an implicit page param a
-                                    ; no-op. Neutral for the compiler: a literal
-                                    ; matching a String-param ctor (String's copy
-                                    ; init) is not const_char, so nothing wraps.
-                                    var ctor_ptypes_arr Array[PlannedType]()
-                                    var ctor_cpi: size_t 0
-                                    while ctor_cpi < init_input_items.length
-                                    {
-                                        let ctor_iip init_input_items.get ctor_cpi
-                                        if ctor_iip <> null and ctor_iip.item_type <> null
-                                            ctor_ptypes_arr.add((*ctor_iip.item_type))
-                                        set ctor_cpi: ctor_cpi + 1
-                                    }
-                                    var ctor_ptypes Vector[PlannedType](ctor_ptypes_arr)
-                                    this.report_null_into_ref_arg(ctor_args_vec, ctor_ptypes, fn_name)
-                                    set ctor_args_vec: this.coerce_string_args_to_cstr(ctor_args_vec, ctor_ptypes)
-                                    set ctor_args_vec: this.fold_string_args_to_char(ctor_args_vec, ctor_ptypes)
-
-                                    ; Page inference, rule 1 (default-to-local
-                                    ; construction): a no-sigil construction of
-                                    ; a heap-backed type (its init takes a page —
-                                    ; `has_page_param`) carries Unspecified life,
-                                    ; which leaves emit_constructor_call with no
-                                    ; page to allocate on (garbage page → SIGSEGV).
-                                    ; Default it to the function's local page,
-                                    ; exactly as an explicit `$` would. The escape
-                                    ; checker promotes it to the caller page when
-                                    ; the result escapes (return/store). This is
-                                    ; the first step of abolishing the `$`/`#`
-                                    ; sigils: the programmer writes `StringBuilder()`
-                                    ; and the compiler picks the page.
-                                    ; Default to Local also when the matched
-                                    ; init has no page param (has_page_param
-                                    ; false) but the concept's own bodies derive
-                                    ; a page from `this` (^this constructions or
-                                    ; Page.get(this) — Array/List/builders/...):
-                                    ; its no-arg init() leaves life Unspecified,
-                                    ; which would stack-allocate, but the instance
-                                    ; must live on a page. Mirrors the reshape-path
-                                    ; rule 1. Only fires for Unspecified life, so
-                                    ; explicit #/^ constructions are unchanged.
-                                    var ctor_heap_default: bool has_page_param
-                                    if has_page_param = false and this.instantiated_type_needs_residency(fn_name, ctor_struct_type)
-                                        set ctor_heap_default: true
-                                    var eff_ctor_life: Lifetime ctor_struct_type.life
-                                    if ctor_heap_default
-                                        choose ctor_struct_type.life
-                                            when u: Unspecified
-                                                set eff_ctor_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
-                                            else
-                                                0
-                                    ; Page inference, step-D adoption (ctor
-                                    ; path): an explicit-^ ctor's defaulted args
-                                    ; adopt the ctor's page — an inline
-                                    ; construction in an arg position of
-                                    ; `T^page(...)` becomes a field of the ^page
-                                    ; aggregate, so its guts must live there
-                                    ; too. restamp_args keeps borrows/explicit-
-                                    ; lifetime args verbatim, so sigiled source
-                                    ; is unchanged. NOTE the ref-reassign shape
-                                    ; is LOAD-BEARING: `set ctor_args_vec:
-                                    ; (*adopted)` — a deref-copy into the
-                                    ; promoted Vector binding — hits a latent
-                                    ; emit_action gap (ptr slot + ptr deref.tmp
-                                    ; source -> raw pointer store to a pooled
-                                    ; STACK temp) and dangles nondeterministically.
-                                    var ctor_args_ref: ref[Vector[PlannedOperand]]? &ctor_args_vec
-                                    choose eff_ctor_life
-                                        when adopt_r: Reference
-                                        {
-                                            let adopted this.restamp_args(ctor_args_vec, eff_ctor_life)
-                                            if adopted <> null
-                                                set ctor_args_ref: adopted
-                                        }
-                                        ; `T#(...)` the same: its inline args
-                                        ; become fields of the caller-page
-                                        ; aggregate (2026-09-25; `&Leaf#(v,
-                                        ; String("x"))` left the String on
-                                        ; the released frame)
-                                        when adopt_c: Call
-                                        {
-                                            let adopted_c this.restamp_args(ctor_args_vec, eff_ctor_life)
-                                            if adopted_c <> null
-                                                set ctor_args_ref: adopted_c
-                                        }
-                                        else
-                                            0
-
-                                    let ctor_call PlannedCall(
-                                        second.loc,
-                                        "init",
-                                        c1_mangled,
-                                        false,
-                                        false,
-                                        false,
-                                        has_page_param,
-                                        ctor_args_ref,
-                                        ctor_struct_type,
-                                        eff_ctor_life,
-                                        null,
-                                        false
-                                    )
-                                    set result: this.rebind_trailing_chain(PlannedOperand(
-                                        second.loc,
-                                        PlannedExpression.Call ctor_call,
-                                        second.member_access,
-                                        ctor_struct_type
-                                    ))
-                                    if ops.length > 2
-                                    {
-                                        var remaining_c Array[PlannedOperand]()
-                                        remaining_c.add result
-                                        var rrc: size_t 2
-                                        while rrc < ops.length
-                                        {
-                                            let prc_ptr ops.get rrc
-                                            if prc_ptr <> null
-                                                remaining_c.add((*prc_ptr))
-                                            set rrc: rrc + 1
-                                        }
-                                        var remaining_cv Vector[PlannedOperand](remaining_c)
-                                        return this.collapse_operand_sequence(remaining_cv)
-                                    }
-                                    return result
-                                }
-                            }
-
-                            ; Reshape the tuple to set tuple_type to the
-                            ; struct type. Stack allocation only for now
-                            ; (Lifetime.Unspecified — heap $/#/^ deferred).
-                            ; Falls through here when find_initializer#
-                            ; didn't match (data classes without init#) or
-                            ; when init has no page_parameter (stack-only
-                            ; init, currently unused).
-                            var components_holder: ref[Vector[PlannedComponent]]? null
-                            ; Collapse each component's operand sequence so
-                            ; nested struct/union ctors and other multi-
-                            ; operand expressions become a single planned
-                            ; operand. emit_operands only walks the first
-                            ; operand of a component value, so without
-                            ; collapsing, `Parser(Lexer 7)` would drop the
-                            ; inner Tuple and emit only the bare `Type(Lexer)`
-                            ; operand — SEGV at LLVMTypeOf on null.
-                            choose second.expr
-                                when tp: PlannedTuple
-                                {
-                                    if tp.components <> null
-                                    {
-                                        let comps_in (*tp.components)
-                                        var new_comps Array[PlannedComponent]()
-                                        var ci: size_t 0
-                                        while ci < comps_in.length
-                                        {
-                                            let cp comps_in.get ci
-                                            if cp <> null
-                                            {
-                                                let cc (*cp)
-                                                var nc_value: ref[Vector[PlannedOperand]]? cc.value
-                                                if cc.value <> null
-                                                {
-                                                    let vals (*cc.value)
-                                                    if vals.length > 1
-                                                    {
-                                                        let collapsed this.collapse_operand_sequence(vals)
-                                                        var one_arr Array[PlannedOperand]()
-                                                        one_arr.add collapsed
-                                                        var one_vec Vector[PlannedOperand](one_arr)
-                                                        set nc_value: &one_vec
-                                                    }
-                                                }
-                                                new_comps.add(PlannedComponent(
-                                                    cc.loc, cc.name, nc_value, cc.attributes
-                                                ))
-                                            }
-                                            set ci: ci + 1
-                                        }
-                                        var new_comps_holder Vector[PlannedComponent](new_comps)
-                                        set components_holder: &new_comps_holder
-                                    }
-                                }
-                                else
-                                    0
-
-                            ; Field defaults: append a planned default component
-                            ; for every property the construction omitted
-                            ; (`Config()` / `Config(true)` with defaulted fields).
-                            ; No-op for a full construction or a plain tuple.
-                            ; Mirrors stage-0 Planner.cpp:9229-9275.
-                            ; A LABELLED component list is resolved and put in
-                            ; declaration order FIRST -- everything below this
-                            ; line reasons about position, including the arity
-                            ; fill and the type check, and a name that has not
-                            ; been placed yet would make all three answer about
-                            ; the wrong field (reorder_named_components#).
-                            set components_holder: this.reorder_named_components(fn_name, second.loc, components_holder, ctor_struct_type)
-
-                            set components_holder: this.fill_default_components(fn_name, second.loc, components_holder, ctor_struct_type, ctor_arg_types)
-
-                            ; A String literal bound to a pointer[const_char]-
-                            ; like FIELD is the c_data pointer, not the varint
-                            ; String record -- the tuple path's counterpart of
-                            ; the coercion every resolved call gets
-                            ; (coerce_string_components_to_cstr#). Runs AFTER
-                            ; the defaults are filled so a defaulted field's
-                            ; own literal is covered by the same walk.
-                            set components_holder: this.coerce_string_components_to_cstr(fn_name, components_holder, ctor_struct_type)
-                            set components_holder: this.deref_ref_components(fn_name, components_holder)
-
-                            ; The type check for this path. AFTER the coercion
-                            ; above, whose whole job is to give a String
-                            ; literal the field's cstr type.
-                            this.report_component_type_mismatch(fn_name, second.loc, components_holder, ctor_struct_type)
-
-                            ; Propagate the type's lifetime into the tuple.
-                            ; ctor_struct_type carries the lifetime from the
-                            ; lifetime marker merge (above) — `Plan(...)` has
-                            ; life=Call; `String(...)` has life=Local; etc.
-                            ; Non-Unspecified life ⇒ heap allocation
-                            ; (emit_tuple respects is_region_alloc by calling
-                            ; Page::allocate on the appropriate page).
-                            ; Page inference rule 1 (reshape path): a no-sigil
-                            ; construction of a residency-needing type (its own
-                            ; bodies derive a page from `this`) that matched no
-                            ; init# here carries Unspecified life and would
-                            ; stack-allocate — but the instance MUST live on a
-                            ; page (a stack base gives a garbage page). Default
-                            ; it to the function's local page; the escape checker
-                            ; promotes to the caller page on escape. Plain value
-                            ; structs stay Unspecified -> stack. Existing #/^
-                            ; constructions already carry a non-Unspecified
-                            ; life, so this only fires for de-sigiled sources
-                            ; (emission-neutral otherwise).
-                            var reshape_life: Lifetime ctor_struct_type.life
-                            choose ctor_struct_type.life
-                                when u: Unspecified
-                                    if this.instantiated_type_needs_residency(fn_name, ctor_struct_type)
-                                        set reshape_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
-                                else
-                                    0
-
-                            ; Page inference, step-D adoption (reshape path): a
-                            ; data-class construction with an explicit ^ life
-                            ; adopts its defaulted component constructions onto
-                            ; the same page — `TypeVariable^this(id,
-                            ; String(name))`'s String must live where the
-                            ; TypeVariable lives, not on the released local
-                            ; page. Ref-reassign shape (see the ctor-path note).
-                            choose reshape_life
-                                when adopt_r2: Reference
-                                {
-                                    if components_holder <> null
-                                    {
-                                        let adopted_comps this.restamp_components((*components_holder), reshape_life)
-                                        if adopted_comps <> null
-                                            set components_holder: adopted_comps
-                                    }
-                                }
-                                ; `T#(...)`: the caller page, the same way
-                                when adopt_c2: Call
-                                {
-                                    if components_holder <> null
-                                    {
-                                        let adopted_comps_c this.restamp_components((*components_holder), reshape_life)
-                                        if adopted_comps_c <> null
-                                            set components_holder: adopted_comps_c
-                                    }
-                                }
-                                else
-                                    0
-
-                            var is_region: bool false
-                            choose reshape_life
-                                when u: Unspecified
-                                    0
-                                else
-                                    set is_region: true
-
-                            let reshaped PlannedTuple(
-                                second.loc,
-                                components_holder,
-                                ctor_struct_type,
-                                is_region,
-                                reshape_life,
-                                null
-                            )
-                            set result: this.rebind_trailing_chain(PlannedOperand(
-                                second.loc,
-                                PlannedExpression.Tuple reshaped,
-                                second.member_access,
-                                ctor_struct_type
-                            ))
-                            if ops.length > 2
-                            {
-                                var remaining Array[PlannedOperand]()
-                                remaining.add result
-                                var rr: size_t 2
-                                while rr < ops.length
-                                {
-                                    let p_ptr ops.get rr
-                                    if p_ptr <> null
-                                        remaining.add((*p_ptr))
-                                    set rr: rr + 1
-                                }
-                                var remaining_vec Vector[PlannedOperand](remaining)
-                                return this.collapse_operand_sequence(remaining_vec)
-                            }
-                            return result
-                        }
+                            return this.collapse_construction(ops, result, second, fn_name, ctor_struct_type)
 
                         if is_variant_ctor
-                        {
-                            ; A CROSS-PACKAGE generic union constructed here
-                            ; (Option[int].Some(7), Result[int,bool].Ok(x))
-                            ; is never reached by the module walk that lays
-                            ; out in-package unions, so lay it out on demand —
-                            ; otherwise emit_variant_construction misses the
-                            ; struct cache and silently returns null, dropping
-                            ; the whole binding. No-op for in-package unions
-                            ; (already instantiated) and opaque stdlib types.
-                            this.ensure_union_layout(ctor_union_type.name)
-                            ; Build a PlannedVariantConstruction. The
-                            ; tuple's first component carries the payload
-                            ; for variants like Some(int); empty `()`
-                            ; produces a payload-less variant.
-                            var payload_holder: ref[PlannedOperand]? null
-                            choose second.expr
-                                when tp: PlannedTuple
-                                {
-                                    if tp.components <> null
-                                    {
-                                        let comps (*tp.components)
-                                        if comps.length > 0
-                                        {
-                                            this.report_variant_arg_arity(ctor_union_type.name, ctor_variant_name, comps.length, second.loc)
-                                            let c_ptr comps.get 0
-                                            if c_ptr <> null
-                                            {
-                                                let c (*c_ptr)
-                                                if c.value <> null
-                                                {
-                                                    let v (*c.value)
-                                                    let collapsed this.collapse_operand_sequence(v)
-                                                    set payload_holder: &^this collapsed
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                else
-                                    0
-                            this.report_variant_payload_shape(ctor_union_type.name, ctor_variant_name, payload_holder, second.loc)
-
-                            let vc PlannedVariantConstruction(
-                                second.loc,
-                                ctor_union_type,
-                                ctor_variant_name,
-                                ctor_variant_tag,
-                                payload_holder
-                            )
-                            ; s184: keep a trailing member chain on the
-                            ; construction result (`Option.Some(5).value`)
-                            ; — same rule as the struct-ctor sites.
-                            set result: this.rebind_trailing_chain(PlannedOperand(
-                                second.loc,
-                                PlannedExpression.VariantConstruction vc,
-                                second.member_access,
-                                ctor_union_type
-                            ))
-                            if ops.length > 2
-                            {
-                                var remaining Array[PlannedOperand]()
-                                remaining.add result
-                                var rr: size_t 2
-                                while rr < ops.length
-                                {
-                                    let p_ptr ops.get rr
-                                    if p_ptr <> null
-                                        remaining.add((*p_ptr))
-                                    set rr: rr + 1
-                                }
-                                var remaining_vec Vector[PlannedOperand](remaining)
-                                return this.collapse_operand_sequence(remaining_vec)
-                            }
-                            return result
-                        }
+                            return this.collapse_variant(ops, result, second, ctor_union_type, ctor_variant_name, ctor_variant_tag)
 
                         ; s90: collapse each tuple component's operand
                         ; sequence before reading result_type so binary
@@ -16165,6 +15676,527 @@ define Planner
             }
             set fell: true
             result
+        }
+
+        ; A type applied to a tuple, of collapse_application#: the construction
+        ; -- through the `init` the arguments match, else by position. ops[0]
+        ; is the type (handed in as `first`), `second` its tuple; what follows
+        ; in ops is collapsed behind the constructed value.
+        procedure collapse_construction(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable second: PlannedOperand,
+            mutable fn_name: String,
+            mutable ctor_struct_type: PlannedType
+        ) returns PlannedOperand
+        {
+            var result: PlannedOperand first
+                            ; A CROSS-PACKAGE struct constructed here (e.g. the
+                            ; dazzle package building an opensp MessageType) is
+                            ; never reached by the module walk that lays out
+                            ; in-package structs; lay it out on demand — the
+                            ; same treatment the is_variant_ctor branch below
+                            ; gives generic union ctors. Without it, map_type
+                            ; falls to the s114 { ptr } placeholder and the
+                            ; construction (plus every dependent statement)
+                            ; drops silently. ensure_member_layout recurses
+                            ; into by-value field types, so nested structs and
+                            ; union fields (MessageFragment, Severity)
+                            ; materialize too. No-op for in-package/planned/
+                            ; opaque-stdlib/generic concepts.
+                            this.ensure_layout_by_name(fn_name)
+                            ; s81: ctor-call diversion. When find_initializer#
+                            ; matches an init# overload (page_parameter set),
+                            ; build a PlannedCall with C1 mangling and divert
+                            ; to emit_constructor_call (Page::allocate + ctor
+                            ; call). Without this, every T/T#/T^ goes
+                            ; through the stack-alloc reshape below, which
+                            ; only works for "data class" structs without
+                            ; custom init# logic. Heavy users like String,
+                            ; Vector, StringBuilder rely on init# for proper
+                            ; internal state (varint length, etc.). The
+                            ; init# bodies are emitted by the synthesized
+                            ; PlannedFunction wrapper in plan_initializer#.
+                            let ctor_arg_types Planner.extract_arg_types(second)
+                            ; Match the initializers in the CONSTRUCTED
+                            ; concept's own generic scope — see
+                            ; enter_concept_generic_scope#.
+                            let ctor_scope this.enter_concept_generic_scope(fn_name, ctor_struct_type)
+                            let init_match this.find_initializer(fn_name, ctor_arg_types)
+                            this.leave_concept_generic_scope(ctor_scope)
+                            if init_match <> null
+                            {
+                                let ini_match (*init_match)
+                                ; s84: the page_parameter if was load-bearing
+                                ; under s81 because the `requires_page_param=true`
+                                ; field below was hard-coded — without page on the
+                                ; init, emit_constructor_call would still pass an
+                                ; extra page arg, mismatching the C1 ABI.
+                                ; Now we propagate `init# vs init` into
+                                ; `requires_page_param`, enabling `Options()`
+                                ; (where Options has only `init()` (no #)) to
+                                ; route through emit_constructor_call: heap-
+                                ; allocate via Page::allocate, call C1 with
+                                ; `this` only. Mirrors stage-0's
+                                ; cli.test() IR for `var opts Options()`.
+                                {
+                                    let has_page_param ini_match.page_parameter <> null
+                                    ; The C1 symbol encodes the init's declared
+                                    ; parameter types, so they must be planned
+                                    ; in the same scope they were MATCHED in —
+                                    ; the concept's own. This used to append
+                                    ; the bindings to the ambient stack, which
+                                    ; a stale binding of the same name silently
+                                    ; won over (first entry wins), mangling a
+                                    ; foreign type into the symbol.
+                                    let mangle_scope this.enter_concept_generic_scope(fn_name, ctor_struct_type)
+                                    let init_input_items this.plan_items(ini_match.input)
+                                    this.leave_concept_generic_scope(mangle_scope)
+                                    var init_input_holder Vector[PlannedItem](init_input_items)
+
+                                    let parent_ref &^this ctor_struct_type
+
+                                    let c1_mangled Planner.mangle_function(
+                                        "init", &init_input_holder, parent_ref, has_page_param
+                                    )
+
+                                    var ctor_call_args Array[PlannedOperand]()
+                                    choose second.expr
+                                        when tp_args: PlannedTuple
+                                        {
+                                            if tp_args.components <> null
+                                            {
+                                                let comps_args (*tp_args.components)
+                                                var ai: size_t 0
+                                                while ai < comps_args.length
+                                                {
+                                                    let cap_ptr comps_args.get ai
+                                                    if cap_ptr <> null
+                                                    {
+                                                        let cap (*cap_ptr)
+                                                        if cap.value <> null
+                                                        {
+                                                            let cvals (*cap.value)
+                                                            let collapsed_arg this.collapse_operand_sequence(cvals)
+                                                            ctor_call_args.add collapsed_arg
+                                                        }
+                                                    }
+                                                    set ai: ai + 1
+                                                }
+                                            }
+                                        }
+                                        else
+                                            0
+                                    var ctor_args_vec Vector[PlannedOperand](ctor_call_args)
+
+                                    ; Coerce String-literal args bound to a
+                                    ; pointer[const_char]-like init parameter to a
+                                    ; raw c_data pointer (and fold single-char
+                                    ; literals to char) — the SAME lowering regular
+                                    ; calls get (coerce_string_args_to_cstr#). A
+                                    ; constructor call skipped this, so
+                                    ; `StringC("AB")` (whose only 1-arg init takes
+                                    ; pointer[const_char]) passed the String { ptr }
+                                    ; record where the init wanted a NUL-terminated
+                                    ; cstring — strlen/deref then read the pointer
+                                    ; bytes as text (garbage size). param_types come
+                                    ; from the matched init's items; the length-
+                                    ; guard inside makes an implicit page param a
+                                    ; no-op. Neutral for the compiler: a literal
+                                    ; matching a String-param ctor (String's copy
+                                    ; init) is not const_char, so nothing wraps.
+                                    var ctor_ptypes_arr Array[PlannedType]()
+                                    var ctor_cpi: size_t 0
+                                    while ctor_cpi < init_input_items.length
+                                    {
+                                        let ctor_iip init_input_items.get ctor_cpi
+                                        if ctor_iip <> null and ctor_iip.item_type <> null
+                                            ctor_ptypes_arr.add((*ctor_iip.item_type))
+                                        set ctor_cpi: ctor_cpi + 1
+                                    }
+                                    var ctor_ptypes Vector[PlannedType](ctor_ptypes_arr)
+                                    this.report_null_into_ref_arg(ctor_args_vec, ctor_ptypes, fn_name)
+                                    set ctor_args_vec: this.coerce_string_args_to_cstr(ctor_args_vec, ctor_ptypes)
+                                    set ctor_args_vec: this.fold_string_args_to_char(ctor_args_vec, ctor_ptypes)
+
+                                    ; Page inference, rule 1 (default-to-local
+                                    ; construction): a no-sigil construction of
+                                    ; a heap-backed type (its init takes a page —
+                                    ; `has_page_param`) carries Unspecified life,
+                                    ; which leaves emit_constructor_call with no
+                                    ; page to allocate on (garbage page → SIGSEGV).
+                                    ; Default it to the function's local page,
+                                    ; exactly as an explicit `$` would. The escape
+                                    ; checker promotes it to the caller page when
+                                    ; the result escapes (return/store). This is
+                                    ; the first step of abolishing the `$`/`#`
+                                    ; sigils: the programmer writes `StringBuilder()`
+                                    ; and the compiler picks the page.
+                                    ; Default to Local also when the matched
+                                    ; init has no page param (has_page_param
+                                    ; false) but the concept's own bodies derive
+                                    ; a page from `this` (^this constructions or
+                                    ; Page.get(this) — Array/List/builders/...):
+                                    ; its no-arg init() leaves life Unspecified,
+                                    ; which would stack-allocate, but the instance
+                                    ; must live on a page. Mirrors the reshape-path
+                                    ; rule 1. Only fires for Unspecified life, so
+                                    ; explicit #/^ constructions are unchanged.
+                                    var ctor_heap_default: bool has_page_param
+                                    if has_page_param = false and this.instantiated_type_needs_residency(fn_name, ctor_struct_type)
+                                        set ctor_heap_default: true
+                                    var eff_ctor_life: Lifetime ctor_struct_type.life
+                                    if ctor_heap_default
+                                        choose ctor_struct_type.life
+                                            when u: Unspecified
+                                                set eff_ctor_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
+                                            else
+                                                0
+                                    ; Page inference, step-D adoption (ctor
+                                    ; path): an explicit-^ ctor's defaulted args
+                                    ; adopt the ctor's page — an inline
+                                    ; construction in an arg position of
+                                    ; `T^page(...)` becomes a field of the ^page
+                                    ; aggregate, so its guts must live there
+                                    ; too. restamp_args keeps borrows/explicit-
+                                    ; lifetime args verbatim, so sigiled source
+                                    ; is unchanged. NOTE the ref-reassign shape
+                                    ; is LOAD-BEARING: `set ctor_args_vec:
+                                    ; (*adopted)` — a deref-copy into the
+                                    ; promoted Vector binding — hits a latent
+                                    ; emit_action gap (ptr slot + ptr deref.tmp
+                                    ; source -> raw pointer store to a pooled
+                                    ; STACK temp) and dangles nondeterministically.
+                                    var ctor_args_ref: ref[Vector[PlannedOperand]]? &ctor_args_vec
+                                    choose eff_ctor_life
+                                        when adopt_r: Reference
+                                        {
+                                            let adopted this.restamp_args(ctor_args_vec, eff_ctor_life)
+                                            if adopted <> null
+                                                set ctor_args_ref: adopted
+                                        }
+                                        ; `T#(...)` the same: its inline args
+                                        ; become fields of the caller-page
+                                        ; aggregate (2026-09-25; `&Leaf#(v,
+                                        ; String("x"))` left the String on
+                                        ; the released frame)
+                                        when adopt_c: Call
+                                        {
+                                            let adopted_c this.restamp_args(ctor_args_vec, eff_ctor_life)
+                                            if adopted_c <> null
+                                                set ctor_args_ref: adopted_c
+                                        }
+                                        else
+                                            0
+
+                                    let ctor_call PlannedCall(
+                                        second.loc,
+                                        "init",
+                                        c1_mangled,
+                                        false,
+                                        false,
+                                        false,
+                                        has_page_param,
+                                        ctor_args_ref,
+                                        ctor_struct_type,
+                                        eff_ctor_life,
+                                        null,
+                                        false
+                                    )
+                                    set result: this.rebind_trailing_chain(PlannedOperand(
+                                        second.loc,
+                                        PlannedExpression.Call ctor_call,
+                                        second.member_access,
+                                        ctor_struct_type
+                                    ))
+                                    if ops.length > 2
+                                    {
+                                        var remaining_c Array[PlannedOperand]()
+                                        remaining_c.add result
+                                        var rrc: size_t 2
+                                        while rrc < ops.length
+                                        {
+                                            let prc_ptr ops.get rrc
+                                            if prc_ptr <> null
+                                                remaining_c.add((*prc_ptr))
+                                            set rrc: rrc + 1
+                                        }
+                                        var remaining_cv Vector[PlannedOperand](remaining_c)
+                                        return this.collapse_operand_sequence(remaining_cv)
+                                    }
+                                    return result
+                                }
+                            }
+
+                            ; Reshape the tuple to set tuple_type to the
+                            ; struct type. Stack allocation only for now
+                            ; (Lifetime.Unspecified — heap $/#/^ deferred).
+                            ; Falls through here when find_initializer#
+                            ; didn't match (data classes without init#) or
+                            ; when init has no page_parameter (stack-only
+                            ; init, currently unused).
+                            var components_holder: ref[Vector[PlannedComponent]]? null
+                            ; Collapse each component's operand sequence so
+                            ; nested struct/union ctors and other multi-
+                            ; operand expressions become a single planned
+                            ; operand. emit_operands only walks the first
+                            ; operand of a component value, so without
+                            ; collapsing, `Parser(Lexer 7)` would drop the
+                            ; inner Tuple and emit only the bare `Type(Lexer)`
+                            ; operand — SEGV at LLVMTypeOf on null.
+                            choose second.expr
+                                when tp: PlannedTuple
+                                {
+                                    if tp.components <> null
+                                    {
+                                        let comps_in (*tp.components)
+                                        var new_comps Array[PlannedComponent]()
+                                        var ci: size_t 0
+                                        while ci < comps_in.length
+                                        {
+                                            let cp comps_in.get ci
+                                            if cp <> null
+                                            {
+                                                let cc (*cp)
+                                                var nc_value: ref[Vector[PlannedOperand]]? cc.value
+                                                if cc.value <> null
+                                                {
+                                                    let vals (*cc.value)
+                                                    if vals.length > 1
+                                                    {
+                                                        let collapsed this.collapse_operand_sequence(vals)
+                                                        var one_arr Array[PlannedOperand]()
+                                                        one_arr.add collapsed
+                                                        var one_vec Vector[PlannedOperand](one_arr)
+                                                        set nc_value: &one_vec
+                                                    }
+                                                }
+                                                new_comps.add(PlannedComponent(
+                                                    cc.loc, cc.name, nc_value, cc.attributes
+                                                ))
+                                            }
+                                            set ci: ci + 1
+                                        }
+                                        var new_comps_holder Vector[PlannedComponent](new_comps)
+                                        set components_holder: &new_comps_holder
+                                    }
+                                }
+                                else
+                                    0
+
+                            ; Field defaults: append a planned default component
+                            ; for every property the construction omitted
+                            ; (`Config()` / `Config(true)` with defaulted fields).
+                            ; No-op for a full construction or a plain tuple.
+                            ; Mirrors stage-0 Planner.cpp:9229-9275.
+                            ; A LABELLED component list is resolved and put in
+                            ; declaration order FIRST -- everything below this
+                            ; line reasons about position, including the arity
+                            ; fill and the type check, and a name that has not
+                            ; been placed yet would make all three answer about
+                            ; the wrong field (reorder_named_components#).
+                            set components_holder: this.reorder_named_components(fn_name, second.loc, components_holder, ctor_struct_type)
+
+                            set components_holder: this.fill_default_components(fn_name, second.loc, components_holder, ctor_struct_type, ctor_arg_types)
+
+                            ; A String literal bound to a pointer[const_char]-
+                            ; like FIELD is the c_data pointer, not the varint
+                            ; String record -- the tuple path's counterpart of
+                            ; the coercion every resolved call gets
+                            ; (coerce_string_components_to_cstr#). Runs AFTER
+                            ; the defaults are filled so a defaulted field's
+                            ; own literal is covered by the same walk.
+                            set components_holder: this.coerce_string_components_to_cstr(fn_name, components_holder, ctor_struct_type)
+                            set components_holder: this.deref_ref_components(fn_name, components_holder)
+
+                            ; The type check for this path. AFTER the coercion
+                            ; above, whose whole job is to give a String
+                            ; literal the field's cstr type.
+                            this.report_component_type_mismatch(fn_name, second.loc, components_holder, ctor_struct_type)
+
+                            ; Propagate the type's lifetime into the tuple.
+                            ; ctor_struct_type carries the lifetime from the
+                            ; lifetime marker merge (above) — `Plan(...)` has
+                            ; life=Call; `String(...)` has life=Local; etc.
+                            ; Non-Unspecified life ⇒ heap allocation
+                            ; (emit_tuple respects is_region_alloc by calling
+                            ; Page::allocate on the appropriate page).
+                            ; Page inference rule 1 (reshape path): a no-sigil
+                            ; construction of a residency-needing type (its own
+                            ; bodies derive a page from `this`) that matched no
+                            ; init# here carries Unspecified life and would
+                            ; stack-allocate — but the instance MUST live on a
+                            ; page (a stack base gives a garbage page). Default
+                            ; it to the function's local page; the escape checker
+                            ; promotes to the caller page on escape. Plain value
+                            ; structs stay Unspecified -> stack. Existing #/^
+                            ; constructions already carry a non-Unspecified
+                            ; life, so this only fires for de-sigiled sources
+                            ; (emission-neutral otherwise).
+                            var reshape_life: Lifetime ctor_struct_type.life
+                            choose ctor_struct_type.life
+                                when u: Unspecified
+                                    if this.instantiated_type_needs_residency(fn_name, ctor_struct_type)
+                                        set reshape_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
+                                else
+                                    0
+
+                            ; Page inference, step-D adoption (reshape path): a
+                            ; data-class construction with an explicit ^ life
+                            ; adopts its defaulted component constructions onto
+                            ; the same page — `TypeVariable^this(id,
+                            ; String(name))`'s String must live where the
+                            ; TypeVariable lives, not on the released local
+                            ; page. Ref-reassign shape (see the ctor-path note).
+                            choose reshape_life
+                                when adopt_r2: Reference
+                                {
+                                    if components_holder <> null
+                                    {
+                                        let adopted_comps this.restamp_components((*components_holder), reshape_life)
+                                        if adopted_comps <> null
+                                            set components_holder: adopted_comps
+                                    }
+                                }
+                                ; `T#(...)`: the caller page, the same way
+                                when adopt_c2: Call
+                                {
+                                    if components_holder <> null
+                                    {
+                                        let adopted_comps_c this.restamp_components((*components_holder), reshape_life)
+                                        if adopted_comps_c <> null
+                                            set components_holder: adopted_comps_c
+                                    }
+                                }
+                                else
+                                    0
+
+                            var is_region: bool false
+                            choose reshape_life
+                                when u: Unspecified
+                                    0
+                                else
+                                    set is_region: true
+
+                            let reshaped PlannedTuple(
+                                second.loc,
+                                components_holder,
+                                ctor_struct_type,
+                                is_region,
+                                reshape_life,
+                                null
+                            )
+                            set result: this.rebind_trailing_chain(PlannedOperand(
+                                second.loc,
+                                PlannedExpression.Tuple reshaped,
+                                second.member_access,
+                                ctor_struct_type
+                            ))
+                            if ops.length > 2
+                            {
+                                var remaining Array[PlannedOperand]()
+                                remaining.add result
+                                var rr: size_t 2
+                                while rr < ops.length
+                                {
+                                    let p_ptr ops.get rr
+                                    if p_ptr <> null
+                                        remaining.add((*p_ptr))
+                                    set rr: rr + 1
+                                }
+                                var remaining_vec Vector[PlannedOperand](remaining)
+                                return this.collapse_operand_sequence(remaining_vec)
+                            }
+                            return result
+        }
+
+        ; A union's variant applied to a tuple, of collapse_application#: the
+        ; variant construction, its payload the tuple's one component.
+        procedure collapse_variant(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable second: PlannedOperand,
+            mutable ctor_union_type: PlannedType,
+            ctor_variant_name: String,
+            ctor_variant_tag: size_t
+        ) returns PlannedOperand
+        {
+            var result: PlannedOperand first
+                            ; A CROSS-PACKAGE generic union constructed here
+                            ; (Option[int].Some(7), Result[int,bool].Ok(x))
+                            ; is never reached by the module walk that lays
+                            ; out in-package unions, so lay it out on demand —
+                            ; otherwise emit_variant_construction misses the
+                            ; struct cache and silently returns null, dropping
+                            ; the whole binding. No-op for in-package unions
+                            ; (already instantiated) and opaque stdlib types.
+                            this.ensure_union_layout(ctor_union_type.name)
+                            ; Build a PlannedVariantConstruction. The
+                            ; tuple's first component carries the payload
+                            ; for variants like Some(int); empty `()`
+                            ; produces a payload-less variant.
+                            var payload_holder: ref[PlannedOperand]? null
+                            choose second.expr
+                                when tp: PlannedTuple
+                                {
+                                    if tp.components <> null
+                                    {
+                                        let comps (*tp.components)
+                                        if comps.length > 0
+                                        {
+                                            this.report_variant_arg_arity(ctor_union_type.name, ctor_variant_name, comps.length, second.loc)
+                                            let c_ptr comps.get 0
+                                            if c_ptr <> null
+                                            {
+                                                let c (*c_ptr)
+                                                if c.value <> null
+                                                {
+                                                    let v (*c.value)
+                                                    let collapsed this.collapse_operand_sequence(v)
+                                                    set payload_holder: &^this collapsed
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                    0
+                            this.report_variant_payload_shape(ctor_union_type.name, ctor_variant_name, payload_holder, second.loc)
+
+                            let vc PlannedVariantConstruction(
+                                second.loc,
+                                ctor_union_type,
+                                ctor_variant_name,
+                                ctor_variant_tag,
+                                payload_holder
+                            )
+                            ; s184: keep a trailing member chain on the
+                            ; construction result (`Option.Some(5).value`)
+                            ; — same rule as the struct-ctor sites.
+                            set result: this.rebind_trailing_chain(PlannedOperand(
+                                second.loc,
+                                PlannedExpression.VariantConstruction vc,
+                                second.member_access,
+                                ctor_union_type
+                            ))
+                            if ops.length > 2
+                            {
+                                var remaining Array[PlannedOperand]()
+                                remaining.add result
+                                var rr: size_t 2
+                                while rr < ops.length
+                                {
+                                    let p_ptr ops.get rr
+                                    if p_ptr <> null
+                                        remaining.add((*p_ptr))
+                                    set rr: rr + 1
+                                }
+                                var remaining_vec Vector[PlannedOperand](remaining)
+                                return this.collapse_operand_sequence(remaining_vec)
+                            }
+                            return result
         }
 
         ; The operator part of collapse_operand_sequence#: `first` is the
