@@ -774,7 +774,8 @@ define Planner
         ; (SCALYC_PENDING, pending_on#)
         var pending_mode: int
         ; the operation census: slot 0 the switch, the rest its counters
-        ; (operation_census#)
+        ; (operation_census#); from slot 23 the operation driver's state and
+        ; counters (operation#)
         var operation_counts: Vector[size_t]
         ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
         ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
@@ -1401,9 +1402,9 @@ define Planner
             set address_taken_locals: Array[String]^this()
             set field_written_locals: Array[String]^this()
             set pending_mode: 0
-            set operation_counts: Vector[size_t]^this(24)
+            set operation_counts: Vector[size_t]^this(48)
             var oc_i: size_t 0
-            while oc_i < 24
+            while oc_i < 48
             {
                 operation_counts.put(oc_i, 0)
                 set oc_i: oc_i + 1
@@ -11031,6 +11032,16 @@ define Planner
                     }
                 }
                 return (*only_ptr)
+            }
+
+            ; The operation driver (SCALYC_PENDING=1, operation#): the
+            ; sequence is read from the left, step by step, and what the
+            ; driver does not understand comes back here as a whole.
+            if this.pending_on()
+            {
+                let driven this.operation(ops)
+                if operation_counts[23] = 1
+                    return driven
             }
 
             ; Indirect call through a function pointer (Phase-1 JIT): `f()`
@@ -26274,6 +26285,339 @@ define Planner
             this.operation_census_line("method+empty-tuple", 17)
             this.operation_census_line("method+value", 19)
             this.operation_census_line("method-bare", 13)
+            if this.pending_on()
+            {
+                this.operation_census_line("driver-sequences", 25)
+                this.operation_census_line("driver-answered", 26)
+                this.operation_census_line("driver-left-prefix-after-operator", 27)
+                this.operation_census_line("driver-left-prefix-chained", 28)
+                this.operation_census_line("driver-left-sigil-first", 29)
+                this.operation_census_line("driver-left-other", 30)
+                this.operation_census_line("driver-left-parenless-inside", 31)
+                this.operation_census_line("driver-left-postfix-with-operators", 32)
+                this.operation_census_line("driver-step-name+tuple", 34)
+                this.operation_census_line("driver-step-name+vector", 35)
+                this.operation_census_line("driver-step-sigil", 36)
+                this.operation_census_line("driver-step-value+vector", 37)
+                this.operation_census_line("driver-step-value+tuple", 38)
+                this.operation_census_line("driver-step-prefix", 39)
+                this.operation_census_line("driver-step-parenless", 40)
+                this.operation_census_line("driver-step-call-chain", 41)
+                this.operation_census_line("driver-step-postfix", 42)
+                this.operation_census_line("driver-step-table", 43)
+            }
+        }
+
+        ; ================================================================
+        ; The operation driver (SCALYC_PENDING=1; ROADMAP-operation.md step 1,
+        ; part 2): the loop that reads a sequence from the left, in front of
+        ; collapse_operand_sequence#. It knows WHICH step comes next -- a name
+        ; and its tuple, a value and its vector literal, a prefix at the
+        ; start, a postfix -- and hands each step to the machinery there is,
+        ; as a short sequence of its own; operators still go by the table, the
+        ; folded terms and the operator names in one hand-over. A sequence it
+        ; does not understand is left to the old collapse as a whole, BEFORE
+        ; any step has run (operation_read#), so nothing is planned twice.
+        ; The yardstick is the emission: with and without the switch every
+        ; root gives the same IR. Slots of operation_counts: 23 answered by
+        ; the last call, 24 the next collapse is a step (do not ask again),
+        ; 25 sequences, 26 answered, 27-32 why one was left, 34-43 the steps.
+        ; ================================================================
+
+        ; What a planned thing of a sequence is: 1 an operator name, 2 another
+        ; name (a function, a type, a local -- a name stays a PlannedType
+        ; until a step resolves it), 3 a lifetime sigil, 4 a tuple, 5 a vector
+        ; literal, 6 a postfix (`as`, `is`), 7 a value
+        function operation_thing(this: Planner, op: PlannedOperand) returns int
+        {
+            choose op.expr
+                when ty: PlannedType
+                {
+                    if ty.name.get_length() = 0
+                        return 3
+                    if op.member_access = null and ty.generics = null
+                    {
+                        if Planner.is_operator_name(ty.name)
+                        {
+                            if this.is_function(ty.name) and this.is_operator(ty.name) = false
+                                return 2
+                            return 1
+                        }
+                        if this.is_operator(ty.name) or Planner.get_operator_precedence(ty.name) > 0
+                            return 1
+                    }
+                    return 2
+                }
+                when tp: PlannedTuple
+                    return 4
+                when mx: scalyc.compiler.Plan.PlannedMatrix
+                    return 5
+                when pa: PlannedAs
+                    return 6
+                when pi: PlannedIs
+                    return 6
+                else
+                    return 7
+            7
+        }
+
+        ; the prefix test of the old collapse: an operator by its characters
+        ; (and `abs`, `not`)
+        function operand_is_symbol_operator(op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when ty: PlannedType
+                    return Planner.is_operator_name(ty.name)
+                else
+                    return false
+            false
+        }
+
+        ; Reads a sequence without planning anything: 0 when every step of it
+        ; is one the driver knows, else the counter slot of the reason.
+        function operation_read(this: Planner, ops: Vector[PlannedOperand]) returns size_t
+        {
+            let n ops.length
+            var operators: size_t 0
+            var postfixes: size_t 0
+            var i: size_t 0
+            while i < n
+            {
+                ; a term begins here; an operator name where there is no
+                ; value yet is a prefix, and that is at the start only
+                var kind this.operation_thing(ops[i])
+                if kind = 1
+                {
+                    if i > 0
+                        return 27
+                    if Planner.operand_is_symbol_operator(ops[0]) = false
+                        return 30
+                    set i: 1
+                    set kind: this.operation_thing(ops[1])
+                    if kind = 1
+                        return 28
+                }
+                if kind = 3
+                    return 29
+                if kind = 6
+                    return 30
+                let head kind
+                var before kind
+                set i: i + 1
+                var more true
+                while more and i < n
+                {
+                    let next this.operation_thing(ops[i])
+                    if next = 1 or next = 6
+                        set more: false
+                    else
+                    {
+                        ; a vector literal is applied to nothing
+                        if head = 5
+                            return 30
+                        ; a value after a function is the call without
+                        ; parentheses -- today only as the WHOLE sequence
+                        if (next = 2 or next = 7) and n <> 2
+                            return 31
+                        if next = 3 and before <> 2 and before <> 5
+                            return 29
+                        set before: next
+                        set i: i + 1
+                    }
+                }
+                while i < n and this.operation_thing(ops[i]) = 6
+                {
+                    set postfixes: postfixes + 1
+                    set i: i + 1
+                }
+                if i < n
+                {
+                    if this.operation_thing(ops[i]) <> 1
+                        return 30
+                    set operators: operators + 1
+                    set i: i + 1
+                    if i >= n
+                        return 30
+                }
+            }
+            ; `a + b as T`: the old loop binds the postfix to the right side
+            if operators > 0 and postfixes > 0
+                return 32
+            0
+        }
+
+        ; One step, handed to the machinery there is: its things are a
+        ; sequence of their own, and collapse_operand_sequence# does not ask
+        ; the driver about that one again.
+        procedure operation_step(mutable this: Planner, mutable things: Vector[PlannedOperand], slot: size_t) returns PlannedOperand
+        {
+            this.operation_count(slot)
+            if things.length >= 2
+                operation_counts.put(24, 1)
+            this.collapse_operand_sequence(things)
+        }
+
+        ; the step of a current value and the ONE thing after it
+        procedure operation_pair(mutable this: Planner, cur: PlannedOperand, next: PlannedOperand, slot: size_t) returns PlannedOperand
+        {
+            var arr Array[PlannedOperand]()
+            arr.add cur
+            arr.add next
+            var vec Vector[PlannedOperand](arr)
+            this.operation_step(vec, slot)
+        }
+
+        ; a tuple or a vector literal with a member hop riding on it
+        ; (`a.b(1).c`, `files[k].equals`)
+        function thing_carries_hop(op: PlannedOperand) returns bool
+        {
+            if op.member_access = null
+                return false
+            let ma (*op.member_access)
+            if ma.length = 0
+                return false
+            choose op.expr
+                when tp: PlannedTuple
+                    return true
+                when mx: scalyc.compiler.Plan.PlannedMatrix
+                    return true
+                else
+                    return false
+            false
+        }
+
+        ; A term -- the things from first up to limit, no operator and no
+        ; postfix among them: the first thing is the current value, and each
+        ; thing after it is applied to that. A tuple or a vector literal
+        ; carrying a member hop (`a.b(1).c(2)`: the hop `.c` rides on `(1)`;
+        ; `files[k].equals(x)`: `.equals` on `[k]`) goes with everything
+        ; chained to it in ONE step, as fold_rhs_call# takes it: the hop is
+        ; resolved by the machinery only with what follows it in hand.
+        procedure operation_term(mutable this: Planner, ops: Vector[PlannedOperand], first: size_t, limit: size_t) returns PlannedOperand
+        {
+            var cur: PlannedOperand ops[first]
+            var k first + 1
+            while k < limit
+            {
+                let next ops[k]
+                let kind this.operation_thing(next)
+                if Planner.thing_carries_hop(next)
+                {
+                    var arr Array[PlannedOperand]()
+                    arr.add cur
+                    arr.add next
+                    set k: k + 1
+                    while k < limit and Planner.thing_carries_hop(ops[k - 1]) and this.operation_thing(ops[k]) >= 4 and this.operation_thing(ops[k]) <= 5
+                    {
+                        arr.add(ops[k])
+                        set k: k + 1
+                    }
+                    var vec Vector[PlannedOperand](arr)
+                    set cur: this.operation_step(vec, 41)
+                }
+                else
+                {
+                    var slot: size_t 40
+                    if kind = 3
+                        set slot: 36
+                    if this.operation_thing(cur) = 2
+                    {
+                        if kind = 4
+                            set slot: 34
+                        if kind = 5
+                            set slot: 35
+                    }
+                    else
+                    {
+                        if kind = 4
+                            set slot: 38
+                        if kind = 5
+                            set slot: 37
+                    }
+                    set cur: this.operation_pair(cur, next, slot)
+                    set k: k + 1
+                }
+            }
+            cur
+        }
+
+        ; The driver. Slot 23 says whether the answer is one: 0 leaves the
+        ; sequence to the old collapse.
+        procedure operation(mutable this: Planner, ops: Vector[PlannedOperand]) returns PlannedOperand
+        {
+            var cur: PlannedOperand ops[0]
+            operation_counts.put(23, 0)
+            if operation_counts[24] = 1
+            {
+                operation_counts.put(24, 0)
+                return cur
+            }
+            this.operation_count(25)
+            let reason this.operation_read(ops)
+            if reason <> 0
+            {
+                this.operation_count(reason)
+                return cur
+            }
+            let n ops.length
+            var out Array[PlannedOperand]()
+            var operators: size_t 0
+            var i: size_t 0
+            while i < n
+            {
+                var prefixed false
+                if this.operation_thing(ops[i]) = 1
+                {
+                    set prefixed: true
+                    set i: i + 1
+                }
+                var j i + 1
+                while j < n and this.operation_thing(ops[j]) <> 1 and this.operation_thing(ops[j]) <> 6
+                {
+                    set j: j + 1
+                }
+                if prefixed
+                {
+                    ; The prefix and its whole term are ONE step for now: the
+                    ; old prefix branch opens a one-component tuple after the
+                    ; operator as a grouping, and a term folded first may BE
+                    ; such a tuple (`&NodeDown^dp(reason)`, a record of one
+                    ; field, came out as `&reason`).
+                    var run Array[PlannedOperand]()
+                    var r i - 1
+                    while r < j
+                    {
+                        run.add(ops[r])
+                        set r: r + 1
+                    }
+                    var run_vec Vector[PlannedOperand](run)
+                    set cur: this.operation_step(run_vec, 39)
+                }
+                else
+                    set cur: this.operation_term(ops, i, j)
+                while j < n and this.operation_thing(ops[j]) = 6
+                {
+                    set cur: this.operation_pair(cur, ops[j], 42)
+                    set j: j + 1
+                }
+                out.add cur
+                if j < n
+                {
+                    out.add(ops[j])
+                    set operators: operators + 1
+                    set j: j + 1
+                }
+                set i: j
+            }
+            ; operators by the table: the folded terms and the operator names
+            if operators > 0
+            {
+                var all Vector[PlannedOperand](out)
+                set cur: this.operation_step(all, 43)
+            }
+            this.operation_count(26)
+            operation_counts.put(23, 1)
+            cur
         }
 
         ; ================================================================

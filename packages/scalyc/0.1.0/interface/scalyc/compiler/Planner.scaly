@@ -646,7 +646,8 @@ define Planner
         ; (SCALYC_PENDING, pending_on#)
         var pending_mode: int
         ; the operation census: slot 0 the switch, the rest its counters
-        ; (operation_census#)
+        ; (operation_census#); from slot 23 the operation driver's state and
+        ; counters (operation#)
         var operation_counts: Vector[size_t]
         ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
         ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
@@ -4413,7 +4414,62 @@ define Planner
 
         procedure operation_census_line(mutable this: Planner, name: pointer[const_char], slot: size_t) @ret_nonlocal true @deep true linked
 
-        procedure operation_census_report(mutable this: Planner) @ret_nonlocal true @deep true linked
+        procedure operation_census_report(mutable this: Planner) @ret_nonlocal true @deep true io linked
+
+        ; ================================================================
+        ; The operation driver (SCALYC_PENDING=1; ROADMAP-operation.md step 1,
+        ; part 2): the loop that reads a sequence from the left, in front of
+        ; collapse_operand_sequence#. It knows WHICH step comes next -- a name
+        ; and its tuple, a value and its vector literal, a prefix at the
+        ; start, a postfix -- and hands each step to the machinery there is,
+        ; as a short sequence of its own; operators still go by the table, the
+        ; folded terms and the operator names in one hand-over. A sequence it
+        ; does not understand is left to the old collapse as a whole, BEFORE
+        ; any step has run (operation_read#), so nothing is planned twice.
+        ; The yardstick is the emission: with and without the switch every
+        ; root gives the same IR. Slots of operation_counts: 23 answered by
+        ; the last call, 24 the next collapse is a step (do not ask again),
+        ; 25 sequences, 26 answered, 27-32 why one was left, 34-43 the steps.
+        ; ================================================================
+
+        ; What a planned thing of a sequence is: 1 an operator name, 2 another
+        ; name (a function, a type, a local -- a name stays a PlannedType
+        ; until a step resolves it), 3 a lifetime sigil, 4 a tuple, 5 a vector
+        ; literal, 6 a postfix (`as`, `is`), 7 a value
+        function operation_thing(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns int linked
+
+        ; the prefix test of the old collapse: an operator by its characters
+        ; (and `abs`, `not`)
+        function operand_is_symbol_operator(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+        ; Reads a sequence without planning anything: 0 when every step of it
+        ; is one the driver knows, else the counter slot of the reason.
+        function operation_read(this: Planner, ops: Vector[PlannedOperand]) @ret_nonlocal true @deep true returns size_t linked
+
+        ; One step, handed to the machinery there is: its things are a
+        ; sequence of their own, and collapse_operand_sequence# does not ask
+        ; the driver about that one again.
+        procedure operation_step(mutable this: Planner, mutable things: Vector[PlannedOperand], slot: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+        ; the step of a current value and the ONE thing after it
+        procedure operation_pair(mutable this: Planner, cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+        ; a tuple or a vector literal with a member hop riding on it
+        ; (`a.b(1).c`, `files[k].equals`)
+        function thing_carries_hop(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+        ; A term -- the things from first up to limit, no operator and no
+        ; postfix among them: the first thing is the current value, and each
+        ; thing after it is applied to that. A tuple or a vector literal
+        ; carrying a member hop (`a.b(1).c(2)`: the hop `.c` rides on `(1)`;
+        ; `files[k].equals(x)`: `.equals` on `[k]`) goes with everything
+        ; chained to it in ONE step, as fold_rhs_call# takes it: the hop is
+        ; resolved by the machinery only with what follows it in hand.
+        procedure operation_term(mutable this: Planner, ops: Vector[PlannedOperand], first: size_t, limit: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+        ; The driver. Slot 23 says whether the answer is one: 0 leaves the
+        ; sequence to the old collapse.
+        procedure operation(mutable this: Planner, ops: Vector[PlannedOperand]) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
         ; ================================================================
         ; EXPERIMENT (2026-10-04, behind SCALYC_PENDING=1): operator

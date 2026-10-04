@@ -8,6 +8,8 @@
 #           module's name, the IR of a program with NO protocol and the calls
 #           written out -- nothing of the protocol reaches the plan
 #   off     without the switch the operators are not answered by the protocol
+#   driver  the operation driver (Planner.operation#) reads a right side that
+#           holds a call to its precedence boundary (precedence_call.scaly)
 # Not in the bar: an experiment. Usage: tests/pending/run.sh [scalyc]
 set -u
 cd "$(dirname "$0")/../.."
@@ -35,6 +37,11 @@ SCALYC_PENDING=1 "$BIN" -S -o "$W/use.ll" "$W/use.scaly" > "$W/use.log" 2>&1 \
   && ok || bad "ir: the folded program differs from the hand-written one"
 
 "$BIN" -S -o "$W/off.ll" "$W/use.scaly" > "$W/off.log" 2>&1 && bad "off: the protocol answered without the switch" || ok
+
+# the driver (Planner.operation#): a right side with a call in it ends at the
+# next weaker operator -- the old collapse runs past it
+got=$(SCALYC_PENDING=1 "$TOOL" run tests/pending/precedence_call.scaly 2>&1 | tr '\n' ' ')
+[ "$got" = "T1 F2 " ] && ok || bad "driver: precedence_call answered '$got', expected 'T1 F2'"
 
 echo "pending: $pass PASS, $fail FAIL"
 [ $fail = 0 ]

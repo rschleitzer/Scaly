@@ -1,0 +1,22 @@
+; `a = 0 - g(1) and b`: the right side of `=` ends at `and`. The old collapse
+; looks for that boundary at every second position from the first operator
+; of the right side, and a call's tuple puts the operators after it on the
+; other positions -- it reads `a = ((0 - g(1)) and b)`, a number as a branch
+; condition: a broken module under the JIT, and compiled to a program it
+; answers F1 at rc 0. The operation driver folds each
+; term before the table sees the operators, so every operator stands where
+; the search looks (ROADMAP-operation.md, step 1 part 2; 2026-10-04).
+function g(n: int) returns int
+    n
+
+function probe(a: int, b: bool) returns bool
+    a = 0 - g(1) and b
+
+if probe(0 - 1, true)
+    print "T1"
+else
+    print "F1"
+if probe(5, true)
+    print "T2"
+else
+    print "F2"
