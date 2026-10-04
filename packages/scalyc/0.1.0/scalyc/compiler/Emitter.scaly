@@ -1203,6 +1203,20 @@ define Emitter
             debug_declare_at(name, shadow, dty, dpos, arg_no, indirect)
         }
 
+        ; A `let`: its shadow, or -- where emit_binding gave it a slot of its
+        ; own ("slot") -- that slot, so the debugger sees a field written later.
+        procedure debug_declare_let(mutable this, mutable name: String, mutable value: LLVMValueRef, mutable slot: LLVMValueRef, mutable pt: PlannedType, dpos: DebugPos)
+        {
+            if slot = null
+            {
+                debug_declare_value(name, value, pt, dpos, 0)
+                return
+            }
+            let dty di_type_for pt
+            if dty <> null
+                debug_declare_at(name, slot, dty, dpos, 0, false)
+        }
+
         procedure di_type_for(mutable this, mutable pt: PlannedType) returns LLVMMetadataRef
         {
             ; pointer[T] / ref[T] — both lower to ptr; point at the pointee's
@@ -22851,8 +22865,51 @@ define Emitter
                     }
                     else
                     {
-                        ; Immutable binding: just use the value directly
-                        define_variable(name, value)
+                        ; Immutable binding: just use the value directly --
+                        ; unless a field is written through the name ("slot",
+                        ; Planner.field_written_locals) and what it holds is a
+                        ; record VALUE (a call result, a copy, a top-level
+                        ; construction): `set x.field: v` needs an address, and
+                        ; the GEP on the value was a broken module. A value that
+                        ; is a pointer already (a page-hosted object, a
+                        ; construction kept in its own slot) stays as it is.
+                        ; ...except the slot of ANOTHER name (`let q p`, p a
+                        ; record in a slot): q is a value of its own, so a write
+                        ; through q must not reach p -- it is loaded and copied,
+                        ; as the `var` path above does for a plain variable.
+                        ; "copy" (a `let` bound to a name whose record can
+                        ; still change) takes the same load and no slot.
+                        var bound value
+                        var let_slot: LLVMValueRef null
+                        if binding.binding_type = "slot" or binding.binding_type = "copy"
+                        {
+                            var slot_ty ty
+                            var slot_val value
+                            if LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer() and binding.operation <> null and binding.operation.length = 1
+                            {
+                                let slot_op0 (*binding.operation)[0]
+                                choose slot_op0.expr
+                                    when slot_pv: PlannedVariable
+                                    {
+                                        let slot_mapped map_type(slot_op0.result_type)
+                                        if slot_mapped <> null and LLVMGetTypeKind(slot_mapped) = LLVMTypeKind.Struct() and LLVMCountStructElementTypes(slot_mapped) > 0
+                                        {
+                                            set slot_ty: slot_mapped
+                                            set slot_val: LLVMBuildLoad2(builder, slot_mapped, value, "binding.load")
+                                        }
+                                    }
+                                    else
+                                        0
+                            }
+                            set bound: slot_val
+                            if binding.binding_type = "slot" and LLVMGetTypeKind(slot_ty) = LLVMTypeKind.Struct() and LLVMCountStructElementTypes(slot_ty) > 0
+                            {
+                                set let_slot: acquire_temp(slot_ty, name.c_data())
+                                copy_struct_value(let_slot, slot_val, slot_ty)
+                                set bound: let_slot
+                            }
+                        }
+                        define_variable(name, bound)
 
                         ; -g: a `let` owns no slot, so debug_declare_value gives it
                         ; a shadow. Same type resolution as the `var` path above:
@@ -22864,7 +22921,7 @@ define Emitter
                             if binding.binding_item.item_type <> null
                             {
                                 let lit_ref binding.binding_item.item_type
-                                debug_declare_value(name, value, (*lit_ref), ldpos, 0)
+                                debug_declare_let(name, bound, let_slot, (*lit_ref), ldpos)
                             }
                             if binding.binding_item.item_type = null
                                 if binding.operation <> null
@@ -22875,7 +22932,7 @@ define Emitter
                                     {
                                         let lop0_ptr lops.get 0
                                         if lop0_ptr <> null
-                                            debug_declare_value(name, value, (*lop0_ptr).result_type, ldpos, 0)
+                                            debug_declare_let(name, bound, let_slot, (*lop0_ptr).result_type, ldpos)
                                     }
                                 }
                         }

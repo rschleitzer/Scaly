@@ -765,6 +765,11 @@ define Planner
         ; the CALLER's page (rp), not the local page — exactly what an explicit
         ; `^rp` did. plan_binding# promotes such bindings; truncated per function.
         address_taken_locals: Array[String]
+        ; Per-function set of names that head a member TARGET of a `set`
+        ; (`set x.field: v`), collected by the same pre-scan. A `let` binding
+        ; of such a name is planned as "slot": the emitter gives a record held
+        ; as a VALUE a slot, so the store has an address (emit_binding#).
+        field_written_locals: Array[String]
         ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
         ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
         ; reach an argument or return position un-dereferenced — directly or
@@ -1388,6 +1393,7 @@ define Planner
             set local_tainted_struct_bindings: Array[String]^this()
             set escaping_targets: Array[String]^this()
             set address_taken_locals: Array[String]^this()
+            set field_written_locals: Array[String]^this()
             set getref_arg_locals: Array[String]^this()
             set getref_alias_names: Array[String]^this()
             set getref_alias_receivers: Array[String]^this()
@@ -26401,6 +26407,7 @@ define Planner
             }
             let ops_to_collapse Vector[PlannedOperand](rest_arr)
             var collapsed this.collapse_operand_sequence(ops_to_collapse)
+            this.report_function_as_operator(collapsed)
 
             ; Page inference, gap 1 (backward binding promotion): if this
             ; binding's name was found returned bare (`let x Foo(); ... return
@@ -26811,9 +26818,42 @@ define Planner
                     ops_holder.put(0, collapsed)
                 }
             }
+            ; A `let` whose name heads a member target somewhere in this
+            ; routine (`set x.field: v`): "slot", see field_written_locals.
+            ; A `let` bound to another NAME whose record can still change (a
+            ; `var`, or a name fields are written through) is "copy": a value of
+            ; its own, where the emitter holds the source through a pointer and
+            ; would hand on the pointer -- `let q p`, then `set p.x: 5`, showed
+            ; in q.x in a routine without a page of its own and nowhere else.
+            ; A type that derives its page from its own address is left alone
+            ; (it must not be copied), and then "slot" is not asked for either.
+            var planned_binding_type b.binding_type
+            if b.binding_type = "const" and b.item.name <> null and rest_arr.length > 0 and is_stack_array_decl = false
+            {
+                var source_changes false
+                var source_resident false
+                if collapsed.member_access = null
+                    choose collapsed.expr
+                        when src_var: Variable
+                        {
+                            if this.result_type_is_value_struct(collapsed.result_type)
+                            {
+                                if this.instantiated_type_needs_residency(collapsed.result_type.name, collapsed.result_type)
+                                    set source_resident: true
+                                else if src_var.is_mutable or this.array_contains_name(field_written_locals, src_var.name)
+                                    set source_changes: true
+                            }
+                        }
+                        else
+                            0
+                if source_changes
+                    set planned_binding_type: "copy"
+                if source_resident = false and this.array_contains_name(field_written_locals, (*b.item.name))
+                    set planned_binding_type: "slot"
+            }
             PlannedBinding(
                 b.span,
-                b.binding_type,
+                planned_binding_type,
                 planned_item,
                 &ops_holder
             )
@@ -44666,6 +44706,7 @@ define Planner
 
             let planned_flat this.plan_operands(r.result)
             var planned_collapsed this.collapse_operand_sequence(planned_flat)
+            this.report_function_as_operator(planned_collapsed)
             if this.current_return_type <> null
                 set planned_collapsed: this.retarget_bare_variant((*this.current_return_type), planned_collapsed)
 
@@ -45103,6 +45144,38 @@ define Planner
         ; Not in an uninstantiated generic template (planning_template): there
         ; a tail like `v.get() + v.get()` on a `T` is unresolved by nature, and
         ; the instantiation is planned and judged on its own.
+        ; Is `name`, standing as an operator, a FUNCTION and nothing else? It
+        ; must be declared one and NOT declared an operator: an operator may
+        ; carry a text name (`operator 'minus'(...)`, tests/aot/text_operator),
+        ; and that one is a real infix call.
+        function name_is_only_a_function(this: Planner, name: String) returns bool
+            Planner.name_is_function_name(name) and this.is_function(name) and this.is_operator(name) = false
+
+        ; The same failed collapse where its value is BOUND or RETURNED:
+        ; `let r show twice(3)` read as `(show twice)(3)`, the "operator"
+        ; carrying the function's name, and r held nothing at rc 0.
+        procedure report_function_as_operator(mutable this: Planner, op: PlannedOperand)
+        {
+            if this.planning_template
+                return
+            choose op.expr
+                when oc: PlannedCall
+                {
+                    if oc.is_operator and this.name_is_only_a_function(oc.name)
+                    {
+                        var fsb StringBuilder()
+                        fsb.append "'"
+                        fsb.append oc.name
+                        fsb.append "' is a function, and here it stands where an operator would - "
+                        fsb.append(Planner.chained_argument_rule())
+                        let fmsg fsb.to_string()
+                        this.add_diagnostic(op.loc, String^this(fmsg))
+                    }
+                }
+                else
+                    0
+        }
+
         procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement, last: bool)
         {
             choose stmt
@@ -45122,7 +45195,13 @@ define Planner
                                     choose s0.expr
                                         when oc: PlannedCall
                                         {
-                                            if oc.is_operator and (last = false or (oc.name.get_length() = 0 and this.planning_template = false))
+                                            ; ...and, last as well, an "operator"
+                                            ; whose NAME is a function's: the
+                                            ; same failed collapse with the name
+                                            ; kept (`print go(1)` as a routine's
+                                            ; or the program's last statement
+                                            ; emitted nothing at rc 0, 2026-10-04).
+                                            if oc.is_operator and (last = false or (this.planning_template = false and (oc.name.get_length() = 0 or this.name_is_only_a_function(oc.name))))
                                             {
                                                 var esb StringBuilder()
                                                 if oc.name.get_length() = 0
@@ -47248,6 +47327,23 @@ define Planner
         {
             this.scan_addr_taken_ops(a.source)
             this.scan_addr_taken_ops(a.target)
+            ; `set x.field: v`: x heads a member target (field_written_locals)
+            if a.target.length = 1
+            {
+                let top a.target[0]
+                choose top.expression
+                    when tt: scalyc.compiler.Model.Type
+                    {
+                        if tt.generics = null and tt.name.length > 0 and (tt.name.length > 1 or top.member_access <> null)
+                        {
+                            let head tt.name[0]
+                            if this.array_contains_name(field_written_locals, head) = false
+                                field_written_locals.add(String^this(head))
+                        }
+                    }
+                    else
+                        0
+            }
         }
         procedure scan_addr_taken_stmt(mutable this: Planner, s: Statement)
         {
@@ -47806,7 +47902,14 @@ define Planner
         {
             choose impl
                 when a: Action
-                    PlannedImplementation.Action(this.plan_action(a))
+                {
+                    ; a body that is ONE expression is no statement of a block,
+                    ; so the statement gate never sees it
+                    let pa this.plan_action(a)
+                    if pa.target = null and pa.source <> null and (*pa.source).length > 0
+                        this.report_function_as_operator((*pa.source)[0])
+                    PlannedImplementation.Action(pa)
+                }
                 when e: Extern
                     PlannedImplementation.Extern(PlannedExternImpl e.span)
                 when i: Instruction
@@ -48115,6 +48218,7 @@ define Planner
             let saved_etg escaping_targets.length
             let saved_lts local_tainted_struct_bindings.length
             let saved_atl address_taken_locals.length
+            let saved_fwl field_written_locals.length
             let saved_gra getref_arg_locals.length
             let saved_gan getref_alias_names.length
             let saved_gar getref_alias_receivers.length
@@ -48213,6 +48317,7 @@ define Planner
             set escaping_targets.length: saved_etg
             set local_tainted_struct_bindings.length: saved_lts
             set address_taken_locals.length: saved_atl
+            set field_written_locals.length: saved_fwl
             set getref_arg_locals.length: saved_gra
             set getref_alias_names.length: saved_gan
             set getref_alias_receivers.length: saved_gar
@@ -51299,7 +51404,15 @@ define Planner
 
             let planned_main this.plan_module(prog.module_)
             this.phase_mark("C1-module-bodies-planned")
+            ; The program's own statements get the member-target half of the
+            ; pre-scan a function body gets (field_written_locals); the
+            ; address-taken half is put back, it has never run here.
+            let top_atl address_taken_locals.length
+            for top_stmt in prog.statements
+                this.scan_addr_taken_stmt(top_stmt)
+            set address_taken_locals.length: top_atl
             let planned_stmts this.plan_statements(prog.statements)
+            set field_written_locals.length: 0
             this.phase_mark("C2-statements-planned")
 
             ; --jit only (jit_dep_bodies): plan the bodies of non-prelude loaded
@@ -58382,6 +58495,23 @@ define Planner
     ; words every diagnostic of that shape uses.
     function chained_argument_rule() returns String
         String("an operand sequence reads left to right, so 'f x.m()' is '(f x.m)()' - an argument that is itself a call takes parentheses: 'f(x.m())'")
+
+    ; A name only a FUNCTION can have: it begins with a letter and is none of
+    ; the six word operators (the list of get_operator_precedence#: `div` and `mod`
+    ; beside the four). `[]` and `!` are operator names of the compiler's own
+    ; that are neither -- 2 515 sites answered to the first version of this,
+    ; which asked "no operator characters".
+    function name_is_function_name(n: String) returns bool
+    {
+        if n.get_length() = 0
+            return false
+        let c n.get 0
+        if ((c >= 65 and c <= 90) or (c >= 97 and c <= 122)) = false
+            return false
+        match n
+            case "and" case "or" case "not" case "xor" case "div" case "mod": return false
+        true
+    }
 
     function name_is_word_or_symbol_operator(n: String) returns bool
     {

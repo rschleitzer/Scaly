@@ -637,6 +637,11 @@ define Planner
         ; the CALLER's page (rp), not the local page — exactly what an explicit
         ; `^rp` did. plan_binding# promotes such bindings; truncated per function.
         address_taken_locals: Array[String]
+        ; Per-function set of names that head a member TARGET of a `set`
+        ; (`set x.field: v`), collected by the same pre-scan. A `let` binding
+        ; of such a name is planned as "slot": the emitter gives a record held
+        ; as a VALUE a slot, so the store has an address (emit_binding#).
+        field_written_locals: Array[String]
         ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
         ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
         ; reach an argument or return position un-dereferenced — directly or
@@ -7024,6 +7029,17 @@ define Planner
         ; Not in an uninstantiated generic template (planning_template): there
         ; a tail like `v.get() + v.get()` on a `T` is unresolved by nature, and
         ; the instantiation is planned and judged on its own.
+        ; Is `name`, standing as an operator, a FUNCTION and nothing else? It
+        ; must be declared one and NOT declared an operator: an operator may
+        ; carry a text name (`operator 'minus'(...)`, tests/aot/text_operator),
+        ; and that one is a real infix call.
+        function name_is_only_a_function(this: Planner, name: String) @ret_nonlocal true @deep true returns bool linked
+
+        ; The same failed collapse where its value is BOUND or RETURNED:
+        ; `let r show twice(3)` read as `(show twice)(3)`, the "operator"
+        ; carrying the function's name, and r held nothing at rc 0.
+        procedure report_function_as_operator(mutable this: Planner, op: PlannedOperand) @deep true linked
+
         procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement, last: bool) @ret_nonlocal true @deep true linked
 
         ; plan_statements: batch plan_statement over a Model.Block's statements.
@@ -8996,6 +9012,13 @@ define Planner
     ; The rule a parenless call with a call as its argument breaks, in the
     ; words every diagnostic of that shape uses.
     function chained_argument_rule() @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; A name only a FUNCTION can have: it begins with a letter and is none of
+    ; the six word operators (the list of get_operator_precedence#: `div` and `mod`
+    ; beside the four). `[]` and `!` are operator names of the compiler's own
+    ; that are neither -- 2 515 sites answered to the first version of this,
+    ; which asked "no operator characters".
+    function name_is_function_name(n: String) @ret_nonlocal true @deep true returns bool linked
 
     function name_is_word_or_symbol_operator(n: String) @ret_nonlocal true @deep true returns bool linked
 

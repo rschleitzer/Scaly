@@ -1,0 +1,97 @@
+; A field written through a `let` that holds a record as a VALUE (2026-10-04):
+; `set x.field: v` needs an address, and where the binding held the value
+; itself -- a construction among the program's own statements, a call result, a
+; copy of another name or of a field -- the store was a GEP on the value and the
+; module was broken (`GEP base pointer is not a vector or a vector of pointers`,
+; LLVM ERROR). The Planner now plans such a binding as "slot"
+; (field_written_locals) and emit_binding# gives it one.
+;   (1) a construction among the program's statements;
+;   (2) a call result, in a procedure and in a loop (a fresh value per round);
+;   (3) a copy of a field: the write does not reach the record it came from;
+;   (4) a copy of another NAME: the same, in both directions;
+;   (5) a nested field, inside a block;
+;   (6) `let q p` NOT written through is a copy too: in a routine without a
+;       page p was held through a pointer and q was a second name for it.
+; Expected: PASS
+
+define Car (var speed: int)
+define Pair (var a: Car, var b: Car)
+
+function make(s: int) returns Car
+    Car(s)
+
+procedure from_call() returns int
+{
+    let c make(50)
+    set c.speed: 60
+    c.speed
+}
+
+procedure in_loop() returns int
+{
+    var sum 0
+    var i 0
+    while i < 3
+    {
+        let c make(i)
+        set c.speed: c.speed + 10
+        set sum: sum + c.speed
+        set i: i + 1
+    }
+    sum
+}
+
+procedure field_copy() returns int
+{
+    let p Pair(Car(1), Car(2))
+    let a p.a
+    set a.speed: 60
+    a.speed + p.a.speed
+}
+
+procedure name_copy() returns int
+{
+    var p Car(1)
+    let q p
+    set q.speed: 7
+    set p.speed: p.speed + 2
+    q.speed * 10 + p.speed
+}
+
+procedure snapshot() returns int
+{
+    var p Car(1)
+    let q p
+    set p.speed: 5
+    q.speed * 10 + p.speed
+}
+
+var ok true
+
+let top Car(50)
+set top.speed: 60
+if top.speed <> 60
+    set ok: false
+
+if from_call() <> 60
+    set ok: false
+if in_loop() <> 33
+    set ok: false
+if field_copy() <> 61
+    set ok: false
+if name_copy() <> 73
+    set ok: false
+if snapshot() <> 15
+    set ok: false
+
+let n 3
+if n > 2
+{
+    let pair Pair(Car(1), Car(2))
+    set pair.b.speed: 9
+    if pair.a.speed <> 1 or pair.b.speed <> 9
+        set ok: false
+}
+
+if ok
+    print "PASS"

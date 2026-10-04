@@ -146,7 +146,7 @@ define PlannedAction
 define PlannedBinding
 (
     loc: Span
-    binding_type: String    ; "const", "var", "mutable"
+    binding_type: String    ; "const", "var", "mutable"; "slot" is a `let` a field is written through, "copy" one bound to a name whose record can change
     binding_item: PlannedItem
     operation: ref[Vector[PlannedOperand]]?
 )

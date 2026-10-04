@@ -1,0 +1,17 @@
+; Regression: the same failed collapse where its value is BOUND
+; (2026-10-04): `let r show twice(3)` is `(show twice)(3)`, and r held nothing
+; at rc 0 -- the program printed an empty line. Reported for a binding, an
+; explicit return and a body that is one expression
+; (Planner.report_function_as_operator#); the statement shapes are
+; `xfail_parenless_call_last` and `xfail_parenless_chain_dropped`.
+;
+; xfail: 'twice' is a function, and here it stands where an operator would
+
+function twice(n: int) returns int
+    n * 2
+
+function show(n: int) returns int
+    n + 1
+
+let r show twice(3)
+print "`r`\n"

@@ -595,6 +595,10 @@ define Emitter
         ; SSA value and not one of lookup_variable's ~40 consumers changes.
         procedure debug_declare_value(mutable this, mutable name: String, mutable value: LLVMValueRef, mutable pt: PlannedType, dpos: DebugPos, arg_no: size_t) @deep true linked
 
+        ; A `let`: its shadow, or -- where emit_binding gave it a slot of its
+        ; own ("slot") -- that slot, so the debugger sees a field written later.
+        procedure debug_declare_let(mutable this, mutable name: String, mutable value: LLVMValueRef, mutable slot: LLVMValueRef, mutable pt: PlannedType, dpos: DebugPos) @deep true linked
+
         procedure di_type_for(mutable this, mutable pt: PlannedType) @direct true @deep true @deep_beyond_2 true returns LLVMMetadataRef linked
 
         ; Build a DICompositeType (DW_TAG_structure_type = 19) for a struct.

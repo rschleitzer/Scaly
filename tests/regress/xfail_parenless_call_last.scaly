@@ -1,0 +1,15 @@
+; Regression: `print go(1)` as the LAST statement emitted nothing at rc 0
+; (2026-10-04). An operand sequence reads left to right, so this is
+; `(print go)(1)`: the collapse leaves an "operator" call carrying the
+; FUNCTION's name. One statement earlier the effect-free gate refused it
+; (`xfail_parenless_chain_dropped` is the member shape); the last statement was
+; judged only where the operator had NO name, because a block's last statement
+; may be its value -- and a call under a function's name is never one.
+; Measured before: `define i32 @main() { ret i32 0 }`.
+;
+; xfail: the result of operator 'go' is discarded
+
+function go(n: int) returns String
+    String#("x")
+
+print go(1)
