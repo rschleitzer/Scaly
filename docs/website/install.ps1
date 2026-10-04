@@ -187,6 +187,12 @@ function Install-Scaly {
                 if (-not $tools) {
                     Say "the Build Tools are still not found; scaly build will say so when it is asked to link"
                     Say "to install them later:  $line"
+                } else {
+                    # Microsoft's installer may end with "Restart your PC to
+                    # finish installation" -- seen 2026-10-04 on a fresh Windows
+                    # 11; the build below ran without one.
+                    Say "the Build Tools are installed. If Microsoft's installer asked for a restart above:"
+                    Say "Scaly does not need one -- the check below builds a program right now."
                 }
             } else {
                 Say "to install them later:  $line"
