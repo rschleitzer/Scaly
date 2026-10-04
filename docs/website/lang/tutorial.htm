@@ -88,17 +88,17 @@ HREF="tutorial.htm#AEN49"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN114"
+HREF="tutorial.htm#AEN124"
 >Using Scaly with VS Code</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN334"
+HREF="tutorial.htm#AEN344"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN415"
+HREF="tutorial.htm#AEN425"
 >Putting It Together</A
 ></DT
 ></DL
@@ -127,64 +127,160 @@ NAME="AEN51"
 ><P
 >This section starts from a blank machine — a fresh Linux
         installation or a new Mac — and ends with the whole Scaly toolchain
-        installed: the compiler, the language server, and (in the next section)
-        editor support in Visual Studio Code with syntax highlighting and a
-        source-level debugger.</P
+        installed: the tool, the compiler, the language server, and (in the
+        next section) editor support in Visual Studio Code with syntax
+        highlighting and a source-level debugger.</P
 ><P
->The quickest way to get the toolchain is the installer hosted on
-        scaly.io. Scaly ships as its own LLVM IR (a <SPAN
+>Scaly is installed by one command. It needs no
+        <B
+CLASS="command"
+>sudo</B
+> and puts everything under
+        <TT
+CLASS="filename"
+>~/.scaly</TT
+>:</P
+><PRE
+CLASS="programlisting"
+>curl -fsSL https://scaly.io/install.sh | sh</PRE
+><P
+>For macOS 26 on Apple silicon and for Ubuntu 26.04 and newer the
+        installer downloads the programs ready to run, which takes a few
+        seconds. The one thing Scaly asks of your machine is a C compiler: it
+        links the programs you build.</P
+><PRE
+CLASS="programlisting"
+>; macOS
+xcode-select --install
+
+; Ubuntu
+sudo apt install clang</PRE
+><P
+>On any other macOS or Linux the installer builds Scaly on your
+        machine instead. Scaly ships as its own LLVM IR (a
+        <SPAN
 CLASS="emphasis"
 ><I
 CLASS="emphasis"
 >seed</I
 ></SPAN
->)
-        and is turned into a native binary on your own machine, so first install
-        LLVM 18 and a C compiler:</P
-><PRE
-CLASS="programlisting"
->; macOS (install Homebrew first from https://brew.sh if you don't have it)
-brew install llvm@18
-
-; Ubuntu / Debian
-sudo apt install llvm-18 clang</PRE
+>), so that route needs LLVM 21 —
+        <KBD
+CLASS="userinput"
+>brew install llvm@21</KBD
+>, or
+        <KBD
+CLASS="userinput"
+>sudo apt install llvm-21 llvm-21-dev lld-21 clang</KBD
+>
+        — and takes about half a minute; the installer says which of the two
+        it is doing.</P
 ><P
->Then run the installer. It downloads Scaly, builds it for your
-        machine, and puts two commands on your <CODE
+>Either way it puts three commands on your <CODE
 CLASS="envar"
 >PATH</CODE
-> under
-        <TT
-CLASS="filename"
->~/.scaly</TT
-> — no <B
-CLASS="command"
->sudo</B
->
-        required:</P
-><PRE
-CLASS="programlisting"
->curl -fsSL https://scaly.io/install.sh | sh</PRE
+>:</P
 ><P
->The two commands are <B
+></P
+><UL
+><LI
+><P
+><B
+CLASS="command"
+>scaly</B
+>, the tool you will use most:
+            <KBD
+CLASS="userinput"
+>scaly run</KBD
+>, <KBD
+CLASS="userinput"
+>scaly build</KBD
+>
+            and <KBD
+CLASS="userinput"
+>scaly test</KBD
+>, and, started without
+            arguments, an interactive session.</P
+></LI
+><LI
+><P
+><B
 CLASS="command"
 >scalyc</B
->, the compiler, and
-        <B
+>, the compiler by itself, with the
+            command line of a C compiler (<CODE
+CLASS="option"
+>-o</CODE
+>,
+            <CODE
+CLASS="option"
+>-c</CODE
+>, <CODE
+CLASS="option"
+>-S</CODE
+>,
+            <CODE
+CLASS="option"
+>-O2</CODE
+>).</P
+></LI
+><LI
+><P
+><B
 CLASS="command"
 >scalyls</B
->, the language server that powers the editor
-        features in <A
-HREF="tutorial.htm#AEN114"
+>, the language server that powers
+            the editor features in <A
+HREF="tutorial.htm#AEN124"
 >the Section called <I
 >Using Scaly with VS Code</I
 ></A
->. Open a new terminal afterwards
-        so the updated <CODE
+>.</P
+></LI
+></UL
+><P
+>The standard library and the standard packages —
+        <TT
+CLASS="literal"
+>http</TT
+>, <TT
+CLASS="literal"
+>https</TT
+>,
+        <TT
+CLASS="literal"
+>tls</TT
+>, <TT
+CLASS="literal"
+>json</TT
+>,
+        <TT
+CLASS="literal"
+>compress</TT
+>, <TT
+CLASS="literal"
+>pg</TT
+>,
+        <TT
+CLASS="literal"
+>redis</TT
+> and <TT
+CLASS="literal"
+>h3</TT
+> — are installed with
+        them, as sources; a package is compiled the first time a program uses
+        it and kept in <TT
+CLASS="filename"
+>~/.scaly/cache</TT
+>.</P
+><P
+>Open a new terminal afterwards so the updated <CODE
 CLASS="envar"
 >PATH</CODE
-> takes effect; then both work from any
-        directory, as the rest of this tutorial assumes. To uninstall, remove
+>
+        takes effect; then all three work from any directory, as the rest of
+        this tutorial assumes. Running the installer again replaces the
+        toolchain with the current one. To uninstall, remove
         <TT
 CLASS="filename"
 >~/.scaly</TT
@@ -199,143 +295,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN69"
->Building from Source</A
-></H2
-><P
->If you have the source repository — for contributing to the compiler
-        itself — you can build <B
-CLASS="command"
->scalyc</B
-> directly instead of
-        using the installer. Scaly is self-hosted: the compiler is written in
-        Scaly and compiles itself, distributed as a <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->seed</I
-></SPAN
-> —
-        the compiler emitted as its own LLVM IR, the <TT
-CLASS="filename"
->.ll</TT
->
-        files committed under <TT
-CLASS="filename"
->seed/</TT
->. A single seed serves
-        every 64-bit little-endian target — the IR carries no target triple, so
-        the compiler you build from it targets whatever machine it runs on.
-        Turning the seed back into a working <B
-CLASS="command"
->scalyc</B
-> needs only
-        LLVM 18 and a C compiler for the final link; no C++ toolchain is
-        involved.</P
-><P
->With the prerequisites above installed, run the build script from the
-        repository root:</P
-><PRE
-CLASS="programlisting"
->tools/build-from-seed.sh</PRE
-><P
->This compiles the seed with <B
-CLASS="command"
->llc</B
->, links it into
-        <TT
-CLASS="filename"
->scalyc/build/scalyc</TT
->, builds the
-        <B
-CLASS="command"
->scalyls</B
-> language server beside it, and builds the
-        small runtime archive the compiler links your programs against. To put
-        both on your <CODE
-CLASS="envar"
->PATH</CODE
-> from a repository checkout:</P
-><PRE
-CLASS="programlisting"
->tools/install.sh</PRE
-><P
->This installs small <B
-CLASS="command"
->scalyc</B
-> and
-        <B
-CLASS="command"
->scalyls</B
-> wrappers in
-        <TT
-CLASS="filename"
->/usr/local/bin</TT
-> (override with <CODE
-CLASS="envar"
->BINDIR</CODE
->,
-        e.g. <KBD
-CLASS="userinput"
->BINDIR="$HOME/.local/bin" tools/install.sh</KBD
->)
-        that point back at the binaries in this repository and set
-        <CODE
-CLASS="envar"
->SCALY_HOME</CODE
-> so the prelude and standard library are found
-        whatever your current directory is; rebuilding is picked up
-        automatically with no reinstall. Remove them again with
-        <TT
-CLASS="filename"
->tools/uninstall.sh</TT
->.</P
-><DIV
-CLASS="note"
-><BLOCKQUOTE
-CLASS="note"
-><P
-><B
->Note: </B
-><TT
-CLASS="filename"
->tools/install.sh</TT
-> builds the small runtime
-          archive into a persistent location under the repository, and the
-          installed <B
-CLASS="command"
->scalyc</B
-> rebuilds it automatically if it
-          ever goes missing. If you instead run
-          <TT
-CLASS="filename"
->scalyc/build/scalyc</TT
-> directly without installing,
-          its archive lives at <TT
-CLASS="filename"
->/tmp/libscaly.a</TT
->, which is
-          cleared on reboot; re-run <TT
-CLASS="filename"
->tools/build-from-seed.sh</TT
->
-          to rebuild it.</P
-></BLOCKQUOTE
-></DIV
-><P
->How the seed came to be — and how it is refreshed and verified — is
-        described in <A
-HREF="appendix-bootstrap.htm"
->Appendix B</A
->; you do not need any
-        of it for everyday use.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN102"
+NAME="AEN98"
 >Hello, World!</A
 ></H2
 ><P
@@ -352,23 +312,81 @@ CLASS="filename"
 CLASS="programlisting"
 >print("Hello, World!")</PRE
 ><P
->Compile it to an executable with <CODE
-CLASS="option"
->-o</CODE
->, then run the
-        result:</P
+>Run it:</P
 ><PRE
 CLASS="programlisting"
->scalyc -o hello hello.scaly
-./hello</PRE
+>scaly run hello.scaly</PRE
 ><P
 >The program prints:</P
 ><PRE
 CLASS="screen"
 >Hello, World!</PRE
 ><P
+><KBD
+CLASS="userinput"
+>scaly run</KBD
+> compiles the file in memory and
+        runs it at once; nothing is left on disk. To get a program you can keep
+        and hand to someone else, build it:</P
+><PRE
+CLASS="programlisting"
+>scaly build hello.scaly -o hello
+./hello</PRE
+><P
+>Add <CODE
+CLASS="option"
+>--release</CODE
+> for the optimised build: the whole
+        program — your code, the standard library and every package it uses —
+        is optimised as one piece.</P
+><P
 >That is the whole edit-compile-run loop. Everything that follows is
         just more interesting things to put between the braces.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN114"
+>Trying Things Out</A
+></H2
+><P
+><B
+CLASS="command"
+>scaly</B
+> without arguments starts an interactive
+        session. An expression shows its value and its type; a
+        <TT
+CLASS="code"
+>let</TT
+> or <TT
+CLASS="code"
+>var</TT
+> keeps a value for the entries that
+        follow:</P
+><PRE
+CLASS="screen"
+>$ scaly
+scaly&#62; 6 * 7
+it: int = 42
+scaly&#62; let name "Scaly"
+name: String = "Scaly"
+scaly&#62; :where name
+  name: String
+    the value   8 bytes, on the session page of its entry
+    its text    5 bytes, on a page of its own
+scaly&#62; :quit</PRE
+><P
+><KBD
+CLASS="userinput"
+>:where</KBD
+> shows where a value lives — Scaly
+        manages memory in regions, and here you can watch it do so.
+        <KBD
+CLASS="userinput"
+>:help</KBD
+> lists the other commands.</P
 ></DIV
 ></DIV
 ><DIV
@@ -376,7 +394,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN114"
+NAME="AEN124"
 >Using Scaly with VS Code</A
 ></H1
 ><P
@@ -444,7 +462,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN131"
+NAME="AEN141"
 >Installing the Scaly Extension</A
 ></H2
 ><P
@@ -504,7 +522,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN146"
+NAME="AEN156"
 >What the Language Server Gives You</A
 ></H2
 ><P
@@ -699,7 +717,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN195"
+NAME="AEN205"
 >Build and Run Tasks</A
 ></H2
 ><DIV
@@ -815,7 +833,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN218"
+NAME="AEN228"
 >Launch Configuration</A
 ></H2
 ><P
@@ -885,14 +903,14 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN232"
+NAME="AEN242"
 >Breakpoints in Scaly Files</A
 ></H2
 ><P
 >VS Code only lets you set breakpoints in files whose language an
         installed extension has declared debuggable. The Scaly extension from
         <A
-HREF="tutorial.htm#AEN131"
+HREF="tutorial.htm#AEN141"
 >the Section called <I
 >Installing the Scaly Extension</I
 ></A
@@ -933,7 +951,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN242"
+NAME="AEN252"
 >Setting a Breakpoint and Stepping</A
 ></H2
 ><P
@@ -1039,7 +1057,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN272"
+NAME="AEN282"
 >Stepping into Functions and the Call Stack</A
 ></H2
 ><P
@@ -1171,13 +1189,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN368"
+HREF="tutorial.htm#AEN378"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN376"
+HREF="tutorial.htm#AEN386"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -1188,7 +1206,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN309"
+NAME="AEN319"
 >What the Debugger Shows</A
 ></H2
 ><P
@@ -1272,7 +1290,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN334"
+NAME="AEN344"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -1285,7 +1303,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN337"
+NAME="AEN347"
 >Values and Bindings</A
 ></H2
 ><P
@@ -1306,7 +1324,7 @@ CLASS="code"
 CLASS="programlisting"
 >let answer 42        ; immutable binding
 var count 0          ; mutable binding
-set count: count + 1 ; assignment uses a colon</PRE
+count := count + 1 ; assignment is :=</PRE
 ><P
 >The equals sign <TT
 CLASS="code"
@@ -1323,7 +1341,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN347"
+NAME="AEN357"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -1357,7 +1375,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN355"
+NAME="AEN365"
 >Control Flow</A
 ></H2
 ><P
@@ -1387,8 +1405,8 @@ CLASS="programlisting"
 var i 1
 while i &#60;= 10
 {
-    set sum: sum + i
-    set i: i + 1
+    sum := sum + i
+    i := i + 1
 }
 ; sum is now 55</PRE
 ><P
@@ -1407,7 +1425,7 @@ CLASS="code"
 CLASS="programlisting"
 >var total 0
 for i in 4
-    set total: total + i
+    total := total + i
 ; total is 0 + 1 + 2 + 3 = 6</PRE
 ></DIV
 ><DIV
@@ -1415,7 +1433,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN368"
+NAME="AEN378"
 >Functions</A
 ></H2
 ><P
@@ -1452,7 +1470,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN376"
+NAME="AEN386"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -1463,7 +1481,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN654"
+HREF="types.htm#AEN664"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -1473,7 +1491,7 @@ CLASS="programlisting"
 >define Counter(value: int)
 {
     procedure increment(this)
-        set value: value + 1
+        value := value + 1
 
     function get(this) returns int
         value
@@ -1489,7 +1507,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN382"
+NAME="AEN392"
 >Structures and Methods</A
 ></H2
 ><P
@@ -1511,7 +1529,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN661"
+HREF="types.htm#AEN671"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1526,7 +1544,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN390"
+NAME="AEN400"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1572,7 +1590,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN773"
+HREF="types.htm#AEN783"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1587,7 +1605,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN404"
+NAME="AEN414"
 >Modules and Imports</A
 ></H2
 ><P
@@ -1642,7 +1660,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN415"
+NAME="AEN425"
 >Putting It Together</A
 ></H1
 ><P
@@ -1702,7 +1720,7 @@ CLASS="filename"
       run it:</P
 ><PRE
 CLASS="programlisting"
->scalyc -o divide divide.scaly
+>scaly build divide.scaly -o divide
 ./divide</PRE
 ><P
 >It prints:</P

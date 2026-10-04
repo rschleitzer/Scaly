@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN536"
+NAME="AEN546"
 ></A
 >Chapter 4 Type System</H1
 ><DIV
@@ -83,67 +83,67 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN538"
+HREF="types.htm#AEN548"
 >Overview</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN541"
+HREF="types.htm#AEN551"
 >Intrinsic Types (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN581"
+HREF="types.htm#AEN591"
 >Type Aliases (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN588"
+HREF="types.htm#AEN598"
 >Backend Preludes (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN598"
+HREF="types.htm#AEN608"
 >Literal Type Inference</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN610"
+HREF="types.htm#AEN620"
 >References</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN637"
+HREF="types.htm#AEN647"
 >Parameter Passing</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN661"
+HREF="types.htm#AEN671"
 >Constructors</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN702"
+HREF="types.htm#AEN712"
 >Lambdas and Closures</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN732"
+HREF="types.htm#AEN742"
 >Error Handling</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN773"
+HREF="types.htm#AEN783"
 >Union Types</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN809"
+HREF="types.htm#AEN819"
 >Generics</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN845"
+HREF="types.htm#AEN855"
 >Lifetimes and Memory Regions</A
 ></DT
 ></DL
@@ -153,7 +153,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN538"
+NAME="AEN548"
 >Overview</A
 ></H1
 ><P
@@ -169,7 +169,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN541"
+NAME="AEN551"
 >Intrinsic Types (Future Direction)</A
 ></H1
 ><DIV
@@ -317,7 +317,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN581"
+NAME="AEN591"
 >Type Aliases (Future Direction)</A
 ></H1
 ><P
@@ -344,7 +344,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN588"
+NAME="AEN598"
 >Backend Preludes (Future Direction)</A
 ></H1
 ><P
@@ -360,7 +360,7 @@ CLASS="emphasis"
 ><DIV
 CLASS="example"
 ><A
-NAME="AEN592"
+NAME="AEN602"
 ></A
 ><P
 ><B
@@ -388,7 +388,7 @@ define size_t u64
 ><DIV
 CLASS="example"
 ><A
-NAME="AEN595"
+NAME="AEN605"
 ></A
 ><P
 ><B
@@ -413,7 +413,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN598"
+NAME="AEN608"
 >Literal Type Inference</A
 ></H1
 ><P
@@ -466,7 +466,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN610"
+NAME="AEN620"
 >References</A
 ></H1
 ><P
@@ -496,7 +496,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN618"
+NAME="AEN628"
 >Low-Level Pointers</A
 ></H2
 ><P
@@ -531,7 +531,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN626"
+NAME="AEN636"
 >Nullable Values</A
 ></H2
 ><P
@@ -567,7 +567,7 @@ CLASS="literal"
 >Option[T]</TT
 > to a simple nullable pointer — no space
         overhead for the tag (see <A
-HREF="types.htm#AEN797"
+HREF="types.htm#AEN807"
 >the Section called <I
 >Option Optimization</I
 ></A
@@ -579,7 +579,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN637"
+NAME="AEN647"
 >Parameter Passing</A
 ></H1
 ><P
@@ -618,7 +618,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN643"
+NAME="AEN653"
 >Implementation</A
 ></H2
 ><P
@@ -660,7 +660,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN654"
+NAME="AEN664"
 >Mutation via Procedures</A
 ></H2
 ><P
@@ -679,7 +679,7 @@ CLASS="programlisting"
 >&#13;define Point ( x: int, y: int )
 
 procedure move(p: Point, dx: int)
-    set p.x: p.x + dx
+    p.x := p.x + dx
 
 var pos Point(0, 0)
 move(pos, 5)          ; pos.x is now 5
@@ -695,7 +695,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN661"
+NAME="AEN671"
 >Constructors</A
 ></H1
 ><P
@@ -706,7 +706,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN664"
+NAME="AEN674"
 >Implicit Constructors</A
 ></H2
 ><P
@@ -724,7 +724,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN668"
+NAME="AEN678"
 >Explicit Constructors</A
 ></H2
 ><P
@@ -748,8 +748,8 @@ CLASS="programlisting"
 {
     init(value: int)        ; convenience constructor
     {
-        set this.x: value
-        set this.y: value
+        this.x := value
+        this.y := value
     }
 }
 
@@ -762,7 +762,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN674"
+NAME="AEN684"
 >The <TT
 CLASS="literal"
 >this</TT
@@ -777,8 +777,8 @@ CLASS="literal"
 ><PRE
 CLASS="programlisting"
 >&#13;init(x: int, y: int) {
-    set this.x: x    ; clear: field x gets parameter x
-    set this.y: y
+    this.x := x    ; clear: field x gets parameter x
+    this.y := y
 }
       </PRE
 ><P
@@ -788,7 +788,7 @@ CLASS="literal"
 > is
         required to disambiguate. Avoid <TT
 CLASS="literal"
->set x: x</TT
+>x := x</TT
 > — it's confusing
         even if technically resolvable.</P
 ></DIV
@@ -797,7 +797,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN683"
+NAME="AEN693"
 >Complete Initialization</A
 ></H2
 ><P
@@ -822,7 +822,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN689"
+NAME="AEN699"
 >Constructor Return</A
 ></H2
 ><P
@@ -844,7 +844,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN695"
+NAME="AEN705"
 >Types That Allocate</A
 ></H2
 ><P
@@ -863,7 +863,7 @@ CLASS="literal"
 > definitions; the region their
         internal data is allocated in is chosen by the compiler from how the
         constructed value is used (see <A
-HREF="types.htm#AEN845"
+HREF="types.htm#AEN855"
 >the Section called <I
 >Lifetimes and Memory Regions</I
 ></A
@@ -876,7 +876,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN702"
+NAME="AEN712"
 >Lambdas and Closures</A
 ></H1
 ><P
@@ -904,7 +904,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN709"
+NAME="AEN719"
 >Capturing Variables</A
 ></H2
 ><P
@@ -935,7 +935,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN715"
+NAME="AEN725"
 >Function Types: Delegates</A
 ></H2
 ><P
@@ -964,7 +964,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN721"
+NAME="AEN731"
 >Closure Lifetime</A
 ></H2
 ><P
@@ -1019,7 +1019,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN729"
+NAME="AEN739"
 >Implementation</A
 ></H2
 ><P
@@ -1035,7 +1035,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN732"
+NAME="AEN742"
 >Error Handling</A
 ></H1
 ><P
@@ -1046,7 +1046,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN735"
+NAME="AEN745"
 >The <TT
 CLASS="literal"
 >throws</TT
@@ -1078,7 +1078,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN743"
+NAME="AEN753"
 >Single Error Type</A
 ></H2
 ><P
@@ -1113,7 +1113,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN750"
+NAME="AEN760"
 >The <TT
 CLASS="literal"
 >try</TT
@@ -1159,7 +1159,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN762"
+NAME="AEN772"
 >Error Propagation</A
 ></H2
 ><P
@@ -1186,7 +1186,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN768"
+NAME="AEN778"
 >Error Lifetime</A
 ></H2
 ><P
@@ -1207,7 +1207,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN773"
+NAME="AEN783"
 >Union Types</A
 ></H1
 ><P
@@ -1232,7 +1232,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN777"
+NAME="AEN787"
 >Memory Layout</A
 ></H2
 ><P
@@ -1250,7 +1250,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN782"
+NAME="AEN792"
 >Pattern Matching with <TT
 CLASS="literal"
 >choose</TT
@@ -1287,7 +1287,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN792"
+NAME="AEN802"
 >Option Type</A
 ></H2
 ><P
@@ -1315,7 +1315,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN797"
+NAME="AEN807"
 >Option Optimization</A
 ></H2
 ><P
@@ -1350,7 +1350,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN809"
+NAME="AEN819"
 >Generics</A
 ></H1
 ><P
@@ -1391,7 +1391,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN819"
+NAME="AEN829"
 >Monomorphization</A
 ></H2
 ><P
@@ -1449,7 +1449,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN839"
+NAME="AEN849"
 >Name Mangling</A
 ></H2
 ><P
@@ -1473,7 +1473,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN845"
+NAME="AEN855"
 >Lifetimes and Memory Regions</A
 ></H1
 ><P
@@ -1486,7 +1486,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN848"
+NAME="AEN858"
 >Allocation Is Inferred</A
 ></H2
 ><P
@@ -1537,7 +1537,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN861"
+NAME="AEN871"
 >Escape Checking</A
 ></H2
 ><P
@@ -1566,7 +1566,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN866"
+NAME="AEN876"
 >Explicit Lifetime Suffixes</A
 ></H2
 ><P
@@ -1631,7 +1631,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN886"
+NAME="AEN896"
 >By-Value Returns</A
 ></H2
 ><P

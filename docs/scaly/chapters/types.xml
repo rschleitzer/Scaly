@@ -210,7 +210,7 @@ distance_squared(origin, target)    ; origin and target unchanged
 define Point ( x: int, y: int )
 
 procedure move(p: Point, dx: int)
-    set p.x: p.x + dx
+    p.x := p.x + dx
 
 var pos Point(0, 0)
 move(pos, 5)          ; pos.x is now 5
@@ -252,8 +252,8 @@ define Point
 {
     init(value: int)        ; convenience constructor
     {
-        set this.x: value
-        set this.y: value
+        this.x := value
+        this.y := value
     }
 }
 
@@ -268,12 +268,12 @@ let p2 Point(5)         ; convenience init - Point(5, 5)
         recommended for clarity:</para>
       <programlisting>
 init(x: int, y: int) {
-    set this.x: x    ; clear: field x gets parameter x
-    set this.y: y
+    this.x := x    ; clear: field x gets parameter x
+    this.y := y
 }
       </programlisting>
       <para>When parameter names shadow field names, <literal>this.</literal> is
-        required to disambiguate. Avoid <literal>set x: x</literal> — it's confusing
+        required to disambiguate. Avoid <literal>x := x</literal> — it's confusing
         even if technically resolvable.</para>
     </section>
 

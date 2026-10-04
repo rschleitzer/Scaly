@@ -11,7 +11,10 @@ TITLE="The Scaly Programming Language"
 HREF="index.html"><LINK
 REL="PREVIOUS"
 TITLE="Standard Library Reference"
-HREF="stdlib.htm"><META
+HREF="stdlib.htm"><LINK
+REL="NEXT"
+TITLE="On the Shoulders of Giants"
+HREF="appendix-heritage.htm"><META
 HTTP-EQUIV="Content-Type"
 CONTENT="text/html; charset=UTF-8"></HEAD
 ><BODY
@@ -54,7 +57,11 @@ VALIGN="bottom"
 WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
->&nbsp;</TD
+><A
+HREF="appendix-heritage.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
 ></TR
 ></TABLE
 ><HR
@@ -64,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="appendix"
 ><H1
 ><A
-NAME="AEN2843"
+NAME="AEN2852"
 ></A
 >Appendix B. Bootstrap History and the Seed</H1
 ><P
@@ -80,13 +87,14 @@ CLASS="emphasis"
 CLASS="filename"
 >seed/</TT
 > — is the sole bootstrap root. The normal way to
-    build the compiler is from that seed, as described in
+    build the compiler is from that seed — it is what the installer of
     <A
-HREF="tutorial.htm#AEN69"
+HREF="tutorial.htm#AEN51"
 >the Section called <I
->Building from Source</I
+>Installing Scaly</I
 > in Chapter 2</A
->; it needs only LLVM 18 and a C compiler. A
+> does on your machine; it needs only LLVM 21
+    and a C compiler. A
     single seed covers every 64-bit little-endian (LP64) target, and a CI
     matrix builds and verifies it natively on macOS and Linux, on both x86-64
     and AArch64.</P
@@ -164,7 +172,11 @@ ACCESSKEY="H"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->&nbsp;</TD
+><A
+HREF="appendix-heritage.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
 ></TR
 ><TR
 ><TD
@@ -181,7 +193,7 @@ VALIGN="top"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->&nbsp;</TD
+>On the Shoulders of Giants</TD
 ></TR
 ></TABLE
 ></DIV

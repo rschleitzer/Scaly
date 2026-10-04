@@ -460,7 +460,7 @@ else
         A semicolon starts a comment.</para>
       <programlisting>let answer 42        ; immutable binding
 var count 0          ; mutable binding
-set count: count + 1 ; assignment uses a colon</programlisting>
+count := count + 1 ; assignment is :=</programlisting>
       <para>The equals sign <code>=</code> is reserved for comparison, so it
         never gets confused with assignment. See <xref linkend="lexical"/> for
         the full lexical rules.</para>
@@ -499,15 +499,15 @@ else
 var i 1
 while i &lt;= 10
 {
-    set sum: sum + i
-    set i: i + 1
+    sum := sum + i
+    i := i + 1
 }
 ; sum is now 55</programlisting>
       <para><code>for</code> iterates. <code>for i in 4</code> runs
         <code>i</code> from 0 up to — but not including — 4:</para>
       <programlisting>var total 0
 for i in 4
-    set total: total + i
+    total := total + i
 ; total is 0 + 1 + 2 + 3 = 6</programlisting>
     </section>
 
@@ -542,7 +542,7 @@ let f factorial(5)   ; f is 120</programlisting>
       <programlisting>define Counter(value: int)
 {
     procedure increment(this)
-        set value: value + 1
+        value := value + 1
 
     function get(this) returns int
         value

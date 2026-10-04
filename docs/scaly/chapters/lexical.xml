@@ -122,8 +122,8 @@ if x = 42 { ... }         ; tests if x equals 42
 let x 42                  ; declares x with value 42
 let y: i32 100            ; with type annotation
 
-; Assignment (uses colon)
-set x: 43                 ; assigns 43 to x
+; Assignment (its own sign)
+x := 43                 ; assigns 43 to x
       </programlisting>
       <para>This design eliminates the classic confusion between assignment and
         comparison that leads to bugs in C-style languages (<literal>if (x = 42)</literal>

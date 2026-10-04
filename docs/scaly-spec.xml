@@ -14,6 +14,7 @@
   <!ENTITY generated-choose SYSTEM "scaly/generated-choose.xml">
   <!ENTITY stdlib SYSTEM "scaly/stdlib.xml">
   <!ENTITY appendix-bootstrap SYSTEM "scaly/chapters/appendix-bootstrap.xml">
+  <!ENTITY appendix-heritage SYSTEM "scaly/chapters/appendix-heritage.xml">
 ]>
 <book xmlns="http://docbook.org/ns/docbook" version="5.0">
   <title>The Scaly Programming Language</title>
@@ -28,5 +29,6 @@
   &modules;
   &stdlib;
   &appendix-bootstrap;
+  &appendix-heritage;
 
 </book>
