@@ -1462,9 +1462,9 @@ define cli
                     {
                         Console.println("Error: no linker - a built program is linked by the Visual Studio Build Tools (the C++ tools and a Windows SDK), and they are not installed.")
                         if tool.target_triple(opts.target_triple).contains(String("aarch64"))
-                            Console.println("       Install them with:  winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override \"--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.ARM64\"")
+                            Console.println("       Install them with:  winget install --id Microsoft.VisualStudio.BuildTools -e --override \"--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.ARM64\"")
                         else
-                            Console.println("       Install them with:  winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override \"--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64\"")
+                            Console.println("       Install them with:  winget install --id Microsoft.VisualStudio.BuildTools -e --override \"--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64\"")
                         Console.println("       (or the Visual Studio Installer: workload \"Desktop development with C++\"; SCALY_CC names another compiler.)")
                         Console.println("       (scaly run, scaly test and the REPL need none.)")
                         return 9

@@ -12,8 +12,11 @@
 #
 # The programs are downloaded ready to run for
 #   macOS 26 (Apple silicon, Intel), Ubuntu 26.04 and newer (arm64, x86-64)
-# and need nothing but a C compiler, which links the programs you build
-# (macOS: xcode-select --install; Ubuntu: sudo apt install clang).
+# and need nothing but a C compiler, which links the programs you build.
+# Where there is none this script FETCHES it (2026-10-04) -- Apple's Command
+# Line Tools on macOS, clang through apt on Ubuntu -- and all that asks of you
+# is your password, once; SCALY_BUILD_TOOLS=skip leaves it out
+# (by hand: xcode-select --install; sudo apt install clang).
 #
 # On any other macOS or Linux, Scaly is BUILT here from its seed — the three
 # programs as LLVM IR — for which LLVM 21 must be present:
@@ -26,6 +29,8 @@
 #   SCALY_INSTALL_BASE    base URL for downloads     (default https://scaly.io)
 #   SCALY_NO_MODIFY_PATH  set to 1 to skip editing your shell profile
 #   SCALY_FROM_SEED       set to 1 to build from the seed in any case
+#   SCALY_BUILD_TOOLS     install (default) | skip -- what to do where no C
+#                         compiler is found
 #   LLVM21                path to an LLVM 21 install (building from the seed)
 #   CC                    the C compiler to use      (default clang)
 #
@@ -356,6 +361,43 @@ for name in scaly scalyc scalyls; do
   rm -f "$BINDIR/$name"     # the script of an earlier installation
   ln -s "../$(basename "$TOOLCHAIN")/libexec/$name" "$BINDIR/$name"
 done
+
+# What a BUILD needs and this machine lacks is fetched here, so that the
+# newcomer's first `scaly build` works: Apple's Command Line Tools (the route
+# Homebrew's installer takes: the marker file makes softwareupdate list them,
+# and no dialog opens), or clang through apt. Both need administrator rights,
+# so the one thing asked is the password, by sudo, on the terminal. Where that
+# cannot be had -- no sudo, no terminal -- the note below stays.
+if [ -z "$CC" ] && [ "${SCALY_BUILD_TOOLS:-install}" != skip ]; then
+  SUDO=""
+  ROOT=0
+  if [ "$(id -u)" = 0 ]; then ROOT=1; elif have sudo; then SUDO="sudo"; fi
+  if [ "$ROOT" = 1 ] || [ -n "$SUDO" ]; then
+    if [ "$OS" = "Darwin" ]; then
+      say "scaly build links with Apple's Command Line Tools, and they are not installed."
+      say "fetching them now -- Apple's software under Apple's license, some minutes;"
+      say "macOS asks for your password (SCALY_BUILD_TOOLS=skip leaves them out)."
+      MARKER=/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+      touch "$MARKER"
+      LABEL="$(softwareupdate -l 2>/dev/null | sed -n 's/^.*Label: \(Command Line Tools.*\)$/\1/p' | tail -1)"
+      if [ -n "$LABEL" ]; then
+        $SUDO softwareupdate -i "$LABEL" --agree-to-license || true
+      else
+        say "softwareupdate lists no Command Line Tools"
+      fi
+      rm -f "$MARKER"
+      if xcode-select -p >/dev/null 2>&1 && have clang; then CC=clang; fi
+    elif have apt-get; then
+      say "scaly build links with a C compiler, and none is installed."
+      if [ -n "$SUDO" ]; then say "fetching clang now with apt -- sudo asks for your password (SCALY_BUILD_TOOLS=skip leaves it out)."
+      else say "fetching clang now with apt (SCALY_BUILD_TOOLS=skip leaves it out)."; fi
+      $SUDO apt-get install -y clang >/dev/null 2>&1 \
+        || { $SUDO apt-get update >/dev/null 2>&1 && $SUDO apt-get install -y clang >/dev/null 2>&1; } || true
+      if have clang; then CC=clang; fi
+    fi
+    if [ -n "$CC" ]; then say "a C compiler is there now: scaly build links"; fi
+  fi
+fi
 
 if [ -z "$CC" ]; then
   say "NOTE: no C compiler found. scaly run, scaly test and the REPL work;"

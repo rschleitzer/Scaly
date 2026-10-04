@@ -16,7 +16,8 @@
 # workload: the linker, the C runtime's libraries, a Windows SDK) -- as Rust
 # does on this target. Nothing else: no LLVM, no clang, no developer prompt;
 # the compiler finds the Build Tools itself. Where they are missing this
-# script says so and offers to fetch them with winget.
+# script says so and FETCHES them (winget, or Microsoft's bootstrapper where
+# there is no winget); Windows asks once for administrator rights.
 #
 # Environment overrides:
 #   SCALY_PREFIX          install location            (default %USERPROFILE%\.scaly)
@@ -24,7 +25,7 @@
 #   SCALY_INSTALL_BASE    base URL for downloads, or a local directory holding
 #                         the two archives            (default https://scaly.io)
 #   SCALY_NO_MODIFY_PATH  set to 1 to leave PATH alone
-#   SCALY_BUILD_TOOLS     ask (default) | install | skip -- what to do when the
+#   SCALY_BUILD_TOOLS     install (default) | ask | skip -- what to do when the
 #                         Build Tools are missing
 #
 # Layout:  %USERPROFILE%\.scaly\toolchain   libexec\ (the three programs, put
@@ -49,7 +50,7 @@ function Install-Scaly {
     $version = if ($env:SCALY_VERSION) { $env:SCALY_VERSION } else { '0.1.0' }
     $prefix = if ($env:SCALY_PREFIX) { $env:SCALY_PREFIX } else { Join-Path $env:USERPROFILE '.scaly' }
     $base = if ($env:SCALY_INSTALL_BASE) { $env:SCALY_INSTALL_BASE } else { 'https://scaly.io' }
-    $toolsMode = if ($env:SCALY_BUILD_TOOLS) { $env:SCALY_BUILD_TOOLS } else { 'ask' }
+    $toolsMode = if ($env:SCALY_BUILD_TOOLS) { $env:SCALY_BUILD_TOOLS } else { 'install' }
 
     # The machine's architecture, not this PowerShell's: an x64 PowerShell on
     # an arm64 Windows reports AMD64 for itself.
@@ -139,21 +140,54 @@ function Install-Scaly {
             Say "the Visual Studio Build Tools (C++ tools for $vcArch and a Windows SDK) are not installed."
             Say "scaly run, scaly test and the REPL work without them; scaly build needs them to link."
             $winget = Get-Command winget -ErrorAction SilentlyContinue
-            $override = "--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add $vcComponent"
-            $line = "winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override `"$override`""
-            $fetch = $false
-            if ($toolsMode -eq 'install') { $fetch = $true }
-            elseif ($winget -and [Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
-                $answer = Read-Host "scaly-install: fetch them now with winget (several GB, asks for administrator rights)? [y/N]"
-                $fetch = $answer -match '^[yYjJ]'
+            $components = "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add $vcComponent"
+            $line = "winget install --id Microsoft.VisualStudio.BuildTools -e --override `"--passive --wait $components`""
+            # ★Visual Studio 2026 (18.x), the toolset the archives are BUILT with:
+            # objects link with the same toolset or a newer one, never an older.
+            # The id named 2022 until 2026-10-04 -- written from memory.
+            # They are FETCHED unless told otherwise (2026-10-04): the newcomer's
+            # first `scaly build` is to work, and all it asks of him is Windows'
+            # one question for administrator rights.
+            $fetch = $true
+            if ($toolsMode -eq 'ask') {
+                $fetch = $false
+                if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+                    $answer = Read-Host "scaly-install: fetch them now (several GB, asks for administrator rights)? [Y/n]"
+                    $fetch = $answer -notmatch '^[nN]'
+                }
             }
-            if ($fetch -and $winget) {
-                Say "running: $line"
+            if ($fetch) {
+                Say "fetching them now -- Microsoft's installer, several GB, under Microsoft's license terms"
+                Say "(https://visualstudio.microsoft.com/license-terms/); Windows asks once for administrator rights."
+                Say "SCALY_BUILD_TOOLS=skip leaves them out."
                 $ErrorActionPreference = 'Continue'
-                & winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override $override | Out-Host
+                # a remote shell has no desktop to show the progress on
+                $shown = if ($env:SSH_CONNECTION -or -not [Environment]::UserInteractive) { '--quiet' } else { '--passive' }
+                if ($winget) {
+                    & winget install --id Microsoft.VisualStudio.BuildTools -e --accept-source-agreements --accept-package-agreements --override "$shown --wait $components" | Out-Host
+                } else {
+                    # no winget -- an older Windows, an account that never signed
+                    # in at the screen: Microsoft's bootstrapper itself
+                    $boot = Join-Path $work 'vs_BuildTools.exe'
+                    try {
+                        $savedProgress = $ProgressPreference
+                        $ProgressPreference = 'SilentlyContinue'
+                        Invoke-WebRequest -UseBasicParsing 'https://aka.ms/vs/stable/vs_BuildTools.exe' -OutFile $boot
+                        $ProgressPreference = $savedProgress
+                        $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+                        $bootArgs = "$shown --wait --norestart $components"
+                        if ($admin) { Start-Process -FilePath $boot -ArgumentList $bootArgs -Wait }
+                        else { Start-Process -FilePath $boot -ArgumentList $bootArgs -Wait -Verb RunAs }
+                    } catch {
+                        Say "the Build Tools' installer did not run: $($_.Exception.Message)"
+                    }
+                }
                 $ErrorActionPreference = 'Stop'
                 $tools = & $haveTools
-                if (-not $tools) { Say "the Build Tools are still not found; scaly build will say so when it is asked to link" }
+                if (-not $tools) {
+                    Say "the Build Tools are still not found; scaly build will say so when it is asked to link"
+                    Say "to install them later:  $line"
+                }
             } else {
                 Say "to install them later:  $line"
                 Say "(or the Visual Studio Installer: workload `"Desktop development with C++`")"
