@@ -55,11 +55,11 @@ check "a write under enter_shared is tagged"   'has ":$(line_of "s.id := 9"):9: 
 check "a field load is frozen"                 'has ":$(line_of "set_flags_of(r, 4)"):13: w-call check_fresh"'
 check "a setter reached with frozen data"      'has ": w-field set_flags_of writes t:ref\[TreeNode\],frozen$"'
 # negative controls
-check "the checker's own state is not listed"  '! has ":$(line_of "set count: count + 1"):"'
+check "the checker's own state is not listed"  '! has ":$(line_of "count := count + 1"):"'
 check "its own container is not listed"        '! has ":$(line_of "seen.add(1)"):"'
-check "a fresh object is not listed"           '! has ":$(line_of "set t.flags: 2"):"'
+check "a fresh object is not listed"           '! has ":$(line_of "t.flags := 2"):"'
 check "a setter handed a fresh object is not"  '! has ":$(line_of "set_flags_of(t, 3)"):"'
-check "a function no entry reaches is not"     '! has ":$(line_of "set n.flags: 1"):"'
+check "a function no entry reaches is not"     '! has ":$(line_of "n.flags := 1"):"'
 check "the head line reports the mode"         'printf "%s\n" "$out" | head -1 | grep -q "FROZEN: reachable"'
 
 # --- the purity check (R1): `function` writes nothing, `mutable` marks what a
