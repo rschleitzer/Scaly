@@ -12424,6 +12424,43 @@ define Planner
             }
             var result: PlannedOperand (*first_ptr)
 
+            ; The prefix at the start (collapse_prefix#) and the call without
+            ; parentheses (collapse_parenless#) are routines of their own since
+            ; 2026-10-04, as the two parts below: the operation driver takes
+            ; each as a step without the pre-passes above.
+            var no_prefix false
+            let prefixed this.collapse_prefix(ops, result, &no_prefix)
+            if no_prefix = false
+                return prefixed
+            var no_single false
+            let single this.collapse_parenless(ops, result, &no_single)
+            if no_single = false
+                return single
+
+            ; The application of the first thing to the tuple after it
+            ; (collapse_application#), and what is left goes by the table
+            ; (collapse_operators#): the two parts are routines of their own
+            ; since 2026-10-04, so the operation driver can take a step
+            ; without the pre-passes above (ROADMAP-operation.md).
+            var fell false
+            let applied this.collapse_application(ops, result, &fell)
+            if fell = false
+                return applied
+            this.collapse_operators(ops, applied)
+        }
+
+        ; The prefix part of collapse_operand_sequence#: ops[0] (handed in as
+        ; `first`) is an operator name, and it takes the operand after it.
+        ; `fell` says that it was none.
+        procedure collapse_prefix(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable fell: ref[bool]
+        ) returns PlannedOperand
+        {
+            var result: PlannedOperand first
+
             ; Prefix operator: first operand is a Type whose name is an
             ; operator (`-x`, `!flag`, `*ptr`, etc.). Recurse on the
             ; rest, resolve against the rest's result type, and wrap in
@@ -13007,6 +13044,20 @@ define Planner
                 }
                 else
                     0
+            set fell: true
+            result
+        }
+
+        ; The call without parentheses, of collapse_operand_sequence#: ops is
+        ; a callable name and ONE value. `fell` says that it was none.
+        procedure collapse_parenless(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable fell: ref[bool]
+        ) returns PlannedOperand
+        {
+            var result: PlannedOperand first
 
             ; Single argument without parentheses: `print "Hello"`,
             ; `sb.append text`, `Box 5`, `ns.fn x`. Any one-argument routine
@@ -13118,17 +13169,8 @@ define Planner
                     }
                 }
             }
-
-            ; The application of the first thing to the tuple after it
-            ; (collapse_application#), and what is left goes by the table
-            ; (collapse_operators#): the two parts are routines of their own
-            ; since 2026-10-04, so the operation driver can take a step
-            ; without the pre-passes above (ROADMAP-operation.md).
-            var fell false
-            let applied this.collapse_application(ops, result, &fell)
-            if fell = false
-                return applied
-            this.collapse_operators(ops, applied)
+            set fell: true
+            result
         }
 
         ; The application part of collapse_operand_sequence#: the first thing
@@ -26536,22 +26578,61 @@ define Planner
             true
         }
 
-        ; The step of a current value and its tuple, in a routine of its own:
-        ; the application part of the old collapse without its pre-passes,
-        ; and its operator part where the pair is no application.
-        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) returns PlannedOperand
+        ; A step taken without the pre-passes of the old collapse: its
+        ; application part, and its operator part where the things are no
+        ; application. `first` is things[0].
+        procedure operation_apply(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable first: PlannedOperand, slot: size_t) returns PlannedOperand
         {
             this.operation_count(slot)
             this.operation_count(44)
+            var fell false
+            let applied this.collapse_application(things, first, &fell)
+            if fell = false
+                return applied
+            this.collapse_operators(things, applied)
+        }
+
+        ; the prefix and its term, by the prefix part of the old collapse
+        procedure operation_prefix(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable sign: PlannedOperand) returns PlannedOperand
+        {
+            this.operation_count(39)
+            var fell false
+            let prefixed this.collapse_prefix(things, sign, &fell)
+            if fell = false
+            {
+                this.operation_count(44)
+                return prefixed
+            }
+            this.operation_apply(things, sign, 46)
+        }
+
+        ; the call without parentheses, by its part of the old collapse
+        procedure operation_parenless(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand) returns PlannedOperand
+        {
+            this.operation_count(40)
             var arr Array[PlannedOperand]()
             arr.add cur
             arr.add next
             var vec Vector[PlannedOperand](arr)
             var fell false
-            let applied this.collapse_application(vec, cur, &fell)
+            let single this.collapse_parenless(vec, cur, &fell)
             if fell = false
-                return applied
-            this.collapse_operators(vec, applied)
+            {
+                this.operation_count(44)
+                return single
+            }
+            this.operation_apply(vec, cur, 46)
+        }
+
+        ; The step of a current value and its tuple, or of the operation so
+        ; far and a postfix, in a routine of its own (operation_apply#).
+        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) returns PlannedOperand
+        {
+            var arr Array[PlannedOperand]()
+            arr.add cur
+            arr.add next
+            var vec Vector[PlannedOperand](arr)
+            this.operation_apply(vec, cur, slot)
         }
 
         ; a tuple or a vector literal with a member hop riding on it
@@ -26593,14 +26674,22 @@ define Planner
                     var arr Array[PlannedOperand]()
                     arr.add cur
                     arr.add next
+                    ; a chain of tuples only is the application part's own;
+                    ; a vector literal in it is the subscript pre-pass's
+                    var tuples kind = 4 and this.operation_call_is_plain(cur)
                     set k: k + 1
                     while k < limit and Planner.thing_carries_hop(ops[k - 1]) and this.operation_thing(ops[k]) >= 4 and this.operation_thing(ops[k]) <= 5
                     {
+                        if this.operation_thing(ops[k]) = 5
+                            set tuples: false
                         arr.add(ops[k])
                         set k: k + 1
                     }
                     var vec Vector[PlannedOperand](arr)
-                    set cur: this.operation_step(vec, 41)
+                    if tuples
+                        set cur: this.operation_apply(vec, cur, 41)
+                    else
+                        set cur: this.operation_step(vec, 41)
                 }
                 else
                 {
@@ -26623,6 +26712,8 @@ define Planner
                     }
                     if kind = 4 and this.operation_call_is_plain(cur)
                         set cur: this.operation_call(cur, next, slot)
+                    else if kind = 2 or kind = 7
+                        set cur: this.operation_parenless(cur, next)
                     else
                         set cur: this.operation_pair(cur, next, slot)
                     set k: k + 1
@@ -26633,16 +26724,29 @@ define Planner
 
         ; operators by the table: the terms and operator names of out from
         ; base on, in one hand-over
+        ; Taken without the pre-passes (operation_apply#) -- no folded term
+        ; and no operator name is a pair they would act on -- unless a vector
+        ; literal stands among the terms: the generic pre-pass reads an
+        ; operator name and a vector literal after it as a type and its
+        ; arguments, and that hand-over stays with the old collapse.
         procedure operation_table(mutable this: Planner, out: Array[PlannedOperand], base: size_t) returns PlannedOperand
         {
             var arr Array[PlannedOperand]()
+            var plain true
             var k base
             while k < out.length
             {
+                if this.operation_thing(out[k]) = 5
+                    set plain: false
                 arr.add(out[k])
                 set k: k + 1
             }
             var vec Vector[PlannedOperand](arr)
+            if plain
+            {
+                var first: PlannedOperand out[base]
+                return this.operation_apply(vec, first, 43)
+            }
             this.operation_step(vec, 43)
         }
 
@@ -26714,7 +26818,27 @@ define Planner
                         set r: r + 1
                     }
                     var run_vec Vector[PlannedOperand](run)
-                    set cur: this.operation_step(run_vec, 39)
+                    ; without the pre-passes where none of them owns a pair of
+                    ; the term: no vector literal, no sigil, and no lambda,
+                    ; delegate or pointer local before a tuple
+                    var direct true
+                    set r: i
+                    while r < j
+                    {
+                        let rk this.operation_thing(ops[r])
+                        if rk = 3 or rk = 5
+                            set direct: false
+                        set r: r + 1
+                    }
+                    if j > i + 1 and this.operation_call_is_plain(ops[i]) = false
+                        set direct: false
+                    if direct
+                    {
+                        var sign: PlannedOperand ops[i - 1]
+                        set cur: this.operation_prefix(run_vec, sign)
+                    }
+                    else
+                        set cur: this.operation_step(run_vec, 39)
                 }
                 else
                     set cur: this.operation_term(ops, i, j)
@@ -26737,7 +26861,7 @@ define Planner
                     }
                     while j < n and this.operation_thing(ops[j]) = 6
                     {
-                        set cur: this.operation_pair(cur, ops[j], 42)
+                        set cur: this.operation_call(cur, ops[j], 42)
                         set j: j + 1
                     }
                     set base: out.length

@@ -3417,6 +3417,25 @@ define Planner
             mutable ops: Vector[PlannedOperand]
         ) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
+        ; The prefix part of collapse_operand_sequence#: ops[0] (handed in as
+        ; `first`) is an operator name, and it takes the operand after it.
+        ; `fell` says that it was none.
+        procedure collapse_prefix(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable fell: ref[bool]
+        ) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+        ; The call without parentheses, of collapse_operand_sequence#: ops is
+        ; a callable name and ONE value. `fell` says that it was none.
+        procedure collapse_parenless(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable fell: ref[bool]
+        ) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
         ; The application part of collapse_operand_sequence#: the first thing
         ; of ops (handed in as planned so far) and the tuple after it -- a
         ; call, a construction, a method on a chain. `fell` says that it was
@@ -4480,9 +4499,19 @@ define Planner
         ; indirect call of the JIT).
         procedure operation_call_is_plain(mutable this: Planner, cur: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
 
-        ; The step of a current value and its tuple, in a routine of its own:
-        ; the application part of the old collapse without its pre-passes,
-        ; and its operator part where the pair is no application.
+        ; A step taken without the pre-passes of the old collapse: its
+        ; application part, and its operator part where the things are no
+        ; application. `first` is things[0].
+        procedure operation_apply(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable first: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+        ; the prefix and its term, by the prefix part of the old collapse
+        procedure operation_prefix(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable sign: PlannedOperand) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+        ; the call without parentheses, by its part of the old collapse
+        procedure operation_parenless(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+        ; The step of a current value and its tuple, or of the operation so
+        ; far and a postfix, in a routine of its own (operation_apply#).
         procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
 
         ; a tuple or a vector literal with a member hop riding on it
@@ -4500,6 +4529,11 @@ define Planner
 
         ; operators by the table: the terms and operator names of out from
         ; base on, in one hand-over
+        ; Taken without the pre-passes (operation_apply#) -- no folded term
+        ; and no operator name is a pair they would act on -- unless a vector
+        ; literal stands among the terms: the generic pre-pass reads an
+        ; operator name and a vector literal after it as a type and its
+        ; arguments, and that hand-over stays with the old collapse.
         procedure operation_table(mutable this: Planner, out: Array[PlannedOperand], base: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
         ; a lone thing between an operator and a postfix: where the source
