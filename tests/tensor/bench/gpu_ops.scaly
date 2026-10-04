@@ -40,7 +40,7 @@ function num_to_string(n: i64) returns String
     var digits Array[char]()
     while value > 0
     {
-        let digit ((value % 10) as char) + 48 as char
+        let digit ((value % 10) as char) + (48 as char)
         digits.add digit
         set value: value / 10
     }

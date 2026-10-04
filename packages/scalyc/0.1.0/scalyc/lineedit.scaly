@@ -73,8 +73,8 @@ define lineedit
             tool.ensure_directory(file.substring(0, slash as size_t))
         var text StringBuilder()
         var i: size_t 0
-        if history.length > HISTORY_KEPT as size_t
-            set i: history.length - HISTORY_KEPT as size_t
+        if history.length > (HISTORY_KEPT as size_t)
+            set i: history.length - (HISTORY_KEPT as size_t)
         while i < history.length
         {
             let h history.at i

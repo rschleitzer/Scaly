@@ -45,7 +45,7 @@ else
     set failures: failures + 1
 
 ; the cast form must keep working and agree with the fold
-if ret_implicit() = "]" as char
+if ret_implicit() = ("]" as char)
     0
 else
     set failures: failures + 1

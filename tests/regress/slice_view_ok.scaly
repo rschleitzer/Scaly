@@ -19,9 +19,9 @@ function check() returns int
 {
     let text "abc"
     let s Slice[char](3, text.get_buffer() as pointer[char])
-    if second(Holder(s)) <> "b" as char
+    if second(Holder(s)) <> ("b" as char)
         return 1
-    if tail_first(s) <> "c" as char
+    if tail_first(s) <> ("c" as char)
         return 2
     if empty(s)
         return 3

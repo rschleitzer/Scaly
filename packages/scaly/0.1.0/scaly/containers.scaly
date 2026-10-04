@@ -338,7 +338,7 @@ define containers
                                 if map.contains(theString) = false
                                     return -44
 
-                                if *((*map)[theString]) <> (i * j * k * l) as size_t
+                                if *((*map)[theString]) <> ((i * j * k * l) as size_t)
                                     return -45
 
                                 set l: l + 1

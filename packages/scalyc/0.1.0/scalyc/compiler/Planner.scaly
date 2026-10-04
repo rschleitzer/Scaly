@@ -2998,7 +2998,7 @@ define Planner
             if aliased.get_length() = 0
                 return ""
             var cur model_function_index.lookup_head name
-            while cur <> (0 - 1) as i64
+            while cur <> ((0 - 1) as i64)
             {
                 let nsp function_namespaces.get(cur as size_t)
                 if nsp <> null and (*nsp) = aliased
@@ -3926,9 +3926,9 @@ define Planner
             ; to this caller.
             if limit = 0
                 return fallback
-            if limit < (1024 * 1024) as size_t
+            if limit < ((1024 * 1024) as size_t)
                 return fallback
-            if limit > (1024 * 1024 * 1024) as size_t
+            if limit > ((1024 * 1024 * 1024) as size_t)
                 return fallback
 
             ; 80 %. The guard runs at a nesting ENTRY, so the remaining fifth
@@ -5484,7 +5484,7 @@ define Planner
         function function_origin_file(this: Planner, f: Function) returns String
         {
             var cur model_function_index.lookup_head f.name
-            while cur <> (0 - 1) as i64
+            while cur <> ((0 - 1) as i64)
             {
                 let kvp_ptr model_functions.get(cur as size_t)
                 if kvp_ptr <> null and kvp_ptr.value.span.start = f.span.start and kvp_ptr.value.span.end = f.span.end
@@ -5511,7 +5511,7 @@ define Planner
         {
             var matches Array[Function]()
             var cur model_function_index.lookup_head name
-            while cur <> (0 - 1) as i64
+            while cur <> ((0 - 1) as i64)
             {
                 let kvp_ptr model_functions.get(cur as size_t)
                 if kvp_ptr <> null
@@ -5540,7 +5540,7 @@ define Planner
             var visible Array[Function]()
             var total: size_t 0
             var cur model_function_index.lookup_head name
-            while cur <> (0 - 1) as i64
+            while cur <> ((0 - 1) as i64)
             {
                 let kvp_ptr model_functions.get(cur as size_t)
                 if kvp_ptr <> null
@@ -5564,7 +5564,7 @@ define Planner
         {
             var matches Array[Operator]()
             var cur model_operator_index.lookup_head name
-            while cur <> (0 - 1) as i64
+            while cur <> ((0 - 1) as i64)
             {
                 let kvp_ptr model_operators.get(cur as size_t)
                 if kvp_ptr <> null
@@ -5576,7 +5576,7 @@ define Planner
 
         function is_function(this: Planner, name: String) returns bool
         {
-            model_function_index.lookup_head(name) <> (0 - 1) as i64
+            model_function_index.lookup_head(name) <> ((0 - 1) as i64)
         }
 
         ; True iff `name` is a declared operator (in the operator-symbol
@@ -5584,7 +5584,7 @@ define Planner
         ; stage-0, to recognise them in infix position.
         function is_operator(this: Planner, name: String) returns bool
         {
-            model_operator_index.lookup_head(name) <> (0 - 1) as i64
+            model_operator_index.lookup_head(name) <> ((0 - 1) as i64)
         }
 
         ; ================================================================
@@ -26345,6 +26345,7 @@ define Planner
                 this.operation_census_line("driver-step-postfix", 42)
                 this.operation_census_line("driver-step-table", 43)
                 this.operation_census_line("driver-own-application", 44)
+                this.operation_census_line("driver-postfix-of-one-thing", 45)
             }
         }
 
@@ -26423,17 +26424,20 @@ define Planner
             var i: size_t 0
             while i < n
             {
-                ; a term begins here; an operator name where there is no
-                ; value yet is a prefix, and that is at the start only
+                ; a term begins here, and an operator name where a value is
+                ; expected is a prefix: at the start, and after an operator
+                ; (`a & ~b`, `a - -2`; the author, 2026-10-04) -- what waits
+                ; for its operand declares no operator, so the name can only
+                ; be the one-operand function
                 var kind this.operation_thing(ops[i])
                 if kind = 1
                 {
-                    if i > 0
-                        return 27
-                    if Planner.operand_is_symbol_operator(ops[0]) = false
+                    if Planner.operand_is_symbol_operator(ops[i]) = false
                         return 30
-                    set i: 1
-                    set kind: this.operation_thing(ops[1])
+                    set i: i + 1
+                    if i >= n
+                        return 30
+                    set kind: this.operation_thing(ops[i])
                     if kind = 1
                         return 28
                 }
@@ -26480,9 +26484,8 @@ define Planner
                         return 30
                 }
             }
-            ; `a + b as T`: the old loop binds the postfix to the right side
-            if operators > 0 and postfixes > 0
-                return 32
+            ; a postfix takes the operation so far (`a + b as T` is
+            ; `(a + b) as T`; the author, 2026-10-04)
             0
         }
 
@@ -26628,6 +26631,37 @@ define Planner
             cur
         }
 
+        ; operators by the table: the terms and operator names of out from
+        ; base on, in one hand-over
+        procedure operation_table(mutable this: Planner, out: Array[PlannedOperand], base: size_t) returns PlannedOperand
+        {
+            var arr Array[PlannedOperand]()
+            var k base
+            while k < out.length
+            {
+                arr.add(out[k])
+                set k: k + 1
+            }
+            var vec Vector[PlannedOperand](arr)
+            this.operation_step(vec, 43)
+        }
+
+        ; a lone thing between an operator and a postfix: where the source
+        ; takes `(thing as T)` (tools/operation-as.py reads these lines)
+        procedure operation_postfix_site(mutable this: Planner, thing: PlannedOperand, postfix: PlannedOperand)
+        {
+            this.operation_count(45)
+            if this.operation_census_on() = false
+                return
+            scaly_eputs("operation-as ")
+            scaly_eputs(this.file.to_c_string())
+            scaly_eputs(" ")
+            scaly_eputi(thing.loc.start as i64)
+            scaly_eputs(" ")
+            scaly_eputi(postfix.loc.end as i64)
+            scaly_eputs("\n")
+        }
+
         ; The driver. Slot 23 says whether the answer is one: 0 leaves the
         ; sequence to the old collapse.
         procedure operation(mutable this: Planner, ops: Vector[PlannedOperand]) returns PlannedOperand
@@ -26648,6 +26682,8 @@ define Planner
             }
             let n ops.length
             var out Array[PlannedOperand]()
+            ; where the operation so far begins in out: past the last postfix
+            var base: size_t 0
             var operators: size_t 0
             var i: size_t 0
             while i < n
@@ -26682,12 +26718,31 @@ define Planner
                 }
                 else
                     set cur: this.operation_term(ops, i, j)
-                while j < n and this.operation_thing(ops[j]) = 6
-                {
-                    set cur: this.operation_pair(cur, ops[j], 42)
-                    set j: j + 1
-                }
                 out.add cur
+                if j < n and this.operation_thing(ops[j]) = 6
+                {
+                    ; A postfix takes the WHOLE operation so far, operators
+                    ; included -- `a + b as T` is `(a + b) as T`, and the
+                    ; cast of the right side alone takes parentheses (the
+                    ; author, 2026-10-04). The old loop gives a right side
+                    ; that is no call (`b`, `v[i]`) the cast to itself: such a
+                    ; place is listed (slot 45) and gets its parentheses in
+                    ; the source.
+                    if operators > 0
+                    {
+                        if prefixed = false and this.operation_thing(ops[j - 1]) <> 4
+                            this.operation_postfix_site(ops[i], ops[j])
+                        set cur: this.operation_table(out, base)
+                        set operators: 0
+                    }
+                    while j < n and this.operation_thing(ops[j]) = 6
+                    {
+                        set cur: this.operation_pair(cur, ops[j], 42)
+                        set j: j + 1
+                    }
+                    set base: out.length
+                    out.add cur
+                }
                 if j < n
                 {
                     out.add(ops[j])
@@ -26698,10 +26753,7 @@ define Planner
             }
             ; operators by the table: the folded terms and the operator names
             if operators > 0
-            {
-                var all Vector[PlannedOperand](out)
-                set cur: this.operation_step(all, 43)
-            }
+                set cur: this.operation_table(out, base)
             this.operation_count(26)
             operation_counts.put(23, 1)
             cur
@@ -32433,7 +32485,7 @@ define Planner
         ; is_operator_char#: one of the eleven characters an operator identifier
         ; consists of (CLAUDE.md, Lexical; the scanner's own class).
         function is_operator_char(c: char) returns bool
-            c = "+" as char or c = "-" as char or c = "*" as char or c = "/" as char or c = "=" as char or c = "%" as char or c = "&" as char or c = "|" as char or c = "~" as char or c = "<" as char or c = ">" as char
+            c = ("+" as char) or c = ("-" as char) or c = ("*" as char) or c = ("/" as char) or c = ("=" as char) or c = ("%" as char) or c = ("&" as char) or c = ("|" as char) or c = ("~" as char) or c = ("<" as char) or c = (">" as char)
 
         ; operand_is_operator_name#: an operand that is an operator identifier
         ; (only the eleven operator characters) or a word operator.
@@ -42130,27 +42182,27 @@ define Planner
             {
                 let c n.get_buffer()[i]
                 var op false
-                if c = "+" as char
+                if c = ("+" as char)
                     set op: true
-                if c = "-" as char
+                if c = ("-" as char)
                     set op: true
-                if c = "*" as char
+                if c = ("*" as char)
                     set op: true
-                if c = "/" as char
+                if c = ("/" as char)
                     set op: true
-                if c = "=" as char
+                if c = ("=" as char)
                     set op: true
-                if c = "%" as char
+                if c = ("%" as char)
                     set op: true
-                if c = "&" as char
+                if c = ("&" as char)
                     set op: true
-                if c = "|" as char
+                if c = ("|" as char)
                     set op: true
-                if c = "~" as char
+                if c = ("~" as char)
                     set op: true
-                if c = "<" as char
+                if c = ("<" as char)
                     set op: true
-                if c = ">" as char
+                if c = (">" as char)
                     set op: true
                 if op = false
                     return false
@@ -53291,7 +53343,7 @@ define Planner
                     }
                 }
                 var cur model_function_index.lookup_head(method)
-                while cur <> (0 - 1) as i64
+                while cur <> ((0 - 1) as i64)
                 {
                     let kvp model_functions.get(cur as size_t)
                     if kvp <> null
@@ -53611,7 +53663,7 @@ define Planner
                         set m: this.members_store_mask((*oc), method, argc)
                 }
                 var cur model_function_index.lookup_head(method)
-                while cur <> (0 - 1) as i64
+                while cur <> ((0 - 1) as i64)
                 {
                     let kvp model_functions.get(cur as size_t)
                     if kvp <> null
@@ -60413,7 +60465,7 @@ define Planner
         var arity_hit: ref[String]? null
         var arity_conflict: bool false
         var cur pl.model_function_index.lookup_head(name)
-        while cur <> (0 - 1) as i64
+        while cur <> ((0 - 1) as i64)
         {
             let kvp_ptr pl.model_functions.get(cur as size_t)
             if kvp_ptr <> null
@@ -60755,7 +60807,7 @@ define Planner
         var arity_yes: size_t 0
         var arity_no: size_t 0
         var cur pl.model_function_index.lookup_head(name)
-        while cur <> (0 - 1) as i64
+        while cur <> ((0 - 1) as i64)
         {
             let kvp_ptr pl.model_functions.get(cur as size_t)
             if kvp_ptr <> null
@@ -62047,7 +62099,7 @@ define Planner
 
         while value > 0
         {
-            let digit ((value % 10) as char) + "0" as char
+            let digit ((value % 10) as char) + ("0" as char)
             digits.add digit
             set value: value / 10
         }

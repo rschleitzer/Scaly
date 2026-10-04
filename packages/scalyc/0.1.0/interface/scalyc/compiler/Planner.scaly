@@ -4498,6 +4498,14 @@ define Planner
         ; resolved by the machinery only with what follows it in hand.
         procedure operation_term(mutable this: Planner, ops: Vector[PlannedOperand], first: size_t, limit: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
+        ; operators by the table: the terms and operator names of out from
+        ; base on, in one hand-over
+        procedure operation_table(mutable this: Planner, out: Array[PlannedOperand], base: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+        ; a lone thing between an operator and a postfix: where the source
+        ; takes `(thing as T)` (tools/operation-as.py reads these lines)
+        procedure operation_postfix_site(mutable this: Planner, thing: PlannedOperand, postfix: PlannedOperand) @deep true io linked
+
         ; The driver. Slot 23 says whether the answer is one: 0 leaves the
         ; sequence to the old collapse.
         procedure operation(mutable this: Planner, ops: Vector[PlannedOperand]) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked

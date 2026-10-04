@@ -11,5 +11,5 @@ function second(h: Holder) returns char
     *(h.s + 1)
 
 let text "abc"
-if second(Holder(Slice[char](3, text.get_buffer() as pointer[char]))) = "b" as char
+if second(Holder(Slice[char](3, text.get_buffer() as pointer[char]))) = ("b" as char)
     print("PASS")

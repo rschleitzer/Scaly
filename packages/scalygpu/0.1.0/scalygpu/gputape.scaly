@@ -651,7 +651,7 @@ define GpuTape
         var i 0
         while i < clen
         {
-            if hp[i] as int <> cp[i] as int
+            if hp[i] as int <> (cp[i] as int)
                 set ok: 0
             set i: i + 1
         }

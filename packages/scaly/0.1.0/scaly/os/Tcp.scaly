@@ -117,7 +117,7 @@ mutable tcp_current_serve: pointer[i64] null
 ; [4] the next scheduler index to hand out, [5 .. 5+n) each scheduler's
 ; Channel, [5+n .. 5+2n) the threads' handles (TcpListener.start only).
 function tcp_word(cell: pointer[i64], k: i64) returns pointer[i64]
-    ((cell as size_t) + (k * 8) as size_t) as pointer[i64]
+    ((cell as size_t) + ((k * 8) as size_t)) as pointer[i64]
 
 procedure tcp_make_cell(fd: i32, mutable handler: pointer[void], n: i64) returns pointer[i64]
 {

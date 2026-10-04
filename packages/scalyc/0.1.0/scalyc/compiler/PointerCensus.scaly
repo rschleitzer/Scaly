@@ -2158,9 +2158,9 @@ define PointerCensus
                         if PointerCensus.text_at(src, at, name)
                         {
                             var o at + name.get_length()
-                            while o < src.get_length() and (src.get(o) = " " as char or src.get(o) = "\t" as char)
+                            while o < src.get_length() and (src.get(o) = (" " as char) or src.get(o) = ("\t" as char))
                                 set o: o + 1
-                            return o < src.get_length() and src.get(o) = "[" as char
+                            return o < src.get_length() and src.get(o) = ("[" as char)
                         }
                         set at: at + 1
                     }

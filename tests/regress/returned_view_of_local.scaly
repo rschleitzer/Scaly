@@ -72,9 +72,9 @@ function ok_bytes(v: Slice[u8]) returns bool
 {
     if v.length <> 5
         return false
-    if v[0] <> 0x61 as u8
+    if v[0] <> (0x61 as u8)
         return false
-    v[4] = 0x35 as u8
+    v[4] = (0x35 as u8)
 }
 
 procedure run()
@@ -96,7 +96,7 @@ procedure run()
         set ok: false
     if e.length <> 5
         set ok: false
-    if e[4] <> "5" as char
+    if e[4] <> ("5" as char)
         set ok: false
     if ok
         print("PASS")

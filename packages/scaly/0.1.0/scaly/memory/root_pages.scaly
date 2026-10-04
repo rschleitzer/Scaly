@@ -1346,7 +1346,7 @@ function scaly_trace_find_or_add(name: pointer[const_char]) returns ref[TraceEnt
         set i: i + 1
     }
     ; Table full — give up rather than corrupting.
-    if trace_count >= TRACE_MAX as i64
+    if trace_count >= (TRACE_MAX as i64)
         return null as pointer[TraceEntry]
     let new_entry trace_entries + trace_count
     ; strdup is required because JIT modules (which own the source of
@@ -1513,7 +1513,7 @@ procedure scaly_heap_trace_find_or_add(mutable hdr: ref[HeapTraceHeader], name: 
         set i: i + 1
     }
     ; Table full — give up rather than corrupting.
-    if hdr.count >= TRACE_MAX as i64
+    if hdr.count >= (TRACE_MAX as i64)
         return null as pointer[TraceEntry]
     let new_entry hdr.entries + hdr.count
     ; strdup for the same reason as scaly_trace_find_or_add: JIT-owned

@@ -210,12 +210,12 @@ define Interface
             if file_of[i] = fi
             {
                 let f facts.at i
-                if f.tag = "F" as char
+                if f.tag = ("F" as char)
                 {
                     if f.generic = false and Interface.inside_generic(facts, file_of, fi, f.start) = false
                         edits.add(Interface.routine_edit(text, facts, file_of, fi, f))
                 }
-                else if f.tag = "C" as char
+                else if f.tag = ("C" as char)
                 {
                     if f.generic = false and f.resident
                     {
@@ -235,7 +235,7 @@ define Interface
                         }
                     }
                 }
-                else if f.tag = "G" as char
+                else if f.tag = ("G" as char)
                 {
                     if Interface.inside_generic(facts, file_of, fi, f.start) = false
                     {
@@ -354,7 +354,7 @@ define Interface
             if file_of[i] = fi
             {
                 let f facts.at i
-                if f.tag = "C" as char and f.generic and f.start <= s and s < f.end
+                if f.tag = ("C" as char) and f.generic and f.start <= s and s < f.end
                     return true
             }
             set i: i + 1
@@ -389,7 +389,7 @@ define Interface
             if file_of[i] = fi
             {
                 let f facts.at i
-                if f.tag = "R" as char and f.start = s
+                if f.tag = ("R" as char) and f.start = s
                     set found: f.text
             }
             set i: i + 1
@@ -530,7 +530,7 @@ define Interface
     {
         let n t.get_length()
         var i Interface.skip_blanks(t, Interface.skip_word(t, start))
-        if kind = "f" as char or kind = "o" as char
+        if kind = ("f" as char) or kind = ("o" as char)
         {
             if t.get(i) <> 0x28             ; ( -- a name, maybe operator symbols
             {
@@ -541,7 +541,7 @@ define Interface
             if t.get(i) = 0x5B              ; [
                 set i: Interface.skip_blanks(t, Interface.skip_balanced(t, i, 0x5B, 0x5D))
         }
-        if kind = "i" as char and t.get(i) = 0x23       ; #
+        if kind = ("i" as char) and t.get(i) = 0x23       ; #
             set i: Interface.skip_blanks(t, i + 1)
         var close: size_t 0
         var has_close false
