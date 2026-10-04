@@ -10,7 +10,7 @@
 #                         package into its build cache on first use, and the
 #                         stdlib's C and assembly files are the runtime shims
 #                         the installer compiles for the three links
-#   LICENSE, VERSION
+#   LICENSE, THIRD-PARTY-LICENSES.txt, VERSION
 # The standard packages are the list below (ROADMAP-public.md, decision 4:
 # shipped with the toolchain). Not in it: scalyc and scalyls (the repository
 # is private, decision 7 — their code travels as the seed), the ports (dazzle,
@@ -59,6 +59,9 @@ for p in $PACKAGES; do
 done
 
 cp LICENSE "$STAGE/LICENSE"
+# the licenses of what is linked into the programs (LLVM and others): they
+# travel with every installation, as those licenses ask
+cp THIRD-PARTY-LICENSES.txt "$STAGE/THIRD-PARTY-LICENSES.txt"
 printf '%s\n' "$VERSION" > "$STAGE/VERSION"
 
 # Drop editor/OS cruft so the tarball is reproducible-ish.

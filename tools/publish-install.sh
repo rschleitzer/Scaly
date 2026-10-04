@@ -3,6 +3,9 @@
 #
 # Uploads:
 #   - install.sh, install.ps1   -> s3://scaly.io/        (curl | sh, irm | iex)
+#   - LICENSE, THIRD-PARTY-LICENSES.txt, SHA256SUMS -> s3://scaly.io/downloads/
+#     (ours, those of what is linked into the programs, and the checksums of
+#     the seven files)
 #   - scaly-<ver>.tar.gz        -> s3://scaly.io/downloads/   (seed + packages + LICENSE),
 #                                  made here by tools/make-dist.sh
 #   - the SIX binary archives, every one found in dist/:
@@ -66,6 +69,14 @@ if [ -n "$RUN" ]; then
   fi
 fi
 
+# The license page shows LICENSE's text: the two must be the same words.
+python3 - <<'PY' || { echo "publish-install: FAIL — docs/website/license/index.html does not show the text of LICENSE"; exit 1; }
+import html, re, sys
+page = open('docs/website/license/index.html', encoding='utf-8').read()
+m = re.search(r'<pre class="license" id="license-text">(.*?)</pre>', page, re.S)
+sys.exit(0 if m and html.unescape(m.group(1)).strip() == open('LICENSE', encoding='utf-8').read().strip() else 1)
+PY
+
 # Build the tarball fresh from the committed seed + stdlib.
 tools/make-dist.sh "$VERSION"
 
@@ -87,6 +98,9 @@ if [ -n "$MISSING" ]; then
   fi
 fi
 
+# What a careful reader checks: SHA256SUMS of the seven files, in the form
+# `shasum -a 256 -c` reads.
+( cd dist && shasum -a 256 "scaly-$VERSION.tar.gz" $(for b in "${BINARIES[@]}"; do basename "$b"; done) | sed 's/ \*/  /' > SHA256SUMS )
 # upload <file> <key> <content-type>
 PATHS=()
 upload() {
@@ -100,6 +114,11 @@ upload() {
 }
 upload docs/website/install.sh  install.sh  'text/x-shellscript'
 upload docs/website/install.ps1 install.ps1 'text/plain; charset=utf-8'
+# under downloads/: docs/deploy.sh syncs the website with --delete and spares
+# only that prefix (the page docs/website/license/ links to both)
+upload LICENSE downloads/LICENSE 'text/plain; charset=utf-8'
+upload THIRD-PARTY-LICENSES.txt downloads/THIRD-PARTY-LICENSES.txt 'text/plain; charset=utf-8'
+upload dist/SHA256SUMS downloads/SHA256SUMS 'text/plain; charset=utf-8'
 upload "$TARBALL" "downloads/scaly-$VERSION.tar.gz" 'application/gzip'
 for b in "${BINARIES[@]}"; do
   case "$b" in
