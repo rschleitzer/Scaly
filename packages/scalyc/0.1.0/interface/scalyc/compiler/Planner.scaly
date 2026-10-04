@@ -4500,7 +4500,7 @@ define Planner
         ; What a planned thing of a sequence is: 1 an operator name, 2 another
         ; name (a function, a type, a local -- a name stays a PlannedType
         ; until a step resolves it), 3 a lifetime sigil, 4 a tuple, 5 a vector
-        ; literal, 6 a postfix (`as`, `is`), 7 a value
+        ; literal, 6 a postfix (`as`, `is`) still without its value, 7 a value
         function operation_thing(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns int linked
 
         ; the prefix test of the old collapse: an operator by its characters

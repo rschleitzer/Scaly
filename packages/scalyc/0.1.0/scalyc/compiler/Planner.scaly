@@ -26464,7 +26464,7 @@ define Planner
         ; What a planned thing of a sequence is: 1 an operator name, 2 another
         ; name (a function, a type, a local -- a name stays a PlannedType
         ; until a step resolves it), 3 a lifetime sigil, 4 a tuple, 5 a vector
-        ; literal, 6 a postfix (`as`, `is`), 7 a value
+        ; literal, 6 a postfix (`as`, `is`) still without its value, 7 a value
         function operation_thing(this: Planner, op: PlannedOperand) returns int
         {
             choose op.expr
@@ -26490,9 +26490,19 @@ define Planner
                 when mx: scalyc.compiler.Plan.PlannedMatrix
                     return 5
                 when pa: PlannedAs
+                {
+                    ; a cast that has its value already is a value (the
+                    ; machinery hands such on: `TBL + (i as size_t)`)
+                    if pa.value <> null
+                        return 7
                     return 6
+                }
                 when pi: PlannedIs
+                {
+                    if pi.value <> null
+                        return 7
                     return 6
+                }
                 else
                     return 7
             7
@@ -26536,12 +26546,22 @@ define Planner
                     set kind: this.operation_thing(ops[i])
                     if kind = 1
                         return 28
+                    ; the sigil of the prefix itself: the box on a named page
+                    ; (`&^this v`, `&# v`)
+                    if kind = 3
+                    {
+                        set i: i + 1
+                        if i >= n
+                            return 29
+                        set kind: this.operation_thing(ops[i])
+                        if kind = 1 or kind = 3
+                            return 29
+                    }
                 }
                 if kind = 3
                     return 29
                 if kind = 6
                     return 30
-                let head kind
                 var before kind
                 set i: i + 1
                 var more true
@@ -26552,14 +26572,14 @@ define Planner
                         set more: false
                     else
                     {
-                        ; a vector literal is applied to nothing
-                        if head = 5
-                            return 30
                         ; a value after a function is the call without
                         ; parentheses -- today only as the WHOLE sequence
                         if (next = 2 or next = 7) and n <> 2
                             return 31
-                        if next = 3 and before <> 2 and before <> 5
+                        ; a sigil stands after a name, after its vector
+                        ; literal, or after a value's method
+                        ; (`ps.current_token^host()`)
+                        if next = 3 and before <> 2 and before <> 5 and before <> 7
                             return 29
                         set before: next
                         set i: i + 1
@@ -26788,6 +26808,18 @@ define Planner
                     else
                         set cur: this.operation_step(vec, 41)
                 }
+                else if kind = 3 and this.operation_thing(cur) <> 2 and k + 1 < limit and this.operation_thing(ops[k + 1]) = 4
+                {
+                    ; the sigil of a CALL (`ps.current_token^host()`) goes
+                    ; with the call's tuple: the method alone is no value yet
+                    var call Array[PlannedOperand]()
+                    call.add cur
+                    call.add next
+                    call.add(ops[k + 1])
+                    var call_vec Vector[PlannedOperand](call)
+                    set cur: this.operation_merge(call_vec, cur, 36)
+                    set k: k + 2
+                }
                 else
                 {
                     var slot: size_t 40
@@ -26881,6 +26913,24 @@ define Planner
             if reason <> 0
             {
                 this.operation_count(reason)
+                if this.operation_census_on()
+                {
+                    scaly_eputs("operation-left ")
+                    scaly_eputi(reason as i64)
+                    scaly_eputs(" ")
+                    scaly_eputs(this.file.to_c_string())
+                    scaly_eputs(" ")
+                    scaly_eputi(cur.loc.start as i64)
+                    ; and what the things are (operation_thing#)
+                    scaly_eputs(" ")
+                    var t: size_t 0
+                    while t < ops.length
+                    {
+                        scaly_eputi(this.operation_thing(ops[t]) as i64)
+                        set t: t + 1
+                    }
+                    scaly_eputs("\n")
+                }
                 return cur
             }
             let n ops.length

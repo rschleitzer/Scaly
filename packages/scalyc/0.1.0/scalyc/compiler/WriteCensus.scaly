@@ -1165,7 +1165,7 @@ define WriteCensus
                     else if id = WC_GW * 64 - 2
                         sb.append "?other-root"
                     else
-                        sb.append gnames[id]
+                        sb.append(gnames[id])
                 }
                 set id: id + 1
             }
@@ -1267,7 +1267,7 @@ define WriteCensus
                         else if id = WC_GW * 64 - 2
                             sb.append "?other-root"
                         else
-                            sb.append gnames[id]
+                            sb.append(gnames[id])
                     }
                     set id: id + 1
                 }
