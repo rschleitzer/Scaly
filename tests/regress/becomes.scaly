@@ -1,0 +1,72 @@
+; `target := source` is the assignment (the Algol tradition; the author,
+; 2026-10-04): the same Action `set target: source` models, read by the
+; grammar as an operation and what it becomes. A variable, a field, a field
+; through a reference, a store through a pointer, a source on the next line,
+; an assignment as the one statement of an `if` and as an arm's action.
+; `set` still works beside it (7) until it has run out.
+; Expected: PASS
+
+define Box (var count: int, var name: String)
+
+procedure bump(mutable b: ref[Box], by: int)
+{
+    b.count := b.count + by
+}
+
+procedure fill(mutable out: ref[int], v: int)
+{
+    out := v
+}
+
+var ok true
+
+var n 1
+n := n + 41
+if n <> 42
+    ok := false
+
+var b Box(1, String("one"))
+b.count := 5
+b.name := String("five")
+if b.count <> 5 or b.name.equals("five") = false
+    ok := false
+
+bump(&b, 2)
+if b.count <> 7
+    ok := false
+
+var cell 0
+fill(&cell, 9)
+if cell <> 9
+    ok := false
+
+var buffer int[4]
+let p &buffer[0] as pointer[int]
+*(p + 2) := 30
+if buffer[2] <> 30
+    ok := false
+
+var long 0
+long :=
+    n * 2 + 1
+if long <> 85
+    ok := false
+
+choose Option[int].Some(3)
+    when v: Some
+        n := v
+    else
+        n := 0
+if n <> 3
+    ok := false
+
+set n: 8
+if n <> 8
+    ok := false
+
+let same n = 8
+if same = false
+    ok := false
+
+if ok
+    print "PASS"

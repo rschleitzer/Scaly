@@ -131,11 +131,19 @@ define SetSyntax
     source: ref[Vector[OperandSyntax]]?
 )
 
+define BecomesSyntax
+(
+    start: size_t
+    end: size_t
+    source: ref[Vector[OperandSyntax]]?
+)
+
 define OperationSyntax
 (
     start: size_t
     end: size_t
     operands: ref[Vector[OperandSyntax]]?
+    becomes: ref[BecomesSyntax]?
 )
 
 define ActionSyntax union (

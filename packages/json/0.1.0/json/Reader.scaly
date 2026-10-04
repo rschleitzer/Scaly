@@ -91,15 +91,15 @@ define JsonStream
             if to >= src.length
                 return src.length
             let next JsonStream.classify(src, JsonStream(bits, base, to, escape_carry, string_carry, scalar_carry))
-            set bits: next.bits
-            set base: next.base
-            set to: next.to
-            set escape_carry: next.escape_carry
-            set string_carry: next.string_carry
-            set scalar_carry: next.scalar_carry
+            bits := next.bits
+            base := next.base
+            to := next.to
+            escape_carry := next.escape_carry
+            string_carry := next.string_carry
+            scalar_carry := next.scalar_carry
         }
         let at base + (trailing_zeros(bits) as size_t)
-        set bits: bits & (bits - 1)
+        bits := bits & (bits - 1)
         at
     }
 
@@ -120,13 +120,13 @@ define JsonStream
             ; each class over the whole block as one bitmap
             let c0 JsonStream.classes(u8x32.load(src, base))
             let c1 JsonStream.classes(u8x32.load(src, base + 32))
-            set quote: JsonStream.class_bits(c0, c1, 0x80)
-            set back: JsonStream.class_bits(c0, c1, 0x40)
-            set op: JsonStream.class_bits(c0, c1, 0x07)
+            quote := JsonStream.class_bits(c0, c1, 0x80)
+            back := JsonStream.class_bits(c0, c1, 0x40)
+            op := JsonStream.class_bits(c0, c1, 0x07)
             ; no scalar byte: operator, whitespace, quote
-            set nonscalar: JsonStream.class_bits(c0, c1, 0x9F)
+            nonscalar := JsonStream.class_bits(c0, c1, 0x9F)
             ; inside a string the byte scanner's business: control, backslash
-            set special: JsonStream.class_bits(c0, c1, 0x60)
+            special := JsonStream.class_bits(c0, c1, 0x60)
         }
         else
         {
@@ -138,33 +138,33 @@ define JsonStream
                 match c
                     case 0x22
                     {
-                        set quote: quote | bit
-                        set nonscalar: nonscalar | bit
+                        quote := quote | bit
+                        nonscalar := nonscalar | bit
                     }
                     case 0x5C
                     {
-                        set back: back | bit
-                        set special: special | bit
+                        back := back | bit
+                        special := special | bit
                     }
                     case 0x7B case 0x7D case 0x5B case 0x5D case 0x3A case 0x2C
                     {
-                        set op: op | bit
-                        set nonscalar: nonscalar | bit
+                        op := op | bit
+                        nonscalar := nonscalar | bit
                     }
                     else
                     {
                         if JsonReader.is_ws(c)
-                            set nonscalar: nonscalar | bit
+                            nonscalar := nonscalar | bit
                     }
                 if c < 0x20
-                    set special: special | bit
-                set i: i + 1
+                    special := special | bit
+                i := i + 1
             }
             ; past the end: whitespace, which is never structural
             while i < 64
             {
-                set nonscalar: nonscalar | ((1 as u64) << (i as u64))
-                set i: i + 1
+                nonscalar := nonscalar | ((1 as u64) << (i as u64))
+                i := i + 1
             }
         }
         ; the escaped bytes: a backslash escapes the next byte unless it is
@@ -177,13 +177,13 @@ define JsonStream
             let at trailing_zeros(b)
             if at = 63
             {
-                set escape_carry: 1
+                escape_carry := 1
                 break
             }
             let next (1 as u64) << (at + 1)
-            set escaped: escaped | next
-            set b: b & (next xor 0xFFFFFFFFFFFFFFFF)
-            set b: b & (b - 1)
+            escaped := escaped | next
+            b := b & (next xor 0xFFFFFFFFFFFFFFFF)
+            b := b & (b - 1)
         }
         let q quote & (escaped xor 0xFFFFFFFFFFFFFFFF)
         ; inside a string: from an opening quote up to (not including) its
@@ -226,11 +226,11 @@ define JsonStream
     function prefix_xor(x: u64) returns u64
     {
         var y x
-        set y: y xor (y << 1)
-        set y: y xor (y << 2)
-        set y: y xor (y << 4)
-        set y: y xor (y << 8)
-        set y: y xor (y << 16)
+        y := y xor (y << 1)
+        y := y xor (y << 2)
+        y := y xor (y << 4)
+        y := y xor (y << 8)
+        y := y xor (y << 16)
         y xor (y << 32)
     }
 }
@@ -264,7 +264,7 @@ define JsonReader
     {
         var limit max_depth
         if limit > MAX_DEPTH
-            set limit: MAX_DEPTH
+            limit := MAX_DEPTH
         JsonReader(source, limit, 0, 0, 0, 0, 0, 0, EXPECT_VALUE, 0, 0, false, false, JSON_OK, 0)
     }
 
@@ -283,7 +283,7 @@ define JsonReader
             {
                 if state = EXPECT_EOF
                 {
-                    set state: READER_DONE
+                    state := READER_DONE
                     return JsonToken.End
                 }
                 return this.fail(JSON_END)
@@ -296,11 +296,11 @@ define JsonReader
                 let in_object this.in_object()
                 if c = 0x2C                                 ; ','
                 {
-                    set pos: pos + 1
+                    pos := pos + 1
                     if in_object
-                        set state: EXPECT_KEY
+                        state := EXPECT_KEY
                     else
-                        set state: EXPECT_VALUE
+                        state := EXPECT_VALUE
                     continue
                 }
                 if in_object and c = 0x7D                   ; '}'
@@ -322,8 +322,8 @@ define JsonReader
                 this.skip_ws()
                 if pos >= source.length or source[pos] <> 0x3A     ; ':'
                     return this.fail(JSON_COLON)
-                set pos: pos + 1
-                set state: EXPECT_VALUE
+                pos := pos + 1
+                state := EXPECT_VALUE
                 return JsonToken.MemberName
             }
             return this.value(c)
@@ -406,17 +406,17 @@ define JsonReader
             ; the run up to the next backslash in one append
             var j i
             while j < raw.length and raw[j] <> 0x5C
-                set j: j + 1
+                j := j + 1
             if j > i
                 sb.append(raw.subslice(i, j).data as pointer[char], j - i)
             if j >= raw.length
                 break
             let e raw[j + 1]
-            set i: j + 2
+            i := j + 2
             if e = 0x75                                     ; 'u'
             {
                 var cp JsonReader.hex4(raw, i)
-                set i: i + 4
+                i := i + 4
                 if cp >= 0xD800 and cp <= 0xDBFF
                 {
                     if i + 6 <= raw.length and raw[i] = 0x5C and raw[i + 1] = 0x75
@@ -424,19 +424,19 @@ define JsonReader
                         let low JsonReader.hex4(raw, i + 2)
                         if low >= 0xDC00 and low <= 0xDFFF
                         {
-                            set cp: 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00)
-                            set i: i + 6
+                            cp := 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00)
+                            i := i + 6
                         }
                         else
-                            set cp: 0xFFFD
+                            cp := 0xFFFD
                     }
                     else
-                        set cp: 0xFFFD
+                        cp := 0xFFFD
                 }
                 else
                 {
                     if cp >= 0xDC00 and cp <= 0xDFFF
-                        set cp: 0xFFFD
+                        cp := 0xFFFD
                 }
                 JsonReader.append_utf8(sb, cp)
             }
@@ -464,8 +464,8 @@ define JsonReader
         var k: size_t 0
         while k < 4
         {
-            set v: (v << 4) + JsonReader.hex_digit(raw[at + k])
-            set k: k + 1
+            v := (v << 4) + JsonReader.hex_digit(raw[at + k])
+            k := k + 1
         }
         v
     }
@@ -513,9 +513,9 @@ define JsonReader
 
     procedure fail(mutable this, code: int) returns JsonToken
     {
-        set error: code
-        set error_at: pos
-        set state: READER_DONE
+        error := code
+        error_at := pos
+        state := READER_DONE
         JsonToken.Invalid
     }
 
@@ -533,9 +533,9 @@ define JsonReader
             let c src[p]
             if c <> 0x20 and c <> 0x0A and c <> 0x0D and c <> 0x09
                 break
-            set p: p + 1
+            p := p + 1
         }
-        set pos: p
+        pos := p
     }
 
     function is_ws(c: u8) returns bool
@@ -568,46 +568,46 @@ define JsonReader
         if word = 0
         {
             if is_object
-                set levels0: levels0 | bit
+                levels0 := levels0 | bit
             else
-                set levels0: levels0 & (bit xor 0xFFFFFFFFFFFFFFFF)
+                levels0 := levels0 & (bit xor 0xFFFFFFFFFFFFFFFF)
         }
         else
         {
             if word = 1
             {
                 if is_object
-                    set levels1: levels1 | bit
+                    levels1 := levels1 | bit
                 else
-                    set levels1: levels1 & (bit xor 0xFFFFFFFFFFFFFFFF)
+                    levels1 := levels1 & (bit xor 0xFFFFFFFFFFFFFFFF)
             }
             else
             {
                 if word = 2
                 {
                     if is_object
-                        set levels2: levels2 | bit
+                        levels2 := levels2 | bit
                     else
-                        set levels2: levels2 & (bit xor 0xFFFFFFFFFFFFFFFF)
+                        levels2 := levels2 & (bit xor 0xFFFFFFFFFFFFFFFF)
                 }
                 else
                 {
                     if is_object
-                        set levels3: levels3 | bit
+                        levels3 := levels3 | bit
                     else
-                        set levels3: levels3 & (bit xor 0xFFFFFFFFFFFFFFFF)
+                        levels3 := levels3 & (bit xor 0xFFFFFFFFFFFFFFFF)
                 }
             }
         }
-        set depth: depth + 1
-        set pos: pos + 1
+        depth := depth + 1
+        pos := pos + 1
         true
     }
 
     procedure close(mutable this, token: JsonToken) returns JsonToken
     {
-        set depth: depth - 1
-        set pos: pos + 1
+        depth := depth - 1
+        pos := pos + 1
         this.after_value()
         token
     }
@@ -615,9 +615,9 @@ define JsonReader
     procedure after_value(mutable this)
     {
         if depth = 0
-            set state: EXPECT_EOF
+            state := EXPECT_EOF
         else
-            set state: EXPECT_SEPARATOR
+            state := EXPECT_SEPARATOR
     }
 
     procedure value(mutable this, c: u8) returns JsonToken
@@ -626,14 +626,14 @@ define JsonReader
         {
             if this.open(true) = false
                 return JsonToken.Invalid
-            set state: EXPECT_KEY_OR_END
+            state := EXPECT_KEY_OR_END
             return JsonToken.ObjectStart
         }
         if c = 0x5B                                         ; '['
         {
             if this.open(false) = false
                 return JsonToken.Invalid
-            set state: EXPECT_VALUE_OR_END
+            state := EXPECT_VALUE_OR_END
             return JsonToken.ArrayStart
         }
         if c = 0x22                                         ; '"'
@@ -665,7 +665,7 @@ define JsonReader
             return false
         if source.subslice(pos, pos + word.length).equals(word) = false
             return false
-        set pos: pos + word.length
+        pos := pos + word.length
         this.after_value()
         true
     }
@@ -677,14 +677,14 @@ define JsonReader
         let s JsonReader.string_close(source, pos)
         if s.code <> JSON_OK
         {
-            set pos: s.at
+            pos := s.at
             this.fail(s.code)
             return false
         }
-        set start: pos + 1
-        set end: s.at
-        set escaped: s.flag
-        set pos: s.at + 1
+        start := pos + 1
+        end := s.at
+        escaped := s.flag
+        pos := s.at + 1
         true
     }
 
@@ -708,17 +708,17 @@ define JsonReader
                 let special ((v = quote) or (v = back) or (v < space)).bits()
                 if special <> 0
                 {
-                    set p: p + (trailing_zeros(special) as size_t)
+                    p := p + (trailing_zeros(special) as size_t)
                     break
                 }
-                set p: p + 16
+                p := p + 16
             }
             if p >= src.length
                 break
             let c src[p]
             if c >= 0x20 and c <> 0x22 and c <> 0x5C
             {
-                set p: p + 1
+                p := p + 1
                 continue
             }
             if c = 0x22
@@ -726,7 +726,7 @@ define JsonReader
             if c < 0x20
                 return JsonScan(JSON_CONTROL, p, escaped)
             ; a backslash
-            set escaped: true
+            escaped := true
             if p + 1 >= src.length
                 return JsonScan(JSON_END, p + 1, escaped)
             let e src[p + 1]
@@ -739,14 +739,14 @@ define JsonReader
                 {
                     if JsonReader.hex_digit(src[p + k]) < 0
                         return JsonScan(JSON_ESCAPE, p + k, escaped)
-                    set k: k + 1
+                    k := k + 1
                 }
-                set p: p + 6
+                p := p + 6
             }
             else
             {
                 match e
-                    case 0x22 case 0x5C case 0x2F case 0x62 case 0x66 case 0x6E case 0x72 case 0x74: set p: p + 2
+                    case 0x22 case 0x5C case 0x2F case 0x62 case 0x66 case 0x6E case 0x72 case 0x74: p := p + 2
                     else: return JsonScan(JSON_ESCAPE, p + 1, escaped)
             }
         }
@@ -758,14 +758,14 @@ define JsonReader
         let s JsonReader.number_end(source, pos)
         if s.code <> JSON_OK
         {
-            set pos: s.at
+            pos := s.at
             this.fail(s.code)
             return false
         }
-        set start: pos
-        set end: s.at
-        set integral: s.flag
-        set pos: s.at
+        start := pos
+        end := s.at
+        integral := s.flag
+        pos := s.at
         true
     }
 
@@ -776,34 +776,34 @@ define JsonReader
         var p from
         var integral true
         if src[p] = 0x2D
-            set p: p + 1
+            p := p + 1
         if JsonReader.digit_at(src, p) = false
             return JsonScan(JSON_NUMBER, p, false)
         if src[p] = 0x30
         {
-            set p: p + 1
+            p := p + 1
             if JsonReader.digit_at(src, p)
                 return JsonScan(JSON_NUMBER, p, false)
         }
         else
-            set p: JsonReader.digits_end(src, p)
+            p := JsonReader.digits_end(src, p)
         if p < src.length and src[p] = 0x2E                 ; '.'
         {
-            set integral: false
-            set p: p + 1
+            integral := false
+            p := p + 1
             if JsonReader.digit_at(src, p) = false
                 return JsonScan(JSON_NUMBER, p, false)
-            set p: JsonReader.digits_end(src, p)
+            p := JsonReader.digits_end(src, p)
         }
         if p < src.length and (src[p] = 0x65 or src[p] = 0x45)     ; 'e' 'E'
         {
-            set integral: false
-            set p: p + 1
+            integral := false
+            p := p + 1
             if p < src.length and (src[p] = 0x2B or src[p] = 0x2D)
-                set p: p + 1
+                p := p + 1
             if JsonReader.digit_at(src, p) = false
                 return JsonScan(JSON_NUMBER, p, false)
-            set p: JsonReader.digits_end(src, p)
+            p := JsonReader.digits_end(src, p)
         }
         JsonScan(JSON_OK, p, integral)
     }
@@ -822,10 +822,10 @@ define JsonReader
             let other ((u8x16.load(src, q) - u8x16.splat(0x30)) > u8x16.splat(9)).bits()
             if other <> 0
                 return q + (trailing_zeros(other) as size_t)
-            set q: q + 16
+            q := q + 16
         }
         while q < src.length and src[q] >= 0x30 and src[q] <= 0x39
-            set q: q + 1
+            q := q + 1
         q
     }
 
@@ -843,20 +843,20 @@ define JsonReader
             if c <> 0x5C
             {
                 doc.put(w, c)
-                set w: w + 1
-                set r: r + 1
+                w := w + 1
+                r := r + 1
                 continue
             }
             let e doc[r + 1]
             if e <> 0x75                                    ; not 'u'
             {
                 doc.put(w, JsonReader.unescape(e))
-                set w: w + 1
-                set r: r + 2
+                w := w + 1
+                r := r + 2
                 continue
             }
             var cp JsonReader.hex4(doc, r + 2)
-            set r: r + 6
+            r := r + 6
             if cp >= 0xD800 and cp <= 0xDBFF
             {
                 if r + 6 <= to and doc[r] = 0x5C and doc[r + 1] = 0x75
@@ -864,21 +864,21 @@ define JsonReader
                     let low JsonReader.hex4(doc, r + 2)
                     if low >= 0xDC00 and low <= 0xDFFF
                     {
-                        set cp: 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00)
-                        set r: r + 6
+                        cp := 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00)
+                        r := r + 6
                     }
                     else
-                        set cp: 0xFFFD
+                        cp := 0xFFFD
                 }
                 else
-                    set cp: 0xFFFD
+                    cp := 0xFFFD
             }
             else
             {
                 if cp >= 0xDC00 and cp <= 0xDFFF
-                    set cp: 0xFFFD
+                    cp := 0xFFFD
             }
-            set w: JsonReader.put_utf8(doc, w, cp)
+            w := JsonReader.put_utf8(doc, w, cp)
         }
         w - from
     }

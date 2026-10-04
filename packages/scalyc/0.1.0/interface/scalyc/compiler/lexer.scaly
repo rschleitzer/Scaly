@@ -23,7 +23,7 @@ define lexer
     define EmptyToken()
     define InvalidToken()
     ; line_feed: the separator was a line feed alone, no ':' in the source
-    define ColonToken(line_feed: bool)
+    define ColonToken(line_feed: bool, becomes: bool)
     define IdentifierToken(name: String)
     define AttributeToken(name: String)
     define PunctuationToken(sign: u8)

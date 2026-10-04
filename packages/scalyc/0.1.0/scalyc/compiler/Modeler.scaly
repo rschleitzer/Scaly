@@ -1092,11 +1092,32 @@ define Modeler
         )
     }
 
+    ; An operation as a statement or an action: `target := source` is the
+    ; assignment (2026-10-04, the Algol tradition; `set target: source` is the
+    ; older spelling of the same Action and runs out).
+    procedure operation_action(mutable op: OperationSyntax) returns Action mutable modeler_error_count
+    {
+        if op.becomes <> null
+        {
+            let assigned (*op.becomes)
+            return Action(handle_operands(assigned.source), handle_operands(op.operands))
+        }
+        Action(handle_operands(op.operands), Vector[Operand](0))
+    }
+
+    ; ... and anywhere else an assignment cannot stand (a condition, a `for`
+    ; range): it is a statement of its own.
+    procedure refuse_assignment(op: OperationSyntax) mutable modeler_error_count
+    {
+        if op.becomes <> null
+            report_load_error(String("error: ':=' assigns, and an assignment is a statement of its own - it cannot stand inside a condition or an expression"))
+    }
+
     procedure handle_action(mutable syntax: ActionSyntax) returns Action mutable modeler_error_count
     {
         choose syntax
             when op: OperationSyntax
-                Action(handle_operands(op.operands), Vector[Operand](0))
+                operation_action(op)
             when set_syntax: SetSyntax
                 Action(handle_operands(set_syntax.source), handle_operands(set_syntax.target))
             else
@@ -1141,6 +1162,7 @@ define Modeler
         choose syntax
             when op: OperationSyntax
             {
+                refuse_assignment(op)
                 let operands handle_operands(op.operands)
                 Binding(
                     Span(op.start, op.end),
@@ -1329,7 +1351,10 @@ define Modeler
     }
 
     procedure handle_operation(mutable syntax: OperationSyntax) returns Vector[Operand] mutable modeler_error_count
+    {
+        refuse_assignment(syntax)
         handle_operands(syntax.operands)
+    }
 
     ; ============================================================================
     ; Statement handling
@@ -1359,10 +1384,7 @@ define Modeler
     {
         choose syntax
             when op: OperationSyntax
-            {
-                let operands handle_operands(op.operands)
-                Statement.Action(Action(operands, Vector[Operand](0)))
-            }
+                Statement.Action(operation_action(op))
             when let_syntax: LetSyntax
             {
                 let item handle_binding_item(let_syntax.binding)

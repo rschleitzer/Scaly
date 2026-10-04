@@ -35,9 +35,9 @@ define JsonWriter
 {
     init()
     {
-        set buffer: Array[u8]^this()
-        set first: true
-        set after_key: false
+        buffer := Array[u8]^this()
+        first := true
+        after_key := false
     }
 
     ; The document so far.
@@ -51,34 +51,34 @@ define JsonWriter
     procedure clear(mutable this)
     {
         buffer.clear()
-        set first: true
-        set after_key: false
+        first := true
+        after_key := false
     }
 
     procedure begin_object(mutable this)
     {
         this.separate()
         this.byte(0x7B)                                     ; '{'
-        set first: true
+        first := true
     }
 
     procedure end_object(mutable this)
     {
         this.byte(0x7D)                                     ; '}'
-        set first: false
+        first := false
     }
 
     procedure begin_array(mutable this)
     {
         this.separate()
         this.byte(0x5B)                                     ; '['
-        set first: true
+        first := true
     }
 
     procedure end_array(mutable this)
     {
         this.byte(0x5D)                                     ; ']'
-        set first: false
+        first := false
     }
 
     ; A member name; the member's value is the next thing written.
@@ -87,7 +87,7 @@ define JsonWriter
         this.separate()
         this.quoted(name)
         this.byte(0x3A)                                     ; ':'
-        set after_key: true
+        after_key := true
     }
 
     procedure text(mutable this, s: Slice[u8])
@@ -104,21 +104,21 @@ define JsonWriter
         if n < 0
         {
             this.byte(0x2D)                                 ; '-'
-            set v: (0 as u64) - v
+            v := (0 as u64) - v
         }
         var at: size_t 20
         repeat
         {
-            set at: at - 1
-            set digits[at]: ((v % 10) as u8) + 0x30
-            set v: v / 10
+            at := at - 1
+            digits[at] := ((v % 10) as u8) + 0x30
+            v := v / 10
             if v = 0
                 break
         }
         while at < 20
         {
             buffer.add(digits[at])
-            set at: at + 1
+            at := at + 1
         }
     }
 
@@ -176,10 +176,10 @@ define JsonWriter
                 let n name.key.length
                 if p + n + 19 > block.length
                 {
-                    set buffer.length: base + p
-                    set base: buffer.length
-                    set block: buffer.extend(n + 19 + JSON_BLOCK)
-                    set p: 0
+                    buffer.length := base + p
+                    base := buffer.length
+                    block := buffer.extend(n + 19 + JSON_BLOCK)
+                    p := 0
                 }
                 if name.verbatim_key
                 {
@@ -189,31 +189,31 @@ define JsonWriter
                     while i < n
                     {
                         u8x16.load(padded, i).store(block, p + 1 + i)
-                        set i: i + 16
+                        i := i + 16
                     }
                     block.put(p + 1 + n, 0x22)
                     block.put(p + 2 + n, 0x3A)              ; ':'
-                    set p: p + n + 3
+                    p := p + n + 3
                 }
                 else
                 {
-                    set buffer.length: base + p
+                    buffer.length := base + p
                     this.quoted(name.key)
                     this.byte(0x3A)
-                    set base: buffer.length
-                    set block: buffer.extend(JSON_BLOCK)
-                    set p: 0
+                    base := buffer.length
+                    block := buffer.extend(JSON_BLOCK)
+                    p := 0
                 }
-                set named: false
+                named := false
             }
             ; room for the longest fixed piece: a closer, a comma and a
             ; literal, or a name's colon
             if p + 16 > block.length
             {
-                set buffer.length: base + p
-                set base: buffer.length
-                set block: buffer.extend(JSON_BLOCK)
-                set p: 0
+                buffer.length := base + p
+                base := buffer.length
+                block := buffer.extend(JSON_BLOCK)
+                p := 0
             }
             ; write cur; a container that is not empty opens and cur becomes
             ; its first element
@@ -225,7 +225,7 @@ define JsonWriter
                     block.put(p + 1, 0x75)
                     block.put(p + 2, 0x6C)
                     block.put(p + 3, 0x6C)
-                    set p: p + 4
+                    p := p + 4
                 }
                 when b: Bool
                 {
@@ -235,7 +235,7 @@ define JsonWriter
                         block.put(p + 1, 0x72)
                         block.put(p + 2, 0x75)
                         block.put(p + 3, 0x65)
-                        set p: p + 4
+                        p := p + 4
                     }
                     else
                     {
@@ -244,7 +244,7 @@ define JsonWriter
                         block.put(p + 2, 0x6C)
                         block.put(p + 3, 0x73)
                         block.put(p + 4, 0x65)
-                        set p: p + 5
+                        p := p + 5
                     }
                 }
                 when num: Number
@@ -252,10 +252,10 @@ define JsonWriter
                     let n num.text.length
                     if p + n + 18 > block.length
                     {
-                        set buffer.length: base + p
-                        set base: buffer.length
-                        set block: buffer.extend(n + 18 + JSON_BLOCK)
-                        set p: 0
+                        buffer.length := base + p
+                        base := buffer.length
+                        block := buffer.extend(n + 18 + JSON_BLOCK)
+                        p := 0
                     }
                     if num.verbatim
                     {
@@ -264,7 +264,7 @@ define JsonWriter
                         while i < n
                         {
                             u8x16.load(padded, i).store(block, p + i)
-                            set i: i + 16
+                            i := i + 16
                         }
                     }
                     else
@@ -273,10 +273,10 @@ define JsonWriter
                         while i < n
                         {
                             block.put(p + i, num.text[i])
-                            set i: i + 1
+                            i := i + 1
                         }
                     }
-                    set p: p + n
+                    p := p + n
                 }
                 when t: Text
                 {
@@ -285,10 +285,10 @@ define JsonWriter
                     {
                         if p + n + 18 > block.length
                         {
-                            set buffer.length: base + p
-                            set base: buffer.length
-                            set block: buffer.extend(n + 18 + JSON_BLOCK)
-                            set p: 0
+                            buffer.length := base + p
+                            base := buffer.length
+                            block := buffer.extend(n + 18 + JSON_BLOCK)
+                            p := 0
                         }
                         block.put(p, 0x22)
                         let padded Slice[u8](n + 16, t.bytes.data)
@@ -296,19 +296,19 @@ define JsonWriter
                         while i < n
                         {
                             u8x16.load(padded, i).store(block, p + 1 + i)
-                            set i: i + 16
+                            i := i + 16
                         }
                         block.put(p + 1 + n, 0x22)
-                        set p: p + n + 2
+                        p := p + n + 2
                     }
                     else
                     {
                         ; the escaping writer goes through the buffer itself
-                        set buffer.length: base + p
+                        buffer.length := base + p
                         this.quoted(t.bytes)
-                        set base: buffer.length
-                        set block: buffer.extend(JSON_BLOCK)
-                        set p: 0
+                        base := buffer.length
+                        block := buffer.extend(JSON_BLOCK)
+                        p := 0
                     }
                 }
                 when a: Array
@@ -317,15 +317,15 @@ define JsonWriter
                     {
                         block.put(p, 0x5B)
                         block.put(p + 1, 0x5D)
-                        set p: p + 2
+                        p := p + 2
                     }
                     else
                     {
                         block.put(p, 0x5B)                  ; '['
-                        set p: p + 1
+                        p := p + 1
                         open.add(JsonWriteFrame(a.items, no_members, 0))
-                        set cur: a.items[0]
-                        set opened: true
+                        cur := a.items[0]
+                        opened := true
                     }
                 }
                 when o: Object
@@ -334,17 +334,17 @@ define JsonWriter
                     {
                         block.put(p, 0x7B)
                         block.put(p + 1, 0x7D)
-                        set p: p + 2
+                        p := p + 2
                     }
                     else
                     {
                         block.put(p, 0x7B)                  ; '{'
-                        set p: p + 1
+                        p := p + 1
                         open.add(JsonWriteFrame(no_items, o.members, 0))
-                        set name: o.members[0]
-                        set named: true
-                        set cur: o.members[0].value
-                        set opened: true
+                        name := o.members[0]
+                        named := true
+                        cur := o.members[0].value
+                        opened := true
                     }
                 }
             if opened
@@ -356,10 +356,10 @@ define JsonWriter
             {
                 if p + 2 > block.length
                 {
-                    set buffer.length: base + p
-                    set base: buffer.length
-                    set block: buffer.extend(JSON_BLOCK)
-                    set p: 0
+                    buffer.length := base + p
+                    base := buffer.length
+                    block := buffer.extend(JSON_BLOCK)
+                    p := 0
                 }
                 let top open.length - 1
                 let f open[top]
@@ -369,18 +369,18 @@ define JsonWriter
                     if at < f.members.length
                     {
                         block.put(p, 0x2C)                  ; ','
-                        set p: p + 1
-                        set name: f.members[at]
-                        set named: true
-                        set cur: f.members[at].value
+                        p := p + 1
+                        name := f.members[at]
+                        named := true
+                        cur := f.members[at].value
                         open.put(top, JsonWriteFrame(f.items, f.members, at))
-                        set next: true
+                        next := true
                     }
                     else
                     {
                         block.put(p, 0x7D)                  ; '}'
-                        set p: p + 1
-                        set open.length: top
+                        p := p + 1
+                        open.length := top
                     }
                 }
                 else
@@ -388,24 +388,24 @@ define JsonWriter
                     if at < f.items.length
                     {
                         block.put(p, 0x2C)                  ; ','
-                        set p: p + 1
-                        set cur: f.items[at]
+                        p := p + 1
+                        cur := f.items[at]
                         open.put(top, JsonWriteFrame(f.items, f.members, at))
-                        set next: true
+                        next := true
                     }
                     else
                     {
                         block.put(p, 0x5D)                  ; ']'
-                        set p: p + 1
-                        set open.length: top
+                        p := p + 1
+                        open.length := top
                     }
                 }
             }
             if next = false
                 break
         }
-        set buffer.length: base + p
-        set first: false
+        buffer.length := base + p
+        first := false
     }
 
     ; Bytes that already are JSON, as a value (the caller vouches for them).
@@ -422,11 +422,11 @@ define JsonWriter
     {
         if after_key
         {
-            set after_key: false
+            after_key := false
             return
         }
         if first
-            set first: false
+            first := false
         else
             this.byte(0x2C)                                 ; ','
     }
@@ -452,10 +452,10 @@ define JsonWriter
             let special ((v = quote) or (v = back) or (v < space)).bits()
             if special <> 0
             {
-                set i: i + (trailing_zeros(special) as size_t)
+                i := i + (trailing_zeros(special) as size_t)
                 break
             }
-            set i: i + 16
+            i := i + 16
         }
         ; the rest (a short string is all rest: keys, names): its plain
         ; bytes counted, then copied in one go -- a put each, bounds
@@ -480,20 +480,20 @@ define JsonWriter
             let b (back - 0x0101010101010101) & (back xor 0xFFFFFFFFFFFFFFFF)
             if ((below | q | b) & 0x8080808080808080) <> 0
                 break
-            set j: j + 8
+            j := j + 8
         }
         while j < n and JsonWriter.plain(bytes[j])
-            set j: j + 1
+            j := j + 1
         if j > i
             memcpy(out.slice_from(i + 1).data as pointer[void], bytes.slice_from(i).data as pointer[void], j - i)
-        set i: j
+        i := j
         if i = n
         {
             out.put(n + 1, 0x22)
             return
         }
         ; an escape at i: what stands before it stays
-        set buffer.length: start + 1 + i
+        buffer.length := start + 1 + i
         this.quoted_rest(s, i)
     }
 
@@ -507,13 +507,13 @@ define JsonWriter
         {
             var j i
             while j < n and JsonWriter.plain(s[j])
-                set j: j + 1
+                j := j + 1
             if j > i
                 this.append(s.subslice(i, j))
             if j >= n
                 break
             this.escape(s[j])
-            set i: j + 1
+            i := j + 1
         }
         this.byte(0x22)
     }
@@ -583,7 +583,7 @@ define JsonWriter
                     sb.append(JsonWriter.hex_digit(c & 0x0F) as char)
                 }
             }
-            set i: i + 1
+            i := i + 1
         }
         sb.append(0x22 as char)
     }
@@ -621,7 +621,7 @@ define JsonWriter
                     if i > 0
                         sb.append(0x2C as char)
                     JsonWriter.append_value(sb, a.items[i])
-                    set i: i + 1
+                    i := i + 1
                 }
                 sb.append(0x5D as char)
             }
@@ -637,7 +637,7 @@ define JsonWriter
                     JsonWriter.append_quoted(sb, m.key)
                     sb.append(0x3A as char)
                     JsonWriter.append_value(sb, m.value)
-                    set i: i + 1
+                    i := i + 1
                 }
                 sb.append(0x7D as char)
             }

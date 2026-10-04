@@ -605,6 +605,11 @@
 
 <syntax id = Operation
     <content link = Operand               multiple          property = operands
+    <content link = Becomes                        optional property = becomes
+
+<syntax id = Becomes
+    <content link = becomes
+    <content link = Operand               multiple          property = source
 
 <syntax id = Set
     <content link = set
@@ -729,6 +734,7 @@
 <punctuation id = left_bracket      value = "["
 <punctuation id = right_bracket     value = "]"
 <punctuation id = colon_sign        value = ":"
+<punctuation id = becomes           value = "="
 <punctuation id = hash              value = "#"
 <punctuation id = caret             value = "^"
 <punctuation id = backslash         value = "\\"

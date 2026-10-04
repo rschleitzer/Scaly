@@ -23,7 +23,7 @@ define lexer
     define EmptyToken()
     define InvalidToken()
     ; line_feed: the separator was a line feed alone, no ':' in the source
-    define ColonToken(line_feed: bool)
+    define ColonToken(line_feed: bool, becomes: bool)
     define IdentifierToken(name: String)
     define AttributeToken(name: String)
     define PunctuationToken(sign: u8)
@@ -216,6 +216,19 @@ define lexer
             if c = 58  ; ':'
             {
                 read_character()
+                ; `:=`, the assignment sign (`x := y`, the Algol tradition;
+                ; 2026-10-04): a colon token of its own kind, as the colon of
+                ; a line feed is one. It is no separator (parse_colon#) and no
+                ; type annotation's sign; the grammar asks for it as the
+                ; punctuation `becomes` (parse_punctuation# with "="). The
+                ; source may go on in the next line.
+                if current <> null and *current = 61
+                {
+                    read_character()
+                    set token: Token.Colon(ColonToken(false, true))
+                    skip_whitespace true
+                    return
+                }
                 ; A colon that ENDS its line and the line feed after it are
                 ; ONE separator, as consecutive line feeds are (2026-09-25).
                 ; As two, `case 1:` with its statement on the next line took
@@ -226,7 +239,7 @@ define lexer
                 skip_whitespace false
                 if current <> null and *current = 10
                     scan_line_feed()
-                set token: Token.Colon(ColonToken(false))
+                set token: Token.Colon(ColonToken(false, false))
                 skip_whitespace false
                 return
             }
@@ -286,7 +299,7 @@ define lexer
             {
                 skip_whitespace false
                 if current = null
-                    return Token.Colon(ColonToken(true))
+                    return Token.Colon(ColonToken(true, false))
 
                 let c *current
 
@@ -310,7 +323,7 @@ define lexer
                     continue
                 }
 
-                return Token.Colon(ColonToken(true))
+                return Token.Colon(ColonToken(true, false))
             }
         }
 
@@ -932,7 +945,13 @@ define lexer
                 ; every later variant shifted by one (rc 0).
                 when colon: Colon
                 {
-                    if c = 58 and colon.line_feed = false
+                    if c = 58 and colon.line_feed = false and colon.becomes = false
+                    {
+                        empty()
+                        return true
+                    }
+                    ; the assignment sign `:=`
+                    if c = 61 and colon.becomes
                     {
                         empty()
                         return true
@@ -954,6 +973,9 @@ define lexer
             choose token
                 when c: Colon
                 {
+                    ; `:=` separates nothing
+                    if c.becomes
+                        return false
                     empty()
                     return true
                 }

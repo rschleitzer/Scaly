@@ -311,6 +311,8 @@ define Parser
 
     procedure parse_operation(mutable this: Parser) @page true @direct true @deep true returns OperationSyntax throws ParserError linked
 
+    procedure parse_becomes(mutable this: Parser) @page true @direct true @deep true returns BecomesSyntax throws ParserError linked
+
     procedure parse_set(mutable this: Parser) @page true @direct true @deep true returns SetSyntax throws ParserError linked
 
     procedure parse_block(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns BlockSyntax throws ParserError linked

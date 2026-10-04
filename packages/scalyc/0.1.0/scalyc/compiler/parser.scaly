@@ -5107,9 +5107,48 @@ define Parser
             when success: Success
                 set operands: success
 
+        let becomes_start lexer.position
+        var becomes: ref[BecomesSyntax]? null
+        choose parse_becomes()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set becomes: BecomesSyntax(success.start, success.end, success.source)
+
         let end lexer.position
 
-        OperationSyntax(start, end, operands)
+        OperationSyntax(start, end, operands, becomes)
+    }
+
+    procedure parse_becomes(mutable this: Parser) returns BecomesSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_punctuation("=")
+            throw ParserError.Different(DifferentSyntax())
+
+        let source_start lexer.position
+        var source: ref[Vector[OperandSyntax]]?
+        choose parse_operand_list()
+            when err: Error
+            {
+                choose err
+                    when d: Different
+                        throw ParserError.Invalid(InvalidSyntax(source_start, lexer.position, "expected Operand"))
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set source: success
+
+        let end lexer.position
+
+        BecomesSyntax(start, end, source)
     }
 
     procedure parse_set(mutable this: Parser) returns SetSyntax throws ParserError
