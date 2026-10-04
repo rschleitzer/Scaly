@@ -123,10 +123,6 @@ define Parser
 
     procedure parse_use(mutable this: Parser) @page true @direct true @deep true returns UseSyntax throws ParserError linked
 
-    procedure parse_implement(mutable this: Parser) @page true @direct true @deep true returns ImplementSyntax throws ParserError linked
-
-    procedure parse_trait(mutable this: Parser) @page true @direct true @deep true returns TraitSyntax throws ParserError linked
-
     procedure parse_method_list(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ref[Vector[MethodSyntax]]? throws ParserError linked
 
     procedure parse_method(mutable this: Parser) @page true @direct true @deep true returns MethodSyntax throws ParserError linked
@@ -158,14 +154,6 @@ define Parser
     procedure parse_intrinsic(mutable this: Parser) @page true @direct true @ret_param_0 true @deep true returns IntrinsicSyntax throws ParserError linked
 
     procedure parse_linked(mutable this: Parser) @page true @direct true @ret_param_0 true @deep true returns LinkedSyntax throws ParserError linked
-
-    procedure parse_extends(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ExtendsSyntax throws ParserError linked
-
-    procedure parse_extend_list(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ref[Vector[ExtendSyntax]]? throws ParserError linked
-
-    procedure parse_extend(mutable this: Parser) @page true @direct true @deep true returns ExtendSyntax throws ParserError linked
-
-    procedure parse_macro(mutable this: Parser) @page true @direct true @deep true returns MacroSyntax throws ParserError linked
 
     procedure parse_attribute_list(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ref[Vector[AttributeSyntax]]? throws ParserError linked
 

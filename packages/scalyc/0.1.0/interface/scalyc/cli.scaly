@@ -258,7 +258,7 @@ define cli
     ; s194: format a single parse error as `file:line:col: <message>`,
     ; mirroring print_diagnostics#'s offset→line/col walk (numeric LF
     ; compare — `"\n" as char` mis-compiles under stage-1).
-    procedure print_parse_error(file_path: String, source: String, offset: size_t, message: String) @ret_nonlocal true @deep true io linked
+    procedure print_parse_error(file_path: String, source: String, offset: size_t, message: String) @deep true io linked
 
     procedure print_diagnostics(planner: ref[Planner.Planner], file_path: String, source: String) @deep true io linked
 

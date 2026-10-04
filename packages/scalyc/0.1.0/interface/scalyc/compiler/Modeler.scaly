@@ -363,6 +363,16 @@ define Modeler
     ; Report a sub-module load failure at its real file:line:col and bump the
     ; error counter. `offset` is a byte offset into `source` (the sub-module's own
     ; contents); the line/col walk mirrors cli.print_parse_error's numeric-LF scan.
+    ; Is source[at..] the word, with no identifier character behind it?
+    function word_at(source: String, at: size_t, word: Slice[char]) @deep true returns bool linked
+
+    ; `trait`, `implement`, `extends` and `macro` are RESERVED: they left the
+    ; grammar on 2026-10-04 (nothing modelled them), and the words are kept
+    ; for a later version -- a trait as the checked contract of a generic
+    ; parameter. A parse error on a line that begins with one of them says
+    ; so, instead of the parser's "expected ...". Answers the note, or null.
+    function reserved_word_note(source: String, offset: size_t) @ret_nonlocal true @deep true returns pointer[const_char] linked
+
     procedure report_module_error(file_path: String, source: String, offset: size_t, message: String) @deep true io mutable modeler_error_count reads modeler_error_count linked
 
     ; A required module file (the prelude, or a declared package's root) could not

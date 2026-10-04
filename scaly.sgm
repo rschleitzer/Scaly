@@ -19,8 +19,6 @@
     <content link = Function
     <content link = Procedure
     <content link = Operator
-    <content link = Trait
-    <content link = Macro
     <content link = Module
     <content link = Mutable
     <content link = Shared
@@ -34,7 +32,6 @@
     <content link = Function
     <content link = Procedure
     <content link = Operator
-    <content link = Trait
     <content link = Module
 
 <syntax id = Member                  multiple abstract
@@ -45,9 +42,6 @@
     <content link = Function
     <content link = Procedure
     <content link = Operator
-    <content link = Implement
-    <content link = Trait
-    <content link = Macro
     <content link = Module
 
 <syntax id = Definition
@@ -188,26 +182,6 @@
     <content link = Name                                    property = name
     <content colon                                 optional
 
-<syntax id = Implement
-    <content link = implement
-    <content link = Type                                    property = type
-    <content link = Attribute             multiple optional property = attributes
-    <content colon                                 optional
-    <content link = left_curly
-    <content link = Use                   multiple optional property = uses
-    <content link = Method                multiple optional property = methods
-    <content link = right_curly
-
-<syntax id = Trait
-    <content link = trait
-    <content link = Name                                    property = name
-    <content link = Extends                        optional property = extension
-    <content link = Attribute             multiple optional property = attributes
-    <content link = left_curly
-    <content link = Use                   multiple optional property = uses
-    <content link = Method                multiple optional property = functions
-    <content link = right_curly
-
 <syntax id = Method                       multiple abstract
     <content link = Function
     <content link = Procedure
@@ -281,20 +255,6 @@
 
 <syntax id = Linked
     <content link = linked
-
-<syntax id = Extends
-    <content link = extends
-    <content link = Extend                multiple optional property = extensions
-
-<syntax id = Extend                       multiple
-    <content link = Type                                    property = type
-    <content link = comma                          optional
-
-<syntax id = Macro
-    <content link = macro
-    <content identifier                                     property = name
-    <content link = Model                                   property = model
-    <content link = Operand               multiple          property = rule
 
 <syntax id = Attribute                    multiple
     <content attribute                                      property = name

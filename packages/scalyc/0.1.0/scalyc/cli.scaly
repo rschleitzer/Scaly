@@ -1849,6 +1849,13 @@ define cli
                 col := col + 1
             off := off + 1
         }
+        let note Modeler.reserved_word_note(source, offset)
+        if note <> null
+        {
+            let note_str "`file_path`:`cli.format_size(line)`:`cli.format_size(col)`: `note`"
+            Console.println(note_str.to_c_string())
+            return
+        }
         let msg_str "`file_path`:`cli.format_size(line)`:`cli.format_size(col)`: `message`"
         Console.println(msg_str.to_c_string())
     }

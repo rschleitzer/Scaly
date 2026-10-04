@@ -220,10 +220,6 @@ define symbols
                 return ""
             when u: UseSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -238,8 +234,6 @@ define symbols
                 return symbols.routine_symbol(source, o.target, o.start, o.end, 25)
             when def: DefinitionSyntax
                 return symbols.definition_symbol(source, def)
-            when t: TraitSyntax
-                return ""
             when m: ModuleSyntax
                 return symbols.symbol_object(source, m.name, 2, m.start, m.end, "[]")
     }
@@ -356,12 +350,6 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.definition_symbol(source, def)
             when e: EmptySyntax
-                return ""
-            when im: ImplementSyntax
-                return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
                 return symbols.symbol_object(source, m.name, 2, m.start, m.end, "[]")
@@ -1956,10 +1944,6 @@ define symbols
                 return ""
             when u: UseSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -1974,8 +1958,6 @@ define symbols
                 return symbols.fold_range(source, o.start, o.end)
             when def: DefinitionSyntax
                 return symbols.fold_definition(source, def)
-            when t: TraitSyntax
-                return ""
             when m: ModuleSyntax
                 return symbols.fold_range(source, m.start, m.end)
     }
@@ -2055,12 +2037,6 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.fold_definition(source, def)
             when e: EmptySyntax
-                return ""
-            when im: ImplementSyntax
-                return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
                 return symbols.fold_range(source, m.start, m.end)
@@ -3182,10 +3158,6 @@ define symbols
                 return ""
             when u: UseSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -3200,8 +3172,6 @@ define symbols
                 return symbols.st_target(source, o.start, o.end, o.target)
             when def: DefinitionSyntax
                 return symbols.st_definition(source, def)
-            when t: TraitSyntax
-                return ""
             when m: ModuleSyntax
                 return ""
     }
@@ -3312,12 +3282,6 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.st_definition(source, def)
             when e: EmptySyntax
-                return ""
-            when im: ImplementSyntax
-                return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
                 return ""
@@ -3856,10 +3820,6 @@ define symbols
                 return ""
             when u: UseSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -3874,8 +3834,6 @@ define symbols
                 return symbols.completion_item_detail(symbols.target_name(o.target), 24, symbols.target_detail_text(source, "operator", o.target))
             when def: DefinitionSyntax
                 return symbols.completion_definition(source, def)
-            when t: TraitSyntax
-                return ""
             when m: ModuleSyntax
                 return symbols.completion_item(m.name, 9)
     }
@@ -4085,12 +4043,6 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.completion_definition(source, def)
             when e: EmptySyntax
-                return ""
-            when im: ImplementSyntax
-                return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
                 return symbols.completion_item(m.name, 9)
@@ -5887,10 +5839,6 @@ define symbols
                 return ""
             when u: UseSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -5905,8 +5853,6 @@ define symbols
                 return ""
             when def: DefinitionSyntax
                 return symbols.mem_definition(source, def, receiver)
-            when t: TraitSyntax
-                return ""
             when m: ModuleSyntax
                 return ""
     }
@@ -6126,10 +6072,6 @@ define symbols
                 return ""
             when u: UseSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -6144,8 +6086,6 @@ define symbols
                 return symbols.hover_routine(source, o.start, o.end, offset, "operator", o.target)
             when def: DefinitionSyntax
                 return symbols.hover_definition(source, def, offset)
-            when t: TraitSyntax
-                return ""
             when m: ModuleSyntax
                 return symbols.hover_leaf(source, m.start, m.end, offset, "module", String(m.name))
     }
@@ -6320,12 +6260,6 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.hover_definition(source, def, offset)
             when e: EmptySyntax
-                return ""
-            when im: ImplementSyntax
-                return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
                 return symbols.hover_leaf(source, m.start, m.end, offset, "module", String(m.name))
@@ -7096,10 +7030,6 @@ define symbols
                 return ""
             when u: UseSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -7114,8 +7044,6 @@ define symbols
                 return symbols.def_match(source, uri, symbols.target_name(o.target), name, o.start)
             when def: DefinitionSyntax
                 return symbols.def_definition(source, uri, def, name)
-            when t: TraitSyntax
-                return ""
             when m: ModuleSyntax
                 return symbols.def_module_match(source, uri, String(m.name), name, m.start)
     }
@@ -7222,12 +7150,6 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.def_definition(source, uri, def, name)
             when e: EmptySyntax
-                return ""
-            when im: ImplementSyntax
-                return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
                 return symbols.def_module_match(source, uri, String(m.name), name, m.start)
@@ -9414,10 +9336,6 @@ define symbols
                 return ""
             when u: UseSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -9432,8 +9350,6 @@ define symbols
                 return symbols.ws_item(source, uri, symbols.target_name(o.target), 25, o.start, o.end, symbols.routine_param_detail(source, o.target), symbols.target_return_field(o.target), "")
             when def: DefinitionSyntax
                 return symbols.ws_definition(source, uri, def)
-            when t: TraitSyntax
-                return ""
             when m: ModuleSyntax
                 return symbols.ws_item(source, uri, String(m.name), 2, m.start, m.end, "", "", "")
     }
@@ -9569,12 +9485,6 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.ws_definition(source, uri, def)
             when e: EmptySyntax
-                return ""
-            when im: ImplementSyntax
-                return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
                 return symbols.ws_item(source, uri, String(m.name), 2, m.start, m.end, "", "", "")
@@ -13604,10 +13514,6 @@ define symbols
                 return ""
             when u: UseSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -13622,8 +13528,6 @@ define symbols
                 return symbols.sig_target(source, o.target, name, active)
             when def: DefinitionSyntax
                 return symbols.sig_definition(source, def, name, active)
-            when t: TraitSyntax
-                return ""
             when m: ModuleSyntax
                 return ""
     }
@@ -13691,12 +13595,6 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.sig_definition(source, def, name, active)
             when e: EmptySyntax
-                return ""
-            when im: ImplementSyntax
-                return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
                 return ""
             when m: ModuleSyntax
                 return ""

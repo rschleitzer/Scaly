@@ -1,0 +1,12 @@
+; `trait`, `implement`, `extends` and `macro` are reserved words without a
+; meaning (2026-10-04): they left the grammar, where nothing modelled them,
+; and are kept for a later version. A line that begins with one says so.
+; xfail: 'trait' is reserved for a later version of the language
+
+trait Store
+{
+    function get(this, id: int) returns int
+        0
+}
+
+print "PASS"

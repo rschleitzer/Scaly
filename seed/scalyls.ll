@@ -559,9 +559,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13PackageSyntax = type { i64, i64, %_Z10NameSyntax, ptr }
 %_Z10NameSyntax = type { i64, i64, { ptr }, ptr }
 %_Z9UseSyntax = type { i64, i64, %_Z10NameSyntax }
-%_Z11TraitSyntax = type { i64, i64, %_Z10NameSyntax, ptr, ptr, ptr, ptr }
-%_Z11MacroSyntax = type { i64, i64, { ptr }, %_Z11ModelSyntax, ptr }
-%_Z11ModelSyntax = type { i8, <{ [4 x i64], [0 x i8] }> }
 %_Z11UnionSyntax = type { i64, i64, ptr, ptr }
 %_Z15NamespaceSyntax = type { i64, i64, ptr, ptr }
 %_Z11ClassSyntax = type { i64, i64, %_Z15StructureSyntax, ptr }
@@ -588,7 +585,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorI12MemberSyntaxE = type { ptr }
 %_Z10InitSyntax = type { i64, i64, ptr, ptr, %_Z20ImplementationSyntax }
 %_Z12DeInitSyntax = type { i64, i64, %_Z20ImplementationSyntax }
-%_Z15ImplementSyntax = type { i64, i64, %_Z10TypeSyntax, ptr, ptr, ptr }
 %_Z14VectorIteratorI13VariantSyntaxE = type { ptr, i64 }
 %_Z5SliceI13VariantSyntaxE = type { i64, ptr }
 %_Z13SliceIteratorI13VariantSyntaxE = type { %_Z5SliceI13VariantSyntaxE, i64 }
@@ -74674,15 +74670,13 @@ entry:
     i8 7, label %choose.when1
     i8 8, label %choose.when8
     i8 5, label %choose.when15
-    i8 11, label %choose.when20
-    i8 12, label %choose.when28
-    i8 13, label %choose.when35
+    i8 9, label %choose.when20
+    i8 10, label %choose.when28
+    i8 11, label %choose.when35
     i8 4, label %choose.when43
     i8 0, label %choose.when48
     i8 1, label %choose.when51
     i8 3, label %choose.when54
-    i8 9, label %choose.when57
-    i8 10, label %choose.when60
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -74802,18 +74796,6 @@ choose.when51:                                    ; preds = %entry
 choose.when54:                                    ; preds = %entry
   %"variant.c_data().ptr55" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
   %variant.val56 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr55", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when57:                                    ; preds = %entry
-  %"variant.c_data().ptr58" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val59 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr58", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when60:                                    ; preds = %entry
-  %"variant.c_data().ptr61" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val62 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr61", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -75215,8 +75197,8 @@ while.exit:                                       ; preds = %while.cond
 
 define linkonce_odr void @_ZN7symbols13export_symbolEPN4scaly6memory4PageE6String12ExportSyntax(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %arg.tmp29 = alloca { ptr }, align 8
   %arg.tmp26 = alloca { ptr }, align 8
+  %arg.tmp23 = alloca { ptr }, align 8
   %arg.tmp18 = alloca %_Z16DefinitionSyntax, align 8
   %arg.tmp = alloca %_Z12TargetSyntax, align 8
   %sret.result = alloca { ptr }, align 8
@@ -75228,7 +75210,6 @@ entry:
     i8 3, label %choose.when8
     i8 0, label %choose.when15
     i8 4, label %choose.when20
-    i8 5, label %choose.when23
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -75284,20 +75265,14 @@ choose.when15:                                    ; preds = %entry
 
 choose.when20:                                    ; preds = %entry
   %"variant.c_data().ptr21" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val22 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr21", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when23:                                    ; preds = %entry
-  %"variant.c_data().ptr24" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val25 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr24", align 8
-  %name = extractvalue %_Z12ModuleSyntax %variant.val25, 2
-  store { ptr } %name, ptr %arg.tmp26, align 1
-  %start27 = extractvalue %_Z12ModuleSyntax %variant.val25, 0
-  %end28 = extractvalue %_Z12ModuleSyntax %variant.val25, 1
-  store { ptr } { ptr @.sconst.507 }, ptr %arg.tmp29, align 1
-  call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp26, i64 2, i64 %start27, i64 %end28, ptr %arg.tmp29)
-  %sret.body30 = load { ptr }, ptr %sret.result, align 8
+  %variant.val22 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr21", align 8
+  %name = extractvalue %_Z12ModuleSyntax %variant.val22, 2
+  store { ptr } %name, ptr %arg.tmp23, align 1
+  %start24 = extractvalue %_Z12ModuleSyntax %variant.val22, 0
+  %end25 = extractvalue %_Z12ModuleSyntax %variant.val22, 1
+  store { ptr } { ptr @.sconst.507 }, ptr %arg.tmp26, align 1
+  call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp23, i64 2, i64 %start24, i64 %end25, ptr %arg.tmp26)
+  %sret.body27 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -77119,9 +77094,6 @@ entry:
     i8 3, label %choose.when29
     i8 0, label %choose.when34
     i8 7, label %choose.when37
-    i8 8, label %choose.when40
-    i8 9, label %choose.when43
-    i8 10, label %choose.when46
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -77207,32 +77179,14 @@ choose.when34:                                    ; preds = %entry
 
 choose.when37:                                    ; preds = %entry
   %"variant.c_data().ptr38" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val39 = load %_Z15ImplementSyntax, ptr %"variant.c_data().ptr38", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when40:                                    ; preds = %entry
-  %"variant.c_data().ptr41" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val42 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr41", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when43:                                    ; preds = %entry
-  %"variant.c_data().ptr44" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val45 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr44", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when46:                                    ; preds = %entry
-  %"variant.c_data().ptr47" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val48 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr47", align 8
-  %name = extractvalue %_Z12ModuleSyntax %variant.val48, 2
+  %variant.val39 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr38", align 8
+  %name = extractvalue %_Z12ModuleSyntax %variant.val39, 2
   store { ptr } %name, ptr %arg.tmp18, align 1
-  %start49 = extractvalue %_Z12ModuleSyntax %variant.val48, 0
-  %end50 = extractvalue %_Z12ModuleSyntax %variant.val48, 1
+  %start40 = extractvalue %_Z12ModuleSyntax %variant.val39, 0
+  %end41 = extractvalue %_Z12ModuleSyntax %variant.val39, 1
   store { ptr } { ptr @.sconst.523 }, ptr %arg.tmp21, align 1
-  call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp18, i64 2, i64 %start49, i64 %end50, ptr %arg.tmp21)
-  %sret.body51 = load { ptr }, ptr %sret.result, align 8
+  call void @_ZN7symbols13symbol_objectEPN4scaly6memory4PageE6String6String3i64mm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp18, i64 2, i64 %start40, i64 %end41, ptr %arg.tmp21)
+  %sret.body42 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -82880,15 +82834,13 @@ entry:
     i8 7, label %choose.when1
     i8 8, label %choose.when7
     i8 5, label %choose.when13
-    i8 11, label %choose.when17
-    i8 12, label %choose.when23
-    i8 13, label %choose.when26
+    i8 9, label %choose.when17
+    i8 10, label %choose.when23
+    i8 11, label %choose.when26
     i8 4, label %choose.when29
     i8 0, label %choose.when34
     i8 1, label %choose.when37
     i8 3, label %choose.when40
-    i8 9, label %choose.when43
-    i8 10, label %choose.when46
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -82983,18 +82935,6 @@ choose.when37:                                    ; preds = %entry
 choose.when40:                                    ; preds = %entry
   %"variant.c_data().ptr41" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
   %variant.val42 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr41", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when43:                                    ; preds = %entry
-  %"variant.c_data().ptr44" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val45 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr44", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when46:                                    ; preds = %entry
-  %"variant.c_data().ptr47" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val48 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr47", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -83327,7 +83267,6 @@ entry:
     i8 3, label %choose.when7
     i8 0, label %choose.when13
     i8 4, label %choose.when17
-    i8 5, label %choose.when20
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -83377,17 +83316,11 @@ choose.when13:                                    ; preds = %entry
 
 choose.when17:                                    ; preds = %entry
   %"variant.c_data().ptr18" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val19 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr18", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when20:                                    ; preds = %entry
-  %"variant.c_data().ptr21" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val22 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr21", align 8
-  %start23 = extractvalue %_Z12ModuleSyntax %variant.val22, 0
-  %end24 = extractvalue %_Z12ModuleSyntax %variant.val22, 1
-  call void @_ZN7symbols10fold_rangeEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start23, i64 %end24)
-  %sret.body25 = load { ptr }, ptr %sret.result, align 8
+  %variant.val19 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr18", align 8
+  %start20 = extractvalue %_Z12ModuleSyntax %variant.val19, 0
+  %end21 = extractvalue %_Z12ModuleSyntax %variant.val19, 1
+  call void @_ZN7symbols10fold_rangeEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start20, i64 %end21)
+  %sret.body22 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -83869,9 +83802,6 @@ entry:
     i8 3, label %choose.when25
     i8 0, label %choose.when29
     i8 7, label %choose.when32
-    i8 8, label %choose.when35
-    i8 9, label %choose.when38
-    i8 10, label %choose.when41
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -83947,29 +83877,11 @@ choose.when29:                                    ; preds = %entry
 
 choose.when32:                                    ; preds = %entry
   %"variant.c_data().ptr33" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val34 = load %_Z15ImplementSyntax, ptr %"variant.c_data().ptr33", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when35:                                    ; preds = %entry
-  %"variant.c_data().ptr36" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val37 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr36", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when38:                                    ; preds = %entry
-  %"variant.c_data().ptr39" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val40 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr39", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when41:                                    ; preds = %entry
-  %"variant.c_data().ptr42" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val43 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr42", align 8
-  %start44 = extractvalue %_Z12ModuleSyntax %variant.val43, 0
-  %end45 = extractvalue %_Z12ModuleSyntax %variant.val43, 1
-  call void @_ZN7symbols10fold_rangeEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start44, i64 %end45)
-  %sret.body46 = load { ptr }, ptr %sret.result, align 8
+  %variant.val34 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr33", align 8
+  %start35 = extractvalue %_Z12ModuleSyntax %variant.val34, 0
+  %end36 = extractvalue %_Z12ModuleSyntax %variant.val34, 1
+  call void @_ZN7symbols10fold_rangeEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start35, i64 %end36)
+  %sret.body37 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -89274,7 +89186,6 @@ entry:
     i8 3, label %choose.when8
     i8 0, label %choose.when15
     i8 4, label %choose.when20
-    i8 5, label %choose.when23
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -89330,13 +89241,7 @@ choose.when15:                                    ; preds = %entry
 
 choose.when20:                                    ; preds = %entry
   %"variant.c_data().ptr21" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val22 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr21", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when23:                                    ; preds = %entry
-  %"variant.c_data().ptr24" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val25 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr24", align 8
+  %variant.val22 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr21", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -89354,15 +89259,13 @@ entry:
     i8 7, label %choose.when1
     i8 8, label %choose.when8
     i8 5, label %choose.when15
-    i8 11, label %choose.when20
-    i8 12, label %choose.when23
-    i8 13, label %choose.when26
+    i8 9, label %choose.when20
+    i8 10, label %choose.when23
+    i8 11, label %choose.when26
     i8 4, label %choose.when29
     i8 0, label %choose.when34
     i8 1, label %choose.when37
     i8 3, label %choose.when40
-    i8 9, label %choose.when43
-    i8 10, label %choose.when46
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -89459,18 +89362,6 @@ choose.when37:                                    ; preds = %entry
 choose.when40:                                    ; preds = %entry
   %"variant.c_data().ptr41" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
   %variant.val42 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr41", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when43:                                    ; preds = %entry
-  %"variant.c_data().ptr44" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val45 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr44", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when46:                                    ; preds = %entry
-  %"variant.c_data().ptr47" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val48 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr47", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -91129,9 +91020,6 @@ entry:
     i8 3, label %choose.when24
     i8 0, label %choose.when29
     i8 7, label %choose.when32
-    i8 8, label %choose.when35
-    i8 9, label %choose.when38
-    i8 10, label %choose.when41
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -91210,25 +91098,7 @@ choose.when29:                                    ; preds = %entry
 
 choose.when32:                                    ; preds = %entry
   %"variant.c_data().ptr33" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val34 = load %_Z15ImplementSyntax, ptr %"variant.c_data().ptr33", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when35:                                    ; preds = %entry
-  %"variant.c_data().ptr36" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val37 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr36", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when38:                                    ; preds = %entry
-  %"variant.c_data().ptr39" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val40 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr39", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when41:                                    ; preds = %entry
-  %"variant.c_data().ptr42" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val43 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr42", align 8
+  %variant.val34 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr33", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -91465,15 +91335,13 @@ entry:
     i8 7, label %choose.when7
     i8 8, label %choose.when22
     i8 5, label %choose.when37
-    i8 11, label %choose.when42
-    i8 12, label %choose.when46
-    i8 13, label %choose.when53
+    i8 9, label %choose.when42
+    i8 10, label %choose.when46
+    i8 11, label %choose.when53
     i8 4, label %choose.when60
     i8 0, label %choose.when65
     i8 1, label %choose.when68
     i8 3, label %choose.when71
-    i8 9, label %choose.when74
-    i8 10, label %choose.when77
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -91641,18 +91509,6 @@ choose.when68:                                    ; preds = %entry
 choose.when71:                                    ; preds = %entry
   %"variant.c_data().ptr72" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
   %variant.val73 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr72", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when74:                                    ; preds = %entry
-  %"variant.c_data().ptr75" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val76 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr75", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when77:                                    ; preds = %entry
-  %"variant.c_data().ptr78" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val79 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr78", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -92719,7 +92575,6 @@ entry:
     i8 3, label %choose.when22
     i8 0, label %choose.when37
     i8 4, label %choose.when42
-    i8 5, label %choose.when45
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -92826,17 +92681,11 @@ choose.when37:                                    ; preds = %entry
 
 choose.when42:                                    ; preds = %entry
   %"variant.c_data().ptr43" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val44 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr43", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when45:                                    ; preds = %entry
-  %"variant.c_data().ptr46" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val47 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr46", align 8
-  %name = extractvalue %_Z12ModuleSyntax %variant.val47, 2
+  %variant.val44 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr43", align 8
+  %name = extractvalue %_Z12ModuleSyntax %variant.val44, 2
   store { ptr } %name, ptr %sret.result1, align 1
   call void @_ZN7symbols15completion_itemEPN4scaly6memory4PageE6String3i64(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sret.result1, i64 9)
-  %sret.body48 = load { ptr }, ptr %sret.result, align 8
+  %sret.body45 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -93298,9 +93147,6 @@ entry:
     i8 3, label %choose.when45
     i8 0, label %choose.when50
     i8 7, label %choose.when53
-    i8 8, label %choose.when56
-    i8 9, label %choose.when59
-    i8 10, label %choose.when62
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -93433,29 +93279,11 @@ choose.when50:                                    ; preds = %entry
 
 choose.when53:                                    ; preds = %entry
   %"variant.c_data().ptr54" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val55 = load %_Z15ImplementSyntax, ptr %"variant.c_data().ptr54", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when56:                                    ; preds = %entry
-  %"variant.c_data().ptr57" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val58 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr57", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when59:                                    ; preds = %entry
-  %"variant.c_data().ptr60" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val61 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr60", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when62:                                    ; preds = %entry
-  %"variant.c_data().ptr63" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val64 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr63", align 8
-  %name = extractvalue %_Z12ModuleSyntax %variant.val64, 2
+  %variant.val55 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr54", align 8
+  %name = extractvalue %_Z12ModuleSyntax %variant.val55, 2
   store { ptr } %name, ptr %sret.result1, align 1
   call void @_ZN7symbols15completion_itemEPN4scaly6memory4PageE6String3i64(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sret.result1, i64 9)
-  %sret.body65 = load { ptr }, ptr %sret.result, align 8
+  %sret.body56 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -98695,15 +98523,13 @@ entry:
     i8 7, label %choose.when1
     i8 8, label %choose.when4
     i8 5, label %choose.when7
-    i8 11, label %choose.when10
-    i8 12, label %choose.when13
-    i8 13, label %choose.when16
+    i8 9, label %choose.when10
+    i8 10, label %choose.when13
+    i8 11, label %choose.when16
     i8 4, label %choose.when19
     i8 0, label %choose.when24
     i8 1, label %choose.when27
     i8 3, label %choose.when30
-    i8 9, label %choose.when33
-    i8 10, label %choose.when36
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -98782,18 +98608,6 @@ choose.when27:                                    ; preds = %entry
 choose.when30:                                    ; preds = %entry
   %"variant.c_data().ptr31" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
   %variant.val32 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr31", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when33:                                    ; preds = %entry
-  %"variant.c_data().ptr34" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val35 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr34", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when36:                                    ; preds = %entry
-  %"variant.c_data().ptr37" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val38 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr37", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -98958,7 +98772,6 @@ entry:
     i8 3, label %choose.when4
     i8 0, label %choose.when7
     i8 4, label %choose.when10
-    i8 5, label %choose.when13
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -98996,13 +98809,7 @@ choose.when7:                                     ; preds = %entry
 
 choose.when10:                                    ; preds = %entry
   %"variant.c_data().ptr11" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val12 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr11", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when13:                                    ; preds = %entry
-  %"variant.c_data().ptr14" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val15 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr14", align 8
+  %variant.val12 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr11", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -99365,15 +99172,13 @@ entry:
     i8 7, label %choose.when3
     i8 8, label %choose.when19
     i8 5, label %choose.when35
-    i8 11, label %choose.when40
-    i8 12, label %choose.when62
-    i8 13, label %choose.when85
+    i8 9, label %choose.when40
+    i8 10, label %choose.when62
+    i8 11, label %choose.when85
     i8 4, label %choose.when109
     i8 0, label %choose.when114
     i8 1, label %choose.when117
     i8 3, label %choose.when120
-    i8 9, label %choose.when123
-    i8 10, label %choose.when126
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -99616,18 +99421,6 @@ choose.when117:                                   ; preds = %entry
 choose.when120:                                   ; preds = %entry
   %"variant.c_data().ptr121" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
   %variant.val122 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr121", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when123:                                   ; preds = %entry
-  %"variant.c_data().ptr124" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val125 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr124", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when126:                                   ; preds = %entry
-  %"variant.c_data().ptr127" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val128 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr127", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -99942,7 +99735,7 @@ land.rhs:                                         ; preds = %entry
 
 define linkonce_odr void @_ZN7symbols12hover_exportEPN4scaly6memory4PageE6String12ExportSyntaxm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4) {
 entry:
-  %arg.tmp63 = alloca { ptr }, align 8
+  %arg.tmp60 = alloca { ptr }, align 8
   %arg.tmp38 = alloca %_Z16DefinitionSyntax, align 8
   %arg.tmp = alloca %_Z12TargetSyntax, align 8
   %sret.result = alloca { ptr }, align 8
@@ -99954,7 +99747,6 @@ entry:
     i8 3, label %choose.when19
     i8 0, label %choose.when35
     i8 4, label %choose.when40
-    i8 5, label %choose.when43
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -100055,46 +99847,40 @@ choose.when35:                                    ; preds = %entry
 
 choose.when40:                                    ; preds = %entry
   %"variant.c_data().ptr41" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val42 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr41", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
+  %variant.val42 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr41", align 8
+  %start43 = extractvalue %_Z12ModuleSyntax %variant.val42, 0
+  %end44 = extractvalue %_Z12ModuleSyntax %variant.val42, 1
+  %frame.page45 = load ptr, ptr %1, align 8
+  %frame.has_page46 = icmp ne ptr %frame.page45, null
+  br i1 %frame.has_page46, label %frame.forced48, label %frame.force47
 
-choose.when43:                                    ; preds = %entry
-  %"variant.c_data().ptr44" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val45 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr44", align 8
-  %start46 = extractvalue %_Z12ModuleSyntax %variant.val45, 0
-  %end47 = extractvalue %_Z12ModuleSyntax %variant.val45, 1
-  %frame.page48 = load ptr, ptr %1, align 8
-  %frame.has_page49 = icmp ne ptr %frame.page48, null
-  br i1 %frame.has_page49, label %frame.forced51, label %frame.force50
+frame.force47:                                    ; preds = %choose.when40
+  %forced_page49 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced48
 
-frame.force50:                                    ; preds = %choose.when43
-  %forced_page52 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced51
+frame.forced48:                                   ; preds = %frame.force47, %choose.when40
+  %forced_page50 = phi ptr [ %frame.page45, %choose.when40 ], [ %forced_page49, %frame.force47 ]
+  %tuple.region51 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page50, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field52 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region51, i32 0, i32 0
+  store i64 6, ptr %tuple.field52, align 1
+  %tuple.field53 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region51, i32 0, i32 1
+  store ptr @.str.670, ptr %tuple.field53, align 1
+  %frame.page54 = load ptr, ptr %1, align 8
+  %frame.has_page55 = icmp ne ptr %frame.page54, null
+  br i1 %frame.has_page55, label %frame.forced57, label %frame.force56
 
-frame.forced51:                                   ; preds = %frame.force50, %choose.when43
-  %forced_page53 = phi ptr [ %frame.page48, %choose.when43 ], [ %forced_page52, %frame.force50 ]
-  %tuple.region54 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page53, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field55 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region54, i32 0, i32 0
-  store i64 6, ptr %tuple.field55, align 1
-  %tuple.field56 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region54, i32 0, i32 1
-  store ptr @.str.670, ptr %tuple.field56, align 1
-  %frame.page57 = load ptr, ptr %1, align 8
-  %frame.has_page58 = icmp ne ptr %frame.page57, null
-  br i1 %frame.has_page58, label %frame.forced60, label %frame.force59
+frame.force56:                                    ; preds = %frame.forced48
+  %forced_page58 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced57
 
-frame.force59:                                    ; preds = %frame.forced51
-  %forced_page61 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced60
-
-frame.forced60:                                   ; preds = %frame.force59, %frame.forced51
-  %forced_page62 = phi ptr [ %frame.page57, %frame.forced51 ], [ %forced_page61, %frame.force59 ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page62, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %name = extractvalue %_Z12ModuleSyntax %variant.val45, 2
-  store { ptr } %name, ptr %arg.tmp63, align 1
-  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp63)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageE6Stringmmm5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start46, i64 %end47, i64 %4, ptr %tuple.region54, ptr %struct.region)
-  %sret.body64 = load { ptr }, ptr %sret.result, align 8
+frame.forced57:                                   ; preds = %frame.force56, %frame.forced48
+  %forced_page59 = phi ptr [ %frame.page54, %frame.forced48 ], [ %forced_page58, %frame.force56 ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page59, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %name = extractvalue %_Z12ModuleSyntax %variant.val42, 2
+  store { ptr } %name, ptr %arg.tmp60, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp60)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageE6Stringmmm5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start43, i64 %end44, i64 %4, ptr %tuple.region51, ptr %struct.region)
+  %sret.body61 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -100546,7 +100332,7 @@ if.end:                                           ; preds = %if.then, %frame.for
 
 define linkonce_odr void @_ZN7symbols12hover_memberEPN4scaly6memory4PageE6String12MemberSyntaxm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4) {
 entry:
-  %arg.tmp82 = alloca { ptr }, align 8
+  %arg.tmp73 = alloca { ptr }, align 8
   %arg.tmp48 = alloca %_Z16DefinitionSyntax, align 8
   %arg.tmp43 = alloca %_Z12DeInitSyntax, align 8
   %arg.tmp38 = alloca %_Z10InitSyntax, align 8
@@ -100563,9 +100349,6 @@ entry:
     i8 3, label %choose.when45
     i8 0, label %choose.when50
     i8 7, label %choose.when53
-    i8 8, label %choose.when56
-    i8 9, label %choose.when59
-    i8 10, label %choose.when62
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -100690,58 +100473,40 @@ choose.when50:                                    ; preds = %entry
 
 choose.when53:                                    ; preds = %entry
   %"variant.c_data().ptr54" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val55 = load %_Z15ImplementSyntax, ptr %"variant.c_data().ptr54", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
+  %variant.val55 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr54", align 8
+  %start56 = extractvalue %_Z12ModuleSyntax %variant.val55, 0
+  %end57 = extractvalue %_Z12ModuleSyntax %variant.val55, 1
+  %frame.page58 = load ptr, ptr %1, align 8
+  %frame.has_page59 = icmp ne ptr %frame.page58, null
+  br i1 %frame.has_page59, label %frame.forced61, label %frame.force60
 
-choose.when56:                                    ; preds = %entry
-  %"variant.c_data().ptr57" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val58 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr57", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
+frame.force60:                                    ; preds = %choose.when53
+  %forced_page62 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced61
 
-choose.when59:                                    ; preds = %entry
-  %"variant.c_data().ptr60" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val61 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr60", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when62:                                    ; preds = %entry
-  %"variant.c_data().ptr63" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val64 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr63", align 8
-  %start65 = extractvalue %_Z12ModuleSyntax %variant.val64, 0
-  %end66 = extractvalue %_Z12ModuleSyntax %variant.val64, 1
+frame.forced61:                                   ; preds = %frame.force60, %choose.when53
+  %forced_page63 = phi ptr [ %frame.page58, %choose.when53 ], [ %forced_page62, %frame.force60 ]
+  %tuple.region64 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page63, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field65 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region64, i32 0, i32 0
+  store i64 6, ptr %tuple.field65, align 1
+  %tuple.field66 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region64, i32 0, i32 1
+  store ptr @.str.682, ptr %tuple.field66, align 1
   %frame.page67 = load ptr, ptr %1, align 8
   %frame.has_page68 = icmp ne ptr %frame.page67, null
   br i1 %frame.has_page68, label %frame.forced70, label %frame.force69
 
-frame.force69:                                    ; preds = %choose.when62
+frame.force69:                                    ; preds = %frame.forced61
   %forced_page71 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   br label %frame.forced70
 
-frame.forced70:                                   ; preds = %frame.force69, %choose.when62
-  %forced_page72 = phi ptr [ %frame.page67, %choose.when62 ], [ %forced_page71, %frame.force69 ]
-  %tuple.region73 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page72, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field74 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region73, i32 0, i32 0
-  store i64 6, ptr %tuple.field74, align 1
-  %tuple.field75 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region73, i32 0, i32 1
-  store ptr @.str.682, ptr %tuple.field75, align 1
-  %frame.page76 = load ptr, ptr %1, align 8
-  %frame.has_page77 = icmp ne ptr %frame.page76, null
-  br i1 %frame.has_page77, label %frame.forced79, label %frame.force78
-
-frame.force78:                                    ; preds = %frame.forced70
-  %forced_page80 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced79
-
-frame.forced79:                                   ; preds = %frame.force78, %frame.forced70
-  %forced_page81 = phi ptr [ %frame.page76, %frame.forced70 ], [ %forced_page80, %frame.force78 ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page81, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %name = extractvalue %_Z12ModuleSyntax %variant.val64, 2
-  store { ptr } %name, ptr %arg.tmp82, align 1
-  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp82)
-  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageE6Stringmmm5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start65, i64 %end66, i64 %4, ptr %tuple.region73, ptr %struct.region)
-  %sret.body83 = load { ptr }, ptr %sret.result, align 8
+frame.forced70:                                   ; preds = %frame.force69, %frame.forced61
+  %forced_page72 = phi ptr [ %frame.page67, %frame.forced61 ], [ %forced_page71, %frame.force69 ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page72, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %name = extractvalue %_Z12ModuleSyntax %variant.val55, 2
+  store { ptr } %name, ptr %arg.tmp73, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp73)
+  call void @_ZN7symbols10hover_leafEPN4scaly6memory4PageE6Stringmmm5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start56, i64 %end57, i64 %4, ptr %tuple.region64, ptr %struct.region)
+  %sret.body74 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -103415,15 +103180,13 @@ entry:
     i8 7, label %choose.when2
     i8 8, label %choose.when8
     i8 5, label %choose.when14
-    i8 11, label %choose.when19
-    i8 12, label %choose.when25
-    i8 13, label %choose.when38
+    i8 9, label %choose.when19
+    i8 10, label %choose.when25
+    i8 11, label %choose.when38
     i8 4, label %choose.when52
     i8 0, label %choose.when57
     i8 1, label %choose.when60
     i8 3, label %choose.when63
-    i8 9, label %choose.when66
-    i8 10, label %choose.when69
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -103573,18 +103336,6 @@ choose.when60:                                    ; preds = %entry
 choose.when63:                                    ; preds = %entry
   %"variant.c_data().ptr64" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %4, i32 0, i32 1
   %variant.val65 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr64", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when66:                                    ; preds = %entry
-  %"variant.c_data().ptr67" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %4, i32 0, i32 1
-  %variant.val68 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr67", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when69:                                    ; preds = %entry
-  %"variant.c_data().ptr70" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %4, i32 0, i32 1
-  %variant.val71 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr70", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -103749,7 +103500,6 @@ entry:
     i8 3, label %choose.when8
     i8 0, label %choose.when14
     i8 4, label %choose.when19
-    i8 5, label %choose.when22
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -103805,30 +103555,24 @@ choose.when14:                                    ; preds = %entry
 
 choose.when19:                                    ; preds = %entry
   %"variant.c_data().ptr20" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %4, i32 0, i32 1
-  %variant.val21 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr20", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when22:                                    ; preds = %entry
-  %"variant.c_data().ptr23" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %4, i32 0, i32 1
-  %variant.val24 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr23", align 8
+  %variant.val21 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr20", align 8
   %frame.page = load ptr, ptr %1, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-frame.force:                                      ; preds = %choose.when22
+frame.force:                                      ; preds = %choose.when19
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   br label %frame.forced
 
-frame.forced:                                     ; preds = %frame.force, %choose.when22
-  %forced_page25 = phi ptr [ %frame.page, %choose.when22 ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %name = extractvalue %_Z12ModuleSyntax %variant.val24, 2
+frame.forced:                                     ; preds = %frame.force, %choose.when19
+  %forced_page22 = phi ptr [ %frame.page, %choose.when19 ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page22, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %name = extractvalue %_Z12ModuleSyntax %variant.val21, 2
   store { ptr } %name, ptr %sret.result1, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %sret.result1)
-  %start26 = extractvalue %_Z12ModuleSyntax %variant.val24, 0
-  call void @_ZN7symbols16def_module_matchEPN4scaly6memory4PageE6String6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %struct.region, ptr %5, i64 %start26)
-  %sret.body27 = load { ptr }, ptr %sret.result, align 8
+  %start23 = extractvalue %_Z12ModuleSyntax %variant.val21, 0
+  call void @_ZN7symbols16def_module_matchEPN4scaly6memory4PageE6String6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %struct.region, ptr %5, i64 %start23)
+  %sret.body24 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -104155,9 +103899,6 @@ entry:
     i8 3, label %choose.when20
     i8 0, label %choose.when25
     i8 7, label %choose.when28
-    i8 8, label %choose.when31
-    i8 9, label %choose.when34
-    i8 10, label %choose.when37
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -104231,42 +103972,24 @@ choose.when25:                                    ; preds = %entry
 
 choose.when28:                                    ; preds = %entry
   %"variant.c_data().ptr29" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %4, i32 0, i32 1
-  %variant.val30 = load %_Z15ImplementSyntax, ptr %"variant.c_data().ptr29", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when31:                                    ; preds = %entry
-  %"variant.c_data().ptr32" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %4, i32 0, i32 1
-  %variant.val33 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr32", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when34:                                    ; preds = %entry
-  %"variant.c_data().ptr35" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %4, i32 0, i32 1
-  %variant.val36 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr35", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when37:                                    ; preds = %entry
-  %"variant.c_data().ptr38" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %4, i32 0, i32 1
-  %variant.val39 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr38", align 8
+  %variant.val30 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr29", align 8
   %frame.page = load ptr, ptr %1, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-frame.force:                                      ; preds = %choose.when37
+frame.force:                                      ; preds = %choose.when28
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   br label %frame.forced
 
-frame.forced:                                     ; preds = %frame.force, %choose.when37
-  %forced_page40 = phi ptr [ %frame.page, %choose.when37 ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page40, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %name = extractvalue %_Z12ModuleSyntax %variant.val39, 2
+frame.forced:                                     ; preds = %frame.force, %choose.when28
+  %forced_page31 = phi ptr [ %frame.page, %choose.when28 ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page31, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %name = extractvalue %_Z12ModuleSyntax %variant.val30, 2
   store { ptr } %name, ptr %sret.result1, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %sret.result1)
-  %start41 = extractvalue %_Z12ModuleSyntax %variant.val39, 0
-  call void @_ZN7symbols16def_module_matchEPN4scaly6memory4PageE6String6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %struct.region, ptr %5, i64 %start41)
-  %sret.body42 = load { ptr }, ptr %sret.result, align 8
+  %start32 = extractvalue %_Z12ModuleSyntax %variant.val30, 0
+  call void @_ZN7symbols16def_module_matchEPN4scaly6memory4PageE6String6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %struct.region, ptr %5, i64 %start32)
+  %sret.body33 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -110344,15 +110067,13 @@ entry:
     i8 7, label %choose.when9
     i8 8, label %choose.when18
     i8 5, label %choose.when27
-    i8 11, label %choose.when32
-    i8 12, label %choose.when39
-    i8 13, label %choose.when53
+    i8 9, label %choose.when32
+    i8 10, label %choose.when39
+    i8 11, label %choose.when53
     i8 4, label %choose.when68
     i8 0, label %choose.when73
     i8 1, label %choose.when76
     i8 3, label %choose.when79
-    i8 9, label %choose.when82
-    i8 10, label %choose.when85
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -110538,18 +110259,6 @@ choose.when76:                                    ; preds = %entry
 choose.when79:                                    ; preds = %entry
   %"variant.c_data().ptr80" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %4, i32 0, i32 1
   %variant.val81 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr80", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when82:                                    ; preds = %entry
-  %"variant.c_data().ptr83" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %4, i32 0, i32 1
-  %variant.val84 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr83", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when85:                                    ; preds = %entry
-  %"variant.c_data().ptr86" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %4, i32 0, i32 1
-  %variant.val87 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr86", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -111015,7 +110724,6 @@ entry:
     i8 3, label %choose.when18
     i8 0, label %choose.when27
     i8 4, label %choose.when32
-    i8 5, label %choose.when35
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -111095,34 +110803,28 @@ choose.when27:                                    ; preds = %entry
 
 choose.when32:                                    ; preds = %entry
   %"variant.c_data().ptr33" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %4, i32 0, i32 1
-  %variant.val34 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr33", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when35:                                    ; preds = %entry
-  %"variant.c_data().ptr36" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %4, i32 0, i32 1
-  %variant.val37 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr36", align 8
+  %variant.val34 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr33", align 8
   %frame.page = load ptr, ptr %1, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-frame.force:                                      ; preds = %choose.when35
+frame.force:                                      ; preds = %choose.when32
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   br label %frame.forced
 
-frame.forced:                                     ; preds = %frame.force, %choose.when35
-  %forced_page38 = phi ptr [ %frame.page, %choose.when35 ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page38, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %name = extractvalue %_Z12ModuleSyntax %variant.val37, 2
+frame.forced:                                     ; preds = %frame.force, %choose.when32
+  %forced_page35 = phi ptr [ %frame.page, %choose.when32 ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %name = extractvalue %_Z12ModuleSyntax %variant.val34, 2
   store { ptr } %name, ptr %sret.result1, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %sret.result1)
-  %start39 = extractvalue %_Z12ModuleSyntax %variant.val37, 0
-  %end40 = extractvalue %_Z12ModuleSyntax %variant.val37, 1
+  %start36 = extractvalue %_Z12ModuleSyntax %variant.val34, 0
+  %end37 = extractvalue %_Z12ModuleSyntax %variant.val34, 1
   store { ptr } zeroinitializer, ptr %sret.result2, align 1
   store { ptr } zeroinitializer, ptr %sret.result5, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp8, align 1
-  call void @_ZN7symbols7ws_itemEPN4scaly6memory4PageE6String6String6String3i64mm6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %struct.region, i64 2, i64 %start39, i64 %end40, ptr %sret.result2, ptr %sret.result5, ptr %arg.tmp8)
-  %sret.body41 = load { ptr }, ptr %sret.result, align 8
+  call void @_ZN7symbols7ws_itemEPN4scaly6memory4PageE6String6String6String3i64mm6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %struct.region, i64 2, i64 %start36, i64 %end37, ptr %sret.result2, ptr %sret.result5, ptr %arg.tmp8)
+  %sret.body38 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -112022,9 +111724,6 @@ entry:
     i8 3, label %choose.when39
     i8 0, label %choose.when44
     i8 7, label %choose.when47
-    i8 8, label %choose.when50
-    i8 9, label %choose.when53
-    i8 10, label %choose.when56
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -112138,46 +111837,28 @@ choose.when44:                                    ; preds = %entry
 
 choose.when47:                                    ; preds = %entry
   %"variant.c_data().ptr48" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %4, i32 0, i32 1
-  %variant.val49 = load %_Z15ImplementSyntax, ptr %"variant.c_data().ptr48", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when50:                                    ; preds = %entry
-  %"variant.c_data().ptr51" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %4, i32 0, i32 1
-  %variant.val52 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr51", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when53:                                    ; preds = %entry
-  %"variant.c_data().ptr54" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %4, i32 0, i32 1
-  %variant.val55 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr54", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when56:                                    ; preds = %entry
-  %"variant.c_data().ptr57" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %4, i32 0, i32 1
-  %variant.val58 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr57", align 8
+  %variant.val49 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr48", align 8
   %frame.page = load ptr, ptr %1, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-frame.force:                                      ; preds = %choose.when56
+frame.force:                                      ; preds = %choose.when47
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   br label %frame.forced
 
-frame.forced:                                     ; preds = %frame.force, %choose.when56
-  %forced_page59 = phi ptr [ %frame.page, %choose.when56 ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page59, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %name = extractvalue %_Z12ModuleSyntax %variant.val58, 2
+frame.forced:                                     ; preds = %frame.force, %choose.when47
+  %forced_page50 = phi ptr [ %frame.page, %choose.when47 ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page50, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %name = extractvalue %_Z12ModuleSyntax %variant.val49, 2
   store { ptr } %name, ptr %sret.result1, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %sret.result1)
-  %start60 = extractvalue %_Z12ModuleSyntax %variant.val58, 0
-  %end61 = extractvalue %_Z12ModuleSyntax %variant.val58, 1
+  %start51 = extractvalue %_Z12ModuleSyntax %variant.val49, 0
+  %end52 = extractvalue %_Z12ModuleSyntax %variant.val49, 1
   store { ptr } zeroinitializer, ptr %sret.result2, align 1
   store { ptr } zeroinitializer, ptr %sret.result5, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp8, align 1
-  call void @_ZN7symbols7ws_itemEPN4scaly6memory4PageE6String6String6String3i64mm6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %struct.region, i64 2, i64 %start60, i64 %end61, ptr %sret.result2, ptr %sret.result5, ptr %arg.tmp8)
-  %sret.body62 = load { ptr }, ptr %sret.result, align 8
+  call void @_ZN7symbols7ws_itemEPN4scaly6memory4PageE6String6String6String3i64mm6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %struct.region, i64 2, i64 %start51, i64 %end52, ptr %sret.result2, ptr %sret.result5, ptr %arg.tmp8)
+  %sret.body53 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -122577,15 +122258,13 @@ entry:
     i8 7, label %choose.when1
     i8 8, label %choose.when6
     i8 5, label %choose.when11
-    i8 11, label %choose.when16
-    i8 12, label %choose.when19
-    i8 13, label %choose.when22
+    i8 9, label %choose.when16
+    i8 10, label %choose.when19
+    i8 11, label %choose.when22
     i8 4, label %choose.when25
     i8 0, label %choose.when30
     i8 1, label %choose.when33
     i8 3, label %choose.when36
-    i8 9, label %choose.when39
-    i8 10, label %choose.when42
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -122676,18 +122355,6 @@ choose.when33:                                    ; preds = %entry
 choose.when36:                                    ; preds = %entry
   %"variant.c_data().ptr37" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
   %variant.val38 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr37", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when39:                                    ; preds = %entry
-  %"variant.c_data().ptr40" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val41 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr40", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when42:                                    ; preds = %entry
-  %"variant.c_data().ptr43" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 1
-  %variant.val44 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr43", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -122826,7 +122493,6 @@ entry:
     i8 3, label %choose.when6
     i8 0, label %choose.when11
     i8 4, label %choose.when16
-    i8 5, label %choose.when19
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -122876,13 +122542,7 @@ choose.when11:                                    ; preds = %entry
 
 choose.when16:                                    ; preds = %entry
   %"variant.c_data().ptr17" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val18 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr17", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when19:                                    ; preds = %entry
-  %"variant.c_data().ptr20" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %3, i32 0, i32 1
-  %variant.val21 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr20", align 8
+  %variant.val18 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr17", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -123064,9 +122724,6 @@ entry:
     i8 3, label %choose.when17
     i8 0, label %choose.when22
     i8 7, label %choose.when25
-    i8 8, label %choose.when28
-    i8 9, label %choose.when31
-    i8 10, label %choose.when34
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -123134,25 +122791,7 @@ choose.when22:                                    ; preds = %entry
 
 choose.when25:                                    ; preds = %entry
   %"variant.c_data().ptr26" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val27 = load %_Z15ImplementSyntax, ptr %"variant.c_data().ptr26", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when28:                                    ; preds = %entry
-  %"variant.c_data().ptr29" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val30 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr29", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when31:                                    ; preds = %entry
-  %"variant.c_data().ptr32" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val33 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr32", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-choose.when34:                                    ; preds = %entry
-  %"variant.c_data().ptr35" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %3, i32 0, i32 1
-  %variant.val36 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr35", align 8
+  %variant.val27 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr26", align 8
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 }
@@ -129010,16 +128649,14 @@ entry:
     i8 6, label %choose.when
     i8 7, label %choose.when1
     i8 8, label %choose.when6
-    i8 12, label %choose.when11
-    i8 13, label %choose.when16
+    i8 10, label %choose.when11
+    i8 11, label %choose.when16
     i8 5, label %choose.when21
     i8 4, label %choose.when24
-    i8 11, label %choose.when29
+    i8 9, label %choose.when29
     i8 0, label %choose.when32
     i8 1, label %choose.when35
     i8 3, label %choose.when38
-    i8 9, label %choose.when41
-    i8 10, label %choose.when44
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -129097,16 +128734,6 @@ choose.when38:                                    ; preds = %entry
   %"variant.c_data().ptr39" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %0, i32 0, i32 1
   %variant.val40 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr39", align 8
   ret i1 false
-
-choose.when41:                                    ; preds = %entry
-  %"variant.c_data().ptr42" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %0, i32 0, i32 1
-  %variant.val43 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr42", align 8
-  ret i1 false
-
-choose.when44:                                    ; preds = %entry
-  %"variant.c_data().ptr45" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %0, i32 0, i32 1
-  %variant.val46 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr45", align 8
-  ret i1 false
 }
 
 define linkonce_odr i1 @_ZN8semantic20definition_has_startE16DefinitionSyntaxm(ptr %0, i64 %1) {
@@ -129164,7 +128791,6 @@ entry:
     i8 3, label %choose.when6
     i8 0, label %choose.when11
     i8 4, label %choose.when14
-    i8 5, label %choose.when17
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -129203,12 +128829,7 @@ choose.when11:                                    ; preds = %entry
 
 choose.when14:                                    ; preds = %entry
   %"variant.c_data().ptr15" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %0, i32 0, i32 1
-  %variant.val16 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr15", align 8
-  ret i1 false
-
-choose.when17:                                    ; preds = %entry
-  %"variant.c_data().ptr18" = getelementptr inbounds nuw %_Z12ExportSyntax, ptr %0, i32 0, i32 1
-  %variant.val19 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr18", align 8
+  %variant.val16 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr15", align 8
   ret i1 false
 }
 
@@ -129341,9 +128962,6 @@ entry:
     i8 3, label %choose.when21
     i8 0, label %choose.when24
     i8 7, label %choose.when27
-    i8 8, label %choose.when30
-    i8 9, label %choose.when33
-    i8 10, label %choose.when36
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -129401,22 +129019,7 @@ choose.when24:                                    ; preds = %entry
 
 choose.when27:                                    ; preds = %entry
   %"variant.c_data().ptr28" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %0, i32 0, i32 1
-  %variant.val29 = load %_Z15ImplementSyntax, ptr %"variant.c_data().ptr28", align 8
-  ret i1 false
-
-choose.when30:                                    ; preds = %entry
-  %"variant.c_data().ptr31" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %0, i32 0, i32 1
-  %variant.val32 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr31", align 8
-  ret i1 false
-
-choose.when33:                                    ; preds = %entry
-  %"variant.c_data().ptr34" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %0, i32 0, i32 1
-  %variant.val35 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr34", align 8
-  ret i1 false
-
-choose.when36:                                    ; preds = %entry
-  %"variant.c_data().ptr37" = getelementptr inbounds nuw %_Z12MemberSyntax, ptr %0, i32 0, i32 1
-  %variant.val38 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr37", align 8
+  %variant.val29 = load %_Z12ModuleSyntax, ptr %"variant.c_data().ptr28", align 8
   ret i1 false
 }
 
@@ -152627,7 +152230,7 @@ if.end14:                                         ; preds = %if.then13, %if.then
 
 define linkonce_odr void @_ZN8codelens16declaration_lensEPN4scaly6memory4PageE6String6String6String6String17DeclarationSyntax(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) {
 entry:
-  %arg.tmp65 = alloca { ptr }, align 8
+  %arg.tmp59 = alloca { ptr }, align 8
   %sret.result21 = alloca { ptr }, align 8
   %arg.tmp20 = alloca { ptr }, align 8
   %sret.result18 = alloca { ptr }, align 8
@@ -152645,7 +152248,7 @@ entry:
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 11, label %choose.when1
+    i8 9, label %choose.when1
     i8 5, label %choose.when6
     i8 0, label %choose.when38
     i8 3, label %choose.when41
@@ -152653,10 +152256,8 @@ entry:
     i8 6, label %choose.when47
     i8 7, label %choose.when50
     i8 8, label %choose.when53
-    i8 9, label %choose.when56
-    i8 10, label %choose.when59
-    i8 12, label %choose.when62
-    i8 13, label %choose.when67
+    i8 10, label %choose.when56
+    i8 11, label %choose.when61
   ]
 
 choose.end:                                       ; preds = %choose.else, %choose.end11
@@ -152815,42 +152416,28 @@ choose.when53:                                    ; preds = %entry
 
 choose.when56:                                    ; preds = %entry
   %"variant.c_data().ptr57" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
-  %variant.val58 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr57", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret void
-
-choose.when59:                                    ; preds = %entry
-  %"variant.c_data().ptr60" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
-  %variant.val61 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr60", align 8
-  store { ptr } zeroinitializer, ptr %0, align 1
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret void
-
-choose.when62:                                    ; preds = %entry
-  %"variant.c_data().ptr63" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
-  %variant.val64 = load %_Z13MutableSyntax, ptr %"variant.c_data().ptr63", align 8
-  %start = extractvalue %_Z13MutableSyntax %variant.val64, 0
+  %variant.val58 = load %_Z13MutableSyntax, ptr %"variant.c_data().ptr57", align 8
+  %start = extractvalue %_Z13MutableSyntax %variant.val58, 0
   store { ptr } { ptr @.sconst.1011 }, ptr %sret.result16, align 1
-  %binding = extractvalue %_Z13MutableSyntax %variant.val64, 2
+  %binding = extractvalue %_Z13MutableSyntax %variant.val58, 2
   %annotation = extractvalue %_Z13BindingSyntax %binding, 3
-  store { ptr } { ptr @.sconst.1012 }, ptr %arg.tmp65, align 1
-  call void @_ZN8codelens12storage_lensEPN4scaly6memory4PageE6Stringm6String6OptionIR23BindingAnnotationSyntaxE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start, ptr %sret.result16, ptr %annotation, ptr %arg.tmp65)
-  %sret.body66 = load { ptr }, ptr %sret.result, align 8
+  store { ptr } { ptr @.sconst.1012 }, ptr %arg.tmp59, align 1
+  call void @_ZN8codelens12storage_lensEPN4scaly6memory4PageE6Stringm6String6OptionIR23BindingAnnotationSyntaxE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start, ptr %sret.result16, ptr %annotation, ptr %arg.tmp59)
+  %sret.body60 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-choose.when67:                                    ; preds = %entry
-  %"variant.c_data().ptr68" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
-  %variant.val69 = load %_Z12SharedSyntax, ptr %"variant.c_data().ptr68", align 8
-  %start70 = extractvalue %_Z12SharedSyntax %variant.val69, 0
+choose.when61:                                    ; preds = %entry
+  %"variant.c_data().ptr62" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
+  %variant.val63 = load %_Z12SharedSyntax, ptr %"variant.c_data().ptr62", align 8
+  %start64 = extractvalue %_Z12SharedSyntax %variant.val63, 0
   store { ptr } { ptr @.sconst.1013 }, ptr %sret.result16, align 1
-  %binding71 = extractvalue %_Z12SharedSyntax %variant.val69, 3
-  %annotation72 = extractvalue %_Z13BindingSyntax %binding71, 3
-  store { ptr } { ptr @.sconst.1014 }, ptr %arg.tmp65, align 1
-  call void @_ZN8codelens12storage_lensEPN4scaly6memory4PageE6Stringm6String6OptionIR23BindingAnnotationSyntaxE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start70, ptr %sret.result16, ptr %annotation72, ptr %arg.tmp65)
-  %sret.body73 = load { ptr }, ptr %sret.result, align 8
+  %binding65 = extractvalue %_Z12SharedSyntax %variant.val63, 3
+  %annotation66 = extractvalue %_Z13BindingSyntax %binding65, 3
+  store { ptr } { ptr @.sconst.1014 }, ptr %arg.tmp59, align 1
+  call void @_ZN8codelens12storage_lensEPN4scaly6memory4PageE6Stringm6String6OptionIR23BindingAnnotationSyntaxE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start64, ptr %sret.result16, ptr %annotation66, ptr %arg.tmp59)
+  %sret.body67 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void

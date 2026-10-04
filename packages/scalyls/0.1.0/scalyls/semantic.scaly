@@ -486,10 +486,6 @@ define semantic
                 return false
             when u: UseSyntax
                 return false
-            when t: TraitSyntax
-                return false
-            when mac: MacroSyntax
-                return false
     }
 
     function export_has_start(export_: ExportSyntax, start: size_t) returns bool
@@ -503,8 +499,6 @@ define semantic
                 return o.start = start
             when def: DefinitionSyntax
                 return semantic.definition_has_start(def, start)
-            when t: TraitSyntax
-                return false
             when m: ModuleSyntax
                 return false
     }
@@ -578,12 +572,6 @@ define semantic
             when def: DefinitionSyntax
                 return semantic.definition_has_start(def, start)
             when e: EmptySyntax
-                return false
-            when im: ImplementSyntax
-                return false
-            when t: TraitSyntax
-                return false
-            when mac: MacroSyntax
                 return false
             when m: ModuleSyntax
                 return false

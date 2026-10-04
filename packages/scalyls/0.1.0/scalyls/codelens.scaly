@@ -483,10 +483,6 @@ define codelens
                 return ""
             when o: OperatorSyntax
                 return ""
-            when t: TraitSyntax
-                return ""
-            when mac: MacroSyntax
-                return ""
             when mut: MutableSyntax
                 return codelens.storage_lens(text, mut.start, "mutable", mut.binding.annotation, "thread-local: one cell per thread")
             when sh: SharedSyntax

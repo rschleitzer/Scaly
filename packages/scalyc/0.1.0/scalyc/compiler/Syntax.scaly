@@ -578,29 +578,6 @@ define AttributeSyntax
     model: ModelSyntax
 )
 
-define MacroSyntax
-(
-    start: size_t
-    end: size_t
-    name: String
-    model: ModelSyntax
-    rule: ref[Vector[OperandSyntax]]?
-)
-
-define ExtendSyntax
-(
-    start: size_t
-    end: size_t
-    type: TypeSyntax
-)
-
-define ExtendsSyntax
-(
-    start: size_t
-    end: size_t
-    extensions: ref[Vector[ExtendSyntax]]?
-)
-
 define LinkedSyntax
 (
     start: size_t
@@ -703,27 +680,6 @@ define MethodSyntax union (
     Function: FunctionSyntax
     Procedure: ProcedureSyntax
     Operator: OperatorSyntax
-)
-
-define TraitSyntax
-(
-    start: size_t
-    end: size_t
-    name: NameSyntax
-    extension: ref[ExtendsSyntax]?
-    attributes: ref[Vector[AttributeSyntax]]?
-    uses: ref[Vector[UseSyntax]]?
-    functions: ref[Vector[MethodSyntax]]?
-)
-
-define ImplementSyntax
-(
-    start: size_t
-    end: size_t
-    type: TypeSyntax
-    attributes: ref[Vector[AttributeSyntax]]?
-    uses: ref[Vector[UseSyntax]]?
-    methods: ref[Vector[MethodSyntax]]?
 )
 
 define UseSyntax
@@ -934,9 +890,6 @@ define MemberSyntax union (
     Function: FunctionSyntax
     Procedure: ProcedureSyntax
     Operator: OperatorSyntax
-    Implement: ImplementSyntax
-    Trait: TraitSyntax
-    Macro: MacroSyntax
     Module: ModuleSyntax
 )
 
@@ -945,7 +898,6 @@ define ExportSyntax union (
     Function: FunctionSyntax
     Procedure: ProcedureSyntax
     Operator: OperatorSyntax
-    Trait: TraitSyntax
     Module: ModuleSyntax
 )
 
@@ -966,8 +918,6 @@ define DeclarationSyntax union (
     Function: FunctionSyntax
     Procedure: ProcedureSyntax
     Operator: OperatorSyntax
-    Trait: TraitSyntax
-    Macro: MacroSyntax
     Module: ModuleSyntax
     Mutable: MutableSyntax
     Shared: SharedSyntax

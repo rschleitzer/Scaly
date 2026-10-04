@@ -2992,6 +2992,57 @@ define Modeler
     ; Report a sub-module load failure at its real file:line:col and bump the
     ; error counter. `offset` is a byte offset into `source` (the sub-module's own
     ; contents); the line/col walk mirrors cli.print_parse_error's numeric-LF scan.
+    ; Is source[at..] the word, with no identifier character behind it?
+    function word_at(source: String, at: size_t, word: Slice[char]) returns bool
+    {
+        let len source.get_length()
+        if at + word.length > len
+            return false
+        var i: size_t 0
+        while i < word.length
+        {
+            if source.get(at + i) <> word[i]
+                return false
+            i := i + 1
+        }
+        if at + word.length = len
+            return true
+        let c source.get(at + word.length)
+        c = (" " as char) or c = ("\n" as char) or c = ("\t" as char)
+    }
+
+    ; `trait`, `implement`, `extends` and `macro` are RESERVED: they left the
+    ; grammar on 2026-10-04 (nothing modelled them), and the words are kept
+    ; for a later version -- a trait as the checked contract of a generic
+    ; parameter. A parse error on a line that begins with one of them says
+    ; so, instead of the parser's "expected ...". Answers the note, or null.
+    function reserved_word_note(source: String, offset: size_t) returns pointer[const_char]
+    {
+        let len source.get_length()
+        var start offset
+        if start > len
+            start := len
+        while start > 0 and source.get(start - 1) <> ("\n" as char)
+        {
+            start := start - 1
+        }
+        while start < len and source.get(start) = (" " as char)
+        {
+            start := start + 1
+        }
+        if Modeler.word_at(source, start, "private")
+            start := start + 8
+        if Modeler.word_at(source, start, "trait")
+            return "'trait' is reserved for a later version of the language - it is no part of this one"
+        if Modeler.word_at(source, start, "implement")
+            return "'implement' is reserved for a later version of the language - it is no part of this one"
+        if Modeler.word_at(source, start, "extends")
+            return "'extends' is reserved for a later version of the language - it is no part of this one"
+        if Modeler.word_at(source, start, "macro")
+            return "'macro' is reserved for a later version of the language - it is no part of this one"
+        null
+    }
+
     procedure report_module_error(file_path: String, source: String, offset: size_t, message: String) mutable modeler_error_count
     {
         var line: size_t 1
@@ -3015,9 +3066,16 @@ define Modeler
         }
         let line_str num_to_string(line)
         let col_str num_to_string(col)
+        modeler_error_count := modeler_error_count + 1
+        let note Modeler.reserved_word_note(source, offset)
+        if note <> null
+        {
+            let note_str "`file_path`:`line_str`:`col_str`: `note`"
+            Console.println(note_str.to_c_string())
+            return
+        }
         let msg_str "`file_path`:`line_str`:`col_str`: `message`"
         Console.println(msg_str.to_c_string())
-        modeler_error_count := modeler_error_count + 1
     }
 
     ; A required module file (the prelude, or a declared package's root) could not
