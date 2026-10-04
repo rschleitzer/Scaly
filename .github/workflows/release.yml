@@ -34,11 +34,13 @@
 # the Linux rate, Windows at twice; every leg builds the compiler twice (the
 # seed recipe, then with the profile). Run it for a release, never per commit.
 #
-# ★Written 2026-10-04 and NOT YET RUN. What the first run has to show: that
-# the labels ubuntu-26.04-arm, macos-26, macos-15-intel and windows-11-arm
-# are available to this account; that Homebrew on the Intel image has an
-# llvm@21 bottle; and that the Windows runners carry 7z and a tar that reads
-# .tar.xz (the two LLVM archives).
+# ★First run 2026-10-04 (run 37195736745), all six legs green and each
+# archive built with a profile made on its runner: darwin-arm64 3 min,
+# linux-aarch64 6, linux-x86_64 7, windows-x86_64 7, windows-arm64 9,
+# darwin-x86_64 11 -- about 190 billed minutes of the month's 2000 (macOS
+# counts ten times, Windows twice). The four newer labels are available to
+# this account, Homebrew on the Intel image has llvm@21, and the Windows
+# runners carry 7z and a tar that reads .tar.xz.
 name: release
 
 on:
