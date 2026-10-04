@@ -585,13 +585,6 @@ define PlannedInitializer
     impl: PlannedImplementation
 )
 
-define PlannedDeInitializer
-(
-    loc: Span
-    mangled_name: String
-    impl: PlannedImplementation
-)
-
 define PlannedOperator
 (
     loc: Span
@@ -630,7 +623,6 @@ define PlannedStructure
     mangled_name: String
     properties: ref[Vector[PlannedProperty]]?
     initializers: ref[Vector[PlannedInitializer]]?
-    deinitializer: ref[PlannedDeInitializer]?
     methods: ref[Vector[PlannedFunction]]?
     operators: ref[Vector[PlannedOperator]]?
     size: size_t

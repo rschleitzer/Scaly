@@ -6773,18 +6773,6 @@ define Planner
                         if ibody
                             facts.add(Planner.fact("F" as char, file, ini.span.start, ini.span.end, "i" as char, String(), g, false, false, String()))
                     }
-                    if s.deinitializer <> null
-                    {
-                        let dei (*s.deinitializer)
-                        var dbody false
-                        choose dei.implementation
-                            when a: Action
-                                dbody := true
-                            else
-                                0
-                        if dbody
-                            facts.add(Planner.fact("F" as char, file, dei.span.start, dei.span.end, "d" as char, String(), g, false, false, String()))
-                    }
                     var mi: size_t 0
                     while mi < s.modules.length
                     {
@@ -7143,13 +7131,6 @@ define Planner
                         return true
                 }
                 i := i + 1
-            }
-            if s.deinitializer <> null
-            {
-                let dr s.deinitializer
-                let di (*dr)
-                if this.impl_has_this_alloc(di.implementation)
-                    return true
             }
             false
         }
@@ -50758,27 +50739,6 @@ define Planner
             result_ini
         }
 
-        ; plan_deinitializer: Model.DeInitializer → Plan.PlannedDeInitializer.
-        ; Even simpler than plan_initializer — no parameters.
-        procedure plan_deinitializer(
-            mutable this: Planner,
-            mutable dei: DeInitializer,
-            parent: ref[PlannedType]?
-        ) returns PlannedDeInitializer
-        {
-            let planned_impl this.plan_implementation(dei.implementation)
-            ; Mangle as a method of `parent` named "deinit" (Itanium
-            ; `_ZN<parent>6deinitEv`); bare deinit for a free context.
-            let mangled Planner.mangle_function(
-                "deinit", null, parent, false
-            )
-            PlannedDeInitializer(
-                dei.span,
-                mangled,
-                planned_impl
-            )
-        }
-
         ; plan_operator: Model.Operator → Plan.PlannedOperator.
         ; Structurally identical to plan_function modulo the two missing
         ; fields (no `pure`, no `lifetime`).
@@ -51127,7 +51087,6 @@ define Planner
             var planned_methods Array[PlannedFunction]()
             var planned_operators Array[PlannedOperator]()
             var planned_initializers Array[PlannedInitializer]()
-            var deinit_ref: ref[PlannedDeInitializer]? null
 
             ; Activate this struct as the current-structure context so a bare
             ; sibling STATIC call inside a method body resolves against this
@@ -51180,12 +51139,6 @@ define Planner
                 ii := ii + 1
             }
 
-            if s.deinitializer <> null
-            {
-                let di (*s.deinitializer)
-                deinit_ref := &^this this.plan_deinitializer(di, parent_ref)
-            }
-
             ; Restore the outer struct context (see the save above).
             current_structure_name := saved_struct_name
 
@@ -51201,7 +51154,6 @@ define Planner
                 mangled,
                 &props_holder,
                 &inits_holder,
-                deinit_ref,
                 &methods_holder,
                 &ops_holder,
                 total_size,
@@ -51339,7 +51291,6 @@ define Planner
                 mangled,
                 &props_holder,
                 &inits_holder,
-                null,
                 &methods_holder,
                 &ops_holder,
                 total_size,
@@ -64280,7 +64231,6 @@ define Planner
             Vector[scalyc.compiler.Model.Module](0),
             Vector[scalyc.compiler.Model.Use](0),
             Vector[scalyc.compiler.Model.Initializer](0),
-            null,
             Vector[scalyc.compiler.Model.Member](0),
             empty_symbols
         )

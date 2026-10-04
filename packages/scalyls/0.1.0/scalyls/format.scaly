@@ -227,7 +227,7 @@ define format
     function is_routine_word(w: String) returns bool
     {
         match w
-            case "function" case "procedure" case "operator" case "init" case "deinit": return true
+            case "function" case "procedure" case "operator" case "init": return true
         false
     }
 

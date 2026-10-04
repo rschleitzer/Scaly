@@ -37,7 +37,6 @@
 <syntax id = Member                  multiple abstract
     <content link = Empty
     <content link = Init
-    <content link = DeInit
     <content link = Definition
     <content link = Function
     <content link = Procedure
@@ -191,12 +190,6 @@
     <content link = init
     <content link = Lifetime                       optional property = lifetime
     <content link = ParameterSet                   optional property = parameters
-    <content colon                                 optional
-    <content link = Implementation                          property = implementation
-    <content colon                                 optional
-
-<syntax id = DeInit
-    <content link = deinit
     <content colon                                 optional
     <content link = Implementation                          property = implementation
     <content colon                                 optional
@@ -631,7 +624,6 @@
 <keyword id = choose
 <keyword id = continue
 <keyword id = define
-<keyword id = deinit
 <keyword id = delegate
 <keyword id = else
 <keyword id = extends

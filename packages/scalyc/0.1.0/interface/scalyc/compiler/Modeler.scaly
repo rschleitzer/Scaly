@@ -265,8 +265,6 @@ define Modeler
 
     procedure handle_initializer(mutable syntax: InitSyntax, is_private: bool) @page true @direct true @deep true returns Initializer io mutable modeler_error_count reads modeler_error_count linked
 
-    procedure handle_deinitializer(mutable syntax: DeInitSyntax) @page true @direct true @deep true returns ref[DeInitializer]? io mutable modeler_error_count reads modeler_error_count linked
-
     ; ============================================================================
     ; Variant handling (for unions)
     ; ============================================================================
@@ -277,7 +275,7 @@ define Modeler
     ; Class/Structure handling
     ; ============================================================================
 
-    procedure handle_class(name: String, mutable path: String, mutable syntax: ClassSyntax, is_private: bool) @page true @direct true @deep true returns Structure io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_class(name: String, mutable path: String, mutable syntax: ClassSyntax, is_private: bool) @page true @direct true @ret_caller true @deep true returns Structure io mutable modeler_error_count reads modeler_error_count linked
 
     procedure handle_constituent(mutable path: String, mutable syntax: MemberSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true @deep true returns Member io mutable modeler_error_count reads modeler_error_count linked
 

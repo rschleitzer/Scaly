@@ -567,8 +567,6 @@ define semantic
                 return o.start = start
             when ini: InitSyntax
                 return ini.start = start
-            when dei: DeInitSyntax
-                return dei.start = start
             when def: DefinitionSyntax
                 return semantic.definition_has_start(def, start)
             when e: EmptySyntax
@@ -781,8 +779,6 @@ define semantic
 
         if result.found = false
         {
-            if st.deinitializer <> null and semantic.is_routine_start(file, (*st.deinitializer).loc.start)
-                result := semantic.walk_impl((*st.deinitializer).impl, mode, offset)
         }
 
         result

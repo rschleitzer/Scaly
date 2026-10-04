@@ -660,13 +660,6 @@ define FunctionSyntax
     target: TargetSyntax
 )
 
-define DeInitSyntax
-(
-    start: size_t
-    end: size_t
-    implementation: ImplementationSyntax
-)
-
 define InitSyntax
 (
     start: size_t
@@ -885,7 +878,6 @@ define DefinitionSyntax
 define MemberSyntax union (
     Empty: EmptySyntax
     Init: InitSyntax
-    DeInit: DeInitSyntax
     Definition: DefinitionSyntax
     Function: FunctionSyntax
     Procedure: ProcedureSyntax

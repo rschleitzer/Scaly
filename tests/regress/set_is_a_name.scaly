@@ -1,5 +1,7 @@
 ; `set` is no keyword any more (2026-10-04): the assignment is `x := y`, and
 ; the word is an ordinary name -- of a binding, a parameter, a function.
+; So is `deinit`, which left the language the same day (it was parsed and
+; planned, never emitted and never called).
 ; Expected: PASS
 
 function set(n: int) returns int
@@ -8,7 +10,12 @@ function set(n: int) returns int
 function size(set: int) returns int
     set * 2
 
+function deinit(n: int) returns int
+    n - 1
+
 var ok true
+if deinit(8) <> 7
+    ok := false
 if set(41) <> 42
     ok := false
 if size(4) <> 8

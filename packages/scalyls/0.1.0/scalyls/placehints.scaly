@@ -511,13 +511,6 @@ define placehints
                 i := i + 1
             }
         }
-        if st.deinitializer <> null
-        {
-            let dp st.deinitializer
-            let d (*dp)
-            if semantic.is_routine_start(file, d.loc.start)
-                placehints.collect_impl(sb, false, d.impl)
-        }
     }
 
     procedure collect_union(mutable sb: ref[StringBuilder], un: PlannedUnion, file: FileSyntax)

@@ -59,7 +59,6 @@ define Parser
         keywords_builder.add("choose")
         keywords_builder.add("continue")
         keywords_builder.add("define")
-        keywords_builder.add("deinit")
         keywords_builder.add("delegate")
         keywords_builder.add("else")
         keywords_builder.add("extends")
@@ -497,16 +496,6 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Init(node)
-        choose parse_deinit()
-            when err: Error
-            {
-                choose err
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-                    when d: Different {}
-            }
-            when node: Success
-                return MemberSyntax.DeInit(node)
         choose parse_definition()
             when err: Error
             {
@@ -1782,36 +1771,6 @@ define Parser
         let end lexer.position
 
         InitSyntax(start, end, lifetime, parameters, implementation)
-    }
-
-    procedure parse_deinit(mutable this: Parser) returns DeInitSyntax throws ParserError
-    {
-        let start lexer.previous_position
-
-        if ~lexer.parse_keyword("deinit")
-            throw ParserError.Different(DifferentSyntax())
-
-        lexer.parse_colon()
-
-        let implementation_start lexer.position
-        var implementation: ImplementationSyntax
-        choose parse_implementation()
-            when err: Error
-            {
-                choose err
-                    when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(implementation_start, lexer.position, "expected Implementation"))
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                implementation := success
-
-        lexer.parse_colon()
-
-        let end lexer.position
-
-        DeInitSyntax(start, end, implementation)
     }
 
     procedure parse_function(mutable this: Parser) returns FunctionSyntax throws ParserError

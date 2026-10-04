@@ -318,8 +318,6 @@ define Initializer
     implementation: Implementation
 )
 
-define DeInitializer(span: Span, implementation: Implementation)
-
 ; Operator
 define Operator
 (
@@ -342,7 +340,6 @@ define Structure
     modules: Vector[Module]
     uses: Vector[Use]
     initializers: Vector[Initializer]
-    deinitializer: ref[DeInitializer]?
     members: Vector[Member]
     symbols: HashMap[String, Nameable]
 )

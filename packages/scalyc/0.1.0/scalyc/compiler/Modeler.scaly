@@ -2211,16 +2211,6 @@ define Modeler
         )
     }
 
-    procedure handle_deinitializer(mutable syntax: DeInitSyntax) returns ref[DeInitializer]? mutable modeler_error_count
-    {
-        let impl handle_implementation(syntax.implementation)
-
-        DeInitializer(
-            Span(syntax.start, syntax.end),
-            impl
-        )
-    }
-
     ; ============================================================================
     ; Variant handling (for unions)
     ; ============================================================================
@@ -2290,7 +2280,6 @@ define Modeler
         var uses Vector[Use](0)
         var initializers Vector[Initializer](0)
         var members Vector[Member](0)
-        var deinitializer: ref[DeInitializer]? null
 
         if syntax.body <> null
         {
@@ -2338,8 +2327,6 @@ define Modeler
                                 initializers.put(init_idx, init_)
                                 init_idx := init_idx + 1
                             }
-                            when deinit_syntax: DeInitSyntax
-                                deinitializer := handle_deinitializer(deinit_syntax)
                             else
                             {
                                 let member handle_constituent(path, member_syntax, &symbols_builder)
@@ -2371,7 +2358,6 @@ define Modeler
             modules,
             uses,
             initializers,
-            deinitializer,
             members,
             symbols
         )

@@ -450,11 +450,7 @@ src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
        "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n"
        # Line 18: a GENERIC routine — nothing in the tree declares one, so this
        # fixture is the only cover for the `[T]` half of the rendering.
-       "\nfunction pick[T](a: T, b: T) returns T\n{\n    return a\n}\n"
-       # Line 28: a DEINIT, appended at the END so no line above it moves. It
-       # is the one member whose hover has no name to add, so it is the only
-       # cover for hover_deinit# — header `deinit`, body `in deinit`.
-       "\ndefine Res\n(\n    n: int\n)\n{\n    deinit\n    {\n        let z 1\n    }\n}\n")
+       "\nfunction pick[T](a: T, b: T) returns T\n{\n    return a\n}\n")
 import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/hover_test"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
 path = _ws + "/lsp_hover_test.scaly"
 open(path, "w").write(src)
@@ -478,8 +474,6 @@ inp += hov(8, 0, 30)     # the RETURN TYPE of `add`
 inp += hov(9, 13, 4)     # get_x's `{` -> body, so the bare `method get_x`
 inp += hov(10, 18, 10)   # the name `pick` -> a generic signature
 inp += hov(11, 18, 14)   # its generic parameter `T`
-inp += hov(12, 28, 4)    # the `deinit` KEYWORD -> the header answer
-inp += hov(13, 29, 4)    # its body brace -> the `in` form
 inp += frame({"jsonrpc":"2.0","id":6,"method":"shutdown"})
 inp += frame({"jsonrpc":"2.0","method":"exit"})
 out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
@@ -513,8 +507,6 @@ check(val(9) == "in method get_x", "hover in a method BODY -> 'in method get_x'"
 check(val(10) == "function pick[T](a: T, b: T) returns T",
       "hover on a generic routine -> signature with its generics")
 check(val(11) == "generic T", "hover on a generic parameter -> 'generic T'")
-check(val(12) == "deinit", "hover on `deinit` -> 'deinit'")
-check(val(13) == "in deinit", "hover in a deinit BODY -> 'in deinit'")
 sys.exit(1 if failures else 0)
 PY
 rc=$?

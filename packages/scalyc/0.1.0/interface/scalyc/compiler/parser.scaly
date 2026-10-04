@@ -131,8 +131,6 @@ define Parser
 
     procedure parse_init(mutable this: Parser) @page true @direct true @deep true returns InitSyntax throws ParserError linked
 
-    procedure parse_deinit(mutable this: Parser) @page true @direct true @deep true returns DeInitSyntax throws ParserError linked
-
     procedure parse_function(mutable this: Parser) @page true @direct true @deep true returns FunctionSyntax throws ParserError linked
 
     procedure parse_procedure(mutable this: Parser) @page true @direct true @deep true returns ProcedureSyntax throws ParserError linked

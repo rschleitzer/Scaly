@@ -65,7 +65,7 @@ define InterfaceFact
     file: String
     start: size_t
     end: size_t
-    kind: char          ; F: f function or procedure, o operator, i init, d deinit
+    kind: char          ; F: f function or procedure, o operator, i init
     name: String        ; C: the concept's name; G: the global's
     generic: bool       ; F, C: generic, or inside a generic concept
     resident: bool      ; C: a construction of it must be page-hosted

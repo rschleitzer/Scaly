@@ -28,8 +28,6 @@ define grammar
             return true
         if word = "define"
             return true
-        if word = "deinit"
-            return true
         if word = "delegate"
             return true
         if word = "else"

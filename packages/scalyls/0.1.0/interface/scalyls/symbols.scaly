@@ -1315,13 +1315,6 @@ define symbols
     ; `kind name` when start <= offset < end, else "".
     function hover_leaf(source: String, start: size_t, end: size_t, offset: size_t, kind: Slice[char], name: String) @page true @direct true @deep true returns String linked
 
-    ; A `deinit` member: it has no name, no parameters and no return, so the
-    ; word IS the whole header. The body still gets the `in` form of it, for
-    ; the reason enclosing_text# states — the split is the only thing this
-    ; needs over the one-liner it replaced (symbols.hover_word#, retired with
-    ; it because deinit was its only caller).
-    function hover_deinit(source: String, dei: DeInitSyntax, offset: size_t) @page true @direct true @deep true returns String linked
-
     ; --------------------------------------------------------------------
     ; DOC COMMENTS — the `;` block written directly above a declaration
     ;

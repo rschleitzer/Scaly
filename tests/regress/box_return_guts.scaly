@@ -8,7 +8,7 @@
 ;   2. the call-result page-promotion must route make_label#'s implicit page
 ;      arg to the box page (rp), so the String's data buffer lands on rp and
 ;      survives — a shallow header copy alone would dangle.
-; This is the shape the compiler's plan_type/plan_deinitializer call-result
+; This is the shape the compiler's plan_type call-result
 ; holders take once de-holdered. Self-hosted-only.
 ; Expected: PASS
 

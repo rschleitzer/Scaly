@@ -160,7 +160,7 @@ define placehints
     ; a large share of the interesting constructions live.
     procedure collect_plan(mutable sb: ref[StringBuilder], plan: Plan, file: FileSyntax, own_statements: bool) @deep true linked
 
-    procedure collect_structure(mutable sb: ref[StringBuilder], st: PlannedStructure, file: FileSyntax) @ret_nonlocal true @deep true linked
+    procedure collect_structure(mutable sb: ref[StringBuilder], st: PlannedStructure, file: FileSyntax) @deep true linked
 
     procedure collect_union(mutable sb: ref[StringBuilder], un: PlannedUnion, file: FileSyntax) @deep true linked
 

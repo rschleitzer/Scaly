@@ -7784,14 +7784,6 @@ define Planner
             parent: ref[PlannedType]?
         ) @page true @direct true @stores true @deep true @deep_this_6 true @deep_whole_4 true returns PlannedInitializer io linked
 
-        ; plan_deinitializer: Model.DeInitializer → Plan.PlannedDeInitializer.
-        ; Even simpler than plan_initializer — no parameters.
-        procedure plan_deinitializer(
-            mutable this: Planner,
-            mutable dei: DeInitializer,
-            parent: ref[PlannedType]?
-        ) @page true @direct true @stores true @deep true returns PlannedDeInitializer io linked
-
         ; plan_operator: Model.Operator → Plan.PlannedOperator.
         ; Structurally identical to plan_function modulo the two missing
         ; fields (no `pure`, no `lifetime`).
@@ -7817,7 +7809,7 @@ define Planner
         ; deinitializer. mangled_name is built via mangle_structure so
         ; method/operator mangling can reference the parent.
         ; ================================================================
-        procedure plan_structure(mutable this: Planner, mutable s: Structure, name: String) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedStructure io linked
+        procedure plan_structure(mutable this: Planner, mutable s: Structure, name: String) @page true @direct true @stores true @ret_caller true @deep true @deep_this_2 true returns PlannedStructure io linked
 
         ; plan_structure_layout#: register a Structure's layout (properties,
         ; offsets, size, alignment) into instantiated_structures WITHOUT
