@@ -133,6 +133,9 @@ lane_compiler() {
   step pointer-report tests/pointer-report/run.sh "$BIN" || rc=1
   step write-report tests/write-report/run.sh "$BIN" || rc=1
   step abi tests/abi/run.sh || rc=1
+  # the tscaly license boundary: its workflow is manual-only since 2026-10-04,
+  # so the check that runs by itself is this one (a grep over the tracked files)
+  step license tools/license-boundary.sh || rc=1
   step debuginfo tests/debuginfo/run.sh "$BIN" || rc=1
   # ★"Last" was not enough: on a ten-core box this lane is here after 36 s,
   # while the tscaly lane is still compiling — two 6.5 GB compilations beside

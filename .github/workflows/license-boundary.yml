@@ -5,17 +5,12 @@ name: license-boundary
 # tools/license-boundary.sh; the rule itself is a one-liner in the root
 # CLAUDE.md, because whoever works in the stdlib never loads tscaly's.
 #
-# ★ THIS ONE IS ON THE PUSH TRIGGER, and deliberately so — unlike `seed`, which
-# went manual-only on 2026-08-11 to stop burning the account's included Actions
-# minutes. Two reasons the cost argument does not reach here:
-#
-#   1. It costs seconds. No toolchain, no build, no LLVM, no submodule — a
-#      checkout and one `grep` over the tracked file list. It is the cheapest
-#      job this repository can run.
-#   2. A manual check enforces nothing. The whole point of putting this rule in
-#      CI rather than only in a document is that a document can fall out of
-#      context while a check cannot — and a check nobody dispatches has exactly
-#      the failure mode of the document.
+# ★ MANUAL ONLY since 2026-10-04 (`gh workflow run license-boundary`): the
+# tscaly port is closed for now, and every workflow of this repository is
+# dispatched by hand so that the account's included Actions minutes last. The
+# check that runs BY ITSELF is the same script as a station of the local bar
+# (tools/bar.sh, `license`) -- a check nobody dispatches enforces nothing, and
+# the bar is what runs before every commit.
 #
 # No paths-ignore: a lift can land anywhere, including in paths the seed
 # pipeline ignores.
@@ -26,10 +21,6 @@ name: license-boundary
 # expensive.
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
   workflow_dispatch:
 
 jobs:
