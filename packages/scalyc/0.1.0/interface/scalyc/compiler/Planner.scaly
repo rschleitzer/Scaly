@@ -288,6 +288,16 @@ define Planner
     ; search paths, loaded-package cache, and error accumulator.
     ; ========================================================================
 
+    ; what application_target# answers
+    define ApplicationTarget
+    (
+        kind: int
+        name: String
+        type: PlannedType
+        variant: String
+        tag: size_t
+    )
+
     ; DeepGateState: the deep escape gate (SCALYC_DEEP_GATE): per-function persist masks, the
     ; gate tables by name and by mangled name, and the indexes over them.
     ; Held by the Planner behind `gate`; allocated on its page in its init.
@@ -3473,6 +3483,14 @@ define Planner
             mutable fell: ref[bool]
         ) @page true @direct true @stores true @deep true @deep_this_4 true returns PlannedOperand io linked
 
+        ; What a name applied to a tuple IS, decided from the name, its concept
+        ; and its hops (the decision of collapse_application#, cut out
+        ; 2026-10-04): kind 1 a construction (type: the constructed type), 2 a
+        ; union's variant (type: the union; variant and tag), 3 a static of a
+        ; generic type (type: that type; name: the static), 0 a call. `name`
+        ; is the name the call goes on with.
+        procedure application_target(mutable this: Planner, mutable result: PlannedOperand, called: String) @page true @direct true @deep true returns ApplicationTarget linked
+
         ; A type applied to a tuple, of collapse_application#: the construction
         ; -- through the `init` the arguments match, else by position. ops[0]
         ; is the type (handed in as `first`), `second` its tuple; what follows
@@ -4585,7 +4603,10 @@ define Planner
 
         ; The step of a current value and its tuple, or of the operation so
         ; far and a postfix, in a routine of its own (operation_apply#).
-        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, mutable next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+        ; the name of a planned thing that is still a bare name, or ""
+        function operand_type_name(op: PlannedOperand) @page true @direct true @deep true returns String linked
 
         ; a tuple or a vector literal with a member hop riding on it
         ; (`a.b(1).c`, `files[k].equals`)
@@ -4598,7 +4619,7 @@ define Planner
         ; `files[k].equals(x)`: `.equals` on `[k]`) goes with everything
         ; chained to it in ONE step, as fold_rhs_call# takes it: the hop is
         ; resolved by the machinery only with what follows it in hand.
-        procedure operation_term(mutable this: Planner, ops: Vector[PlannedOperand], first: size_t, limit: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+        procedure operation_term(mutable this: Planner, mutable ops: Vector[PlannedOperand], first: size_t, limit: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
         ; operators by the table: the terms and operator names of out from
         ; base on, in one hand-over
@@ -4615,7 +4636,7 @@ define Planner
 
         ; The driver. Slot 23 says whether the answer is one: 0 leaves the
         ; sequence to the old collapse.
-        procedure operation(mutable this: Planner, ops: Vector[PlannedOperand]) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+        procedure operation(mutable this: Planner, mutable ops: Vector[PlannedOperand]) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
         ; ================================================================
         ; EXPERIMENT (2026-10-04, behind SCALYC_PENDING=1): operator

@@ -9,7 +9,7 @@ name: bench-json
 # job prints which one it got, since the numbers are only comparable within
 # one run.
 #
-# Manual only, like seed.yml: `gh workflow run bench-json`.
+# Manual only, like release.yml: `gh workflow run bench-json`.
 on:
   workflow_dispatch:
 

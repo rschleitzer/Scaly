@@ -1,0 +1,188 @@
+# The six binary archives the installers hand out, built natively, one runner
+# per system — and nothing else. Dispatch by hand:
+#
+#   gh workflow run release                    # version 0.1.0
+#   gh workflow run release -f version=0.1.1
+#   gh run download <run-id> -D dist           # the six archives, one directory each
+#
+# What it makes (the names docs/website/install.sh and install.ps1 ask for):
+#   scaly-<v>-darwin-arm64.tar.gz     macOS 26 (Tahoe) on Apple silicon
+#   scaly-<v>-darwin-x86_64.tar.gz    macOS on Intel — supported as long as
+#                                     Tahoe, the last macOS for Intel, gets
+#                                     security updates (decided 2026-10-04)
+#   scaly-<v>-linux-x86_64.tar.gz     Ubuntu 26.04 and newer
+#   scaly-<v>-linux-aarch64.tar.gz    Ubuntu 26.04 and newer
+#   scaly-<v>-windows-x86_64.zip      Windows 10 and newer
+#   scaly-<v>-windows-arm64.zip       Windows 11 on arm64
+# Each holds the three programs — scalyc, scaly, scalyls — with LLVM linked in
+# statically and built with a profile made on that runner, plus the runtime
+# archive: tools/make-bindist.sh and tools/make-bindist-windows.sh, unchanged.
+# Both scripts check their own result (the profiled compiler emits what the
+# seed's does, the profiled tool runs a program in process); the step after
+# them only shows that the unpacked compiler STARTS with no LLVM beside it.
+#
+# NOT made here: scaly-<v>.tar.gz, the packages and the seed. It is the same
+# for every system and no build — tools/make-dist.sh on any machine, and
+# tools/publish-install.sh uploads all seven.
+#
+# ★An archive runs on the system it was built on and newer ones, so each
+# runner is the OLDEST system we promise: Ubuntu 26.04 (glibc 2.43), macOS 26
+# for Apple silicon. The Intel Mac leg runs on macos-15-intel — GitHub's last
+# Intel image — so that archive's floor is macOS 15, below what we promise.
+#
+# ★COST: this repository is private. macOS minutes are billed at ten times
+# the Linux rate, Windows at twice; every leg builds the compiler twice (the
+# seed recipe, then with the profile). Run it for a release, never per commit.
+#
+# ★Written 2026-10-04 and NOT YET RUN. What the first run has to show: that
+# the labels ubuntu-26.04-arm, macos-26, macos-15-intel and windows-11-arm
+# are available to this account; that Homebrew on the Intel image has an
+# llvm@21 bottle; and that the Windows runners carry 7z and a tar that reads
+# .tar.xz (the two LLVM archives).
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: the version in the archive names (packages/scaly/<version> must exist)
+        default: '0.1.0'
+
+jobs:
+  posix:
+    name: ${{ matrix.system }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { system: linux-x86_64,  runner: ubuntu-26.04 }
+          - { system: linux-aarch64, runner: ubuntu-26.04-arm }
+          - { system: darwin-arm64,  runner: macos-26 }
+          - { system: darwin-x86_64, runner: macos-15-intel }
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: LLVM 21 (Linux)
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/llvm21
+
+      - name: What the static link needs beside it (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y clang zlib1g-dev libzstd-dev libxml2-dev
+
+      - name: LLVM 21 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install llvm@21 zstd
+
+      - name: Build the archive
+        run: |
+          set -e
+          uname -a
+          tools/make-bindist.sh "${{ inputs.version }}" dist
+          ls -l dist
+          # the name the installer asks for on this machine is the one we promised
+          [ -f "dist/scaly-${{ inputs.version }}-${{ matrix.system }}.tar.gz" ]
+
+      - name: The unpacked compiler starts, with no LLVM beside it
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/home"
+          tar -xzf "dist/scaly-${{ inputs.version }}-${{ matrix.system }}.tar.gz" -C "$RUNNER_TEMP/home"
+          ls -l "$RUNNER_TEMP/home/libexec" "$RUNNER_TEMP/home/lib"
+          # no loader path, no brew prefix: the checkout only lends its packages
+          env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH SCALY_HOME="$PWD" \
+            "$RUNNER_TEMP/home/libexec/scalyc" -S -o "$RUNNER_TEMP/hello.ll" tests/aot/hello.scaly
+          grep -q '^define ' "$RUNNER_TEMP/hello.ll"
+          if [ "$RUNNER_OS" = Linux ]; then ldd "$RUNNER_TEMP/home/libexec/scalyc" | grep -i llvm && exit 1 || true
+          else otool -L "$RUNNER_TEMP/home/libexec/scalyc" | grep -i llvm && exit 1 || true; fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: scaly-${{ inputs.version }}-${{ matrix.system }}
+          path: dist/scaly-${{ inputs.version }}-${{ matrix.system }}.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+
+  windows:
+    name: windows-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x86_64, runner: windows-2025,   installer: LLVM-21.1.8-win64.exe, libs: x86_64 }
+          - { arch: arm64,  runner: windows-11-arm, installer: LLVM-21.1.8-woa64.exe, libs: aarch64 }
+    steps:
+      - uses: actions/checkout@v5
+
+      # The toolchain is the dev box's: clang 21.1.8 from the standalone LLVM
+      # archive, UNPACKED, never installed: run silently on a runner, the
+      # official installer worked and the next line died with `clang: command
+      # not found` -- a second LLVM on Windows is not additive (measured in the
+      # removed seed.yml, rung 9); 7z reads the NSIS archive directly
+      # and put first on PATH for this job alone, with LLVM-C beside it.
+      - name: LLVM 21.1.8, unpacked
+        shell: bash
+        run: |
+          set -e
+          command -v 7z > /dev/null || { echo "no 7z on this runner"; exit 1; }
+          curl -fsSL --retry 3 -o llvm21.exe \
+            "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/${{ matrix.installer }}"
+          # relative target: an argument that does not begin with `/` is left alone by MSYS
+          7z x -bso0 -bsp0 llvm21.exe -ollvm21
+          rm -f llvm21.exe
+          for f in bin/clang.exe bin/lld-link.exe bin/llvm-ar.exe bin/llvm-profdata.exe bin/LLVM-C.dll lib/LLVM-C.lib; do
+            [ -f "llvm21/$f" ] || { echo "the archive did not yield $f"; ls llvm21 | head -30; exit 1; }
+          done
+          cygpath -w "$PWD/llvm21/bin" >> "$GITHUB_PATH"
+
+      # About 1 GB to download; only the static libraries and llvm-config are
+      # unpacked (tests/win32/static-llvm.sh, step 1, is the same lines).
+      - name: LLVM's static libraries
+        shell: bash
+        run: |
+          set -e
+          name="clang+llvm-21.1.8-${{ matrix.libs }}-pc-windows-msvc"
+          dir="$(cygpath -u "$RUNNER_TEMP")/llvm-static"
+          mkdir -p "$dir"
+          curl -fL --retry 3 -o llvm.tar.xz \
+            "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/$name.tar.xz"
+          tar -xJf llvm.tar.xz -C "$dir" --strip-components=1 --wildcards "$name/lib/LLVM*.lib" "$name/bin/llvm-config.exe" \
+            || tar -xJf llvm.tar.xz -C "$dir" --strip-components=1 "$name/lib" "$name/bin/llvm-config.exe"
+          rm -f llvm.tar.xz
+          [ -f "$dir/lib/LLVMCore.lib" ] || { echo "no LLVMCore.lib after unpacking"; ls "$dir"; exit 1; }
+          echo "SCALY_STATIC_LLVM_DIR=$dir" >> "$GITHUB_ENV"
+
+      - name: Build the archive
+        shell: bash
+        run: |
+          set -e
+          clang -dumpmachine
+          tools/make-bindist-windows.sh "${{ inputs.version }}" dist
+          ls -l dist
+          # the machine the toolchain builds for is the one this leg is named after
+          [ -f "dist/scaly-${{ inputs.version }}-windows-${{ matrix.arch }}.zip" ]
+
+      - name: The unpacked compiler starts, with no LLVM beside it
+        shell: bash
+        run: |
+          set -e
+          home="$(cygpath -u "$RUNNER_TEMP")/home"
+          mkdir -p "$home"
+          7z x -bso0 -bsp0 "dist/scaly-${{ inputs.version }}-windows-${{ matrix.arch }}.zip" "-o$(cygpath -w "$home")"
+          ls -l "$home/libexec"
+          [ ! -f "$home/libexec/LLVM-C.dll" ]
+          # LLVM's bin off the PATH: what starts now loads no LLVM-C.dll
+          PATH="$(echo "$PATH" | tr ':' '\n' | grep -v llvm21 | paste -sd: -)" SCALY_HOME="$(cygpath -w "$PWD")" \
+            "$home/libexec/scalyc.exe" -S -o hello.ll tests/aot/hello.scaly
+          grep -q '^define ' hello.ll
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: scaly-${{ inputs.version }}-windows-${{ matrix.arch }}
+          path: dist/scaly-${{ inputs.version }}-windows-${{ matrix.arch }}.zip
+          if-no-files-found: error
+          compression-level: 0

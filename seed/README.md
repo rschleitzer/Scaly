@@ -49,7 +49,7 @@ corpus + a fixed-point re-emit) before trusting it there. See `RELEASING.md`.
 
 ## Verification status
 
-CI (`.github/workflows/seed.yml`) builds from this seed and runs
+CI (`.github/workflows/seed.yml`, REMOVED 2026-10-04 — the bar on the machines is the gate now, CI only builds the release archives) built from this seed and ran
 `tools/verify-seed.sh` (hello + AOT corpus) on every push — since 2026-08-04 on
 ONE target, because this repo is private and GitHub bills macOS minutes at 10×
 the Linux rate:

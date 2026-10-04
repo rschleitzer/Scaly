@@ -11,7 +11,7 @@
 # tls, json, compress, pg, redis, h3) as sources.
 #
 # The programs are downloaded ready to run for
-#   macOS 26 on Apple silicon, Ubuntu 26.04 and newer (arm64, x86-64)
+#   macOS 26 (Apple silicon, Intel), Ubuntu 26.04 and newer (arm64, x86-64)
 # and need nothing but a C compiler, which links the programs you build
 # (macOS: xcode-select --install; Ubuntu: sudo apt install clang).
 #

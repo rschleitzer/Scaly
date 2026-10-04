@@ -11,7 +11,7 @@ name: bench-http
 # Scaly image by tools/bench/httparena/build.sh (profile-guided, for the
 # runner's CPU).
 #
-# Manual only, like seed.yml: `gh workflow run bench-http`
+# Manual only, like release.yml: `gh workflow run bench-http`
 # (`-f frameworks="scaly tokio"` to run others). By default Scaly's own
 # pool, the frameworks (flagship, emerging and experimental, scored
 # together), by where they stand on the board at the pinned commit: swerver

@@ -315,6 +315,16 @@ define Planner
     ; search paths, loaded-package cache, and error accumulator.
     ; ========================================================================
 
+    ; what application_target# answers
+    define ApplicationTarget
+    (
+        kind: int
+        name: String
+        type: PlannedType
+        variant: String
+        tag: size_t
+    )
+
     ; DeepGateState: the deep escape gate (SCALYC_DEEP_GATE): per-function persist masks, the
     ; gate tables by name and by mangled name, and the indexes over them.
     ; Held by the Planner behind `gate`; allocated on its page in its init.
@@ -13310,193 +13320,19 @@ define Planner
                         ; Type(args) as construction rather than a free
                         ; function call. Mirrors Planner.cpp:8810+
                         ; (struct) and 9086+ (union variant).
-                        var is_struct_ctor: bool false
-                        var is_variant_ctor: bool false
-                        var ctor_struct_type: PlannedType Planner.make_void_type()
-                        var ctor_union_type: PlannedType Planner.make_void_type()
-                        var ctor_variant_name: String ""
-                        var ctor_variant_tag: size_t 0
-                        ; `Stack[int].make(5)`: a STATIC of a GENERIC concept.
-                        ; The planned Type carries the static's name as a
-                        ; (non-method) hop, and the Structure arm below took the
-                        ; whole thing for `Stack[int](5)` -- the static never
-                        ; ran, rc 0 (2026-09-24). Such a call is resolved
-                        ; through lookup_method# on the instantiated type
-                        ; after the free-function resolution below.
-                        var static_on_type: bool false
-                        var static_type: PlannedType Planner.make_void_type()
-
-                        ; Resolve struct construction regardless of lifetime.
-                        ; The reshape below force-sets Lifetime.Unspecified on
-                        ; the result PlannedTuple so stage-1 stack-alloca's the
-                        ; struct (heap $/#/^ ctor support is deferred — would
-                        ; need scaly_page_alloc + RBMM wiring). Without lifting
-                        ; this guard, every `T(args)` / `T(args)` for a
-                        ; registered struct (e.g. `Options()`,
-                        ; `String(arg_ptr)`, `Vector[T](0)`) silently dropped:
-                        ; lookup_concept finds the Structure but the gate stays
-                        ; shut, the call falls through to resolve_function_call
-                        ; which returns null, mangled_name stays empty, and
-                        ; emit_call returns null — taking the binding and any
-                        ; downstream reference (e.g. `arg.starts_with(...)`)
-                        ; with it. parse_args body went from full option-
-                        ; parsing to a bare `let arg_ptr; set i: i+1`.
-                        let conc_ref this.lookup_concept(fn_name)
-                        if conc_ref <> null
-                        {
-                            let conc (*conc_ref)
-                            choose conc.definition
-                                when s: Structure
-                                {
-                                    let sh_name Planner.generic_static_hop(result)
-                                    if sh_name.get_length() > 0
-                                    {
-                                        static_on_type := true
-                                        fn_name := sh_name
-                                        choose result.expr
-                                            when t: PlannedType
-                                                static_type := t
-                                            else
-                                                0
-                                    }
-                                    else
-                                    {
-                                        is_struct_ctor := true
-                                        choose result.expr
-                                            when t: PlannedType
-                                                ctor_struct_type := t
-                                            else
-                                                0
-                                    }
-                                }
-                                when un: scalyc.compiler.Model.Union
-                                {
-                                    ; s172: Union(value) copy-construction —
-                                    ; e.g. `set parameters: ParameterSetSyntax(
-                                    ; success)` in parse_routine. Mirrors
-                                    ; stage-0's Union-with-lifetime branch
-                                    ; (Planner.cpp:9086): reshape the args
-                                    ; tuple with tuple_type = the union so
-                                    ; emit_tuple's whole-struct short-circuit
-                                    ; copies the value. find_initializer#
-                                    ; returns null for unions, so this always
-                                    ; takes the reshape fallback below.
-                                    ; Without it the construction falls
-                                    ; through to function lookup, resolves
-                                    ; nothing, and the whole `set` silently
-                                    ; drops — stage-2 modeled every function
-                                    ; with zero parameters (_Z3addv).
-                                    ;
-                                    ; s184: generic union variant ctor —
-                                    ; `Option[int].Some(42)`. The planned
-                                    ; Type operand names the union and
-                                    ; carries the variant as its first
-                                    ; resolved member-access hop (stage-0
-                                    ; Case 2, Planner.cpp:8279). Divert to
-                                    ; the variant-ctor branch; the s172
-                                    ; copy-construction applies only when
-                                    ; no variant hop is present.
-                                    var has_variant_hop: bool false
-                                    if result.member_access <> null
-                                    {
-                                        let vma (*result.member_access)
-                                        if vma.length > 0
-                                        {
-                                            let vh_ptr vma.get 0
-                                            if vh_ptr <> null
-                                            {
-                                                let vhop (*vh_ptr)
-                                                if vhop.is_union_value
-                                                {
-                                                    has_variant_hop := true
-                                                    is_variant_ctor := true
-                                                    ctor_variant_name := vhop.name
-                                                    ctor_variant_tag := vhop.field_index
-                                                    choose result.expr
-                                                        when t: PlannedType
-                                                            ctor_union_type := t
-                                                        else
-                                                            0
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if has_variant_hop = false
-                                    {
-                                        is_struct_ctor := true
-                                        choose result.expr
-                                            when t: PlannedType
-                                                ctor_struct_type := t
-                                            else
-                                                0
-                                    }
-                                }
-                                else
-                                    0
-                        }
-
-                        ; Dotted union variant: Union.Variant(args). Split
-                        ; on last '.', look up the prefix as a Union, the
-                        ; suffix as a variant.
-                        if is_struct_ctor = false
-                        {
-                            let dot_idx fn_name.last_index_of(46)
-                            if dot_idx > 0
-                            {
-                                let dot_pos dot_idx as size_t
-                                let prefix fn_name.substring(0, dot_pos)
-                                let suffix fn_name.substring(
-                                    dot_pos + 1,
-                                    fn_name.get_length() - dot_pos - 1
-                                )
-                                let union_ref this.lookup_concept(prefix)
-                                if union_ref <> null
-                                {
-                                    let uconc (*union_ref)
-                                    var is_union_def: bool false
-                                    choose uconc.definition
-                                        when u: scalyc.compiler.Model.Union
-                                            is_union_def := true
-                                        else
-                                            0
-                                    if is_union_def
-                                    {
-                                        let tag this.lookup_variant_tag(prefix, suffix)
-                                        if tag >= 0
-                                        {
-                                            is_variant_ctor := true
-                                            ; ★The page SIGIL rides on the operand's own
-                                            ; PlannedType (`Thing.Alpha^host(...)`), and
-                                            ; rebuilding the union type from the NAME used to
-                                            ; hard-code Unspecified here — so a sigil on a
-                                            ; variant construction was dropped in silence and
-                                            ; `allocate(...) as pointer[T]` + `set *p:` was the
-                                            ; only way to put one on a page. The sibling branch
-                                            ; above (the variant HOP) keeps the type and its
-                                            ; lifetime; this one now keeps the lifetime too.
-                                            var variant_life: Lifetime Lifetime.Unspecified(Unspecified())
-                                            choose result.expr
-                                                when vt: PlannedType
-                                                    variant_life := vt.life
-                                                else
-                                                    0
-                                            ctor_union_type := PlannedType(
-                                                result.loc,
-                                                prefix,
-                                                Planner.mangle_structure(prefix, null),
-                                                null,
-                                                variant_life,
-                                                null,
-                                                "",
-                                                null
-                                            )
-                                            ctor_variant_name := suffix
-                                            ctor_variant_tag := tag as size_t
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        ; what the name before the tuple IS -- a routine of its
+                        ; own since 2026-10-04 (application_target#), which the
+                        ; operation driver asks before it takes the step
+                        let target this.application_target(result, fn_name)
+                        var is_struct_ctor: bool target.kind = 1
+                        var is_variant_ctor: bool target.kind = 2
+                        var static_on_type: bool target.kind = 3
+                        var ctor_struct_type: PlannedType target.type
+                        var ctor_union_type: PlannedType target.type
+                        var static_type: PlannedType target.type
+                        var ctor_variant_name: String target.variant
+                        var ctor_variant_tag: size_t target.tag
+                        fn_name := target.name
 
                         ; the construction and the variant are routines of their
                         ; own since 2026-10-04 (ROADMAP-operation.md): what a
@@ -15657,6 +15493,219 @@ define Planner
             }
             fell := true
             result
+        }
+
+        ; What a name applied to a tuple IS, decided from the name, its concept
+        ; and its hops (the decision of collapse_application#, cut out
+        ; 2026-10-04): kind 1 a construction (type: the constructed type), 2 a
+        ; union's variant (type: the union; variant and tag), 3 a static of a
+        ; generic type (type: that type; name: the static), 0 a call. `name`
+        ; is the name the call goes on with.
+        procedure application_target(mutable this: Planner, mutable result: PlannedOperand, called: String) returns ApplicationTarget
+        {
+            var fn_name: String called
+            var is_struct_ctor: bool false
+            var is_variant_ctor: bool false
+            var ctor_struct_type: PlannedType Planner.make_void_type()
+            var ctor_union_type: PlannedType Planner.make_void_type()
+            var ctor_variant_name: String ""
+            var ctor_variant_tag: size_t 0
+            ; `Stack[int].make(5)`: a STATIC of a GENERIC concept.
+            ; The planned Type carries the static's name as a
+            ; (non-method) hop, and the Structure arm below took the
+            ; whole thing for `Stack[int](5)` -- the static never
+            ; ran, rc 0 (2026-09-24). Such a call is resolved
+            ; through lookup_method# on the instantiated type
+            ; after the free-function resolution below.
+            var static_on_type: bool false
+            var static_type: PlannedType Planner.make_void_type()
+
+            ; Resolve struct construction regardless of lifetime.
+            ; The reshape below force-sets Lifetime.Unspecified on
+            ; the result PlannedTuple so stage-1 stack-alloca's the
+            ; struct (heap $/#/^ ctor support is deferred — would
+            ; need scaly_page_alloc + RBMM wiring). Without lifting
+            ; this guard, every `T(args)` / `T(args)` for a
+            ; registered struct (e.g. `Options()`,
+            ; `String(arg_ptr)`, `Vector[T](0)`) silently dropped:
+            ; lookup_concept finds the Structure but the gate stays
+            ; shut, the call falls through to resolve_function_call
+            ; which returns null, mangled_name stays empty, and
+            ; emit_call returns null — taking the binding and any
+            ; downstream reference (e.g. `arg.starts_with(...)`)
+            ; with it. parse_args body went from full option-
+            ; parsing to a bare `let arg_ptr; set i: i+1`.
+            let conc_ref this.lookup_concept(fn_name)
+            if conc_ref <> null
+            {
+                let conc (*conc_ref)
+                choose conc.definition
+                    when s: Structure
+                    {
+                        let sh_name Planner.generic_static_hop(result)
+                        if sh_name.get_length() > 0
+                        {
+                            static_on_type := true
+                            fn_name := sh_name
+                            choose result.expr
+                                when t: PlannedType
+                                    static_type := t
+                                else
+                                    0
+                        }
+                        else
+                        {
+                            is_struct_ctor := true
+                            choose result.expr
+                                when t: PlannedType
+                                    ctor_struct_type := t
+                                else
+                                    0
+                        }
+                    }
+                    when un: scalyc.compiler.Model.Union
+                    {
+                        ; s172: Union(value) copy-construction —
+                        ; e.g. `set parameters: ParameterSetSyntax(
+                        ; success)` in parse_routine. Mirrors
+                        ; stage-0's Union-with-lifetime branch
+                        ; (Planner.cpp:9086): reshape the args
+                        ; tuple with tuple_type = the union so
+                        ; emit_tuple's whole-struct short-circuit
+                        ; copies the value. find_initializer#
+                        ; returns null for unions, so this always
+                        ; takes the reshape fallback below.
+                        ; Without it the construction falls
+                        ; through to function lookup, resolves
+                        ; nothing, and the whole `set` silently
+                        ; drops — stage-2 modeled every function
+                        ; with zero parameters (_Z3addv).
+                        ;
+                        ; s184: generic union variant ctor —
+                        ; `Option[int].Some(42)`. The planned
+                        ; Type operand names the union and
+                        ; carries the variant as its first
+                        ; resolved member-access hop (stage-0
+                        ; Case 2, Planner.cpp:8279). Divert to
+                        ; the variant-ctor branch; the s172
+                        ; copy-construction applies only when
+                        ; no variant hop is present.
+                        var has_variant_hop: bool false
+                        if result.member_access <> null
+                        {
+                            let vma (*result.member_access)
+                            if vma.length > 0
+                            {
+                                let vh_ptr vma.get 0
+                                if vh_ptr <> null
+                                {
+                                    let vhop (*vh_ptr)
+                                    if vhop.is_union_value
+                                    {
+                                        has_variant_hop := true
+                                        is_variant_ctor := true
+                                        ctor_variant_name := vhop.name
+                                        ctor_variant_tag := vhop.field_index
+                                        choose result.expr
+                                            when t: PlannedType
+                                                ctor_union_type := t
+                                            else
+                                                0
+                                    }
+                                }
+                            }
+                        }
+                        if has_variant_hop = false
+                        {
+                            is_struct_ctor := true
+                            choose result.expr
+                                when t: PlannedType
+                                    ctor_struct_type := t
+                                else
+                                    0
+                        }
+                    }
+                    else
+                        0
+            }
+
+            ; Dotted union variant: Union.Variant(args). Split
+            ; on last '.', look up the prefix as a Union, the
+            ; suffix as a variant.
+            if is_struct_ctor = false
+            {
+                let dot_idx fn_name.last_index_of(46)
+                if dot_idx > 0
+                {
+                    let dot_pos dot_idx as size_t
+                    let prefix fn_name.substring(0, dot_pos)
+                    let suffix fn_name.substring(
+                        dot_pos + 1,
+                        fn_name.get_length() - dot_pos - 1
+                    )
+                    let union_ref this.lookup_concept(prefix)
+                    if union_ref <> null
+                    {
+                        let uconc (*union_ref)
+                        var is_union_def: bool false
+                        choose uconc.definition
+                            when u: scalyc.compiler.Model.Union
+                                is_union_def := true
+                            else
+                                0
+                        if is_union_def
+                        {
+                            let tag this.lookup_variant_tag(prefix, suffix)
+                            if tag >= 0
+                            {
+                                is_variant_ctor := true
+                                ; ★The page SIGIL rides on the operand's own
+                                ; PlannedType (`Thing.Alpha^host(...)`), and
+                                ; rebuilding the union type from the NAME used to
+                                ; hard-code Unspecified here — so a sigil on a
+                                ; variant construction was dropped in silence and
+                                ; `allocate(...) as pointer[T]` + `set *p:` was the
+                                ; only way to put one on a page. The sibling branch
+                                ; above (the variant HOP) keeps the type and its
+                                ; lifetime; this one now keeps the lifetime too.
+                                var variant_life: Lifetime Lifetime.Unspecified(Unspecified())
+                                choose result.expr
+                                    when vt: PlannedType
+                                        variant_life := vt.life
+                                    else
+                                        0
+                                ctor_union_type := PlannedType(
+                                    result.loc,
+                                    prefix,
+                                    Planner.mangle_structure(prefix, null),
+                                    null,
+                                    variant_life,
+                                    null,
+                                    "",
+                                    null
+                                )
+                                ctor_variant_name := suffix
+                                ctor_variant_tag := tag as size_t
+                            }
+                        }
+                    }
+                }
+            }
+            var kind 0
+            var type: PlannedType static_type
+            if static_on_type
+                kind := 3
+            if is_variant_ctor
+            {
+                kind := 2
+                type := ctor_union_type
+            }
+            if is_struct_ctor
+            {
+                kind := 1
+                type := ctor_struct_type
+            }
+            ApplicationTarget(kind, fn_name, type, ctor_variant_name, ctor_variant_tag)
         }
 
         ; A type applied to a tuple, of collapse_application#: the construction
@@ -26455,6 +26504,7 @@ define Planner
                 this.operation_census_line("driver-step-table", 43)
                 this.operation_census_line("driver-own-application", 44)
                 this.operation_census_line("driver-postfix-of-one-thing", 45)
+                this.operation_census_line("driver-own-construction-or-variant", 71)
                 this.operation_census_line("driver-tuple-after-method-gives-call", 47)
                 this.operation_census_line("driver-tuple-after-method-gives-tuple", 48)
                 this.operation_census_line("driver-tuple-after-method-gives-variant", 49)
@@ -26854,13 +26904,51 @@ define Planner
 
         ; The step of a current value and its tuple, or of the operation so
         ; far and a postfix, in a routine of its own (operation_apply#).
-        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) returns PlannedOperand
+        procedure operation_call(mutable this: Planner, mutable cur: PlannedOperand, mutable next: PlannedOperand, slot: size_t) returns PlannedOperand
         {
             var arr Array[PlannedOperand]()
             arr.add cur
             arr.add next
             var vec Vector[PlannedOperand](arr)
+            ; A bare NAME and its tuple: the driver asks what the name is
+            ; (application_target#) and takes the construction and the variant
+            ; as steps of their own; a call, and every name with a member hop,
+            ; goes through the application part as before.
+            if slot = 34 and cur.member_access = null
+            {
+                let named Planner.operand_type_name(cur)
+                if named.get_length() > 0
+                {
+                    let target this.application_target(cur, named)
+                    if target.kind = 1
+                    {
+                        this.operation_count(slot)
+                        this.operation_count(71)
+                        var built: PlannedType target.type
+                        var built_name: String target.name
+                        return this.collapse_construction(vec, cur, next, built_name, built)
+                    }
+                    if target.kind = 2
+                    {
+                        this.operation_count(slot)
+                        this.operation_count(71)
+                        var union_type: PlannedType target.type
+                        return this.collapse_variant(vec, cur, next, union_type, target.variant, target.tag)
+                    }
+                }
+            }
             this.operation_apply(vec, cur, slot)
+        }
+
+        ; the name of a planned thing that is still a bare name, or ""
+        function operand_type_name(op: PlannedOperand) returns String
+        {
+            choose op.expr
+                when ty: PlannedType
+                    return ty.name
+                else
+                    return String("")
+            String("")
         }
 
         ; a tuple or a vector literal with a member hop riding on it
@@ -26889,7 +26977,7 @@ define Planner
         ; `files[k].equals(x)`: `.equals` on `[k]`) goes with everything
         ; chained to it in ONE step, as fold_rhs_call# takes it: the hop is
         ; resolved by the machinery only with what follows it in hand.
-        procedure operation_term(mutable this: Planner, ops: Vector[PlannedOperand], first: size_t, limit: size_t) returns PlannedOperand
+        procedure operation_term(mutable this: Planner, mutable ops: Vector[PlannedOperand], first: size_t, limit: size_t) returns PlannedOperand
         {
             var cur: PlannedOperand ops[first]
             var k first + 1
@@ -27016,7 +27104,7 @@ define Planner
 
         ; The driver. Slot 23 says whether the answer is one: 0 leaves the
         ; sequence to the old collapse.
-        procedure operation(mutable this: Planner, ops: Vector[PlannedOperand]) returns PlannedOperand
+        procedure operation(mutable this: Planner, mutable ops: Vector[PlannedOperand]) returns PlannedOperand
         {
             var cur: PlannedOperand ops[0]
             operation_counts.put(23, 0)
