@@ -3417,6 +3417,32 @@ define Planner
             mutable ops: Vector[PlannedOperand]
         ) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
+        ; A pair pre-pass of collapse_operand_sequence#: a bare name and the
+        ; vector literal after it become the generic type, and the shorter
+        ; sequence is collapsed. `fell`: no pair was merged (the answer is
+        ; then ops[0], unused).
+        procedure collapse_generics(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable fell: ref[bool]
+        ) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+        ; A pair pre-pass of collapse_operand_sequence#: a lifetime sigil goes
+        ; into the type before it. `fell`: none was merged.
+        procedure collapse_sigils(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable fell: ref[bool]
+        ) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+        ; A pair pre-pass of collapse_operand_sequence#: a value and the vector
+        ; literal after it become the `[]` call. `fell`: none was fused.
+        procedure collapse_subscripts(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable fell: ref[bool]
+        ) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
         ; The prefix part of collapse_operand_sequence#: ops[0] (handed in as
         ; `first`) is an operator name, and it takes the operand after it.
         ; `fell` says that it was none.
@@ -4503,6 +4529,15 @@ define Planner
         ; application part, and its operator part where the things are no
         ; application. `first` is things[0].
         procedure operation_apply(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable first: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+        ; A step with a vector literal or a sigil in it, by the pair
+        ; pre-passes of the old collapse in their order -- generic arguments,
+        ; sigil, subscript --, and its application part where none of them
+        ; takes it.
+        procedure operation_merge(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable first: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+        ; the pair of a current value and its vector literal or sigil
+        procedure operation_merge_pair(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
 
         ; the prefix and its term, by the prefix part of the old collapse
         procedure operation_prefix(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable sign: PlannedOperand) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked

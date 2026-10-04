@@ -11504,6 +11504,73 @@ define Planner
                 }
             }
 
+            ; The three pair pre-passes -- generic arguments, the sigil, the
+            ; subscript -- are routines of their own since 2026-10-04
+            ; (collapse_generics#, collapse_sigils#, collapse_subscripts#): each
+            ; rewrites its pairs and collapses what is left, or says that
+            ; there was nothing for it. The operation driver takes the step
+            ; of a vector literal and of a sigil on them.
+            var no_generics false
+            let generic this.collapse_generics(ops, &no_generics)
+            if no_generics = false
+                return generic
+            var no_sigils false
+            let sigiled this.collapse_sigils(ops, &no_sigils)
+            if no_sigils = false
+                return sigiled
+            var no_subscripts false
+            let indexed this.collapse_subscripts(ops, &no_subscripts)
+            if no_subscripts = false
+                return indexed
+
+            let first_ptr ops.get 0
+            if first_ptr = null
+            {
+                let void_ty Planner.make_void_type()
+                return PlannedOperand(
+                    Span(0, 0),
+                    PlannedExpression.Type void_ty,
+                    null,
+                    void_ty
+                )
+            }
+            var result: PlannedOperand (*first_ptr)
+
+            ; The prefix at the start (collapse_prefix#) and the call without
+            ; parentheses (collapse_parenless#) are routines of their own since
+            ; 2026-10-04, as the two parts below: the operation driver takes
+            ; each as a step without the pre-passes above.
+            var no_prefix false
+            let prefixed this.collapse_prefix(ops, result, &no_prefix)
+            if no_prefix = false
+                return prefixed
+            var no_single false
+            let single this.collapse_parenless(ops, result, &no_single)
+            if no_single = false
+                return single
+
+            ; The application of the first thing to the tuple after it
+            ; (collapse_application#), and what is left goes by the table
+            ; (collapse_operators#): the two parts are routines of their own
+            ; since 2026-10-04, so the operation driver can take a step
+            ; without the pre-passes above (ROADMAP-operation.md).
+            var fell false
+            let applied this.collapse_application(ops, result, &fell)
+            if fell = false
+                return applied
+            this.collapse_operators(ops, applied)
+        }
+
+        ; A pair pre-pass of collapse_operand_sequence#: a bare name and the
+        ; vector literal after it become the generic type, and the shorter
+        ; sequence is collapsed. `fell`: no pair was merged (the answer is
+        ; then ops[0], unused).
+        procedure collapse_generics(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable fell: ref[bool]
+        ) returns PlannedOperand
+        {
             ; s107: pre-pass — combine `Type + Matrix` into a generic
             ; Type with concrete generic args. The Modeler emits
             ; `Box[int](42)` as three operands [Type(Box), Matrix([int]),
@@ -11847,7 +11914,18 @@ define Planner
                 if merged_vec2.length < ops.length
                     return this.collapse_operand_sequence(merged_vec2)
             }
+            set fell: true
+            ops[0]
+        }
 
+        ; A pair pre-pass of collapse_operand_sequence#: a lifetime sigil goes
+        ; into the type before it. `fell`: none was merged.
+        procedure collapse_sigils(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable fell: ref[bool]
+        ) returns PlannedOperand
+        {
             ; Pre-pass: merge lifetime-marker operands into the
             ; preceding Type operand. Runs AFTER the s107 generic
             ; merger so that `Vector[String]^rp(1)` (parsed as
@@ -12081,7 +12159,18 @@ define Planner
                 if merged_vec.length < ops.length
                     return this.collapse_operand_sequence(merged_vec)
             }
+            set fell: true
+            ops[0]
+        }
 
+        ; A pair pre-pass of collapse_operand_sequence#: a value and the vector
+        ; literal after it become the `[]` call. `fell`: none was fused.
+        procedure collapse_subscripts(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable fell: ref[bool]
+        ) returns PlannedOperand
+        {
             ; Subscript pre-pass: fuse `[value, Matrix]` pairs into a `[]`
             ; operator call BEFORE the prefix/binary machinery runs, so
             ; `base[index] <op> rhs` collapses as call-then-binary instead
@@ -12410,43 +12499,8 @@ define Planner
                 if sub_vec.length < ops.length
                     return this.collapse_operand_sequence(sub_vec)
             }
-
-            let first_ptr ops.get 0
-            if first_ptr = null
-            {
-                let void_ty Planner.make_void_type()
-                return PlannedOperand(
-                    Span(0, 0),
-                    PlannedExpression.Type void_ty,
-                    null,
-                    void_ty
-                )
-            }
-            var result: PlannedOperand (*first_ptr)
-
-            ; The prefix at the start (collapse_prefix#) and the call without
-            ; parentheses (collapse_parenless#) are routines of their own since
-            ; 2026-10-04, as the two parts below: the operation driver takes
-            ; each as a step without the pre-passes above.
-            var no_prefix false
-            let prefixed this.collapse_prefix(ops, result, &no_prefix)
-            if no_prefix = false
-                return prefixed
-            var no_single false
-            let single this.collapse_parenless(ops, result, &no_single)
-            if no_single = false
-                return single
-
-            ; The application of the first thing to the tuple after it
-            ; (collapse_application#), and what is left goes by the table
-            ; (collapse_operators#): the two parts are routines of their own
-            ; since 2026-10-04, so the operation driver can take a step
-            ; without the pre-passes above (ROADMAP-operation.md).
-            var fell false
-            let applied this.collapse_application(ops, result, &fell)
-            if fell = false
-                return applied
-            this.collapse_operators(ops, applied)
+            set fell: true
+            ops[0]
         }
 
         ; The prefix part of collapse_operand_sequence#: ops[0] (handed in as
@@ -26592,6 +26646,47 @@ define Planner
             this.collapse_operators(things, applied)
         }
 
+        ; A step with a vector literal or a sigil in it, by the pair
+        ; pre-passes of the old collapse in their order -- generic arguments,
+        ; sigil, subscript --, and its application part where none of them
+        ; takes it.
+        procedure operation_merge(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable first: PlannedOperand, slot: size_t) returns PlannedOperand
+        {
+            this.operation_count(slot)
+            var no_generics false
+            let generic this.collapse_generics(things, &no_generics)
+            if no_generics = false
+            {
+                this.operation_count(44)
+                return generic
+            }
+            var no_sigils false
+            let sigiled this.collapse_sigils(things, &no_sigils)
+            if no_sigils = false
+            {
+                this.operation_count(44)
+                return sigiled
+            }
+            var no_subscripts false
+            let indexed this.collapse_subscripts(things, &no_subscripts)
+            if no_subscripts = false
+            {
+                this.operation_count(44)
+                return indexed
+            }
+            this.operation_apply(things, first, 46)
+        }
+
+        ; the pair of a current value and its vector literal or sigil
+        procedure operation_merge_pair(mutable this: Planner, mutable cur: PlannedOperand, next: PlannedOperand, slot: size_t) returns PlannedOperand
+        {
+            var arr Array[PlannedOperand]()
+            arr.add cur
+            arr.add next
+            var vec Vector[PlannedOperand](arr)
+            this.operation_merge(vec, cur, slot)
+        }
+
         ; the prefix and its term, by the prefix part of the old collapse
         procedure operation_prefix(mutable this: Planner, mutable things: Vector[PlannedOperand], mutable sign: PlannedOperand) returns PlannedOperand
         {
@@ -26688,6 +26783,8 @@ define Planner
                     var vec Vector[PlannedOperand](arr)
                     if tuples
                         set cur: this.operation_apply(vec, cur, 41)
+                    else if this.operation_call_is_plain(cur)
+                        set cur: this.operation_merge(vec, cur, 41)
                     else
                         set cur: this.operation_step(vec, 41)
                 }
@@ -26714,6 +26811,8 @@ define Planner
                         set cur: this.operation_call(cur, next, slot)
                     else if kind = 2 or kind = 7
                         set cur: this.operation_parenless(cur, next)
+                    else if kind = 3 or kind = 5
+                        set cur: this.operation_merge_pair(cur, next, slot)
                     else
                         set cur: this.operation_pair(cur, next, slot)
                     set k: k + 1
