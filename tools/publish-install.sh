@@ -1,61 +1,129 @@
 #!/bin/bash
-# Publish the public Scaly installer to scaly.io.
+# Publish the public Scaly installers and what they fetch to scaly.io.
 #
 # Uploads:
-#   - install.sh           -> s3://scaly.io/install.sh       (the curl|sh bootstrap)
-#   - scaly-<ver>.tar.gz   -> s3://scaly.io/downloads/...     (seed + packages + LICENSE)
-#   - scaly-<ver>-<system>-<machine>.tar.gz, every one found in dist/ — the
-#     programs for one system (tools/make-bindist.sh, run ON that system; this
-#     script builds none of them)
-# then invalidates the CloudFront cache for them. The tarball lives under the
-# /downloads/ prefix, which docs/deploy.sh excludes from its --delete sync, so a
-# routine docs deploy never removes it.
+#   - install.sh, install.ps1   -> s3://scaly.io/        (curl | sh, irm | iex)
+#   - scaly-<ver>.tar.gz        -> s3://scaly.io/downloads/   (seed + packages + LICENSE),
+#                                  made here by tools/make-dist.sh
+#   - the SIX binary archives, every one found in dist/:
+#       scaly-<ver>-darwin-{arm64,x86_64}.tar.gz
+#       scaly-<ver>-linux-{aarch64,x86_64}.tar.gz
+#       scaly-<ver>-windows-{arm64,x86_64}.zip
+#     They are built by the `release` workflow (gh workflow run release);
+#     --run <id> fetches that run's artifacts into dist/ first. A POSIX system
+#     without its archive is built from the seed by install.sh; Windows has
+#     no such route, so a missing zip means no Windows installation.
+# then invalidates the CloudFront cache for them. Everything lies under
+# /downloads/ or beside the website's files, and docs/deploy.sh excludes
+# /downloads/ from its --delete sync, so a routine docs deploy removes none.
 #
 # Run AFTER the seed is current (tools/seed.sh + tools/install-seed.sh) so the
-# published compiler matches the repo.
+# published compiler matches the repo. ★The tarball is made of THIS tree and
+# the archives of the run's commit: the script says so when the two differ.
 #
-# Usage: tools/publish-install.sh [version]   (default 0.1.0)
+# Usage: tools/publish-install.sh [version] [--run <id>] [--dry-run] [--partial]
+#   version     default 0.1.0
+#   --run <id>  fetch the six archives of that release run into dist/ (gh)
+#   --dry-run   say what would be uploaded, upload and invalidate nothing
+#   --partial   go on although one of the six archives is missing
 set -e
 cd "$(dirname "$0")/.."
-VERSION="${1:-0.1.0}"
+VERSION=0.1.0
+RUN=""
+DRY=0
+PARTIAL=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --run) RUN="$2"; shift ;;
+    --dry-run) DRY=1 ;;
+    --partial) PARTIAL=1 ;;
+    -*) echo "publish-install: unknown option $1"; exit 2 ;;
+    *) VERSION="$1" ;;
+  esac
+  shift
+done
 TARBALL="dist/scaly-$VERSION.tar.gz"
 DIST_ID=E3INKQI1B221G9   # same CloudFront distribution as docs/deploy.sh
 
 command -v aws >/dev/null 2>&1 || { echo "publish-install: FAIL — aws CLI not found"; exit 1; }
 
+# The archives of a release run: each artifact is a directory holding one file.
+if [ -n "$RUN" ]; then
+  command -v gh >/dev/null 2>&1 || { echo "publish-install: FAIL — gh not found (--run)"; exit 1; }
+  FETCH="$(mktemp -d)"
+  trap 'rm -rf "$FETCH"' EXIT
+  echo "publish-install: fetching the archives of release run $RUN"
+  gh run download "$RUN" -D "$FETCH" || { echo "publish-install: FAIL — gh run download $RUN"; exit 1; }
+  mkdir -p dist
+  find "$FETCH" -type f \( -name "scaly-$VERSION-*.tar.gz" -o -name "scaly-$VERSION-*.zip" \) -exec cp {} dist/ \;
+  RUN_SHA="$(gh run view "$RUN" --json headSha --jq .headSha 2>/dev/null || true)"
+  if [ -n "$RUN_SHA" ] && [ "$RUN_SHA" != "$(git rev-parse HEAD)" ]; then
+    echo "publish-install: NOTE — the run built commit ${RUN_SHA:0:9}, this tree is $(git rev-parse --short=9 HEAD):"
+    echo "                 the tarball (packages, seed) is made of this tree, the programs of that commit"
+    if ! git diff --quiet "$RUN_SHA" HEAD -- packages seed 2>/dev/null; then
+      echo "publish-install: NOTE — packages/ or seed/ differ between the two"
+    fi
+  fi
+fi
+
 # Build the tarball fresh from the committed seed + stdlib.
 tools/make-dist.sh "$VERSION"
 
-echo "publish-install: uploading install.sh + $TARBALL"
-aws s3 cp docs/website/install.sh "s3://scaly.io/install.sh" \
-    --content-type 'text/x-shellscript'
-aws s3 cp "$TARBALL" "s3://scaly.io/downloads/scaly-$VERSION.tar.gz" \
-    --content-type 'application/gzip'
-
-# The programs, per system: whatever tools/make-bindist.sh left in dist/. A
-# system without one is built from the seed by the installer.
-BIN_PATHS=()
-for b in dist/scaly-"$VERSION"-*-*.tar.gz; do
-  [ -f "$b" ] || continue
-  echo "publish-install: uploading $b"
-  aws s3 cp "$b" "s3://scaly.io/downloads/$(basename "$b")" --content-type 'application/gzip'
-  BIN_PATHS+=("/downloads/$(basename "$b")")
+# The programs, per system: what the release run (or tools/make-bindist.sh on
+# that system) left in dist/.
+BINARIES=()
+MISSING=""
+for sys in darwin-arm64 darwin-x86_64 linux-aarch64 linux-x86_64; do
+  if [ -f "dist/scaly-$VERSION-$sys.tar.gz" ]; then BINARIES+=("dist/scaly-$VERSION-$sys.tar.gz"); else MISSING="$MISSING $sys"; fi
 done
-[ "${#BIN_PATHS[@]}" -gt 0 ] || echo "publish-install: NOTE — no programs in dist/ (tools/make-bindist.sh); every system will build from the seed"
+for sys in windows-arm64 windows-x86_64; do
+  if [ -f "dist/scaly-$VERSION-$sys.zip" ]; then BINARIES+=("dist/scaly-$VERSION-$sys.zip"); else MISSING="$MISSING $sys"; fi
+done
+if [ -n "$MISSING" ]; then
+  echo "publish-install: missing in dist/:$MISSING"
+  if [ "$PARTIAL" != 1 ]; then
+    echo "publish-install: FAIL — all six archives are published together (--run <id> fetches them; --partial goes on without)"
+    exit 1
+  fi
+fi
+
+# upload <file> <key> <content-type>
+PATHS=()
+upload() {
+  PATHS+=("/$2")
+  if [ "$DRY" = 1 ]; then
+    printf 'publish-install: would upload %-44s -> s3://scaly.io/%s (%s bytes)\n' "$1" "$2" "$(wc -c < "$1" | tr -d ' ')"
+  else
+    echo "publish-install: uploading $1"
+    aws s3 cp "$1" "s3://scaly.io/$2" --content-type "$3"
+  fi
+}
+upload docs/website/install.sh  install.sh  'text/x-shellscript'
+upload docs/website/install.ps1 install.ps1 'text/plain; charset=utf-8'
+upload "$TARBALL" "downloads/scaly-$VERSION.tar.gz" 'application/gzip'
+for b in "${BINARIES[@]}"; do
+  case "$b" in
+    *.zip) upload "$b" "downloads/$(basename "$b")" 'application/zip' ;;
+    *)     upload "$b" "downloads/$(basename "$b")" 'application/gzip' ;;
+  esac
+done
 
 # Publish the VS Code extension under a STABLE name so the tutorial's install
 # command never goes stale. Picks the newest committed .vsix; rebuild it with
 # `cd editors/vscode && npm run package` before publishing a new version.
 VSIX=$(ls -t editors/vscode/scaly-*.vsix 2>/dev/null | head -1)
 if [ -n "$VSIX" ]; then
-  echo "publish-install: uploading $VSIX -> downloads/scaly-vscode.vsix"
-  aws s3 cp "$VSIX" "s3://scaly.io/downloads/scaly-vscode.vsix" \
-      --content-type 'application/octet-stream'
+  upload "$VSIX" downloads/scaly-vscode.vsix 'application/octet-stream'
 fi
 
-aws cloudfront create-invalidation --distribution-id "$DIST_ID" \
-    --paths "/install.sh" "/downloads/scaly-$VERSION.tar.gz" "/downloads/scaly-vscode.vsix" "${BIN_PATHS[@]}"
+if [ "$DRY" = 1 ]; then
+  echo "publish-install: would invalidate ${#PATHS[@]} paths of distribution $DIST_ID"
+  echo "publish-install: DRY RUN — nothing was uploaded"
+  exit 0
+fi
+aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "${PATHS[@]}"
 
 echo "publish-install: OK"
 echo "  users install with:  curl -fsSL https://scaly.io/install.sh | sh"
+echo "  on Windows:          irm https://scaly.io/install.ps1 | iex"
 echo "  VS Code extension:   https://scaly.io/downloads/scaly-vscode.vsix"
