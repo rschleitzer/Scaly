@@ -645,6 +645,9 @@ define Planner
         ; the pending-type experiment: 0 not asked yet, 1 off, 2 on
         ; (SCALYC_PENDING, pending_on#)
         var pending_mode: int
+        ; the operation census: slot 0 the switch, the rest its counters
+        ; (operation_census#)
+        var operation_counts: Vector[size_t]
         ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
         ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
         ; reach an argument or return position un-dereferenced — directly or
@@ -4384,6 +4387,35 @@ define Planner
         procedure report_absorbed_after_control(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand]) @deep true linked
 
         ; ================================================================
+        ; The operation census (SCALYC_OPERATION_CENSUS=1,
+        ; ROADMAP-operation.md step 1): what the operand sequences of a root
+        ; ARE, counted where they are planned -- which thing follows which.
+        ; It is what the new left-to-right path has to answer, and it counts
+        ; the shapes the concept reads differently from today: a prefix in the
+        ; middle of a sequence, a method named without a tuple.
+        ; Slot 0 of operation_counts is the switch (0 not asked, 1 off, 2 on).
+        ; ================================================================
+        procedure operation_census_on(mutable this: Planner) @ret_param_0 true @deep true returns bool io linked
+
+        ; 1 an operator name, 2 a function's name, 3 a type's name, 4 another
+        ; single name, 5 a tuple, 6 the empty tuple, 7 a vector literal, 8 a
+        ; block, 9 a constant, 10 a control expression, 11 a dotted name,
+        ; 0 anything else
+        function operation_kind(this: Planner, op: Operand) @ret_nonlocal true @deep true returns int linked
+
+        procedure operation_count(mutable this: Planner, slot: size_t) @persists true @ret_nonlocal true @deep true linked
+
+        ; a counted shape and where it stands: the script counts each place
+        ; ONCE, however many roots plan the body it is in
+        procedure operation_site(mutable this: Planner, slot: size_t, start: size_t) @ret_nonlocal true @deep true linked
+
+        procedure operation_census(mutable this: Planner, ops: Vector[Operand], planned: Vector[PlannedOperand]) @deep true linked
+
+        procedure operation_census_line(mutable this: Planner, name: pointer[const_char], slot: size_t) @ret_nonlocal true @deep true linked
+
+        procedure operation_census_report(mutable this: Planner) @ret_nonlocal true @deep true linked
+
+        ; ================================================================
         ; EXPERIMENT (2026-10-04, behind SCALYC_PENDING=1): operator
         ; precedence as a protocol of PENDING types written in Scaly
         ; (tests/pending/protocol.scaly) instead of the table in
@@ -4404,6 +4436,9 @@ define Planner
         ; the table.
         ; ================================================================
         procedure pending_on(mutable this: Planner) @ret_param_0 true @deep true returns bool io linked
+
+        ; Is op the bare name `=`?
+        function operand_is_leading_equals(op: Operand) @ret_param_0 true @deep true returns bool linked
 
         ; Is op a bare name made of operator characters?
         function pending_is_operator_name(op: Operand) @ret_param_0 true @deep true returns bool linked
@@ -7089,6 +7124,14 @@ define Planner
         ; carry a text name (`operator 'minus'(...)`, tests/aot/text_operator),
         ; and that one is a real infix call.
         function name_is_only_a_function(this: Planner, name: String) @ret_nonlocal true @deep true returns bool linked
+
+        ; A method named without its tuple (`name.length`): the collapse used
+        ; to append the empty tuple and call. A thing that is not written is
+        ; not there -- `x.m` is the method, `x.m()` the call
+        ; (ROADMAP-operation.md); until a method is a value of its own the
+        ; bare name is refused. The call is still planned, so the rest of the
+        ; routine is judged as before.
+        procedure report_method_without_tuple(mutable this: Planner, loc: Span, method: String) @deep true linked
 
         ; The same failed collapse where its value is BOUND or RETURNED:
         ; `let r show twice(3)` read as `(show twice)(3)`, the "operator"

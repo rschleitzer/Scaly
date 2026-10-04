@@ -120,7 +120,7 @@ if ok
 
 let host Page.allocate_page()
 let src_text "{\"k\\u00e9y\":\"a\\nb\\\"c\",\"n\":-12.5e3,\"plain\":\"xyz\"}"
-var src allocate_slice[u8]^host(host, src_text.length)
+var src allocate_slice[u8]^host(host, src_text.length())
 set i: 0
 while i < src.length
 {

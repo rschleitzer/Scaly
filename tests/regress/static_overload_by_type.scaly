@@ -15,7 +15,7 @@ define W (x: int)
         s.length + 1000
 
     function name_of(s: String) returns size_t
-        s.length + 2000
+        s.length() + 2000
 
     function sibling(s: String) returns size_t
         name_of(s)

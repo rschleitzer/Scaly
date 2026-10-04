@@ -773,6 +773,9 @@ define Planner
         ; the pending-type experiment: 0 not asked yet, 1 off, 2 on
         ; (SCALYC_PENDING, pending_on#)
         var pending_mode: int
+        ; the operation census: slot 0 the switch, the rest its counters
+        ; (operation_census#)
+        var operation_counts: Vector[size_t]
         ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
         ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
         ; reach an argument or return position un-dereferenced — directly or
@@ -1398,6 +1401,13 @@ define Planner
             set address_taken_locals: Array[String]^this()
             set field_written_locals: Array[String]^this()
             set pending_mode: 0
+            set operation_counts: Vector[size_t]^this(24)
+            var oc_i: size_t 0
+            while oc_i < 24
+            {
+                operation_counts.put(oc_i, 0)
+                set oc_i: oc_i + 1
+            }
             set getref_arg_locals: Array[String]^this()
             set getref_alias_names: Array[String]^this()
             set getref_alias_receivers: Array[String]^this()
@@ -6365,7 +6375,7 @@ define Planner
                                 set report_exact: false
                             if at_ptr <> null
                             {
-                                if at_ptr.name.length = 0
+                                if at_ptr.name.length() = 0
                                     set report_exact: false
                                 if at_ptr.name = "void"
                                     set report_exact: false
@@ -10518,14 +10528,14 @@ define Planner
             ; an answer about the PLANNER's knowledge, not about the code.
             if Planner.type_mentions_generic_param(ft)
                 return
-            if ft.name.length = 0
+            if ft.name.length() = 0
                 return
 
             ; The same restriction report_method_arg_types# carries: an
             ; argument whose type is a fresh variable, unnamed or void matches
             ; nothing, so a rejection over one says nothing about the source.
             let at a.result_type
-            if at.name.length = 0
+            if at.name.length() = 0
                 return
             if at.name = "void"
                 return
@@ -10995,6 +11005,7 @@ define Planner
                             let last_hop (*last_ptr)
                             if last_hop.is_method
                             {
+                                this.report_method_without_tuple(only_op.loc, last_hop.name)
                                 let void_ty Planner.make_void_type()
                                 let empty_tuple PlannedTuple(
                                     only_op.loc,
@@ -16042,6 +16053,7 @@ define Planner
                     {
                         if (*lhs_last_ptr).is_method
                         {
+                            this.report_method_without_tuple(result.loc, (*lhs_last_ptr).name)
                             let void_ty_l Planner.make_void_type()
                             let empty_tuple_l PlannedTuple(
                                 result.loc,
@@ -20544,7 +20556,7 @@ define Planner
                 }
                 else
                     return
-            if page_name.length = 0
+            if page_name.length() = 0
                 return
             if page_name = "this"
                 return
@@ -26065,6 +26077,206 @@ define Planner
         }
 
         ; ================================================================
+        ; The operation census (SCALYC_OPERATION_CENSUS=1,
+        ; ROADMAP-operation.md step 1): what the operand sequences of a root
+        ; ARE, counted where they are planned -- which thing follows which.
+        ; It is what the new left-to-right path has to answer, and it counts
+        ; the shapes the concept reads differently from today: a prefix in the
+        ; middle of a sequence, a method named without a tuple.
+        ; Slot 0 of operation_counts is the switch (0 not asked, 1 off, 2 on).
+        ; ================================================================
+        procedure operation_census_on(mutable this: Planner) returns bool
+        {
+            if operation_counts[0] = 0
+            {
+                operation_counts.put(0, 1)
+                if getenv("SCALYC_OPERATION_CENSUS") <> null
+                    operation_counts.put(0, 2)
+            }
+            operation_counts[0] = 2
+        }
+
+        ; 1 an operator name, 2 a function's name, 3 a type's name, 4 another
+        ; single name, 5 a tuple, 6 the empty tuple, 7 a vector literal, 8 a
+        ; block, 9 a constant, 10 a control expression, 11 a dotted name,
+        ; 0 anything else
+        function operation_kind(this: Planner, op: Operand) returns int
+        {
+            choose op.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.name.length <> 1
+                        return 11
+                    let n t.name[0]
+                    if t.generics = null and op.member_access = null
+                    {
+                        if Planner.name_is_word_or_symbol_operator(n) or n = "div" or n = "mod"
+                            return 1
+                        if this.lookup_local(n) <> null
+                            return 4
+                        if this.is_operator(n)
+                            return 1
+                    }
+                    if this.lookup_local(n) <> null
+                        return 4
+                    if this.is_function(n)
+                        return 2
+                    if this.lookup_concept_any(n) <> null
+                        return 3
+                    return 4
+                }
+                when tp: Tuple
+                {
+                    if tp.components.length = 0
+                        return 6
+                    return 5
+                }
+                when m: Matrix
+                    return 7
+                when b: Block
+                    return 8
+                when k: Constant
+                    return 9
+                when i: If
+                    return 10
+                when mt: Match
+                    return 10
+                when ch: Choose
+                    return 10
+                else
+                    return 0
+            0
+        }
+
+        procedure operation_count(mutable this: Planner, slot: size_t)
+        {
+            operation_counts.put(slot, operation_counts[slot] + 1)
+        }
+
+        ; a counted shape and where it stands: the script counts each place
+        ; ONCE, however many roots plan the body it is in
+        procedure operation_site(mutable this: Planner, slot: size_t, start: size_t)
+        {
+            this.operation_count(slot)
+            scaly_eputs("operation-site ")
+            scaly_eputi(slot as i64)
+            scaly_eputs(" ")
+            scaly_eputs(this.file.to_c_string())
+            scaly_eputs(":")
+            scaly_eputi(start as i64)
+            scaly_eputs("\n")
+        }
+
+        procedure operation_census(mutable this: Planner, ops: Vector[Operand], planned: Vector[PlannedOperand])
+        {
+            if ops.length = 0
+                return
+            this.operation_count(1)
+            if ops.length = 1
+                this.operation_count(2)
+            var binary false
+            var prev 0
+            var i: size_t 0
+            while i < ops.length
+            {
+                let kind this.operation_kind(ops[i])
+                var next 0
+                if i + 1 < ops.length
+                    set next: this.operation_kind(ops[i + 1])
+                if kind = 1
+                {
+                    if i = 0
+                        this.operation_site(10, ops[i].span.start)
+                    else if prev = 1
+                        this.operation_site(11, ops[i].span.start)
+                    else if prev = 2
+                        this.operation_site(12, ops[i].span.start)
+                    else
+                        set binary: true
+                }
+                if i > 0
+                {
+                    if prev = 2 and (kind = 5 or kind = 6)
+                        this.operation_site(5, ops[i].span.start)
+                    if prev = 2 and kind <> 5 and kind <> 6 and kind <> 1 and kind <> 7
+                        this.operation_site(6, ops[i].span.start)
+                    if prev = 3 and (kind = 5 or kind = 6)
+                        this.operation_site(7, ops[i].span.start)
+                    if prev = 3 and kind = 7
+                        this.operation_site(8, ops[i].span.start)
+                    if kind = 7 and prev <> 3 and prev <> 1 and prev <> 2
+                        this.operation_site(9, ops[i].span.start)
+                    if prev = 2 and kind = 7
+                        this.operation_site(18, ops[i].span.start)
+                    if prev = 11 and (kind = 5 or kind = 6)
+                        this.operation_site(14, ops[i].span.start)
+                    if prev = 4 and (kind = 5 or kind = 6)
+                        this.operation_site(15, ops[i].span.start)
+                }
+                ; a name whose last hop is a METHOD: with a tuple, with the
+                ; empty tuple, with one value (the parenless call), or bare --
+                ; nothing follows, or an operator does (today's implicit call)
+                if i < planned.length
+                {
+                    let p planned[i]
+                    if p.member_access <> null
+                    {
+                        let hops (*p.member_access)
+                        if hops.length > 0 and hops[hops.length - 1].is_method
+                        {
+                            if next = 5
+                                this.operation_site(16, ops[i].span.start)
+                            else if next = 6
+                                this.operation_site(17, ops[i].span.start)
+                            else if i + 1 < ops.length and next <> 1
+                                this.operation_site(19, ops[i].span.start)
+                            else
+                                this.operation_site(13, ops[i].span.start)
+                        }
+                    }
+                }
+                set prev: kind
+                set i: i + 1
+            }
+            if binary
+                this.operation_count(3)
+            else if ops.length > 1
+                this.operation_count(4)
+        }
+
+        procedure operation_census_line(mutable this: Planner, name: pointer[const_char], slot: size_t)
+        {
+            scaly_eputs("operation-census ")
+            scaly_eputs(name)
+            scaly_eputs(" ")
+            scaly_eputi(operation_counts[slot] as i64)
+            scaly_eputs("\n")
+        }
+
+        procedure operation_census_report(mutable this: Planner)
+        {
+            this.operation_census_line("sequences", 1)
+            this.operation_census_line("single", 2)
+            this.operation_census_line("with-binary-operator", 3)
+            this.operation_census_line("application-only", 4)
+            this.operation_census_line("function+tuple", 5)
+            this.operation_census_line("function+value", 6)
+            this.operation_census_line("function+vector", 18)
+            this.operation_census_line("type+tuple", 7)
+            this.operation_census_line("type+vector", 8)
+            this.operation_census_line("value+vector", 9)
+            this.operation_census_line("dotted+tuple", 14)
+            this.operation_census_line("name+tuple", 15)
+            this.operation_census_line("prefix-at-start", 10)
+            this.operation_census_line("prefix-after-operator", 11)
+            this.operation_census_line("prefix-after-function", 12)
+            this.operation_census_line("method+tuple", 16)
+            this.operation_census_line("method+empty-tuple", 17)
+            this.operation_census_line("method+value", 19)
+            this.operation_census_line("method-bare", 13)
+        }
+
+        ; ================================================================
         ; EXPERIMENT (2026-10-04, behind SCALYC_PENDING=1): operator
         ; precedence as a protocol of PENDING types written in Scaly
         ; (tests/pending/protocol.scaly) instead of the table in
@@ -26093,6 +26305,19 @@ define Planner
                     set pending_mode: 2
             }
             pending_mode = 2
+        }
+
+        ; Is op the bare name `=`?
+        function operand_is_leading_equals(op: Operand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expression
+                when t: scalyc.compiler.Model.Type
+                    return t.generics = null and t.name.length = 1 and t.name[0] = "="
+                else
+                    return false
+            false
         }
 
         ; Is op a bare name made of operator characters?
@@ -26499,6 +26724,20 @@ define Planner
             mutable ops: Vector[scalyc.compiler.Model.Operand]
         ) returns Vector[PlannedOperand]
         {
+            ; `=` at the START of an operation is a prefix that does nothing
+            ; (`let a = 42`, `return = x`, `(= 1, = 2)`; the author,
+            ; 2026-10-04): anywhere else it compares.
+            if ops.length > 1 and Planner.operand_is_leading_equals(ops[0])
+            {
+                var rest Vector[scalyc.compiler.Model.Operand]^this(ops.length - 1)
+                var ri: size_t 1
+                while ri < ops.length
+                {
+                    rest.put(ri - 1, ops[ri])
+                    set ri: ri + 1
+                }
+                return this.plan_operands(rest)
+            }
             ; the pending-type experiment (SCALYC_PENDING=1, pending_rewrite#)
             if ops.length > 2 and this.pending_on()
             {
@@ -26557,6 +26796,8 @@ define Planner
                 }
                 set i: i + 1
             }
+            if this.operation_census_on()
+                this.operation_census(ops, result)
             result
         }
 
@@ -45592,6 +45833,26 @@ define Planner
         function name_is_only_a_function(this: Planner, name: String) returns bool
             Planner.name_is_function_name(name) and this.is_function(name) and this.is_operator(name) = false
 
+        ; A method named without its tuple (`name.length`): the collapse used
+        ; to append the empty tuple and call. A thing that is not written is
+        ; not there -- `x.m` is the method, `x.m()` the call
+        ; (ROADMAP-operation.md); until a method is a value of its own the
+        ; bare name is refused. The call is still planned, so the rest of the
+        ; routine is judged as before.
+        procedure report_method_without_tuple(mutable this: Planner, loc: Span, method: String)
+        {
+            if this.planning_template
+                return
+            var msb StringBuilder()
+            msb.append "'"
+            msb.append method
+            msb.append "' is a method and stands here without its tuple - a call takes it: '"
+            msb.append method
+            msb.append "()'"
+            let mmsg msb.to_string()
+            this.add_diagnostic(loc, String^this(mmsg))
+        }
+
         ; The same failed collapse where its value is BOUND or RETURNED:
         ; `let r show twice(3)` read as `(show twice)(3)`, the "operator"
         ; carrying the function's name, and r held nothing at rc 0.
@@ -51882,6 +52143,8 @@ define Planner
             ; hard diagnostic (failed at cli.run) on a detected escape.
             this.check_interprocedural_escapes()
             this.phase_mark("D2-interprocedural-escapes")
+            if this.operation_census_on()
+                this.operation_census_report()
 
             ; Channel move checker (milestone 1.4): a use of a channel-sent
             ; message binding after its Channel.send is a hard diagnostic
@@ -53320,7 +53583,7 @@ define Planner
     ; encode_name: "foo" -> "3foo" (length prefix + raw name)
     function encode_name(name: String) returns String
     {
-        let len name.length
+        let len name.length()
         let len_str size_to_string len
         "`len_str``name`"
     }

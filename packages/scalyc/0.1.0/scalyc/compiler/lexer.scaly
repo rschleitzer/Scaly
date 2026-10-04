@@ -860,7 +860,7 @@ define lexer
             choose token
                 when ident: Identifier
                 {
-                    let name String(ident.name.get_buffer(), ident.name.length)
+                    let name String(ident.name.get_buffer(), ident.name.length())
                     if keywords.contains(name)
                         return String("", 0)
 
@@ -882,7 +882,7 @@ define lexer
 
             choose token
                 when ident: Identifier
-                    return String(ident.name.get_buffer(), ident.name.length)
+                    return String(ident.name.get_buffer(), ident.name.length())
                 else {}
 
             String("", 0)
@@ -899,7 +899,7 @@ define lexer
             choose token
                 when attr: Attribute
                 {
-                    let name String(attr.name.get_buffer(), attr.name.length)
+                    let name String(attr.name.get_buffer(), attr.name.length())
                     empty()
                     return name
                 }

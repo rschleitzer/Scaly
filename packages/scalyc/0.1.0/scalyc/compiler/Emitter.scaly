@@ -7589,7 +7589,7 @@ define Emitter
                 }
                 when fr: Fragment
                 {
-                    return LLVMConstStringInContext(context, fr.value.c_data(), fr.value.length as int, 0)
+                    return LLVMConstStringInContext(context, fr.value.c_data(), fr.value.length() as int, 0)
                 }
                 when n: Null
                 {
@@ -16421,7 +16421,7 @@ define Emitter
                                         ; Variant index 0 with name implies Some.
                                         if c.variant_index = 0
                                         {
-                                            if c.name.length > 0
+                                            if c.name.length() > 0
                                                 set has_some: true
                                         }
                                     }
@@ -16799,7 +16799,7 @@ define Emitter
                         ; Option, the Some payload IS the non-null pointer; bind
                         ; the variable to union_value directly. For tagged unions,
                         ; GEP into the data field and load the variant value.
-                        if when_case.name.length > 0
+                        if when_case.name.length() > 0
                         {
                             if is_npo
                                 define_variable(when_case.name, union_value)
@@ -20132,7 +20132,7 @@ define Emitter
                     LLVMAddCase(arm_switch, LLVMConstInt(i32k_ty, arm.variant_index, 0), arm_block)
                     LLVMPositionBuilderAtEnd(builder, arm_block)
 
-                    if arm.name.length > 0
+                    if arm.name.length() > 0
                     {
                         if arm.variant_type.name <> "void"
                         {
@@ -20390,7 +20390,7 @@ define Emitter
                         ; if the arm names it. Skip when the variant type is void
                         ; (an unresolved / generic `when e: Error` arm): loading a
                         ; void type is invalid IR.
-                        if catch_case.name.length > 0
+                        if catch_case.name.length() > 0
                         {
                             if catch_case.variant_type.name <> "void"
                             {

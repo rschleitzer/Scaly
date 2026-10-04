@@ -20,7 +20,7 @@ procedure busy() mutable ran
     let s String("a region-allocated string, dying with the task")
     Scheduler.yield()
     Scheduler.sleep(1)
-    if s.length > 0
+    if s.length() > 0
         set ran: ran + 1
 }
 

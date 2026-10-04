@@ -11,7 +11,7 @@
 ; expect-ir: "target-cpu"="core2"
 
 ; a run-time index, so the IR builder cannot fold the lookup away
-let k String("abc").length as u8
+let k String("abc").length() as u8
 let t u8x16.iota(0, 1)
 let x u8x16.lookup(t, u8x16.splat(k))
 if x[0] = 3

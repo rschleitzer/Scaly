@@ -160,7 +160,7 @@ procedure agree(doc: Slice[u8]) returns bool
         return true
     ; a refusal: the tokens before it are the pull reader's alone
     let bang pull.last_index_of(0x21)
-    if tree.length > 0 and tree.get(0) = 0x21 and bang >= 0 and tree.equals(pull.substring(bang as size_t, pull.length - (bang as size_t)))
+    if tree.length() > 0 and tree.get(0) = 0x21 and bang >= 0 and tree.equals(pull.substring(bang as size_t, pull.length() - (bang as size_t)))
         return true
     print "  disagree on `String(doc.data as pointer[const_char], doc.length)`"
     print "    pull `pull`"
