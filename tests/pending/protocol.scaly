@@ -1,0 +1,73 @@
+; Experiment (2026-10-04): operator precedence as a protocol of PENDING types,
+; written in Scaly and folded away by the Planner (SCALYC_PENDING=1).
+; `a +` answers an Addend that waits for what follows; nothing here is ever
+; bound, stored or laid out (ROADMAP-operation.md). `pending` is spelled
+; `@pending true` here, until the grammar has it; `apply` is "a value follows",
+; `finish` the end of the operand sequence. An operator of a pending type
+; states no return type: what `Product +` answers depends on what waits
+; outside.
+
+define Num (v: int)
+{
+    ; the raw operations the protocol finishes on
+    function add(this, other: Num) returns Num
+        Num(v + other.v)
+    function mul(this, other: Num) returns Num
+        Num(v * other.v)
+
+    operator +(this)
+        Addend[Top[Num], Num](Top[Num](0), *this)
+    operator *(this)
+        Factor[Top[Num], Num](Top[Num](0), *this)
+}
+
+; nothing waits outside
+define Top[T] @pending true (unused: int)
+{
+    function finish(this, value: T) returns T
+        value
+    function apply_finish(this, value: T) returns T
+        value
+    function apply_plus(this, value: T) returns Addend[Top[T], T]
+        Addend[Top[T], T](Top[T](0), value)
+}
+
+; `left +`, waiting for its right operand
+define Addend[O, T] @pending true (outer: O, left: T)
+{
+    function apply(this, right: T) returns Sum[O, T]
+        Sum[O, T](outer, left, right)
+    function apply_finish(this, right: T) returns T
+        outer.finish(left.add(right))
+    function apply_plus(this, right: T) returns Addend[O, T]
+        Addend[O, T](outer, left.add(right))
+}
+
+; `left + right`, waiting to see what follows
+define Sum[O, T] @pending true (outer: O, left: T, right: T)
+{
+    operator +(this)
+        Addend[O, T](outer, left.add(right))
+    operator *(this)
+        Factor[Addend[O, T], T](Addend[O, T](outer, left), right)
+    function finish(this) returns T
+        outer.finish(left.add(right))
+}
+
+; `left *`, waiting for its right operand
+define Factor[O, T] @pending true (outer: O, left: T)
+{
+    function apply(this, right: T) returns Product[O, T]
+        Product[O, T](outer, left, right)
+}
+
+; `left * right`, waiting to see what follows
+define Product[O, T] @pending true (outer: O, left: T, right: T)
+{
+    operator *(this)
+        Factor[O, T](outer, left.mul(right))
+    operator +(this)
+        outer.apply_plus(left.mul(right))
+    function finish(this) returns T
+        outer.apply_finish(left.mul(right))
+}

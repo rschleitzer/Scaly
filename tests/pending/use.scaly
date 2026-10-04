@@ -1,0 +1,12 @@
+; the expressions of direct.scaly written with operators: the protocol folds
+; them to exactly what direct.scaly spells out by hand
+
+function mixed(a: Num, b: Num, c: Num) returns Num
+    a + b * c
+
+function chain(a: Num, b: Num, c: Num, d: Num) returns Num
+    a * b + c + d * a
+
+let r mixed(Num(2), Num(3), Num(4))
+let s chain(Num(2), Num(3), Num(4), Num(5))
+print "`r.v` `s.v`\n"

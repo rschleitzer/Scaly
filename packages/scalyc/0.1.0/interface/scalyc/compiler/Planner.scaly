@@ -642,6 +642,9 @@ define Planner
         ; of such a name is planned as "slot": the emitter gives a record held
         ; as a VALUE a slot, so the store has an address (emit_binding#).
         field_written_locals: Array[String]
+        ; the pending-type experiment: 0 not asked yet, 1 off, 2 on
+        ; (SCALYC_PENDING, pending_on#)
+        var pending_mode: int
         ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
         ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
         ; reach an argument or return position un-dereferenced — directly or
@@ -4337,7 +4340,7 @@ define Planner
 
         procedure plan_tuple(mutable this: Planner, mutable t: Tuple) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedTuple io linked
 
-        procedure plan_matrix(mutable this: Planner, mutable m: Matrix) @page true @direct true @stores true @ret_caller true @deep true returns scalyc.compiler.Plan.PlannedMatrix io linked
+        procedure plan_matrix(mutable this: Planner, mutable m: Matrix) @page true @direct true @stores true @ret_caller true @deep true @deep_this_2 true returns scalyc.compiler.Plan.PlannedMatrix io linked
 
         ; plan_new: `new Foo(args)` — object construction. The mangled
         ; initializer and resolved struct type depend on the concept
@@ -4380,10 +4383,62 @@ define Planner
         ; front, scaly.sgm); this stays as the net behind that.
         procedure report_absorbed_after_control(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand]) @deep true linked
 
+        ; ================================================================
+        ; EXPERIMENT (2026-10-04, behind SCALYC_PENDING=1): operator
+        ; precedence as a protocol of PENDING types written in Scaly
+        ; (tests/pending/protocol.scaly) instead of the table in
+        ; collapse_operand_sequence#. `a +` answers a value of a type marked
+        ; `@pending true` that waits for what follows; such a value is never
+        ; bound, stored or laid out. The planner evaluates the protocol on the
+        ; MODEL -- an operator name after a value is that value's operator
+        ; taking only `this`, a value after a pending value is its `apply`,
+        ; the end of the sequence its `finish` -- and plans what is left, an
+        ; ordinary expression of real calls. Nothing of the protocol reaches
+        ; the plan.
+        ;
+        ; Deliberately narrow: an operand of the sequence is ONE model
+        ; operand; a protocol body is a name, a construction `P(args)` or a
+        ; call `f(args)` / `x.m(args)`; types are not checked, a pending type's
+        ; type arguments are not read; an operand a body names twice is
+        ; evaluated twice. A sequence the protocol does not answer is left to
+        ; the table.
+        ; ================================================================
+        procedure pending_on(mutable this: Planner) @ret_param_0 true @deep true returns bool io linked
+
+        ; Is op a bare name made of operator characters?
+        function pending_is_operator_name(op: Operand) @ret_param_0 true @deep true returns bool linked
+
+        function pending_env_index(names: ref[Array[String]], name: String) @ret_param_0 true @deep true returns int linked
+
+        ; The pending concept seq constructs (`P[...](...)`), or null.
+        function pending_construction(this: Planner, seq: Vector[Operand]) @ret_param_0 true @deep true returns ref[Concept]? linked
+
+        ; The body of c's member `name` -- an operator taking only `this`, or
+        ; a function -- with the names of its parameters after `this`; an
+        ; empty sequence when c has none.
+        procedure pending_member_body(mutable this: Planner, c: ref[Concept], is_operator: bool, name: String, mutable params: ref[Array[String]]) @page true @direct true @ret_args_3 true @deep true returns Vector[Operand] linked
+
+        ; `recv.method(args)` for a REAL receiver: a name takes the method as
+        ; one more segment, a call takes it as its member access.
+        procedure pending_real_call(mutable this: Planner, recv: Vector[Operand], method: String, args: Operand, mutable ok: ref[bool]) @page true @direct true @ret_args_3 true @deep true returns Vector[Operand] linked
+
+        ; A member of the pending value recv (a construction of c), its fields
+        ; and the arguments bound by name.
+        procedure pending_call(mutable this: Planner, c: ref[Concept], recv: Vector[Operand], is_operator: bool, name: String, args: ref[Array[Vector[Operand]]], mutable ok: ref[bool], depth: int) @page true @direct true @ret_args_7 true @deep true returns Vector[Operand] linked
+
+        ; One expression of the protocol's own language. The answer is in
+        ; normal form: a real expression, or the construction of a pending
+        ; type whose components are in normal form.
+        procedure pending_eval(mutable this: Planner, seq_in: Vector[Operand], names: ref[Array[String]], vals: ref[Array[Vector[Operand]]], mutable ok: ref[bool], depth: int) @page true @direct true @ret_args_11 true @deep true returns Vector[Operand] linked
+
+        ; The operand sequence ops read by the protocol: the real expression
+        ; it folds to, or an empty sequence when the protocol does not answer.
+        procedure pending_rewrite(mutable this: Planner, ops: Vector[Operand]) @page true @direct true @stores true @ret_param_0 true @deep true @deep_this_2 true returns Vector[Operand] io linked
+
         procedure plan_operands(
             mutable this: Planner,
             mutable ops: Vector[scalyc.compiler.Model.Operand]
-        ) @page true @direct true @stores true @ret_caller true @deep true returns Vector[PlannedOperand] io linked
+        ) @page true @direct true @stores true @ret_caller true @deep true @deep_this_2 true returns Vector[PlannedOperand] io linked
 
         ; ================================================================
         ; plan_binding: Model.Binding → Plan.PlannedBinding.

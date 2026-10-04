@@ -1,0 +1,11 @@
+; the same expressions written out by hand: what the protocol must fold to
+
+function mixed(a: Num, b: Num, c: Num) returns Num
+    a.add(b.mul(c))
+
+function chain(a: Num, b: Num, c: Num, d: Num) returns Num
+    a.mul(b).add(c).add(d.mul(a))
+
+let r mixed(Num(2), Num(3), Num(4))
+let s chain(Num(2), Num(3), Num(4), Num(5))
+print "`r.v` `s.v`\n"

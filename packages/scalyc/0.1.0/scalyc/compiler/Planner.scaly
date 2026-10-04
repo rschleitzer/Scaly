@@ -770,6 +770,9 @@ define Planner
         ; of such a name is planned as "slot": the emitter gives a record held
         ; as a VALUE a slot, so the store has an address (emit_binding#).
         field_written_locals: Array[String]
+        ; the pending-type experiment: 0 not asked yet, 1 off, 2 on
+        ; (SCALYC_PENDING, pending_on#)
+        var pending_mode: int
         ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
         ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
         ; reach an argument or return position un-dereferenced — directly or
@@ -1394,6 +1397,7 @@ define Planner
             set escaping_targets: Array[String]^this()
             set address_taken_locals: Array[String]^this()
             set field_written_locals: Array[String]^this()
+            set pending_mode: 0
             set getref_arg_locals: Array[String]^this()
             set getref_alias_names: Array[String]^this()
             set getref_alias_receivers: Array[String]^this()
@@ -26060,11 +26064,448 @@ define Planner
             }
         }
 
+        ; ================================================================
+        ; EXPERIMENT (2026-10-04, behind SCALYC_PENDING=1): operator
+        ; precedence as a protocol of PENDING types written in Scaly
+        ; (tests/pending/protocol.scaly) instead of the table in
+        ; collapse_operand_sequence#. `a +` answers a value of a type marked
+        ; `@pending true` that waits for what follows; such a value is never
+        ; bound, stored or laid out. The planner evaluates the protocol on the
+        ; MODEL -- an operator name after a value is that value's operator
+        ; taking only `this`, a value after a pending value is its `apply`,
+        ; the end of the sequence its `finish` -- and plans what is left, an
+        ; ordinary expression of real calls. Nothing of the protocol reaches
+        ; the plan.
+        ;
+        ; Deliberately narrow: an operand of the sequence is ONE model
+        ; operand; a protocol body is a name, a construction `P(args)` or a
+        ; call `f(args)` / `x.m(args)`; types are not checked, a pending type's
+        ; type arguments are not read; an operand a body names twice is
+        ; evaluated twice. A sequence the protocol does not answer is left to
+        ; the table.
+        ; ================================================================
+        procedure pending_on(mutable this: Planner) returns bool
+        {
+            if pending_mode = 0
+            {
+                set pending_mode: 1
+                if getenv("SCALYC_PENDING") <> null
+                    set pending_mode: 2
+            }
+            pending_mode = 2
+        }
+
+        ; Is op a bare name made of operator characters?
+        function pending_is_operator_name(op: Operand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expression
+                when t: scalyc.compiler.Model.Type
+                    return t.generics = null and t.name.length = 1 and Planner.name_reads_as_operator(t.name[0])
+                else
+                    return false
+            false
+        }
+
+        function pending_env_index(names: ref[Array[String]], name: String) returns int
+        {
+            var i: size_t names.length
+            while i > 0
+            {
+                set i: i - 1
+                if names[i] = name
+                    return i as int
+            }
+            0 - 1
+        }
+
+        ; The pending concept seq constructs (`P[...](...)`), or null.
+        function pending_construction(this: Planner, seq: Vector[Operand]) returns ref[Concept]?
+        {
+            if seq.length <> 2
+                return null
+            let head seq[0]
+            if head.member_access <> null
+                return null
+            var args_follow false
+            choose seq[1].expression
+                when tp: Tuple
+                    set args_follow: true
+                else
+                    0
+            if args_follow = false
+                return null
+            choose head.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.name.length <> 1
+                        return null
+                    let cref this.lookup_concept_any(t.name[0])
+                    if cref <> null and Planner.attributes_have(cref.attributes, "pending")
+                        return cref
+                    return null
+                }
+                else
+                    return null
+            null
+        }
+
+        ; The body of c's member `name` -- an operator taking only `this`, or
+        ; a function -- with the names of its parameters after `this`; an
+        ; empty sequence when c has none.
+        procedure pending_member_body(mutable this: Planner, c: ref[Concept], is_operator: bool, name: String, mutable params: ref[Array[String]]) returns Vector[Operand]
+        {
+            choose c.definition
+                when st: Structure
+                {
+                    var mi: size_t 0
+                    while mi < st.members.length
+                    {
+                        let mem st.members[mi]
+                        set mi: mi + 1
+                        choose mem
+                            when o: Operator
+                            {
+                                if is_operator and o.name = name and o.input.length = 1
+                                {
+                                    choose o.implementation
+                                        when a: Action
+                                            return a.source
+                                        else
+                                            0
+                                }
+                            }
+                            when f: Function
+                            {
+                                if is_operator = false and f.name = name
+                                {
+                                    var pi: size_t 0
+                                    while pi < f.input.length
+                                    {
+                                        let it f.input[pi]
+                                        set pi: pi + 1
+                                        if it.name <> null and (*it.name) <> "this"
+                                            params.add(String^this((*it.name)))
+                                    }
+                                    choose f.implementation
+                                        when a: Action
+                                            return a.source
+                                        else
+                                            0
+                                }
+                            }
+                            else
+                                0
+                    }
+                }
+                else
+                    0
+            Vector[Operand]^this(0)
+        }
+
+        ; `recv.method(args)` for a REAL receiver: a name takes the method as
+        ; one more segment, a call takes it as its member access.
+        procedure pending_real_call(mutable this: Planner, recv: Vector[Operand], method: String, args: Operand, mutable ok: ref[bool]) returns Vector[Operand]
+        {
+            let last recv[recv.length - 1]
+            if recv.length = 1 and last.member_access = null
+            {
+                choose last.expression
+                    when t: scalyc.compiler.Model.Type
+                    {
+                        if t.generics = null
+                        {
+                            var dotted Vector[String]^this(t.name.length + 1)
+                            var ni: size_t 0
+                            while ni < t.name.length
+                            {
+                                dotted.put(ni, t.name[ni])
+                                set ni: ni + 1
+                            }
+                            dotted.put(t.name.length, String^this(method))
+                            var out Vector[Operand]^this(2)
+                            out.put(0, Operand(last.span, Expression.Type(scalyc.compiler.Model.Type(t.span, dotted, null, t.lifetime)), null))
+                            out.put(1, args)
+                            return out
+                        }
+                    }
+                    else
+                        0
+            }
+            var tail_is_call false
+            choose last.expression
+                when tp: Tuple
+                    set tail_is_call: last.member_access = null and recv.length > 1
+                else
+                    0
+            if tail_is_call = false
+            {
+                set ok: false
+                return recv
+            }
+            var hop Vector[String]^this(1)
+            hop.put(0, String^this(method))
+            var hop_holder Vector[Vector[String]]^this(1)
+            hop_holder.put(0, hop)
+            var chained Vector[Operand]^this(recv.length + 1)
+            var ri: size_t 0
+            while ri + 1 < recv.length
+            {
+                chained.put(ri, recv[ri])
+                set ri: ri + 1
+            }
+            chained.put(recv.length - 1, Operand(last.span, last.expression, hop_holder.get(0)))
+            chained.put(recv.length, args)
+            chained
+        }
+
+        ; A member of the pending value recv (a construction of c), its fields
+        ; and the arguments bound by name.
+        procedure pending_call(mutable this: Planner, c: ref[Concept], recv: Vector[Operand], is_operator: bool, name: String, args: ref[Array[Vector[Operand]]], mutable ok: ref[bool], depth: int) returns Vector[Operand]
+        {
+            var names Array[String]()
+            var vals Array[Vector[Operand]]()
+            choose c.definition
+                when st: Structure
+                {
+                    choose recv[1].expression
+                        when tp: Tuple
+                        {
+                            var fi: size_t 0
+                            while fi < st.properties.length and fi < tp.components.length
+                            {
+                                names.add(String^this(st.properties[fi].name))
+                                vals.add(tp.components[fi].value)
+                                set fi: fi + 1
+                            }
+                        }
+                        else
+                            0
+                }
+                else
+                    0
+            var params Array[String]()
+            let body this.pending_member_body(c, is_operator, name, &params)
+            if body.length = 0 or params.length <> args.length
+            {
+                set ok: false
+                return recv
+            }
+            var ai: size_t 0
+            while ai < params.length
+            {
+                names.add(String^this(params[ai]))
+                vals.add(args[ai])
+                set ai: ai + 1
+            }
+            this.pending_eval(body, &names, &vals, ok, depth + 1)
+        }
+
+        ; One expression of the protocol's own language. The answer is in
+        ; normal form: a real expression, or the construction of a pending
+        ; type whose components are in normal form.
+        procedure pending_eval(mutable this: Planner, seq_in: Vector[Operand], names: ref[Array[String]], vals: ref[Array[Vector[Operand]]], mutable ok: ref[bool], depth: int) returns Vector[Operand]
+        {
+            var seq seq_in
+            if depth > 64
+            {
+                set ok: false
+                return seq
+            }
+            ; `P[O, T](...)`: in expression position the type arguments are
+            ; a vector literal between the name and the tuple; the protocol
+            ; does not read them
+            if seq.length = 3
+            {
+                var generic_args false
+                choose seq[1].expression
+                    when mx: Matrix
+                        set generic_args: seq[1].member_access = null
+                    else
+                        0
+                if generic_args
+                {
+                    var two Vector[Operand]^this(2)
+                    two.put(0, seq[0])
+                    two.put(1, seq[2])
+                    set seq: two
+                }
+            }
+            ; `*this`: the receiver by value
+            if seq.length = 2
+            {
+                var star false
+                if seq[0].member_access = null
+                    choose seq[0].expression
+                        when st: scalyc.compiler.Model.Type
+                            set star: st.name.length = 1 and st.name[0] = "*"
+                        else
+                            0
+                if star
+                {
+                    var one Vector[Operand]^this(1)
+                    one.put(0, seq[1])
+                    set seq: one
+                }
+            }
+            if seq.length = 1
+            {
+                let only seq[0]
+                if only.member_access = null
+                {
+                    choose only.expression
+                        when t: scalyc.compiler.Model.Type
+                        {
+                            if t.name.length = 1 and t.generics = null
+                            {
+                                let idx Planner.pending_env_index(names, t.name[0])
+                                if idx >= 0
+                                    return vals[idx as size_t]
+                            }
+                        }
+                        else
+                            0
+                }
+                return seq
+            }
+            if seq.length <> 2 or seq[0].member_access <> null
+            {
+                set ok: false
+                return seq
+            }
+            choose seq[1].expression
+                when tp: Tuple
+                {
+                    ; the arguments, in normal form
+                    var arg_vals Array[Vector[Operand]]()
+                    var comps Vector[scalyc.compiler.Model.Component]^this(tp.components.length)
+                    var ci: size_t 0
+                    while ci < tp.components.length
+                    {
+                        let comp tp.components[ci]
+                        let v this.pending_eval(comp.value, names, vals, ok, depth + 1)
+                        arg_vals.add v
+                        comps.put(ci, scalyc.compiler.Model.Component(comp.span, comp.name, v, comp.attributes))
+                        set ci: ci + 1
+                    }
+                    let new_args Operand(seq[1].span, Expression.Tuple(scalyc.compiler.Model.Tuple(tp.span, comps)), seq[1].member_access)
+                    choose seq[0].expression
+                        when t: scalyc.compiler.Model.Type
+                        {
+                            if t.name.length = 2
+                            {
+                                let idx Planner.pending_env_index(names, t.name[0])
+                                if idx >= 0
+                                {
+                                    let recv vals[idx as size_t]
+                                    let rc this.pending_construction(recv)
+                                    if rc <> null
+                                        return this.pending_call(rc, recv, false, t.name[1], &arg_vals, ok, depth)
+                                    ; a real receiver: `recv.m(args)`
+                                    return this.pending_real_call(recv, t.name[1], new_args, ok)
+                                }
+                            }
+                            ; a construction or a real call: the head as written
+                            var out Vector[Operand]^this(2)
+                            out.put(0, seq[0])
+                            out.put(1, new_args)
+                            return out
+                        }
+                        else
+                            0
+                }
+                else
+                    0
+            set ok: false
+            seq
+        }
+
+        ; The operand sequence ops read by the protocol: the real expression
+        ; it folds to, or an empty sequence when the protocol does not answer.
+        procedure pending_rewrite(mutable this: Planner, ops: Vector[Operand]) returns Vector[Operand]
+        {
+            let none Vector[Operand]^this(0)
+            if ops.length < 3 or Planner.pending_is_operator_name(ops[1]) = false
+                return none
+            var ok true
+            var cur Vector[Operand]^this(1)
+            cur.put(0, ops[0])
+            var i: size_t 1
+            while i < ops.length and ok
+            {
+                let e ops[i]
+                set i: i + 1
+                let pc this.pending_construction(cur)
+                if Planner.pending_is_operator_name(e)
+                {
+                    var op_name String()
+                    choose e.expression
+                        when t: scalyc.compiler.Model.Type
+                            set op_name: t.name[0]
+                        else
+                            0
+                    if pc <> null
+                    {
+                        var no_args Array[Vector[Operand]]()
+                        set cur: this.pending_call(pc, cur, true, op_name, &no_args, &ok, 0)
+                    }
+                    else
+                    {
+                        ; a real value: its own type says what `value OP` answers
+                        let planned this.collapse_operand_sequence(this.plan_operands(cur))
+                        let rc this.lookup_concept_any(planned.result_type.name)
+                        if rc = null
+                            return none
+                        var params Array[String]()
+                        let body this.pending_member_body(rc, true, op_name, &params)
+                        if body.length = 0
+                            return none
+                        var names Array[String]()
+                        var vals Array[Vector[Operand]]()
+                        names.add(String^this("this"))
+                        vals.add cur
+                        set cur: this.pending_eval(body, &names, &vals, &ok, 0)
+                    }
+                }
+                else
+                {
+                    if pc = null
+                        return none
+                    var one_arg Array[Vector[Operand]]()
+                    var arg Vector[Operand]^this(1)
+                    arg.put(0, e)
+                    one_arg.add arg
+                    set cur: this.pending_call(pc, cur, false, "apply", &one_arg, &ok, 0)
+                }
+            }
+            var rounds 0
+            while ok and rounds < 16
+            {
+                let fc this.pending_construction(cur)
+                if fc = null
+                    break
+                var end_args Array[Vector[Operand]]()
+                set cur: this.pending_call(fc, cur, false, "finish", &end_args, &ok, 0)
+                set rounds: rounds + 1
+            }
+            if ok = false or this.pending_construction(cur) <> null
+                return none
+            cur
+        }
+
         procedure plan_operands(
             mutable this: Planner,
             mutable ops: Vector[scalyc.compiler.Model.Operand]
         ) returns Vector[PlannedOperand]
         {
+            ; the pending-type experiment (SCALYC_PENDING=1, pending_rewrite#)
+            if ops.length > 2 and this.pending_on()
+            {
+                let folded this.pending_rewrite(ops)
+                if folded.length > 0
+                    return this.plan_operands(folded)
+            }
             this.report_absorbed_after_control(ops)
             var result Vector[PlannedOperand](ops.length)
             var i: size_t 0
@@ -49561,7 +50002,11 @@ define Planner
                         }
                         when o: Operator
                         {
-                            planned_operators.add(this.plan_operator(o, parent_ref))
+                            ; the pending-type experiment: an operator taking
+                            ; only `this` and stating no return type starts
+                            ; the protocol and is never a call
+                            if (this.pending_on() and o.returns_ = null and o.input.length = 1) = false
+                                planned_operators.add(this.plan_operator(o, parent_ref))
                             0
                         }
                         else
@@ -50970,6 +51415,10 @@ define Planner
                 {
                     var skip: bool false
                     if c.parameters.length > 0 and s.members.length = 0 and s.initializers.length = 0
+                        set skip: true
+                    ; the pending-type experiment: a pending type is never
+                    ; laid out and its members are never routines
+                    if this.pending_on() and Planner.attributes_have(c.attributes, "pending")
                         set skip: true
                     if skip
                         return PlannedConcept(
