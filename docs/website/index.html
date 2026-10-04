@@ -331,10 +331,12 @@
                 <span class="project-tag">Language Specification</span>
                 <a href="lang/scaly-spec.rtf" class="project-tag" style="text-decoration: none;">Download RTF</a>
                 <a href="downloads/scaly-vscode.vsix" class="project-tag" style="text-decoration: none;">VS Code Extension</a>
-                <p class="install-label">Install on macOS and Linux — <a href="download/" style="color: var(--accent);">Windows, details and direct downloads</a></p>
+                <!-- the script below names the visitor's system and shows its command;
+                     without it this stands: the POSIX command and the way to the rest -->
+                <p class="install-label"><span id="install-for">Install on macOS and Linux</span> — <a href="download/" id="install-more" style="color: var(--accent);">Windows and details</a></p>
                 <div class="install-cmd">
-                    <code class="install-text"><span class="prompt">$ </span>curl -fsSL https://scaly.io/install.sh | sh</code>
-                    <button class="copy-btn" type="button" aria-label="Copy install command" data-copy="curl -fsSL https://scaly.io/install.sh | sh" onclick="copyInstall(this)">
+                    <code class="install-text"><span class="prompt" id="install-prompt">$ </span><span id="install-command">curl -fsSL https://scaly.io/install.sh | sh</span></code>
+                    <button class="copy-btn" id="install-copy" type="button" aria-label="Copy install command" data-copy="curl -fsSL https://scaly.io/install.sh | sh" onclick="copyInstall(this)">
                         <svg class="icon-clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
                     </button>
@@ -387,6 +389,28 @@
     </main>
 
     <script>
+        // The install line for the system the visitor sits at (the same test as
+        // download/): Windows gets the PowerShell command, the others keep
+        // the POSIX one under their own name. Unknown: nothing changes.
+        (function () {
+            var ua = navigator.userAgent || '';
+            var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+            var os = null;
+            if (/Android|iPhone|iPad|iPod/i.test(ua)) os = null;
+            else if (/Win/i.test(platform) || /Windows/i.test(ua)) os = 'Windows';
+            else if (/Mac/i.test(platform)) os = 'macOS';
+            else if (/Linux|X11|CrOS/i.test(platform + ' ' + ua)) os = 'Linux';
+            if (!os) return;
+            document.getElementById('install-for').textContent = 'Install on ' + os;
+            document.getElementById('install-more').textContent = 'details and other systems';
+            if (os === 'Windows') {
+                var command = 'irm https://scaly.io/install.ps1 | iex';
+                document.getElementById('install-prompt').textContent = '> ';
+                document.getElementById('install-command').textContent = command;
+                document.getElementById('install-copy').setAttribute('data-copy', command);
+            }
+        })();
+
         function copyInstall(btn) {
             var text = btn.getAttribute('data-copy');
             var mark = function () {
