@@ -1402,9 +1402,9 @@ define Planner
             set address_taken_locals: Array[String]^this()
             set field_written_locals: Array[String]^this()
             set pending_mode: 0
-            set operation_counts: Vector[size_t]^this(48)
+            set operation_counts: Vector[size_t]^this(72)
             var oc_i: size_t 0
-            while oc_i < 48
+            while oc_i < 72
             {
                 operation_counts.put(oc_i, 0)
                 set oc_i: oc_i + 1
@@ -26442,6 +26442,30 @@ define Planner
                 this.operation_census_line("driver-step-table", 43)
                 this.operation_census_line("driver-own-application", 44)
                 this.operation_census_line("driver-postfix-of-one-thing", 45)
+                this.operation_census_line("driver-tuple-after-method-gives-call", 47)
+                this.operation_census_line("driver-tuple-after-method-gives-tuple", 48)
+                this.operation_census_line("driver-tuple-after-method-gives-variant", 49)
+                this.operation_census_line("driver-tuple-after-method-gives-else", 50)
+                this.operation_census_line("driver-tuple-after-value-gives-call", 51)
+                this.operation_census_line("driver-tuple-after-value-gives-tuple", 52)
+                this.operation_census_line("driver-tuple-after-value-gives-variant", 53)
+                this.operation_census_line("driver-tuple-after-value-gives-else", 54)
+                this.operation_census_line("driver-tuple-after-function-gives-call", 55)
+                this.operation_census_line("driver-tuple-after-function-gives-tuple", 56)
+                this.operation_census_line("driver-tuple-after-function-gives-variant", 57)
+                this.operation_census_line("driver-tuple-after-function-gives-else", 58)
+                this.operation_census_line("driver-tuple-after-type-gives-call", 59)
+                this.operation_census_line("driver-tuple-after-type-gives-tuple", 60)
+                this.operation_census_line("driver-tuple-after-type-gives-variant", 61)
+                this.operation_census_line("driver-tuple-after-type-gives-else", 62)
+                this.operation_census_line("driver-tuple-after-qualified-gives-call", 63)
+                this.operation_census_line("driver-tuple-after-qualified-gives-tuple", 64)
+                this.operation_census_line("driver-tuple-after-qualified-gives-variant", 65)
+                this.operation_census_line("driver-tuple-after-qualified-gives-else", 66)
+                this.operation_census_line("driver-tuple-after-unknown-gives-call", 67)
+                this.operation_census_line("driver-tuple-after-unknown-gives-tuple", 68)
+                this.operation_census_line("driver-tuple-after-unknown-gives-variant", 69)
+                this.operation_census_line("driver-tuple-after-unknown-gives-else", 70)
             }
         }
 
@@ -26506,6 +26530,82 @@ define Planner
                 else
                     return 7
             7
+        }
+
+        ; What the thing before a tuple IS, asked before the step is taken --
+        ; the rule reads the current value's type, the old collapse the
+        ; operand's shape: 1 a method on a chain, 2 a value (a local, a
+        ; field, a call's result), 3 a function, 4 a type, 5 a qualified name
+        ; (`Owner.member`), 6 a bare name that is none of these here.
+        function operation_name(this: Planner, op: PlannedOperand) returns size_t
+        {
+            if op.member_access <> null
+            {
+                let ma (*op.member_access)
+                if ma.length > 0
+                {
+                    if ma[ma.length - 1].is_method
+                        return 1
+                    return 2
+                }
+            }
+            choose op.expr
+                when ty: PlannedType
+                {
+                    if ty.generics <> null
+                        return 4
+                    if this.lookup_local_binding(ty.name) <> null
+                        return 2
+                    if this.is_function(ty.name)
+                        return 3
+                    if this.lookup_concept_any(ty.name) <> null
+                        return 4
+                    ; a qualified name: a static, a namespace's function, a
+                    ; union's variant
+                    var d: size_t 0
+                    while d < ty.name.get_length()
+                    {
+                        if ty.name.get(d) = ("." as u8)
+                            return 5
+                        set d: d + 1
+                    }
+                    return 6
+                }
+                else
+                    return 2
+            6
+        }
+
+        ; ... and what the machinery made of it: a call, a tuple (the
+        ; construction by position), a variant, something else. Counted
+        ; against operation_name#'s answer (slots 47 to 70): where the two
+        ; disagree, the step by type has something to learn.
+        procedure operation_note(mutable this: Planner, named: size_t, made: PlannedOperand)
+        {
+            var what: size_t 3
+            choose made.expr
+                when c: PlannedCall
+                    set what: 0
+                when tp: PlannedTuple
+                    set what: 1
+                when vc: PlannedVariantConstruction
+                    set what: 2
+                else
+                    0
+            this.operation_count(47 + (named - 1) * 4 + what)
+            ; the places the name lookup does not explain, for reading
+            if (named = 6 or named = 2) and this.operation_census_on()
+            {
+                scaly_eputs("operation-name ")
+                scaly_eputi(named as i64)
+                scaly_eputs(" ")
+                scaly_eputi(what as i64)
+                scaly_eputs(" ")
+                scaly_eputs(this.file.to_c_string())
+                scaly_eputs(" ")
+                scaly_eputi(made.loc.start as i64)
+                scaly_eputs("\n")
+            }
         }
 
         ; the prefix test of the old collapse: an operator by its characters
@@ -26840,7 +26940,11 @@ define Planner
                             set slot: 37
                     }
                     if kind = 4 and this.operation_call_is_plain(cur)
+                    {
+                        let named this.operation_name(cur)
                         set cur: this.operation_call(cur, next, slot)
+                        this.operation_note(named, cur)
+                    }
                     else if kind = 2 or kind = 7
                         set cur: this.operation_parenless(cur, next)
                     else if kind = 3 or kind = 5

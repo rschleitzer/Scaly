@@ -4503,6 +4503,19 @@ define Planner
         ; literal, 6 a postfix (`as`, `is`) still without its value, 7 a value
         function operation_thing(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns int linked
 
+        ; What the thing before a tuple IS, asked before the step is taken --
+        ; the rule reads the current value's type, the old collapse the
+        ; operand's shape: 1 a method on a chain, 2 a value (a local, a
+        ; field, a call's result), 3 a function, 4 a type, 5 a qualified name
+        ; (`Owner.member`), 6 a bare name that is none of these here.
+        function operation_name(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns size_t linked
+
+        ; ... and what the machinery made of it: a call, a tuple (the
+        ; construction by position), a variant, something else. Counted
+        ; against operation_name#'s answer (slots 47 to 70): where the two
+        ; disagree, the step by type has something to learn.
+        procedure operation_note(mutable this: Planner, named: size_t, made: PlannedOperand) @ret_nonlocal true @deep true io linked
+
         ; the prefix test of the old collapse: an operator by its characters
         ; (and `abs`, `not`)
         function operand_is_symbol_operator(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
