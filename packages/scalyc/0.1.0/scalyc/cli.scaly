@@ -542,28 +542,47 @@ define cli
     ; adopt_compiler#, e.g. clang-21 on a box that has no plain `clang`), then $CC,
     ; falling back to `clang`. Unset → `clang`, exactly as before, so CI /
     ; bootstrap / AOT linking is byte-for-byte unchanged.
-    ; On a Mac without the Command Line Tools, /usr/bin/clang is Apple's stub:
-    ; it fails and asks the system for an installation dialog. Asked BEFORE
-    ; the compiler is run -- `xcode-select -p` tells without raising the
-    ; dialog, as docs/website/install.sh does -- so the tool can say what is
-    ; missing in its own words. Only where the compiler is the default one
-    ; (SCALY_CC and CC name no other), and only where xcode-select exists:
-    ; that is what makes it a question about macOS, in a seed that serves
-    ; every system. Found 2026-10-04 on a vanilla Tahoe VM, where `scaly
-    ; build` said "panic.c did not compile".
-    procedure developer_tools_missing() returns bool
+    ; Is there a C compiler to build and link with? Asked BEFORE one is run,
+    ; so the tool can say what is missing in its own words (2026-10-04; it
+    ; said "panic.c did not compile"). Only where the compiler is the default
+    ; one -- SCALY_CC and CC name no other. Answers 0 there is one (or we
+    ; cannot tell), 1 a Mac without developer tools, 2 no `clang` on the PATH.
+    ;   1: /usr/bin/clang is Apple's stub there: it fails and asks the system
+    ;      for an installation dialog. `xcode-select -p` tells without raising
+    ;      it, as docs/website/install.sh does (found on a vanilla Tahoe VM).
+    ;   2: asked of the shell (found on a fresh Ubuntu 26.04 container).
+    ; Both are questions a POSIX system answers; where neither file exists --
+    ; Windows, whose link is the Build Tools' -- nothing is asked. That is
+    ; what makes this right in a seed that serves every system.
+    procedure developer_tools_missing() returns int
     {
         if getenv("SCALY_CC") <> null or getenv("CC") <> null
-            return false
-        if File.exists(String("/usr/bin/xcode-select")) = false
-            return false
-        system("/usr/bin/xcode-select -p > /dev/null 2>&1") <> 0
+            return 0
+        if File.exists(String("/usr/bin/xcode-select"))
+        {
+            if system("/usr/bin/xcode-select -p > /dev/null 2>&1") <> 0
+                return 1
+            return 0
+        }
+        if File.exists(String("/bin/sh")) = false
+            return 0
+        if system("command -v clang > /dev/null 2>&1") <> 0
+            return 2
+        0
     }
 
-    procedure report_developer_tools_missing()
+    procedure report_developer_tools_missing(what: int)
     {
-        Console.println("Error: no C compiler - a built program is linked by one, and this Mac has no developer tools.")
-        Console.println("       Install them with:  xcode-select --install")
+        if what = 1
+        {
+            Console.println("Error: no C compiler - a built program is linked by one, and this Mac has no developer tools.")
+            Console.println("       Install them with:  xcode-select --install")
+        }
+        else
+        {
+            Console.println("Error: no C compiler - a built program is linked by one, and there is no 'clang' on the PATH.")
+            Console.println("       Install one (Ubuntu: sudo apt install clang), or name yours in SCALY_CC.")
+        }
         Console.println("       (scaly run, scaly test and the REPL need none.)")
     }
 
@@ -1424,9 +1443,10 @@ define cli
             }
             else
             {
-                if cli.developer_tools_missing()
+                let missing cli.developer_tools_missing()
+                if missing <> 0
                 {
-                    cli.report_developer_tools_missing()
+                    cli.report_developer_tools_missing(missing)
                     return 9
                 }
                 cmd_builder.append(link_compiler())
