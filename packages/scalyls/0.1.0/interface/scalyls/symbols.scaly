@@ -1948,7 +1948,17 @@ define symbols
     ; list_scaly_files#, which lists one root after the other, so a name both
     ; have is answered by the installation as the compiler answers it.
     ; Without SCALY_HOME the project's root alone, as before.
+    ;
+    ; A third root follows the two where the tool has FETCHED anything
+    ; (Modeler.fetched_directory#): $SCALY_PACKAGES, else ~/.scaly/packages.
+    ; It is scanned whole -- every source and version lying there, not only
+    ; what this document's program declares.
     procedure package_search_dir(path: String) @page true @direct true @deep true returns String io linked
+
+    ; where fetched packages lie, "" when nothing has been fetched
+    procedure fetched_root() @page true @direct true @deep true returns String io linked
+
+    procedure package_search_two(path: String) @page true @direct true @deep true returns String io linked
 
     ; `path` truncated to include its last "/packages" segment (so
     ; "/u/Scaly/packages/scalyls/0.1.0/x.scaly" -> "/u/Scaly/packages"), or ""

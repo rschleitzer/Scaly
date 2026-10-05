@@ -4719,6 +4719,62 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp project packages"; else bad "lsp project packages"; fi
 
+# ---- LSP server: what the tool FETCHED is searched too -------------------
+# A package with a source lies where the tool laid it,
+# <SCALY_PACKAGES>/<host>/<path>/<name>/<version> (Modeler.fetched_directory#),
+# and the server takes that base as a third root after the installation and
+# the project: a concept that lives only there resolves, and without the base
+# it does not.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+ws = "/tmp/lsp_ws/fetchedpkg"; shutil.rmtree(ws, ignore_errors=True)
+fetched = ws + "/fetched"
+os.makedirs(ws + "/proj/packages/aa/0.1.0/aa")
+os.makedirs(fetched + "/example.org/someone/cc/cc/0.1.0/cc")
+open(fetched + "/example.org/someone/cc/cc/0.1.0/cc.scaly", "w").write("define cc\n{\n    module quux\n}\n")
+open(fetched + "/example.org/someone/cc/cc/0.1.0/cc/quux.scaly", "w").write("define Quuxling (count: int)\n")
+uri = "file://" + ws + "/proj/packages/aa/0.1.0/aa/user.scaly"
+doc = ("function f()\n{\n    var q Quuxling(1)\n}\n")
+
+def ask(env):
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+            "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+    inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/definition","params":{
+            "textDocument":{"uri":uri},"position":{"line":2,"character":12}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE, env=env).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    f = next((x for x in frames if x.get("id") == 2), None)
+    return (f or {}).get("result")
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+base = {**os.environ, "SCALY_HOME": os.getcwd()}
+r = ask({**base, "SCALY_PACKAGES": fetched})
+check(r is not None and r.get("uri","").endswith("/fetched/example.org/someone/cc/cc/0.1.0/cc/quux.scaly"),
+      "definition: a concept of a FETCHED package resolves")
+r = ask({**base, "SCALY_PACKAGES": ws + "/nothing-here"})
+check(not r, "definition: without the fetched base it does not (the hit came from there)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp fetched packages"; else bad "lsp fetched packages"; fi
+
 # ---- LSP server: `module NAME` must not shadow `define NAME` --------------
 # A `module NAME` statement is a LOAD DIRECTIVE, not a definition of NAME: the
 # concept lives in the file the module names. packages/scaly/0.1.0/scaly/

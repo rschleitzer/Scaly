@@ -65,8 +65,9 @@
 #              directory changed afterwards is refused when fetched again;
 #              a source without the package, one that is no address, and a
 #              repository that is not there are each said; a package with C
-#              files is announced; scalyc alone fetches nothing. SKIPs by
-#              name without git
+#              files is announced; scalyc alone fetches nothing; one package
+#              asked for out of two sources is refused, two spellings of one
+#              source are one. SKIPs by name without git
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -500,6 +501,18 @@ else
   printf 'package up 0.1.0 "../../climb"\nprint("x")\n' > "$fp/e.scaly"
   ft run e.scaly > /dev/null 2>&1; [ ! -e "$TMP/climb" ] && [ ! -e "$fb/../climb" ] && said=$((said+1))
   [ "$said" = 5 ] && ok || bad "fetch: $said of 5 wrong sources answered as they should"
+  # one package comes from one source: main asks for inner out of a second
+  # repository while outer asks for it out of the first
+  cp -R "$fr/inner" "$fr/inner2"
+  rm -rf "$fb"
+  ( cd "$fr/inner" && tg checkout -q HEAD~1 -- . && tg commit -q -m back ) > /dev/null 2>&1
+  printf 'package inner 0.1.0 "%s"\npackage outer 0.1.0 "%s"\n\nprint(outer.twice("git"))\n' "$fr/inner2" "$fr/outer" > "$fp/two.scaly"
+  out=$(ft run two.scaly 2>&1); rc=$?
+  [ "$rc" != 0 ] && echo "$out" | grep -q 'package inner is required from two sources' && ok || bad "fetch: two sources rc=$rc '$(echo "$out" | grep -v '^scaly: ' | head -1 | cut -c1-160)'"
+  # ... and two spellings of one source are one
+  printf 'package inner 0.1.0 "file://%s"\npackage outer 0.1.0 "%s"\n\nprint(outer.twice("git"))\n' "$fr/inner" "$fr/outer" > "$fp/one.scaly"
+  out=$(ft run one.scaly 2> "$TMP/fetch3.err")
+  [ "$out" = "Hello, Hello, git!!" ] && ok || bad "fetch: one source in two spellings got '$out' $(grep -v '^scaly: ' "$TMP/fetch3.err" | head -1 | cut -c1-160)"
 fi
 
 # bare: no clang, no LIB -- only the Build Tools, found by the compiler

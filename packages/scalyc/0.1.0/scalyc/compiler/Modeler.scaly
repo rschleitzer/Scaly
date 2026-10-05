@@ -3109,6 +3109,32 @@ define Modeler
                     return
                 }
         }
+        ; One package comes from ONE source. `versions` remembers it as an
+        ; entry of its own, "@name <source_path>" -- no package is named with
+        ; an `@` --, compared as the place it names, so two spellings of one
+        ; address agree.
+        if source_str.get_length() > 0
+        {
+            let from_key "@`pkg_name` `source_path(source_str)`"
+            var known false
+            var si: size_t 0
+            while si < versions.length
+            {
+                let s versions.get si
+                if s <> null and s.starts_with("@`pkg_name` ")
+                {
+                    known := true
+                    if s.equals(from_key) = false
+                    {
+                        report_load_error("error: package `pkg_name` is required from two sources, \"`s.substring(pkg_name.get_length() + 2, s.get_length() - pkg_name.get_length() - 2)`\" and \"`source_path(source_str)`\"")
+                        return
+                    }
+                }
+                si := si + 1
+            }
+            if known = false
+                versions.add from_key
+        }
         let key "`pkg_name` `version_str`"
         var vi: size_t 0
         while vi < versions.length

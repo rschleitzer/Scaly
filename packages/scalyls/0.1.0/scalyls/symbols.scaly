@@ -8911,7 +8911,43 @@ define symbols
     ; list_scaly_files#, which lists one root after the other, so a name both
     ; have is answered by the installation as the compiler answers it.
     ; Without SCALY_HOME the project's root alone, as before.
+    ;
+    ; A third root follows the two where the tool has FETCHED anything
+    ; (Modeler.fetched_directory#): $SCALY_PACKAGES, else ~/.scaly/packages.
+    ; It is scanned whole -- every source and version lying there, not only
+    ; what this document's program declares.
     procedure package_search_dir(path: String) returns String
+    {
+        let two symbols.package_search_two path
+        let fetched symbols.fetched_root()
+        if fetched.get_length() = 0 or two.get_length() = 0
+            return two
+        "`two`\n`fetched`"
+    }
+
+    ; where fetched packages lie, "" when nothing has been fetched
+    procedure fetched_root() returns String
+    {
+        var base ""
+        let own getenv "SCALY_PACKAGES"
+        if own <> null
+            base := String(own)
+        if base.get_length() = 0
+        {
+            var home getenv "HOME"
+            if home = null
+                home := getenv("USERPROFILE")
+            if home = null
+                return ""
+            let h String(home)
+            base := "`h`/.scaly/packages"
+        }
+        if runtime.access(base.to_c_string(), 0) <> 0
+            return ""
+        base
+    }
+
+    procedure package_search_two(path: String) returns String
     {
         let base symbols.scaly_home_base()
         let own symbols.packages_dir_from_path path
