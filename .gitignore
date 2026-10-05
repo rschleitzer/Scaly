@@ -29,3 +29,4 @@ scalyc_native
 dist/
 demo/build/
 
+docs/scaly-spec.rtf
