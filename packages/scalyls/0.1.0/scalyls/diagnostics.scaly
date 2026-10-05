@@ -435,7 +435,7 @@ define diagnostics
         while fi < flen
         {
             ; Bind the byte first: `files.get fi = X` is a parenless call whose
-            ; head swallows the comparison (CLAUDE.md's dropped-chain class; the
+            ; head swallows the comparison (the dropped-chain class; the
             ; arity gate reports it as "got 0").
             let fc files.get fi
             if fc = ("\n" as char)

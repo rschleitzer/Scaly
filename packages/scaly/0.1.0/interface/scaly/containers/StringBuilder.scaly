@@ -41,18 +41,18 @@ define StringBuilder
 
     function get_length(this: StringBuilder) @ret_param_0 true @deep true returns size_t linked
 
-    ; ★DIE LETZTE (Zeiger, Laenge)-PAARSTELLE DES BAUMES, und sie bleibt
-    ; absichtlich stehen.  Die anderen 131 sind kollabiert (`tools/pairslice.py`):
-    ; opensp/dazzle ueber `StringC.as_slice()`, und die sechs im generierten
-    ; `parser.scaly` ueber `String(x)` -- ein Copy-`init`, das es die ganze Zeit
-    ; gab.  Hier ginge das nicht: `buffer` ist ein `Array[char]`, und `String`
-    ; hat kein `init(Slice[char])`.
+    ; ★THE TREE'S LAST (pointer, length) PAIR SITE, and it stays standing
+    ; on purpose.  The other 131 have been collapsed (`tools/pairslice.py`):
+    ; opensp/dazzle through `StringC.as_slice()`, and the six in the generated
+    ; `parser.scaly` through `String(x)` -- a copy `init` that had been there
+    ; the whole time.  That would not work in this place: `buffer` is an
+    ; `Array[char]`, and `String` has no `init(Slice[char])`.
     ;
-    ; ★★★EINES ZU BAUEN WAERE API-FLAECHE FUER GENAU EINE AUFRUFSTELLE.  Es
-    ; gehoert dorthin, wo eine POPULATION es braucht -- `String.get_buffer()`
-    ; hat 340 Aufrufstellen, aber die sind Walks und nicht Paare, und fuer die
-    ; ist `as_slice()` (gibt es) plus `tools/sliceview.py` die Form.  Solange
-    ; niemand ausser dieser Zeile danach fragt, ist das Paar hier billiger als
-    ; ein sechstes 1-Argument-`init` auf `String`.
+    ; ★★★BUILDING ONE WOULD BE API SURFACE FOR EXACTLY ONE CALL SITE.  It
+    ; belongs where a POPULATION needs it -- `String.get_buffer()`
+    ; has 340 call sites, but those are walks and not pairs, and for those
+    ; `as_slice()` (which does exist) plus `tools/sliceview.py` is the form.  As
+    ; long as nobody apart from this line asks for it, the pair is cheaper here
+    ; than a sixth 1-argument `init` on `String`.
     function to_string(this: StringBuilder) @page true @direct true @ret_caller true @deep true returns String linked
 }

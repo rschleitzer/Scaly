@@ -177,7 +177,7 @@ define cli
 
     procedure link_compiler() @page true @direct true @ret_caller true @deep true returns String io linked
 
-    ; ★Windows, Rust's way (ROADMAP-public.md, 2026-10-03): a program is linked
+    ; ★Windows, Rust's way (2026-10-03): a program is linked
     ; by the Visual Studio Build Tools' own linker, found HERE -- no `clang`, no
     ; LLVM install, no developer prompt. The five procedures below find the
     ; toolset (a developer prompt's VCToolsInstallDir, else every install
@@ -358,7 +358,7 @@ define cli
 
     procedure main(argc: int, mutable argv: pointer[pointer[char]]) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
-    ; Entry point of `scaly`, the tool (ROADMAP-public.md): alone it is the
+    ; Entry point of `scaly`, the tool: alone it is the
     ; REPL, `scaly run file args`, `scaly build file [options]`, `scaly test
     ; file [filter]`. Anything else is answered with the usage -- a bare file
     ; or a flag is scalyc's command line, not this one's.

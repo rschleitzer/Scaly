@@ -1,7 +1,7 @@
 name: bench-http
 
 # The Scaly entry for HttpArena against the board's leaders on an x86_64
-# runner (ROADMAP-http.md): HttpArena's own benchmark-lite.sh, every
+# runner: HttpArena's own benchmark-lite.sh, every
 # framework in Docker, the load generators too. The dev box is an arm64 Mac,
 # where the harness runs under Docker Desktop and zrk -- the load generator
 # of 8gbit -- does not run at all (x86-only). GitHub's runners are 4 shared
@@ -53,8 +53,8 @@ jobs:
           git -C "$RUNNER_TEMP/ha" checkout -q "$HTTPARENA_COMMIT"
           echo "HA=$RUNNER_TEMP/ha" >> "$GITHUB_ENV"
 
-      # The scored profiles benchmark-lite.sh leaves out (ROADMAP-http.md,
-      # "The rest of the scored profiles"), in lite's style: no pinning, one
+      # The scored profiles benchmark-lite.sh leaves out,
+      # in lite's style: no pinning, one
       # connection count, async at 4096 connections instead of 32 000. The
       # latency profiles stay out: their pinned 1M req/s is beyond a runner.
       - name: Lite extras

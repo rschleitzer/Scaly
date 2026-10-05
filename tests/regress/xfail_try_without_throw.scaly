@@ -1,13 +1,13 @@
-; Expected-failure: ein `try`, dessen Bedingung nichts wirft, ist eine Luege --
-; die `when`-Arme sind unerreichbar.
+; Expected-failure: a `try` whose condition throws nothing is a lie --
+; the `when` arms are unreachable.
 ;
-; Bis 2026-09-07 uebersetzte diese Form WORTLOS und tat nichts: der Arm wurde
-; nicht emittiert (die 55 kam im IR nicht vor), und ein Laufzeit-Trap beendete
-; den Prozess mit rc 15, als staende kein try da. Ein Autor konnte damit einen
-; behandelten Fall hinschreiben, der keiner ist.
+; Until 2026-09-07 this form compiled WORDLESSLY and did nothing: the arm was
+; not emitted (the 55 did not occur in the IR), and a runtime trap ended
+; the process with rc 15 as if no try stood there. An author could thus write
+; down a handled case that is none.
 ;
-; Ein Laufzeit-Trap ist kein `throw`: fangbar ist er heute nur um einen AUFRUF
-; herum, mit Region.run_guarded (tests/regress/panic_caught.scaly).
+; A runtime trap is not a `throw`: today it is catchable only around a
+; CALL, with Region.run_guarded (tests/regress/panic_caught.scaly).
 ; xfail: this try cannot catch anything
 
 define OobErr union (Oob: Detail)

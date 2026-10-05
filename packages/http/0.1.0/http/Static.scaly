@@ -1,4 +1,4 @@
-; Static files (ROADMAP-http.md, stage D): the file a route names under a
+; Static files: the file a route names under a
 ; directory, with its media type from the extension and, when the client
 ; accepts a content coding, the pre-compressed twin that sits beside it on
 ; disk (`app.js.br`, `app.js.gz`) — chosen by the q-values of

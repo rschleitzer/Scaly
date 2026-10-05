@@ -1,4 +1,4 @@
-; Floating-point reductions in a promoted `for` (ROADMAP 4.8, route 2): the
+; Floating-point reductions in a promoted `for`: the
 ; variable takes each iteration's partial IN INDEX ORDER, forked or not, so
 ; the result never depends on timing or the worker count. With one
 ; contribution per iteration that is the naive left-to-right fold bit for bit

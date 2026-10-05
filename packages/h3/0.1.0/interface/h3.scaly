@@ -1,5 +1,5 @@
 ; h3 -- HTTP/3 (RFC 9114) for the http package's router, over QUIC from
-; ngtcp2 (ROADMAP-http.md, stage G), TLS 1.3 from OpenSSL through ngtcp2's
+; ngtcp2, TLS 1.3 from OpenSSL through ngtcp2's
 ; crypto helper. Its own package, so that only a program serving HTTP/3
 ; links ngtcp2: it needs libngtcp2, libngtcp2_crypto_ossl, libssl and
 ; libcrypto (declared below and by tls), and h3/ngtcp2_glue.c (the C this

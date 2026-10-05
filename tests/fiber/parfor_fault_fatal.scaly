@@ -1,4 +1,4 @@
-; The other half of TRAPS.md 3.19: a program that catches NOTHING sees no
+; The other half of parfor_fault_caught.scaly: a program that catches NOTHING sees no
 ; change at all.
 ;
 ; The same promoted loop with the same out-of-bounds read, but no `try`

@@ -191,8 +191,8 @@ scaly_jump_context:
 
 // ---- the catch point: scaly_setjmp / scaly_longjmp ----------------------
 //
-// The panic shim's catch point on Windows (scaly/memory/panic.c, TRAPS.md
-// 3.22b). The CRT's longjmp UNWINDS through SEH (RtlUnwindEx) when the
+// The panic shim's catch point on Windows (scaly/memory/panic.c).
+// The CRT's longjmp UNWINDS through SEH (RtlUnwindEx) when the
 // buffer's Frame is set, and that needs registered unwind data for every frame
 // between the throw and the catch, which code the JIT generated does not
 // have. These two do what longjmp does on POSIX: save the callee-saved state

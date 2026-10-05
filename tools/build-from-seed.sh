@@ -75,7 +75,7 @@ fi
 # (tools/win-archive.sh); the language server takes the same LTO route with
 # its own two roots over the compiler's package IR. The in-process JIT does
 # not work on Windows, so the weak_odr promotion the POSIX build makes for it
-# is deliberately not made here (CLAUDE-tooling.md, "The Windows port").
+# is deliberately not made here.
 if [ "$SCALY_COFF" = 1 ]; then
     OUT="${OUT%.exe}.exe"
     tools/win-lto.sh --llvm "$OUT" "$SEED/main.ll" "$SEED/scalyc.ll" "$SEED/scaly.ll"

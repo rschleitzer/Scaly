@@ -145,7 +145,7 @@ define TaskPlanner
         ; the chunk's own stack frame, which no adoption can keep.
         var cls_keeps: bool
         var cls_takes_address: bool
-        ; REDUCTIONS of the classified body (ROADMAP 4.8, route 2): a
+        ; REDUCTIONS of the classified body (route 2): a
         ; loop-external INTEGER variable the body writes only as
         ; `set v: v OP e` (OP + - | & xor, e not reading v) or as
         ; `if e > v  set v: e` (max; < for min). Parallel lists: the name,
@@ -209,7 +209,7 @@ define TaskPlanner
         procedure classify_body(mutable this: TaskPlanner, fr: PlannedFor) @ret_nonlocal true @deep true linked
 
         ; ================================================================
-        ; Reductions (ROADMAP 4.8, route 2). A chunk of a promoted loop runs
+        ; Reductions (route 2). A chunk of a promoted loop runs
         ; the update on its OWN copy started at the operation's identity and
         ; combines the partial into the submitter's variable with one
         ; atomicrmw at its end (Emitter.emit_parallel_for#); the inline
@@ -429,7 +429,7 @@ define TaskPlanner
         ; state, process control beyond abort) does.
         ; ================================================================
 
-        ; The stdlib's READ primitives (ROADMAP 4.5): they reach the world
+        ; The stdlib's READ primitives: they reach the world
         ; outside the program only to READ it, so independent iterations may
         ; run them in any order and at once — a parallel `for` body may call
         ; them, and they overlap on the pool's worker threads (which have no
@@ -554,7 +554,7 @@ define TaskPlanner
 
         procedure wr_operand(mutable this: TaskPlanner, op: PlannedOperand) @deep true linked
 
-        ; a SIMD vector store writes its argument 1 (ROADMAP-simd.md phase 2;
+        ; a SIMD vector store writes its argument 1 (SIMD phase 2;
         ; WriteCensus.is_simd_store is the same list)
         function is_simd_store(name: String) @ret_nonlocal true @deep true returns bool linked
 

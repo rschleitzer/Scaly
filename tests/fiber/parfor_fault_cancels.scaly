@@ -1,4 +1,4 @@
-; A fault in one parallel chunk STOPS the running siblings (TRAPS.md 3.21),
+; A fault in one parallel chunk STOPS the running siblings,
 ; and the chunks taken after it run no iteration at all.
 ;
 ; The index comes from a TABLE, not from arithmetic: `tab[k] = k` everywhere
@@ -12,7 +12,7 @@
 ; the slots that differ are exactly the iterations that ran.
 ;
 ; ★★★WHAT THE FIRST VERSION GOT WRONG, AND WHY THIS ONE REPEATS ITSELF
-; (2026-09-20, TRAPS.md 3.22). It assumed the fault chunk RUNS FIRST. It
+; (2026-09-20). It assumed the fault chunk RUNS FIRST. It
 ; need not: TaskPool.submit deals the chunks round-robin over the workers'
 ; deques, a worker drains its OWN deque before it steals, and a worker the
 ; OS does not schedule during the wave (four workers plus anything else on

@@ -4,7 +4,7 @@
 // machine: a fiber switches, all eighteen callee-saved registers survive
 // (tests/win32/d8_check_arm64.S), the stack overflow report arrives in 96 of
 // 96 landing points, and a catch point on a fiber unwinds since the headroom
-// in scaly_make_context below. tests/win32/WINDOWS-BOX.md §8 has the account.
+// in scaly_make_context below.
 //
 // A separate file from fcontext_arm64.S for ONE of the four reasons the x64
 // Windows file has (fcontext_x86_64_windows.S): the register conventions are
@@ -140,8 +140,8 @@ scaly_jump_context:
 
 // ---- the catch point: scaly_setjmp / scaly_longjmp ----------------------
 //
-// The panic shim's catch point on Windows (scaly/memory/panic.c, TRAPS.md
-// 3.22b). The CRT's longjmp UNWINDS through SEH (RtlUnwindEx) on arm64 -- a
+// The panic shim's catch point on Windows (scaly/memory/panic.c).
+// The CRT's longjmp UNWINDS through SEH (RtlUnwindEx) on arm64 -- a
 // `Frame` of 0 does not opt out there, measured -- and that needs registered
 // unwind data for every frame between the throw and the catch, which code the
 // JIT generated does not have. These two do what longjmp does on POSIX: save

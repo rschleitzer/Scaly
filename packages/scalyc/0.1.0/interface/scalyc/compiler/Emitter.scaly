@@ -146,7 +146,7 @@ define Emitter
         ; The emission triple is AArch64, whatever --portable-simd says.
         var target_is_arm64: bool
         ; The emission triple is AArch64 and --portable-simd is off: the SIMD
-        ; operations with a NEON form take it (ROADMAP-simd.md phase 6).
+        ; operations with a NEON form take it (SIMD phase 6).
         ; Decided once in apply_target_layout.
         var simd_neon: bool
         ; The emission triple is x86_64, --portable-simd is off, and the CPU
@@ -371,7 +371,7 @@ define Emitter
         ; pointer[Page] FIELD of the receiver, as in opensp's Parser) by loading
         ; this.<field>. scaly/scalyc never use `^field`, so this stays neutral.
         var current_receiver_concept: String
-        ; Route 3 (ROADMAP 4.8): fork-join of calls. fj_self is the mangled
+        ; Route 3: fork-join of calls. fj_self is the mangled
         ; name of the function being emitted when it qualifies
         ; (fork_join_eligible#); fj_mode says which body is being emitted:
         ; 0 the ordinary one (a fork pair only sets fj_seen), 1 the plain
@@ -760,7 +760,7 @@ define Emitter
         ; region out of the prologue but could only reach materialisations a
         ; function made for ITSELF: a caller that opened its page ONLY to pass it
         ; to a callee which then allocated nothing still paid the full push/pop.
-        ; Measured on the dazzle DSSSL engine (tests/dazzle/PERFORMANCE.md), that
+        ; Measured on the dazzle DSSSL engine, that
         ; was 13.79 of the remaining 28.59 million frames per 977 KB document.
         ; Passing the RECORD instead of a materialised page lets the callee decide,
         ; and 13.57 million of those frames stop existing.
@@ -846,7 +846,7 @@ define Emitter
         ;
         ; emits as @get_gi(ptr sret, ptr page, ptr this) and never touches `page`
         ; — but every caller must build a region frame to pass it. Measured on
-        ; the dazzle DSSSL engine (tests/dazzle/PERFORMANCE.md): 133.7 M region
+        ; the dazzle DSSSL engine: 133.7 M region
         ; frames for one 977 KB document, 118.9 M of them (89 %) opened and
         ; released without a single object ever allocated on them.
         ;
@@ -1151,7 +1151,7 @@ define Emitter
         ; is a pointer here, or through a `ref`) is `noalias` when the routine
         ; and everything it calls never store that type as a whole -- the
         ; aliasing rule makes that the only way its bytes can change
-        ; (StoreEffects.scaly, tools/aliasing/README.md). The implicit page and
+        ; (StoreEffects.scaly). The implicit page and
         ; the sret slot sit before `offset` and are not judged.
         procedure mark_noalias_params(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef, offset: size_t) @deep true linked
 
@@ -1189,14 +1189,14 @@ define Emitter
         ; setjmp trap, which C answers with `volatile`. With the attribute the
         ; backend keeps what it must in memory, so a `try` can use its own
         ; locals in the else arm (measured against clang's own output for the
-        ; same shape, TRAPS.md 5.6).
+        ; same shape).
         procedure mark_returns_twice_callee(mutable this, mutable fn: LLVMValueRef) @deep true linked
 
         ; libc setjmp. The buffer comes from scaly_catch_push (the shim owns
         ; the jmp_buf layout, which is OS- and arch-specific and must not reach
         ; the ONE committed seed), so this declaration only needs the pointer.
         ;
-        ; ★★★COFF IS DIFFERENT (TRAPS.md 3.22, 3.22b): since 2026-10-03 the
+        ; ★★★COFF IS DIFFERENT: since 2026-10-03 the
         ; catch point there is the runtime's own `scaly_setjmp`
         ; (get_setjmp_fn_coff). What follows is why the CRT's form was hard to
         ; call at all, kept for the trap it describes.
@@ -1218,7 +1218,7 @@ define Emitter
         procedure get_setjmp_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
         ; The COFF half of get_setjmp_fn: `i32 @scaly_setjmp(ptr buf)`, the
-        ; runtime's own catch point (fiber/fcontext_*_windows.S, TRAPS.md 3.22b).
+        ; runtime's own catch point (fiber/fcontext_*_windows.S).
         ; It replaced the CRT's `_setjmp(buf, frame)` (x64) and
         ; `_setjmpex(buf, sponentry)` (arm64) on 2026-10-03: their longjmp
         ; unwinds through SEH, which needs registered unwind data for every
@@ -1254,7 +1254,7 @@ define Emitter
 
         ; ★★★The two Scaly routines the shim calls back into, referenced BY
         ; THEIR ITANIUM NAMES -- which freezes their parameter types, the cost
-        ; CLAUDE.md names for the eight symbols that already pay it. Grep for
+        ; eight symbols already pay. Grep for
         ; these strings before re-signing scaly_panic_mark or
         ; scaly_panic_unwind_to; the RETURN is free (Itanium does not encode
         ; one). They are looked up rather than declared where possible, so a
@@ -1278,7 +1278,7 @@ define Emitter
         ; on by hand -- mark_noreturn_callee knows this mangled name.
         ;
         ; ★★★The literal FREEZES scaly_panic_null's parameter types, the ninth
-        ; such case in this tree (CLAUDE.md's rule): grep for the string before
+        ; such case in this tree: grep for the string before
         ; re-signing it. The RETURN is free -- Itanium does not encode one.
         procedure get_panic_null_fn(mutable this) @direct true @deep true returns LLVMValueRef linked
 
@@ -1585,7 +1585,7 @@ define Emitter
 
         ; Emit function body (implementation)
         ; ------------------------------------------------------------------
-        ; Route 3 (ROADMAP 4.8): fork-join of calls. A pure free function f
+        ; Route 3: fork-join of calls. A pure free function f
         ; whose parameters and result are scalars and whose body contains a
         ; FORK PAIR — `f(a) OP f(b)`, OP any binary operator but a short-
         ; circuiting one — is emitted in four pieces:
@@ -1740,7 +1740,7 @@ define Emitter
         procedure emit_build_stamp(mutable this) @deep true linked
 
         ; A PROGRAM module for a COFF target sets the standard streams binary
-        ; before main (decided 2026-10-03, tests/win32/WINDOWS-BOX.md §8): a
+        ; before main (decided 2026-10-03): a
         ; constructor of its own, `_setmode(fd, _O_BINARY)` for 0, 1 and 2,
         ; entered in `llvm.global_ctors`, which COFF emits into the CRT's
         ; initializer table (.CRT$XCU). In the object itself, because a program
@@ -1757,7 +1757,7 @@ define Emitter
         ; initializer, as emit_build_stamp# computes for a program. The
         ; compiler defines it (tool.scaly) to key its build cache by the code
         ; that does the compiling: a rebuilt compiler must not reuse objects an
-        ; older one emitted (ROADMAP-public.md, stage A). A global and not a
+        ; older one emitted. A global and not a
         ; function because a compiler that does not know this leaves it 0 and
         ; still links -- the bootstrap needs no second seed.
         procedure emit_package_stamp(mutable this, mutable global_var: LLVMValueRef) @deep true linked
@@ -2310,7 +2310,7 @@ define Emitter
         procedure emit_intrinsic_binary_op(mutable this, op_name: String, mutable left: LLVMValueRef, mutable right: LLVMValueRef, mutable result_type: PlannedType, left_operand_type: PlannedType, right_operand_type: PlannedType) @direct true @deep true returns LLVMValueRef linked
 
         ; Emit an intrinsic function call
-        ; ---- SIMD vectors (ROADMAP-simd.md) -------------------------------
+        ; ---- SIMD vectors --------------------------------------------------
 
         procedure vector_bytes(this, mutable t: LLVMTypeRef) @ret_caller true @deep true returns size_t linked
 
@@ -2585,7 +2585,7 @@ define Emitter
         ; (Reloc PIC, default code model): the CPU `-mcpu` names, the host's
         ; CPU AND feature string for `native`, else "generic". The datalayout
         ; stamped into the IR (apply_target_layout) does not depend on it, so
-        ; the IR -- and the seed -- stay CPU-independent (ROADMAP-simd.md
+        ; the IR -- and the seed -- stay CPU-independent (SIMD
         ; phase 3). An unknown name is LLVM's to report: it warns and
         ; generates for the generic CPU.
         procedure create_target_machine(mutable this, mutable target: LLVMTargetRef, mutable triple: pointer[const_char], level: int) @direct true @ret_caller true @deep true returns LLVMTargetMachineRef io linked
@@ -2665,7 +2665,7 @@ define Emitter
         ; Emit a try expression
         ; emit_try_panic_catch: a `try ... else` whose condition throws
         ; NOTHING, which since 2026-09-07 catches a runtime PANIC instead of
-        ; being the silent no-op it was (TRAPS.md 5.1). The shape:
+        ; being the silent no-op it was. The shape:
         ;
         ;     %buf = call ptr @scaly_catch_push(@mark, @unwind)
         ;     %sj  = call i32 @setjmp(ptr %buf)     ; returns_twice

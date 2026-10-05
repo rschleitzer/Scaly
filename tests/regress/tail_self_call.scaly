@@ -1,6 +1,6 @@
 ; Regression: a self TAIL call — `return f(…)` written inside f — is lowered
 ; as a jump to a loop header, so recursion in tail position runs in ONE stack
-; frame (2026-08-04, the TCO item from the wish list; the documented
+; frame (2026-08-04; the documented
 ; precondition for the dazzle Stage-6b JIT).
 ;
 ; Before: the emitter emitted `%call = call @f(…)` / `ret %call`, and the

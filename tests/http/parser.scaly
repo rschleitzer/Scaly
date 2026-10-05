@@ -1,5 +1,5 @@
-; The http package's request parser, without a network (ROADMAP-http.md
-; stage A). Every request shape is cut at EVERY byte offset: each proper
+; The http package's request parser, without a network.
+; Every request shape is cut at EVERY byte offset: each proper
 ; prefix must parse as incomplete and leave the buffer untouched, the whole
 ; request must parse to the right fields — the property HttpArena's
 ; validate-frag.py tests over a socket, here exhaustively and in-process.

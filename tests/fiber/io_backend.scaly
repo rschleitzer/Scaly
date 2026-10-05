@@ -1,4 +1,4 @@
-; Which I/O backend the runtime chose (2026-09-28, ROADMAP-http.md): on
+; Which I/O backend the runtime chose (2026-09-28): on
 ; linux the poller is an io_uring where the kernel offers one and seccomp
 ; allows it, epoll otherwise — decided at run time, invisible from outside.
 ; The name goes to stderr, so a CI log shows it; stdout is the same on every

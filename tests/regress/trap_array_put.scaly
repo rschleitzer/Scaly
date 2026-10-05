@@ -1,4 +1,4 @@
-; Tor: Array.put -- der Schreibweg.
+; Gate: Array.put -- the write path.
 ; expect-rc: 15
 ; expect-out: Array.put: index out of bounds
 

@@ -1,4 +1,4 @@
-; Tor: Array.operator[].
+; Gate: Array.operator[].
 ; expect-rc: 15
 ; expect-out: Array[]: index out of bounds
 

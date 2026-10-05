@@ -1,4 +1,4 @@
-; The panic catch-point chain is per FIBER, not per thread (TRAPS.md 3.16).
+; The panic catch-point chain is per FIBER, not per thread.
 ;
 ; A catch frame lives on the stack of the routine that pushed it, and a fiber
 ; has its own stack. So a fiber must not see a catch point armed outside it,

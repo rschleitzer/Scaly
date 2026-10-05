@@ -2,7 +2,7 @@
 ;
 ; A vector operation takes two vectors of ONE type (or a vector and a scalar,
 ; which is broadcast): f64x4 + f32x4 is refused, never converted behind the
-; author's back -- the cast is written (ROADMAP-simd.md).
+; author's back -- the cast is written.
 let a f64x4.splat(1.0)
 let b f32x4.splat(2.0)
 let c a + b

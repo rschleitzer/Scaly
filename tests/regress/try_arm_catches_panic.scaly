@@ -1,21 +1,21 @@
-; Regression: `try ... when e: OutOfBounds` faengt einen Laufzeit-PANIC und
-; bindet dessen Detail TYPISIERT (TRAPS.md 0, 5.1).
+; Regression: `try ... when e: OutOfBounds` catches a runtime PANIC and
+; binds its detail TYPED.
 ;
-; Die Arm-Form ist der Grund, warum das Panic-Union RuntimeFault im Prelude
-; steht: ein `when`-Arm ist eine Auswahl ueber einen Variantentag, also
-; braucht ein fangbarer Fehler ein Union und keinen Record.
+; The arm form is the reason why the panic union RuntimeFault stands in the
+; prelude: a `when` arm is a selection over a variant tag, so
+; a catchable fault needs a union and not a record.
 ;
-; Geprueft wird:
-;   (1) der Arm bindet e mit e.index / e.length
-;   (2) Locals des FAENGERS ueberleben den Sprung (returns_twice)
-;   (3) die Regionen der uebersprungenen Rahmen kommen zurueck
-;   (4) Verschachtelung: ein try mit Arm IM Arm eines anderen
-;   (5) Arm UND else zusammen, auf dem Erfolgspfad
+; Checked:
+;   (1) the arm binds e with e.index / e.length
+;   (2) locals of the CATCHER survive the jump (returns_twice)
+;   (3) the regions of the skipped frames come back
+;   (4) nesting: a try with an arm INSIDE the arm of another
+;   (5) arm AND else together, on the success path
 ;
-; Kein Union-Wert wird materialisiert: jeder Arm kennt seinen Payload-Typ, der
-; Emitter legt den Record an und der Shim fuellt ihn (emit_try_panic_catch#).
+; No union value is materialised: every arm knows its payload type, the
+; Emitter lays out the record and the shim fills it (emit_try_panic_catch#).
 ;
-; Erwartet: PASS
+; Expected: PASS
 function deep(n: i64) returns i64
 {
     let s String("eine Region auf diesem Rahmen")
@@ -33,7 +33,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     vor := vor + argc
     let mark0 scaly_panic_mark()
 
-    ; (1) Arm bindet typisiert, (2) Locals ueberleben
+    ; (1) the arm binds typed, (2) locals survive
     try let a deep(1)
         when e: OutOfBounds
         {
@@ -44,17 +44,17 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             if vor <> 101
                 return 3
 
-            ; (4) Verschachtelung mit Arm
+            ; (4) nesting with an arm
             try let b deep(1)
                 when e2: OutOfBounds
                     if e2.length <> (2 as size_t)
                         return 4
 
-            ; (3) Regionen zurueck
+            ; (3) regions back
             if scaly_panic_mark() <> mark0
                 return 5
 
-            ; (5) Arm UND else zusammen: hier panickt nichts, also Erfolgspfad
+            ; (5) arm AND else together: nothing panics here, so the success path
             try let c deep(0)
                 when e3: OutOfBounds
                     return 6
@@ -66,6 +66,6 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
             print "PASS"
             return 0
         }
-    print "FAIL nicht gefangen"
+    print "FAIL not caught"
     9
 }

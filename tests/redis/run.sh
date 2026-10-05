@@ -1,6 +1,6 @@
 #!/bin/bash
-# tests/redis/run.sh [compiler] — the redis package (ROADMAP-http.md, stage
-# C): build every test here with `scaly build` (the package objects come out
+# tests/redis/run.sh [compiler] — the redis package:
+# build every test here with `scaly build` (the package objects come out
 # of the build cache), run it under poison and compare stdout with its "; Expected:"
 # line. A test that names REDIS_URL in its header needs a server: it runs
 # against REDISTEST_URL (e.g. redis://127.0.0.1:6379 of a redis:7-alpine

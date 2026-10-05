@@ -1,44 +1,44 @@
 #!/usr/bin/env python3
-"""LLP64-Audit der C-Shims — kein bare `long` in einer exportierten Signatur.
+"""LLP64 audit of the C shims — no bare `long` in an exported signature.
 
-Warum das ein eigener Prüfer ist und nicht eine Zeile in abi-audit.py:
-abi-audit.py vergleicht Scaly-Deklarationen gegen ECHTE C-Header und kann
-deshalb nur prüfen, was auf DIESEM Host deklariert ist. Die LLP64-Frage ist
-eine andere: sie fragt, ob eine Signatur ihre Breite auf einem Target ändert,
-das wir hier gar nicht übersetzen.
+Why this is a checker of its own and not a line in abi-audit.py:
+abi-audit.py compares Scaly declarations against REAL C headers and can
+therefore only check what is declared on THIS host. The LLP64 question is
+a different one: it asks whether a signature changes its width on a target
+we do not compile here at all.
 
-Der Mechanismus, in einem Satz: der committete Seed liefert EIN scaly.ll für
-jedes Target, also kann eine Scaly-extern-Deklaration nicht target-abhängig
-sein — sie sagt einmal `i64` bzw. `size_t`, für alle. C's `long` ist aber
-64 Bit auf LP64 (mac/linux) und 32 Bit auf LLP64 (Win64). Eine exportierte
-Shim-Funktion mit `long` widerspricht damit ihrer eigenen Deklaration auf
-genau einem Target — und zwar lautlos.
+The mechanism, in one sentence: the committed seed delivers ONE scaly.ll for
+every target, so a Scaly extern declaration cannot be target-dependent
+— it says `i64` or `size_t` once, for all of them. But C's `long` is
+64 bits on LP64 (mac/linux) and 32 bits on LLP64 (Win64). An exported
+shim function with `long` thus contradicts its own declaration on
+exactly one target — and silently.
 
-Die RÜCKGABE ist die gefährliche Hälfte (dieselbe Klasse, für die
-tests/abi/run.sh gebaut wurde): eine 32-Bit-Rückgabe, als i64 gelesen, lässt
-die oberen 32 Bit unbestimmt, das kippt das VORZEICHEN, und jede
-`if r < 0`-Fehlerprüfung darauf wird zum Münzwurf. Parameter sind die
-gutartige Richtung, werden aber mitgemeldet: `unsigned long count` gegen ein
-deklariertes `size_t` ist auf Win64 schlicht eine andere Funktion.
+The RESULT is the dangerous half (the same class
+tests/abi/run.sh was built for): a 32-bit result, read as i64, leaves
+the upper 32 bits unspecified, that flips the SIGN, and every
+`if r < 0` error check on it becomes a coin flip. Parameters are the
+benign direction, but are reported too: `unsigned long count` against a
+declared `size_t` is simply a different function on Win64.
 
-Geprüft werden NUR exportierte (nicht-`static`) Definitionen, denn nur die
-sind die ABI-Grenze. Ein `long` in einem lokalen Zwischenwert ist in Ordnung
-und teils sogar richtig (sysconf() gibt `long` zurück).
+ONLY exported (non-`static`) definitions are checked, because only those
+are the ABI boundary. A `long` in a local intermediate value is fine
+and sometimes even right (sysconf() returns `long`).
 
-Behebung immer auf der C-SEITE: `long long` für Ergebnisse, `size_t` für
-Größen/Zählungen — beide 64 Bit auf jedem Target, das wir ausliefern. Die
-Scaly-Deklaration bleibt unangetastet, es gibt also keine Emissionsänderung
-und keinen Seed-Refresh.
+The fix is always on the C SIDE: `long long` for results, `size_t` for
+sizes/counts — both 64 bits on every target we ship. The
+Scaly declaration stays untouched, so there is no emission change
+and no seed refresh.
 
-Usage: tools/llp64-audit.py [--quiet] [datei.c ...]
-       ohne Dateien: alle .c unter packages/
+Usage: tools/llp64-audit.py [--quiet] [file.c ...]
+       without files: every .c under packages/
 """
 
 import os
 import re
 import sys
 
-# `long long` zuerst neutralisieren, sonst schlägt \blong\b darauf an.
+# Neutralise `long long` first, otherwise \blong\b fires on it.
 LONGLONG = re.compile(r"\blong\s+long\b")
 BARE_LONG = re.compile(r"\blong\b")
 BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
@@ -46,7 +46,7 @@ LINE_COMMENT = re.compile(r"//[^\n]*")
 
 
 def strip_comments(text):
-    """Kommentare durch Leerzeilen ersetzen, damit die Zeilennummern stimmen."""
+    """Replace comments by empty lines so that the line numbers stay right."""
     text = BLOCK_COMMENT.sub(lambda m: "\n" * m.group(0).count("\n"), text)
     return LINE_COMMENT.sub("", text)
 
@@ -56,11 +56,11 @@ def has_bare_long(fragment):
 
 
 def find_definitions(lines):
-    """Top-level-Funktionsdefinitionen im Allman-Stil der Shims.
+    """Top-level function definitions in the shims' Allman style.
 
-    Eine Definition ist eine Zeile ohne Einrückung, die eine Parameterliste
-    schliesst und deren naechste nicht-leere Zeile mit '{' beginnt. Damit
-    fallen Prototypen (enden auf ';') und Funktionszeiger-Variablen heraus.
+    A definition is a line without indentation that closes a parameter list
+    and whose next non-empty line begins with '{'. That drops
+    prototypes (they end in ';') and function-pointer variables.
     """
     for i, line in enumerate(lines):
         if not line or line[0].isspace():
@@ -75,7 +75,7 @@ def find_definitions(lines):
 
 
 def split_signature(sig):
-    """(Rueckgabetyp+Name, Parameterliste) — an der ERSTEN offenen Klammer."""
+    """(return type+name, parameter list) — at the FIRST opening parenthesis."""
     depth = 0
     for i, ch in enumerate(sig):
         if ch == "(":
@@ -98,7 +98,7 @@ def audit(path):
             continue
         where = []
         if has_bare_long(head):
-            where.append("RUECKGABE")
+            where.append("RESULT")
         if has_bare_long(params):
             where.append("PARAMETER")
         if where:
@@ -124,7 +124,7 @@ def main():
         findings.extend(audit(path))
 
     if not quiet:
-        print(f"Geprüfte C-Shims: {len(files)}")
+        print(f"C shims checked: {len(files)}")
         for path in files:
             print(f"  {path}")
         print()
@@ -132,7 +132,7 @@ def main():
     for path, lineno, where, sig in findings:
         print(f"{path}:{lineno}: {where}: {sig}")
 
-    print(f"LLP64-BEFUNDE: {len(findings)}")
+    print(f"LLP64 FINDINGS: {len(findings)}")
     return 1 if findings else 0
 
 

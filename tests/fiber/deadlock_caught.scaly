@@ -1,4 +1,4 @@
-; A deadlock is CATCHABLE (TRAPS.md 3.18).
+; A deadlock is CATCHABLE.
 ;
 ; Same setup as channel_deadlock.scaly -- a lone main-context receiver on a
 ; channel with a live send handle nobody uses, so nothing can ever make

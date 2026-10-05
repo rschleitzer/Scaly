@@ -11,7 +11,7 @@
 #                         stdlib's C and assembly files are the runtime shims
 #                         the installer compiles for the three links
 #   LICENSE, THIRD-PARTY-LICENSES.txt, VERSION
-# The standard packages are the list below (ROADMAP-public.md, decision 4:
+# The standard packages are the list below (decision 4:
 # shipped with the toolchain). Not in it: scalyc and scalyls (the repository
 # is private, decision 7 — their code travels as the seed), the ports (dazzle,
 # opensp) and scalygpu.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# tests/h3/run.sh [compiler] — the h3 package (ROADMAP-http.md, stage G):
+# tests/h3/run.sh [compiler] — the h3 package:
 # build every test here with `scaly build` -- h3/ngtcp2_glue.c, ngtcp2 and
 # OpenSSL come in through the packages' `extern` declarations -- run it under
 # poison with a fresh

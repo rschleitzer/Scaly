@@ -33,8 +33,8 @@ esac
 #
 # ★It is `SCALY_ARCH` and not `ARCH` on purpose: a bare `ARCH` is a name a
 # developer environment may already EXPORT, and an exported name silently
-# steers a script that only meant to read its own variable (the `LIB` trap in
-# the root CLAUDE.md, same shape).
+# steers a script that only meant to read its own variable (the `LIB` trap,
+# same shape).
 #
 # ★`-arch` is a Darwin/clang facility, not a general cross-compile switch: it
 # works because macOS ships a universal SDK. Setting SCALY_ARCH anywhere else

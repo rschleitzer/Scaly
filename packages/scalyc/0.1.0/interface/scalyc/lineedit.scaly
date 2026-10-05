@@ -1,4 +1,4 @@
-; lineedit.scaly - the REPL's line editor (ROADMAP-public.md, stage R)
+; lineedit.scaly - the REPL's line editor
 ;
 ; At a terminal a line is edited in place: the cursor moves by characters
 ; (UTF-8, so an umlaut is one step), the arrows walk the history, which

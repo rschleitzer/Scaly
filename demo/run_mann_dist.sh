@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stage-7 finale (ROADMAP 7.4): the DISTRIBUTED Mann trainer. Trains the
+# Stage-7 finale: the DISTRIBUTED Mann trainer. Trains the
 # same 2-layer char transformer as demo/run.sh, but by synchronous
 # data-parallel SGD across N OS processes that all-reduce their gradient
 # regions over TCP (stage-7 remote channels) — pure Scaly, no MPI/NCCL.

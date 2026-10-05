@@ -1,4 +1,4 @@
-; WebSocket (RFC 6455, ROADMAP-http.md stage F): a handler accepts the
+; WebSocket (RFC 6455): a handler accepts the
 ; upgrade, the connection answers 101 and from then on reads frames, hands
 ; every complete text or binary message to a message handler and writes what
 ; it sends; pings are answered, a close is answered with the same code.

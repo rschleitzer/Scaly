@@ -1,6 +1,6 @@
 ; Stage-5 milestone 5.0: pure-Scaly matmul throughput measurement.
 ;
-; The question this answers (ROADMAP stage 5: "Measure, don't assume"):
+; The question this answers (stage 5: "Measure, don't assume"):
 ; how far does the stage-4 adaptive-parallel path carry a naive
 ; row-major f64 matmul at demo-relevant GEMM sizes — and do we need a
 ; vendor kernel (Accelerate/MKL) for the Thomas-Mann demo or not?

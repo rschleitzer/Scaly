@@ -1,5 +1,5 @@
 /* Does a catch point survive on Win64, and does it survive a stack the program
- * switched itself? (2026-09-19, TRAPS.md 3.22)
+ * switched itself? (2026-09-19)
  *
  * The Windows corpus reported six failures, all of them catchers and all of
  * them fiber or parfor programs, each ending in the harness' `exit 127` with

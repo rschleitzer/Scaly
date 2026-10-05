@@ -1,4 +1,4 @@
-; The http package's server over TCP (ROADMAP-http.md stage A): started on
+; The http package's server over TCP: started on
 ; an ephemeral port, main the client.
 ;   1. three requests pipelined in ONE write — a GET with a query, a POST
 ;      with a chunked body, a GET that sleeps 20 ms — come back as three

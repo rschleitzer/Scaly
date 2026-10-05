@@ -1,4 +1,4 @@
-; The json package's value tree (ROADMAP-http.md stage B):
+; The json package's value tree:
 ;   access   a JSON-RPC message read by chained accessors; every step on a
 ;            missing member or the wrong kind answers the empty value
 ;   numbers  the text is kept (1.50 stays 1.50); as_i64 only for an integer

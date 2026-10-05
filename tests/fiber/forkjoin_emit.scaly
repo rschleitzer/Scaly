@@ -1,4 +1,4 @@
-; Fork-join of calls (ROADMAP 4.8, route 3), written the plain way: a pure
+; Fork-join of calls, written the plain way: a pure
 ; function calling itself twice in one expression runs its two calls in
 ; parallel once the recursion proves long (the heartbeat promotes, an idle
 ; worker steals). Each shape is checked against a loop that computes the same

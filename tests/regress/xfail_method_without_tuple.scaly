@@ -1,5 +1,5 @@
 ; Regression: a method named WITHOUT its tuple is the method, not a call
-; (ROADMAP-operation.md, 2026-10-04). The collapse used to append an empty
+; (2026-10-04). The collapse used to append an empty
 ; tuple to a name whose last hop is a method -- `name.length` called -- and a
 ; thing that is not written shut out the method as a value. Twelve places in
 ; the compiler wrote it, all `String.length`; 25 794 write the `()`.

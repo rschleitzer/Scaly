@@ -1,7 +1,7 @@
 ; Regression (2026-09-24): `!` is the THROWN lifetime sigil (`Foo!(...)`), not
 ; negation. In `if !a` it joined nothing and the marker pass dropped it: `if !a`
 ; ran as `if a`, `b and !a` as `b and a`, `!(x = 3)` as `x = 3` -- at rc 0,
-; while CLAUDE.md listed `!` as a synonym of `not`. Nothing in the tree spelled
+; while `!` was documented as a synonym of `not`. Nothing in the tree spelled
 ; it; found probing `and`-chains. Planner.report_dropped_thrown_marker#.
 ; xfail: error: '!' is the thrown-lifetime sigil, not negation
 function negate(a: bool) returns int

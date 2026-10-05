@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# tools/aliasing/census.py — the audit behind the aliasing rule (CLAUDE.md,
-# "Memory: the aliasing rule"; tools/aliasing/README.md).
+# tools/aliasing/census.py — the audit behind the aliasing rule.
 #
 #   tools/pointer-report.sh <compiler> <out-dir>
 #   tools/aliasing/census.py <out-dir>

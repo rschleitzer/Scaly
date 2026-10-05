@@ -3,7 +3,7 @@
 single cell the callee writes a reference into, not a buffer of pointers it
 walks.
 
-The route is the one CLAUDE.md records as proven and never executed: a
+The route is the one recorded as proven and never executed: a
 `ref[ref[X]?]` parameter deref-stored from a caller's `var cell: ref[X]? null`
 answers correctly on both the taken and the untaken branch.  The old reason for
 the inner pointer -- "the outer pointer is what makes it writable, so the inner

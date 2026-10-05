@@ -1,4 +1,4 @@
-; Scheduler.sleep (2026-09-28, ROADMAP-http.md stage A): a sleeping task
+; Scheduler.sleep (2026-09-28): a sleeping task
 ; parks on its scheduler's timer list and wakes at its deadline, in
 ; deadline order whatever the order of the calls (80 before 60 before 40
 ; exercises the insert from the head, the two 20s the O(1) tail append);

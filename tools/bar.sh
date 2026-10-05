@@ -50,7 +50,7 @@ QUICK=0
 [ "${1:-}" = "--quick" ] && QUICK=1
 
 LOG=${BAR_LOG:-$(mktemp -d /tmp/bar.XXXXXX)}
-# the build cache of the one tool (`scaly build`/`test`, ROADMAP-public.md):
+# the build cache of the one tool (`scaly build`/`test`):
 # one per run, beside the logs -- every suite of the run shares it, and the
 # user's ~/.scaly/cache does not collect an entry per compiler the bar builds
 export SCALY_CACHE="$LOG/cache"

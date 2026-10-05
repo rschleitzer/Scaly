@@ -1,5 +1,5 @@
 ; mandelbrot_simd — the same count as mandelbrot.scaly, written with the SIMD
-; vector types (ROADMAP-simd.md): eight points at once, as two independent
+; vector types: eight points at once, as two independent
 ; f64x4 so the floating-point latency is hidden, the escape test every eight
 ; iterations.
 ; The row loop around it self-scales as in the scalar program; this one

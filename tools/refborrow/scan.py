@@ -4,8 +4,7 @@
 `function collect_methods_in(..., acc: Array[Function])` appends to `acc` and
 the CALLER reads the result back.  That works only because the emitter lowers
 every by-value struct parameter to a POINTER, which makes the declaration a lie
-that the ABI happens to honour -- see packages/scalyc/CLAUDE.md, "A STRUCT
-PARAMETER IS BORROWED AND MUTABLE".  The honest spelling is `ref[Array[T]]`,
+that the ABI happens to honour.  The honest spelling is `ref[Array[T]]`,
 which is this campaign's own doctrine applied to the slice it never swept.
 
 Two kinds of evidence, and the second is a FIXPOINT:

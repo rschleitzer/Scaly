@@ -1,5 +1,5 @@
-; A fault inside a SELF-SCALED `for` reaches the caller's catch point
-; (TRAPS.md 3.19).
+; A fault inside a SELF-SCALED `for` reaches the caller's catch
+; point.
 ;
 ; The body runs on worker threads, and a jump may never cross stacks (3.16) --
 ; so the worker catches its iteration's fault, records it in the wave's group,

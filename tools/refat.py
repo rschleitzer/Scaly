@@ -184,7 +184,7 @@ def main():
             print('%5d  %s' % (c, p))
             if apply: open(p, 'w', encoding='utf8').write('\n'.join(new))
         total += c
-    print('SUMME:', total, '(angewendet)' if apply else '(nur gezählt)')
+    print('TOTAL:', total, '(applied)' if apply else '(counted only)')
 
 
 if __name__ == '__main__':

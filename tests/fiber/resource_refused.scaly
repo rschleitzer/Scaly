@@ -1,4 +1,4 @@
-; A refused OS resource names itself and keeps its exit code (TRAPS.md 3.18).
+; A refused OS resource names itself and keeps its exit code.
 ;
 ; A fiber stack of 32 PB is refused by mmap on every target, so this fires the
 ; real site -- no injector needed. Before, it was a bare `exit 103` with no

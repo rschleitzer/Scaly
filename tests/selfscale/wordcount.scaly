@@ -1,6 +1,6 @@
 ; wordcount — the words in 256 files of ~256 KB each: every file read and
 ; scanned in a plain `for`, which self-scales since reading no longer blocks
-; the TaskPlanner (ROADMAP 4.5, 2026-09-27): the reads overlap on the pool's
+; the TaskPlanner (2026-09-27): the reads overlap on the pool's
 ; worker threads together with the scanning. The files are written once, on
 ; the first run (sequentially — writing keeps its order), under
 ; /tmp/scaly_wordcount_<i>.txt, and read on every run after.

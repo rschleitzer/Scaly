@@ -2,8 +2,8 @@
 ; written by compiler/Interface.scaly: after a file's path, the interface
 ; line starting at the first byte is the source's line starting at the second
 compress/Gzip.scaly
-1992 1990
-2049 2045
-2216 2258
-2445 2541
-2786 3015
+1981 1979
+2038 2034
+2205 2247
+2434 2530
+2775 3004

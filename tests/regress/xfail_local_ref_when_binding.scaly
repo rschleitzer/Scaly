@@ -1,6 +1,6 @@
 ; Regression (2026-09-24): the address of a `when` binding — a COPY of the
 ; union arm, living in this frame — kept in a local and returned. This is the
-; "set ref_var: <choose-bound value>" class CLAUDE.md carried as ACTIVE since
+; "set ref_var: <choose-bound value>" class carried as ACTIVE since
 ; session 25: rc 0, and under SCALY_POISON the caller read garbage.
 ; xfail: error: reference into a local page escapes via return
 define Payload (var name: String  var n: int)

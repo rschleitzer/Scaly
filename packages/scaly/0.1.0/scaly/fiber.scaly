@@ -751,7 +751,7 @@ define Fiber
     ; routine that pushed it, and a fiber has its own stack. Kept per thread,
     ; the frames of a SUSPENDED fiber stay visible, and a panic raised by
     ; whoever runs next longjmps into a stack that is not running. Measured
-    ; before the fix (TRAPS.md 3.16): a fiber armed a catch point and yielded,
+    ; before the fix: a fiber armed a catch point and yielded,
     ; main violated a bound, and the FIBER's else arm ran on the suspended
     ; stack, then died in Fiber.finish with exit 21 because `current_fiber`
     ; was not it.
@@ -759,7 +759,7 @@ define Fiber
     ; ★The consequence is a RULE, not a limitation to work around: a panic
     ; inside a fiber is caught only by a catch point on THAT fiber's stack.
     ; Delivering a fiber's fault to its resumer is a task-boundary policy
-    ; (TRAPS.md 3.1) and needs an unwind that can cross stacks -- it is not
+    ; and needs an unwind that can cross stacks -- it is not
     ; this crossing's job.
     procedure swap_allocator(mutable f: ref[Fiber])
     {
@@ -963,7 +963,7 @@ function fiber_guard_hit(addr: pointer[void]) returns i32
 
 ; A descriptor a TcpStream reads and writes, watched by its scheduler's
 ; poller ONCE for the stream's life, edge-triggered in both directions
-; (2026-09-28, ROADMAP-http.md stage A). Io.park's oneshot arm costs an
+; (2026-09-28). Io.park's oneshot arm costs an
 ; epoll_ctl for every wait on linux: the profile of a server against tokio
 ; put ~5 % of its CPU there. Edge-triggered, a direction's readiness is
 ; REMEMBERED here: an edge sets it (and wakes the task waiting on that
@@ -1211,7 +1211,7 @@ define Scheduler
     ; the deadline; without a scheduler the thread sleeps. ms <= 0 is a
     ; yield. A sleeping task is BLOCKED (join/deadlock accounting) and
     ; bounds the poller's wait, so an otherwise idle scheduler sleeps in
-    ; the kernel instead of spinning (2026-09-28, ROADMAP-http.md stage A:
+    ; the kernel instead of spinning (2026-09-28:
     ; HttpArena's async profile parks 32 000 requests for 10 ms each).
     procedure sleep(ms: i64)
     {
@@ -3128,7 +3128,7 @@ define TaskGroup
     ; submitting thread: it records whether a catch point stood when the wave
     ; was created. A worker installs one only if it did -- so a program that
     ; catches nothing keeps exactly today's behaviour, message and code
-    ; included, and pays nothing (TRAPS.md 3.19).
+    ; included, and pays nothing.
     procedure create() returns ref[TaskGroup]
     {
         let p Page.allocate_page_traced("TaskGroup.record_page")
@@ -3233,7 +3233,7 @@ define TaskGroup
 
         ; ★★★A fault a worker caught is raised again HERE -- on the
         ; submitting thread, inside the try the submitter armed. A jump may
-        ; never cross stacks (TRAPS.md 3.16), so this is the only sound route,
+        ; never cross stacks, so this is the only sound route,
         ; and it is the AggregateException shape with one fault.
         ;
         ; ★It happens AFTER the wave is joined, not at the moment of the
@@ -3591,7 +3591,7 @@ procedure task_worker(arg: pointer[void]) returns pointer[void]
     }
 }
 
-; ---- Fork-join of calls (ROADMAP 4.8, route 3) ----
+; ---- Fork-join of calls (route 3) ----
 ;
 ; A pure function that calls itself twice in one expression (`f(l) + f(r)`)
 ; is emitted in three bodies (Emitter.emit_fork_join_function): the entry
@@ -3605,7 +3605,7 @@ procedure task_worker(arg: pointer[void]) returns pointer[void]
 ; its deque — the shallowest frame, the biggest pending call — and wakes a
 ; worker (heartbeat scheduling, Acar et al. PLDI 2018). Promotions therefore
 ; happen only when somebody can take them, and the cost of a fork point that
-; nobody steals is a few stores. The spike behind the numbers is in ROADMAP.
+; nobody steals is a few stores.
 ;
 ; Deque discipline, per thread: slots [top, pub) are published and
 ; stealable, [pub, bottom) latent and the owner's alone. The owner pushes and

@@ -1,4 +1,4 @@
-; The http package's static files (ROADMAP-http.md stage D) over TCP, from a
+; The http package's static files over TCP, from a
 ; directory this test writes (scaly_http_static, in the CURRENT directory -- the
 ; runners start it in their scratch directory; it was /tmp/scaly_http_static
 ; until 2026-10-02, which a native Windows program reads as \tmp on the current

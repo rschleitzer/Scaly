@@ -1,48 +1,48 @@
 #!/usr/bin/env python3
-"""Die HANDGESCHRIEBENE Schreibweise von `allocate_slice[T]` einsammeln.
+"""Collect the HAND-WRITTEN spelling of `allocate_slice[T]`.
 
     Slice[T](L, R.allocate(B, A) as pointer[T])   ->   allocate_slice[T](R, L)
 
-`allocate_slice` (2026-09-04, `scaly/containers/Slice.scaly`) IST diese
-Konstruktion -- ihr eigener Kommentar nennt die Sites, die sie von Hand
-schreiben.  Neun wurden in der ersten Runde geerntet, ALLE mit skalarem
-Elementtyp; die hier gefundenen sind der Rest, und darunter liegen die beiden
-Elementklassen, die noch nie durch diese Funktion gelaufen sind: `ref[X]?`
-(NPO-Option, opensp' Id/Lpd/Partition/Syntax) und ein 16-Byte-STRUCT
-(`Slice[StringC]` in Syntax.scaly).  Beide sind mit einer Sonde belegt, BEVOR
-hier etwas umgeschrieben wurde -- put/get-Rundlauf ueber `allocate_slice`.
+`allocate_slice` (2026-09-04, `scaly/containers/Slice.scaly`) IS this
+construction -- its own comment names the sites that write it by
+hand.  Nine were harvested in the first round, ALL with a scalar
+element type; the ones found here are the rest, and among them lie the two
+element classes that have never run through this function: `ref[X]?`
+(NPO option, opensp's Id/Lpd/Partition/Syntax) and a 16-byte STRUCT
+(`Slice[StringC]` in Syntax.scaly).  Both are established by a probe BEFORE
+anything was rewritten here -- a put/get round trip over `allocate_slice`.
 
-★★★DAS EIGENTLICHE ARGUMENT ist kein Zaehlerstand, sondern eine ASYMMETRIE:
-`Escape.scaly` und `Jit.scaly` rufen `allocate_slice` im `init` (Zeile 275/597)
-und schreiben im REHASH derselben Datei (346/672) dieselbe Allokation von Hand.
-CLAUDE.md nennt genau diese Form den Beweis und nicht den Hinweis: wenn eine
-Schwesterroutine die Fassung schon hat und diese nicht, ist das der Fund.
+★★★THE REAL ARGUMENT is not a count but an ASYMMETRY:
+`Escape.scaly` and `Jit.scaly` call `allocate_slice` in the `init` (line 275/597)
+and write the same allocation by hand in the REHASH of the same file (346/672).
+Exactly this shape is the proof and not the hint: when a
+sibling routine already has the form and this one does not, that is the find.
 
-★★★WAS DER GEWINN IST: jede dieser Zeilen MINTET ein `as pointer[T]`.
-`Page.allocate` antwortet rohen Speicher, also muss ihm irgendwer einen Typ
-geben -- am Aufrufort getan, ist das genau der Zeiger, den die Kampagne sucht.
-In `allocate_slice` steht der Cast EINMAL.
+★★★WHAT THE GAIN IS: each of these lines MINTS an `as pointer[T]`.
+`Page.allocate` answers raw memory, so somebody has to give it a
+type -- done at the call site, that is exactly the pointer the campaign looks for.
+In `allocate_slice` the cast stands ONCE.
 
-★★★WAS DIESES SKRIPT NICHT ENTSCHEIDET: ob `B` wirklich `L * sizeof T` ist.
-Es PRUEFT das textuell (unten) und LEHNT AB, was es nicht beweisen kann -- die
-Gleichheit `alignof pointer[Id]` == `alignof ref[Id]?` etwa steht hier als
-Tabelle und nicht als Vermutung.  Ein Rest, den die Tabelle nicht traegt, wird
-gemeldet und bleibt liegen; der Leser entscheidet, nie das Werkzeug.
+★★★WHAT THIS SCRIPT DOES NOT DECIDE: whether `B` really is `L * sizeof T`.
+It CHECKS that textually (below) and REFUSES what it cannot prove -- the
+equality `alignof pointer[Id]` == `alignof ref[Id]?`, say, stands here as a
+table and not as a guess.  A rest the table does not carry is
+reported and left alone; the reader decides, never the tool.
 
-Aufruf: tools/allocslice_inline.py [--apply]
+Usage: tools/allocslice_inline.py [--apply]
 """
 import re, sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'derefcensus'))
 import scan
 
-# Elementgroesse in Bytes, soweit sie hier BEWEISBAR ist.  Ein Typ, der nicht
-# in dieser Tabelle steht, wird nur akzeptiert, wenn `B` ihn SYMBOLISCH nennt
-# (`n * sizeof StringC`) -- dann ist die Gleichheit textuell und braucht keine
-# Zahl.
+# Element size in bytes, as far as it is PROVABLE here.  A type that is not
+# in this table is accepted only when `B` names it SYMBOLICALLY
+# (`n * sizeof StringC`) -- then the equality is textual and needs no
+# number.
 SIZE = {'u8': 1, 'i8': 1, 'char': 1, 'u16': 2, 'i16': 2, 'u32': 4, 'i32': 4,
         'u64': 8, 'i64': 8, 'int': 8, 'size_t': 8}
-# Ein `ref[X]?` ist Option[ref[X]] und damit NPO -- zeigergross.  Der Baum
-# schreibt die Allokation dafuer als `sizeof pointer[X]`, was dieselbe Zahl ist.
+# A `ref[X]?` is Option[ref[X]] and therefore NPO -- pointer-sized.  The tree
+# writes the allocation for it as `sizeof pointer[X]`, which is the same number.
 PTRLIKE = 8
 
 def norm(s):
@@ -55,14 +55,14 @@ def elem_size(t):
     return None
 
 def bytes_match(L, B, T):
-    """Ist `B` beweisbar `L * sizeof T`?"""
+    """Is `B` provably `L * sizeof T`?"""
     L, B = norm(L), norm(B)
     sz = elem_size(T)
-    # (a) symbolisch: B ist L * sizeof T  (Klammerung egal)
+    # (a) symbolic: B is L * sizeof T  (parenthesisation does not matter)
     for form in (f'{L} * sizeof {T}', f'({L}) * sizeof {T}',
                  f'{L} * (sizeof {T})', f'({L}) * (sizeof {T})'):
         if norm(form) == B: return True
-    # (b) der Baum schreibt fuer ref[X]?/Zeiger `sizeof pointer[X]`
+    # (b) for ref[X]?/pointers the tree writes `sizeof pointer[X]`
     if sz == PTRLIKE:
         inner = re.match(r'^ref\[(.*)\]\?$', T)
         names = ['void'] + ([inner.group(1)] if inner else [])
@@ -71,9 +71,9 @@ def bytes_match(L, B, T):
                          f'({L}) * (sizeof pointer[{nm}])', f'({L}) * sizeof pointer[{nm}]'):
                 if norm(form) == B: return True
     if sz is None: return False
-    # (c) numerisch: B ist L mit angehaengtem `* <sz>`, oder sz == 1 und B == L
+    # (c) numeric: B is L with `* <sz>` appended, or sz == 1 and B == L
     if sz == 1 and B == L: return True
-    # L kann ein `X as size_t` sein, B dieselbe Basis ohne den Cast
+    # L may be an `X as size_t`, B the same base without the cast
     Lb = re.sub(r'\s+as\s+size_t\b', '', L).strip()
     Lb = Lb[1:-1].strip() if Lb.startswith('(') and Lb.endswith(')') else Lb
     Bb = B
@@ -105,7 +105,7 @@ def split_args(s):
     return [x.strip() for x in out]
 
 def balanced_end(text, open_at):
-    """Index NACH der zu text[open_at]=='(' gehoerenden ')'."""
+    """Index AFTER the ')' that belongs to text[open_at]=='('."""
     depth = 0
     for i in range(open_at, len(text)):
         if text[i] in '([': depth += 1
@@ -117,14 +117,14 @@ def balanced_end(text, open_at):
 HEAD = re.compile(r'\bSlice\[')
 
 def convert_text(text):
-    """Alle Sites in einem (ggf. mehrzeiligen) Quelltext ersetzen. Liefert
-    (neuer_text, [(alt, neu)], [(alt, grund)])."""
+    """Replace every site in a (possibly multi-line) source text. Returns
+    (new_text, [(old, new)], [(old, reason)])."""
     done, held = [], []
     pos = 0
     while True:
         m = HEAD.search(text, pos)
         if not m: break
-        tb = balanced_end(text, m.end() - 1)          # ] des Typarguments
+        tb = balanced_end(text, m.end() - 1)          # ] of the type argument
         if tb < 0: break
         T = text[m.end():tb - 1].strip()
         if tb >= len(text) or text[tb] != '(':
@@ -144,14 +144,14 @@ def convert_text(text):
         aargs = split_args(R[am.end():ae - 1])
         tail = norm(R[ae:])
         if len(aargs) != 2 or not re.match(r'^as\s+pointer\[', tail):
-            held.append((norm(whole), f'Schwanz nicht `as pointer[..]`: {tail[:40]}'))
+            held.append((norm(whole), f'tail is not `as pointer[..]`: {tail[:40]}'))
             pos = m.end(); continue
         B, A = aargs[0], aargs[1]
         if not bytes_match(L, B, T):
-            held.append((norm(whole), f'Bytezahl nicht beweisbar L*sizeof {T}: {norm(B)}'))
+            held.append((norm(whole), f'byte count not provably L*sizeof {T}: {norm(B)}'))
             pos = m.end(); continue
         if not align_match(A, T):
-            held.append((norm(whole), f'Ausrichtung nicht beweisbar alignof {T}: {norm(A)}'))
+            held.append((norm(whole), f'alignment not provably alignof {T}: {norm(A)}'))
             pos = m.end(); continue
         new = f'allocate_slice[{T}]({recv}, {norm(L)})'
         done.append((norm(whole), new))
@@ -173,13 +173,13 @@ def main():
         if not done and not held: continue
         print(f'--- {p}')
         for a, b in done: print(f'   OK   {a[:120]}\n     ->  {b}')
-        for a, r in held: print(f'   HALT {r}\n        {a[:120]}')
+        for a, r in held: print(f'   HELD {r}\n        {a[:120]}')
         nd += len(done); nh += len(held)
         if done:
             nf += 1
             if apply: open(p, 'w', encoding='utf-8').write(new)
-    print(f'\nSUMME: {nd} konvertierbar, {nh} liegen gelassen, {nf} Dateien'
-          + ('' if apply else '  (nur gezählt)'))
+    print(f'\nTOTAL: {nd} convertible, {nh} left alone, {nf} files'
+          + ('' if apply else '  (counted only)'))
 
 if __name__ == '__main__':
     main()

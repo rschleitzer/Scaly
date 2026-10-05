@@ -1,7 +1,7 @@
 ; TLS over a TcpStream through OpenSSL 3 (libssl, libcrypto), bound
 ; directly: every function used takes pointers, `int` flags and `size_t`
 ; counts (the `_ex` forms of read and write), so no C shim is needed
-; (CLAUDE.md, the containment rule) and no `long` crosses the boundary --
+; (the containment rule) and no `long` crosses the boundary --
 ; the protocol-version switch is SSL_CTX_set_options, which takes and
 ; answers a uint64_t, not the SSL_CTX_ctrl macro behind
 ; SSL_CTX_set_min_proto_version. The package root declares `extern ssl,

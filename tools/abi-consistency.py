@@ -57,7 +57,7 @@ def split_params(sig):
 def main():
     # Walked in Python, not through `find`: on the Windows box a subprocess
     # named `find` is DOS's find.exe from System32, which answers nothing and
-    # made this check report 0 of 0 symbols (tests/win32/WINDOWS-BOX.md §4a).
+    # made this check report 0 of 0 symbols.
     # The same set of files on every host; order does not reach the verdict.
     files = sorted(glob.glob("packages/**/*.scaly", recursive=True))
     handles = set()
@@ -89,9 +89,9 @@ def main():
                 continue
             seen.add((ps, ret))
             print(f"    {f}:{ln}  ({', '.join(ps)}) -> {ret}")
-    print(f"\nSymbole mit ABI-widersprüchlichen Deklarationen: {bad} von {len(sigs)}")
+    print(f"\nSymbols with ABI-contradicting declarations: {bad} of {len(sigs)}")
     dupes = sum(1 for n, e in sigs.items() if len(e) > 1)
-    print(f"mehrfach deklarierte Symbole insgesamt: {dupes}")
+    print(f"symbols declared more than once in total: {dupes}")
 
 
 if __name__ == "__main__":

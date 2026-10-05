@@ -6,7 +6,7 @@
     ... *(mp + i) ...             ->      ... modes[i] ...
     ... set *(mp + i): v ...              ... set modes[i]: v ...
 
-A `var x T[N]` local is an `[N x T]` VALUE, and CLAUDE.md's own rule for the
+A `var x T[N]` local is an `[N x T]` VALUE, and the rule for the
 const-array form says to index it IN PLACE -- it cannot be passed to a
 `pointer[T]` parameter.  The ports learned the second half of that rule and
 not the first, so they cast the array to a pointer and walk it, and 312 of the
@@ -116,7 +116,7 @@ def main():
             print('%5d  %s' % (c, p))
             if apply: open(p, 'w', encoding='utf8').write('\n'.join(new))
         total += c
-    print('SUMME:', total, '(angewendet)' if apply else '(nur gezählt)')
+    print('TOTAL:', total, '(applied)' if apply else '(counted only)')
 
 if __name__ == '__main__':
     main()

@@ -7,8 +7,7 @@
  * `fiber__guard_overflow`. What this file adds is what a corpus test cannot: it
  * varies the RECURSION FRAME SIZE, which is what decides whether the exception
  * dispatch has room to run at all, and it can move the guard page to try a
- * layout the Scaly side does not have yet. Build and sweep lines are in
- * tests/win32/WINDOWS-BOX.md section 5.
+ * layout the Scaly side does not have yet.
  *
  * WHAT IS UNDER TEST IS THE COMMITTED SHIM. scaly_stack_guard,
  * scaly_guard_install and the vectored handler come from eio_win.obj; this file

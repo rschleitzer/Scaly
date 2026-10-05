@@ -1,4 +1,4 @@
-; tool.scaly - the build side of the one tool (ROADMAP-public.md, stage A)
+; tool.scaly - the build side of the one tool
 ;
 ; `scaly build` links a program against OBJECTS of the packages it uses, each
 ; compiled once into a cache and found again by a key over everything that
@@ -427,7 +427,7 @@ define tool
     {
         var natives Array[String]()
         tool.select_native(&files, triple, &natives)
-        ; ★READY-MADE objects (ROADMAP-public.md, Windows the Rust way): what we
+        ; ★READY-MADE objects (Windows the Rust way): what we
         ; hand out carries, per system and architecture, the object of every
         ; native file under `<package>/_native/<os>-<arch>/`, named as the cache
         ; names it without the package's key. Where one is there it is linked
@@ -610,7 +610,7 @@ define tool
         true
     }
 
-    ; ---- C libraries (ROADMAP-public.md, stage B) ---------------------------
+    ; ---- C libraries (stage B) ----------------------------------------------
     ;
     ; A package says which C libraries it uses in its root file:
     ;     extern ssl, crypto

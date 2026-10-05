@@ -1,4 +1,4 @@
-; A refused OS resource is CATCHABLE (TRAPS.md 3.18).
+; A refused OS resource is CATCHABLE.
 ;
 ; The same refused fiber stack as resource_refused.scaly, inside a `try`: a
 ; server that cannot get a stack, a thread or a pipe should shed the request,

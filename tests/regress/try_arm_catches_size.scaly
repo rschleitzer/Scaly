@@ -1,5 +1,5 @@
 ; Regression: `try ... when e: SizeOverflow` catches the wraparound guard in
-; `Array.add` (TRAPS.md 3.14) -- the fourth catchable trap kind.
+; `Array.add` -- the fourth catchable trap kind.
 ;
 ; Checked:
 ;   (1) the arm binds e with e.added / e.length

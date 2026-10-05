@@ -7,7 +7,7 @@
 ; `to_c_string` anywhere. The one that survives is the one whose argument is a
 ; plain literal.
 ;
-; CLAUDE.md described this shape as "silently drops or mis-parses" and it was
+; This shape was described as "silently drops or mis-parses" and that was
 ; half right: through a MEMBER receiver (`vec.add helper(2)`) the arity gate
 ; catches it and says `got 0, expected 1`. Through a FREE function there is no
 ; arity to check against, so the collapse leaves an unnamed operator call behind

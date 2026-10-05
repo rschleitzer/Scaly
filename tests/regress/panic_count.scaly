@@ -1,4 +1,4 @@
-; Regression: the counter at the panic site (TRAPS.md 4).
+; Regression: the counter at the panic site.
 ;
 ; The inventory named as its first unknown how often a bounds trap really
 ; fires in operation -- no number, no counter. Since all eight traps route

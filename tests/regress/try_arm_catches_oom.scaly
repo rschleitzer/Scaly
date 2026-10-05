@@ -1,5 +1,5 @@
 ; Regression: `try ... when e: OutOfMemory` catches an allocator failure
-; (TRAPS.md 3.17) -- the fifth catchable trap kind, and the only one where
+; -- the fifth catchable trap kind, and the only one where
 ; catching does more than contain the damage: dropping a region gives the
 ; memory back, so a catcher can actually recover.
 ;

@@ -4,7 +4,7 @@
 ; it is flat. `adapt(a, m, …) + adapt(m, b, …)` is the plain pattern: the
 ; engine runs the two calls in parallel once the recursion proves long, and
 ; adds them in the same order either way, so the digits are those of the
-; sequential run (ROADMAP 4.8, route 3).
+; sequential run.
 
 function g(x: double) returns double
 {

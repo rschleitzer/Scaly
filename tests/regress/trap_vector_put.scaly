@@ -1,4 +1,4 @@
-; Tor: Vector.put -- der Schreibweg.
+; Gate: Vector.put -- the write path.
 ; expect-rc: 15
 ; expect-out: Vector.put: index out of bounds
 

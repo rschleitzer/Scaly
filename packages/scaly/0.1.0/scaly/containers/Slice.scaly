@@ -233,7 +233,7 @@ define SliceIterator[T](slice: Slice[T], var position: size_t(0))
 ;
 ; ★★★THE ARGUMENT WAS NEVER A COUNT BUT AN ASYMMETRY: `Escape.scaly` and
 ; `Jit.scaly` call this function in the `init` and wrote the same allocation by
-; hand in the REHASH of the same file.  CLAUDE.md calls that shape the proof
+; hand in the REHASH of the same file.  That shape is the proof
 ; and not the hint.
 ;
 ; ★★★AND THE REHASH IS WHERE THE ESCAPE CHECKER SPEAKS UP: `set m.keys:

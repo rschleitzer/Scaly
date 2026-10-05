@@ -1,5 +1,5 @@
 #!/bin/bash
-# tests/install/run.sh — the public installer (ROADMAP-public.md, stage F):
+# tests/install/run.sh — the public installer:
 # the two archives made of this tree — the packages and the seed
 # (tools/make-dist.sh), the programs for this system with LLVM linked in
 # (tools/make-bindist.sh) — installed by docs/website/install.sh into a scratch

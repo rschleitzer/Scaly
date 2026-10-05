@@ -1,4 +1,4 @@
-; The https package (ROADMAP-http.md stage D): the http package's connection
+; The https package: the http package's connection
 ; loop over a TlsStream, started on an ephemeral port; main is the client.
 ;   alpn       a client offering h2 and http/1.1 is given http/1.1
 ;   pipelined  two requests in ONE TLS write come back as two responses in

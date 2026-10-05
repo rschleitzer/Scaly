@@ -1,7 +1,7 @@
 ; fannkuch-redux — for every permutation of 0..n-1, flip the prefix the first
 ; element names until 0 leads, and keep the largest flip count. The split is
 ; by the first TWO elements: each pair is an independent pure function of n
-; and the pair, returning a small record (a kept value — ROADMAP 4.7). The
+; and the pair, returning a small record (a kept value). The
 ; checksum here is the plain sum of all flip counts, independent of order,
 ; not the benchmark's alternating one.
 ;

@@ -2,7 +2,7 @@
 ; Expected: PASS
 ;
 ; This fixture is a CONTROL, and it exists because the Windows corpus had none
-; (2026-09-19, TRAPS.md 3.22). Every catching program the corpus ran was a
+; (2026-09-19). Every catching program the corpus ran was a
 ; fiber or parfor case, so when all six of them failed on Windows and nothing
 ; else did, two very different diagnoses fitted the same evidence: "catching is
 ; broken on this target" and "catching is broken on a stack the program

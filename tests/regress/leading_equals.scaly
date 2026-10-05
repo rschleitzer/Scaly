@@ -1,5 +1,5 @@
 ; `=` at the START of an operation is a prefix that does nothing
-; (ROADMAP-operation.md; the author, 2026-10-04): a binding, a `set`, a
+; (the author, 2026-10-04): a binding, a `set`, a
 ; return, a tuple component, a vector element and a one-expression body may
 ; all begin with it. Anywhere else `=` compares -- (3) and (6) hold both.
 ; A binding dropped its leading `=` before; the others are new.

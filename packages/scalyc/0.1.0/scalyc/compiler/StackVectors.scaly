@@ -1,5 +1,5 @@
 ; StackVectors.scaly - which local Vectors of a routine may live on the
-; machine stack instead of its frame page (ROADMAP 4.9, the fannkuch gap).
+; machine stack instead of its frame page (the fannkuch gap).
 ;
 ; A `Vector[T](n)` bound to a local lands on the routine's frame page: the
 ; record because Vector's init derives its page from the record's address

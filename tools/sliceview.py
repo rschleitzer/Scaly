@@ -33,7 +33,7 @@ moved its buffer in between.  Both conditions fail often:
 ★`as_slice()` already exists on `String`, `Array` and `Vector` -- no stdlib
 change and no seed is owed for this.
 
-★★★THE GUARD THAT IS LOAD-BEARING is the one CLAUDE.md lists as ACTIVE: a
+★★★THE GUARD THAT IS LOAD-BEARING is the one listed as ACTIVE: a
 `Slice[T]` is ACCEPTED where a `pointer[T]` is declared, silently, and
 arithmetic on one compiles.  So EVERY use of the local must be a deref of the
 form `*(b + i)` or `set *(b + i): v`.  A local also passed to a callee, bound
@@ -44,7 +44,7 @@ STRUCT to a pointer parameter with nothing said at any stage.
 
 ★★★THE SECOND MODE HOLDS THE VIEW ONE LEVEL UP, and it exists because
 `tools/subscript_driver.py` says in so many words that this file is the answer
-for a `String` receiver "aber es beansprucht sie nicht von selbst".  The
+for a `String` receiver "but it does not claim them by itself".  The
 driver reverted 28 of 29 proposals on 2026-09-04 for one structural reason --
 the ports walk STRING bytes and `String` has NO `operator []` -- and every one
 of those reverted sites is this shape:
@@ -264,7 +264,7 @@ def main():
             print('%5d  %s' % (c, p))
             if apply: open(p, 'w', encoding='utf8').write('\n'.join(new))
         total += c
-    print('SUMME:', total, '(angewendet)' if apply else '(nur gezählt)')
+    print('TOTAL:', total, '(applied)' if apply else '(counted only)')
 
 if __name__ == '__main__':
     main()

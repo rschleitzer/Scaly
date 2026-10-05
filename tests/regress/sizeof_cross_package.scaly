@@ -12,7 +12,7 @@
 ; name (pointer/ref/NPO Option/delegate/intrinsic); otherwise the `ptr` is
 ; map_type's placeholder and the planner's estimate is the only real answer.
 ;
-; STILL OPEN (see the wish list): a root struct that embeds a cross-package
+; STILL OPEN: a root struct that embeds a cross-package
 ; struct BY VALUE and never READS the field keeps the 8-byte placeholder for
 ; it, so its own size and its later fields' offsets are wrong. A member
 ; access anywhere triggers ensure_member_layout# and makes the layout right,

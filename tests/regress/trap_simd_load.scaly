@@ -1,8 +1,8 @@
 ; A SIMD load or store checks ONCE that all its lanes lie inside the
 ; container (i + lanes <= length) and traps like every bounds violation (exit
 ; 15, scaly_panic_oob) when one does not: lanes 6..9 of an 8-element Vector.
-; The index is computed so the compiler cannot fold the check away
-; (ROADMAP-simd.md phase 2).
+; The index is computed so the compiler cannot fold the check
+; away.
 ; expect-rc: 15
 ; expect-out: SIMD load: index out of bounds (index 6, length 8)
 

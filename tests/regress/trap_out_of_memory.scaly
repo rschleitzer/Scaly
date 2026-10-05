@@ -9,7 +9,7 @@
 ; ★The failure is INJECTED (`scaly_alloc_fail_after`, scaly/fiber/eio.c), for
 ; the reason SCALYC_STACK_BUDGET exists in the planner: an out-of-memory trap
 ; cannot be fired deterministically any other way, and a trap no test fires is
-; a trap that may have stopped working (TRAPS.md 1.5).
+; a trap that may have stopped working.
 ;
 ; expect-rc: 23
 ; expect-out: Page.allocate_oversized: out of memory asking for 1052672 bytes

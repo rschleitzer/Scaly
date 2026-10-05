@@ -21,7 +21,7 @@
 #   PATH     (again) a real python3 when the one that resolves is the Microsoft
 #            Store stub, which prints an advertisement and exits 49: winget's
 #            Python.Python.3.13 lands under %LOCALAPPDATA%\Programs\Python and
-#            is not on PATH at all (CLAUDE-tooling.md).
+#            is not on PATH at all.
 #   SCALY_COFF=1, SCALY_EXE=.exe, SCALY_WIN_TOOLS — the facts the scripts ask
 #            (tests/platform.sh sets the POSIX values; tools/llvm-env.sh reads
 #            these on the Windows box and points LLC/OPT at the stand-ins).
@@ -115,7 +115,7 @@ for t in ar llc opt; do
 done
 # The tools the installer does not ship (llvm-dwarfdump for tests/debuginfo),
 # UNPACKED from the release tarball into %LOCALAPPDATA%\Programs\llvm-21.1.8
-# — never a second installer run (tests/win32/WINDOWS-BOX.md §1) — and at the
+# — never a second installer run — and at the
 # END of PATH: the installed clang stays the one that answers, and the LLC/OPT
 # stand-ins are named explicitly by tools/llvm-env.sh, so the real llc/opt in
 # there change nothing the bar measures.
@@ -129,9 +129,10 @@ if ! python3 -c 'import sys' >/dev/null 2>&1; then
 fi
 export PATH
 # Python on Windows reads and writes in the ANSI code page unless told: the
-# tree's tools print `ü` and read UTF-8 sources, and tests/abi's grep for its
-# own verdict line missed on a cp1252 byte (measured 2026-09-20). One switch,
-# the one the interpreter documents for exactly this.
+# tree's tools print non-ASCII characters (`—`) and read UTF-8 sources. When a
+# verdict line still carried an `ü`, tests/abi's grep for it missed on a cp1252
+# byte (measured 2026-09-20; that line is ASCII today). One switch, the one the
+# interpreter documents for exactly this.
 export PYTHONUTF8=1
 SCALY_COFF=1
 SCALY_EXE=.exe

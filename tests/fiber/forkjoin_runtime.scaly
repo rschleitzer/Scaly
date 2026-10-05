@@ -1,4 +1,4 @@
-; Fork-join runtime (ROADMAP 4.8, route 3), driven by hand the way the
+; Fork-join runtime, driven by hand the way the
 ; Emitter drives it for `f(l) + f(r)`: a range sum split in halves, the left
 ; half recorded latently (ForkJoin.push), the right half run inline, the left
 ; taken back (pop) or waited for (join). The heavy sum must be stolen at least

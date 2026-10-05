@@ -5,7 +5,7 @@
 ; condition: a broken module under the JIT, and compiled to a program it
 ; answers F1 at rc 0. The operation driver folds each
 ; term before the table sees the operators, so every operator stands where
-; the search looks (ROADMAP-operation.md, step 1 part 2; 2026-10-04).
+; the search looks (2026-10-04).
 function g(n: int) returns int
     n
 

@@ -1,5 +1,5 @@
 ; bench — the json package's parser and writer on one core, timed on the files
-; the Rust parsers read (tools/bench/json/run.sh, ROADMAP-http.md stage B).
+; the Rust parsers read (tools/bench/json/run.sh).
 ;
 ;   bench <file> [iterations] [parse|write]   (default 20, both)
 ;

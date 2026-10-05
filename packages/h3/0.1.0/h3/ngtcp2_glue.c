@@ -1,4 +1,4 @@
-/* ngtcp2 for the h3 package (ROADMAP-http.md, stage G): what Scaly cannot
+/* ngtcp2 for the h3 package: what Scaly cannot
  * write for itself. ngtcp2's settings, transport parameters and callback
  * table are open C structs to fill -- the parameters hold a struct
  * sockaddr_in and a sockaddr_in6, the OS's layouts (shim rule (a)) -- and

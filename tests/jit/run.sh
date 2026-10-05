@@ -20,7 +20,7 @@ cd "$(dirname "$0")/../.." || exit 1
 . tests/platform.sh || exit 1
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
 if ! scaly_jit_available; then
-  echo "jit: SKIP (the in-process JIT is unavailable on Windows — tests/win32/WINDOWS-BOX.md §1)"
+  echo "jit: SKIP (the in-process JIT is unavailable on Windows)"
   exit 0
 fi
 TIMEOUT_SECS=${TIMEOUT_SECS:-30}

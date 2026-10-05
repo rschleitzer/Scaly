@@ -1,7 +1,7 @@
 ; Experiment (2026-10-04): operator precedence as a protocol of PENDING types,
 ; written in Scaly and folded away by the Planner (SCALYC_PENDING=1).
 ; `a +` answers an Addend that waits for what follows; nothing here is ever
-; bound, stored or laid out (ROADMAP-operation.md). `pending` is spelled
+; bound, stored or laid out. `pending` is spelled
 ; `@pending true` here, until the grammar has it; `apply` is "a value follows",
 ; `finish` the end of the operand sequence. An operator of a pending type
 ; states no return type: what `Product +` answers depends on what waits

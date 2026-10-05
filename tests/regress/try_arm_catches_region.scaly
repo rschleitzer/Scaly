@@ -1,5 +1,5 @@
 ; Regression: `try ... when e: InvalidRegion` catches an invalid RECEIVED
-; frame (TRAPS.md 3.13) -- the third catchable trap kind, and the first that
+; frame -- the third catchable trap kind, and the first that
 ; is not a programmer error in the caller's own code: the data comes from
 ; somewhere else, so a long-running process must be able to lose the MESSAGE
 ; instead of itself.
@@ -15,7 +15,7 @@
 ;
 ; ★What this gate does NOT check: that the pages of the half-built receive
 ; come back. `Region.deserialize` gives them back through the TABLE before
-; raising, and that is measured (TRAPS.md 3.13: 1.5 MB against 21.4 MB peak
+; raising, and that is measured (1.5 MB against 21.4 MB peak
 ; RSS over 5000 catches) -- but it cannot be checked from in here: the
 ; HeapBucket always hands out the lowest free slot, so a probe page's address
 ; is the same with and without the leak. Two versions of that probe passed the

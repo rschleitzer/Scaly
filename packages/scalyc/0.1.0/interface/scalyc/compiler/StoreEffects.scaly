@@ -1,6 +1,6 @@
 ; StoreEffects.scaly - which record types a routine may overwrite AS A WHOLE,
-; so that the Emitter can mark a parameter `noalias` (ROADMAP 4.9, the n-body
-; gap; the aliasing rule, tools/aliasing/README.md).
+; so that the Emitter can mark a parameter `noalias` (the n-body
+; gap; the aliasing rule).
 ;
 ; A DEEPLY IMMUTABLE record is one whose fields are all `let` and whose
 ; by-value record fields are deeply immutable in turn (Vector: a length and a

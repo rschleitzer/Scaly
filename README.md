@@ -32,9 +32,6 @@ demo/run.sh                 # stage 5: char transformer on one node
 demo/run_mann_dist.sh 4     # stage 7: the same model, data-parallel over 4 nodes
 ```
 
-See [ROADMAP.md](ROADMAP.md) for the full staged plan and what each milestone
-proved.
-
 Install
 -------
 
@@ -101,7 +98,7 @@ tools/install.sh                # put it on your PATH (override BINDIR; tools/un
 ```
 
 See [RELEASING.md](RELEASING.md) for how the seed is minted, verified, and
-published, and [CLAUDE.md](CLAUDE.md) for the compiler architecture.
+published.
 
 Repository layout
 -----------------

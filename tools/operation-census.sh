@@ -1,6 +1,6 @@
 #!/bin/bash
-# tools/operation-census.sh — the operation census over every package root
-# (ROADMAP-operation.md step 1): what the operand sequences of the tree are,
+# tools/operation-census.sh — the operation census over every package root:
+# what the operand sequences of the tree are,
 # counted by the planner where it plans them (SCALYC_OPERATION_CENSUS=1,
 # Planner.operation_census#). One line per root and the sum.
 #

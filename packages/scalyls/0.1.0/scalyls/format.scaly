@@ -84,7 +84,7 @@ define format
 
     ; What one scanned line is, structurally. Built ONCE at the end of
     ; scan_line# — a small struct returned from several branches would
-    ; region-allocate per site and fail the phi (see CLAUDE.md).
+    ; region-allocate per site and fail the phi.
     define LineScan
     (
         kind: size_t

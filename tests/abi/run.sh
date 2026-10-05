@@ -54,7 +54,7 @@ cd "$(dirname "$0")/../.." || exit 1
 . tests/platform.sh || exit 1
 
 # The parameter findings this tree is known to carry. Raise or lower ONLY
-# together with a note in CLAUDE.md saying which declaration changed and why.
+# together with a note saying which declaration changed and why.
 #
 # 9 -> 7 on 2026-08-09: `fseek` contributed two (`offset`, declared int against
 # C's `long`, and `origin`/`whence` against C's `int`) and is no longer declared
@@ -90,17 +90,17 @@ esac
 
 fail=0
 
-echo "abi: 3) consistency — doppelte extern-Deklarationen"
+echo "abi: 3) consistency — duplicate extern declarations"
 out=$(python3 tools/abi-consistency.py) || { echo "$out"; echo "abi: FAIL (consistency crashed)"; exit 1; }
 echo "$out" | tail -2 | sed 's/^/    /'
-if ! echo "$out" | grep -q "^Symbole mit ABI-widersprüchlichen Deklarationen: 0 "; then
+if ! echo "$out" | grep -q "^Symbols with ABI-contradicting declarations: 0 "; then
   echo "$out"
-  echo "abi: FAIL — widersprüchliche extern-Deklarationen"
+  echo "abi: FAIL — contradicting extern declarations"
   fail=1
 fi
 
 echo
-echo "abi: 1+2) Breiten gegen die echten Header"
+echo "abi: 1+2) widths against the real headers"
 # shellcheck disable=SC1091
 source tools/llvm-env.sh > /dev/null 2>&1
 hdrs=()
@@ -116,40 +116,40 @@ if [ "$SCALY_COFF" = 1 ]; then
   # Windows Kits, whose prototypes tools/abi-audit.py does not read, and a pin
   # taken against it would be a third host's number for the SAME benign
   # positions. Said by name; checks 3 and 4 below judge the tree on every host.
-  echo "    SKIP (Windows box: keine POSIX-Header — Breitenprüfung übersprungen, tests/win32/WINDOWS-BOX.md §4a)"
+  echo "    SKIP (Windows box: no POSIX headers — width check skipped)"
 elif [ ${#hdrs[@]} -eq 0 ]; then
-  echo "    SKIP (keine C-Header gefunden — Breitenprüfung übersprungen)"
+  echo "    SKIP (no C headers found — width check skipped)"
 else
   out=$(python3 tools/abi-audit.py --quiet "${hdrs[@]}" $(find packages -name '*.scaly'))
   rc=$?
   echo "$out" | head -4 | sed 's/^/    /'
   if [ "$rc" -ne 0 ]; then
     python3 tools/abi-audit.py --quiet "${hdrs[@]}" $(find packages -name '*.scaly') | head -40
-    echo "abi: FAIL — RESULT-Breite weicht vom C-Prototyp ab (kann das Vorzeichen kippen)"
+    echo "abi: FAIL — RESULT width differs from the C prototype (can flip the sign)"
     fail=1
   fi
-  got=$(echo "$out" | sed -n 's/^PARAM-BEFUNDE: //p')
+  got=$(echo "$out" | sed -n 's/^PARAM FINDINGS: //p')
   if [ -z "$EXPECTED_PARAM_FINDINGS" ]; then
-    echo "abi: FAIL — kein PARAM-Pin für $(uname -s) (gemessen: $got)"
-    echo "         (Pin oben eintragen, nachdem die Befunde geprüft sind)"
+    echo "abi: FAIL — no PARAM pin for $(uname -s) (measured: $got)"
+    echo "         (enter the pin above once the findings have been checked)"
     python3 tools/abi-audit.py --quiet "${hdrs[@]}" $(find packages -name '*.scaly') | head -40
     fail=1
   elif [ "$got" != "$EXPECTED_PARAM_FINDINGS" ]; then
-    echo "abi: FAIL — PARAM-BEFUNDE $got, erwartet $EXPECTED_PARAM_FINDINGS auf $(uname -s)"
-    echo "         (mehr = eine neue Abweichung; weniger = eine wurde behoben," \
-         "dann EXPECTED_PARAM_FINDINGS hier nachziehen)"
+    echo "abi: FAIL — PARAM FINDINGS $got, expected $EXPECTED_PARAM_FINDINGS on $(uname -s)"
+    echo "         (more = a new mismatch; fewer = one was fixed," \
+         "then bring EXPECTED_PARAM_FINDINGS here into line)"
     python3 tools/abi-audit.py --quiet "${hdrs[@]}" $(find packages -name '*.scaly') | head -40
     fail=1
   fi
 fi
 
 echo
-echo "abi: 4) LLP64 — bare \`long\` in exportierten Shim-Signaturen"
+echo "abi: 4) LLP64 — bare \`long\` in exported shim signatures"
 out=$(python3 tools/llp64-audit.py --quiet) || fail=1
 echo "$out" | sed 's/^/    /'
-if ! echo "$out" | grep -q "^LLP64-BEFUNDE: 0$"; then
-  echo "abi: FAIL — \`long\` ist auf Win64 32 Bit; auf der C-Seite beheben" \
-       "(\`long long\` für Ergebnisse, \`size_t\` für Zählungen)"
+if ! echo "$out" | grep -q "^LLP64 FINDINGS: 0$"; then
+  echo "abi: FAIL — \`long\` is 32 bits on Win64; fix it on the C side" \
+       "(\`long long\` for results, \`size_t\` for counts)"
   fail=1
 fi
 

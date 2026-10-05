@@ -1,6 +1,6 @@
 # tools/bench — Scaly against the benchmarks-game C champions
 
-The comparison of 2026-09-27 (ROADMAP-simd.md, phase 4) as a recipe that runs
+The comparison of 2026-09-27 as a recipe that runs
 on any machine that builds Scaly: the programs of `tests/selfscale/` that have
 a benchmarks-game counterpart against the fastest C programs of that game.
 
@@ -47,8 +47,8 @@ programs expect: `memalign` and `sched_getaffinity`.
   one where every C program builds as its authors wrote it — glibc has
   `memalign`, `sched_getaffinity` and pthreads, so no shim is involved. Needs
   LLVM 20 with clang, lld and libomp (apt.llvm.org: `clang-20`, `lld-20`,
-  `libomp-20-dev`; CLAUDE-tooling.md has the rest of the list).
-- **Windows** (the box of tests/win32/WINDOWS-BOX.md: Git Bash, the standalone
+  `libomp-20-dev`).
+- **Windows** (Git Bash, the standalone
   LLVM 20 install, the MSVC runtime): the scripts take their environment from
   `tests/platform.sh`, binaries carry `.exe`, and a Scaly program links against
   `/tmp/libscaly.lib` (`tools/win-archive.sh`). The C programs get three small
@@ -58,7 +58,7 @@ programs expect: `memalign` and `sched_getaffinity`.
   and binary-trees #5 are written on pthreads, which the MSVC runtime lacks —
   `build.sh` says so and `race.sh` runs without them. ★Measure the box before
   the programs: the antimalware scanner can make every process start cost
-  seconds (WINDOWS-BOX.md §4b), and that lands in every row. The Windows path
+  seconds, and that lands in every row. The Windows path
   was written without a Windows machine at hand; its first run is its test.
 
 ## Reading the numbers
@@ -74,9 +74,6 @@ programs expect: `memalign` and `sched_getaffinity`.
 - The outputs are printed at the end: the Scaly programs of a problem must
   agree with each other and the C programs with each other (the formats
   differ between the two sides; mandelbrot's C image is shown as an md5).
-
-The measured results on arm64 are in ROADMAP-simd.md (phase 4) and in the
-memory `benchmarks-game-c-race`.
 
 ## net/ — an HTTP server against Go and Rust
 

@@ -49,7 +49,7 @@ fi
 
 # ---- the x86_64 runtime archive -------------------------------------------
 # Plain `-c`, never `-c -O2`: with no main anchor, GlobalDCE deletes every
-# linkonce_odr body and the object comes out empty (root CLAUDE.md). The
+# linkonce_odr body and the object comes out empty. The
 # whole-program opt route is for the shipped archive, not for this check.
 echo "rosetta: building the $TRIPLE runtime archive"
 "$SCALYC" --target "$TRIPLE" -c --no-prelude --no-tests \

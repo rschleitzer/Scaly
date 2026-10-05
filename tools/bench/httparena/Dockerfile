@@ -1,4 +1,4 @@
-# The Scaly entry for HttpArena (ROADMAP-http.md): tools/bench/http/arena.scaly
+# The Scaly entry for HttpArena: tools/bench/http/arena.scaly
 # on the http package, built from the committed seed the way CI's Linux leg
 # builds the compiler (.github/actions/llvm21), then copied alone into a
 # runtime image. The build context is not the repository: build.sh stages the

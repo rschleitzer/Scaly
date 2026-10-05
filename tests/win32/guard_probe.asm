@@ -5,7 +5,7 @@
 ; has. This one is MASM because the Windows box has the VS Build Tools and no
 ; clang, and the measurement it enables was worth more than the uniformity. If
 ; you wire it into the workflow, port it to GAS first — ml64 is not installed on
-; the runner. tests/win32/WINDOWS-BOX.md section 5 has the build line.
+; the runner.
 ;
 ; switch_stack(rcx = stack top, rdx = entry) — move onto the hand-made stack and
 ; call the entry. Never returns: the process dies on that stack, which is the

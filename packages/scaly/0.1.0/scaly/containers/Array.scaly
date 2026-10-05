@@ -24,10 +24,10 @@ use scaly.memory.runtime
 ; the `?` spelling every instantiation of `next` emits
 ; `load %_Z5ArrayIiE` (Array[int]) regardless of T, reading `length` out of the
 ; wrong layout; it survived all 217 regress tests because field 0 lines up.
-; The open defect is written up in the root CLAUDE.md; until it is fixed, a
+; The defect is open; until it is fixed, a
 ; nullable slot inside a GENERIC concept whose type nests generics stays a
-; pointer, which is what `tools/refconv.py` holds back as
-; `generic-substitution-defect`.
+; pointer (the `generic-substitution-defect` the reference conversion
+; held back).
 define ArrayIterator[T]
 (
     array: ref[Array[T]]?
@@ -301,7 +301,7 @@ define Array[T]
     ; buys is the OTHER case — an index the loop cannot bound. Without it LLVM
     ; must assume scaly_panic_oob returns having written memory, so every CSE
     ; across a check dies: two accesses to one index kept two checks and
-    ; reloaded both `length` and `buffer`. Account in TRAPS.md 1.2.
+    ; reloaded both `length` and `buffer`.
 
     ; The ORDINARY element access, and it reads like the reference ports it
     ; serves: Clark's `v[i]` and tsgo's `x[i]`. An index past the end is a

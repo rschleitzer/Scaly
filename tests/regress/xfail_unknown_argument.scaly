@@ -17,7 +17,7 @@
 ; block in collapse_operand_sequence#), so all three say the same true thing and
 ; name the typo rather than the callee.
 ;
-; Cost of the old behaviour, from CLAUDE.md: a mechanical rename left
+; Cost of the old behaviour: a mechanical rename left
 ; `Primitive.grove_entity(gnode, …)` in a body with no `gnode` in scope, and the
 ; result was a SIGSEGV three suites away.
 ;

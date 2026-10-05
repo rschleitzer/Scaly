@@ -1,19 +1,19 @@
-; Expected-failure: das Ergebnis eines `throws`-Aufrufs wird nicht behandelt.
+; Expected-failure: the result of a `throws` call is not handled.
 ;
-; Bis 2026-09-07 war das STILL FALSCH und damit schlimmer als jede andere
-; Fehlklasse um try: `let x step(b)` band den Result-Wrapper als Erfolgswert
-; und lieferte 6164131296 statt der 100 des Erfolgsfalls. Es propagierte auch
-; nicht -- dieselbe Zeile in einer Funktion, die SELBST `throws` deklariert,
-; nahm den Erfolgsarm, sodass der Fehler zwischen zwei Funktionen verschwand,
-; die beide `throws` sagen, und der Aufrufer mit einem ordentlichen
-; `choose ... when e: Error` einen Erfolg mit Muellwert sah (TRAPS.md 3.9).
+; Until 2026-09-07 that was SILENTLY WRONG and thus worse than any other
+; failure class around try: `let x step(b)` bound the result wrapper as the
+; success value and delivered 6164131296 instead of the success case's 100. Nor
+; did it propagate -- the same line in a function that ITSELF declares `throws`
+; took the success arm, so that the error vanished between two functions
+; that both say `throws`, and the caller with a proper
+; `choose ... when e: Error` saw a success with a garbage value.
 ;
-; Die Konvention des Baums ist explizite Propagierung (throws_propagate.scaly:
-; `choose` plus `throw e`); gefehlt hat, dass die Unterlassung nichts sagte.
+; The tree's convention is explicit propagation (throws_propagate.scaly:
+; `choose` plus `throw e`); what was missing is that the omission said nothing.
 ;
-; Sechs Formen lasen den Wrapper still: die nackte Bindung, `return f()`,
-; `set x: f()`, ein verschachteltes Argument `g(f())`, der implizite
-; Rueckgabewert und eine Bedingung `if f() > 0`. Alle sechs melden jetzt.
+; Six forms read the wrapper silently: the bare binding, `return f()`,
+; `set x: f()`, a nested argument `g(f())`, the implicit
+; return value and a condition `if f() > 0`. All six report now.
 ; xfail: the error of this throws call is not handled
 
 define D(a: int)

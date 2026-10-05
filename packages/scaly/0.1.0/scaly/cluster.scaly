@@ -1,6 +1,6 @@
 ; Node runtime (self-scaling stage 7, milestone 7.3) — remote channels
-; over TCP with the failure-semantics memo implemented (ROADMAP.md,
-; stage-7 chapter, rules 1-6, 8, 10):
+; over TCP with the failure-semantics memo implemented
+; (rules 1-6, 8, 10):
 ;
 ;   let lfd Cluster.listen(port)              ; INADDR_ANY; 0 = ephemeral
 ;   let peer Cluster.accept(lfd)              ; handshake; null = refused

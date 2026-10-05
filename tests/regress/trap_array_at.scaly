@@ -1,4 +1,4 @@
-; Tor: Array.at -- die geborgte Referenz.
+; Gate: Array.at -- the borrowed reference.
 ; expect-rc: 15
 ; expect-out: Array.at: index out of bounds
 

@@ -1,7 +1,7 @@
 ; Regression: the POINTER-POINTEE OUT-CELL, `ref[ref[X]?]` — writing it,
 ; clearing it, and reading it back (2026-08-28).
 ;
-; This is the shape CLAUDE.md recorded as a proven route and never executed:
+; This is the shape recorded as a proven route and never executed:
 ; `pointer[pointer[X]]` naming a single cell the callee writes a reference
 ; into. Converting it needed one compiler change, because TWO GATES HAD CLOSED
 ; ON EACH OTHER and left the tree with no way to clear such a cell:

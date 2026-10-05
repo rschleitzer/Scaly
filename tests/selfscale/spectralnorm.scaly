@@ -1,7 +1,7 @@
 ; spectral-norm — the largest singular value of the infinite matrix
 ; A(i, j) = 1 / ((i + j)(i + j + 1) / 2 + i + 1), by power iteration.
 ; Each matrix-vector product is a plain `for` over the rows, every row a pure
-; function of the input vector (ROADMAP 4.8, route 1).
+; function of the input vector.
 
 function sqrt(x: double) returns double extern
 

@@ -6,8 +6,8 @@ the callee's definition in emitted LLVM IR.
 
 Why this exists (2026-08-01): `FotSink.start_line_field` called
 `TeXFOTBuilder.start_line_field()` one argument short. scalyc accepted it
-silently (the mirror of the documented too-many-arguments hole, CLAUDE.md
-"Calls & operands"), and at -O0 the callee read whatever the ABI register still
+silently (the mirror of the documented too-many-arguments hole), and at -O0
+the callee read whatever the ABI register still
 held — the caller's own `nic`, by luck. Turning on `opt -O2` reallocated that
 register and the value became garbage: a silent wrong-output miscompile that
 only one fixture in one suite caught. Run this over emitted IR BEFORE blaming

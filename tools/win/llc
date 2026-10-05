@@ -1,7 +1,7 @@
 #!/bin/bash
 # `llc` for the Windows box — the standalone LLVM installer ships no llc, and
-# `llc -filetype=obj` IS `clang -c` (CLAUDE-tooling.md, "what the LLVM
-# installer does NOT ship"). The bar's scripts call
+# `llc -filetype=obj` IS `clang -c`.
+# The bar's scripts call
 #     "$LLC" -relocation-model=pic [-O2] -filetype=obj <in.ll|in.bc> -o <out.o>
 # and tools/llvm-env.sh points LLC here on this box, so every script keeps
 # its POSIX line. Only that spelling is accepted; anything else is refused

@@ -1,22 +1,22 @@
-; Regression: `try ... else` faengt einen Laufzeit-PANIC (TRAPS.md 0, 5.1).
+; Regression: `try ... else` catches a runtime PANIC.
 ;
-; Bis 2026-09-07 war diese Form ein stiller No-op -- der Trap beendete den
-; Prozess mit rc 15, als staende kein try da. Jetzt installiert der Emitter
-; einen Fangpunkt VOR der Bedingung (emit_try_panic_catch#).
+; Until 2026-09-07 this form was a silent no-op -- the trap ended the
+; process with rc 15 as if no try stood there. Now the Emitter installs
+; a catch point BEFORE the condition (emit_try_panic_catch#).
 ;
-; Geprueft wird, was die Form tragen muss:
-;   (1) Locals des FAENGERS ueberleben den Sprung -- das haengt am
-;       returns_twice-Attribut auf setjmp; ohne es duerfte LLVM sie in
-;       Register ziehen, und nach dem Sprung staende dort Beliebiges.
-;   (2) der Erfolgspfad bindet die Variable und laeuft normal durch
-;   (3) die Regionen der uebersprungenen Rahmen kommen zurueck (Wasserstand)
-;   (4) Verschachtelung: ein try IM Fangzweig eines anderen
+; Checked is what the form has to carry:
+;   (1) locals of the CATCHER survive the jump -- that hangs on the
+;       returns_twice attribute on setjmp; without it LLVM would be free to
+;       pull them into registers, and after the jump anything could stand there.
+;   (2) the success path binds the variable and runs through normally
+;   (3) the regions of the skipped frames come back (water mark)
+;   (4) nesting: a try INSIDE the catch branch of another
 ;
-; Die when-Arm-Form ist NICHT hier: sie braucht einen Union-Wert im Speicher
-; und ist noch nicht gebaut -- ein Arm ohne werfende Bedingung ist die harte
-; Diagnose in xfail_try_without_throw.scaly.
+; The when-arm form is NOT here: it needs a union value in memory
+; and is not built yet -- an arm without a throwing condition is the hard
+; diagnostic in xfail_try_without_throw.scaly.
 ;
-; Erwartet: PASS
+; Expected: PASS
 function deep(n: i64) returns i64
 {
     let s String("eine Region auf diesem Rahmen")
@@ -30,7 +30,7 @@ function deep(n: i64) returns i64
 
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
-    ; (1) Locals, die den Sprung ueberleben muessen
+    ; (1) locals that must survive the jump
     var vor 100
     let konstant 41
     vor := vor + argc
@@ -42,38 +42,38 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     {
         if vor <> 101
         {
-            scaly_eputs "FAIL: Local nach dem Sprung verloren"
+            scaly_eputs "FAIL: local lost after the jump"
             scaly_eputnl()
             return 1
         }
         if konstant <> 41
         {
-            scaly_eputs "FAIL: let-Local verloren"
+            scaly_eputs "FAIL: let local lost"
             scaly_eputnl()
             return 2
         }
         if Region.panic_index() <> 5
             return 3
 
-        ; (4) Verschachtelung: ein try IM Fangzweig
+        ; (4) nesting: a try INSIDE the catch branch
         try let b deep(1)
         else
         {
             if Region.panic_length() <> 2
                 return 4
-            scaly_eputs "verschachtelt gefangen"
+            scaly_eputs "caught nested"
             scaly_eputnl()
         }
 
-        ; (3) die Regionen sind zurueck
+        ; (3) the regions are back
         if scaly_panic_mark() <> mark0
         {
-            scaly_eputs "FAIL: Wasserstand verschoben"
+            scaly_eputs "FAIL: water mark moved"
             scaly_eputnl()
             return 5
         }
 
-        ; (2) der Erfolgspfad bindet und laeuft durch
+        ; (2) the success path binds and runs through
         try let c deep(0)
         else
             return 6
@@ -83,7 +83,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         print "PASS"
         return 0
     }
-    scaly_eputs "FAIL: nicht gefangen"
+    scaly_eputs "FAIL: not caught"
     scaly_eputnl()
     8
 }

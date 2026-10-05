@@ -10,7 +10,7 @@
 ;                                      program cannot see: dropped too
 ;
 ; The third is how it was found: a scheduler test compared two such reads,
-; both 0, and passed without measuring anything (ROADMAP-http.md, the
+; both 0, and passed without measuring anything (the
 ; spawn_detached gate). The first shape is pinned here; the neighbouring
 ; spellings `let p nosuchname` and `set seen: nosuchname` were loud already.
 ; xfail: unknown identifier: nosuchname

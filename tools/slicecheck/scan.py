@@ -25,7 +25,7 @@ by the compiler and neither is visible in a suite until an output differs.
 an instrument and a noise generator.  The first version of this file collected
 Slice-typed names per FILE: one `function hash_name(d: Slice[char])` in
 tscaly's ast.scaly made every unrelated `d` in the file a finding, and the run
-reported 607 where the truth was a handful.  CLAUDE.md already carries this as
+reported 607 where the truth was a handful.  This is already known as
 "a name-keyed index answers about the wrong name" -- from the refslice
 campaign, which paid for it once.
 

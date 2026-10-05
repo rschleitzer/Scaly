@@ -1,10 +1,10 @@
-"""Konvertiert EINEN hand-allokierten, rein lokal gelaufenen Puffer je Aufruf.
+"""Converts ONE hand-allocated buffer that is walked purely locally per call.
 
-ROUTINE-LOKAL, weil derselbe Name in derselben Datei zu einer anderen Bindung
-gehoeren kann: `specified` ist in Parser.scaly dreimal gebunden, und eine
-dateiweite Ersetzung schriebe die anderen beiden Routinen mit um.
-Die WRITE-Form zuerst -- sonst erzeugt die Read-Regel `set p[i]: v`, ein
-harter rc-4.
+ROUTINE-LOCAL, because the same name can belong to another binding in the
+same file: `specified` is bound three times in Parser.scaly, and a
+file-wide replacement would rewrite the other two routines along with it.
+The WRITE form first -- otherwise the read rule produces `set p[i]: v`, a
+hard rc-4.
 """
 import re, sys
 sys.path.insert(0, 'tools')
@@ -31,4 +31,4 @@ for i in range(a, b):
     new, k = R.subn(rf'{local}[\1]', code)
     if k: lines[i] = new; n_r += k
 open(path, 'w', encoding='utf8').write('\n'.join(lines))
-print(f'{path}:{line_no}  {local}: {n_w} writes, {n_r} reads  (Routine {a+1}..{b})')
+print(f'{path}:{line_no}  {local}: {n_w} writes, {n_r} reads  (routine {a+1}..{b})')

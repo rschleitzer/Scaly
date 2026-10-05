@@ -1,5 +1,5 @@
 ; Regression: `try ... when e: NullReference` catches the NULL UNWRAP
-; (TRAPS.md 3.12) -- the second catchable trap kind.
+; -- the second catchable trap kind.
 ;
 ; The trap sits two frames deep in code that knows nothing about catch points:
 ; `x as ref[T]` is the claim that something is there, and it is false. Without

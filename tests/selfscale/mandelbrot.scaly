@@ -1,7 +1,7 @@
 ; mandelbrot — how many points of an n x n grid lie in the Mandelbrot set.
 ; Written the way a Scaly author would: a pure function per row, each row's
 ; count kept in a vector, summed at the end. No annotation anywhere; whether
-; the row loop runs in parallel is the engine's call (ROADMAP 4.8, route 1).
+; the row loop runs in parallel is the engine's call.
 
 function row_count(y: int, n: int) returns int
 {

@@ -2,8 +2,8 @@
 # Stage-5 milestone 5.0: pure-Scaly matmul throughput at demo-relevant
 # GEMM sizes — sequential baseline vs the stage-4 adaptive-parallel
 # path (cold run + promoted run). The numbers feed the
-# Accelerate-or-pure decision for the Thomas-Mann demo (ROADMAP
-# stage 5: "Measure, don't assume").
+# Accelerate-or-pure decision for the Thomas-Mann demo
+# (stage 5: "Measure, don't assume").
 #
 # Usage: tests/tensor/bench/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 set -e

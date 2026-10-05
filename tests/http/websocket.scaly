@@ -1,4 +1,4 @@
-; The http package's WebSocket (ROADMAP-http.md stage F):
+; The http package's WebSocket:
 ;   sha1      RFC 3174's vectors: "", "abc" and the 56-byte message that
 ;             needs a second padding block
 ;   accept    RFC 6455 1.3's key and accept value

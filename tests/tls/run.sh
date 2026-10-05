@@ -1,6 +1,6 @@
 #!/bin/bash
-# tests/tls/run.sh [compiler] — the tls and https packages (ROADMAP-http.md,
-# stage D; TLS 1.3 through OpenSSL): make a self-signed RSA-2048
+# tests/tls/run.sh [compiler] — the tls and https packages
+# (TLS 1.3 through OpenSSL): make a self-signed RSA-2048
 # certificate for the run, build every test program here with `scaly build`
 # (libssl and libcrypto come from the tls package's `extern`), run it under poison with the certificate and key as its
 # arguments, and compare stdout with its "; Expected:" line.

@@ -1,6 +1,6 @@
 #!/bin/bash
-# The READY-MADE objects of the packages' native files, for what we hand out
-# (ROADMAP-public.md, "Windows: Rust's way"): `scaly build` links them as they
+# The READY-MADE objects of the packages' native files, for what we hand out:
+# `scaly build` links them as they
 # are and asks no C compiler (tool.scaly, native_objects).
 #
 #   tools/native-objects.sh <compiler> <home>

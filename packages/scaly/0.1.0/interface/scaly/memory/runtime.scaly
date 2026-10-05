@@ -44,7 +44,7 @@ function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns 
 ; --- the value a `try` catches -------------------------------------------
 ;
 ; A runtime fault is what a trap USED to be: `exit 15` ended the process, and
-; nothing could look at it (TRAPS.md 0). Since 2026-09-07 a `try` can catch
+; nothing could look at it. Since 2026-09-07 a `try` can catch
 ; one, and these are the types its arms select on:
 ;
 ;     try let x a[i]
@@ -54,7 +54,7 @@ function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns 
 ; ★It is a UNION and not a record because that is what `when` arms are: the
 ; planner resolves an arm name to a variant tag of the scrutinee's union
 ; (plan_when -> lookup_variant_tag), so a single record would have no arm to
-; select. Seven variants today; the rest of the trap family in TRAPS.md 2.4 --
+; select. Seven variants today; the rest of the trap family --
 ; an oversized page, the fiber codes -- each needs its own decision about
 ; whether it MAY be caught at all, which is why they are not here yet.
 ;
@@ -67,7 +67,7 @@ function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns 
 ;
 ; ★The names are deliberately specific: everything here lives in the prelude,
 ; where a short name like `Bounds` would be taken away from every program in
-; the tree (CLAUDE.md, prelude names are TAKEN).
+; the tree (prelude names are TAKEN).
 ;
 ; ★★★THE ORDER IS A CONTRACT WITH scaly/memory/panic.c: a variant's TAG is its
 ; position here, and the shim answers that tag from `scaly_panic_last_kind`

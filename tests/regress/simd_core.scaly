@@ -1,4 +1,4 @@
-; SIMD vector types, phase 1 (ROADMAP-simd.md): every element type and width,
+; SIMD vector types, phase 1: every element type and width,
 ; construction, splat, iota, lanes, with, the operators lane by lane (a scalar
 ; side broadcast, an integer literal into a float vector included), the
 ; comparisons into masks, the mask operations, select, the casts, and vectors

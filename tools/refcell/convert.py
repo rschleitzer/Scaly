@@ -114,7 +114,7 @@ def main(paths, dry=False, only=None):
                 new, c = pat.subn(r'\1\2', lines[k][:end])
                 if c: lines[k] = new + lines[k][end:]; ns += c
         # The caller's cell, in BOTH spellings. The second one is why this loop
-        # is not one regex: CLAUDE.md records `var x null as pointer[X]` as the
+        # is not one regex: `var x null as pointer[X]` is the
         # form that hides from every pass, because the occurrence sits after an
         # `as` and reads as a cast -- 148 sites hid there once. This tool walked
         # into it too: tscaly reported ZERO caller cells for two conversions

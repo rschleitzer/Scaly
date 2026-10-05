@@ -1,9 +1,9 @@
-; Expected-failure: ein `try` mit einem Fault-Arm UND einem fremden Arm.
+; Expected-failure: a `try` with a fault arm AND a foreign arm.
 ;
-; Der OutOfBounds-Arm allein waere erreichbar, der andere nie -- also ist die
-; Form eine Verwirrung, und sie bekommt eine EIGENE Meldung. Bis zur
-; Differenzierung sagte sie "the when arms are unreachable", was fuer den
-; Fault-Arm nicht stimmte.
+; The OutOfBounds arm alone would be reachable, the other never -- so the
+; form is a confusion, and it gets a message OF ITS OWN. Until the
+; differentiation it said "the when arms are unreachable", which was not true
+; for the fault arm.
 ; xfail: this try mixes a runtime-fault arm
 
 define E union (Nonsense: D)

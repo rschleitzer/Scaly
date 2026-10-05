@@ -1,6 +1,6 @@
 #!/bin/bash
-# tests/compress/run.sh [compiler] — the compress package (ROADMAP-http.md,
-# stage B; gzip over libdeflate): build every test program here with `scaly
+# tests/compress/run.sh [compiler] — the compress package
+# (gzip over libdeflate): build every test program here with `scaly
 # build` (libdeflate through the package's `extern`), run it under poison, and compare stdout with its
 # "; Expected:" line.
 HERE="$(cd "$(dirname "$0")" && pwd)"

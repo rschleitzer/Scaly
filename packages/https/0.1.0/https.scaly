@@ -1,4 +1,4 @@
-; https — the http package's server over TLS 1.3 (ROADMAP-http.md, stage D):
+; https — the http package's server over TLS 1.3:
 ; the same connection loop (http.Server.serve_connection) over a TlsStream.
 ; Its own package, so that http alone never links OpenSSL and tls alone never
 ; links http.

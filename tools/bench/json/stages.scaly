@@ -1,5 +1,5 @@
 ; stages — where a parse's time goes: each stage of JsonValue.parse on its
-; own (tools/bench/json/run.sh with STAGES=1; ROADMAP-http.md stage B).
+; own (tools/bench/json/run.sh with STAGES=1).
 ;   stages <file> <iterations> <mode>
 ; modes, each including what comes before it:
 ;   copy      the padded copy of the document

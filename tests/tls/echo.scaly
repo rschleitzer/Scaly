@@ -1,4 +1,4 @@
-; The tls package over TCP (ROADMAP-http.md stage D): a TLS 1.3 echo server
+; The tls package over TCP: a TLS 1.3 echo server
 ; started on an ephemeral port, its context from the certificate and key
 ; run.sh makes; main is the client.
 ;   handshake  both sides of it, over memory BIOs on TcpStreams

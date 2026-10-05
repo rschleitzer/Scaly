@@ -1,4 +1,4 @@
-; Tor: Vector.at -- die geborgte Referenz (seit 2026-09-25).
+; Gate: Vector.at -- the borrowed reference (since 2026-09-25).
 ; expect-rc: 15
 ; expect-out: Vector.at: index out of bounds
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Re-measure the `pointer[` residue, by category and by package.
 
-The instrument behind the residue table in CLAUDE.md, committed because a
+The instrument behind the residue table, committed because a
 measurement claim owes its tool: the figures it replaced were stale the day
 they were written, and nobody could tell without re-running the count.
 

@@ -2,8 +2,8 @@
 ; long partial sum of the Leibniz series for pi/4, and the partial sums added
 ; up. `set total: total + leibniz(i)` is the plain pattern: the engine runs the
 ; iterations in parallel and folds their results into `total` in index order,
-; so the printed digits are those of the sequential loop, bit for bit
-; (ROADMAP 4.8, route 2).
+; so the printed digits are those of the sequential loop, bit for
+; bit.
 
 function leibniz(terms: int) returns double
 {

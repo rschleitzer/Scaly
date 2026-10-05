@@ -1,4 +1,4 @@
-; arena — the HttpArena endpoints of ROADMAP-http.md stage A, served by the
+; arena — the HttpArena endpoints of stage A, served by the
 ; http package: the entry that is measured against the other frameworks.
 ;
 ;   GET/POST /baseline11?a=&b=   the sum of a, b and the (optional) body

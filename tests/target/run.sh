@@ -69,7 +69,7 @@ check arm64-apple-darwin  Mach-O  arm64    arm64mac
 check_coff x86_64-pc-windows-msvc  6486  x86win
 check_coff aarch64-pc-windows-msvc 64aa  arm64win
 
-# -mcpu reaches codegen (ROADMAP-simd.md phase 3): the same f64x4 function for
+# -mcpu reaches codegen: the same f64x4 function for
 # x86-64 is SSE (xmm only) for the generic CPU and AVX (ymm) for haswell. The
 # check reads the disassembly, so it needs llvm-objdump; without one (the
 # Windows box) it says SKIP by name.

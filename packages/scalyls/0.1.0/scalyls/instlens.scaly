@@ -3,7 +3,7 @@
 ;
 ; WHY. The planner is demand-driven: a routine nothing reaches is never planned
 ; and never emitted, and the source gives no hint of it. That is not a cosmetic
-; fact — it is the one that cost a red CI leg (CLAUDE.md's first iron rule: a
+; fact — it is the one that cost a red CI leg (a
 ; stdlib entry point the compiler itself never calls is absent from the compiler
 ; image, so the `--jit` leg cannot materialise it). A `0` where the file looks
 ; perfectly alive is the whole point of this family.

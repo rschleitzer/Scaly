@@ -95,7 +95,7 @@ fi
 # a property of the TARGET and the LLVM version, not of who ran it.
 SEED_TARGET=${SEED_TARGET:-arm64-apple-darwin}
 # ★--portable-simd (2026-09-29): a SIMD operation with a target form (NEON's
-# tbl and addp, ROADMAP-simd.md phase 6) would otherwise take it for the named
+# tbl and addp) would otherwise take it for the named
 # arm64 target, and an x86_64 build from this seed would meet AArch64
 # intrinsics. The seed carries the target-neutral forms; a program compiled
 # for its machine gets the target's.

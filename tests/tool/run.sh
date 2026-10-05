@@ -1,5 +1,5 @@
 #!/bin/bash
-# tests/tool/run.sh [compiler] — the one tool (ROADMAP-public.md, stage A):
+# tests/tool/run.sh [compiler] — the one tool:
 # `scaly build` and `scaly run` with no script, archive or -L behind them.
 #   build      tests/tool/hello.scaly built against the package objects of a
 #              fresh build cache, run with arguments
@@ -43,7 +43,7 @@
 #              project's own ./packages (Modeler.package_directory#), one of
 #              an installed name there does not shadow the installed one, and
 #              a package in neither place is reported with both named
-#   bare       Windows the Rust way (ROADMAP-public.md): a handed-out tree --
+#   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
 #              --release, with NO clang on the PATH and neither LIB nor

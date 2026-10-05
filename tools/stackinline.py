@@ -55,7 +55,7 @@ def match_paren(s, i):
     return -1
 
 def spans(lines):
-    """(start, end) je Funktionsrumpf, an der Deklarationszeile getrennt."""
+    """(start, end) per function body, split at the declaration line."""
     starts = [i for i, l in enumerate(lines) if FN.match(l)]
     for k, s in enumerate(starts):
         yield s, (starts[k+1] if k+1 < len(starts) else len(lines))
@@ -79,7 +79,7 @@ for root, dirs, files in os.walk('packages'):
                     continue
                 m2 = OTHER.match(lines[i])
                 if m2 and m2.group(1) in arrays:
-                    shadowed.add(m2.group(1))       # im selben Rumpf neu gebunden
+                    shadowed.add(m2.group(1))       # rebound in the same body
             for i in range(s, e):
                 line, new = lines[i], lines[i]
                 for rx, kind in ((PAT, "OFFSET"),):

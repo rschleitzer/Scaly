@@ -1,5 +1,5 @@
-; compress — the content codings HTTP negotiates for a body (ROADMAP-http.md,
-; stage B): gzip now, brotli when a measurement asks for it. Its own package
+; compress — the content codings HTTP negotiates for a body:
+; gzip now, brotli when a measurement asks for it. Its own package
 ; so that a program which never compresses does not link the library.
 
 package scaly 0.1.0

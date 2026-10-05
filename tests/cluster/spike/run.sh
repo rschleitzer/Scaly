@@ -4,7 +4,7 @@
 # and the receiver hand-swizzles + byte-verifies its own copy, then
 # both run throughput/latency phases. NOT wired into CI (the spike
 # precedes the tests/cluster suite, which arrives with 7.1).
-# Needs /tmp/libscaly.a (see CLAUDE.md runtime-archive recipe).
+# Needs /tmp/libscaly.a.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../../.." && pwd)"

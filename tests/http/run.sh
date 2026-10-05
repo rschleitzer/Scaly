@@ -1,5 +1,5 @@
 #!/bin/bash
-# tests/http/run.sh [compiler] — the http package (ROADMAP-http.md): build its
+# tests/http/run.sh [compiler] — the http package: build its
 # every test program here with `scaly build` (the package objects come out of
 # the build cache), run it under poison, and compare
 # stdout with its "; Expected:" line.

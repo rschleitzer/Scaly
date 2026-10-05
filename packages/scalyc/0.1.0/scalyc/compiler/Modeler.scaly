@@ -2874,8 +2874,8 @@ define Modeler
     }
 
     ; A package's root file declares the packages it uses; they are loaded
-    ; before it, so a program names only the packages it uses itself
-    ; (ROADMAP-public.md, stage A). A root that does not parse is left to
+    ; before it, so a program names only the packages it uses itself.
+    ; A root that does not parse is left to
     ; build_referenced_module#, which reports it with its location.
     procedure load_package_dependencies(mutable root_file: String, mutable packages: ref[Array[Module]], mutable versions: ref[Array[String]]) mutable modeler_error_count
     {

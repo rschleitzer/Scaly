@@ -1,4 +1,4 @@
-; The h3 package (ROADMAP-http.md stage G) against a client written here on
+; The h3 package against a client written here on
 ; ngtcp2's client side (h3/ngtcp2_glue.c), over UDP on the loopback:
 ;   handshake  TLS 1.3 with ALPN h3 completes
 ;   streams    three requests on one connection at once: GET /sum?a=1&b=2

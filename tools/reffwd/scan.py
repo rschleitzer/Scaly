@@ -7,7 +7,7 @@ BUFFER verdict upward: a parameter handed to a proven buffer is a buffer.
 That direction cannot see the opposite evidence.  A pure forwarder derefs
 nothing and walks nothing, so it scores UNSEEN -- "absence of evidence" --
 even when its callee has ALREADY been converted and is declared `ref`.
-CLAUDE.md records the lesson twice (a dead forwarder is invisible to a
+The lesson is recorded twice (a dead forwarder is invisible to a
 fixpoint; seed from the CALLEE side) without a tool that applies it.
 
 The evidence here is not a body but a CALL: the parameter is passed BARE
@@ -118,7 +118,7 @@ def compatible(ptr_inner, ref_inner):
 def code_only(body):
     """The body with every comment cut away.
 
-    CLAUDE.md's oldest instrument rule: a hazard scan reads CODE, not prose.
+    The oldest instrument rule: a hazard scan reads CODE, not prose.
     The first draft of this tool skipped it and reported `normalize_append`
     twice, because a COMMENT four lines below the body explains why
     `Page.get(buf)` is not a real page -- and a `get(buf)` in prose reads

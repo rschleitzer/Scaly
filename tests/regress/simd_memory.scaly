@@ -1,4 +1,4 @@
-; SIMD vector types, phase 2 (ROADMAP-simd.md): load and store on a Slice, a
+; SIMD vector types, phase 2: load and store on a Slice, a
 ; Vector and an Array (by value and through a ref), the unchecked forms over a
 ; pointer, the math methods, the reductions (a float sum ORDERED, lane 0
 ; first), and a negative int broadcast into a float vector (phase 1 read the

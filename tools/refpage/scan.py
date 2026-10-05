@@ -102,10 +102,10 @@ if __name__ == '__main__':
         (peel if pl else conv)[pkg] += 1
         if not pl: names[nm] += 1
     print("eingefroren (Itanium-Literal mit P4Page):", ", ".join(sorted(FROZEN)) or "keine")
-    print(f"{'package':12} {'konvertierbar':>14} {'gesperrt':>9}")
+    print(f"{'package':12} {'convertible':>14} {'blocked':>9}")
     for pkg in sorted(set(list(conv) + list(peel))):
         print(f"{pkg:12} {conv[pkg]:14d} {peel[pkg]:9d}")
-    print(f"{'SUMME':12} {sum(conv.values()):14d} {sum(peel.values()):9d}")
-    print("\nParameternamen der konvertierbaren:", dict(names.most_common(12)))
+    print(f"{'TOTAL':12} {sum(conv.values()):14d} {sum(peel.values()):9d}")
+    print("\nparameter names of the convertible ones:", dict(names.most_common(12)))
     ml = [h for h in hits if h[2] > h[1] and not h[5]]
     print(f"davon mehrzeilige Signaturen: {len(ml)}")

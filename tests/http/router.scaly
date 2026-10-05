@@ -1,4 +1,4 @@
-; The http package's router, without a network (ROADMAP-http.md stage A):
+; The http package's router, without a network:
 ; requests are parsed from literals and handed to Router.handle, which
 ; writes the responses into a buffer read back here.
 ;   priority  `/metadata` beats `/{type}`, and `/{type}/_search` beats

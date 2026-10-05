@@ -1,5 +1,5 @@
 ; The hashes and key derivations a protocol above TLS asks for — SCRAM-SHA-256
-; in Postgres' authentication (ROADMAP-http.md, stage C) — bound to
+; in Postgres' authentication — bound to
 ; libcrypto, which every program of this package links anyway. Direct
 ; externs (no shim): pointers, `int` lengths and `size_t` counts only.
 ;

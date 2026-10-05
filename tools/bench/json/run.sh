@@ -1,6 +1,6 @@
 #!/bin/bash
 # tools/bench/json/run.sh [iterations] — the json package against the best
-# JSON parsers (ROADMAP-http.md stage B): Rust's serde_json (Value, the
+# JSON parsers: Rust's serde_json (Value, the
 # realistic bar), simd-json and sonic-rs, and simdjson (C++, its DOM) and
 # yyjson (C) — the SIMD ceiling. One core, the same method on every side
 # (bench.scaly, rust/src/main.rs, cpp/bench.cpp): best of five rounds, the

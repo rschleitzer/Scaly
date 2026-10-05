@@ -9,8 +9,8 @@
 # 0. The Windows box (Git Bash, the standalone LLVM installer). None of the
 #    probes below can find anything there — no brew, no /usr/lib/llvm-21, no
 #    llvm-config — and until 2026-09-20 the whole seed pipeline therefore did
-#    not START here, which looks like nothing at all (CLAUDE-tooling.md, "THE
-#    BAR'S SCRIPTS ARE POSIX-BOUND"). tools/win-env.sh derives the developer
+#    not START here, which looks like nothing at all.
+#    tools/win-env.sh derives the developer
 #    environment; this block answers the four names the scripts ask for:
 #      LLVM_PREFIX   the install clang came from (/c/Program Files/LLVM)
 #      LLC / OPT     tools/win/llc and tools/win/opt — `clang -c` and
@@ -79,7 +79,7 @@ LLVM_PREFIX=${LLVM_PREFIX:-}
 #    Note the failure below reads `llc (LLVM 21) not found`, which looks like a
 #    PATH problem and is usually a missing PACKAGE: llc/opt/llvm-link ship in
 #    Ubuntu's `llvm-21`, NOT in `llvm-21-dev`, and libLLVM-21.so may already be
-#    present as another package's dependency. See CLAUDE.md's Dependencies.
+#    present as another package's dependency.
 if [ -z "${LLC:-}" ]; then
   for cand in "$LLVM_PREFIX/bin/llc" "$LLVM_PREFIX/bin/llc-$LLVM_MAJOR" "llc-$LLVM_MAJOR"; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLC="$cand"; break; fi

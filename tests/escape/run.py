@@ -12,8 +12,8 @@ one must compile. The groups, as the shell loops had them:
 plus two diagnostic LOCATION checks over multi-file roots (mfloc_main,
 mfloc_call_main): the escape must be reported in the HELPER file at its line.
 
-A driver and not six shell loops since 2026-10-03 (tests/win32/WINDOWS-BOX.md
-§8): the fixtures were compiled one after another, each inside a subshell, and
+A driver and not six shell loops since 2026-10-03:
+the fixtures were compiled one after another, each inside a subshell, and
 Git Bash emulates every fork. Here they compile in parallel; the summary line
 and the exit code are the loops'.
 

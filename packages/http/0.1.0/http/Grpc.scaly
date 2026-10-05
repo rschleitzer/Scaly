@@ -1,4 +1,4 @@
-; Unary gRPC over the http package's HTTP/2 (ROADMAP-http.md stage E): the
+; Unary gRPC over the http package's HTTP/2: the
 ; length-prefixed message of a request body, the reply in the same framing
 ; with its grpc-status trailer, and the Protocol Buffers varint fields that
 ; small messages are made of.

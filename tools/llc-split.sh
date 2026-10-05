@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Parallel codegen for ONE whole-program module (ROADMAP 4.8, step 2): split the
+# Parallel codegen for ONE whole-program module: split the
 # OPTIMIZED module into n parts with llvm-split and run one llc per part at once.
 # opt still runs over the whole module first, so inlining across the parts is
 # untouched; what the split costs is code placement — measured on the tscaly

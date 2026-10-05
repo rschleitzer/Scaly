@@ -218,7 +218,7 @@ function scaly_panic_last_code() returns i32 extern
 ; Raise a fault again on THIS thread, with the kind and words a worker
 ; recorded. It is how a fault from a self-scaled `for` reaches the catch point
 ; the submitter armed -- a jump may never cross stacks, so the worker catches
-; and the submitting thread raises again (TRAPS.md 3.19). Never returns.
+; and the submitting thread raises again. Never returns.
 procedure scaly_panic_reraise(kind: i32, what: pointer[const_char], index: size_t, length: size_t, code: i32) extern
 function scaly_catch_run(body: pointer[void], arg: pointer[void], mark: pointer[void], unwind: pointer[void], caught: pointer[i32]) returns i64 extern
 function scaly_catch_active() returns i32 extern
@@ -230,11 +230,11 @@ function scaly_panic_last_length() returns i64 extern
 ; The ONE place a bounds violation ends the program -- unless somebody asked
 ; to catch it.
 ;
-; Every `if i >= length` in Slice, Array and Vector routes here (eight sites,
-; TRAPS.md 2.1) instead of writing its own message and calling `exit` inline.
+; Every `if i >= length` in Slice, Array and Vector routes here (eight sites)
+; instead of writing its own message and calling `exit` inline.
 ; Three reasons, in the order they matter:
 ;
-; 1. It is where a FANGPUNKT goes. The requirement in TRAPS.md 0 is that the
+; 1. It is where a FANGPUNKT goes. The requirement is that the
 ;    programmer can handle an OoB where it happens, and a jump to a registered
 ;    catch point has to be installed at ONE site, not at eight -- and never at
 ;    the 929 call sites, which is what makes this the cheap preparation rather
@@ -248,7 +248,7 @@ function scaly_panic_last_length() returns i64 extern
 ; assumed: LLVM's function-attrs infers `noreturn` here (the body ends in
 ; `exit`, which the Emitter marks) and then proves the cold arm redundant
 ; against a loop condition and deletes it, message and all -- byte for byte the
-; emission of the inline form (TRAPS.md 1.2/1.6). ★The inference needs the BODY
+; emission of the inline form. ★The inference needs the BODY
 ; in view: it holds while a program compiles the stdlib along with it, and a
 ; separately compiled archive at a lower opt level does not get it. Should that
 ; ever change, the fix is one name in `Emitter.mark_noreturn_callee`, whose list
@@ -257,8 +257,8 @@ function scaly_panic_last_length() returns i64 extern
 ; `what` is a `pointer[const_char]` and not a `Slice[char]`: it goes straight
 ; into scaly_eputs, which is the documented exception for the C boundary.
 
-; Bounds traps this THREAD raised, caught and fatal alike (TRAPS.md 4, the
-; first of the three things that inventory did not know: nobody had a number
+; Bounds traps this THREAD raised, caught and fatal alike (the
+; first of the three things the trap inventory did not know: nobody had a number
 ; for how often a trap fires in operation, because a fatal one printed and
 ; left and a caught one said nothing at all).
 ;
@@ -270,9 +270,9 @@ function scaly_panic_last_length() returns i64 extern
 ; `mutable` global in this language: a trap raised by a worker of a
 ; self-scaled `for` is counted on THAT thread and cannot be read from here. A
 ; process-wide total would need a `shared` cell, and a `shared` SCALAR cannot
-; be bumped atomically today (`&global` on a scalar mis-emits, CLAUDE.md) --
+; be bumped atomically today (`&global` on a scalar mis-emits) --
 ; so it would move into the C shim, and the cross-thread panic is an open
-; corner anyway (TRAPS.md 5.5). Stated rather than half-answered.
+; corner anyway. Stated rather than half-answered.
 ;
 ; ★It costs the cold path one load, one add and one store, and the access
 ; site nothing: the arm is still deleted whole where LLVM proves it
@@ -320,7 +320,7 @@ procedure scaly_panic_oob(mutable what: pointer[const_char], index: size_t, leng
 ;
 ; 1. It is where the FANGPUNKT jumps from, and since 2026-09-08 it does:
 ;    `try let x … when e: NullReference` catches this trap the way an arm
-;    catches a bounds violation (TRAPS.md 3.12). One site to jump from is what
+;    catches a bounds violation. One site to jump from is what
 ;    made that possible -- it could not be done while the sequence was rebuilt
 ;    in the Emitter at ~6300 sites.
 ; 2. The trap can say more than it does. Today it names the enclosing mangled
@@ -337,7 +337,7 @@ procedure scaly_panic_oob(mutable what: pointer[const_char], index: size_t, leng
 ; ends in `exit`, and `Emitter.mark_noreturn_callee` carries this routine's
 ; MANGLED name so a program's module -- which sees only a `declare`, the body
 ; being in libscaly.a -- gets the attribute anyway. A mangled name written out
-; as a literal FREEZES the parameter types (CLAUDE.md); grep for
+; as a literal FREEZES the parameter types; grep for
 ; `_Z16scaly_panic_nullP10const_char` before re-signing this.
 ;
 ; ★`where` is the enclosing symbol's mangled name, not a source location:
@@ -429,7 +429,7 @@ procedure scaly_panic_region(mutable what: pointer[const_char], address: size_t)
 ; wrapped sum says nothing.
 ;
 ; ★It is called from inside a GENERIC concept method, which is allowed: a
-; generic body may call a free procedure of another module (CLAUDE.md, the
+; generic body may call a free procedure of another module (the
 ; measured-closed rule), and `scaly_panic_oob` in the container subscripts is
 ; the precedent.
 ;
@@ -467,7 +467,7 @@ procedure scaly_panic_size(mutable what: pointer[const_char], added: size_t, len
 ;
 ; ★★★What it MEANS is worth writing down, because the message could not say
 ; it before: the object this String points at is not a String. That is the
-; dangling-String class CLAUDE.md describes twice -- a record built with
+; dangling-String class -- a record built with
 ; `allocate` + `set *p: T()` whose `Page.get(this)` answered a header in
 ; arbitrary memory, or a `StringC(literal)` stack temporary stored into a
 ; field. The check fires BEFORE the bogus length is used, so nothing has been
@@ -483,7 +483,7 @@ procedure scaly_panic_size(mutable what: pointer[const_char], added: size_t, len
 ; unlike an index one past the end, this fault says the program's own memory
 ; is already wrong. Making it catchable is a variant in
 ; scaly/memory/runtime.scaly plus a case in the shim, exactly as the other
-; four went (TRAPS.md 2.4 carries the argument).
+; four went.
 ;
 ; ★★Which is also why the counter below cannot be read yet: the only way to
 ; reach it is a FATAL trap, so nobody is alive to ask. Same situation the null
@@ -742,7 +742,7 @@ procedure count_bucket_freed()
 ; stayed in its chain for good, and a thread that frees pages another
 ; thread allocates — a server's acceptor hands every connection over on a
 ; page of its own — adopted bucket after bucket and grew without bound
-; (2026-09-28: 0.6 GiB per 5 s of HttpArena's limited-conn, ROADMAP-http.md).
+; (2026-09-28: 0.6 GiB per 5 s of HttpArena's limited-conn).
 ; Safe without further locking: an all-free bucket has no live page for
 ; another thread to free, and only the owner allocates from its chain.
 ;
@@ -1085,7 +1085,7 @@ procedure scaly_release_root_page_full(p: pointer[Page])
 ; does not have to grow, and its kind). Measured on the dazzle DSSSL engine
 ; after the slot change: 13.79 of the remaining 28.59 million frames per
 ; 977 KB document were still empty, 13.57 million of them with no allocation
-; anywhere in their dynamic subtree (tests/dazzle/PERFORMANCE.md).
+; anywhere in their dynamic subtree.
 ;
 ; So the caller-page argument stops being a materialised page and becomes a
 ; pointer to this two-word record, which every function with a region holds as
@@ -1184,7 +1184,7 @@ procedure scaly_release_frame(mutable f: pointer[Frame])
 ; local page as exclusive pages: the kept values then live exactly as long as
 ; they would have sequentially, and deallocate_extensions frees each chunk
 ; region with the host. Cross-thread is safe: a heap page may be released by
-; any thread (ROADMAP 2.3), and a page outliving its worker thread is drained
+; any thread (2.3), and a page outliving its worker thread is drained
 ; from a dead bucket (2.3b).
 ;
 ; ★★★Both mangled names are written out in the Emitter (emit_parallel_for):
@@ -1229,8 +1229,8 @@ procedure scaly_region_adopt_drain(mutable host: ref[Page], mutable head: pointe
 }
 
 ; --------------------------------------------------------------------------
-; Panic unwinding: giving the region stack back when control LEAVES by a jump
-; (TRAPS.md 0 and 5). Nothing calls this yet -- the catch point that will is
+; Panic unwinding: giving the region stack back when control LEAVES by a jump.
+; Nothing calls this yet -- the catch point that will is
 ; still to be built -- but the two halves it needs exist, and they are here
 ; rather than in the eventual catch machinery because this file owns the
 ; release side of the region stack.

@@ -1,5 +1,5 @@
-; Tor: Vector.operator[]. Der Vector ist FESTER Groesse und wird hier aus
-; einem Array eingefroren -- die Form, die der Baum benutzt.
+; Gate: Vector.operator[]. The Vector is of FIXED size and is frozen here from
+; an Array -- the shape the tree uses.
 ; expect-rc: 15
 ; expect-out: Vector[]: index out of bounds
 

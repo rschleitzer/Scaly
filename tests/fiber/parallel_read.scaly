@@ -1,4 +1,4 @@
-; Reading in a promoted `for` (ROADMAP 4.5, 2026-09-27): the stdlib's READ
+; Reading in a promoted `for` (2026-09-27): the stdlib's READ
 ; primitives (File.read_to_string, File.exists, Directory.exists/
 ; is_directory) no longer block the TaskPlanner — independent iterations may
 ; read in any order and at once, on the pool's worker threads. Writers still

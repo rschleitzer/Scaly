@@ -7,7 +7,7 @@
 # Reads every `%name = type { … }` of an emission, computes size and alignment
 # by LLVM's rules (i1/i8 1, i32 4, i64/ptr 8, arrays and structs by element) and
 # compares the DECLARED order with the same fields sorted by alignment. Records
-# are laid out in declaration order (packages/scalyc/CLAUDE.md), so the
+# are laid out in declaration order, so the
 # difference is what an automatic reordering would save PER INSTANCE.
 #
 # ★★★Measured 2026-09-18, and the number is why the compiler does NOT reorder:

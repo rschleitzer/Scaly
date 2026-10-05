@@ -361,7 +361,7 @@ define cli
                 else if arg = "--portable-simd"
                 {
                     ; A SIMD operation with a target form (NEON's tbl and addp,
-                    ; ROADMAP-simd.md phase 6) takes its target-neutral one: the
+                    ; SIMD phase 6) takes its target-neutral one: the
                     ; seed is emitted this way, since one seed serves every
                     ; target.
                     opts.portable_simd := true
@@ -369,7 +369,7 @@ define cli
                 else if arg.starts_with("-mcpu=")
                 {
                     ; The CPU the object code is generated and optimized for
-                    ; (ROADMAP-simd.md phase 3): a name the target's backend
+                    ; (SIMD phase 3): a name the target's backend
                     ; knows, or `native` for this machine's CPU and features.
                     ; Since phase 6 it reaches the IR too: every function
                     ; carries the CPU, and on x86_64 a SIMD operation takes the
@@ -599,7 +599,7 @@ define cli
         String(name)
     }
 
-    ; ★Windows, Rust's way (ROADMAP-public.md, 2026-10-03): a program is linked
+    ; ★Windows, Rust's way (2026-10-03): a program is linked
     ; by the Visual Studio Build Tools' own linker, found HERE -- no `clang`, no
     ; LLVM install, no developer prompt. The five procedures below find the
     ; toolset (a developer prompt's VCToolsInstallDir, else every install
@@ -2469,7 +2469,7 @@ define cli
         return cli.run(opts)
     }
 
-    ; Entry point of `scaly`, the tool (ROADMAP-public.md): alone it is the
+    ; Entry point of `scaly`, the tool: alone it is the
     ; REPL, `scaly run file args`, `scaly build file [options]`, `scaly test
     ; file [filter]`. Anything else is answered with the usage -- a bare file
     ; or a flag is scalyc's command line, not this one's.

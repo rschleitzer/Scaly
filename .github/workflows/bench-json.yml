@@ -1,8 +1,8 @@
 name: bench-json
 
 # The json package against serde_json, simd-json, sonic-rs, simdjson and
-# yyjson on an x86_64 runner (tools/bench/json/run.sh; ROADMAP-http.md stage
-# B). The dev box is an arm64 Mac, where x86 can only be checked for
+# yyjson on an x86_64 runner (tools/bench/json/run.sh).
+# The dev box is an arm64 Mac, where x86 can only be checked for
 # CORRECTNESS (tests/target/rosetta.sh); what the SIMD target forms of phase 6
 # are WORTH on x86 -- pshufb, AVX2's vpshufb and vpmovmskb -- only a real x86
 # CPU can say. GitHub's x86 runners are AMD EPYC or Intel Xeon with AVX2; the

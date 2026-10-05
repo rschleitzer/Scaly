@@ -186,19 +186,19 @@ def prune(lines):
             m = DEAD.match(codes[k])
             if not m: continue
             local = m.group(1)
-            # ★★★EINE ZWEITE BINDUNG DESSELBEN NAMENS IST KEINE NUTZUNG.
-            # Diese Pruefung las den Namen im ganzen Routine-Body, also hielten
-            # sich ZWEI tote `let buf x.get_buffer()` in einer Routine
-            # GEGENSEITIG am Leben und prune meldete 0 -- gemessen an
-            # Pattern.scaly (nb, 2x) und Parser.scaly (buf, 2x), wo die
-            # Schleifen laengst auf `container[i]` konvertiert waren.  Es ist
-            # die Klasse, die CLAUDE.md "ein namensindizierter Index antwortet
-            # ueber den falschen Namen" nennt.
+            # ★★★A SECOND BINDING OF THE SAME NAME IS NOT A USE.
+            # This check read the name in the whole routine body, so
+            # TWO dead `let buf x.get_buffer()` in one routine kept
+            # EACH OTHER alive and prune reported 0 -- measured on
+            # Pattern.scaly (nb, 2x) and Parser.scaly (buf, 2x), where the
+            # loops had long been converted to `container[i]`.  It is
+            # the class "an index keyed by name answers
+            # through the wrong name".
             def is_rebind(code):
                 mb = BIND.match(code)
                 if not mb or mb.group(2) != local:
                     return False
-                # `let buf buf.foo()` waere eine Bindung, die den Namen NUTZT
+                # `let buf buf.foo()` would be a binding that USES the name
                 return not re.search(rf'\b{re.escape(local)}\b', code[mb.end(2):])
             if any(re.search(rf'\b{re.escape(local)}\b', codes[j])
                    and not is_rebind(codes[j])
@@ -226,8 +226,8 @@ def main():
                 print('%5d  %s' % (n, p))
                 if apply: open(p, 'w', encoding='utf8').write('\n'.join(new))
             t += n
-        print('SUMME:', t, 'dead bindings',
-              '(angewendet)' if apply else '(nur gezählt)')
+        print('TOTAL:', t, 'dead bindings',
+              '(applied)' if apply else '(counted only)')
         return
     for p in files:
         text = open(p, encoding='utf8').read()
@@ -237,8 +237,8 @@ def main():
             print('%5d  %3d dropped  %s' % (c, d, p))
             if apply: open(p, 'w', encoding='utf8').write('\n'.join(new))
         tc += c; td += d
-    print('SUMME:', tc, 'sites,', td, 'bindings dropped',
-          '(angewendet)' if apply else '(nur gezählt)')
+    print('TOTAL:', tc, 'sites,', td, 'bindings dropped',
+          '(applied)' if apply else '(counted only)')
 
 # ★Under `if __name__`, for the reason recorded in tools/subscript.py: a bare
 # module-scope `main()` runs this tool with the IMPORTER's argv the moment

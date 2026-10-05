@@ -100,7 +100,7 @@ run)
   # trap: a budget set to TODAY'S failure count says nothing about exactly the
   # cases that are NEW. When the corpus went to eight, `parfor_fault_fatal` and
   # `resource_caught` were listed in the summary with no block above them, and
-  # nothing said so (TRAPS.md 3.22). The budget stays, because an unbounded
+  # nothing said so. The budget stays, because an unbounded
   # dump really does bury the aggregate — but it sits well above the stand and
   # SAYS when it ran out.
   verbose_left=12
@@ -140,7 +140,7 @@ run)
     # with it. That silently broke all three exit-code expectations
     # (guard_overflow 108, both deadlock detectors 106) and, worse, hid the
     # exit code of every failing test, which is the one number that says WHERE
-    # a program stopped. Same class as the `| tail` trap CLAUDE.md records for
+    # a program stopped. Same class as the `| tail` trap of
     # tools/aot_corpus.sh; the fix here is to have no pipeline at all rather
     # than to remember PIPESTATUS.
     $TO "$exe" > "$OUT/$base.out" 2> "$OUT/$base.err"; rc=$?
@@ -159,8 +159,8 @@ run)
     # bracket class that never closes — grep answers `Unmatched [` and **rc 2**,
     # which `! grep -q` reads as an honest miss. That case therefore reported
     # `stderr` on every run of this script no matter what the program wrote,
-    # and was counted among the Windows catch failures for a day (TRAPS.md
-    # 3.22). ★A grep that fails with rc 2 instead of rc 1 is indistinguishable
+    # and was counted among the Windows catch failures for a day.
+    # ★A grep that fails with rc 2 instead of rc 1 is indistinguishable
     # from a non-match inside a `!`, which is what made it survive review.
     if [ -n "$want_err" ] && ! grep -qF "$want_err" "$OUT/$base.err"; then
       why="$why,stderr"
@@ -193,7 +193,7 @@ run)
         # bits wide, and MSYS maps an abnormal termination onto it: the six
         # catching programs all read `127`, which is also bash's own "command
         # not found" and was already the reported code once before, for a CRT
-        # invalid-parameter kill (CLAUDE-tooling.md). Three very different
+        # invalid-parameter kill. Three very different
         # deaths therefore look alike. The NTSTATUS separates them —
         # 0xC0000005 access violation, 0xC0000409 fast fail (which is what the
         # CRT's invalid-parameter handler raises), 0xC0000028 bad stack — and

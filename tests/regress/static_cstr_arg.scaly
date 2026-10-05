@@ -1,7 +1,7 @@
 ; A string literal (and a String variable) bound to a pointer[const_char]
 ; parameter of a no-`this` concept static method coerces to the plain
-; NUL-terminated cstr, not the { ptr } String record address (2026-07-08,
-; CLAUDE-history.md Finding 3: the s155 static-call path built its
+; NUL-terminated cstr, not the { ptr } String record address (2026-07-08:
+; the s155 static-call path built its
 ; MethodMatch with parameter_types = null, skipping the String→const_char
 ; and char-fold coercions; a String LOCAL additionally arrives ptr-kind in
 ; emit_as and fell through the ptr→ptr no-op instead of get_buffer).

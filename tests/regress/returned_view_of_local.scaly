@@ -1,7 +1,7 @@
 ; Regression (2026-09-24): a function returning a VIEW (`Slice[T]`) of a local
 ; whose contents it built itself. `let s sb.to_string()` lands on the routine's
 ; own frame, and `s.as_slice()` returned a view of a released page at rc 0 --
-; garbage after the next allocations (CLAUDE.md carried it as ACTIVE since
+; garbage after the next allocations (carried as an ACTIVE trap since
 ; 2026-09-13). The escape checker judges only reference TYPES and a Slice is a
 ; value with a pointer inside, so the fix is page inference instead: the local
 ; behind a returned view is built on the caller page

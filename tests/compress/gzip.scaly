@@ -1,4 +1,4 @@
-; The compress package's gzip over libdeflate (ROADMAP-http.md stage B):
+; The compress package's gzip over libdeflate:
 ;   round     12 KB of JSON-like text compressed and decompressed back, byte
 ;             for byte; the member starts with the gzip magic and deflate
 ;   ratio     repetitive text comes out below a quarter of its size

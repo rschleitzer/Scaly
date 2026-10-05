@@ -1,4 +1,4 @@
-; repl.scaly - `scaly` with no arguments: the REPL (ROADMAP-public.md, stage R)
+; repl.scaly - `scaly` with no arguments: the REPL
 ;
 ; Every entry runs as a whole program in the in-process JIT: the session's
 ; definitions, then a `main` that binds the session's values, runs the entry,

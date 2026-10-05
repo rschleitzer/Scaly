@@ -4,7 +4,7 @@ description: >
   export the environment the scripts read. Extracted 2026-08-10 when the Linux
   leg was split into an emit job and a verify job: both need this block, and a
   second copy is a second thing to get wrong — the reasoning below was paid for
-  once (see CLAUDE.md on -lm and on lld) and should not be duplicated.
+  once and should not be duplicated.
 runs:
   using: composite
   steps:

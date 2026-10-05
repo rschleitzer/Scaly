@@ -2,7 +2,7 @@
 """tools/operation-as.py — parentheses for a cast of the right side alone.
 
 A postfix (`as`, `is`) takes the whole operation so far: `a + b as T` is
-`(a + b) as T` (ROADMAP-operation.md; the author, 2026-10-04). The old
+`(a + b) as T` (the author, 2026-10-04). The old
 collapse gave a lone thing between an operator and the postfix the cast to
 itself, so such a place means `a + (b as T)` today and has to say so. The
 operation driver lists them (Planner.operation_postfix_site#):

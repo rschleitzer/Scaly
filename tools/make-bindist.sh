@@ -24,7 +24,7 @@
 #      scalyc and scaly are built
 #      AGAIN, from the compiler's sources, by the tool of step 1:
 #      `scaly build --pgo <profile> --export` and the same static libraries.
-#      About -30 % compile time (ROADMAP-public.md). A profile applies only
+#      About -30 % compile time. A profile applies only
 #      where the compiler is compiled from its sources, which is why the seed
 #      recipe of step 1 cannot take it. scalyls stays step 1's: it holds no
 #      LLVM and was not measured.

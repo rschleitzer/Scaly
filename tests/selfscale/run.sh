@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-scaling yardstick (ROADMAP 4.8, route 1): small idiomatic programs,
+# Self-scaling yardstick: small idiomatic programs,
 # written without any annotation, measured sequential against self-scaled.
 #
 #   tests/selfscale/run.sh [compiler] [rounds]      (defaults scalyc/build/scalyc, 3)

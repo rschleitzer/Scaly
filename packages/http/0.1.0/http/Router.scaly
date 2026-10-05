@@ -1,5 +1,5 @@
 ; The router: routes with path parameters and a chain of middleware
-; (ROADMAP-http.md, stage A — the first thing the FHIR server's REST API
+; (stage A — the first thing the FHIR server's REST API
 ; needs, and HttpArena's `completeness` flags).
 ;
 ; A route is a method and a PATTERN. A segment in braces is a parameter

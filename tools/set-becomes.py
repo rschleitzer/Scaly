@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """tools/set-becomes.py — `set target: source` becomes `target := source`.
 
-The assignment is written `x := y` since 2026-10-04 (the Algol tradition;
-ROADMAP-operation.md), and `set` runs out. Both spellings model the same
+The assignment is written `x := y` since 2026-10-04 (the Algol tradition),
+and `set` runs out. Both spellings model the same
 Action, so the rewrite is emission-neutral: prove it by emitting the root
 before and after and comparing the IR.
 

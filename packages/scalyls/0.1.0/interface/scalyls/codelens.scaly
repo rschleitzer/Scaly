@@ -9,7 +9,7 @@
 ;   GENERATED FILE   "generated from codegen/parser-scaly.scm - edit the
 ;                    generator, then ./mkp" at the top of every file ./mkp
 ;                    writes. The rule it states is one this repo breaks often
-;                    enough to document it in CLAUDE.md; a lens states it where
+;                    enough; a lens states it where
 ;                    the mistake is made. The table below MIRRORS ./mkp (its
 ;                    GENERATED list plus its msggen loop) and mkp is the
 ;                    authority — the two must agree, and a generator that moves
@@ -214,8 +214,8 @@ define codelens
     ; as a local Binding, and emits no global — and a lens claiming
     ; "thread-local" over it would be describing a cell that does not exist.
     ;
-    ; NAMESPACE BODIES ARE COVERED, and that is a correction: this repo's
-    ; CLAUDE.md says a `mutable` is "rejected inside a namespace body", which
+    ; NAMESPACE BODIES ARE COVERED, and that is a correction: it was
+    ; once recorded that a `mutable` is "rejected inside a namespace body", which
     ; is not what the compiler does. Modeler.handle_namespace# routes its
     ; declarations through the same handle_declaration#, and
     ; `define ns { mutable inner: int 3 }` emits

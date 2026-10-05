@@ -5862,8 +5862,8 @@ if os.path.exists(ir):
           and rows.get(7, ("", ))[0].startswith("no type:")
           and rows.get(8, ("", ))[0].startswith("no type:"),
           "a colon is not enough: `: (x: int)` is no type and the lens says so")
-    # The namespace pair is a correction to CLAUDE.md, which calls a namespace
-    # `mutable` rejected. It is not rejected, so the lens must cover it.
+    # The namespace pair: a namespace `mutable` is not rejected, so the lens
+    # must cover it.
     check(ir_state("inner") == "thread-local" and ir_state("outer") == "process-global",
           "a global declared inside `define ns` is emitted, not rejected")
 
@@ -7088,7 +7088,7 @@ call_l, call_c = loc("let a util.num()", "num")     # the SIBLING module's call
 bind_l, bind_c = loc("let a util.num()", "a")       # the binding bound to it
 brace_l = next(i for i, l in enumerate(lines) if l == "    {")  # body open brace
 
-# The real tree at real scale: the very position the wish list names.
+# The real tree at real scale.
 srv = os.path.join(os.getcwd(), "packages/scalyls/0.1.0/scalyls/server.scaly")
 srv_uri = "file://" + srv
 srv_doc = open(srv).read()

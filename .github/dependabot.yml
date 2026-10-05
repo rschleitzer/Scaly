@@ -14,7 +14,7 @@
 # devDependencies nobody ships; version churn there produced PRs like
 # "typescript ^5.4 -> ^7.0.2" that no security finding asked for. NOTHING in
 # either manifest is part of the compiler, which has no npm dependencies at all
-# (LLVM 20 + clang; openjade optional since stage 8, see CLAUDE.md).
+# (LLVM 20 + clang; openjade optional since stage 8).
 #
 # ★★★THIS FILE IS INERT since 2026-08-11, and the reason is not in this file:
 # **vulnerability alerts are DISABLED for the repository**

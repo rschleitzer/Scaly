@@ -23,7 +23,7 @@ rm -f "/tmp/rt_warm_$$$SCALY_EXE"
 # the branches and their markers): `xargs -P bash -c run_one` started a bash and
 # some ten processes per fixture around the one compile and the one run, and Git
 # Bash emulates every fork -- on the Windows box the median fixture spent 1.3 s
-# in that set-up against 0.7 s compiling (tests/win32/WINDOWS-BOX.md §8). The
+# in that set-up against 0.7 s compiling. The
 # verdicts, the summary line and the exit code are the loop's. Fixtures run in
 # parallel (REGRESS_JOBS, default every core); each owns its binary rt_<name>
 # in the temp directory, and every compile links from an object named by its

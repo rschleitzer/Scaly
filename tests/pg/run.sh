@@ -1,5 +1,5 @@
 #!/bin/bash
-# tests/pg/run.sh [compiler] — the pg package (ROADMAP-http.md, stage C):
+# tests/pg/run.sh [compiler] — the pg package:
 # build every test here with `scaly build` (OpenSSL through tls's `extern`), run it
 # under poison and compare stdout with its "; Expected:" line. A test that
 # names DATABASE_URL in its header needs a server: it runs against

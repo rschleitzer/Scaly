@@ -92,7 +92,7 @@ function head_incomplete(have: size_t) @deep true returns i64 linked
 ; number of bytes the request took (head and encoded body); PARSE_INCOMPLETE
 ; asks for more bytes; the negative answers name the error response.
 ;
-; ONE pass over the head (2026-09-28, the hot path of ROADMAP-http.md stage
+; ONE pass over the head (2026-09-28, the hot path of stage
 ; A: the parser was 17 % of a pipelined server's CPU): memchr finds each
 ; line's LF, the line is judged at once, and the head ends at the first
 ; empty line — where the parser used to find the head's end first and then

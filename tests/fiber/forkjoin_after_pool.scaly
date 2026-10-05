@@ -1,4 +1,4 @@
-; Fork-join after the pool already exists (ROADMAP 4.8, route 3; 2026-09-27).
+; Fork-join after the pool already exists (2026-09-27).
 ; A pool worker counts itself idle for fork-join only while it blocks, and it
 ; decided whether to count BEFORE blocking — so a worker that blocked before
 ; fork-join was set up (here: after a parallel `for` created the pool) was

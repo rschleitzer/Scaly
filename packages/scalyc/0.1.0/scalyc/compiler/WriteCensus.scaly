@@ -4260,7 +4260,7 @@ define WriteCensus
         ; with `mutable` marks (PointerCensus.extern_contract#), and a new
         ; binding declares rather than growing this table.
         ; a SIMD vector stored into a container or through a pointer: the
-        ; intrinsic writes its argument 1 (ROADMAP-simd.md phase 2)
+        ; intrinsic writes its argument 1 (SIMD phase 2)
         function is_simd_store(name: String) returns bool
         {
             match name

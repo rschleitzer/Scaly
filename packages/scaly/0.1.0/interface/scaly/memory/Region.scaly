@@ -107,7 +107,7 @@ define Region
     ; fix() instead: by then the frame claims to be a closed region.
     function deserialize(frame: pointer[u8], host: ref[Page]) @page true @direct true @ret_args_3 true @deep true returns ref[ReceivedRegion]? linked
 
-    ; --- catching a panic (TRAPS.md 0) --------------------------------------
+    ; --- catching a panic ---------------------------------------------------
     ;
     ; The requirement is that a programmer can handle an out-of-bounds index
     ; instead of watching the process die. `try` is not built yet; this is the
@@ -118,7 +118,7 @@ define Region
     ;
     ; ★It lives on `Region` and not as a free function because a user program
     ; cannot resolve a cross-package free function with a concept-pointer
-    ; parameter (CLAUDE.md, Package system); concept STATICS resolve fine.
+    ; parameter; concept STATICS resolve fine.
     ;
     ; ★`caught` is a `pointer[i32]` and not a `ref[bool]`: the shim writes a C
     ; `int`, and a bool would be the wrong WIDTH -- the silent half of the
@@ -126,7 +126,7 @@ define Region
     ;
     ; ★The two function pointers are how the shim reaches the region-stack
     ; watermark and the unwind without writing their Itanium mangled names
-    ; into C, which would freeze their signatures (CLAUDE.md, eight symbols
+    ; into C, which would freeze their signatures (eight symbols
     ; already pay that price).
     procedure run_guarded(mutable body: pointer[void], mutable arg: pointer[void], mutable caught: pointer[i32]) @ret_nonlocal true @deep true returns i64 linked
 
@@ -143,7 +143,7 @@ define Region
     ; How many traps this thread has raised, caught and fatal alike, one
     ; reader per KIND. Each counter sits at its kind's ONE panic site
     ; (root_pages.scaly), which is what makes it a single load instead of one
-    ; per access site; TRAPS.md 4 is the question they answer.
+    ; per access site.
     ;
     ; ★A caller that wants the count for a WINDOW takes a delta -- there is
     ; deliberately no reset, because two callers resetting one thread-local

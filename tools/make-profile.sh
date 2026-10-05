@@ -6,7 +6,7 @@
 #   tools/make-profile.sh [outfile]      (default dist/scalyc.profdata)
 #
 # The training is the compiler emitting its own package and the stdlib — the
-# runs ROADMAP-public.md measured 2026-10-02: about -30 % compile time, on
+# runs measured 2026-10-02: about -30 % compile time, on
 # roots the profile never saw as on the trained one.
 #
 # ★The profile is made ONCE, on the fast machine, and used on every system we

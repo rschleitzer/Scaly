@@ -1,4 +1,4 @@
-; The json package's writer (ROADMAP-http.md stage B):
+; The json package's writer:
 ;   build    objects, arrays, nesting and empty containers: the commas and
 ;            colons are the writer's business
 ;   escape   quote, backslash, the named escapes, \u00XX for the other

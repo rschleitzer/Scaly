@@ -1,6 +1,6 @@
-; Tor: Slice.put -- der Schreibweg. Er schreibt DURCH die Sicht in Speicher,
-; der ihr nicht gehoert, weshalb ein Index daneben hier fremden Speicher
-; ueberschreiben wuerde. Die Pruefung ist also nicht nur Diagnose.
+; Gate: Slice.put -- the write path. It writes THROUGH the view into memory
+; that does not belong to it, which is why an index beside it would overwrite
+; foreign memory here. So the check is not only a diagnosis.
 ; expect-rc: 15
 ; expect-out: Slice.put: index out of bounds
 

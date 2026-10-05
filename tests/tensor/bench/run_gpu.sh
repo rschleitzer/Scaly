@@ -21,7 +21,7 @@ if [ ! -x "$SCALYC" ]; then
   exit 1
 fi
 
-# -O2 runtime archive (the CLAUDE.md recipe; NEVER -c -O2 a library).
+# -O2 runtime archive (NEVER -c -O2 a library).
 if [ ! -f /tmp/libscaly.a ] || find packages/scaly -name '*.scaly' -newer /tmp/libscaly.a | grep -q .; then
   echo "building -O2 runtime archive..."
   source tools/llvm-env.sh

@@ -1,6 +1,6 @@
-; Tor: Slice.at -- die geborgte Referenz. Eine METHODE und damit ein anderer
-; Emissionsweg als operator[] (eine Methode wird fuer JEDE Instanziierung
-; emittiert, ein Operator nur dort, wo er benutzt wird).
+; Gate: Slice.at -- the borrowed reference. A METHOD and therefore another
+; emission path than operator[] (a method is emitted for EVERY instantiation,
+; an operator only where it is used).
 ; expect-rc: 15
 ; expect-out: Slice.at: index out of bounds
 

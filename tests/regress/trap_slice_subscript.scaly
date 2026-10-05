@@ -1,15 +1,15 @@
-; Tor: der Bounds-Check von Slice.operator[] MUSS in der Emission ankommen.
+; Gate: the bounds check of Slice.operator[] MUST arrive in the emission.
 ;
-; Es ist der erste Test des Baums, der einen LAUFZEIT-Trap wirklich ausloest
-; (TRAPS.md 1.5: bis 2026-09-07 tat das keiner, und der Laeufer konnte es auch
-; nicht bewerten -- ein Fixture, das mit exit 15 endet, druckt kein PASS).
-; Der Marker `; expect-rc:` ist genau dafuer da.
+; It is the tree's first test that really fires a RUNTIME trap
+; (until 2026-09-07 none did, and the runner could not
+; judge it either -- a fixture that ends with exit 15 prints no PASS).
+; The marker `; expect-rc:` is there for exactly this.
 ;
-; Der Empfaenger ist LOKAL konstruiert, und das ist die riskante Form: ein
-; generischer Operator verliert dort sein Resultat (tools/opzero/scan.py), den
-; Bounds-Check aber nicht. Dass das so bleibt, haelt dieser Test fest.
+; The receiver is constructed LOCALLY, and that is the risky shape: a
+; generic operator loses its result there (tools/opzero/scan.py), but not the
+; bounds check. This test pins that it stays that way.
 ;
-; Der Index kommt aus argc, damit er nicht wegfaltet.
+; The index comes from argc so that it does not fold away.
 ; expect-rc: 15
 ; expect-out: Slice[]: index out of bounds
 

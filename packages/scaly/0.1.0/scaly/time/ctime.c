@@ -17,7 +17,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 
-/* Civil-time shim (the DSSSL time primitives, COMPLETENESS.md package 22).
+/* Civil-time shim (the DSSSL time primitives).
  *
  * Three functions, compiled by tools/ctime.sh into ctime.o and linked beside
  * fcontext.o and eio.o into every libscaly.a AND into every scalyc/scalyls
@@ -26,9 +26,9 @@
  * itself calls none of them; it carries them so that a dazzle stylesheet run
  * through `--jit` resolves them out of the host process, exactly as an AOT
  * link resolves them out of the archive. An undefined extern under ORC would
- * become a silently 0-returning stub (memory opensp-harness-falsepass).
+ * become a silently 0-returning stub.
  *
- * Why C and not Scaly, per the containment rule in CLAUDE.md:
+ * Why C and not Scaly, per the containment rule:
  *   (a) all three touch `struct tm` — a libc STRUCT whose field order is not
  *       guaranteed across the four LP64 targets the single committed seed
  *       serves, so its layout may not be assumed in Scaly; and

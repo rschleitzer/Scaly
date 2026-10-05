@@ -1,7 +1,7 @@
 ; n-body — five bodies under gravity, advanced step by step. The CONTROL of
 ; the yardstick: every step reads and writes all five bodies, so nothing here
 ; is independent and nothing may run in parallel. What it measures is that the
-; engine leaves such a program alone and costs it nothing (ROADMAP 4.8).
+; engine leaves such a program alone and costs it nothing.
 ;
 ; The bodies are an array of records, as in the C programs: one body's
 ; position, velocity and mass lie together, and `at(i)` hands out the record

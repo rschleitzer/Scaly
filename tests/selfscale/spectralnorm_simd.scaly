@@ -1,4 +1,4 @@
-; spectral-norm with the SIMD vector types (ROADMAP-simd.md phase 4) beside
+; spectral-norm with the SIMD vector types beside
 ; spectralnorm.scaly: each row product takes eight columns at a time as two
 ; independent f64x4 chains, the matrix entry computed in doubles
 ; ((i + j)(i + j + 1) / 2 + i + 1 is exact in a double at this size). The rows

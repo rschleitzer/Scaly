@@ -2,7 +2,7 @@
 ; benchmark for a memory manager. Every tree lives on the page of the call
 ; that walks it and is gone when that call returns (RBMM, no collector). The
 ; depths are independent: a plain `for` over them, each a pure function
-; returning a count (ROADMAP 4.8, route 1).
+; returning a count.
 
 define Tree (left: ref[Tree]?  right: ref[Tree]?)
 

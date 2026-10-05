@@ -1,4 +1,4 @@
-; The json package's pull reader (ROADMAP-http.md stage B):
+; The json package's pull reader:
 ;   tokens   a document's token sequence, with the text of names and numbers
 ;   refuse   what RFC 8259 does not allow, each with its code and offset
 ;   depth    MAX_DEPTH nested arrays pass, one more is refused (and a

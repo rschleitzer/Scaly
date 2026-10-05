@@ -7,8 +7,8 @@
 ; of unknown size: map_type answers `ptr`, sizeof is 8, and the program compiles.
 ;
 ; The class covered every position that takes an annotation — binding, parameter,
-; return type, structure property, module-level `mutable` — and CLAUDE.md already
-; recorded one face of it under the storage lens ("a declaration whose annotation
+; return type, structure property, module-level `mutable` — and one face of it was
+; already recorded under the storage lens ("a declaration whose annotation
 ; does not resolve to a TYPE is DROPPED, with rc 0 and no diagnostic"), where the
 ; first sign is a later `unknown assignment target` at a line that is not the
 ; mistake.

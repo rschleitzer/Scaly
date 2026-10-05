@@ -4,7 +4,7 @@
 # committed seed and a freshly emitted one build here without llc, opt or
 # llvm-link. `clang -flto=full` writes bitcode objects and lld-link does the
 # merge, the optimisation and the codegen: that IS llvm-link + opt + llc under
-# the two names the LLVM installer ships (CLAUDE-tooling.md).
+# the two names the LLVM installer ships.
 #
 #   tools/win-lto.sh [--llvm] <out.exe> <root.ll> [<root.ll> ...]
 #

@@ -532,7 +532,7 @@ int creat(const char* path, unsigned mode)
  * with an underscore. An AOT link resolves them through oldnames.lib, which
  * makes them weak aliases nobody can export; defined here they are ordinary
  * functions, so the in-process JIT finds them among the runtime's exports
- * (tools/win-link.sh --export; 2026-10-03, tests/win32/WINDOWS-BOX.md §8).
+ * (tools/win-link.sh --export; 2026-10-03).
  * They forward unchanged -- the behaviour oldnames.lib gave them -- in the
  * shape the Scaly side DECLARES them (POSIX's): read and write take and answer
  * a size_t, so the CRT's int result is sign-extended and -1 stays -1 (the

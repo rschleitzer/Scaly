@@ -3,7 +3,7 @@
 # programs as docs/website/install.ps1 hands them out -- LLVM linked in
 # statically, nothing to load but what Windows 10 and newer bring -- and what
 # `scaly build` needs so that the Visual Studio Build Tools are its ONLY
-# prerequisite (ROADMAP-public.md, "Windows: Rust's way").
+# prerequisite.
 #
 # Output: <outdir>/scaly-<version>-windows-<arch>.zip, <arch> arm64 or x86_64.
 # Payload:
@@ -20,7 +20,7 @@
 # Needs LLVM's static libraries, the unpacked `clang+llvm-21.1.8-<arch>-pc-
 # windows-msvc` release: $SCALY_STATIC_LLVM_DIR, default
 # %LOCALAPPDATA%\Programs\llvm-21.1.8-static -- tests/win32/static-llvm.sh
-# fetches them there (WINDOWS-BOX.md §10 has what the link owes them).
+# fetches them there.
 #
 # Two steps, as tools/make-bindist.sh:
 #   1. tools/build-from-seed.sh with $SCALY_STATIC_LLVM_DIR set: all three
@@ -36,8 +36,8 @@
 #      optimised object; the LINK is tools/win-link.sh's static branch, not
 #      the tool's own line -- LLVM's libraries, the JIT host's C runtime, the
 #      64 MB stack and the runtime's EXPORTS (what the in-process JIT finds
-#      the runtime by; the tool's own link exports nothing on Windows,
-#      WINDOWS-BOX.md §9). A driver handed over as $SCALY_CC does that.
+#      the runtime by; the tool's own link exports nothing on Windows).
+#      A driver handed over as $SCALY_CC does that.
 #      scalyls stays step 1's. Making the profile needs the clang, the
 #      profile runtime and llvm-profdata of the LLVM install -- which a box
 #      that builds this has.

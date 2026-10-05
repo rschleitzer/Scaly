@@ -831,8 +831,7 @@ int scaly_stack_guard(void* base, size_t len)
 static int (*scaly_guard_classify)(void*);
 
 /* ★THE TERMINATOR HAS TO BE A SYSCALL STUB, AND THAT IS THE WHOLE FIX (measured
- * on a Windows box 2026-08-10; the reproduction and its numbers are in
- * tests/win32/WINDOWS-BOX.md section 5).
+ * on a Windows box 2026-08-10).
  *
  * The handler is entered with only a few HUNDRED bytes of stack: the guard page
  * is 4096 bytes, the exception dispatch spends ~2600 of them on the CONTEXT
@@ -898,8 +897,7 @@ static LONG CALLBACK scaly_guard_veh(EXCEPTION_POINTERS* ep)
              * closes it is one WRITABLE page below the guard page for the
              * dispatch to spill into (64 of 64 with it, measured the same way),
              * and that is a stack-LAYOUT change in fiber.scaly, not a shim
-             * change. tests/win32/WINDOWS-BOX.md section 5 has the numbers and
-             * the shape. */
+             * change. */
             scaly_guard_die();
         }
     }
@@ -1639,8 +1637,8 @@ int scaly_proc_wait_readable(int fd, int timeout_ms)
 
 /* The CRT opens stdin, stdout and stderr in TEXT mode: "\n" goes out as
  * "\r\n", a "\r\n" comes in as "\n" and a Ctrl-Z byte ends the input. A Scaly
- * program's standard streams carry BYTES on every target (decided 2026-10-03,
- * tests/win32/WINDOWS-BOX.md §8): what the program writes is what leaves it, as
+ * program's standard streams carry BYTES on every target (decided 2026-10-03):
+ * what the program writes is what leaves it, as
  * on POSIX, and a protocol framed by byte counts (the language server, a JSON
  * pipe) or a byte-compared golden needs no filter. So every program sets them
  * binary BEFORE main, through the CRT's own initializer table (.CRT$XCU, the
@@ -1756,7 +1754,7 @@ int scaly_eio_is_symlink(const char* path)
 
 /* ---- the JIT's memory: one arena for every section --------------------
  *
- * ★★★WHY (2026-10-03, tests/win32/WINDOWS-BOX.md §8). ORC's default memory
+ * ★★★WHY (2026-10-03). ORC's default memory
  * manager allocates each SECTION of a JIT'd object on its own, and on COFF
  * every linkonce function is a section of its own (a comdat). VirtualAlloc
  * places those allocations anywhere in the address space, sometimes more than
@@ -1774,8 +1772,8 @@ int scaly_eio_is_symlink(const char* path)
  * ★The LLVM C API is reached through GetProcAddress on LLVM-C.dll, because
  * this object is in every Scaly program and an ordinary program must not
  * depend on LLVM; only a JIT host has the DLL loaded when this runs.
- * ★A JIT host with LLVM linked INTO it has no such DLL (the experiment of
- * tests/win32/WINDOWS-BOX.md §10): there the three functions are looked up in
+ * ★A JIT host with LLVM linked INTO it has no such DLL:
+ * there the three functions are looked up in
  * the program itself, which exports them (tools/win-link.sh, the static
  * branch). Without that the arena was silently off and the truncation above
  * was back -- `scaly test` on opensp, 9 of 24 runs on x64.

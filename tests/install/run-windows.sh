@@ -6,8 +6,8 @@
 # docs/website/install.ps1 into a scratch prefix, and what a newcomer does
 # with the result. ★Everything after `install` runs on a BARE environment: a
 # PATH of Git Bash's own tools and System32 (no clang, no LLVM), neither LIB
-# nor INCLUDE — what a machine with the Build Tools and nothing else has
-# (ROADMAP-public.md, "Windows: Rust's way"). It is not a fresh Windows: the
+# nor INCLUDE — what a machine with the Build Tools and nothing else has.
+# It is not a fresh Windows: the
 # box has the Build Tools, and that is the one thing `scaly build` may use.
 #   payload    the tarball carries the seed and the standard packages and none
 #              of the compiler's, the language server's or the ports' sources

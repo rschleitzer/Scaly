@@ -1,4 +1,4 @@
-; Reductions in a promoted `for` (ROADMAP 4.8, route 2): a loop-external
+; Reductions in a promoted `for`: a loop-external
 ; integer written only as `set v: v OP e` or `if e > v  set v: e` runs in
 ; parallel, every chunk on its own copy from the identity, the partials
 ; combined into the variable with one atomicrmw per chunk. Each wave's body is

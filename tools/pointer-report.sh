@@ -28,7 +28,7 @@ mkdir -p "$OUT"
 ROOTS=""
 for r in packages/*/0.1.0/*.scaly; do
   b=$(echo "$r" | sed 's#packages/##; s#/0.1.0/#_#; s#\.scaly$##')
-  # dazzle needs the wide stack (CLAUDE.md: stage2 cannot compile it at 8 MB)
+  # dazzle needs the wide stack (stage2 cannot compile it at 8 MB)
   ( ulimit -s 65520; "$STAGE" --plan --no-prelude --no-tests --pointer-report "$r" ) > "$OUT/$b.txt" 2>&1
   rc=$?
   ROOTS="$ROOTS $OUT/$b.txt"

@@ -1,4 +1,4 @@
-; The json package's two parsers agree (ROADMAP-http.md stage B): the tree
+; The json package's two parsers agree: the tree
 ; builder (JsonValue.parse -- stage 2 over stage 1's structural bitmaps, 64
 ; bytes a block) and the pull reader (JsonReader, byte by byte) answer the
 ; same tokens with the same decoded text, or refuse with the same code at the

@@ -1,4 +1,4 @@
-; Stage-5 demo (ROADMAP 5.4): live training + inference of a 2-layer
+; Stage-5 demo: live training + inference of a 2-layer
 ; pre-LN char transformer on Thomas Mann's "Der Tod in Venedig"
 ; (tests/tensor/mann.txt), pure Scaly, zero Python. Trains with
 ; progress lines (step, windowed loss, steps/s), then extends a

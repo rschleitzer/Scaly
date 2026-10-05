@@ -1,4 +1,4 @@
-; The http package's HTTP/2 (ROADMAP-http.md stage E) against a client
+; The http package's HTTP/2 against a client
 ; written here over TCP by prior knowledge, with a send window of 1000
 ; bytes so that flow control has to work:
 ;   h2        the preface and SETTINGS are answered (the server's SETTINGS

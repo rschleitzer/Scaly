@@ -41,7 +41,7 @@ function exit(code: i32) extern
 ; `else if` chain: it nests one level per arm, and each arm costs ~15 KB with the
 ; opt -O2 compiler and ~12x that with the UNOPTIMIZED bootstrap stages. dazzle's
 ; TeXFOTBuilder.scaly has a 126-arm chain — that single chain is what makes
-; /tmp/scalyc_stage2 need ~24 MB to compile the package (CLAUDE.md iron rule).
+; /tmp/scalyc_stage2 need ~24 MB to compile the package.
 ;
 ; Without a guard the failure is a bare SIGSEGV with ONE frame in the lldb
 ; backtrace (the guard page) and no file, line, or hint — an hour of looking in
@@ -1379,7 +1379,7 @@ define Planner
 
         ; ====================================================================
         ; Two silent collisions inside ONE concept, each measured in a port
-        ; before it was diagnosed (CLAUDE.md, "Calls & operands"):
+        ; before it was diagnosed:
         ;
         ;   (a) a FIELD DECLARED TWICE. `define Box (v: int  w: int  v: int)`
         ;       lays out three slots at rc 0; the second `v` is real layout
@@ -1412,7 +1412,7 @@ define Planner
         ; ====================================================================
         ; (c) A `this` METHOD AND A STATIC of one concept with the same name
         ; and the same parameter list mangle to ONE Itanium symbol, and the
-        ; emitter keeps ONE body (CLAUDE.md; CLAUDE-history.md 2026-09-08).
+        ; emitter keeps ONE body (2026-09-08).
         ; Neither the receiver nor the implicit caller page is in the name, so
         ; `f(this, x: T)` and `f(x: T)` are `_ZN3Box4pickER3Box` twice over --
         ; the linker has nothing to object to, because only one definition
@@ -3745,7 +3745,7 @@ define Planner
             at: Span
         ) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns Vector[PlannedMemberAccess] io linked
 
-        ; ---- SIMD vector types: the planned intrinsic calls (ROADMAP-simd.md)
+        ; ---- SIMD vector types: the planned intrinsic calls
 
         ; the result of `a OP b` where one side is a vector: the vector type,
         ; a mask for a comparison; two vectors must be the same type, a
@@ -3796,7 +3796,7 @@ define Planner
         ; or passed name by the Local pointee on its TYPE, and a declared type
         ; carries none: `var r: ref[X]? null` / `set r: &a` / `r` returned the
         ; address of a stack slot at rc 0 -- also through a `when` binding,
-        ; the "set ref_var: <choose-bound value>" class CLAUDE.md carried as
+        ; the "set ref_var: <choose-bound value>" class, carried as
         ; ACTIVE since session 25. Only `let r &a` (no annotation) inherited
         ; the stamp. The binding's type is re-stamped in place, flow-
         ; insensitively on purpose: after `if c set r: &a` the name may hold
@@ -4335,9 +4335,9 @@ define Planner
         ; line inside a function that itself declares `throws` took the success
         ; arm, so the error vanished between two functions that both say
         ; `throws` and the caller's honest `choose ... when e: Error` saw a
-        ; success with a garbage value (measured 2026-09-07, TRAPS.md 3.9).
+        ; success with a garbage value (measured 2026-09-07).
         ;
-        ; The tree's convention is EXPLICIT propagation -- CLAUDE.md's "no
+        ; The tree's convention is EXPLICIT propagation -- "no
         ; exceptions, explicit error propagation", and
         ; tests/regress/throws_propagate.scaly writes `choose` plus `throw e`.
         ; What was missing is that leaving it out said nothing.
@@ -4497,7 +4497,7 @@ define Planner
 
         ; ================================================================
         ; The operation census (SCALYC_OPERATION_CENSUS=1,
-        ; ROADMAP-operation.md step 1): what the operand sequences of a root
+        ; step 1): what the operand sequences of a root
         ; ARE, counted where they are planned -- which thing follows which.
         ; It is what the new left-to-right path has to answer, and it counts
         ; the shapes the concept reads differently from today: a prefix in the
@@ -4525,7 +4525,7 @@ define Planner
         procedure operation_census_report(mutable this: Planner) @ret_nonlocal true @deep true io linked
 
         ; ================================================================
-        ; The operation driver (SCALYC_PENDING=1; ROADMAP-operation.md step 1,
+        ; The operation driver (SCALYC_PENDING=1; step 1,
         ; part 2): the loop that reads a sequence from the left, in front of
         ; collapse_operand_sequence#. It knows WHICH step comes next -- a name
         ; and its tuple, a value and its vector literal, a prefix at the
@@ -5322,7 +5322,7 @@ define Planner
         ; around it.
         ;
         ; ★★★ It was found by CONVERTING, not by reading: the pointer-pointee
-        ; out-cell `out: ref[ref[X]?]` -- the route CLAUDE.md records as proven
+        ; out-cell `out: ref[ref[X]?]` -- the route recorded as proven
         ; and never executed -- opens with `set out: null` at nearly every one
         ; of its sites, and the tree had NO spelling left for it.  Judging the
         ; reference refused the honest form, while `set *out: null` is refused
@@ -5447,7 +5447,7 @@ define Planner
         ; DEFAULTS were then never stored, so every default read back as `#f`,
         ; and the root-rule specificity sort never swapped a pair. Five backend
         ; suites plus `tests/dazzle/engine` went red, and the engine red was
-        ; written down in CLAUDE.md as "not ours".
+        ; written down as "not ours".
         ; ★A POINTER subscript is untouched and must stay so: the pre-pass
         ; FUSES `p[i]` into the `*` deref call, which is a real store and is
         ; what every hand-rolled buffer in the tree writes through. Only a `[]`
@@ -5632,7 +5632,7 @@ define Planner
         ; compiler's own sources: an NPO Option wrapper on either side
         ; (`plan_function(name, t)` where the parameter is declared
         ; `ref[PlannedType]?`, which s113 wraps to Option[ref[PlannedType]] —
-        ; the seam CLAUDE.md records hiding a pointer-shaped thing under a name
+        ; the seam that hides a pointer-shaped thing under a name
         ; no name-test knows), and an Option flowing INTO a plain parameter
         ; (`Emitter.emit`, argument Option[ref[Plan]] against `Plan`), which the
         ; nullability rule explicitly allows. Rules 3/4 cover ONE direction of
@@ -5974,7 +5974,7 @@ define Planner
         function marker_has_no_receiver(this: Planner, ops: Vector[PlannedOperand], mi: size_t) @ret_nonlocal true @deep true returns bool linked
 
         ; is_operator_char#: one of the eleven characters an operator identifier
-        ; consists of (CLAUDE.md, Lexical; the scanner's own class).
+        ; consists of (the scanner's own class).
         function is_operator_char(c: char) @ret_nonlocal true @deep true returns bool linked
 
         ; operand_is_operator_name#: an operand that is an operator identifier
@@ -5985,7 +5985,7 @@ define Planner
         ; (`Foo!(...)`, `x.m!(...)`), not negation. In `if !a` it stands alone,
         ; joins nothing, and the marker pass dropped it: `if !a` ran as `if a`,
         ; `!a and b` as `a and b`, `!(x = 3)` as `x = 3` -- all at rc 0, while
-        ; CLAUDE.md listed `!` as a synonym of `not` (2026-09-24; nothing in the
+        ; `!` was listed as a synonym of `not` (2026-09-24; nothing in the
         ; tree spelled it, found while probing `and`-chains). Negation is `not`.
         procedure report_dropped_thrown_marker(mutable this: Planner, life: Lifetime, at: Span) @ret_nonlocal true @deep true linked
 
@@ -6027,7 +6027,7 @@ define Planner
         ; a reference or a page-owning value on THIS routine's page. The store
         ; vector judged only the top of the source, so `set out: Holder(sb.
         ; to_string())` through an out-parameter handed the caller a String on
-        ; a released page at rc 0 (the "out-param store" class CLAUDE.md
+        ; a released page at rc 0 (the "out-param store" class,
         ; carried since the page-inference era; 2026-09-24). A parameter's
         ; field and `this.field` with a DIRECT local source were already judged.
         function operand_carries_local_guts(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
@@ -7350,8 +7350,8 @@ define Planner
 
         ; A method named without its tuple (`name.length`): the collapse used
         ; to append the empty tuple and call. A thing that is not written is
-        ; not there -- `x.m` is the method, `x.m()` the call
-        ; (ROADMAP-operation.md); until a method is a value of its own the
+        ; not there -- `x.m` is the method, `x.m()` the call;
+        ; until a method is a value of its own the
         ; bare name is refused. The call is still planned, so the rest of the
         ; routine is judged as before.
         procedure report_method_without_tuple(mutable this: Planner, loc: Span, method: String) @deep true linked
@@ -7581,7 +7581,7 @@ define Planner
         ; ...), so `x` escapes like a bare `return x` and plan_binding# builds
         ; it on the caller page. Before, `let s sb.to_string()` + `s.as_slice()`
         ; returned a view of a String on the routine's own frame, rc 0, garbage
-        ; after the next allocations (CLAUDE.md carried it as ACTIVE since
+        ; after the next allocations (carried as ACTIVE since
         ; 2026-09-13). A dotted FIELD read (one operand) was already collected;
         ; the call was not. Only a view-returning function is judged, so
         ; `return s.get_length()` elsewhere promotes nothing.
@@ -8116,7 +8116,7 @@ define Planner
         ; page fixpoints, cli.run's purity gate and emission. The differences
         ; are the phase times (2026-09-26: planning bodies is ~40 % of a
         ; compile in every package, which is what a parallel planner could
-        ; win at most; ROADMAP 4.8). Off, it costs one getenv per mark.
+        ; win at most). Off, it costs one getenv per mark.
         procedure phase_mark(this: Planner, phase_name: pointer[const_char]) @deep true io linked
 
         procedure plan_program(mutable this: Planner, mutable prog: Program) @page true @direct true @stores true @ret_caller true @deep true returns ref[Plan]? io linked
@@ -8466,7 +8466,7 @@ define Planner
 
     function is_scalar_value_type_name(name: String) @ret_nonlocal true @deep true returns bool linked
 
-    ; ---- SIMD vector types (ROADMAP-simd.md) ------------------------------
+    ; ---- SIMD vector types -------------------------------------------------
     ; Built-in VALUE types named by element and lane count, lowered to LLVM
     ; vectors. A name is all the compiler needs: no grammar, no concept.
 
@@ -9448,7 +9448,7 @@ define Planner
     ; (measured on `VM.resolve_set` / `ProcessContext.push_style_end`, where the
     ; temporaries of a `while` loop then die one level further out). Its sibling
     ; `ret_page_type_last_name` already unwraps both. Same class as the six NPO
-    ; sightings in CLAUDE.md: ask the shape, not the name.
+    ; sightings: ask the shape, not the name.
     function ret_page_type_is_page_pointer(t: scalyc.compiler.Model.Type) @deep true returns bool linked
 
     ; ---- the RESOLVED-callee decision -----------------------------------------
@@ -9661,7 +9661,7 @@ define Planner
     ; site; `pl` supplies the precomputed transitive set.
     ; env-gated probe (SCALYC_PAGE_PROBE=1): one line per page-granting
     ; return of function_needs_caller_page, tagged R1..R7 -- the instrument
-    ; CLAUDE.md asks to rebuild for every page question, kept this time.
+    ; rebuilt for every page question, kept this time.
     procedure page_probe(func: Function, tag: pointer[const_char]) @deep true io linked
 
     procedure function_needs_caller_page(pl: Planner, mutable func: Function) @ret_nonlocal true @deep true returns bool io linked

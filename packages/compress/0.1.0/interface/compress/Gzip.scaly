@@ -1,6 +1,6 @@
 ; gzip through libdeflate (github.com/ebiggers/libdeflate), bound directly:
 ; its API is size_t and opaque pointers throughout, so no C shim is needed
-; (CLAUDE.md, the containment rule) and no `long` crosses the boundary. The
+; (the containment rule) and no `long` crosses the boundary. The
 ; package root declares `extern deflate`; the tool finds and links it.
 ;
 ; A compressor is not safe to share between threads. Each thread makes its

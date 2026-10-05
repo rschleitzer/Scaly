@@ -6,7 +6,7 @@
 ; into main's chain by the free that finds it full. Before, an adopted
 ; bucket stayed in main's chain after its last page came back: the process
 ; kept a bucket per 63 pages ever handed over — the ~0.6 GiB per 5 s a
-; server's acceptor cost under HttpArena's limited-conn (ROADMAP-http.md).
+; server's acceptor cost under HttpArena's limited-conn.
 ; Now a bucket of the freeing thread's own chain that becomes empty goes
 ; back to the system, and a handful stay alive (the refuter: without
 ; release_idle_bucket the count ends in the hundreds). The owner token that

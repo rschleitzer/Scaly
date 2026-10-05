@@ -1,14 +1,14 @@
-; Die Grenze der Regel aus xfail_try_without_throw: gemeldet wird ein try mit
-; unerreichbaren `when`-ARMEN. Ein try ohne Arme sagt nichts ueber Fehlerarten
-; und bleibt unbehelligt -- sonst waere die Diagnose eine Aussage ueber die
-; Form statt ueber die Unerreichbarkeit.
+; The limit of the rule from xfail_try_without_throw: what is reported is a try
+; with unreachable `when` ARMS. A try without arms says nothing about error kinds
+; and is left alone -- otherwise the diagnostic would be a statement about the
+; form instead of about the unreachability.
 ;
-; ★Seit 2026-09-07 ist diese Form zugleich ein FANGPUNKT (emit_try_panic_catch#,
-; try_else_catches_panic.scaly): hier panickt nichts, also laeuft der
-; else-Zweig nie -- was der Test weiter prueft, ist die Diagnose-Grenze und
-; der ungestoerte Erfolgspfad.
+; ★Since 2026-09-07 this form is also a CATCH POINT (emit_try_panic_catch#,
+; try_else_catches_panic.scaly): nothing panics here, so the
+; else branch never runs -- what the test goes on checking is the diagnostic's
+; limit and the undisturbed success path.
 ;
-; Erwartet: PASS
+; Expected: PASS
 
 function plain(n: int) returns int
     n + 1

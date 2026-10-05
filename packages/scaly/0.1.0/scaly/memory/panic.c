@@ -1,6 +1,6 @@
-/* Catch points for a runtime panic (TRAPS.md 0, 5.6, 5.7).
+/* Catch points for a runtime panic.
  *
- * Why this is C and not Scaly, by the containment rule in CLAUDE.md:
+ * Why this is C and not Scaly, by the containment rule:
  *   (a) `jmp_buf` is an OS- and ARCH-specific struct layout, and the committed
  *       seed ships ONE scaly.ll for every target, so its size cannot be a
  *       Scaly declaration.
@@ -24,15 +24,15 @@
  * why panic.o stands EXPLICITLY on every scalyc/scalyls link line
  * (build-from-seed.sh, seed.sh, verify-seed.sh, install.sh, tests/lsp/run.sh)
  * and in every archive: a `--jit` run resolves externs out of the HOST
- * PROCESS, where an undefined extern becomes a silently 0-returning stub
- * (tests/dazzle/COMPLETENESS.md carries the account for the ctime shim). For
+ * PROCESS, where an undefined extern becomes a silently 0-returning stub.
+ * For
  * scaly_panic_jump a 0 means "no catch point installed", so the failure mode
  * would not be a crash but something worse: catching would silently never
  * work under --jit, and every panic would end the process as if nobody had
  * asked to catch it.
  *
- * ★★★BROKEN ON WINDOWS, MEASURED (2026-09-19, CI run 35465806161; TRAPS.md
- * 3.22). This said "unproven" until the Windows job compiled this file for the
+ * ★★★BROKEN ON WINDOWS, MEASURED (2026-09-19, CI run 35465806161).
+ * This said "unproven" until the Windows job compiled this file for the
  * first time: of the 98 corpus programs of rung 5, 92 pass and the SIX that
  * fail are exactly the ones that CATCH. They link, start and print the line
  * before the catch point, then end with exit 127 and an empty stderr. The
@@ -47,7 +47,7 @@
 #include <stddef.h>
 #include <stdlib.h>   /* malloc/free for the emitter-side frames */
 
-/* ★★★WINDOWS CATCHES WITH ITS OWN PAIR (2026-10-03, TRAPS.md 3.22b). The
+/* ★★★WINDOWS CATCHES WITH ITS OWN PAIR (2026-10-03). The
  * CRT's longjmp unwinds through SEH there, and that needs registered unwind
  * data for every frame between the throw and the catch -- which code the JIT
  * generated does not have, and which arm64 does not let a caller opt out of
@@ -84,7 +84,7 @@ typedef jmp_buf scaly_jmp_buf;
 /* The region-stack watermark and the unwind live in Scaly
  * (scaly/memory/root_pages.scaly). They are reached through function POINTERS
  * that the Scaly side passes in, deliberately: writing their Itanium mangled
- * names here would freeze their signatures the way CLAUDE.md warns about, and
+ * names here would freeze their signatures, and
  * the eight symbols that already carry that cost are enough. */
 typedef void *(*scaly_mark_fn)(void);
 typedef void (*scaly_unwind_fn)(void *);
@@ -472,7 +472,7 @@ int scaly_panic_last_code(void) { return scaly_last_code_v; }
 /* --- re-raising a fault a WORKER caught ----------------------------------
  *
  * ★★★A self-scaled `for` runs its body on other threads, and a jump must
- * never cross stacks (TRAPS.md 3.16). So a fault inside a parallel iteration
+ * never cross stacks. So a fault inside a parallel iteration
  * is caught ON THE WORKER, recorded in the wave's TaskGroup, and raised again
  * HERE -- on the submitting thread, inside whatever `try` the submitter
  * wrapped the loop in. That is the AggregateException shape with one fault:
@@ -505,7 +505,7 @@ void scaly_panic_reraise(int kind, const char *what, size_t index,
  * fiber has its own stack. The chain must therefore be per FIBER, not per
  * thread: while fiber A is suspended, its frames must be invisible, or a
  * panic raised by whoever runs next would longjmp into a stack that is not
- * running. Measured before the fix (TRAPS.md 3.16): a fiber armed a catch
+ * running. Measured before the fix: a fiber armed a catch
  * point and yielded, main then violated a bound, and the FIBER's else arm ran
  * -- on the suspended stack -- and died in Fiber.finish with exit 21 because
  * `current_fiber` was not it.

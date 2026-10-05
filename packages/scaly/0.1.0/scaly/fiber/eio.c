@@ -289,7 +289,7 @@ int scaly_eio_backend(int q)
 #include <sys/mman.h>
 #include <sys/syscall.h>
 
-/* ---- io_uring (2026-09-28, ROADMAP-http.md) ------------------------------
+/* ---- io_uring (2026-09-28) -----------------------------------------------
  *
  * The poller is an io_uring when the kernel offers one this shim can use
  * (IORING_FEAT_EXT_ARG, 5.11: a wait with a timeout; NODROP; SINGLE_MMAP)
@@ -1326,8 +1326,8 @@ int scaly_eio_ncpu(void)
     return (int)n;
 }
 
-/* Sleep for us microseconds — the fork-join ticker's pace (ROADMAP 4.8,
- * route 3). Shim rule (a): struct timespec and nanosleep are POSIX, the
+/* Sleep for us microseconds — the fork-join ticker's pace (route 3).
+ * Shim rule (a): struct timespec and nanosleep are POSIX, the
  * Windows twin is a high-resolution waitable timer. */
 void scaly_eio_sleep_us(unsigned int us)
 {
@@ -1492,7 +1492,7 @@ int scaly_thread_spawn_sized(size_t* thread, void* start, void* arg, size_t stac
  * ★★★It exists for the same reason SCALYC_STACK_BUDGET exists in the
  * planner: an out-of-memory trap cannot be exercised deterministically any
  * other way, and a trap no test ever fires is a trap that may have stopped
- * working (TRAPS.md 1.5). `scaly_alloc_fail_after(n)` makes the (n+1)-th
+ * working. `scaly_alloc_fail_after(n)` makes the (n+1)-th
  * following aligned allocation answer NULL, once; `scaly_alloc_fail_after(-1)`
  * disarms it.
  *
@@ -1536,7 +1536,7 @@ void scaly_aligned_free(void* p)
  * NUL-terminated into buf, answers its length and sets *is_dir; -1 is the
  * end. "." and ".." are never answered, and a name that does not fit cap is
  * skipped. The handle is the DIR* itself. First user: the one tool finding a
- * package's files (ROADMAP-public.md, stage A).
+ * package's files.
  */
 #include <dirent.h>
 #include <sys/stat.h>

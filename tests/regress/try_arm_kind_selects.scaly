@@ -1,5 +1,5 @@
 ; Regression: a `when` arm selects by the KIND of the panic, not by "any
-; panic" (TRAPS.md 3.12).
+; panic".
 ;
 ; With more than one catchable kind that is a checkable claim -- and the
 ; coupling it rests on is tight: the variant TAG of one union in the prelude

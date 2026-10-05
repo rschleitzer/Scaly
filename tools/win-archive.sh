@@ -3,7 +3,7 @@
 # link driver looks for it (cli.scaly runtime_archive_path: $TMP/libscaly.lib,
 # which Git Bash mounts as /tmp). The POSIX equivalent lives inside
 # tools/build-from-seed.sh / bootstrap.sh; those go through tools/llvm-env.sh
-# and do not start here (CLAUDE-tooling.md), hence this file.
+# and do not start here, hence this file.
 #
 # The recipe is the one CI's `windows` job runs at rung 3 (.github/workflows/
 # seed.yml), object for object: the stdlib emitted with --no-prelude --no-tests,

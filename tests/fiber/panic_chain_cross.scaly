@@ -1,4 +1,4 @@
-; The defect this per-fiber chain closes, as a gate (TRAPS.md 3.16).
+; The defect this per-fiber chain closes, as a gate.
 ;
 ; Before the fix, a fiber that armed a catch point and suspended inside it
 ; stayed on the thread's chain -- so when MAIN violated a bound, the panic

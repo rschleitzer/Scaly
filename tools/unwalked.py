@@ -1,25 +1,25 @@
-"""Was passiert im Body WIRKLICH mit einem UNWALKED-Pufferparameter?
+"""What REALLY happens in the body to an UNWALKED buffer parameter?
 
-`refslice` sagt nur `not walks(body, p)` -- keine Arithmetik, keine
-Indizierung -- und nennt das zu Recht die Abwesenheit von Evidenz.  Diese
-Aufschluesselung fragt, WAS statt dessen passiert.  Genau diese Frage hat bei
-den Handpuffern neun konvertierbare Sites unter einer Klassenaussage
-hervorgeholt.
+`refslice` says only `not walks(body, p)` -- no arithmetic, no
+indexing -- and rightly calls that the absence of evidence.  This
+breakdown asks WHAT happens instead.  Exactly this question brought out,
+for the hand buffers, nine convertible sites from under a statement about
+a class.
 
-★★★GEMESSEN 2026-09-04 ueber alle Pakete: **427 UNWALKED, davon 0 tote
-Parameter und 280 reine Forwarder.**  Die Klasse ist damit das, was der
-refslice-Kommentar sagt -- Abwesenheit von Evidenz -- aber die
-Weiterreich-ZIELE sind die eigentliche Auskunft: `kw_eq` fuehrt die Liste mit
-85, und genau ueber diese 85 kam der Fund dieser Runde (der GENERATOR von
-`Keywords.scaly` erzeugte noch die Vor-Slice-Signatur, eine Regeneration haette
-die Konversion an 88 Stellen still zurueckgedreht).
+★★★MEASURED 2026-09-04 over all packages: **427 UNWALKED, of them 0 dead
+parameters and 280 pure forwarders.**  The class is thus what the
+refslice comment says -- absence of evidence -- but the
+forwarding TARGETS are the real information: `kw_eq` leads the list with
+85, and it was through exactly these 85 that this round's find came (the GENERATOR
+of `Keywords.scaly` still produced the pre-Slice signature, a regeneration would
+have silently reverted the conversion at 88 sites).
 
-★★★DIE FALLE, DIE DIESES SKRIPT ZUERST SELBST STELLTE: `collect()` liefert
-`body` als STRING.  `for l in r['body']` laeuft dann ueber ZEICHEN, findet nie
-einen Parameternamen und meldet JEDEN Parameter als "unbenutzt" -- der erste
-Lauf sagte 314 tote Parameter, und die Zahl sah plausibel aus.  Deshalb die
-Selbstpruefung unten: sie beweist, dass das Instrument feuert, bevor eine Zahl
-geglaubt wird.
+★★★THE TRAP THIS SCRIPT FIRST SET ITSELF: `collect()` delivers
+`body` as a STRING.  `for l in r['body']` then runs over CHARACTERS, never finds
+a parameter name and reports EVERY parameter as "unused" -- the first
+run said 314 dead parameters, and the number looked plausible.  Hence the
+self-check below: it proves that the instrument fires before a number
+is believed.
 """
 import re, os, sys, collections
 sys.path.insert(0, os.path.abspath('tools/refout'))
@@ -34,14 +34,14 @@ fwd_targets = collections.Counter()
 
 routines = collect(['packages'])
 
-# ★★★SELBSTPRUEFUNG: `body` ist ein STRING, kein Zeilenlist -- eine Iteration
-# darueber laeuft ueber ZEICHEN und findet NIE einen Parameternamen, worauf
-# JEDER Parameter als "unbenutzt" gilt.  Genau so hat dieses Skript zuerst
-# 314 tote Parameter gemeldet.  Ein Instrument, das nicht feuern kann, ist
-# schlimmer als keins -- also erst beweisen, dass es feuert.
+# ★★★SELF-CHECK: `body` is a STRING, not a list of lines -- an iteration
+# over it runs over CHARACTERS and NEVER finds a parameter name, whereupon
+# EVERY parameter counts as "unused".  That is exactly how this script first
+# reported 314 dead parameters.  An instrument that cannot fire is
+# worse than none -- so prove first that it fires.
 _probe = [x for x in routines if x['fn'] == 'usage_put_stringc']
-assert _probe, 'Sondenroutine nicht gefunden'
-assert 'bp' in _probe[0]['body'], 'SELBSTPRUEFUNG FEHLGESCHLAGEN: Body sieht den Parameter nicht'
+assert _probe, 'probe routine not found'
+assert 'bp' in _probe[0]['body'], 'SELF-CHECK FAILED: the body does not see the parameter'
 
 for r in routines:
     for pn, pt in r['params']:
@@ -49,32 +49,32 @@ for r in routines:
         if not m: continue
         elem = m.group(1)
         if elem in NON_ELEMENT: continue
-        if rs.walks(r['body'], pn): continue          # nur UNWALKED
+        if rs.walks(r['body'], pn): continue          # UNWALKED only
         body = [strip_comment(l) for l in r['body'].split('\n')]
         occ = [l for l in body if re.search(rf'\b{re.escape(pn)}\b', l)]
         if not occ:
-            st['UNBENUTZT (toter Parameter)'] += 1
-            if len(ex['UNBENUTZT (toter Parameter)']) < 6:
-                ex['UNBENUTZT (toter Parameter)'].append(f"{r['file']}:{r['line']}  {r['fn']}({pn})")
+            st['UNUSED (dead parameter)'] += 1
+            if len(ex['UNUSED (dead parameter)']) < 6:
+                ex['UNUSED (dead parameter)'].append(f"{r['file']}:{r['line']}  {r['fn']}({pn})")
             continue
         kinds = set()
         for l in occ:
             if re.search(rf'\*\s*{re.escape(pn)}\b', l):        kinds.add('bare deref *p')
             if re.search(rf'\b{re.escape(pn)}\s*(=|<>)\s*null', l) or \
-               re.search(rf'null\s*(=|<>)\s*\b{re.escape(pn)}\b', l): kinds.add('null-Test')
-            if re.search(rf'\b{re.escape(pn)}\s+as\b', l):      kinds.add('Cast')
+               re.search(rf'null\s*(=|<>)\s*\b{re.escape(pn)}\b', l): kinds.add('null test')
+            if re.search(rf'\b{re.escape(pn)}\s+as\b', l):      kinds.add('cast')
             mm = re.findall(r'\b([A-Za-z_][A-Za-z0-9_.]*)\s*\(', l)
             if mm and re.search(rf'\(\s*[^)]*\b{re.escape(pn)}\b', l):
-                kinds.add('als Argument weitergereicht')
+                kinds.add('handed on as an argument')
                 for t in mm: fwd_targets[t.split('.')[-1]] += 1
-            if re.search(rf'set\s+\b{re.escape(pn)}\b', l):     kinds.add('neu zugewiesen')
-        k = ' + '.join(sorted(kinds)) or 'sonstige Erwaehnung'
+            if re.search(rf'set\s+\b{re.escape(pn)}\b', l):     kinds.add('reassigned')
+        k = ' + '.join(sorted(kinds)) or 'other mention'
         st[k] += 1
         if len(ex[k]) < 4:
             ex[k].append(f"{r['file']}:{r['line']}  {r['fn']}({pn}: pointer[{elem}])")
 for k, n in st.most_common():
     print(f'{n:5}  {k}')
     for e in ex[k]: print(f'         {e}')
-print('--- gesamt', sum(st.values()))
-print('\n=== haeufigste Weiterreich-Ziele ===')
+print('--- total', sum(st.values()))
+print('\n=== most frequent forwarding targets ===')
 for t, n in fwd_targets.most_common(12): print(f'{n:5}  {t}')

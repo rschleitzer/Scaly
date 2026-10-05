@@ -10,7 +10,7 @@
 #   SCALY_STAGE_DEFAULT  the compiler a runner uses when none is passed:
 #                        /tmp/scalyc_stage2 on POSIX (tools/bootstrap.sh), the
 #                        tree's scalyc/build/scalyc.exe on Windows, where the
-#                        bootstrap scripts do not start (CLAUDE-tooling.md)
+#                        bootstrap scripts do not start
 #   LLVM_LIBDIR/LLVM_LIBNAME  preset on Windows for the `; link: llvm` fixtures
 #                        (tools/llvm-env.sh finds no LLVM there); the 8.3
 #                        spelling because cli.scaly's link driver hands -L through
@@ -25,9 +25,8 @@
 #                        2026-09-20, `--jit` died with SIGSEGV). A JIT host
 #                        exports its runtime now (tools/win-link.sh --export),
 #                        the JIT reaches it through import slots
-#                        (Emitter.jit_import_externals) and catches without SEH
-#                        (TRAPS.md 3.22b) -- tests/win32/WINDOWS-BOX.md §8. A
-#                        compiler built before that still cannot JIT there.
+#                        (Emitter.jit_import_externals) and catches without SEH.
+#                        A compiler built before that still cannot JIT there.
 #
 # The POSIX values are byte-for-byte what every runner hard-coded before
 # 2026-09-20; sourcing this on a POSIX host changes nothing. tools/win-env.sh
@@ -51,7 +50,7 @@ if [ "$SCALY_COFF" = 1 ]; then
     LLVM_LIBDIR=$(cygpath -u "$(cygpath -d '/c/Program Files/LLVM/lib')")
     LLVM_LIBNAME=LLVM-C
   fi
-  # ★`TMP` is not a free name here (tests/win32/WINDOWS-BOX.md): Windows
+  # ★`TMP` is not a free name here: Windows
   # EXPORTS it, and a dozen runners write `TMP="$(mktemp -d)"` for their own
   # scratch — an assignment to an exported name stays exported, so every
   # compiler they then start read ITS scratch dir off the runner's, and the
@@ -83,7 +82,7 @@ scaly_jit_available() { true; }
 # stdout of a program on the Windows box arrived with CRLF until 2026-10-03: the
 # CRT's fd 1 starts in TEXT mode and turned every `\n` our runtime writes into
 # `\r\n`. A Scaly program's standard streams are BINARY there since (set before
-# main by the runtime; tests/win32/WINDOWS-BOX.md §8), so for a program a current
+# main by the runtime), so for a program a current
 # compiler built this filter removes nothing; it stays for objects an older
 # compiler emitted. Every Windows rung of CI strips at the COMPARISON
 # (tests/win32/lf-wrapper.sh has the account); this is the same filter,

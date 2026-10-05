@@ -14,7 +14,7 @@
 #              the compiler and the language server CALL the library, and a
 #              DLL beside the .exe is found before anything on PATH, so which
 #              LLVM answers is not decided by the shell that happened to start
-#              it (the winget LLVM 23 is the trap, CLAUDE-tooling.md)
+#              it (the winget LLVM 23 is the trap)
 #   --lto      the inputs are bitcode from `clang -flto=full -c`: adds
 #              -O2 -fuse-ld=lld -flto=full (link.exe cannot read bitcode; -O2
 #              on the LINK is what sets the LTO pipeline's level) and
@@ -30,7 +30,7 @@
 # COFF spelling of `ulimit -s 65520`, because Windows gives a thread 1 MB and
 # the planner is bound in nesting depth. ★`-stack:`, never `/STACK:`: under
 # Git Bash an argument beginning with `/` is rewritten into a path on its way
-# to a native program (tests/win32/WINDOWS-BOX.md).
+# to a native program.
 set -eu
 cd "$(dirname "$0")/.."
 . tools/win-env.sh || exit 1
@@ -116,7 +116,7 @@ fi
 # The JIT host: a program that runs the in-process JIT resolves the runtime
 # through GetProcAddress on ITSELF, and an .exe exports nothing -- every stdlib
 # function was then a stub answering 0 (Emitter.emit_jit_stubs) and every C
-# shim an unresolved symbol (2026-10-03, tests/win32/WINDOWS-BOX.md §8). So a
+# shim an unresolved symbol (2026-10-03). So a
 # link that names runtime inputs with --export (and every --llvm --runtime
 # link: the archive) exports the FUNCTIONS they define, through a .def written
 # here. Only the runtime: exporting the whole compiler would keep LTO from

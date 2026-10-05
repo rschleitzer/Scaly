@@ -16,8 +16,8 @@ and the exit code are run.sh's of before. The branches, by MARKER in the fixture
   ; env: K=V     environment of the COMPILE;  ; run-env: K=V  of the PROGRAM
   ; args: ...    compiler flags;  ; link: llvm  the libLLVM link flags
 
-A driver and not `xargs -P bash -c run_one` since 2026-10-03
-(tests/win32/WINDOWS-BOX.md §8): each fixture started a bash and some ten
+A driver and not `xargs -P bash -c run_one` since 2026-10-03:
+each fixture started a bash and some ten
 processes around the one compile and the one run, and Git Bash emulates every
 fork -- measured on the Windows box, the median fixture spent 1.3 s in that set-up
 against 0.7 s compiling and linking.

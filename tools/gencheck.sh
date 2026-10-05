@@ -1,37 +1,37 @@
 #!/bin/bash
-# Prueft, ob jede GENERIERTE Datei noch das ist, was ihr Generator erzeugt.
+# Checks whether every GENERATED file still is what its generator produces.
 #
-# ★★★DIE KLASSE, DIE DIESES GATE FAENGT: eine Konversion wird in der
-# GENERIERTEN DATEI gemacht und nicht im Generator.  Bis zur naechsten
-# Regeneration faellt das nicht auf, dann dreht sie still zurueck.  Zweimal
-# gefunden am 2026-09-04:
-#   * tscaly/Keywords.scaly  -- kw_eq auf Slice[char] konvertiert, Generator
-#     erzeugte weiter (pointer[const_char], int): 88 Stellen.
-#   * dazzle/CharNames.scaly + Sdata.scaly -- pointer[Interpreter] -> ref und
-#     der Literal-Cast-Sweep (` as u32`): 1830 Diff-Zeilen.
+# ★★★THE CLASS THIS GATE CATCHES: a conversion is made in the
+# GENERATED FILE and not in the generator.  Until the next
+# regeneration nobody notices, then it silently reverts.  Found twice
+# on 2026-09-04:
+#   * tscaly/Keywords.scaly  -- kw_eq converted to Slice[char], the generator
+#     went on producing (pointer[const_char], int): 88 sites.
+#   * dazzle/CharNames.scaly + Sdata.scaly -- pointer[Interpreter] -> ref and
+#     the literal-cast sweep (` as u32`): 1830 diff lines.
 #
-# ★Die openjade/opensp-Quellen fehlen auf dem Entwicklungsrechner, also kann
-# chartablegen nicht gegen die echte Tabelle laufen.  Die Quelle wird deshalb
-# AUS DER AUSGABE REKONSTRUIERT -- das prueft weiterhin alles, was nicht die
-# Eintragsdaten selbst ist (Signaturen, Rahmen, Zahlenformat), und genau dort
-# sassen beide Funde.
+# ★The openjade/opensp sources are missing on the development machine, so
+# chartablegen cannot run against the real table.  The source is therefore
+# RECONSTRUCTED FROM THE OUTPUT -- that still checks everything that is not
+# the entry data itself (signatures, frame, number format), and that is
+# exactly where both finds sat.
 set -u
 cd "$(dirname "$0")/.."
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 fail=0
 
-# --- 1. (entfallen 2026-10-05) ---------------------------------------------
-# Die Generatoren, die ihre Zieldatei direkt schreiben, waren die von tscaly
-# (packages/tscaly/tools/gen*.py). tscaly ist ein eigenes Repository
-# (github.com/rschleitzer/tscaly); der Lauf dort: jeden Generator starten und
-# die erzeugten Dateien vorher und nachher per Prüfsumme vergleichen.
+# --- 1. (dropped 2026-10-05) -----------------------------------------------
+# The generators that write their target file directly were tscaly's
+# (packages/tscaly/tools/gen*.py). tscaly is a repository of its own
+# (github.com/rschleitzer/tscaly); the run there: start every generator and
+# compare the generated files before and after by checksum.
 
-# --- 2. chartablegen: Quelle aus der Ausgabe rekonstruieren ---------------
+# --- 2. chartablegen: reconstruct the source from the output --------------
 python3 - "$TMP" <<'PY'
 import re, sys
 tmp = sys.argv[1]
-# Der Dateiname der Quelle landet IM KOPF der Ausgabe, also muss die
-# rekonstruierte Datei genau so heissen wie die echte Referenztabelle.
+# The source's file name ends up IN THE HEAD of the output, so the
+# reconstructed file must have exactly the name of the real reference table.
 for concept, call, src in (('CharNames', 'def_char', 'charNames.h'),
                            ('Sdata', 'def_sdata_char', 'sdata.h')):
     f = f'packages/dazzle/0.1.0/dazzle/{concept}.scaly'
@@ -51,5 +51,5 @@ for pair in "CharNames:charNames.h" "Sdata:sdata.h"; do
     fi
 done
 
-[ $fail = 0 ] && echo "gencheck: OK — jede geprüfte generierte Datei ist Generatorausgabe"
+[ $fail = 0 ] && echo "gencheck: OK — every generated file checked is generator output"
 exit $fail

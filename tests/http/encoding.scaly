@@ -1,4 +1,4 @@
-; The http package's content-coding negotiation (ROADMAP-http.md stage B):
+; The http package's content-coding negotiation:
 ;   quality   coding_quality reads a coding's weight off an Accept-Encoding
 ;             value: bare, with q, case-insensitive, absent
 ;   accepts   Request.accepts_encoding: named with q > 0, refused by q=0,

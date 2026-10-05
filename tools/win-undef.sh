@@ -15,8 +15,8 @@
 # archive is ONE object with ONE .text section (no per-function COMDATs), so a
 # COFF linker cannot discard anything — a program that touches the runtime AT
 # ALL must resolve every symbol below, not just the ones on its own call path.
-# That is the same "the archive is one object" mechanic as the -lm rule in
-# CLAUDE.md, and it is why "link something that uses the runtime" is not a
+# That is the same "the archive is one object" mechanic as the -lm rule,
+# and it is why "link something that uses the runtime" is not a
 # single rung: it forces brocken 1, 2 and 3 at once.
 #
 # ★SCOPE, and why it is wider than the runtime root (2026-08-10): it used to
@@ -177,7 +177,7 @@ ALL=$(printf '%s\n' "$ALL" | while read -r s
 # a program with a `try` emits the call directly from the Emitter, not through
 # a shim.
 # ★★★`_setjmp` is the COFF spelling and it is what a `try` emits SINCE
-# 2026-09-20 (TRAPS.md 3.22): on Win64 the CRT's catch point takes the frame as
+# 2026-09-20: on Win64 the CRT's catch point takes the frame as
 # a second argument, which is what made every catching program die, so the
 # Emitter emits `i32 @_setjmp(ptr, ptr)` for COFF and plain `setjmp` elsewhere.
 # **This list went INCOMPLETE on the very commit that FIXED the catch** -- the

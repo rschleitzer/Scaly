@@ -1,7 +1,7 @@
 ; Runtime trap: `x as ref[T]` met a null (exit 21).
 ;
-; ★Until today NO gate pinned this trap -- the same situation TRAPS.md 1.5
-; describes for the eight bounds traps, and invisible for the same reason: a
+; ★Until today NO gate pinned this trap -- the same situation as
+; for the eight bounds traps, and invisible for the same reason: a
 ; trap cannot reach the PASS-on-stdout convention. Hence an `expect-rc`
 ; fixture.
 ;

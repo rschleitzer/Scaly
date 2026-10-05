@@ -1,4 +1,4 @@
-; redis — a Redis client over RESP2 (ROADMAP-http.md, stage C: the L2 cache
+; redis — a Redis client over RESP2 (stage C: the L2 cache
 ; of the production-stack profile): commands sent as arrays of bulk
 ; strings, one reply read per command, and a pool of connections per
 ; scheduler thread. The modules, in dependency order: the byte buffer, the

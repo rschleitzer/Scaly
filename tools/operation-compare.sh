@@ -1,6 +1,6 @@
 #!/bin/bash
 # tools/operation-compare.sh — the yardstick of the operation driver
-# (ROADMAP-operation.md step 1, part 2; Planner.operation#): every package
+# (Planner.operation#): every package
 # root is emitted twice, by the old collapse alone and with the driver in
 # front of it (SCALYC_PENDING=1), and the two IR files must be the same bytes.
 # With it the driver's counters: how many sequences it answered, the steps it

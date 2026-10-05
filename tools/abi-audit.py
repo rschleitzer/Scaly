@@ -234,7 +234,7 @@ def main():
             continue
         ret_c, args_c, raw, ok = protos[name]
         if "..." in args_c:
-            unparsed.append((name, f"variadisch: {raw}"))
+            unparsed.append((name, f"variadic: {raw}"))
             continue
         # EVERY declaration of the name, not just the first: a symbol declared
         # in three packages used to be width-checked once, so a mismatch in the
@@ -258,7 +258,7 @@ def main():
             if "*" not in ret_c:
                 cw, sw = width_c(base), S_WIDTH.get(sret_i)
                 if cw is None:
-                    unparsed.append((name, f"unbewertbarer Rueckgabetyp '{base}': {raw}"))
+                    unparsed.append((name, f"return type '{base}' cannot be judged: {raw}"))
                 elif sw is None:
                     pass
                 elif cw != sw:
@@ -289,8 +289,8 @@ def main():
 
     n_result = sum(1 for _, _, iss, _ in findings for i in iss if i.startswith("RESULT"))
     n_param = sum(1 for _, _, iss, _ in findings for i in iss if not i.startswith("RESULT"))
-    print(f"geprüfte Positionen (Parameter + Ergebnis): {checked}")
-    print(f"BEFUNDE: {len(findings)}")
+    print(f"positions checked (parameters + result): {checked}")
+    print(f"FINDINGS: {len(findings)}")
     # Reported apart because they are not equally dangerous. A wrong RESULT
     # width can flip the sign of a returned value (the upper half of the return
     # register is unspecified) -- that is a bug, and it gates. A wrong PARAMETER
@@ -298,8 +298,8 @@ def main():
     # register and a 32-bit callee reads exactly the low half it is entitled to.
     # Those are pinned by count in tests/abi/run.sh instead, so a NEW one still
     # gets caught.
-    print(f"RESULT-BEFUNDE: {n_result}")
-    print(f"PARAM-BEFUNDE: {n_param}")
+    print(f"RESULT FINDINGS: {n_result}")
+    print(f"PARAM FINDINGS: {n_param}")
     for name, entries, issues, raw in findings:
         print(f"\n### {name}\n    C: {raw}")
         for path, lineno, sig, sret in entries:
@@ -307,16 +307,16 @@ def main():
         for i in issues:
             print(f"    -> {i}")
     if not quiet:
-        print(f"\nkein Prototyp in den Headern gefunden ({len(unmatched)}) — "
-              f"NICHT als sauber verbucht:")
+        print(f"\nno prototype found in the headers ({len(unmatched)}) — "
+              f"NOT booked as clean:")
         print("    " + " ".join(sorted(unmatched)))
         if unknown_params:
             u = {}
             for n, t in unknown_params:
                 u[t] = u.get(t, 0) + 1
-            print(f"\nParametertypen ohne bekannte Breite ({len(unknown_params)} Stellen) — "
-                  f"nicht verbucht: {dict(sorted(u.items(), key=lambda kv: -kv[1]))}")
-        print(f"\nnicht sicher geparst ({len(unparsed)}) — ebenfalls nicht verbucht:")
+            print(f"\nparameter types without a known width ({len(unknown_params)} positions) — "
+                  f"not booked: {dict(sorted(u.items(), key=lambda kv: -kv[1]))}")
+        print(f"\nnot parsed safely ({len(unparsed)}) — not booked either:")
         for n, r in sorted(unparsed):
             print(f"    {n}: {r}")
     return 1 if n_result else 0

@@ -14,7 +14,7 @@ stdout and (where given) its stderr are what its markers say:
                            forks, submits or steals, which follow measured time,
                            and a core shared with another fixture moves them
 
-A driver and not a shell loop since 2026-10-03 (tests/win32/WINDOWS-BOX.md §8):
+A driver and not a shell loop since 2026-10-03:
 the loop ran the 65 fixtures one after another, each wrapped in a handful of
 processes, and Git Bash emulates every fork. Here every build runs in parallel,
 the programs without `Isolated` run in parallel, and the isolated ones one at a

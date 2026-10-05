@@ -1,4 +1,4 @@
-; tool.scaly - the build side of the one tool (ROADMAP-public.md, stage A)
+; tool.scaly - the build side of the one tool
 ;
 ; `scaly build` links a program against OBJECTS of the packages it uses, each
 ; compiled once into a cache and found again by a key over everything that
@@ -113,7 +113,7 @@ define tool
     ; one fixed /tmp path, which two runs at once overwrote.
     procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_24 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
 
-    ; ---- C libraries (ROADMAP-public.md, stage B) ---------------------------
+    ; ---- C libraries (stage B) ----------------------------------------------
     ;
     ; A package says which C libraries it uses in its root file:
     ;     extern ssl, crypto

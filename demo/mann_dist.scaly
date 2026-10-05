@@ -1,4 +1,4 @@
-; Stage-7 finale (ROADMAP 7.4): the DISTRIBUTED Mann trainer. The same
+; Stage-7 finale: the DISTRIBUTED Mann trainer. The same
 ; 2-layer pre-LN char transformer as demo/mann.scaly, trained by
 ; SYNCHRONOUS DATA-PARALLEL SGD across N OS processes over the stage-7
 ; remote channels — pure Scaly, zero Python, no MPI, no NCCL.

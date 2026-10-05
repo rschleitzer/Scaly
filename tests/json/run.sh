@@ -1,5 +1,5 @@
 #!/bin/bash
-# tests/json/run.sh [compiler] — the json package (ROADMAP-http.md, stage B): build its
+# tests/json/run.sh [compiler] — the json package: build its
 # every test program here with `scaly build` (the package objects come out of
 # the build cache), run it under poison, and compare
 # stdout with its "; Expected:" line.

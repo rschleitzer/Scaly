@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stage-5 demo (ROADMAP 5.4): train a char transformer on Thomas
+# Stage-5 demo: train a char transformer on Thomas
 # Mann's "Der Tod in Venedig" and print generated text — pure Scaly,
 # zero Python. Training and inference each finish well under a
 # minute on an Apple-silicon Mac.

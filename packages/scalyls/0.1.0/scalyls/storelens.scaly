@@ -29,7 +29,7 @@
 ; — while the `rp` version allocates from `%0`, the caller's page. The escape
 ; checker does not object because it is FIELD-INSENSITIVE: what escapes is the
 ; inner buffer of a by-value String field of a by-value struct, written through
-; a pointer. CLAUDE.md's out-param entry says such a function "must be checked
+; a pointer. The out-param rule says such a function "must be checked
 ; by hand"; this family is what tells the hand where to look.
 ;
 ; ★★★THE RETURN HALF OF THAT DOCTRINE IS REFUTED, which is why no lens here says
@@ -39,7 +39,7 @@
 ;     `scaly_force_frame(%1)` — the CALLER's page — constructs into it and
 ;     memcpys to the sret slot. The sret slot is never the init's `this`, so the
 ;     `Page.get(<sret slot>)` story does not happen.
-;   * the real `StringC.substr`, named in CLAUDE.md as THE instance of that bug,
+;   * the real `StringC.substr`, once named as THE instance of that bug,
 ;     does exactly that in today's tree.
 ;   * a String returned through TWO frames is not copied at all: the middle
 ;     function passes its own `_rp` straight down, so the value is built on the
@@ -95,7 +95,7 @@
 ; which is what actually separates a correct mark from a foreign one.
 ;
 ; SCOPE, stated because it is narrower than "everything that can dangle":
-;   * The buffer types are `String` and `StringC` BY NAME — the two CLAUDE.md's
+;   * The buffer types are `String` and `StringC` BY NAME — the two the
 ;     rule names — reached through by-value struct fields, transitively (an
 ;     `ExternalId` carrying two Strings counts, and says so).
 ;   * A property that is itself a `pointer[T]`/`ref[T]` is NOT followed: a

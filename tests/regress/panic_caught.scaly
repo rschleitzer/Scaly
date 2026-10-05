@@ -1,12 +1,12 @@
-; Regression: ein Programmierer kann eine Grenzverletzung BEHANDELN, statt
-; zuzusehen, wie der Prozess endet (TRAPS.md 0).
+; Regression: a programmer can HANDLE a bounds violation instead of
+; watching the process end.
 ;
-; Der Trap liegt tief unten in Code, der nichts von Fangpunkten weiss -- so
-; wie eine Bibliothek, die `[]` benutzt und die der Aufrufer nicht aendern
-; kann. Jeder der drei Rahmen forciert vorher eine Region: dass die
-; zurueckkommen, prueft der Wasserstand am Ende.
+; The trap lies deep down in code that knows nothing about catch points -- like
+; a library that uses `[]` and that the caller cannot
+; change. Each of the three frames forces a region beforehand: that they
+; come back is checked by the water mark at the end.
 ;
-; Erwartet: PASS
+; Expected: PASS
 
 function deep3(n: i64) returns i64
 {
@@ -15,7 +15,7 @@ function deep3(n: i64) returns i64
     buf[0] := 10
     let v Slice[int](2, &buf[0])
     if n > 0
-        return v[(n as size_t) + 4]        ; Index 5 in einer Sicht der Laenge 2
+        return v[(n as size_t) + 4]        ; index 5 in a view of length 2
     (s.get_length() as i64)
 }
 
@@ -39,53 +39,53 @@ function body_ok(arg: pointer[void]) returns i64
 
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
-    ; (1) ohne Fangpunkt wuerde derselbe Zugriff den Prozess beenden --
-    ;     das prueft trap_slice_subscript.scaly, hier nur die Aussage:
+    ; (1) without a catch point the same access would end the process --
+    ;     trap_slice_subscript.scaly checks that, here only the claim:
     if Region.catch_active()
     {
-        print "FAIL: ein Fangpunkt stand schon"
+        print "FAIL: a catch point was already set"
         return 1
     }
 
-    ; (2) mit Fangpunkt endet der geschuetzte AUFRUF
+    ; (2) with a catch point the guarded CALL ends
     var caught: i32 0
     let r Region.run_guarded(&body_panics, null as pointer[void], &caught)
     if caught = 0
     {
-        print "FAIL: das Panic wurde nicht gefangen"
+        print "FAIL: the panic was not caught"
         return 2
     }
 
-    ; (3) und es sagt, was es sah
+    ; (3) and it says what it saw
     let idx Region.panic_index()
     let len Region.panic_length()
     if idx <> 5
     {
-        print "FAIL: falscher Index"
+        print "FAIL: wrong index"
         return 3
     }
     if len <> 2
     {
-        print "FAIL: falsche Laenge"
+        print "FAIL: wrong length"
         return 4
     }
 
-    ; (4) danach laeuft das Programm weiter, und ein gueltiger Lauf geht durch
+    ; (4) afterwards the program goes on, and a valid run passes through
     var caught2: i32 0
     let r2 Region.run_guarded(&body_ok, null as pointer[void], &caught2)
     if caught2 <> 0
     {
-        print "FAIL: der gueltige Lauf hat gepanickt"
+        print "FAIL: the valid run panicked"
         return 5
     }
     if r2 < 1
     {
-        print "FAIL: der gueltige Lauf hat nichts geliefert"
+        print "FAIL: the valid run delivered nothing"
         return 6
     }
 
-    ; (5) und die Regionen der uebersprungenen Rahmen sind zurueck: nach
-    ;     vielen Faengen muss der Wasserstand dort stehen, wo er stand
+    ; (5) and the regions of the skipped frames are back: after
+    ;     many catches the water mark must stand where it stood
     let mark_before scaly_panic_mark()
     var i 0
     while i < 200
@@ -94,14 +94,14 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         let rr Region.run_guarded(&body_panics, null as pointer[void], &c3)
         if c3 = 0
         {
-            print "FAIL: ein spaeterer Fang blieb aus"
+            print "FAIL: a later catch did not happen"
             return 7
         }
         i := i + 1
     }
     if scaly_panic_mark() <> mark_before
     {
-        print "FAIL: der Wasserstand der Regionen ist verschoben"
+        print "FAIL: the water mark of the regions has moved"
         return 8
     }
 
