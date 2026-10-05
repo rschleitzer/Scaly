@@ -2839,6 +2839,40 @@ define Modeler
         pkg_path
     }
 
+    ; has_package_root#: does `dir` hold the package `pkg_name` -- its root
+    ; file, or the generated interface that stands for it?
+    procedure has_package_root(dir: String, pkg_name: String) returns bool
+    {
+        var root "`dir`/`pkg_name`.scaly"
+        if File.exists(root)
+            return true
+        var iface "`dir`/interface/`pkg_name`.scaly"
+        File.exists(iface)
+    }
+
+    ; package_directory#: where a declared package lives. The installation's
+    ; packages come first, <SCALY_HOME>/packages/<name>/<version>; a package
+    ; the installation does not have is the PROJECT's own,
+    ; ./packages/<name>/<version> under the directory the compiler runs in
+    ; (2026-10-05: a program outside the compiler's tree brings packages of
+    ; its own). The order is deliberate -- a project cannot put a standard
+    ; library of its own in front of the installed one, whose prelude and
+    ; runtime archive it gets in any case. Without SCALY_HOME there is one
+    ; base, the current directory, as before.
+    procedure package_directory(pkg_name: String, version_str: String) returns String
+    {
+        let home scaly_home_base()
+        let installed "`home`packages/`pkg_name`/`version_str`"
+        if home.get_length() = 0
+            return installed
+        if has_package_root(installed, pkg_name)
+            return installed
+        let own "packages/`pkg_name`/`version_str`"
+        if has_package_root(own, pkg_name)
+            return own
+        installed
+    }
+
     ; A package's root file declares the packages it uses; they are loaded
     ; before it, so a program names only the packages it uses itself
     ; (ROADMAP-public.md, stage A). A root that does not parse is left to
@@ -2910,8 +2944,8 @@ define Modeler
         }
         versions.add key
 
-        ; Search path: <SCALY_HOME/>packages/<name>/<version>/
-        let pkg_path "`scaly_home_base()`packages/`pkg_name`/`version_str`"
+        ; Search path: the installation, then the project (package_directory#)
+        let pkg_path package_directory(pkg_name, version_str)
         let root_dir interface_or_source(pkg_path, pkg_name)
         load_package_dependencies("`root_dir`/`pkg_name`.scaly", packages, versions)
 
@@ -2931,7 +2965,7 @@ define Modeler
                 perr.append pkg_path
                 perr.append("/" as char)
                 perr.append pkg_name
-                perr.append ".scaly - run from a directory containing packages/, or set SCALY_HOME"
+                perr.append ".scaly - looked in the installation (SCALY_HOME) and in ./packages of the directory this runs in"
                 let perr_str perr.to_string()
                 report_load_error(perr_str)
             }

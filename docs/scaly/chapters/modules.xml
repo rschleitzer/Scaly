@@ -61,18 +61,22 @@ if b.area() = 12
       path is the single source of truth; there is no separate version
       manifest. The statement</para>
     <programlisting>package scaly 0.1.0</programlisting>
-    <para>declares a dependency on that package. Packages are resolved under
-      <filename>$SCALY_HOME/packages/</filename> when
-      <envar>SCALY_HOME</envar> is set (the installed
-      <command>scalyc</command> wrapper sets it), otherwise under
-      <filename>./packages/</filename> relative to the current directory.
-      A declared package that cannot be found fails the compile with a
-      pointed error.</para>
-    <para>Multiple versions of the same package can coexist in one program:
-      the version is baked into the mangled symbol names, so they never
-      collide. Dependencies are not transitively visible — a package sees only
-      the packages it declares itself — and circular package dependencies are
-      forbidden.</para>
+    <para>declares a dependency on that package. A package is looked for in
+      two places, in this order: among the packages of the installation,
+      <filename>$SCALY_HOME/packages/</filename> (the installed programs set
+      <envar>SCALY_HOME</envar> themselves), and then among the project's own,
+      <filename>./packages/</filename> under the directory the compiler runs
+      in. So a project brings the packages the installation does not have by
+      putting them beside its sources, and it cannot put a package of its own
+      in front of an installed one of the same name. Without
+      <envar>SCALY_HOME</envar> only the current directory is searched. A
+      declared package that is in neither place fails the compile with an
+      error naming both.</para>
+    <para>One compilation takes one version of a package: a program that
+      reaches the same package in two versions — directly, or through the
+      packages it uses — is refused. A package's root file declares the
+      packages it uses itself, so a program names only the packages it calls
+      directly; circular package dependencies are forbidden.</para>
     <para>The standard library package <code>scaly</code> is the implicit
       <emphasis>prelude</emphasis>: every program depends on it automatically,
       and its types are visible everywhere without any <code>use</code>

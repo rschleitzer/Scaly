@@ -39,6 +39,10 @@
 #   test       `scaly test`: tests/tool/sums.scaly names its failing test and
 #              answers rc 1, a filter selects, the file's own statements do
 #              not run; opensp's forty test functions pass
+#   project    a package the installation does not have is found in the
+#              project's own ./packages (Modeler.package_directory#), one of
+#              an installed name there does not shadow the installed one, and
+#              a package in neither place is reported with both named
 #   bare       Windows the Rust way (ROADMAP-public.md): a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -274,6 +278,46 @@ if scaly_jit_available 2>/dev/null; then
     out=$(python3 tests/tool/repl_pty.py "$SCALY" "$TMP" 2>&1); rc=$?
     [ "$rc" = 0 ] && ok || bad "repl-pty: $(echo "$out" | tail -2 | tr '\n' '|')"
   fi
+fi
+
+# project: a package the installation does not have is the project's own,
+# ./packages/<name>/<version> under the directory the tool runs in
+# (Modeler.package_directory#) -- and a project's package of an INSTALLED
+# name does not get in front of the installed one
+proj="$TMP/proj"
+mkdir -p "$proj/packages/mine/0.1.0/mine" "$proj/packages/json/0.1.0"
+cat > "$proj/packages/mine/0.1.0/mine.scaly" <<'PKG'
+define mine
+{
+    module greet
+}
+PKG
+cat > "$proj/packages/mine/0.1.0/mine/greet.scaly" <<'PKG'
+function greeting(n: int) returns int
+    n + 40
+PKG
+printf 'this is no package at all (\n' > "$proj/packages/json/0.1.0/json.scaly"
+cat > "$proj/main.scaly" <<'PKG'
+package mine 0.1.0
+package json 0.1.0
+
+print("project `greeting(2)`")
+PKG
+here="$PWD"
+case "$SCALY" in /*) scaly_abs="$SCALY" ;; *) scaly_abs="$here/$SCALY" ;; esac
+if ( cd "$proj" && SCALY_HOME="$here" "$scaly_abs" build main.scaly -o "$TMP/proj_main$SCALY_EXE" ) > "$TMP/proj.log" 2>&1; then
+  out=$("$TMP/proj_main$SCALY_EXE")
+  [ "$out" = "project 42" ] && ok || bad "project: got '$out'"
+else
+  bad "project: rc=$? $(tail -3 "$TMP/proj.log" | tr '\n' ' ')"
+fi
+# ... and a package neither has is reported with both places named
+printf 'package nowhere 0.1.0\nprint("x")\n' > "$proj/missing.scaly"
+out=$( cd "$proj" && SCALY_HOME="$here" "$scaly_abs" build missing.scaly -o "$TMP/proj_missing$SCALY_EXE" 2>&1 ); rc=$?
+if [ "$rc" != 0 ] && echo "$out" | grep -q 'package not found: nowhere 0.1.0' && echo "$out" | grep -q 'in ./packages of the directory'; then
+  ok
+else
+  bad "project-missing: rc=$rc $(echo "$out" | tail -2 | tr '\n' ' ')"
 fi
 
 # bare: no clang, no LIB -- only the Build Tools, found by the compiler
