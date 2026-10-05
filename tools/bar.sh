@@ -19,8 +19,10 @@
 #             over, so its 6.5 GB tscaly compilation does not overlap the one
 #             that lane starts with
 #   lsp       tests/lsp/run.sh — once the tscaly lane has compiled its package
-#   ports     likewise; one dazzle CLI build shared by all 14 dazzle suites (DAZZLE_PREBUILT),
-#             which run side by side; then onsgmls, the SGML corpus, opensp, http, json, compress, tls, pg, redis, tool, cmscratch
+#   ports     likewise; dazzle and opensp from THEIR repository (../dazzle or
+#             $DAZZLE_REPO, SKIPPED by name without it): its tests/run.sh with
+#             this tree's compiler, then the codegen gate here; then http,
+#             json, compress, tls, h3, pg, redis, tool
 #   tscaly    the TypeScript port, a repository of its own since 2026-10-05
 #             (github.com/rschleitzer/tscaly), expected beside this one or at
 #             $TSCALY_REPO and SKIPPED by name when it is not there: its
@@ -173,40 +175,28 @@ lane_lsp() {
   step lsp env SCALYLS_BUDGET_MS=300000 SCALYLS_PREBUILT="$ROOT/scalyc/build/scalyls" tests/lsp/run.sh "$BIN"
 }
 
-dazzle_all() {
-  local d rc=0 pids=() names=()
-  for d in cli codegen coding engine flowobj fot framemark grove html mif prims rtf specarena tex; do
-    ( DAZZLE_PREBUILT=$LOG/dazzle SCALY_POISON=1 tests/dazzle/$d/run.sh > "$LOG/dz_$d.log" 2>&1 ) &
-    pids+=($!); names+=($d)
-  done
-  for i in "${!pids[@]}"; do
-    if wait "${pids[$i]}"; then echo "dazzle-${names[$i]}: $(tail -1 "$LOG/dz_${names[$i]}.log" | cut -c1-60)"
-    else echo "dazzle-${names[$i]}: FAIL — $LOG/dz_${names[$i]}.log"; rc=1; fi
-  done
-  [ $rc = 0 ] && echo "dazzle: all 14 suites PASS"
-  return $rc
+# dazzle and opensp: the other repository (github.com/rschleitzer/dazzle,
+# expected beside this one or at $DAZZLE_REPO), tested with this tree's
+# compiler. Its own entry script builds both programs once and runs every
+# suite of the engine, the SGML corpus and the parser's unit tests.
+DAZZLE_REPO=${DAZZLE_REPO:-$ROOT/../dazzle}
+have_dazzle() { [ -x "$DAZZLE_REPO/tests/run.sh" ]; }
+dazzle_env() {  # dazzle_env <command of the dazzle repository> [args]
+  ( cd "$DAZZLE_REPO" && env SCALY_POISON=1 SCALYC="$BIN" LIBSCALY="$TSCALY_LIB" SCALY_HOME="$ROOT" "$@" )
 }
 
 lane_ports() {
   ulimit -s 65520
   local rc=0
   await_tscaly_build
-  if step dazzle-build env DAZZLE_PREBUILT= tests/dazzle/build-cli.sh "$LOG/dazzle" "$BIN"; then
-    step dazzle dazzle_all || rc=1
+  if have_dazzle; then
+    echo "dazzle: $DAZZLE_REPO at $(git -C "$DAZZLE_REPO" rev-parse --short=9 HEAD 2>/dev/null)"
+    step dazzle dazzle_env tests/run.sh || rc=1
+    # the gate that stays here: the engine reproduces THIS tree's generated files
+    step dazzle-codegen env DAZZLE_REPO="$DAZZLE_REPO" tests/dazzle/codegen/run.sh "$BIN" || rc=1
   else
-    rc=1
+    echo "SKIP dazzle, dazzle-codegen (no checkout at $DAZZLE_REPO — git clone https://github.com/rschleitzer/dazzle there, or set DAZZLE_REPO)"
   fi
-  if step onsgmls-build tests/sgml/build-onsgmls.sh; then
-    # On Windows /tmp/scaly-onsgmls is a bash front-end over
-    # tests/win32/lf-wrapper.sh; the driver starts the native binary itself
-    # (no CR to strip since the streams are binary): 45 s against 1.7 s.
-    local sgml_bin=/tmp/scaly-onsgmls
-    [ -f /tmp/scaly-onsgmls-native.exe ] && sgml_bin=/tmp/scaly-onsgmls-native.exe
-    step sgml env SCALY_POISON=1 tests/sgml/run.sh "$sgml_bin" || rc=1
-  else
-    rc=1
-  fi
-  step opensp tests/opensp/run.sh || rc=1
   step http tests/http/run.sh "$BIN" || rc=1
   step json tests/json/run.sh "$BIN" || rc=1
   step compress tests/compress/run.sh "$BIN" || rc=1
@@ -215,7 +205,6 @@ lane_ports() {
   step pg tests/pg/run.sh "$BIN" || rc=1
   step redis tests/redis/run.sh "$BIN" || rc=1
   step tool tests/tool/run.sh "$BIN" || rc=1
-  step cmscratch tests/sgml/cmscratch/run.sh || rc=1
   return $rc
 }
 

@@ -110,18 +110,13 @@ Repository layout
 Licensing
 ---------
 
-Scaly is MIT (see [LICENSE](LICENSE)) — but licensing here is **per directory**,
-not per repository, because two packages are ports of existing works and carry
-the license they were derived under:
+Scaly is MIT (see [LICENSE](LICENSE)).
 
-| path | license | origin |
-|---|---|---|
-| everything not listed below | MIT | — |
-| `packages/opensp/`, `packages/dazzle/` | Clark / OpenJade (permissive) | James Clark's SP and the OpenJade project |
-
-Each such package carries its own `LICENSE` next to its sources; that file
-governs the directory it sits in. None of these licenses is copyleft, so they
-neither infect one another nor the rest of the tree.
+Two ports written in Scaly are repositories of their own and carry the license
+of the work they were derived from. The SGML parser and the DSSSL engine —
+ports of James Clark's SP and of OpenJade, under their permissive license —
+are [github.com/rschleitzer/dazzle](https://github.com/rschleitzer/dazzle);
+this tree's generated sources are produced with that engine.
 
 The TypeScript port, tscaly, is Apache 2.0 and a repository of its own,
 [github.com/rschleitzer/tscaly](https://github.com/rschleitzer/tscaly). One

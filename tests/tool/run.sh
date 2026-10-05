@@ -38,7 +38,7 @@
 #              SKIPs by name on Windows
 #   test       `scaly test`: tests/tool/sums.scaly names its failing test and
 #              answers rc 1, a filter selects, the file's own statements do
-#              not run; opensp's forty test functions pass
+#              not run
 #   project    a package the installation does not have is found in the
 #              project's own ./packages (Modeler.package_directory#), one of
 #              an installed name there does not shadow the installed one, and
@@ -161,8 +161,6 @@ if scaly_jit_available 2>/dev/null; then
   fi
   out=$("$SCALY" test tests/tool/sums.scaly sum 2>&1); rc=$?
   [ "$rc" = 0 ] && [ "$out" = "$(printf 'test test_sum ... ok\n1 passed')" ] && ok || bad "test filter: rc=$rc '$out'"
-  out=$("$SCALY" test packages/opensp/0.1.0/opensp.scaly 2>&1); rc=$?
-  [ "$rc" = 0 ] && echo "$out" | grep -q '^40 passed$' && ok || bad "test opensp: rc=$rc $(echo "$out" | tail -1)"
 fi
 
 # no-tests method: a method named `test` is not a test

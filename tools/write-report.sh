@@ -24,7 +24,7 @@ mkdir -p "$OUT"
 SUMMARIES="$OUT/summaries.tsv"
 rm -f "$SUMMARIES"
 export SCALYC_WRITE_SUMMARIES="$SUMMARIES"
-ORDER="scaly opensp scalyc dazzle scalyls scalygpu"
+ORDER="scaly scalyc scalyls scalygpu"
 LIST=""
 for p in $ORDER; do
   LIST="$LIST packages/$p/0.1.0/$p.scaly"

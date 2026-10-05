@@ -115,8 +115,6 @@ done
 # One row per binary: name, library root + its flags, program root + its flags.
 # A row whose library field is empty has no package object of its own.
 PRODUCTS=(
-  "opensp|packages/opensp/0.1.0/opensp.scaly|--no-prelude|packages/opensp/0.1.0/onsgmls.scaly|"
-  "dazzle|packages/dazzle/0.1.0/dazzle.scaly|--no-prelude|packages/dazzle/0.1.0/dazzle_cli.scaly|"
   "scalyc|packages/scalyc/0.1.0/scalyc.scaly|--no-tests|packages/scalyc/0.1.0/main.scaly|--no-tests"
 )
 ndropin=0
@@ -285,7 +283,7 @@ n() { printf '%s\n' "$1" | grep -c . ; }
 
 echo "win-undef: $(n "$ALL") undefined symbols for $TRIPLE"
 echo "  (runtime root + $nprog corpus programs + $nbench bench programs"
-echo "   + $ndropin products of ${#PRODUCTS[@]} (onsgmls, dazzle, scalyc);"
+echo "   + $ndropin products of ${#PRODUCTS[@]} (scalyc);"
 echo "   symbols a package object defines are resolved at the link)"
 if [ "$nemitfail" -gt 0 ]; then
   echo "  WARNING — $nemitfail corpus program(s) did not cross-emit and were NOT scanned"

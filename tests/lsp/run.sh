@@ -2543,7 +2543,9 @@ if [ $rc -eq 0 ]; then ok "lsp context-aware completion"; else bad "lsp context-
 # package ROOT instead. So in this tree's own sources `this.` fell through to the
 # FLAT all-names list, and paid the session's first plan (~6 s) to get there.
 #
-# Asserted on a real tree file (line found by CONTENT): the enclosing concept's
+# Asserted on a real package file -- one of the SGML parser's, which lives in the
+# dazzle repository since 2026-10-05 (../dazzle or $DAZZLE_REPO; without that
+# checkout the check is SKIPPED by name). The line is found by CONTENT: the enclosing concept's
 # fields AND methods must be there, and `fill_zeros_u32` — a FILE-LEVEL function
 # of the same file, i.e. the tell-tale of the flat list — must not be.
 SCALY_HOME="$(pwd)" python3 - <<'PY'
@@ -2553,7 +2555,11 @@ def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 
-path = os.path.join(os.getcwd(), "packages/opensp/0.1.0/opensp/ContentState.scaly")
+DZ = os.path.abspath(os.environ.get("DAZZLE_REPO") or os.path.join(os.getcwd(), "..", "dazzle"))
+path = os.path.join(DZ, "packages/opensp/0.1.0/opensp/ContentState.scaly")
+if not os.path.exists(path):
+    print("SKIP  `this.` in a package module (no dazzle checkout at %s)" % DZ)
+    sys.exit(0)
 uri  = "file://" + path
 doc  = open(path).read()
 lines = doc.split("\n")
@@ -3108,7 +3114,9 @@ for f in files:
     if same and f in ALLOWED:
         still_clean.append(f)
 
-check(len(files) > 150, "the corpus is the whole tree (%d files)" % len(files))
+# 125 files since the two ports became repositories of their own (2026-10-05);
+# the number only guards against a glob that found nothing much
+check(len(files) > 100, "the corpus is the whole tree (%d files)" % len(files))
 check(not not_idem, "format(format(x)) == format(x) on every file"
       + ("" if not not_idem else " -- %s" % not_idem[:3]))
 check(not unexpected, "every file outside the allow-list is reproduced BYTE-IDENTICALLY"
@@ -5450,7 +5458,6 @@ gen_cases = [
     ("packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly", "codegen/syntax-scaly.scm"),
     ("packages/scalyls/0.1.0/scalyls/grammar.scaly",       "codegen/highlight-scaly.scm"),
     ("tests/selfhosted/controlflow__break-in-for.scaly",   "tests/controlflow.sgm"),
-    ("packages/opensp/0.1.0/opensp/ParserMessages.scaly",  "tools/msggen.py"),
 ]
 for (f, want) in gen_cases:
     banner = [r for r in rows(lenses(f)) if r[1].startswith("generated from ")]
@@ -6087,10 +6094,17 @@ check(not qrows, "none of the four quiet shapes is marked (%s)" % sorted(qrows))
 # took `set *p: T(...)` out of Parser.scaly 69 times, tipping it to exactly 10.
 # A canary whose margin is one is a canary that reports the next refactor as a
 # defect, so the answer is more corpus, never a lower threshold.
-sweep = ["packages/dazzle/0.1.0/dazzle/Style.scaly",
+# The four are the dazzle repository's (../dazzle or $DAZZLE_REPO) since
+# 2026-10-05; without that checkout the sweep is SKIPPED by name.
+DZ = os.path.abspath(os.environ.get("DAZZLE_REPO") or os.path.join(os.getcwd(), "..", "dazzle"))
+sweep = [os.path.join(DZ, f) for f in
+        ["packages/dazzle/0.1.0/dazzle/Style.scaly",
          "packages/dazzle/0.1.0/dazzle/Primitive.scaly",
          "packages/opensp/0.1.0/opensp/Parser.scaly",
-         "packages/opensp/0.1.0/opensp/ParserState.scaly"]
+         "packages/opensp/0.1.0/opensp/ParserState.scaly"]]
+if not os.path.exists(sweep[0]):
+    print("SKIP  the sweep over real sources (no dazzle checkout at %s)" % DZ)
+    sweep = []
 def routine_head(src, ln):
     j = ln - 1
     while j >= 0 and not re.match(r"\s*(function|procedure)\s", src[j]): j -= 1
@@ -6132,7 +6146,7 @@ for f in sweep:
 # worker.serve_on_worker_stack#), and the sweep reads 25 since (Style 15, Parser
 # 8, ParserState 2, Primitive 0). So the rule above holds again: more corpus,
 # never a lower threshold.
-check(total > 10, "the sweep marked a real number of stores (%d)" % total)
+if sweep: check(total > 10, "the sweep marked a real number of stores (%d)" % total)
 check(not wrong, "every mark is attributed to a parameter of its OWN routine")
 for w in wrong[:5]: print("      ", w)
 sys.exit(1 if failures else 0)
@@ -6174,7 +6188,11 @@ def lens_count(path, stack_kb):
     r = next((f for f in frames if f.get("id") == 2), None)
     res = (r or {}).get("result")
     return len(res) if isinstance(res, list) else -1
-f = "packages/dazzle/0.1.0/dazzle/Style.scaly"
+DZ = os.path.abspath(os.environ.get("DAZZLE_REPO") or os.path.join(os.getcwd(), "..", "dazzle"))
+f = os.path.join(DZ, "packages/dazzle/0.1.0/dazzle/Style.scaly")
+if not os.path.exists(f):
+    print("SKIP  codeLens at 1 MB (no dazzle checkout at %s)" % DZ)
+    sys.exit(0)
 if os.name == "nt":
     # A Windows thread's stack is the PE header's (tools/win-link.sh), and no
     # ulimit of a parent reaches it: the check would compare one run with itself.

@@ -45,7 +45,7 @@ done
 # openjade is the fallback that makes it an optional dependency rather than a
 # removed one; and if neither is available the codegen is SKIPPED with a
 # message, because the generated files are committed and stay valid — the same
-# posture the opensp message tables below take. That last case is not
+# posture a missing tool gets everywhere here. That last case is not
 # hypothetical: ./build.sh runs this script BEFORE it builds the compiler, so
 # a fresh checkout genuinely has no engine to offer yet.
 DAZZLE="${DAZZLE:-scalyc/build/dazzle}"
@@ -54,12 +54,20 @@ SCALYC="${SCALYC:-scalyc/build/scalyc}"
 # Build the engine when a compiler exists and the binary is missing or older
 # than its sources. ★Not on every run: it costs ~31 s, and this script is on
 # the ./build.sh path.
-if [ ! -x "$DAZZLE" ] || [ -n "$(find packages/dazzle packages/opensp packages/scaly \
-        -name '*.scaly' -newer "$DAZZLE" -print -quit 2>/dev/null)" ]; then
-    if [ -x "$SCALYC" ]; then
-        echo "mkp: building the DSSSL engine ($DAZZLE)"
-        tests/dazzle/build-cli.sh "$DAZZLE" "$SCALYC" > /tmp/mkp-dazzle-build.log 2>&1 \
-            || { echo "mkp: engine build FAILED — see /tmp/mkp-dazzle-build.log"; tail -5 /tmp/mkp-dazzle-build.log; }
+# The engine is a repository of its own since 2026-10-05
+# (github.com/rschleitzer/dazzle), expected beside this one or at $DAZZLE_REPO;
+# it is built there, with this tree's compiler and standard library.
+DAZZLE_REPO="${DAZZLE_REPO:-../dazzle}"
+if [ -x "$DAZZLE_REPO/tests/dazzle/build-cli.sh" ]; then
+    DAZZLE_REPO="$(cd "$DAZZLE_REPO" && pwd)"
+    if [ ! -x "$DAZZLE" ] || [ -n "$(find "$DAZZLE_REPO/packages" packages/scaly \
+            -name '*.scaly' -newer "$DAZZLE" -print -quit 2>/dev/null)" ]; then
+        if [ -x "$SCALYC" ]; then
+            echo "mkp: building the DSSSL engine ($DAZZLE)"
+            ( here="$PWD"; cd "$DAZZLE_REPO" && ulimit -s 65520 2>/dev/null; \
+              SCALY_HOME="$here" tests/dazzle/build-cli.sh "$here/$DAZZLE" "$here/$SCALYC" ) > /tmp/mkp-dazzle-build.log 2>&1 \
+                || { echo "mkp: engine build FAILED — see /tmp/mkp-dazzle-build.log"; tail -5 /tmp/mkp-dazzle-build.log; }
+        fi
     fi
 fi
 
@@ -95,6 +103,8 @@ oj_accept() {  # $1 = command to interrogate
 }
 if [ -x "$DAZZLE" ]; then
     ENGINE=("$DAZZLE" -t sgml -d)
+    # its DSSSL prolog and catalog are in its own checkout
+    [ -d "$DAZZLE_REPO/packages/dazzle" ] && DAZZLE_HOME_FOR_ENGINE="$DAZZLE_REPO"
     echo "mkp: codegen via $DAZZLE (dazzle)"
 elif command -v openjade > /dev/null 2>&1; then
     if oj_accept openjade; then
@@ -117,7 +127,7 @@ fi
 # worth one word. Exporting it would be wrong in the other direction: scalyc
 # then looks for its runtime archive under $SCALY_HOME/lib instead of /tmp,
 # which is exactly what the engine build above needs not to happen.
-gen() { SCALY_HOME="$PWD" "${ENGINE[@]}" "$@"; }
+gen() { SCALY_HOME="${DAZZLE_HOME_FOR_ENGINE:-$PWD}" "${ENGINE[@]}" "$@"; }
 
 if [ ${#ENGINE[@]} -ne 0 ]; then
     # Generate parser.scaly, Syntax.scaly, scalyls' grammar, the tmLanguage
@@ -128,34 +138,6 @@ if [ ${#ENGINE[@]} -ne 0 ]; then
     gen codegen/test-definitions.dsl tests/definitions.sgm
     gen codegen/test-choose.dsl tests/choose.sgm
     gen codegen/test-controlflow.dsl tests/controlflow.sgm
-fi
-
-# Generate opensp message tables from the OpenSP .msg catalogs (single source of
-# truth: James Clark's OpenSP, ~/repos/openjade-net/upstream/opensp/lib). Skipped
-# when that checkout is absent — the checked-in *Messages.scaly stay valid; a
-# contributor with the checkout re-runs and diffs (output is byte-exact).
-MSGDIR="${OPENSP_MSG_DIR:-$HOME/repos/openjade-net/upstream/opensp/lib}"
-if [ -d "$MSGDIR" ]; then
-    # ★Content-stable, like the codegen above: write to a temporary and replace
-    # the target only when the BYTES differ. Redirecting straight onto the
-    # target gave 20-odd package sources a fresh mtime on every run even though
-    # the tables have not changed in months.
-    msggen() {  # msggen <msg-file> <target>
-        python3 tools/msggen.py "$1" > "$SNAP/msg.tmp" || return 1
-        cmp -s "$SNAP/msg.tmp" "$2" || mv "$SNAP/msg.tmp" "$2"
-    }
-    for m in "$MSGDIR"/*.msg; do
-        base=$(basename "$m" .msg)
-        msggen "$m" "packages/opensp/0.1.0/opensp/$base.scaly"
-    done
-    # nsgmls's own app-level table (unknownOutputOption + the -h help texts)
-    # and the RAST handler's table (the -t axis).
-    msggen "$MSGDIR/../nsgmls/NsgmlsMessages.msg" \
-           "packages/opensp/0.1.0/opensp/NsgmlsMessages.scaly"
-    msggen "$MSGDIR/../nsgmls/RastEventHandlerMessages.msg" \
-           "packages/opensp/0.1.0/opensp/RastEventHandlerMessages.scaly"
-else
-    echo "mkp: skipping opensp message tables ($MSGDIR not found)"
 fi
 
 # Restore byte-identical files to their pre-generation mtime so ninja skips

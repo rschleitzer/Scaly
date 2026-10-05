@@ -23,7 +23,7 @@ cd "$(dirname "$0")/.."
 CHECK=0
 if [ "${1:-}" = "--check" ]; then CHECK=1; shift; fi
 BIN="${1:-scalyc/build/scalyc}"
-PKGS="scaly opensp dazzle scalyc scalyls scalygpu http json compress tls pg https h3 redis"
+PKGS="scaly scalyc scalyls scalygpu http json compress tls pg https h3 redis"
 T="$(mktemp -d)"
 # One job per package, side by side under --check; the reports print in
 # package order. (tscaly, which ran alone after them for its 6.5 GB, is a

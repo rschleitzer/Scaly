@@ -14,6 +14,7 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
+case "$BIN" in /*) ;; *) BIN="$ROOT/$BIN" ;; esac
 cd "$ROOT"
 set -u
 
@@ -21,7 +22,18 @@ DZ="$(mktemp -d)/dazzle"
 SNAP="$(mktemp -d)"
 trap 'rm -rf "$(dirname "$DZ")" "$SNAP"' EXIT
 
-if ! tests/dazzle/build-cli.sh "$DZ" "$BIN" > "$SNAP/build.log" 2>&1; then
+# The engine is a repository of its own since 2026-10-05
+# (github.com/rschleitzer/dazzle), expected beside this one or at $DAZZLE_REPO:
+# it is built THERE with THIS tree's compiler and standard library, and it
+# reads its DSSSL prolog and catalog from that checkout.
+DAZZLE_REPO="${DAZZLE_REPO:-$ROOT/../dazzle}"
+if [ ! -x "$DAZZLE_REPO/tests/dazzle/build-cli.sh" ]; then
+  echo "dazzle-codegen: SKIP (no dazzle checkout at $DAZZLE_REPO)"; exit 0
+fi
+DAZZLE_REPO="$(cd "$DAZZLE_REPO" && pwd)"
+if [ -n "${DAZZLE_PREBUILT:-}" ] && [ -x "$DAZZLE_PREBUILT" ]; then
+  DZ="$DAZZLE_PREBUILT"
+elif ! ( cd "$DAZZLE_REPO" && ulimit -s 65520 2>/dev/null; SCALY_HOME="$ROOT" tests/dazzle/build-cli.sh "$DZ" "$BIN" ) > "$SNAP/build.log" 2>&1; then
   echo "dazzle-codegen: FAIL (build)"; tail -8 "$SNAP/build.log"; exit 1
 fi
 
@@ -39,7 +51,7 @@ run_case() {
   local out; out=$(mktemp -d "$SNAP/case.XXXXXX")
   local f
   for f in "$@"; do mkdir -p "$out/$(dirname "$f")"; done
-  if ! (cd "$out" && SCALY_HOME="$ROOT" "$DZ" -t sgml -d "$ROOT/$spec" "$ROOT/$doc" > "$SNAP/stdout" 2>"$SNAP/stderr"); then
+  if ! (cd "$out" && SCALY_HOME="$DAZZLE_REPO" "$DZ" -t sgml -d "$ROOT/$spec" "$ROOT/$doc" > "$SNAP/stdout" 2>"$SNAP/stderr"); then
     echo "dazzle-codegen: FAIL ($spec)"; cat "$SNAP/stderr"; return 1
   fi
   local rc=0

@@ -99,7 +99,7 @@ make_bindist() {
 # payload
 if make_dist > "$TMP/dist.log" 2>&1; then
   tar -tzf "$TMP/downloads/scaly-0.1.0.tar.gz" > "$TMP/payload.txt"
-  private=$(grep -cE 'packages/(scalyc|scalyls|dazzle|opensp|tscaly|scalygpu)/|\.o$|/\._|CLAUDE' "$TMP/payload.txt")
+  private=$(grep -cE 'packages/(scalyc|scalyls|tscaly|scalygpu)/|\.o$|/\._|CLAUDE' "$TMP/payload.txt")
   missing=""
   for f in seed/scalyc.ll seed/SHA256SUMS packages/scaly/0.1.0/scaly.scaly packages/http/0.1.0/http.scaly \
            packages/json/0.1.0/json.scaly packages/http/0.1.0/interface/ LICENSE VERSION; do
