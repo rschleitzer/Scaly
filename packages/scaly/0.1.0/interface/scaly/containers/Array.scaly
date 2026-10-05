@@ -16,7 +16,7 @@ use scaly.memory.runtime
 ; ★★★`array` is a POINTER on purpose, and it may not be spelled `ref[...]` in
 ; either form. `next` tests it against null, so the non-optional `ref` is a
 ; declaration that lies -- report_null_test_on_ref# says so, and it was
-; `pointer[Array[T]]` until 7c4240ad converted it. But the nullable `ref[...]?`
+; `pointer[Array[T]]` until 5b0f054d converted it. But the nullable `ref[...]?`
 ; is worse than wrong here, it MISCOMPILES: an `X?` field adds exactly one
 ; generic level, which pushes `plan_structure -> plan_function -> plan_type ->
 ; instantiate_generic` into the s116 cycle guard, and that guard short-circuits

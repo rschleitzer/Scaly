@@ -11,7 +11,7 @@
 ; The shape below is the real one. `packages/dazzle`'s `Escape.analysable`
 ; opened with exactly `if i = null return false` on a parameter declared
 ; `ref[Insn]`, and 240 more sites like it survived the 2026-08-23 conversion
-; (a72ed732), which added 4081 `ref[...]` declarations and not one `ref[...]?`.
+; (403b6e9e), which added 4081 `ref[...]` declarations and not one `ref[...]?`.
 ;
 ; The exit is the nullable spelling; null_test_on_ref_ok.scaly proves it, and
 ; proves the gate stays off a `pointer[T]`, which may always be null by design.

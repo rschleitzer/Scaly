@@ -5442,7 +5442,7 @@ define Planner
         ; nothing said at the line that caused it. The write is `put`.
         ; ★★★It cost FOUR live miscompiles that stood for a day.
         ; `tools/subscript.py` rewrote four `set` TARGETS from
-        ; `set *(x.get_buffer() + i): v` into `set x[i]: v` (commit 25614a02,
+        ; `set *(x.get_buffer() + i): v` into `set x[i]: v` (commit 9c153a2e,
         ; "74 buffer walks become subscripts"): dazzle's `#!optional`/`#!key`
         ; DEFAULTS were then never stored, so every default read back as `#f`,
         ; and the root-rule specificity sort never swapped a pair. Five backend
@@ -5557,7 +5557,7 @@ define Planner
         ; declaration.
         ;
         ; ★★★Why a checker and not another sweep. The 2026-08-23 conversion
-        ; (a72ed732, "Declare concept refs as ref in the ports") added 4081
+        ; (403b6e9e, "Declare concept refs as ref in the ports") added 4081
         ; `: ref[...]` declarations across opensp and dazzle and NOT ONE
         ; `ref[...]?` -- it was a flat `pointer[X]` -> `ref[X]` rewrite with no
         ; nullability analysis, and `tools/refconv.py`, which has that rule,
