@@ -2502,6 +2502,9 @@ define cli
                 Console.println "Usage: scaly run <file> [arguments]"
                 return 1
             }
+            var run_seen Array[String]()
+            if tool.fetch_declared(String(*(argv + 2)), &run_seen) = false
+                return 1
             var run_opts Options()
             run_opts.input_file := String(*(argv + 2))
             run_opts.jit_program := true
@@ -2517,6 +2520,9 @@ define cli
                 Console.println "Usage: scaly test <file> [filter]"
                 return 1
             }
+            var test_seen Array[String]()
+            if tool.fetch_declared(String(*(argv + 2)), &test_seen) = false
+                return 1
             var test_opts Options()
             test_opts.input_file := String(*(argv + 2))
             test_opts.test_mode := true
@@ -2528,6 +2534,9 @@ define cli
         {
             var build_opts cli.parse_args(argc - 1, argv + 1)
             build_opts.tool_build := true
+            var build_seen Array[String]()
+            if build_opts.has_input() and tool.fetch_declared(String(build_opts.input_file), &build_seen) = false
+                return 1
             if build_opts.output_file.get_length() = 0 and build_opts.has_input()
                 build_opts.output_file := cli.extract_program_name(build_opts.input_file)
             return cli.run(build_opts)

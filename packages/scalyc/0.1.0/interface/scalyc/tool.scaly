@@ -22,6 +22,9 @@ use scaly.os.Directory
 use scaly.os.Directory.DirectoryEntry
 use scaly.memory.Page
 use scaly.memory.root_pages.getenv
+use scaly.memory.root_pages.scaly_eputs
+use scaly.memory.runtime.unlink
+use scalyc.compiler.Modeler
 use scalyc.cli
 use scalyc.cli.Options
 use scalyc.compiler.lexer.*
@@ -185,4 +188,41 @@ define tool
     ; A program is <name>/<name>.scaly; a package lies where the compiler and
     ; a later fetch from git look for one, <name>/packages/<name>/0.1.0/.
     procedure new_project(name: String, library: bool) @ret_nonlocal true @deep true returns int io linked
+
+    ; ---- fetching (stage D2) ------------------------------------------------
+
+    ; A source goes into a shell command, and it comes out of a program's
+    ; text: only what an address or a path is made of, and no leading `-`
+    ; (git would read an option).
+    function source_is_safe(source: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; what git is given for a source: "github.com/x/y" is
+    ; https://github.com/x/y.git; an address with a scheme, a `user@host:`
+    ; address and a local path are taken as they are
+    function source_url(source: String) @page true @direct true @deep true returns String linked
+
+    ; run a command, what it says kept in `log`; true when it answered 0
+    procedure quiet(command: String, log: String) @ret_nonlocal true @deep true returns bool io linked
+
+    ; the first line of a file, without its line feed
+    procedure first_line(mutable file: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; the value of `key` in a record file of `key value` lines, "" without
+    procedure record_value(mutable file: String, key: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; Fetch the package `name` `version` of `source` into `dir`
+    ; (Modeler.fetched_directory#): the default branch's head of the source,
+    ; its packages/<name>/<version> laid down with its files read-only. The
+    ; commit and the git tree id of that directory are remembered beside it
+    ; (<version>.fetched), and a version fetched AGAIN must have the tree it
+    ; had: a published version does not change. Nothing is written into the
+    ; project. False, with the reason, when it cannot be done.
+    procedure fetch_package(source: String, name: String, version: String, mutable dir: String) @ret_nonlocal true @deep true returns bool io linked
+
+    ; Fetch what `root_file` declares with a source and neither the
+    ; installation nor the project has, and what those packages declare in
+    ; their turn. `seen` holds the roots already read. Before a compile: the
+    ; compiler itself never reaches the network (Modeler.package_directory#
+    ; only looks). False when a fetch failed.
+    procedure fetch_declared(mutable root_file: String, mutable seen: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_2 true returns bool io linked
 }

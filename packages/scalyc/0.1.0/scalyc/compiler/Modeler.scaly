@@ -2905,7 +2905,8 @@ define Modeler
     ; source_path#: a source as a directory path, <host>/<path>:
     ; "github.com/x/json", "https://github.com/x/json.git" and
     ; "git@github.com:x/json.git" are one place. A scheme, a user and a
-    ; trailing ".git" or "/" go; what no file name should hold becomes `_`, so
+    ; trailing ".git" or "/" go; what no file name should hold becomes `_`, and
+    ; so does a dot a component begins with, so
     ; a local path ("/home/me/json", "C:\\work\\json") lies under its own
     ; spelling too.
     function source_path(source: String) returns String
@@ -2955,7 +2956,9 @@ define Modeler
             }
             else
             {
-                if plain
+                ; a component does not begin with a dot: `..` would climb out
+                ; of the place fetched packages are kept in
+                if plain and (c <> 46 or last_slash = false)
                     sb.append(c as char)
                 else
                     sb.append("_" as char)
@@ -3004,6 +3007,67 @@ define Modeler
                         choose decl_syntax
                             when pkg_syntax: PackageSyntax
                                 handle_package_decl(pkg_syntax, packages, versions)
+                            else
+                            {
+                                ; not a package
+                            }
+                    }
+                    i := i + 1
+                }
+            }
+    }
+
+    ; The packages a root file declares, as three lists side by side: name,
+    ; version, source ("" where the declaration names none). For the tool,
+    ; which fetches what has a source before anything is compiled
+    ; (tool.fetch_declared#); a file that does not parse declares nothing
+    ; here and is reported when it is compiled.
+    procedure declared_packages(mutable root_file: String, mutable names: ref[Array[String]], mutable versions: ref[Array[String]], mutable sources: ref[Array[String]])
+    {
+        if File.exists(root_file) = false
+            return
+        var contents File.read_to_string(root_file)
+        if contents.get_length() = 0
+            return
+        var p Parser(contents)
+        choose p.parse_program()
+            when err: Error
+                return
+            when syntax: Success
+            {
+                if syntax.file.declarations = null
+                    return
+                let decl_syns (*syntax.file.declarations)
+                let page Page.get(names)
+                var i: size_t 0
+                while i < decl_syns.length
+                {
+                    let decl_ptr decl_syns.get i
+                    if decl_ptr <> null
+                    {
+                        let decl_syntax (*decl_ptr)
+                        choose decl_syntax
+                            when pkg_syntax: PackageSyntax
+                            {
+                                var version_str "0.1.0"
+                                if pkg_syntax.version <> null
+                                    version_str := format_version(pkg_syntax.version.unwrap())
+                                var source_str ""
+                                if pkg_syntax.source <> null
+                                {
+                                    let src pkg_syntax.source.unwrap()
+                                    choose src.literal
+                                        when str: StringLiteral
+                                            source_str := String(str.value)
+                                        else
+                                        {
+                                            ; no string: handle_package_decl# says so
+                                        }
+                                }
+                                names.add(String^page(pkg_syntax.name.name))
+                                versions.add(String^page(version_str))
+                                sources.add(String^page(source_str))
+                            }
                             else
                             {
                                 ; not a package
@@ -3087,7 +3151,7 @@ define Modeler
                 perr.append("/" as char)
                 perr.append pkg_name
                 if source_str.get_length() > 0
-                    perr.append ".scaly - not in the installation (SCALY_HOME), not in ./packages of the directory this runs in, and not fetched from \"`source_str`\""
+                    perr.append ".scaly - not in the installation (SCALY_HOME), not in ./packages of the directory this runs in, and not fetched from \"`source_str`\" - scaly build, scaly run and scaly test fetch it"
                 else
                     perr.append ".scaly - looked in the installation (SCALY_HOME) and in ./packages of the directory this runs in"
                 let perr_str perr.to_string()

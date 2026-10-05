@@ -364,7 +364,8 @@ define Modeler
     ; source_path#: a source as a directory path, <host>/<path>:
     ; "github.com/x/json", "https://github.com/x/json.git" and
     ; "git@github.com:x/json.git" are one place. A scheme, a user and a
-    ; trailing ".git" or "/" go; what no file name should hold becomes `_`, so
+    ; trailing ".git" or "/" go; what no file name should hold becomes `_`, and
+    ; so does a dot a component begins with, so
     ; a local path ("/home/me/json", "C:\\work\\json") lies under its own
     ; spelling too.
     function source_path(source: String) @page true @direct true @ret_caller true @deep true returns String linked
@@ -379,6 +380,13 @@ define Modeler
     ; A root that does not parse is left to
     ; build_referenced_module#, which reports it with its location.
     procedure load_package_dependencies(mutable root_file: String, mutable packages: ref[Array[Module]], mutable versions: ref[Array[String]]) @page true @stores true @deep true io mutable modeler_error_count reads modeler_error_count linked
+
+    ; The packages a root file declares, as three lists side by side: name,
+    ; version, source ("" where the declaration names none). For the tool,
+    ; which fetches what has a source before anything is compiled
+    ; (tool.fetch_declared#); a file that does not parse declares nothing
+    ; here and is reported when it is compiled.
+    procedure declared_packages(mutable root_file: String, mutable names: ref[Array[String]], mutable versions: ref[Array[String]], mutable sources: ref[Array[String]]) @deep true @deep_pageof_2 true io linked
 
     procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]], mutable versions: ref[Array[String]]) @page true @direct true @stores true @deep true io mutable modeler_error_count reads modeler_error_count linked
 

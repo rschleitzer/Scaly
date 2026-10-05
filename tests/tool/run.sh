@@ -58,6 +58,15 @@
 #              all three routes and under every spelling of one source; a
 #              missing one is reported with source and place, a source that
 #              is no string is refused, and a local ./packages wins
+#   fetch      the tool fetches a declared source with git (local
+#              repositories, no network): a package whose own root declares
+#              a second source brings that one too; the files lie read-only
+#              with commit and tree remembered beside them; a version whose
+#              directory changed afterwards is refused when fetched again;
+#              a source without the package, one that is no address, and a
+#              repository that is not there are each said; a package with C
+#              files is announced; scalyc alone fetches nothing. SKIPs by
+#              name without git
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -404,7 +413,9 @@ src="$TMP/source"
 fetched="$TMP/fetched"
 mkdir -p "$src"
 printf 'package shapes 0.1.0 "github.com/someone/shapes"\n\nprint(shapes.greeting("fetched"))\n' > "$src/main.scaly"
-out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$scaly_abs" run main.scaly 2>&1); rc=$?
+# (asked of scalyc, which only looks: the tool would go and fetch it)
+case "$BIN" in /*) BIN_ABS="$BIN" ;; *) BIN_ABS="$here/$BIN" ;; esac
+out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$BIN_ABS" -S -o "$TMP/source.ll" main.scaly 2>&1); rc=$?
 if [ "$rc" != 0 ] && echo "$out" | grep -q 'package not found: shapes 0.1.0' \
    && echo "$out" | grep -q 'fetched/github.com/someone/shapes/shapes/0.1.0/shapes.scaly' \
    && echo "$out" | grep -q 'not fetched from "github.com/someone/shapes"'; then
@@ -438,6 +449,58 @@ mkdir -p "$src/packages/shapes/0.1.0"
 sed 's/Hello/Local hello/' "$TMP/shapes/packages/shapes/0.1.0/shapes.scaly" > "$src/packages/shapes/0.1.0/shapes.scaly"
 out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$scaly_abs" run main.scaly 2>&1)
 [ "$out" = "Local hello, fetched!" ] && ok || bad "source: a local ./packages did not win, got '$(echo "$out" | head -1 | cut -c1-120)'"
+
+# fetch: git is the registry (local repositories, so no network)
+if ! command -v git > /dev/null 2>&1; then
+  echo "SKIP fetch (no git on the PATH)"
+else
+  fr="$TMP/fetchrepos"; fp="$TMP/fetchproj"; fb="$TMP/fetchbase"
+  mkdir -p "$fr" "$fp"
+  tg() { git -c user.name=t -c user.email=t@example.invalid -c init.defaultBranch=main "$@"; }
+  ft() { ( cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" "$scaly_abs" "$@" ); }
+  ( cd "$fr" && SCALY_HOME="$here" "$scaly_abs" new inner --lib ) > /dev/null 2>&1
+  ( cd "$fr/inner" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
+  mkdir -p "$fr/outer/packages/outer/0.1.0"
+  printf 'package scaly 0.1.0\npackage inner 0.1.0 "%s"\n\ndefine outer\n{\n    function twice(name: String) returns String\n        inner.greeting(inner.greeting(name))\n}\n' "$fr/inner" > "$fr/outer/packages/outer/0.1.0/outer.scaly"
+  printf 'int outer_c(void) { return 7; }\n' > "$fr/outer/packages/outer/0.1.0/extra.c"
+  ( cd "$fr/outer" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
+  printf 'package outer 0.1.0 "%s"\n\nprint(outer.twice("git"))\n' "$fr/outer" > "$fp/main.scaly"
+  case "$BIN" in /*) BIN_ABS="$BIN" ;; *) BIN_ABS="$here/$BIN" ;; esac
+  # scalyc alone looks and does not fetch
+  out=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" "$BIN_ABS" -S -o "$TMP/fetch.ll" main.scaly 2>&1); rc=$?
+  [ "$rc" != 0 ] && [ ! -e "$fb" ] && echo "$out" | grep -q 'scaly build, scaly run and scaly test fetch it' && ok || bad "fetch: scalyc alone rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
+  out=$(ft run main.scaly 2> "$TMP/fetch.err"); rc=$?
+  if [ "$rc" = 0 ] && [ "$out" = "Hello, Hello, git!!" ] && grep -q '^scaly: fetching outer 0.1.0 from ' "$TMP/fetch.err" \
+     && grep -q '^scaly: fetching inner 0.1.0 from ' "$TMP/fetch.err" && grep -q 'outer 0.1.0 brings native code - 1 C or assembly files' "$TMP/fetch.err"; then
+    ok
+  else
+    bad "fetch: rc=$rc out='$out' $(head -3 "$TMP/fetch.err" | tr '\n' '|' | cut -c1-200)"
+  fi
+  # a second run fetches nothing; build and --release use what lies there
+  out=$(ft run main.scaly 2> "$TMP/fetch2.err")
+  [ "$out" = "Hello, Hello, git!!" ] && [ ! -s "$TMP/fetch2.err" ] && ok || bad "fetch: the second run said '$(head -1 "$TMP/fetch2.err" | cut -c1-120)'"
+  ft build main.scaly --release -o "$TMP/fetch_m$SCALY_EXE" > "$TMP/fetchb.log" 2>&1 && [ "$("$TMP/fetch_m$SCALY_EXE")" = "Hello, Hello, git!!" ] && ok || bad "fetch: --release $(tail -1 "$TMP/fetchb.log" | cut -c1-120)"
+  # laid down read-only, commit and tree beside it
+  fd=$(find "$fb" -type d -path '*/inner/inner/0.1.0' | head -1)
+  if [ -n "$fd" ] && [ ! -w "$fd/inner.scaly" ] && grep -q '^commit [0-9a-f]\{40\}$' "$fd.fetched" && grep -q '^tree [0-9a-f]\{40\}$' "$fd.fetched"; then ok; else bad "fetch: the record or the read-only files ($fd)"; fi
+  # a published version does not change
+  ( cd "$fr/inner" && sed 's/Hello/Changed/' packages/inner/0.1.0/inner.scaly > x && mv x packages/inner/0.1.0/inner.scaly && tg commit -q -am two ) > /dev/null 2>&1
+  rm -rf "$fd"
+  out=$(ft run main.scaly 2>&1); rc=$?
+  [ "$rc" != 0 ] && echo "$out" | grep -q 'is not what it was when it was first fetched here' && [ ! -e "$fd" ] && ok || bad "fetch: a changed version rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-120)'"
+  said=0
+  printf 'package nosuch 0.1.0 "%s"\nprint("x")\n' "$fr/inner" > "$fp/a.scaly"
+  ft run a.scaly 2>&1 | grep -q 'has no package nosuch 0.1.0 - no directory packages/nosuch/0.1.0' && said=$((said+1))
+  printf 'package inner 0.1.0 "x; touch %s/PWNED"\nprint("x")\n' "$TMP" > "$fp/b.scaly"
+  ft run b.scaly 2>&1 | grep -q 'is no source' && [ ! -e "$TMP/PWNED" ] && said=$((said+1))
+  printf 'package opt 0.1.0 "--upload-pack=x"\nprint("x")\n' > "$fp/c.scaly"
+  ft run c.scaly 2>&1 | grep -q 'is no source' && said=$((said+1))
+  printf 'package gone 0.1.0 "%s/nowhere"\nprint("x")\n' "$fr" > "$fp/d.scaly"
+  ft run d.scaly 2>&1 | grep -q 'git could not fetch' && said=$((said+1))
+  printf 'package up 0.1.0 "../../climb"\nprint("x")\n' > "$fp/e.scaly"
+  ft run e.scaly > /dev/null 2>&1; [ ! -e "$TMP/climb" ] && [ ! -e "$fb/../climb" ] && said=$((said+1))
+  [ "$said" = 5 ] && ok || bad "fetch: $said of 5 wrong sources answered as they should"
+fi
 
 # bare: no clang, no LIB -- only the Build Tools, found by the compiler
 if [ "$SCALY_COFF" = 1 ]; then

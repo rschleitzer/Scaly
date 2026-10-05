@@ -22,6 +22,9 @@ use scaly.os.Directory
 use scaly.os.Directory.DirectoryEntry
 use scaly.memory.Page
 use scaly.memory.root_pages.getenv
+use scaly.memory.root_pages.scaly_eputs
+use scaly.memory.runtime.unlink
+use scalyc.compiler.Modeler
 use scalyc.cli
 use scalyc.cli.Options
 use scalyc.compiler.lexer.*
@@ -1137,5 +1140,239 @@ define tool
         else
             Console.println("  cd `name` && scaly run `name`.scaly")
         0
+    }
+
+    ; ---- fetching (stage D2) ------------------------------------------------
+
+    ; A source goes into a shell command, and it comes out of a program's
+    ; text: only what an address or a path is made of, and no leading `-`
+    ; (git would read an option).
+    function source_is_safe(source: String) returns bool
+    {
+        let n source.get_length()
+        if n = 0 or source.get(0) = 45
+            return false
+        var i: size_t 0
+        while i < n
+        {
+            let c source.get i
+            let plain (c >= 48 and c <= 57) or (c >= 65 and c <= 90) or (c >= 97 and c <= 122)
+            let mark c = 45 or c = 46 or c = 95 or c = 47 or c = 58 or c = 64 or c = 126 or c = 43 or c = 92
+            if plain = false and mark = false
+                return false
+            i := i + 1
+        }
+        true
+    }
+
+    ; what git is given for a source: "github.com/x/y" is
+    ; https://github.com/x/y.git; an address with a scheme, a `user@host:`
+    ; address and a local path are taken as they are
+    function source_url(source: String) returns String
+    {
+        let n source.get_length()
+        if source.contains(String("://")) or source.contains(64 as u8)
+            return String(source)
+        let c source.get 0
+        if c = 47 or c = 46 or c = 126 or c = 92
+            return String(source)
+        if n > 2 and source.get(1) = 58 and (source.get(2) = 47 or source.get(2) = 92)
+            return String(source)
+        if source.ends_with(String(".git"))
+            return "https://`source`"
+        "https://`source`.git"
+    }
+
+    ; run a command, what it says kept in `log`; true when it answered 0
+    procedure quiet(command: String, log: String) returns bool
+    {
+        let line "`command` > \"`log`\" 2>&1"
+        system(line.to_c_string()) = 0
+    }
+
+    ; the first line of a file, without its line feed
+    procedure first_line(mutable file: String) returns String
+    {
+        let text File.read_to_string(file)
+        let nl text.index_of(10)
+        if nl < 0
+            return text
+        var end nl as size_t
+        if end > 0 and text.get(end - 1) = 13
+            end := end - 1
+        text.substring(0, end)
+    }
+
+    ; the value of `key` in a record file of `key value` lines, "" without
+    procedure record_value(mutable file: String, key: String) returns String
+    {
+        let text File.read_to_string(file)
+        let n text.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        while at <= n
+        {
+            if at = n or text.get(at) = 10
+            {
+                let line text.substring(from, at - from)
+                if line.starts_with("`key` ")
+                    return line.substring(key.get_length() + 1, line.get_length() - key.get_length() - 1)
+                from := at + 1
+            }
+            at := at + 1
+        }
+        String()
+    }
+
+    ; Fetch the package `name` `version` of `source` into `dir`
+    ; (Modeler.fetched_directory#): the default branch's head of the source,
+    ; its packages/<name>/<version> laid down with its files read-only. The
+    ; commit and the git tree id of that directory are remembered beside it
+    ; (<version>.fetched), and a version fetched AGAIN must have the tree it
+    ; had: a published version does not change. Nothing is written into the
+    ; project. False, with the reason, when it cannot be done.
+    procedure fetch_package(source: String, name: String, version: String, mutable dir: String) returns bool
+    {
+        if tool.source_is_safe(source) = false
+        {
+            Console.println("Error: package `name` `version`: \"`source`\" is no source - an address or a path (letters, digits and . _ - / : @ ~ +)")
+            return false
+        }
+        let base Modeler.fetched_base()
+        let home "`base`/`Modeler.source_path(source)`"
+        let store "`home`/.git-store"
+        let pid getpid() as int
+        let log "`home`/.fetch.`pid`.log"
+        let out "`home`/.fetch.`pid`.out"
+        if tool.ensure_directory(home) = false
+        {
+            Console.println("Error: cannot create `home`")
+            return false
+        }
+        if tool.quiet("git --version", log) = false
+        {
+            Console.println("Error: package `name` `version` is to be fetched from \"`source`\", and git is not on the PATH")
+            return false
+        }
+        scaly_eputs("scaly: fetching `name` `version` from `source`\n".to_c_string())
+        if Directory.is_directory(store) = false
+        {
+            if tool.quiet("git init --quiet --bare \"`store`\"", log) = false
+            {
+                Console.println("Error: git could not make `store`: `tool.first_line(log)`")
+                return false
+            }
+        }
+        let url tool.source_url(source)
+        if tool.quiet("git -C \"`store`\" fetch --quiet --depth 1 \"`url`\" HEAD", log) = false
+        {
+            Console.println("Error: package `name` `version`: git could not fetch `url`")
+            Console.println("       `tool.first_line(log)`")
+            unlink(log.to_c_string())
+            return false
+        }
+        let path "packages/`name`/`version`"
+        system("git -C \"`store`\" rev-parse FETCH_HEAD > \"`out`\" 2> \"`log`\"".to_c_string())
+        let commit tool.first_line(out)
+        if system("git -C \"`store`\" rev-parse FETCH_HEAD:`path` > \"`out`\" 2> \"`log`\"".to_c_string()) <> 0
+        {
+            Console.println("Error: \"`source`\" has no package `name` `version` - no directory `path` at its commit `commit`")
+            unlink(log.to_c_string())
+            unlink(out.to_c_string())
+            return false
+        }
+        let tree tool.first_line(out)
+        unlink(out.to_c_string())
+        let record "`dir`.fetched"
+        if File.exists(record)
+        {
+            let had tool.record_value(record, "tree")
+            if had.get_length() > 0 and had.equals(tree) = false
+            {
+                Console.println("Error: package `name` `version` of \"`source`\" is not what it was when it was first fetched here:")
+                let had_commit tool.record_value(record, "commit")
+                Console.println("       then commit `had_commit`, tree `had`")
+                Console.println("       now  commit `commit`, tree `tree`")
+                Console.println("       A published version does not change. If this is meant, remove `record`.")
+                unlink(log.to_c_string())
+                return false
+            }
+        }
+        let tmp "`home`/.fetch.`pid`"
+        let tar "`tmp`.tar"
+        var laid tool.ensure_directory(tmp)
+        if laid
+            laid := system("git -C \"`store`\" archive --format=tar FETCH_HEAD `path` > \"`tar`\" 2> \"`log`\"".to_c_string()) = 0
+        if laid
+            laid := tool.quiet("tar -xf \"`tar`\" -C \"`tmp`\"", log)
+        unlink(tar.to_c_string())
+        let slash dir.last_index_of(47)
+        if laid and slash > 0
+            laid := tool.ensure_directory(dir.substring(0, slash as size_t))
+        if laid
+            laid := rename("`tmp`/`path`".to_c_string(), dir.to_c_string()) = 0
+        Directory.remove("`tmp`/packages/`name`")
+        Directory.remove("`tmp`/packages")
+        Directory.remove(tmp)
+        if laid = false
+        {
+            Console.println("Error: package `name` `version` of \"`source`\" could not be laid down in `dir`")
+            Console.println("       `tool.first_line(log)`")
+            unlink(log.to_c_string())
+            return false
+        }
+        unlink(log.to_c_string())
+        ; read-only files, where the system has chmod: what was fetched is
+        ; not the place to edit (a copy under ./packages is)
+        if tool.triple_os(tool.target_triple(String())).equals("windows") = false
+            system("find \"`dir`\" -type f -exec chmod a-w {} + 2>/dev/null".to_c_string())
+        File.write_from_string(record, "commit `commit`\ntree `tree`\nsource `source`\n")
+        ; its author's C runs through this machine's compiler when it is built
+        var files Array[String]()
+        tool.package_files(dir, "", &files)
+        var natives Array[String]()
+        tool.select_native(&files, tool.target_triple(String()), &natives)
+        if natives.length > 0
+            scaly_eputs("scaly: `name` `version` brings native code - `natives.length` C or assembly files, compiled on this machine when the package is built\n".to_c_string())
+        true
+    }
+
+    ; Fetch what `root_file` declares with a source and neither the
+    ; installation nor the project has, and what those packages declare in
+    ; their turn. `seen` holds the roots already read. Before a compile: the
+    ; compiler itself never reaches the network (Modeler.package_directory#
+    ; only looks). False when a fetch failed.
+    procedure fetch_declared(mutable root_file: String, mutable seen: ref[Array[String]]) returns bool
+    {
+        var si: size_t 0
+        while si < seen.length
+        {
+            let s seen.at si
+            if s.equals(root_file)
+                return true
+            si := si + 1
+        }
+        let seen_page Page.get(seen)
+        seen.add(String^seen_page(root_file))
+        var names Array[String]()
+        var versions Array[String]()
+        var sources Array[String]()
+        Modeler.declared_packages(root_file, &names, &versions, &sources)
+        var i: size_t 0
+        while i < names.length
+        {
+            let name names.at i
+            let version versions.at i
+            let source sources.at i
+            i := i + 1
+            var dir Modeler.package_directory(name, version, source)
+            if source.get_length() > 0 and dir.starts_with(Modeler.fetched_base()) and Modeler.has_package_root(dir, name) = false
+                if tool.fetch_package(source, name, version, dir) = false
+                    return false
+            var root "`dir`/`name`.scaly"
+            if File.exists(root) and tool.fetch_declared(root, seen) = false
+                return false
+        }
+        true
     }
 }
