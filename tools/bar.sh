@@ -190,8 +190,12 @@ lane_ports() {
   local rc=0
   await_tscaly_build
   if have_dazzle; then
-    echo "dazzle: $DAZZLE_REPO at $(git -C "$DAZZLE_REPO" rev-parse --short=9 HEAD 2>/dev/null)"
+    # tools/dazzle.pin names the dazzle commit this tree was last green with
+    local at pin
+    at=$(git -C "$DAZZLE_REPO" rev-parse HEAD 2>/dev/null); pin=$(cat tools/dazzle.pin 2>/dev/null)
+    echo "dazzle: $DAZZLE_REPO at ${at:0:9}$([ "$at" = "$pin" ] || echo " (tools/dazzle.pin names ${pin:0:9})")"
     step dazzle dazzle_env tests/run.sh || rc=1
+    step dazzle-interface dazzle_env tools/interface.sh --check || rc=1
     # the gate that stays here: the engine reproduces THIS tree's generated files
     step dazzle-codegen env DAZZLE_REPO="$DAZZLE_REPO" tests/dazzle/codegen/run.sh "$BIN" || rc=1
   else
