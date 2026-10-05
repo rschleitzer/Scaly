@@ -30,15 +30,15 @@
 # for Apple silicon. The Intel Mac leg runs on macos-15-intel — GitHub's last
 # Intel image — so that archive's floor is macOS 15, below what we promise.
 #
-# ★COST: this repository is private. macOS minutes are billed at ten times
-# the Linux rate, Windows at twice; every leg builds the compiler twice (the
-# seed recipe, then with the profile). Run it for a release, never per commit.
+# ★COST: every leg builds the compiler twice (the seed recipe, then with the
+# profile). Run it for a release, never per commit. The repository is public
+# since 2026-10-05, so the minutes are no longer billed; while it was private,
+# macOS counted ten times the Linux rate and Windows twice.
 #
 # ★First run 2026-10-04 (run 37195736745), all six legs green and each
 # archive built with a profile made on its runner: darwin-arm64 3 min,
 # linux-aarch64 6, linux-x86_64 7, windows-x86_64 7, windows-arm64 9,
-# darwin-x86_64 11 -- about 190 billed minutes of the month's 2000 (macOS
-# counts ten times, Windows twice). The four newer labels are available to
+# darwin-x86_64 11 -- about 190 billed minutes then. The four newer labels are available to
 # this account, Homebrew on the Intel image has llvm@21, and the Windows
 # runners carry 7z and a tar that reads .tar.xz.
 name: release
