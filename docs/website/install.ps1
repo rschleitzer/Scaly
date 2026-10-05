@@ -141,7 +141,7 @@ function Install-Scaly {
             Say "scaly run, scaly test and the REPL work without them; scaly build needs them to link."
             $winget = Get-Command winget -ErrorAction SilentlyContinue
             $components = "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add $vcComponent"
-            $line = "winget install --id Microsoft.VisualStudio.BuildTools -e --override `"--passive --wait $components`""
+            $line = "winget install --id Microsoft.VisualStudio.BuildTools -e --source winget --override `"--passive --wait $components`""
             # ★Visual Studio 2026 (18.x), the toolset the archives are BUILT with:
             # objects link with the same toolset or a newer one, never an older.
             # The id named 2022 until 2026-10-04 -- written from memory.
@@ -164,10 +164,20 @@ function Install-Scaly {
                 # a remote shell has no desktop to show the progress on
                 $shown = if ($env:SSH_CONNECTION -or -not [Environment]::UserInteractive) { '--quiet' } else { '--passive' }
                 if ($winget) {
-                    & winget install --id Microsoft.VisualStudio.BuildTools -e --accept-source-agreements --accept-package-agreements --override "$shown --wait $components" | Out-Host
-                } else {
+                    # ★`--source winget`: without it winget asks every source it
+                    # knows, and one that fails ends the command -- on a fresh
+                    # Windows 11 (2026-10-05, at the screen) the Store source
+                    # answered "0x8a15005e: the server certificate did not match"
+                    # and winget then refused to choose, the package found
+                    # under `winget` in the same breath.
+                    & winget install --id Microsoft.VisualStudio.BuildTools -e --source winget --accept-source-agreements --accept-package-agreements --override "$shown --wait $components" | Out-Host
+                    $tools = & $haveTools
+                    if (-not $tools) { Say "winget did not install them; taking Microsoft's installer directly" }
+                }
+                if (-not $tools) {
                     # no winget -- an older Windows, an account that never signed
-                    # in at the screen: Microsoft's bootstrapper itself
+                    # in at the screen -- or a winget that failed: Microsoft's
+                    # bootstrapper itself
                     $boot = Join-Path $work 'vs_BuildTools.exe'
                     try {
                         $savedProgress = $ProgressPreference
