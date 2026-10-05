@@ -247,7 +247,7 @@ int pthread_join(size_t thread, void* retval)
 }
 
 /* Give the processor to another ready thread. Rule (a): the POSIX name does
- * not exist here. packages/tscaly declares it as an extern for its loader's
+ * not exist here. ../tscaly/packages/tscaly declares it as an extern for its loader's
  * wait loops, and the port's test programs did not link without it
  * (2026-10-02, the first tscaly build on Windows). SwitchToThread answers
  * whether a switch happened; POSIX answers 0 for success either way. */

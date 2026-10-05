@@ -1939,10 +1939,16 @@ define symbols
     ; Modeler.scaly::scaly_home_base#.
     procedure scaly_home_base() @page true @direct true @ret_caller true @deep true returns String io linked
 
-    ; The packages/ root to scan for cross-package symbols, or "" when none can
-    ; be determined. Prefers <SCALY_HOME>/packages; otherwise the longest prefix
-    ; of `path` ending in a `/packages` segment.
-    procedure package_search_dir(path: String) @page true @direct true @ret_caller true @deep true returns String io linked
+    ; The packages/ roots to scan for cross-package symbols, or "" when none
+    ; can be determined: <SCALY_HOME>/packages, and -- as the compiler looks
+    ; (Modeler.package_directory#, 2026-10-05) -- the PROJECT's own packages
+    ; after it, the longest prefix of `path` ending in a `/packages` segment.
+    ; Two roots are ONE string with a line feed between them, the
+    ; installation's first: every scan takes its files from
+    ; list_scaly_files#, which lists one root after the other, so a name both
+    ; have is answered by the installation as the compiler answers it.
+    ; Without SCALY_HOME the project's root alone, as before.
+    procedure package_search_dir(path: String) @page true @direct true @deep true returns String io linked
 
     ; `path` truncated to include its last "/packages" segment (so
     ; "/u/Scaly/packages/scalyls/0.1.0/x.scaly" -> "/u/Scaly/packages"), or ""
@@ -1951,6 +1957,9 @@ define symbols
 
     ; One directory of list_scaly_files#'s walk, its subdirectories after it.
     procedure list_scaly_walk(mutable dir: String, mutable sb: ref[StringBuilder]) @deep true io linked
+
+    ; One root of list_scaly_files#.
+    procedure list_scaly_root(one: String, mutable sb: ref[StringBuilder]) @deep true io linked
 
     ; Every `*.scaly` under `dir`: newline-separated paths, each `dir` plus the
     ; way down, with a guaranteed trailing LF, in the order the file system

@@ -1929,7 +1929,7 @@ define Planner
         ;       nobody can reach and every read resolves to the first. Nothing
         ;       looks wrong anywhere -- the two declarations may be four
         ;       hundred lines apart and both readers agree, because they read
-        ;       the same slot. It cost `packages/tscaly` a shared memo: two
+        ;       the same slot. It cost `../tscaly/packages/tscaly` a shared memo: two
         ;       resolvers of one name answering out of one cell.
         ;
         ;   (b) a METHOD NAMED LIKE A FIELD. The field shadows it at every call
@@ -2025,7 +2025,7 @@ define Planner
         ; the wrong slot. Twenty lines compile with no diagnostic and exit 139.
         ;
         ; ★It stays LATENT while either call form is unreachable: in
-        ; packages/tscaly the static's one caller sat behind a stop, and 28
+        ; ../tscaly/packages/tscaly the static's one caller sat behind a stop, and 28
         ; stage-2 units began crashing the moment that arm was ported.
         ;
         ; Reported at the STATIC, which is the form to keep where the function
@@ -2515,7 +2515,7 @@ define Planner
         ; generic arguments, nothing else -- so two same-named records that
         ; both reach one compilation collapse into ONE LLVM struct and every
         ; field access in the loser reads the other's layout. In
-        ; packages/tscaly a bool on a ptr slot made `store i1 true` write into
+        ; ../tscaly/packages/tscaly a bool on a ptr slot made `store i1 true` write into
         ; a pointer's low byte and the reader's `return tp.is_this_type` was
         ; DROPPED, false for the whole tree for four slices; planner and linker
         ; said nothing, and a second pair with the same LLVM shape was harmless
@@ -20107,7 +20107,7 @@ define Planner
                     ; shape needs is_method on the last hop — while the same
                     ; call on a parameter, whose operand type is already the
                     ; pointee, was a loud exit 16. It cost a silently wrong
-                    ; parse of `{@link Foo#bar}` in packages/tscaly, whose
+                    ; parse of `{@link Foo#bar}` in ../tscaly/packages/tscaly, whose
                     ; scanner.re_scan_hash_token() had never been written.
                     ; A base that genuinely did not resolve still has an empty
                     ; name here (lookup_type = current), so the recovery keeps
@@ -28533,7 +28533,7 @@ define Planner
             ; so the access was emitted against whatever the slot held -- a
             ; `let`-bound result SIGSEGV'd, an unbound call was DROPPED at rc 0,
             ; and the recognition rule was that the code had NO EFFECT
-            ; WHATSOEVER. It cost packages/tscaly a whole elision branch that
+            ; WHATSOEVER. It cost ../tscaly/packages/tscaly a whole elision branch that
             ; ran every gate green and fired zero times. The BASE of a chain is
             ; judged exactly like a bare name; every legitimate base --- a
             ; local, a global, a concept, a namespace, a function, a primitive,
@@ -35313,7 +35313,7 @@ define Planner
         ; WITH THAT OBJECT (2026-09-20). The checker refuses a frame-local
         ; reference that is RETURNED or stored by a plain `set` -- both
         ; measured loud -- and said NOTHING when the reference travelled into a
-        ; callee that puts it inside a NEW HEAP OBJECT. In packages/tscaly 174
+        ; callee that puts it inside a NEW HEAP OBJECT. In ../tscaly/packages/tscaly 174
         ; frame-local lists reached `box_node_data[T](host, T(... list ...))`
         ; and compiled clean; the program died of an UNBOUNDED RECURSION (a
         ; dangling list feeds a memo, the memo answers nonsense, the cycle
@@ -46364,7 +46364,7 @@ define Planner
             ; the entire value of a return it was neither resolved nor
             ; diagnosed, so the tell was a function answering the zero value of
             ; its return type for every input and a CALLER that says nothing
-            ; either. It was found in packages/tscaly by writing three
+            ; either. It was found in ../tscaly/packages/tscaly by writing three
             ; `AssignmentKind*` constants that no `define` in the package
             ; declared: every gate stayed green.
             this.report_unknown_identifier(planned_collapsed)

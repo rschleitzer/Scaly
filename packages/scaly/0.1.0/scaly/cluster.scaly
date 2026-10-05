@@ -555,8 +555,39 @@ define Cluster
             Cluster.teardown(p, NODE_DOWN_SUSPECT)
             return false
         }
+        ; ★A frame can arrive AFTER this side closed the peer: Cluster.close
+        ; runs on the application's thread while this one has the next frame
+        ; in hand, and the other side cannot know we stopped listening before
+        ; our goodbye reaches it. Such a frame has no receiver and is DROPPED,
+        ; as a send to a peer that is gone is (rule 4). Until 2026-10-05 it
+        ; was handed to Channel.send, which traps on a closed channel as a
+        ; handle-discipline bug (exit 110) -- but the handle is the runtime's
+        ; own and nothing was misused: the distributed trainer died of it in
+        ; one run of thirty, a worker's next gradient racing the reducer's
+        ; close (gate tests/cluster/lateframe.scaly, 6 of 6 before the fix).
+        ; The delivery happens UNDER the peer's lock, which teardown# takes
+        ; to drop `alive` before it closes the channels: either the message
+        ; is queued before the close (a receiver finds it, then null) or it
+        ; is dropped here -- never a send on a closed channel. A node channel
+        ; is unbounded, so the send cannot block while the lock is held.
+        Cluster.acquire(p)
+        let live p.alive
+        Cluster.release(p)
+        if live = false
+        {
+            Cluster.dispose_message(rr)
+            return false
+        }
         let ch Cluster.channel(p, id)
+        Cluster.acquire(p)
+        if p.alive = false
+        {
+            Cluster.release(p)
+            Cluster.dispose_message(rr)
+            return false
+        }
         Channel.send(ch, rr as pointer[void])
+        Cluster.release(p)
         true
     }
 

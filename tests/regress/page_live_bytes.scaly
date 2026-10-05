@@ -1,5 +1,5 @@
 ; Page.live_bytes and Page.allocation_count — the two counts tsc's --diagnostics
-; prints as `Memory used` and `Memory allocs` (packages/tscaly's statistics table).
+; prints as `Memory used` and `Memory allocs` (../tscaly/packages/tscaly's statistics table).
 ; A dead frame's objects must LEAVE the live count on its way back (the frame page
 ; goes LIFO through scaly_release_root_page, its heap extensions and exclusive
 ; buffers through release_page), and an object that stays must stay in it. The

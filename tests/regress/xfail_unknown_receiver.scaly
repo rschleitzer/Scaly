@@ -4,7 +4,7 @@
 ; access was emitted against whatever the slot held: a `let`-bound result
 ; SIGSEGVs, an unbound call is DROPPED at rc 0. The recognition rule was that
 ; the code had NO EFFECT WHATSOEVER — a new condition that never fires — and it
-; cost packages/tscaly a whole elision branch that ran every gate green.
+; cost ../tscaly/packages/tscaly a whole elision branch that ran every gate green.
 ;
 ; ★The receiver reaches the planner as ONE DOTTED NAME, not as a base with a
 ; chain, and dotted names were exempt wholesale (the namespace machinery owns

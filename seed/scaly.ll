@@ -36264,8 +36264,33 @@ if.then25:                                        ; preds = %if.end21
   ret i1 false
 
 if.end26:                                         ; preds = %if.end21
-  %call27 = call ptr @_ZN7Cluster7channelEP8NodePeer3u64(ptr %0, i64 %deref5)
-  call void @_ZN7Channel4sendEP7ChannelPv(ptr %call27, ptr %call23)
+  call void @_ZN7Cluster7acquireEP8NodePeer(ptr %0)
+  %load.struct = load %_Z8NodePeer, ptr %0, align 8
+  %alive = extractvalue %_Z8NodePeer %load.struct, 2
+  call void @_ZN7Cluster7releaseEP8NodePeer(ptr %0)
+  %eq27 = icmp eq i1 %alive, false
+  br i1 %eq27, label %if.then28, label %if.end29
+
+if.then28:                                        ; preds = %if.end26
+  call void @_ZN7Cluster15dispose_messageER14ReceivedRegion(ptr %call23)
+  ret i1 false
+
+if.end29:                                         ; preds = %if.end26
+  %call30 = call ptr @_ZN7Cluster7channelEP8NodePeer3u64(ptr %0, i64 %deref5)
+  call void @_ZN7Cluster7acquireEP8NodePeer(ptr %0)
+  %load.struct31 = load %_Z8NodePeer, ptr %0, align 8
+  %alive32 = extractvalue %_Z8NodePeer %load.struct31, 2
+  %eq33 = icmp eq i1 %alive32, false
+  br i1 %eq33, label %if.then34, label %if.end35
+
+if.then34:                                        ; preds = %if.end29
+  call void @_ZN7Cluster7releaseEP8NodePeer(ptr %0)
+  call void @_ZN7Cluster15dispose_messageER14ReceivedRegion(ptr %call23)
+  ret i1 false
+
+if.end35:                                         ; preds = %if.end29
+  call void @_ZN7Channel4sendEP7ChannelPv(ptr %call30, ptr %call23)
+  call void @_ZN7Cluster7releaseEP8NodePeer(ptr %0)
   ret i1 true
 }
 

@@ -1,0 +1,100 @@
+; A frame that arrives AFTER this side closed the peer is dropped, not a
+; trap (2026-10-05). ONE program, two roles (LATEFRAME_ROLE=a|b), ROUNDS
+; connections one after the other: B accepts and floods channel 1 with FLOOD
+; messages of BLOB bytes without waiting for anything; A connects, takes one
+; of them, says goodbye in the middle of the stream and joins its reader.
+;
+; Before the fix A died with exit 110: the reader thread had the next frame
+; in hand when Cluster.close closed the channels, and delivered it with
+; Channel.send -- which traps on a closed channel as a handle-discipline bug.
+; But the handle here is the RUNTIME's, and what happened is the ordinary end
+; of a conversation: the other side cannot know we stopped listening until
+; our goodbye reaches it. It was the distributed trainer's flaky `rrc=110`
+; (tests/cluster/run.sh, train parity), where a worker's next gradient raced
+; the reducer's close.
+
+define PORT i32 47631
+define ROUNDS i64 200
+define FLOOD i64 60
+define BLOB size_t 32768
+
+define FloodMsg
+(
+    value: i64
+    data: Vector[u8]
+)
+
+procedure run_b()
+{
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+
+    let lfd Cluster.listen(PORT)
+    if lfd < (0 as i32)
+        exit 3
+    Console.println "B: ready"
+    var round 0 as i64
+    while round < ROUNDS
+    {
+        let peer Cluster.accept(lfd)
+        if peer = null
+            exit 3
+        var i 0 as i64
+        while i < FLOOD
+        {
+            let mp Page.allocate_page()
+            let m mp.allocate(sizeof FloodMsg, alignof FloodMsg) as pointer[FloodMsg]
+            m.value := i
+            let dv Vector[u8]^mp(BLOB)
+            m.data := dv
+            ; a send to a peer that is gone is dropped silently (rule 4)
+            Cluster.send(peer, 1 as u64, m as pointer[void])
+            i := i + (1 as i64)
+        }
+        Cluster.close(peer)
+        Cluster.dispose_peer(peer)
+        round := round + (1 as i64)
+    }
+    Console.println "B: PASS"
+}
+
+procedure run_a()
+{
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+
+    var round 0 as i64
+    while round < ROUNDS
+    {
+        var peer Cluster.connect("127.0.0.1", PORT)
+        var tries 0
+        while peer = null
+        {
+            tries := tries + 1
+            if tries > 100
+                exit 3
+            poll(null as pointer[pollfd], 0 as u64, 100 as i32)
+            peer := Cluster.connect("127.0.0.1", PORT)
+        }
+        let ch Cluster.channel(peer, 1 as u64)
+        let raw Channel.receive(ch)
+        if raw = null
+            exit 4
+        let rr raw as pointer[ReceivedRegion]
+        Cluster.dispose_message(rr)
+        ; goodbye in the middle of the stream: the reader has frames in hand
+        Cluster.close(peer)
+        Cluster.dispose_peer(peer)
+        round := round + (1 as i64)
+    }
+    Console.println "A: PASS"
+}
+
+let role getenv("LATEFRAME_ROLE")
+if role = null
+    exit 2
+let rc (*role) as u8
+if rc = (98 as u8)
+    run_b()
+else
+    run_a()

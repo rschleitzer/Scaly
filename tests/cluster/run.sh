@@ -94,6 +94,35 @@ else
   fi
 fi
 
+# ---- a frame that arrives after the local close is dropped, not a trap ----
+# 200 connections: B floods, A takes one message and says goodbye in the
+# middle of the stream. Before 2026-10-05 A's reader delivered the frame it
+# had in hand into the channel the close had just closed: exit 110, in 6 runs
+# of 6 here and in one run of thirty of the trainer below (train parity).
+t=lateframe
+rm -f "$OUT/cluster_$t$SCALY_EXE"
+if ! "$SCALY" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
+  fail=$((fail+1)); failures+=("$t(compile)")
+else
+  LATEFRAME_ROLE=b "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_b.log" 2>&1 &
+  BPID=$!
+  wait_marker "$OUT/cluster_${t}_b.log" "^B: ready$"
+  LATEFRAME_ROLE=a "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_a.log" 2>&1
+  ARC=$?
+  # B waits in accept for a connection that never comes when A died early
+  [ "$ARC" = "0" ] || kill $BPID 2>/dev/null
+  wait $BPID
+  BRC=$?
+  if [ "$ARC" = "0" ] && [ "$BRC" = "0" ] \
+     && grep -q "^A: PASS$" "$OUT/cluster_${t}_a.log" \
+     && grep -q "^B: PASS$" "$OUT/cluster_${t}_b.log"; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1))
+    failures+=("lateframe: a rc=$ARC b rc=$BRC $(tail -1 "$OUT/cluster_${t}_a.log") / $(tail -1 "$OUT/cluster_${t}_b.log")")
+  fi
+fi
+
 # ---- 7.3 kill -9 mid-run: survivor's receive nulls + monitor fires ----
 t=kill9
 rm -f "$OUT/cluster_$t$SCALY_EXE"

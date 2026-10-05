@@ -14,7 +14,7 @@ The first draft of this docstring claimed it was "behaviour-preserving by
 construction" -- the unwrap emits the exit-21 trap, and the trap was supposed
 to fire only where the old code already took a SIGSEGV.  That is FALSE.  A
 null that is merely STORED works today and derefs nothing; the trap kills it.
-Run over the ports, this took `packages/tscaly` to 3237 failures, EVERY ONE of
+Run over the ports, this took `../tscaly/packages/tscaly` to 3237 failures, EVERY ONE of
 them `exited 21`.
 
 The diagnostic offers two fixes and they are not interchangeable.  Where the

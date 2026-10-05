@@ -4,7 +4,7 @@
 ; and as the entire value of an implicit OR explicit return it was neither
 ; resolved nor diagnosed: rc 0, answering the zero value of the return type for
 ; every input, with the CALLER silent as well, so nothing anywhere named the
-; identifier. Found in packages/tscaly by writing three `AssignmentKind*`
+; identifier. Found in ../tscaly/packages/tscaly by writing three `AssignmentKind*`
 ; constants that no `define` in the package declared; every gate stayed green.
 ; xfail: error: unknown identifier: NoSuchConstant
 

@@ -315,8 +315,10 @@ for i in "${!PIDS[@]}"; do wait "${PIDS[$i]}" || RC=1; done
 
 # The TIMING-bound suite runs after the lanes, alone: tests/cluster waits at
 # most ~10 s for a peer's marker ("S: linked"), and beside the lanes a peer
-# missed it — a parity rc 110 in one run, a survivor waiting forever in the
-# next — where it passes in 2-5 s on its own.
+# missed it — a survivor waiting forever — where it passes in 2-5 s on its
+# own. (The `train parity … rrc=110` that came and went here, alone too, was
+# no timing of the test: a frame delivered after the local close, fixed in
+# the runtime on 2026-10-05 — Cluster.dispatch#, gate tests/cluster/lateframe.)
 step cluster tests/cluster/run.sh "$BIN" > "$LOG/lane_tail.txt" || RC=1
 kill $MEM_PID 2>/dev/null
 

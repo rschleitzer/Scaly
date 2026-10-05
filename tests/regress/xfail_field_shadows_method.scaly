@@ -1,7 +1,7 @@
 ; Regression (2026-09-20): a RECEIVER method with the name of a field of its
 ; own concept. The field shadows it at every call site — the argument is
 ; dropped and the call answers the FIELD's value, rc 0 and no diagnostic. For a
-; bool field that reads as a broken predicate; in packages/tscaly a
+; bool field that reads as a broken predicate; in ../tscaly/packages/tscaly a
 ; `skip_trivia: bool` field beside a same-named method meant every diagnostic
 ; that had to move past leading trivia was reported at offset 0.
 ; xfail: error: method v of Box2 has the name of a field

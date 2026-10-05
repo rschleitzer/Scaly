@@ -1,7 +1,7 @@
 ; Regression (2026-09-20): two top-level records of one compilation that share
 ; a name and disagree about their fields. A top-level define mangles without
 ; its module and without its package, so both collapse into ONE LLVM struct and
-; every field access in the loser reads the other's layout — in packages/tscaly
+; every field access in the loser reads the other's layout — in ../tscaly/packages/tscaly
 ; a bool on a ptr slot made `store i1 true` write into a pointer's low byte and
 ; the reader's return was DROPPED, false for the whole tree for four slices,
 ; with nothing said by planner or linker.

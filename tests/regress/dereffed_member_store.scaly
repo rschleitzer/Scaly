@@ -12,7 +12,7 @@
 ; `let x (*p).v` read the right field while `set (*p).v: 77` wrote into that
 ; loaded COPY. Reading worked, writing evaporated -- and this class has been
 ; paid for twice already (root_pages' heap-trace table, whose comment describes
-; it, and packages/tscaly's SymbolTable.set_entry, where the broken store hid a
+; it, and ../tscaly/packages/tscaly's SymbolTable.set_entry, where the broken store hid a
 ; wrong CALL and the two defects cancelled over a 13 000-case corpus).
 ;
 ; Fix: collapse_grouping_target# (Planner) peels every grouping level in the

@@ -74,7 +74,7 @@ def is_generated(path, cache={}):
         return True
     if not path.startswith('packages/tscaly/'):
         return False
-    # packages/tscaly/tools/gen*.py stamp GENERATED into their outputs' heads
+    # ../tscaly/packages/tscaly/tools/gen*.py stamp GENERATED into their outputs' heads
     if path not in cache:
         with open(path, errors='replace') as f:
             head = ''.join(f.readline() for _ in range(15))

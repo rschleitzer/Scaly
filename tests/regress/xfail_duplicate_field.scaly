@@ -2,7 +2,7 @@
 ; slot is real layout nobody can reach — every read resolves to the first — and
 ; nothing looks wrong anywhere: the two declarations may be four hundred lines
 ; apart and both readers agree, because they read the same slot. It cost
-; packages/tscaly a shared memo, and its own Transformer carried a literal
+; ../tscaly/packages/tscaly a shared memo, and its own Transformer carried a literal
 ; duplicate line until this gate found it.
 ; xfail: error: field v of Box is declared twice
 

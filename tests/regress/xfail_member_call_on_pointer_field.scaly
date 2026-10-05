@@ -22,7 +22,7 @@
 ; for a second reason: the call shape is only recognised when the chain's last
 ; hop is_method, which an unresolved hop is not.
 ;
-; It cost a silently wrong parse of `{@link Foo#bar}` in packages/tscaly, whose
+; It cost a silently wrong parse of `{@link Foo#bar}` in ../tscaly/packages/tscaly, whose
 ; scanner.re_scan_hash_token() had never been written; and it hid one live site
 ; in packages/dazzle (VM.scaly's `ic.ident.get_name()`, whose Identifier was not
 ; visible in that file) where field 0 happened to BE the intended member, so the

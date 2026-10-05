@@ -2,7 +2,7 @@
 ; CALLEE'S CONSTRUCTION. The escape checker refused a frame-local reference
 ; that is returned or stored by a plain `set`, and said nothing when it
 ; travelled into a callee that puts it inside a new object on a NAMED region —
-; in packages/tscaly 174 frame-local lists reached
+; in ../tscaly/packages/tscaly 174 frame-local lists reached
 ; `box_node_data[T](host, T(... list ...))` and compiled clean; the program
 ; died of an unbounded recursion that the whole gate chain missed.
 ;

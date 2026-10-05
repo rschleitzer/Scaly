@@ -4647,6 +4647,70 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-package definition+signatureHelp"; else bad "lsp cross-package definition+signatureHelp"; fi
 
+# ---- LSP server: the project's own packages are searched too -------------
+# The compiler finds a package the installation does not have in ./packages of
+# the project (Modeler.package_directory#, 2026-10-05), and the server follows:
+# a document in ONE project package asks for a concept that lives in ANOTHER.
+# Its own directory tree does not hold it and the installation (SCALY_HOME,
+# this repository) does not either, so a hit can only come from the project's
+# packages/ root -- and the stdlib must still answer beside it.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os, shutil
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+ws = "/tmp/lsp_ws/projpkg"; shutil.rmtree(ws, ignore_errors=True)
+os.makedirs(ws + "/packages/aa/0.1.0/aa"); os.makedirs(ws + "/packages/bb/0.1.0/bb")
+open(ws + "/packages/bb/0.1.0/bb.scaly", "w").write("define bb\n{\n    module zorblat\n}\n")
+open(ws + "/packages/bb/0.1.0/bb/zorblat.scaly", "w").write("define Zorblat (count: int)\n")
+uri = "file://" + ws + "/packages/aa/0.1.0/aa/user.scaly"
+doc = ("function f()\n"                # 0
+       "{\n"                           # 1
+       "    var z Zorblat(1)\n"        # 2
+       "    var sb StringBuilder()\n"  # 3
+       "}\n")                          # 4
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/definition","params":{
+        "textDocument":{"uri":uri},"position":{"line":2,"character":12}}})
+inp += frame({"jsonrpc":"2.0","id":3,"method":"textDocument/definition","params":{
+        "textDocument":{"uri":uri},"position":{"line":3,"character":15}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE,
+                     env={**os.environ, "SCALY_HOME": os.getcwd()}).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+
+r2 = res(2)
+check(r2 is not None and r2.get("uri","").endswith("/projpkg/packages/bb/0.1.0/bb/zorblat.scaly"),
+      "definition: a concept of another PROJECT package resolves")
+r3 = res(3)
+check(r3 is not None and "packages/scaly" in r3.get("uri",""),
+      "definition: the stdlib still resolves beside the project's packages")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp project packages"; else bad "lsp project packages"; fi
+
 # ---- LSP server: `module NAME` must not shadow `define NAME` --------------
 # A `module NAME` statement is a LOAD DIRECTIVE, not a definition of NAME: the
 # concept lives in the file the module names. packages/scaly/0.1.0/scaly/

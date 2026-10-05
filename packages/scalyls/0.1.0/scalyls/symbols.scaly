@@ -8902,26 +8902,27 @@ define symbols
         sb.to_string()
     }
 
-    ; The packages/ root to scan for cross-package symbols, or "" when none can
-    ; be determined. Prefers <SCALY_HOME>/packages; otherwise the longest prefix
-    ; of `path` ending in a `/packages` segment.
+    ; The packages/ roots to scan for cross-package symbols, or "" when none
+    ; can be determined: <SCALY_HOME>/packages, and -- as the compiler looks
+    ; (Modeler.package_directory#, 2026-10-05) -- the PROJECT's own packages
+    ; after it, the longest prefix of `path` ending in a `/packages` segment.
+    ; Two roots are ONE string with a line feed between them, the
+    ; installation's first: every scan takes its files from
+    ; list_scaly_files#, which lists one root after the other, so a name both
+    ; have is answered by the installation as the compiler answers it.
+    ; Without SCALY_HOME the project's root alone, as before.
     procedure package_search_dir(path: String) returns String
     {
         let base symbols.scaly_home_base()
-        if base.get_length() > 0
-        {
-            var sb StringBuilder()
-            var i: size_t 0
-            let bl base.get_length()
-            while i < bl
-            {
-                sb.append(base.get(i) as char)
-                i := i + 1
-            }
-            sb.append "packages"
-            return sb.to_string()
-        }
-        symbols.packages_dir_from_path path
+        let own symbols.packages_dir_from_path path
+        if base.get_length() = 0
+            return own
+        let installed "`base`packages"
+        if own.get_length() = 0
+            return installed
+        if own.equals(installed)
+            return installed
+        "`installed`\n`own`"
     }
 
     ; `path` truncated to include its last "/packages" segment (so
@@ -8972,6 +8973,18 @@ define symbols
         }
     }
 
+    ; One root of list_scaly_files#.
+    procedure list_scaly_root(one: String, mutable sb: ref[StringBuilder])
+    {
+        ; `-not -path` judged the whole path, the root included
+        if one.contains(String("/interface/")) or one.ends_with("/interface")
+            return
+        var root String(one)
+        if root.ends_with("/")
+            root := symbols.substring(root, 0, root.get_length() - 1)
+        symbols.list_scaly_walk(root, sb)
+    }
+
     ; Every `*.scaly` under `dir`: newline-separated paths, each `dir` plus the
     ; way down, with a guaranteed trailing LF, in the order the file system
     ; gives them, a directory's own entry before what lies below it.
@@ -9019,13 +9032,23 @@ define symbols
 
         prof_list := prof_list + 1
         var sb StringBuilder()
-        ; `-not -path` judged the whole path, the root included
-        if dir.contains(String("/interface/")) = false and dir.ends_with("/interface") = false
+        ; `dir` is one root, or the two of package_search_dir# with a line
+        ; feed between them: each is walked, in that order
+        var from: size_t 0
+        let dn dir.get_length()
+        var at: size_t 0
+        while at <= dn
         {
-            var root String(dir)
-            if root.ends_with("/")
-                root := symbols.substring(root, 0, root.get_length() - 1)
-            symbols.list_scaly_walk(root, &sb)
+            var ends at = dn
+            if ends = false
+                ends := dir.get(at) = ("\n" as char)
+            if ends
+            {
+                if at > from
+                    symbols.list_scaly_root(symbols.substring(dir, from, at), &sb)
+                from := at + 1
+            }
+            at := at + 1
         }
         sb.append("\n" as char)                    ; trailing LF
         let listing sb.to_string()
