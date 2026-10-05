@@ -88,17 +88,17 @@ HREF="tutorial.htm#AEN49"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN124"
+HREF="tutorial.htm#AEN131"
 >Using Scaly with VS Code</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN344"
+HREF="tutorial.htm#AEN351"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN425"
+HREF="tutorial.htm#AEN437"
 >Putting It Together</A
 ></DT
 ></DL
@@ -195,12 +195,15 @@ CLASS="userinput"
 >, <KBD
 CLASS="userinput"
 >scaly build</KBD
->
-            and <KBD
+>,
+            <KBD
 CLASS="userinput"
 >scaly test</KBD
->, and, started without
-            arguments, an interactive session.</P
+> and <KBD
+CLASS="userinput"
+>scaly new</KBD
+>,
+            and, started without arguments, an interactive session.</P
 ></LI
 ><LI
 ><P
@@ -231,7 +234,7 @@ CLASS="command"
 >scalyls</B
 >, the language server that powers
             the editor features in <A
-HREF="tutorial.htm#AEN124"
+HREF="tutorial.htm#AEN131"
 >the Section called <I
 >Using Scaly with VS Code</I
 ></A
@@ -295,7 +298,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN98"
+NAME="AEN99"
 >Hello, World!</A
 ></H2
 ><P
@@ -340,6 +343,28 @@ CLASS="option"
         program — your code, the standard library and every package it uses —
         is optimised as one piece.</P
 ><P
+><KBD
+CLASS="userinput"
+>scaly new hello</KBD
+> writes such a start for
+        you: a directory <TT
+CLASS="filename"
+>hello</TT
+> with
+        <TT
+CLASS="filename"
+>hello.scaly</TT
+> in it — a function, a test for it
+        (<KBD
+CLASS="userinput"
+>scaly test hello.scaly</KBD
+> runs every function
+        whose name begins with <TT
+CLASS="literal"
+>test</TT
+>) and the line that
+        prints.</P
+><P
 >That is the whole edit-compile-run loop. Everything that follows is
         just more interesting things to put between the braces.</P
 ></DIV
@@ -348,7 +373,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN114"
+NAME="AEN121"
 >Trying Things Out</A
 ></H2
 ><P
@@ -394,7 +419,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN124"
+NAME="AEN131"
 >Using Scaly with VS Code</A
 ></H1
 ><P
@@ -462,7 +487,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN141"
+NAME="AEN148"
 >Installing the Scaly Extension</A
 ></H2
 ><P
@@ -522,7 +547,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN156"
+NAME="AEN163"
 >What the Language Server Gives You</A
 ></H2
 ><P
@@ -717,7 +742,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN205"
+NAME="AEN212"
 >Build and Run Tasks</A
 ></H2
 ><DIV
@@ -833,7 +858,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN228"
+NAME="AEN235"
 >Launch Configuration</A
 ></H2
 ><P
@@ -903,14 +928,14 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN242"
+NAME="AEN249"
 >Breakpoints in Scaly Files</A
 ></H2
 ><P
 >VS Code only lets you set breakpoints in files whose language an
         installed extension has declared debuggable. The Scaly extension from
         <A
-HREF="tutorial.htm#AEN141"
+HREF="tutorial.htm#AEN148"
 >the Section called <I
 >Installing the Scaly Extension</I
 ></A
@@ -951,7 +976,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN252"
+NAME="AEN259"
 >Setting a Breakpoint and Stepping</A
 ></H2
 ><P
@@ -1057,7 +1082,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN282"
+NAME="AEN289"
 >Stepping into Functions and the Call Stack</A
 ></H2
 ><P
@@ -1189,13 +1214,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN378"
+HREF="tutorial.htm#AEN385"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN386"
+HREF="tutorial.htm#AEN393"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -1206,7 +1231,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN319"
+NAME="AEN326"
 >What the Debugger Shows</A
 ></H2
 ><P
@@ -1290,7 +1315,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN344"
+NAME="AEN351"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -1303,7 +1328,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN347"
+NAME="AEN354"
 >Values and Bindings</A
 ></H2
 ><P
@@ -1341,7 +1366,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN357"
+NAME="AEN364"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -1375,7 +1400,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN365"
+NAME="AEN372"
 >Control Flow</A
 ></H2
 ><P
@@ -1433,7 +1458,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN378"
+NAME="AEN385"
 >Functions</A
 ></H2
 ><P
@@ -1470,7 +1495,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN386"
+NAME="AEN393"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -1481,7 +1506,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN664"
+HREF="types.htm#AEN676"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -1507,7 +1532,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN392"
+NAME="AEN399"
 >Structures and Methods</A
 ></H2
 ><P
@@ -1529,7 +1554,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN671"
+HREF="types.htm#AEN683"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1544,7 +1569,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN400"
+NAME="AEN407"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1590,7 +1615,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN783"
+HREF="types.htm#AEN795"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1605,7 +1630,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN414"
+NAME="AEN421"
 >Modules and Imports</A
 ></H2
 ><P
@@ -1647,12 +1672,30 @@ if b.area() = 12
 CLASS="code"
 >use</TT
 > line to add. The standard library
-        needs no imports — it is always visible. See
+        needs no imports — it is always visible.</P
+><P
+>Code that several programs share is a <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>package</I
+></SPAN
+>,
+        and a package somebody else wrote is one line away:</P
+><PRE
+CLASS="programlisting"
+>package json 0.1.3 "github.com/someone/json"</PRE
+><P
+><B
+CLASS="command"
+>scaly</B
+> fetches it from that git repository the
+        first time the program is run, tested or built. See
         <A
 HREF="modules.htm"
 >Chapter 8</A
-> for packages, visibility rules, and glob
-        imports.</P
+> for packages and their sources, visibility
+        rules, and glob imports.</P
 ></DIV
 ></DIV
 ><DIV
@@ -1660,7 +1703,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN425"
+NAME="AEN437"
 >Putting It Together</A
 ></H1
 ><P

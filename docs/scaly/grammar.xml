@@ -247,7 +247,17 @@
 
   <production xml:id="prod.Package">
     <lhs>Package</lhs>
-    <rhs>'package' <nonterminal def="prod.Name">Name</nonterminal> ':'? </rhs>
+    <rhs>'package' <nonterminal def="prod.Name">Name</nonterminal> <nonterminal def="prod.Version">Version</nonterminal>? <nonterminal def="prod.Source">Source</nonterminal>? ':'? </rhs>
+  </production>
+
+  <production xml:id="prod.Version">
+    <lhs>Version</lhs>
+    <rhs>LITERAL '.' LITERAL </rhs>
+  </production>
+
+  <production xml:id="prod.Source">
+    <lhs>Source</lhs>
+    <rhs>LITERAL </rhs>
   </production>
 
   <production xml:id="prod.Initializer">

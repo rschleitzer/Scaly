@@ -1,12 +1,4 @@
 #!/bin/bash
-export SP_ENCODING=utf-8
-
-# Generate HTML
-openjade -t sgml -d dsssl-stylesheets/html/docbook.dsl scaly-spec.xml
-mkdir -p website/lang
-mv *.htm website/lang/
-mv website/lang/book1.htm website/lang/index.html
-sed -i '' 's/book1\.htm/index.html/g' website/lang/*.htm website/lang/*.html
-
-# Generate PDF
-./pdf.sh
+# The specification, both ways: HTML and PDF, by the Scaly DSSSL engine.
+cd "$(dirname "$0")" || exit 1
+./html.sh && ./pdf.sh

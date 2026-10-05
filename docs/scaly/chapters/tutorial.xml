@@ -40,9 +40,9 @@ sudo apt install clang</programlisting>
       <itemizedlist>
         <listitem>
           <para><command>scaly</command>, the tool you will use most:
-            <userinput>scaly run</userinput>, <userinput>scaly build</userinput>
-            and <userinput>scaly test</userinput>, and, started without
-            arguments, an interactive session.</para>
+            <userinput>scaly run</userinput>, <userinput>scaly build</userinput>,
+            <userinput>scaly test</userinput> and <userinput>scaly new</userinput>,
+            and, started without arguments, an interactive session.</para>
         </listitem>
         <listitem>
           <para><command>scalyc</command>, the compiler by itself, with the
@@ -88,6 +88,12 @@ sudo apt install clang</programlisting>
       <para>Add <option>--release</option> for the optimised build: the whole
         program — your code, the standard library and every package it uses —
         is optimised as one piece.</para>
+      <para><userinput>scaly new hello</userinput> writes such a start for
+        you: a directory <filename>hello</filename> with
+        <filename>hello.scaly</filename> in it — a function, a test for it
+        (<userinput>scaly test hello.scaly</userinput> runs every function
+        whose name begins with <literal>test</literal>) and the line that
+        prints.</para>
       <para>That is the whole edit-compile-run loop. Everything that follows is
         just more interesting things to put between the braces.</para>
     </section>
@@ -619,9 +625,14 @@ if b.area() = 12
     print("area is 12")</programlisting>
       <para>Forgetting the import is caught at compile time, and the error
         states the exact <code>use</code> line to add. The standard library
-        needs no imports — it is always visible. See
-        <xref linkend="modules"/> for packages, visibility rules, and glob
-        imports.</para>
+        needs no imports — it is always visible.</para>
+      <para>Code that several programs share is a <emphasis>package</emphasis>,
+        and a package somebody else wrote is one line away:</para>
+      <programlisting>package json 0.1.3 "github.com/someone/json"</programlisting>
+      <para><command>scaly</command> fetches it from that git repository the
+        first time the program is run, tested or built. See
+        <xref linkend="modules"/> for packages and their sources, visibility
+        rules, and glob imports.</para>
     </section>
   </section>
 
