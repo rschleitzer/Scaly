@@ -7993,7 +7993,7 @@ define Planner
 
         ; plan_namespace_module_one#: walk EVERY sub-module of the
         ; namespace being compiled (the former hand-maintained name
-        ; allowlist is GONE — commit 0c4791f4). Only the COMPILATION
+        ; allowlist is GONE — commit a893485a). Only the COMPILATION
         ; ROOT package's namespace modules reach here (loaded dependency
         ; packages are registered but never walked), so this emits
         ; exactly the current package's bodies.

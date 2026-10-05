@@ -15187,7 +15187,7 @@ define Planner
                         ; NEUTRAL on sigiled source: an explicit `#` value
                         ; (Call life) is kept verbatim by restamp_operand_life#.
                         ; Mirrors plan_action#'s set-store inline-ctor restamp
-                        ; (499d3312) for the put/add method-call shape.
+                        ; (141f491c) for the put/add method-call shape.
                         var put_args_ref: ref[Vector[PlannedOperand]]? &call_args_holder
                         var is_putadd false
                         if fn_name = "put"
@@ -45485,7 +45485,7 @@ define Planner
                     ; handle_operands call) become the escaping struct's fields and
                     ; must move to the caller page. Recurse restamp_args# only —
                     ; never restamp the construction itself (that would region-
-                    ; promote a pure stack value, the ba5045c2 rule-3 hazard).
+                    ; promote a pure stack value, the 474acc57 rule-3 hazard).
                     ; Gated on Unspecified so explicit `#`/`^` placements stand.
                     var c_unspec false
                     choose c.life
@@ -52093,7 +52093,7 @@ define Planner
 
         ; plan_namespace_module_one#: walk EVERY sub-module of the
         ; namespace being compiled (the former hand-maintained name
-        ; allowlist is GONE — commit 0c4791f4). Only the COMPILATION
+        ; allowlist is GONE — commit a893485a). Only the COMPILATION
         ; ROOT package's namespace modules reach here (loaded dependency
         ; packages are registered but never walked), so this emits
         ; exactly the current package's bodies.

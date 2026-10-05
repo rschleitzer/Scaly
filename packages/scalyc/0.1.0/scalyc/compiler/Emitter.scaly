@@ -10635,7 +10635,7 @@ define Emitter
                             ; pointer[void]: a String cast to a raw buffer
                             ; pointer (write/fwrite args) hands over its
                             ; content pointer exactly like the cstr targets.
-                            ; Without this the e45166de loud-cast trap fires
+                            ; Without this the 43ef7ef2 loud-cast trap fires
                             ; on `"..." as pointer[void]` (io.scaly tests).
                             if inner.name = "void"
                                 result := true
