@@ -43,6 +43,10 @@
 #              project's own ./packages (Modeler.package_directory#), one of
 #              an installed name there does not shadow the installed one, and
 #              a package in neither place is reported with both named
+#   new        `scaly new`: the program it writes runs and passes its test,
+#              the package it writes (--lib) passes its test and is found by
+#              a program beside its packages directory; an existing name, a
+#              name no package can have and a missing name are refused
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -317,6 +321,35 @@ if [ "$rc" != 0 ] && echo "$out" | grep -q 'package not found: nowhere 0.1.0' &&
 else
   bad "project-missing: rc=$rc $(echo "$out" | tail -2 | tr '\n' ' ')"
 fi
+
+# new: what `scaly new` writes is a program, or a package, that works as it is
+newdir="$TMP/new"
+mkdir -p "$newdir"
+if ( cd "$newdir" && SCALY_HOME="$here" "$scaly_abs" new hello ) > "$TMP/new.log" 2>&1 \
+   && [ "$(head -1 "$TMP/new.log")" = "created hello/hello.scaly" ]; then
+  out=$(cd "$newdir/hello" && SCALY_HOME="$here" "$scaly_abs" run hello.scaly 2>&1)
+  [ "$out" = "Hello, world!" ] && ok || bad "new: the program printed '$out'"
+  out=$(cd "$newdir/hello" && SCALY_HOME="$here" "$scaly_abs" test hello.scaly 2>&1); rc=$?
+  [ "$rc" = 0 ] && echo "$out" | grep -q '^1 passed$' && ok || bad "new: its test rc=$rc '$(echo "$out" | tail -1)'"
+else
+  bad "new: $(tr '\n' ' ' < "$TMP/new.log")"
+fi
+if ( cd "$newdir" && SCALY_HOME="$here" "$scaly_abs" new shapes --lib ) > "$TMP/newlib.log" 2>&1 \
+   && [ -f "$newdir/shapes/packages/shapes/0.1.0/shapes.scaly" ]; then
+  out=$(cd "$newdir/shapes" && SCALY_HOME="$here" "$scaly_abs" test packages/shapes/0.1.0/shapes.scaly 2>&1); rc=$?
+  [ "$rc" = 0 ] && echo "$out" | grep -q '^1 passed$' && ok || bad "new --lib: its test rc=$rc '$(echo "$out" | tail -1)'"
+  printf 'package shapes 0.1.0\nprint(shapes.greeting("user"))\n' > "$newdir/shapes/user.scaly"
+  out=$(cd "$newdir/shapes" && SCALY_HOME="$here" "$scaly_abs" run user.scaly 2>&1)
+  [ "$out" = "Hello, user!" ] && ok || bad "new --lib: a program beside it printed '$out'"
+else
+  bad "new --lib: $(tr '\n' ' ' < "$TMP/newlib.log")"
+fi
+refused=0
+for args in "hello" "9lives" "a-b" "" "--lib"; do
+  # shellcheck disable=SC2086
+  ( cd "$newdir" && SCALY_HOME="$here" "$scaly_abs" new $args ) > /dev/null 2>&1 || refused=$((refused+1))
+done
+[ "$refused" = 5 ] && [ ! -e "$newdir/9lives" ] && [ ! -e "$newdir/a-b" ] && ok || bad "new: $refused of 5 bad invocations refused"
 
 # bare: no clang, no LIB -- only the Build Tools, found by the compiler
 if [ "$SCALY_COFF" = 1 ]; then

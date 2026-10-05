@@ -441,6 +441,7 @@ define cli
         Console.println "             --export             ... every definition kept and visible: a program that runs others in process"
         Console.println "             --target <t>, -g, -mcpu=<cpu>, -L<path>, -l<name>   as scalyc takes them"
         Console.println "       scaly test <file> [filter]       run its test functions"
+        Console.println "       scaly new <name> [--lib]         a directory with a root file: a program, with --lib a package"
         Console.println ""
         Console.println "The compiler with a command line like a C compiler's is scalyc,"
         Console.println "the language server scalyls."
@@ -2515,6 +2516,30 @@ define cli
             if build_opts.output_file.get_length() = 0 and build_opts.has_input()
                 build_opts.output_file := cli.extract_program_name(build_opts.input_file)
             return cli.run(build_opts)
+        }
+        if command.equals("new")
+        {
+            ; scaly new <name> [--lib], the flag before or after the name
+            var new_name ""
+            var new_lib false
+            var na 2
+            while na < argc
+            {
+                let arg String(*(argv + na))
+                if arg.equals("--lib")
+                    new_lib := true
+                else if new_name.get_length() = 0
+                    new_name := arg
+                else
+                    new_name := "-"
+                na := na + 1
+            }
+            if new_name.get_length() = 0 or new_name.equals("-")
+            {
+                Console.println "Usage: scaly new <name> [--lib]"
+                return 1
+            }
+            return tool.new_project(new_name, new_lib)
         }
         if command.equals("-h") or command.equals("--help") or command.equals("help")
         {

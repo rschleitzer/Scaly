@@ -850,4 +850,107 @@ define tool
                 Console.println("warning: C library `l` could not be loaded")
         }
     }
+
+    ; a name `scaly new` accepts: what a package and its root file can be
+    ; called -- letters, digits and `_`, a letter first
+    function is_project_name(name: String) returns bool
+    {
+        let n name.get_length()
+        if n = 0
+            return false
+        var i: size_t 0
+        while i < n
+        {
+            let c name.get i
+            let letter (c >= 65 and c <= 90) or (c >= 97 and c <= 122)
+            let other (c >= 48 and c <= 57) or c = 95
+            if letter = false and (i = 0 or other = false)
+                return false
+            i := i + 1
+        }
+        true
+    }
+
+    ; the function and its test every new root file starts with
+    function new_body(indent: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append "`indent`function greeting(name: String) returns String\n"
+        sb.append "`indent`    \"Hello, \`name\`!\"\n"
+        sb.append "\n"
+        sb.append "`indent`function test_greeting() returns int\n"
+        sb.append "`indent`{\n"
+        sb.append "`indent`    if greeting(\"Scaly\") <> \"Hello, Scaly!\"\n"
+        sb.append "`indent`        return 1\n"
+        sb.append "`indent`    0\n"
+        sb.append "`indent`}\n"
+        sb.to_string()
+    }
+
+    ; `scaly new <name> [--lib]`: a directory with a root file, nothing else.
+    ; A program is <name>/<name>.scaly; a package lies where the compiler and
+    ; a later fetch from git look for one, <name>/packages/<name>/0.1.0/.
+    procedure new_project(name: String, library: bool) returns int
+    {
+        if is_project_name(name) = false
+        {
+            Console.println("scaly new: `name` is no name for a program or a package - letters, digits and _, a letter first")
+            return 1
+        }
+        var top String(name)
+        if Directory.exists(top) or File.exists(top)
+        {
+            Console.println("scaly new: `name` exists already")
+            return 1
+        }
+        var sb StringBuilder()
+        var dir String(name)
+        if library
+        {
+            dir := "`name`/packages/`name`/0.1.0"
+            sb.append "; `name` -- a Scaly package, version 0.1.0.\n"
+            sb.append ";\n"
+            sb.append ";   scaly test packages/`name`/0.1.0/`name`.scaly    run its test functions\n"
+            sb.append ";\n"
+            sb.append "; A program beside the directory packages uses it with\n"
+            sb.append ";\n"
+            sb.append ";   package `name` 0.1.0\n"
+            sb.append "\n"
+            sb.append "package scaly 0.1.0\n"
+            sb.append "\n"
+            sb.append "define `name`\n"
+            sb.append "{\n"
+            sb.append(new_body("    "))
+            sb.append "}\n"
+        }
+        else
+        {
+            sb.append "; `name` -- a Scaly program.\n"
+            sb.append ";\n"
+            sb.append ";   scaly run `name`.scaly      compile and run it\n"
+            sb.append ";   scaly test `name`.scaly     run its test functions\n"
+            sb.append ";   scaly build `name`.scaly    build the executable\n"
+            sb.append "\n"
+            sb.append(new_body(""))
+            sb.append "\n"
+            sb.append "print(greeting(\"world\"))\n"
+        }
+        if ensure_directory(dir) = false
+        {
+            Console.println("scaly new: cannot create the directory `dir`")
+            return 1
+        }
+        let file "`dir`/`name`.scaly"
+        if File.write_from_string(file, sb.to_string()) = false
+        {
+            Console.println("scaly new: cannot write `file`")
+            return 1
+        }
+        Console.println("created `file`")
+        if library
+            Console.println("  cd `name` && scaly test packages/`name`/0.1.0/`name`.scaly")
+        else
+            Console.println("  cd `name` && scaly run `name`.scaly")
+        0
+    }
 }

@@ -153,4 +153,16 @@ define tool
     ; load each library into this process (scaly_eio_load_library); one that
     ; does not load is said, and the JIT then names the symbol it misses
     procedure load_libraries(libs: ref[Array[String]]) @deep true io linked
+
+    ; a name `scaly new` accepts: what a package and its root file can be
+    ; called -- letters, digits and `_`, a letter first
+    function is_project_name(name: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; the function and its test every new root file starts with
+    function new_body(indent: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; `scaly new <name> [--lib]`: a directory with a root file, nothing else.
+    ; A program is <name>/<name>.scaly; a package lies where the compiler and
+    ; a later fetch from git look for one, <name>/packages/<name>/0.1.0/.
+    procedure new_project(name: String, library: bool) @ret_nonlocal true @deep true returns int io linked
 }
