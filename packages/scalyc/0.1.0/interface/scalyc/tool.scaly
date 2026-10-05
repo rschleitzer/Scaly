@@ -92,6 +92,26 @@ define tool
     ; same time finds either no file or a whole one
     procedure publish(mutable tmp: String, mutable final: String) @ret_nonlocal true @deep true returns bool io linked
 
+    ; Is `sym` an INSTANCE -- a symbol every package that uses a generic
+    ; defines for itself, from one source? Template arguments in its name
+    ; (`_ZN5ArrayIiE3addEi`), or the name of a generic free function with the
+    ; encoded types behind it (`_Z17allocate_slice2u8...`).
+    function is_instance_symbol(sym: String, generics: ref[Array[String]]) @ret_nonlocal true @deep true returns bool linked
+
+    ; the name in a symbol, as it is written: `helper` of `_Z6helperi`,
+    ; `Box.grown` of `_ZN3Box5grownEv`
+    function plain_name(sym: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; No mangled name carries its package, so a function two packages each
+    ; define is ONE function after the link -- and which of the two depends
+    ; on how the program is built (measured 2026-10-05: `scaly run`, `scaly
+    ; build` and `--release` gave three different answers at rc 0). `files`
+    ; are the definition lists the compiler wrote beside each package's
+    ; object (cli.run with defs_file), `owners` the packages; instances of
+    ; generics, which every user defines from one source, are not judged.
+    ; False, each collision named, when two packages define one symbol.
+    procedure check_definitions(owners: ref[Array[String]], files: ref[Array[String]]) @ret_nonlocal true @deep true returns bool io linked
+
     ; The objects of every package a program uses, each built into the cache
     ; the first time it is needed: the package's Scaly code as one object at
     ; -O2 (library linkage, cli.run with --no-prelude --no-tests), and the C

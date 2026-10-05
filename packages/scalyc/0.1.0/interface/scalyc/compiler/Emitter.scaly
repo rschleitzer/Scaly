@@ -1898,6 +1898,13 @@ define Emitter
         ; refused ("Invalid record", the http package, 2026-10-01).
         procedure write_bitcode_to_file(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
 
+        ; Every function this module DEFINES under an Itanium name, one per
+        ; line as `d <symbol>`: what a package's object brings to a link. The
+        ; tool compares the lists of a program's packages
+        ; (tool.check_definitions#) -- no mangled name carries its package, so
+        ; two packages defining one symbol would be one body after the link.
+        procedure defined_symbols(mutable this) @page true @direct true @ret_caller true @deep true returns String linked
+
         ; Link a package's bitcode into this module (tools/link-lto.sh's
         ; llvm-link, in process). False when the file cannot be read or does not
         ; link.

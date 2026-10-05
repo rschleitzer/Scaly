@@ -2389,6 +2389,13 @@ define Planner
 
         procedure register_function(mutable this: Planner, f: Function) @persists true @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
 
+        ; The names of the generic free functions this compilation knows, one
+        ; per line as `g <name>`. An instance of one is a symbol of its own,
+        ; named <name><encoded types>, and every package that uses it defines
+        ; it -- which is how tool.check_definitions# tells such a symbol from a
+        ; function two packages each wrote.
+        function generic_function_names(this: Planner) @page true @direct true @ret_caller true @deep true returns String linked
+
         ; function_origin_file: the file the registered function `f` (the same
         ; name AND the same span) was declared in, or "" when unknown. A span
         ; carries only offsets, so the name is needed to tell two files apart.

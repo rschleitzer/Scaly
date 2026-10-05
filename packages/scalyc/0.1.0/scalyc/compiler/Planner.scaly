@@ -5488,6 +5488,29 @@ define Planner
             function_origin_files.add(String^this(registering_file))
         }
 
+        ; The names of the generic free functions this compilation knows, one
+        ; per line as `g <name>`. An instance of one is a symbol of its own,
+        ; named <name><encoded types>, and every package that uses it defines
+        ; it -- which is how tool.check_definitions# tells such a symbol from a
+        ; function two packages each wrote.
+        function generic_function_names(this: Planner) returns String
+        {
+            var sb StringBuilder()
+            var i: size_t 0
+            while i < model_functions.length
+            {
+                let kvp model_functions.get i
+                if kvp <> null and kvp.value.parameters.length > 0
+                {
+                    sb.append "g "
+                    sb.append kvp.key
+                    sb.append "\n"
+                }
+                i := i + 1
+            }
+            sb.to_string()
+        }
+
         ; function_origin_file: the file the registered function `f` (the same
         ; name AND the same span) was declared in, or "" when unknown. A span
         ; carries only offsets, so the name is needed to tell two files apart.

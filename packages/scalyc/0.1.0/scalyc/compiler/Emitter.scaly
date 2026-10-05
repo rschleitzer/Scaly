@@ -8784,6 +8784,33 @@ define Emitter
             LLVMWriteBitcodeToFile(llvm_module, filename.to_c_string()) = 0
         }
 
+        ; Every function this module DEFINES under an Itanium name, one per
+        ; line as `d <symbol>`: what a package's object brings to a link. The
+        ; tool compares the lists of a program's packages
+        ; (tool.check_definitions#) -- no mangled name carries its package, so
+        ; two packages defining one symbol would be one body after the link.
+        procedure defined_symbols(mutable this) returns String
+        {
+            var sb StringBuilder()
+            var func LLVMGetFirstFunction(llvm_module)
+            while func <> null
+            {
+                if LLVMIsDeclaration(func) = 0
+                {
+                    var name_len: size_t 0
+                    let name_ptr LLVMGetValueName2(func, &name_len)
+                    if name_ptr <> null and name_len > 2 and *name_ptr = 95 and *(name_ptr + 1) = 90
+                    {
+                        sb.append "d "
+                        sb.append(String(name_ptr))
+                        sb.append "\n"
+                    }
+                }
+                func := LLVMGetNextFunction(func)
+            }
+            sb.to_string()
+        }
+
         ; Link a package's bitcode into this module (tools/link-lto.sh's
         ; llvm-link, in process). False when the file cannot be read or does not
         ; link.

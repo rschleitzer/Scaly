@@ -322,6 +322,177 @@ define tool
         rename(tmp.to_c_string(), final.to_c_string()) = 0
     }
 
+    ; Is `sym` an INSTANCE -- a symbol every package that uses a generic
+    ; defines for itself, from one source? Template arguments in its name
+    ; (`_ZN5ArrayIiE3addEi`), or the name of a generic free function with the
+    ; encoded types behind it (`_Z17allocate_slice2u8...`).
+    function is_instance_symbol(sym: String, generics: ref[Array[String]]) returns bool
+    {
+        let n sym.get_length()
+        var i: size_t 2
+        let nested i < n and sym.get(i) = 78
+        if nested
+            i := i + 1
+        while i < n
+        {
+            var len: size_t 0
+            var digits false
+            while i < n and sym.get(i) >= 48 and sym.get(i) <= 57
+            {
+                len := len * 10 + ((sym.get(i) - 48) as size_t)
+                digits := true
+                i := i + 1
+            }
+            if digits = false or i + len > n
+                return false
+            let id sym.substring(i, len)
+            i := i + len
+            if i < n and sym.get(i) = 73
+                return true
+            if nested = false
+            {
+                var g: size_t 0
+                while g < generics.length
+                {
+                    let name generics.at g
+                    if id.get_length() > name.get_length() and id.starts_with(name)
+                        return true
+                    g := g + 1
+                }
+                return false
+            }
+        }
+        false
+    }
+
+    ; the name in a symbol, as it is written: `helper` of `_Z6helperi`,
+    ; `Box.grown` of `_ZN3Box5grownEv`
+    function plain_name(sym: String) returns String
+    {
+        var sb StringBuilder()
+        let n sym.get_length()
+        var i: size_t 2
+        let nested i < n and sym.get(i) = 78
+        if nested
+            i := i + 1
+        var first true
+        while i < n
+        {
+            var len: size_t 0
+            var digits false
+            while i < n and sym.get(i) >= 48 and sym.get(i) <= 57
+            {
+                len := len * 10 + ((sym.get(i) - 48) as size_t)
+                digits := true
+                i := i + 1
+            }
+            if digits = false or i + len > n
+                break
+            if first = false
+                sb.append "."
+            first := false
+            sb.append(sym.substring(i, len))
+            i := i + len
+            if nested = false
+                break
+        }
+        sb.to_string()
+    }
+
+    ; No mangled name carries its package, so a function two packages each
+    ; define is ONE function after the link -- and which of the two depends
+    ; on how the program is built (measured 2026-10-05: `scaly run`, `scaly
+    ; build` and `--release` gave three different answers at rc 0). `files`
+    ; are the definition lists the compiler wrote beside each package's
+    ; object (cli.run with defs_file), `owners` the packages; instances of
+    ; generics, which every user defines from one source, are not judged.
+    ; False, each collision named, when two packages define one symbol.
+    procedure check_definitions(owners: ref[Array[String]], files: ref[Array[String]]) returns bool
+    {
+        var generics Array[String]()
+        var syms Array[String]()
+        var sym_owner Array[size_t]()
+        var fi: size_t 0
+        while fi < files.length
+        {
+            let text File.read_to_string(files.at(fi))
+            let n text.get_length()
+            var from: size_t 0
+            var at: size_t 0
+            while at < n
+            {
+                if text.get(at) = 10
+                {
+                    if at > from + 2
+                    {
+                        let value text.substring(from + 2, at - from - 2)
+                        if text.get(from) = 103
+                            generics.add value
+                        else
+                        {
+                            syms.add value
+                            sym_owner.add fi
+                        }
+                    }
+                    from := at + 1
+                }
+                at := at + 1
+            }
+            fi := fi + 1
+        }
+        var cap: size_t 1024
+        while cap < syms.length * 2
+            cap := cap * 2
+        var slots Array[size_t]()
+        var z: size_t 0
+        while z < cap
+        {
+            slots.add 0
+            z := z + 1
+        }
+        var ok true
+        var k: size_t 0
+        while k < syms.length
+        {
+            let sym syms.at k
+            if tool.is_instance_symbol(sym, &generics) = false
+            {
+                var idx (tool.fnv_string(0xcbf29ce484222325, sym) as size_t) & (cap - 1)
+                while true
+                {
+                    let slot slots[idx]
+                    if slot = 0
+                    {
+                        slots.put(idx, k + 1)
+                        break
+                    }
+                    let other syms.at(slot - 1)
+                    if other.equals(sym)
+                    {
+                        let a sym_owner[slot - 1]
+                        let b sym_owner[k]
+                        if a <> b
+                        {
+                            let pa owners.at a
+                            let pb owners.at b
+                            Console.println("Error: packages `pa` and `pb` both define `tool.plain_name(sym)` (`sym`)")
+                            ok := false
+                        }
+                        break
+                    }
+                    idx := (idx + 1) & (cap - 1)
+                }
+            }
+            k := k + 1
+        }
+        if ok = false
+        {
+            Console.println("       A symbol does not carry its package: the two would be ONE function after the link,")
+            Console.println("       and which of them depends on how the program is built. One of the two needs another name.")
+        }
+        ok
+    }
+
     ; The objects of every package a program uses, each built into the cache
     ; the first time it is needed: the package's Scaly code as one object at
     ; -O2 (library linkage, cli.run with --no-prelude --no-tests), and the C
@@ -340,6 +511,8 @@ define tool
             return false
         }
         let triple tool.target_triple(given_triple)
+        var def_owners Array[String]()
+        var def_files Array[String]()
         var i: size_t 0
         while i < roots.length
         {
@@ -362,13 +535,18 @@ define tool
             let key tool.package_key(dir, &files, triple, "O2`cpu`")
             let base "`cache`/`np`-`version`-`tool.hex16(key)`"
             let obj "`base`.o"
+            ; what the package defines, written by whichever build comes first
+            ; (check_definitions# below)
+            let defs "`base`.defs"
+            def_owners.add(String(np))
+            def_files.add(String(defs))
             ; --release: the package as unoptimised bitcode, which the program's
             ; module takes in whole (Emitter.link_bitcode#); its C and assembly
             ; stay objects
             if release
             {
                 let bc "`base`.bc"
-                if File.exists(bc) = false
+                if File.exists(bc) = false or File.exists(defs) = false
                 {
                     let btmp "`bc`.`getpid() as int`.tmp"
                     var bo Options()
@@ -376,6 +554,7 @@ define tool
                     bo.output_file := String(btmp)
                     bo.compile_only := true
                     bo.bitcode := true
+                    bo.defs_file := String(defs)
                     bo.no_prelude := true
                     bo.no_tests := true
                     bo.target_triple := String(given_triple)
@@ -393,10 +572,11 @@ define tool
                     return false
                 continue
             }
-            if File.exists(obj) = false
+            if File.exists(obj) = false or File.exists(defs) = false
             {
                 let tmp "`obj`.`getpid() as int`.tmp"
                 var o Options()
+                o.defs_file := String(defs)
                 o.input_file := String(root)
                 o.output_file := String(tmp)
                 o.compile_only := true
@@ -418,7 +598,7 @@ define tool
             if tool.native_objects(dir, &files, triple, base, given_triple, includes, objects) = false
                 return false
         }
-        true
+        tool.check_definitions(&def_owners, &def_files)
     }
 
     ; the C and assembly files of a package this target takes, each compiled
@@ -541,6 +721,8 @@ define tool
             return false
         }
         let triple tool.target_triple(String())
+        var def_owners Array[String]()
+        var def_files Array[String]()
         var i: size_t 0
         while i < roots.length
         {
@@ -562,12 +744,15 @@ define tool
             let base "`cache`/`np`-`version`-`tool.hex16(key)`"
             let obj "`base`.jit.o"
             let syms "`base`.jit.syms"
-            if File.exists(obj) = false
+            let defs "`base`.jit.defs"
+            def_owners.add(String(np))
+            def_files.add(String(defs))
+            if File.exists(obj) = false or File.exists(defs) = false
             {
                 let tmp "`obj`.`getpid() as int`.tmp"
                 let stmp "`syms`.`getpid() as int`.tmp"
                 var built Array[String]()
-                if cli.compile_dep_package_to_object(root, tmp, &built) = false
+                if cli.compile_dep_package_to_object(root, tmp, defs, &built) = false
                 {
                     Console.println("Error: package `np` did not build")
                     return false
@@ -607,7 +792,7 @@ define tool
             if tool.native_objects(dir, &files, triple, base, String(), includes, objects) = false
                 return false
         }
-        true
+        tool.check_definitions(&def_owners, &def_files)
     }
 
     ; ---- C libraries (stage B) ----------------------------------------------

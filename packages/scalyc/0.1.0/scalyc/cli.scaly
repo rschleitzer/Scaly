@@ -96,6 +96,7 @@ define Options
     tool_build: bool                ; `scaly build`: link against the cached package objects
     release: bool                   ; `scaly build --release`: the whole program as one module at -O2
     bitcode: bool                   ; with -c: write bitcode (a package for a release build)
+    defs_file: String               ; with -c: also write what the module defines (tool.check_definitions#)
     pgo_train: bool                 ; `scaly build --pgo-train`: the release build instrumented
     pgo_profile: String             ; `scaly build --pgo <file>`: the release build with a profile
     export_symbols: bool            ; `scaly build --release --export`: every definition kept and visible (a JIT host)
@@ -144,6 +145,7 @@ define Options
         tool_build := false
         release := false
         bitcode := false
+        defs_file := String()
         pgo_train := false
         pgo_profile := String()
         export_symbols := false
@@ -1318,6 +1320,15 @@ define cli
                 Console.println "Error: -c requires -o <file>"
                 return 6
             }
+            if opts.defs_file.get_length() > 0
+            {
+                let defs "`planner.generic_function_names()``emitter.defined_symbols()`"
+                if File.write_from_string(opts.defs_file, defs) = false
+                {
+                    Console.println("Error: Could not write `opts.defs_file`")
+                    return 8
+                }
+            }
             var obj_ok false
             if opts.bitcode
                 obj_ok := emitter.write_bitcode_to_file(opts.output_file)
@@ -1826,10 +1837,11 @@ define cli
     ; Compile a dependency package (its entry .scaly file) through the same
     ; ROOT compilation path that builds libopensp.a/libdazzle.a — prelude OFF
     ; (its scaly-stdlib calls resolve from the host process at JIT link) — into
-    ; an object at out_obj, and append the mangled names it defines to `syms`.
+    ; an object at out_obj, and append the mangled names it defines to `syms`;
+    ; with a `defs_file`, the definition list is written there.
     ; This ROOT path plans the package's bodies correctly (unlike the retired
     ; jit_dep_bodies dependency path). Returns false on any failure.
-    procedure compile_dep_package_to_object(mutable entry_file_in: String, mutable out_obj: String, mutable syms: ref[Array[String]]) returns bool mutable modeler_error_count
+    procedure compile_dep_package_to_object(mutable entry_file_in: String, mutable out_obj: String, defs_file: String, mutable syms: ref[Array[String]]) returns bool mutable modeler_error_count
     {
         ; the program loaded the package through its interface; the object is
         ; built from its SOURCE root
@@ -1871,6 +1883,9 @@ define cli
         ; package's mutable globals (scalyc's own `modeler_error_count`) hit it
         ; exactly the same way.
         dep_emitter.jit_clear_thread_locals()
+        ; what the package defines, for tool.check_definitions#
+        if defs_file.get_length() > 0
+            File.write_from_string(defs_file, "`dep_planner.generic_function_names()``dep_emitter.defined_symbols()`")
         let obj_ok dep_emitter.write_object_to_file out_obj
         if obj_ok = false
             return false
