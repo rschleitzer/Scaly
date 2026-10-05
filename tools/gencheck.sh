@@ -20,17 +20,11 @@ cd "$(dirname "$0")/.."
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 fail=0
 
-# --- 1. Generatoren, die ihre Zieldatei direkt schreiben -------------------
-for g in packages/tscaly/tools/gen*.py; do
-    before=$(git status --porcelain packages/tscaly/0.1.0/tscaly/ | wc -l)
-    python3 "$g" >/dev/null 2>&1 || { echo "FAIL  $g lief nicht"; fail=1; continue; }
-    after=$(git status --porcelain packages/tscaly/0.1.0/tscaly/ | wc -l)
-    if [ "$before" != "$after" ]; then
-        echo "DIVERGENT  $(basename "$g"): die eingecheckte Datei ist NICHT die Generatorausgabe"
-        git status --porcelain packages/tscaly/0.1.0/tscaly/ | sed 's/^/           /'
-        fail=1
-    fi
-done
+# --- 1. (entfallen 2026-10-05) ---------------------------------------------
+# Die Generatoren, die ihre Zieldatei direkt schreiben, waren die von tscaly
+# (packages/tscaly/tools/gen*.py). tscaly ist ein eigenes Repository
+# (github.com/rschleitzer/tscaly); der Lauf dort: jeden Generator starten und
+# die erzeugten Dateien vorher und nachher per Prüfsumme vergleichen.
 
 # --- 2. chartablegen: Quelle aus der Ausgabe rekonstruieren ---------------
 python3 - "$TMP" <<'PY'

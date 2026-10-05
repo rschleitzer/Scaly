@@ -23,12 +23,12 @@ cd "$(dirname "$0")/.."
 CHECK=0
 if [ "${1:-}" = "--check" ]; then CHECK=1; shift; fi
 BIN="${1:-scalyc/build/scalyc}"
-PKGS="scaly opensp dazzle scalyc scalyls tscaly scalygpu http json compress tls pg https h3 redis"
+PKGS="scaly opensp dazzle scalyc scalyls scalygpu http json compress tls pg https h3 redis"
 T="$(mktemp -d)"
-# One job per package, side by side under --check — all but tscaly, which runs
-# alone after them (~35 s and 6.5 GB, where the others take a few seconds each
-# but scalyc, dazzle and opensp are 2-4 GB apiece: side by side with them it was
-# the peak of the whole bar); the reports print in package order.
+# One job per package, side by side under --check; the reports print in
+# package order. (tscaly, which ran alone after them for its 6.5 GB, is a
+# repository of its own since 2026-10-05 and checks its interface itself:
+# packages/tscaly/tools/interface.sh there, a step of the bar's tscaly lane.)
 # Either way the interface is written into $T first, so a compile that fails
 # leaves the committed interface as it was.
 one() {
@@ -50,23 +50,19 @@ one() {
 # ★Side by side only under --check, which reads the committed interfaces and
 # writes into $T. REWRITING goes one package at a time, in the order above: a
 # dependent's facts are computed against its dependencies' interfaces, and a
-# parallel rewrite handed scalyls and tscaly the scalyc interface while it was
+# parallel rewrite handed scalyls the scalyc interface while it was
 # being deleted and written (2026-09-24: "FAIL (facts of scalyls)" on the first
 # run, green on the second — and had it not failed, the facts would have been
 # computed against the OLD dependency interface).
 rc=0
 if [ "$CHECK" = 1 ]; then
-  BIG=tscaly
   for p in $PKGS; do
-    [ "$p" = "$BIG" ] && continue
     one "$p" > "$T/$p.log" 2>&1 &
     eval "pid_$p=$!"
   done
   for p in $PKGS; do
-    [ "$p" = "$BIG" ] && continue
     eval "wait \$pid_$p" || rc=1
   done
-  one "$BIG" > "$T/$BIG.log" 2>&1 || rc=1
   for p in $PKGS; do cat "$T/$p.log"; done
 else
   for p in $PKGS; do

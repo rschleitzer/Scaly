@@ -14,7 +14,7 @@
 # The standard packages are the list below (ROADMAP-public.md, decision 4:
 # shipped with the toolchain). Not in it: scalyc and scalyls (the repository
 # is private, decision 7 — their code travels as the seed), the ports (dazzle,
-# opensp, tscaly) and scalygpu.
+# opensp) and scalygpu.
 #
 # Output: <outdir>/scaly-<version>.tar.gz, <outdir> default dist/ (gitignored).
 # tools/publish-install.sh uploads it to https://scaly.io/downloads/ (kept out

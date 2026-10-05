@@ -121,14 +121,14 @@ the license they were derived under:
 |---|---|---|
 | everything not listed below | MIT | — |
 | `packages/opensp/`, `packages/dazzle/` | Clark / OpenJade (permissive) | James Clark's SP and the OpenJade project |
-| `packages/tscaly/` | Apache 2.0 (+ `NOTICE.txt`) | [microsoft/typescript-go](https://github.com/microsoft/typescript-go) |
 
 Each such package carries its own `LICENSE` next to its sources; that file
 governs the directory it sits in. None of these licenses is copyleft, so they
 neither infect one another nor the rest of the tree.
 
-One rule follows from the mixture and is easy to break by accident:
-**no code moves out of `packages/tscaly` into the compiler, the runtime or the
-standard library.** Concepts and ideas yes, literal code no — a helper lifted
-upward while porting would relicense a piece of the MIT stdlib to Apache 2.0
-without anyone deciding to. `tools/license-boundary.sh` checks it on every push.
+The TypeScript port, tscaly, is Apache 2.0 and a repository of its own,
+[github.com/rschleitzer/tscaly](https://github.com/rschleitzer/tscaly). One
+rule follows from that and is easy to break by accident: **no code moves out
+of tscaly into the compiler, the runtime or the standard library.** Concepts
+and ideas yes, literal code no — a helper lifted over while porting would
+relicense a piece of the MIT stdlib to Apache 2.0 without anyone deciding to.

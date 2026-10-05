@@ -21,8 +21,13 @@
 #   lsp       tests/lsp/run.sh — once the tscaly lane has compiled its package
 #   ports     likewise; one dazzle CLI build shared by all 14 dazzle suites (DAZZLE_PREBUILT),
 #             which run side by side; then onsgmls, the SGML corpus, opensp, http, json, compress, tls, pg, redis, tool, cmscratch
-#   tscaly    tests/run.sh at stage 2 (its corpus contains stage 1's), then the
-#             two case yardsticks side by side — the longest lane
+#   tscaly    the TypeScript port, a repository of its own since 2026-10-05
+#             (github.com/rschleitzer/tscaly), expected beside this one or at
+#             $TSCALY_REPO and SKIPPED by name when it is not there: its
+#             tests/run.sh at stage 2 (the corpus contains stage 1's) with THIS
+#             tree's compiler, its interface check, then the two case
+#             yardsticks side by side — the longest lane. tools/tscaly.pin
+#             names the commit of it this tree was last green with
 #   vscode    only with BAR_VSCODE_SCENARIO and BAR_VSCODE_BASELINE set: the bench
 #             build, then one --bench-batch run (in BAR_VSCODE_DIR, default the
 #             scenario's directory) whose first BAR_VSCODE_LINES lines must equal
@@ -52,6 +57,18 @@ export SCALY_CACHE="$LOG/cache"
 mkdir -p "$LOG"
 BIN=$ROOT/scalyc/build/scalyc
 T0=$(date +%s)
+
+# tscaly: the other repository, tested with this tree's compiler. SCALY_HOME is
+# this tree, which does not hold the package tscaly, so the compiler takes it
+# from the project it runs in (Modeler.package_directory#).
+TSCALY=${TSCALY_REPO:-$ROOT/../tscaly}
+TSCALY_LIB=/tmp/libscaly.a
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) TSCALY_LIB=/tmp/libscaly.lib ;; esac
+tscaly_env() {  # tscaly_env <command of the tscaly repository> [args]
+  ( cd "$TSCALY" && env SCALY_POISON=1 SCALYC="$BIN" LIBSCALY="$TSCALY_LIB" SCALY_HOME="$ROOT" \
+      TSCALY_WIN_ENV="$ROOT/tools/win-env.sh" "$@" )
+}
+have_tscaly() { [ -x "$TSCALY/packages/tscaly/tests/run.sh" ]; }
 
 # glibc's malloc may ask for transparent huge pages (MADV_HUGEPAGE), and the
 # compiler's sparse page use then costs twice the memory: tscaly's interface
@@ -119,7 +136,7 @@ T1=$(date +%s)
 # done, and the `tscaly` step's own marker covers a suite that stopped before
 # it built anything. They are a tenth of the tscaly lane, so the wait is free.
 await_tscaly_build() {
-  while [ ! packages/tscaly/tests/out/tscaly_tokens-build.log -nt "$LOG/phase1.txt" ] \
+  while [ ! "$TSCALY/packages/tscaly/tests/out/tscaly_tokens-build.log" -nt "$LOG/phase1.txt" ] \
         && [ ! -e "$LOG/tscaly.stepped" ]; do sleep 2; done
 }
 
@@ -133,9 +150,6 @@ lane_compiler() {
   step pointer-report tests/pointer-report/run.sh "$BIN" || rc=1
   step write-report tests/write-report/run.sh "$BIN" || rc=1
   step abi tests/abi/run.sh || rc=1
-  # the tscaly license boundary: its workflow is manual-only since 2026-10-04,
-  # so the check that runs by itself is this one (a grep over the tracked files)
-  step license tools/license-boundary.sh || rc=1
   step debuginfo tests/debuginfo/run.sh "$BIN" || rc=1
   # ★"Last" was not enough: on a ten-core box this lane is here after 36 s,
   # while the tscaly lane is still compiling — two 6.5 GB compilations beside
@@ -207,13 +221,13 @@ lane_ports() {
 
 tscaly_stage() {
   if [ "$QUICK" = 1 ]; then
-    SCALY_POISON=1 packages/tscaly/tests/run.sh
+    tscaly_env packages/tscaly/tests/run.sh
   else
-    SCALY_POISON=1 TSCALY_STAGE=2 packages/tscaly/tests/run.sh
+    tscaly_env env TSCALY_STAGE=2 packages/tscaly/tests/run.sh
   fi
 }
 tscaly_case() {  # tscaly_case caseerrors|casejs: rc AND a zero CRASH count
-  SCALY_POISON=1 python3 packages/tscaly/tests/$1.py --jobs 8 || return 1
+  tscaly_env python3 packages/tscaly/tests/$1.py --jobs 8 || return 1
 }
 tscaly_cases() {
   local rc=0 p1 p2 c
@@ -231,7 +245,18 @@ tscaly_cases() {
 lane_tscaly() {
   ulimit -s 65520
   local rc=0
+  if ! have_tscaly; then
+    : > "$LOG/tscaly.stepped"
+    echo "SKIP tscaly (no checkout at $TSCALY — git clone https://github.com/rschleitzer/tscaly there, or set TSCALY_REPO)"
+    return 0
+  fi
+  local at pin
+  at=$(git -C "$TSCALY" rev-parse HEAD 2>/dev/null); pin=$(cat tools/tscaly.pin 2>/dev/null)
+  echo "tscaly: $TSCALY at ${at:0:9}$([ "$at" = "$pin" ] || echo " (tools/tscaly.pin names ${pin:0:9})")"
   step tscaly tscaly_stage || rc=1
+  # its generated interface, with this tree's compiler — before the marker: it
+  # is a 6.5 GB compilation like the one the compiler lane waits to start
+  step tscaly-interface tscaly_env packages/tscaly/tools/interface.sh --check || rc=1
   : > "$LOG/tscaly.stepped"   # lane_compiler's interfaces step waits for this
   [ $rc = 0 ] || return 1
   if grep -qE 'UNEXPLAINED +[1-9]' "$LOG/tscaly.log"; then echo "tscaly: UNEXPLAINED units"; return 1; fi
@@ -252,7 +277,8 @@ vscode_run() {
 }
 lane_vscode() {
   ulimit -s 65520
-  step vscode-build packages/tscaly/tools/bench/build.sh "$LOG/tscaly_bench" "$BIN" || return 1
+  have_tscaly || { echo "SKIP vscode (no tscaly checkout at $TSCALY)"; return 0; }
+  step vscode-build tscaly_env packages/tscaly/tools/bench/build.sh "$LOG/tscaly_bench" "$BIN" || return 1
   step vscode vscode_run
 }
 
