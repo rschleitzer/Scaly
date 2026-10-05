@@ -170,7 +170,19 @@ function Install-Scaly {
                     # answered "0x8a15005e: the server certificate did not match"
                     # and winget then refused to choose, the package found
                     # under `winget` in the same breath.
-                    & winget install --id Microsoft.VisualStudio.BuildTools -e --source winget --accept-source-agreements --accept-package-agreements --override "$shown --wait $components" | Out-Host
+                    # winget writes UTF-8 and, into a pipe, one line per step of
+                    # its spinner and its progress bar: read as the console's
+                    # code page that was a screen of garbled letters (seen 2026-10-05).
+                    # So it is read as UTF-8, and the spinner and the bars are
+                    # left out -- what it SAYS stays.
+                    $savedEncoding = [Console]::OutputEncoding
+                    try {
+                        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+                        & winget install --id Microsoft.VisualStudio.BuildTools -e --source winget --accept-source-agreements --accept-package-agreements --override "$shown --wait $components" |
+                            Where-Object { $_ -notmatch '^\s*[-\\|/]?\s*$' -and $_ -notmatch '[\u2580-\u259F]' } | Out-Host
+                    } finally {
+                        [Console]::OutputEncoding = $savedEncoding
+                    }
                     $tools = & $haveTools
                     if (-not $tools) { Say "winget did not install them; taking Microsoft's installer directly" }
                 }
