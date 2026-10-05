@@ -2334,11 +2334,40 @@ define Parser
             when success: Success
                 version := VersionSyntax(success.start, success.end, success.majorMinor, success.patch)
 
+        let source_start lexer.position
+        var source: ref[SourceSyntax]? null
+        choose parse_source()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                source := SourceSyntax(success.start, success.end, success.literal)
+
         lexer.parse_colon()
 
         let end lexer.position
 
-        PackageSyntax(start, end, name, version)
+        PackageSyntax(start, end, name, version, source)
+    }
+
+    procedure parse_source(mutable this: Parser) returns SourceSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        var literal: Literal
+        choose parse_literal_token()
+            when err: Error
+                throw err
+            when success: Success
+                literal := success
+
+        let end lexer.position
+
+        SourceSyntax(start, end, literal)
     }
 
     procedure parse_libraries(mutable this: Parser) returns LibrariesSyntax throws ParserError

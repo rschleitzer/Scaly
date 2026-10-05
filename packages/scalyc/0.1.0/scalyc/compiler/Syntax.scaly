@@ -548,12 +548,20 @@ define LibrariesSyntax
     more: ref[Vector[LibrarySyntax]]?
 )
 
+define SourceSyntax
+(
+    start: size_t
+    end: size_t
+    literal: Literal
+)
+
 define PackageSyntax
 (
     start: size_t
     end: size_t
     name: NameSyntax
     version: ref[VersionSyntax]?
+    source: ref[SourceSyntax]?
 )
 
 define ModuleSyntax

@@ -165,6 +165,8 @@ define Parser
 
     procedure parse_package(mutable this: Parser) @page true @direct true @deep true returns PackageSyntax throws ParserError linked
 
+    procedure parse_source(mutable this: Parser) @page true @direct true @deep true returns SourceSyntax throws ParserError linked
+
     procedure parse_libraries(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns LibrariesSyntax throws ParserError linked
 
     procedure parse_library_list(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ref[Vector[LibrarySyntax]]? throws ParserError linked

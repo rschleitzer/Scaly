@@ -52,6 +52,12 @@
 #              `scaly build` and `--release` alike, both symbols named
 #              (tool.check_definitions#) -- before, the three gave three
 #              different answers at rc 0; with the names apart the three agree
+#   source     `package name version "source"`: a package neither the
+#              installation nor the project has is taken from where a fetch
+#              lays it, $SCALY_PACKAGES/<host>/<path>/<name>/<version>, on
+#              all three routes and under every spelling of one source; a
+#              missing one is reported with source and place, a source that
+#              is no string is refused, and a local ./packages wins
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -392,6 +398,46 @@ for route in "run main.scaly" "build main.scaly -o $TMP/col_a$SCALY_EXE" "build 
   esac
   [ "$out" = "2 101 2 101" ] && ok || bad "collide, names apart (${route%% *}): rc=$rc got '$(echo "$out" | head -1)'"
 done
+
+# source: the third place a package is looked for, what a fetch laid down
+src="$TMP/source"
+fetched="$TMP/fetched"
+mkdir -p "$src"
+printf 'package shapes 0.1.0 "github.com/someone/shapes"\n\nprint(shapes.greeting("fetched"))\n' > "$src/main.scaly"
+out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$scaly_abs" run main.scaly 2>&1); rc=$?
+if [ "$rc" != 0 ] && echo "$out" | grep -q 'package not found: shapes 0.1.0' \
+   && echo "$out" | grep -q 'fetched/github.com/someone/shapes/shapes/0.1.0/shapes.scaly' \
+   && echo "$out" | grep -q 'not fetched from "github.com/someone/shapes"'; then
+  ok
+else
+  bad "source, missing: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)'"
+fi
+( cd "$TMP" && SCALY_HOME="$here" "$scaly_abs" new shapes --lib ) > /dev/null 2>&1
+mkdir -p "$fetched/github.com/someone/shapes/shapes"
+cp -R "$TMP/shapes/packages/shapes/0.1.0" "$fetched/github.com/someone/shapes/shapes/"
+for route in "run main.scaly" "build main.scaly -o $TMP/src_a$SCALY_EXE" "build main.scaly --release -o $TMP/src_b$SCALY_EXE"; do
+  # shellcheck disable=SC2086
+  out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$scaly_abs" $route 2>&1); rc=$?
+  case "$route" in
+    *src_a*) [ "$rc" = 0 ] && out=$("$TMP/src_a$SCALY_EXE") ;;
+    *src_b*) [ "$rc" = 0 ] && out=$("$TMP/src_b$SCALY_EXE") ;;
+  esac
+  [ "$out" = "Hello, fetched!" ] && ok || bad "source (${route%% *}): rc=$rc got '$(echo "$out" | head -1 | cut -c1-120)'"
+done
+same=0
+for spelling in 'https://github.com/someone/shapes.git' 'git@github.com:someone/shapes.git' 'ssh://git@github.com/someone/shapes/'; do
+  printf 'package shapes 0.1.0 "%s"\nprint(shapes.greeting("x"))\n' "$spelling" > "$src/spelled.scaly"
+  out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$scaly_abs" run spelled.scaly 2>&1)
+  [ "$out" = "Hello, x!" ] && same=$((same+1))
+done
+[ "$same" = 3 ] && ok || bad "source: $same of 3 spellings of one source found the package"
+printf 'package shapes 0.1.0 42\nprint("no")\n' > "$src/nostring.scaly"
+out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$scaly_abs" run nostring.scaly 2>&1); rc=$?
+[ "$rc" != 0 ] && echo "$out" | grep -q "is the package's source, a string" && ok || bad "source, no string: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
+mkdir -p "$src/packages/shapes/0.1.0"
+sed 's/Hello/Local hello/' "$TMP/shapes/packages/shapes/0.1.0/shapes.scaly" > "$src/packages/shapes/0.1.0/shapes.scaly"
+out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$scaly_abs" run main.scaly 2>&1)
+[ "$out" = "Local hello, fetched!" ] && ok || bad "source: a local ./packages did not win, got '$(echo "$out" | head -1 | cut -c1-120)'"
 
 # bare: no clang, no LIB -- only the Build Tools, found by the compiler
 if [ "$SCALY_COFF" = 1 ]; then

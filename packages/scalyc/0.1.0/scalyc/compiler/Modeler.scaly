@@ -2859,18 +2859,119 @@ define Modeler
     ; library of its own in front of the installed one, whose prelude and
     ; runtime archive it gets in any case. Without SCALY_HOME there is one
     ; base, the current directory, as before.
-    procedure package_directory(pkg_name: String, version_str: String) returns String
+    ;
+    ; A declaration that names a SOURCE (`package json 0.1.3 "github.com/x/json"`)
+    ; has a third place, after the two: what the tool fetched from that
+    ; source, fetched_directory#. A local directory wins over a remote one --
+    ; vendoring is copying a directory, patching a dependency is editing it.
+    procedure package_directory(pkg_name: String, version_str: String, source: String) returns String
     {
         let home scaly_home_base()
         let installed "`home`packages/`pkg_name`/`version_str`"
-        if home.get_length() = 0
-            return installed
-        if has_package_root(installed, pkg_name)
+        if home.get_length() > 0 and has_package_root(installed, pkg_name)
             return installed
         let own "packages/`pkg_name`/`version_str`"
-        if has_package_root(own, pkg_name)
+        if home.get_length() > 0 and has_package_root(own, pkg_name)
             return own
+        if source.get_length() > 0
+        {
+            if home.get_length() = 0 and has_package_root(installed, pkg_name)
+                return installed
+            return fetched_directory(source, pkg_name, version_str)
+        }
         installed
+    }
+
+    ; fetched_base#: where fetched packages are kept -- $SCALY_PACKAGES, else
+    ; ~/.scaly/packages (beside the build cache, tool.cache_root#).
+    procedure fetched_base() returns String
+    {
+        let own getenv "SCALY_PACKAGES"
+        if own <> null
+        {
+            let s String(own)
+            if s.get_length() > 0
+                return String(own)
+        }
+        var home getenv "HOME"
+        if home = null
+            home := getenv("USERPROFILE")
+        if home = null
+            return String(".scaly-packages")
+        let h String(home)
+        "`h`/.scaly/packages"
+    }
+
+    ; source_path#: a source as a directory path, <host>/<path>:
+    ; "github.com/x/json", "https://github.com/x/json.git" and
+    ; "git@github.com:x/json.git" are one place. A scheme, a user and a
+    ; trailing ".git" or "/" go; what no file name should hold becomes `_`, so
+    ; a local path ("/home/me/json", "C:\\work\\json") lies under its own
+    ; spelling too.
+    function source_path(source: String) returns String
+    {
+        let n source.get_length()
+        var from: size_t 0
+        ; scheme://
+        var i: size_t 0
+        while i + 2 < n
+        {
+            if source.get(i) = 58 and source.get(i + 1) = 47 and source.get(i + 2) = 47
+            {
+                from := i + 3
+                break
+            }
+            i := i + 1
+        }
+        ; user@
+        i := from
+        while i < n and source.get(i) <> 47
+        {
+            if source.get(i) = 64
+            {
+                from := i + 1
+                break
+            }
+            i := i + 1
+        }
+        var end n
+        while end > from and source.get(end - 1) = 47
+            end := end - 1
+        if end >= from + 4 and source.get(end - 4) = 46 and source.get(end - 3) = 103 and source.get(end - 2) = 105 and source.get(end - 1) = 116
+            end := end - 4
+        var sb StringBuilder()
+        var last_slash true
+        i := from
+        while i < end
+        {
+            let c source.get i
+            let plain (c >= 48 and c <= 57) or (c >= 65 and c <= 90) or (c >= 97 and c <= 122) or c = 45 or c = 46 or c = 95
+            if c = 47 or c = 92 or c = 58
+            {
+                ; a separator: one `/`, none at the start
+                if last_slash = false
+                    sb.append("/" as char)
+                last_slash := true
+            }
+            else
+            {
+                if plain
+                    sb.append(c as char)
+                else
+                    sb.append("_" as char)
+                last_slash := false
+            }
+            i := i + 1
+        }
+        sb.to_string()
+    }
+
+    ; fetched_directory#: where the package `pkg_name` `version_str` of
+    ; `source` lies once fetched:
+    ; <fetched_base>/<host>/<path>/<name>/<version>.
+    procedure fetched_directory(source: String, pkg_name: String, version_str: String) returns String
+    {
+        "`fetched_base()`/`source_path(source)`/`pkg_name`/`version_str`"
     }
 
     ; A package's root file declares the packages it uses; they are loaded
@@ -2929,6 +3030,21 @@ define Modeler
         ; package loaded or being loaded, so a cycle ends here as well. Two
         ; versions of one package cannot share a compilation: the version
         ; selects the directory only, and no mangled name carries it.
+        ; the source, where the declaration names one: a string, taken as it
+        ; is written
+        var source_str ""
+        if pkg_syntax.source <> null
+        {
+            let src pkg_syntax.source.unwrap()
+            choose src.literal
+                when str: StringLiteral
+                    source_str := String#(str.value)
+                else
+                {
+                    report_load_error("error: package `pkg_name` `version_str`: what follows the version is the package's source, a string - \"github.com/someone/`pkg_name`\"")
+                    return
+                }
+        }
         let key "`pkg_name` `version_str`"
         var vi: size_t 0
         while vi < versions.length
@@ -2945,8 +3061,13 @@ define Modeler
         versions.add key
 
         ; Search path: the installation, then the project (package_directory#)
-        let pkg_path package_directory(pkg_name, version_str)
-        let root_dir interface_or_source(pkg_path, pkg_name)
+        let pkg_path package_directory(pkg_name, version_str, source_str)
+        ; a fetched package is read from its sources: an interface its author
+        ; committed is not trusted (the tool generates one in the cache)
+        var root_dir String(pkg_path)
+        let fetched source_str.get_length() > 0 and pkg_path.starts_with(fetched_base())
+        if fetched = false
+            root_dir := interface_or_source(pkg_path, pkg_name)
         load_package_dependencies("`root_dir`/`pkg_name`.scaly", packages, versions)
 
         let loaded build_referenced_module(root_dir, pkg_name, false)
@@ -2965,7 +3086,10 @@ define Modeler
                 perr.append pkg_path
                 perr.append("/" as char)
                 perr.append pkg_name
-                perr.append ".scaly - looked in the installation (SCALY_HOME) and in ./packages of the directory this runs in"
+                if source_str.get_length() > 0
+                    perr.append ".scaly - not in the installation (SCALY_HOME), not in ./packages of the directory this runs in, and not fetched from \"`source_str`\""
+                else
+                    perr.append ".scaly - looked in the installation (SCALY_HOME) and in ./packages of the directory this runs in"
                 let perr_str perr.to_string()
                 report_load_error(perr_str)
             }

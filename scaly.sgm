@@ -267,7 +267,11 @@
     <content link = package
     <content link = Name                                    property = name
     <content link = Version                        optional property = version
+    <content link = Source                         optional property = source
     <content colon                                 optional
+
+<syntax id = Source
+    <content literal                                        property = literal
 
 <syntax id = Libraries
     <content link = extern
