@@ -24,8 +24,8 @@ alias claude-scaly='claude --plugin-dir "$HOME/repos/Scaly/.claude/skills/scaly-
 
 Two alternatives, both needing someone else: the admin adds
 `{"source":"skills-dir"}` to `strictKnownMarketplaces` (then this committed
-plugin auto-loads, no flag), or the plugin is published into the approved
-`in-house-claude-plugins` marketplace.
+plugin auto-loads, no flag), or the plugin is published into the
+organization's approved plugin marketplace.
 
 ## Verifying it loaded
 
