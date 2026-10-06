@@ -219,7 +219,8 @@ define tool
 
     ; Fetch the package `name` `version` of `source` into `dir`
     ; (Modeler.fetched_directory#): the default branch's head of the source,
-    ; its packages/<name>/<version> laid down with its files read-only. The
+    ; its packages/<name>/<version> laid down with its files read-only, by
+    ; git and nothing else. The
     ; commit and the git tree id of that directory are remembered beside it
     ; (<version>.fetched), and a version fetched AGAIN must have the tree it
     ; had: a published version does not change. Nothing is written into the

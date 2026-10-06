@@ -3618,24 +3618,31 @@ define Planner
                     return ""
                 return path.substring(0, (rel_end as size_t) + 1)
             }
+            ; ★The LAST `/packages/` of the path, not the first: what the tool
+            ; fetched lies under `~/.scaly/packages/<host>/<path>/packages/
+            ; <name>/`, and by the first one every fetched package was the
+            ; package `.../.scaly/packages/<host>/` -- all of them ONE, so a
+            ; constant of the fetched pdf package was `unknown identifier` in
+            ; dazzle beside it (2026-10-06, from the default place only: the
+            ; gates had a scratch base without that segment).
             let n path.get_length()
+            var found ""
             var at: size_t 0
             while at + 10 <= n
             {
                 let slash path.index_of(47, at)
                 if slash < 0
-                    return ""
+                    break
                 let s slash as size_t
                 if s + 10 <= n and path.substring(s, 10) = "/packages/"
                 {
                     let end path.index_of(47, s + 10)
-                    if end < 0
-                        return ""
-                    return path.substring(0, (end as size_t) + 1)
+                    if end >= 0
+                        found := path.substring(0, (end as size_t) + 1)
                 }
                 at := s + 1
             }
-            ""
+            found
         }
 
         ; report_string_data_read#: `s.data` on a String outside the standard

@@ -1259,7 +1259,8 @@ define tool
 
     ; Fetch the package `name` `version` of `source` into `dir`
     ; (Modeler.fetched_directory#): the default branch's head of the source,
-    ; its packages/<name>/<version> laid down with its files read-only. The
+    ; its packages/<name>/<version> laid down with its files read-only, by
+    ; git and nothing else. The
     ; commit and the git tree id of that directory are remembered beside it
     ; (<version>.fetched), and a version fetched AGAIN must have the tree it
     ; had: a published version does not change. Nothing is written into the
@@ -1331,14 +1332,14 @@ define tool
                 return false
             }
         }
+        ; git alone lays the one directory down, into a work tree given for
+        ; the occasion. ★No `git archive | tar`: in the Git Bash of Windows
+        ; `tar` is GNU tar, which reads the `C:` of the archive's name as a
+        ; host ("Cannot connect to C: resolve failed", 2026-10-06).
         let tmp "`home`/.fetch.`pid`"
-        let tar "`tmp`.tar"
         var laid tool.ensure_directory(tmp)
         if laid
-            laid := system("git -C \"`store`\" archive --format=tar FETCH_HEAD `path` > \"`tar`\" 2> \"`log`\"".to_c_string()) = 0
-        if laid
-            laid := tool.quiet("tar -xf \"`tar`\" -C \"`tmp`\"", log)
-        unlink(tar.to_c_string())
+            laid := tool.quiet("git --git-dir=\"`store`\" --work-tree=\"`tmp`\" checkout -q FETCH_HEAD -- `path`", log)
         let slash dir.last_index_of(47)
         if laid and slash > 0
             laid := tool.ensure_directory(dir.substring(0, slash as size_t))

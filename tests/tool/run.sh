@@ -420,14 +420,14 @@ done
 
 # source: the third place a package is looked for, what a fetch laid down
 src="$TMP/source"
-fetched="$TMP/fetched"
+fetched="$TMP/userhome2/.scaly/packages"
 mkdir -p "$src"
 printf 'package shapes 0.1.0 "github.com/someone/shapes"\n\nprint(shapes.greeting("fetched"))\n' > "$src/main.scaly"
 # (asked of scalyc, which only looks: the tool would go and fetch it)
 case "$BIN" in /*) BIN_ABS="$BIN" ;; *) BIN_ABS="$here/$BIN" ;; esac
 out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$BIN_ABS" -S -o "$TMP/source.ll" main.scaly 2>&1); rc=$?
 if [ "$rc" != 0 ] && echo "$out" | grep -q 'package not found: shapes 0.1.0' \
-   && echo "$out" | grep -q 'fetched/github.com/someone/shapes/packages/shapes/0.1.0/shapes.scaly' \
+   && echo "$out" | grep -q 'userhome2/.scaly/packages/github.com/someone/shapes/packages/shapes/0.1.0/shapes.scaly' \
    && echo "$out" | grep -q 'not fetched from "github.com/someone/shapes"'; then
   ok
 else
@@ -464,7 +464,12 @@ out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$scaly_abs" run
 if ! command -v git > /dev/null 2>&1; then
   echo "SKIP fetch (no git on the PATH)"
 else
-  fr="$TMP/fetchrepos"; fp="$TMP/fetchproj"; fb="$TMP/fetchbase"
+  # ★The base has the shape of the DEFAULT one, ~/.scaly/packages: a path with
+  # a `packages` segment BEFORE the source's. With a base that had none, every
+  # check here passed while the default place could not build a package that
+  # reads a sibling's constant (the planner took the first such segment for
+  # the package's own; found on a user's machine, 2026-10-06).
+  fr="$TMP/fetchrepos"; fp="$TMP/fetchproj"; fb="$TMP/userhome/.scaly/packages"
   mkdir -p "$fr" "$fp"
   tg() { git -c user.name=t -c user.email=t@example.invalid -c init.defaultBranch=main "$@"; }
   ft() { ( cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" "$scaly_abs" "$@" ); }
