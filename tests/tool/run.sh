@@ -572,6 +572,11 @@ else
   else
     bad "install: rc=$rc '$(echo "$out" | tr '\n' '|' | cut -c1-200)' $(grep -v '^scaly: ' "$TMP/install.err" | head -1 | cut -c1-120)"
   fi
+  # a directory that is not on the PATH is said, one that is, is not
+  noted=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 kit 2>/dev/null)
+  quiet=$(cd "$fp" && PATH="$PATH:$kb/" SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 kit 2>/dev/null)
+  echo "$noted" | grep -q "^note: $kb is not on your PATH" && ! echo "$quiet" | grep -q 'not on your PATH' && ok \
+    || bad "install: the PATH note '$(echo "$noted" | tail -1 | cut -c1-120)' / '$(echo "$quiet" | tail -1 | cut -c1-80)'"
   # what was installed is listed, and uninstall removes one of THOSE and
   # nothing else of the directory
   : > "$kb/mine$SCALY_EXE"

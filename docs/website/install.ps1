@@ -243,19 +243,28 @@ function Install-Scaly {
         Rename-Item $new 'toolchain'
         if (Test-Path $old) { Remove-Item -Recurse -Force $old }
         $bin = Join-Path $toolchain 'libexec'
+        # where `scaly install` puts the programs it builds (tool.install_bin):
+        # beside the toolchain, not in it -- the toolchain is replaced by the
+        # next install, what the user installed is not. Until 2026-10-07 this
+        # script knew nothing of it, and such a program was built into a
+        # directory no PATH named.
+        $userBin = Join-Path $prefix 'bin'
+        if (-not (Test-Path $userBin)) { New-Item -ItemType Directory -Force -Path $userBin | Out-Null }
 
         if ($env:SCALY_NO_MODIFY_PATH -eq '1') {
             Say "installed into $toolchain"
-            Say "PATH left alone: put $bin on it"
+            Say "PATH left alone: put $bin and $userBin on it"
         } else {
             $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
             if (-not $userPath) { $userPath = '' }
-            if (($userPath -split ';') -notcontains $bin) {
-                [Environment]::SetEnvironmentVariable('Path', (($userPath.TrimEnd(';') + ';' + $bin).TrimStart(';')), 'User')
+            foreach ($d in @($bin, $userBin)) {
+                if (($userPath -split ';') -notcontains $d) { $userPath = ($userPath.TrimEnd(';') + ';' + $d).TrimStart(';') }
+                # this session too
+                if (($env:Path -split ';') -notcontains $d) { $env:Path = "$env:Path;$d" }
             }
-            # this session too
-            if (($env:Path -split ';') -notcontains $bin) { $env:Path = "$env:Path;$bin" }
-            Say "installed into $toolchain; scaly, scalyc and scalyls are on PATH (new terminals see it)"
+            [Environment]::SetEnvironmentVariable('Path', $userPath, 'User')
+            Say "installed into $toolchain; scaly, scalyc and scalyls are on PATH (new terminals see it),"
+            Say "and so is $userBin, where scaly install puts the programs it builds"
         }
         # the same first steps install.sh prints (they were missing here until
         # 2026-10-04: two lines, and no word of how a program is built)
@@ -267,7 +276,7 @@ function Install-Scaly {
         Write-Host "    scaly build hello.scaly -o hello.exe   build a program ..."
         Write-Host "    .\hello.exe                            ... and run that"
         Write-Host "    scaly                                  the REPL (:help, :quit)"
-        Write-Host "  Uninstall:  Remove-Item -Recurse `"$prefix`"  (and remove its libexec directory from PATH)"
+        Write-Host "  Uninstall:  Remove-Item -Recurse `"$prefix`"  (and remove its libexec and bin directories from PATH)"
         $ok = $true
         $script:scalyInstalled = $true
     } finally {

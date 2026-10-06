@@ -237,8 +237,12 @@ define tool
     ; ---- scaly install (stage D5) -------------------------------------------
 
     ; where installed programs go: $SCALY_BIN; the `bin` beside an installed
-    ; toolchain (<prefix>/toolchain is its home, <prefix>/bin on the PATH);
-    ; else ~/.scaly/bin
+    ; toolchain (<prefix>/toolchain is its home -- it has a `libexec` --,
+    ; <prefix>/bin the directory both installers put on the PATH); else
+    ; ~/.scaly/bin. ★The Windows installer has no `bin` of its own (its PATH
+    ; entry is toolchain\libexec, which the next install replaces), so the
+    ; rule may not ask for a `scaly` IN that directory: it did, fell back to
+    ; ~/.scaly/bin, and nothing had put that on the PATH (2026-10-07).
     procedure install_bin() @page true @direct true @deep true returns String io linked
 
     ; `scaly install <source> <package> <version> [program]`: the programs a
@@ -249,6 +253,10 @@ define tool
     ; program built `--release` and laid into install_bin#. 0 when every
     ; program asked for was built.
     procedure install(source: String, name: String, version: String, only: String) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; is the directory `dir` one of $PATH's? Compared as written but for the
+    ; kind of slash and, where the list is separated by `;`, the case
+    procedure on_path(dir: String) @ret_nonlocal true @deep true returns bool io linked
 
     ; What `scaly install` put into a bin directory is written down there, in
     ; `.scaly-installed`: a line `program package version source` each. It is

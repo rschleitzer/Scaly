@@ -398,15 +398,18 @@ CLASS="command"
 >scaly</B
 > fetches the package
         and the packages it uses, builds its programs optimised, and puts
-        them where <B
-CLASS="command"
->scaly</B
-> itself is, so they are on your
-        <CODE
+        them into the <TT
+CLASS="filename"
+>bin</TT
+> directory of your Scaly
+        installation, which the installer put on your <CODE
 CLASS="envar"
 >PATH</CODE
-> (on Windows the last line of its output says
-        where). A fourth argument names one program where a package offers
+>
+        (if it is not there, <B
+CLASS="command"
+>scaly install</B
+> says so). A fourth argument names one program where a package offers
         several. This needs <B
 CLASS="command"
 >git</B

@@ -109,9 +109,9 @@ sudo apt install clang</programlisting>
       <para>The three arguments are the repository, the package in it and
         the package's version. <command>scaly</command> fetches the package
         and the packages it uses, builds its programs optimised, and puts
-        them where <command>scaly</command> itself is, so they are on your
-        <envar>PATH</envar> (on Windows the last line of its output says
-        where). A fourth argument names one program where a package offers
+        them into the <filename>bin</filename> directory of your Scaly
+        installation, which the installer put on your <envar>PATH</envar>
+        (if it is not there, <command>scaly install</command> says so). A fourth argument names one program where a package offers
         several. This needs <command>git</command>.</para>
       <programlisting>scaly install               ; what has been installed so
 scaly uninstall dazzle      ; remove one of them</programlisting>

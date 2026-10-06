@@ -1416,8 +1416,12 @@ define tool
     ; ---- scaly install (stage D5) -------------------------------------------
 
     ; where installed programs go: $SCALY_BIN; the `bin` beside an installed
-    ; toolchain (<prefix>/toolchain is its home, <prefix>/bin on the PATH);
-    ; else ~/.scaly/bin
+    ; toolchain (<prefix>/toolchain is its home -- it has a `libexec` --,
+    ; <prefix>/bin the directory both installers put on the PATH); else
+    ; ~/.scaly/bin. ★The Windows installer has no `bin` of its own (its PATH
+    ; entry is toolchain\libexec, which the next install replaces), so the
+    ; rule may not ask for a `scaly` IN that directory: it did, fell back to
+    ; ~/.scaly/bin, and nothing had put that on the PATH (2026-10-07).
     procedure install_bin() returns String
     {
         let own getenv "SCALY_BIN"
@@ -1428,16 +1432,15 @@ define tool
                 return String(own)
         }
         let base Modeler.scaly_home_base()
-        if base.get_length() > 0
+        var libexec "`base`libexec"
+        if base.get_length() > 1 and Directory.is_directory(libexec)
         {
-            var beside "`base`../bin"
-            if Directory.is_directory(beside)
-            {
-                var tool_there "`beside`/scaly"
-                var tool_exe "`beside`/scaly.exe"
-                if File.exists(tool_there) or File.exists(tool_exe)
-                    return beside
-            }
+            ; <prefix>/toolchain/ -> <prefix>/bin: the last component goes
+            var end base.get_length() - 1
+            while end > 0 and base.get(end - 1) <> 47 and base.get(end - 1) <> 92
+                end := end - 1
+            if end > 0
+                return "`base.substring(0, end)`bin"
         }
         var home getenv "HOME"
         if home = null
@@ -1531,7 +1534,63 @@ define tool
         }
         if failed > 0
             return 1
+        if tool.on_path(bin) = false
+            Console.println("note: `bin` is not on your PATH - put it there to call what was installed by its name")
         0
+    }
+
+    ; is the directory `dir` one of $PATH's? Compared as written but for the
+    ; kind of slash and, where the list is separated by `;`, the case
+    procedure on_path(dir: String) returns bool
+    {
+        let p getenv "PATH"
+        if p = null
+            return false
+        let path String(p)
+        let windows path.contains(59 as u8)
+        var sep: u8 58
+        if windows
+            sep := 59
+        let n path.get_length()
+        let dn dir.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        while at <= n
+        {
+            if at = n or path.get(at) = sep
+            {
+                var len at - from
+                ; a trailing separator on the entry does not count
+                while len > 0 and (path.get(from + len - 1) = 47 or path.get(from + len - 1) = 92)
+                    len := len - 1
+                if len = dn
+                {
+                    var same true
+                    var k: size_t 0
+                    while k < dn and same
+                    {
+                        var a path.get(from + k)
+                        var b dir.get(k)
+                        if a = 92
+                            a := 47
+                        if b = 92
+                            b := 47
+                        if windows and a >= 65 and a <= 90
+                            a := a + 32
+                        if windows and b >= 65 and b <= 90
+                            b := b + 32
+                        if a <> b
+                            same := false
+                        k := k + 1
+                    }
+                    if same
+                        return true
+                }
+                from := at + 1
+            }
+            at := at + 1
+        }
+        false
     }
 
     ; What `scaly install` put into a bin directory is written down there, in
