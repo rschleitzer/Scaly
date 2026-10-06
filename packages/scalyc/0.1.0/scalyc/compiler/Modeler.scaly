@@ -3017,6 +3017,162 @@ define Modeler
             }
     }
 
+    ; ---- which version of a package a build takes --------------------------
+    ; A declaration names a MINIMUM. A build takes, per package, the highest
+    ; minimum anyone asked for -- the program or a package it reaches --
+    ; within one major version; two major versions stay an error. The answer
+    ; is a function of the sources alone: no lock file, no solver, and adding
+    ; a dependency can only raise a version, never lower one (Go's minimal
+    ; version selection).
+
+    ; the `which`-th number of a dotted version, 0 where it has none
+    function version_part(v: String, which: size_t) returns size_t
+    {
+        let n v.get_length()
+        var part: size_t 0
+        var value: size_t 0
+        var i: size_t 0
+        while i < n
+        {
+            let c v.get i
+            if c = 46
+            {
+                if part = which
+                    return value
+                part := part + 1
+                value := 0
+            }
+            else if c >= 48 and c <= 57
+                value := value * 10 + ((c - 48) as size_t)
+            i := i + 1
+        }
+        if part = which
+            return value
+        0
+    }
+
+    ; is version `a` newer than `b`, number by number?
+    function version_newer(a: String, b: String) returns bool
+    {
+        var k: size_t 0
+        while k < 3
+        {
+            let pa version_part(a, k)
+            let pb version_part(b, k)
+            if pa <> pb
+                return pa > pb
+            k := k + 1
+        }
+        false
+    }
+
+    ; The selection for the program (or package) whose root is `root_file`,
+    ; as lines `name version`: every declaration reachable from the root is
+    ; read -- each declared version's own root too, also one that is not
+    ; taken in the end --, and the highest version per package stays. With
+    ; `report`, two major versions of one package are an error naming who
+    ; asked for each.
+    procedure select_versions(mutable root_file: String, report: bool) returns String mutable modeler_error_count
+    {
+        var names Array[String]()
+        var versions Array[String]()
+        var sources Array[String]()
+        var askers Array[String]()
+        declared_packages(root_file, &names, &versions, &sources)
+        while askers.length < names.length
+            askers.add(String("the program"))
+        var sel_names Array[String]()
+        var sel_versions Array[String]()
+        var sel_askers Array[String]()
+        var i: size_t 0
+        while i < names.length
+        {
+            let name names.at i
+            let version versions.at i
+            let source sources.at i
+            let asker askers.at i
+            i := i + 1
+            ; seen before as this very version: its declarations are in
+            var seen false
+            var j: size_t 0
+            while j + 1 < i
+            {
+                if names.at(j).equals(name) and versions.at(j).equals(version)
+                    seen := true
+                j := j + 1
+            }
+            var known false
+            var s: size_t 0
+            while s < sel_names.length
+            {
+                if sel_names.at(s).equals(name)
+                {
+                    known := true
+                    let had sel_versions.at s
+                    if version_part(had, 0) <> version_part(version, 0)
+                    {
+                        if report and seen = false
+                            report_load_error("error: package `name` is required in two major versions, `had` (by `sel_askers.at(s)`) and `version` (by `asker`); one compilation takes one")
+                    }
+                    else if version_newer(version, had)
+                    {
+                        sel_versions.put(s, String(version))
+                        sel_askers.put(s, String(asker))
+                    }
+                }
+                s := s + 1
+            }
+            if known = false
+            {
+                sel_names.add(String(name))
+                sel_versions.add(String(version))
+                sel_askers.add(String(asker))
+            }
+            if seen
+                continue
+            let dir package_directory(name, version, source)
+            var root_dir String(dir)
+            if source.get_length() = 0 or dir.starts_with(fetched_base()) = false
+                root_dir := interface_or_source(dir, name)
+            var root "`root_dir`/`name`.scaly"
+            declared_packages(root, &names, &versions, &sources)
+            while askers.length < names.length
+                askers.add("`name` `version`")
+        }
+        var sb StringBuilder()
+        var k: size_t 0
+        while k < sel_names.length
+        {
+            sb.append(sel_names.at(k))
+            sb.append(" ")
+            sb.append(sel_versions.at(k))
+            sb.append("\n")
+            k := k + 1
+        }
+        sb.to_string()
+    }
+
+    ; the version the selection `selected` (lines `name version`) holds for
+    ; `name`, "" where it holds none
+    function selected_version(selected: String, name: String) returns String
+    {
+        let n selected.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        while at < n
+        {
+            if selected.get(at) = 10
+            {
+                let line selected.substring(from, at - from)
+                if line.starts_with("`name` ")
+                    return line.substring(name.get_length() + 1, line.get_length() - name.get_length() - 1)
+                from := at + 1
+            }
+            at := at + 1
+        }
+        String()
+    }
+
     ; The packages a root file declares, as three lists side by side: name,
     ; version, source ("" where the declaration names none). For the tool,
     ; which fetches what has a source before anything is compiled
@@ -3134,6 +3290,17 @@ define Modeler
             }
             if known = false
                 versions.add from_key
+        }
+        ; the version the build takes is the SELECTED one, at least the one
+        ; this declaration names (select_versions#; `versions` holds it as
+        ; "=name version")
+        var qi: size_t 0
+        while qi < versions.length
+        {
+            let q versions.get qi
+            if q <> null and q.starts_with("=`pkg_name` ")
+                version_str := q.substring(pkg_name.get_length() + 2, q.get_length() - pkg_name.get_length() - 2)
+            qi := qi + 1
         }
         let key "`pkg_name` `version_str`"
         var vi: size_t 0
@@ -3556,9 +3723,34 @@ define Modeler
 
     procedure build_program(mutable file_name: String, program_name: String, mutable syntax: ProgramSyntax, enable_prelude: bool) returns Program mutable modeler_error_count
     {
+        build_program_selected(file_name, program_name, syntax, enable_prelude, String())
+    }
+
+    ; build_program with the versions its packages are taken in: `selected`
+    ; is the selection of the PROGRAM a package is compiled for (lines
+    ; `name version`, select_versions#) -- a package built by itself would
+    ; choose among its own declarations only, and could take an older version
+    ; of a dependency than the program it is linked into. Empty: selected here,
+    ; from this root.
+    procedure build_program_selected(mutable file_name: String, program_name: String, mutable syntax: ProgramSyntax, enable_prelude: bool, selected: String) returns Program mutable modeler_error_count
+    {
         reset_errors()
         var packages Array[Module]()
         var versions Array[String]()
+        var selection String(selected)
+        if selection.get_length() = 0
+            selection := select_versions(file_name, true)
+        var sel_from: size_t 0
+        var sel_at: size_t 0
+        while sel_at < selection.get_length()
+        {
+            if selection.get(sel_at) = 10
+            {
+                versions.add("=`selection.substring(sel_from, sel_at - sel_from)`")
+                sel_from := sel_at + 1
+            }
+            sel_at := sel_at + 1
+        }
         if syntax.file.declarations <> null
         {
             let decl_syns (*syntax.file.declarations)

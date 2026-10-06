@@ -496,6 +496,31 @@ define tool
         ok
     }
 
+    ; What a package's object depends on beyond its own files: the versions
+    ; its dependencies are taken in for THIS program (lines `name version` of
+    ; the packages its root declares, out of the program's selection). Part of
+    ; the cache key -- built for a program that takes a newer json, a package
+    ; is another object.
+    procedure dependency_versions(mutable root: String, selection: String) returns String
+    {
+        var names Array[String]()
+        var versions Array[String]()
+        var sources Array[String]()
+        Modeler.declared_packages(root, &names, &versions, &sources)
+        var sb StringBuilder()
+        var i: size_t 0
+        while i < names.length
+        {
+            let name names.at i
+            var version Modeler.selected_version(selection, name)
+            if version.get_length() = 0
+                version := String(versions.at(i))
+            sb.append " `name`=`version`"
+            i := i + 1
+        }
+        sb.to_string()
+    }
+
     ; The objects of every package a program uses, each built into the cache
     ; the first time it is needed: the package's Scaly code as one object at
     ; -O2 (library linkage, cli.run with --no-prelude --no-tests), and the C
@@ -514,6 +539,8 @@ define tool
             return false
         }
         let triple tool.target_triple(given_triple)
+        var program_root String(program_file)
+        let selection Modeler.select_versions(program_root, false)
         var def_owners Array[String]()
         var def_files Array[String]()
         var i: size_t 0
@@ -535,7 +562,8 @@ define tool
             tool.package_files(dir, "", &files)
             ; -mcpu is part of what a package is compiled for: it reaches the
             ; IR (a SIMD operation's target form, every function's attribute)
-            let key tool.package_key(dir, &files, triple, "O2`cpu`")
+            var root_for_deps String(root)
+            let key tool.package_key(dir, &files, triple, "O2`cpu``tool.dependency_versions(root_for_deps, selection)`")
             let base "`cache`/`np`-`version`-`tool.hex16(key)`"
             let obj "`base`.o"
             ; what the package defines, written by whichever build comes first
@@ -558,6 +586,7 @@ define tool
                     bo.compile_only := true
                     bo.bitcode := true
                     bo.defs_file := String(defs)
+                    bo.selected_versions := String(selection)
                     bo.no_prelude := true
                     bo.no_tests := true
                     bo.target_triple := String(given_triple)
@@ -580,6 +609,7 @@ define tool
                 let tmp "`obj`.`getpid() as int`.tmp"
                 var o Options()
                 o.defs_file := String(defs)
+                o.selected_versions := String(selection)
                 o.input_file := String(root)
                 o.output_file := String(tmp)
                 o.compile_only := true
@@ -724,6 +754,8 @@ define tool
             return false
         }
         let triple tool.target_triple(String())
+        var program_root String(program_file)
+        let selection Modeler.select_versions(program_root, false)
         var def_owners Array[String]()
         var def_files Array[String]()
         var i: size_t 0
@@ -743,7 +775,8 @@ define tool
                 version := dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
             var files Array[String]()
             tool.package_files(dir, "", &files)
-            let key tool.package_key(dir, &files, triple, "jit")
+            var root_for_deps String(root)
+            let key tool.package_key(dir, &files, triple, "jit`tool.dependency_versions(root_for_deps, selection)`")
             let base "`cache`/`np`-`version`-`tool.hex16(key)`"
             let obj "`base`.jit.o"
             let syms "`base`.jit.syms"
@@ -755,7 +788,7 @@ define tool
                 let tmp "`obj`.`getpid() as int`.tmp"
                 let stmp "`syms`.`getpid() as int`.tmp"
                 var built Array[String]()
-                if cli.compile_dep_package_to_object(root, tmp, defs, &built) = false
+                if cli.compile_dep_package_to_object(root, tmp, defs, selection, &built) = false
                 {
                     Console.println("Error: package `np` did not build")
                     return false

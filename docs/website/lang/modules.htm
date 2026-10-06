@@ -98,7 +98,7 @@ HREF="modules.htm#AEN2492"
 ></DT
 ><DT
 ><A
-HREF="modules.htm#AEN2541"
+HREF="modules.htm#AEN2545"
 >Imports and Visibility</A
 ></DT
 ></DL
@@ -245,11 +245,35 @@ CLASS="envar"
       declared package that is nowhere fails the compile with an error naming
       the places.</P
 ><P
->One compilation takes one version of a package: a program that
-      reaches the same package in two versions — directly, or through the
-      packages it uses — is refused. A package's root file declares the
-      packages it uses itself, so a program names only the packages it calls
-      directly; circular package dependencies are forbidden.</P
+>The version in a declaration is a <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>minimum</I
+></SPAN
+>. One
+      compilation takes one version of a package, and where a program reaches
+      the same package through several declarations — its own and those of
+      the packages it uses — it takes the highest version any of them names:
+      a program that asks for <TT
+CLASS="literal"
+>json 0.1.5</TT
+> and uses a package
+      that asks for <TT
+CLASS="literal"
+>json 0.1.2</TT
+> is built, with
+      <TT
+CLASS="literal"
+>0.1.5</TT
+> for both. That holds within one major version;
+      two major versions of one package are refused, with a message naming who
+      asked for each. Nothing else decides: there is no lock file and no
+      solver, the versions follow from the declarations alone, and adding a
+      dependency can raise a version but never lower one. A package's root
+      file declares the packages it uses itself, so a program names only the
+      packages it calls directly; circular package dependencies are
+      forbidden.</P
 ><P
 >The standard library package <TT
 CLASS="code"
@@ -280,7 +304,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2509"
+NAME="AEN2513"
 >Packages from a git repository</A
 ></H2
 ><P
@@ -374,7 +398,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2531"
+NAME="AEN2535"
 >Starting a package</A
 ></H2
 ><PRE
@@ -427,7 +451,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2541"
+NAME="AEN2545"
 >Imports and Visibility</A
 ></H1
 ><P
@@ -451,7 +475,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2547"
+NAME="AEN2551"
 >What Is Visible Without an Import</A
 ></H2
 ><P
@@ -536,7 +560,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2568"
+NAME="AEN2572"
 >Importing a Single Type</A
 ></H2
 ><P
@@ -567,7 +591,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2576"
+NAME="AEN2580"
 >Importing Everything from a Module</A
 ></H2
 ><P
@@ -595,7 +619,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2582"
+NAME="AEN2586"
 >When a Type Is Not Visible</A
 ></H2
 ><P

@@ -97,6 +97,7 @@ define Options
     release: bool                   ; `scaly build --release`: the whole program as one module at -O2
     bitcode: bool                   ; with -c: write bitcode (a package for a release build)
     defs_file: String               ; with -c: also write what the module defines (tool.check_definitions#)
+    selected_versions: String       ; a package compiled for a program: that program's selection (Modeler.select_versions#)
     pgo_train: bool                 ; `scaly build --pgo-train`: the release build instrumented
     pgo_profile: String             ; `scaly build --pgo <file>`: the release build with a profile
     export_symbols: bool            ; `scaly build --release --export`: every definition kept and visible (a JIT host)
@@ -242,7 +243,7 @@ define cli
     ; functions resolve to the real bodies (see Emitter.jit_run). The `scaly`
     ; stdlib is skipped — its symbols are already in the host scalyc image and
     ; resolve via the ORC process generator. Returns false on any dep failure.
-    procedure compile_jit_dependencies(mutable model: ref[Program], program_file: String, mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_6 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+    procedure compile_jit_dependencies(mutable model: ref[Program], program_file: String, mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_6 true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
     ; a test: named `test` or `test_<name>`, taking nothing, answering an int,
     ; no caller page, not in a package the file uses, its name containing the
@@ -265,7 +266,7 @@ define cli
     ; with a `defs_file`, the definition list is written there.
     ; This ROOT path plans the package's bodies correctly (unlike the retired
     ; jit_dep_bodies dependency path). Returns false on any failure.
-    procedure compile_dep_package_to_object(mutable entry_file_in: String, mutable out_obj: String, defs_file: String, mutable syms: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_8 true returns bool io mutable modeler_error_count reads modeler_error_count linked
+    procedure compile_dep_package_to_object(mutable entry_file_in: String, mutable out_obj: String, defs_file: String, selected: String, mutable syms: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_16 true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
     ; Print hard planner diagnostics in stage-0's error format:
     ;     <file>:<line>:<col>: error: <message>

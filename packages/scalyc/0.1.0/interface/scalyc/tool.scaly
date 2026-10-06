@@ -115,13 +115,20 @@ define tool
     ; False, each collision named, when two packages define one symbol.
     procedure check_definitions(owners: ref[Array[String]], files: ref[Array[String]]) @ret_nonlocal true @deep true returns bool io linked
 
+    ; What a package's object depends on beyond its own files: the versions
+    ; its dependencies are taken in for THIS program (lines `name version` of
+    ; the packages its root declares, out of the program's selection). Part of
+    ; the cache key -- built for a program that takes a newer json, a package
+    ; is another object.
+    procedure dependency_versions(mutable root: String, selection: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
     ; The objects of every package a program uses, each built into the cache
     ; the first time it is needed: the package's Scaly code as one object at
     ; -O2 (library linkage, cli.run with --no-prelude --no-tests), and the C
     ; and assembly files its target takes. `names` and `roots` pair a
     ; package's name with its root file. False when one of them does not build;
     ; what went wrong is printed where it happened.
-    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, cpu: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) @ret_nonlocal true @deep true @deep_pageof_192 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, cpu: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) @ret_nonlocal true @deep true @deep_pageof_192 true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
     ; the C and assembly files of a package this target takes, each compiled
     ; into the cache beside the package's object (`<base>-<path>.o`)
@@ -134,7 +141,7 @@ define tool
     ; cleared, cli.compile_dep_package_to_object), the names beside them in
     ; `<base>.jit.syms`. Before 2026-09-30 every run compiled them anew into
     ; one fixed /tmp path, which two runs at once overwrote.
-    procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_24 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+    procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_24 true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
     ; ---- C libraries (stage B) ----------------------------------------------
     ;

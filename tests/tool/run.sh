@@ -67,7 +67,10 @@
 #              repository that is not there are each said; a package with C
 #              files is announced; scalyc alone fetches nothing; one package
 #              asked for out of two sources is refused, two spellings of one
-#              source are one. SKIPs by name without git
+#              source are one; a declaration is a MINIMUM -- the highest one
+#              asked for is taken, by the program and by the packages built
+#              for it, on all three routes, two major versions are refused.
+#              SKIPs by name without git
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -501,6 +504,39 @@ else
   printf 'package up 0.1.0 "../../climb"\nprint("x")\n' > "$fp/e.scaly"
   ft run e.scaly > /dev/null 2>&1; [ ! -e "$TMP/climb" ] && [ ! -e "$fb/../climb" ] && said=$((said+1))
   [ "$said" = 5 ] && ok || bad "fetch: $said of 5 wrong sources answered as they should"
+  # versions: a declaration names a minimum, the build takes the highest one
+  # asked for within a major version (Modeler.select_versions#) -- for the
+  # program AND for the packages compiled for it
+  vr="$fr/mini"; mkdir -p "$vr"
+  for v in 0.1.2 0.1.5 1.0.0; do
+    mkdir -p "$vr/packages/mini/$v"
+    printf 'package scaly 0.1.0\n\ndefine mini\n{\n    function version() returns String\n        "%s"\n}\n' "$v" > "$vr/packages/mini/$v/mini.scaly"
+  done
+  ( cd "$vr" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
+  mkdir -p "$fr/via/packages/via/0.1.0"
+  printf 'package scaly 0.1.0\npackage mini 0.1.2 "%s"\n\ndefine via\n{\n    function seen() returns String\n        mini.version()\n}\n' "$vr" > "$fr/via/packages/via/0.1.0/via.scaly"
+  ( cd "$fr/via" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
+  printf 'package via 0.1.0 "%s"\npackage mini 0.1.5 "%s"\n\nprint("`mini.version()` `via.seen()`")\n' "$fr/via" "$vr" > "$fp/newer.scaly"
+  printf 'package via 0.1.0 "%s"\n\nprint(via.seen())\n' "$fr/via" > "$fp/older.scaly"
+  printf 'package via 0.1.0 "%s"\npackage mini 1.0.0 "%s"\n\nprint("no")\n' "$fr/via" "$vr" > "$fp/major.scaly"
+  agree=0
+  for route in "run newer.scaly" "build newer.scaly -o $TMP/ver_a$SCALY_EXE" "build newer.scaly --release -o $TMP/ver_b$SCALY_EXE"; do
+    # shellcheck disable=SC2086
+    out=$(ft $route 2> /dev/null); rc=$?
+    case "$route" in
+      *ver_a*) [ "$rc" = 0 ] && out=$("$TMP/ver_a$SCALY_EXE") ;;
+      *ver_b*) [ "$rc" = 0 ] && out=$("$TMP/ver_b$SCALY_EXE") ;;
+    esac
+    [ "$out" = "0.1.5 0.1.5" ] && agree=$((agree+1)) || echo "    versions (${route%% *}): got '$out'"
+  done
+  [ "$agree" = 3 ] && ok || bad "versions: $agree of 3 routes took 0.1.5 for the program and for the package that asked for 0.1.2"
+  # the same package for a program that asks for nothing newer: its own minimum,
+  # and not the object the other program left in the cache
+  out=$(ft run older.scaly 2> /dev/null); out2=""
+  ft build older.scaly -o "$TMP/ver_c$SCALY_EXE" > /dev/null 2>&1 && out2=$("$TMP/ver_c$SCALY_EXE")
+  [ "$out" = "0.1.2" ] && [ "$out2" = "0.1.2" ] && ok || bad "versions: alone the package took '$out' / '$out2', not its minimum 0.1.2"
+  out=$(ft run major.scaly 2>&1); rc=$?
+  [ "$rc" != 0 ] && echo "$out" | grep -q 'package mini is required in two major versions, 1.0.0 (by the program) and 0.1.2 (by via 0.1.0)' && ok || bad "versions: two majors rc=$rc '$(echo "$out" | grep -v '^scaly: ' | head -1 | cut -c1-170)'"
   # one package comes from one source: main asks for inner out of a second
   # repository while outer asks for it out of the first
   cp -R "$fr/inner" "$fr/inner2"

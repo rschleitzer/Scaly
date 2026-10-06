@@ -72,11 +72,20 @@ if b.area() = 12
       <envar>SCALY_HOME</envar> only the current directory is searched. A
       declared package that is nowhere fails the compile with an error naming
       the places.</para>
-    <para>One compilation takes one version of a package: a program that
-      reaches the same package in two versions — directly, or through the
-      packages it uses — is refused. A package's root file declares the
-      packages it uses itself, so a program names only the packages it calls
-      directly; circular package dependencies are forbidden.</para>
+    <para>The version in a declaration is a <emphasis>minimum</emphasis>. One
+      compilation takes one version of a package, and where a program reaches
+      the same package through several declarations — its own and those of
+      the packages it uses — it takes the highest version any of them names:
+      a program that asks for <literal>json 0.1.5</literal> and uses a package
+      that asks for <literal>json 0.1.2</literal> is built, with
+      <literal>0.1.5</literal> for both. That holds within one major version;
+      two major versions of one package are refused, with a message naming who
+      asked for each. Nothing else decides: there is no lock file and no
+      solver, the versions follow from the declarations alone, and adding a
+      dependency can raise a version but never lower one. A package's root
+      file declares the packages it uses itself, so a program names only the
+      packages it calls directly; circular package dependencies are
+      forbidden.</para>
     <para>The standard library package <code>scaly</code> is the implicit
       <emphasis>prelude</emphasis>: every program depends on it automatically,
       and its types are visible everywhere without any <code>use</code>
