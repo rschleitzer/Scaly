@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN561"
+NAME="types"
 ></A
 >Chapter 4 Type System</H1
 ><DIV
@@ -83,67 +83,67 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN563"
+HREF="types.htm#types-overview"
 >Overview</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN566"
+HREF="types.htm#types-intrinsic"
 >Intrinsic Types (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN606"
+HREF="types.htm#types-aliases"
 >Type Aliases (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN613"
+HREF="types.htm#types-prelude"
 >Backend Preludes (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN623"
+HREF="types.htm#types-literals"
 >Literal Type Inference</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN635"
+HREF="types.htm#types-references"
 >References</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN662"
+HREF="types.htm#types-parameters"
 >Parameter Passing</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN686"
+HREF="types.htm#types-constructors"
 >Constructors</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN727"
+HREF="types.htm#types-closures"
 >Lambdas and Closures</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN757"
+HREF="types.htm#types-errors"
 >Error Handling</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN798"
+HREF="types.htm#types-unions"
 >Union Types</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN834"
+HREF="types.htm#types-generics"
 >Generics</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN870"
+HREF="types.htm#types-lifetimes"
 >Lifetimes and Memory Regions</A
 ></DT
 ></DL
@@ -153,7 +153,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN563"
+NAME="types-overview"
 >Overview</A
 ></H1
 ><P
@@ -169,7 +169,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN566"
+NAME="types-intrinsic"
 >Intrinsic Types (Future Direction)</A
 ></H1
 ><DIV
@@ -317,7 +317,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN606"
+NAME="types-aliases"
 >Type Aliases (Future Direction)</A
 ></H1
 ><P
@@ -344,7 +344,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN613"
+NAME="types-prelude"
 >Backend Preludes (Future Direction)</A
 ></H1
 ><P
@@ -360,7 +360,7 @@ CLASS="emphasis"
 ><DIV
 CLASS="example"
 ><A
-NAME="AEN617"
+NAME="AEN630"
 ></A
 ><P
 ><B
@@ -388,7 +388,7 @@ define size_t u64
 ><DIV
 CLASS="example"
 ><A
-NAME="AEN620"
+NAME="AEN633"
 ></A
 ><P
 ><B
@@ -413,7 +413,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN623"
+NAME="types-literals"
 >Literal Type Inference</A
 ></H1
 ><P
@@ -466,7 +466,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN635"
+NAME="types-references"
 >References</A
 ></H1
 ><P
@@ -496,7 +496,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN643"
+NAME="types-pointers"
 >Low-Level Pointers</A
 ></H2
 ><P
@@ -531,7 +531,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN651"
+NAME="types-option"
 >Nullable Values</A
 ></H2
 ><P
@@ -567,7 +567,7 @@ CLASS="literal"
 >Option[T]</TT
 > to a simple nullable pointer — no space
         overhead for the tag (see <A
-HREF="types.htm#AEN822"
+HREF="types.htm#types-unions-optimization"
 >the Section called <I
 >Option Optimization</I
 ></A
@@ -579,7 +579,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN662"
+NAME="types-parameters"
 >Parameter Passing</A
 ></H1
 ><P
@@ -618,7 +618,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN668"
+NAME="types-params-implementation"
 >Implementation</A
 ></H2
 ><P
@@ -660,7 +660,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN679"
+NAME="types-params-mutation"
 >Mutation via Procedures</A
 ></H2
 ><P
@@ -695,7 +695,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN686"
+NAME="types-constructors"
 >Constructors</A
 ></H1
 ><P
@@ -706,7 +706,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN689"
+NAME="types-constructors-implicit"
 >Implicit Constructors</A
 ></H2
 ><P
@@ -724,7 +724,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN693"
+NAME="types-constructors-explicit"
 >Explicit Constructors</A
 ></H2
 ><P
@@ -762,7 +762,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN699"
+NAME="types-constructors-this"
 >The <TT
 CLASS="literal"
 >this</TT
@@ -797,7 +797,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN708"
+NAME="types-constructors-complete"
 >Complete Initialization</A
 ></H2
 ><P
@@ -822,7 +822,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN714"
+NAME="types-constructors-return"
 >Constructor Return</A
 ></H2
 ><P
@@ -844,7 +844,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN720"
+NAME="types-constructors-allocating"
 >Types That Allocate</A
 ></H2
 ><P
@@ -863,7 +863,7 @@ CLASS="literal"
 > definitions; the region their
         internal data is allocated in is chosen by the compiler from how the
         constructed value is used (see <A
-HREF="types.htm#AEN870"
+HREF="types.htm#types-lifetimes"
 >the Section called <I
 >Lifetimes and Memory Regions</I
 ></A
@@ -876,7 +876,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN727"
+NAME="types-closures"
 >Lambdas and Closures</A
 ></H1
 ><P
@@ -904,7 +904,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN734"
+NAME="types-closures-capture"
 >Capturing Variables</A
 ></H2
 ><P
@@ -935,7 +935,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN740"
+NAME="types-closures-delegates"
 >Function Types: Delegates</A
 ></H2
 ><P
@@ -964,7 +964,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN746"
+NAME="types-closures-lifetime"
 >Closure Lifetime</A
 ></H2
 ><P
@@ -1019,7 +1019,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN754"
+NAME="types-closures-impl"
 >Implementation</A
 ></H2
 ><P
@@ -1035,7 +1035,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN757"
+NAME="types-errors"
 >Error Handling</A
 ></H1
 ><P
@@ -1046,7 +1046,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN760"
+NAME="types-errors-throws"
 >The <TT
 CLASS="literal"
 >throws</TT
@@ -1078,7 +1078,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN768"
+NAME="types-errors-single"
 >Single Error Type</A
 ></H2
 ><P
@@ -1113,7 +1113,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN775"
+NAME="types-errors-try"
 >The <TT
 CLASS="literal"
 >try</TT
@@ -1159,7 +1159,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN787"
+NAME="types-errors-propagate"
 >Error Propagation</A
 ></H2
 ><P
@@ -1186,7 +1186,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN793"
+NAME="types-errors-lifetime"
 >Error Lifetime</A
 ></H2
 ><P
@@ -1207,7 +1207,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN798"
+NAME="types-unions"
 >Union Types</A
 ></H1
 ><P
@@ -1232,7 +1232,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN802"
+NAME="types-unions-layout"
 >Memory Layout</A
 ></H2
 ><P
@@ -1250,7 +1250,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN807"
+NAME="types-unions-choose"
 >Pattern Matching with <TT
 CLASS="literal"
 >choose</TT
@@ -1287,7 +1287,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN817"
+NAME="types-unions-option"
 >Option Type</A
 ></H2
 ><P
@@ -1315,7 +1315,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN822"
+NAME="types-unions-optimization"
 >Option Optimization</A
 ></H2
 ><P
@@ -1350,7 +1350,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN834"
+NAME="types-generics"
 >Generics</A
 ></H1
 ><P
@@ -1391,7 +1391,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN844"
+NAME="types-generics-mono"
 >Monomorphization</A
 ></H2
 ><P
@@ -1449,7 +1449,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN864"
+NAME="types-generics-mangling"
 >Name Mangling</A
 ></H2
 ><P
@@ -1473,7 +1473,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN870"
+NAME="types-lifetimes"
 >Lifetimes and Memory Regions</A
 ></H1
 ><P
@@ -1486,7 +1486,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN873"
+NAME="types-lifetime-inference"
 >Allocation Is Inferred</A
 ></H2
 ><P
@@ -1537,7 +1537,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN886"
+NAME="types-escape"
 >Escape Checking</A
 ></H2
 ><P
@@ -1566,7 +1566,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN891"
+NAME="types-lifetime-explicit"
 >Explicit Lifetime Suffixes</A
 ></H2
 ><P
@@ -1631,7 +1631,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN911"
+NAME="types-lifetime-byvalue"
 >By-Value Returns</A
 ></H2
 ><P

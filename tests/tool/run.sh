@@ -73,7 +73,9 @@
 #              `scaly install` builds the programs a package offers (its
 #              programs/), all or one by name, their sourceless declarations
 #              of the package and its sibling found in the same source; a
-#              package without programs and an unknown program are said.
+#              package without programs and an unknown program are said;
+#              `scaly install` alone lists what was installed, `scaly
+#              uninstall` removes one of those and nothing else there.
 #              SKIPs by name without git
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
@@ -564,6 +566,21 @@ else
     ok
   else
     bad "install: rc=$rc '$(echo "$out" | tr '\n' '|' | cut -c1-200)' $(grep -v '^scaly: ' "$TMP/install.err" | head -1 | cut -c1-120)"
+  fi
+  # what was installed is listed, and uninstall removes one of THOSE and
+  # nothing else of the directory
+  : > "$kb/mine$SCALY_EXE"
+  listed=$(SCALY_HOME="$here" SCALY_BIN="$kb" "$scaly_abs" install 2>&1)
+  gone=$(SCALY_HOME="$here" SCALY_BIN="$kb" "$scaly_abs" uninstall kit 2>&1); rc_gone=$?
+  refused=$(SCALY_HOME="$here" SCALY_BIN="$kb" "$scaly_abs" uninstall mine 2>&1); rc_ref=$?
+  after=$(SCALY_HOME="$here" SCALY_BIN="$kb" "$scaly_abs" install 2>&1)
+  if echo "$listed" | grep -q "^  kit kit 0.1.0 $kr\$" && echo "$listed" | grep -q "^  kit_twice kit 0.1.0 " \
+     && [ "$rc_gone" = 0 ] && [ ! -e "$kb/kit$SCALY_EXE" ] && [ -x "$kb/kit_twice$SCALY_EXE" ] \
+     && [ "$rc_ref" != 0 ] && [ -e "$kb/mine$SCALY_EXE" ] && echo "$refused" | grep -q 'was not installed by scaly install' \
+     && ! echo "$after" | grep -q '^  kit kit ' && echo "$after" | grep -q '^  kit_twice kit '; then
+    ok
+  else
+    bad "install: list / uninstall '$(echo "$listed" | tr '\n' '|' | cut -c1-160)' gone=$rc_gone refused=$rc_ref"
   fi
   rm -rf "$kb"
   out=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 kit_twice 2>&1)

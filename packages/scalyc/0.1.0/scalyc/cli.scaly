@@ -447,6 +447,8 @@ define cli
         Console.println "       scaly test <file> [filter]       run its test functions"
         Console.println "       scaly new <name> [--lib]         a directory with a root file: a program, with --lib a package"
         Console.println "       scaly install <source> <package> <version> [program]   build the programs a package offers (its programs/) from git"
+        Console.println "       scaly install                    what was installed so"
+        Console.println "       scaly uninstall <program>        remove one of them"
         Console.println ""
         Console.println "The compiler with a command line like a C compiler's is scalyc,"
         Console.println "the language server scalyls."
@@ -2567,6 +2569,17 @@ define cli
                 return 1
             }
             return tool.new_project(new_name, new_lib)
+        }
+        if command.equals("install") and argc = 2
+            return tool.list_installed()
+        if command.equals("uninstall")
+        {
+            if argc <> 3
+            {
+                Console.println "Usage: scaly uninstall <program>"
+                return 1
+            }
+            return tool.uninstall(String(*(argv + 2)))
         }
         if command.equals("install")
         {

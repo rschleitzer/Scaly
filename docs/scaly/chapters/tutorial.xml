@@ -99,6 +99,26 @@ sudo apt install clang</programlisting>
         just more interesting things to put between the braces.</para>
     </section>
 
+    <section xml:id="tut-install-program">
+      <title>Installing a Program</title>
+      <para>A program somebody wrote in Scaly and keeps in a git repository
+        is one command away. <command>dazzle</command>, for one — a DSSSL
+        processor that turns a DocBook book into HTML or a typeset PDF, and
+        the program this documentation is built with:</para>
+      <programlisting>scaly install github.com/rschleitzer/dazzle dazzle 0.1.0</programlisting>
+      <para>The three arguments are the repository, the package in it and
+        the package's version. <command>scaly</command> fetches the package
+        and the packages it uses, builds its programs optimised, and puts
+        them where <command>scaly</command> itself is, so they are on your
+        <envar>PATH</envar> (on Windows the last line of its output says
+        where). A fourth argument names one program where a package offers
+        several. This needs <command>git</command>.</para>
+      <programlisting>scaly install               ; what has been installed so
+scaly uninstall dazzle      ; remove one of them</programlisting>
+      <para><xref linkend="mod-package-programs"/> has the other side: how a
+        package offers programs.</para>
+    </section>
+
     <section xml:id="tut-repl">
       <title>Trying Things Out</title>
       <para><command>scaly</command> without arguments starts an interactive

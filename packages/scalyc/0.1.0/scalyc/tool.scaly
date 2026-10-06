@@ -1526,9 +1526,123 @@ define tool
                 continue
             }
             Console.println("installed `out`")
+            tool.record_installed(bin, program, name, version, source)
         }
         if failed > 0
             return 1
+        0
+    }
+
+    ; What `scaly install` put into a bin directory is written down there, in
+    ; `.scaly-installed`: a line `program package version source` each. It is
+    ; what `scaly install` alone lists and what `scaly uninstall` goes by --
+    ; the directory holds scaly, scalyc and scalyls too, and whatever else
+    ; the user put on his PATH.
+
+    ; the record without the line of `program`, `added` behind it where it
+    ; is not empty; `found` says whether there was such a line
+    procedure rewrite_installed(mutable bin: String, program: String, added: String) returns bool
+    {
+        var record "`bin`/.scaly-installed"
+        var text ""
+        if File.exists(record)
+            text := File.read_to_string(record)
+        var found false
+        var sb StringBuilder()
+        let n text.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        while at <= n
+        {
+            if at = n or text.get(at) = 10
+            {
+                if at > from
+                {
+                    let line text.substring(from, at - from)
+                    if line.starts_with("`program` ")
+                        found := true
+                    else
+                    {
+                        sb.append line
+                        sb.append "\n"
+                    }
+                }
+                from := at + 1
+            }
+            at := at + 1
+        }
+        if added.get_length() > 0
+        {
+            sb.append added
+            sb.append "\n"
+        }
+        File.write_from_string(record, sb.to_string())
+        found
+    }
+
+    procedure record_installed(mutable bin: String, program: String, name: String, version: String, source: String)
+    {
+        tool.rewrite_installed(bin, program, "`program` `name` `version` `source`")
+    }
+
+    ; `scaly install` alone: what it has installed
+    procedure list_installed() returns int
+    {
+        var bin tool.install_bin()
+        var record "`bin`/.scaly-installed"
+        var text ""
+        if File.exists(record)
+            text := File.read_to_string(record)
+        if text.get_length() = 0
+        {
+            Console.println("scaly install has installed nothing into `bin`")
+            Console.println("Usage: scaly install <source> <package> <version> [program]")
+            return 0
+        }
+        Console.println("installed in `bin` (program, package, version, source):")
+        let n text.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        while at <= n
+        {
+            if at = n or text.get(at) = 10
+            {
+                if at > from
+                    Console.println("  `text.substring(from, at - from)`")
+                from := at + 1
+            }
+            at := at + 1
+        }
+        0
+    }
+
+    ; `scaly uninstall <program>`: a program `scaly install` put there, and
+    ; nothing else of that directory
+    procedure uninstall(program: String) returns int
+    {
+        var bin tool.install_bin()
+        var record "`bin`/.scaly-installed"
+        var known false
+        if File.exists(record)
+        {
+            let text File.read_to_string(record)
+            known := text.starts_with("`program` ") or text.contains("\n`program` ")
+        }
+        if known = false
+        {
+            Console.println("scaly uninstall: `program` was not installed by scaly install into `bin` - scaly install alone lists what was")
+            return 1
+        }
+        var file "`bin`/`program`"
+        if tool.triple_os(tool.target_triple(String())).equals("windows")
+            file := "`bin`/`program`.exe"
+        if File.exists(file) and unlink(file.to_c_string()) <> 0
+        {
+            Console.println("scaly uninstall: cannot remove `file`")
+            return 1
+        }
+        tool.rewrite_installed(bin, program, String())
+        Console.println("removed `file`")
         0
     }
 }

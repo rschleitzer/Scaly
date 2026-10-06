@@ -248,4 +248,23 @@ define tool
     ; program built `--release` and laid into install_bin#. 0 when every
     ; program asked for was built.
     procedure install(source: String, name: String, version: String, only: String) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; What `scaly install` put into a bin directory is written down there, in
+    ; `.scaly-installed`: a line `program package version source` each. It is
+    ; what `scaly install` alone lists and what `scaly uninstall` goes by --
+    ; the directory holds scaly, scalyc and scalyls too, and whatever else
+    ; the user put on his PATH.
+
+    ; the record without the line of `program`, `added` behind it where it
+    ; is not empty; `found` says whether there was such a line
+    procedure rewrite_installed(mutable bin: String, program: String, added: String) @ret_nonlocal true @deep true returns bool io linked
+
+    procedure record_installed(mutable bin: String, program: String, name: String, version: String, source: String) @ret_nonlocal true @deep true io linked
+
+    ; `scaly install` alone: what it has installed
+    procedure list_installed() @ret_nonlocal true @deep true returns int io linked
+
+    ; `scaly uninstall <program>`: a program `scaly install` put there, and
+    ; nothing else of that directory
+    procedure uninstall(program: String) @ret_nonlocal true @deep true returns int io linked
 }

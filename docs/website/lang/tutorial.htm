@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN46"
+NAME="tutorial"
 ></A
 >Chapter 2 Tutorial</H1
 ><DIV
@@ -83,22 +83,22 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN49"
+HREF="tutorial.htm#tut-getting-started"
 >Getting Started</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN132"
+HREF="tutorial.htm#tut-vscode"
 >Using Scaly with VS Code</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN352"
+HREF="tutorial.htm#tut-tour"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN440"
+HREF="tutorial.htm#tut-together"
 >Putting It Together</A
 ></DT
 ></DL
@@ -113,7 +113,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN49"
+NAME="tut-getting-started"
 >Getting Started</A
 ></H1
 ><DIV
@@ -121,7 +121,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN51"
+NAME="tut-install"
 >Installing Scaly</A
 ></H2
 ><P
@@ -238,7 +238,7 @@ CLASS="command"
 >scalyls</B
 >, the language server that powers
             the editor features in <A
-HREF="tutorial.htm#AEN132"
+HREF="tutorial.htm#tut-vscode"
 >the Section called <I
 >Using Scaly with VS Code</I
 ></A
@@ -302,7 +302,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN100"
+NAME="tut-hello"
 >Hello, World!</A
 ></H2
 ><P
@@ -377,7 +377,59 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN122"
+NAME="tut-install-program"
+>Installing a Program</A
+></H2
+><P
+>A program somebody wrote in Scaly and keeps in a git repository
+        is one command away. <B
+CLASS="command"
+>dazzle</B
+>, for one — a DSSSL
+        processor that turns a DocBook book into HTML or a typeset PDF, and
+        the program this documentation is built with:</P
+><PRE
+CLASS="programlisting"
+>scaly install github.com/rschleitzer/dazzle dazzle 0.1.0</PRE
+><P
+>The three arguments are the repository, the package in it and
+        the package's version. <B
+CLASS="command"
+>scaly</B
+> fetches the package
+        and the packages it uses, builds its programs optimised, and puts
+        them where <B
+CLASS="command"
+>scaly</B
+> itself is, so they are on your
+        <CODE
+CLASS="envar"
+>PATH</CODE
+> (on Windows the last line of its output says
+        where). A fourth argument names one program where a package offers
+        several. This needs <B
+CLASS="command"
+>git</B
+>.</P
+><PRE
+CLASS="programlisting"
+>scaly install               ; what has been installed so
+scaly uninstall dazzle      ; remove one of them</PRE
+><P
+><A
+HREF="modules.htm#mod-package-programs"
+>the Section called <I
+>The programs of a package</I
+> in Chapter 8</A
+> has the other side: how a
+        package offers programs.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="tut-repl"
 >Trying Things Out</A
 ></H2
 ><P
@@ -423,7 +475,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN132"
+NAME="tut-vscode"
 >Using Scaly with VS Code</A
 ></H1
 ><P
@@ -451,7 +503,7 @@ CLASS="command"
 >scalyls</B
 > language server you installed in
           <A
-HREF="tutorial.htm#AEN51"
+HREF="tutorial.htm#tut-install"
 >the Section called <I
 >Installing Scaly</I
 ></A
@@ -491,7 +543,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN149"
+NAME="tut-vscode-extension"
 >Installing the Scaly Extension</A
 ></H2
 ><P
@@ -530,7 +582,7 @@ CLASS="envar"
 >PATH</CODE
 >, so install the toolchain first
         (<A
-HREF="tutorial.htm#AEN51"
+HREF="tutorial.htm#tut-install"
 >the Section called <I
 >Installing Scaly</I
 ></A
@@ -551,7 +603,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN164"
+NAME="tut-vscode-lsp"
 >What the Language Server Gives You</A
 ></H2
 ><P
@@ -746,7 +798,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN213"
+NAME="tut-vscode-tasks"
 >Build and Run Tasks</A
 ></H2
 ><DIV
@@ -862,7 +914,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN236"
+NAME="tut-vscode-launch"
 >Launch Configuration</A
 ></H2
 ><P
@@ -932,14 +984,14 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN250"
+NAME="tut-vscode-breakpoints-setting"
 >Breakpoints in Scaly Files</A
 ></H2
 ><P
 >VS Code only lets you set breakpoints in files whose language an
         installed extension has declared debuggable. The Scaly extension from
         <A
-HREF="tutorial.htm#AEN149"
+HREF="tutorial.htm#tut-vscode-extension"
 >the Section called <I
 >Installing the Scaly Extension</I
 ></A
@@ -980,7 +1032,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN260"
+NAME="tut-vscode-debug"
 >Setting a Breakpoint and Stepping</A
 ></H2
 ><P
@@ -1086,7 +1138,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN290"
+NAME="tut-vscode-callstack"
 >Stepping into Functions and the Call Stack</A
 ></H2
 ><P
@@ -1218,13 +1270,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN386"
+HREF="tutorial.htm#tut-functions"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN394"
+HREF="tutorial.htm#tut-procedures"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -1235,7 +1287,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN327"
+NAME="tut-vscode-limits"
 >What the Debugger Shows</A
 ></H2
 ><P
@@ -1319,7 +1371,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN352"
+NAME="tut-tour"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -1332,7 +1384,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN355"
+NAME="tut-values"
 >Values and Bindings</A
 ></H2
 ><P
@@ -1370,7 +1422,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN365"
+NAME="tut-operators"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -1404,7 +1456,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN373"
+NAME="tut-control-flow"
 >Control Flow</A
 ></H2
 ><P
@@ -1462,7 +1514,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN386"
+NAME="tut-functions"
 >Functions</A
 ></H2
 ><P
@@ -1499,7 +1551,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN394"
+NAME="tut-procedures"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -1510,7 +1562,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN679"
+HREF="types.htm#types-params-mutation"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -1536,7 +1588,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN400"
+NAME="tut-structs"
 >Structures and Methods</A
 ></H2
 ><P
@@ -1558,7 +1610,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN686"
+HREF="types.htm#types-constructors"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1573,7 +1625,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN408"
+NAME="tut-unions"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1619,7 +1671,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN798"
+HREF="types.htm#types-unions"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1634,7 +1686,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN422"
+NAME="tut-modules"
 >Modules and Imports</A
 ></H2
 ><P
@@ -1715,7 +1767,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN440"
+NAME="tut-together"
 >Putting It Together</A
 ></H1
 ><P

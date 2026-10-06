@@ -192,6 +192,11 @@ scaly install github.com/someone/shapes shapes 0.1.0 shapes_check</programlistin
         <filename>~/.scaly/bin</filename> (<envar>SCALY_BIN</envar> names
         another place). A package without <filename>programs/</filename> is a
         library, and <command>scaly install</command> says so.</para>
+      <para><userinput>scaly install</userinput> without arguments lists what
+        it has installed — program, package, version and source —, and
+        <userinput>scaly uninstall shapes_check</userinput> removes one of
+        those. It goes by its own record and removes nothing else of that
+        directory.</para>
     </section>
   </section>
 

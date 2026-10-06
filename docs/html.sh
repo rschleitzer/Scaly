@@ -10,7 +10,7 @@ export SP_ENCODING=utf-8
 DAZZLE="${DAZZLE:-../scalyc/build/dazzle}"
 [ -x "$DAZZLE" ] || { echo "html.sh: no engine at $DAZZLE -- run ./mkp with the dazzle checkout beside this one"; exit 1; }
 rm -f ./*.htm
-"$DAZZLE" -t sgml -d dsssl-stylesheets/html/docbook.dsl scaly-spec.xml || exit 1
+"$DAZZLE" -t sgml -d dsssl/scaly-html.dsl scaly-spec.xml || exit 1
 mkdir -p website/lang
 mv ./*.htm website/lang/
 mv website/lang/book1.htm website/lang/index.html
