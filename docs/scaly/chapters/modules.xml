@@ -111,8 +111,9 @@ if b.area() = 12
         <command>scaly build</command> fetch what a program declares before
         they compile it, and what the fetched packages declare in their turn;
         <command>scalyc</command> never reaches the network and says which
-        commands do. This needs <command>git</command> on the
-        <envar>PATH</envar>. A fetched package is kept under
+        commands do. This needs <command>git</command> and
+        <command>tar</command> on the <envar>PATH</envar> (Windows brings
+        <command>tar</command> since Windows 10, version 1803). A fetched package is kept under
         <filename>~/.scaly/packages/</filename>
         (<envar>SCALY_PACKAGES</envar> names another place), by source, name
         and version, with its files read-only; nothing is written into the
