@@ -41,8 +41,9 @@ sudo apt install clang</programlisting>
         <listitem>
           <para><command>scaly</command>, the tool you will use most:
             <userinput>scaly run</userinput>, <userinput>scaly build</userinput>,
-            <userinput>scaly test</userinput> and <userinput>scaly new</userinput>,
-            and, started without arguments, an interactive session.</para>
+            <userinput>scaly test</userinput>, <userinput>scaly new</userinput>
+            and <userinput>scaly install</userinput>, and, started without
+            arguments, an interactive session.</para>
         </listitem>
         <listitem>
           <para><command>scalyc</command>, the compiler by itself, with the
@@ -630,7 +631,9 @@ if b.area() = 12
         and a package somebody else wrote is one line away:</para>
       <programlisting>package json 0.1.3 "github.com/someone/json"</programlisting>
       <para><command>scaly</command> fetches it from that git repository the
-        first time the program is run, tested or built. See
+        first time the program is run, tested or built; and
+        <userinput>scaly install</userinput> builds the programs such a
+        package offers and puts them on your <envar>PATH</envar>. See
         <xref linkend="modules"/> for packages and their sources, visibility
         rules, and glob imports.</para>
     </section>

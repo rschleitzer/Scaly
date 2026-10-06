@@ -88,17 +88,17 @@ HREF="tutorial.htm#AEN49"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN131"
+HREF="tutorial.htm#AEN132"
 >Using Scaly with VS Code</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN351"
+HREF="tutorial.htm#AEN352"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN437"
+HREF="tutorial.htm#AEN440"
 >Putting It Together</A
 ></DT
 ></DL
@@ -199,11 +199,15 @@ CLASS="userinput"
             <KBD
 CLASS="userinput"
 >scaly test</KBD
-> and <KBD
+>, <KBD
 CLASS="userinput"
 >scaly new</KBD
->,
-            and, started without arguments, an interactive session.</P
+>
+            and <KBD
+CLASS="userinput"
+>scaly install</KBD
+>, and, started without
+            arguments, an interactive session.</P
 ></LI
 ><LI
 ><P
@@ -234,7 +238,7 @@ CLASS="command"
 >scalyls</B
 >, the language server that powers
             the editor features in <A
-HREF="tutorial.htm#AEN131"
+HREF="tutorial.htm#AEN132"
 >the Section called <I
 >Using Scaly with VS Code</I
 ></A
@@ -298,7 +302,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN99"
+NAME="AEN100"
 >Hello, World!</A
 ></H2
 ><P
@@ -373,7 +377,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN121"
+NAME="AEN122"
 >Trying Things Out</A
 ></H2
 ><P
@@ -419,7 +423,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN131"
+NAME="AEN132"
 >Using Scaly with VS Code</A
 ></H1
 ><P
@@ -487,7 +491,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN148"
+NAME="AEN149"
 >Installing the Scaly Extension</A
 ></H2
 ><P
@@ -547,7 +551,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN163"
+NAME="AEN164"
 >What the Language Server Gives You</A
 ></H2
 ><P
@@ -742,7 +746,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN212"
+NAME="AEN213"
 >Build and Run Tasks</A
 ></H2
 ><DIV
@@ -858,7 +862,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN235"
+NAME="AEN236"
 >Launch Configuration</A
 ></H2
 ><P
@@ -928,14 +932,14 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN249"
+NAME="AEN250"
 >Breakpoints in Scaly Files</A
 ></H2
 ><P
 >VS Code only lets you set breakpoints in files whose language an
         installed extension has declared debuggable. The Scaly extension from
         <A
-HREF="tutorial.htm#AEN148"
+HREF="tutorial.htm#AEN149"
 >the Section called <I
 >Installing the Scaly Extension</I
 ></A
@@ -976,7 +980,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN259"
+NAME="AEN260"
 >Setting a Breakpoint and Stepping</A
 ></H2
 ><P
@@ -1082,7 +1086,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN289"
+NAME="AEN290"
 >Stepping into Functions and the Call Stack</A
 ></H2
 ><P
@@ -1214,13 +1218,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN385"
+HREF="tutorial.htm#AEN386"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN393"
+HREF="tutorial.htm#AEN394"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -1231,7 +1235,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN326"
+NAME="AEN327"
 >What the Debugger Shows</A
 ></H2
 ><P
@@ -1315,7 +1319,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN351"
+NAME="AEN352"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -1328,7 +1332,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN354"
+NAME="AEN355"
 >Values and Bindings</A
 ></H2
 ><P
@@ -1366,7 +1370,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN364"
+NAME="AEN365"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -1400,7 +1404,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN372"
+NAME="AEN373"
 >Control Flow</A
 ></H2
 ><P
@@ -1458,7 +1462,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN385"
+NAME="AEN386"
 >Functions</A
 ></H2
 ><P
@@ -1495,7 +1499,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN393"
+NAME="AEN394"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -1506,7 +1510,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN676"
+HREF="types.htm#AEN679"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -1532,7 +1536,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN399"
+NAME="AEN400"
 >Structures and Methods</A
 ></H2
 ><P
@@ -1554,7 +1558,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN683"
+HREF="types.htm#AEN686"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1569,7 +1573,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN407"
+NAME="AEN408"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1615,7 +1619,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN795"
+HREF="types.htm#AEN798"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1630,7 +1634,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN421"
+NAME="AEN422"
 >Modules and Imports</A
 ></H2
 ><P
@@ -1690,7 +1694,15 @@ CLASS="programlisting"
 CLASS="command"
 >scaly</B
 > fetches it from that git repository the
-        first time the program is run, tested or built. See
+        first time the program is run, tested or built; and
+        <KBD
+CLASS="userinput"
+>scaly install</KBD
+> builds the programs such a
+        package offers and puts them on your <CODE
+CLASS="envar"
+>PATH</CODE
+>. See
         <A
 HREF="modules.htm"
 >Chapter 8</A
@@ -1703,7 +1715,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN437"
+NAME="AEN440"
 >Putting It Together</A
 ></H1
 ><P

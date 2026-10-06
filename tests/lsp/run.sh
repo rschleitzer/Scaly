@@ -4721,7 +4721,7 @@ if [ $rc -eq 0 ]; then ok "lsp project packages"; else bad "lsp project packages
 
 # ---- LSP server: what the tool FETCHED is searched too -------------------
 # A package with a source lies where the tool laid it,
-# <SCALY_PACKAGES>/<host>/<path>/<name>/<version> (Modeler.fetched_directory#),
+# <SCALY_PACKAGES>/<host>/<path>/packages/<name>/<version> (Modeler.fetched_directory#),
 # and the server takes that base as a third root after the installation and
 # the project: a concept that lives only there resolves, and without the base
 # it does not.
@@ -4734,9 +4734,9 @@ def frame(o):
 ws = "/tmp/lsp_ws/fetchedpkg"; shutil.rmtree(ws, ignore_errors=True)
 fetched = ws + "/fetched"
 os.makedirs(ws + "/proj/packages/aa/0.1.0/aa")
-os.makedirs(fetched + "/example.org/someone/cc/cc/0.1.0/cc")
-open(fetched + "/example.org/someone/cc/cc/0.1.0/cc.scaly", "w").write("define cc\n{\n    module quux\n}\n")
-open(fetched + "/example.org/someone/cc/cc/0.1.0/cc/quux.scaly", "w").write("define Quuxling (count: int)\n")
+os.makedirs(fetched + "/example.org/someone/cc/packages/cc/0.1.0/cc")
+open(fetched + "/example.org/someone/cc/packages/cc/0.1.0/cc.scaly", "w").write("define cc\n{\n    module quux\n}\n")
+open(fetched + "/example.org/someone/cc/packages/cc/0.1.0/cc/quux.scaly", "w").write("define Quuxling (count: int)\n")
 uri = "file://" + ws + "/proj/packages/aa/0.1.0/aa/user.scaly"
 doc = ("function f()\n{\n    var q Quuxling(1)\n}\n")
 
@@ -4766,7 +4766,7 @@ def check(cond, label):
     if not cond: failures += 1
 base = {**os.environ, "SCALY_HOME": os.getcwd()}
 r = ask({**base, "SCALY_PACKAGES": fetched})
-check(r is not None and r.get("uri","").endswith("/fetched/example.org/someone/cc/cc/0.1.0/cc/quux.scaly"),
+check(r is not None and r.get("uri","").endswith("/fetched/example.org/someone/cc/packages/cc/0.1.0/cc/quux.scaly"),
       "definition: a concept of a FETCHED package resolves")
 r = ask({**base, "SCALY_PACKAGES": ws + "/nothing-here"})
 check(not r, "definition: without the fetched base it does not (the hit came from there)")

@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN2466"
+NAME="AEN2469"
 ></A
 >Chapter 8 Modules and Packages</H1
 ><DIV
@@ -83,22 +83,22 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="modules.htm#AEN2468"
+HREF="modules.htm#AEN2471"
 >Overview</A
 ></DT
 ><DT
 ><A
-HREF="modules.htm#AEN2481"
+HREF="modules.htm#AEN2484"
 >Modules</A
 ></DT
 ><DT
 ><A
-HREF="modules.htm#AEN2492"
+HREF="modules.htm#AEN2495"
 >Packages</A
 ></DT
 ><DT
 ><A
-HREF="modules.htm#AEN2545"
+HREF="modules.htm#AEN2565"
 >Imports and Visibility</A
 ></DT
 ></DL
@@ -108,7 +108,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2468"
+NAME="AEN2471"
 >Overview</A
 ></H1
 ><P
@@ -150,7 +150,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2481"
+NAME="AEN2484"
 >Modules</A
 ></H1
 ><P
@@ -206,7 +206,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2492"
+NAME="AEN2495"
 >Packages</A
 ></H1
 ><P
@@ -304,7 +304,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2513"
+NAME="AEN2516"
 >Packages from a git repository</A
 ></H2
 ><P
@@ -398,7 +398,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2535"
+NAME="AEN2538"
 >Starting a package</A
 ></H2
 ><PRE
@@ -445,13 +445,84 @@ CLASS="code"
         repository somewhere, any program does, by naming that repository as
         the source.</P
 ></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2548"
+>The programs of a package</A
+></H2
+><P
+>A package that is a library first may still bring programs — a
+        parser its validator and its normalizer, say. The programs a package
+        offers are the files of the directory <TT
+CLASS="filename"
+>programs/</TT
+>
+        beside its root file, each a program named after its file:</P
+><PRE
+CLASS="programlisting"
+>packages/shapes/0.1.0/
+    shapes.scaly              the library
+    shapes/                   its modules
+    programs/
+        shapes.scaly          the program "shapes"
+        shapes_check.scaly    the program "shapes_check"</PRE
+><P
+>A program there is an ordinary program that declares the package
+        it belongs to, without a source — its package and the others of the
+        same repository lie beside it:</P
+><PRE
+CLASS="programlisting"
+>package shapes 0.1.0
+
+print(shapes.greeting("world"))</PRE
+><P
+>One of the programs may be called like the package. Other
+        program files a package keeps — drivers for its tests, experiments —
+        stay outside <TT
+CLASS="filename"
+>programs/</TT
+> and are not offered.</P
+><PRE
+CLASS="programlisting"
+>scaly install github.com/someone/shapes shapes 0.1.0
+scaly install github.com/someone/shapes shapes 0.1.0 shapes_check</PRE
+><P
+>fetches the package from that repository, builds its programs —
+        all of them, or the one named — optimised as
+        <KBD
+CLASS="userinput"
+>scaly build --release</KBD
+> does, and puts them
+        beside <B
+CLASS="command"
+>scaly</B
+> itself, in
+        <TT
+CLASS="filename"
+>~/.scaly/bin</TT
+> (<CODE
+CLASS="envar"
+>SCALY_BIN</CODE
+> names
+        another place). A package without <TT
+CLASS="filename"
+>programs/</TT
+> is a
+        library, and <B
+CLASS="command"
+>scaly install</B
+> says so.</P
+></DIV
 ></DIV
 ><DIV
 CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2545"
+NAME="AEN2565"
 >Imports and Visibility</A
 ></H1
 ><P
@@ -475,7 +546,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2551"
+NAME="AEN2571"
 >What Is Visible Without an Import</A
 ></H2
 ><P
@@ -560,7 +631,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2572"
+NAME="AEN2592"
 >Importing a Single Type</A
 ></H2
 ><P
@@ -591,7 +662,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2580"
+NAME="AEN2600"
 >Importing Everything from a Module</A
 ></H2
 ><P
@@ -619,7 +690,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2586"
+NAME="AEN2606"
 >When a Type Is Not Visible</A
 ></H2
 ><P

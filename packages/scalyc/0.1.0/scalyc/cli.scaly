@@ -446,6 +446,7 @@ define cli
         Console.println "             --target <t>, -g, -mcpu=<cpu>, -L<path>, -l<name>   as scalyc takes them"
         Console.println "       scaly test <file> [filter]       run its test functions"
         Console.println "       scaly new <name> [--lib]         a directory with a root file: a program, with --lib a package"
+        Console.println "       scaly install <source> <package> <version> [program]   build the programs a package offers (its programs/) from git"
         Console.println ""
         Console.println "The compiler with a command line like a C compiler's is scalyc,"
         Console.println "the language server scalyls."
@@ -2566,6 +2567,18 @@ define cli
                 return 1
             }
             return tool.new_project(new_name, new_lib)
+        }
+        if command.equals("install")
+        {
+            if argc < 5 or argc > 6
+            {
+                Console.println "Usage: scaly install <source> <package> <version> [program]"
+                return 1
+            }
+            var install_only ""
+            if argc = 6
+                install_only := String(*(argv + 5))
+            return tool.install(String(*(argv + 2)), String(*(argv + 3)), String(*(argv + 4)), install_only)
         }
         if command.equals("-h") or command.equals("--help") or command.equals("help")
         {

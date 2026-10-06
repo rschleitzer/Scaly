@@ -232,4 +232,20 @@ define tool
     ; compiler itself never reaches the network (Modeler.package_directory#
     ; only looks). False when a fetch failed.
     procedure fetch_declared(mutable root_file: String, mutable seen: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_2 true returns bool io linked
+
+    ; ---- scaly install (stage D5) -------------------------------------------
+
+    ; where installed programs go: $SCALY_BIN; the `bin` beside an installed
+    ; toolchain (<prefix>/toolchain is its home, <prefix>/bin on the PATH);
+    ; else ~/.scaly/bin
+    procedure install_bin() @page true @direct true @deep true returns String io linked
+
+    ; `scaly install <source> <package> <version> [program]`: the programs a
+    ; package OFFERS are the files of its `programs/` directory, each named
+    ; after its file -- a package that is a library first brings as many
+    ; utilities as it likes, and one may be called like the package itself.
+    ; The package is fetched like any declared one (fetch_package#), each
+    ; program built `--release` and laid into install_bin#. 0 when every
+    ; program asked for was built.
+    procedure install(source: String, name: String, version: String, only: String) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 }

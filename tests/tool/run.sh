@@ -54,7 +54,7 @@
 #              different answers at rc 0; with the names apart the three agree
 #   source     `package name version "source"`: a package neither the
 #              installation nor the project has is taken from where a fetch
-#              lays it, $SCALY_PACKAGES/<host>/<path>/<name>/<version>, on
+#              lays it, $SCALY_PACKAGES/<host>/<path>/packages/<name>/<version>, on
 #              all three routes and under every spelling of one source; a
 #              missing one is reported with source and place, a source that
 #              is no string is refused, and a local ./packages wins
@@ -69,7 +69,11 @@
 #              asked for out of two sources is refused, two spellings of one
 #              source are one; a declaration is a MINIMUM -- the highest one
 #              asked for is taken, by the program and by the packages built
-#              for it, on all three routes, two major versions are refused.
+#              for it, on all three routes, two major versions are refused;
+#              `scaly install` builds the programs a package offers (its
+#              programs/), all or one by name, their sourceless declarations
+#              of the package and its sibling found in the same source; a
+#              package without programs and an unknown program are said.
 #              SKIPs by name without git
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
@@ -421,15 +425,15 @@ printf 'package shapes 0.1.0 "github.com/someone/shapes"\n\nprint(shapes.greetin
 case "$BIN" in /*) BIN_ABS="$BIN" ;; *) BIN_ABS="$here/$BIN" ;; esac
 out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$BIN_ABS" -S -o "$TMP/source.ll" main.scaly 2>&1); rc=$?
 if [ "$rc" != 0 ] && echo "$out" | grep -q 'package not found: shapes 0.1.0' \
-   && echo "$out" | grep -q 'fetched/github.com/someone/shapes/shapes/0.1.0/shapes.scaly' \
+   && echo "$out" | grep -q 'fetched/github.com/someone/shapes/packages/shapes/0.1.0/shapes.scaly' \
    && echo "$out" | grep -q 'not fetched from "github.com/someone/shapes"'; then
   ok
 else
   bad "source, missing: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)'"
 fi
 ( cd "$TMP" && SCALY_HOME="$here" "$scaly_abs" new shapes --lib ) > /dev/null 2>&1
-mkdir -p "$fetched/github.com/someone/shapes/shapes"
-cp -R "$TMP/shapes/packages/shapes/0.1.0" "$fetched/github.com/someone/shapes/shapes/"
+mkdir -p "$fetched/github.com/someone/shapes/packages/shapes"
+cp -R "$TMP/shapes/packages/shapes/0.1.0" "$fetched/github.com/someone/shapes/packages/shapes/"
 for route in "run main.scaly" "build main.scaly -o $TMP/src_a$SCALY_EXE" "build main.scaly --release -o $TMP/src_b$SCALY_EXE"; do
   # shellcheck disable=SC2086
   out=$(cd "$src" && SCALY_HOME="$here" SCALY_PACKAGES="$fetched" "$scaly_abs" $route 2>&1); rc=$?
@@ -485,7 +489,7 @@ else
   [ "$out" = "Hello, Hello, git!!" ] && [ ! -s "$TMP/fetch2.err" ] && ok || bad "fetch: the second run said '$(head -1 "$TMP/fetch2.err" | cut -c1-120)'"
   ft build main.scaly --release -o "$TMP/fetch_m$SCALY_EXE" > "$TMP/fetchb.log" 2>&1 && [ "$("$TMP/fetch_m$SCALY_EXE")" = "Hello, Hello, git!!" ] && ok || bad "fetch: --release $(tail -1 "$TMP/fetchb.log" | cut -c1-120)"
   # laid down read-only, commit and tree beside it
-  fd=$(find "$fb" -type d -path '*/inner/inner/0.1.0' | head -1)
+  fd=$(find "$fb" -type d -path '*/inner/packages/inner/0.1.0' | head -1)
   if [ -n "$fd" ] && [ ! -w "$fd/inner.scaly" ] && grep -q '^commit [0-9a-f]\{40\}$' "$fd.fetched" && grep -q '^tree [0-9a-f]\{40\}$' "$fd.fetched"; then ok; else bad "fetch: the record or the read-only files ($fd)"; fi
   # a published version does not change
   ( cd "$fr/inner" && sed 's/Hello/Changed/' packages/inner/0.1.0/inner.scaly > x && mv x packages/inner/0.1.0/inner.scaly && tg commit -q -am two ) > /dev/null 2>&1
@@ -537,6 +541,41 @@ else
   [ "$out" = "0.1.2" ] && [ "$out2" = "0.1.2" ] && ok || bad "versions: alone the package took '$out' / '$out2', not its minimum 0.1.2"
   out=$(ft run major.scaly 2>&1); rc=$?
   [ "$rc" != 0 ] && echo "$out" | grep -q 'package mini is required in two major versions, 1.0.0 (by the program) and 0.1.2 (by via 0.1.0)' && ok || bad "versions: two majors rc=$rc '$(echo "$out" | grep -v '^scaly: ' | head -1 | cut -c1-170)'"
+  # install: the programs a package offers are the files of its programs/,
+  # one of them called like the package; they name their own package and its
+  # sibling WITHOUT a source, as in the repository, and fetched they still
+  # find them (Modeler.inherited_source#)
+  kr="$fr/kit"; mkdir -p "$kr/packages/kit/0.1.0/programs" "$kr/packages/kithelp/0.1.0" "$kr/packages/bare/0.1.0"
+  mkdir -p "$kr/packages/kithelp/0.1.0/kithelp"
+  printf 'package scaly 0.1.0\n\ndefine kithelp\n{\n    module marks\n}\n' > "$kr/packages/kithelp/0.1.0/kithelp.scaly"
+  # a module-level constant of the sibling, read by the package beside it: the
+  # planner finds a file's package by the `packages` segment of its path
+  printf 'define KIT_MARKS: int 1\n\nfunction mark() returns String\n    "!"\n' > "$kr/packages/kithelp/0.1.0/kithelp/marks.scaly"
+  printf 'package scaly 0.1.0\npackage kithelp 0.1.0\n\ndefine kit\n{\n    function say(what: String) returns String\n        "kit says `what``mark()``KIT_MARKS`"\n}\n' > "$kr/packages/kit/0.1.0/kit.scaly"
+  printf 'package kit 0.1.0\n\nprint(kit.say("hello"))\n' > "$kr/packages/kit/0.1.0/programs/kit.scaly"
+  printf 'package kit 0.1.0\n\nprint(kit.say("twice twice"))\n' > "$kr/packages/kit/0.1.0/programs/kit_twice.scaly"
+  printf 'package scaly 0.1.0\n\ndefine bare\n{\n    function one() returns int\n        1\n}\n' > "$kr/packages/bare/0.1.0/bare.scaly"
+  ( cd "$kr" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
+  kb="$TMP/kitbin"
+  out=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 2> "$TMP/install.err"); rc=$?
+  if [ "$rc" = 0 ] && echo "$out" | grep -q "^installed $kb/kit$SCALY_EXE\$" && echo "$out" | grep -q "^installed $kb/kit_twice$SCALY_EXE\$" \
+     && [ "$("$kb/kit$SCALY_EXE")" = "kit says hello!1" ] && [ "$("$kb/kit_twice$SCALY_EXE")" = "kit says twice twice!1" ] \
+     && grep -q '^scaly: fetching kithelp 0.1.0 from ' "$TMP/install.err"; then
+    ok
+  else
+    bad "install: rc=$rc '$(echo "$out" | tr '\n' '|' | cut -c1-200)' $(grep -v '^scaly: ' "$TMP/install.err" | head -1 | cut -c1-120)"
+  fi
+  rm -rf "$kb"
+  out=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 kit_twice 2>&1)
+  [ -x "$kb/kit_twice$SCALY_EXE" ] && [ ! -e "$kb/kit$SCALY_EXE" ] && ok || bad "install: one program by name '$(echo "$out" | tail -1 | cut -c1-120)'"
+  told=0
+  out=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" bare 0.1.0 2>&1); rc=$?
+  [ "$rc" != 0 ] && echo "$out" | grep -q 'offers no programs - it has no directory programs/, it is a library' && told=$((told+1))
+  out=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 nosuch 2>&1); rc=$?
+  [ "$rc" != 0 ] && echo "$out" | grep -q 'offers no program nosuch' && told=$((told+1))
+  out=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 2>&1); rc=$?
+  [ "$rc" != 0 ] && echo "$out" | grep -q '^Usage: scaly install' && told=$((told+1))
+  [ "$told" = 3 ] && ok || bad "install: $told of 3 wrong invocations answered as they should"
   # one package comes from one source: main asks for inner out of a second
   # repository while outer asks for it out of the first
   cp -R "$fr/inner" "$fr/inner2"

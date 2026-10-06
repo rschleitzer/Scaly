@@ -1396,7 +1396,10 @@ define tool
         {
             let name names.at i
             let version versions.at i
-            let source sources.at i
+            var source String(sources.at(i))
+            ; a sibling of a fetched package: out of the same repository
+            if source.get_length() = 0
+                source := Modeler.inherited_source(root_file)
             i := i + 1
             var dir Modeler.package_directory(name, version, source)
             if source.get_length() > 0 and dir.starts_with(Modeler.fetched_base()) and Modeler.has_package_root(dir, name) = false
@@ -1407,5 +1410,125 @@ define tool
                 return false
         }
         true
+    }
+
+    ; ---- scaly install (stage D5) -------------------------------------------
+
+    ; where installed programs go: $SCALY_BIN; the `bin` beside an installed
+    ; toolchain (<prefix>/toolchain is its home, <prefix>/bin on the PATH);
+    ; else ~/.scaly/bin
+    procedure install_bin() returns String
+    {
+        let own getenv "SCALY_BIN"
+        if own <> null
+        {
+            let s String(own)
+            if s.get_length() > 0
+                return String(own)
+        }
+        let base Modeler.scaly_home_base()
+        if base.get_length() > 0
+        {
+            var beside "`base`../bin"
+            if Directory.is_directory(beside)
+            {
+                var tool_there "`beside`/scaly"
+                var tool_exe "`beside`/scaly.exe"
+                if File.exists(tool_there) or File.exists(tool_exe)
+                    return beside
+            }
+        }
+        var home getenv "HOME"
+        if home = null
+            home := getenv("USERPROFILE")
+        if home = null
+            return String("bin")
+        let h String(home)
+        "`h`/.scaly/bin"
+    }
+
+    ; `scaly install <source> <package> <version> [program]`: the programs a
+    ; package OFFERS are the files of its `programs/` directory, each named
+    ; after its file -- a package that is a library first brings as many
+    ; utilities as it likes, and one may be called like the package itself.
+    ; The package is fetched like any declared one (fetch_package#), each
+    ; program built `--release` and laid into install_bin#. 0 when every
+    ; program asked for was built.
+    procedure install(source: String, name: String, version: String, only: String) returns int mutable modeler_error_count
+    {
+        if tool.is_project_name(name) = false
+        {
+            Console.println("scaly install: `name` is no package name")
+            return 1
+        }
+        var dir Modeler.fetched_directory(source, name, version)
+        if Modeler.has_package_root(dir, name) = false
+            if tool.fetch_package(source, name, version, dir) = false
+                return 1
+        var programs_dir "`dir`/programs"
+        var programs Array[String]()
+        if Directory.is_directory(programs_dir)
+        {
+            let entries Directory.list(programs_dir)
+            var e: size_t 0
+            while e < entries.length
+            {
+                let entry entries.at e
+                e := e + 1
+                if entry.is_directory or entry.name.ends_with(".scaly") = false
+                    continue
+                let program entry.name.substring(0, entry.name.get_length() - 6)
+                if only.get_length() = 0 or only.equals(program)
+                    programs.add(String(program))
+            }
+        }
+        if programs.length = 0
+        {
+            if only.get_length() > 0
+                Console.println("scaly install: package `name` `version` of \"`source`\" offers no program `only` - its programs are the files of `programs_dir`")
+            else
+                Console.println("scaly install: package `name` `version` of \"`source`\" offers no programs - it has no directory programs/, it is a library")
+            return 1
+        }
+        var bin tool.install_bin()
+        if tool.ensure_directory(bin) = false
+        {
+            Console.println("scaly install: cannot create `bin`")
+            return 1
+        }
+        let windows tool.triple_os(tool.target_triple(String())).equals("windows")
+        var failed 0
+        var k: size_t 0
+        while k < programs.length
+        {
+            let program programs.at k
+            k := k + 1
+            var file "`programs_dir`/`program`.scaly"
+            var seen Array[String]()
+            if tool.fetch_declared(file, &seen) = false
+            {
+                failed := failed + 1
+                continue
+            }
+            var out "`bin`/`program`"
+            if windows
+                out := "`bin`/`program`.exe"
+            var o Options()
+            o.input_file := String(file)
+            o.output_file := String(out)
+            o.tool_build := true
+            o.opt_level := 2
+            o.release := true
+            if cli.run(o) <> 0
+            {
+                Console.println("scaly install: `program` did not build")
+                failed := failed + 1
+                continue
+            }
+            Console.println("installed `out`")
+        }
+        if failed > 0
+            return 1
+        0
     }
 }

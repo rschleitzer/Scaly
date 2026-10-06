@@ -2969,12 +2969,57 @@ define Modeler
         sb.to_string()
     }
 
+    ; inherited_source#: the source a declaration WITHOUT one has when the
+    ; file that makes it was itself fetched -- the source of that file's
+    ; package. A repository's packages name each other without a source, as
+    ; they lie side by side in its `packages/`; fetched, they are still
+    ; siblings, out of one repository. `from_file` is a package's root or one
+    ; of its programs (`<version>/programs/x.scaly`); the answer is read from
+    ; the record the fetch left beside the version directory
+    ; (tool.fetch_package#), "" for a file that was not fetched.
+    procedure inherited_source(from_file: String) returns String
+    {
+        var file String(from_file)
+        var dir Path.get_directory_name(file)
+        var steps 0
+        while steps < 2 and dir.get_length() > 0
+        {
+            var record "`dir`.fetched"
+            if File.exists(record)
+            {
+                let text File.read_to_string(record)
+                let n text.get_length()
+                var from: size_t 0
+                var at: size_t 0
+                while at <= n
+                {
+                    if at = n or text.get(at) = 10
+                    {
+                        let line text.substring(from, at - from)
+                        if line.starts_with("source ")
+                            return line.substring(7, line.get_length() - 7)
+                        from := at + 1
+                    }
+                    at := at + 1
+                }
+                return String()
+            }
+            dir := Path.get_directory_name(dir)
+            steps := steps + 1
+        }
+        String()
+    }
+
     ; fetched_directory#: where the package `pkg_name` `version_str` of
     ; `source` lies once fetched:
-    ; <fetched_base>/<host>/<path>/<name>/<version>.
+    ; <fetched_base>/<host>/<path>/packages/<name>/<version> -- the layout
+    ; it has in its repository. ★The `packages` segment is load-bearing: the
+    ; planner tells a file's package by it (Planner.package_dir_of#), and
+    ; without it a constant of a fetched dependency was `unknown identifier`
+    ; (dazzle against the fetched pdf package, 2026-10-06).
     procedure fetched_directory(source: String, pkg_name: String, version_str: String) returns String
     {
-        "`fetched_base()`/`source_path(source)`/`pkg_name`/`version_str`"
+        "`fetched_base()`/`source_path(source)`/packages/`pkg_name`/`version_str`"
     }
 
     ; A package's root file declares the packages it uses; they are loaded
@@ -3006,7 +3051,7 @@ define Modeler
                         let decl_syntax (*decl_ptr)
                         choose decl_syntax
                             when pkg_syntax: PackageSyntax
-                                handle_package_decl(pkg_syntax, packages, versions)
+                                handle_package_decl(pkg_syntax, packages, versions, root_file)
                             else
                             {
                                 ; not a package
@@ -3078,9 +3123,13 @@ define Modeler
         var versions Array[String]()
         var sources Array[String]()
         var askers Array[String]()
+        var froms Array[String]()
         declared_packages(root_file, &names, &versions, &sources)
         while askers.length < names.length
+        {
             askers.add(String("the program"))
+            froms.add(String(root_file))
+        }
         var sel_names Array[String]()
         var sel_versions Array[String]()
         var sel_askers Array[String]()
@@ -3089,7 +3138,9 @@ define Modeler
         {
             let name names.at i
             let version versions.at i
-            let source sources.at i
+            var source String(sources.at(i))
+            if source.get_length() = 0
+                source := inherited_source(froms.at(i))
             let asker askers.at i
             i := i + 1
             ; seen before as this very version: its declarations are in
@@ -3137,7 +3188,10 @@ define Modeler
             var root "`root_dir`/`name`.scaly"
             declared_packages(root, &names, &versions, &sources)
             while askers.length < names.length
+            {
                 askers.add("`name` `version`")
+                froms.add(String(root))
+            }
         }
         var sb StringBuilder()
         var k: size_t 0
@@ -3234,7 +3288,7 @@ define Modeler
             }
     }
 
-    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]], mutable versions: ref[Array[String]]) mutable modeler_error_count
+    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]], mutable versions: ref[Array[String]], from_file: String) mutable modeler_error_count
     {
         ; the name lives on the page of the parser that read it -- for a
         ; dependency's root (load_package_dependencies#) a page released when
@@ -3265,11 +3319,25 @@ define Modeler
                     return
                 }
         }
+        ; a declaration without a source, made by a fetched file: that file's
+        ; own source (inherited_source#) -- where the package is installed or
+        ; the project's, it is still taken from there
+        let declared_source source_str.get_length() > 0
+        if declared_source = false
+        {
+            let inherited inherited_source(from_file)
+            if inherited.get_length() > 0
+                source_str := String#(inherited)
+        }
         ; One package comes from ONE source. `versions` remembers it as an
         ; entry of its own, "@name <source_path>" -- no package is named with
         ; an `@` --, compared as the place it names, so two spellings of one
-        ; address agree.
-        if source_str.get_length() > 0
+        ; address agree. An inherited source counts where the package is in
+        ; fact taken from it.
+        var judged declared_source
+        if judged = false and source_str.get_length() > 0
+            judged := package_directory(pkg_name, version_str, source_str).starts_with(fetched_base())
+        if judged
         {
             let from_key "@`pkg_name` `source_path(source_str)`"
             var known false
@@ -3763,7 +3831,7 @@ define Modeler
                     let decl_syntax (*decl_ptr)
                     choose decl_syntax
                         when pkg_syntax: PackageSyntax
-                            handle_package_decl(pkg_syntax, &packages, &versions)
+                            handle_package_decl(pkg_syntax, &packages, &versions, file_name)
                         else
                         {
                             ; not a package

@@ -161,6 +161,37 @@ define shapes
         repository somewhere, any program does, by naming that repository as
         the source.</para>
     </section>
+    <section xml:id="mod-package-programs">
+      <title>The programs of a package</title>
+      <para>A package that is a library first may still bring programs — a
+        parser its validator and its normalizer, say. The programs a package
+        offers are the files of the directory <filename>programs/</filename>
+        beside its root file, each a program named after its file:</para>
+      <programlisting>packages/shapes/0.1.0/
+    shapes.scaly              the library
+    shapes/                   its modules
+    programs/
+        shapes.scaly          the program "shapes"
+        shapes_check.scaly    the program "shapes_check"</programlisting>
+      <para>A program there is an ordinary program that declares the package
+        it belongs to, without a source — its package and the others of the
+        same repository lie beside it:</para>
+      <programlisting>package shapes 0.1.0
+
+print(shapes.greeting("world"))</programlisting>
+      <para>One of the programs may be called like the package. Other
+        program files a package keeps — drivers for its tests, experiments —
+        stay outside <filename>programs/</filename> and are not offered.</para>
+      <programlisting>scaly install github.com/someone/shapes shapes 0.1.0
+scaly install github.com/someone/shapes shapes 0.1.0 shapes_check</programlisting>
+      <para>fetches the package from that repository, builds its programs —
+        all of them, or the one named — optimised as
+        <userinput>scaly build --release</userinput> does, and puts them
+        beside <command>scaly</command> itself, in
+        <filename>~/.scaly/bin</filename> (<envar>SCALY_BIN</envar> names
+        another place). A package without <filename>programs/</filename> is a
+        library, and <command>scaly install</command> says so.</para>
+    </section>
   </section>
 
   <section xml:id="mod-use">

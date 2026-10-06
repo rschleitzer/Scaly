@@ -370,9 +370,23 @@ define Modeler
     ; spelling too.
     function source_path(source: String) @page true @direct true @ret_caller true @deep true returns String linked
 
+    ; inherited_source#: the source a declaration WITHOUT one has when the
+    ; file that makes it was itself fetched -- the source of that file's
+    ; package. A repository's packages name each other without a source, as
+    ; they lie side by side in its `packages/`; fetched, they are still
+    ; siblings, out of one repository. `from_file` is a package's root or one
+    ; of its programs (`<version>/programs/x.scaly`); the answer is read from
+    ; the record the fetch left beside the version directory
+    ; (tool.fetch_package#), "" for a file that was not fetched.
+    procedure inherited_source(from_file: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
     ; fetched_directory#: where the package `pkg_name` `version_str` of
     ; `source` lies once fetched:
-    ; <fetched_base>/<host>/<path>/<name>/<version>.
+    ; <fetched_base>/<host>/<path>/packages/<name>/<version> -- the layout
+    ; it has in its repository. ★The `packages` segment is load-bearing: the
+    ; planner tells a file's package by it (Planner.package_dir_of#), and
+    ; without it a constant of a fetched dependency was `unknown identifier`
+    ; (dazzle against the fetched pdf package, 2026-10-06).
     procedure fetched_directory(source: String, pkg_name: String, version_str: String) @page true @direct true @ret_caller true @deep true returns String io linked
 
     ; A package's root file declares the packages it uses; they are loaded
@@ -414,7 +428,7 @@ define Modeler
     ; here and is reported when it is compiled.
     procedure declared_packages(mutable root_file: String, mutable names: ref[Array[String]], mutable versions: ref[Array[String]], mutable sources: ref[Array[String]]) @deep true @deep_pageof_2 true io linked
 
-    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]], mutable versions: ref[Array[String]]) @page true @direct true @stores true @deep true io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]], mutable versions: ref[Array[String]], from_file: String) @page true @direct true @stores true @deep true io mutable modeler_error_count reads modeler_error_count linked
 
     ; True when any sub-module failed to load. cli.run gates on this after
     ; build_program and fails the compile before the planner emits misleading
