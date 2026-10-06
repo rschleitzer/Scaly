@@ -120,6 +120,21 @@ else
   bad "spaced: rc=$? $(tail -3 "$TMP/spaced.log" | tr '\n' ' ')"
 fi
 
+# file names: a name outside ASCII arrives in the file system as written, out
+# of the program's own text and in through argv -- built, and under the JIT
+# (whose host is the program that carries the code page there)
+mkdir -p "$TMP/names" "$TMP/names jit"
+if "$SCALY" build tests/tool/umlaut.scaly -o "$TMP/umlaut$SCALY_EXE" > "$TMP/umlaut.log" 2>&1; then
+  ( cd "$TMP/names" && "$TMP/umlaut$SCALY_EXE" "größe.txt" )
+  [ -f "$TMP/names/empfänger.txt" ] && [ -f "$TMP/names/größe.txt" ] && ok \
+    || bad "file names: got '$(ls "$TMP/names" | tr '\n' ' ')'"
+else
+  bad "file names: rc=$? $(tail -3 "$TMP/umlaut.log" | tr '\n' ' ')"
+fi
+( cd "$TMP/names jit" && SCALY_HOME="$ROOT" "$SCALY" run "$ROOT/tests/tool/umlaut.scaly" "größe.txt" > "$TMP/umlaut-jit.log" 2>&1 )
+[ -f "$TMP/names jit/empfänger.txt" ] && [ -f "$TMP/names jit/größe.txt" ] && ok \
+  || bad "file names (jit): got '$(ls "$TMP/names jit" | tr '\n' ' ')' $(tail -2 "$TMP/umlaut-jit.log" | tr '\n' ' ')"
+
 # spaced-scratch (Windows): the compiler's scratch directory comes from TMP
 # there, and its object and the runtime archive are named on the link line
 if [ "$SCALY_COFF" = 1 ]; then

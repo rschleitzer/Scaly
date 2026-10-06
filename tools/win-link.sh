@@ -56,6 +56,11 @@ shift
 args=(clang --target=$T)
 [ "$LTO" = 1 ] && args+=(-O2 -fuse-ld=lld -flto=full)
 args+=("$@")
+# The code page resource: every program linked here reads and writes file
+# names, arguments and the environment as UTF-8, which is what a Scaly string
+# is (scaly/win32/utf8.manifest; the driver adds it too, cli.scaly
+# utf8_resource#). A .res is an input the linker takes as it is.
+args+=(packages/scaly/0.1.0/scaly/win32/utf8.res)
 if [ "$RT" = 1 ]; then
   rt="$(cygpath -u "${TMP:-${TEMP:-/tmp}}")/libscaly.lib"
   [ -f "$rt" ] || { echo "win-link: no $rt — build it: tools/win-archive.sh <compiler>" >&2; exit 1; }

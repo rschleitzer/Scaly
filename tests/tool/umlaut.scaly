@@ -1,0 +1,14 @@
+; A file name outside ASCII (tests/tool/run.sh *file names*): the program
+; writes one file under a name of its own text and one under the name it is
+; handed, so the name travels both ways -- out of the source and in through
+; argv. On Windows both pass only when the program's code page is UTF-8
+; (scaly/win32/utf8.manifest); without it the first file is created under the
+; bytes of its name read in the machine's own code page.
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if File.write_from_string(String("empfänger.txt"), String("own")) = false
+        return 1
+    if argc > 1 and File.write_from_string(String(*(argv + 1)), String("handed")) = false
+        return 2
+    0
+}
