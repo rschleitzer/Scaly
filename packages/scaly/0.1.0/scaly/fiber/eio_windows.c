@@ -1192,7 +1192,50 @@ static int sc_live_remove(void* p, sc_big* out)
     return 0;
 }
 
-/* Hand every cached block back to the CRT. Called without the lock. */
+/* A large block comes from the system itself, not from the CRT.
+ *
+ * `_aligned_malloc(size, alignment)` makes an aligned block by asking for
+ * size + alignment and handing out a part of it. A heap bucket is 256 KB
+ * aligned to 256 KB, so every bucket COMMITTED twice its size: a production
+ * run showed 4243 MB of private bytes beside a working set of 2375 MB, and
+ * 2068 beside 1223 (2026-10-07). The pages never touched cost no memory, but
+ * they count against the commit limit and are what a process is charged with.
+ *
+ * VirtualAlloc hands out addresses on the allocation granularity (64 KB),
+ * which is alignment enough for everything but the buckets. For those the
+ * place is found by reserving size + alignment, giving that back and taking
+ * the aligned stretch inside it; another thread may take the place between
+ * the two calls, then it is tried again.
+ *
+ * ★Every block in the live table and in the cache was made here, so both
+ * give theirs back with sc_os_free. A block the live table has no room for is
+ * NOT left untracked as a system block -- its free would go to the CRT -- but
+ * given back at once and replaced by one of the CRT's (sc_big_alloc). */
+static void* sc_os_alloc(size_t alignment, size_t size)
+{
+    int tries;
+    if (alignment <= (size_t)0x10000)
+        return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    for (tries = 0; tries < 64; tries++) {
+        void* wide = VirtualAlloc(NULL, size + alignment, MEM_RESERVE, PAGE_NOACCESS);
+        void* at;
+        if (wide == NULL)
+            return NULL;
+        at = (void*)(((size_t)wide + alignment - 1) & ~(alignment - 1));
+        VirtualFree(wide, 0, MEM_RELEASE);
+        at = VirtualAlloc(at, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        if (at != NULL)
+            return at;
+    }
+    return NULL;
+}
+
+static void sc_os_free(void* p)
+{
+    VirtualFree(p, 0, MEM_RELEASE);
+}
+
+/* Hand every cached block back to the system. Called without the lock. */
 static void sc_cache_flush(void)
 {
     for (;;) {
@@ -1206,7 +1249,7 @@ static void sc_cache_flush(void)
         ReleaseSRWLockExclusive(&sc_big_lock);
         if (p == NULL)
             return;
-        _aligned_free(p);
+        sc_os_free(p);
     }
 }
 
@@ -1230,20 +1273,24 @@ static void* sc_big_alloc(size_t alignment, size_t size)
     }
     if (p == NULL) {
         ReleaseSRWLockExclusive(&sc_big_lock);
-        p = _aligned_malloc(rounded, alignment);
+        p = sc_os_alloc(alignment, rounded);
         if (p == NULL) {
             sc_cache_flush();
-            p = _aligned_malloc(rounded, alignment);
+            p = sc_os_alloc(alignment, rounded);
             if (p == NULL)
                 return NULL;
         }
         AcquireSRWLockExclusive(&sc_big_lock);
     }
-    /* A block the table has no room for (it could not grow) stays untracked:
-     * its free finds nothing here and goes to the CRT, which is right. */
     tracked = sc_live_insert(p, rounded, alignment);
     ReleaseSRWLockExclusive(&sc_big_lock);
-    (void)tracked;
+    /* A block the table has no room for (it could not grow) cannot be a
+     * system block: its free would find nothing here and go to the CRT. It is
+     * given back, and the CRT serves this one request. */
+    if (!tracked) {
+        sc_os_free(p);
+        return _aligned_malloc(rounded, alignment);
+    }
     return p;
 }
 
@@ -1270,7 +1317,7 @@ static int sc_big_free(void* p)
         memmove(&sc_cache[0], &sc_cache[1], (sc_cache_n - 1) * sizeof(sc_big));
         sc_cache_n--;
         ReleaseSRWLockExclusive(&sc_big_lock);
-        _aligned_free(oldest);
+        sc_os_free(oldest);
         AcquireSRWLockExclusive(&sc_big_lock);
     }
     if (sc_cache_bytes + b.size <= SC_CACHE_CAP) {
@@ -1290,7 +1337,7 @@ static int sc_big_free(void* p)
     }
     ReleaseSRWLockExclusive(&sc_big_lock);
     if (!keep)
-        _aligned_free(p);
+        sc_os_free(p);
     return 1;
 }
 
