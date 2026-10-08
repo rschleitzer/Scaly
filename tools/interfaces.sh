@@ -3,21 +3,30 @@
 #
 #   tools/interfaces.sh [--check] [scalyc-binary]
 #
-# Every library package carries packages/<p>/<v>/interface/: its module tree
-# with every non-generic body replaced by `linked` and the facts a caller needs
-# that the compiler derives from bodies written out. The compiler writes it
-# (`scalyc --emit-interface [-o dir] <root>`, compiler/Interface.scaly has the
-# list); this script only runs it over the packages. The loader reads a package
-# through its interface whenever it has one, so a dependent root sees
-# declarations only — the bodies are in the package's archive, which is what
-# AOT compilation used from the sources anyway.
+# A library package of this tree is read through packages/<p>/<v>/interface/:
+# its module tree with every non-generic body replaced by `linked` and the
+# facts a caller needs that the compiler derives from bodies written out. The
+# compiler writes it (`scalyc --emit-interface [-o dir] <root>`,
+# compiler/Interface.scaly has the list); this script only runs it over the
+# packages. The loader reads a package through its interface whenever it has
+# one, so a dependent root sees declarations only — the bodies are in the
+# package's archive, which is what AOT compilation used from the sources
+# anyway.
+#
+# THE INTERFACES ARE A BUILD PRODUCT, NOT SOURCES: git ignores them,
+# ./build.sh and the bar write them with the compiler they just built, and
+# tools/make-dist.sh puts them into the distribution after checking them. A
+# tree without them compiles all the same, each package read from its
+# sources. (A package from elsewhere -- fetched, or a project's own -- gets
+# its interface in the tool's cache instead, written when the package is
+# compiled: tool.interface_wanted#.) AFTER CHANGING A LIBRARY PACKAGE RUN
+# THIS, as after changing the compiler one builds it: a stale interface lets
+# every dependent compile against a package that does not exist.
 #
 # Without --check the interfaces are (re)written; with it they are generated
-# into a scratch directory and compared, and a difference fails: an interface
-# that no longer matches its sources would let every dependent compile against
-# a package that does not exist. Packages go in DEPENDENCY order, because the
-# facts of a package are computed with its dependencies loaded through THEIR
-# interfaces.
+# into a scratch directory and compared, and a difference fails. Packages go
+# in DEPENDENCY order, because the facts of a package are computed with its
+# dependencies loaded through THEIR interfaces.
 set -u
 cd "$(dirname "$0")/.."
 CHECK=0
@@ -30,7 +39,7 @@ T="$(mktemp -d)"
 # repository of its own since 2026-10-05 and checks its interface itself:
 # packages/tscaly/tools/interface.sh there, a step of the bar's tscaly lane.)
 # Either way the interface is written into $T first, so a compile that fails
-# leaves the committed interface as it was.
+# leaves the interface that lies there as it was.
 one() {
   local p=$1 root="packages/$1/0.1.0/$1.scaly" flags="" out="packages/$1/0.1.0/interface"
   [ "$p" = scaly ] && flags="--no-prelude"
@@ -47,7 +56,7 @@ one() {
     rm -rf "$out" && mv "$T/$p" "$out" && sed "s#$T/$p#$out#; s#^#interfaces: $p: #" "$T/$p.out"
   fi
 }
-# ★Side by side only under --check, which reads the committed interfaces and
+# ★Side by side only under --check, which reads the interfaces that lie there and
 # writes into $T. REWRITING goes one package at a time, in the order above: a
 # dependent's facts are computed against its dependencies' interfaces, and a
 # parallel rewrite handed scalyls the scalyc interface while it was

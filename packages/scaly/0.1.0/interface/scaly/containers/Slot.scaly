@@ -1,1 +1,0 @@
-define Slot[T](value: T, hash_code: size_t)

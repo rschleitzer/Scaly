@@ -48,6 +48,14 @@ mkdir -p "$STAGE/seed"
 for f in $SEED_FILES; do cp "seed/$f.ll" "$STAGE/seed/"; done
 cp seed/SHA256SUMS "$STAGE/seed/"
 
+# The interfaces are a build product (./build.sh, tools/interfaces.sh) and
+# travel with the sources: what lies in the tree must be what this tree's
+# compiler writes from these sources, or every installation compiles against
+# packages that do not exist.
+tools/interfaces.sh --check > "$STAGE/interfaces.log" 2>&1 \
+  || { grep -v ' current$' "$STAGE/interfaces.log" | head -5; echo "make-dist: FAIL — the packages' interfaces are missing or stale: ./build.sh (or tools/interfaces.sh) first"; exit 1; }
+rm -f "$STAGE/interfaces.log"
+
 # Every version directory a package has: a program names the version it wants.
 for p in $PACKAGES; do
   [ -d "packages/$p" ] || { echo "make-dist: FAIL — packages/$p missing"; exit 1; }

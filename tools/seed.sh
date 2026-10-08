@@ -176,6 +176,16 @@ fi
 fi
 echo "seed: linked clean -> $OUT/scalyc_seed, $OUT/scaly_seed"
 
+# The packages' interfaces are a build product (tools/interfaces.sh), and a
+# root that uses a library package comes out differently with and without
+# them -- scalyls reads the compiler PACKAGE through its interface (measured
+# 2026-10-08: scalyls.ll differed on a tree that had none). So the seed is
+# emitted with the interfaces THIS compiler writes, whatever lay in the tree:
+# before the roots, and not beside them, because the script replaces each
+# directory.
+tools/interfaces.sh "$OUT/scalyc_seed" > "$OUT/interfaces.log" 2>&1 || { tail -5 "$OUT/interfaces.log"; fail "the packages' interfaces"; }
+rm -f "$OUT/interfaces.log"
+
 # The seed compiler's four jobs are independent of each other and run side by
 # side: hello + the AOT corpus, and the re-emission of the three compiler roots.
 # The scalyls roots (below) are emitted in the same round.

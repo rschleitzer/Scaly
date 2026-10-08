@@ -14,10 +14,7 @@
 #
 # Phase 2 runs in lanes, all at once; inside a lane the steps are in order:
 #   compiler  regress, selfhosted, target, fiber, escape, pointer-report,
-#             write-report, abi, debuginfo, then tools/interfaces.sh
-#             --check — last, and only once the tscaly lane's first step is
-#             over, so its 6.5 GB tscaly compilation does not overlap the one
-#             that lane starts with
+#             write-report, abi, debuginfo
 #   lsp       tests/lsp/run.sh — once the tscaly lane has compiled its package
 #   ports     likewise; dazzle and opensp from THEIR repository (../dazzle or
 #             $DAZZLE_REPO, SKIPPED by name without it): its tests/run.sh with
@@ -119,6 +116,8 @@ phase1() {
   if grep -q 'Emitter:' "$LOG/bootstrap.log"; then echo "bootstrap: Emitter abort in the log"; return 1; fi
   step seed seed_refresh || return 1
   step build tools/build-from-seed.sh scalyc/build/scalyc || return 1
+  # the packages' interfaces: a build product of that compiler, read by every lane
+  step interfaces tools/interfaces.sh scalyc/build/scalyc || return 1
 }
 
 echo "bar: logs in $LOG"
@@ -153,14 +152,6 @@ lane_compiler() {
   step write-report tests/write-report/run.sh "$BIN" || rc=1
   step abi tests/abi/run.sh || rc=1
   step debuginfo tests/debuginfo/run.sh "$BIN" || rc=1
-  # ★"Last" was not enough: on a ten-core box this lane is here after 36 s,
-  # while the tscaly lane is still compiling — two 6.5 GB compilations beside
-  # the dazzle LTO build and the LSP suite, and 18 GB did not hold them
-  # (2026-10-03). The marker is written when that lane's `tscaly` step returns,
-  # passed or not; what runs beside this step then is the case yardsticks, and
-  # the tscaly lane stays the longest, so the wait costs the bar nothing.
-  while [ ! -e "$LOG/tscaly.stepped" ]; do sleep 2; done
-  step interfaces tools/interfaces.sh --check "$BIN" || rc=1
   return $rc
 }
 
@@ -250,7 +241,7 @@ lane_tscaly() {
   # its generated interface, with this tree's compiler — before the marker: it
   # is a 6.5 GB compilation like the one the compiler lane waits to start
   step tscaly-interface tscaly_env packages/tscaly/tools/interface.sh --check || rc=1
-  : > "$LOG/tscaly.stepped"   # lane_compiler's interfaces step waits for this
+  : > "$LOG/tscaly.stepped"
   [ $rc = 0 ] || return 1
   if grep -qE 'UNEXPLAINED +[1-9]' "$LOG/tscaly.log"; then echo "tscaly: UNEXPLAINED units"; return 1; fi
   [ "$QUICK" = 1 ] && return 0

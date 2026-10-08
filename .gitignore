@@ -1,4 +1,6 @@
 # Build artifacts
+# a package's generated interface: written by ./build.sh (tools/interfaces.sh)
+packages/*/*/interface/
 *.o
 *.a
 *.bc
