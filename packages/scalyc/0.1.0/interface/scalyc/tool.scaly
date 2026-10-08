@@ -265,6 +265,7 @@ define tool
 
     ; `scaly publish [--check] [remote]` (stage E), run at the root of a
     ; package's repository; the remote is `origin` unless one is named.
+    ; It speaks of the packages this repository tracks (repository_has#).
     ;   1. A published version does not change: no line of the remote's
     ;      record is gone or reads differently here, and a recorded version
     ;      whose directory is still in the tree is the recorded git tree,
@@ -277,6 +278,12 @@ define tool
     ; 0: all well; 1: a rule is broken, each case named; 2: it could not be
     ; asked (no repository, the remote not reached).
     procedure publish_run(remote: String, write: bool) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Is `path` a directory of THIS repository -- does it track a file under
+    ; it? A package linked into packages/ out of another checkout (and
+    ; ignored) is that checkout's to publish, and one nothing of which is
+    ; committed yet has no commit to be published at.
+    procedure repository_has(path: String, log: String) @ret_nonlocal true @deep true returns bool io linked
 
     ; Give each new version its line, commit the records and push.
     procedure publish_write(remote: String, fresh: ref[Array[String]], mutable log: String, mutable out: String) @ret_nonlocal true @deep true returns int io linked

@@ -87,7 +87,8 @@
 #              directory may leave the tree: the next version is compared
 #              with it out of its commit, and a program that declares it
 #              still gets it from there. A remote that is not there and a
-#              directory that is not the repository's root are said (rc 2).
+#              directory that is not the repository's root are said (rc 2);
+#              a package linked in out of another checkout is not asked.
 #              The version rule (tool.publish_compare#): below 1.0 a changed
 #              declaration takes the second number and anything else the
 #              third, from 1.0 on a changed one the first and an addition the
@@ -738,6 +739,13 @@ else
   out=$( cd "$pub/user" && SCALY_HOME="$here" SCALY_PACKAGES="$pub/home/.scaly/packages" "$scaly_abs" run old.scaly 2> /dev/null )
   out2=$( cd "$pub/user" && SCALY_HOME="$here" SCALY_PACKAGES="$pub/home/.scaly/packages" "$scaly_abs" run new.scaly 2> /dev/null )
   [ "$out" = "Hello, history!" ] && [ "$out2" = "Hello, head!" ] && grep -q "^commit $at" "$(find "$pub/home/.scaly/packages" -name 0.1.0.fetched | head -1)" 2>/dev/null && ok || bad "publish: a program fetching the version that left the tree got '$out' / '$out2'"
+  # a package linked into packages/ out of another checkout is not this
+  # repository's to publish, its record there no claim on this one
+  ( cd "$pub/work" && ln -s "$pub/rule-other/packages/demo" packages/other && echo /packages/other >> .git/info/exclude ) 2> /dev/null
+  mkdir -p "$pub/rule-other/packages/demo/0.1.0"; printf '0.1.0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000\n' > "$pub/rule-other/packages/demo/published"
+  out=$(pp --check); rc=$?
+  [ "$rc" = 0 ] && ok || bad "publish, a linked package of another checkout: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-140)'"
+  rm -f "$pub/work/packages/other"
   out=$(pp --check "$pub/nowhere.git"); rc=$?
   [ "$rc" = 2 ] && echo "$out" | grep -q 'could not ask' && ok || bad "publish, no such remote: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
   out=$( ( cd "$pub/work/packages" && SCALY_HOME="$here" "$scaly_abs" publish --check ) 2>&1 ); rc=$?

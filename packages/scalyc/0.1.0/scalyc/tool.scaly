@@ -1569,6 +1569,7 @@ define tool
 
     ; `scaly publish [--check] [remote]` (stage E), run at the root of a
     ; package's repository; the remote is `origin` unless one is named.
+    ; It speaks of the packages this repository tracks (repository_has#).
     ;   1. A published version does not change: no line of the remote's
     ;      record is gone or reads differently here, and a recorded version
     ;      whose directory is still in the tree is the recorded git tree,
@@ -1618,7 +1619,7 @@ define tool
         {
             let pe pkgs.at(q)
             q := q + 1
-            if pe.is_directory = false
+            if pe.is_directory = false or tool.repository_has("packages/`pe.name`", log) = false
                 continue
             var record "packages/`pe.name`/published"
             var here ""
@@ -1699,7 +1700,7 @@ define tool
         {
             let pe pkgs.at(q)
             q := q + 1
-            if pe.is_directory = false
+            if pe.is_directory = false or tool.repository_has("packages/`pe.name`", log) = false
                 continue
             var record "packages/`pe.name`/published"
             var here ""
@@ -1751,6 +1752,15 @@ define tool
         unlink(out.to_c_string())
         unlink(log.to_c_string())
         answer
+    }
+
+    ; Is `path` a directory of THIS repository -- does it track a file under
+    ; it? A package linked into packages/ out of another checkout (and
+    ; ignored) is that checkout's to publish, and one nothing of which is
+    ; committed yet has no commit to be published at.
+    procedure repository_has(path: String, log: String) returns bool
+    {
+        tool.quiet("git ls-files --error-unmatch -- \"`path`\"", log)
     }
 
     ; Give each new version its line, commit the records and push.
