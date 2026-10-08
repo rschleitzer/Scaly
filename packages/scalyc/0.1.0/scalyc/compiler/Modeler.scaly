@@ -2837,18 +2837,15 @@ define Modeler
     ; tools/interfaces.sh) is loaded through it: every declaration a caller
     ; needs, generic bodies included, while the other bodies are in the
     ; package's archive -- what AOT compilation used from the sources anyway.
-    ; AN INTERFACE LIVES IN THE CACHE (cached_interface#), whoever wrote it;
-    ; one that lies beside the sources is what a package committed before
-    ; 2026-10-08 and is taken second.
+    ; AN INTERFACE LIVES IN THE CACHE (cached_interface#) and nowhere else: a
+    ; directory `interface/` beside a package's sources -- what packages
+    ; committed until 2026-10-08, and what the published versions of that
+    ; time still hold -- is not read.
     procedure interface_or_source(pkg_path: String, pkg_name: String, deps: String) returns String
     {
         let cached cached_interface(pkg_path, pkg_name, deps)
         if cached.get_length() > 0
             return cached
-        let iface_dir "`pkg_path`/interface"
-        var root_path "`iface_dir`/`pkg_name`.scaly"
-        if File.exists(root_path)
-            return iface_dir
         pkg_path
     }
 
@@ -3199,10 +3196,7 @@ define Modeler
     procedure has_package_root(dir: String, pkg_name: String) returns bool
     {
         var root "`dir`/`pkg_name`.scaly"
-        if File.exists(root)
-            return true
-        var iface "`dir`/interface/`pkg_name`.scaly"
-        File.exists(iface)
+        File.exists(root)
     }
 
     ; package_directory#: where a declared package lives. The installation's
@@ -3767,15 +3761,7 @@ define Modeler
         let fetched source_str.get_length() > 0 and pkg_path.starts_with(fetched_base())
         var source_root "`pkg_path`/`pkg_name`.scaly"
         let deps dependency_text_loaded(source_root, versions)
-        if fetched = false
-            root_dir := interface_or_source(pkg_path, pkg_name, deps)
-        else
-        {
-            ; ... but the one in the cache, written here from these sources
-            let cached cached_interface(pkg_path, pkg_name, deps)
-            if cached.get_length() > 0
-                root_dir := "`cached`"
-        }
+        root_dir := interface_or_source(pkg_path, pkg_name, deps)
         ; SCALY_REQUIRE_INTERFACES: a root that uses a library package comes
         ; out differently with and without the package's interface, and the
         ; seed must not depend on what a cache happens to hold (tools/seed.sh)

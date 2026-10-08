@@ -186,7 +186,6 @@ lane_ports() {
     at=$(git -C "$DAZZLE_REPO" rev-parse HEAD 2>/dev/null); pin=$(cat tools/dazzle.pin 2>/dev/null)
     echo "dazzle: $DAZZLE_REPO at ${at:0:9}$([ "$at" = "$pin" ] || echo " (tools/dazzle.pin names ${pin:0:9})")"
     step dazzle dazzle_env tests/run.sh || rc=1
-    step dazzle-interface dazzle_env tools/interface.sh --check || rc=1
     # the gate that stays here: the engine reproduces THIS tree's generated files
     step dazzle-codegen env DAZZLE_REPO="$DAZZLE_REPO" tests/dazzle/codegen/run.sh "$BIN" || rc=1
   else
@@ -238,9 +237,6 @@ lane_tscaly() {
   at=$(git -C "$TSCALY" rev-parse HEAD 2>/dev/null); pin=$(cat tools/tscaly.pin 2>/dev/null)
   echo "tscaly: $TSCALY at ${at:0:9}$([ "$at" = "$pin" ] || echo " (tools/tscaly.pin names ${pin:0:9})")"
   step tscaly tscaly_stage || rc=1
-  # its generated interface, with this tree's compiler — before the marker: it
-  # is a 6.5 GB compilation like the one the compiler lane waits to start
-  step tscaly-interface tscaly_env packages/tscaly/tools/interface.sh --check || rc=1
   : > "$LOG/tscaly.stepped"
   [ $rc = 0 ] || return 1
   if grep -qE 'UNEXPLAINED +[1-9]' "$LOG/tscaly.log"; then echo "tscaly: UNEXPLAINED units"; return 1; fi

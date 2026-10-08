@@ -458,6 +458,7 @@ define cli
         Console.println "       scaly install <source> <package> <version> [program]   build the programs a package offers (its programs/) from git"
         Console.println "       scaly install                    what was installed so"
         Console.println "       scaly uninstall <program>        remove one of them"
+        Console.println "       scaly clean                      empty the cache of compiled packages and interfaces (they are made again when needed)"
         Console.println "       scaly publish [remote]           record the new versions of the packages here as published, commit and push (origin)"
         Console.println "       scaly publish --check [remote]   ... only check: no published version changed, each new number says its change"
         Console.println ""
@@ -2651,6 +2652,15 @@ define cli
                 return 1
             }
             return tool.new_project(new_name, new_lib)
+        }
+        if command.equals("clean")
+        {
+            if argc <> 2
+            {
+                Console.println "Usage: scaly clean"
+                return 1
+            }
+            return tool.clean()
         }
         if command.equals("publish")
         {

@@ -1458,6 +1458,60 @@ define tool
         setenv("SCALY_PACKAGE_SUMS", map.to_c_string(), 1)
     }
 
+    ; ---- scaly clean ---------------------------------------------------------
+    ; Everything under `dir`, the directories last; how many files went.
+    ; Each entry is tried as a file first: a link is removed as the link it
+    ; is, never followed into what it points at.
+    procedure remove_tree(mutable dir: String) returns int
+    {
+        var gone 0
+        let entries Directory.list(dir)
+        var i: size_t 0
+        while i < entries.length
+        {
+            let e entries.at(i)
+            i := i + 1
+            var path "`dir`/`e.name`"
+            if unlink(path.to_c_string()) = 0
+                gone := gone + 1
+            else if e.is_directory
+            {
+                gone := gone + tool.remove_tree(path)
+                Directory.remove(path)
+            }
+        }
+        gone
+    }
+
+    ; `scaly clean`: empty the cache. Everything there was made from sources
+    ; and is made again when it is needed -- the compiled packages and their
+    ; interfaces, each under a key over what went into it, so nothing there
+    ; is ever wrong, only no longer asked for: every change to the compiler
+    ; or to a package leaves the files of the state before. What was FETCHED
+    ; (~/.scaly/packages) and what was installed (~/.scaly/bin) are not the
+    ; cache and stay.
+    procedure clean() returns int
+    {
+        var cache tool.cache_root()
+        let n cache.get_length()
+        ; a place that can only be a cache: named by the variable, or the
+        ; directory `cache` this tool made
+        let own getenv "SCALY_CACHE"
+        if n < 4 or (own = null and cache.ends_with("/.scaly/cache") = false)
+        {
+            Console.println("Error: scaly clean: `cache` does not look like a cache")
+            return 1
+        }
+        if Directory.is_directory(cache) = false
+        {
+            Console.println("clean: the cache `cache` is empty")
+            return 0
+        }
+        let gone tool.remove_tree(cache)
+        Console.println("clean: `gone` files removed from `cache`")
+        0
+    }
+
     ; ---- scaly publish (stage E) --------------------------------------------
     ; where the tool keeps a file for the length of one command
     procedure scratch_base() returns String

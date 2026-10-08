@@ -138,6 +138,26 @@ if b.area() = 12
         what the packages of a program define and refuses such a pair, naming
         both packages and the function.</para>
     </section>
+    <section xml:id="mod-package-cache">
+      <title>The cache</title>
+      <para>A package is compiled once. The first program that uses it has
+        it compiled into the cache, <filename>~/.scaly/cache</filename>
+        (<envar>SCALY_CACHE</envar> names another place); every later build
+        links what lies there. Beside the compiled package lies its
+        <emphasis>interface</emphasis> — the package as a caller sees it,
+        every declaration and no body — and that is what the compiler reads
+        from then on instead of the sources. Nothing of this is written into
+        a project or a package, and nothing of it is ever committed.</para>
+      <para>Each entry is kept under a key over everything that went into
+        it: the compiler, every file of the package, and the versions of the
+        packages it declares. So an entry is never wrong, only no longer
+        asked for — a changed package or a new compiler leaves the files of
+        the state before. <userinput>scaly clean</userinput> empties the
+        cache; what is needed is made again by the next build. The packages
+        that were fetched (<filename>~/.scaly/packages</filename>) and the
+        programs that were installed (<filename>~/.scaly/bin</filename>) are
+        not the cache and stay.</para>
+    </section>
     <section xml:id="mod-package-versions">
       <title>Versions, and what publishing means</title>
       <para>The rules of a package's versions are few, and the tool checks

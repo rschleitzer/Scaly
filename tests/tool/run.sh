@@ -99,6 +99,7 @@
 #              third, from 1.0 on a changed one the first and an addition the
 #              second -- eight cases; a new version that does not compile is
 #              refused. SKIPs by name without git
+#   clean      `scaly clean` empties the cache, and the next build fills it
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -816,6 +817,16 @@ package demo 0.1.0 \"$pub/work.git\"|" packages/client/0.1.0/client.scaly && rm 
   out=$(pv rule-0.1.0); rc=$?
   [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.3.0 does not compile' && ok || bad "publish, a version that does not compile: rc=$rc '$(echo "$out" | tail -1 | cut -c1-120)'"
 fi
+
+# clean: the cache is emptied, what was fetched stays, and the next build
+# makes what it needs again
+before=$(find "$SCALY_CACHE" -type f 2>/dev/null | wc -l | tr -d ' ')
+out=$(SCALY_HOME="$here" "$scaly_abs" clean 2>&1); rc=$?
+after=$(find "$SCALY_CACHE" -mindepth 1 2>/dev/null | wc -l | tr -d ' ')
+[ "$rc" = 0 ] && [ "$before" -gt 0 ] && [ "$after" = 0 ] && echo "$out" | grep -q "^clean: $before files removed" && ok || bad "clean: rc=$rc, $before files before, $after entries after, '$(echo "$out" | head -1 | cut -c1-100)'"
+( cd "$ROOT" && SCALY_HOME="$here" "$scaly_abs" build tests/tool/hello.scaly -o "$TMP/after_clean$SCALY_EXE" ) > /dev/null 2>&1
+out=$("$TMP/after_clean$SCALY_EXE" a b 2>&1)
+[ "$out" = "hello a b" ] && [ "$(find "$SCALY_CACHE" -type f | wc -l | tr -d ' ')" -gt 0 ] && ok || bad "clean: the build after it: '$(echo "$out" | head -1 | cut -c1-100)'"
 
 echo "tool: $pass PASS, $fail FAIL"
 for x in "${failures[@]+"${failures[@]}"}"; do echo "  $x"; done

@@ -418,6 +418,55 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
+NAME="mod-package-cache"
+>The cache</A
+></H2
+><P
+>A package is compiled once. The first program that uses it has
+        it compiled into the cache, <TT
+CLASS="filename"
+>~/.scaly/cache</TT
+>
+        (<CODE
+CLASS="envar"
+>SCALY_CACHE</CODE
+> names another place); every later build
+        links what lies there. Beside the compiled package lies its
+        <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>interface</I
+></SPAN
+> — the package as a caller sees it,
+        every declaration and no body — and that is what the compiler reads
+        from then on instead of the sources. Nothing of this is written into
+        a project or a package, and nothing of it is ever committed.</P
+><P
+>Each entry is kept under a key over everything that went into
+        it: the compiler, every file of the package, and the versions of the
+        packages it declares. So an entry is never wrong, only no longer
+        asked for — a changed package or a new compiler leaves the files of
+        the state before. <KBD
+CLASS="userinput"
+>scaly clean</KBD
+> empties the
+        cache; what is needed is made again by the next build. The packages
+        that were fetched (<TT
+CLASS="filename"
+>~/.scaly/packages</TT
+>) and the
+        programs that were installed (<TT
+CLASS="filename"
+>~/.scaly/bin</TT
+>) are
+        not the cache and stay.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
 NAME="mod-package-versions"
 >Versions, and what publishing means</A
 ></H2
@@ -537,7 +586,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2578"
+NAME="AEN2588"
 ></A
 ><TABLE
 BORDER="1"
