@@ -249,7 +249,61 @@ define tool
     ; version that differs from what it fetched first. Run at the root of the
     ; repository. 0: unchanged; 1: a published version differs, each one
     ; named; 2: it could not be asked (no repository, the remote not reached).
-    procedure publish_check(remote: String) @ret_nonlocal true @deep true returns int io linked
+    procedure publish_check(remote: String) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; does a directory's name begin like a version?
+    function is_version(name: String) @deep true returns bool linked
+
+    function holds(list: ref[Array[String]], what: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; ---- E2: the version rule ------------------------------------------------
+    ; What a package DECLARES is its surface (compiler/Interface.scaly,
+    ; --emit-surface): every routine's header, every record with its fields,
+    ; every constant, global and alias -- no body. The surface of the new
+    ; version is compared with the one before it, declaration by declaration:
+    ;   a declaration of before that is gone or reads differently  -> breaking
+    ;   one that was not there                                      -> an addition
+    ;   neither                                                     -> bodies only
+    ; and the number must say so (the author, 2026-10-08): from 1.0 on a
+    ; breaking change takes the first number and an addition the second;
+    ; below 1.0 a breaking change takes the second number and everything else
+    ; the third -- 0.x has promised nothing, 1.0.0 is the promise. The same
+    ; reading as Modeler.version_compatible#, which decides what may stand in
+    ; for what in a build.
+    ; `use`, `package` and `module` lines declare nothing a caller sees.
+    ; ★Conservative on purpose: a declaration is compared as TEXT (comments
+    ; and line breaks apart), so a renamed parameter or a constant's new
+    ; value counts as changed. Nothing in Scaly is private, so every
+    ; declaration counts.
+
+    ; A file of a surface as one declaration per line: comments gone, blanks
+    ; run together, a parenthesis or bracket that spans lines drawn into one.
+    function surface_text(text: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; The declarations of one surface file, each as `file scope| text`: the
+    ; scope is the chain of the `define`s whose braces enclose it.
+    procedure surface_lines(rel: String, text: String, mutable lines: ref[Array[String]]) @page true @direct true @stores true @deep true linked
+
+    ; byte by byte: does `a` sort before `b`?
+    function text_before(a: String, b: String) @deep true returns bool linked
+
+    ; the indices of `lines` in sorted order (a shell sort: no sort in the
+    ; standard library yet, and a surface has thousands of lines, not millions)
+    procedure sorted_order(lines: ref[Array[String]], mutable order: ref[Array[size_t]]) @deep true @deep_into_1_2 true linked
+
+    ; How many declarations `a` has that `b` has not (each as often as it
+    ; stands there); the first three go into `examples`.
+    procedure surface_missing(a: ref[Array[String]], b: ref[Array[String]], mutable examples: ref[Array[String]]) @page true @direct true @stores true @ret_nonlocal true @deep true returns int linked
+
+    ; The surface of packages/<name>/<version> of this repository, written
+    ; under `dir` and read into `lines`. False when the version does not compile.
+    procedure surface_of(name: String, version: String, mutable dir: String, mutable lines: ref[Array[String]]) @page true @stores true @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure show_lines(lines: ref[Array[String]]) @deep true io linked
+
+    ; Does the number of `next` say what it changed against `prev`? Says what
+    ; it found either way; false when the number understates it.
+    procedure publish_compare(name: String, prev: String, next: String, scratch: String) @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
     ; ---- scaly install (stage D5) -------------------------------------------
 

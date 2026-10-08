@@ -78,9 +78,11 @@ if b.area() = 12
       the packages it uses — it takes the highest version any of them names:
       a program that asks for <literal>json 0.1.5</literal> and uses a package
       that asks for <literal>json 0.1.2</literal> is built, with
-      <literal>0.1.5</literal> for both. That holds within one major version;
-      two major versions of one package are refused, with a message naming who
-      asked for each. Nothing else decides: there is no lock file and no
+      <literal>0.1.5</literal> for both. That holds among versions that go
+      together — within one major version, and below 1.0 within one second
+      number (<xref linkend="mod-package-versions"/> says why); two versions
+      that do not go together are refused, with a message naming who asked
+      for each. Nothing else decides: there is no lock file and no
       solver, the versions follow from the declarations alone, and adding a
       dependency can raise a version but never lower one. A package's root
       file declares the packages it uses itself, so a program names only the
@@ -120,7 +122,8 @@ if b.area() = 12
         installation and the project's <filename>./packages/</filename> — so
         copying a package there is how a project keeps its own copy, and
         editing that copy is how it patches a dependency.</para>
-      <para>A published version does not change. The first fetch remembers
+      <para>A published version does not change
+        (<xref linkend="mod-package-versions"/>). The first fetch remembers
         the commit and the content of the version's directory beside it; a
         version that is fetched again and is no longer what it was is refused,
         with both commits named. One package comes from one source: a program
@@ -132,6 +135,79 @@ if b.area() = 12
         define would be one function in the linked program. The tool compares
         what the packages of a program define and refuses such a pair, naming
         both packages and the function.</para>
+    </section>
+    <section xml:id="mod-package-versions">
+      <title>Versions, and what publishing means</title>
+      <para>The rules of a package's versions are few, and the tool checks
+        them.</para>
+      <para><emphasis>A version is a directory.</emphasis>
+        <filename>packages/json/0.1.3/</filename> is version 0.1.3 of
+        <code>json</code>, and a later version is another directory beside
+        it. There are no tags, no registry and no manifest: the repository is
+        the record.</para>
+      <para><emphasis>Published is what the default branch holds.</emphasis>
+        A version directory on the default branch of the package's
+        repository is a published version — that is the state everyone who
+        declares the package fetches. So a new version is written on a branch
+        or in a checkout that is not pushed, and the push that brings its
+        directory to the default branch publishes it.</para>
+      <para><emphasis>A published version does not change.</emphasis> Whoever
+        fetched it has its files, and a build that fetches it again refuses a
+        directory that is no longer what it was. A correction, however small,
+        is a new version: copy the directory, change the copy.</para>
+      <para><emphasis>The number says what changed.</emphasis> A new version
+        is compared with the one before it — the highest lower version the
+        repository has — by what the two <emphasis>declare</emphasis>: every
+        function, procedure, operator and initializer with its parameters and
+        its result, every record with its fields, every union with its
+        variants, every constant, global and alias. Bodies are not part of
+        it, a generic routine's body neither.</para>
+      <informaltable>
+        <tgroup cols="3">
+          <thead>
+            <row><entry>against the version before</entry><entry>from 1.0 on</entry><entry>below 1.0</entry></row>
+          </thead>
+          <tbody>
+            <row><entry>a declaration is gone or reads differently</entry><entry>the first number rises</entry><entry>the second number rises</entry></row>
+            <row><entry>declarations were added, none is gone</entry><entry>the second number rises</entry><entry>the third number rises</entry></row>
+            <row><entry>bodies only</entry><entry>the third number rises</entry><entry>the third number rises</entry></row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+      <para>A version below 1.0 has promised nothing yet, so there a breaking
+        change costs the second number; 1.0.0 is the statement that what the
+        package declares is meant to stay. A build follows the same reading:
+        the highest version asked for stands in for the lower ones where the
+        table says nothing was taken away — within one first number from 1.0
+        on, within one second number below it. <literal>0.2.0</literal> does
+        not stand in for <literal>0.1.5</literal>, and a program that reaches
+        both is told so.</para>
+      <para>The comparison is deliberately strict. Declarations are compared
+        as they are written, comments and line breaks apart: a renamed
+        parameter, a constant's new value, a field added to a record all
+        count as a declaration that reads differently. And nothing in a
+        package is private, so every declaration counts — a helper a package
+        would rather not promise is best not declared at its top level under
+        a name others will use.</para>
+      <programlisting>scaly publish --check</programlisting>
+      <para>run at the root of the package's repository, checks all of this
+        against the remote <literal>origin</literal> (another remote, an
+        address or a path may follow): every published version is still what
+        the remote has, and every new version's number says what it changed.
+        A version that understates its change is refused with the
+        declarations that are gone and the number it takes at least; a new
+        version that does not compile is refused too. The command answers 0
+        when all is well, 1 when a rule is broken and 2 when it could not
+        ask — no repository, or the remote out of reach — and it changes
+        nothing. It belongs in the package's own test run, so a change to a
+        published version is noticed before it is pushed, not by the first
+        program that fetches it.</para>
+      <para>Making the next version of a package is therefore: copy
+        <filename>packages/json/0.1.3/</filename> to the directory of the
+        number the change takes, work there,
+        <userinput>scaly publish --check</userinput>, and push to the default
+        branch. Committing and pushing are still done with
+        <command>git</command>.</para>
     </section>
     <section xml:id="mod-package-new">
       <title>Starting a package</title>

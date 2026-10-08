@@ -50,6 +50,12 @@
 ; file, line and column. Only the tokens after an attribute inserted into a
 ; header line sit that many bytes further on.
 ;
+; THE SURFACE (--emit-surface, `scaly publish`): the same files with EVERY
+; routine cut down to its header -- a generic one too --, a global to its
+; name and type, and no fact written: what a package declares, and nothing a
+; body decides. Two versions of a package whose surfaces agree differ in
+; bodies only; tool.publish_compare# reads them. No positions are written.
+;
 ; Offsets are BYTES, and the text is handled as bytes, so UTF-8 passes
 ; through unchanged. Replaces tools/interface/geninterface.py (2026-09-28),
 ; which kept a removed body's line breaks instead of marking the jump.
@@ -94,6 +100,7 @@ define Interface
 (
     pkg_dir: String     ; the package directory: the root file's
     out_dir: String     ; where the interface goes
+    surface: bool       ; --emit-surface: the declarations alone (below)
 )
 {
     ; Writes the interface of the root `root_file` from its facts: every module
@@ -107,11 +114,14 @@ define Interface
 
     ; The interface text of the file with index `fi`: its facts applied to the
     ; source text. Answers an empty String after printing why it cannot.
-    procedure transform(text: String, facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, mutable pairs: ref[StringBuilder]) @page true @direct true @ret_caller true @deep true returns String io linked
+    procedure transform(text: String, facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, mutable pairs: ref[StringBuilder], surface: bool) @page true @direct true @ret_caller true @deep true returns String io linked
 
     ; A routine keeps its header, its facts after the parameter list, and ends
     ; in ` linked`.
     function routine_edit(text: String, facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, f: ref[InterfaceFact]) @page true @direct true @deep true returns InterfaceEdit linked
+
+    ; The surface's form of a routine: its header, as the source has it.
+    function surface_edit(text: String, f: ref[InterfaceFact]) @page true @direct true @deep true returns InterfaceEdit linked
 
     ; Does `a` come before `b` in text order (start, then end)?
     function edit_before(a: ref[InterfaceEdit], b: ref[InterfaceEdit]) @ret_param_0 true @deep true returns bool linked

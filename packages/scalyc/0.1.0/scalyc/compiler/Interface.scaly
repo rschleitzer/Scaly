@@ -50,6 +50,12 @@
 ; file, line and column. Only the tokens after an attribute inserted into a
 ; header line sit that many bytes further on.
 ;
+; THE SURFACE (--emit-surface, `scaly publish`): the same files with EVERY
+; routine cut down to its header -- a generic one too --, a global to its
+; name and type, and no fact written: what a package declares, and nothing a
+; body decides. Two versions of a package whose surfaces agree differ in
+; bodies only; tool.publish_compare# reads them. No positions are written.
+;
 ; Offsets are BYTES, and the text is handled as bytes, so UTF-8 passes
 ; through unchanged. Replaces tools/interface/geninterface.py (2026-09-28),
 ; which kept a removed body's line breaks instead of marking the jump.
@@ -94,6 +100,7 @@ define Interface
 (
     pkg_dir: String     ; the package directory: the root file's
     out_dir: String     ; where the interface goes
+    surface: bool       ; --emit-surface: the declarations alone (below)
 )
 {
     ; Writes the interface of the root `root_file` from its facts: every module
@@ -144,7 +151,7 @@ define Interface
                 let rel file.substring(prefix.get_length(), file.get_length() - prefix.get_length())
                 let text File.read_to_string file
                 var pairs StringBuilder()
-                let out Interface.transform(text, facts, &file_of, fi, &pairs)
+                let out Interface.transform(text, facts, &file_of, fi, &pairs, this.surface)
                 if out.get_length() = 0 and text.get_length() > 0
                     return 0 - 1
                 if pairs.get_length() > 0
@@ -172,7 +179,7 @@ define Interface
                 written := written + 1
             }
         }
-        if this.write_file(String("positions"), positions.to_string()) = false
+        if this.surface = false and this.write_file(String("positions"), positions.to_string()) = false
             return 0 - 1
         written
     }
@@ -201,7 +208,7 @@ define Interface
 
     ; The interface text of the file with index `fi`: its facts applied to the
     ; source text. Answers an empty String after printing why it cannot.
-    procedure transform(text: String, facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, mutable pairs: ref[StringBuilder]) returns String
+    procedure transform(text: String, facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, mutable pairs: ref[StringBuilder], surface: bool) returns String
     {
         var edits Array[InterfaceEdit]()
         var i: size_t 0
@@ -212,12 +219,14 @@ define Interface
                 let f facts.at i
                 if f.tag = ("F" as char)
                 {
-                    if f.generic = false and Interface.inside_generic(facts, file_of, fi, f.start) = false
+                    if surface
+                        edits.add(Interface.surface_edit(text, f))
+                    else if f.generic = false and Interface.inside_generic(facts, file_of, fi, f.start) = false
                         edits.add(Interface.routine_edit(text, facts, file_of, fi, f))
                 }
                 else if f.tag = ("C" as char)
                 {
-                    if f.generic = false and f.resident
+                    if surface = false and f.generic = false and f.resident
                     {
                         ; right before the record's `(`: after the name an
                         ; optional separator takes a line break, after an
@@ -240,7 +249,9 @@ define Interface
                     if Interface.inside_generic(facts, file_of, fi, f.start) = false
                     {
                         let m Interface.match_global(text, f.start, f.name)
-                        if m > 0
+                        if m > 0 and surface
+                            edits.add(InterfaceEdit(Interface.skip_type(text, m), Interface.body_end(text, f.end), String("")))
+                        else if m > 0
                             edits.add(InterfaceEdit(Interface.skip_type(text, m), Interface.body_end(text, f.end), String(" linked")))
                     }
                 }
@@ -335,6 +346,14 @@ define Interface
         if global_read.get_length() > 0
             head := "`Interface.rstrip(head)` reads `global_read`"
         InterfaceEdit(s, Interface.body_end(text, f.end), "`Interface.rstrip(head)` linked")
+    }
+
+    ; The surface's form of a routine: its header, as the source has it.
+    function surface_edit(text: String, f: ref[InterfaceFact]) returns InterfaceEdit
+    {
+        let s f.start
+        let h Interface.header(text, s, f.kind)
+        InterfaceEdit(s, Interface.body_end(text, f.end), "`Interface.rstrip(text.substring(s, h.end - s))`")
     }
 
     ; Does `a` come before `b` in text order (start, then end)?

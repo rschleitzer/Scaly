@@ -3065,10 +3065,13 @@ define Modeler
     ; ---- which version of a package a build takes --------------------------
     ; A declaration names a MINIMUM. A build takes, per package, the highest
     ; minimum anyone asked for -- the program or a package it reaches --
-    ; within one major version; two major versions stay an error. The answer
-    ; is a function of the sources alone: no lock file, no solver, and adding
-    ; a dependency can only raise a version, never lower one (Go's minimal
-    ; version selection).
+    ; among the versions that go together; two that do not stay an error.
+    ; Versions go together within one major version, and below 1.0 within one
+    ; second number: 0.x has promised nothing yet, so there the second number
+    ; is the one a breaking change raises (version_compatible#; the author,
+    ; 2026-10-08, with `scaly publish`). The answer is a function of the
+    ; sources alone: no lock file, no solver, and adding a dependency can
+    ; only raise a version, never lower one (Go's minimal version selection).
 
     ; the `which`-th number of a dotted version, 0 where it has none
     function version_part(v: String, which: size_t) returns size_t
@@ -3096,6 +3099,17 @@ define Modeler
         0
     }
 
+    ; do two versions of a package go together -- may the higher one stand
+    ; in for the lower?
+    function version_compatible(a: String, b: String) returns bool
+    {
+        if version_part(a, 0) <> version_part(b, 0)
+            return false
+        if version_part(a, 0) = 0 and version_part(a, 1) <> version_part(b, 1)
+            return false
+        true
+    }
+
     ; is version `a` newer than `b`, number by number?
     function version_newer(a: String, b: String) returns bool
     {
@@ -3115,7 +3129,7 @@ define Modeler
     ; as lines `name version`: every declaration reachable from the root is
     ; read -- each declared version's own root too, also one that is not
     ; taken in the end --, and the highest version per package stays. With
-    ; `report`, two major versions of one package are an error naming who
+    ; `report`, two versions of one package that do not go together are an error naming who
     ; asked for each.
     procedure select_versions(mutable root_file: String, report: bool) returns String mutable modeler_error_count
     {
@@ -3160,10 +3174,15 @@ define Modeler
                 {
                     known := true
                     let had sel_versions.at s
-                    if version_part(had, 0) <> version_part(version, 0)
+                    if version_compatible(had, version) = false
                     {
                         if report and seen = false
-                            report_load_error("error: package `name` is required in two major versions, `had` (by `sel_askers.at(s)`) and `version` (by `asker`); one compilation takes one")
+                        {
+                            if version_part(had, 0) <> version_part(version, 0)
+                                report_load_error("error: package `name` is required in two major versions, `had` (by `sel_askers.at(s)`) and `version` (by `asker`); one compilation takes one")
+                            else
+                                report_load_error("error: package `name` is required in two versions that do not go together, `had` (by `sel_askers.at(s)`) and `version` (by `asker`): below 1.0 the second number is the one a breaking change raises; one compilation takes one")
+                        }
                     }
                     else if version_newer(version, had)
                     {

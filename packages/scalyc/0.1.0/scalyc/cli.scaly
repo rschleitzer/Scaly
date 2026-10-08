@@ -80,6 +80,7 @@ define Options
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
     purity_check: bool      ; --purity-check: a function may not write what its parameters reach
     emit_interface: bool    ; --emit-interface: write the package's interface (compiler/Interface.scaly)
+    emit_surface: bool      ; --emit-surface: ... its declarations alone, for `scaly publish` (with emit_interface)
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -130,6 +131,7 @@ define Options
         host_report := false
         purity_check := false
         emit_interface := false
+        emit_surface := false
         debug := false
         run_mode := false
         run_function := String()
@@ -265,6 +267,11 @@ define cli
                 else if arg = "--emit-interface"
                 {
                     opts.emit_interface := true
+                }
+                else if arg = "--emit-surface"
+                {
+                    opts.emit_interface := true
+                    opts.emit_surface := true
                 }
                 else if arg = "-O0"
                 {
@@ -481,6 +488,7 @@ define cli
         Console.println("  --write-report  Report every write through a parameter, off the Plan")
         Console.println("  --purity-check  Report every function that writes what its parameters reach")
         Console.println("  --emit-interface  Write the package's interface to <dir>/interface, or to -o <dir>")
+        Console.println("  --emit-surface    Write the package's declarations alone (what scaly publish compares) to -o <dir>")
         Console.println "  --run <fn>     JIT-compile and run <fn> in-process"
         Console.println "  --jit          JIT-compile and run the whole program"
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
@@ -1127,7 +1135,7 @@ define cli
                 purity_gate.mark_stub_purity(plan)
                 planner.phase_mark("E1-purity-gate")
                 if opts.emit_interface
-                    return cli.emit_interface(opts.input_file, opts.output_file, &planner, &model, &purity_gate)
+                    return cli.emit_interface(opts.input_file, opts.output_file, opts.emit_surface, &planner, &model, &purity_gate)
             }
         }
 
@@ -2345,7 +2353,7 @@ define cli
 
     ; --emit-interface: the package's interface (compiler/Interface.scaly),
     ; written to <root dir>/interface or to the directory -o names.
-    procedure emit_interface(root: String, output: String, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) returns int
+    procedure emit_interface(root: String, output: String, surface: bool, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) returns int
     {
         var facts Array[InterfaceFact]()
         planner.interface_facts(model.module_, &facts)
@@ -2355,11 +2363,12 @@ define cli
         var out_dir output
         if out_dir.get_length() = 0
             out_dir := "`pkg_dir`/interface"
-        let writer Interface(pkg_dir, out_dir)
+        let writer Interface(pkg_dir, out_dir, surface)
         let n writer.write(root, &facts)
         if n < 0
             return 1
-        Console.println "interface: `n` files -> `out_dir`"
+        if surface = false
+            Console.println "interface: `n` files -> `out_dir`"
         0
     }
 

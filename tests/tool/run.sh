@@ -69,7 +69,8 @@
 #              asked for out of two sources is refused, two spellings of one
 #              source are one; a declaration is a MINIMUM -- the highest one
 #              asked for is taken, by the program and by the packages built
-#              for it, on all three routes, two major versions are refused;
+#              for it, on all three routes, two major versions are refused,
+#              and so are 0.2 beside 0.1 (below 1.0 the second number breaks);
 #              `scaly install` builds the programs a package offers (its
 #              programs/), all or one by name, their sourceless declarations
 #              of the package and its sibling found in the same source; a
@@ -84,7 +85,12 @@
 #              committed, a committed one and a removed version are each
 #              refused with the version named (rc 1); a remote that is not
 #              there and a directory that is not the repository's root are
-#              said (rc 2). SKIPs by name without git
+#              said (rc 2). A NEW version is compared with the one before
+#              it, declaration by declaration (tool.publish_compare#): below
+#              1.0 a changed declaration takes the second number and anything
+#              else the third, from 1.0 on a changed one the first and an
+#              addition the second -- eight cases; a new version that does
+#              not compile is refused. SKIPs by name without git
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -542,7 +548,7 @@ else
   # asked for within a major version (Modeler.select_versions#) -- for the
   # program AND for the packages compiled for it
   vr="$fr/mini"; mkdir -p "$vr"
-  for v in 0.1.2 0.1.5 1.0.0; do
+  for v in 0.1.2 0.1.5 0.2.0 1.0.0; do
     mkdir -p "$vr/packages/mini/$v"
     printf 'package scaly 0.1.0\n\ndefine mini\n{\n    function version() returns String\n        "%s"\n}\n' "$v" > "$vr/packages/mini/$v/mini.scaly"
   done
@@ -553,6 +559,7 @@ else
   printf 'package via 0.1.0 "%s"\npackage mini 0.1.5 "%s"\n\nprint("`mini.version()` `via.seen()`")\n' "$fr/via" "$vr" > "$fp/newer.scaly"
   printf 'package via 0.1.0 "%s"\n\nprint(via.seen())\n' "$fr/via" > "$fp/older.scaly"
   printf 'package via 0.1.0 "%s"\npackage mini 1.0.0 "%s"\n\nprint("no")\n' "$fr/via" "$vr" > "$fp/major.scaly"
+  printf 'package via 0.1.0 "%s"\npackage mini 0.2.0 "%s"\n\nprint("no")\n' "$fr/via" "$vr" > "$fp/minor.scaly"
   agree=0
   for route in "run newer.scaly" "build newer.scaly -o $TMP/ver_a$SCALY_EXE" "build newer.scaly --release -o $TMP/ver_b$SCALY_EXE"; do
     # shellcheck disable=SC2086
@@ -571,6 +578,9 @@ else
   [ "$out" = "0.1.2" ] && [ "$out2" = "0.1.2" ] && ok || bad "versions: alone the package took '$out' / '$out2', not its minimum 0.1.2"
   out=$(ft run major.scaly 2>&1); rc=$?
   [ "$rc" != 0 ] && echo "$out" | grep -q 'package mini is required in two major versions, 1.0.0 (by the program) and 0.1.2 (by via 0.1.0)' && ok || bad "versions: two majors rc=$rc '$(echo "$out" | grep -v '^scaly: ' | head -1 | cut -c1-170)'"
+  # below 1.0 the second number is the one that breaks: 0.2.0 does not stand in for 0.1.2
+  out=$(ft run minor.scaly 2>&1); rc=$?
+  [ "$rc" != 0 ] && echo "$out" | grep -q 'package mini is required in two versions that do not go together, 0.2.0 (by the program) and 0.1.2 (by via 0.1.0)' && ok || bad "versions: 0.2 beside 0.1 rc=$rc '$(echo "$out" | grep -v '^scaly: ' | head -1 | cut -c1-170)'"
   # install: the programs a package offers are the files of its programs/,
   # one of them called like the package; they name their own package and its
   # sibling WITHOUT a source, as in the repository, and fetched they still
@@ -674,7 +684,7 @@ if ! command -v git > /dev/null 2>&1; then
 else
   pg() { git -c user.name=t -c user.email=t@example.invalid -c init.defaultBranch=main "$@"; }
   pub="$TMP/publish"; mkdir -p "$pub/work/packages/demo/0.1.0"
-  pc() { ( cd "$pub/work" && "$scaly_abs" publish --check "$@" ) 2>&1; }
+  pc() { ( cd "$pub/work" && SCALY_HOME="$here" "$scaly_abs" publish --check "$@" ) 2>&1; }
   (
     cd "$pub/work" && pg init -q && echo 'define DEMO: int 1' > packages/demo/0.1.0/demo.scaly \
       && pg add -A && pg commit -q -m one && pg clone -q --bare . "$pub/remote.git" && pg remote add origin "$pub/remote.git"
@@ -687,7 +697,7 @@ else
   ( cd "$pub/work" && pg commit -q -am two )
   out=$(pc); rc=$?
   [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0 is tree .*; here it is tree ' && ok || bad "publish, committed change: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-120)'"
-  ( cd "$pub/work" && pg reset -q --hard HEAD~1 && mkdir packages/demo/0.1.1 && echo 'define DEMO: int 2' > packages/demo/0.1.1/demo.scaly && pg add -A && pg commit -q -m new )
+  ( cd "$pub/work" && pg reset -q --hard HEAD~1 && mkdir packages/demo/0.1.1 && echo 'define DEMO: int 1' > packages/demo/0.1.1/demo.scaly && pg add -A && pg commit -q -m new )
   out=$(pc); rc=$?
   [ "$rc" = 0 ] && ok || bad "publish, a new version beside it: rc=$rc '$(echo "$out" | head -2 | tr '\n' '|' | cut -c1-160)'"
   ( cd "$pub/work" && pg rm -q -r packages/demo/0.1.0 && pg commit -q -m gone )
@@ -700,6 +710,44 @@ else
   [ "$rc" = 2 ] && echo "$out" | grep -q 'could not ask' && ok || bad "publish, no such remote: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
   out=$( ( cd "$pub/work/packages" && "$scaly_abs" publish --check ) 2>&1 ); rc=$?
   [ "$rc" = 2 ] && echo "$out" | grep -q 'root of the repository' && ok || bad "publish, not at the root: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
+  # E2: a new version's number says what it changed against the one before
+  # (a package `scaly new --lib` wrote, published as 0.1.0 and, in a second
+  # repository, as 1.0.0)
+  pv() { ( cd "$pub/$1" && SCALY_HOME="$here" "$scaly_abs" publish --check ) 2>&1; }
+  for first in 0.1.0 1.0.0; do
+    r="rule-$first"
+    ( cd "$pub" && SCALY_HOME="$here" "$scaly_abs" new demo --lib && mv demo "$r" && cd "$r" \
+        && { [ "$first" = 0.1.0 ] || mv packages/demo/0.1.0 "packages/demo/$first"; } \
+        && pg init -q && pg add -A && pg commit -q -m one && pg clone -q --bare . "$pub/$r.git" && pg remote add origin "$pub/$r.git"
+    ) > "$TMP/publish-$first.log" 2>&1
+  done
+  # the next version as a copy of the first, its text run through sed
+  nextv() { rm -rf "$pub/$1/packages/demo/$3"; cp -R "$pub/$1/packages/demo/$2" "$pub/$1/packages/demo/$3"; sed -i.bak "$4" "$pub/$1/packages/demo/$3/demo.scaly"; rm -f "$pub/$1/packages/demo/$3/demo.scaly.bak"; }
+  body='s/"Hello, `name`!"/"Hello,  `name`!"/'
+  added='s/^    function test_greeting/    function farewell(name: String) returns String\
+        "Bye, `name`!"\
+\
+    function test_greeting/'
+  changed='s/function greeting(name: String)/function greeting(who: String)/; s/`name`/`who`/'
+  rule=0
+  # below 1.0: bodies and additions take the third number, a changed declaration the second
+  nextv rule-0.1.0 0.1.0 0.1.1 "$body";    out=$(pv rule-0.1.0); [ $? = 0 ] && echo "$out" | grep -q 'demo 0.1.1 is new after 0.1.0: 0 declaration(s) gone or changed, 0 added' && rule=$((rule+1)) || echo "    publish rule (0.x body): $(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)"
+  nextv rule-0.1.0 0.1.0 0.1.1 "$added";   out=$(pv rule-0.1.0); [ $? = 0 ] && echo "$out" | grep -q '0 declaration(s) gone or changed, 1 added' && rule=$((rule+1)) || echo "    publish rule (0.x added): $(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)"
+  nextv rule-0.1.0 0.1.0 0.1.1 "$changed"; out=$(pv rule-0.1.0); [ $? = 1 ] && echo "$out" | grep -q 'demo 0.1.1 understates what it changed since 0.1.0; that takes 0.2.0 at least' && echo "$out" | grep -q 'demo.scaly demo.| function greeting(name: String) returns String' && rule=$((rule+1)) || echo "    publish rule (0.x changed): $(echo "$out" | tail -4 | tr '\n' '|' | cut -c1-300)"
+  rm -rf "$pub/rule-0.1.0/packages/demo/0.1.1"
+  nextv rule-0.1.0 0.1.0 0.2.0 "$changed"; out=$(pv rule-0.1.0); [ $? = 0 ] && echo "$out" | grep -q 'demo 0.2.0 is new after 0.1.0: 1 declaration(s) gone or changed, 1 added' && rule=$((rule+1)) || echo "    publish rule (0.2.0): $(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)"
+  # from 1.0 on: an addition takes the second number, a changed declaration the first
+  nextv rule-1.0.0 1.0.0 1.0.1 "$body";    out=$(pv rule-1.0.0); [ $? = 0 ] && rule=$((rule+1)) || echo "    publish rule (1.x body): $(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)"
+  nextv rule-1.0.0 1.0.0 1.0.1 "$added";   out=$(pv rule-1.0.0); [ $? = 1 ] && echo "$out" | grep -q 'that takes 1.1.0 at least' && rule=$((rule+1)) || echo "    publish rule (1.x added): $(echo "$out" | tail -4 | tr '\n' '|' | cut -c1-300)"
+  rm -rf "$pub/rule-1.0.0/packages/demo/1.0.1"
+  nextv rule-1.0.0 1.0.0 1.1.0 "$changed"; out=$(pv rule-1.0.0); [ $? = 1 ] && echo "$out" | grep -q 'that takes 2.0.0 at least' && rule=$((rule+1)) || echo "    publish rule (1.x changed): $(echo "$out" | tail -4 | tr '\n' '|' | cut -c1-300)"
+  rm -rf "$pub/rule-1.0.0/packages/demo/1.1.0"
+  nextv rule-1.0.0 1.0.0 2.0.0 "$changed"; out=$(pv rule-1.0.0); [ $? = 0 ] && rule=$((rule+1)) || echo "    publish rule (2.0.0): $(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)"
+  [ "$rule" = 8 ] && ok || bad "publish: the version rule held in $rule of 8 cases"
+  # a new version that does not compile is not published
+  nextv rule-0.1.0 0.1.0 0.3.0 's/returns String$/returns Strin/'
+  out=$(pv rule-0.1.0); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.3.0 does not compile' && ok || bad "publish, a version that does not compile: rc=$rc '$(echo "$out" | tail -1 | cut -c1-120)'"
 fi
 
 echo "tool: $pass PASS, $fail FAIL"
