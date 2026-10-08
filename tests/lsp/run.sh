@@ -2556,7 +2556,11 @@ def frame(o):
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 
 DZ = os.path.abspath(os.environ.get("DAZZLE_REPO") or os.path.join(os.getcwd(), "..", "dazzle"))
-path = os.path.join(DZ, "packages/opensp/0.1.0/opensp/ContentState.scaly")
+def dzv(p):
+    # the version of a dazzle-repository package being worked on: its highest version directory
+    vs = [d for d in os.listdir(os.path.join(DZ, "packages", p)) if d[:1].isdigit()] if os.path.isdir(os.path.join(DZ, "packages", p)) else []
+    return max(vs, key=lambda v: [int(x) for x in v.split(".")]) if vs else "0.1.0"
+path = os.path.join(DZ, "packages/opensp/%s/opensp/ContentState.scaly" % dzv("opensp"))
 if not os.path.exists(path):
     print("SKIP  `this.` in a package module (no dazzle checkout at %s)" % DZ)
     sys.exit(0)
@@ -6153,11 +6157,15 @@ check(not qrows, "none of the four quiet shapes is marked (%s)" % sorted(qrows))
 # The four are the dazzle repository's (../dazzle or $DAZZLE_REPO) since
 # 2026-10-05; without that checkout the sweep is SKIPPED by name.
 DZ = os.path.abspath(os.environ.get("DAZZLE_REPO") or os.path.join(os.getcwd(), "..", "dazzle"))
+def dzv(p):
+    # the version of a dazzle-repository package being worked on: its highest version directory
+    vs = [d for d in os.listdir(os.path.join(DZ, "packages", p)) if d[:1].isdigit()] if os.path.isdir(os.path.join(DZ, "packages", p)) else []
+    return max(vs, key=lambda v: [int(x) for x in v.split(".")]) if vs else "0.1.0"
 sweep = [os.path.join(DZ, f) for f in
-        ["packages/dazzle/0.1.0/dazzle/Style.scaly",
-         "packages/dazzle/0.1.0/dazzle/Primitive.scaly",
-         "packages/opensp/0.1.0/opensp/Parser.scaly",
-         "packages/opensp/0.1.0/opensp/ParserState.scaly"]]
+        ["packages/dazzle/%s/dazzle/Style.scaly" % dzv("dazzle"),
+         "packages/dazzle/%s/dazzle/Primitive.scaly" % dzv("dazzle"),
+         "packages/opensp/%s/opensp/Parser.scaly" % dzv("opensp"),
+         "packages/opensp/%s/opensp/ParserState.scaly" % dzv("opensp")]]
 if not os.path.exists(sweep[0]):
     print("SKIP  the sweep over real sources (no dazzle checkout at %s)" % DZ)
     sweep = []
@@ -6245,7 +6253,11 @@ def lens_count(path, stack_kb):
     res = (r or {}).get("result")
     return len(res) if isinstance(res, list) else -1
 DZ = os.path.abspath(os.environ.get("DAZZLE_REPO") or os.path.join(os.getcwd(), "..", "dazzle"))
-f = os.path.join(DZ, "packages/dazzle/0.1.0/dazzle/Style.scaly")
+def dzv(p):
+    # the version of a dazzle-repository package being worked on: its highest version directory
+    vs = [d for d in os.listdir(os.path.join(DZ, "packages", p)) if d[:1].isdigit()] if os.path.isdir(os.path.join(DZ, "packages", p)) else []
+    return max(vs, key=lambda v: [int(x) for x in v.split(".")]) if vs else "0.1.0"
+f = os.path.join(DZ, "packages/dazzle/%s/dazzle/Style.scaly" % dzv("dazzle"))
 if not os.path.exists(f):
     print("SKIP  codeLens at 1 MB (no dazzle checkout at %s)" % DZ)
     sys.exit(0)

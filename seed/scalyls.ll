@@ -1857,9 +1857,9 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.sconst.994 = private constant [8 x i8] c"\06tests/\00"
 @.sconst.995 = private constant [6 x i8] c"\04.sgm\00"
 @.sconst.996 = private constant [19 x i8] c"\11/tests/selfhosted\00"
-@.sconst.997 = private constant [31 x i8] c"\1D/packages/opensp/0.1.0/opensp\00"
+@.sconst.997 = private constant [9 x i8] c"\07/opensp\00"
 @.sconst.998 = private constant [16 x i8] c"\0EMessages.scaly\00"
-@.sconst.999 = private constant [31 x i8] c"\1D/packages/opensp/0.1.0/opensp\00"
+@.sconst.999 = private constant [18 x i8] c"\10/packages/opensp\00"
 @.sconst.1000 = private constant [17 x i8] c"\0Ftools/msggen.py\00"
 @.sconst.1001 = private constant [17 x i8] c"\0Fgenerated from \00"
 @.sconst.1002 = private constant [35 x i8] c"! - edit the generator, then ./mkp\00"
@@ -151712,6 +151712,7 @@ if.end20:                                         ; preds = %if.then19, %if.then
 define linkonce_odr void @_ZN8codelens16generated_bannerEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %arg.tmp48 = alloca { ptr }, align 8
+  %sret.result47 = alloca { ptr }, align 8
   %arg.tmp32 = alloca { ptr }, align 8
   %sret.result31 = alloca { ptr }, align 8
   %sret.result29 = alloca { ptr }, align 8
@@ -151787,8 +151788,8 @@ if.then16:                                        ; preds = %if.end11
 
 if.end17:                                         ; preds = %if.end21, %if.end11
   store { ptr } { ptr @.sconst.997 }, ptr %sret.result22, align 1
-  %call38 = call i1 @_ZN6String9ends_withE6String(ptr %arg.tmp6, ptr %sret.result22)
-  br i1 %call38, label %if.then39, label %if.end40
+  %call40 = call i1 @_ZN6String9ends_withE6String(ptr %arg.tmp6, ptr %sret.result22)
+  br i1 %call40, label %land.rhs, label %if.end39
 
 if.then20:                                        ; preds = %if.then16
   call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result22, ptr %frame, ptr %arg.tmp12, i64 0, i64 %call18)
@@ -151834,36 +151835,45 @@ if.then35:                                        ; preds = %frame.forced
 if.end36:                                         ; preds = %frame.forced
   br label %if.end21
 
-if.then39:                                        ; preds = %if.end17
-  store { ptr } { ptr @.sconst.998 }, ptr %sret.result29, align 1
-  %call41 = call i1 @_ZN6String9ends_withE6String(ptr %arg.tmp12, ptr %sret.result29)
-  br i1 %call41, label %if.then42, label %if.end43
+if.then38:                                        ; preds = %land.rhs
+  %call42 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp6)
+  %sub = sub i64 %call42, 7
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result31, ptr %frame, ptr %arg.tmp6, i64 0, i64 %sub)
+  %call43 = call i64 @_ZN6String13last_index_ofE2u8(ptr %sret.result31, i8 47)
+  %gt44 = icmp sgt i64 %call43, 0
+  br i1 %gt44, label %if.then45, label %if.end46
 
-if.end40:                                         ; preds = %if.end43, %if.end17
+if.end39:                                         ; preds = %if.end46, %land.rhs, %if.end17
   store { ptr } zeroinitializer, ptr %0, align 1
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-if.then42:                                        ; preds = %if.then39
-  store { ptr } { ptr @.sconst.999 }, ptr %arg.tmp32, align 1
-  call void @_ZN8codelens12strip_suffixEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result31, ptr %1, ptr %arg.tmp6, ptr %arg.tmp32)
-  %call44 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result31)
-  %gt45 = icmp ugt i64 %call44, 0
-  br i1 %gt45, label %if.then46, label %if.end47
+land.rhs:                                         ; preds = %if.end17
+  store { ptr } { ptr @.sconst.998 }, ptr %sret.result29, align 1
+  %call41 = call i1 @_ZN6String9ends_withE6String(ptr %arg.tmp12, ptr %sret.result29)
+  br i1 %call41, label %if.then38, label %if.end39
 
-if.end43:                                         ; preds = %if.end47, %if.then39
-  br label %if.end40
+if.then45:                                        ; preds = %if.then38
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result47, ptr %1, ptr %sret.result31, i64 0, i64 %call43)
+  store { ptr } { ptr @.sconst.999 }, ptr %arg.tmp48, align 1
+  call void @_ZN8codelens12strip_suffixEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %arg.tmp32, ptr %1, ptr %sret.result47, ptr %arg.tmp48)
+  %call49 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp32)
+  %gt50 = icmp ugt i64 %call49, 0
+  br i1 %gt50, label %if.then51, label %if.end52
 
-if.then46:                                        ; preds = %if.then42
+if.end46:                                         ; preds = %if.end52, %if.then38
+  br label %if.end39
+
+if.then51:                                        ; preds = %if.then45
   store { ptr } { ptr @.sconst.1000 }, ptr %arg.tmp48, align 1
-  call void @_ZN8codelens11banner_lensEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %arg.tmp32, ptr %1, ptr %2, ptr %sret.result31, ptr %arg.tmp48)
-  %sret.body49 = load { ptr }, ptr %arg.tmp32, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp32, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8codelens11banner_lensEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result47, ptr %1, ptr %2, ptr %arg.tmp32, ptr %arg.tmp48)
+  %sret.body53 = load { ptr }, ptr %sret.result47, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result47, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-if.end47:                                         ; preds = %if.then42
-  br label %if.end43
+if.end52:                                         ; preds = %if.then45
+  br label %if.end46
 }
 
 define linkonce_odr i1 @_ZN8codelens24has_top_level_statementsE6String(ptr %0) {
@@ -152070,6 +152080,8 @@ if.end3:                                          ; preds = %if.end
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
+
+declare i64 @_ZN6String13last_index_ofE2u8(ptr, i8)
 
 define linkonce_odr void @_ZN8codelens4joinEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
@@ -153137,8 +153149,6 @@ if.end4:                                          ; preds = %if.end
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
-
-declare i64 @_ZN6String13last_index_ofE2u8(ptr, i8)
 
 define linkonce_odr ptr @_ZN5SliceI7DocSlotE3getEm(ptr %0, i64 %1) {
 entry:

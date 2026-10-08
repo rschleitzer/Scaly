@@ -346,11 +346,15 @@ define codelens
         ; tools/msggen.py (mkp's msggen loop). The catalogs live in a separate
         ; checkout that need not exist here, so the lens points at the
         ; generator, which always does.
-        if dir.ends_with("/packages/opensp/0.1.0/opensp")
+        ; The package's version directory is whatever it is at the time:
+        ; <root>/packages/opensp/<version>/opensp.
+        if dir.ends_with("/opensp") and base.ends_with("Messages.scaly")
         {
-            if base.ends_with("Messages.scaly")
+            let outer dir.substring(0, dir.get_length() - 7)
+            let slash outer.last_index_of(47)
+            if slash > 0
             {
-                let root codelens.strip_suffix(dir, "/packages/opensp/0.1.0/opensp")
+                let root codelens.strip_suffix(outer.substring(0, slash as size_t), "/packages/opensp")
                 if root.get_length() > 0
                     return codelens.banner_lens(text, root, "tools/msggen.py")
             }
