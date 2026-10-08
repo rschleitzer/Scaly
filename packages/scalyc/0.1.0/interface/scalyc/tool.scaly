@@ -320,7 +320,9 @@ define tool
     ; the third -- 0.x has promised nothing, 1.0.0 is the promise. The same
     ; reading as Modeler.version_compatible#, which decides what may stand in
     ; for what in a build.
-    ; `use`, `package` and `module` lines declare nothing a caller sees.
+    ; `use`, `package` and `module` lines declare nothing a caller sees -- but a
+    ; declared package that moved to ANOTHER LINE counts as a changed
+    ; declaration (publish_compare#): the user's build must follow it.
     ; ★Conservative on purpose: a declaration is compared as TEXT (comments
     ; and line breaks apart), so a renamed parameter or a constant's new
     ; value counts as changed. Nothing in Scaly is private, so every

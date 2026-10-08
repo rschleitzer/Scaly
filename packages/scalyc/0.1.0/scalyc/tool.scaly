@@ -1916,7 +1916,9 @@ define tool
     ; the third -- 0.x has promised nothing, 1.0.0 is the promise. The same
     ; reading as Modeler.version_compatible#, which decides what may stand in
     ; for what in a build.
-    ; `use`, `package` and `module` lines declare nothing a caller sees.
+    ; `use`, `package` and `module` lines declare nothing a caller sees -- but a
+    ; declared package that moved to ANOTHER LINE counts as a changed
+    ; declaration (publish_compare#): the user's build must follow it.
     ; ★Conservative on purpose: a declaration is compared as TEXT (comments
     ; and line breaks apart), so a renamed parameter or a constant's new
     ; value counts as changed. Nothing in Scaly is private, so every
@@ -2220,6 +2222,12 @@ define tool
             before := "`history`/"
         }
         let read_before tool.surface_of(before, name, prev, old_dir, &old_lines)
+        ; ... and what it declared of other packages
+        var old_names Array[String]()
+        var old_versions Array[String]()
+        var old_sources Array[String]()
+        var old_root "`before`packages/`name`/`prev`/`name`.scaly"
+        Modeler.declared_packages(old_root, &old_names, &old_versions, &old_sources)
         if before.get_length() > 0
         {
             tool.quiet("git worktree remove --force \"`history`\"", log)
@@ -2229,8 +2237,33 @@ define tool
             return false
         var gone_examples Array[String]()
         var added_examples Array[String]()
-        let gone tool.surface_missing(&old_lines, &new_lines, &gone_examples)
+        var gone tool.surface_missing(&old_lines, &new_lines, &gone_examples)
         let added tool.surface_missing(&new_lines, &old_lines, &added_examples)
+        ; A package this one declares, now in ANOTHER LINE, is a change of
+        ; what it declares: one build takes one line of a package, so whoever
+        ; uses this package beside that one must follow -- or is refused.
+        ; (A dependency added or dropped is none: nothing a user had is taken.)
+        var new_names Array[String]()
+        var new_versions Array[String]()
+        var new_sources Array[String]()
+        var new_root "packages/`name`/`next`/`name`.scaly"
+        Modeler.declared_packages(new_root, &new_names, &new_versions, &new_sources)
+        var d: size_t 0
+        while d < old_names.length
+        {
+            var e: size_t 0
+            while e < new_names.length
+            {
+                if old_names.at(d).equals(new_names.at(e)) and Modeler.version_compatible(old_versions.at(d), new_versions.at(e)) = false
+                {
+                    gone := gone + 1
+                    if gone_examples.length < 3
+                        gone_examples.add("package `old_names.at(d)` `old_versions.at(d)` -> `new_versions.at(e)`: another line of a package this one declares")
+                }
+                e := e + 1
+            }
+            d := d + 1
+        }
         let pm Modeler.version_part(prev, 0)
         let p1 Modeler.version_part(prev, 1)
         let nm Modeler.version_part(next, 0)

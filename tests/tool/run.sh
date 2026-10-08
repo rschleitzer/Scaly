@@ -90,7 +90,8 @@
 #              directory that is not the repository's root are said (rc 2);
 #              a package linked in out of another checkout is not asked. A
 #              package that declares one whose newer line is published is
-#              told so (a note; rc 0).
+#              told so (a note; rc 0), and a next version that moves a
+#              declared package to another line has changed what it declares.
 #              The version rule (tool.publish_compare#): below 1.0 a changed
 #              declaration takes the second number and anything else the
 #              third, from 1.0 on a changed one the first and an addition the
@@ -758,6 +759,13 @@ package demo 0.1.0 \"$pub/work.git\"|" packages/client/0.1.0/client.scaly && rm 
   ) > "$TMP/publish-client.log" 2>&1
   out=$( cd "$pub/client" && SCALY_HOME="$here" SCALY_PACKAGES="$pub/home/.scaly/packages" "$scaly_abs" publish --check 2>&1 ); rc=$?
   [ "$rc" = 0 ] && echo "$out" | grep -q '^note: client 0.1.0 declares demo 0.1.0; demo 0.2.0 is published, a newer line' && ok || bad "publish, a dependency's newer line: rc=$rc '$(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-220)'"
+  # ... and a next version that MOVES a declared package to another line has
+  # changed what it declares: its users' builds must follow
+  ( cd "$pub/client" && SCALY_HOME="$here" SCALY_PACKAGES="$pub/home/.scaly/packages" "$scaly_abs" publish ) > "$TMP/publish-client.out" 2>&1
+  cp -R "$pub/client/packages/client/0.1.0" "$pub/client/packages/client/0.1.1"
+  sed -i.bak 's/^package demo 0\.1\.0 /package demo 0.2.0 /' "$pub/client/packages/client/0.1.1/client.scaly"; rm -f "$pub/client/packages/client/0.1.1/client.scaly.bak"
+  out=$( cd "$pub/client" && SCALY_HOME="$here" SCALY_PACKAGES="$pub/home/.scaly/packages" "$scaly_abs" publish --check 2>&1 ); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'client 0.1.1 understates what it changed since 0.1.0; that takes 0.2.0 at least' && echo "$out" | grep -q 'package demo 0.1.0 -> 0.2.0: another line' && ok || bad "publish, a dependency moved to another line: rc=$rc '$(echo "$out" | tail -4 | tr '\n' '|' | cut -c1-260)'"
   out=$(pp --check "$pub/nowhere.git"); rc=$?
   [ "$rc" = 2 ] && echo "$out" | grep -q 'could not ask' && ok || bad "publish, no such remote: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
   out=$( ( cd "$pub/work/packages" && SCALY_HOME="$here" "$scaly_abs" publish --check ) 2>&1 ); rc=$?

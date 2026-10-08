@@ -521,13 +521,23 @@ CLASS="emphasis"
         initializer with its parameters and its result, every record with its
         fields, every union with its variants, every constant, global and
         alias. Bodies are not part of it, a generic routine's body
-        neither.</P
+        neither. A package it declares counts too, by its line: a version
+        that moves from <TT
+CLASS="literal"
+>json 0.1</TT
+> to
+        <TT
+CLASS="literal"
+>json 0.2</TT
+> has changed what it declares, because a
+        program that uses both packages must follow. Adding or dropping a
+        dependency changes nothing a user had.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2576"
+NAME="AEN2578"
 ></A
 ><TABLE
 BORDER="1"
