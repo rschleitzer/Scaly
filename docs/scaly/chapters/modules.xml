@@ -213,7 +213,10 @@ scaly publish</programlisting>
         and whether every new version's number says what it changed. A
         version that understates its change is refused with the declarations
         that are gone and the number it takes at least; a new version that
-        does not compile is refused too. It answers 0 when all is well, 1
+        does not compile is refused too. Where a new version declares a
+        package of which a newer line has been published meanwhile, it says
+        so in a note — the declaration is not wrong, but no build will take
+        the newer line until its author raises it. It answers 0 when all is well, 1
         when a rule is broken and 2 when it could not ask — no repository, or
         the remote out of reach. It belongs in the package's own test run, so
         a change to a published version is noticed before it is pushed and

@@ -88,7 +88,9 @@
 #              with it out of its commit, and a program that declares it
 #              still gets it from there. A remote that is not there and a
 #              directory that is not the repository's root are said (rc 2);
-#              a package linked in out of another checkout is not asked.
+#              a package linked in out of another checkout is not asked. A
+#              package that declares one whose newer line is published is
+#              told so (a note; rc 0).
 #              The version rule (tool.publish_compare#): below 1.0 a changed
 #              declaration takes the second number and anything else the
 #              third, from 1.0 on a changed one the first and an addition the
@@ -746,6 +748,16 @@ else
   out=$(pp --check); rc=$?
   [ "$rc" = 0 ] && ok || bad "publish, a linked package of another checkout: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-140)'"
   rm -f "$pub/work/packages/other"
+  # a package that declares one whose newer LINE is published is told so
+  # (demo 0.2.0 beside the declared 0.1.0), and is published all the same
+  ( cd "$pub" && SCALY_HOME="$here" "$scaly_abs" new client --lib && cd client \
+      && sed -i.bak "s|^package scaly 0.1.0\$|package scaly 0.1.0\\
+package demo 0.1.0 \"$pub/work.git\"|" packages/client/0.1.0/client.scaly && rm -f packages/client/0.1.0/client.scaly.bak \
+      && pg init -q && git config user.name t && git config user.email t@example.invalid \
+      && pg add -A && pg commit -q -m one && pg clone -q --bare . "$pub/client.git" && pg remote add origin "$pub/client.git"
+  ) > "$TMP/publish-client.log" 2>&1
+  out=$( cd "$pub/client" && SCALY_HOME="$here" SCALY_PACKAGES="$pub/home/.scaly/packages" "$scaly_abs" publish --check 2>&1 ); rc=$?
+  [ "$rc" = 0 ] && echo "$out" | grep -q '^note: client 0.1.0 declares demo 0.1.0; demo 0.2.0 is published, a newer line' && ok || bad "publish, a dependency's newer line: rc=$rc '$(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-220)'"
   out=$(pp --check "$pub/nowhere.git"); rc=$?
   [ "$rc" = 2 ] && echo "$out" | grep -q 'could not ask' && ok || bad "publish, no such remote: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
   out=$( ( cd "$pub/work/packages" && SCALY_HOME="$here" "$scaly_abs" publish --check ) 2>&1 ); rc=$?

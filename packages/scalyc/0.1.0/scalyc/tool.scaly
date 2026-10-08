@@ -1741,6 +1741,7 @@ define tool
                     understated := understated + 1
                     continue
                 }
+                tool.publish_notes(pe.name, ve.name, log, out)
                 fresh.add("`pe.name` `ve.name`")
             }
         }
@@ -1752,6 +1753,71 @@ define tool
         unlink(out.to_c_string())
         unlink(log.to_c_string())
         answer
+    }
+
+    ; The record of published versions (packages/<name>/published) a source
+    ; has at its head, "" where it has none or cannot be asked.
+    procedure source_record(source: String, name: String, mutable log: String, mutable out: String) returns String
+    {
+        if tool.source_is_safe(source) = false
+            return String()
+        var home "`Modeler.fetched_base()`/`Modeler.source_path(source)`"
+        var store "`home`/.git-store"
+        if tool.ensure_directory(home) = false
+            return String()
+        if Directory.is_directory(store) = false and tool.quiet("git init --quiet --bare \"`store`\"", log) = false
+            return String()
+        let url tool.source_url(source)
+        if tool.quiet("git -C \"`store`\" fetch --quiet --depth 1 \"`url`\" HEAD", log) = false
+            return String()
+        if system("git -C \"`store`\" show \"FETCH_HEAD:packages/`name`/published\" > \"`out`\" 2> \"`log`\"".to_c_string()) <> 0
+            return String()
+        File.read_to_string(out)
+    }
+
+    ; Said where someone can act on it: a package this new version declares
+    ; has a NEWER LINE published -- a version that does not stand in for the
+    ; declared one (Modeler.version_compatible#), so no build takes it by
+    ; itself and the declaration stays behind until its author raises it. A
+    ; note, never a refusal: not everyone can follow at once. (A newer version
+    ; WITHIN the line needs no word -- a build takes the highest one asked
+    ; for.) The cure for dependencies nobody raises; see ROADMAP-public.md.
+    procedure publish_notes(name: String, version: String, mutable log: String, mutable out: String)
+    {
+        var root "packages/`name`/`version`/`name`.scaly"
+        var names Array[String]()
+        var versions Array[String]()
+        var sources Array[String]()
+        Modeler.declared_packages(root, &names, &versions, &sources)
+        var i: size_t 0
+        while i < names.length
+        {
+            let dep names.at(i)
+            let asked versions.at(i)
+            let source sources.at(i)
+            i := i + 1
+            var record ""
+            if source.get_length() > 0
+                record := tool.source_record(source, dep, log, out)
+            else
+            {
+                var file "packages/`dep`/published"
+                if File.exists(file)
+                    record := File.read_to_string(file)
+            }
+            var listed Array[String]()
+            tool.published_versions(record, &listed)
+            var top ""
+            var k: size_t 0
+            while k < listed.length
+            {
+                if top.get_length() = 0 or Modeler.version_newer(listed.at(k), top)
+                    top := "`listed.at(k)`"
+                k := k + 1
+            }
+            if top.get_length() > 0 and Modeler.version_newer(top, asked) and Modeler.version_compatible(top, asked) = false
+                Console.println("note: `name` `version` declares `dep` `asked`; `dep` `top` is published, a newer line")
+        }
     }
 
     ; Is `path` a directory of THIS repository -- does it track a file under

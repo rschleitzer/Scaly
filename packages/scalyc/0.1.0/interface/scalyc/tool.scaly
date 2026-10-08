@@ -279,6 +279,19 @@ define tool
     ; asked (no repository, the remote not reached).
     procedure publish_run(remote: String, write: bool) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
+    ; The record of published versions (packages/<name>/published) a source
+    ; has at its head, "" where it has none or cannot be asked.
+    procedure source_record(source: String, name: String, mutable log: String, mutable out: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; Said where someone can act on it: a package this new version declares
+    ; has a NEWER LINE published -- a version that does not stand in for the
+    ; declared one (Modeler.version_compatible#), so no build takes it by
+    ; itself and the declaration stays behind until its author raises it. A
+    ; note, never a refusal: not everyone can follow at once. (A newer version
+    ; WITHIN the line needs no word -- a build takes the highest one asked
+    ; for.) The cure for dependencies nobody raises; see ROADMAP-public.md.
+    procedure publish_notes(name: String, version: String, mutable log: String, mutable out: String) @deep true io linked
+
     ; Is `path` a directory of THIS repository -- does it track a file under
     ; it? A package linked into packages/ out of another checkout (and
     ; ignored) is that checkout's to publish, and one nothing of which is
