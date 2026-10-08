@@ -5,9 +5,9 @@
 # scalyls) and what they need afterwards, and NONE of the compiler's sources:
 #   seed/                 the seven .ll roots (the compiler, the tool and the
 #                         language server as IR) and their SHA256SUMS
-#   packages/<p>/<v>/     the stdlib and the standard packages as SOURCES, each
-#                         with its generated interface/ — the tool compiles a
-#                         package into its build cache on first use, and the
+#   packages/<p>/<v>/     the stdlib and the standard packages as SOURCES — the
+#                         tool compiles a package into its build cache on
+#                         first use and writes its interface there, and the
 #                         stdlib's C and assembly files are the runtime shims
 #                         the installer compiles for the three links
 #   LICENSE, THIRD-PARTY-LICENSES.txt, VERSION
@@ -47,14 +47,6 @@ trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/seed"
 for f in $SEED_FILES; do cp "seed/$f.ll" "$STAGE/seed/"; done
 cp seed/SHA256SUMS "$STAGE/seed/"
-
-# The interfaces are a build product (./build.sh, tools/interfaces.sh) and
-# travel with the sources: what lies in the tree must be what this tree's
-# compiler writes from these sources, or every installation compiles against
-# packages that do not exist.
-tools/interfaces.sh --check > "$STAGE/interfaces.log" 2>&1 \
-  || { grep -v ' current$' "$STAGE/interfaces.log" | head -5; echo "make-dist: FAIL — the packages' interfaces are missing or stale: ./build.sh (or tools/interfaces.sh) first"; exit 1; }
-rm -f "$STAGE/interfaces.log"
 
 # Every version directory a package has: a program names the version it wants.
 for p in $PACKAGES; do

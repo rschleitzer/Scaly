@@ -176,13 +176,13 @@ fi
 fi
 echo "seed: linked clean -> $OUT/scalyc_seed, $OUT/scaly_seed"
 
-# The packages' interfaces are a build product (tools/interfaces.sh), and a
-# root that uses a library package comes out differently with and without
-# them -- scalyls reads the compiler PACKAGE through its interface (measured
-# 2026-10-08: scalyls.ll differed on a tree that had none). So the seed is
-# emitted with the interfaces THIS compiler writes, whatever lay in the tree:
-# before the roots, and not beside them, because the script replaces each
-# directory.
+# A root that uses a library package comes out differently with and without
+# the package's interface -- scalyls reads the compiler PACKAGE through its
+# (measured 2026-10-08: scalyls.ll differed on a machine that had none). The
+# interfaces lie in the cache, keyed by the compiler that wrote them, so they
+# are written here with the compiler just linked, before the roots; and the
+# scalyls roots are emitted with SCALY_REQUIRE_INTERFACES, which makes a
+# package without one an error instead of another seed.
 tools/interfaces.sh "$OUT/scalyc_seed" > "$OUT/interfaces.log" 2>&1 || { tail -5 "$OUT/interfaces.log"; fail "the packages' interfaces"; }
 rm -f "$OUT/interfaces.log"
 
@@ -205,7 +205,7 @@ echo "seed: hello.scaly, AOT corpus, fixed-point re-emission, scalyls roots"
   [ "${PIPESTATUS[0]}" = "0" ] || { echo "AOT corpus"; exit 1; }
 ) > "$OUT/aot.log" 2>&1 & aot_pid=$!
 emit_roots "$OUT/scalyc_seed" r_main=$C/main.scaly r_scaly_main=$C/scaly_main.scaly r_scalyc=$C/scalyc.scaly r_scaly=packages/scaly/0.1.0/scaly.scaly & reemit_pid=$!
-emit_roots "$OUT/scalyc_seed" scalyls_main=$L/main.scaly scalyls=$L/scalyls.scaly json=packages/json/0.1.0/json.scaly & ls_pid=$!
+SCALY_REQUIRE_INTERFACES=1 emit_roots "$OUT/scalyc_seed" scalyls_main=$L/main.scaly scalyls=$L/scalyls.scaly json=packages/json/0.1.0/json.scaly & ls_pid=$!
 wait $aot_pid; aot_rc=$?
 cat "$OUT/aot.log"; rm -f "$OUT/aot.log"
 [ $aot_rc = 0 ] || fail "hello / AOT corpus"

@@ -490,7 +490,7 @@ define cli
         Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
         Console.println("  --write-report  Report every write through a parameter, off the Plan")
         Console.println("  --purity-check  Report every function that writes what its parameters reach")
-        Console.println("  --emit-interface  Write the package's interface to <dir>/interface, or to -o <dir>")
+        Console.println("  --emit-interface  Write the package's interface into the cache, or to -o <dir>")
         Console.println("  --emit-surface    Write the package's declarations alone (what scaly publish compares) to -o <dir>")
         Console.println "  --run <fn>     JIT-compile and run <fn> in-process"
         Console.println "  --jit          JIT-compile and run the whole program"
@@ -1141,11 +1141,11 @@ define cli
                 ; interface there too, and is compiled on
                 if opts.interface_dir.get_length() > 0
                 {
-                    if cli.emit_interface(opts.input_file, opts.interface_dir, true, false, &planner, &model, &purity_gate) <> 0
+                    if cli.emit_interface(opts.input_file, opts.interface_dir, true, false, true, opts.selected_versions, &planner, &model, &purity_gate) <> 0
                         return 1
                 }
                 if opts.emit_interface
-                    return cli.emit_interface(opts.input_file, opts.output_file, opts.emit_surface, opts.emit_surface, &planner, &model, &purity_gate)
+                    return cli.emit_interface(opts.input_file, opts.output_file, opts.emit_surface, opts.emit_surface, false, opts.selected_versions, &planner, &model, &purity_gate)
             }
         }
 
@@ -2362,8 +2362,8 @@ define cli
     }
 
     ; --emit-interface: the package's interface (compiler/Interface.scaly),
-    ; written to <root dir>/interface or to the directory -o names.
-    procedure emit_interface(root: String, output: String, quiet: bool, surface: bool, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) returns int
+    ; written into the cache or to the directory -o names.
+    procedure emit_interface(root: String, output: String, quiet: bool, surface: bool, origin: bool, selection: String, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) returns int mutable modeler_error_count
     {
         var facts Array[InterfaceFact]()
         planner.interface_facts(model.module_, &facts)
@@ -2371,12 +2371,43 @@ define cli
         var root_path root
         let pkg_dir Path.get_directory_name(root_path)
         var out_dir output
+        ; Without a place named: into the cache, where every reader looks
+        ; (Modeler.interface_home#) -- written beside its place and moved
+        ; there whole, so a reader never meets half of one.
+        var home ""
+        var staged ""
         if out_dir.get_length() = 0
-            out_dir := "`pkg_dir`/interface"
+        {
+            let name cli.extract_program_name(root)
+            var selected String(selection)
+            if selected.get_length() = 0
+                selected := Modeler.select_versions(root_path, false)
+            home := Modeler.interface_home(pkg_dir, name, Modeler.dependency_text(root_path, selected))
+            var there "`home`/interface/`name`.scaly"
+            if File.exists(there)
+            {
+                if quiet = false
+                    Console.println "interface: current -> `home`"
+                return 0
+            }
+            staged := "`home`.`getpid() as int`.tmp"
+            out_dir := "`staged`/interface"
+        }
         let writer Interface(pkg_dir, out_dir, surface)
         let n writer.write(root, &facts)
         if n < 0
             return 1
+        ; which package directory its files stand for (Modeler.interface_source_file#)
+        if origin or staged.get_length() > 0
+        {
+            var origin_file "`out_dir`/origin"
+            File.write_from_string(origin_file, Modeler.canonical_dir(pkg_dir))
+        }
+        if staged.get_length() > 0
+        {
+            tool.publish(staged, home)
+            out_dir := "`home`/interface"
+        }
         if quiet = false
             Console.println "interface: `n` files -> `out_dir`"
         0

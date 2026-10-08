@@ -26,6 +26,13 @@ use scalyc.compiler.Model.*
 ; globals are rejected inside a namespace body).
 mutable modeler_error_count: size_t 0
 
+; the compiler's own identity: the Emitter sets it to the hash of this
+; package's IR when it compiles the compiler (emit_package_stamp#); a compiler
+; that does not know the rule leaves it 0, which keys a cache of its own
+shared scaly_package_stamp: u64 0
+procedure getcwd(mutable buffer: pointer[char], size: size_t) returns pointer[char] extern
+procedure setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
+
 
 define Modeler
 {
@@ -2830,18 +2837,14 @@ define Modeler
     ; tools/interfaces.sh) is loaded through it: every declaration a caller
     ; needs, generic bodies included, while the other bodies are in the
     ; package's archive -- what AOT compilation used from the sources anyway.
-    ; A package without one beside it -- a fetched one, a project's own --
-    ; has its interface in the tool's cache (cached_pair#), and that one
-    ; comes first.
-    procedure interface_or_source(pkg_path: String, pkg_name: String) returns String
+    ; AN INTERFACE LIVES IN THE CACHE (cached_interface#), whoever wrote it;
+    ; one that lies beside the sources is what a package committed before
+    ; 2026-10-08 and is taken second.
+    procedure interface_or_source(pkg_path: String, pkg_name: String, deps: String) returns String
     {
-        let cached cached_pair(pkg_path, true)
+        let cached cached_interface(pkg_path, pkg_name, deps)
         if cached.get_length() > 0
-        {
-            var cached_root "`cached`/interface/`pkg_name`.scaly"
-            if File.exists(cached_root)
-                return "`cached`/interface"
-        }
+            return cached
         let iface_dir "`pkg_path`/interface"
         var root_path "`iface_dir`/`pkg_name`.scaly"
         if File.exists(root_path)
@@ -2849,19 +2852,126 @@ define Modeler
         pkg_path
     }
 
-    ; THE TOOL'S GENERATED INTERFACES. Before it compiles a program the tool
-    ; writes the interface of every package that has none beside its sources
-    ; into its cache (tool.prepare_interfaces#) and says where in
-    ; SCALY_PACKAGE_INTERFACES: lines in threes -- a package's directory, the
-    ; cache directory that holds its `interface/` (`-` while it has none
-    ; yet), and a number of the tool's own (the sum over the package's files,
-    ; tool.files_sum#). The compiler only reads the variable -- it does not
-    ; know the cache. `forward`: the cache directory of a package directory;
-    ; else the package directory of a cache directory. "" where the variable
-    ; names none.
-    procedure cached_pair(key: String, forward: bool) returns String
+    ; ---- the cache ----------------------------------------------------------
+    ; A package is compiled once and afterwards read through its INTERFACE
+    ; and linked. Objects and interfaces lie in one cache, $SCALY_CACHE or
+    ; ~/.scaly/cache, each under a key over everything that went into it, so
+    ; nothing there can be stale: the compiling compiler
+    ; (scaly_package_stamp), every file of the package, and the selected
+    ; versions of what the package declares. The compiler READS interfaces
+    ; from there (this file) and writes one when asked (`--emit-interface`
+    ; without -o; the tool asks with every package it compiles,
+    ; tool.interface_wanted#); the objects are the tool's. No interface lies
+    ; in a source tree.
+
+    ; where compiled packages are kept: $SCALY_CACHE, else ~/.scaly/cache
+    ; (%USERPROFILE% where there is no HOME)
+    procedure cache_root() returns String
     {
-        let env getenv "SCALY_PACKAGE_INTERFACES"
+        let own getenv "SCALY_CACHE"
+        if own <> null
+        {
+            let s String(own)
+            if s.get_length() > 0
+                return String(own)
+        }
+        var home getenv "HOME"
+        if home = null
+            home := getenv("USERPROFILE")
+        if home = null
+            return String(".scaly-cache")
+        let h String(home)
+        "`h`/.scaly/cache"
+    }
+
+    ; every file of a package, relative to its directory: the tree without
+    ; `interface/` (what a package committed before interfaces moved here)
+    ; and without a name that starts with `_` or `.` -- no module can be
+    ; named so, and tscaly's `_submodules` holds another project's tree
+    procedure package_files(mutable dir: String, prefix: String, mutable files: ref[Array[String]])
+    {
+        let entries Directory.list(dir)
+        var i: size_t 0
+        while i < entries.length
+        {
+            let e entries.at i
+            i := i + 1
+            let c e.name.get(0)
+            if c = 95 or c = 46
+                continue
+            if e.is_directory
+            {
+                if prefix.get_length() = 0 and e.name.equals("interface")
+                    continue
+                package_files("`dir`/`e.name`", "`prefix``e.name`/", files)
+            }
+            else
+                files.add("`prefix``e.name`")
+        }
+    }
+
+    function fnv_string(h: u64, s: String) returns u64
+    {
+        var r h
+        let n s.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            r := (r xor (s.get(i) as u64)) * 0x100000001b3
+            i := i + 1
+        }
+        r
+    }
+
+    ; A file's text into a hash, eight bytes at a step: every compile and every
+    ; request of a language server sums megabytes of package sources for the
+    ; keys, and byte by byte that was a third of the LSP suite's time
+    ; (2026-10-08). The length goes in, so a file of zero bytes counts.
+    function hash_text(h: u64, s: String) returns u64
+    {
+        var r (h xor (s.get_length() as u64)) * 0x100000001b3
+        let n s.get_length()
+        let words s.c_data() as pointer[u64]
+        let whole n / 8
+        var w: size_t 0
+        while w < whole
+        {
+            r := (r xor *(words + w)) * 0x100000001b3
+            r := r xor (r >> 29)
+            w := w + 1
+        }
+        var i whole * 8
+        while i < n
+        {
+            r := (r xor (s.get(i) as u64)) * 0x100000001b3
+            i := i + 1
+        }
+        r
+    }
+
+    function hex16(k: u64) returns String
+    {
+        var sb StringBuilder()
+        var i: u64 0
+        while i < 16
+        {
+            let d (k >> ((15 - i) * 4)) & 15
+            if d < 10
+                sb.append((48 + d) as char)
+            else
+                sb.append((87 + d) as char)
+            i := i + 1
+        }
+        sb.to_string()
+    }
+
+    ; A small table this process keeps for itself in an environment variable:
+    ; lines in pairs, a key and its value. (The loader has no state to put it
+    ; in, and a global would have to be named in the signature of every
+    ; routine above it; a program started from here inherits it, harmlessly.)
+    procedure table_value(variable: String, key: String) returns String
+    {
+        let env getenv(variable.to_c_string())
         if env = null
             return String()
         let text String(env)
@@ -2869,35 +2979,219 @@ define Modeler
         var from: size_t 0
         var at: size_t 0
         var line: size_t 0
-        var first_from: size_t 0
-        var first_len: size_t 0
+        var mine false
         while at <= n
         {
             if at = n or text.get(at) = 10
             {
-                if line % 3 = 0
-                {
-                    first_from := from
-                    first_len := at - from
-                }
-                else if line % 3 = 1
-                {
-                    let a text.substring(first_from, first_len)
-                    let b text.substring(from, at - from)
-                    if b.equals("-") = false
-                    {
-                        if forward and a.equals(key)
-                            return "`b`"
-                        if forward = false and b.equals(key)
-                            return "`a`"
-                    }
-                }
+                if line % 2 = 0
+                    mine := text.substring(from, at - from).equals(key)
+                else if mine
+                    return text.substring(from, at - from)
                 line := line + 1
                 from := at + 1
             }
             at := at + 1
         }
         String()
+    }
+
+    procedure table_add(variable: String, key: String, value: String)
+    {
+        var text ""
+        let env getenv(variable.to_c_string())
+        if env <> null
+            text := String(env)
+        setenv(variable.to_c_string(), "`text``key`\n`value`\n".to_c_string(), 1)
+    }
+
+    ; the sum of a package directory computed before in this process -- by
+    ; the tool for every package of a build, or by files_sum# itself
+    ; (SCALY_PACKAGE_SUMS), "" without
+    procedure known_sum(dir: String) returns String
+        table_value(String("SCALY_PACKAGE_SUMS"), dir)
+
+    ; Every file of a package with its path, summed -- so the order the file
+    ; system lists them in does not matter. Reading them is most of what a
+    ; build that compiles nothing costs; the tool does it once per package
+    ; and command and leaves the number where known_sum# finds it.
+    procedure files_sum(mutable dir: String, files: ref[Array[String]]) returns u64
+    {
+        let known known_sum(dir)
+        if known.get_length() = 16
+        {
+            var value: u64 0
+            var k: size_t 0
+            while k < 16
+            {
+                let c known.get(k) as u64
+                if c >= 97
+                    value := (value << 4) + (c - 87)
+                else
+                    value := (value << 4) + (c - 48)
+                k := k + 1
+            }
+            return value
+        }
+        var sum: u64 0
+        var i: size_t 0
+        while i < files.length
+        {
+            let f files.at i
+            let content File.read_to_string("`dir`/`f`")
+            var fh fnv_string(0xcbf29ce484222325, f)
+            fh := hash_text(fh * 0x100000001b3, content)
+            sum := sum + fh
+            i := i + 1
+        }
+        ; once per process: a language server asks with every request
+        table_add(String("SCALY_PACKAGE_SUMS"), dir, hex16(sum))
+        sum
+    }
+
+    ; The versions the packages a root declares are taken in, as ` name=version`
+    ; each: part of that package's keys. `selection` holds lines `name version`.
+    procedure dependency_text(mutable root: String, selection: String) returns String
+    {
+        var names Array[String]()
+        var versions Array[String]()
+        var sources Array[String]()
+        declared_packages(root, &names, &versions, &sources)
+        var sb StringBuilder()
+        var i: size_t 0
+        while i < names.length
+        {
+            let name names.at i
+            var version selected_version(selection, name)
+            if version.get_length() = 0
+                version := String(versions.at(i))
+            sb.append " `name`=`version`"
+            i := i + 1
+        }
+        sb.to_string()
+    }
+
+    ; the same out of the loader's list, where the selection stands as
+    ; entries `=name version`
+    procedure dependency_text_loaded(mutable root: String, loaded: ref[Array[String]]) returns String
+    {
+        var selection StringBuilder()
+        var i: size_t 0
+        while i < loaded.length
+        {
+            let entry loaded.at i
+            i := i + 1
+            if entry.get_length() > 1 and entry.get(0) = 61
+            {
+                selection.append(entry.substring(1, entry.get_length() - 1))
+                selection.append("\n" as char)
+            }
+        }
+        dependency_text(root, selection.to_string())
+    }
+
+    ; A directory as one spelling: made absolute against the working
+    ; directory, `.` and `..` resolved, one `/` between its parts. The key of
+    ; an interface holds its package's directory (below), and the one who
+    ; writes it and the one who reads it name that directory differently --
+    ; a root file on a command line, SCALY_HOME plus a path.
+    procedure canonical_dir(path: String) returns String
+    {
+        var full "`path`"
+        let n0 path.get_length()
+        var absolute n0 > 0 and (path.get(0) = 47 or path.get(0) = 92)
+        if n0 > 2 and path.get(1) = 58
+            absolute := true
+        if absolute = false
+        {
+            var buffer char[4096]
+            if getcwd(&buffer[0] as pointer[char], 4096) <> null
+            {
+                let cwd String(&buffer[0] as pointer[const_char])
+                full := "`cwd`/`path`"
+            }
+        }
+        var parts Array[String]()
+        var depth: size_t 0
+        let n full.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        while at <= n
+        {
+            if at = n or full.get(at) = 47 or full.get(at) = 92
+            {
+                if at > from
+                {
+                    let part full.substring(from, at - from)
+                    if part.equals("..")
+                    {
+                        if depth > 0
+                            depth := depth - 1
+                    }
+                    else if part.equals(".") = false
+                    {
+                        if depth < parts.length
+                            parts.put(depth, "`part`")
+                        else
+                            parts.add("`part`")
+                        depth := depth + 1
+                    }
+                }
+                from := at + 1
+            }
+            at := at + 1
+        }
+        var sb StringBuilder()
+        let rooted n > 0 and (full.get(0) = 47 or full.get(0) = 92)
+        var k: size_t 0
+        while k < depth
+        {
+            if k > 0 or rooted
+                sb.append("/" as char)
+            sb.append(parts.at(k))
+            k := k + 1
+        }
+        sb.to_string()
+    }
+
+    ; Where the interface of a package in that state lies in the cache:
+    ; <cache>/<name>-<version>-<key>.iface, its files under `interface/` there
+    ; and the package's directory in `interface/origin`. The directory is
+    ; part of the key: an interface file stands for a source file
+    ; (interface_source_file#), so two copies of one package have two.
+    procedure interface_home(pkg_path: String, name: String, deps: String) returns String
+    {
+        var dir canonical_dir(pkg_path)
+        var files Array[String]()
+        var listed String(pkg_path)
+        package_files(listed, "", &files)
+        let sum files_sum(listed, &files)
+        var h: u64 0xcbf29ce484222325
+        h := (h xor scaly_package_stamp) * 0x100000001b3
+        h := fnv_string(h, dir)
+        h := fnv_string(h, "interface`deps`")
+        let key (h xor sum) * 0x100000001b3
+        let slash dir.last_index_of(47)
+        var version String("0")
+        if slash >= 0
+            version := dir.substring((slash + 1) as size_t, dir.get_length() - ((slash + 1) as size_t))
+        "`cache_root()`/`name`-`version`-`hex16(key)`.iface"
+    }
+
+    ; the directory to read that package's interface from, "" when the cache
+    ; has none
+    procedure cached_interface(pkg_path: String, name: String, deps: String) returns String
+    {
+        let home interface_home(pkg_path, name, deps)
+        var root "`home`/interface/`name`.scaly"
+        if File.exists(root) = false
+            return String()
+        ; its files stand for the sources under `pkg_path` AS THIS PROCESS
+        ; SPELLS IT (interface_source_file#): a location names the path the
+        ; program was given, not the one the writer of the interface had
+        if table_value(String("SCALY_INTERFACE_ORIGINS"), home).get_length() = 0
+            table_add(String("SCALY_INTERFACE_ORIGINS"), home, pkg_path)
+        "`home`/interface"
     }
 
     ; has_package_root#: does `dir` hold the package `pkg_name` -- its root
@@ -3265,10 +3559,7 @@ define Modeler
             if seen
                 continue
             let dir package_directory(name, version, source)
-            var root_dir String(dir)
-            if source.get_length() = 0 or dir.starts_with(fetched_base()) = false
-                root_dir := interface_or_source(dir, name)
-            var root "`root_dir`/`name`.scaly"
+            var root "`dir`/`name`.scaly"
             declared_packages(root, &names, &versions, &sources)
             while askers.length < names.length
             {
@@ -3474,15 +3765,22 @@ define Modeler
         ; committed is not trusted (the tool generates one in the cache)
         var root_dir String(pkg_path)
         let fetched source_str.get_length() > 0 and pkg_path.starts_with(fetched_base())
+        var source_root "`pkg_path`/`pkg_name`.scaly"
+        let deps dependency_text_loaded(source_root, versions)
         if fetched = false
-            root_dir := interface_or_source(pkg_path, pkg_name)
+            root_dir := interface_or_source(pkg_path, pkg_name, deps)
         else
         {
-            ; ... and that one is what a fetched package is read through
-            let cached cached_pair(pkg_path, true)
+            ; ... but the one in the cache, written here from these sources
+            let cached cached_interface(pkg_path, pkg_name, deps)
             if cached.get_length() > 0
-                root_dir := "`cached`/interface"
+                root_dir := "`cached`"
         }
+        ; SCALY_REQUIRE_INTERFACES: a root that uses a library package comes
+        ; out differently with and without the package's interface, and the
+        ; seed must not depend on what a cache happens to hold (tools/seed.sh)
+        if getenv("SCALY_REQUIRE_INTERFACES") <> null and root_dir.equals(pkg_path) and File.exists(source_root)
+            report_load_error("error: package `pkg_name` `version_str` has no interface in the cache `cache_root()` and SCALY_REQUIRE_INTERFACES is set - tools/interfaces.sh writes them")
         load_package_dependencies("`root_dir`/`pkg_name`.scaly", packages, versions)
 
         let loaded build_referenced_module(root_dir, pkg_name, false)
@@ -3753,8 +4051,9 @@ define Modeler
 
     ; `<dir>/interface/<rest>` -> `<dir>/<rest>` for a file of a generated
     ; package interface; "" for any other path
-    ; (an interface in the tool's cache stands for the package directory the
-    ; tool named for it, cached_pair#)
+    ; (an interface in the cache stands for the package directory the loader
+    ; found it for, cached_interface#; its `origin` file names that directory
+    ; for whoever opens it without the loader)
     procedure interface_source_file(path: String) returns String
     {
         let at interface_dir_at(path)
@@ -3762,9 +4061,12 @@ define Modeler
             return String()
         let i at as size_t
         let n path.get_length()
-        let origin cached_pair(path.substring(0, i), false)
-        if origin.get_length() > 0
-            return "`origin``path.substring(i + 10, n - i - 10)`"
+        let spelled table_value(String("SCALY_INTERFACE_ORIGINS"), path.substring(0, i))
+        if spelled.get_length() > 0
+            return "`spelled``path.substring(i + 10, n - i - 10)`"
+        var origin_file "`path.substring(0, i)`/interface/origin"
+        if File.exists(origin_file)
+            return "`File.read_to_string(origin_file)``path.substring(i + 10, n - i - 10)`"
         "`path.substring(0, i)``path.substring(i + 10, n - i - 10)`"
     }
 
@@ -4015,7 +4317,7 @@ define Modeler
             if has_scaly = false
             {
                 let std_path "`scaly_home_base()`packages/scaly/0.1.0"
-                let std_module build_referenced_module(interface_or_source(std_path, String("scaly")), "scaly", false)
+                let std_module build_referenced_module(interface_or_source(std_path, String("scaly"), String()), "scaly", false)
                 if std_module.members.length > 0
                     packages.add std_module
             }

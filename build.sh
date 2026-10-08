@@ -18,7 +18,7 @@ if [ -f ./mkp ]; then
 fi
 
 tools/build-from-seed.sh scalyc/build/scalyc
-# the packages' interfaces are a build product of the compiler just built
+# the packages' interfaces, into the cache, with the compiler just built
 tools/interfaces.sh scalyc/build/scalyc
 
 if [ "$1" = "test" ]; then

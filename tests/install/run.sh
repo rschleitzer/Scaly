@@ -71,7 +71,7 @@ if "$ROOT/tools/make-dist.sh" 0.1.0 "$TMP/base/downloads" > "$TMP/dist.log" 2>&1
   for f in seed/main.ll seed/scaly_main.ll seed/scalyc.ll seed/scaly.ll seed/scalyls.ll seed/scalyls_main.ll \
            seed/json.ll seed/SHA256SUMS packages/scaly/0.1.0/scaly.scaly packages/http/0.1.0/http.scaly \
            packages/https/0.1.0/https.scaly packages/tls/0.1.0/tls.scaly packages/json/0.1.0/json.scaly \
-           packages/http/0.1.0/interface/ LICENSE VERSION; do
+           LICENSE VERSION; do
     grep -q "^\./$f" "$TMP/payload.txt" || missing="$missing $f"
   done
   [ "$private" = 0 ] && [ -z "$missing" ] && ok || bad "payload: $private entries that must not ship; missing:$missing"

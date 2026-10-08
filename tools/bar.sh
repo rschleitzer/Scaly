@@ -116,7 +116,7 @@ phase1() {
   if grep -q 'Emitter:' "$LOG/bootstrap.log"; then echo "bootstrap: Emitter abort in the log"; return 1; fi
   step seed seed_refresh || return 1
   step build tools/build-from-seed.sh scalyc/build/scalyc || return 1
-  # the packages' interfaces: a build product of that compiler, read by every lane
+  # the packages' interfaces, into the cache, with that compiler: every lane reads them
   step interfaces tools/interfaces.sh scalyc/build/scalyc || return 1
 }
 
