@@ -335,7 +335,22 @@ define Modeler
     ; tools/interfaces.sh) is loaded through it: every declaration a caller
     ; needs, generic bodies included, while the other bodies are in the
     ; package's archive -- what AOT compilation used from the sources anyway.
+    ; A package without one beside it -- a fetched one, a project's own --
+    ; has its interface in the tool's cache (cached_pair#), and that one
+    ; comes first.
     procedure interface_or_source(pkg_path: String, pkg_name: String) @page true @direct true @deep true returns String io linked
+
+    ; THE TOOL'S GENERATED INTERFACES. Before it compiles a program the tool
+    ; writes the interface of every package that has none beside its sources
+    ; into its cache (tool.prepare_interfaces#) and says where in
+    ; SCALY_PACKAGE_INTERFACES: lines in threes -- a package's directory, the
+    ; cache directory that holds its `interface/` (`-` while it has none
+    ; yet), and a number of the tool's own (the sum over the package's files,
+    ; tool.files_sum#). The compiler only reads the variable -- it does not
+    ; know the cache. `forward`: the cache directory of a package directory;
+    ; else the package directory of a cache directory. "" where the variable
+    ; names none.
+    procedure cached_pair(key: String, forward: bool) @page true @direct true @deep true returns String io linked
 
     ; has_package_root#: does `dir` hold the package `pkg_name` -- its root
     ; file, or the generated interface that stands for it?
@@ -486,7 +501,9 @@ define Modeler
 
     ; `<dir>/interface/<rest>` -> `<dir>/<rest>` for a file of a generated
     ; package interface; "" for any other path
-    function interface_source_file(path: String) @page true @direct true @ret_caller true @deep true returns String linked
+    ; (an interface in the tool's cache stands for the package directory the
+    ; tool named for it, cached_pair#)
+    procedure interface_source_file(path: String) @page true @direct true @deep true returns String io linked
 
     ; The position pairs of an interface file: its section of the package's
     ; `<dir>/interface/positions` -- the line `<rest>`, then one line

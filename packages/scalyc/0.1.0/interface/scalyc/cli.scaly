@@ -80,6 +80,7 @@ define Options
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
     purity_check: bool      ; --purity-check: a function may not write what its parameters reach
     emit_interface: bool    ; --emit-interface: write the package's interface (compiler/Interface.scaly)
+    interface_dir: String   ; a package compiled into the tool's cache: write its interface here on the way (tool.interface_wanted#)
     emit_surface: bool      ; --emit-surface: ... its declarations alone, for `scaly publish` (with emit_interface)
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
@@ -333,7 +334,7 @@ define cli
 
     ; --emit-interface: the package's interface (compiler/Interface.scaly),
     ; written to <root dir>/interface or to the directory -o names.
-    procedure emit_interface(root: String, output: String, surface: bool, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) @ret_nonlocal true @deep true returns int io linked
+    procedure emit_interface(root: String, output: String, quiet: bool, surface: bool, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) @ret_nonlocal true @deep true returns int io linked
 
     ; Decimal formatting for diagnostics. Local mirror of
     ; Planner.size_to_string to avoid cross-namespace call resolution

@@ -36,6 +36,7 @@ use scalyc.compiler.Syntax.*
 ; that does not know the rule leaves it 0, which keys a cache of its own
 shared scaly_package_stamp: u64 linked
 function getpid() returns i32 extern
+procedure setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
 function system(command: pointer[const_char]) returns i32 extern
 function rename(old_path: pointer[const_char], new_path: pointer[const_char]) returns i32 extern
 function LLVMGetDefaultTargetTriple() returns pointer[char] extern
@@ -71,6 +72,15 @@ define tool
     ; flavour, and every file with its path -- summed, so the order the file
     ; system lists them in does not matter
     procedure package_key(mutable dir: String, files: ref[Array[String]], triple: String, flavour: String) @ret_nonlocal true @deep true returns u64 io reads scaly_package_stamp linked
+
+    ; Every file of a package with its path, summed. Reading them is most of
+    ; what a build that compiles nothing costs, so it is done once per
+    ; package and command: prepare_interfaces# leaves the number in
+    ; SCALY_PACKAGE_INTERFACES, and whoever asks afterwards takes it from there.
+    procedure files_sum(mutable dir: String, files: ref[Array[String]]) @ret_nonlocal true @deep true returns u64 io linked
+
+    ; the third line of a package directory's entry in SCALY_PACKAGE_INTERFACES, "" without
+    procedure known_sum(dir: String) @page true @direct true @ret_caller true @deep true returns String io linked
 
     function hex16(k: u64) @page true @direct true @ret_caller true @deep true returns String linked
 
@@ -234,6 +244,43 @@ define tool
     ; compiler itself never reaches the network (Modeler.package_directory#
     ; only looks). False when a fetch failed.
     procedure fetch_declared(mutable root_file: String, mutable seen: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_2 true returns bool io linked
+
+    ; ---- generated interfaces in the cache -----------------------------------
+    ; A package is compiled once and afterwards only READ THROUGH ITS
+    ; INTERFACE and linked: its declarations, the generic bodies, and the
+    ; facts a caller needs (compiler/Interface.scaly). The packages of the
+    ; installation bring theirs; for every other package a program reaches --
+    ; a fetched one, the project's own -- the tool writes it into the cache
+    ; when it compiles the package (package_objects#), once per state of the
+    ; package: the key is the object's kind (package_key#: the compiling
+    ; compiler, every file, the selected versions of what it declares). The compiler learns where
+    ; through SCALY_PACKAGE_INTERFACES (Modeler.cached_pair#). An interface
+    ; its author committed beside a FETCHED package is not trusted; one beside
+    ; a project's own package is taken as before.
+
+    ; The packages `root_file` reaches, each once, what a package declares
+    ; before the package itself: name, selected version and directory.
+    procedure collect_packages(mutable root_file: String, selection: String, mutable seen: ref[Array[String]], mutable names: ref[Array[String]], mutable versions: ref[Array[String]], mutable dirs: ref[Array[String]]) @page true @direct true @stores true @deep true io linked
+
+    ; Does the package at `dir` take its interface out of the cache? Not the
+    ; standard library, and not a package that brings one beside its sources
+    ; -- unless it was fetched: what a stranger committed is not trusted.
+    procedure interface_in_cache(name: String, dir: String) @ret_nonlocal true @deep true returns bool io linked
+
+    ; where the interface of that state of a package lies in the cache
+    procedure interface_home(name: String, version: String, mutable dir: String, files: ref[Array[String]], mutable root: String, selection: String) @page true @direct true @ret_caller true @deep true returns String io reads scaly_package_stamp linked
+
+    ; "" when the package compiled now has its interface already (or takes
+    ; none out of the cache); else where it is to go
+    procedure interface_wanted(name: String, version: String, mutable dir: String, files: ref[Array[String]], mutable root: String, selection: String) @page true @direct true @ret_caller true @deep true returns String io reads scaly_package_stamp linked
+
+    ; Before a program is compiled: tell the compiler which of the packages
+    ; it reaches have their interface in the cache, and remember each
+    ; package's sum for the keys asked later (files_sum#). Nothing is compiled
+    ; here -- an interface is written when its package is (package_objects#),
+    ; so the first build of a package reads it from its sources and every
+    ; later one through the interface.
+    procedure prepare_interfaces(mutable root_file: String) @ret_nonlocal true @deep true io mutable modeler_error_count reads modeler_error_count linked
 
     ; ---- scaly publish (stage E) --------------------------------------------
     ; where the tool keeps a file for the length of one command

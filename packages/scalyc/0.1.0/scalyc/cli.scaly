@@ -80,6 +80,7 @@ define Options
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
     purity_check: bool      ; --purity-check: a function may not write what its parameters reach
     emit_interface: bool    ; --emit-interface: write the package's interface (compiler/Interface.scaly)
+    interface_dir: String   ; a package compiled into the tool's cache: write its interface here on the way (tool.interface_wanted#)
     emit_surface: bool      ; --emit-surface: ... its declarations alone, for `scaly publish` (with emit_interface)
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
@@ -132,6 +133,7 @@ define Options
         purity_check := false
         emit_interface := false
         emit_surface := false
+        interface_dir := String()
         debug := false
         run_mode := false
         run_function := String()
@@ -1034,7 +1036,7 @@ define cli
         var planner Planner.Planner(opts.input_file)
         if opts.host_report
             planner.host_report := true
-        if opts.emit_interface
+        if opts.emit_interface or opts.interface_dir.get_length() > 0
             planner.gate.deep_facts := true
         if opts.use_vis
             planner.use_vis_measure := true
@@ -1135,8 +1137,15 @@ define cli
                 }
                 purity_gate.mark_stub_purity(plan)
                 planner.phase_mark("E1-purity-gate")
+                ; a package on its way into the tool's cache leaves its
+                ; interface there too, and is compiled on
+                if opts.interface_dir.get_length() > 0
+                {
+                    if cli.emit_interface(opts.input_file, opts.interface_dir, true, false, &planner, &model, &purity_gate) <> 0
+                        return 1
+                }
                 if opts.emit_interface
-                    return cli.emit_interface(opts.input_file, opts.output_file, opts.emit_surface, &planner, &model, &purity_gate)
+                    return cli.emit_interface(opts.input_file, opts.output_file, opts.emit_surface, opts.emit_surface, &planner, &model, &purity_gate)
             }
         }
 
@@ -2354,7 +2363,7 @@ define cli
 
     ; --emit-interface: the package's interface (compiler/Interface.scaly),
     ; written to <root dir>/interface or to the directory -o names.
-    procedure emit_interface(root: String, output: String, surface: bool, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) returns int
+    procedure emit_interface(root: String, output: String, quiet: bool, surface: bool, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) returns int
     {
         var facts Array[InterfaceFact]()
         planner.interface_facts(model.module_, &facts)
@@ -2368,7 +2377,7 @@ define cli
         let n writer.write(root, &facts)
         if n < 0
             return 1
-        if surface = false
+        if quiet = false
             Console.println "interface: `n` files -> `out_dir`"
         0
     }
@@ -2548,6 +2557,7 @@ define cli
             var run_seen Array[String]()
             if tool.fetch_declared(String(*(argv + 2)), &run_seen) = false
                 return 1
+            tool.prepare_interfaces(String(*(argv + 2)))
             var run_opts Options()
             run_opts.input_file := String(*(argv + 2))
             run_opts.jit_program := true
@@ -2566,6 +2576,7 @@ define cli
             var test_seen Array[String]()
             if tool.fetch_declared(String(*(argv + 2)), &test_seen) = false
                 return 1
+            tool.prepare_interfaces(String(*(argv + 2)))
             var test_opts Options()
             test_opts.input_file := String(*(argv + 2))
             test_opts.test_mode := true
@@ -2580,6 +2591,8 @@ define cli
             var build_seen Array[String]()
             if build_opts.has_input() and tool.fetch_declared(String(build_opts.input_file), &build_seen) = false
                 return 1
+            if build_opts.has_input()
+                tool.prepare_interfaces(String(build_opts.input_file))
             if build_opts.output_file.get_length() = 0 and build_opts.has_input()
                 build_opts.output_file := cli.extract_program_name(build_opts.input_file)
             return cli.run(build_opts)

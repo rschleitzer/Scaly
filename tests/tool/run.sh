@@ -69,7 +69,9 @@
 #              asked for out of two sources is refused, two spellings of one
 #              source are one; a declaration is a MINIMUM -- the highest one
 #              asked for is taken, by the program and by the packages built
-#              for it, on all three routes, two major versions are refused,
+#              for it, on all three routes (the package's interface written
+#              into the cache on the way and read from there afterwards),
+#              two major versions are refused,
 #              and so are 0.2 beside 0.1 (below 1.0 the second number breaks);
 #              `scaly install` builds the programs a package offers (its
 #              programs/), all or one by name, their sourceless declarations
@@ -587,6 +589,14 @@ else
   # below 1.0 the second number is the one that breaks: 0.2.0 does not stand in for 0.1.2
   out=$(ft run minor.scaly 2>&1); rc=$?
   [ "$rc" != 0 ] && echo "$out" | grep -q 'package mini is required in two versions that do not go together, 0.2.0 (by the program) and 0.1.2 (by via 0.1.0)' && ok || bad "versions: 0.2 beside 0.1 rc=$rc '$(echo "$out" | grep -v '^scaly: ' | head -1 | cut -c1-170)'"
+  # a fetched package's interface is written into the cache when the package
+  # is compiled (tool.interface_wanted#) and read from there afterwards: the
+  # bodies gone (`linked`), and a build that compiles nothing writes none anew
+  ifaces=$(ls -d "$SCALY_CACHE"/mini-*.iface 2>/dev/null | wc -l | tr -d ' ')
+  linked=$(cat "$SCALY_CACHE"/mini-*.iface/interface/mini.scaly 2>/dev/null | grep -c ' linked$')
+  ft build newer.scaly -o "$TMP/ver_d$SCALY_EXE" > /dev/null 2>&1; out=$("$TMP/ver_d$SCALY_EXE" 2> /dev/null)
+  again=$(ls -d "$SCALY_CACHE"/mini-*.iface 2>/dev/null | wc -l | tr -d ' ')
+  [ "$ifaces" -gt 0 ] && [ "$linked" -gt 0 ] && [ "$again" = "$ifaces" ] && [ "$out" = "0.1.5 0.1.5" ] && ok || bad "interfaces in the cache: $ifaces written, $linked routines linked, $again after a second build, the program says '$out'"
   # install: the programs a package offers are the files of its programs/,
   # one of them called like the package; they name their own package and its
   # sibling WITHOUT a source, as in the repository, and fetched they still

@@ -36,6 +36,7 @@ use scalyc.compiler.Syntax.*
 ; that does not know the rule leaves it 0, which keys a cache of its own
 shared scaly_package_stamp: u64 0
 function getpid() returns i32 extern
+procedure setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
 function system(command: pointer[const_char]) returns i32 extern
 function rename(old_path: pointer[const_char], new_path: pointer[const_char]) returns i32 extern
 function LLVMGetDefaultTargetTriple() returns pointer[char] extern
@@ -141,6 +142,32 @@ define tool
         h := (h xor scaly_package_stamp) * 0x100000001b3
         h := tool.fnv_string(h, triple)
         h := tool.fnv_string(h, flavour)
+        let sum tool.files_sum(dir, files)
+        (h xor sum) * 0x100000001b3
+    }
+
+    ; Every file of a package with its path, summed. Reading them is most of
+    ; what a build that compiles nothing costs, so it is done once per
+    ; package and command: prepare_interfaces# leaves the number in
+    ; SCALY_PACKAGE_INTERFACES, and whoever asks afterwards takes it from there.
+    procedure files_sum(mutable dir: String, files: ref[Array[String]]) returns u64
+    {
+        let known tool.known_sum(dir)
+        if known.get_length() = 16
+        {
+            var value: u64 0
+            var k: size_t 0
+            while k < 16
+            {
+                let c known.get(k) as u64
+                if c >= 97
+                    value := (value << 4) + (c - 87)
+                else
+                    value := (value << 4) + (c - 48)
+                k := k + 1
+            }
+            return value
+        }
         var sum: u64 0
         var i: size_t 0
         while i < files.length
@@ -152,7 +179,35 @@ define tool
             sum := sum + fh
             i := i + 1
         }
-        (h xor sum) * 0x100000001b3
+        sum
+    }
+
+    ; the third line of a package directory's entry in SCALY_PACKAGE_INTERFACES, "" without
+    procedure known_sum(dir: String) returns String
+    {
+        let env getenv "SCALY_PACKAGE_INTERFACES"
+        if env = null
+            return String()
+        let text String(env)
+        let n text.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        var line: size_t 0
+        var mine false
+        while at <= n
+        {
+            if at = n or text.get(at) = 10
+            {
+                if line % 3 = 0
+                    mine := text.substring(from, at - from).equals(dir)
+                else if line % 3 = 2 and mine
+                    return text.substring(from, at - from)
+                line := line + 1
+                from := at + 1
+            }
+            at := at + 1
+        }
+        String()
     }
 
     function hex16(k: u64) returns String
@@ -591,12 +646,19 @@ define tool
                     bo.no_tests := true
                     bo.target_triple := String(given_triple)
                     bo.target_cpu := String(cpu)
+                    var bi_dir String(dir)
+                    var bi_home tool.interface_wanted(np, version, bi_dir, &files, root_for_deps, selection)
+                    var bi_tmp "`bi_home`.`getpid() as int`.tmp"
+                    if bi_home.get_length() > 0
+                        bo.interface_dir := "`bi_tmp`/interface"
                     if cli.run(bo) <> 0
                     {
                         Console.println("Error: package `np` did not build")
                         return false
                     }
                     tool.publish(btmp, bc)
+                    if bi_home.get_length() > 0
+                        tool.publish(bi_tmp, bi_home)
                 }
                 let bc_page Page.get(bitcode)
                 bitcode.add(String^bc_page(bc))
@@ -619,12 +681,19 @@ define tool
                 o.library := true
                 o.target_triple := String(given_triple)
                 o.target_cpu := String(cpu)
+                var oi_dir String(dir)
+                var oi_home tool.interface_wanted(np, version, oi_dir, &files, root_for_deps, selection)
+                var oi_tmp "`oi_home`.`getpid() as int`.tmp"
+                if oi_home.get_length() > 0
+                    o.interface_dir := "`oi_tmp`/interface"
                 if cli.run(o) <> 0
                 {
                     Console.println("Error: package `np` did not build")
                     return false
                 }
                 tool.publish(tmp, obj)
+                if oi_home.get_length() > 0
+                    tool.publish(oi_tmp, oi_home)
             }
             let obj_page Page.get(objects)
             objects.add(String^obj_page(obj))
@@ -1440,6 +1509,129 @@ define tool
                 return false
         }
         true
+    }
+
+    ; ---- generated interfaces in the cache -----------------------------------
+    ; A package is compiled once and afterwards only READ THROUGH ITS
+    ; INTERFACE and linked: its declarations, the generic bodies, and the
+    ; facts a caller needs (compiler/Interface.scaly). The packages of the
+    ; installation bring theirs; for every other package a program reaches --
+    ; a fetched one, the project's own -- the tool writes it into the cache
+    ; when it compiles the package (package_objects#), once per state of the
+    ; package: the key is the object's kind (package_key#: the compiling
+    ; compiler, every file, the selected versions of what it declares). The compiler learns where
+    ; through SCALY_PACKAGE_INTERFACES (Modeler.cached_pair#). An interface
+    ; its author committed beside a FETCHED package is not trusted; one beside
+    ; a project's own package is taken as before.
+
+    ; The packages `root_file` reaches, each once, what a package declares
+    ; before the package itself: name, selected version and directory.
+    procedure collect_packages(mutable root_file: String, selection: String, mutable seen: ref[Array[String]], mutable names: ref[Array[String]], mutable versions: ref[Array[String]], mutable dirs: ref[Array[String]])
+    {
+        if tool.holds(seen, root_file)
+            return
+        seen.add("`root_file`")
+        var declared Array[String]()
+        var asked Array[String]()
+        var sources Array[String]()
+        Modeler.declared_packages(root_file, &declared, &asked, &sources)
+        var i: size_t 0
+        while i < declared.length
+        {
+            let name declared.at(i)
+            var version "`asked.at(i)`"
+            let selected Modeler.selected_version(selection, name)
+            if selected.get_length() > 0
+                version := "`selected`"
+            var source "`sources.at(i)`"
+            if source.get_length() = 0
+                source := Modeler.inherited_source(root_file)
+            i := i + 1
+            var dir Modeler.package_directory(name, version, source)
+            var root "`dir`/`name`.scaly"
+            if File.exists(root) = false
+                continue
+            tool.collect_packages(root, selection, seen, names, versions, dirs)
+            if tool.holds(dirs, dir) = false
+            {
+                names.add("`name`")
+                versions.add("`version`")
+                dirs.add("`dir`")
+            }
+        }
+    }
+
+    ; Does the package at `dir` take its interface out of the cache? Not the
+    ; standard library, and not a package that brings one beside its sources
+    ; -- unless it was fetched: what a stranger committed is not trusted.
+    procedure interface_in_cache(name: String, dir: String) returns bool
+    {
+        if name.equals("scaly")
+            return false
+        var beside "`dir`/interface/`name`.scaly"
+        dir.starts_with(Modeler.fetched_base()) or File.exists(beside) = false
+    }
+
+    ; where the interface of that state of a package lies in the cache
+    procedure interface_home(name: String, version: String, mutable dir: String, files: ref[Array[String]], mutable root: String, selection: String) returns String
+    {
+        let key tool.package_key(dir, files, String(), "interface`tool.dependency_versions(root, selection)`")
+        "`tool.cache_root()`/`name`-`version`-`tool.hex16(key)`.iface"
+    }
+
+    ; "" when the package compiled now has its interface already (or takes
+    ; none out of the cache); else where it is to go
+    procedure interface_wanted(name: String, version: String, mutable dir: String, files: ref[Array[String]], mutable root: String, selection: String) returns String
+    {
+        if tool.interface_in_cache(name, dir) = false
+            return String()
+        let home tool.interface_home(name, version, dir, files, root, selection)
+        var written "`home`/interface/`name`.scaly"
+        if File.exists(written)
+            return String()
+        home
+    }
+
+    ; Before a program is compiled: tell the compiler which of the packages
+    ; it reaches have their interface in the cache, and remember each
+    ; package's sum for the keys asked later (files_sum#). Nothing is compiled
+    ; here -- an interface is written when its package is (package_objects#),
+    ; so the first build of a package reads it from its sources and every
+    ; later one through the interface.
+    procedure prepare_interfaces(mutable root_file: String) mutable modeler_error_count
+    {
+        setenv("SCALY_PACKAGE_INTERFACES", "", 1)
+        let selection Modeler.select_versions(root_file, false)
+        var seen Array[String]()
+        var names Array[String]()
+        var versions Array[String]()
+        var dirs Array[String]()
+        tool.collect_packages(root_file, selection, &seen, &names, &versions, &dirs)
+        var map ""
+        var i: size_t 0
+        while i < names.length
+        {
+            let name names.at(i)
+            let version versions.at(i)
+            var dir "`dirs.at(i)`"
+            i := i + 1
+            var files Array[String]()
+            tool.package_files(dir, "", &files)
+            let sum tool.files_sum(dir, &files)
+            var home "-"
+            if tool.interface_in_cache(name, dir)
+            {
+                ; the sum is in reach of the key from here on
+                setenv("SCALY_PACKAGE_INTERFACES", "`map``dir`\n-\n`tool.hex16(sum)`\n".to_c_string(), 1)
+                var root "`dir`/`name`.scaly"
+                let there tool.interface_home(name, version, dir, &files, root, selection)
+                var written "`there`/interface/`name`.scaly"
+                if File.exists(written)
+                    home := "`there`"
+            }
+            map := "`map``dir`\n`home`\n`tool.hex16(sum)`\n"
+        }
+        setenv("SCALY_PACKAGE_INTERFACES", map.to_c_string(), 1)
     }
 
     ; ---- scaly publish (stage E) --------------------------------------------

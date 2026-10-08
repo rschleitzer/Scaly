@@ -2830,13 +2830,74 @@ define Modeler
     ; tools/interfaces.sh) is loaded through it: every declaration a caller
     ; needs, generic bodies included, while the other bodies are in the
     ; package's archive -- what AOT compilation used from the sources anyway.
+    ; A package without one beside it -- a fetched one, a project's own --
+    ; has its interface in the tool's cache (cached_pair#), and that one
+    ; comes first.
     procedure interface_or_source(pkg_path: String, pkg_name: String) returns String
     {
+        let cached cached_pair(pkg_path, true)
+        if cached.get_length() > 0
+        {
+            var cached_root "`cached`/interface/`pkg_name`.scaly"
+            if File.exists(cached_root)
+                return "`cached`/interface"
+        }
         let iface_dir "`pkg_path`/interface"
         var root_path "`iface_dir`/`pkg_name`.scaly"
         if File.exists(root_path)
             return iface_dir
         pkg_path
+    }
+
+    ; THE TOOL'S GENERATED INTERFACES. Before it compiles a program the tool
+    ; writes the interface of every package that has none beside its sources
+    ; into its cache (tool.prepare_interfaces#) and says where in
+    ; SCALY_PACKAGE_INTERFACES: lines in threes -- a package's directory, the
+    ; cache directory that holds its `interface/` (`-` while it has none
+    ; yet), and a number of the tool's own (the sum over the package's files,
+    ; tool.files_sum#). The compiler only reads the variable -- it does not
+    ; know the cache. `forward`: the cache directory of a package directory;
+    ; else the package directory of a cache directory. "" where the variable
+    ; names none.
+    procedure cached_pair(key: String, forward: bool) returns String
+    {
+        let env getenv "SCALY_PACKAGE_INTERFACES"
+        if env = null
+            return String()
+        let text String(env)
+        let n text.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        var line: size_t 0
+        var first_from: size_t 0
+        var first_len: size_t 0
+        while at <= n
+        {
+            if at = n or text.get(at) = 10
+            {
+                if line % 3 = 0
+                {
+                    first_from := from
+                    first_len := at - from
+                }
+                else if line % 3 = 1
+                {
+                    let a text.substring(first_from, first_len)
+                    let b text.substring(from, at - from)
+                    if b.equals("-") = false
+                    {
+                        if forward and a.equals(key)
+                            return "`b`"
+                        if forward = false and b.equals(key)
+                            return "`a`"
+                    }
+                }
+                line := line + 1
+                from := at + 1
+            }
+            at := at + 1
+        }
+        String()
     }
 
     ; has_package_root#: does `dir` hold the package `pkg_name` -- its root
@@ -2980,6 +3041,9 @@ define Modeler
     procedure inherited_source(from_file: String) returns String
     {
         var file String(from_file)
+        ; read through its generated interface, the file is still its source's
+        if interface_dir_at(file) >= 0
+            file := interface_source_file(from_file)
         var dir Path.get_directory_name(file)
         var steps 0
         while steps < 2 and dir.get_length() > 0
@@ -3412,6 +3476,13 @@ define Modeler
         let fetched source_str.get_length() > 0 and pkg_path.starts_with(fetched_base())
         if fetched = false
             root_dir := interface_or_source(pkg_path, pkg_name)
+        else
+        {
+            ; ... and that one is what a fetched package is read through
+            let cached cached_pair(pkg_path, true)
+            if cached.get_length() > 0
+                root_dir := "`cached`/interface"
+        }
         load_package_dependencies("`root_dir`/`pkg_name`.scaly", packages, versions)
 
         let loaded build_referenced_module(root_dir, pkg_name, false)
@@ -3682,13 +3753,18 @@ define Modeler
 
     ; `<dir>/interface/<rest>` -> `<dir>/<rest>` for a file of a generated
     ; package interface; "" for any other path
-    function interface_source_file(path: String) returns String
+    ; (an interface in the tool's cache stands for the package directory the
+    ; tool named for it, cached_pair#)
+    procedure interface_source_file(path: String) returns String
     {
         let at interface_dir_at(path)
         if at < 0
             return String()
         let i at as size_t
         let n path.get_length()
+        let origin cached_pair(path.substring(0, i), false)
+        if origin.get_length() > 0
+            return "`origin``path.substring(i + 10, n - i - 10)`"
         "`path.substring(0, i)``path.substring(i + 10, n - i - 10)`"
     }
 
