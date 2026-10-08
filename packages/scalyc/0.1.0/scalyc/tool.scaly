@@ -1413,6 +1413,142 @@ define tool
         true
     }
 
+    ; ---- scaly publish (stage E) --------------------------------------------
+    ; where the tool keeps a file for the length of one command
+    procedure scratch_base() returns String
+    {
+        var dir getenv "TMPDIR"
+        if dir = null
+            dir := getenv("TMP")
+        if dir = null
+            dir := getenv("TEMP")
+        if dir = null
+            return String("/tmp")
+        String(dir)
+    }
+
+    ; the lines of a file, each without its line end, the empty ones left out
+    procedure read_lines(mutable file: String, mutable lines: ref[Array[String]])
+    {
+        let text File.read_to_string(file)
+        let n text.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        while at <= n
+        {
+            if at = n or text.get(at) = 10
+            {
+                var end at
+                if end > from and text.get(end - 1) = 13
+                    end := end - 1
+                if end > from
+                    lines.add("`text.substring(from, end - from)`")
+                from := at + 1
+            }
+            at := at + 1
+        }
+    }
+
+    ; `scaly publish --check [remote]` (E1): a published version does not
+    ; change. Published is what the remote's default branch holds: every
+    ; packages/<name>/<version> there must be the same git tree in this
+    ; checkout, committed and with nothing uncommitted in it -- whoever
+    ; fetched the version has those files, and fetch_package# refuses a
+    ; version that differs from what it fetched first. Run at the root of the
+    ; repository. 0: unchanged; 1: a published version differs, each one
+    ; named; 2: it could not be asked (no repository, the remote not reached).
+    procedure publish_check(remote: String) returns int
+    {
+        if tool.source_is_safe(remote) = false
+        {
+            Console.println("Error: scaly publish: \"`remote`\" is no remote - a name, an address or a path")
+            return 2
+        }
+        let pid getpid() as int
+        let base tool.scratch_base()
+        var log "`base`/scaly-publish.`pid`.log"
+        var out "`base`/scaly-publish.`pid`.out"
+        if tool.quiet("git rev-parse --show-prefix", out) = false
+        {
+            Console.println("Error: scaly publish: this directory is in no git repository")
+            unlink(out.to_c_string())
+            return 2
+        }
+        if tool.first_line(out).get_length() > 0 or Directory.is_directory(String("packages")) = false
+        {
+            Console.println("Error: scaly publish: run it at the root of the repository, where packages/ is")
+            unlink(out.to_c_string())
+            return 2
+        }
+        if tool.quiet("git fetch --quiet \"`remote`\" HEAD", log) = false
+        {
+            Console.println("Error: scaly publish: git could not ask \"`remote`\" what is published: `tool.first_line(log)`")
+            unlink(out.to_c_string())
+            unlink(log.to_c_string())
+            return 2
+        }
+        var names Array[String]()
+        system("git ls-tree -d --name-only FETCH_HEAD packages/ > \"`out`\" 2> \"`log`\"".to_c_string())
+        tool.read_lines(out, &names)
+        var kept 0
+        var changed 0
+        var p: size_t 0
+        while p < names.length
+        {
+            let pkg names.at(p)
+            p := p + 1
+            var versions Array[String]()
+            system("git ls-tree -d --name-only FETCH_HEAD \"`pkg`/\" > \"`out`\" 2> \"`log`\"".to_c_string())
+            tool.read_lines(out, &versions)
+            let name String(pkg.substring(9, pkg.get_length() - 9))
+            var v: size_t 0
+            while v < versions.length
+            {
+                let path versions.at(v)
+                v := v + 1
+                let version String(path.substring(pkg.get_length() + 1, path.get_length() - (pkg.get_length() + 1)))
+                let digit version.get(0)
+                if digit < 48 or digit > 57
+                    continue
+                system("git rev-parse \"FETCH_HEAD:`path`\" > \"`out`\" 2> \"`log`\"".to_c_string())
+                let there tool.first_line(out)
+                var why ""
+                if system("git rev-parse --verify --quiet \"HEAD:`path`\" > \"`out`\" 2> \"`log`\"".to_c_string()) <> 0
+                    why := "here it is gone"
+                else
+                {
+                    let here tool.first_line(out)
+                    if here.equals(there) = false
+                        why := "here it is tree `here`"
+                    else
+                    {
+                        system("git status --porcelain -- \"`path`\" > \"`out`\" 2> \"`log`\"".to_c_string())
+                        if tool.first_line(out).get_length() > 0
+                            why := "here it has changes that are not committed"
+                    }
+                }
+                if why.get_length() = 0
+                {
+                    kept := kept + 1
+                    continue
+                }
+                if changed = 0
+                    Console.println("Error: scaly publish: a published version does not change. At \"`remote`\":")
+                changed := changed + 1
+                Console.println("       `name` `version` is tree `there`; `why`")
+            }
+        }
+        unlink(out.to_c_string())
+        unlink(log.to_c_string())
+        if changed > 0
+        {
+            Console.println("       Put the change into a new version directory beside it.")
+            return 1
+        }
+        Console.println("publish: `kept` published version(s) unchanged")
+        0
+    }
+
     ; ---- scaly install (stage D5) -------------------------------------------
 
     ; where installed programs go: $SCALY_BIN; the `bin` beside an installed

@@ -449,6 +449,7 @@ define cli
         Console.println "       scaly install <source> <package> <version> [program]   build the programs a package offers (its programs/) from git"
         Console.println "       scaly install                    what was installed so"
         Console.println "       scaly uninstall <program>        remove one of them"
+        Console.println "       scaly publish --check [remote]   no version the remote (origin) has published differs here"
         Console.println ""
         Console.println "The compiler with a command line like a C compiler's is scalyc,"
         Console.println "the language server scalyls."
@@ -2596,6 +2597,19 @@ define cli
                 return 1
             }
             return tool.new_project(new_name, new_lib)
+        }
+        if command.equals("publish")
+        {
+            ; E1: the check alone -- publishing itself (E2, E3) is not built
+            if argc >= 3 and argc <= 4 and String(*(argv + 2)).equals("--check")
+            {
+                var publish_remote "origin"
+                if argc = 4
+                    publish_remote := String(*(argv + 3))
+                return tool.publish_check(publish_remote)
+            }
+            Console.println "Usage: scaly publish --check [remote]   (the check is all of publish that is built)"
+            return 1
         }
         if command.equals("install") and argc = 2
             return tool.list_installed()

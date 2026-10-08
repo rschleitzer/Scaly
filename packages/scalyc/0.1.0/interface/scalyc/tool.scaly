@@ -234,6 +234,23 @@ define tool
     ; only looks). False when a fetch failed.
     procedure fetch_declared(mutable root_file: String, mutable seen: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_2 true returns bool io linked
 
+    ; ---- scaly publish (stage E) --------------------------------------------
+    ; where the tool keeps a file for the length of one command
+    procedure scratch_base() @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; the lines of a file, each without its line end, the empty ones left out
+    procedure read_lines(mutable file: String, mutable lines: ref[Array[String]]) @page true @direct true @stores true @deep true io linked
+
+    ; `scaly publish --check [remote]` (E1): a published version does not
+    ; change. Published is what the remote's default branch holds: every
+    ; packages/<name>/<version> there must be the same git tree in this
+    ; checkout, committed and with nothing uncommitted in it -- whoever
+    ; fetched the version has those files, and fetch_package# refuses a
+    ; version that differs from what it fetched first. Run at the root of the
+    ; repository. 0: unchanged; 1: a published version differs, each one
+    ; named; 2: it could not be asked (no repository, the remote not reached).
+    procedure publish_check(remote: String) @ret_nonlocal true @deep true returns int io linked
+
     ; ---- scaly install (stage D5) -------------------------------------------
 
     ; where installed programs go: $SCALY_BIN; the `bin` beside an installed

@@ -77,6 +77,14 @@
 #              `scaly install` alone lists what was installed, `scaly
 #              uninstall` removes one of those and nothing else there.
 #              SKIPs by name without git
+#   publish    `scaly publish --check`: a published version does not change
+#              (local repositories, no network) -- what the remote's default
+#              branch holds as packages/<name>/<version> is the same tree
+#              here: unchanged and a NEW version beside it pass; a change not
+#              committed, a committed one and a removed version are each
+#              refused with the version named (rc 1); a remote that is not
+#              there and a directory that is not the repository's root are
+#              said (rc 2). SKIPs by name without git
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -658,6 +666,40 @@ if [ "$SCALY_COFF" = 1 ]; then
   fi
 else
   echo "SKIP bare (the Build Tools' linker is a Windows matter)"
+fi
+
+# publish: a published version does not change (stage E1)
+if ! command -v git > /dev/null 2>&1; then
+  echo "SKIP publish (no git on the PATH)"
+else
+  pg() { git -c user.name=t -c user.email=t@example.invalid -c init.defaultBranch=main "$@"; }
+  pub="$TMP/publish"; mkdir -p "$pub/work/packages/demo/0.1.0"
+  pc() { ( cd "$pub/work" && "$scaly_abs" publish --check "$@" ) 2>&1; }
+  (
+    cd "$pub/work" && pg init -q && echo 'define DEMO: int 1' > packages/demo/0.1.0/demo.scaly \
+      && pg add -A && pg commit -q -m one && pg clone -q --bare . "$pub/remote.git" && pg remote add origin "$pub/remote.git"
+  ) > "$TMP/publish.log" 2>&1
+  out=$(pc); rc=$?
+  [ "$rc" = 0 ] && [ "$out" = "publish: 1 published version(s) unchanged" ] && ok || bad "publish, unchanged: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
+  echo '; more' >> "$pub/work/packages/demo/0.1.0/demo.scaly"
+  out=$(pc); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0 is tree .* not committed' && ok || bad "publish, not committed: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-120)'"
+  ( cd "$pub/work" && pg commit -q -am two )
+  out=$(pc); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0 is tree .*; here it is tree ' && ok || bad "publish, committed change: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-120)'"
+  ( cd "$pub/work" && pg reset -q --hard HEAD~1 && mkdir packages/demo/0.1.1 && echo 'define DEMO: int 2' > packages/demo/0.1.1/demo.scaly && pg add -A && pg commit -q -m new )
+  out=$(pc); rc=$?
+  [ "$rc" = 0 ] && ok || bad "publish, a new version beside it: rc=$rc '$(echo "$out" | head -2 | tr '\n' '|' | cut -c1-160)'"
+  ( cd "$pub/work" && pg rm -q -r packages/demo/0.1.0 && pg commit -q -m gone )
+  out=$(pc); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0 is tree .*; here it is gone' && ok || bad "publish, removed: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-120)'"
+  ( cd "$pub/work" && pg reset -q --hard HEAD~1 )
+  out=$(pc "$pub/remote.git"); rc=$?
+  [ "$rc" = 0 ] && ok || bad "publish, the remote by its path: rc=$rc"
+  out=$(pc "$pub/nowhere.git"); rc=$?
+  [ "$rc" = 2 ] && echo "$out" | grep -q 'could not ask' && ok || bad "publish, no such remote: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
+  out=$( ( cd "$pub/work/packages" && "$scaly_abs" publish --check ) 2>&1 ); rc=$?
+  [ "$rc" = 2 ] && echo "$out" | grep -q 'root of the repository' && ok || bad "publish, not at the root: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
 fi
 
 echo "tool: $pass PASS, $fail FAIL"
