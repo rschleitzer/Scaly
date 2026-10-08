@@ -78,19 +78,21 @@
 #              `scaly install` alone lists what was installed, `scaly
 #              uninstall` removes one of those and nothing else there.
 #              SKIPs by name without git
-#   publish    `scaly publish --check`: a published version does not change
-#              (local repositories, no network) -- what the remote's default
-#              branch holds as packages/<name>/<version> is the same tree
-#              here: unchanged and a NEW version beside it pass; a change not
-#              committed, a committed one and a removed version are each
-#              refused with the version named (rc 1); a remote that is not
-#              there and a directory that is not the repository's root are
-#              said (rc 2). A NEW version is compared with the one before
-#              it, declaration by declaration (tool.publish_compare#): below
-#              1.0 a changed declaration takes the second number and anything
-#              else the third, from 1.0 on a changed one the first and an
-#              addition the second -- eight cases; a new version that does
-#              not compile is refused. SKIPs by name without git
+#   publish    `scaly publish [--check]` (local repositories, no network):
+#              published is what packages/<name>/published names -- nothing
+#              before `scaly publish` writes the line (version, commit, tree),
+#              commits it and pushes; again it finds nothing new. A published
+#              version does not change: a change not committed, a committed
+#              one and an altered record line are each refused (rc 1). Its
+#              directory may leave the tree: the next version is compared
+#              with it out of its commit, and a program that declares it
+#              still gets it from there. A remote that is not there and a
+#              directory that is not the repository's root are said (rc 2).
+#              The version rule (tool.publish_compare#): below 1.0 a changed
+#              declaration takes the second number and anything else the
+#              third, from 1.0 on a changed one the first and an addition the
+#              second -- eight cases; a new version that does not compile is
+#              refused. SKIPs by name without git
 #   bare       Windows the Rust way: a handed-out tree --
 #              the stdlib with its READY-MADE native objects
 #              (tools/native-objects.sh) -- builds a program, plain and
@@ -683,43 +685,70 @@ if ! command -v git > /dev/null 2>&1; then
   echo "SKIP publish (no git on the PATH)"
 else
   pg() { git -c user.name=t -c user.email=t@example.invalid -c init.defaultBranch=main "$@"; }
-  pub="$TMP/publish"; mkdir -p "$pub/work/packages/demo/0.1.0"
-  pc() { ( cd "$pub/work" && SCALY_HOME="$here" "$scaly_abs" publish --check "$@" ) 2>&1; }
-  (
-    cd "$pub/work" && pg init -q && echo 'define DEMO: int 1' > packages/demo/0.1.0/demo.scaly \
-      && pg add -A && pg commit -q -m one && pg clone -q --bare . "$pub/remote.git" && pg remote add origin "$pub/remote.git"
-  ) > "$TMP/publish.log" 2>&1
-  out=$(pc); rc=$?
-  [ "$rc" = 0 ] && [ "$out" = "publish: 1 published version(s) unchanged" ] && ok || bad "publish, unchanged: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
+  pub="$TMP/publish"; mkdir -p "$pub"
+  # a repository with the package `scaly new --lib` writes, a bare one as its origin
+  pubrepo() {
+    ( cd "$pub" && SCALY_HOME="$here" "$scaly_abs" new demo --lib && mv demo "$1" && cd "$1" \
+        && { [ "$2" = 0.1.0 ] || mv packages/demo/0.1.0 "packages/demo/$2"; } \
+        && pg init -q && git config user.name t && git config user.email t@example.invalid \
+        && pg add -A && pg commit -q -m one && pg clone -q --bare . "$pub/$1.git" && pg remote add origin "$pub/$1.git"
+    ) > "$TMP/publish-$1.log" 2>&1
+  }
+  pp() { ( cd "$pub/work" && SCALY_HOME="$here" "$scaly_abs" publish "$@" ) 2>&1; }
+  pubrepo work 0.1.0
+  # nothing is published before `scaly publish` says so
+  out=$(pp --check); rc=$?
+  [ "$rc" = 0 ] && echo "$out" | grep -q "demo 0.1.0 is new, the package's first version" && [ ! -e "$pub/work/packages/demo/published" ] && ok || bad "publish --check, nothing published yet: rc=$rc '$(echo "$out" | tail -1 | cut -c1-120)'"
+  out=$(pp); rc=$?
+  line=$(grep '^0\.1\.0 ' "$pub/work/packages/demo/published" 2>/dev/null)
+  at=$(echo "$line" | cut -d' ' -f2)
+  [ "$rc" = 0 ] && [ -n "$at" ] && [ "$(echo "$line" | cut -d' ' -f3)" = "$(git -C "$pub/work" rev-parse "$at:packages/demo/0.1.0" 2>/dev/null)" ] \
+    && [ "$(git --git-dir="$pub/work.git" show HEAD:packages/demo/published 2>/dev/null | grep -c '^0\.1\.0 ')" = 1 ] \
+    && ok || bad "publish: rc=$rc line '$line' '$(echo "$out" | tail -1 | cut -c1-140)'"
+  out=$(pp); rc=$?
+  [ "$rc" = 0 ] && echo "$out" | grep -q 'nothing new to publish' && ok || bad "publish, again: rc=$rc '$(echo "$out" | tail -1 | cut -c1-120)'"
+  out=$(pp --check); rc=$?
+  [ "$rc" = 0 ] && echo "$out" | grep -q '^publish: 1 published version(s) unchanged' && ok || bad "publish --check, unchanged: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
   echo '; more' >> "$pub/work/packages/demo/0.1.0/demo.scaly"
-  out=$(pc); rc=$?
-  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0 is tree .* not committed' && ok || bad "publish, not committed: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-120)'"
+  out=$(pp --check); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0 was published as tree .* not committed' && ok || bad "publish, not committed: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-140)'"
   ( cd "$pub/work" && pg commit -q -am two )
-  out=$(pc); rc=$?
-  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0 is tree .*; here it is tree ' && ok || bad "publish, committed change: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-120)'"
-  ( cd "$pub/work" && pg reset -q --hard HEAD~1 && mkdir packages/demo/0.1.1 && echo 'define DEMO: int 1' > packages/demo/0.1.1/demo.scaly && pg add -A && pg commit -q -m new )
-  out=$(pc); rc=$?
-  [ "$rc" = 0 ] && ok || bad "publish, a new version beside it: rc=$rc '$(echo "$out" | head -2 | tr '\n' '|' | cut -c1-160)'"
-  ( cd "$pub/work" && pg rm -q -r packages/demo/0.1.0 && pg commit -q -m gone )
-  out=$(pc); rc=$?
-  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0 is tree .*; here it is gone' && ok || bad "publish, removed: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-120)'"
+  out=$(pp --check); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0 was published as tree .*; its directory is tree ' && ok || bad "publish, committed change: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-140)'"
   ( cd "$pub/work" && pg reset -q --hard HEAD~1 )
-  out=$(pc "$pub/remote.git"); rc=$?
-  [ "$rc" = 0 ] && ok || bad "publish, the remote by its path: rc=$rc"
-  out=$(pc "$pub/nowhere.git"); rc=$?
+  # a line of the record does not change either
+  sed -i.bak 's/^0\.1\.0 ......./0.1.0 0000000/' "$pub/work/packages/demo/published"; rm -f "$pub/work/packages/demo/published.bak"
+  out=$(pp --check); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.1.0: its line in packages/demo/published is gone or reads differently' && ok || bad "publish, a record line changed: rc=$rc '$(echo "$out" | sed -n 2p | cut -c1-140)'"
+  ( cd "$pub/work" && pg checkout -q -- packages/demo/published )
+  # the next version, and the published one leaves the tree: it lives on at
+  # its commit, and the new one is compared with it out of there
+  cp -R "$pub/work/packages/demo/0.1.0" "$pub/work/packages/demo/0.1.1"
+  sed -i.bak 's/function greeting(name: String)/function greeting(who: String)/; s/`name`/`who`/' "$pub/work/packages/demo/0.1.1/demo.scaly"; rm -f "$pub/work/packages/demo/0.1.1/demo.scaly.bak"
+  ( cd "$pub/work" && pg rm -q -r packages/demo/0.1.0 && pg add -A && pg commit -q -m next )
+  out=$(pp --check); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q '^publish: 1 published version(s) unchanged' && echo "$out" | grep -q 'demo 0.1.1 understates what it changed since 0.1.0; that takes 0.2.0 at least' && ok || bad "publish, compared with a version out of history: rc=$rc '$(echo "$out" | tail -4 | tr '\n' '|' | cut -c1-240)'"
+  ( cd "$pub/work" && pg mv packages/demo/0.1.1 packages/demo/0.2.0 && pg commit -q -m "as 0.2.0" )
+  out=$(pp); rc=$?
+  [ "$rc" = 0 ] && [ "$(git --git-dir="$pub/work.git" show HEAD:packages/demo/published 2>/dev/null | grep -c '^0\.[12]\.0 ')" = 2 ] && [ -z "$(cd "$pub/work" && git worktree list | sed 1d)" ] && ok || bad "publish, the second version: rc=$rc '$(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)'"
+  # ... and a program still gets the version that left the tree, out of its commit
+  mkdir -p "$pub/user"
+  printf 'package demo 0.1.0 "%s"\n\nprint(demo.greeting("history"))\n' "$pub/work.git" > "$pub/user/old.scaly"
+  printf 'package demo 0.2.0 "%s"\n\nprint(demo.greeting("head"))\n' "$pub/work.git" > "$pub/user/new.scaly"
+  out=$( cd "$pub/user" && SCALY_HOME="$here" SCALY_PACKAGES="$pub/home/.scaly/packages" "$scaly_abs" run old.scaly 2> /dev/null )
+  out2=$( cd "$pub/user" && SCALY_HOME="$here" SCALY_PACKAGES="$pub/home/.scaly/packages" "$scaly_abs" run new.scaly 2> /dev/null )
+  [ "$out" = "Hello, history!" ] && [ "$out2" = "Hello, head!" ] && grep -q "^commit $at" "$(find "$pub/home/.scaly/packages" -name 0.1.0.fetched | head -1)" 2>/dev/null && ok || bad "publish: a program fetching the version that left the tree got '$out' / '$out2'"
+  out=$(pp --check "$pub/nowhere.git"); rc=$?
   [ "$rc" = 2 ] && echo "$out" | grep -q 'could not ask' && ok || bad "publish, no such remote: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
-  out=$( ( cd "$pub/work/packages" && "$scaly_abs" publish --check ) 2>&1 ); rc=$?
+  out=$( ( cd "$pub/work/packages" && SCALY_HOME="$here" "$scaly_abs" publish --check ) 2>&1 ); rc=$?
   [ "$rc" = 2 ] && echo "$out" | grep -q 'root of the repository' && ok || bad "publish, not at the root: rc=$rc '$(echo "$out" | head -1 | cut -c1-120)'"
   # E2: a new version's number says what it changed against the one before
   # (a package `scaly new --lib` wrote, published as 0.1.0 and, in a second
   # repository, as 1.0.0)
   pv() { ( cd "$pub/$1" && SCALY_HOME="$here" "$scaly_abs" publish --check ) 2>&1; }
   for first in 0.1.0 1.0.0; do
-    r="rule-$first"
-    ( cd "$pub" && SCALY_HOME="$here" "$scaly_abs" new demo --lib && mv demo "$r" && cd "$r" \
-        && { [ "$first" = 0.1.0 ] || mv packages/demo/0.1.0 "packages/demo/$first"; } \
-        && pg init -q && pg add -A && pg commit -q -m one && pg clone -q --bare . "$pub/$r.git" && pg remote add origin "$pub/$r.git"
-    ) > "$TMP/publish-$first.log" 2>&1
+    pubrepo "rule-$first" "$first"
+    ( cd "$pub/rule-$first" && SCALY_HOME="$here" "$scaly_abs" publish ) > "$TMP/publish-rule-$first.out" 2>&1
   done
   # the next version as a copy of the first, its text run through sed
   nextv() { rm -rf "$pub/$1/packages/demo/$3"; cp -R "$pub/$1/packages/demo/$2" "$pub/$1/packages/demo/$3"; sed -i.bak "$4" "$pub/$1/packages/demo/$3/demo.scaly"; rm -f "$pub/$1/packages/demo/$3/demo.scaly.bak"; }

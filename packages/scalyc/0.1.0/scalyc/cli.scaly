@@ -456,7 +456,8 @@ define cli
         Console.println "       scaly install <source> <package> <version> [program]   build the programs a package offers (its programs/) from git"
         Console.println "       scaly install                    what was installed so"
         Console.println "       scaly uninstall <program>        remove one of them"
-        Console.println "       scaly publish --check [remote]   no version the remote (origin) has published differs here"
+        Console.println "       scaly publish [remote]           record the new versions of the packages here as published, commit and push (origin)"
+        Console.println "       scaly publish --check [remote]   ... only check: no published version changed, each new number says its change"
         Console.println ""
         Console.println "The compiler with a command line like a C compiler's is scalyc,"
         Console.println "the language server scalyls."
@@ -2609,16 +2610,29 @@ define cli
         }
         if command.equals("publish")
         {
-            ; E1: the check alone -- publishing itself (E2, E3) is not built
-            if argc >= 3 and argc <= 4 and String(*(argv + 2)).equals("--check")
+            ; scaly publish [--check] [remote]
+            var publish_remote "origin"
+            var publish_write true
+            var publish_words 0
+            var pa 2
+            while pa < argc
             {
-                var publish_remote "origin"
-                if argc = 4
-                    publish_remote := String(*(argv + 3))
-                return tool.publish_check(publish_remote)
+                let arg String(*(argv + pa))
+                pa := pa + 1
+                if arg.equals("--check")
+                    publish_write := false
+                else
+                {
+                    publish_remote := arg
+                    publish_words := publish_words + 1
+                }
             }
-            Console.println "Usage: scaly publish --check [remote]   (the check is all of publish that is built)"
-            return 1
+            if publish_words > 1 or publish_remote.starts_with("-")
+            {
+                Console.println "Usage: scaly publish [--check] [remote]"
+                return 1
+            }
+            return tool.publish_run(publish_remote, publish_write)
         }
         if command.equals("install") and argc = 2
             return tool.list_installed()

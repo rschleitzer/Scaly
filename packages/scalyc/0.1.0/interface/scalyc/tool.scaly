@@ -218,9 +218,10 @@ define tool
     procedure record_value(mutable file: String, key: String) @page true @direct true @ret_caller true @deep true returns String io linked
 
     ; Fetch the package `name` `version` of `source` into `dir`
-    ; (Modeler.fetched_directory#): the default branch's head of the source,
-    ; its packages/<name>/<version> laid down with its files read-only, by
-    ; git and nothing else. The
+    ; (Modeler.fetched_directory#): out of the commit the source's record
+    ; names for the version, or out of the default branch's head for a
+    ; version it does not name -- its packages/<name>/<version> laid down
+    ; with its files read-only, by git and nothing else. The
     ; commit and the git tree id of that directory are remembered beside it
     ; (<version>.fetched), and a version fetched AGAIN must have the tree it
     ; had: a published version does not change. Nothing is written into the
@@ -241,15 +242,44 @@ define tool
     ; the lines of a file, each without its line end, the empty ones left out
     procedure read_lines(mutable file: String, mutable lines: ref[Array[String]]) @page true @direct true @stores true @deep true io linked
 
-    ; `scaly publish --check [remote]` (E1): a published version does not
-    ; change. Published is what the remote's default branch holds: every
-    ; packages/<name>/<version> there must be the same git tree in this
-    ; checkout, committed and with nothing uncommitted in it -- whoever
-    ; fetched the version has those files, and fetch_package# refuses a
-    ; version that differs from what it fetched first. Run at the root of the
-    ; repository. 0: unchanged; 1: a published version differs, each one
-    ; named; 2: it could not be asked (no repository, the remote not reached).
-    procedure publish_check(remote: String) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
+    ; THE RECORD. packages/<name>/published names the published versions of a
+    ; package, a line each: `version commit tree` -- the commit the version's
+    ; directory lay at when it was published, and that directory's git tree.
+    ; PUBLISHED IS WHAT HAS A LINE THERE (the author, 2026-10-08): a version
+    ; directory without one is being written and may change, a line never
+    ; does. A published version's directory may leave the tree: it lives on at
+    ; its commit, and fetch_package# takes it from there. `scaly publish`
+    ; writes the lines; lines beginning with `;` are comments.
+
+    ; the `index`-th word of a line (0 the first), "" where it has none
+    function word_of(line: String, index: size_t) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; the `index`-th word of the record's line for `version`, "" without one
+    function published_field(text: String, version: String, index: size_t) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; the versions a record names
+    procedure published_versions(text: String, mutable versions: ref[Array[String]]) @page true @direct true @stores true @deep true linked
+
+    ; a commit or tree id as git prints it: hexadecimal digits and nothing else
+    function is_object_id(id: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; `scaly publish [--check] [remote]` (stage E), run at the root of a
+    ; package's repository; the remote is `origin` unless one is named.
+    ;   1. A published version does not change: no line of the remote's
+    ;      record is gone or reads differently here, and a recorded version
+    ;      whose directory is still in the tree is the recorded git tree,
+    ;      with nothing uncommitted in it.
+    ;   2. A version directory without a line is NEW, and its number says
+    ;      what it changed against the version before it (publish_compare#).
+    ;   3. Without --check: each new version gets its line -- the commit is
+    ;      HEAD, so the tree must be committed --, the record is committed and
+    ;      both commits are pushed (publish_write#).
+    ; 0: all well; 1: a rule is broken, each case named; 2: it could not be
+    ; asked (no repository, the remote not reached).
+    procedure publish_run(remote: String, write: bool) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Give each new version its line, commit the records and push.
+    procedure publish_write(remote: String, fresh: ref[Array[String]], mutable log: String, mutable out: String) @ret_nonlocal true @deep true returns int io linked
 
     ; does a directory's name begin like a version?
     function is_version(name: String) @deep true returns bool linked
@@ -295,15 +325,16 @@ define tool
     ; stands there); the first three go into `examples`.
     procedure surface_missing(a: ref[Array[String]], b: ref[Array[String]], mutable examples: ref[Array[String]]) @page true @direct true @stores true @ret_nonlocal true @deep true returns int linked
 
-    ; The surface of packages/<name>/<version> of this repository, written
-    ; under `dir` and read into `lines`. False when the version does not compile.
-    procedure surface_of(name: String, version: String, mutable dir: String, mutable lines: ref[Array[String]]) @page true @stores true @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads modeler_error_count linked
+    ; The surface of `tree`packages/<name>/<version> (`tree` empty: this
+    ; repository's working tree), written under `dir` and read into `lines`.
+    ; False when the version does not compile.
+    procedure surface_of(tree: String, name: String, version: String, mutable dir: String, mutable lines: ref[Array[String]]) @page true @stores true @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
     procedure show_lines(lines: ref[Array[String]]) @deep true io linked
 
     ; Does the number of `next` say what it changed against `prev`? Says what
     ; it found either way; false when the number understates it.
-    procedure publish_compare(name: String, prev: String, next: String, scratch: String) @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads modeler_error_count linked
+    procedure publish_compare(name: String, prev: String, next: String, prev_commit: String, scratch: String) @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
     ; ---- scaly install (stage D5) -------------------------------------------
 

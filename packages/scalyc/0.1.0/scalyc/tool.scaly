@@ -1258,9 +1258,10 @@ define tool
     }
 
     ; Fetch the package `name` `version` of `source` into `dir`
-    ; (Modeler.fetched_directory#): the default branch's head of the source,
-    ; its packages/<name>/<version> laid down with its files read-only, by
-    ; git and nothing else. The
+    ; (Modeler.fetched_directory#): out of the commit the source's record
+    ; names for the version, or out of the default branch's head for a
+    ; version it does not name -- its packages/<name>/<version> laid down
+    ; with its files read-only, by git and nothing else. The
     ; commit and the git tree id of that directory are remembered beside it
     ; (<version>.fetched), and a version fetched AGAIN must have the tree it
     ; had: a published version does not change. Nothing is written into the
@@ -1306,6 +1307,28 @@ define tool
             return false
         }
         let path "packages/`name`/`version`"
+        ; A version the package's record names (packages/<name>/published,
+        ; tool.publish_run#) is taken from the commit it was published at --
+        ; its directory may have left the head since. One the record does not
+        ; name is taken from the head, as a version still being written.
+        var listed_tree ""
+        if system("git -C \"`store`\" show \"FETCH_HEAD:packages/`name`/published\" > \"`out`\" 2> \"`log`\"".to_c_string()) = 0
+        {
+            let published File.read_to_string(out)
+            let at_commit tool.published_field(published, version, 1)
+            if at_commit.get_length() > 0
+            {
+                listed_tree := "`tool.published_field(published, version, 2)`"
+                if tool.is_object_id(at_commit) = false or tool.quiet("git -C \"`store`\" fetch --quiet --depth 1 \"`url`\" `at_commit`", log) = false
+                {
+                    Console.println("Error: package `name` `version` was published at commit `at_commit` of \"`source`\", and git could not fetch that")
+                    Console.println("       `tool.first_line(log)`")
+                    unlink(log.to_c_string())
+                    unlink(out.to_c_string())
+                    return false
+                }
+            }
+        }
         system("git -C \"`store`\" rev-parse FETCH_HEAD > \"`out`\" 2> \"`log`\"".to_c_string())
         let commit tool.first_line(out)
         if system("git -C \"`store`\" rev-parse FETCH_HEAD:`path` > \"`out`\" 2> \"`log`\"".to_c_string()) <> 0
@@ -1317,6 +1340,12 @@ define tool
         }
         let tree tool.first_line(out)
         unlink(out.to_c_string())
+        if listed_tree.get_length() > 0 and listed_tree.equals(tree) = false
+        {
+            Console.println("Error: package `name` `version` of \"`source`\" is not what its record says: published as tree `listed_tree`, commit `commit` holds tree `tree`")
+            unlink(log.to_c_string())
+            return false
+        }
         let record "`dir`.fetched"
         if File.exists(record)
         {
@@ -1449,15 +1478,109 @@ define tool
         }
     }
 
-    ; `scaly publish --check [remote]` (E1): a published version does not
-    ; change. Published is what the remote's default branch holds: every
-    ; packages/<name>/<version> there must be the same git tree in this
-    ; checkout, committed and with nothing uncommitted in it -- whoever
-    ; fetched the version has those files, and fetch_package# refuses a
-    ; version that differs from what it fetched first. Run at the root of the
-    ; repository. 0: unchanged; 1: a published version differs, each one
-    ; named; 2: it could not be asked (no repository, the remote not reached).
-    procedure publish_check(remote: String) returns int mutable modeler_error_count
+    ; THE RECORD. packages/<name>/published names the published versions of a
+    ; package, a line each: `version commit tree` -- the commit the version's
+    ; directory lay at when it was published, and that directory's git tree.
+    ; PUBLISHED IS WHAT HAS A LINE THERE (the author, 2026-10-08): a version
+    ; directory without one is being written and may change, a line never
+    ; does. A published version's directory may leave the tree: it lives on at
+    ; its commit, and fetch_package# takes it from there. `scaly publish`
+    ; writes the lines; lines beginning with `;` are comments.
+
+    ; the `index`-th word of a line (0 the first), "" where it has none
+    function word_of(line: String, index: size_t) returns String
+    {
+        let n line.get_length()
+        var word: size_t 0
+        var from: size_t 0
+        var at: size_t 0
+        while at <= n
+        {
+            if at = n or line.get(at) = 32
+            {
+                if word = index
+                    return line.substring(from, at - from)
+                word := word + 1
+                from := at + 1
+            }
+            at := at + 1
+        }
+        String()
+    }
+
+    ; the `index`-th word of the record's line for `version`, "" without one
+    function published_field(text: String, version: String, index: size_t) returns String
+    {
+        let n text.get_length()
+        let vn version.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        while at <= n
+        {
+            if at = n or text.get(at) = 10
+            {
+                var end at
+                if end > from and text.get(end - 1) = 13
+                    end := end - 1
+                let line text.substring(from, end - from)
+                if line.get_length() > vn and line.starts_with(version) and line.get(vn) = 32
+                    return tool.word_of(line, index)
+                from := at + 1
+            }
+            at := at + 1
+        }
+        String()
+    }
+
+    ; the versions a record names
+    procedure published_versions(text: String, mutable versions: ref[Array[String]])
+    {
+        let n text.get_length()
+        var from: size_t 0
+        var at: size_t 0
+        while at <= n
+        {
+            if at = n or text.get(at) = 10
+            {
+                if at > from and tool.is_version(text.substring(from, at - from))
+                    versions.add("`tool.word_of(text.substring(from, at - from), 0)`")
+                from := at + 1
+            }
+            at := at + 1
+        }
+    }
+
+    ; a commit or tree id as git prints it: hexadecimal digits and nothing else
+    function is_object_id(id: String) returns bool
+    {
+        let n id.get_length()
+        if n < 7
+            return false
+        var i: size_t 0
+        while i < n
+        {
+            let c id.get(i)
+            if (c < 48 or c > 57) and (c < 97 or c > 102)
+                return false
+            i := i + 1
+        }
+        true
+    }
+
+    ; `scaly publish [--check] [remote]` (stage E), run at the root of a
+    ; package's repository; the remote is `origin` unless one is named.
+    ;   1. A published version does not change: no line of the remote's
+    ;      record is gone or reads differently here, and a recorded version
+    ;      whose directory is still in the tree is the recorded git tree,
+    ;      with nothing uncommitted in it.
+    ;   2. A version directory without a line is NEW, and its number says
+    ;      what it changed against the version before it (publish_compare#).
+    ;   3. Without --check: each new version gets its line -- the commit is
+    ;      HEAD, so the tree must be committed --, the record is committed and
+    ;      both commits are pushed (publish_write#).
+    ; 0: all well; 1: a rule is broken, each case named; 2: it could not be
+    ; asked (no repository, the remote not reached).
+    procedure publish_run(remote: String, write: bool) returns int mutable modeler_error_count
     {
         if tool.source_is_safe(remote) = false
         {
@@ -1487,70 +1610,8 @@ define tool
             unlink(log.to_c_string())
             return 2
         }
-        var names Array[String]()
-        system("git ls-tree -d --name-only FETCH_HEAD packages/ > \"`out`\" 2> \"`log`\"".to_c_string())
-        tool.read_lines(out, &names)
-        var published Array[String]()
         var kept 0
         var changed 0
-        var p: size_t 0
-        while p < names.length
-        {
-            let pkg names.at(p)
-            p := p + 1
-            var versions Array[String]()
-            system("git ls-tree -d --name-only FETCH_HEAD \"`pkg`/\" > \"`out`\" 2> \"`log`\"".to_c_string())
-            tool.read_lines(out, &versions)
-            let name String(pkg.substring(9, pkg.get_length() - 9))
-            var v: size_t 0
-            while v < versions.length
-            {
-                let path versions.at(v)
-                v := v + 1
-                let version String(path.substring(pkg.get_length() + 1, path.get_length() - (pkg.get_length() + 1)))
-                let digit version.get(0)
-                if digit < 48 or digit > 57
-                    continue
-                system("git rev-parse \"FETCH_HEAD:`path`\" > \"`out`\" 2> \"`log`\"".to_c_string())
-                let there tool.first_line(out)
-                var why ""
-                if system("git rev-parse --verify --quiet \"HEAD:`path`\" > \"`out`\" 2> \"`log`\"".to_c_string()) <> 0
-                    why := "here it is gone"
-                else
-                {
-                    let here tool.first_line(out)
-                    if here.equals(there) = false
-                        why := "here it is tree `here`"
-                    else
-                    {
-                        system("git status --porcelain -- \"`path`\" > \"`out`\" 2> \"`log`\"".to_c_string())
-                        if tool.first_line(out).get_length() > 0
-                            why := "here it has changes that are not committed"
-                    }
-                }
-                published.add("`name` `version`")
-                if why.get_length() = 0
-                {
-                    kept := kept + 1
-                    continue
-                }
-                if changed = 0
-                    Console.println("Error: scaly publish: a published version does not change. At \"`remote`\":")
-                changed := changed + 1
-                Console.println("       `name` `version` is tree `there`; `why`")
-            }
-        }
-        unlink(out.to_c_string())
-        unlink(log.to_c_string())
-        if changed > 0
-        {
-            Console.println("       Put the change into a new version directory beside it.")
-            return 1
-        }
-        Console.println("publish: `kept` published version(s) unchanged")
-        ; E2: a version that is not published yet says with its number what
-        ; it changed against the one before it
-        var understated 0
         let pkgs Directory.list(String("packages"))
         var q: size_t 0
         while q < pkgs.length
@@ -1559,14 +1620,102 @@ define tool
             q := q + 1
             if pe.is_directory = false
                 continue
+            var record "packages/`pe.name`/published"
+            var here ""
+            if File.exists(record)
+                here := File.read_to_string(record)
+            var there ""
+            if system("git show \"FETCH_HEAD:packages/`pe.name`/published\" > \"`out`\" 2> \"`log`\"".to_c_string()) = 0
+                there := File.read_to_string(out)
+            ; the remote's lines are all here, as they are
+            var remote_versions Array[String]()
+            tool.published_versions(there, &remote_versions)
+            var r: size_t 0
+            while r < remote_versions.length
+            {
+                let rv remote_versions.at(r)
+                r := r + 1
+                if tool.published_field(there, rv, 1).equals(tool.published_field(here, rv, 1)) and tool.published_field(there, rv, 2).equals(tool.published_field(here, rv, 2))
+                    continue
+                if changed = 0
+                    Console.println("Error: scaly publish: a published version does not change.")
+                changed := changed + 1
+                Console.println("       `pe.name` `rv`: its line in `record` is gone or reads differently than at \"`remote`\"")
+            }
+            ; a recorded version that still has its directory is that tree
+            var versions Array[String]()
+            tool.published_versions(here, &versions)
+            var v: size_t 0
+            while v < versions.length
+            {
+                let version versions.at(v)
+                v := v + 1
+                var path "packages/`pe.name`/`version`"
+                if Directory.is_directory(path) = false
+                {
+                    kept := kept + 1
+                    continue
+                }
+                let tree tool.published_field(here, version, 2)
+                var why ""
+                if system("git rev-parse --verify --quiet \"HEAD:`path`\" > \"`out`\" 2> \"`log`\"".to_c_string()) <> 0
+                    why := "its directory is not committed"
+                else
+                {
+                    let now tool.first_line(out)
+                    if now.equals(tree) = false
+                        why := "its directory is tree `now` here"
+                    else
+                    {
+                        system("git status --porcelain -- \"`path`\" > \"`out`\" 2> \"`log`\"".to_c_string())
+                        if tool.first_line(out).get_length() > 0
+                            why := "its directory has changes that are not committed"
+                    }
+                }
+                if why.get_length() = 0
+                {
+                    kept := kept + 1
+                    continue
+                }
+                if changed = 0
+                    Console.println("Error: scaly publish: a published version does not change.")
+                changed := changed + 1
+                Console.println("       `pe.name` `version` was published as tree `tree`; `why`")
+            }
+        }
+        if changed > 0
+        {
+            Console.println("       Put the change into a new version directory.")
+            unlink(out.to_c_string())
+            unlink(log.to_c_string())
+            return 1
+        }
+        Console.println("publish: `kept` published version(s) unchanged")
+        ; a version without a line is new: its number says what it changed
+        var fresh Array[String]()
+        var understated 0
+        q := 0
+        while q < pkgs.length
+        {
+            let pe pkgs.at(q)
+            q := q + 1
+            if pe.is_directory = false
+                continue
+            var record "packages/`pe.name`/published"
+            var here ""
+            if File.exists(record)
+                here := File.read_to_string(record)
+            var recorded Array[String]()
+            tool.published_versions(here, &recorded)
             let vs Directory.list("packages/`pe.name`")
             var w: size_t 0
             while w < vs.length
             {
                 let ve vs.at(w)
                 w := w + 1
-                if ve.is_directory = false or tool.is_version(ve.name) = false or tool.holds(&published, "`pe.name` `ve.name`")
+                if ve.is_directory = false or tool.is_version(ve.name) = false or tool.holds(&recorded, ve.name)
                     continue
+                ; the version before it: the highest lower one, in the tree or in the record
                 var prev ""
                 var x: size_t 0
                 while x < vs.length
@@ -1576,17 +1725,83 @@ define tool
                     if oe.is_directory and tool.is_version(oe.name) and Modeler.version_newer(ve.name, oe.name) and (prev.get_length() = 0 or Modeler.version_newer(oe.name, prev))
                         prev := "`oe.name`"
                 }
-                if prev.get_length() = 0
+                x := 0
+                while x < recorded.length
                 {
+                    let ov recorded.at(x)
+                    x := x + 1
+                    if Modeler.version_newer(ve.name, ov) and (prev.get_length() = 0 or Modeler.version_newer(ov, prev))
+                        prev := "`ov`"
+                }
+                if prev.get_length() = 0
                     Console.println("publish: `pe.name` `ve.name` is new, the package's first version")
+                else if tool.publish_compare(pe.name, prev, ve.name, tool.published_field(here, prev, 1), "`base`/scaly-publish.`pid`") = false
+                {
+                    understated := understated + 1
                     continue
                 }
-                if tool.publish_compare(pe.name, prev, ve.name, "`base`/scaly-publish.`pid`") = false
-                    understated := understated + 1
+                fresh.add("`pe.name` `ve.name`")
             }
         }
+        var answer 0
         if understated > 0
+            answer := 1
+        else if write
+            answer := tool.publish_write(remote, &fresh, log, out)
+        unlink(out.to_c_string())
+        unlink(log.to_c_string())
+        answer
+    }
+
+    ; Give each new version its line, commit the records and push.
+    procedure publish_write(remote: String, fresh: ref[Array[String]], mutable log: String, mutable out: String) returns int
+    {
+        if fresh.length = 0
+        {
+            Console.println("publish: nothing new to publish")
+            return 0
+        }
+        system("git status --porcelain -- packages > \"`out`\" 2> \"`log`\"".to_c_string())
+        if tool.first_line(out).get_length() > 0
+        {
+            Console.println("Error: scaly publish: packages/ has changes that are not committed - a version is published at a commit")
             return 1
+        }
+        system("git rev-parse HEAD > \"`out`\" 2> \"`log`\"".to_c_string())
+        let commit tool.first_line(out)
+        var what ""
+        var i: size_t 0
+        while i < fresh.length
+        {
+            let name tool.word_of(fresh.at(i), 0)
+            let version tool.word_of(fresh.at(i), 1)
+            if i > 0
+                what := "`what`, "
+            what := "`what``fresh.at(i)`"
+            i := i + 1
+            system("git rev-parse \"HEAD:packages/`name`/`version`\" > \"`out`\" 2> \"`log`\"".to_c_string())
+            let tree tool.first_line(out)
+            var record "packages/`name`/published"
+            var text "; The published versions of `name`: version, commit, git tree of its directory.\n; Written by scaly publish. A line here does not change.\n"
+            if File.exists(record)
+                text := File.read_to_string(record)
+            if text.get_length() > 0 and text.get(text.get_length() - 1) <> 10
+                text := "`text`\n"
+            File.write_from_string(record, "`text``version` `commit` `tree`\n")
+            system("git add \"`record`\"".to_c_string())
+        }
+        if tool.quiet("git commit --quiet -m \"Publish `what`\"", log) = false
+        {
+            Console.println("Error: scaly publish: git could not commit the record: `tool.first_line(log)`")
+            return 1
+        }
+        if tool.quiet("git push --quiet \"`remote`\" HEAD", log) = false
+        {
+            Console.println("Error: scaly publish: the record is committed here, but git could not push to \"`remote`\": `tool.first_line(log)`")
+            Console.println("       Push it, and `what` is published.")
+            return 1
+        }
+        Console.println("publish: `what` published at commit `commit`, pushed to \"`remote`\"")
         0
     }
 
@@ -1850,11 +2065,12 @@ define tool
         missing
     }
 
-    ; The surface of packages/<name>/<version> of this repository, written
-    ; under `dir` and read into `lines`. False when the version does not compile.
-    procedure surface_of(name: String, version: String, mutable dir: String, mutable lines: ref[Array[String]]) returns bool mutable modeler_error_count
+    ; The surface of `tree`packages/<name>/<version> (`tree` empty: this
+    ; repository's working tree), written under `dir` and read into `lines`.
+    ; False when the version does not compile.
+    procedure surface_of(tree: String, name: String, version: String, mutable dir: String, mutable lines: ref[Array[String]]) returns bool mutable modeler_error_count
     {
-        var root "packages/`name`/`version`/`name`.scaly"
+        var root "`tree`packages/`name`/`version`/`name`.scaly"
         if File.exists(root) = false
         {
             Console.println("Error: scaly publish: `name` `version` has no root file `root`")
@@ -1901,13 +2117,39 @@ define tool
 
     ; Does the number of `next` say what it changed against `prev`? Says what
     ; it found either way; false when the number understates it.
-    procedure publish_compare(name: String, prev: String, next: String, scratch: String) returns bool mutable modeler_error_count
+    procedure publish_compare(name: String, prev: String, next: String, prev_commit: String, scratch: String) returns bool mutable modeler_error_count
     {
         var old_lines Array[String]()
         var new_lines Array[String]()
         var old_dir "`scratch`.before"
         var new_dir "`scratch`.after"
-        if tool.surface_of(name, prev, old_dir, &old_lines) = false or tool.surface_of(name, next, new_dir, &new_lines) = false
+        ; the version before, out of the tree -- or, when its directory has
+        ; left the tree, out of the commit its line names, checked out beside
+        var before ""
+        var history "`scratch`.tree"
+        var log "`scratch`.treelog"
+        if Directory.is_directory("packages/`name`/`prev`") = false
+        {
+            if tool.is_object_id(prev_commit) = false
+            {
+                Console.println("Error: scaly publish: `name` `prev`, the version before `next`, is neither in the tree nor in the record")
+                return false
+            }
+            if tool.quiet("git worktree add --detach \"`history`\" `prev_commit`", log) = false
+            {
+                Console.println("Error: scaly publish: `name` `prev` was published at commit `prev_commit`, which this repository cannot check out: `tool.first_line(log)`")
+                unlink(log.to_c_string())
+                return false
+            }
+            before := "`history`/"
+        }
+        let read_before tool.surface_of(before, name, prev, old_dir, &old_lines)
+        if before.get_length() > 0
+        {
+            tool.quiet("git worktree remove --force \"`history`\"", log)
+            unlink(log.to_c_string())
+        }
+        if read_before = false or tool.surface_of(String(), name, next, new_dir, &new_lines) = false
             return false
         var gone_examples Array[String]()
         var added_examples Array[String]()
