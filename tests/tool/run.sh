@@ -422,19 +422,21 @@ done
 
 # collide: a symbol carries its package (an ABI tag, `_Z6helperB5alphai`), so
 # two packages that each define a function of one name, and a record of one
-# name with a method, stand side by side -- on every route
+# name with a method, stand side by side -- on every route; and each has its
+# own cell for a mutable global of one name (`calls`: 1, 10, 2 -- one shared
+# cell would answer 1, 11, 12)
 col="$TMP/collide"
 for p in alpha beta; do
   mkdir -p "$col/packages/$p/0.1.0/$p"
   printf 'package scaly 0.1.0\n\ndefine %s\n{\n    module util\n    module Box\n}\n' "$p" > "$col/packages/$p/0.1.0/$p.scaly"
 done
 write_pair() {  # write_pair <helper of beta> <record of beta>
-  printf 'function helper(n: int) returns int\n    n + 1\n\nfunction from_alpha(n: int) returns int\n    helper(n)\n' > "$col/packages/alpha/0.1.0/alpha/util.scaly"
-  printf 'function %s(n: int) returns int\n    n + 100\n\nfunction from_beta(n: int) returns int\n    %s(n)\n' "$1" "$1" > "$col/packages/beta/0.1.0/beta/util.scaly"
+  printf 'function helper(n: int) returns int\n    n + 1\n\nfunction from_alpha(n: int) returns int\n    helper(n)\n\nmutable calls: int 0\n\nprocedure bump_alpha() returns int mutable calls\n{\n    calls := calls + 1\n    calls\n}\n' > "$col/packages/alpha/0.1.0/alpha/util.scaly"
+  printf 'function %s(n: int) returns int\n    n + 100\n\nfunction from_beta(n: int) returns int\n    %s(n)\n\nmutable calls: int 0\n\nprocedure bump_beta() returns int mutable calls\n{\n    calls := calls + 10\n    calls\n}\n' "$1" "$1" > "$col/packages/beta/0.1.0/beta/util.scaly"
   printf 'define Box\n(\n    v: int\n)\n{\n    function grown(this) returns int\n        v + 1\n}\n\nfunction alpha_box(n: int) returns int\n{\n    let b Box(n)\n    b.grown()\n}\n' > "$col/packages/alpha/0.1.0/alpha/Box.scaly"
   printf 'define %s\n(\n    v: int\n)\n{\n    function grown(this) returns int\n        v + 100\n}\n\nfunction beta_box(n: int) returns int\n{\n    let b %s(n)\n    b.grown()\n}\n' "$2" "$2" > "$col/packages/beta/0.1.0/beta/Box.scaly"
 }
-printf 'package alpha 0.1.0\npackage beta 0.1.0\n\nprint("`from_alpha(1)` `from_beta(1)` `alpha_box(1)` `beta_box(1)`")\n' > "$col/main.scaly"
+printf 'package alpha 0.1.0\npackage beta 0.1.0\n\nlet one bump_alpha()\nlet ten bump_beta()\nlet two bump_alpha()\nprint("`from_alpha(1)` `from_beta(1)` `alpha_box(1)` `beta_box(1)` `one` `ten` `two`")\n' > "$col/main.scaly"
 write_pair helper Box
 for route in "run main.scaly" "build main.scaly -o $TMP/col_a$SCALY_EXE" "build main.scaly --release -o $TMP/col_b$SCALY_EXE"; do
   # shellcheck disable=SC2086
@@ -443,7 +445,7 @@ for route in "run main.scaly" "build main.scaly -o $TMP/col_a$SCALY_EXE" "build 
     *col_a*) [ "$rc" = 0 ] && out=$("$TMP/col_a$SCALY_EXE") ;;
     *col_b*) [ "$rc" = 0 ] && out=$("$TMP/col_b$SCALY_EXE") ;;
   esac
-  [ "$out" = "2 101 2 101" ] && ok || bad "collide (${route%% *} ${route##*main.scaly}): rc=$rc got '$(echo "$out" | head -2 | tr '\n' '|')'"
+  [ "$out" = "2 101 2 101 1 10 2" ] && ok || bad "collide (${route%% *} ${route##*main.scaly}): rc=$rc got '$(echo "$out" | head -2 | tr '\n' '|')'"
 done
 # the tag is in the symbols the packages define
 grep -q '_Z6helperB5alphai' "$SCALY_CACHE"/alpha-0.1.0-*.defs && grep -q '_ZN3BoxB4beta5grownEv' "$SCALY_CACHE"/beta-0.1.0-*.defs && ok || bad "collide: the definitions carry no package tag"
@@ -456,7 +458,7 @@ for route in "run main.scaly" "build main.scaly -o $TMP/col_a$SCALY_EXE" "build 
     *col_a*) [ "$rc" = 0 ] && out=$("$TMP/col_a$SCALY_EXE") ;;
     *col_b*) [ "$rc" = 0 ] && out=$("$TMP/col_b$SCALY_EXE") ;;
   esac
-  [ "$out" = "2 101 2 101" ] && ok || bad "collide, names apart (${route%% *}): rc=$rc got '$(echo "$out" | head -1)'"
+  [ "$out" = "2 101 2 101 1 10 2" ] && ok || bad "collide, names apart (${route%% *}): rc=$rc got '$(echo "$out" | head -1)'"
 done
 
 # source: the third place a package is looked for, what a fetch laid down

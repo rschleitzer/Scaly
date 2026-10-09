@@ -61,7 +61,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z5Lexer = type { { ptr }, ptr, ptr, i64, i64, %_Z5Token, %_Z5SliceImE, i64, ptr }
 %_Z5Token = type { i8, <{ [1 x i64], [1 x i8] }> }
 %_Z11ParserError = type { i8, <{ [3 x i64], [0 x i8] }> }
-%_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, ptr, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, i1, i64, ptr, i1, i64, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z6VectorImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, ptr, ptr, ptr, ptr, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, %_Z12ConceptIndex, ptr, ptr, ptr, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, ptr, ptr, %_Z12ConceptIndex, ptr, i64, i64 }
+%_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, ptr, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, i1, i64, ptr, i1, i64, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z6VectorImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, ptr, ptr, ptr, ptr, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, %_Z12ConceptIndex, ptr, ptr, ptr, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, ptr, ptr, %_Z12ConceptIndex, %_Z12ConceptIndex, ptr, i64, i64 }
 %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE = type { i64, i64, ptr }
 %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE = type { i64, i64, ptr }
 %_Z5ArrayI14TypeConstraintE = type { i64, i64, ptr }
@@ -667,7 +667,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorI15ExtensionSyntaxE = type { ptr }
 %_Z8LineScan = type { i64, i64, i64, i1, i1, i8, i1 }
 %_Z13ResolveResult = type { i1, i64, { ptr } }
-%_Z4Plan = type { %_Z13PlannedModule, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, %_Z12ConceptIndex, %_Z12ConceptIndex }
+%_Z4Plan = type { %_Z13PlannedModule, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, %_Z12ConceptIndex, %_Z12ConceptIndex, %_Z12ConceptIndex }
 %_Z13PlannedModule = type { { ptr }, { ptr }, ptr, ptr, ptr, ptr }
 %_Z6VectorI16PlannedStatementE = type { i64, ptr }
 %_Z16PlannedStatement = type { i8, <{ [16 x i64], [0 x i8] }> }
@@ -814,21 +814,21 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @"13RPC_STDOUT_FD" = internal constant i64 1
 @"7IDX_CAP" = internal constant i64 4096
 @"7DIR_CAP" = internal constant i64 16
-@idx_slots = thread_local global ptr null
-@dir_slots = thread_local global ptr null
-@idx_epoch = thread_local global i64 0
+@_Z9idx_slotsB7scalyls = thread_local global ptr null
+@_Z9dir_slotsB7scalyls = thread_local global ptr null
+@_Z9idx_epochB7scalyls = thread_local global i64 0
 @"6NS_CAP" = internal constant i64 32768
-@prof_list = thread_local global i64 0
-@prof_read = thread_local global i64 0
-@prof_fresh = thread_local global i64 0
-@prof_sig = thread_local global i64 0
-@prof_bytes = thread_local global i64 0
-@lc_data = thread_local global ptr null
-@lc_len = thread_local global i64 0
-@lc_off = thread_local global i64 0
-@lc_line = thread_local global i64 0
-@lc_col = thread_local global i64 0
-@lc_active = thread_local global i1 false
+@_Z9prof_listB7scalyls = thread_local global i64 0
+@_Z9prof_readB7scalyls = thread_local global i64 0
+@_Z10prof_freshB7scalyls = thread_local global i64 0
+@_Z8prof_sigB7scalyls = thread_local global i64 0
+@_Z10prof_bytesB7scalyls = thread_local global i64 0
+@_Z7lc_dataB7scalyls = thread_local global ptr null
+@_Z6lc_lenB7scalyls = thread_local global i64 0
+@_Z6lc_offB7scalyls = thread_local global i64 0
+@_Z7lc_lineB7scalyls = thread_local global i64 0
+@_Z6lc_colB7scalyls = thread_local global i64 0
+@_Z9lc_activeB7scalyls = thread_local global i1 false
 @"10FK_BRACKET" = internal constant i64 0
 @"6FK_ONE" = internal constant i64 1
 @"8FK_MULTI" = internal constant i64 2
@@ -841,23 +841,23 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @"7LK_STMT" = internal constant i64 6
 @"13LK_ARM_INLINE" = internal constant i64 7
 @"12INDENT_WIDTH" = internal constant i64 4
-@ph_path_data = thread_local global ptr null
-@ph_path_len = thread_local global i64 0
-@ph_blob_data = thread_local global ptr null
-@ph_blob_len = thread_local global i64 0
-@ph_hash = thread_local global i64 0
-@ph_used = thread_local global i1 false
+@_Z12ph_path_dataB7scalyls = thread_local global ptr null
+@_Z11ph_path_lenB7scalyls = thread_local global i64 0
+@_Z12ph_blob_dataB7scalyls = thread_local global ptr null
+@_Z11ph_blob_lenB7scalyls = thread_local global i64 0
+@_Z7ph_hashB7scalyls = thread_local global i64 0
+@_Z7ph_usedB7scalyls = thread_local global i1 false
 @"7DOC_CAP" = internal constant i64 256
-@doc_slots = thread_local global ptr null
-@ws_root_data = thread_local global ptr null
-@ws_root_len = thread_local global i64 0
+@_Z9doc_slotsB7scalyls = thread_local global ptr null
+@_Z12ws_root_dataB7scalyls = thread_local global ptr null
+@_Z11ws_root_lenB7scalyls = thread_local global i64 0
 @"18WORKER_STACK_BYTES" = internal constant i64 67108864
 @"18ANALYZE_TIMEOUT_MS" = internal constant i32 30000
 @"20WORKSPACE_TIMEOUT_MS" = internal constant i32 60000
 @"21COMPLETION_TIMEOUT_MS" = internal constant i32 20000
-@worker_pid = thread_local global i64 0
-@worker_in = thread_local global i64 0
-@worker_out = thread_local global i64 0
+@_Z10worker_pidB7scalyls = thread_local global i64 0
+@_Z9worker_inB7scalyls = thread_local global i64 0
+@_Z10worker_outB7scalyls = thread_local global i64 0
 @.sconst = private constant [17 x i8] c"\0FContent-Length:\00"
 @.sconst.1 = private constant [18 x i8] c"\10Content-Length: \00"
 @.str = private unnamed_addr constant [10 x i8] c"Vector.at\00", align 1
@@ -71081,7 +71081,7 @@ entry:
 
 define linkonce_odr void @_ZN8symindexB7scalyls8idx_viewEv(ptr noalias sret(%_Z5SliceI7IdxSlotE) %0) {
 entry:
-  %global.load = load ptr, ptr @idx_slots, align 8
+  %global.load = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %tuple = alloca %_Z5SliceI7IdxSlotE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI7IdxSlotE, ptr %tuple, i32 0, i32 0
   store i64 4096, ptr %tuple.field, align 1
@@ -71378,7 +71378,7 @@ entry:
 
 define linkonce_odr void @_ZN8symindexB7scalyls8dir_viewEv(ptr noalias sret(%_Z5SliceI7DirSlotE) %0) {
 entry:
-  %global.load = load ptr, ptr @dir_slots, align 8
+  %global.load = load ptr, ptr @_Z9dir_slotsB7scalyls, align 8
   %tuple = alloca %_Z5SliceI7DirSlotE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI7DirSlotE, ptr %tuple, i32 0, i32 0
   store i64 16, ptr %tuple.field, align 1
@@ -71392,15 +71392,15 @@ entry:
 define linkonce_odr void @_ZN8symindexB7scalyls6ensureEv() {
 entry:
   %i = alloca i64, align 8
-  %global.load = load ptr, ptr @idx_slots, align 8
+  %global.load = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %eq = icmp eq ptr %global.load, null
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %mul = mul i64 4096, ptrtoint (ptr getelementptr (%_Z7IdxSlot, ptr null, i32 1) to i64)
   %call = call ptr @malloc(i64 %mul)
-  store ptr %call, ptr @idx_slots, align 8
-  %global.load1 = load ptr, ptr @idx_slots, align 8
+  store ptr %call, ptr @_Z9idx_slotsB7scalyls, align 8
+  %global.load1 = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %eq2 = icmp eq ptr %global.load1, null
   br i1 %eq2, label %if.then3, label %if.end4
 
@@ -71420,7 +71420,7 @@ while.cond:                                       ; preds = %while.body, %if.end
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load6 = load ptr, ptr @idx_slots, align 8
+  %global.load6 = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %i7 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z7IdxSlot, ptr %global.load6, i64 %i7
   %used = getelementptr inbounds nuw %_Z7IdxSlot, ptr %ptr.add, i32 0, i32 5
@@ -71448,9 +71448,9 @@ while.exit:                                       ; preds = %while.cond
 
 define linkonce_odr void @_ZN8symindexB7scalyls13begin_requestEv() {
 entry:
-  %global.load = load i64, ptr @idx_epoch, align 8
+  %global.load = load i64, ptr @_Z9idx_epochB7scalyls, align 8
   %add = add i64 %global.load, 1
-  store i64 %add, ptr @idx_epoch, align 8
+  store i64 %add, ptr @_Z9idx_epochB7scalyls, align 8
   ret void
 }
 
@@ -71461,7 +71461,7 @@ entry:
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
   %i = alloca i64, align 8
-  %global.load = load ptr, ptr @idx_slots, align 8
+  %global.load = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %ne = icmp ne ptr %global.load, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -71479,7 +71479,7 @@ while.cond:                                       ; preds = %if.end5, %if.then
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load2 = load ptr, ptr @idx_slots, align 8
+  %global.load2 = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %i3 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z7IdxSlot, ptr %global.load2, i64 %i3
   %load.struct = load %_Z7IdxSlot, ptr %ptr.add, align 8
@@ -71526,7 +71526,7 @@ if.end10:                                         ; preds = %frame.forced
 
 define linkonce_odr i1 @_ZN8symindexB7scalyls5freshE6String(ptr %0) {
 entry:
-  %global.load = load i64, ptr @idx_epoch, align 8
+  %global.load = load i64, ptr @_Z9idx_epochB7scalyls, align 8
   %eq = icmp eq i64 %global.load, 0
   br i1 %eq, label %if.then, label %if.end
 
@@ -71542,11 +71542,11 @@ if.then1:                                         ; preds = %if.end
   ret i1 false
 
 if.end2:                                          ; preds = %if.end
-  %global.load3 = load ptr, ptr @idx_slots, align 8
+  %global.load3 = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %ptr.add = getelementptr inbounds %_Z7IdxSlot, ptr %global.load3, i64 %call
   %load.struct = load %_Z7IdxSlot, ptr %ptr.add, align 8
   %epoch = extractvalue %_Z7IdxSlot %load.struct, 6
-  %global.load4 = load i64, ptr @idx_epoch, align 8
+  %global.load4 = load i64, ptr @_Z9idx_epochB7scalyls, align 8
   %ne = icmp ne i64 %epoch, %global.load4
   br i1 %ne, label %if.then5, label %if.end6
 
@@ -71567,9 +71567,9 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %global.load = load ptr, ptr @idx_slots, align 8
+  %global.load = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %ptr.add = getelementptr inbounds %_Z7IdxSlot, ptr %global.load, i64 %call
-  %global.load1 = load i64, ptr @idx_epoch, align 8
+  %global.load1 = load i64, ptr @_Z9idx_epochB7scalyls, align 8
   %epoch = getelementptr inbounds nuw %_Z7IdxSlot, ptr %ptr.add, i32 0, i32 6
   store i64 %global.load1, ptr %epoch, align 8
   ret void
@@ -71582,7 +71582,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load = load ptr, ptr @idx_slots, align 8
+  %global.load = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %ptr.add = getelementptr inbounds %_Z7IdxSlot, ptr %global.load, i64 %call
   %load.struct = load %_Z7IdxSlot, ptr %ptr.add, align 8
   %chash = extractvalue %_Z7IdxSlot %load.struct, 2
@@ -71606,7 +71606,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load = load ptr, ptr @idx_slots, align 8
+  %global.load = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %ptr.add = getelementptr inbounds %_Z7IdxSlot, ptr %global.load, i64 %call
   %load.struct = load %_Z7IdxSlot, ptr %ptr.add, align 8
   %blob_data = extractvalue %_Z7IdxSlot %load.struct, 3
@@ -71733,7 +71733,7 @@ entry:
   %i = alloca i64, align 8
   %sret.result = alloca %_Z5SliceI7IdxSlotE, align 8
   call void @_ZN8symindexB7scalyls6ensureEv()
-  %global.load = load ptr, ptr @idx_slots, align 8
+  %global.load = load ptr, ptr @_Z9idx_slotsB7scalyls, align 8
   %eq = icmp eq ptr %global.load, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -71793,15 +71793,15 @@ if.end9:                                          ; preds = %while.body
 define linkonce_odr void @_ZN8symindexB7scalyls11ensure_dirsEv() {
 entry:
   %i = alloca i64, align 8
-  %global.load = load ptr, ptr @dir_slots, align 8
+  %global.load = load ptr, ptr @_Z9dir_slotsB7scalyls, align 8
   %eq = icmp eq ptr %global.load, null
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %mul = mul i64 16, ptrtoint (ptr getelementptr (%_Z7DirSlot, ptr null, i32 1) to i64)
   %call = call ptr @malloc(i64 %mul)
-  store ptr %call, ptr @dir_slots, align 8
-  %global.load1 = load ptr, ptr @dir_slots, align 8
+  store ptr %call, ptr @_Z9dir_slotsB7scalyls, align 8
+  %global.load1 = load ptr, ptr @_Z9dir_slotsB7scalyls, align 8
   %eq2 = icmp eq ptr %global.load1, null
   br i1 %eq2, label %if.then3, label %if.end4
 
@@ -71821,7 +71821,7 @@ while.cond:                                       ; preds = %while.body, %if.end
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load6 = load ptr, ptr @dir_slots, align 8
+  %global.load6 = load ptr, ptr @_Z9dir_slotsB7scalyls, align 8
   %i7 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z7DirSlot, ptr %global.load6, i64 %i7
   %used = getelementptr inbounds nuw %_Z7DirSlot, ptr %ptr.add, i32 0, i32 4
@@ -71852,7 +71852,7 @@ entry:
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
   %i = alloca i64, align 8
-  %global.load = load ptr, ptr @dir_slots, align 8
+  %global.load = load ptr, ptr @_Z9dir_slotsB7scalyls, align 8
   %eq = icmp eq ptr %global.load, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -71870,7 +71870,7 @@ while.cond:                                       ; preds = %if.end5, %if.end
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load2 = load ptr, ptr @dir_slots, align 8
+  %global.load2 = load ptr, ptr @_Z9dir_slotsB7scalyls, align 8
   %i3 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z7DirSlot, ptr %global.load2, i64 %i3
   %load.struct = load %_Z7DirSlot, ptr %ptr.add, align 8
@@ -71884,7 +71884,7 @@ while.exit:                                       ; preds = %while.cond
 if.then4:                                         ; preds = %while.body
   %load.struct6 = load %_Z7DirSlot, ptr %ptr.add, align 8
   %epoch = extractvalue %_Z7DirSlot %load.struct6, 5
-  %global.load7 = load i64, ptr @idx_epoch, align 8
+  %global.load7 = load i64, ptr @_Z9idx_epochB7scalyls, align 8
   %eq8 = icmp eq i64 %epoch, %global.load7
   br i1 %eq8, label %if.then9, label %if.end10
 
@@ -71928,7 +71928,7 @@ if.end15:                                         ; preds = %frame.forced
 
 define linkonce_odr i1 @_ZN8symindexB7scalyls11has_listingE6String(ptr %0) {
 entry:
-  %global.load = load i64, ptr @idx_epoch, align 8
+  %global.load = load i64, ptr @_Z9idx_epochB7scalyls, align 8
   %eq = icmp eq i64 %global.load, 0
   br i1 %eq, label %if.then, label %if.end
 
@@ -71952,7 +71952,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %global.load = load ptr, ptr @dir_slots, align 8
+  %global.load = load ptr, ptr @_Z9dir_slotsB7scalyls, align 8
   %ptr.add = getelementptr inbounds %_Z7DirSlot, ptr %global.load, i64 %call
   %load.struct = load %_Z7DirSlot, ptr %ptr.add, align 8
   %list_len = extractvalue %_Z7DirSlot %load.struct, 3
@@ -72077,7 +72077,7 @@ entry:
   %i = alloca i64, align 8
   %target = alloca i64, align 8
   call void @_ZN8symindexB7scalyls11ensure_dirsEv()
-  %global.load = load ptr, ptr @dir_slots, align 8
+  %global.load = load ptr, ptr @_Z9dir_slotsB7scalyls, align 8
   %eq = icmp eq ptr %global.load, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -72095,7 +72095,7 @@ while.cond:                                       ; preds = %if.end11, %if.end
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load2 = load ptr, ptr @dir_slots, align 8
+  %global.load2 = load ptr, ptr @_Z9dir_slotsB7scalyls, align 8
   %i3 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z7DirSlot, ptr %global.load2, i64 %i3
   %load.struct = load %_Z7DirSlot, ptr %ptr.add, align 8
@@ -72142,7 +72142,7 @@ land.rhs12:                                       ; preds = %land.rhs13
 land.rhs13:                                       ; preds = %if.end5
   %load.struct16 = load %_Z7DirSlot, ptr %ptr.add, align 8
   %epoch = extractvalue %_Z7DirSlot %load.struct16, 5
-  %global.load17 = load i64, ptr @idx_epoch, align 8
+  %global.load17 = load i64, ptr @_Z9idx_epochB7scalyls, align 8
   %ne = icmp ne i64 %epoch, %global.load17
   br i1 %ne, label %land.rhs12, label %if.end11
 
@@ -72158,7 +72158,7 @@ if.end25:                                         ; preds = %if.then24, %while.e
   call void @_ZN8symindexB7scalyls12set_dir_listER7DirSlotB7scalyls6String(ptr %call, ptr %1)
   %used27 = getelementptr inbounds nuw %_Z7DirSlot, ptr %call, i32 0, i32 4
   store i1 true, ptr %used27, align 1
-  %global.load28 = load i64, ptr @idx_epoch, align 8
+  %global.load28 = load i64, ptr @_Z9idx_epochB7scalyls, align 8
   %epoch29 = getelementptr inbounds nuw %_Z7DirSlot, ptr %call, i32 0, i32 5
   store i64 %global.load28, ptr %epoch29, align 8
   ret void
@@ -73299,11 +73299,11 @@ declare i32 @fgetc(ptr)
 
 define linkonce_odr void @_ZN7symbolsB7scalyls10prof_resetEv() {
 entry:
-  store i64 0, ptr @prof_list, align 8
-  store i64 0, ptr @prof_read, align 8
-  store i64 0, ptr @prof_fresh, align 8
-  store i64 0, ptr @prof_sig, align 8
-  store i64 0, ptr @prof_bytes, align 8
+  store i64 0, ptr @_Z9prof_listB7scalyls, align 8
+  store i64 0, ptr @_Z9prof_readB7scalyls, align 8
+  store i64 0, ptr @_Z10prof_freshB7scalyls, align 8
+  store i64 0, ptr @_Z8prof_sigB7scalyls, align 8
+  store i64 0, ptr @_Z10prof_bytesB7scalyls, align 8
   ret void
 }
 
@@ -73319,19 +73319,19 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   call void @_Z11scaly_eputsP10const_char(ptr @.str.488)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.489)
-  %global.load = load i64, ptr @prof_list, align 8
+  %global.load = load i64, ptr @_Z9prof_listB7scalyls, align 8
   call void @_Z11scaly_eputi3i64(i64 %global.load)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.490)
-  %global.load1 = load i64, ptr @prof_read, align 8
+  %global.load1 = load i64, ptr @_Z9prof_readB7scalyls, align 8
   call void @_Z11scaly_eputi3i64(i64 %global.load1)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.491)
-  %global.load2 = load i64, ptr @prof_fresh, align 8
+  %global.load2 = load i64, ptr @_Z10prof_freshB7scalyls, align 8
   call void @_Z11scaly_eputi3i64(i64 %global.load2)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.492)
-  %global.load3 = load i64, ptr @prof_sig, align 8
+  %global.load3 = load i64, ptr @_Z8prof_sigB7scalyls, align 8
   call void @_Z11scaly_eputi3i64(i64 %global.load3)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.493)
-  %global.load4 = load i64, ptr @prof_bytes, align 8
+  %global.load4 = load i64, ptr @_Z10prof_bytesB7scalyls, align 8
   %sdiv = sdiv i64 %global.load4, 1024
   call void @_Z11scaly_eputi3i64(i64 %sdiv)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.494)
@@ -79622,9 +79622,9 @@ if.end:                                           ; preds = %if.then, %entry
 if.then3:                                         ; preds = %if.end
   %target5 = load i64, ptr %target, align 8
   call void @_ZN7symbolsB7scalyls16line_cursor_seekEm(i64 %target5)
-  %global.load = load i64, ptr @lc_line, align 8
+  %global.load = load i64, ptr @_Z7lc_lineB7scalyls, align 8
   store i64 %global.load, ptr %line, align 1
-  %global.load6 = load i64, ptr @lc_col, align 8
+  %global.load6 = load i64, ptr @_Z6lc_colB7scalyls, align 8
   store i64 %global.load6, ptr %col, align 1
   store i1 true, ptr %walked, align 1
   br label %if.end4
@@ -79727,27 +79727,27 @@ frame.forced:                                     ; preds = %frame.force, %if.en
 define linkonce_odr void @_ZN7symbolsB7scalyls17line_cursor_beginE6String(ptr %0) {
 entry:
   %call = call ptr @_ZN6String10get_bufferEv(ptr %0)
-  store ptr %call, ptr @lc_data, align 8
+  store ptr %call, ptr @_Z7lc_dataB7scalyls, align 8
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %0)
-  store i64 %call1, ptr @lc_len, align 8
-  store i64 0, ptr @lc_off, align 8
-  store i64 0, ptr @lc_line, align 8
-  store i64 0, ptr @lc_col, align 8
-  store i1 true, ptr @lc_active, align 1
+  store i64 %call1, ptr @_Z6lc_lenB7scalyls, align 8
+  store i64 0, ptr @_Z6lc_offB7scalyls, align 8
+  store i64 0, ptr @_Z7lc_lineB7scalyls, align 8
+  store i64 0, ptr @_Z6lc_colB7scalyls, align 8
+  store i1 true, ptr @_Z9lc_activeB7scalyls, align 1
   ret void
 }
 
 define linkonce_odr void @_ZN7symbolsB7scalyls15line_cursor_endEv() {
 entry:
-  store i1 false, ptr @lc_active, align 1
-  store ptr null, ptr @lc_data, align 8
-  store i64 0, ptr @lc_len, align 8
+  store i1 false, ptr @_Z9lc_activeB7scalyls, align 1
+  store ptr null, ptr @_Z7lc_dataB7scalyls, align 8
+  store i64 0, ptr @_Z6lc_lenB7scalyls, align 8
   ret void
 }
 
 define linkonce_odr i1 @_ZN7symbolsB7scalyls17line_cursor_holdsE6Stringm(ptr %0, i64 %1) {
 entry:
-  %global.load = load i1, ptr @lc_active, align 1
+  %global.load = load i1, ptr @_Z9lc_activeB7scalyls, align 1
   %eq = icmp eq i1 %global.load, false
   br i1 %eq, label %if.then, label %if.end
 
@@ -79755,7 +79755,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %global.load1 = load i64, ptr @lc_len, align 8
+  %global.load1 = load i64, ptr @_Z6lc_lenB7scalyls, align 8
   %ne = icmp ne i64 %global.load1, %1
   br i1 %ne, label %if.then2, label %if.end3
 
@@ -79763,7 +79763,7 @@ if.then2:                                         ; preds = %if.end
   ret i1 false
 
 if.end3:                                          ; preds = %if.end
-  %global.load4 = load ptr, ptr @lc_data, align 8
+  %global.load4 = load ptr, ptr @_Z7lc_dataB7scalyls, align 8
   %eq5 = icmp eq ptr %global.load4, null
   br i1 %eq5, label %if.then6, label %if.end7
 
@@ -79811,8 +79811,8 @@ if.end:                                           ; preds = %while.body
 
 define linkonce_odr void @_ZN7symbolsB7scalyls16line_cursor_seekEm(i64 %0) {
 entry:
-  %global.load = load ptr, ptr @lc_data, align 8
-  %global.load1 = load i64, ptr @lc_len, align 8
+  %global.load = load ptr, ptr @_Z7lc_dataB7scalyls, align 8
+  %global.load1 = load i64, ptr @_Z6lc_lenB7scalyls, align 8
   %tuple = alloca %_Z5SliceI2u8E, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
   store i64 %global.load1, ptr %tuple.field, align 1
@@ -79821,12 +79821,12 @@ entry:
   br label %while.cond
 
 while.cond:                                       ; preds = %if.end7, %entry
-  %global.load3 = load i64, ptr @lc_off, align 8
+  %global.load3 = load i64, ptr @_Z6lc_offB7scalyls, align 8
   %lt = icmp ult i64 %global.load3, %0
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load4 = load i64, ptr @lc_off, align 8
+  %global.load4 = load i64, ptr @_Z6lc_offB7scalyls, align 8
   %ptr.add = getelementptr inbounds i8, ptr %global.load, i64 %global.load4
   %deref = load i8, ptr %ptr.add, align 1
   %eq = icmp eq i8 %deref, 10
@@ -79836,10 +79836,10 @@ while.exit:                                       ; preds = %while.cond
   br label %while.cond12
 
 if.then:                                          ; preds = %while.body
-  %global.load5 = load i64, ptr @lc_line, align 8
+  %global.load5 = load i64, ptr @_Z7lc_lineB7scalyls, align 8
   %add = add i64 %global.load5, 1
-  store i64 %add, ptr @lc_line, align 8
-  store i64 0, ptr @lc_col, align 8
+  store i64 %add, ptr @_Z7lc_lineB7scalyls, align 8
+  store i64 0, ptr @_Z6lc_colB7scalyls, align 8
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %while.body
@@ -79847,27 +79847,27 @@ if.end:                                           ; preds = %if.then, %while.bod
   br i1 %ne, label %if.then6, label %if.end7
 
 if.then6:                                         ; preds = %if.end
-  %global.load8 = load i64, ptr @lc_col, align 8
+  %global.load8 = load i64, ptr @_Z6lc_colB7scalyls, align 8
   %add9 = add i64 %global.load8, 1
-  store i64 %add9, ptr @lc_col, align 8
+  store i64 %add9, ptr @_Z6lc_colB7scalyls, align 8
   br label %if.end7
 
 if.end7:                                          ; preds = %if.then6, %if.end
-  %global.load10 = load i64, ptr @lc_off, align 8
+  %global.load10 = load i64, ptr @_Z6lc_offB7scalyls, align 8
   %add11 = add i64 %global.load10, 1
-  store i64 %add11, ptr @lc_off, align 8
+  store i64 %add11, ptr @_Z6lc_offB7scalyls, align 8
   br label %while.cond
 
 while.cond12:                                     ; preds = %if.end28, %while.exit
-  %global.load15 = load i64, ptr @lc_off, align 8
+  %global.load15 = load i64, ptr @_Z6lc_offB7scalyls, align 8
   %gt = icmp ugt i64 %global.load15, %0
   br i1 %gt, label %while.body13, label %while.exit14
 
 while.body13:                                     ; preds = %while.cond12
-  %global.load16 = load i64, ptr @lc_off, align 8
+  %global.load16 = load i64, ptr @_Z6lc_offB7scalyls, align 8
   %sub = sub i64 %global.load16, 1
-  store i64 %sub, ptr @lc_off, align 8
-  %global.load17 = load i64, ptr @lc_off, align 8
+  store i64 %sub, ptr @_Z6lc_offB7scalyls, align 8
+  %global.load17 = load i64, ptr @_Z6lc_offB7scalyls, align 8
   %ptr.add18 = getelementptr inbounds i8, ptr %global.load, i64 %global.load17
   %deref19 = load i8, ptr %ptr.add18, align 1
   %eq20 = icmp eq i8 %deref19, 10
@@ -79877,12 +79877,12 @@ while.exit14:                                     ; preds = %while.cond12
   ret void
 
 if.then21:                                        ; preds = %while.body13
-  %global.load23 = load i64, ptr @lc_line, align 8
+  %global.load23 = load i64, ptr @_Z7lc_lineB7scalyls, align 8
   %sub24 = sub i64 %global.load23, 1
-  store i64 %sub24, ptr @lc_line, align 8
-  %global.load25 = load i64, ptr @lc_off, align 8
+  store i64 %sub24, ptr @_Z7lc_lineB7scalyls, align 8
+  %global.load25 = load i64, ptr @_Z6lc_offB7scalyls, align 8
   %call = call i64 @_ZN7symbolsB7scalyls25line_cursor_column_beforeE5SliceI2u8Em(ptr %tuple, i64 %global.load25)
-  store i64 %call, ptr @lc_col, align 8
+  store i64 %call, ptr @_Z6lc_colB7scalyls, align 8
   br label %if.end22
 
 if.end22:                                         ; preds = %if.then21, %while.body13
@@ -79890,9 +79890,9 @@ if.end22:                                         ; preds = %if.then21, %while.b
   br i1 %ne26, label %if.then27, label %if.end28
 
 if.then27:                                        ; preds = %if.end22
-  %global.load29 = load i64, ptr @lc_col, align 8
+  %global.load29 = load i64, ptr @_Z6lc_colB7scalyls, align 8
   %sub30 = sub i64 %global.load29, 1
-  store i64 %sub30, ptr @lc_col, align 8
+  store i64 %sub30, ptr @_Z6lc_colB7scalyls, align 8
   br label %if.end28
 
 if.end28:                                         ; preds = %if.then27, %if.end22
@@ -96562,9 +96562,9 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %global.load = load i64, ptr @prof_list, align 8
+  %global.load = load i64, ptr @_Z9prof_listB7scalyls, align 8
   %add = add i64 %global.load, 1
-  store i64 %add, ptr @prof_list, align 8
+  store i64 %add, ptr @_Z9prof_listB7scalyls, align 8
   %frame.page = load ptr, ptr %frame, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
   br i1 %frame.has_page, label %frame.forced, label %frame.force
@@ -96656,18 +96656,18 @@ entry:
   br i1 %call, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load = load i64, ptr @prof_fresh, align 8
+  %global.load = load i64, ptr @_Z10prof_freshB7scalyls, align 8
   %add = add i64 %global.load, 1
-  store i64 %add, ptr @prof_fresh, align 8
+  store i64 %add, ptr @_Z10prof_freshB7scalyls, align 8
   call void @_ZN8symindexB7scalyls8get_blobEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.end:                                           ; preds = %entry
-  %global.load1 = load i64, ptr @prof_read, align 8
+  %global.load1 = load i64, ptr @_Z9prof_readB7scalyls, align 8
   %add2 = add i64 %global.load1, 1
-  store i64 %add2, ptr @prof_read, align 8
+  store i64 %add2, ptr @_Z9prof_readB7scalyls, align 8
   %call3 = call i1 @_ZN4File6existsE6String(ptr %2)
   %eq = icmp eq i1 %call3, false
   br i1 %eq, label %if.then4, label %if.end5
@@ -106472,13 +106472,13 @@ define linkonce_odr void @_ZN7symbolsB7scalyls16sig_from_ws_blobEPN4scaly6memory
 entry:
   %sret.result6 = alloca { ptr }, align 8
   %sret.result4 = alloca { ptr }, align 8
-  %global.load = load i64, ptr @prof_sig, align 8
+  %global.load = load i64, ptr @_Z8prof_sigB7scalyls, align 8
   %add = add i64 %global.load, 1
-  store i64 %add, ptr @prof_sig, align 8
-  %global.load1 = load i64, ptr @prof_bytes, align 8
+  store i64 %add, ptr @_Z8prof_sigB7scalyls, align 8
+  %global.load1 = load i64, ptr @_Z10prof_bytesB7scalyls, align 8
   %call = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %add2 = add i64 %global.load1, %call
-  store i64 %add2, ptr @prof_bytes, align 8
+  store i64 %add2, ptr @_Z10prof_bytesB7scalyls, align 8
   %sret.result = alloca { ptr }, align 8
   call void @_ZN7symbolsB7scalyls14detail_payloadEPN4scaly6memory4PageE6String6String2u8(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, i8 83)
   %call3 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -148608,7 +148608,7 @@ if.end:                                           ; preds = %entry
 define linkonce_odr i1 @_ZN10placehintsB7scalyls9cache_hitE6Stringm(ptr %0, i64 %1) {
 entry:
   %i = alloca i64, align 8
-  %global.load = load i1, ptr @ph_used, align 1
+  %global.load = load i1, ptr @_Z7ph_usedB7scalyls, align 1
   %eq = icmp eq i1 %global.load, false
   br i1 %eq, label %if.then, label %if.end
 
@@ -148616,7 +148616,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %global.load1 = load i64, ptr @ph_hash, align 8
+  %global.load1 = load i64, ptr @_Z7ph_hashB7scalyls, align 8
   %ne = icmp ne i64 %global.load1, %1
   br i1 %ne, label %if.then2, label %if.end3
 
@@ -148624,7 +148624,7 @@ if.then2:                                         ; preds = %if.end
   ret i1 false
 
 if.end3:                                          ; preds = %if.end
-  %global.load4 = load i64, ptr @ph_path_len, align 8
+  %global.load4 = load i64, ptr @_Z11ph_path_lenB7scalyls, align 8
   %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
   %ne5 = icmp ne i64 %global.load4, %call
   br i1 %ne5, label %if.then6, label %if.end7
@@ -148638,12 +148638,12 @@ if.end7:                                          ; preds = %if.end3
 
 while.cond:                                       ; preds = %if.end16, %if.end7
   %i8 = load i64, ptr %i, align 8
-  %global.load9 = load i64, ptr @ph_path_len, align 8
+  %global.load9 = load i64, ptr @_Z11ph_path_lenB7scalyls, align 8
   %lt = icmp ult i64 %i8, %global.load9
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load10 = load ptr, ptr @ph_path_data, align 8
+  %global.load10 = load ptr, ptr @_Z12ph_path_dataB7scalyls, align 8
   %i11 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds i8, ptr %global.load10, i64 %i11
   %deref = load i8, ptr %ptr.add, align 1
@@ -148667,7 +148667,7 @@ if.end16:                                         ; preds = %while.body
 
 define linkonce_odr void @_ZN10placehintsB7scalyls11cached_blobEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1) {
 entry:
-  %global.load = load i1, ptr @ph_used, align 1
+  %global.load = load i1, ptr @_Z7ph_usedB7scalyls, align 1
   %eq = icmp eq i1 %global.load, false
   br i1 %eq, label %if.then, label %if.end
 
@@ -148687,8 +148687,8 @@ frame.force:                                      ; preds = %if.end
 frame.forced:                                     ; preds = %frame.force, %if.end
   %forced_page1 = phi ptr [ %frame.page, %if.end ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %global.load2 = load ptr, ptr @ph_blob_data, align 8
-  %global.load3 = load i64, ptr @ph_blob_len, align 8
+  %global.load2 = load ptr, ptr @_Z12ph_blob_dataB7scalyls, align 8
+  %global.load3 = load i64, ptr @_Z11ph_blob_lenB7scalyls, align 8
   call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %global.load2, i64 %global.load3)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -148904,15 +148904,15 @@ if.end67:                                         ; preds = %if.then66, %frame.f
 
 define linkonce_odr void @_ZN10placehintsB7scalyls9cache_putE6Stringm6String(ptr %0, i64 %1, ptr %2) {
 entry:
-  %global.load = load i1, ptr @ph_used, align 1
+  %global.load = load i1, ptr @_Z7ph_usedB7scalyls, align 1
   br i1 %global.load, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load1 = load ptr, ptr @ph_path_data, align 8
+  %global.load1 = load ptr, ptr @_Z12ph_path_dataB7scalyls, align 8
   call void @free(ptr %global.load1)
-  %global.load2 = load ptr, ptr @ph_blob_data, align 8
+  %global.load2 = load ptr, ptr @_Z12ph_blob_dataB7scalyls, align 8
   call void @free(ptr %global.load2)
-  store i1 false, ptr @ph_used, align 1
+  store i1 false, ptr @_Z7ph_usedB7scalyls, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -148941,12 +148941,12 @@ if.end11:                                         ; preds = %if.end6
   %call13 = call ptr @memcpy(ptr %call4, ptr %call12, i64 %call)
   %call14 = call ptr @_ZN6String10get_bufferEv(ptr %2)
   %call15 = call ptr @memcpy(ptr %call8, ptr %call14, i64 %call3)
-  store ptr %call4, ptr @ph_path_data, align 8
-  store i64 %call, ptr @ph_path_len, align 8
-  store ptr %call8, ptr @ph_blob_data, align 8
-  store i64 %call3, ptr @ph_blob_len, align 8
-  store i64 %1, ptr @ph_hash, align 8
-  store i1 true, ptr @ph_used, align 1
+  store ptr %call4, ptr @_Z12ph_path_dataB7scalyls, align 8
+  store i64 %call, ptr @_Z11ph_path_lenB7scalyls, align 8
+  store ptr %call8, ptr @_Z12ph_blob_dataB7scalyls, align 8
+  store i64 %call3, ptr @_Z11ph_blob_lenB7scalyls, align 8
+  store i64 %1, ptr @_Z7ph_hashB7scalyls, align 8
+  store i1 true, ptr @_Z7ph_usedB7scalyls, align 1
   ret void
 }
 
@@ -153436,7 +153436,7 @@ entry:
 
 define linkonce_odr void @_ZN8docstoreB7scalyls8doc_viewEv(ptr noalias sret(%_Z5SliceI7DocSlotE) %0) {
 entry:
-  %global.load = load ptr, ptr @doc_slots, align 8
+  %global.load = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %tuple = alloca %_Z5SliceI7DocSlotE, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI7DocSlotE, ptr %tuple, i32 0, i32 0
   store i64 256, ptr %tuple.field, align 1
@@ -153449,18 +153449,18 @@ entry:
 
 define linkonce_odr void @_ZN8docstoreB7scalyls18set_workspace_rootE6String(ptr %0) {
 entry:
-  %global.load = load ptr, ptr @ws_root_data, align 8
+  %global.load = load ptr, ptr @_Z12ws_root_dataB7scalyls, align 8
   %ne = icmp ne ptr %global.load, null
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load1 = load ptr, ptr @ws_root_data, align 8
+  %global.load1 = load ptr, ptr @_Z12ws_root_dataB7scalyls, align 8
   call void @free(ptr %global.load1)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  store ptr null, ptr @ws_root_data, align 8
-  store i64 0, ptr @ws_root_len, align 8
+  store ptr null, ptr @_Z12ws_root_dataB7scalyls, align 8
+  store i64 0, ptr @_Z11ws_root_lenB7scalyls, align 8
   %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
   %gt = icmp ugt i64 %call, 0
   br i1 %gt, label %if.then2, label %if.end3
@@ -153476,8 +153476,8 @@ if.end3:                                          ; preds = %if.end7, %if.end
 if.then6:                                         ; preds = %if.then2
   %call8 = call ptr @_ZN6String10get_bufferEv(ptr %0)
   %call9 = call ptr @memcpy(ptr %call4, ptr %call8, i64 %call)
-  store ptr %call4, ptr @ws_root_data, align 8
-  store i64 %call, ptr @ws_root_len, align 8
+  store ptr %call4, ptr @_Z12ws_root_dataB7scalyls, align 8
+  store i64 %call, ptr @_Z11ws_root_lenB7scalyls, align 8
   br label %if.end7
 
 if.end7:                                          ; preds = %if.then6, %if.then2
@@ -153486,7 +153486,7 @@ if.end7:                                          ; preds = %if.then6, %if.then2
 
 define linkonce_odr void @_ZN8docstoreB7scalyls14workspace_rootEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1) {
 entry:
-  %global.load = load ptr, ptr @ws_root_data, align 8
+  %global.load = load ptr, ptr @_Z12ws_root_dataB7scalyls, align 8
   %ne = icmp ne ptr %global.load, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -153506,8 +153506,8 @@ frame.force:                                      ; preds = %if.then
 frame.forced:                                     ; preds = %frame.force, %if.then
   %forced_page1 = phi ptr [ %frame.page, %if.then ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %global.load2 = load ptr, ptr @ws_root_data, align 8
-  %global.load3 = load i64, ptr @ws_root_len, align 8
+  %global.load2 = load ptr, ptr @_Z12ws_root_dataB7scalyls, align 8
+  %global.load3 = load i64, ptr @_Z11ws_root_lenB7scalyls, align 8
   call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %global.load2, i64 %global.load3)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -153517,15 +153517,15 @@ frame.forced:                                     ; preds = %frame.force, %if.th
 define linkonce_odr void @_ZN8docstoreB7scalyls6ensureEv() {
 entry:
   %i = alloca i64, align 8
-  %global.load = load ptr, ptr @doc_slots, align 8
+  %global.load = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %eq = icmp eq ptr %global.load, null
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %mul = mul i64 256, ptrtoint (ptr getelementptr (%_Z7DocSlot, ptr null, i32 1) to i64)
   %call = call ptr @malloc(i64 %mul)
-  store ptr %call, ptr @doc_slots, align 8
-  %global.load1 = load ptr, ptr @doc_slots, align 8
+  store ptr %call, ptr @_Z9doc_slotsB7scalyls, align 8
+  %global.load1 = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %eq2 = icmp eq ptr %global.load1, null
   br i1 %eq2, label %if.then3, label %if.end4
 
@@ -153545,7 +153545,7 @@ while.cond:                                       ; preds = %while.body, %if.end
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load6 = load ptr, ptr @doc_slots, align 8
+  %global.load6 = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %i7 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load6, i64 %i7
   %used = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 4
@@ -153576,7 +153576,7 @@ entry:
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
   %i = alloca i64, align 8
-  %global.load = load ptr, ptr @doc_slots, align 8
+  %global.load = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %ne = icmp ne ptr %global.load, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -153594,7 +153594,7 @@ while.cond:                                       ; preds = %if.end5, %if.then
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load2 = load ptr, ptr @doc_slots, align 8
+  %global.load2 = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %i3 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load2, i64 %i3
   %load.struct = load %_Z7DocSlot, ptr %ptr.add, align 8
@@ -153730,7 +153730,7 @@ entry:
   %i = alloca i64, align 8
   %sret.result = alloca %_Z5SliceI7DocSlotE, align 8
   call void @_ZN8docstoreB7scalyls6ensureEv()
-  %global.load = load ptr, ptr @doc_slots, align 8
+  %global.load = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %eq = icmp eq ptr %global.load, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -153792,7 +153792,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load = load ptr, ptr @doc_slots, align 8
+  %global.load = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load, i64 %call
   %load.struct = load %_Z7DocSlot, ptr %ptr.add, align 8
   %text_data = extractvalue %_Z7DocSlot %load.struct, 2
@@ -153843,7 +153843,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load = load ptr, ptr @doc_slots, align 8
+  %global.load = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load, i64 %call
   %dirty = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 5
   store i1 true, ptr %dirty, align 1
@@ -153860,7 +153860,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load = load ptr, ptr @doc_slots, align 8
+  %global.load = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load, i64 %call
   %dirty = getelementptr inbounds nuw %_Z7DocSlot, ptr %ptr.add, i32 0, i32 5
   store i1 false, ptr %dirty, align 1
@@ -153873,7 +153873,7 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr void @_ZN8docstoreB7scalyls9dirty_uriEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1) {
 entry:
   %i = alloca i64, align 8
-  %global.load = load ptr, ptr @doc_slots, align 8
+  %global.load = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %ne = icmp ne ptr %global.load, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -153891,7 +153891,7 @@ while.cond:                                       ; preds = %if.end5, %if.then
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %global.load2 = load ptr, ptr @doc_slots, align 8
+  %global.load2 = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %i3 = load i64, ptr %i, align 8
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load2, i64 %i3
   %load.struct = load %_Z7DocSlot, ptr %ptr.add, align 8
@@ -153947,7 +153947,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load = load ptr, ptr @doc_slots, align 8
+  %global.load = load ptr, ptr @_Z9doc_slotsB7scalyls, align 8
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load, i64 %call
   %load.struct = load %_Z7DocSlot, ptr %ptr.add, align 8
   %text_data = extractvalue %_Z7DocSlot %load.struct, 2
@@ -154497,19 +154497,19 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %pid1 = load i64, ptr %pid, align 8
-  store i64 %pid1, ptr @worker_pid, align 8
+  store i64 %pid1, ptr @_Z10worker_pidB7scalyls, align 8
   %to_worker2 = load i32, ptr %to_worker, align 4
   %as.sext = sext i32 %to_worker2 to i64
-  store i64 %as.sext, ptr @worker_in, align 8
+  store i64 %as.sext, ptr @_Z9worker_inB7scalyls, align 8
   %from_worker3 = load i32, ptr %from_worker, align 4
   %as.sext4 = sext i32 %from_worker3 to i64
-  store i64 %as.sext4, ptr @worker_out, align 8
+  store i64 %as.sext4, ptr @_Z10worker_outB7scalyls, align 8
   ret void
 }
 
 define linkonce_odr void @_ZN6workerB7scalyls6ensureEv() {
 entry:
-  %global.load = load i64, ptr @worker_pid, align 8
+  %global.load = load i64, ptr @_Z10worker_pidB7scalyls, align 8
   %le = icmp sle i64 %global.load, 0
   br i1 %le, label %if.then, label %if.end
 
@@ -154523,39 +154523,39 @@ if.end:                                           ; preds = %if.then, %entry
 
 define linkonce_odr void @_ZN6workerB7scalyls8shutdownEv() {
 entry:
-  %global.load = load i64, ptr @worker_pid, align 8
+  %global.load = load i64, ptr @_Z10worker_pidB7scalyls, align 8
   %gt = icmp sgt i64 %global.load, 0
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %global.load1 = load i64, ptr @worker_pid, align 8
+  %global.load1 = load i64, ptr @_Z10worker_pidB7scalyls, align 8
   %call = call i32 @scaly_proc_reap(i64 %global.load1)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %global.load2 = load i64, ptr @worker_in, align 8
+  %global.load2 = load i64, ptr @_Z9worker_inB7scalyls, align 8
   %gt3 = icmp sgt i64 %global.load2, 0
   br i1 %gt3, label %if.then4, label %if.end5
 
 if.then4:                                         ; preds = %if.end
-  %global.load6 = load i64, ptr @worker_in, align 8
+  %global.load6 = load i64, ptr @_Z9worker_inB7scalyls, align 8
   %call7 = call i32 @close(i64 %global.load6)
   br label %if.end5
 
 if.end5:                                          ; preds = %if.then4, %if.end
-  %global.load8 = load i64, ptr @worker_out, align 8
+  %global.load8 = load i64, ptr @_Z10worker_outB7scalyls, align 8
   %gt9 = icmp sgt i64 %global.load8, 0
   br i1 %gt9, label %if.then10, label %if.end11
 
 if.then10:                                        ; preds = %if.end5
-  %global.load12 = load i64, ptr @worker_out, align 8
+  %global.load12 = load i64, ptr @_Z10worker_outB7scalyls, align 8
   %call13 = call i32 @close(i64 %global.load12)
   br label %if.end11
 
 if.end11:                                         ; preds = %if.then10, %if.end5
-  store i64 0, ptr @worker_pid, align 8
-  store i64 0, ptr @worker_in, align 8
-  store i64 0, ptr @worker_out, align 8
+  store i64 0, ptr @_Z10worker_pidB7scalyls, align 8
+  store i64 0, ptr @_Z9worker_inB7scalyls, align 8
+  store i64 0, ptr @_Z10worker_outB7scalyls, align 8
   ret void
 }
 
@@ -154580,7 +154580,7 @@ while.body:                                       ; preds = %while.cond
   %add = add i64 %attempts2, 1
   store i64 %add, ptr %attempts, align 1
   call void @_ZN6workerB7scalyls6ensureEv()
-  %global.load = load i64, ptr @worker_pid, align 8
+  %global.load = load i64, ptr @_Z10worker_pidB7scalyls, align 8
   %le = icmp sle i64 %global.load, 0
   br i1 %le, label %if.then, label %if.end
 
@@ -154613,16 +154613,16 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   %load.struct4 = load %_Z5SliceIcE, ptr %2, align 8
   %length = extractvalue %_Z5SliceIcE %load.struct4, 0
   call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %data, i64 %length)
-  %global.load5 = load i64, ptr @worker_in, align 8
+  %global.load5 = load i64, ptr @_Z9worker_inB7scalyls, align 8
   call void @_ZN3rpcB7scalyls16write_message_fdEi6String(i64 %global.load5, ptr %struct.region)
-  %global.load6 = load i64, ptr @worker_in, align 8
+  %global.load6 = load i64, ptr @_Z9worker_inB7scalyls, align 8
   call void @_ZN3rpcB7scalyls16write_message_fdEi6String(i64 %global.load6, ptr %3)
-  %global.load7 = load i64, ptr @worker_in, align 8
+  %global.load7 = load i64, ptr @_Z9worker_inB7scalyls, align 8
   call void @_ZN3rpcB7scalyls16write_message_fdEi6String(i64 %global.load7, ptr %4)
-  %global.load8 = load i64, ptr @worker_in, align 8
+  %global.load8 = load i64, ptr @_Z9worker_inB7scalyls, align 8
   call void @_ZN3rpcB7scalyls16write_message_fdEi6String(i64 %global.load8, ptr %5)
   %call = call i32 @_ZN6workerB7scalyls15budget_for_kindE6String(ptr %struct.region)
-  %global.load9 = load i64, ptr @worker_out, align 8
+  %global.load9 = load i64, ptr @_Z10worker_outB7scalyls, align 8
   %as.trunc = trunc i64 %global.load9 to i32
   %call10 = call i32 @scaly_proc_wait_readable(i32 %as.trunc, i32 %call)
   %le11 = icmp sle i32 %call10, 0
@@ -154646,7 +154646,7 @@ if.then12:                                        ; preds = %frame.forced
   ret void
 
 if.end13:                                         ; preds = %frame.forced
-  %global.load18 = load i64, ptr @worker_out, align 8
+  %global.load18 = load i64, ptr @_Z10worker_outB7scalyls, align 8
   call void @_ZN3rpcB7scalyls15read_message_fdEPN4scaly6memory4PageEi(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %global.load18)
   %call19 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call19, 0

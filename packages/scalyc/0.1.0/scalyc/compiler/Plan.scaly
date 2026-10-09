@@ -754,9 +754,11 @@ define Plan
     constraints: ref[Vector[TypeConstraint]]?
     ; What Emitter.tag_packages# writes into the finished symbols: the
     ; packages by number ([0] is none), every package's concepts by name and
-    ; its free functions by mangled name, each with its package's number.
+    ; its free functions by mangled name and its mutable globals by symbol,
+    ; each with its package's number.
     tag_names: ref[Vector[String]]?
     tag_concepts: ConceptIndex
     tag_symbols: ConceptIndex
+    tag_globals: ConceptIndex
 )
 

@@ -7941,6 +7941,27 @@ define Emitter
                 }
                 func := next
             }
+            ; a package's mutable globals: `count` of alpha is
+            ; `_Z5countB5alpha` (Planner.note_global_package#)
+            var gv LLVMGetFirstGlobal(llvm_module)
+            while gv <> null
+            {
+                let next_gv LLVMGetNextGlobal(gv)
+                var gname_len: size_t 0
+                let gname_ptr LLVMGetValueName2(gv, &gname_len)
+                if gname_ptr <> null and gname_len > 0
+                {
+                    let gname String(gname_ptr)
+                    let gtag plan.tag_globals.lookup(gname)
+                    if gtag > 0 and (gtag as size_t) < names.length
+                    {
+                        let gpkg names[gtag as size_t]
+                        let gnew "_Z`gname.get_length()``gname`B`gpkg.get_length()``gpkg`"
+                        LLVMSetValueName2(gv, gnew.to_c_string() as pointer[const_char], gnew.get_length())
+                    }
+                }
+                gv := next_gv
+            }
         }
 
         ; concept_tag#: the package number of a type's identifier, 0 for none.

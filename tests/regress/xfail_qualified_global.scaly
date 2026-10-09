@@ -1,21 +1,24 @@
-; Regression: a global named through a namespace (2026-10-09).
+; Regression: a global named through a namespace that does not hold it
+; (2026-10-09).
 ;
-; A global is registered by its bare name alone -- one declared inside a
-; namespace body too -- so `Ns.count` names nothing. It was planned as a bare
-; Type operand, the read was not emitted and the statement it stands in was
-; DROPPED at rc 0: this program printed 100. The dangling-reference check let
-; it pass because a global of the last segment's name exists (and a global is
-; registered as a concept of its name as well).
+; A global is registered by its bare name, so `Ns.count` reached the planner's
+; fallback for a qualified name, was planned as a bare Type operand, the read
+; was not emitted and the statement it stands in was DROPPED at rc 0: this
+; program printed 100. The dangling-reference check let it pass because a
+; global of the last segment's name exists (and a global is registered as a
+; concept of its name as well). A global named through the namespace or the
+; module it IS declared in is read (qualified_global.scaly); any other
+; qualifier is this error.
 ;
 ; How it was found: `h := (h xor Modeler.scaly_package_stamp) * p` in the
 ; tool's cache key had no load, no xor and no store in the IR, so the
 ; compiler's stamp was missing from the key of every compiled package.
 ; xfail: not found: Ns.count; the global count is not reached through a namespace or a module
 
+mutable count: int 5
+
 define Ns
 {
-    mutable count: int 5
-
     function one() returns int
         1
 }

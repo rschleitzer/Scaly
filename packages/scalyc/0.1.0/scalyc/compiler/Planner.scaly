@@ -1356,6 +1356,8 @@ define Planner
         ; of the package each was defined in -- note_symbol_package#
         tag_package_names: ref[Array[String]]
         var tag_symbol_index: ConceptIndex
+        ; ... and the mutable globals by their symbol (plan_global#)
+        var tag_global_index: ConceptIndex
         ; the start offsets of variant constructions made from a BARE name
         ; (`Hit(5)`, `Blue`) -- retarget_bare_variant# may move them onto the
         ; union a declared target type names
@@ -1539,6 +1541,7 @@ define Planner
             tag_package_names := &Array[String]^this()
             tag_package_names.add(String^this(""))
             tag_symbol_index := ConceptIndex()
+            tag_global_index := ConceptIndex()
             bare_variant_starts := &Array[size_t]^this()
             registering_namespace := String^this("")
             registering_file := String^this("")
@@ -3728,6 +3731,22 @@ define Planner
             if tag_symbol_index.cap = 0
                 tag_symbol_index := ConceptIndex.create(262144)
             tag_symbol_index.insert(String^this(mangled), n)
+        }
+
+        ; note_global_package#: a mutable global is its bare name with
+        ; external linkage -- two packages' `count` were ONE cell --, so the
+        ; package of the file it is planned from is recorded with its symbol
+        ; (plan_global# runs with that file current, plan_foreign_constant#
+        ; installs it) and Emitter.tag_packages# renames it. A constant is
+        ; internal to every module that reads it and needs none.
+        procedure note_global_package(mutable this, symbol: String)
+        {
+            let n this.package_number(Planner.package_of_file(this.file))
+            if n = 0
+                return
+            if tag_global_index.cap = 0
+                tag_global_index := ConceptIndex.create(4096)
+            tag_global_index.insert_if_absent(String^this(symbol), n)
         }
 
         ; tag_concept_index#: every concept of a package by its name, with
@@ -21995,6 +22014,45 @@ define Planner
         ; qualified_ref_is_dangling# lets it pass twice over -- "a global under
         ; either name resolves", and a global is registered as a CONCEPT of
         ; its name as well --, so the sentence is said here.
+        ; qualified_global_reachable#: is `X.g` the global `g` named through
+        ; what CONTAINS it -- the namespace it is declared in, or its file's
+        ; module where it stands at file level? The last segment of the
+        ; global's origin path says (concept_origin_paths: module chain plus
+        ; enclosing namespaces). Such a name is planned as the bare one.
+        procedure qualified_global_reachable(mutable this: Planner, t: Type) returns bool
+        {
+            if t.name.length <> 2
+                return false
+            let prefix_ptr t.name.get 0
+            let suffix_ptr t.name.get 1
+            if prefix_ptr = null or suffix_ptr = null
+                return false
+            let prefix (*prefix_ptr)
+            let suffix (*suffix_ptr)
+            if this.lookup_global(Planner.join_dotted_name(t.name)) <> null or this.is_function(suffix) or this.is_operator(suffix)
+                return false
+            let idx concept_index.lookup suffix
+            if idx < 0
+                return false
+            let i idx as size_t
+            if i >= concept_origin_paths.length
+                return false
+            let ck concepts.get i
+            if ck = null
+                return false
+            choose ck.value.definition
+                when g: Global
+                {
+                    let path concept_origin_paths[i]
+                    if path.equals(prefix)
+                        return true
+                    return path.ends_with(".`prefix`")
+                }
+                else
+                    0
+            false
+        }
+
         procedure report_qualified_global(mutable this: Planner, t: Type, loc: Span)
         {
             if t.name.length <> 2
@@ -22694,6 +22752,13 @@ define Planner
             ; lenient bare Type operand the emitter would turn into garbage. A
             ; parenful `NS.bogus()` already errors via the call path; this closes
             ; the parenless value-position hole.
+            if this.qualified_global_reachable(t)
+            {
+                var bare_names Array[String]()
+                bare_names.add((*t.name.get(1)))
+                var bare_type Type(t.span, Vector[String](bare_names), null, t.lifetime)
+                return this.plan_type_operand(bare_type, loc)
+            }
             if this.qualified_ref_is_dangling(t)
             {
                 let dangling_name Planner.join_dotted_name(t.name)
@@ -52056,7 +52121,10 @@ define Planner
             ; defines stay Itanium-length-prefixed via encode_name (s189).
             var mangled Planner.encode_name(name)
             if g.is_mutable
+            {
                 mangled := String(name)
+                this.note_global_package(mangled)
+            }
             ; Const ARRAY global: `define X: T[] [a, b, ...]` — the
             ; annotation plans as scalar T (empty [] carries no generics),
             ; the value as a single PlannedMatrix. Decay the global's type
@@ -53399,7 +53467,8 @@ define Planner
                 &constraints_holder,
                 &tag_names_holder,
                 tag_concepts,
-                tag_symbol_index
+                tag_symbol_index,
+                tag_global_index
             )
         }
 

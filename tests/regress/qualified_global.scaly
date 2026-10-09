@@ -1,0 +1,28 @@
+; Regression (2026-10-09): a global named through the namespace it is declared
+; in. `Ns.LIMIT` and `Ns.count` from outside the namespace named nothing --
+; a global is registered by its bare name alone -- and the statement holding
+; the read was dropped at rc 0 (100 where 109 is right). The planner asks the
+; global's origin path now (Planner.qualified_global_reachable#) and reads
+; the bare name; the write `Ns.count := v` goes the same way.
+; Expected: PASS
+define Ns
+{
+    define LIMIT: int 7
+    mutable count: int 2
+
+    function one() returns int
+        1
+}
+
+procedure key() returns int mutable count
+{
+    var h 100
+    h := h + Ns.LIMIT + Ns.count
+    Ns.count := 40
+    h + Ns.count
+}
+
+if key() = 149
+    print "PASS"
+else
+    print "FAIL"
