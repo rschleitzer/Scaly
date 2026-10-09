@@ -1,8 +1,10 @@
 ; A record `var` no initializer names, set to a call's result: the copy goes
-; to its set site's stack slot, not to the frame page (record_var_set pins
-; what it computes). Before 2026-09-29 every such set allocated on the frame
-; page -- once per string in the json parser.
-; expect-ir: set.slot
+; INTO the object the variable has (`set.own`), not to the frame page
+; (record_var_set pins what it computes). Before 2026-09-29 every such set
+; allocated on the frame page -- once per string in the json parser; until
+; 2026-10-09 it went to a stack slot of the set site, a frame address for a
+; variable whose address outlives the frame (set_deref_promoted).
+; expect-ir: set.own
 
 define R (a: int, b: size_t, c: bool)
 

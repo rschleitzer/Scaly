@@ -214,6 +214,8 @@ define Emitter
         var source_file: String
         ; Current plan being emitted
         var current_plan: ref[Plan]?
+        ; SCALYC_ID_PROBE: identity_probe#
+        var id_probe: bool
         ; Type cache: name -> LLVM type (using parallel vectors)
         type_cache_names: ref[Array[String]]?
         type_cache_types: ref[Array[LLVMTypeRef]]?
@@ -464,6 +466,7 @@ define Emitter
             source_text := String()
             source_file := String()
             current_plan := null
+            id_probe := false
             type_cache_names := Array[String]^this()
             type_cache_types := Array[LLVMTypeRef]^this()
             struct_cache_names := Array[String]^this()
@@ -3397,6 +3400,31 @@ define Emitter
             false
         }
 
+        ; identity_probe# (SCALYC_ID_PROBE=1): is a type's mangled_name its
+        ; identity? Asked of every type map_type# is handed behind the builtin
+        ; and pointer cases: `id-ok` where the field is what mangle_structure
+        ; makes of name and arguments, `id-empty <name> ... in <function>`
+        ; where it is missing (right for a generic parameter, nowhere else),
+        ; `id-diff` where it is something else. An unnamed type with a name
+        ; of more than one letter also calls fflush(null), which is rare
+        ; enough to break on: `breakpoint set -n fflush` + `bt 8` names the
+        ; emitter path, and from it the plan construct, that carried it.
+        procedure identity_probe(mutable this, planned_type: PlannedType)
+        {
+            if planned_type.mangled_name.get_length() = 0
+            {
+                if planned_type.name.get_length() > 1
+                    fflush(null)
+                Console.println("id-empty `planned_type.name` g=`planned_type.generics <> null` in `String(this.current_function_label())`")
+                return
+            }
+            let want Planner.mangle_structure(planned_type.name, planned_type.generics)
+            if want.equals(planned_type.mangled_name)
+                Console.println("id-ok")
+            else
+                Console.println("id-diff `planned_type.name` has `planned_type.mangled_name` want `want`")
+        }
+
         procedure map_type(mutable this, planned_type: PlannedType) returns LLVMTypeRef
         {
             ; Check type cache first — under the key cache_type# writes, the
@@ -3441,6 +3469,9 @@ define Emitter
                 cache_type(planned_type.mangled_name, ptr_type)
                 return ptr_type
             }
+
+            if id_probe
+                this.identity_probe(planned_type)
 
             ; Delegate (function-pointer) types lower to an LLVM ptr (GAP B). The
             ; planner lists every delegate concept name in current_plan.delegates;
@@ -7640,6 +7671,7 @@ define Emitter
         {
             initialize(module_name)
             current_plan := plan
+            id_probe := getenv("SCALYC_ID_PROBE") <> null
             store_effects.analyze(plan)
 
             ; s159: Pre-declare the extern C runtime functions memcpy/memset
@@ -21880,11 +21912,24 @@ define Emitter
                                             ; Aliased, the page copy stays: a `let q r`
                                             ; holds the OLD object, and a slot this site
                                             ; reuses could be that object on its next run.
+                                            ; ★Since 2026-10-09 that is a copy INTO the object
+                                            ; the variable has, not a slot of the set site:
+                                            ; unaliased means the object is the variable's own
+                                            ; construction and nobody else holds it (a binding
+                                            ; made from a NAME is on the list itself,
+                                            ; note_record_aliases#), so writing it is the same
+                                            ; assignment -- and it stays where the planner put
+                                            ; it. A slot was a frame address for a variable
+                                            ; whose address goes on living: `out := (*adopted)`
+                                            ; ... `&out` returned read a dead frame
+                                            ; (set_deref_promoted, which passed only while the
+                                            ; value arrived as a pointer because its type
+                                            ; carried no name).
                                             if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct() and this.record_aliased_has(variable.name) = false
                                             {
-                                                let slot entry_alloca(val_ty, "set.slot")
-                                                copy_struct_value(slot, value, val_ty)
-                                                store_val := slot
+                                                let own_ptr LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), var_ptr, "set.own")
+                                                copy_struct_value(own_ptr, value, val_ty)
+                                                return value
                                             }
                                             else if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct()
                                             {
@@ -22886,7 +22931,21 @@ define Emitter
         {
             var value: LLVMValueRef null
             if binding.operation <> null
-                this.note_record_aliases(binding.operation as ref[Vector[PlannedOperand]])
+            {
+                let init_ops binding.operation as ref[Vector[PlannedOperand]]
+                this.note_record_aliases(init_ops)
+                ; a binding made from a NAME may hold that name's object, not
+                ; one of its own: it is on the list itself, so that a later
+                ; `set` of it does not write into the other's object
+                if init_ops.length > 0 and binding.binding_item.name <> null
+                {
+                    choose init_ops[0].expr
+                        when first_var: Variable
+                            record_aliased.add((*binding.binding_item.name))
+                        else
+                            0
+                }
+            }
 
             ; Route 3: the left binding of a fork-join pair arrives computed.
             if fj_preset <> null

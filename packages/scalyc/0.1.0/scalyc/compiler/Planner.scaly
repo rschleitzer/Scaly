@@ -21524,7 +21524,31 @@ define Planner
                 }
             }
             if this.has_concept(canonical_name) = false
-                return after_subst
+            {
+                ; no concept of that name -- a generic FUNCTION's name with
+                ; its explicit arguments comes this way (`serve[TcpStream]`),
+                ; and its arguments are types like any other
+                let other_gens this.named_arguments(after_subst, mt)
+                ; A record or a union this FILE does not see -- the type in
+                ; the signature of a routine another package declares, planned
+                ; here because it is called here -- is that concept all the
+                ; same: it gets its name, and stays what it was otherwise.
+                var hidden_name after_subst.mangled_name
+                if hidden_name.get_length() = 0 and this.hidden_record(canonical_name)
+                    hidden_name := Planner.mangle_structure(canonical_name, other_gens)
+                if other_gens = after_subst.generics and hidden_name.get_length() = after_subst.mangled_name.get_length()
+                    return after_subst
+                return PlannedType(
+                    after_subst.loc,
+                    after_subst.name,
+                    hidden_name,
+                    other_gens,
+                    after_subst.life,
+                    after_subst.origin,
+                    after_subst.array_size,
+                    after_subst.variable
+                )
+            }
 
             ; s107: when the concept is a generic data class (Structure
             ; with no members/initializers) used with concrete type args,
@@ -21720,7 +21744,7 @@ define Planner
                                         {
                                             let gp (*gp_ptr)
                                             var need_replan: bool false
-                                            if gp.mangled_name.get_length() = 0
+                                            if Planner.pointee_unnamed(gp)
                                                 need_replan := true
                                             if gp.generics = null
                                             {
@@ -21787,17 +21811,79 @@ define Planner
                 }
             }
 
-            let mangled Planner.mangle_structure(canonical_name, after_subst.generics)
+            ; An argument that carries no name of its own (straight from
+            ; resolve_type_base#: `ref[Rec]` inside `Option[ref[Rec]]`, a
+            ; union, which the instantiation above does not serve) is planned
+            ; like any written type, so that what a member hop or a sizeof
+            ; later takes out of this type is a type with its name.
+            let tail_gens this.named_arguments(after_subst, mt)
+            let mangled Planner.mangle_structure(canonical_name, tail_gens)
             PlannedType(
                 after_subst.loc,
                 canonical_name,
                 mangled,
-                after_subst.generics,
+                tail_gens,
                 after_subst.life,
                 after_subst.origin,
                 after_subst.array_size,
                 after_subst.variable
             )
+        }
+
+        ; hidden_record#: does `name` name a record or a union when use
+        ; visibility is not asked -- and no generic parameter?
+        procedure hidden_record(mutable this: Planner, name: String) returns bool
+        {
+            if name.get_length() = 0 or name.contains(".")
+                return false
+            if Planner.is_primitive_type_name(name) or Planner.is_generic_type_param_name(name) or this.is_concept_parameter_name(name)
+                return false
+            let c this.lookup_concept_any(name)
+            if c = null
+                return false
+            choose c.definition
+                when st: Structure
+                    return true
+                when un: scalyc.compiler.Model.Union
+                    return true
+                else
+                    0
+            false
+        }
+
+        ; named_arguments#: the generic arguments of `have`, each one that
+        ; carries no name of its own planned from what was WRITTEN (`written`,
+        ; the Model type `have` was resolved from); `have`'s own vector when
+        ; none needs it.
+        procedure named_arguments(mutable this: Planner, have_type: PlannedType, mutable written_type: Type) returns ref[Vector[PlannedType]]?
+        {
+            if have_type.generics = null or written_type.generics = null
+                return have_type.generics
+            let have (*have_type.generics)
+            let written (*written_type.generics)
+            if written.length <> have.length
+                return have_type.generics
+            var any_unnamed false
+            var ui: size_t 0
+            while ui < have.length
+            {
+                if Planner.pointee_unnamed(have[ui])
+                    any_unnamed := true
+                ui := ui + 1
+            }
+            if any_unnamed = false
+                return have_type.generics
+            var named Vector[PlannedType]^this(have.length)
+            ui := 0
+            while ui < have.length
+            {
+                if Planner.pointee_unnamed(have[ui])
+                    named.put(ui, this.plan_type(written[ui]))
+                else
+                    named.put(ui, have[ui])
+                ui := ui + 1
+            }
+            &named
         }
 
         ; ================================================================
@@ -56604,7 +56690,7 @@ define Planner
             return PlannedType(
                 t.loc,
                 t.name,
-                t.mangled_name,
+                Planner.mangled_over(t, &new_gens),
                 &new_gens,
                 t.life,
                 t.origin,
@@ -56766,6 +56852,42 @@ define Planner
         PlannedType(t.loc, t.name, rg_name, t.generics, t.life, t.origin, t.array_size, t.variable)
     }
 
+    ; pointee_unnamed#: does `t`, or what it points at through any number
+    ; of pointer/ref levels, carry no mangled name? resolve_type_base# names
+    ; a wrapper "P"/"R" plus its pointee's name, so `ref[SchedTask]` straight
+    ; from there is "R" -- not empty, and yet it names nothing.
+    function pointee_unnamed(t: PlannedType) returns bool
+    {
+        if (t.name = "pointer" or t.name = "ref") and t.generics <> null
+        {
+            let gens (*t.generics)
+            if gens.length = 1
+                return Planner.pointee_unnamed(gens[0])
+        }
+        t.mangled_name.get_length() = 0
+    }
+
+    ; mangled_over#: the mangled name of `t` with other generic ARGUMENTS --
+    ; what a substitution owes the type it rebuilds, instead of carrying the
+    ; old name beside the new arguments (the STALE half of remangle_generic#'s
+    ; account). A pointer or a reference is its prefix and the pointee's
+    ; name; a type that had none keeps none.
+    function mangled_over(t: PlannedType, gens: ref[Vector[PlannedType]]) returns String
+    {
+        if t.name = "pointer" or t.name = "ref"
+        {
+            if gens.length = 0
+                return String(t.mangled_name)
+            let inner gens[0]
+            if t.name = "pointer"
+                return "P`inner.mangled_name`"
+            return "R`inner.mangled_name`"
+        }
+        if t.mangled_name.get_length() = 0
+            return ""
+        Planner.mangle_structure(t.name, gens)
+    }
+
     ; apply_name_substitution: substitute type-parameter names (e.g. "T",
     ; "K") with concrete types. Used by generic instantiation — the C++
     ; `TypeSubstitutions` is a name-keyed map populated before resolving
@@ -56817,7 +56939,7 @@ define Planner
             return PlannedType(
                 t.loc,
                 t.name,
-                t.mangled_name,
+                Planner.mangled_over(t, &new_gens),
                 &new_gens,
                 t.life,
                 t.origin,
@@ -62840,7 +62962,7 @@ define Planner
                 PlannedType(
                     s.span,
                     "String",
-                    "6String",
+                    "_Z6String",
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     null,
@@ -63441,7 +63563,7 @@ define Planner
         let t_str Planner.infer_constant_type(c_str)
         if t_str.name <> "String"
             return 65
-        if t_str.mangled_name <> "6String"
+        if t_str.mangled_name <> "_Z6String"
             return 66
         if t_str.generics <> null
             return 67
