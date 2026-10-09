@@ -133,14 +133,20 @@ if b.area() = 12
         spellings of one address are one source.</para>
       <para>A package may bring C or assembly files, which are compiled on the
         machine that builds it; the tool says so when it fetches one.</para>
-      <para>What a package defines carries the package's name in the linked
-        program: two packages may each define a function, a record with its
-        methods or a mutable global of one name, and each keeps its own. That
-        holds for what a package uses inside. A record that a package hands
-        to its user is still known by its bare name: a program that brings
-        two same-named records with different fields together without saying
-        which it means (<code>use alpha.Box</code>) is refused. The standard
-        library's names and a program's own are not marked.</para>
+      <para>What a package defines is the package's own: two packages may
+        each define a function, a record with its methods or a mutable global
+        of one name, and each keeps its own. A record of one package is
+        another type than a same-named record of another, and a name written
+        in a package means that package's own before anything a
+        <code>use</code> brings in. A program may hold values of both, call
+        their methods and hand each back to its package; handing one
+        package's record to the other is refused like any wrong type. The
+        standard library's names and a program's own are not marked.</para>
+      <para>A <code>use</code> makes a name writable — as a type, in a
+        construction, before a static call. A value brings its type along:
+        its methods and fields are reached without naming the type, so
+        <code>let a make_alpha(1)</code> and <code>a.grown()</code> need no
+        <code>use</code> of what <code>make_alpha</code> returns.</para>
     </section>
     <section xml:id="mod-package-cache">
       <title>The cache</title>
