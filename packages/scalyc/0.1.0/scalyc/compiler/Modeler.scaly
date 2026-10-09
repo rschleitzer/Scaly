@@ -2907,6 +2907,12 @@ define Modeler
         }
     }
 
+    ; the stamp of the compiler that is running (scaly_package_stamp), for
+    ; a cache key made outside this file -- the global is not reached by a
+    ; qualified name
+    procedure compiler_stamp() returns u64
+        scaly_package_stamp
+
     function fnv_string(h: u64, s: String) returns u64
     {
         var r h

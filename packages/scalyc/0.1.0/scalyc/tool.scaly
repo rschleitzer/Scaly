@@ -91,7 +91,7 @@ define tool
     procedure package_key(mutable dir: String, files: ref[Array[String]], triple: String, flavour: String) returns u64
     {
         var h: u64 0xcbf29ce484222325
-        h := (h xor Modeler.scaly_package_stamp) * 0x100000001b3
+        h := (h xor Modeler.compiler_stamp()) * 0x100000001b3
         h := tool.fnv_string(h, triple)
         h := tool.fnv_string(h, flavour)
         let sum tool.files_sum(dir, files)
