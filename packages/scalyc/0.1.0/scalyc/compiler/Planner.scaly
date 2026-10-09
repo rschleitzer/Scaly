@@ -21984,6 +21984,34 @@ define Planner
         }
 
         ; plan_type_operand: a Model.Type used as an operand can mean
+        ; report_qualified_global#: `X.g` in value position where `g` is a
+        ; global under its BARE name and nothing is called `X.g`. A global is
+        ; registered by its bare name alone, one declared inside a namespace
+        ; body too (`Ns.LIMIT` from outside was the same silence), so the name
+        ; reaches plan_type_operand#'s fallback and is planned as a bare Type
+        ; operand: the read is not emitted and the statement it stands in is
+        ; DROPPED at rc 0 (`h := (h xor Modeler.scaly_package_stamp) * p` left
+        ; the compiler's stamp out of its own cache key, 2026-10-09).
+        ; qualified_ref_is_dangling# lets it pass twice over -- "a global under
+        ; either name resolves", and a global is registered as a CONCEPT of
+        ; its name as well --, so the sentence is said here.
+        procedure report_qualified_global(mutable this: Planner, t: Type, loc: Span)
+        {
+            if t.name.length <> 2
+                return
+            let suffix_ptr t.name.get 1
+            if suffix_ptr = null
+                return
+            let suffix (*suffix_ptr)
+            let joined Planner.join_dotted_name(t.name)
+            if this.lookup_global(suffix) = null or this.lookup_global(joined) <> null
+                return
+            if this.is_function(suffix) or this.is_operator(suffix)
+                return
+            let text "not found: `joined`; the global `suffix` is not reached through a namespace or a module, it is read by its bare name"
+            this.add_diagnostic(loc, String^this(text))
+        }
+
         ; qualified_ref_is_dangling: a VALUE-position qualified name `X.Y`
         ; (exactly two segments) whose prefix X is a known NAMESPACE but whose
         ; suffix Y is not any member of it (function/operator/nested concept),
@@ -22671,6 +22699,7 @@ define Planner
                 let dangling_name Planner.join_dotted_name(t.name)
                 this.add_diagnostic(loc, "not found: `dangling_name`")
             }
+            this.report_qualified_global(t, loc)
 
             let pt this.plan_type(t)
             PlannedOperand(
