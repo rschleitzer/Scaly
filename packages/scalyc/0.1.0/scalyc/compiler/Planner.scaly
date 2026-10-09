@@ -20056,13 +20056,6 @@ define Planner
                         }
                     }
 
-                    ; ★★★ A member hop's type may carry a mangled name that is
-                    ; MISSING or STALE while its name and generic ARGUMENTS are
-                    ; right; `remangle_generic#` repairs it. See that function for
-                    ; the measurement -- both faces are memory faults and both are
-                    ; SILENT, because every hop reads correct when printed by name.
-                    lookup_type := Planner.remangle_generic(lookup_type)
-
                     ; Property lookup.
                     let prop_ref this.lookup_property(lookup_type.name, m)
                     if prop_ref <> null
@@ -20207,7 +20200,7 @@ define Planner
                         ; leaves the defect in place; this was measured, once each.
                         result.add(PlannedMemberAccess(
                             m, idx as size_t, false, false, lookup_type,
-                            Planner.remangle_generic(prop_type)
+                            prop_type
                         ))
                         current := prop_type
                     }
@@ -55008,11 +55001,9 @@ define Planner
 
     ; encode_type: Itanium ABI type code.
     ;
-    ; Recurses for pointer[T], ref[T] and generic instantiations. The
-    ; optimized "use pre-computed mangled_name" shortcut from the C++
-    ; implementation is deliberately omitted here — every PlannedType we
-    ; construct from scratch will end up with an empty mangled_name, and
-    ; the shortcut only saves work in a later pass we do not implement yet.
+    ; Recurses for pointer[T] and ref[T]. A concept's type answers with the
+    ; name it carries; a type without one (a generic parameter, a type this
+    ; routine is handed from scratch) is encoded from name and arguments.
     function encode_type(type_value: PlannedType) returns String
     {
         ; Built-in primitive types.
@@ -55085,6 +55076,12 @@ define Planner
 
         ; Generic instantiation: Name + "I" + args + "E".
         ; Strip any "Base.arg" instantiation suffix so we encode the template name.
+        ; A type that carries its name IS that name (2026-10-09): the code
+        ; of a concept's type is its mangled_name without the `_Z`, not a
+        ; second encoding of name and arguments beside it.
+        if type_value.mangled_name.starts_with("_Z")
+            return type_value.mangled_name.substring(2, type_value.mangled_name.get_length() - 2)
+
         if type_value.generics <> null
         {
             let gens (*type_value.generics)
@@ -55800,6 +55797,9 @@ define Planner
     ; are unequal. Null/empty generics are treated uniformly as arity 0.
     function types_equal(a: PlannedType, b: PlannedType) returns bool
     {
+        ; two types that carry the same name are one type
+        if a.mangled_name.get_length() > 2 and a.mangled_name.equals(b.mangled_name)
+            return true
         let norm_a Planner.normalize_type_name(a.name)
         let norm_b Planner.normalize_type_name(b.name)
         if norm_a <> norm_b
@@ -56822,35 +56822,27 @@ define Planner
         Type(pt.loc, name_path, maybe_gens, pt.life)
     }
 
-    ; remangle_generic: recompute a generic type's Itanium name from its own
-    ; ARGUMENTS, which is the identity for any type whose name already agrees.
-    ;
-    ; ★★★ Two ways a type reaches the emitter with a name that lies, both silent
-    ; and both memory faults:
-    ;   MISSING -- a receiver unwrapped out of one generic level too many
-    ;     (`Option[ref[Vector[X]]]` where `pointer[Vector[X]]` works) carries "".
-    ;     `map_type` then has nothing to key on, falls back to a bare-name match
-    ;     and answers the FIRST `Vector[...]` ever registered; the GEP walked
-    ;     `Vector[String]`.
-    ;   STALE -- `apply_name_substitution` replaces a type's generic arguments and
-    ;     carries `mangled_name` through UNCHANGED, so a substituted
-    ;     `KeyValuePair[K, V]` comes back named `_Z12KeyValuePairI1K8NameableE`
-    ;     beside arguments reading `String, Nameable`. The emitter reads the
-    ;     unresolved parameter as a POINTER and LOADS the field instead of taking
-    ;     its address, so `String::equals` gets string BYTES as an address.
-    ;
-    ; ★★★Why this hid behind six earlier attempts: every hop is CORRECT when
-    ; printed by name and argument -- a probe over `resolve_member_access` shows
-    ; `.key on=KeyValuePair[String Nameable]` throughout. Only the name the emitter
-    ; keys on is wrong, and nothing else in the planner reads it.
-    function remangle_generic(t: PlannedType) returns PlannedType
-    {
-        if t.generics = null
-            return t
-        var rg_args Vector[PlannedType]((*t.generics))
-        let rg_name Planner.mangle_structure(t.name, &rg_args)
-        PlannedType(t.loc, t.name, rg_name, t.generics, t.life, t.origin, t.array_size, t.variable)
-    }
+    ; ★★★ A type's mangled_name is its IDENTITY, and it is made where the type
+    ; is made (2026-10-09). Until then a type could reach the emitter with a
+    ; name that lied, in two ways, both silent and both memory faults:
+    ;   MISSING -- carried "" (a receiver unwrapped out of one generic level
+    ;     too many, the arguments of a union, a record the planning file does
+    ;     not see). `map_type` then had nothing to key on, fell back to a
+    ;     bare-name match and answered the FIRST `Vector[...]` ever
+    ;     registered; the GEP walked `Vector[String]`.
+    ;   STALE -- a substitution replaced a type's generic arguments and
+    ;     carried the name through unchanged, so a substituted
+    ;     `KeyValuePair[K, V]` came back named `_Z12KeyValuePairI1K8NameableE`
+    ;     beside arguments reading `String, Nameable`; the emitter read the
+    ;     unresolved parameter as a POINTER and loaded the field.
+    ; A routine `remangle_generic#` re-minted the name at three READERS (the
+    ; member hop's lookup type, its result type, the region walker's symbol).
+    ; With plan_type# naming every argument (named_arguments#,
+    ; hidden_record#) and the substitutions recomputing the name
+    ; (mangled_over#) it had nothing left to repair -- every root emitted
+    ; byte-identically without it -- and it is gone. `SCALYC_ID_PROBE=1`
+    ; (Emitter.identity_probe#) is the census that says whether that still
+    ; holds; a new way to build a type owes it a run.
 
     ; pointee_unnamed#: does `t`, or what it points at through any number
     ; of pointer/ref levels, carry no mangled name? resolve_type_base# names
@@ -56869,8 +56861,8 @@ define Planner
 
     ; mangled_over#: the mangled name of `t` with other generic ARGUMENTS --
     ; what a substitution owes the type it rebuilds, instead of carrying the
-    ; old name beside the new arguments (the STALE half of remangle_generic#'s
-    ; account). A pointer or a reference is its prefix and the pointee's
+    ; old name beside the new arguments (the STALE half of the account
+    ; above). A pointer or a reference is its prefix and the pointee's
     ; name; a type that had none keeps none.
     function mangled_over(t: PlannedType, gens: ref[Vector[PlannedType]]) returns String
     {

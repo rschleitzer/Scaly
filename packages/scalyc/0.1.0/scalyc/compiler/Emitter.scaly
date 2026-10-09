@@ -11190,12 +11190,11 @@ define Emitter
         ; pointers are never fixed. Symptom: `ReceivedRegion.fix_value: pointer
         ; outside the received region` from `tests/cluster`, with nothing wrong at
         ; the site that reported it.
-        ; `remangle_generic#` re-mints the name from the type's own ARGUMENTS and is
-        ; the identity for a non-generic type, so the fallback still serves the case
-        ; it was written for.
+        ; (A type carries its name from where it is made since 2026-10-09; the
+        ; re-minting that stood here is gone, Planner's account of mangled_name.)
         function region_walker_symbol(this, t: PlannedType) returns String
         {
-            let rt Planner.remangle_generic(t)
+            let rt t
             var sb StringBuilder()
             sb.append "_scaly_walk_"
             if rt.mangled_name.get_length() > 0
