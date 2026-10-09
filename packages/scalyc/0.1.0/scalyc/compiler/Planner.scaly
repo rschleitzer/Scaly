@@ -1351,6 +1351,11 @@ define Planner
         ; parallel to the registry as well: the source FILE a function was
         ; registered from ("" outside a module walk) -- function_origin_file#
         function_origin_files: ref[Array[String]]
+        ; the packages a symbol of this compilation is tagged with, [0] = ""
+        ; (none), and the free functions by their mangled name: the number
+        ; of the package each was defined in -- note_symbol_package#
+        tag_package_names: ref[Array[String]]
+        var tag_symbol_index: ConceptIndex
         ; the start offsets of variant constructions made from a BARE name
         ; (`Hit(5)`, `Blue`) -- retarget_bare_variant# may move them onto the
         ; union a declared target type names
@@ -1531,6 +1536,9 @@ define Planner
             function_origin_paths := Array[String]^this()
             function_namespaces := &Array[String]^this()
             function_origin_files := &Array[String]^this()
+            tag_package_names := &Array[String]^this()
+            tag_package_names.add(String^this(""))
+            tag_symbol_index := ConceptIndex()
             bare_variant_starts := &Array[size_t]^this()
             registering_namespace := String^this("")
             registering_file := String^this("")
@@ -3690,6 +3698,63 @@ define Planner
         ; function_package#: the package of a registered function.
         function function_package(this: Planner, f: Function) returns String
             Planner.package_of_file(this.function_origin_file(f))
+
+        ; package_number#: the number a package's name has in this compilation
+        procedure package_number(mutable this, pkg: String) returns size_t
+        {
+            var i: size_t 0
+            while i < tag_package_names.length
+            {
+                if tag_package_names.at(i).equals(pkg)
+                    return i
+                i := i + 1
+            }
+            tag_package_names.add(String^this(pkg))
+            tag_package_names.length - 1
+        }
+
+        ; note_symbol_package#: a FREE function's mangled name does not say
+        ; where it was defined -- two packages' `helper(int)` are one
+        ; `_Z6helperi` --, so the place that mangles one with its Function in
+        ; hand says it here, definition and call alike. The emitter's last
+        ; pass (Emitter.tag_packages#) writes the package into the symbol. A
+        ; method needs none: it follows its type (tag_concept_index#).
+        procedure note_symbol_package(mutable this, mangled: String, f: Function)
+        {
+            let n this.package_number(this.function_package(f))
+            let had tag_symbol_index.lookup(mangled)
+            if had = (n as i64) or (n = 0 and had < 0)
+                return
+            if tag_symbol_index.cap = 0
+                tag_symbol_index := ConceptIndex.create(262144)
+            tag_symbol_index.insert(String^this(mangled), n)
+        }
+
+        ; tag_concept_index#: every concept of a package by its name, with
+        ; the number of that package -- the entry a bare name RESOLVES to
+        ; (concept_package#), so the tag says what the planner took the name
+        ; for. Empty where no package but the standard library is in reach.
+        procedure tag_concept_index(mutable this) returns ConceptIndex
+        {
+            var table ConceptIndex()
+            var i: size_t 0
+            while i < concepts.length
+            {
+                let ck concepts.get i
+                if ck <> null
+                {
+                    let pkg this.concept_package(ck.key)
+                    if pkg.get_length() > 0
+                    {
+                        if table.cap = 0
+                            table := ConceptIndex.create(65536)
+                        table.insert(ck.key, this.package_number(pkg))
+                    }
+                }
+                i := i + 1
+            }
+            table
+        }
 
         ; package_probe# (SCALYC_PKG_PROBE=1): whether the package of every
         ; registered definition is KNOWN -- its origin file -- before any name
@@ -9142,9 +9207,12 @@ define Planner
                     ns_for_mangle := this.use_alias_member_namespace(f.name)
 
                 if ns_for_mangle.get_length() = 0
+                {
                     mangled := Planner.mangle_free_function_from_types(
                         f.name, params_holder, has_page
                     )
+                    this.note_symbol_package(mangled, f)
+                }
 
                 if ns_for_mangle.get_length() > 0
                 {
@@ -13164,6 +13232,7 @@ define Planner
                                                 ; (report_address_of_page_function#; s178: one statement).
                                                 this.report_address_of_page_function((*fc_ptr), result.loc)
                                                 fref_mangled := Planner.mangle_free_function_from_types(fref_name, fparam_vec, fref_has_page)
+                                                this.note_symbol_package(fref_mangled, (*fc_ptr))
                                             }
                                             let fref_ty Planner.make_pointer_type(Planner.make_void_type())
                                             let fref PlannedFunctionRef(result.loc, fref_mangled, fref_ty)
@@ -50241,6 +50310,8 @@ define Planner
                 mangled_holder.put(0, String(f.name))
             if Planner.is_extern_impl(f.implementation) = false
                 mangled_holder.put(0, Planner.mangle_function(mname, &input_holder, parent, has_page))
+            if parent = null and Planner.is_extern_impl(f.implementation) = false and Planner.is_linked(f) = false
+                this.note_symbol_package((*mangled_holder.get(0)), f)
             let mangled (*mangled_holder.get(0))
 
             ; An IMPLICIT self tail call becomes an explicit `return`, so the
@@ -53284,6 +53355,8 @@ define Planner
             var globals_holder Vector[PlannedGlobal](instantiated_globals)
             var delegates_holder Vector[String](delegate_names)
             var constraints_holder Vector[TypeConstraint](constraints)
+            let tag_concepts this.tag_concept_index()
+            var tag_names_holder Vector[String](tag_package_names)
 
             Plan(
                 planned_main,
@@ -53294,7 +53367,10 @@ define Planner
                 &globals_holder,
                 &delegates_holder,
                 next_type_var_id,
-                &constraints_holder
+                &constraints_holder,
+                &tag_names_holder,
+                tag_concepts,
+                tag_symbol_index
             )
         }
 

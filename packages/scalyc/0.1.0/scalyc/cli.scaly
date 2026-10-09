@@ -1953,7 +1953,8 @@ define cli
             let sym_page Page.get(syms)
             for f in dep_plan.functions
             {
-                let durable_name String^sym_page(f.mangled_name)
+                ; the name the object has it under (Emitter.tag_packages#)
+                let durable_name String^sym_page(dep_emitter.tagged_name(dep_plan, f.mangled_name))
                 syms.add durable_name
             }
         }

@@ -22,11 +22,11 @@ entry:
 
 declare i32 @puts(ptr)
 
-declare i64 @_ZN3cli4mainEiPPc(i64, ptr)
+declare i64 @_ZN3cliB6scalyc4mainEiPPc(i64, ptr)
 
 define i64 @main(i64 %0, ptr %1) {
 entry:
-  %call = call i64 @_ZN3cli4mainEiPPc(i64 %0, ptr %1)
+  %call = call i64 @_ZN3cliB6scalyc4mainEiPPc(i64 %0, ptr %1)
   ret i64 %call
 }
 

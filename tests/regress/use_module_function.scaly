@@ -9,8 +9,8 @@
 ; An IR gate: the package lives in its own SCALY_HOME.
 ; env: SCALY_HOME=tests/regress/use_module_function_home
 ; args: --no-prelude
-; expect-ir: call i64 @_Z5firsti(i64 1)
-; expect-ir: call i64 @_Z6secondi(i64 2)
+; expect-ir: call i64 @_Z5firstB3umfi(i64 1)
+; expect-ir: call i64 @_Z6secondB3umfi(i64 2)
 
 package umf 0.1.0
 use umf.Tools.first

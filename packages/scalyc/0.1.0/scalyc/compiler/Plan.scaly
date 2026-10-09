@@ -5,6 +5,7 @@
 ; Ported from C++ Plan.h
 
 use scalyc.compiler.Model.*
+use scalyc.compiler.ConceptIndex.ConceptIndex
 
 ; ============================================================================
 ; Type Inference Support
@@ -751,5 +752,11 @@ define Plan
     ; Type inference state
     next_type_var_id: size_t
     constraints: ref[Vector[TypeConstraint]]?
+    ; What Emitter.tag_packages# writes into the finished symbols: the
+    ; packages by number ([0] is none), every package's concepts by name and
+    ; its free functions by mangled name, each with its package's number.
+    tag_names: ref[Vector[String]]?
+    tag_concepts: ConceptIndex
+    tag_symbols: ConceptIndex
 )
 

@@ -48,10 +48,11 @@
 #              a program beside its packages directory; an existing name, a
 #              name no package can have and a missing name are refused
 #   collide    two packages that each define a function of one name (and a
-#              record with a method of one name) are refused by `scaly run`,
-#              `scaly build` and `--release` alike, both symbols named
-#              (tool.check_definitions#) -- before, the three gave three
-#              different answers at rc 0; with the names apart the three agree
+#              record with a method of one name) stand side by side under
+#              `scaly run`, `scaly build` and `--release` alike: every symbol
+#              of a package carries its package (Emitter.tag_packages#) --
+#              before, they were refused (and before that the three routes
+#              gave three different answers at rc 0)
 #   source     `package name version "source"`: a package neither the
 #              installation nor the project has is taken from where a fetch
 #              lays it, $SCALY_PACKAGES/<host>/<path>/packages/<name>/<version>, on
@@ -419,8 +420,9 @@ for args in "hello" "9lives" "a-b" "" "--lib"; do
 done
 [ "$refused" = 5 ] && [ ! -e "$newdir/9lives" ] && [ ! -e "$newdir/a-b" ] && ok || bad "new: $refused of 5 bad invocations refused"
 
-# collide: no symbol carries its package, so two packages defining one are
-# refused -- on every route, because every route merged them differently
+# collide: a symbol carries its package (an ABI tag, `_Z6helperB5alphai`), so
+# two packages that each define a function of one name, and a record of one
+# name with a method, stand side by side -- on every route
 col="$TMP/collide"
 for p in alpha beta; do
   mkdir -p "$col/packages/$p/0.1.0/$p"
@@ -437,13 +439,14 @@ write_pair helper Box
 for route in "run main.scaly" "build main.scaly -o $TMP/col_a$SCALY_EXE" "build main.scaly --release -o $TMP/col_b$SCALY_EXE"; do
   # shellcheck disable=SC2086
   out=$(cd "$col" && SCALY_HOME="$here" "$scaly_abs" $route 2>&1); rc=$?
-  if [ "$rc" != 0 ] && echo "$out" | grep -q 'packages alpha and beta both define helper (_Z6helperi)' \
-     && echo "$out" | grep -q 'both define Box.grown (_ZN3Box5grownEv)' && ! echo "$out" | grep -q '^2 '; then
-    ok
-  else
-    bad "collide (${route%% *} ${route##*main.scaly}): rc=$rc '$(echo "$out" | head -2 | tr '\n' '|')'"
-  fi
+  case "$route" in
+    *col_a*) [ "$rc" = 0 ] && out=$("$TMP/col_a$SCALY_EXE") ;;
+    *col_b*) [ "$rc" = 0 ] && out=$("$TMP/col_b$SCALY_EXE") ;;
+  esac
+  [ "$out" = "2 101 2 101" ] && ok || bad "collide (${route%% *} ${route##*main.scaly}): rc=$rc got '$(echo "$out" | head -2 | tr '\n' '|')'"
 done
+# the tag is in the symbols the packages define
+grep -q '_Z6helperB5alphai' "$SCALY_CACHE"/alpha-0.1.0-*.defs && grep -q '_ZN3BoxB4beta5grownEv' "$SCALY_CACHE"/beta-0.1.0-*.defs && ok || bad "collide: the definitions carry no package tag"
 # ... and with the names apart the three routes give ONE answer
 write_pair helper_b BoxB
 for route in "run main.scaly" "build main.scaly -o $TMP/col_a$SCALY_EXE" "build main.scaly --release -o $TMP/col_b$SCALY_EXE"; do

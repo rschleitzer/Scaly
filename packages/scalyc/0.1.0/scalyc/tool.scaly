@@ -260,6 +260,28 @@ define tool
         rename(tmp.to_c_string(), final.to_c_string()) = 0
     }
 
+    ; the position behind the package tags that follow an identifier ending
+    ; at `at` (`B5alpha` in `_ZN3BoxB5alpha5grownEv`, Emitter.tag_packages#)
+    function past_tags(sym: String, at: size_t) returns size_t
+    {
+        let n sym.get_length()
+        var i at
+        while i + 1 < n and sym.get(i) = 66 and sym.get(i + 1) >= 48 and sym.get(i + 1) <= 57
+        {
+            var j i + 1
+            var len: size_t 0
+            while j < n and sym.get(j) >= 48 and sym.get(j) <= 57
+            {
+                len := len * 10 + ((sym.get(j) - 48) as size_t)
+                j := j + 1
+            }
+            if j + len > n
+                return i
+            i := j + len
+        }
+        i
+    }
+
     ; Is `sym` an INSTANCE -- a symbol every package that uses a generic
     ; defines for itself, from one source? Template arguments in its name
     ; (`_ZN5ArrayIiE3addEi`), or the name of a generic free function with the
@@ -284,7 +306,7 @@ define tool
             if digits = false or i + len > n
                 return false
             let id sym.substring(i, len)
-            i := i + len
+            i := tool.past_tags(sym, i + len)
             if i < n and sym.get(i) = 73
                 return true
             if nested = false
@@ -330,7 +352,7 @@ define tool
                 sb.append "."
             first := false
             sb.append(sym.substring(i, len))
-            i := i + len
+            i := tool.past_tags(sym, i + len)
             if nested = false
                 break
         }
