@@ -32,5 +32,5 @@ entry:
 
 define i64 @scaly_build_stamp() {
 entry:
-  ret i64 -1071088297212113680
+  ret i64 7033102753115649904
 }

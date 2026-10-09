@@ -261,7 +261,7 @@ define tool
     }
 
     ; the position behind the package tags that follow an identifier ending
-    ; at `at` (`B5alpha` in `_ZN3BoxB5alpha5grownEv`, Emitter.tag_packages#)
+    ; at `at` (`B5alpha` in `_ZN3BoxB5alpha5grownEv`, Planner.package_tag#)
     function past_tags(sym: String, at: size_t) returns size_t
     {
         let n sym.get_length()
@@ -363,7 +363,7 @@ define tool
     ; of the two depends on how the program is built (measured 2026-10-05:
     ; `scaly run`, `scaly build` and `--release` gave three different answers
     ; at rc 0). Since 2026-10-09 a package's symbols carry its name
-    ; (Emitter.tag_packages#) and two packages' functions of one name no
+    ; (Planner.package_tag#) and two packages' functions of one name no
     ; longer meet here; this stays as the net under the tag -- a symbol the
     ; tag pass could not read goes over untagged, and would meet its twin
     ; silently without it. `files`

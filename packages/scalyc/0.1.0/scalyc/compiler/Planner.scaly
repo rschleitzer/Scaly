@@ -1351,13 +1351,6 @@ define Planner
         ; parallel to the registry as well: the source FILE a function was
         ; registered from ("" outside a module walk) -- function_origin_file#
         function_origin_files: ref[Array[String]]
-        ; the packages a symbol of this compilation is tagged with, [0] = ""
-        ; (none), and the free functions by their mangled name: the number
-        ; of the package each was defined in -- note_symbol_package#
-        tag_package_names: ref[Array[String]]
-        var tag_symbol_index: ConceptIndex
-        ; ... and the mutable globals by their symbol (plan_global#)
-        var tag_global_index: ConceptIndex
         ; the start offsets of variant constructions made from a BARE name
         ; (`Hit(5)`, `Blue`) -- retarget_bare_variant# may move them onto the
         ; union a declared target type names
@@ -1538,10 +1531,6 @@ define Planner
             function_origin_paths := Array[String]^this()
             function_namespaces := &Array[String]^this()
             function_origin_files := &Array[String]^this()
-            tag_package_names := &Array[String]^this()
-            tag_package_names.add(String^this(""))
-            tag_symbol_index := ConceptIndex()
-            tag_global_index := ConceptIndex()
             bare_variant_starts := &Array[size_t]^this()
             registering_namespace := String^this("")
             registering_file := String^this("")
@@ -3702,96 +3691,10 @@ define Planner
         function function_package(this: Planner, f: Function) returns String
             Planner.package_of_file(this.function_origin_file(f))
 
-        ; package_number#: the number a package's name has in this compilation
-        procedure package_number(mutable this, pkg: String) returns size_t
-        {
-            var i: size_t 0
-            while i < tag_package_names.length
-            {
-                if tag_package_names.at(i).equals(pkg)
-                    return i
-                i := i + 1
-            }
-            tag_package_names.add(String^this(pkg))
-            tag_package_names.length - 1
-        }
-
-        ; note_symbol_package#: a FREE function's mangled name does not say
-        ; where it was defined -- two packages' `helper(int)` are one
-        ; `_Z6helperi` --, so the place that mangles one with its Function in
-        ; hand says it here, definition and call alike. The emitter's last
-        ; pass (Emitter.tag_packages#) writes the package into the symbol. A
-        ; method needs none: it follows its type (tag_concept_index#).
-        procedure note_symbol_package(mutable this, mangled: String, f: Function)
-        {
-            let n this.package_number(this.function_package(f))
-            let had tag_symbol_index.lookup(mangled)
-            if had = (n as i64) or (n = 0 and had < 0)
-                return
-            if tag_symbol_index.cap = 0
-                tag_symbol_index := ConceptIndex.create(262144)
-            tag_symbol_index.insert(String^this(mangled), n)
-        }
-
-        ; note_global_package#: a mutable global is its bare name with
-        ; external linkage -- two packages' `count` were ONE cell --, so the
-        ; package of the file it is planned from is recorded with its symbol
-        ; (plan_global# runs with that file current, plan_foreign_constant#
-        ; installs it) and Emitter.tag_packages# renames it. A constant is
-        ; internal to every module that reads it and needs none.
-        procedure note_global_package(mutable this, symbol: String)
-        {
-            let n this.package_number(Planner.package_of_file(this.file))
-            if n = 0
-                return
-            if tag_global_index.cap = 0
-                tag_global_index := ConceptIndex.create(4096)
-            tag_global_index.insert_if_absent(String^this(symbol), n)
-        }
-
-        ; tag_generic_names#: the generic free functions by name. An instance
-        ; of one is named <name><encoded type arguments> in ONE identifier
-        ; (`_Z22allocate_slice7StringCR4Pagem`), so the types in it are
-        ; found only by who knows where the name ends (Emitter.tagged_symbol#).
-        procedure tag_generic_names(mutable this) returns Array[String]
-        {
-            var out Array[String]()
-            var i: size_t 0
-            while i < model_functions.length
-            {
-                let kvp model_functions.get i
-                if kvp <> null and kvp.value.parameters.length > 0
-                    out.add(kvp.key)
-                i := i + 1
-            }
-            out
-        }
-
-        ; tag_concept_index#: every concept of a package by its name, with
-        ; the number of that package -- the entry a bare name RESOLVES to
-        ; (concept_package#), so the tag says what the planner took the name
-        ; for. Empty where no package but the standard library is in reach.
-        procedure tag_concept_index(mutable this) returns ConceptIndex
-        {
-            var table ConceptIndex()
-            var i: size_t 0
-            while i < concepts.length
-            {
-                let ck concepts.get i
-                if ck <> null
-                {
-                    let pkg this.concept_package(ck.key)
-                    if pkg.get_length() > 0
-                    {
-                        if table.cap = 0
-                            table := ConceptIndex.create(65536)
-                        table.insert(ck.key, this.package_number(pkg))
-                    }
-                }
-                i := i + 1
-            }
-            table
-        }
+        ; type_symbol#: the mangled name of the concept `name` with these
+        ; arguments -- its IDENTITY, the package it comes from included.
+        procedure type_symbol(mutable this, name: String, generic_args: ref[Vector[PlannedType]]?) returns String
+            Planner.mangle_structure_in(name, generic_args, Planner.package_tag(this.concept_package(name)))
 
         ; package_probe# (SCALYC_PKG_PROBE=1): whether the package of every
         ; registered definition is KNOWN -- its origin file -- before any name
@@ -8391,7 +8294,7 @@ define Planner
             ; definition and re-append to instantiated_{structures,
             ; unions}.
             var args_holder Vector[PlannedType](args)
-            let mangled Planner.mangle_structure(concept_name, &args_holder)
+            let mangled this.type_symbol(concept_name, &args_holder)
 
             var already_cached: bool false
             if this.has_instantiated_structure(mangled)
@@ -9246,9 +9149,8 @@ define Planner
                 if ns_for_mangle.get_length() = 0
                 {
                     mangled := Planner.mangle_free_function_from_types(
-                        f.name, params_holder, has_page
+                        f.name, params_holder, has_page, Planner.package_tag(this.function_package(f))
                     )
-                    this.note_symbol_package(mangled, f)
                 }
 
                 if ns_for_mangle.get_length() > 0
@@ -9259,7 +9161,7 @@ define Planner
                     let ns_parent_ref &^this PlannedType(
                         Span(0, 0),
                         String(cnsn),
-                        Planner.encode_name cnsn,
+                        this.type_symbol(cnsn, null),
                         null,
                         Lifetime.Unspecified(Unspecified()),
                         null,
@@ -9757,7 +9659,7 @@ define Planner
             let sparent_ref &^this PlannedType(
                 loc,
                 String(struct_name),
-                Planner.encode_name struct_name,
+                this.type_symbol(struct_name, null),
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 null,
@@ -13268,8 +13170,7 @@ define Planner
                                                 ; symbol nothing defines -- report it HERE, with a line number
                                                 ; (report_address_of_page_function#; s178: one statement).
                                                 this.report_address_of_page_function((*fc_ptr), result.loc)
-                                                fref_mangled := Planner.mangle_free_function_from_types(fref_name, fparam_vec, fref_has_page)
-                                                this.note_symbol_package(fref_mangled, (*fc_ptr))
+                                                fref_mangled := Planner.mangle_free_function_from_types(fref_name, fparam_vec, fref_has_page, Planner.package_tag(this.function_package((*fc_ptr))))
                                             }
                                             let fref_ty Planner.make_pointer_type(Planner.make_void_type())
                                             let fref PlannedFunctionRef(result.loc, fref_mangled, fref_ty)
@@ -14235,7 +14136,7 @@ define Planner
                                             let ns_parent_ref &^this PlannedType(
                                                 result.loc,
                                                 String(prefix),
-                                                Planner.encode_name prefix,
+                                                this.type_symbol(prefix, null),
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
                                                 null,
@@ -14775,7 +14676,7 @@ define Planner
                                             let sparent_ref &^this PlannedType(
                                                 result.loc,
                                                 String(sconcept),
-                                                Planner.encode_name sconcept,
+                                                this.type_symbol(sconcept, null),
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
                                                 null,
@@ -15245,7 +15146,7 @@ define Planner
                                         let bv_union_ty PlannedType(
                                             result.loc,
                                             bv_union_name,
-                                            Planner.mangle_structure(bv_union_name, null),
+                                            this.type_symbol(bv_union_name, null),
                                             null,
                                             Lifetime.Unspecified(Unspecified()),
                                             null,
@@ -15944,7 +15845,7 @@ define Planner
                                 ctor_union_type := PlannedType(
                                     result.loc,
                                     prefix,
-                                    Planner.mangle_structure(prefix, null),
+                                    this.type_symbol(prefix, null),
                                     null,
                                     variant_life,
                                     null,
@@ -19032,7 +18933,7 @@ define Planner
                     let li_gens (*lookup_st.generics)
                     if li_gens.length > 0
                     {
-                        let li_smangled Planner.mangle_structure(lookup_st.name, lookup_st.generics)
+                        let li_smangled this.type_symbol(lookup_st.name, lookup_st.generics)
                         var li_need: bool true
                         if this.has_instantiated_structure(li_smangled)
                             li_need := false
@@ -19427,7 +19328,7 @@ define Planner
             ; planning completes). Keyed distinctly from the struct
             ; mangled so the s188 lazy-instantiation entries are not
             ; disturbed.
-            let guard_key "ix:`op_name`:`Planner.mangle_structure(lookup_st.name, lookup_st.generics)`"
+            let guard_key "ix:`op_name`:`this.type_symbol(lookup_st.name, lookup_st.generics)`"
             var gi_i: size_t 0
             while gi_i < instantiating_methods.length
             {
@@ -21528,7 +21429,7 @@ define Planner
                 ; same: it gets its name, and stays what it was otherwise.
                 var hidden_name after_subst.mangled_name
                 if hidden_name.get_length() = 0 and this.hidden_record(canonical_name)
-                    hidden_name := Planner.mangle_structure(canonical_name, other_gens)
+                    hidden_name := this.type_symbol(canonical_name, other_gens)
                 if other_gens = after_subst.generics and hidden_name.get_length() = after_subst.mangled_name.get_length()
                     return after_subst
                 return PlannedType(
@@ -21810,7 +21711,7 @@ define Planner
             ; like any written type, so that what a member hop or a sizeof
             ; later takes out of this type is a type with its name.
             let tail_gens this.named_arguments(after_subst, mt)
-            let mangled Planner.mangle_structure(canonical_name, tail_gens)
+            let mangled this.type_symbol(canonical_name, tail_gens)
             PlannedType(
                 after_subst.loc,
                 canonical_name,
@@ -26636,7 +26537,7 @@ define Planner
             let unit_union_ty PlannedType(
                 loc,
                 union_name,
-                Planner.mangle_structure(union_name, null),
+                this.type_symbol(union_name, null),
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 null,
@@ -50500,9 +50401,7 @@ define Planner
             if Planner.is_extern_impl(f.implementation)
                 mangled_holder.put(0, String(f.name))
             if Planner.is_extern_impl(f.implementation) = false
-                mangled_holder.put(0, Planner.mangle_function(mname, &input_holder, parent, has_page))
-            if parent = null and Planner.is_extern_impl(f.implementation) = false and Planner.is_linked(f) = false
-                this.note_symbol_package((*mangled_holder.get(0)), f)
+                mangled_holder.put(0, Planner.mangle_function_in(mname, &input_holder, parent, has_page, Planner.package_tag(this.function_package(f))))
             let mangled (*mangled_holder.get(0))
 
             ; An IMPLICIT self tail call becomes an explicit `return`, so the
@@ -51608,7 +51507,7 @@ define Planner
             var gens_ref: ref[Vector[PlannedType]]? null
             if gens_holder.length > 0
                 gens_ref := &gens_holder
-            let mangled Planner.mangle_structure(name, gens_ref)
+            let mangled this.type_symbol(name, gens_ref)
 
             let parent_ref PlannedType^this(
                 s.span,
@@ -51778,7 +51677,7 @@ define Planner
             var props_holder Vector[PlannedProperty](props_with_offsets)
             let total_size Planner.compute_struct_size(&props_holder)
             let total_align Planner.compute_struct_alignment(&props_holder)
-            let mangled Planner.mangle_structure(name, null)
+            let mangled this.type_symbol(name, null)
 
             ; Build the parent type (struct's own PlannedType) so
             ; plan_initializer can encode the parent in the
@@ -51892,7 +51791,7 @@ define Planner
                 return
 
             ; Skip if already recorded.
-            let m_check_v Planner.mangle_structure(c.name, null)
+            let m_check_v this.type_symbol(c.name, null)
             let m_check String^this(m_check_v)
             if this.has_instantiated_structure(m_check)
                 return
@@ -51964,7 +51863,7 @@ define Planner
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
-            let m_check_v Planner.mangle_structure(name, null)
+            let m_check_v this.type_symbol(name, null)
             let m_check String^this(m_check_v)
             if this.has_instantiated_structure(m_check)
                 return
@@ -52047,7 +51946,7 @@ define Planner
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
-            let m_check_v Planner.mangle_structure(name, null)
+            let m_check_v this.type_symbol(name, null)
             let m_check String^this(m_check_v)
             if this.has_instantiated_union(m_check)
                 return
@@ -52219,8 +52118,13 @@ define Planner
             var mangled Planner.encode_name(name)
             if g.is_mutable
             {
+                ; a package's mutable global is the package's own cell:
+                ; `_Z5callsB5alpha`. The standard library's and a program's
+                ; keep the bare name (the runtime's C files name some).
                 mangled := String(name)
-                this.note_global_package(mangled)
+                let global_tag Planner.package_tag(Planner.package_of_file(this.file))
+                if global_tag.get_length() > 0
+                    mangled := "_Z`Planner.encode_name name``global_tag`"
             }
             ; Const ARRAY global: `define X: T[] [a, b, ...]` — the
             ; annotation plans as scalar T (empty [] carries no generics),
@@ -52420,10 +52324,10 @@ define Planner
         procedure plan_namespace(mutable this: Planner, mutable ns: Namespace, name: String) returns PlannedNamespace
         {
             ; Build the parent PlannedType that tags every Function /
-            ; Operator inside this namespace for mangling. Name alone
-            ; drives the Itanium segment; encode_type length-prefixes
-            ; it to emit `_ZN<NSName><FnName>E…`.
-            let ns_mangled Planner.encode_name(name)
+            ; Operator inside this namespace for mangling: the namespace's
+            ; own name as a type's (type_symbol#, its package included), so
+            ; that `_ZN<NSName><FnName>E…` is what a call of a member makes.
+            let ns_mangled this.type_symbol(name, null)
             let parent_ref PlannedType^this(
                 ns.span,
                 String^this(name),
@@ -53100,7 +53004,7 @@ define Planner
             if c.parameters.length > 0
                 mangled := Planner.encode_name(c.name)
             if c.parameters.length = 0
-                mangled := Planner.mangle_structure(c.name, null)
+                mangled := this.type_symbol(c.name, null)
 
             PlannedConcept(
                 c.span,
@@ -53355,7 +53259,7 @@ define Planner
             var u_gens_ref: ref[Vector[PlannedType]]? null
             if u_gens_holder.length > 0
                 u_gens_ref := &u_gens_holder
-            let u_mangled Planner.mangle_structure(name, u_gens_ref)
+            let u_mangled this.type_symbol(name, u_gens_ref)
 
             let u_parent_ref PlannedType^this(
                 u.span,
@@ -53549,9 +53453,6 @@ define Planner
             var globals_holder Vector[PlannedGlobal](instantiated_globals)
             var delegates_holder Vector[String](delegate_names)
             var constraints_holder Vector[TypeConstraint](constraints)
-            let tag_concepts this.tag_concept_index()
-            var tag_names_holder Vector[String](tag_package_names)
-            var tag_generics_holder Vector[String](this.tag_generic_names())
 
             Plan(
                 planned_main,
@@ -53562,12 +53463,7 @@ define Planner
                 &globals_holder,
                 &delegates_holder,
                 next_type_var_id,
-                &constraints_holder,
-                &tag_names_holder,
-                tag_concepts,
-                tag_symbol_index,
-                tag_global_index,
-                &tag_generics_holder
+                &constraints_holder
             )
         }
 
@@ -55129,6 +55025,44 @@ define Planner
     ; mangle_structure: "_Z" + name-with-length-prefix + optional "I...E" generic block.
     ; Used for symbol-mangling concrete struct / union / trait definitions.
     function mangle_structure(name: String, generic_args: ref[Vector[PlannedType]]?) returns String
+        Planner.mangle_structure_in(name, generic_args, "")
+
+    ; package_tag#: the Itanium ABI tag a name of the package `pkg` carries
+    ; behind it -- `B5alpha` --, nothing for the standard library and for a
+    ; program's own (pkg ""). A demangler prints `Box[abi:alpha]`.
+    function package_tag(pkg: String) returns String
+    {
+        if pkg.get_length() = 0
+            return ""
+        "B`Planner.encode_name pkg`"
+    }
+
+    ; package_tag_in#: the tag in a type's mangled name, `B5alpha` of
+    ; `_Z3BoxB5alpha` and of `_Z5TableB5alphaIiE` -- what a routine that
+    ; makes the name anew from name and arguments must hand on, since it has
+    ; no concept to ask. "" for none, and for a name that is no concept's.
+    function package_tag_in(mangled: String, name: String) returns String
+    {
+        let head "_Z`Planner.encode_name name`"
+        let n mangled.get_length()
+        var i head.get_length()
+        if mangled.starts_with(head) = false or i + 1 >= n or mangled.get(i) <> 66
+            return ""
+        var j i + 1
+        var len: size_t 0
+        while j < n and mangled.get(j) >= 48 and mangled.get(j) <= 57
+        {
+            len := len * 10 + ((mangled.get(j) - 48) as size_t)
+            j := j + 1
+        }
+        if j = i + 1 or j + len > n
+            return ""
+        mangled.substring(i, j + len - i)
+    }
+
+    ; mangle_structure_in#: mangle_structure with the package's tag (as
+    ; package_tag# writes it, or "") behind the name.
+    function mangle_structure_in(name: String, generic_args: ref[Vector[PlannedType]]?, tag: String) returns String
     {
         if generic_args <> null
         {
@@ -55138,6 +55072,7 @@ define Planner
                 var sb StringBuilder()
                 sb.append "_Z"
                 sb.append(Planner.encode_name name)
+                sb.append tag
                 sb.append "I"
                 var i: size_t 0
                 while i < args.length
@@ -55156,7 +55091,7 @@ define Planner
             }
         }
 
-        "_Z`Planner.encode_name name`"
+        "_Z`Planner.encode_name name``tag`"
     }
 
     ; mangle_function: Itanium symbol for a function / method.
@@ -55173,6 +55108,18 @@ define Planner
         params: ref[Vector[PlannedItem]]?,
         parent: ref[PlannedType]?,
         has_page_param: bool
+    ) returns String
+        Planner.mangle_function_in(name, params, parent, has_page_param, "")
+
+    ; mangle_function_in#: mangle_function with the package's tag
+    ; (package_tag#) behind a FREE function's own name. A member's name takes
+    ; none: it follows its type, whose name carries the package.
+    function mangle_function_in(
+        name: String,
+        params: ref[Vector[PlannedItem]]?,
+        parent: ref[PlannedType]?,
+        has_page_param: bool,
+        tag: String
     ) returns String
     {
         var sb StringBuilder()
@@ -55195,7 +55142,10 @@ define Planner
             sb.append "E"
         }
         if parent = null
+        {
             sb.append(Planner.encode_name name)
+            sb.append tag
+        }
 
         var has_explicit_params: bool false
 
@@ -55250,12 +55200,14 @@ define Planner
     function mangle_free_function_from_types(
         name: String,
         params: Vector[PlannedType],
-        has_page_param: bool
+        has_page_param: bool,
+        tag: String
     ) returns String
     {
         var sb StringBuilder()
         sb.append "_Z"
         sb.append(Planner.encode_name name)
+        sb.append tag
 
         var has_explicit: bool false
         if has_page_param
@@ -56877,7 +56829,7 @@ define Planner
         }
         if t.mangled_name.get_length() = 0
             return ""
-        Planner.mangle_structure(t.name, gens)
+        Planner.mangle_structure_in(t.name, gens, Planner.package_tag_in(t.mangled_name, t.name))
     }
 
     ; apply_name_substitution: substitute type-parameter names (e.g. "T",

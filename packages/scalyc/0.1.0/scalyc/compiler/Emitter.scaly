@@ -3418,7 +3418,7 @@ define Emitter
                 Console.println("id-empty `planned_type.name` g=`planned_type.generics <> null` in `String(this.current_function_label())`")
                 return
             }
-            let want Planner.mangle_structure(planned_type.name, planned_type.generics)
+            let want Planner.mangle_structure_in(planned_type.name, planned_type.generics, Planner.package_tag_in(planned_type.mangled_name, planned_type.name))
             if want.equals(planned_type.mangled_name)
                 Console.println("id-ok")
             else
@@ -5624,6 +5624,13 @@ define Emitter
                 {
                     length := length * 10 + ((mangled.get(i) - ("0" as char)) as size_t)
                     i := i + 1
+                }
+                ; B5alpha: a package's tag behind a name (Planner.package_tag#),
+                ; no name of its own -- a package called `t` is no parameter
+                if before = ("B" as char)
+                {
+                    i := i + length
+                    continue
                 }
                 if length = 1 and i < n
                 {
@@ -7919,7 +7926,9 @@ define Emitter
                 if target_is_coff
                     this.emit_stdio_binary_ctor()
             }
-            let pkg_stamp LLVMGetNamedGlobal(llvm_module, "scaly_package_stamp" as pointer[const_char])
+            ; the compiler's own global, under the name its package gives it
+            ; (Planner.plan_global#)
+            let pkg_stamp LLVMGetNamedGlobal(llvm_module, "_Z19scaly_package_stampB6scalyc" as pointer[const_char])
             if pkg_stamp <> null and LLVMIsDeclaration(pkg_stamp) = 0
                 emit_package_stamp(pkg_stamp)
 
@@ -7935,244 +7944,7 @@ define Emitter
             ; to exist before a callee's parameter uses can be read.
             elide_unused_pages()
 
-            ; ... and then every symbol of a package gets its package's tag.
-            ; After everything that finds a function by the name the planner
-            ; gave it.
-            this.tag_packages(plan)
-
             true
-        }
-
-        ; tag_packages#: the planner's names do not say which PACKAGE a symbol
-        ; belongs to -- two packages' `helper(int)` are one `_Z6helperi`, two
-        ; `Box.grown()` one `_ZN3Box5grownEv` -- and the planner goes on
-        ; working with those names. The finished module's functions are
-        ; renamed here, definition and declaration alike, each identifier of a
-        ; package followed by an Itanium ABI tag: `_Z6helperB5alphai`,
-        ; `_ZN3BoxB5alpha5grownEv` (a demangler prints `Box[abi:alpha]`). The
-        ; standard library and a program's own definitions keep their names.
-        procedure tag_packages(mutable this, plan: Plan)
-        {
-            if plan.tag_names = null
-                return
-            let names (*plan.tag_names)
-            if names.length < 2
-                return
-            var func LLVMGetFirstFunction(llvm_module)
-            while func <> null
-            {
-                let next LLVMGetNextFunction(func)
-                var name_len: size_t 0
-                let name_ptr LLVMGetValueName2(func, &name_len)
-                if name_ptr <> null and name_len > 2 and *name_ptr = 95 and *(name_ptr + 1) = 90
-                {
-                    let old String(name_ptr)
-                    let tagged Emitter.tagged_symbol(old, names, plan.tag_concepts, plan.tag_symbols, plan.tag_generics)
-                    if tagged.get_length() <> old.get_length()
-                        LLVMSetValueName2(func, tagged.to_c_string() as pointer[const_char], tagged.get_length())
-                }
-                func := next
-            }
-            ; a package's mutable globals: `count` of alpha is
-            ; `_Z5countB5alpha` (Planner.note_global_package#)
-            var gv LLVMGetFirstGlobal(llvm_module)
-            while gv <> null
-            {
-                let next_gv LLVMGetNextGlobal(gv)
-                var gname_len: size_t 0
-                let gname_ptr LLVMGetValueName2(gv, &gname_len)
-                if gname_ptr <> null and gname_len > 0
-                {
-                    let gname String(gname_ptr)
-                    let gtag plan.tag_globals.lookup(gname)
-                    if gtag > 0 and (gtag as size_t) < names.length
-                    {
-                        let gpkg names[gtag as size_t]
-                        let gnew "_Z`gname.get_length()``gname`B`gpkg.get_length()``gpkg`"
-                        LLVMSetValueName2(gv, gnew.to_c_string() as pointer[const_char], gnew.get_length())
-                    }
-                }
-                gv := next_gv
-            }
-        }
-
-        ; concept_tag#: the package number of a type's identifier, 0 for none.
-        ; A dotted name is asked by its last segment as well.
-        function concept_tag(concepts: ConceptIndex, id: String) returns i64
-        {
-            let t concepts.lookup(id)
-            if t >= 0
-                return t
-            let dot id.last_index_of("." as u8)
-            if dot < 0
-                return 0
-            let start (dot as size_t) + 1
-            let t2 concepts.lookup(id.substring(start, id.get_length() - start))
-            if t2 >= 0
-                return t2
-            0
-        }
-
-        ; generic_name_length#: the length of the longest generic free
-        ; function's name that `id` begins with and is longer than, 0 for none
-        function generic_name_length(generics: ref[Vector[String]]?, id: String) returns size_t
-        {
-            if generics = null
-                return 0
-            let gs (*generics)
-            var best: size_t 0
-            var g: size_t 0
-            while g < gs.length
-            {
-                let gl gs[g].get_length()
-                if gl > best and gl < id.get_length() and id.starts_with(gs[g])
-                    best := gl
-                g := g + 1
-            }
-            best
-        }
-
-        ; tagged_symbol#: a mangled name with the tag of its package behind
-        ; every identifier that belongs to one. It reads what the planner's
-        ; manglers write: `_Z`, an `N` for a member, identifiers with their
-        ; length in front, `I`..`E` around type arguments, one-letter codes.
-        ; A FREE function's own name is asked of `symbols` by the whole name;
-        ; the head of a member's name and every identifier in type position
-        ; of `concepts`; a member's own name, a constructor's `C1` and the
-        ; caller page's `PN4scaly6memory4PageE` take none. What it cannot read
-        ; goes over as it stands: definition and call make the same name
-        ; either way, since it is a function of the name and the tables alone.
-        function tagged_symbol(name: String, names: Vector[String], concepts: ConceptIndex, symbols: ConceptIndex, generics: ref[Vector[String]]?) returns String
-        {
-            let n name.get_length()
-            if n < 3 or name.get(0) <> 95 or name.get(1) <> 90
-                return String(name)
-            var sb StringBuilder()
-            sb.append "_Z"
-            var i: size_t 2
-            let nested name.get(2) = 78
-            var depth: size_t 0
-            ; the next identifier is the name's head; then, in a member's
-            ; name, the next one at depth 1 is the member's own
-            var head true
-            var member false
-            var free_tag: i64 0
-            if nested
-            {
-                sb.append("N" as char)
-                i := 3
-                depth := 1
-            }
-            else
-            {
-                free_tag := symbols.lookup(name)
-                if name.get(2) < 48 or name.get(2) > 57
-                    head := false
-            }
-            while i < n
-            {
-                let c name.get(i)
-                if c >= 48 and c <= 57
-                {
-                    var len: size_t 0
-                    var j i
-                    while j < n and name.get(j) >= 48 and name.get(j) <= 57
-                    {
-                        len := len * 10 + ((name.get(j) - 48) as size_t)
-                        j := j + 1
-                    }
-                    if len = 0 or j + len > n or name.get(j) = 95
-                    {
-                        sb.append(name.substring(i, n - i))
-                        i := n
-                        continue
-                    }
-                    var tag: i64 0
-                    if head and nested = false
-                    {
-                        ; a free function's own name; an instance of a generic
-                        ; one holds its type arguments' encoding, tagged like
-                        ; any type and counted into the identifier's length
-                        head := false
-                        tag := free_tag
-                        let own name.substring(j, len)
-                        let cut Emitter.generic_name_length(generics, own)
-                        if cut > 0
-                        {
-                            let types Emitter.tagged_symbol("_Zv`own.substring(cut, len - cut)`", names, concepts, symbols, null)
-                            let tagged_types types.substring(3, types.get_length() - 3)
-                            sb.append(cut + tagged_types.get_length())
-                            sb.append(own.substring(0, cut))
-                            sb.append tagged_types
-                        }
-                        else
-                            sb.append(name.substring(i, j - i + len))
-                    }
-                    else
-                    {
-                        sb.append(name.substring(i, j - i + len))
-                        if head
-                        {
-                            head := false
-                            member := true
-                            tag := Emitter.concept_tag(concepts, name.substring(j, len))
-                        }
-                        else
-                        {
-                            if member and depth = 1
-                                member := false
-                            else
-                                tag := Emitter.concept_tag(concepts, name.substring(j, len))
-                        }
-                    }
-                    if tag > 0 and (tag as size_t) < names.length
-                    {
-                        let pkg names[tag as size_t]
-                        sb.append("B" as char)
-                        sb.append(pkg.get_length())
-                        sb.append pkg
-                    }
-                    i := j + len
-                    continue
-                }
-                if c = 67 and member and depth = 1 and i + 1 < n and name.get(i + 1) = 49
-                {
-                    sb.append "C1"
-                    member := false
-                    i := i + 2
-                    continue
-                }
-                if c = 80 and i + 21 <= n and name.substring(i, 21) = "PN4scaly6memory4PageE"
-                {
-                    sb.append "PN4scaly6memory4PageE"
-                    i := i + 21
-                    continue
-                }
-                if c = 73 or c = 78
-                    depth := depth + 1
-                if c = 69 and depth > 0
-                {
-                    depth := depth - 1
-                    if depth = 0
-                        member := false
-                }
-                sb.append(c as char)
-                i := i + 1
-            }
-            sb.to_string()
-        }
-
-        ; tagged_name#: what tag_packages# made of a name the planner handed
-        ; out, for whoever looks a symbol up afterwards (the JIT's entry and
-        ; test names).
-        function tagged_name(this: Emitter, plan: Plan, name: String) returns String
-        {
-            if plan.tag_names = null
-                return String(name)
-            let names (*plan.tag_names)
-            if names.length < 2
-                return String(name)
-            Emitter.tagged_symbol(name, names, plan.tag_concepts, plan.tag_symbols, plan.tag_generics)
         }
 
         ; s187: define the free-form page-get intrinsic `_Z3getPv`. The s181
@@ -8965,8 +8737,7 @@ define Emitter
                     Console.print(tl.to_c_string())
                     Console.print " ... "
                     var taddr: u64 0
-                    let tagged_tn this.tagged_name(plan, tn)
-                    let terr LLVMOrcLLJITLookup(jit, &taddr, tagged_tn.to_c_string())
+                    let terr LLVMOrcLLJITLookup(jit, &taddr, tn.to_c_string())
                     if terr <> null
                     {
                         report_jit_error(terr, "JIT: test lookup failed")
@@ -8990,8 +8761,7 @@ define Emitter
 
             ; Look up the target function's address (ORC applies the global prefix).
             var addr: u64 0
-            let tagged_fn this.tagged_name(plan, fn_mangled)
-            let lookup_err LLVMOrcLLJITLookup(jit, &addr, tagged_fn.to_c_string())
+            let lookup_err LLVMOrcLLJITLookup(jit, &addr, fn_mangled.to_c_string())
             if lookup_err <> null
             {
                 report_jit_error(lookup_err, "JIT: symbol lookup failed")

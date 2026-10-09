@@ -47,5 +47,5 @@ declare void @scaly_proc_stdio_binary(...)
 
 define i64 @scaly_build_stamp() {
 entry:
-  ret i64 -420814130034237712
+  ret i64 -3156649535406613450
 }

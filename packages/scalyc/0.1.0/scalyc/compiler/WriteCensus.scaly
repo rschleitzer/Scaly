@@ -2942,6 +2942,20 @@ define WriteCensus
                 let c m.get i
                 if c = 69
                     break
+                ; B5alpha: the package's tag behind a name (Planner.package_tag#),
+                ; no component of its own
+                if c = 66 and i + 1 < n and m.get(i + 1) >= 48 and m.get(i + 1) <= 57
+                {
+                    i := i + 1
+                    var tag_len: size_t 0
+                    while i < n and m.get(i) >= 48 and m.get(i) <= 57
+                    {
+                        tag_len := tag_len * 10 + ((m.get(i) - 48) as size_t)
+                        i := i + 1
+                    }
+                    i := i + tag_len
+                    continue
+                }
                 if (c >= 48) and (c <= 57)
                 {
                     var len: size_t 0

@@ -12,8 +12,8 @@
 ; archive to link against, and the evidence is the struct type itself.
 ; env: SCALY_HOME=tests/regress/generic_field_cross_package_home
 ; args: --no-prelude
-; expect-ir: %_Z4WrapIiE = type { i64, %_Z5Inner }
-; expect-ir: %_Z5Inner = type { i64, i64, i64 }
+; expect-ir: %_Z4WrapB3gflIiE = type { i64, %_Z5InnerB3gfl }
+; expect-ir: %_Z5InnerB3gfl = type { i64, i64, i64 }
 
 package gfl 0.1.0
 use gfl.shapes.Wrap

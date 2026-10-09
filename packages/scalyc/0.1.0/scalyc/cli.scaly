@@ -1835,8 +1835,8 @@ define cli
         false
     }
 
-    ; the dotted name an Itanium symbol spells: `_ZN6opensp7StringC4testEv`
-    ; is opensp.StringC.test, `_Z4testv` is test
+    ; the dotted name an Itanium symbol spells: `_ZN6openspB6opensp4testEv`
+    ; is opensp.test, `_Z4testv` is test
     function label_of_test(mangled: String) returns String
     {
         let n mangled.get_length()
@@ -1863,7 +1863,8 @@ define cli
             if first = false
                 sb.append("." as char)
             sb.append(mangled.substring(i, len))
-            i := i + len
+            ; a package's tag behind the name is no part of the label
+            i := tool.past_tags(mangled, i + len)
             first := false
             if nested = false
                 break
@@ -1953,8 +1954,7 @@ define cli
             let sym_page Page.get(syms)
             for f in dep_plan.functions
             {
-                ; the name the object has it under (Emitter.tag_packages#)
-                let durable_name String^sym_page(dep_emitter.tagged_name(dep_plan, f.mangled_name))
+                let durable_name String^sym_page(f.mangled_name)
                 syms.add durable_name
             }
         }
