@@ -4732,7 +4732,7 @@ while.exit:                                       ; preds = %while.cond
   ret void
 }
 
-define linkonce_odr %_Z5SliceI9JsonValueE @_Z24allocate_slice9JsonValueR4Pagem(ptr %0, i64 %1) {
+define linkonce_odr %_Z5SliceI9JsonValueE @_Z30allocate_slice9JsonValueB4jsonR4Pagem(ptr %0, i64 %1) {
 entry:
   %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64)
   %call = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 %mul, i64 8)
@@ -4781,7 +4781,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   %call = call ptr @_ZN4Page3getEPv(ptr %2)
-  %call1 = call %_Z5SliceI9JsonValueE @_Z24allocate_slice9JsonValueR4Pagem(ptr %call, i64 %length)
+  %call1 = call %_Z5SliceI9JsonValueE @_Z30allocate_slice9JsonValueB4jsonR4Pagem(ptr %call, i64 %length)
   %data = extractvalue %_Z5SliceI9JsonValueE %call1, 1
   %load.struct2 = load %_Z5SliceI9JsonValueE, ptr %3, align 8
   %data3 = extractvalue %_Z5SliceI9JsonValueE %load.struct2, 1
@@ -4802,7 +4802,7 @@ if.end:                                           ; preds = %entry
 
 if.then9:                                         ; preds = %if.end
   %call11 = call ptr @_ZN4Page3getEPv(ptr %2)
-  %call12 = call %_Z5SliceI9JsonValueE @_Z24allocate_slice9JsonValueR4Pagem(ptr %call11, i64 128)
+  %call12 = call %_Z5SliceI9JsonValueE @_Z30allocate_slice9JsonValueB4jsonR4Pagem(ptr %call11, i64 128)
   %value_room13 = getelementptr inbounds nuw %_Z9JsonArena, ptr %2, i32 0, i32 0
   store %_Z5SliceI9JsonValueE %call12, ptr %value_room13, align 8
   %value_used14 = getelementptr inbounds nuw %_Z9JsonArena, ptr %2, i32 0, i32 1
@@ -4846,7 +4846,7 @@ while.exit:                                       ; preds = %while.cond
   ret void
 }
 
-define linkonce_odr %_Z5SliceI10JsonMemberE @_Z26allocate_slice10JsonMemberR4Pagem(ptr %0, i64 %1) {
+define linkonce_odr %_Z5SliceI10JsonMemberE @_Z32allocate_slice10JsonMemberB4jsonR4Pagem(ptr %0, i64 %1) {
 entry:
   %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64)
   %call = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 %mul, i64 8)
@@ -4895,7 +4895,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   %call = call ptr @_ZN4Page3getEPv(ptr %2)
-  %call1 = call %_Z5SliceI10JsonMemberE @_Z26allocate_slice10JsonMemberR4Pagem(ptr %call, i64 %length)
+  %call1 = call %_Z5SliceI10JsonMemberE @_Z32allocate_slice10JsonMemberB4jsonR4Pagem(ptr %call, i64 %length)
   %data = extractvalue %_Z5SliceI10JsonMemberE %call1, 1
   %load.struct2 = load %_Z5SliceI10JsonMemberE, ptr %3, align 8
   %data3 = extractvalue %_Z5SliceI10JsonMemberE %load.struct2, 1
@@ -4916,7 +4916,7 @@ if.end:                                           ; preds = %entry
 
 if.then9:                                         ; preds = %if.end
   %call11 = call ptr @_ZN4Page3getEPv(ptr %2)
-  %call12 = call %_Z5SliceI10JsonMemberE @_Z26allocate_slice10JsonMemberR4Pagem(ptr %call11, i64 128)
+  %call12 = call %_Z5SliceI10JsonMemberE @_Z32allocate_slice10JsonMemberB4jsonR4Pagem(ptr %call11, i64 128)
   %member_room13 = getelementptr inbounds nuw %_Z9JsonArena, ptr %2, i32 0, i32 2
   store %_Z5SliceI10JsonMemberE %call12, ptr %member_room13, align 8
   %member_used14 = getelementptr inbounds nuw %_Z9JsonArena, ptr %2, i32 0, i32 3

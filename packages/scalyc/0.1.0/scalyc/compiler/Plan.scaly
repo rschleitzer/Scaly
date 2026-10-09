@@ -760,5 +760,8 @@ define Plan
     tag_concepts: ConceptIndex
     tag_symbols: ConceptIndex
     tag_globals: ConceptIndex
+    ; the generic free functions by name: an instance's identifier is the
+    ; name with its encoded type arguments behind it
+    tag_generics: ref[Vector[String]]?
 )
 

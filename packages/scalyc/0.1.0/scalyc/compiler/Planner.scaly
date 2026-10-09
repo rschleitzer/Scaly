@@ -3749,6 +3749,24 @@ define Planner
             tag_global_index.insert_if_absent(String^this(symbol), n)
         }
 
+        ; tag_generic_names#: the generic free functions by name. An instance
+        ; of one is named <name><encoded type arguments> in ONE identifier
+        ; (`_Z22allocate_slice7StringCR4Pagem`), so the types in it are
+        ; found only by who knows where the name ends (Emitter.tagged_symbol#).
+        procedure tag_generic_names(mutable this) returns Array[String]
+        {
+            var out Array[String]()
+            var i: size_t 0
+            while i < model_functions.length
+            {
+                let kvp model_functions.get i
+                if kvp <> null and kvp.value.parameters.length > 0
+                    out.add(kvp.key)
+                i := i + 1
+            }
+            out
+        }
+
         ; tag_concept_index#: every concept of a package by its name, with
         ; the number of that package -- the entry a bare name RESOLVES to
         ; (concept_package#), so the tag says what the planner took the name
@@ -53454,6 +53472,7 @@ define Planner
             var constraints_holder Vector[TypeConstraint](constraints)
             let tag_concepts this.tag_concept_index()
             var tag_names_holder Vector[String](tag_package_names)
+            var tag_generics_holder Vector[String](this.tag_generic_names())
 
             Plan(
                 planned_main,
@@ -53468,7 +53487,8 @@ define Planner
                 &tag_names_holder,
                 tag_concepts,
                 tag_symbol_index,
-                tag_global_index
+                tag_global_index,
+                &tag_generics_holder
             )
         }
 

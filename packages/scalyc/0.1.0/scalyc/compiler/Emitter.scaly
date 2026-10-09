@@ -7935,7 +7935,7 @@ define Emitter
                 if name_ptr <> null and name_len > 2 and *name_ptr = 95 and *(name_ptr + 1) = 90
                 {
                     let old String(name_ptr)
-                    let tagged Emitter.tagged_symbol(old, names, plan.tag_concepts, plan.tag_symbols)
+                    let tagged Emitter.tagged_symbol(old, names, plan.tag_concepts, plan.tag_symbols, plan.tag_generics)
                     if tagged.get_length() <> old.get_length()
                         LLVMSetValueName2(func, tagged.to_c_string() as pointer[const_char], tagged.get_length())
                 }
@@ -7981,6 +7981,25 @@ define Emitter
             0
         }
 
+        ; generic_name_length#: the length of the longest generic free
+        ; function's name that `id` begins with and is longer than, 0 for none
+        function generic_name_length(generics: ref[Vector[String]]?, id: String) returns size_t
+        {
+            if generics = null
+                return 0
+            let gs (*generics)
+            var best: size_t 0
+            var g: size_t 0
+            while g < gs.length
+            {
+                let gl gs[g].get_length()
+                if gl > best and gl < id.get_length() and id.starts_with(gs[g])
+                    best := gl
+                g := g + 1
+            }
+            best
+        }
+
         ; tagged_symbol#: a mangled name with the tag of its package behind
         ; every identifier that belongs to one. It reads what the planner's
         ; manglers write: `_Z`, an `N` for a member, identifiers with their
@@ -7991,7 +8010,7 @@ define Emitter
         ; caller page's `PN4scaly6memory4PageE` take none. What it cannot read
         ; goes over as it stands: definition and call make the same name
         ; either way, since it is a function of the name and the tables alone.
-        function tagged_symbol(name: String, names: Vector[String], concepts: ConceptIndex, symbols: ConceptIndex) returns String
+        function tagged_symbol(name: String, names: Vector[String], concepts: ConceptIndex, symbols: ConceptIndex, generics: ref[Vector[String]]?) returns String
         {
             let n name.get_length()
             if n < 3 or name.get(0) <> 95 or name.get(1) <> 90
@@ -8036,23 +8055,43 @@ define Emitter
                         i := n
                         continue
                     }
-                    sb.append(name.substring(i, j - i + len))
                     var tag: i64 0
-                    if head
+                    if head and nested = false
                     {
+                        ; a free function's own name; an instance of a generic
+                        ; one holds its type arguments' encoding, tagged like
+                        ; any type and counted into the identifier's length
                         head := false
-                        member := nested
-                        if nested
-                            tag := Emitter.concept_tag(concepts, name.substring(j, len))
+                        tag := free_tag
+                        let own name.substring(j, len)
+                        let cut Emitter.generic_name_length(generics, own)
+                        if cut > 0
+                        {
+                            let types Emitter.tagged_symbol("_Zv`own.substring(cut, len - cut)`", names, concepts, symbols, null)
+                            let tagged_types types.substring(3, types.get_length() - 3)
+                            sb.append(cut + tagged_types.get_length())
+                            sb.append(own.substring(0, cut))
+                            sb.append tagged_types
+                        }
                         else
-                            tag := free_tag
+                            sb.append(name.substring(i, j - i + len))
                     }
                     else
                     {
-                        if member and depth = 1
-                            member := false
-                        else
+                        sb.append(name.substring(i, j - i + len))
+                        if head
+                        {
+                            head := false
+                            member := true
                             tag := Emitter.concept_tag(concepts, name.substring(j, len))
+                        }
+                        else
+                        {
+                            if member and depth = 1
+                                member := false
+                            else
+                                tag := Emitter.concept_tag(concepts, name.substring(j, len))
+                        }
                     }
                     if tag > 0 and (tag as size_t) < names.length
                     {
@@ -8101,7 +8140,7 @@ define Emitter
             let names (*plan.tag_names)
             if names.length < 2
                 return String(name)
-            Emitter.tagged_symbol(name, names, plan.tag_concepts, plan.tag_symbols)
+            Emitter.tagged_symbol(name, names, plan.tag_concepts, plan.tag_symbols, plan.tag_generics)
         }
 
         ; s187: define the free-form page-get intrinsic `_Z3getPv`. The s181
