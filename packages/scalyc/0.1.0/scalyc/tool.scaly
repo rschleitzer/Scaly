@@ -471,8 +471,57 @@ define tool
     ; and assembly files its target takes. `names` and `roots` pair a
     ; package's name with its root file. False when one of them does not build;
     ; what went wrong is printed where it happened.
+    ; Two LINES of one package in one program are two packages -- their
+    ; Scaly symbols carry the line -- but a C or assembly file's symbols are
+    ; not ours to mark: two lines of a package that brings such files would
+    ; define them twice. False, said, for such a pair.
+    procedure lines_may_double(names: ref[Array[String]], roots: ref[Array[String]]) returns bool
+    {
+        var i: size_t 0
+        while i < names.length
+        {
+            var j i + 1
+            while j < names.length
+            {
+                if names.at(i).equals(names.at(j)) and roots.at(i).equals(roots.at(j)) = false
+                {
+                    var k: size_t 0
+                    while k < 2
+                    {
+                        var root String(roots.at(i))
+                        if k = 1
+                            root := String(roots.at(j))
+                        k := k + 1
+                        let slash root.last_index_of(47)
+                        if slash < 0
+                            continue
+                        let dir root.substring(0, slash as size_t)
+                        var files Array[String]()
+                        tool.package_files(dir, "", &files)
+                        var f: size_t 0
+                        while f < files.length
+                        {
+                            let file files.at f
+                            f := f + 1
+                            if file.ends_with(".c") or file.ends_with(".S") or file.ends_with(".s")
+                            {
+                                Console.println("error: package `names.at(i)` is required in two lines (`roots.at(i)`, `roots.at(j)`) and brings C or assembly files (`file`): their symbols carry no line, so the two cannot stand in one program - bring the packages that declare it to one line")
+                                return false
+                            }
+                        }
+                    }
+                }
+                j := j + 1
+            }
+            i := i + 1
+        }
+        true
+    }
+
     procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, cpu: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) returns bool mutable modeler_error_count
     {
+        if tool.lines_may_double(names, roots) = false
+            return false
         var include_flags StringBuilder()
         tool.libraries_of(names, roots, program_file, link_flags, &include_flags)
         let includes include_flags.to_string()
@@ -699,6 +748,8 @@ define tool
     ; one fixed /tmp path, which two runs at once overwrote.
     procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) returns bool mutable modeler_error_count
     {
+        if tool.lines_may_double(names, roots) = false
+            return false
         ; the C libraries go into this process, where the JIT looks symbols up
         var link_flags StringBuilder()
         var include_flags StringBuilder()
@@ -1425,7 +1476,7 @@ define tool
         {
             let name declared.at(i)
             var version "`asked.at(i)`"
-            let selected Modeler.selected_version(selection, name)
+            let selected Modeler.selected_version(selection, name, asked.at(i))
             if selected.get_length() > 0
                 version := "`selected`"
             var source "`sources.at(i)`"

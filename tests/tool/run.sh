@@ -56,6 +56,10 @@
 #   twobox     two packages hand out a record of one name with other fields:
 #              a program holds both, with and without a `use` of one, on
 #              all three routes; one package's handed to the other is refused
+#   diamond    two lines of one package under two packages of a program: both
+#              run, each with its own types and globals, on all three routes;
+#              the program's own line whichever it declares first; refused: a
+#              value across the lines, one file declaring both, C files twice
 #   source     `package name version "source"`: a package neither the
 #              installation nor the project has is taken from where a fetch
 #              lays it, $SCALY_PACKAGES/<host>/<path>/packages/<name>/<version>, on
@@ -75,7 +79,8 @@
 #              asked for is taken, by the program and by the packages built
 #              for it, on all three routes (the package's interface written
 #              into the cache on the way and read from there afterwards),
-#              two major versions are refused,
+#              two lines of one package (1.0 beside 0.1, 0.2 beside 0.1)
+#              stand side by side, each declarer with its own,
 #              and so are 0.2 beside 0.1 (below 1.0 the second number breaks);
 #              `scaly install` builds the programs a package offers (its
 #              programs/), all or one by name, their sourceless declarations
@@ -423,7 +428,7 @@ for args in "hello" "9lives" "a-b" "" "--lib"; do
 done
 [ "$refused" = 5 ] && [ ! -e "$newdir/9lives" ] && [ ! -e "$newdir/a-b" ] && ok || bad "new: $refused of 5 bad invocations refused"
 
-# collide: a symbol carries its package (an ABI tag, `_Z6helperB5alphai`), so
+# collide: a symbol carries its package (an ABI tag, `_Z6helperB5alphaB4v0_1i`), so
 # two packages that each define a function of one name, and a record of one
 # name with a method, stand side by side -- on every route; and each has its
 # own cell for a mutable global of one name (`calls`: 1, 10, 2 -- one shared
@@ -453,7 +458,7 @@ for route in "run main.scaly" "build main.scaly -o $TMP/col_a$SCALY_EXE" "build 
   [ "$out" = "2 101 2 101 1 10 2 32 96" ] && ok || bad "collide (${route%% *} ${route##*main.scaly}): rc=$rc got '$(echo "$out" | head -2 | tr '\n' '|')'"
 done
 # the tag is in the symbols the packages define
-grep -q '_Z6helperB5alphai' "$SCALY_CACHE"/alpha-0.1.0-*.defs && grep -q 'allocate_slice3BoxB4beta' "$SCALY_CACHE"/beta-0.1.0-*.defs && grep -q '_ZN3BoxB4beta5grownEv' "$SCALY_CACHE"/beta-0.1.0-*.defs && ok || bad "collide: the definitions carry no package tag"
+grep -q '_Z6helperB5alphaB4v0_1i' "$SCALY_CACHE"/alpha-0.1.0-*.defs && grep -q 'allocate_slice3BoxB4betaB4v0_1' "$SCALY_CACHE"/beta-0.1.0-*.defs && grep -q '_ZN3BoxB4betaB4v0_15grownEv' "$SCALY_CACHE"/beta-0.1.0-*.defs && ok || bad "collide: the definitions carry no package tag"
 # ... and with the names apart the three routes give ONE answer
 write_pair helper_b BoxB
 for route in "run main.scaly" "build main.scaly -o $TMP/col_a$SCALY_EXE" "build main.scaly --release -o $TMP/col_b$SCALY_EXE"; do
@@ -503,6 +508,53 @@ out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run named.scaly 2>&1); rc=$?
 printf 'package alpha 0.1.0\npackage beta 0.1.0\n\nlet b make_beta(1)\nprint("`alpha_of(b)`")\n' > "$tb/cross.scaly"
 out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run cross.scaly 2>&1); rc=$?
 [ "$rc" != 0 ] && echo "$out" | grep -q 'function not found: alpha_of' && ok || bad "twobox: one package's record handed to the other: rc=$rc '$(echo "$out" | head -1)'"
+
+# diamond: two LINES of one package in one program. `a` declares jdoc 0.1,
+# `b` declares jdoc 0.2 (another record of the name, another answer, a global
+# each); a program over both holds a value of each line, hands each back to
+# its side, and the two lines count for themselves -- on every route. A name
+# of jdoc written in a file means the line that file's package declares, in
+# either order of the program's own declarations. Refused: a value of one
+# line handed to the other, one file declaring both lines, and two lines of a
+# package that brings C files.
+dm="$TMP/diamond"
+for v in 0.1.0 0.2.0; do
+  mkdir -p "$dm/packages/jdoc/$v/jdoc"
+  printf 'package scaly 0.1.0\n\ndefine jdoc\n{\n    module api\n}\n' > "$dm/packages/jdoc/$v/jdoc.scaly"
+done
+printf 'define Value\n(\n    n: int\n)\n\nmutable made: int 0\n\nprocedure make(n: int) returns Value mutable made\n{\n    made := made + 1\n    Value(n)\n}\n\nfunction get(v: Value) returns int\n    v.n\n\nprocedure count() returns int\n    made\n' > "$dm/packages/jdoc/0.1.0/jdoc/api.scaly"
+printf 'define Value\n(\n    n: int\n    m: int\n)\n\nmutable made: int 0\n\nprocedure make(n: int) returns Value mutable made\n{\n    made := made + 10\n    Value(n, 1000)\n}\n\nfunction get(v: Value) returns int\n    v.n + v.m\n\nprocedure count() returns int\n    made\n' > "$dm/packages/jdoc/0.2.0/jdoc/api.scaly"
+for p in a b; do
+  v=0.1.0; [ "$p" = b ] && v=0.2.0
+  mkdir -p "$dm/packages/$p/0.1.0/$p"
+  printf 'package scaly 0.1.0\npackage jdoc %s\n\ndefine %s\n{\n    module use_it\n}\n' "$v" "$p" > "$dm/packages/$p/0.1.0/$p.scaly"
+  printf 'use jdoc.api.Value\n\nprocedure %s_value(n: int) returns Value mutable made\n    make(n)\n\nfunction %s_get(v: Value) returns int\n    get(v)\n\nprocedure %s_count() returns int\n    count()\n' "$p" "$p" "$p" > "$dm/packages/$p/0.1.0/$p/use_it.scaly"
+done
+printf 'package a 0.1.0\npackage b 0.1.0\n\nlet x a_value(1)\nlet y b_value(1)\nlet z a_value(2)\nprint("`a_get(x)` `b_get(y)` `a_get(z)` `a_count()` `b_count()`")\n' > "$dm/main.scaly"
+for route in "run main.scaly" "build main.scaly -o $TMP/dm_a$SCALY_EXE" "build main.scaly --release -o $TMP/dm_b$SCALY_EXE"; do
+  # shellcheck disable=SC2086
+  out=$(cd "$dm" && SCALY_HOME="$here" "$scaly_abs" $route 2>&1); rc=$?
+  case "$route" in
+    *dm_a*) [ "$rc" = 0 ] && out=$("$TMP/dm_a$SCALY_EXE") ;;
+    *dm_b*) [ "$rc" = 0 ] && out=$("$TMP/dm_b$SCALY_EXE") ;;
+  esac
+  [ "$out" = "1 1001 2 2 10" ] && ok || bad "diamond (${route%% *} ${route##*main.scaly}): rc=$rc got '$(echo "$out" | head -1)'"
+done
+# the program's own line, whichever it declares first
+for order in 'package b 0.1.0\npackage jdoc 0.1.0' 'package jdoc 0.1.0\npackage b 0.1.0'; do
+  printf "$order"'\n\nuse jdoc.api.Value\n\nlet v make(5)\nlet w: Value make(6)\nprint("`get(v)` `get(w)` `b_get(b_value(1))`")\n' > "$dm/low.scaly"
+  out=$(cd "$dm" && SCALY_HOME="$here" "$scaly_abs" run low.scaly 2>&1); rc=$?
+  [ "$out" = "5 6 1001" ] && ok || bad "diamond: the program's own line (${order%%\\n*} first): rc=$rc got '$(echo "$out" | head -1)'"
+done
+printf 'package a 0.1.0\npackage b 0.1.0\n\nlet y b_value(1)\nprint("`a_get(y)`")\n' > "$dm/cross.scaly"
+out=$(cd "$dm" && SCALY_HOME="$here" "$scaly_abs" run cross.scaly 2>&1); rc=$?
+[ "$rc" != 0 ] && echo "$out" | grep -q 'function not found: a_get' && ok || bad "diamond: one line's value handed to the other: rc=$rc '$(echo "$out" | head -1)'"
+printf 'package jdoc 0.1.0\npackage jdoc 0.2.0\n\nprint("x")\n' > "$dm/both.scaly"
+out=$(cd "$dm" && SCALY_HOME="$here" "$scaly_abs" run both.scaly 2>&1); rc=$?
+[ "$rc" != 0 ] && echo "$out" | grep -q 'package jdoc is declared in two lines here, 0.1.0 and 0.2.0' && ok || bad "diamond: one file declaring two lines: rc=$rc '$(echo "$out" | head -1)'"
+for v in 0.1.0 0.2.0; do printf 'int jdoc_c(void) { return 1; }\n' > "$dm/packages/jdoc/$v/jdoc/extra.c"; done
+out=$(cd "$dm" && SCALY_HOME="$here" "$scaly_abs" run main.scaly 2>&1); rc=$?
+[ "$rc" != 0 ] && echo "$out" | grep -q 'package jdoc is required in two lines .* and brings C or assembly files' && ok || bad "diamond: two lines of a package with C files: rc=$rc '$(echo "$out" | head -1)'"
 
 # source: the third place a package is looked for, what a fetch laid down
 src="$TMP/source"
@@ -615,8 +667,8 @@ else
   ( cd "$fr/via" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
   printf 'package via 0.1.0 "%s"\npackage mini 0.1.5 "%s"\n\nprint("`mini.version()` `via.seen()`")\n' "$fr/via" "$vr" > "$fp/newer.scaly"
   printf 'package via 0.1.0 "%s"\n\nprint(via.seen())\n' "$fr/via" > "$fp/older.scaly"
-  printf 'package via 0.1.0 "%s"\npackage mini 1.0.0 "%s"\n\nprint("no")\n' "$fr/via" "$vr" > "$fp/major.scaly"
-  printf 'package via 0.1.0 "%s"\npackage mini 0.2.0 "%s"\n\nprint("no")\n' "$fr/via" "$vr" > "$fp/minor.scaly"
+  printf 'package via 0.1.0 "%s"\npackage mini 1.0.0 "%s"\n\nprint("`mini.version()` `via.seen()`")\n' "$fr/via" "$vr" > "$fp/major.scaly"
+  printf 'package via 0.1.0 "%s"\npackage mini 0.2.0 "%s"\n\nprint("`mini.version()` `via.seen()`")\n' "$fr/via" "$vr" > "$fp/minor.scaly"
   agree=0
   for route in "run newer.scaly" "build newer.scaly -o $TMP/ver_a$SCALY_EXE" "build newer.scaly --release -o $TMP/ver_b$SCALY_EXE"; do
     # shellcheck disable=SC2086
@@ -633,11 +685,21 @@ else
   out=$(ft run older.scaly 2> /dev/null); out2=""
   ft build older.scaly -o "$TMP/ver_c$SCALY_EXE" > /dev/null 2>&1 && out2=$("$TMP/ver_c$SCALY_EXE")
   [ "$out" = "0.1.2" ] && [ "$out2" = "0.1.2" ] && ok || bad "versions: alone the package took '$out' / '$out2', not its minimum 0.1.2"
-  out=$(ft run major.scaly 2>&1); rc=$?
-  [ "$rc" != 0 ] && echo "$out" | grep -q 'package mini is required in two major versions, 1.0.0 (by the program) and 0.1.2 (by via 0.1.0)' && ok || bad "versions: two majors rc=$rc '$(echo "$out" | grep -v '^scaly: ' | head -1 | cut -c1-170)'"
-  # below 1.0 the second number is the one that breaks: 0.2.0 does not stand in for 0.1.2
-  out=$(ft run minor.scaly 2>&1); rc=$?
-  [ "$rc" != 0 ] && echo "$out" | grep -q 'package mini is required in two versions that do not go together, 0.2.0 (by the program) and 0.1.2 (by via 0.1.0)' && ok || bad "versions: 0.2 beside 0.1 rc=$rc '$(echo "$out" | grep -v '^scaly: ' | head -1 | cut -c1-170)'"
+  # two LINES of one package stand side by side (2026-10-09; refused until
+  # then): the program's `mini` is the line it declares, the package's its own
+  for pair in "major 1.0.0" "minor 0.2.0"; do
+    lines=0
+    for route in "run ${pair%% *}.scaly" "build ${pair%% *}.scaly -o $TMP/ver_d$SCALY_EXE" "build ${pair%% *}.scaly --release -o $TMP/ver_e$SCALY_EXE"; do
+      # shellcheck disable=SC2086
+      out=$(ft $route 2> /dev/null); rc=$?
+      case "$route" in
+        *ver_d*) [ "$rc" = 0 ] && out=$("$TMP/ver_d$SCALY_EXE") ;;
+        *ver_e*) [ "$rc" = 0 ] && out=$("$TMP/ver_e$SCALY_EXE") ;;
+      esac
+      [ "$out" = "${pair##* } 0.1.2" ] && lines=$((lines+1)) || echo "    versions, two lines (${route%% *}): got '$out'"
+    done
+    [ "$lines" = 3 ] && ok || bad "versions: $lines of 3 routes ran ${pair##* } for the program beside 0.1.2 for the package"
+  done
   # a fetched package's interface is written into the cache when the package
   # is compiled (tool.interface_wanted#) and read from there afterwards: the
   # bodies gone (`linked`), and a build that compiles nothing writes none anew

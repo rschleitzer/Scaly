@@ -22,15 +22,15 @@ entry:
 
 declare i32 @puts(ptr)
 
-declare i64 @_ZN3cliB6scalyc4mainEiPPc(i64, ptr)
+declare i64 @_ZN3cliB6scalycB4v0_14mainEiPPc(i64, ptr)
 
 define i64 @main(i64 %0, ptr %1) {
 entry:
-  %call = call i64 @_ZN3cliB6scalyc4mainEiPPc(i64 %0, ptr %1)
+  %call = call i64 @_ZN3cliB6scalycB4v0_14mainEiPPc(i64 %0, ptr %1)
   ret i64 %call
 }
 
 define i64 @scaly_build_stamp() {
 entry:
-  ret i64 -1106519838660934922
+  ret i64 -5817351547557714130
 }

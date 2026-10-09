@@ -1302,6 +1302,12 @@ define Planner
         ; identity*: a bare name means the declaring package's own concept
         ; before anything a `use` brings in.
         var cross_package_index: ConceptIndex
+        ; who declared which package: entries `<declaring package>|<declared
+        ; package>`, each a name and its line as package_of_file# answers
+        ; ("" for the program) -- from Program.declared, read_declared#
+        declared_lines: ref[Array[String]]
+        ; ... and whether two LINES of one package are among them
+        var lines_doubled: bool
         var lookup_package: String
         var lookup_directed: bool
         ; set while the members of a VALUE's type are looked up (a method, a
@@ -1540,6 +1546,8 @@ define Planner
             concept_origin_paths := Array[String]^this()
             ambiguous_index := ConceptIndex.create(4096)
             cross_package_index := ConceptIndex()
+            declared_lines := &Array[String]^this()
+            lines_doubled := false
             lookup_package := String^this("")
             lookup_directed := false
             value_access := false
@@ -2404,7 +2412,105 @@ define Planner
                         return i as i64
                 }
             }
+            ; ... or of a package that one DECLARES: `Value` written in `a`,
+            ; which declares json 0.1, is json 0.1's whatever other line of
+            ; json the program holds
+            i := concepts.length
+            while i > 0
+            {
+                i := i - 1
+                let kvp_ptr concepts.get i
+                if kvp_ptr <> null and kvp_ptr.key = name and i < concept_origin_files.length
+                {
+                    let of concept_origin_files.get i
+                    if of <> null and this.declares(wanted, Planner.package_of_file((*of)))
+                        return i as i64
+                }
+            }
             (0 - 1) as i64
+        }
+
+        ; declares#: does the package `who` ("" the program) declare the
+        ; package `what`, name and line?
+        function declares(this: Planner, who: String, what: String) returns bool
+        {
+            let wanted "`who`|`what`"
+            var i: size_t 0
+            while i < declared_lines.length
+            {
+                if declared_lines[i].equals(wanted)
+                    return true
+                i := i + 1
+            }
+            false
+        }
+
+        ; read_declared#: Program.declared (`<file>|<name> <version>`) as
+        ; pairs of packages, each a name and its line.
+        procedure read_declared(mutable this: Planner, prog: Program)
+        {
+            var i: size_t 0
+            while i < prog.declared.length
+            {
+                let entry prog.declared[i]
+                i := i + 1
+                let bar entry.last_index_of("|" as u8)
+                if bar < 0
+                    continue
+                let b bar as size_t
+                let rest entry.substring(b + 1, entry.get_length() - b - 1)
+                let space rest.index_of(" " as u8)
+                if space < 0
+                    continue
+                let sp space as size_t
+                let name rest.substring(0, sp)
+                if name.equals("scaly")
+                    continue
+                let line Planner.version_line(rest, sp + 1)
+                let who Planner.package_of_file(entry.substring(0, b))
+                let what "`name` `line`"
+                var k: size_t 0
+                while k < declared_lines.length
+                {
+                    let had declared_lines[k]
+                    k := k + 1
+                    let hb had.last_index_of("|" as u8)
+                    if hb < 0
+                        continue
+                    let had_what had.substring((hb as size_t) + 1, had.get_length() - (hb as size_t) - 1)
+                    if had_what.starts_with("`name` ") and had_what.equals(what) = false
+                        lines_doubled := true
+                }
+                declared_lines.add(String^this("`who`|`what`"))
+            }
+        }
+
+        ; functions_in_reach#: where two lines of one package stand in the
+        ; program, a bare call's candidates from a package the WRITER neither
+        ; is nor declares drop out when others remain -- `make(5)` in a
+        ; program that declares json 0.1 is json 0.1's, whatever a package
+        ; beside it brought of json 0.2 (it was whichever was declared
+        ; last: 1005 for 5 in the probe). The standard library's and the
+        ; program's own are always in reach.
+        procedure functions_in_reach(mutable this: Planner, found: Vector[Function]) returns Vector[Function]
+        {
+            if lines_doubled = false or found.length < 2
+                return found
+            var writer Planner.package_of_file(this.file)
+            if lookup_directed
+                writer := lookup_package
+            var reach Array[Function]()
+            var i: size_t 0
+            while i < found.length
+            {
+                let pkg this.function_package(found[i])
+                if pkg.get_length() = 0 or pkg.equals(writer) or this.declares(writer, pkg)
+                    reach.add(found[i])
+                i := i + 1
+            }
+            if reach.length = 0 or reach.length = found.length
+                return found
+            Vector[Function](reach)
         }
 
         ; resolved_package#: the package of the concept `name` RESOLVES to
@@ -2448,13 +2554,28 @@ define Planner
                     return Planner.package_of_type(gens[0])
             }
             let tag Planner.package_tag_in(t.mangled_name, t.name)
-            if tag.get_length() < 3
-                return ""
-            ; B<length><name>
-            var i: size_t 1
-            while i < tag.get_length() and tag.get(i) >= 48 and tag.get(i) <= 57
+            ; B<length><name> and, behind it, B<length><line>: the texts,
+            ; a space between them -- what package_of_file# answers
+            var sb StringBuilder()
+            let n tag.get_length()
+            var i: size_t 0
+            while i + 1 < n and tag.get(i) = 66
+            {
                 i := i + 1
-            tag.substring(i, tag.get_length() - i)
+                var len: size_t 0
+                while i < n and tag.get(i) >= 48 and tag.get(i) <= 57
+                {
+                    len := len * 10 + ((tag.get(i) - 48) as size_t)
+                    i := i + 1
+                }
+                if i + len > n
+                    break
+                if sb.get_length() > 0
+                    sb.append(" " as char)
+                sb.append(tag.substring(i, len))
+                i := i + len
+            }
+            sb.to_string()
         }
 
         ; lookup_concept_any: raw registry lookup WITHOUT the strict
@@ -3780,7 +3901,47 @@ define Planner
             let name dir.substring(start, n - 1 - start)
             if name = "scaly"
                 return ""
-            name
+            ; ... and its LINE, off the version directory behind the name
+            ; (`.../packages/json/0.1.3/...` is `json v0_1`): two lines of one
+            ; package are two packages to everything that asks here -- the
+            ; tag, a type's identity, the direction of a lookup
+            let line Planner.version_line(path, n)
+            if line.get_length() = 0
+                return name
+            "`name` `line`"
+        }
+
+        ; version_line#: the LINE of the version directory that begins at
+        ; `from` in `path` -- the versions that go together
+        ; (Modeler.version_compatible#): `v1` for 1.x.y, `v0_3` for 0.3.y
+        ; (below 1.0 the second number is the line). "" where no version
+        ; directory stands there.
+        function version_line(path: String, from: size_t) returns String
+        {
+            let n path.get_length()
+            var i from
+            var first: size_t 0
+            var digits false
+            while i < n and path.get(i) >= 48 and path.get(i) <= 57
+            {
+                first := first * 10 + ((path.get(i) - 48) as size_t)
+                digits := true
+                i := i + 1
+            }
+            if digits = false
+                return ""
+            if first > 0
+                return "v`first`"
+            if i >= n or path.get(i) <> 46
+                return "v0"
+            i := i + 1
+            var second: size_t 0
+            while i < n and path.get(i) >= 48 and path.get(i) <= 57
+            {
+                second := second * 10 + ((path.get(i) - 48) as size_t)
+                i := i + 1
+            }
+            "v0_`second`"
         }
 
         ; concept_package#: the package of the concept a bare name resolves
@@ -10087,7 +10248,7 @@ define Planner
             explicit_generics: ref[Vector[PlannedType]]?
         ) returns ref[MethodMatch]?
         {
-            let candidates this.lookup_functions_preferring(name)
+            let candidates this.functions_in_reach(this.lookup_functions_preferring(name))
             if candidates.length = 0
             {
                 var sb StringBuilder()
@@ -52379,7 +52540,7 @@ define Planner
             if g.is_mutable
             {
                 ; a package's mutable global is the package's own cell:
-                ; `_Z5callsB5alpha`. The standard library's and a program's
+                ; `_Z5callsB5alphaB4v0_1`. The standard library's and a program's
                 ; keep the bare name (the runtime's C files name some).
                 mangled := String(name)
                 let global_tag Planner.package_tag(Planner.package_of_file(this.file))
@@ -53617,6 +53778,7 @@ define Planner
             ; while planning loaded-package namespace bodies.
             this.record_program_uses(prog)
             root_package := String^this(Planner.package_dir_of(prog.module_.file))
+            this.read_declared(prog)
 
             ; Seed the concept/function/operator registries with
             ; every sibling program's top-level definitions first.
@@ -55294,7 +55456,12 @@ define Planner
     {
         if pkg.get_length() = 0
             return ""
-        "B`Planner.encode_name pkg`"
+        ; name and line (Planner.package_of_file#): a tag each
+        let space pkg.index_of(" " as u8)
+        if space < 0
+            return "B`Planner.encode_name pkg`"
+        let sp space as size_t
+        "B`Planner.encode_name(pkg.substring(0, sp))`B`Planner.encode_name(pkg.substring(sp + 1, pkg.get_length() - sp - 1))`"
     }
 
     ; package_tag_in#: the tag in a type's mangled name, `B5alpha` of
@@ -55308,16 +55475,22 @@ define Planner
         var i head.get_length()
         if mangled.starts_with(head) = false or i + 1 >= n or mangled.get(i) <> 66
             return ""
-        var j i + 1
-        var len: size_t 0
-        while j < n and mangled.get(j) >= 48 and mangled.get(j) <= 57
+        ; one tag or two (name, line), each `B<length><text>`
+        var end i
+        while end + 1 < n and mangled.get(end) = 66 and mangled.get(end + 1) >= 48 and mangled.get(end + 1) <= 57
         {
-            len := len * 10 + ((mangled.get(j) - 48) as size_t)
-            j := j + 1
+            var j end + 1
+            var len: size_t 0
+            while j < n and mangled.get(j) >= 48 and mangled.get(j) <= 57
+            {
+                len := len * 10 + ((mangled.get(j) - 48) as size_t)
+                j := j + 1
+            }
+            if j + len > n
+                break
+            end := j + len
         }
-        if j = i + 1 or j + len > n
-            return ""
-        mangled.substring(i, j + len - i)
+        mangled.substring(i, end - i)
     }
 
     ; mangle_structure_in#: mangle_structure with the package's tag (as

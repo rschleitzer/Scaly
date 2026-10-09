@@ -452,6 +452,11 @@ define Program
     packages: Vector[Module]
     module_: Module
     statements: Vector[Statement]
+    ; who declared which package, one entry `<declaring file>|<name>
+    ; <version>` per `package` line read (Modeler.handle_package_decl#): two
+    ; lines of one package may stand in a program, and a name written in a
+    ; package means the line THAT package declared
+    declared: Vector[String]
 )
 
 ; Member union

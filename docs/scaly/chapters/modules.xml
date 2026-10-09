@@ -80,9 +80,19 @@ if b.area() = 12
       that asks for <literal>json 0.1.2</literal> is built, with
       <literal>0.1.5</literal> for both. That holds among versions that go
       together — within one major version, and below 1.0 within one second
-      number (<xref linkend="mod-package-versions"/> says why); two versions
-      that do not go together are refused, with a message naming who asked
-      for each. Nothing else decides: there is no lock file and no
+      number (<xref linkend="mod-package-versions"/> says why). Such versions
+      form a <emphasis>line</emphasis>. Two lines of one package — a package
+      that asks for <literal>json 0.1</literal> beside one that asks for
+      <literal>json 0.2</literal> — are two packages to the build: both are
+      compiled and linked, each asker gets its own, and a name of
+      <literal>json</literal> written in a file means the line that file's
+      package declares. What does not go: a value of one line handed to a
+      routine of the other (they are different types), one file that
+      declares both lines, and two lines of a package that brings C or
+      assembly files. Each line has its own state — a cache or a counter
+      kept in a package's global exists once per line — and what builds
+      this way is not raised, so <command>scaly publish</command> says when
+      a newer line of a dependency exists. Nothing else decides: there is no lock file and no
       solver, the versions follow from the declarations alone, and adding a
       dependency can raise a version but never lower one. A package's root
       file declares the packages it uses itself, so a program names only the

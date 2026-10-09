@@ -3065,7 +3065,7 @@ define Modeler
         while i < names.length
         {
             let name names.at i
-            var version selected_version(selection, name)
+            var version selected_version(selection, name, versions.at(i))
             if version.get_length() = 0
                 version := String(versions.at(i))
             sb.append " `name`=`version`"
@@ -3524,29 +3524,28 @@ define Modeler
                     seen := true
                 j := j + 1
             }
+            ; by name AND line: two versions of one line go together and
+            ; the higher stays; two lines of one package are two entries, and
+            ; each declaration takes the one of its line (selected_version#).
+            ; The standard library is one -- one runtime, one allocator.
             var known false
             var s: size_t 0
             while s < sel_names.length
             {
                 if sel_names.at(s).equals(name)
                 {
-                    known := true
                     let had sel_versions.at s
-                    if version_compatible(had, version) = false
+                    if version_compatible(had, version)
                     {
-                        if report and seen = false
+                        known := true
+                        if version_newer(version, had)
                         {
-                            if version_part(had, 0) <> version_part(version, 0)
-                                report_load_error("error: package `name` is required in two major versions, `had` (by `sel_askers.at(s)`) and `version` (by `asker`); one compilation takes one")
-                            else
-                                report_load_error("error: package `name` is required in two versions that do not go together, `had` (by `sel_askers.at(s)`) and `version` (by `asker`): below 1.0 the second number is the one a breaking change raises; one compilation takes one")
+                            sel_versions.put(s, String(version))
+                            sel_askers.put(s, String(asker))
                         }
                     }
-                    else if version_newer(version, had)
-                    {
-                        sel_versions.put(s, String(version))
-                        sel_askers.put(s, String(asker))
-                    }
+                    else if name.equals("scaly") and report and seen = false
+                        report_load_error("error: the standard library is required in two lines, scaly `had` (by `sel_askers.at(s)`) and scaly `version` (by `asker`) - a program has one runtime; raise the lower declaration")
                 }
                 s := s + 1
             }
@@ -3582,7 +3581,9 @@ define Modeler
 
     ; the version the selection `selected` (lines `name version`) holds for
     ; `name`, "" where it holds none
-    function selected_version(selected: String, name: String) returns String
+    ; the version taken for `name` in the line of `asked` -- the entry
+    ; that goes together with the version a declaration writes; "" for none
+    function selected_version(selected: String, name: String, asked: String) returns String
     {
         let n selected.get_length()
         var from: size_t 0
@@ -3593,7 +3594,11 @@ define Modeler
             {
                 let line selected.substring(from, at - from)
                 if line.starts_with("`name` ")
-                    return line.substring(name.get_length() + 1, line.get_length() - name.get_length() - 1)
+                {
+                    let taken line.substring(name.get_length() + 1, line.get_length() - name.get_length() - 1)
+                    if asked.get_length() = 0 or version_compatible(taken, asked)
+                        return taken
+                }
                 from := at + 1
             }
             at := at + 1
@@ -3741,16 +3746,49 @@ define Modeler
         {
             let q versions.get qi
             if q <> null and q.starts_with("=`pkg_name` ")
-                version_str := q.substring(pkg_name.get_length() + 2, q.get_length() - pkg_name.get_length() - 2)
+            {
+                ; the selection's entry of THIS declaration's line
+                let taken q.substring(pkg_name.get_length() + 2, q.get_length() - pkg_name.get_length() - 2)
+                if version_compatible(taken, version_str)
+                    version_str := taken
+            }
             qi := qi + 1
         }
+        ; who declares it (Program.declared): the source file, also where
+        ; the declaration is read out of a generated interface
+        var declaring interface_source_file(from_file)
+        if declaring.get_length() = 0
+            declaring := String#(from_file)
+        ; two LINES of one package may stand in a program, each declared by
+        ; another package -- one file that declares both could not say which
+        ; of them a name of that package means
+        var di: size_t 0
+        while di < versions.length
+        {
+            let had versions.at di
+            di := di + 1
+            let mine ">`declaring`|`pkg_name` "
+            if had.starts_with(mine)
+            {
+                let had_version had.substring(mine.get_length(), had.get_length() - mine.get_length())
+                if version_compatible(had_version, version_str) = false
+                {
+                    report_load_error("error: package `pkg_name` is declared in two lines here, `had_version` and `version_str`: a name of `pkg_name` written in this file could mean either - declare one (two lines of a package go together in a program only where two OTHER packages each declare one)")
+                    return
+                }
+            }
+        }
+        versions.add(">`declaring`|`pkg_name` `version_str`")
         let key "`pkg_name` `version_str`"
         var vi: size_t 0
         while vi < versions.length
         {
             let v versions.get vi
-            if v <> null and v.starts_with("`pkg_name` ")
+            if v <> null and v.starts_with("`pkg_name` ") and version_compatible(v.substring(pkg_name.get_length() + 1, v.get_length() - pkg_name.get_length() - 1), version_str)
             {
+                ; loaded already -- this version, or (an error) another of
+                ; its line; ANOTHER LINE of the package is a package of its
+                ; own and is loaded beside it
                 if v.equals(key) = false
                     report_load_error("error: package `pkg_name` is required in two versions, `v.substring(pkg_name.get_length() + 1, v.get_length() - pkg_name.get_length() - 1)` and `version_str`; one compilation takes one version of a package")
                 return
@@ -4319,10 +4357,20 @@ define Modeler
         let statements handle_statements(syntax.statements)
 
         let prog_packages Vector[Module](packages)
+        var declared Array[String]()
+        var di: size_t 0
+        while di < versions.length
+        {
+            let entry versions.at di
+            if entry.get_length() > 1 and entry.get(0) = 62
+                declared.add(entry.substring(1, entry.get_length() - 1))
+            di := di + 1
+        }
         Program(
             prog_packages,
             main_module,
-            statements
+            statements,
+            Vector[String](declared)
         )
     }
 

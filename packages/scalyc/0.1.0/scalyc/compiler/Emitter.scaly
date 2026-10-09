@@ -7928,7 +7928,7 @@ define Emitter
             }
             ; the compiler's own global, under the name its package gives it
             ; (Planner.plan_global#)
-            let pkg_stamp LLVMGetNamedGlobal(llvm_module, "_Z19scaly_package_stampB6scalyc" as pointer[const_char])
+            let pkg_stamp this.package_stamp_global()
             if pkg_stamp <> null and LLVMIsDeclaration(pkg_stamp) = 0
                 emit_package_stamp(pkg_stamp)
 
@@ -8124,6 +8124,28 @@ define Emitter
             let ctors LLVMAddGlobal(llvm_module, LLVMArrayType2(entry_ty, 1), "llvm.global_ctors")
             LLVMSetLinkage(ctors, LLVMLinkage.Appending())
             LLVMSetInitializer(ctors, LLVMConstArray2(entry_ty, entries.data, 1))
+        }
+
+        ; the compiler's own stamp global in this module, under the name its
+        ; package and line give it (`_Z19scaly_package_stampB6scalycB4v0_1`,
+        ; Planner.plan_global#) -- found by its beginning, so that the
+        ; compiler's next line does not lose it; null for every other module
+        procedure package_stamp_global(mutable this) returns LLVMValueRef
+        {
+            var gv LLVMGetFirstGlobal(llvm_module)
+            while gv <> null
+            {
+                var name_len: size_t 0
+                let name_ptr LLVMGetValueName2(gv, &name_len)
+                if name_ptr <> null and name_len > 31
+                {
+                    let name String(name_ptr)
+                    if name.starts_with("_Z19scaly_package_stampB6scalyc")
+                        return gv
+                }
+                gv := LLVMGetNextGlobal(gv)
+            }
+            null
         }
 
         ; A module that DEFINES the global `scaly_package_stamp` (a `shared u64`,

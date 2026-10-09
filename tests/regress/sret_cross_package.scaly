@@ -15,8 +15,8 @@
 ;     --emit-interface -o packages/srp/0.1.0/interface packages/srp/0.1.0/srp.scaly)
 ; env: SCALY_HOME=tests/regress/sret_cross_package_home
 ; args: --no-prelude
-; expect-ir: %_Z3RecB3srp = type { i64, i64, i64 }
-; expect-ir: declare void @_ZN3RecB3srp4makeEPN4scaly6memory4PageEi(ptr noalias sret(%_Z3RecB3srp), ptr, i64)
+; expect-ir: %_Z3RecB3srpB4v0_1 = type { i64, i64, i64 }
+; expect-ir: declare void @_ZN3RecB3srpB4v0_14makeEPN4scaly6memory4PageEi(ptr noalias sret(%_Z3RecB3srpB4v0_1), ptr, i64)
 
 package srp 0.1.0
 use srp.rec.Rec
