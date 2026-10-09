@@ -1,5 +1,0 @@
-; `Ctx` is used, `EmitHelpers` is not: the second hop's owner is invisible here
-use xfail_hidden_member_hop.ctx.Ctx
-
-function read_y(c: ref[Ctx]) returns int
-    c.helpers.y

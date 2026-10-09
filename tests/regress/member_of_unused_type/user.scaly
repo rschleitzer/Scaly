@@ -1,0 +1,5 @@
+; `Ctx` is used, `EmitHelpers` is not: the field is reached through the value
+use member_of_unused_type.ctx.Ctx
+
+function read_y(c: ref[Ctx]) returns int
+    c.helpers.y

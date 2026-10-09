@@ -1304,6 +1304,10 @@ define Planner
         var cross_package_index: ConceptIndex
         var lookup_package: String
         var lookup_directed: bool
+        ; set while the members of a VALUE's type are looked up (a method, a
+        ; field): `use` makes a name writable, a value brings its type along
+        ; -- lookup_concept# does not ask whether this file sees the concept
+        var value_access: bool
 
         ; Cache of the current file's EXPLICIT (non-glob) use names. `file` is
         ; set once (init) and never changes, so this stays valid; rebuilt only
@@ -1538,6 +1542,7 @@ define Planner
             cross_package_index := ConceptIndex()
             lookup_package := String^this("")
             lookup_directed := false
+            value_access := false
             file_explicit_names := Array[String]^this()
             disambiguation_active := false
             scope_isolation_base := 0
@@ -2370,7 +2375,7 @@ define Planner
                                     return dis
                             }
                         }
-                        if this.use_vis_check(name, idx as size_t) = false
+                        if value_access = false and this.use_vis_check(name, idx as size_t) = false
                             return null
                     }
                     return &kvp_ptr.value
@@ -18767,8 +18772,17 @@ define Planner
             arg_ops: Vector[PlannedOperand]
         ) returns ref[MethodMatch]?
         {
+            ; the members of a value's type: found whether or not this file
+            ; `use`s the type (value_access), and where two packages share
+            ; its name, in the package the type's name says
+            let saved_access value_access
+            value_access := true
             if cross_package_index.cap = 0
-                return this.lookup_method_in(struct_type, method_name, arg_types, arg_ops)
+            {
+                let plain this.lookup_method_in(struct_type, method_name, arg_types, arg_ops)
+                value_access := saved_access
+                return plain
+            }
             let saved_package lookup_package
             let saved_directed lookup_directed
             lookup_package := String^this(Planner.package_of_type(struct_type))
@@ -18776,6 +18790,7 @@ define Planner
             let answer this.lookup_method_in(struct_type, method_name, arg_types, arg_ops)
             lookup_package := saved_package
             lookup_directed := saved_directed
+            value_access := saved_access
             answer
         }
 
@@ -20050,8 +20065,17 @@ define Planner
             at: Span
         ) returns Vector[PlannedMemberAccess]
         {
+            ; the members of a value's type: found whether or not this file
+            ; `use`s the type (value_access), and where two packages share
+            ; its name, in the package the type's name says
+            let saved_access value_access
+            value_access := true
             if cross_package_index.cap = 0
-                return this.resolve_member_access_in(base_type, members, at)
+            {
+                let plain this.resolve_member_access_in(base_type, members, at)
+                value_access := saved_access
+                return plain
+            }
             let saved_package lookup_package
             let saved_directed lookup_directed
             lookup_package := String^this(Planner.package_of_type(base_type))
@@ -20059,6 +20083,7 @@ define Planner
             let answer this.resolve_member_access_in(base_type, members, at)
             lookup_package := saved_package
             lookup_directed := saved_directed
+            value_access := saved_access
             answer
         }
 

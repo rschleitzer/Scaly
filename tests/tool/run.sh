@@ -491,6 +491,15 @@ for variant in "" "use alpha.Box\n\n"; do
     [ "$out" = "2 131 1 20" ] && ok || bad "twobox (${route%% *}${variant:+, use}): rc=$rc got '$(echo "$out" | head -1)'"
   done
 done
+# ... and a method on a value needs no `use` of its type where ONE package has
+# the name either: `use` makes a name writable, a value brings its type along
+printf 'package alpha 0.1.0\n\nlet a make_alpha(1)\nprint("`a.grown()` `a.v`")\n' > "$tb/one.scaly"
+out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run one.scaly 2>&1); rc=$?
+[ "$out" = "2 1" ] && ok || bad "twobox: a member through a value, its type not used: rc=$rc '$(echo "$out" | head -1)'"
+# ... while the NAME stays what `use` makes it: a construction without one is refused
+printf 'package alpha 0.1.0\n\nlet a Box(1)\nprint("`a.v`")\n' > "$tb/named.scaly"
+out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run named.scaly 2>&1); rc=$?
+[ "$rc" != 0 ] && echo "$out" | grep -q 'Box' && ok || bad "twobox: a construction of a type not used: rc=$rc '$(echo "$out" | head -1)'"
 printf 'package alpha 0.1.0\npackage beta 0.1.0\n\nlet b make_beta(1)\nprint("`alpha_of(b)`")\n' > "$tb/cross.scaly"
 out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run cross.scaly 2>&1); rc=$?
 [ "$rc" != 0 ] && echo "$out" | grep -q 'function not found: alpha_of' && ok || bad "twobox: one package's record handed to the other: rc=$rc '$(echo "$out" | head -1)'"

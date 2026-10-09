@@ -1,0 +1,20 @@
+; A member reached through a VALUE needs no `use` of the value's type
+; (2026-10-09): `c.helpers.y` with the record holding `helpers` used and the
+; helpers' own concept not. `use` makes a name WRITABLE -- an annotation, a
+; construction, a static call --; a value brings its type along, and its
+; methods and fields are found whether or not this file names the type.
+;
+; Until that day this was refused (`member y of EmitHelpers: the concept is
+; not visible in this file`, 2026-09-24; before THAT the emitter aborted,
+; rc 16, no file and no line). The refusal could not stand once two packages'
+; records of one name were two types: a program cannot `use` both, so a
+; method on the second was unwritable. A LIBRARY root: a library's modules
+; are where the visibility gate bites.
+; args: --no-prelude
+; expect-ir: %y = extractvalue %_Z11EmitHelpers %helpers, 1
+define member_of_unused_type
+{
+    module helpers
+    module ctx
+    module user
+}

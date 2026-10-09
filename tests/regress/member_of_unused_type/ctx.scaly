@@ -1,0 +1,7 @@
+use member_of_unused_type.helpers.EmitHelpers
+
+define Ctx
+(
+    name: int
+    helpers: EmitHelpers
+)
