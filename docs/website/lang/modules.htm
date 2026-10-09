@@ -273,9 +273,37 @@ HREF="modules.htm#mod-package-versions"
 >the Section called <I
 >Versions, and what publishing means</I
 ></A
-> says why); two versions
-      that do not go together are refused, with a message naming who asked
-      for each. Nothing else decides: there is no lock file and no
+> says why). Such versions
+      form a <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>line</I
+></SPAN
+>. Two lines of one package — a package
+      that asks for <TT
+CLASS="literal"
+>json 0.1</TT
+> beside one that asks for
+      <TT
+CLASS="literal"
+>json 0.2</TT
+> — are two packages to the build: both are
+      compiled and linked, each asker gets its own, and a name of
+      <TT
+CLASS="literal"
+>json</TT
+> written in a file means the line that file's
+      package declares. What does not go: a value of one line handed to a
+      routine of the other (they are different types), one file that
+      declares both lines, and two lines of a package that brings C or
+      assembly files. Each line has its own state — a cache or a counter
+      kept in a package's global exists once per line — and what builds
+      this way is not raised, so <B
+CLASS="command"
+>scaly publish</B
+> says when
+      a newer line of a dependency exists. Nothing else decides: there is no lock file and no
       solver, the versions follow from the declarations alone, and adding a
       dependency can raise a version but never lower one. A package's root
       file declares the packages it uses itself, so a program names only the
@@ -408,10 +436,39 @@ HREF="modules.htm#mod-package-versions"
 >A package may bring C or assembly files, which are compiled on the
         machine that builds it; the tool says so when it fetches one.</P
 ><P
->No name carries its package: a function that two packages each
-        define would be one function in the linked program. The tool compares
-        what the packages of a program define and refuses such a pair, naming
-        both packages and the function.</P
+>What a package defines is the package's own: two packages may
+        each define a function, a record with its methods or a mutable global
+        of one name, and each keeps its own. A record of one package is
+        another type than a same-named record of another, and a name written
+        in a package means that package's own before anything a
+        <TT
+CLASS="code"
+>use</TT
+> brings in. A program may hold values of both, call
+        their methods and hand each back to its package; handing one
+        package's record to the other is refused like any wrong type. The
+        standard library's names and a program's own are not marked.</P
+><P
+>A <TT
+CLASS="code"
+>use</TT
+> makes a name writable — as a type, in a
+        construction, before a static call. A value brings its type along:
+        its methods and fields are reached without naming the type, so
+        <TT
+CLASS="code"
+>let a make_alpha(1)</TT
+> and <TT
+CLASS="code"
+>a.grown()</TT
+> need no
+        <TT
+CLASS="code"
+>use</TT
+> of what <TT
+CLASS="code"
+>make_alpha</TT
+> returns.</P
 ></DIV
 ><DIV
 CLASS="section"
@@ -586,7 +643,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2588"
+NAME="AEN2600"
 ></A
 ><TABLE
 BORDER="1"
