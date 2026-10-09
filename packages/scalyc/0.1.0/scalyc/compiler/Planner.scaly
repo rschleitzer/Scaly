@@ -3645,6 +3645,133 @@ define Planner
             found
         }
 
+        ; ---- the package of a definition (ROADMAP: package and line in the mangling) ----
+        ; package_of_file#: the package a source file belongs to -- the <name>
+        ; of its `.../packages/<name>/` -- or "" for a file of no package: a
+        ; program's own modules. And "" for the STANDARD LIBRARY, whose names
+        ; stay as they are: the runtime and some sixty names the compiler
+        ; writes out as strings are its, and the prelude, a sub-module of
+        ; every program, lies under packages/scaly/ like the rest of it.
+        ; The FILE decides, not the module path: it is what definition and
+        ; call site both have (concept_origin_files, function_origin_files,
+        ; PlannedFunction.file), and what an interface in the cache hands on
+        ; unchanged (Modeler.interface_source_file#).
+        function package_of_file(path: String) returns String
+        {
+            let dir Planner.package_dir_of(path)
+            let n dir.get_length()
+            if n < 2
+                return ""
+            var start n - 1
+            while start > 0 and dir.get(start - 1) <> 47
+                start := start - 1
+            let name dir.substring(start, n - 1 - start)
+            if name = "scaly"
+                return ""
+            name
+        }
+
+        ; concept_package#: the package of the concept a bare name resolves
+        ; to in the registry (the entry lookup_concept# would hand out).
+        function concept_package(this: Planner, name: String) returns String
+        {
+            let idx concept_index.lookup name
+            if idx < 0
+                return ""
+            let i idx as size_t
+            if i >= concept_origin_files.length
+                return ""
+            let of concept_origin_files.get i
+            if of = null
+                return ""
+            Planner.package_of_file((*of))
+        }
+
+        ; function_package#: the package of a registered function.
+        function function_package(this: Planner, f: Function) returns String
+            Planner.package_of_file(this.function_origin_file(f))
+
+        ; package_probe# (SCALYC_PKG_PROBE=1): whether the package of every
+        ; registered definition is KNOWN -- its origin file -- before any name
+        ; is made to depend on it. One line per package with its counts, and
+        ; one per definition WITHOUT an origin file: such a one would pass for
+        ; a program's own and lose its package silently.
+        procedure package_probe(this: Planner)
+        {
+            if getenv("SCALYC_PKG_PROBE") = null
+                return
+            var names Array[String]()
+            var concepts_of Array[size_t]()
+            var functions_of Array[size_t]()
+            var i: size_t 0
+            while i < concepts.length
+            {
+                var pkg ""
+                var known false
+                if i < concept_origin_files.length
+                {
+                    let of concept_origin_files.get i
+                    if of <> null and (*of).get_length() > 0
+                    {
+                        known := true
+                        pkg := Planner.package_of_file((*of))
+                    }
+                }
+                let ck concepts.get i
+                if known = false and ck <> null
+                    Console.println("package-probe: NO ORIGIN concept `ck.key`")
+                var k: size_t 0
+                while k < names.length and names.at(k).equals(pkg) = false
+                    k := k + 1
+                if k = names.length
+                {
+                    names.add("`pkg`")
+                    concepts_of.add(0)
+                    functions_of.add(0)
+                }
+                concepts_of.put(k, concepts_of[k] + 1)
+                i := i + 1
+            }
+            i := 0
+            while i < model_functions.length
+            {
+                var pkg ""
+                var known false
+                if i < function_origin_files.length
+                {
+                    let of function_origin_files.get i
+                    if of <> null and (*of).get_length() > 0
+                    {
+                        known := true
+                        pkg := Planner.package_of_file((*of))
+                    }
+                }
+                let fk model_functions.get i
+                if known = false and fk <> null
+                    Console.println("package-probe: NO ORIGIN function `fk.key`")
+                var k: size_t 0
+                while k < names.length and names.at(k).equals(pkg) = false
+                    k := k + 1
+                if k = names.length
+                {
+                    names.add("`pkg`")
+                    concepts_of.add(0)
+                    functions_of.add(0)
+                }
+                functions_of.put(k, functions_of[k] + 1)
+                i := i + 1
+            }
+            var k: size_t 0
+            while k < names.length
+            {
+                var shown "`names.at(k)`"
+                if shown.get_length() = 0
+                    shown := "(none: the program, the standard library)"
+                Console.println("package-probe: `shown`: `concepts_of[k]` concepts, `functions_of[k]` functions")
+                k := k + 1
+            }
+        }
+
         ; report_string_data_read#: `s.data` on a String outside the standard
         ; library. The field points at the VARINT-PREFIXED buffer, not at the
         ; characters -- `let nm "NaN"` then `takes(nm.data)` read the length
@@ -53148,6 +53275,7 @@ define Planner
             ; mis-emitted call it was meant to make visible.
             this.check_use_paths()
             this.phase_mark("D3-moves-and-use-paths")
+            this.package_probe()
 
             var stmts_holder Vector[PlannedStatement](planned_stmts)
             var structs_holder Vector[PlannedStructure](instantiated_structures)
