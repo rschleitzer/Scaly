@@ -1292,6 +1292,18 @@ define Planner
         ; compiler shares several such names (Model/Plan/Syntax Call, Type,
         ; Lifetime, Span, …) but explicitly uses none of them.
         ambiguous_index: ConceptIndex
+        ; ... and the names two PACKAGES each declare (a subset of the above;
+        ; empty in almost every compilation, and then nothing below costs
+        ; anything). For such a name `lookup_concept#` asks WHOSE is meant:
+        ; the package lookups are directed to (lookup_package, set while a
+        ; routine's signature, a record's fields or a type's members are
+        ; resolved -- they were written in THAT package), else the package
+        ; of the file being planned. Rule 1 of ROADMAP-public.md *Type
+        ; identity*: a bare name means the declaring package's own concept
+        ; before anything a `use` brings in.
+        var cross_package_index: ConceptIndex
+        var lookup_package: String
+        var lookup_directed: bool
 
         ; Cache of the current file's EXPLICIT (non-glob) use names. `file` is
         ; set once (init) and never changes, so this stays valid; rebuilt only
@@ -1523,6 +1535,9 @@ define Planner
             concept_origin_files := Array[String]^this()
             concept_origin_paths := Array[String]^this()
             ambiguous_index := ConceptIndex.create(4096)
+            cross_package_index := ConceptIndex()
+            lookup_package := String^this("")
+            lookup_directed := false
             file_explicit_names := Array[String]^this()
             disambiguation_active := false
             scope_isolation_base := 0
@@ -2240,6 +2255,12 @@ define Planner
                             if prev_of.get_length() > 0
                             {
                                 ambiguous_index.insert(c.name, 1)
+                                if Planner.package_of_file((*prev_of)).equals(Planner.package_of_file(registering_file)) = false
+                                {
+                                    if cross_package_index.cap = 0
+                                        cross_package_index := ConceptIndex.create(1024)
+                                    cross_package_index.insert(c.name, 1)
+                                }
                                 ; If the main file also explicitly uses this
                                 ; now-ambiguous name, disambiguation matters.
                                 if this.array_contains_name(file_explicit_names, c.name)
@@ -2297,6 +2318,19 @@ define Planner
                 let kvp_ptr concepts.get(idx as size_t)
                 if kvp_ptr <> null
                 {
+                    ; A name two packages declare: the directed one, or this
+                    ; file's own package's. Its writer saw it; whether THIS
+                    ; file does is not the question.
+                    if cross_package_index.cap > 0 and cross_package_index.lookup(name) >= 0
+                    {
+                        let directed this.directed_concept_index(name)
+                        if directed >= 0
+                        {
+                            let directed_ptr concepts.get(directed as size_t)
+                            if directed_ptr <> null
+                                return &directed_ptr.value
+                        }
+                    }
                     ; Use-visibility stage 2: advisory classification of
                     ; this hit against the strict rules (counting only).
                     if use_vis_measure
@@ -2343,6 +2377,79 @@ define Planner
                 }
             }
             null
+        }
+
+        ; directed_concept_index#: among the concepts named `name`, the one
+        ; of the package lookups are directed to, else of the package the
+        ; file being planned belongs to; -1 when that package declares none.
+        function directed_concept_index(this: Planner, name: String) returns i64
+        {
+            var wanted Planner.package_of_file(this.file)
+            if lookup_directed
+                wanted := lookup_package
+            var i: size_t concepts.length
+            while i > 0
+            {
+                i := i - 1
+                let kvp_ptr concepts.get i
+                if kvp_ptr <> null and kvp_ptr.key = name and i < concept_origin_files.length
+                {
+                    let of concept_origin_files.get i
+                    if of <> null and Planner.package_of_file((*of)).equals(wanted)
+                        return i as i64
+                }
+            }
+            (0 - 1) as i64
+        }
+
+        ; resolved_package#: the package of the concept `name` RESOLVES to
+        ; here and now -- the directed one, the one an explicit `use` of
+        ; this file names, else the last registered -- for the tag in a
+        ; type's name (type_symbol#), which must say what lookup_concept#
+        ; answered.
+        procedure resolved_package(mutable this: Planner, name: String) returns String
+        {
+            if cross_package_index.cap > 0 and cross_package_index.lookup(name) >= 0
+            {
+                let directed this.directed_concept_index(name)
+                if directed >= 0
+                    return Planner.package_of_file(concept_origin_files[directed as size_t])
+                if use_vis_enforce and disambiguation_active and this.file_has_explicit_cached(name)
+                {
+                    var i: size_t concepts.length
+                    while i > 0
+                    {
+                        i := i - 1
+                        let kvp_ptr concepts.get i
+                        if kvp_ptr <> null and kvp_ptr.key = name and i < concept_origin_paths.length
+                        {
+                            if this.origin_matches_explicit_use(name, concept_origin_paths[i])
+                                return Planner.package_of_file(concept_origin_files[i])
+                        }
+                    }
+                }
+            }
+            this.concept_package(name)
+        }
+
+        ; package_of_type#: the package in the name of `t`, or of what it
+        ; points at or holds as an Option -- "" for none.
+        function package_of_type(t: PlannedType) returns String
+        {
+            if (t.name = "pointer" or t.name = "ref" or t.name = "Option") and t.generics <> null
+            {
+                let gens (*t.generics)
+                if gens.length = 1
+                    return Planner.package_of_type(gens[0])
+            }
+            let tag Planner.package_tag_in(t.mangled_name, t.name)
+            if tag.get_length() < 3
+                return ""
+            ; B<length><name>
+            var i: size_t 1
+            while i < tag.get_length() and tag.get(i) >= 48 and tag.get(i) <= 57
+                i := i + 1
+            tag.substring(i, tag.get_length() - i)
         }
 
         ; lookup_concept_any: raw registry lookup WITHOUT the strict
@@ -3694,7 +3801,7 @@ define Planner
         ; type_symbol#: the mangled name of the concept `name` with these
         ; arguments -- its IDENTITY, the package it comes from included.
         procedure type_symbol(mutable this, name: String, generic_args: ref[Vector[PlannedType]]?) returns String
-            Planner.mangle_structure_in(name, generic_args, Planner.package_tag(this.concept_package(name)))
+            Planner.mangle_structure_in(name, generic_args, Planner.package_tag(this.resolved_package(name)))
 
         ; package_probe# (SCALYC_PKG_PROBE=1): whether the package of every
         ; registered definition is KNOWN -- its origin file -- before any name
@@ -8514,6 +8621,25 @@ define Planner
             arg_types: Vector[PlannedType]
         ) returns bool
         {
+            if cross_package_index.cap = 0
+                return this.candidate_matches_string_i8_in(f, arg_types)
+            let saved_package lookup_package
+            let saved_directed lookup_directed
+            lookup_package := String^this(this.function_package(f))
+            lookup_directed := true
+            let answer this.candidate_matches_string_i8_in(f, arg_types)
+            lookup_package := saved_package
+            lookup_directed := saved_directed
+            answer
+        }
+
+        ; ... its body, with lookups directed to the candidate's package
+        procedure candidate_matches_string_i8_in(
+            mutable this: Planner,
+            mutable f: Function,
+            arg_types: Vector[PlannedType]
+        ) returns bool
+        {
             var param_start: size_t 0
             if f.input.length > 0
             {
@@ -8588,6 +8714,26 @@ define Planner
             exact_only: bool
         ) returns bool
         {
+            if cross_package_index.cap = 0
+                return this.candidate_matches_in(f, arg_types, exact_only)
+            let saved_package lookup_package
+            let saved_directed lookup_directed
+            lookup_package := String^this(this.function_package(f))
+            lookup_directed := true
+            let answer this.candidate_matches_in(f, arg_types, exact_only)
+            lookup_package := saved_package
+            lookup_directed := saved_directed
+            answer
+        }
+
+        ; ... its body, with lookups directed to the candidate's package
+        procedure candidate_matches_in(
+            mutable this: Planner,
+            mutable f: Function,
+            arg_types: Vector[PlannedType],
+            exact_only: bool
+        ) returns bool
+        {
             var param_start: size_t 0
             if f.input.length > 0
             {
@@ -8641,6 +8787,26 @@ define Planner
         ; (plan_type# only) — the winner is rebuilt by check_function_match#
         ; with char_fold=true, which folds the operand at the call site.
         procedure candidate_matches_char_fold(
+            mutable this: Planner,
+            mutable f: Function,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand]
+        ) returns bool
+        {
+            if cross_package_index.cap = 0
+                return this.candidate_matches_char_fold_in(f, arg_types, arg_ops)
+            let saved_package lookup_package
+            let saved_directed lookup_directed
+            lookup_package := String^this(this.function_package(f))
+            lookup_directed := true
+            let answer this.candidate_matches_char_fold_in(f, arg_types, arg_ops)
+            lookup_package := saved_package
+            lookup_directed := saved_directed
+            answer
+        }
+
+        ; ... its body, with lookups directed to the candidate's package
+        procedure candidate_matches_char_fold_in(
             mutable this: Planner,
             mutable f: Function,
             arg_types: Vector[PlannedType],
@@ -8972,6 +9138,30 @@ define Planner
         }
 
         procedure check_function_match(
+            mutable this: Planner,
+            mutable f: Function,
+            arg_types: Vector[PlannedType],
+            exact_only: bool,
+            char_fold: bool,
+            arg_ops: Vector[PlannedOperand]
+        ) returns ref[MethodMatch]?
+        {
+            if cross_package_index.cap = 0
+                return this.check_function_match_in(f, arg_types, exact_only, char_fold, arg_ops)
+            let saved_package lookup_package
+            let saved_directed lookup_directed
+            lookup_package := String^this(this.function_package(f))
+            lookup_directed := true
+            let answer this.check_function_match_in(f, arg_types, exact_only, char_fold, arg_ops)
+            lookup_package := saved_package
+            lookup_directed := saved_directed
+            answer
+        }
+
+        ; ... its body: the lookups in it are directed to the package the
+        ; signature, the fields or the members were written in (the wrapper
+        ; above; nothing is directed where no two packages share a name)
+        procedure check_function_match_in(
             mutable this: Planner,
             mutable f: Function,
             arg_types: Vector[PlannedType],
@@ -18577,6 +18767,29 @@ define Planner
             arg_ops: Vector[PlannedOperand]
         ) returns ref[MethodMatch]?
         {
+            if cross_package_index.cap = 0
+                return this.lookup_method_in(struct_type, method_name, arg_types, arg_ops)
+            let saved_package lookup_package
+            let saved_directed lookup_directed
+            lookup_package := String^this(Planner.package_of_type(struct_type))
+            lookup_directed := true
+            let answer this.lookup_method_in(struct_type, method_name, arg_types, arg_ops)
+            lookup_package := saved_package
+            lookup_directed := saved_directed
+            answer
+        }
+
+        ; ... its body: the lookups in it are directed to the package the
+        ; signature, the fields or the members were written in (the wrapper
+        ; above; nothing is directed where no two packages share a name)
+        procedure lookup_method_in(
+            mutable this: Planner,
+            mutable struct_type: PlannedType,
+            mutable method_name: String,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand]
+        ) returns ref[MethodMatch]?
+        {
             ; s106: auto-deref pointer[T] / ref[T] before lookup. Mirrors
             ; getInnerTypeIfPointerLike at Planner.cpp:1441. Without this,
             ; method dispatch on a pointer-typed local (e.g. init#'s
@@ -19831,6 +20044,28 @@ define Planner
         ; The produced access chain feeds `PlannedOperand.member_access`.
         ; ================================================================
         procedure resolve_member_access(
+            mutable this: Planner,
+            mutable base_type: PlannedType,
+            mutable members: Vector[String],
+            at: Span
+        ) returns Vector[PlannedMemberAccess]
+        {
+            if cross_package_index.cap = 0
+                return this.resolve_member_access_in(base_type, members, at)
+            let saved_package lookup_package
+            let saved_directed lookup_directed
+            lookup_package := String^this(Planner.package_of_type(base_type))
+            lookup_directed := true
+            let answer this.resolve_member_access_in(base_type, members, at)
+            lookup_package := saved_package
+            lookup_directed := saved_directed
+            answer
+        }
+
+        ; ... its body: the lookups in it are directed to the package the
+        ; signature, the fields or the members were written in (the wrapper
+        ; above; nothing is directed where no two packages share a name)
+        procedure resolve_member_access_in(
             mutable this: Planner,
             mutable base_type: PlannedType,
             mutable members: Vector[String],
@@ -55752,6 +55987,10 @@ define Planner
         ; two types that carry the same name are one type
         if a.mangled_name.get_length() > 2 and a.mangled_name.equals(b.mangled_name)
             return true
+        ; ... and two records of one bare name from two PACKAGES are two:
+        ; their names differ in the tag (`_Z3BoxB5alpha`, `_Z3BoxB4beta`)
+        if a.generics = null and b.generics = null and a.mangled_name.starts_with("_Z") and b.mangled_name.starts_with("_Z") and a.name.equals(b.name)
+            return false
         let norm_a Planner.normalize_type_name(a.name)
         let norm_b Planner.normalize_type_name(b.name)
         if norm_a <> norm_b

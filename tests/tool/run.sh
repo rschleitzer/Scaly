@@ -53,6 +53,9 @@
 #              of a package carries its package (Emitter.tag_packages#) --
 #              before, they were refused (and before that the three routes
 #              gave three different answers at rc 0)
+#   twobox     two packages hand out a record of one name with other fields:
+#              a program holds both, with and without a `use` of one, on
+#              all three routes; one package's handed to the other is refused
 #   source     `package name version "source"`: a package neither the
 #              installation nor the project has is taken from where a fetch
 #              lays it, $SCALY_PACKAGES/<host>/<path>/packages/<name>/<version>, on
@@ -462,6 +465,35 @@ for route in "run main.scaly" "build main.scaly -o $TMP/col_a$SCALY_EXE" "build 
   esac
   [ "$out" = "2 101 2 101 1 10 2 32 96" ] && ok || bad "collide, names apart (${route%% *}): rc=$rc got '$(echo "$out" | head -1)'"
 done
+
+# twobox: two packages each HAND OUT a record of one name with other fields.
+# A type's name carries its package, a name written in a package means that
+# package's own concept, so the program holds both, calls a method on each and
+# hands each back to its own package -- on every route. Handing one package's
+# to the other is refused. (Until 2026-10-09: garbage at rc 0 with a `use` of
+# one of them, the layout check silent because a `use` names the name.)
+tb="$TMP/twobox"
+for p in alpha beta; do
+  mkdir -p "$tb/packages/$p/0.1.0/$p"
+  printf 'package scaly 0.1.0\n\ndefine %s\n{\n    module Box\n}\n' "$p" > "$tb/packages/$p/0.1.0/$p.scaly"
+done
+printf 'define Box\n(\n    v: int\n)\n{\n    function grown(this) returns int\n        v + 1\n}\n\nfunction make_alpha(n: int) returns Box\n    Box(n)\n\nfunction alpha_of(b: Box) returns int\n    b.v\n' > "$tb/packages/alpha/0.1.0/alpha/Box.scaly"
+printf 'define Box\n(\n    v: int\n    w: int\n    x: int\n)\n{\n    function grown(this) returns int\n        v + w + x + 100\n}\n\nfunction make_beta(n: int) returns Box\n    Box(n, 10, 20)\n\nfunction beta_of(b: Box) returns int\n    b.x\n' > "$tb/packages/beta/0.1.0/beta/Box.scaly"
+for variant in "" "use alpha.Box\n\n"; do
+  printf 'package alpha 0.1.0\npackage beta 0.1.0\n\n'"$variant"'let a make_alpha(1)\nlet b make_beta(1)\nprint("`a.grown()` `b.grown()` `alpha_of(a)` `beta_of(b)`")\n' > "$tb/main.scaly"
+  for route in "run main.scaly" "build main.scaly -o $TMP/tb_a$SCALY_EXE" "build main.scaly --release -o $TMP/tb_b$SCALY_EXE"; do
+    # shellcheck disable=SC2086
+    out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" $route 2>&1); rc=$?
+    case "$route" in
+      *tb_a*) [ "$rc" = 0 ] && out=$("$TMP/tb_a$SCALY_EXE") ;;
+      *tb_b*) [ "$rc" = 0 ] && out=$("$TMP/tb_b$SCALY_EXE") ;;
+    esac
+    [ "$out" = "2 131 1 20" ] && ok || bad "twobox (${route%% *}${variant:+, use}): rc=$rc got '$(echo "$out" | head -1)'"
+  done
+done
+printf 'package alpha 0.1.0\npackage beta 0.1.0\n\nlet b make_beta(1)\nprint("`alpha_of(b)`")\n' > "$tb/cross.scaly"
+out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run cross.scaly 2>&1); rc=$?
+[ "$rc" != 0 ] && echo "$out" | grep -q 'function not found: alpha_of' && ok || bad "twobox: one package's record handed to the other: rc=$rc '$(echo "$out" | head -1)'"
 
 # source: the third place a package is looked for, what a fetch laid down
 src="$TMP/source"
