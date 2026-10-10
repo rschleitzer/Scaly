@@ -31185,6 +31185,33 @@ if.end14:                                         ; preds = %if.end11
   br label %if.end8
 }
 
+define linkonce_odr void @_ZN2os20environment_variableEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1, ptr %2) {
+entry:
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %call = call ptr @getenv(ptr %2)
+  %eq = icmp eq ptr %call, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr null, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+if.end:                                           ; preds = %entry
+  %call2 = call i64 @strlen(ptr %call)
+  %tuple.field3 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %call2, ptr %tuple.field3, align 1
+  %tuple.field4 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %call, ptr %tuple.field4, align 1
+  %tuple.val5 = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN7Console7printlnEP10const_char(ptr %0) {
 entry:
   call void @_ZN7Console5printEP10const_char(ptr %0)

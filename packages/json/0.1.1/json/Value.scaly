@@ -340,6 +340,47 @@ define JsonValue union
                 return JsonValue.Null
     }
 
+    ; A string value over bytes that outlive it.
+    function of_text(bytes: Slice[u8]) returns JsonValue
+        JsonValue.Text(JsonString(bytes, false))
+
+    ; An object without members, to be filled with with_member.
+    function empty_object() returns JsonValue
+        JsonValue.Object(JsonObject(Slice[JsonMember](0, null)))
+
+    ; This object with its member `key` set to value: in the member's place
+    ; when it has one of that name (the first), else as its last member.
+    ; The tree itself is not written: the answer has a member list of its
+    ; own on the caller's page, and shares every other value with this
+    ; one. A value that is no object answers itself.
+    procedure with_member(this, key: Slice[u8], value: JsonValue) returns JsonValue
+    {
+        choose this
+            when o: Object
+            {
+                var arena JsonArena#()
+                var members Array[JsonMember]()
+                var found false
+                var i: size_t 0
+                while i < o.members.length
+                {
+                    if found = false and o.members[i].key.equals(key)
+                    {
+                        members.add(JsonMember(key, value, false))
+                        found := true
+                    }
+                    else
+                        members.add(o.members[i])
+                    i := i + 1
+                }
+                if found = false
+                    members.add(JsonMember(key, value, false))
+                return JsonValue.Object(JsonObject(arena.keep_members(members.as_slice())))
+            }
+            else
+                return this
+    }
+
     function has(this, key: Slice[u8]) returns bool
     {
         choose this

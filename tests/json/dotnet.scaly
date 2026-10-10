@@ -1,0 +1,81 @@
+; The json package's editing of a tree and its .NET writing:
+;   edit    with_member sets a member in its place or appends it, and leaves
+;           the tree it was called on as it was; a value that is no object
+;           answers itself; empty_object and of_text build what is set
+;   dotnet  value_dotnet writes what System.Text.Json's default encoder
+;           writes: the quote, the characters HTML reads, the controls, DEL
+;           and everything beyond ASCII as \uXXXX in upper case, surrogate
+;           pairs past the BMP, the short escapes, a number as it came, a
+;           member name like a string
+; Expected: edit dotnet done
+
+package scaly 0.1.0
+package json 0.1.1
+
+use json.Value.JsonValue
+use json.Writer.JsonWriter
+
+function written(v: JsonValue) returns String
+{
+    var w JsonWriter()
+    w.value(v)
+    w.to_string()
+}
+
+function written_dotnet(v: JsonValue) returns String
+{
+    var w JsonWriter()
+    w.value_dotnet(v)
+    w.to_string()
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let parsed JsonValue.parse("{\"a\":1,\"meta\":{\"x\":\"y\"},\"z\":[true,null]}")
+    if parsed.ok() = false
+        return 1
+    let root parsed.value
+    let replaced root.with_member("meta", JsonValue.of_text("m"))
+    if written(replaced).equals("{\"a\":1,\"meta\":\"m\",\"z\":[true,null]}") = false
+    {
+        print(written(replaced))
+        return 2
+    }
+    let appended replaced.with_member("id", JsonValue.of_text("7"))
+    if written(appended).equals("{\"a\":1,\"meta\":\"m\",\"z\":[true,null],\"id\":\"7\"}") = false
+        return 3
+    if written(root).equals("{\"a\":1,\"meta\":{\"x\":\"y\"},\"z\":[true,null]}") = false
+        return 4
+    let inner JsonValue.empty_object().with_member("versionId", JsonValue.of_text("1"))
+    let nested root.with_member("meta", root.get("meta").with_member("x", inner))
+    if written(nested).equals("{\"a\":1,\"meta\":{\"x\":{\"versionId\":\"1\"}},\"z\":[true,null]}") = false
+    {
+        print(written(nested))
+        return 5
+    }
+    if written(root.get("a").with_member("b", JsonValue.Null)).equals("1") = false
+        return 6
+    Console.print "edit "
+
+    let tricky JsonValue.parse("{\"t\":\"<a href=\\\"x\\\">Mü & 'q' 1+1 \`b\` / \\\\ \\u00e9 😀 \\t\\u0001\\u007f</a>\",\"n\":1.50,\"ké\":[]}")
+    if tricky.ok() = false
+        return 7
+    if written_dotnet(tricky.value).equals("{\"t\":\"\\u003Ca href=\\u0022x\\u0022\\u003EM\\u00FC \\u0026 \\u0027q\\u0027 1\\u002B1 \\u0060b\\u0060 / \\\\ \\u00E9 \\uD83D\\uDE00 \\t\\u0001\\u007F\\u003C/a\\u003E\",\"n\":1.50,\"k\\u00E9\":[]}") = false
+    {
+        print(written_dotnet(tricky.value))
+        return 8
+    }
+    var w JsonWriter()
+    w.begin_object()
+    w.key("a")
+    w.text_dotnet("1+1")
+    w.key_dotnet("b'")
+    w.integer(2)
+    w.end_object()
+    if w.to_string().equals("{\"a\":\"1\\u002B1\",\"b\\u0027\":2}") = false
+        return 9
+    Console.print "dotnet "
+
+    Console.print "done"
+    0
+}

@@ -30,13 +30,6 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI2u8E = type { ptr, ptr }
 %_Z4NodeI2u8E = type { i8, ptr }
 %_Z12ListIteratorI2u8E = type { ptr }
-%_Z5ArrayI9JsonValueB4jsonB4v0_1E = type { i64, i64, ptr }
-%_Z6VectorI9JsonValueB4jsonB4v0_1E = type { i64, ptr }
-%_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E = type { ptr, i64 }
-%_Z4ListI9JsonValueB4jsonB4v0_1E = type { ptr, ptr }
-%_Z4NodeI9JsonValueB4jsonB4v0_1E = type { %_Z9JsonValueB4jsonB4v0_1, ptr }
-%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E = type { ptr }
-%_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E = type { ptr, i64 }
 %_Z5ArrayI10JsonMemberB4jsonB4v0_1E = type { i64, i64, ptr }
 %_Z6VectorI10JsonMemberB4jsonB4v0_1E = type { i64, ptr }
 %_Z14VectorIteratorI10JsonMemberB4jsonB4v0_1E = type { ptr, i64 }
@@ -44,6 +37,13 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4NodeI10JsonMemberB4jsonB4v0_1E = type { %_Z10JsonMemberB4jsonB4v0_1, ptr }
 %_Z12ListIteratorI10JsonMemberB4jsonB4v0_1E = type { ptr }
 %_Z13ArrayIteratorI10JsonMemberB4jsonB4v0_1E = type { ptr, i64 }
+%_Z5ArrayI9JsonValueB4jsonB4v0_1E = type { i64, i64, ptr }
+%_Z6VectorI9JsonValueB4jsonB4v0_1E = type { i64, ptr }
+%_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E = type { ptr, i64 }
+%_Z4ListI9JsonValueB4jsonB4v0_1E = type { ptr, ptr }
+%_Z4NodeI9JsonValueB4jsonB4v0_1E = type { %_Z9JsonValueB4jsonB4v0_1, ptr }
+%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E = type { ptr }
+%_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E = type { ptr, i64 }
 %_Z5ArrayImE = type { i64, i64, ptr }
 %_Z6VectorImE = type { i64, ptr }
 %_Z14VectorIteratorImE = type { ptr, i64 }
@@ -170,13 +170,20 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.simd.mem.75 = private unnamed_addr constant [11 x i8] c"SIMD store\00", align 1
 @.simd.mem.76 = private unnamed_addr constant [10 x i8] c"SIMD load\00", align 1
 @.simd.mem.77 = private unnamed_addr constant [11 x i8] c"SIMD store\00", align 1
-@.simd.mem.78 = private unnamed_addr constant [10 x i8] c"SIMD load\00", align 1
-@.simd.mem.79 = private unnamed_addr constant [11 x i8] c"SIMD store\00", align 1
-@.str.80 = private unnamed_addr constant [4 x i8] c"u00\00", align 1
+@.str.78 = private unnamed_addr constant [3 x i8] c"\\\\\00", align 1
+@.str.79 = private unnamed_addr constant [3 x i8] c"\\b\00", align 1
+@.str.80 = private unnamed_addr constant [3 x i8] c"\\t\00", align 1
+@.str.81 = private unnamed_addr constant [3 x i8] c"\\n\00", align 1
+@.str.82 = private unnamed_addr constant [3 x i8] c"\\f\00", align 1
+@.str.83 = private unnamed_addr constant [3 x i8] c"\\r\00", align 1
+@.str.84 = private unnamed_addr constant [3 x i8] c"\\u\00", align 1
+@.simd.mem.85 = private unnamed_addr constant [10 x i8] c"SIMD load\00", align 1
+@.simd.mem.86 = private unnamed_addr constant [11 x i8] c"SIMD store\00", align 1
+@.str.87 = private unnamed_addr constant [4 x i8] c"u00\00", align 1
 @.sconst = private constant [5 x i8] c"\03u00\00"
-@.sconst.81 = private constant [6 x i8] c"\04null\00"
-@.sconst.82 = private constant [6 x i8] c"\04true\00"
-@.sconst.83 = private constant [7 x i8] c"\05false\00"
+@.sconst.88 = private constant [6 x i8] c"\04null\00"
+@.sconst.89 = private constant [6 x i8] c"\04true\00"
+@.sconst.90 = private constant [7 x i8] c"\05false\00"
 
 declare ptr @memcpy(...)
 
@@ -6661,1172 +6668,55 @@ if.end:                                           ; preds = %while.body
   br label %while.cond
 }
 
-define linkonce_odr i1 @_ZN9JsonValueB4jsonB4v0_13hasE5SliceI2u8E(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN9JsonValueB4jsonB4v0_17of_textEPN4scaly6memory4PageE5SliceI2u8E(ptr noalias sret(%_Z9JsonValueB4jsonB4v0_1) %0, ptr %1, ptr %2) {
 entry:
-  %arg.tmp4 = alloca %_Z5SliceI2u8E, align 8
-  %arg.tmp = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
-  %sret.result = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
-  %i = alloca i64, align 8
-  %tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %0, i32 0, i32 0
-  %tag = load i8, ptr %tag.ptr, align 1
-  switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-  ]
-
-choose.end:                                       ; No predecessors!
-  ret i1 false
-
-choose.else:                                      ; preds = %entry
-  ret i1 false
-
-choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %0, i32 0, i32 1
-  %variant.val = load %_Z10JsonObjectB4jsonB4v0_1, ptr %"variant.c_data().ptr", align 8
-  store i64 0, ptr %i, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end, %choose.when
-  %i1 = load i64, ptr %i, align 8
-  %members = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
-  %length = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members, 0
-  %lt = icmp ult i64 %i1, %length
-  br i1 %lt, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %members2 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
-  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members2, ptr %arg.tmp, align 1
-  %i3 = load i64, ptr %i, align 8
-  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result, ptr %arg.tmp, i64 %i3)
-  %load.struct = load %_Z10JsonMemberB4jsonB4v0_1, ptr %sret.result, align 8
-  %key = extractvalue %_Z10JsonMemberB4jsonB4v0_1 %load.struct, 0
-  store %_Z5SliceI2u8E %key, ptr %arg.tmp4, align 1
-  %call = call i1 @_ZN5SliceI2u8E6equalsE5SliceI2u8E(ptr %arg.tmp4, ptr %1)
-  br i1 %call, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-
-if.then:                                          ; preds = %while.body
-  ret i1 true
-
-if.end:                                           ; preds = %while.body
-  %i5 = load i64, ptr %i, align 8
-  %add = add i64 %i5, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-}
-
-define linkonce_odr void @_ZN9JsonValueB4jsonB4v0_16key_atEm(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1, i64 %2) {
-entry:
-  %struct.init3 = alloca %_Z5SliceI2u8E, align 8
-  %struct.init = alloca %_Z5SliceI2u8E, align 8
-  %arg.tmp = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
-  %sret.result = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
-  %tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 0
-  %tag = load i8, ptr %tag.ptr, align 1
-  switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-  ]
-
-choose.end:                                       ; No predecessors!
-  ret void
-
-choose.else:                                      ; preds = %entry
-  %tuple.field4 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init3, i32 0, i32 0
-  store i64 0, ptr %tuple.field4, align 8
-  %tuple.field5 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init3, i32 0, i32 1
-  store ptr null, ptr %tuple.field5, align 8
-  %sret.body6 = load %_Z5SliceI2u8E, ptr %struct.init3, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init3, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 1
-  %variant.val = load %_Z10JsonObjectB4jsonB4v0_1, ptr %"variant.c_data().ptr", align 8
-  %members = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
-  %length = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members, 0
-  %lt = icmp ult i64 %2, %length
-  br i1 %lt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %choose.when
-  %members1 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
-  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members1, ptr %arg.tmp, align 1
-  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result, ptr %arg.tmp, i64 %2)
-  %load.struct = load %_Z10JsonMemberB4jsonB4v0_1, ptr %sret.result, align 8
-  %key = extractvalue %_Z10JsonMemberB4jsonB4v0_1 %load.struct, 0
-  store %_Z5SliceI2u8E %key, ptr %0, align 1
-  ret void
-
-if.end:                                           ; preds = %choose.when
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init, i32 0, i32 0
-  store i64 0, ptr %tuple.field, align 8
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init, i32 0, i32 1
-  store ptr null, ptr %tuple.field2, align 8
-  %sret.body = load %_Z5SliceI2u8E, ptr %struct.init, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN9JsonValueB4jsonB4v0_18value_atEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValueB4jsonB4v0_1) %0, ptr %1, ptr %2, i64 %3) {
-entry:
-  %variant.ptr3 = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
   %variant.ptr = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
-  %arg.tmp = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
-  %sret.result = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
-  %tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %2, i32 0, i32 0
-  %tag = load i8, ptr %tag.ptr, align 1
-  switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-  ]
-
-choose.end:                                       ; No predecessors!
-  ret void
-
-choose.else:                                      ; preds = %entry
-  %variant.tag.ptr4 = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr3, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr4, align 1
-  %variant.val5 = load %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr3, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %variant.ptr3, i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %2, i32 0, i32 1
-  %variant.val = load %_Z10JsonObjectB4jsonB4v0_1, ptr %"variant.c_data().ptr", align 8
-  %members = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
-  %length = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members, 0
-  %lt = icmp ult i64 %3, %length
-  br i1 %lt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %choose.when
-  %members1 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
-  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members1, ptr %arg.tmp, align 1
-  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result, ptr %arg.tmp, i64 %3)
-  %load.struct = load %_Z10JsonMemberB4jsonB4v0_1, ptr %sret.result, align 8
-  %value = extractvalue %_Z10JsonMemberB4jsonB4v0_1 %load.struct, 1
-  store %_Z9JsonValueB4jsonB4v0_1 %value, ptr %0, align 1
-  ret void
-
-if.end:                                           ; preds = %choose.when
   %variant.tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr, align 1
-  %variant.val2 = load %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, align 1
+  store i8 3, ptr %variant.tag.ptr, align 1
+  %tuple = alloca %_Z10JsonStringB4jsonB4v0_1, align 8
+  %field.load = load %_Z5SliceI2u8E, ptr %2, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z10JsonStringB4jsonB4v0_1, ptr %tuple, i32 0, i32 0
+  store %_Z5SliceI2u8E %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z10JsonStringB4jsonB4v0_1, ptr %tuple, i32 0, i32 1
+  store i1 false, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z10JsonStringB4jsonB4v0_1, ptr %tuple, align 8
+  %variant.data.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, i32 0, i32 1
+  store %_Z10JsonStringB4jsonB4v0_1 %tuple.val, ptr %variant.data.ptr, align 1
+  %variant.val = load %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %variant.ptr, i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
-define linkonce_odr ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_bufferEv(ptr %0) {
+define linkonce_odr void @_ZN9JsonValueB4jsonB4v0_112empty_objectEPN4scaly6memory4PageE(ptr noalias sret(%_Z9JsonValueB4jsonB4v0_1) %0, ptr %1) {
 entry:
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 2
-  ret ptr %buffer
-}
+  %tuple = alloca %_Z10JsonObjectB4jsonB4v0_1, align 8
+  %variant.ptr = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
+  %variant.tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, i32 0, i32 0
+  store i8 5, ptr %variant.tag.ptr, align 1
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-define linkonce_odr i64 @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  ret i64 %length
-}
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
 
-define linkonce_odr i64 @_ZN5ArrayI9JsonValueB4jsonB4v0_1E12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 1
-  ret i64 %capacity
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10reallocateEv(ptr %0) {
-entry:
-  %first_cap = alloca i64, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %first_cap, align 1
-  %first_cap1 = load i64, ptr %first_cap, align 8
-  %lt = icmp ult i64 %first_cap1, 1
-  br i1 %lt, label %if.then2, label %if.end3
-
-if.end:                                           ; preds = %entry
-  %load.struct18 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %capacity19 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct18, 1
-  %mul20 = mul i64 %capacity19, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %le21 = icmp ule i64 %mul20, 1024
-  %load.struct22 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer23 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct22, 2
-  %load.struct24 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %capacity25 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct24, 1
-  %load.struct26 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %capacity27 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct26, 1
-  %mul28 = mul i64 %capacity27, 2
-  store i64 %mul28, ptr %first_cap, align 1
-  %new_capacity = load i64, ptr %first_cap, align 8
-  %mul29 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %le30 = icmp ule i64 %mul29, 1024
-  br i1 %le30, label %if.then31, label %if.end32
-
-if.then2:                                         ; preds = %if.then
-  store i64 1, ptr %first_cap, align 1
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.then2, %if.then
-  %first_cap4 = load i64, ptr %first_cap, align 8
-  %mul = mul i64 %first_cap4, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  %first_cap7 = load i64, ptr %first_cap, align 8
-  %mul8 = mul i64 %first_cap7, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call9 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul8, i64 8)
-  %buffer10 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr %call9, ptr %buffer10, align 8
-  %first_cap11 = load i64, ptr %first_cap, align 8
-  %capacity = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 %first_cap11, ptr %capacity, align 8
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceI10JsonMemberB4jsonB4v0_1E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceI10JsonMemberB4jsonB4v0_1E }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI10JsonMemberB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI10JsonMemberB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 1
+  store ptr null, ptr %tuple.field2, align 1
+  %field.load = load %_Z5SliceI10JsonMemberB4jsonB4v0_1E, ptr %tuple.region, align 8
+  %tuple.field3 = getelementptr inbounds nuw %_Z10JsonObjectB4jsonB4v0_1, ptr %tuple, i32 0, i32 0
+  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %field.load, ptr %tuple.field3, align 1
+  %tuple.val = load %_Z10JsonObjectB4jsonB4v0_1, ptr %tuple, align 8
+  %variant.data.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, i32 0, i32 1
+  store %_Z10JsonObjectB4jsonB4v0_1 %tuple.val, ptr %variant.data.ptr, align 1
+  %variant.val = load %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %variant.ptr, i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
   ret void
-
-if.end6:                                          ; preds = %if.end3
-  %first_cap12 = load i64, ptr %first_cap, align 8
-  %mul13 = mul i64 %first_cap12, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call14 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul13, i64 8)
-  %buffer15 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr %call14, ptr %buffer15, align 8
-  %first_cap16 = load i64, ptr %first_cap, align 8
-  %capacity17 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 %first_cap16, ptr %capacity17, align 8
-  ret void
-
-if.then31:                                        ; preds = %if.end
-  %new_capacity33 = load i64, ptr %first_cap, align 8
-  %mul34 = mul i64 %new_capacity33, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call35 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul34, i64 8)
-  %buffer36 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr %call35, ptr %buffer36, align 8
-  %new_capacity37 = load i64, ptr %first_cap, align 8
-  %capacity38 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity37, ptr %capacity38, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul39 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call40 = call ptr @memcpy(ptr %deref.recv, ptr %buffer23, i64 %mul39)
-  ret void
-
-if.end32:                                         ; preds = %if.end
-  %call41 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call42 = call i64 @_ZN4Page12get_capacityEm(ptr %call41, i64 8)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call41)
-  %new_capacity43 = load i64, ptr %first_cap, align 8
-  %udiv44 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %lt45 = icmp ult i64 %new_capacity43, %udiv44
-  br i1 %lt45, label %if.then46, label %if.end47
-
-if.then46:                                        ; preds = %if.end32
-  %udiv48 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  store i64 %udiv48, ptr %first_cap, align 1
-  br label %if.end47
-
-if.end47:                                         ; preds = %if.then46, %if.end32
-  %new_capacity49 = load i64, ptr %first_cap, align 8
-  %mul50 = mul i64 %new_capacity49, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call51 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul50, i64 8)
-  %buffer52 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr %call51, ptr %buffer52, align 8
-  %new_capacity53 = load i64, ptr %first_cap, align 8
-  %capacity54 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity53, ptr %capacity54, align 8
-  %field.inplace55 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  %deref.recv56 = load ptr, ptr %field.inplace55, align 8
-  %mul57 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call58 = call ptr @memcpy(ptr %deref.recv56, ptr %buffer23, i64 %mul57)
-  %eq59 = icmp eq i1 %le21, false
-  br i1 %eq59, label %if.then60, label %if.end61
-
-if.then60:                                        ; preds = %if.end47
-  %call62 = call ptr @_ZN4Page3getEPv(ptr %buffer23)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call62)
-  br label %if.end61
-
-if.end61:                                         ; preds = %if.then60, %if.end47
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3addE9JsonValueB4jsonB4v0_1(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %if.then, label %lor.rhs
-
-if.then:                                          ; preds = %lor.rhs, %entry
-  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.rhs
-  %load.struct4 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer5 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct4, 2
-  %load.struct6 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length7 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct6, 0
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer5, i64 %length7
-  %store.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %1, align 1
-  store %_Z9JsonValueB4jsonB4v0_1 %store.load, ptr %ptr.add, align 1
-  %load.struct8 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length9 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct8, 0
-  %add = add i64 %length9, 1
-  %length10 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length10, align 8
-  ret void
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br i1 %eq3, label %if.then, label %if.end
-}
-
-define linkonce_odr ptr @_ZN6VectorI9JsonValueB4jsonB4v0_1E3getEm(ptr noalias %0, i64 %1) {
-entry:
-  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data, i64 %1
-  ret ptr %ptr.add
-}
-
-define linkonce_odr ptr @_ZN6VectorI9JsonValueB4jsonB4v0_1E2atEm(ptr noalias %0, i64 %1) {
-entry:
-  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.35, i64 %1, i64 %field.val)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data, i64 %1
-  ret ptr %ptr.add
-}
-
-define linkonce_odr ptr @_ZN6VectorI9JsonValueB4jsonB4v0_1E7get_ptrEm(ptr noalias %0, i64 %1) {
-entry:
-  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data, i64 %1
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1E3putEm9JsonValueB4jsonB4v0_1(ptr noalias %0, i64 %1, ptr %2) {
-entry:
-  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.36, i64 %1, i64 %field.val)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data, i64 %1
-  %store.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %2, align 1
-  store %_Z9JsonValueB4jsonB4v0_1 %store.load, ptr %ptr.add, align 1
-  ret void
-}
-
-define linkonce_odr ptr @_ZN14VectorIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %vector = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %position = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
-  %load.struct2 = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %vector3 = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct2, 0
-  %deref = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %vector3, align 8
-  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %position8 = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %load.struct10 = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %position11 = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %call = call ptr @_ZN6VectorI9JsonValueB4jsonB4v0_1E7get_ptrEm(ptr %deref.recv, i64 %sub)
-  ret ptr %call
-}
-
-define linkonce_odr void @_ZN14VectorIteratorI9JsonValueB4jsonB4v0_1EC1E6OptionIR6VectorI9JsonValueB4jsonB4v0_1EE(ptr %0, ptr %1) {
-entry:
-  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
-  %position = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E) %0, ptr %1, ptr noalias %2) {
-entry:
-  %struct.init = alloca %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, align 8
-  call void @_ZN14VectorIteratorI9JsonValueB4jsonB4v0_1EC1E6OptionIR6VectorI9JsonValueB4jsonB4v0_1EE(ptr %struct.init, ptr %2)
-  %sret.body = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %struct.init, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1E8as_sliceEv(ptr noalias sret(%_Z5SliceI9JsonValueB4jsonB4v0_1E) %0, ptr noalias %1) {
-entry:
-  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
-  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
-  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
-  %tuple = alloca %_Z5SliceI9JsonValueB4jsonB4v0_1E, align 8
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 0
-  store i64 %length, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 1
-  store ptr %data, ptr %tuple.field2, align 1
-  %tuple.val = load %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1Ev(ptr noalias %0) {
-entry:
-  %length = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 8
-  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1Em(ptr %0, i64 %1) {
-entry:
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %length = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 %1, ptr %length, align 8
-  %gt = icmp ugt i64 %1, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
-  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr %call1, ptr %data, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data4 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data4, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call3, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1E6VectorI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
-entry:
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
-  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %length1 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 %length, ptr %length1, align 8
-  %load.struct2 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length3 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct2, 0
-  %gt = icmp ugt i64 %length3, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct4 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length5 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct4, 0
-  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
-  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr %call6, ptr %data, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace7 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 1
-  %deref.recv8 = load ptr, ptr %field.inplace7, align 8
-  %load.struct9 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length10 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct9, 0
-  %mul11 = mul i64 %length10, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call12 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv8, i64 %mul11)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data13 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data13, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call12, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1E5ArrayI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
-entry:
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %length1 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 %length, ptr %length1, align 8
-  %load.struct2 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length3 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct2, 0
-  %gt = icmp ugt i64 %length3, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct4 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length5 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct4, 0
-  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
-  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr %call6, ptr %data, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call7 = call ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_bufferEv(ptr %1)
-  %load.struct8 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length9 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct8, 0
-  %mul10 = mul i64 %length9, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call11 = call ptr @memcpy(ptr %deref.recv, ptr %call7, i64 %mul10)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data12 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data12, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call11, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr ptr @_ZN4ListI9JsonValueB4jsonB4v0_1E8get_headEv(ptr %0) {
-entry:
-  %load.struct = load %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %head = extractvalue %_Z4ListI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %eq = icmp eq ptr %head, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %addr.gep = getelementptr inbounds nuw %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  %addr.hop = load ptr, ptr %addr.gep, align 8
-  %addr.gep1 = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %addr.hop, i32 0, i32 0
-  ret ptr %addr.gep1
-}
-
-define linkonce_odr ptr @_ZN12ListIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %0) {
-entry:
-  %old_current = alloca ptr, align 8
-  %load.struct = load %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %current = extractvalue %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %ne = icmp ne ptr %current, null
-  br i1 %ne, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct1 = load %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %current2 = extractvalue %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E %load.struct1, 0
-  store ptr %current2, ptr %old_current, align 1
-  %load.struct3 = load %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %current4 = extractvalue %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E %load.struct3, 0
-  %deref = load %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %current4, align 8
-  %next = extractvalue %_Z4NodeI9JsonValueB4jsonB4v0_1E %deref, 1
-  %current5 = getelementptr inbounds nuw %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store ptr %next, ptr %current5, align 8
-  %old_current6 = load ptr, ptr %old_current, align 8
-  %addr.gep = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %old_current6, i32 0, i32 0
-  ret ptr %addr.gep
-
-if.else:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; No predecessors!
-  ret ptr null
-}
-
-define linkonce_odr i64 @_ZN4ListI9JsonValueB4jsonB4v0_1E5countEv(ptr %0) {
-entry:
-  %sret.result = alloca %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, align 8
-  call void @_ZN4ListI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E) %sret.result, ptr null, ptr %0)
-  %list_iterator = alloca ptr, align 8
-  store ptr %sret.result, ptr %list_iterator, align 1
-  %i = alloca i64, align 8
-  store i64 0, ptr %i, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %list_iterator1 = load ptr, ptr %list_iterator, align 8
-  %call = call ptr @_ZN12ListIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %list_iterator1)
-  %ne = icmp ne ptr %call, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %i2 = load i64, ptr %i, align 8
-  %add = add i64 %i2, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  %i3 = load i64, ptr %i, align 8
-  ret i64 %i3
-}
-
-define linkonce_odr void @_ZN4ListI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E) %0, ptr %1, ptr %2) {
-entry:
-  %load.struct = load %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %2, align 8
-  %head = extractvalue %_Z4ListI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %tuple = alloca %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, align 8
-  %tuple.field = getelementptr inbounds nuw %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 0
-  store ptr %head, ptr %tuple.field, align 1
-  %tuple.val = load %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN4ListI9JsonValueB4jsonB4v0_1E4linkEP4NodeI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %tail = extractvalue %_Z4ListI9JsonValueB4jsonB4v0_1E %load.struct, 1
-  %eq = icmp eq ptr %tail, null
-  br i1 %eq, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %head = getelementptr inbounds nuw %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %head, align 8
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %tail1 = getelementptr inbounds nuw %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  %field.deref = load ptr, ptr %tail1, align 8
-  %next = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %field.deref, i32 0, i32 1
-  store ptr %1, ptr %next, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %1, %if.then ], [ %1, %if.else ]
-  %tail2 = getelementptr inbounds nuw %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %tail2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN4ListI9JsonValueB4jsonB4v0_1E3addE9JsonValueB4jsonB4v0_1(ptr %0, ptr %1) {
-entry:
-  %own_page = call ptr @_Z3getPv(ptr %0)
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI9JsonValueB4jsonB4v0_1E }, ptr null, i64 0, i32 1) to i64))
-  %field.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %1, align 1
-  %tuple.field = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 0
-  store %_Z9JsonValueB4jsonB4v0_1 %field.load, ptr %tuple.field, align 1
-  %tuple.field1 = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 1
-  store ptr null, ptr %tuple.field1, align 1
-  call void @_ZN4ListI9JsonValueB4jsonB4v0_1E4linkEP4NodeI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %tuple.region)
-  ret void
-}
-
-define linkonce_odr void @_ZN4ListI9JsonValueB4jsonB4v0_1E6add_onER4Page9JsonValueB4jsonB4v0_1(ptr %0, ptr %1, ptr %2) {
-entry:
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI9JsonValueB4jsonB4v0_1E }, ptr null, i64 0, i32 1) to i64))
-  %field.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %2, align 1
-  %tuple.field = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 0
-  store %_Z9JsonValueB4jsonB4v0_1 %field.load, ptr %tuple.field, align 1
-  %tuple.field1 = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 1
-  store ptr null, ptr %tuple.field1, align 1
-  call void @_ZN4ListI9JsonValueB4jsonB4v0_1E4linkEP4NodeI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %tuple.region)
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1E4ListI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
-entry:
-  %deref.tmp = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
-  %i = alloca i64, align 8
-  %list_iterator = alloca ptr, align 8
-  %sret.result = alloca %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %call1 = call i64 @_ZN4ListI9JsonValueB4jsonB4v0_1E5countEv(ptr %1)
-  %length = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 %call1, ptr %length, align 8
-  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length2 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %gt = icmp ugt i64 %length2, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct3 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length4 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct3, 0
-  %mul = mul i64 %length4, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
-  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr %call5, ptr %data, align 8
-  call void @_ZN4ListI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E) %sret.result, ptr null, ptr %1)
-  store ptr %sret.result, ptr %list_iterator, align 1
-  store i64 0, ptr %i, align 1
-  br label %while.cond
-
-if.else:                                          ; preds = %entry
-  %data12 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data12, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %while.exit
-  ret void
-
-while.cond:                                       ; preds = %while.body, %if.then
-  %list_iterator6 = load ptr, ptr %list_iterator, align 8
-  %call7 = call ptr @_ZN12ListIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %list_iterator6)
-  %while.tobool = icmp ne ptr %call7, null
-  br i1 %while.tobool, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call7, i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
-  %load.struct8 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %data9 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct8, 1
-  %i10 = load i64, ptr %i, align 8
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data9, i64 %i10
-  %store.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %deref.tmp, align 1
-  store %_Z9JsonValueB4jsonB4v0_1 %store.load, ptr %ptr.add, align 1
-  %i11 = load i64, ptr %i, align 8
-  %add = add i64 %i11, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  br label %if.end
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7add_runEmP9JsonValueB4jsonB4v0_1(ptr %0, i64 %1, ptr %2) {
-entry:
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %add = add i64 %length, %1
-  %new_length = alloca i64, align 8
-  store i64 %add, ptr %new_length, align 1
-  %new_length1 = load i64, ptr %new_length, align 8
-  %load.struct2 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length3 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct2, 0
-  %lt = icmp ult i64 %new_length1, %length3
-  br i1 %lt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z16scaly_panic_sizeP10const_charmm(ptr @.str.37, i64 %1, i64 %field.val)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct6 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct6, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %if.then4, label %lor.rhs
-
-if.then4:                                         ; preds = %lor.rhs, %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
-  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7grow_toEm(ptr %0, i64 %new_length9)
-  br label %if.end5
-
-if.end5:                                          ; preds = %if.then4, %lor.rhs
-  %gt10 = icmp ugt i64 %1, 0
-  br i1 %gt10, label %if.then11, label %if.end12
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length7 = load i64, ptr %new_length, align 8
-  %load.struct8 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct8, 1
-  %gt = icmp ugt i64 %new_length7, %capacity
-  br i1 %gt, label %if.then4, label %if.end5
-
-if.then11:                                        ; preds = %if.end5
-  %load.struct13 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer14 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct13, 2
-  %load.struct15 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length16 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct15, 0
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer14, i64 %length16
-  %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call = call ptr @memcpy(ptr %ptr.add, ptr %2, i64 %mul)
-  br label %if.end12
-
-if.end12:                                         ; preds = %if.then11, %if.end5
-  %load.struct17 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length18 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct17, 0
-  %add19 = add i64 %length18, %1
-  %length20 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 %add19, ptr %length20, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3addE6VectorI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
-entry:
-  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  %field.inplace1 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace1, align 8
-  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7add_runEmP9JsonValueB4jsonB4v0_1(ptr %0, i64 %field.val, ptr %deref.recv)
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3addE5SliceI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
-entry:
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace1, align 8
-  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7add_runEmP9JsonValueB4jsonB4v0_1(ptr %0, i64 %field.val, ptr %deref.recv)
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7grow_toEm(ptr %0, i64 %1) {
-entry:
-  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10reallocateEv(ptr %0)
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 1
-  %gt = icmp ugt i64 %1, %capacity
-  br i1 %gt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 2
-  %load.struct2 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %capacity3 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct2, 1
-  %mul = mul i64 %capacity3, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  %mul4 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %le5 = icmp ule i64 %mul4, 1024
-  br i1 %le5, label %if.then6, label %if.else
-
-if.end:                                           ; preds = %if.end24, %entry
-  ret void
-
-if.then6:                                         ; preds = %if.then
-  %mul8 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call9 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul8, i64 8)
-  %buffer10 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr %call9, ptr %buffer10, align 8
-  br label %if.end7
-
-if.else:                                          ; preds = %if.then
-  %mul11 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call12 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul11, i64 8)
-  %buffer13 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr %call12, ptr %buffer13, align 8
-  br label %if.end7
-
-if.end7:                                          ; preds = %if.else, %if.then6
-  %if.value = phi ptr [ %call9, %if.then6 ], [ %call12, %if.else ]
-  %capacity14 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 %1, ptr %capacity14, align 8
-  %load.struct15 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct15, 0
-  %gt16 = icmp ugt i64 %length, 0
-  br i1 %gt16, label %if.then17, label %if.end18
-
-if.then17:                                        ; preds = %if.end7
-  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %load.struct19 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length20 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct19, 0
-  %mul21 = mul i64 %length20, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call22 = call ptr @memcpy(ptr %deref.recv, ptr %buffer, i64 %mul21)
-  br label %if.end18
-
-if.end18:                                         ; preds = %if.then17, %if.end7
-  %eq = icmp eq i1 %le, false
-  br i1 %eq, label %if.then23, label %if.end24
-
-if.then23:                                        ; preds = %if.end18
-  %call25 = call ptr @_ZN4Page3getEPv(ptr %buffer)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call25)
-  br label %if.end24
-
-if.end24:                                         ; preds = %if.then23, %if.end18
-  br label %if.end
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E6extendEm(ptr noalias sret(%_Z5SliceI9JsonValueB4jsonB4v0_1E) %0, ptr %1, i64 %2) {
-entry:
-  %tuple = alloca %_Z5SliceI9JsonValueB4jsonB4v0_1E, align 8
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %add = add i64 %length, %2
-  %lt = icmp ult i64 %add, %length
-  br i1 %lt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_Z16scaly_panic_sizeP10const_charmm(ptr @.str.38, i64 %2, i64 %length)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct3 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
-  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct3, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %if.then1, label %lor.rhs
-
-if.then1:                                         ; preds = %lor.rhs, %if.end
-  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7grow_toEm(ptr %1, i64 %add)
-  br label %if.end2
-
-if.end2:                                          ; preds = %if.then1, %lor.rhs
-  %length5 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 0
-  store i64 %add, ptr %length5, align 8
-  %load.struct6 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
-  %buffer7 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct6, 2
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer7, i64 %length
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 0
-  store i64 %2, ptr %tuple.field, align 1
-  %tuple.field8 = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 1
-  store ptr %ptr.add, ptr %tuple.field8, align 1
-  %tuple.val = load %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-lor.rhs:                                          ; preds = %if.end
-  %load.struct4 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
-  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct4, 1
-  %gt = icmp ugt i64 %add, %capacity
-  br i1 %gt, label %if.then1, label %if.end2
-}
-
-define linkonce_odr ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3getEm(ptr %0, i64 %1) {
-entry:
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 2
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer, i64 %1
-  ret ptr %ptr.add
-}
-
-define linkonce_odr ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E2atEm(ptr %0, i64 %1) {
-entry:
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.39, i64 %1, i64 %field.val)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 2
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer, i64 %1
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E5clearEv(ptr %0) {
-entry:
-  %length = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3putEm9JsonValueB4jsonB4v0_1(ptr %0, i64 %1, ptr %2) {
-entry:
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.40, i64 %1, i64 %field.val)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 2
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer, i64 %1
-  %store.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %2, align 1
-  store %_Z9JsonValueB4jsonB4v0_1 %store.load, ptr %ptr.add, align 1
-  ret void
-}
-
-define linkonce_odr ptr @_ZN13ArrayIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %array = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %eq = icmp eq ptr %array, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %position = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
-  %load.struct2 = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %array3 = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct2, 0
-  %deref = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %array3, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %position8 = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds nuw %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_bufferEv(ptr %deref.recv)
-  %load.struct10 = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
-  %position11 = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %call, i64 %sub
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN13ArrayIteratorI9JsonValueB4jsonB4v0_1EC1E6OptionIR5ArrayI9JsonValueB4jsonB4v0_1EE(ptr %0, ptr %1) {
-entry:
-  %array = getelementptr inbounds nuw %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %array, align 8
-  %position = getelementptr inbounds nuw %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E) %0, ptr %1, ptr %2) {
-entry:
-  %struct.init = alloca %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, align 8
-  call void @_ZN13ArrayIteratorI9JsonValueB4jsonB4v0_1EC1E6OptionIR5ArrayI9JsonValueB4jsonB4v0_1EE(ptr %struct.init, ptr %2)
-  %sret.body = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %struct.init, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E8as_sliceEv(ptr noalias sret(%_Z5SliceI9JsonValueB4jsonB4v0_1E) %0, ptr %1) {
-entry:
-  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
-  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
-  %call = call ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_bufferEv(ptr %1)
-  %tuple = alloca %_Z5SliceI9JsonValueB4jsonB4v0_1E, align 8
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 0
-  store i64 %length, ptr %tuple.field, align 1
-  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 1
-  store ptr %call, ptr %tuple.field1, align 1
-  %tuple.val = load %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1EC1Ev(ptr %0) {
-entry:
-  %length = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 8
-  %capacity = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %capacity, align 8
-  %buffer = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr null, ptr %buffer, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1EC1Em(ptr %0, i64 %1) {
-entry:
-  %length = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 8
-  %capacity = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 0, ptr %capacity, align 8
-  %buffer = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr null, ptr %buffer, align 8
-  %gt = icmp ugt i64 %1, 0
-  br i1 %gt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %capacity1 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
-  store i64 %1, ptr %capacity1, align 8
-  %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then2, label %if.else
-
-if.end:                                           ; preds = %if.end3, %entry
-  ret void
-
-if.then2:                                         ; preds = %if.then
-  %mul4 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul4, i64 8)
-  %buffer6 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr %call5, ptr %buffer6, align 8
-  br label %if.end3
-
-if.else:                                          ; preds = %if.then
-  %mul7 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
-  %call8 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul7, i64 8)
-  %buffer9 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
-  store ptr %call8, ptr %buffer9, align 8
-  br label %if.end3
-
-if.end3:                                          ; preds = %if.else, %if.then2
-  %if.value = phi ptr [ %call5, %if.then2 ], [ %call8, %if.else ]
-  br label %if.end
 }
 
 define linkonce_odr ptr @_ZN5ArrayI10JsonMemberB4jsonB4v0_1E10get_bufferEv(ptr %0) {
@@ -8032,7 +6922,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI10JsonMemberB4jsonB4v0_1E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.41, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.35, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8069,7 +6959,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI10JsonMemberB4jsonB4v0_1E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.42, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.36, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8478,7 +7368,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_1E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z16scaly_panic_sizeP10const_charmm(ptr @.str.43, i64 %1, i64 %field.val)
+  call void @_Z16scaly_panic_sizeP10const_charmm(ptr @.str.37, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8620,7 +7510,7 @@ entry:
   br i1 %lt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z16scaly_panic_sizeP10const_charmm(ptr @.str.44, i64 %2, i64 %length)
+  call void @_Z16scaly_panic_sizeP10const_charmm(ptr @.str.38, i64 %2, i64 %length)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8681,7 +7571,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_1E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.45, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.39, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8708,7 +7598,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_1E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.46, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.40, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8836,6 +7726,1344 @@ if.else:                                          ; preds = %if.then
   %mul7 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_1, ptr null, i32 1) to i64)
   %call8 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul7, i64 8)
   %buffer9 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr %call8, ptr %buffer9, align 8
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.else, %if.then2
+  %if.value = phi ptr [ %call5, %if.then2 ], [ %call8, %if.else ]
+  br label %if.end
+}
+
+define linkonce_odr void @_ZN9JsonValueB4jsonB4v0_111with_memberEPN4scaly6memory4PageE5SliceI2u8E9JsonValueB4jsonB4v0_1(ptr noalias sret(%_Z9JsonValueB4jsonB4v0_1) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %tuple46 = alloca %_Z10JsonObjectB4jsonB4v0_1, align 8
+  %sret.result44 = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
+  %sret.result42 = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
+  %variant.ptr = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
+  %arg.tmp41 = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %tuple34 = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %arg.tmp26 = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
+  %sret.result24 = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %arg.tmp22 = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %tuple = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %arg.tmp16 = alloca %_Z5SliceI2u8E, align 8
+  %arg.tmp = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
+  %sret.result = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %i = alloca i64, align 8
+  %found = alloca i1, align 1
+  %members = alloca ptr, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr %1, ptr %frame.parent, align 8
+  %arena = alloca ptr, align 8
+  %tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %2, i32 0, i32 0
+  %tag = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag, label %choose.else [
+    i8 5, label %choose.when
+  ]
+
+choose.end:                                       ; No predecessors!
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+choose.else:                                      ; preds = %entry
+  %sret.body = load %_Z9JsonValueB4jsonB4v0_1, ptr %2, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %2, i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+choose.when:                                      ; preds = %entry
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %2, i32 0, i32 1
+  %variant.val = load %_Z10JsonObjectB4jsonB4v0_1, ptr %"variant.c_data().ptr", align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %choose.when
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %choose.when
+  %forced_page1 = phi ptr [ %frame.page, %choose.when ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z9JsonArenaB4jsonB4v0_1, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z9JsonArenaB4jsonB4v0_1 }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN9JsonArenaB4jsonB4v0_1C1Ev(ptr %struct.region)
+  store ptr %struct.region, ptr %arena, align 1
+  %frame.page2 = load ptr, ptr %frame, align 8
+  %frame.has_page3 = icmp ne ptr %frame.page2, null
+  br i1 %frame.has_page3, label %frame.forced5, label %frame.force4
+
+frame.force4:                                     ; preds = %frame.forced
+  %forced_page6 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced5
+
+frame.forced5:                                    ; preds = %frame.force4, %frame.forced
+  %forced_page7 = phi ptr [ %frame.page2, %frame.forced ], [ %forced_page6, %frame.force4 ]
+  %struct.region8 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page7, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI10JsonMemberB4jsonB4v0_1E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI10JsonMemberB4jsonB4v0_1E }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_1E, ptr %struct.region8, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 8
+  %tuple.field9 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_1E, ptr %struct.region8, i32 0, i32 1
+  store i64 0, ptr %tuple.field9, align 8
+  %tuple.field10 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_1E, ptr %struct.region8, i32 0, i32 2
+  store ptr null, ptr %tuple.field10, align 8
+  store ptr %struct.region8, ptr %members, align 1
+  store i1 false, ptr %found, align 1
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %frame.forced5
+  %i11 = load i64, ptr %i, align 8
+  %members12 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
+  %length = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members12, 0
+  %lt = icmp ult i64 %i11, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %found13 = load i1, ptr %found, align 1
+  %eq = icmp eq i1 %found13, false
+  br i1 %eq, label %land.rhs, label %if.else
+
+while.exit:                                       ; preds = %while.cond
+  %found29 = load i1, ptr %found, align 1
+  %eq30 = icmp eq i1 %found29, false
+  br i1 %eq30, label %if.then31, label %if.end32
+
+if.then:                                          ; preds = %land.rhs
+  %members17 = load ptr, ptr %members, align 8
+  %field.load = load %_Z5SliceI2u8E, ptr %3, align 8
+  %tuple.field18 = getelementptr inbounds nuw %_Z10JsonMemberB4jsonB4v0_1, ptr %tuple, i32 0, i32 0
+  store %_Z5SliceI2u8E %field.load, ptr %tuple.field18, align 1
+  %field.load19 = load %_Z9JsonValueB4jsonB4v0_1, ptr %4, align 1
+  %tuple.field20 = getelementptr inbounds nuw %_Z10JsonMemberB4jsonB4v0_1, ptr %tuple, i32 0, i32 1
+  store %_Z9JsonValueB4jsonB4v0_1 %field.load19, ptr %tuple.field20, align 1
+  %tuple.field21 = getelementptr inbounds nuw %_Z10JsonMemberB4jsonB4v0_1, ptr %tuple, i32 0, i32 2
+  store i1 false, ptr %tuple.field21, align 1
+  %tuple.val = load %_Z10JsonMemberB4jsonB4v0_1, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp22, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN5ArrayI10JsonMemberB4jsonB4v0_1E3addE10JsonMemberB4jsonB4v0_1(ptr %members17, ptr %arg.tmp22)
+  store i1 true, ptr %found, align 1
+  br label %if.end
+
+if.else:                                          ; preds = %land.rhs, %while.body
+  %members23 = load ptr, ptr %members, align 8
+  %members25 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
+  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members25, ptr %arg.tmp26, align 1
+  %i27 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result24, ptr %arg.tmp26, i64 %i27)
+  call void @_ZN5ArrayI10JsonMemberB4jsonB4v0_1E3addE10JsonMemberB4jsonB4v0_1(ptr %members23, ptr %sret.result24)
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %i28 = load i64, ptr %i, align 8
+  %add = add i64 %i28, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+land.rhs:                                         ; preds = %while.body
+  %members14 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
+  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members14, ptr %arg.tmp, align 1
+  %i15 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result, ptr %arg.tmp, i64 %i15)
+  %load.struct = load %_Z10JsonMemberB4jsonB4v0_1, ptr %sret.result, align 8
+  %key = extractvalue %_Z10JsonMemberB4jsonB4v0_1 %load.struct, 0
+  store %_Z5SliceI2u8E %key, ptr %arg.tmp16, align 1
+  %call = call i1 @_ZN5SliceI2u8E6equalsE5SliceI2u8E(ptr %arg.tmp16, ptr %3)
+  br i1 %call, label %if.then, label %if.else
+
+if.then31:                                        ; preds = %while.exit
+  %members33 = load ptr, ptr %members, align 8
+  %field.load35 = load %_Z5SliceI2u8E, ptr %3, align 8
+  %tuple.field36 = getelementptr inbounds nuw %_Z10JsonMemberB4jsonB4v0_1, ptr %tuple34, i32 0, i32 0
+  store %_Z5SliceI2u8E %field.load35, ptr %tuple.field36, align 1
+  %field.load37 = load %_Z9JsonValueB4jsonB4v0_1, ptr %4, align 1
+  %tuple.field38 = getelementptr inbounds nuw %_Z10JsonMemberB4jsonB4v0_1, ptr %tuple34, i32 0, i32 1
+  store %_Z9JsonValueB4jsonB4v0_1 %field.load37, ptr %tuple.field38, align 1
+  %tuple.field39 = getelementptr inbounds nuw %_Z10JsonMemberB4jsonB4v0_1, ptr %tuple34, i32 0, i32 2
+  store i1 false, ptr %tuple.field39, align 1
+  %tuple.val40 = load %_Z10JsonMemberB4jsonB4v0_1, ptr %tuple34, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp41, ptr align 1 %tuple34, i64 ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN5ArrayI10JsonMemberB4jsonB4v0_1E3addE10JsonMemberB4jsonB4v0_1(ptr %members33, ptr %arg.tmp41)
+  br label %if.end32
+
+if.end32:                                         ; preds = %if.then31, %while.exit
+  %variant.tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, i32 0, i32 0
+  store i8 5, ptr %variant.tag.ptr, align 1
+  %arena43 = load ptr, ptr %arena, align 8
+  %members45 = load ptr, ptr %members, align 8
+  call void @_ZN5ArrayI10JsonMemberB4jsonB4v0_1E8as_sliceEv(ptr noalias sret(%_Z5SliceI10JsonMemberB4jsonB4v0_1E) %sret.result44, ptr %members45)
+  call void @_ZN9JsonArenaB4jsonB4v0_112keep_membersEPN4scaly6memory4PageE5SliceI10JsonMemberB4jsonB4v0_1E(ptr noalias sret(%_Z5SliceI10JsonMemberB4jsonB4v0_1E) %sret.result42, ptr null, ptr %arena43, ptr %sret.result44)
+  %field.load47 = load %_Z5SliceI10JsonMemberB4jsonB4v0_1E, ptr %sret.result42, align 8
+  %tuple.field48 = getelementptr inbounds nuw %_Z10JsonObjectB4jsonB4v0_1, ptr %tuple46, i32 0, i32 0
+  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %field.load47, ptr %tuple.field48, align 1
+  %tuple.val49 = load %_Z10JsonObjectB4jsonB4v0_1, ptr %tuple46, align 8
+  %variant.data.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, i32 0, i32 1
+  store %_Z10JsonObjectB4jsonB4v0_1 %tuple.val49, ptr %variant.data.ptr, align 1
+  %variant.val50 = load %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %variant.ptr, i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+}
+
+define linkonce_odr i1 @_ZN9JsonValueB4jsonB4v0_13hasE5SliceI2u8E(ptr %0, ptr %1) {
+entry:
+  %arg.tmp4 = alloca %_Z5SliceI2u8E, align 8
+  %arg.tmp = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
+  %sret.result = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %i = alloca i64, align 8
+  %tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %0, i32 0, i32 0
+  %tag = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag, label %choose.else [
+    i8 5, label %choose.when
+  ]
+
+choose.end:                                       ; No predecessors!
+  ret i1 false
+
+choose.else:                                      ; preds = %entry
+  ret i1 false
+
+choose.when:                                      ; preds = %entry
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %0, i32 0, i32 1
+  %variant.val = load %_Z10JsonObjectB4jsonB4v0_1, ptr %"variant.c_data().ptr", align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %choose.when
+  %i1 = load i64, ptr %i, align 8
+  %members = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
+  %length = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members, 0
+  %lt = icmp ult i64 %i1, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %members2 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
+  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members2, ptr %arg.tmp, align 1
+  %i3 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result, ptr %arg.tmp, i64 %i3)
+  %load.struct = load %_Z10JsonMemberB4jsonB4v0_1, ptr %sret.result, align 8
+  %key = extractvalue %_Z10JsonMemberB4jsonB4v0_1 %load.struct, 0
+  store %_Z5SliceI2u8E %key, ptr %arg.tmp4, align 1
+  %call = call i1 @_ZN5SliceI2u8E6equalsE5SliceI2u8E(ptr %arg.tmp4, ptr %1)
+  br i1 %call, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then:                                          ; preds = %while.body
+  ret i1 true
+
+if.end:                                           ; preds = %while.body
+  %i5 = load i64, ptr %i, align 8
+  %add = add i64 %i5, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+}
+
+define linkonce_odr void @_ZN9JsonValueB4jsonB4v0_16key_atEm(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1, i64 %2) {
+entry:
+  %struct.init3 = alloca %_Z5SliceI2u8E, align 8
+  %struct.init = alloca %_Z5SliceI2u8E, align 8
+  %arg.tmp = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
+  %sret.result = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 0
+  %tag = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag, label %choose.else [
+    i8 5, label %choose.when
+  ]
+
+choose.end:                                       ; No predecessors!
+  ret void
+
+choose.else:                                      ; preds = %entry
+  %tuple.field4 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init3, i32 0, i32 0
+  store i64 0, ptr %tuple.field4, align 8
+  %tuple.field5 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init3, i32 0, i32 1
+  store ptr null, ptr %tuple.field5, align 8
+  %sret.body6 = load %_Z5SliceI2u8E, ptr %struct.init3, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init3, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+choose.when:                                      ; preds = %entry
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 1
+  %variant.val = load %_Z10JsonObjectB4jsonB4v0_1, ptr %"variant.c_data().ptr", align 8
+  %members = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
+  %length = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members, 0
+  %lt = icmp ult i64 %2, %length
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %choose.when
+  %members1 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
+  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members1, ptr %arg.tmp, align 1
+  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result, ptr %arg.tmp, i64 %2)
+  %load.struct = load %_Z10JsonMemberB4jsonB4v0_1, ptr %sret.result, align 8
+  %key = extractvalue %_Z10JsonMemberB4jsonB4v0_1 %load.struct, 0
+  store %_Z5SliceI2u8E %key, ptr %0, align 1
+  ret void
+
+if.end:                                           ; preds = %choose.when
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 8
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %struct.init, i32 0, i32 1
+  store ptr null, ptr %tuple.field2, align 8
+  %sret.body = load %_Z5SliceI2u8E, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN9JsonValueB4jsonB4v0_18value_atEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValueB4jsonB4v0_1) %0, ptr %1, ptr %2, i64 %3) {
+entry:
+  %variant.ptr3 = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
+  %variant.ptr = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
+  %arg.tmp = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
+  %sret.result = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %2, i32 0, i32 0
+  %tag = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag, label %choose.else [
+    i8 5, label %choose.when
+  ]
+
+choose.end:                                       ; No predecessors!
+  ret void
+
+choose.else:                                      ; preds = %entry
+  %variant.tag.ptr4 = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr3, i32 0, i32 0
+  store i8 0, ptr %variant.tag.ptr4, align 1
+  %variant.val5 = load %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr3, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %variant.ptr3, i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+choose.when:                                      ; preds = %entry
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %2, i32 0, i32 1
+  %variant.val = load %_Z10JsonObjectB4jsonB4v0_1, ptr %"variant.c_data().ptr", align 8
+  %members = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
+  %length = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members, 0
+  %lt = icmp ult i64 %3, %length
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %choose.when
+  %members1 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val, 0
+  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members1, ptr %arg.tmp, align 1
+  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result, ptr %arg.tmp, i64 %3)
+  %load.struct = load %_Z10JsonMemberB4jsonB4v0_1, ptr %sret.result, align 8
+  %value = extractvalue %_Z10JsonMemberB4jsonB4v0_1 %load.struct, 1
+  store %_Z9JsonValueB4jsonB4v0_1 %value, ptr %0, align 1
+  ret void
+
+if.end:                                           ; preds = %choose.when
+  %variant.tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, i32 0, i32 0
+  store i8 0, ptr %variant.tag.ptr, align 1
+  %variant.val2 = load %_Z9JsonValueB4jsonB4v0_1, ptr %variant.ptr, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %variant.ptr, i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 2
+  ret ptr %buffer
+}
+
+define linkonce_odr i64 @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayI9JsonValueB4jsonB4v0_1E12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 1
+  ret i64 %capacity
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10reallocateEv(ptr %0) {
+entry:
+  %first_cap = alloca i64, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %first_cap, align 1
+  %first_cap1 = load i64, ptr %first_cap, align 8
+  %lt = icmp ult i64 %first_cap1, 1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.end:                                           ; preds = %entry
+  %load.struct18 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %capacity19 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct18, 1
+  %mul20 = mul i64 %capacity19, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %le21 = icmp ule i64 %mul20, 1024
+  %load.struct22 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer23 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct22, 2
+  %load.struct24 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %capacity25 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct24, 1
+  %load.struct26 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %capacity27 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct26, 1
+  %mul28 = mul i64 %capacity27, 2
+  store i64 %mul28, ptr %first_cap, align 1
+  %new_capacity = load i64, ptr %first_cap, align 8
+  %mul29 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %le30 = icmp ule i64 %mul29, 1024
+  br i1 %le30, label %if.then31, label %if.end32
+
+if.then2:                                         ; preds = %if.then
+  store i64 1, ptr %first_cap, align 1
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.then
+  %first_cap4 = load i64, ptr %first_cap, align 8
+  %mul = mul i64 %first_cap4, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end3
+  %first_cap7 = load i64, ptr %first_cap, align 8
+  %mul8 = mul i64 %first_cap7, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call9 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul8, i64 8)
+  %buffer10 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr %call9, ptr %buffer10, align 8
+  %first_cap11 = load i64, ptr %first_cap, align 8
+  %capacity = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 %first_cap11, ptr %capacity, align 8
+  ret void
+
+if.end6:                                          ; preds = %if.end3
+  %first_cap12 = load i64, ptr %first_cap, align 8
+  %mul13 = mul i64 %first_cap12, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call14 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul13, i64 8)
+  %buffer15 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr %call14, ptr %buffer15, align 8
+  %first_cap16 = load i64, ptr %first_cap, align 8
+  %capacity17 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 %first_cap16, ptr %capacity17, align 8
+  ret void
+
+if.then31:                                        ; preds = %if.end
+  %new_capacity33 = load i64, ptr %first_cap, align 8
+  %mul34 = mul i64 %new_capacity33, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call35 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul34, i64 8)
+  %buffer36 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr %call35, ptr %buffer36, align 8
+  %new_capacity37 = load i64, ptr %first_cap, align 8
+  %capacity38 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity37, ptr %capacity38, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %mul39 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call40 = call ptr @memcpy(ptr %deref.recv, ptr %buffer23, i64 %mul39)
+  ret void
+
+if.end32:                                         ; preds = %if.end
+  %call41 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call42 = call i64 @_ZN4Page12get_capacityEm(ptr %call41, i64 8)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call41)
+  %new_capacity43 = load i64, ptr %first_cap, align 8
+  %udiv44 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %lt45 = icmp ult i64 %new_capacity43, %udiv44
+  br i1 %lt45, label %if.then46, label %if.end47
+
+if.then46:                                        ; preds = %if.end32
+  %udiv48 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  store i64 %udiv48, ptr %first_cap, align 1
+  br label %if.end47
+
+if.end47:                                         ; preds = %if.then46, %if.end32
+  %new_capacity49 = load i64, ptr %first_cap, align 8
+  %mul50 = mul i64 %new_capacity49, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call51 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul50, i64 8)
+  %buffer52 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr %call51, ptr %buffer52, align 8
+  %new_capacity53 = load i64, ptr %first_cap, align 8
+  %capacity54 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity53, ptr %capacity54, align 8
+  %field.inplace55 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  %deref.recv56 = load ptr, ptr %field.inplace55, align 8
+  %mul57 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call58 = call ptr @memcpy(ptr %deref.recv56, ptr %buffer23, i64 %mul57)
+  %eq59 = icmp eq i1 %le21, false
+  br i1 %eq59, label %if.then60, label %if.end61
+
+if.then60:                                        ; preds = %if.end47
+  %call62 = call ptr @_ZN4Page3getEPv(ptr %buffer23)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call62)
+  br label %if.end61
+
+if.end61:                                         ; preds = %if.then60, %if.end47
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3addE9JsonValueB4jsonB4v0_1(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then, label %lor.rhs
+
+if.then:                                          ; preds = %lor.rhs, %entry
+  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.rhs
+  %load.struct4 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer5 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct4, 2
+  %load.struct6 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length7 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct6, 0
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer5, i64 %length7
+  %store.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %1, align 1
+  store %_Z9JsonValueB4jsonB4v0_1 %store.load, ptr %ptr.add, align 1
+  %load.struct8 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length9 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct8, 0
+  %add = add i64 %length9, 1
+  %length10 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length10, align 8
+  ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
+}
+
+define linkonce_odr ptr @_ZN6VectorI9JsonValueB4jsonB4v0_1E3getEm(ptr noalias %0, i64 %1) {
+entry:
+  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data, i64 %1
+  ret ptr %ptr.add
+}
+
+define linkonce_odr ptr @_ZN6VectorI9JsonValueB4jsonB4v0_1E2atEm(ptr noalias %0, i64 %1) {
+entry:
+  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.41, i64 %1, i64 %field.val)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data, i64 %1
+  ret ptr %ptr.add
+}
+
+define linkonce_odr ptr @_ZN6VectorI9JsonValueB4jsonB4v0_1E7get_ptrEm(ptr noalias %0, i64 %1) {
+entry:
+  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data, i64 %1
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1E3putEm9JsonValueB4jsonB4v0_1(ptr noalias %0, i64 %1, ptr %2) {
+entry:
+  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.42, i64 %1, i64 %field.val)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data, i64 %1
+  %store.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %2, align 1
+  store %_Z9JsonValueB4jsonB4v0_1 %store.load, ptr %ptr.add, align 1
+  ret void
+}
+
+define linkonce_odr ptr @_ZN14VectorIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %vector = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %position = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
+  %load.struct2 = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %vector3 = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct2, 0
+  %deref = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %vector3, align 8
+  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %position8 = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct10 = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %position11 = extractvalue %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %call = call ptr @_ZN6VectorI9JsonValueB4jsonB4v0_1E7get_ptrEm(ptr %deref.recv, i64 %sub)
+  ret ptr %call
+}
+
+define linkonce_odr void @_ZN14VectorIteratorI9JsonValueB4jsonB4v0_1EC1E6OptionIR6VectorI9JsonValueB4jsonB4v0_1EE(ptr %0, ptr %1) {
+entry:
+  %vector = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position = getelementptr inbounds nuw %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E) %0, ptr %1, ptr noalias %2) {
+entry:
+  %struct.init = alloca %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, align 8
+  call void @_ZN14VectorIteratorI9JsonValueB4jsonB4v0_1EC1E6OptionIR6VectorI9JsonValueB4jsonB4v0_1EE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1E8as_sliceEv(ptr noalias sret(%_Z5SliceI9JsonValueB4jsonB4v0_1E) %0, ptr noalias %1) {
+entry:
+  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
+  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
+  %tuple = alloca %_Z5SliceI9JsonValueB4jsonB4v0_1E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 0
+  store i64 %length, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1Ev(ptr noalias %0) {
+entry:
+  %length = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1Em(ptr %0, i64 %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %length = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 %1, ptr %length, align 8
+  %gt = icmp ugt i64 %1, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr %call1, ptr %data, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %mul2 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call3 = call ptr @memset(ptr %deref.recv, i32 0, i64 %mul2)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data4 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data4, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call3, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1E6VectorI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %length1 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 8
+  %load.struct2 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr %call6, ptr %data, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace7 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 1
+  %deref.recv8 = load ptr, ptr %field.inplace7, align 8
+  %load.struct9 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length10 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct9, 0
+  %mul11 = mul i64 %length10, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call12 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv8, i64 %mul11)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data13 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data13, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call12, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1E5ArrayI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %length1 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 8
+  %load.struct2 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call6 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr %call6, ptr %data, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call7 = call ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_bufferEv(ptr %1)
+  %load.struct8 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length9 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct8, 0
+  %mul10 = mul i64 %length9, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call11 = call ptr @memcpy(ptr %deref.recv, ptr %call7, i64 %mul10)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data12 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data12, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call11, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr ptr @_ZN4ListI9JsonValueB4jsonB4v0_1E8get_headEv(ptr %0) {
+entry:
+  %load.struct = load %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %head = extractvalue %_Z4ListI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %eq = icmp eq ptr %head, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds nuw %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  %addr.hop = load ptr, ptr %addr.gep, align 8
+  %addr.gep1 = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %addr.hop, i32 0, i32 0
+  ret ptr %addr.gep1
+}
+
+define linkonce_odr ptr @_ZN12ListIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %0) {
+entry:
+  %old_current = alloca ptr, align 8
+  %load.struct = load %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %current = extractvalue %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %ne = icmp ne ptr %current, null
+  br i1 %ne, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %current2 = extractvalue %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E %load.struct1, 0
+  store ptr %current2, ptr %old_current, align 1
+  %load.struct3 = load %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %current4 = extractvalue %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E %load.struct3, 0
+  %deref = load %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %current4, align 8
+  %next = extractvalue %_Z4NodeI9JsonValueB4jsonB4v0_1E %deref, 1
+  %current5 = getelementptr inbounds nuw %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store ptr %next, ptr %current5, align 8
+  %old_current6 = load ptr, ptr %old_current, align 8
+  %addr.gep = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %old_current6, i32 0, i32 0
+  ret ptr %addr.gep
+
+if.else:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; No predecessors!
+  ret ptr null
+}
+
+define linkonce_odr i64 @_ZN4ListI9JsonValueB4jsonB4v0_1E5countEv(ptr %0) {
+entry:
+  %sret.result = alloca %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, align 8
+  call void @_ZN4ListI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E) %sret.result, ptr null, ptr %0)
+  %list_iterator = alloca ptr, align 8
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %list_iterator1 = load ptr, ptr %list_iterator, align 8
+  %call = call ptr @_ZN12ListIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %list_iterator1)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %add = add i64 %i2, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %i3 = load i64, ptr %i, align 8
+  ret i64 %i3
+}
+
+define linkonce_odr void @_ZN4ListI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %2, align 8
+  %head = extractvalue %_Z4ListI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %tuple = alloca %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  %tuple.val = load %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListI9JsonValueB4jsonB4v0_1E4linkEP4NodeI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %tail = extractvalue %_Z4ListI9JsonValueB4jsonB4v0_1E %load.struct, 1
+  %eq = icmp eq ptr %tail, null
+  br i1 %eq, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %head = getelementptr inbounds nuw %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %head, align 8
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %tail1 = getelementptr inbounds nuw %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  %field.deref = load ptr, ptr %tail1, align 8
+  %next = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %field.deref, i32 0, i32 1
+  store ptr %1, ptr %next, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %1, %if.then ], [ %1, %if.else ]
+  %tail2 = getelementptr inbounds nuw %_Z4ListI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr %1, ptr %tail2, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListI9JsonValueB4jsonB4v0_1E3addE9JsonValueB4jsonB4v0_1(ptr %0, ptr %1) {
+entry:
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI9JsonValueB4jsonB4v0_1E }, ptr null, i64 0, i32 1) to i64))
+  %field.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %1, align 1
+  %tuple.field = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 0
+  store %_Z9JsonValueB4jsonB4v0_1 %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 1
+  store ptr null, ptr %tuple.field1, align 1
+  call void @_ZN4ListI9JsonValueB4jsonB4v0_1E4linkEP4NodeI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %tuple.region)
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListI9JsonValueB4jsonB4v0_1E6add_onER4Page9JsonValueB4jsonB4v0_1(ptr %0, ptr %1, ptr %2) {
+entry:
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeI9JsonValueB4jsonB4v0_1E }, ptr null, i64 0, i32 1) to i64))
+  %field.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %2, align 1
+  %tuple.field = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 0
+  store %_Z9JsonValueB4jsonB4v0_1 %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z4NodeI9JsonValueB4jsonB4v0_1E, ptr %tuple.region, i32 0, i32 1
+  store ptr null, ptr %tuple.field1, align 1
+  call void @_ZN4ListI9JsonValueB4jsonB4v0_1E4linkEP4NodeI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %tuple.region)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_1EC1E4ListI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
+entry:
+  %deref.tmp = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
+  %i = alloca i64, align 8
+  %list_iterator = alloca ptr, align 8
+  %sret.result = alloca %_Z12ListIteratorI9JsonValueB4jsonB4v0_1E, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %call1 = call i64 @_ZN4ListI9JsonValueB4jsonB4v0_1E5countEv(ptr %1)
+  %length = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 %call1, ptr %length, align 8
+  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length2 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %gt = icmp ugt i64 %length2, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct3 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length4 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct3, 0
+  %mul = mul i64 %length4, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
+  %data = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr %call5, ptr %data, align 8
+  call void @_ZN4ListI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9JsonValueB4jsonB4v0_1E) %sret.result, ptr null, ptr %1)
+  store ptr %sret.result, ptr %list_iterator, align 1
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+if.else:                                          ; preds = %entry
+  %data12 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data12, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %while.exit
+  ret void
+
+while.cond:                                       ; preds = %while.body, %if.then
+  %list_iterator6 = load ptr, ptr %list_iterator, align 8
+  %call7 = call ptr @_ZN12ListIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %list_iterator6)
+  %while.tobool = icmp ne ptr %call7, null
+  br i1 %while.tobool, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call7, i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64), i1 false)
+  %load.struct8 = load %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %data9 = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_1E %load.struct8, 1
+  %i10 = load i64, ptr %i, align 8
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %data9, i64 %i10
+  %store.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %deref.tmp, align 1
+  store %_Z9JsonValueB4jsonB4v0_1 %store.load, ptr %ptr.add, align 1
+  %i11 = load i64, ptr %i, align 8
+  %add = add i64 %i11, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  br label %if.end
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7add_runEmP9JsonValueB4jsonB4v0_1(ptr %0, i64 %1, ptr %2) {
+entry:
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %add = add i64 %length, %1
+  %new_length = alloca i64, align 8
+  store i64 %add, ptr %new_length, align 1
+  %new_length1 = load i64, ptr %new_length, align 8
+  %load.struct2 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length3 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct2, 0
+  %lt = icmp ult i64 %new_length1, %length3
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_Z16scaly_panic_sizeP10const_charmm(ptr @.str.43, i64 %1, i64 %field.val)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct6 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct6, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then4, label %lor.rhs
+
+if.then4:                                         ; preds = %lor.rhs, %if.end
+  %new_length9 = load i64, ptr %new_length, align 8
+  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7grow_toEm(ptr %0, i64 %new_length9)
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %lor.rhs
+  %gt10 = icmp ugt i64 %1, 0
+  br i1 %gt10, label %if.then11, label %if.end12
+
+lor.rhs:                                          ; preds = %if.end
+  %new_length7 = load i64, ptr %new_length, align 8
+  %load.struct8 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct8, 1
+  %gt = icmp ugt i64 %new_length7, %capacity
+  br i1 %gt, label %if.then4, label %if.end5
+
+if.then11:                                        ; preds = %if.end5
+  %load.struct13 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer14 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct13, 2
+  %load.struct15 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length16 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct15, 0
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer14, i64 %length16
+  %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call = call ptr @memcpy(ptr %ptr.add, ptr %2, i64 %mul)
+  br label %if.end12
+
+if.end12:                                         ; preds = %if.then11, %if.end5
+  %load.struct17 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length18 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct17, 0
+  %add19 = add i64 %length18, %1
+  %length20 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 %add19, ptr %length20, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3addE6VectorI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7add_runEmP9JsonValueB4jsonB4v0_1(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3addE5SliceI9JsonValueB4jsonB4v0_1E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7add_runEmP9JsonValueB4jsonB4v0_1(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7grow_toEm(ptr %0, i64 %1) {
+entry:
+  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10reallocateEv(ptr %0)
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 1
+  %gt = icmp ugt i64 %1, %capacity
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 2
+  %load.struct2 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %capacity3 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct2, 1
+  %mul = mul i64 %capacity3, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  %mul4 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %le5 = icmp ule i64 %mul4, 1024
+  br i1 %le5, label %if.then6, label %if.else
+
+if.end:                                           ; preds = %if.end24, %entry
+  ret void
+
+if.then6:                                         ; preds = %if.then
+  %mul8 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call9 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul8, i64 8)
+  %buffer10 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr %call9, ptr %buffer10, align 8
+  br label %if.end7
+
+if.else:                                          ; preds = %if.then
+  %mul11 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call12 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul11, i64 8)
+  %buffer13 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr %call12, ptr %buffer13, align 8
+  br label %if.end7
+
+if.end7:                                          ; preds = %if.else, %if.then6
+  %if.value = phi ptr [ %call9, %if.then6 ], [ %call12, %if.else ]
+  %capacity14 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 %1, ptr %capacity14, align 8
+  %load.struct15 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct15, 0
+  %gt16 = icmp ugt i64 %length, 0
+  br i1 %gt16, label %if.then17, label %if.end18
+
+if.then17:                                        ; preds = %if.end7
+  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct19 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length20 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct19, 0
+  %mul21 = mul i64 %length20, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call22 = call ptr @memcpy(ptr %deref.recv, ptr %buffer, i64 %mul21)
+  br label %if.end18
+
+if.end18:                                         ; preds = %if.then17, %if.end7
+  %eq = icmp eq i1 %le, false
+  br i1 %eq, label %if.then23, label %if.end24
+
+if.then23:                                        ; preds = %if.end18
+  %call25 = call ptr @_ZN4Page3getEPv(ptr %buffer)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call25)
+  br label %if.end24
+
+if.end24:                                         ; preds = %if.then23, %if.end18
+  br label %if.end
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E6extendEm(ptr noalias sret(%_Z5SliceI9JsonValueB4jsonB4v0_1E) %0, ptr %1, i64 %2) {
+entry:
+  %tuple = alloca %_Z5SliceI9JsonValueB4jsonB4v0_1E, align 8
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %add = add i64 %length, %2
+  %lt = icmp ult i64 %add, %length
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z16scaly_panic_sizeP10const_charmm(ptr @.str.44, i64 %2, i64 %length)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct3 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
+  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct3, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then1, label %lor.rhs
+
+if.then1:                                         ; preds = %lor.rhs, %if.end
+  call void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E7grow_toEm(ptr %1, i64 %add)
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %lor.rhs
+  %length5 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, i32 0, i32 0
+  store i64 %add, ptr %length5, align 8
+  %load.struct6 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
+  %buffer7 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct6, 2
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer7, i64 %length
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 0
+  store i64 %2, ptr %tuple.field, align 1
+  %tuple.field8 = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 1
+  store ptr %ptr.add, ptr %tuple.field8, align 1
+  %tuple.val = load %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+lor.rhs:                                          ; preds = %if.end
+  %load.struct4 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
+  %capacity = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct4, 1
+  %gt = icmp ugt i64 %add, %capacity
+  br i1 %gt, label %if.then1, label %if.end2
+}
+
+define linkonce_odr ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3getEm(ptr %0, i64 %1) {
+entry:
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 2
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer, i64 %1
+  ret ptr %ptr.add
+}
+
+define linkonce_odr ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E2atEm(ptr %0, i64 %1) {
+entry:
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.45, i64 %1, i64 %field.val)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 2
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer, i64 %1
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E5clearEv(ptr %0) {
+entry:
+  %length = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E3putEm9JsonValueB4jsonB4v0_1(ptr %0, i64 %1, ptr %2) {
+entry:
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.46, i64 %1, i64 %field.val)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %buffer = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct1, 2
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %buffer, i64 %1
+  %store.load = load %_Z9JsonValueB4jsonB4v0_1, ptr %2, align 1
+  store %_Z9JsonValueB4jsonB4v0_1 %store.load, ptr %ptr.add, align 1
+  ret void
+}
+
+define linkonce_odr ptr @_ZN13ArrayIteratorI9JsonValueB4jsonB4v0_1E4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %array = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %eq = icmp eq ptr %array, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %position = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct1, 1
+  %load.struct2 = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %array3 = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct2, 0
+  %deref = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %array3, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %position8 = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds nuw %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_bufferEv(ptr %deref.recv)
+  %load.struct10 = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, align 8
+  %position11 = extractvalue %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %ptr.add = getelementptr inbounds %_Z9JsonValueB4jsonB4v0_1, ptr %call, i64 %sub
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN13ArrayIteratorI9JsonValueB4jsonB4v0_1EC1E6OptionIR5ArrayI9JsonValueB4jsonB4v0_1EE(ptr %0, ptr %1) {
+entry:
+  %array = getelementptr inbounds nuw %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %array, align 8
+  %position = getelementptr inbounds nuw %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, align 8
+  call void @_ZN13ArrayIteratorI9JsonValueB4jsonB4v0_1EC1E6OptionIR5ArrayI9JsonValueB4jsonB4v0_1EE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1E8as_sliceEv(ptr noalias sret(%_Z5SliceI9JsonValueB4jsonB4v0_1E) %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_1E %load.struct, 0
+  %call = call ptr @_ZN5ArrayI9JsonValueB4jsonB4v0_1E10get_bufferEv(ptr %1)
+  %tuple = alloca %_Z5SliceI9JsonValueB4jsonB4v0_1E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 0
+  store i64 %length, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, i32 0, i32 1
+  store ptr %call, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9JsonValueB4jsonB4v0_1E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1EC1Ev(ptr %0) {
+entry:
+  %length = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %capacity = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %capacity, align 8
+  %buffer = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr null, ptr %buffer, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9JsonValueB4jsonB4v0_1EC1Em(ptr %0, i64 %1) {
+entry:
+  %length = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 8
+  %capacity = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 0, ptr %capacity, align 8
+  %buffer = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr null, ptr %buffer, align 8
+  %gt = icmp ugt i64 %1, 0
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %capacity1 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 1
+  store i64 %1, ptr %capacity1, align 8
+  %mul = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %le = icmp ule i64 %mul, 1024
+  br i1 %le, label %if.then2, label %if.else
+
+if.end:                                           ; preds = %if.end3, %entry
+  ret void
+
+if.then2:                                         ; preds = %if.then
+  %mul4 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul4, i64 8)
+  %buffer6 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
+  store ptr %call5, ptr %buffer6, align 8
+  br label %if.end3
+
+if.else:                                          ; preds = %if.then
+  %mul7 = mul i64 %1, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_1, ptr null, i32 1) to i64)
+  %call8 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul7, i64 8)
+  %buffer9 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_1E, ptr %0, i32 0, i32 2
   store ptr %call8, ptr %buffer9, align 8
   br label %if.end3
 
@@ -11320,7 +11548,7 @@ while.exit:                                       ; preds = %if.then, %while.con
   br label %while.cond28
 
 simd.mem.oob:                                     ; preds = %while.body
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.78, i64 %i5, i64 %simd.len)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.85, i64 %i5, i64 %simd.len)
   unreachable
 
 simd.mem.ok:                                      ; preds = %while.body
@@ -11339,7 +11567,7 @@ simd.mem.ok:                                      ; preds = %while.body
   br i1 %simd.inrange16, label %simd.mem.ok18, label %simd.mem.oob17
 
 simd.mem.oob17:                                   ; preds = %simd.mem.ok
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.79, i64 %add8, i64 %simd.len10)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.86, i64 %add8, i64 %simd.len10)
   unreachable
 
 simd.mem.ok18:                                    ; preds = %simd.mem.ok
@@ -13965,6 +14193,501 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN10JsonWriterB4jsonB4v0_113quoted_dotnetE5SliceI2u8E(ptr %0, ptr %1) {
+entry:
+  %n = alloca i64, align 8
+  %cp = alloca i64, align 8
+  call void @_ZN10JsonWriterB4jsonB4v0_14byteE2u8(ptr %0, i8 34)
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end81, %if.then, %entry
+  %i1 = load i64, ptr %i, align 8
+  %load.struct = load %_Z5SliceI2u8E, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
+  %lt = icmp ult i64 %i1, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %call = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %i2)
+  %as.zext = zext i8 %call to i64
+  %lt3 = icmp slt i64 %as.zext, 128
+  br i1 %lt3, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  call void @_ZN10JsonWriterB4jsonB4v0_14byteE2u8(ptr %0, i8 34)
+  ret void
+
+if.then:                                          ; preds = %while.body
+  call void @_ZN10JsonWriterB4jsonB4v0_112ascii_dotnetEi(ptr %0, i64 %as.zext)
+  %i4 = load i64, ptr %i, align 8
+  %add = add i64 %i4, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+if.end:                                           ; preds = %while.body
+  store i64 65533, ptr %cp, align 1
+  store i64 1, ptr %n, align 1
+  %ge = icmp sge i64 %as.zext, 194
+  br i1 %ge, label %land.rhs7, label %if.end6
+
+if.then5:                                         ; preds = %land.rhs
+  %and = and i64 %as.zext, 31
+  %shl = shl i64 %and, 6
+  %i14 = load i64, ptr %i, align 8
+  %add15 = add i64 %i14, 1
+  %call16 = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %add15)
+  %as.zext17 = zext i8 %call16 to i64
+  %and18 = and i64 %as.zext17, 63
+  %or = or i64 %shl, %and18
+  store i64 %or, ptr %cp, align 1
+  store i64 2, ptr %n, align 1
+  br label %if.end6
+
+if.end6:                                          ; preds = %if.then5, %land.rhs, %land.rhs7, %if.end
+  %ge23 = icmp sge i64 %as.zext, 224
+  br i1 %ge23, label %land.rhs22, label %if.end20
+
+land.rhs:                                         ; preds = %land.rhs7
+  %i9 = load i64, ptr %i, align 8
+  %add10 = add i64 %i9, 1
+  %load.struct11 = load %_Z5SliceI2u8E, ptr %1, align 8
+  %length12 = extractvalue %_Z5SliceI2u8E %load.struct11, 0
+  %lt13 = icmp ult i64 %add10, %length12
+  br i1 %lt13, label %if.then5, label %if.end6
+
+land.rhs7:                                        ; preds = %if.end
+  %lt8 = icmp slt i64 %as.zext, 224
+  br i1 %lt8, label %land.rhs, label %if.end6
+
+if.then19:                                        ; preds = %land.rhs21
+  %and30 = and i64 %as.zext, 15
+  %shl31 = shl i64 %and30, 12
+  %i32 = load i64, ptr %i, align 8
+  %add33 = add i64 %i32, 1
+  %call34 = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %add33)
+  %as.zext35 = zext i8 %call34 to i64
+  %and36 = and i64 %as.zext35, 63
+  %shl37 = shl i64 %and36, 6
+  %or38 = or i64 %shl31, %shl37
+  %i39 = load i64, ptr %i, align 8
+  %add40 = add i64 %i39, 2
+  %call41 = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %add40)
+  %as.zext42 = zext i8 %call41 to i64
+  %and43 = and i64 %as.zext42, 63
+  %or44 = or i64 %or38, %and43
+  store i64 %or44, ptr %cp, align 1
+  store i64 3, ptr %n, align 1
+  br label %if.end20
+
+if.end20:                                         ; preds = %if.then19, %land.rhs21, %land.rhs22, %if.end6
+  %ge49 = icmp sge i64 %as.zext, 240
+  br i1 %ge49, label %land.rhs48, label %if.end46
+
+land.rhs21:                                       ; preds = %land.rhs22
+  %i25 = load i64, ptr %i, align 8
+  %add26 = add i64 %i25, 2
+  %load.struct27 = load %_Z5SliceI2u8E, ptr %1, align 8
+  %length28 = extractvalue %_Z5SliceI2u8E %load.struct27, 0
+  %lt29 = icmp ult i64 %add26, %length28
+  br i1 %lt29, label %if.then19, label %if.end20
+
+land.rhs22:                                       ; preds = %if.end6
+  %lt24 = icmp slt i64 %as.zext, 240
+  br i1 %lt24, label %land.rhs21, label %if.end20
+
+if.then45:                                        ; preds = %land.rhs47
+  %and56 = and i64 %as.zext, 7
+  %shl57 = shl i64 %and56, 18
+  %i58 = load i64, ptr %i, align 8
+  %add59 = add i64 %i58, 1
+  %call60 = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %add59)
+  %as.zext61 = zext i8 %call60 to i64
+  %and62 = and i64 %as.zext61, 63
+  %shl63 = shl i64 %and62, 12
+  %or64 = or i64 %shl57, %shl63
+  %i65 = load i64, ptr %i, align 8
+  %add66 = add i64 %i65, 2
+  %call67 = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %add66)
+  %as.zext68 = zext i8 %call67 to i64
+  %and69 = and i64 %as.zext68, 63
+  %shl70 = shl i64 %and69, 6
+  %or71 = or i64 %or64, %shl70
+  %i72 = load i64, ptr %i, align 8
+  %add73 = add i64 %i72, 3
+  %call74 = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %add73)
+  %as.zext75 = zext i8 %call74 to i64
+  %and76 = and i64 %as.zext75, 63
+  %or77 = or i64 %or71, %and76
+  store i64 %or77, ptr %cp, align 1
+  store i64 4, ptr %n, align 1
+  br label %if.end46
+
+if.end46:                                         ; preds = %if.then45, %land.rhs47, %land.rhs48, %if.end20
+  %cp78 = load i64, ptr %cp, align 8
+  %lt79 = icmp slt i64 %cp78, 65536
+  br i1 %lt79, label %if.then80, label %if.else
+
+land.rhs47:                                       ; preds = %land.rhs48
+  %i51 = load i64, ptr %i, align 8
+  %add52 = add i64 %i51, 3
+  %load.struct53 = load %_Z5SliceI2u8E, ptr %1, align 8
+  %length54 = extractvalue %_Z5SliceI2u8E %load.struct53, 0
+  %lt55 = icmp ult i64 %add52, %length54
+  br i1 %lt55, label %if.then45, label %if.end46
+
+land.rhs48:                                       ; preds = %if.end20
+  %lt50 = icmp slt i64 %as.zext, 245
+  br i1 %lt50, label %land.rhs47, label %if.end46
+
+if.then80:                                        ; preds = %if.end46
+  %cp82 = load i64, ptr %cp, align 8
+  call void @_ZN10JsonWriterB4jsonB4v0_111unit_dotnetEi(ptr %0, i64 %cp82)
+  br label %if.end81
+
+if.else:                                          ; preds = %if.end46
+  %cp83 = load i64, ptr %cp, align 8
+  %sub = sub i64 %cp83, 65536
+  %ashr = ashr i64 %sub, 10
+  %add84 = add i64 55296, %ashr
+  call void @_ZN10JsonWriterB4jsonB4v0_111unit_dotnetEi(ptr %0, i64 %add84)
+  %and85 = and i64 %sub, 1023
+  %add86 = add i64 56320, %and85
+  call void @_ZN10JsonWriterB4jsonB4v0_111unit_dotnetEi(ptr %0, i64 %add86)
+  br label %if.end81
+
+if.end81:                                         ; preds = %if.else, %if.then80
+  %i87 = load i64, ptr %i, align 8
+  %n88 = load i64, ptr %n, align 8
+  %add89 = add i64 %i87, %n88
+  store i64 %add89, ptr %i, align 1
+  br label %while.cond
+}
+
+define linkonce_odr void @_ZN10JsonWriterB4jsonB4v0_110key_dotnetE5SliceI2u8E(ptr %0, ptr %1) {
+entry:
+  call void @_ZN10JsonWriterB4jsonB4v0_18separateEv(ptr %0)
+  call void @_ZN10JsonWriterB4jsonB4v0_113quoted_dotnetE5SliceI2u8E(ptr %0, ptr %1)
+  call void @_ZN10JsonWriterB4jsonB4v0_14byteE2u8(ptr %0, i8 58)
+  %after_key = getelementptr inbounds nuw %_Z10JsonWriterB4jsonB4v0_1, ptr %0, i32 0, i32 2
+  store i1 true, ptr %after_key, align 1
+  ret void
+}
+
+define linkonce_odr void @_ZN10JsonWriterB4jsonB4v0_111text_dotnetE5SliceI2u8E(ptr %0, ptr %1) {
+entry:
+  call void @_ZN10JsonWriterB4jsonB4v0_18separateEv(ptr %0)
+  call void @_ZN10JsonWriterB4jsonB4v0_113quoted_dotnetE5SliceI2u8E(ptr %0, ptr %1)
+  ret void
+}
+
+define linkonce_odr void @_ZN10JsonWriterB4jsonB4v0_112value_dotnetE9JsonValueB4jsonB4v0_1(ptr %0, ptr %1) {
+entry:
+  %arg.tmp36 = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
+  %arg.tmp33 = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
+  %sret.result31 = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %arg.tmp30 = alloca %_Z5SliceI2u8E, align 8
+  %arg.tmp28 = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_1E, align 8
+  %sret.result26 = alloca %_Z10JsonMemberB4jsonB4v0_1, align 8
+  %arg.tmp15 = alloca %_Z5SliceI9JsonValueB4jsonB4v0_1E, align 8
+  %sret.result = alloca %_Z9JsonValueB4jsonB4v0_1, align 8
+  %i = alloca i64, align 8
+  %arg.tmp9 = alloca %_Z5SliceI2u8E, align 8
+  %arg.tmp = alloca %_Z5SliceI2u8E, align 8
+  %tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 0
+  %tag = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag, label %choose.else [
+    i8 0, label %choose.when
+    i8 1, label %choose.when1
+    i8 2, label %choose.when3
+    i8 3, label %choose.when6
+    i8 4, label %choose.when10
+    i8 5, label %choose.when18
+  ]
+
+choose.end:                                       ; preds = %choose.else, %while.exit23, %while.exit, %choose.when6, %choose.when3, %choose.when1, %choose.when
+  ret void
+
+choose.else:                                      ; preds = %entry
+  br label %choose.end
+
+choose.when:                                      ; preds = %entry
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 1
+  call void @_ZN10JsonWriterB4jsonB4v0_110null_valueEv(ptr %0)
+  br label %choose.end
+
+choose.when1:                                     ; preds = %entry
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 1
+  %variant.val = load i1, ptr %"variant.c_data().ptr2", align 1
+  call void @_ZN10JsonWriterB4jsonB4v0_17booleanEb(ptr %0, i1 %variant.val)
+  br label %choose.end
+
+choose.when3:                                     ; preds = %entry
+  %"variant.c_data().ptr4" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 1
+  %variant.val5 = load %_Z10JsonNumberB4jsonB4v0_1, ptr %"variant.c_data().ptr4", align 8
+  %text = extractvalue %_Z10JsonNumberB4jsonB4v0_1 %variant.val5, 0
+  store %_Z5SliceI2u8E %text, ptr %arg.tmp, align 1
+  call void @_ZN10JsonWriterB4jsonB4v0_16numberE5SliceI2u8E(ptr %0, ptr %arg.tmp)
+  br label %choose.end
+
+choose.when6:                                     ; preds = %entry
+  %"variant.c_data().ptr7" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 1
+  %variant.val8 = load %_Z10JsonStringB4jsonB4v0_1, ptr %"variant.c_data().ptr7", align 8
+  %bytes = extractvalue %_Z10JsonStringB4jsonB4v0_1 %variant.val8, 0
+  store %_Z5SliceI2u8E %bytes, ptr %arg.tmp9, align 1
+  call void @_ZN10JsonWriterB4jsonB4v0_111text_dotnetE5SliceI2u8E(ptr %0, ptr %arg.tmp9)
+  br label %choose.end
+
+choose.when10:                                    ; preds = %entry
+  %"variant.c_data().ptr11" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 1
+  %variant.val12 = load %_Z9JsonArrayB4jsonB4v0_1, ptr %"variant.c_data().ptr11", align 8
+  call void @_ZN10JsonWriterB4jsonB4v0_111begin_arrayEv(ptr %0)
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %choose.when10
+  %i13 = load i64, ptr %i, align 8
+  %items = extractvalue %_Z9JsonArrayB4jsonB4v0_1 %variant.val12, 0
+  %length = extractvalue %_Z5SliceI9JsonValueB4jsonB4v0_1E %items, 0
+  %lt = icmp ult i64 %i13, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %items14 = extractvalue %_Z9JsonArrayB4jsonB4v0_1 %variant.val12, 0
+  store %_Z5SliceI9JsonValueB4jsonB4v0_1E %items14, ptr %arg.tmp15, align 1
+  %i16 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI9JsonValueB4jsonB4v0_1EixEm(ptr noalias sret(%_Z9JsonValueB4jsonB4v0_1) %sret.result, ptr %arg.tmp15, i64 %i16)
+  call void @_ZN10JsonWriterB4jsonB4v0_112value_dotnetE9JsonValueB4jsonB4v0_1(ptr %0, ptr %sret.result)
+  %i17 = load i64, ptr %i, align 8
+  %add = add i64 %i17, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  call void @_ZN10JsonWriterB4jsonB4v0_19end_arrayEv(ptr %0)
+  br label %choose.end
+
+choose.when18:                                    ; preds = %entry
+  %"variant.c_data().ptr19" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 1
+  %variant.val20 = load %_Z10JsonObjectB4jsonB4v0_1, ptr %"variant.c_data().ptr19", align 8
+  call void @_ZN10JsonWriterB4jsonB4v0_112begin_objectEv(ptr %0)
+  store i64 0, ptr %i, align 1
+  br label %while.cond21
+
+while.cond21:                                     ; preds = %while.body22, %choose.when18
+  %k = load i64, ptr %i, align 8
+  %members = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val20, 0
+  %length24 = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members, 0
+  %lt25 = icmp ult i64 %k, %length24
+  br i1 %lt25, label %while.body22, label %while.exit23
+
+while.body22:                                     ; preds = %while.cond21
+  %members27 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val20, 0
+  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members27, ptr %arg.tmp28, align 1
+  %k29 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result26, ptr %arg.tmp28, i64 %k29)
+  %load.struct = load %_Z10JsonMemberB4jsonB4v0_1, ptr %sret.result26, align 8
+  %key = extractvalue %_Z10JsonMemberB4jsonB4v0_1 %load.struct, 0
+  store %_Z5SliceI2u8E %key, ptr %arg.tmp30, align 1
+  call void @_ZN10JsonWriterB4jsonB4v0_110key_dotnetE5SliceI2u8E(ptr %0, ptr %arg.tmp30)
+  %members32 = extractvalue %_Z10JsonObjectB4jsonB4v0_1 %variant.val20, 0
+  store %_Z5SliceI10JsonMemberB4jsonB4v0_1E %members32, ptr %arg.tmp33, align 1
+  %k34 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI10JsonMemberB4jsonB4v0_1EixEm(ptr noalias sret(%_Z10JsonMemberB4jsonB4v0_1) %sret.result31, ptr %arg.tmp33, i64 %k34)
+  %load.struct35 = load %_Z10JsonMemberB4jsonB4v0_1, ptr %sret.result31, align 8
+  %value = extractvalue %_Z10JsonMemberB4jsonB4v0_1 %load.struct35, 1
+  store %_Z9JsonValueB4jsonB4v0_1 %value, ptr %arg.tmp36, align 1
+  call void @_ZN10JsonWriterB4jsonB4v0_112value_dotnetE9JsonValueB4jsonB4v0_1(ptr %0, ptr %arg.tmp36)
+  %k37 = load i64, ptr %i, align 8
+  %add38 = add i64 %k37, 1
+  store i64 %add38, ptr %i, align 1
+  br label %while.cond21
+
+while.exit23:                                     ; preds = %while.cond21
+  call void @_ZN10JsonWriterB4jsonB4v0_110end_objectEv(ptr %0)
+  br label %choose.end
+}
+
+define linkonce_odr void @_ZN10JsonWriterB4jsonB4v0_112ascii_dotnetEi(ptr %0, i64 %1) {
+entry:
+  %arg.tmp = alloca %_Z5SliceI2u8E, align 8
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %match.cmp = icmp eq i64 %1, 92
+  br i1 %match.cmp, label %match.case, label %match.next
+
+match.end:                                        ; preds = %match.next21
+  %lt = icmp slt i64 %1, 32
+  br i1 %lt, label %if.then, label %lor.rhs37
+
+match.case:                                       ; preds = %entry
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 2, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr @.str.78, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN10JsonWriterB4jsonB4v0_16appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
+  ret void
+
+match.next:                                       ; preds = %entry
+  %match.cmp4 = icmp eq i64 %1, 8
+  br i1 %match.cmp4, label %match.case2, label %match.next3
+
+match.case2:                                      ; preds = %match.next
+  %tuple.field5 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 2, ptr %tuple.field5, align 1
+  %tuple.field6 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr @.str.79, ptr %tuple.field6, align 1
+  %tuple.val7 = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN10JsonWriterB4jsonB4v0_16appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
+  ret void
+
+match.next3:                                      ; preds = %match.next
+  %match.cmp10 = icmp eq i64 %1, 9
+  br i1 %match.cmp10, label %match.case8, label %match.next9
+
+match.case8:                                      ; preds = %match.next3
+  %tuple.field11 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 2, ptr %tuple.field11, align 1
+  %tuple.field12 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr @.str.80, ptr %tuple.field12, align 1
+  %tuple.val13 = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN10JsonWriterB4jsonB4v0_16appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
+  ret void
+
+match.next9:                                      ; preds = %match.next3
+  %match.cmp16 = icmp eq i64 %1, 10
+  br i1 %match.cmp16, label %match.case14, label %match.next15
+
+match.case14:                                     ; preds = %match.next9
+  %tuple.field17 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 2, ptr %tuple.field17, align 1
+  %tuple.field18 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr @.str.81, ptr %tuple.field18, align 1
+  %tuple.val19 = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN10JsonWriterB4jsonB4v0_16appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
+  ret void
+
+match.next15:                                     ; preds = %match.next9
+  %match.cmp22 = icmp eq i64 %1, 12
+  br i1 %match.cmp22, label %match.case20, label %match.next21
+
+match.case20:                                     ; preds = %match.next15
+  %tuple.field23 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 2, ptr %tuple.field23, align 1
+  %tuple.field24 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr @.str.82, ptr %tuple.field24, align 1
+  %tuple.val25 = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN10JsonWriterB4jsonB4v0_16appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
+  ret void
+
+match.next21:                                     ; preds = %match.next15
+  %match.cmp27 = icmp eq i64 %1, 13
+  br i1 %match.cmp27, label %match.case26, label %match.end
+
+match.case26:                                     ; preds = %match.next21
+  %tuple.field28 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 2, ptr %tuple.field28, align 1
+  %tuple.field29 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr @.str.83, ptr %tuple.field29, align 1
+  %tuple.val30 = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN10JsonWriterB4jsonB4v0_16appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
+  ret void
+
+if.then:                                          ; preds = %lor.rhs, %lor.rhs31, %lor.rhs32, %lor.rhs33, %lor.rhs34, %lor.rhs35, %lor.rhs36, %lor.rhs37, %match.end
+  call void @_ZN10JsonWriterB4jsonB4v0_111unit_dotnetEi(ptr %0, i64 %1)
+  ret void
+
+if.end:                                           ; preds = %lor.rhs
+  %as.trunc = trunc i64 %1 to i8
+  call void @_ZN10JsonWriterB4jsonB4v0_14byteE2u8(ptr %0, i8 %as.trunc)
+  ret void
+
+lor.rhs:                                          ; preds = %lor.rhs31
+  %eq44 = icmp eq i64 %1, 96
+  br i1 %eq44, label %if.then, label %if.end
+
+lor.rhs31:                                        ; preds = %lor.rhs32
+  %eq43 = icmp eq i64 %1, 62
+  br i1 %eq43, label %if.then, label %lor.rhs
+
+lor.rhs32:                                        ; preds = %lor.rhs33
+  %eq42 = icmp eq i64 %1, 60
+  br i1 %eq42, label %if.then, label %lor.rhs31
+
+lor.rhs33:                                        ; preds = %lor.rhs34
+  %eq41 = icmp eq i64 %1, 43
+  br i1 %eq41, label %if.then, label %lor.rhs32
+
+lor.rhs34:                                        ; preds = %lor.rhs35
+  %eq40 = icmp eq i64 %1, 39
+  br i1 %eq40, label %if.then, label %lor.rhs33
+
+lor.rhs35:                                        ; preds = %lor.rhs36
+  %eq39 = icmp eq i64 %1, 38
+  br i1 %eq39, label %if.then, label %lor.rhs34
+
+lor.rhs36:                                        ; preds = %lor.rhs37
+  %eq38 = icmp eq i64 %1, 34
+  br i1 %eq38, label %if.then, label %lor.rhs35
+
+lor.rhs37:                                        ; preds = %match.end
+  %eq = icmp eq i64 %1, 127
+  br i1 %eq, label %if.then, label %lor.rhs36
+}
+
+define linkonce_odr void @_ZN10JsonWriterB4jsonB4v0_111unit_dotnetEi(ptr %0, i64 %1) {
+entry:
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 2, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr @.str.84, ptr %tuple.field1, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  %arg.tmp = alloca %_Z5SliceI2u8E, align 8
+  store %_Z5SliceI2u8E %tuple.val, ptr %arg.tmp, align 1
+  call void @_ZN10JsonWriterB4jsonB4v0_16appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
+  %ashr = ashr i64 %1, 12
+  %and = and i64 %ashr, 15
+  %call = call i8 @_ZN10JsonWriterB4jsonB4v0_115upper_hex_digitEi(i64 %and)
+  call void @_ZN10JsonWriterB4jsonB4v0_14byteE2u8(ptr %0, i8 %call)
+  %ashr2 = ashr i64 %1, 8
+  %and3 = and i64 %ashr2, 15
+  %call4 = call i8 @_ZN10JsonWriterB4jsonB4v0_115upper_hex_digitEi(i64 %and3)
+  call void @_ZN10JsonWriterB4jsonB4v0_14byteE2u8(ptr %0, i8 %call4)
+  %ashr5 = ashr i64 %1, 4
+  %and6 = and i64 %ashr5, 15
+  %call7 = call i8 @_ZN10JsonWriterB4jsonB4v0_115upper_hex_digitEi(i64 %and6)
+  call void @_ZN10JsonWriterB4jsonB4v0_14byteE2u8(ptr %0, i8 %call7)
+  %and8 = and i64 %1, 15
+  %call9 = call i8 @_ZN10JsonWriterB4jsonB4v0_115upper_hex_digitEi(i64 %and8)
+  call void @_ZN10JsonWriterB4jsonB4v0_14byteE2u8(ptr %0, i8 %call9)
+  ret void
+}
+
+define linkonce_odr i8 @_ZN10JsonWriterB4jsonB4v0_115upper_hex_digitEi(i64 %0) {
+entry:
+  %lt = icmp slt i64 %0, 10
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %add = add i64 %0, 48
+  %as.trunc = trunc i64 %add to i8
+  ret i8 %as.trunc
+
+if.end:                                           ; preds = %entry
+  %add1 = add i64 %0, 55
+  %as.trunc2 = trunc i64 %add1 to i8
+  ret i8 %as.trunc2
+}
+
 define linkonce_odr i1 @_ZN10JsonWriterB4jsonB4v0_15plainE2u8(i8 %0) {
 entry:
   %ge = icmp uge i8 %0, 32
@@ -14080,7 +14803,7 @@ if.else:                                          ; preds = %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
-  store ptr @.str.80, ptr %tuple.field1, align 1
+  store ptr @.str.87, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   call void @_ZN10JsonWriterB4jsonB4v0_16appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
@@ -14305,7 +15028,7 @@ choose.else:                                      ; preds = %entry
 
 choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_1, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.81 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.88 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %arg.tmp)
   br label %choose.end
 
@@ -14315,12 +15038,12 @@ choose.when1:                                     ; preds = %entry
   br i1 %variant.val, label %if.then, label %if.else
 
 if.then:                                          ; preds = %choose.when1
-  store { ptr } { ptr @.sconst.82 }, ptr %arg.tmp3, align 1
+  store { ptr } { ptr @.sconst.89 }, ptr %arg.tmp3, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %arg.tmp3)
   br label %if.end
 
 if.else:                                          ; preds = %choose.when1
-  store { ptr } { ptr @.sconst.83 }, ptr %arg.tmp4, align 1
+  store { ptr } { ptr @.sconst.90 }, ptr %arg.tmp4, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %arg.tmp4)
   br label %if.end
 

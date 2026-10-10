@@ -416,6 +416,143 @@ define JsonWriter
     }
 
     ; ------------------------------------------------------------------
+    ; The text .NET's System.Text.Json writes with its default encoder, for
+    ; a document that must be the bytes such a program stored or sent: in a
+    ; string everything but plain Basic Latin is escaped -- the short
+    ; escapes \b \t \n \f \r and \\, and \uXXXX in upper case for the
+    ; rest: the quote, & ' + < > `, the other controls, DEL, and every
+    ; character beyond ASCII (a pair of surrogates past the BMP). A number
+    ; is its source text here too.
+
+    ; A member name, as key.
+    procedure key_dotnet(mutable this, name: Slice[u8])
+    {
+        this.separate()
+        this.quoted_dotnet(name)
+        this.byte(0x3A)                                     ; ':'
+        after_key := true
+    }
+
+    ; A string, as text.
+    procedure text_dotnet(mutable this, s: Slice[u8])
+    {
+        this.separate()
+        this.quoted_dotnet(s)
+    }
+
+    ; A whole tree, as value.
+    procedure value_dotnet(mutable this, v: JsonValue)
+    {
+        choose v
+            when n: Null
+                this.null_value()
+            when b: Bool
+                this.boolean(b)
+            when x: Number
+                this.number(x.text)
+            when s: Text
+                this.text_dotnet(s.bytes)
+            when a: Array
+            {
+                this.begin_array()
+                var i: size_t 0
+                while i < a.items.length
+                {
+                    this.value_dotnet(a.items[i])
+                    i := i + 1
+                }
+                this.end_array()
+            }
+            when o: Object
+            {
+                this.begin_object()
+                var k: size_t 0
+                while k < o.members.length
+                {
+                    this.key_dotnet(o.members[k].key)
+                    this.value_dotnet(o.members[k].value)
+                    k := k + 1
+                }
+                this.end_object()
+            }
+    }
+
+    procedure quoted_dotnet(mutable this, s: Slice[u8])
+    {
+        this.byte(0x22)
+        var i: size_t 0
+        while i < s.length
+        {
+            let c s[i] as int
+            if c < 128
+            {
+                this.ascii_dotnet(c)
+                i := i + 1
+                continue
+            }
+            ; a sequence that is not UTF-8 goes out as U+FFFD, byte by byte
+            var cp 65533
+            var n: size_t 1
+            if c >= 194 and c < 224 and i + 1 < s.length
+            {
+                cp := ((c & 31) << 6) | ((s[i + 1] as int) & 63)
+                n := 2
+            }
+            if c >= 224 and c < 240 and i + 2 < s.length
+            {
+                cp := ((c & 15) << 12) | (((s[i + 1] as int) & 63) << 6) | ((s[i + 2] as int) & 63)
+                n := 3
+            }
+            if c >= 240 and c < 245 and i + 3 < s.length
+            {
+                cp := ((c & 7) << 18) | (((s[i + 1] as int) & 63) << 12) | (((s[i + 2] as int) & 63) << 6) | ((s[i + 3] as int) & 63)
+                n := 4
+            }
+            if cp < 65536
+                this.unit_dotnet(cp)
+            else
+            {
+                let v cp - 65536
+                this.unit_dotnet(55296 + (v >> 10))
+                this.unit_dotnet(56320 + (v & 1023))
+            }
+            i := i + n
+        }
+        this.byte(0x22)
+    }
+
+    procedure ascii_dotnet(mutable this, c: int)
+    {
+        match c
+            case 92: return this.append("\\\\")
+            case 8: return this.append("\\b")
+            case 9: return this.append("\\t")
+            case 10: return this.append("\\n")
+            case 12: return this.append("\\f")
+            case 13: return this.append("\\r")
+        if c < 32 or c = 127 or c = 34 or c = 38 or c = 39 or c = 43 or c = 60 or c = 62 or c = 96
+            return this.unit_dotnet(c)
+        this.byte(c as u8)
+    }
+
+    ; \uXXXX for a UTF-16 code unit, the digits in upper case.
+    procedure unit_dotnet(mutable this, unit: int)
+    {
+        this.append("\\u")
+        this.byte(upper_hex_digit((unit >> 12) & 15))
+        this.byte(upper_hex_digit((unit >> 8) & 15))
+        this.byte(upper_hex_digit((unit >> 4) & 15))
+        this.byte(upper_hex_digit(unit & 15))
+    }
+
+    function upper_hex_digit(v: int) returns u8
+    {
+        if v < 10
+            return (v + 48) as u8
+        (v + 55) as u8
+    }
+
+    ; ------------------------------------------------------------------
 
     ; The comma before an element that is not its container's first.
     procedure separate(mutable this)

@@ -52,6 +52,19 @@ long long scaly_time_now(void)
   return (long long)time(0);
 }
 
+/* The wall clock in MICROSECONDS since the epoch, UTC -- what a server
+ * stamps a record with (scaly_time_now is whole seconds). C11's
+ * timespec_get, which every target's C library has, so no branch per
+ * system; 0 where the clock cannot be read. (Rule a/c of the containment
+ * rule: struct timespec's layout is the C library's.) */
+long long scaly_time_now_usec(void)
+{
+  struct timespec ts;
+  if (timespec_get(&ts, TIME_UTC) != TIME_UTC)
+    return 0;
+  return (long long)ts.tv_sec * 1000000LL + (long long)(ts.tv_nsec / 1000);
+}
+
 /* Process CPU time in MICROSECONDS — the JIT's compile-time accounting
  * (dazzle/Jit.scaly, `--jit-stats`), which used to call `clock()` directly.
  *

@@ -9,6 +9,16 @@ define os
     module Path
     module Tcp
 
+    ; The environment variable `name` as bytes, a view of the process's
+    ; environment; empty when it is not set.
+    procedure environment_variable(name: pointer[const_char]) returns Slice[u8]
+    {
+        let v getenv(name)
+        if v = null
+            return Slice[u8](0, null)
+        Slice[u8](strlen(v), v as pointer[u8])
+    }
+
     procedure test_direct() returns int
     {
         ; Direct write call to test if external functions work in os module
