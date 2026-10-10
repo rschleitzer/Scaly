@@ -119,7 +119,7 @@ fi
 if [ -n "$VERIFY_FIXEDPOINT" ]; then
   echo "verify: fixed point vs committed seed/ (re-emit; high memory)"
   for f in main scaly_main scalyc; do
-    "$SC" -S --no-tests -o "$WORK/$f.ll" packages/scalyc/0.1.1/$f.scaly >/dev/null 2>&1 || fail "re-emit $f.ll"
+    "$SC" -S --no-tests -o "$WORK/$f.ll" packages/scalyc/0.2.0/$f.scaly >/dev/null 2>&1 || fail "re-emit $f.ll"
   done
   "$SC" -S --no-tests -o "$WORK/scaly.ll" packages/scaly/0.1.1/scaly.scaly >/dev/null 2>&1 || fail "re-emit scaly.ll"
   for f in main scaly_main scalyc scaly; do

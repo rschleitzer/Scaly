@@ -115,7 +115,7 @@ done
 # One row per binary: name, library root + its flags, program root + its flags.
 # A row whose library field is empty has no package object of its own.
 PRODUCTS=(
-  "scalyc|packages/scalyc/0.1.1/scalyc.scaly|--no-tests|packages/scalyc/0.1.1/main.scaly|--no-tests"
+  "scalyc|packages/scalyc/0.2.0/scalyc.scaly|--no-tests|packages/scalyc/0.2.0/main.scaly|--no-tests"
 )
 ndropin=0
 for row in "${PRODUCTS[@]}"; do

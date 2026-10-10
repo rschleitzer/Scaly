@@ -109,7 +109,7 @@ EOF
   for pair in main:scalyc scaly_main:scaly; do
     root="${pair%%:*}"; prog="${pair##*:}"
     SCALY_CC="$(cygpath -w "$PGO/cc.cmd")" SCALY_CACHE="$PGO/cache" SCALY_HOME= \
-      "$STAGE/libexec/scaly.exe" build "packages/scalyc/0.1.1/$root.scaly" --pgo "$PROFILE" --export \
+      "$STAGE/libexec/scaly.exe" build "packages/scalyc/0.2.0/$root.scaly" --pgo "$PROFILE" --export \
       -o "$PGO/$prog.exe" > "$PGO/$prog.log" 2>&1 \
       || { tail -20 "$PGO/$prog.log"; echo "make-bindist-windows: FAIL — the profile build of $prog"; exit 1; }
     stale=$(grep -c 'profile data may be out of date\|function control flow change detected' "$PGO/$prog.log" || true)

@@ -126,7 +126,7 @@ llc_objs() {
   done
   waitall "${pids[@]}"
 }
-C=packages/scalyc/0.1.1 L=packages/scalyls/0.1.1
+C=packages/scalyc/0.2.0 L=packages/scalyls/0.1.1
 echo "seed: emitting .ll with $CC --no-tests --portable-simd --target $SEED_TARGET"
 emit_roots "$CC" main=$C/main.scaly scaly_main=$C/scaly_main.scaly scalyc=$C/scalyc.scaly scaly=packages/scaly/0.1.1/scaly.scaly || fail "emission"
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # tests/pointer-report/run.sh — the gate for `scalyc --pointer-report`
-# (packages/scalyc/0.1.1/scalyc/compiler/PointerCensus.scaly).
+# (packages/scalyc/0.2.0/scalyc/compiler/PointerCensus.scaly).
 #
 # The census is an INSTRUMENT: a residue number nobody can refute is worth
 # nothing, so this gate pins (1) the exact report over a fixture carrying one
