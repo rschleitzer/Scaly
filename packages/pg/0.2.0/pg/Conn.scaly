@@ -11,6 +11,16 @@
 ;           … c.column(0) … c.column_int(3) …
 ;
 ; A column is a view into the input buffer, valid until the next query.
+;
+; Parameters and columns are text unless said otherwise: param_bytes sends
+; a parameter as it stands (a BYTEA value's bytes), param_null sends NULL,
+; and binary_column, between start and run, asks for a result column in
+; the server's binary form (a BYTEA column's bytes, without the hex of its
+; text form). column_is_null tells NULL from an empty value.
+;
+; execute sends SQL without preparing it, through the simple query
+; protocol: no parameters, any number of statements separated by
+; semicolons (a schema script, BEGIN, COMMIT), text results.
 ; Everything a connection holds lives on its own page, released by close.
 
 use pg.Buf.PgBuf
@@ -52,6 +62,17 @@ define PgConn
     var col_start: Slice[u32]
     var col_len: Slice[i32]
     var col_count: size_t
+    ; the Bind message's parameter format codes, where they stand, and
+    ; which parameters and result columns are binary (none: all text, and
+    ; the message says so in two zero counts)
+    var formats_at: size_t
+    var binary_params: Array[u32]
+    var binary_columns: Array[u32]
+    ; the result columns of each prepared statement, in the order of
+    ; `prepared` (the server's description at prepare), and the field count
+    ; of the RowDescription drain met last
+    var prepared_columns: Array[u32]
+    var described: i64
 )
 {
     ; Connect and authenticate; not is_open() when the server cannot be
@@ -67,7 +88,7 @@ define PgConn
             return null
         }
         tcp.set_nodelay(true)
-        let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page(), allocate_slice[u32]^page(page, PG_ROW_INDEX), allocate_slice[i32]^page(page, PG_ROW_INDEX), 0)
+        let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page(), allocate_slice[u32]^page(page, PG_ROW_INDEX), allocate_slice[i32]^page(page, PG_ROW_INDEX), 0, 0, Array[u32]^page(), Array[u32]^page(), Array[u32]^page(), 0)
         if c.startup(user, password, database) = false
         {
             c.close()
@@ -196,6 +217,8 @@ define PgConn
                 error_at := msg_start
                 error_length := msg_length
             }
+            if t = 84
+                described := be_u16(inb.bytes(), msg_start)
             if t = 90
                 return ok
         }
@@ -288,11 +311,19 @@ define PgConn
         outb.append_cstr(sql)
         outb.append_i16(0)
         outb.finish(at)
+        ; Describe: how many columns its rows have (run needs the number to
+        ; name a binary one)
+        let describe outb.begin(68)
+        outb.append_byte(83)
+        outb.append_cstr(name)
+        outb.finish(describe)
         let sync outb.begin(83)
         outb.finish(sync)
+        described := 0
         if this.flush() = false or this.drain() = false
             return false
         prepared.add(String^host(name.data as pointer[const_char], name.length))
+        prepared_columns.add(described as u32)
         true
     }
 
@@ -304,11 +335,36 @@ define PgConn
         bind_at := outb.begin(66)
         outb.append_byte(0)
         outb.append_cstr(name)
+        formats_at := outb.length
         outb.append_i16(0)
         param_count_at := outb.length
         outb.append_i16(0)
         param_count := 0
+        binary_params.length := 0
+        binary_columns.length := 0
     }
+
+    ; A parameter sent as it stands, in the server's binary form: the bytes
+    ; of a BYTEA value.
+    procedure param_bytes(mutable this, v: Slice[u8])
+    {
+        binary_params.add(param_count as u32)
+        outb.append_i32(v.length as i64)
+        outb.append(v)
+        param_count := param_count + 1
+    }
+
+    ; NULL as a parameter.
+    procedure param_null(mutable this)
+    {
+        outb.append_i32((0 as i64) - 1)
+        param_count := param_count + 1
+    }
+
+    ; Ask for result column i (from 0) in the server's binary form; between
+    ; start and run. The other columns stay text.
+    procedure binary_column(mutable this, i: int)
+        binary_columns.add(i as u32)
 
     procedure param_text(mutable this, v: Slice[u8])
     {
@@ -326,13 +382,71 @@ define PgConn
         param_count := param_count + 1
     }
 
+    ; The result columns of the statement the Bind message in outb names.
+    function statement_columns(this) returns size_t
+    {
+        let name outb.bytes().subslice(bind_at + 5, formats_at - 1)
+        var i: size_t 0
+        while i < prepared.length
+        {
+            if prepared.at(i).as_slice().equals(name)
+                return prepared_columns[i] as size_t
+            i := i + 1
+        }
+        0
+    }
+
     ; Send the query and read its whole answer; false on an error. The rows
     ; are then walked with next_row.
     procedure run(mutable this) returns bool
     {
-        outb.data.put(param_count_at, ((param_count >> 8) & 255) as u8)
-        outb.data.put(param_count_at + 1, (param_count & 255) as u8)
-        outb.append_i16(0)
+        var count_at param_count_at
+        if binary_params.length > 0
+        {
+            ; a format code for every parameter, in front of their count
+            let gap (param_count as size_t) * 2
+            outb.open_gap(formats_at + 2, gap)
+            outb.data.put(formats_at, ((param_count >> 8) & 255) as u8)
+            outb.data.put(formats_at + 1, (param_count & 255) as u8)
+            var z: size_t 0
+            while z < gap
+            {
+                outb.data.put(formats_at + 2 + z, 0)
+                z := z + 1
+            }
+            var b: size_t 0
+            while b < binary_params.length
+            {
+                outb.data.put(formats_at + 3 + (binary_params[b] as size_t) * 2, 1)
+                b := b + 1
+            }
+            count_at := count_at + gap
+        }
+        outb.data.put(count_at, ((param_count >> 8) & 255) as u8)
+        outb.data.put(count_at + 1, (param_count & 255) as u8)
+        if binary_columns.length = 0
+            outb.append_i16(0)
+        else
+        {
+            ; a format code for every column of the statement (the server
+            ; takes none, one for all, or exactly as many as there are)
+            let columns this.statement_columns()
+            outb.append_i16(columns as i64)
+            let codes_at outb.length
+            var k: size_t 0
+            while k < columns
+            {
+                outb.append_i16(0)
+                k := k + 1
+            }
+            k := 0
+            while k < binary_columns.length
+            {
+                if (binary_columns[k] as size_t) < columns
+                    outb.data.put(codes_at + 1 + (binary_columns[k] as size_t) * 2, 1)
+                k := k + 1
+            }
+        }
         outb.finish(bind_at)
         let ex outb.begin(69)
         outb.append_byte(0)
@@ -340,6 +454,24 @@ define PgConn
         outb.finish(ex)
         let sync outb.begin(83)
         outb.finish(sync)
+        this.reset_input()
+        if this.flush() = false or this.drain() = false
+            return false
+        walk := 0
+        true
+    }
+
+    ; Send sql as it stands and read its whole answer; false on an error
+    ; (error_message). The simple query protocol: no parameters, any number
+    ; of statements separated by semicolons -- they run in one transaction
+    ; unless the text says otherwise, and the first error ends them. The
+    ; rows of every statement are walked with next_row, as text.
+    procedure execute(mutable this, sql: Slice[u8]) returns bool
+    {
+        outb.clear()
+        let at outb.begin(81)
+        outb.append_cstr(sql)
+        outb.finish(at)
         this.reset_input()
         if this.flush() = false or this.drain() = false
             return false
@@ -443,6 +575,29 @@ define PgConn
         if len < 0
             return b.slice_to(0)
         b.subslice(at + 4, at + 4 + (len as size_t))
+    }
+
+    ; Is column i of the current row NULL? (column answers empty for NULL
+    ; and for an empty value alike.)
+    function column_is_null(this, i: int) returns bool
+    {
+        let b inb.bytes()
+        if i >= 0 and (i as size_t) < col_count
+            return col_len[i as size_t] < 0
+        let n be_u16(b, row_start)
+        if (i as i64) >= n
+            return true
+        var at row_start + 2
+        var k 0
+        while k < i
+        {
+            let len be_i32(b, at)
+            at := at + 4
+            if len > 0
+                at := at + (len as size_t)
+            k := k + 1
+        }
+        be_i32(b, at) < 0
     }
 
     function column_int(this, i: int) returns i64

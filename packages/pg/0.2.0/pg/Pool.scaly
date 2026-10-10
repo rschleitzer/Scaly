@@ -8,7 +8,8 @@
 ; suspends until one is given back.
 ;
 ; The server comes from DATABASE_URL (postgres://user:password@host:port/db)
-; and the bound from DATABASE_MAX_CONN, read once per thread.
+; and the bound from DATABASE_MAX_CONN, read once per thread -- unless the
+; program named the server itself with configure, before its first acquire.
 
 use pg.Conn.PgConn
 
@@ -46,6 +47,39 @@ define PgPool
 
 ; This thread's pool, made at its first acquire.
 mutable pg_pool: ref[PgPool]? null
+
+; The server configure named, as the address of a PgConfig on a page of its
+; own; 0 when the program named none. Stored before the threads that read
+; it start, and only through scaly_atomic_* (an ordinary global would be
+; thread-local).
+shared atomic pg_configured: u64 0
+
+; Name the server every thread's pool connects to, in place of
+; DATABASE_URL: a program whose configuration is its own. Before the first
+; acquire; the parts are copied.
+procedure configure(host_name: Slice[u8], port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8])
+{
+    let page Page.allocate_page()
+    let c &PgConfig^page(
+        String^page(host_name.data as pointer[const_char], host_name.length),
+        port,
+        String^page(user.data as pointer[const_char], user.length),
+        String^page(password.data as pointer[const_char], password.length),
+        String^page(database.data as pointer[const_char], database.length)
+    )
+    scaly_atomic_store_u64(&pg_configured, c as u64)
+}
+
+; The server of this thread's pool, its strings on host: what configure
+; named, else DATABASE_URL.
+procedure pool_config(host: ref[Page]) returns PgConfig
+{
+    let set scaly_atomic_load_u64(&pg_configured)
+    if set = 0
+        return parse_database_url(host, env_bytes("DATABASE_URL"))
+    let c (set as size_t) as ref[PgConfig]
+    PgConfig(String^host(c.host), c.port, String^host(c.user), String^host(c.password), String^host(c.database))
+}
 
 ; Parse postgres://user:password@host:port/database onto host; the port
 ; defaults to 5432, a missing part reads empty.
@@ -114,7 +148,7 @@ procedure pool() returns ref[PgPool] mutable pg_pool
     if existing <> null
         return existing as ref[PgPool]
     let host Page.allocate_page()
-    let config parse_database_url(host, env_bytes("DATABASE_URL"))
+    let config pool_config(host)
     var max decimal_of(env_bytes("DATABASE_MAX_CONN"))
     if max <= 0
         max := 32

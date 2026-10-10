@@ -61,6 +61,18 @@ define PgBuf
         length := rest
     }
 
+    ; Make room for n bytes at `at`, sliding what stands there back; the
+    ; room holds what was there before and is the caller's to fill.
+    procedure open_gap(mutable this, at: size_t, n: size_t)
+    {
+        if n = 0
+            return
+        this.reserve(n)
+        if length > at
+            memmove(data.slice_from(at + n).data as pointer[void], data.slice_from(at).data as pointer[void], length - at)
+        length := length + n
+    }
+
     procedure append(mutable this, s: Slice[u8])
     {
         if s.length = 0
