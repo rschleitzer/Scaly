@@ -3,7 +3,15 @@
 #
 #   gh workflow run release                    # the version the tree's VERSION file names
 #   gh workflow run release -f version=0.1.1
-#   gh run download <run-id> -D dist           # the six archives, one directory each
+#   gh release download v<version> -D dist     # the six archives
+#
+# The archives are assets of a GitHub release `v<version>`, a PRERELEASE until
+# tools/publish-install.sh has put them on scaly.io and marks it the release.
+# Nothing is kept as a workflow artifact: artifacts count against the
+# account's Actions storage (0.5 GB a month; fourteen runs' worth, kept the
+# default ninety days, used it up in five days of October 2026), release
+# assets do not. A run for a version scaly.io already has is refused -- a
+# published version does not change, raise VERSION.
 #
 # What it makes (the names docs/website/install.sh and install.ps1 ask for):
 #   scaly-<v>-darwin-arm64.tar.gz     macOS 26 (Tahoe) on Apple silicon
@@ -50,9 +58,35 @@ on:
         description: the version in the archive names (empty - the tree's VERSION file)
         default: ''
 
+permissions:
+  contents: write
+
 jobs:
+  # the release the legs hang their archives on: made anew for this commit
+  prepare:
+    name: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          v="${{ inputs.version }}"
+          [ -n "$v" ] || v="$(cat VERSION)"
+          if curl -fsSI "https://scaly.io/downloads/scaly-$v.tar.gz?t=$(date +%s)" > /dev/null 2>&1; then
+            echo "scaly $v is published at scaly.io -- a published version does not change; raise VERSION"
+            exit 1
+          fi
+          gh release delete "v$v" --repo "${{ github.repository }}" --cleanup-tag --yes 2> /dev/null || true
+          gh release create "v$v" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease \
+            --title "Scaly $v" \
+            --notes "The programs of Scaly $v, one archive per system. Install with the installer at https://scaly.io -- it takes the archive for your system and the packages."
+
   posix:
     name: ${{ matrix.system }}
+    needs: prepare
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     strategy:
@@ -108,16 +142,15 @@ jobs:
           if [ "$RUNNER_OS" = Linux ]; then ldd "$RUNNER_TEMP/home/libexec/scalyc" | grep -i llvm && exit 1 || true
           else otool -L "$RUNNER_TEMP/home/libexec/scalyc" | grep -i llvm && exit 1 || true; fi
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: scaly-${{ env.RELEASE_VERSION }}-${{ matrix.system }}
-          path: dist/scaly-${{ env.RELEASE_VERSION }}-${{ matrix.system }}.tar.gz
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 3
+      - name: the archive, onto the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v$RELEASE_VERSION" "dist/scaly-$RELEASE_VERSION-${{ matrix.system }}.tar.gz" --repo "${{ github.repository }}" --clobber
 
   windows:
     name: windows-${{ matrix.arch }}
+    needs: prepare
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     strategy:
@@ -218,10 +251,8 @@ jobs:
           [ -f "$RUNNER_TEMP/names-jit/empfänger.txt" ]
           [ -f "$RUNNER_TEMP/names-jit/größe.txt" ]
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: scaly-${{ env.RELEASE_VERSION }}-windows-${{ matrix.arch }}
-          path: dist/scaly-${{ env.RELEASE_VERSION }}-windows-${{ matrix.arch }}.zip
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 3
+      - name: the archive, onto the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "v$RELEASE_VERSION" "dist/scaly-$RELEASE_VERSION-windows-${{ matrix.arch }}.zip" --repo "${{ github.repository }}" --clobber

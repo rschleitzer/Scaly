@@ -79,11 +79,15 @@ declarations break.
    `tests/install/run-windows.sh` on a Windows machine.
 5. **The programs.** `gh workflow run release` builds the six archives on
    GitHub's runners from the pushed commit (the version is the `VERSION`
-   file's unless one is given). Wait for all six.
+   file's unless one is given) and hangs each on the GitHub release
+   `v<version>`, a prerelease so far. Wait for all six. It keeps no
+   workflow artifacts — they count against the account's Actions storage —
+   and refuses a version scaly.io already has.
 6. **The upload.** `tools/publish-install.sh --run <run id>` fetches the
    run's archives, makes the source archive of THIS tree, and uploads: the
    seven files, `SHA256SUMS` and `SHA256SUMS-<version>`, then
-   `downloads/latest`, the two installers last. `--dry-run` shows the
+   `downloads/latest`, the two installers last; then it marks the GitHub
+   release as the latest. `--dry-run` shows the
    uploads and sends nothing. It says so when the run's commit and this
    tree's differ.
 7. **The documentation.** `docs/html.sh` regenerates the pages from

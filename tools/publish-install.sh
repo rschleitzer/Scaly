@@ -13,7 +13,8 @@
 #       scaly-<ver>-linux-{aarch64,x86_64}.tar.gz
 #       scaly-<ver>-windows-{arm64,x86_64}.zip
 #     They are built by the `release` workflow (gh workflow run release);
-#     --run <id> fetches that run's artifacts into dist/ first. A POSIX system
+#     --run <id> fetches that run's archives (the assets of the GitHub
+#     release v<ver>) into dist/ first. A POSIX system
 #     without its archive is built from the seed by install.sh; Windows has
 #     no such route, so a missing zip means no Windows installation.
 # then invalidates the CloudFront cache for them. Everything lies under
@@ -54,13 +55,16 @@ DIST_ID=E3INKQI1B221G9   # same CloudFront distribution as docs/deploy.sh
 
 command -v aws >/dev/null 2>&1 || { echo "publish-install: FAIL — aws CLI not found"; exit 1; }
 
-# The archives of a release run: each artifact is a directory holding one file.
+# The archives of a release run: the assets of the GitHub release v<version>
+# (the workflow keeps no artifacts -- they count against Actions storage).
 if [ -n "$RUN" ]; then
   command -v gh >/dev/null 2>&1 || { echo "publish-install: FAIL — gh not found (--run)"; exit 1; }
   FETCH="$(mktemp -d)"
   trap 'rm -rf "$FETCH"' EXIT
   echo "publish-install: fetching the archives of release run $RUN"
-  gh run download "$RUN" -D "$FETCH" || { echo "publish-install: FAIL — gh run download $RUN"; exit 1; }
+  [ "$(gh run view "$RUN" --json conclusion --jq .conclusion 2>/dev/null)" = success ] \
+    || { echo "publish-install: FAIL — release run $RUN did not succeed"; exit 1; }
+  gh release download "v$VERSION" -D "$FETCH" || { echo "publish-install: FAIL — gh release download v$VERSION"; exit 1; }
   mkdir -p dist
   find "$FETCH" -type f \( -name "scaly-$VERSION-*.tar.gz" -o -name "scaly-$VERSION-*.zip" \) -exec cp {} dist/ \;
   RUN_SHA="$(gh run view "$RUN" --json headSha --jq .headSha 2>/dev/null || true)"
@@ -161,6 +165,12 @@ if [ "$DRY" = 1 ]; then
   exit 0
 fi
 aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "${PATHS[@]}"
+
+# the GitHub release the run made is the release now
+if [ -n "$RUN" ]; then
+  gh release edit "v$VERSION" --prerelease=false --latest > /dev/null \
+    || echo "publish-install: NOTE — could not mark the GitHub release v$VERSION as the latest"
+fi
 
 echo "publish-install: OK"
 echo "  users install with:  curl -fsSL https://scaly.io/install.sh | sh"
