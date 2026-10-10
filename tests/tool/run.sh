@@ -1029,6 +1029,33 @@ package demo 0.1.0 \"$pub/work.git\"|" packages/client/0.1.0/client.scaly && rm 
   nextv rule-0.1.0 0.1.0 0.3.0 's/returns String$/returns Strin/'
   out=$(pv rule-0.1.0); rc=$?
   [ "$rc" = 1 ] && echo "$out" | grep -q 'demo 0.3.0 does not compile' && ok || bad "publish, a version that does not compile: rc=$rc '$(echo "$out" | tail -1 | cut -c1-120)'"
+  # a PUBLISHED version this compiler refuses -- it holds the same routine
+  # twice, which was no error when it was published -- is still what the next
+  # one is compared with: its findings are printed, its declarations read,
+  # and the routine that stood twice counts once (the second gets a name of
+  # its own in the next version: nothing gone, one added)
+  rm -rf "$pub/rule-0.1.0/packages/demo/0.3.0"
+  rg() { git -C "$pub/rule-0.1.0" -c user.name=t -c user.email=t@example.invalid "$@"; }
+  python3 - "$pub/rule-0.1.0/packages/demo/0.1.0/demo.scaly" <<'PY'
+import sys
+p = sys.argv[1]; t = open(p).read()
+at = t.index('    function test_greeting')
+open(p, 'w').write(t[:at] + '    function greeting(name: String) returns String\n        "Hi, `name`!"\n\n' + t[at:])
+PY
+  rg add -A && rg commit -q -m twice
+  printf '0.1.0 %s %s\n' "$(rg rev-parse HEAD)" "$(rg rev-parse HEAD:packages/demo/0.1.0)" > "$pub/rule-0.1.0/packages/demo/published"
+  rg add -A && rg commit -q -m record && rg push -q origin HEAD 2> /dev/null
+  nextv rule-0.1.0 0.1.0 0.1.1 's/x/x/'
+  python3 - "$pub/rule-0.1.0/packages/demo/0.1.1/demo.scaly" <<'PY'
+import sys
+p = sys.argv[1]; t = open(p).read()
+k = 'function greeting(name'
+at = t.index(k, t.index(k) + 1)
+open(p, 'w').write(t[:at] + 'function greeting_again(name' + t[at + len(k):])
+PY
+  out=$(pv rule-0.1.0); rc=$?
+  [ "$rc" = 0 ] && echo "$out" | grep -q 'function greeting of demo is written twice' && echo "$out" | grep -q 'demo 0.1.1 is new after 0.1.0: 0 declaration(s) gone or changed, 1 added' && ok \
+    || bad "publish, a published version this compiler refuses: rc=$rc '$(echo "$out" | tail -3 | tr '\n' '|' | cut -c1-300)'"
 fi
 
 # clean: the cache is emptied, what was fetched stays, and the next build

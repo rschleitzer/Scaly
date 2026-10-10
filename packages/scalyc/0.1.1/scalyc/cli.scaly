@@ -82,6 +82,7 @@ define Options
     emit_interface: bool    ; --emit-interface: write the package's interface (compiler/Interface.scaly)
     interface_dir: String   ; a package compiled into the tool's cache: write its interface here on the way (tool.interface_wanted#)
     emit_surface: bool      ; --emit-surface: ... its declarations alone, for `scaly publish` (with emit_interface)
+    surface_lenient: bool   ; ... of a version PUBLISHED before a check of this compiler existed: its findings are said and the declarations written all the same
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -133,6 +134,7 @@ define Options
         purity_check := false
         emit_interface := false
         emit_surface := false
+        surface_lenient := false
         interface_dir := String()
         debug := false
         run_mode := false
@@ -1113,7 +1115,8 @@ define cli
         if planner.has_diagnostics()
         {
             cli.print_diagnostics(&planner, opts.input_file, source)
-            return 4
+            if opts.surface_lenient = false
+                return 4
         }
 
         ; R1: a function writes nothing its parameters reach, a procedure only
@@ -1135,7 +1138,8 @@ define cli
                 if purity_gate.n_violations > 0
                 {
                     cli.print_located("", &purity_gate.report_files, &purity_gate.report_offsets, &purity_gate.report_texts)
-                    return 4
+                    if opts.surface_lenient = false
+                        return 4
                 }
                 purity_gate.mark_stub_purity(plan)
                 planner.phase_mark("E1-purity-gate")

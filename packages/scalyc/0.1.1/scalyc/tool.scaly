@@ -2528,8 +2528,10 @@ define tool
         }
     }
 
-    ; How many declarations `a` has that `b` has not (each as often as it
-    ; stands there); the first three go into `examples`.
+    ; How many declarations `a` has that `b` has not; the first three go into
+    ; `examples`. A declaration standing twice in `a` is ONE: the same routine
+    ; written twice was one symbol and one thing to call (and is refused
+    ; since 2026-10-10), so taking the second away takes nothing from a user.
     procedure surface_missing(a: ref[Array[String]], b: ref[Array[String]], mutable examples: ref[Array[String]]) returns int
     {
         var oa Array[size_t]()
@@ -2542,7 +2544,9 @@ define tool
         while i < oa.length
         {
             let x a.at(oa[i])
-            if j < ob.length and x.equals(b.at(ob[j]))
+            if i > 0 and x.equals(a.at(oa[i - 1]))
+                i := i + 1
+            else if j < ob.length and x.equals(b.at(ob[j]))
             {
                 i := i + 1
                 j := j + 1
@@ -2562,8 +2566,10 @@ define tool
 
     ; The surface of `tree`packages/<name>/<version> (`tree` empty: this
     ; repository's working tree), written under `dir` and read into `lines`.
-    ; False when the version does not compile.
-    procedure surface_of(tree: String, name: String, version: String, mutable dir: String, mutable lines: ref[Array[String]]) returns bool mutable modeler_error_count
+    ; False when the version does not compile. `lenient` for a version that IS
+    ; published: a check this compiler has learned since may refuse it, and
+    ; what it declared is read all the same -- the findings are printed.
+    procedure surface_of(tree: String, name: String, version: String, lenient: bool, mutable dir: String, mutable lines: ref[Array[String]]) returns bool mutable modeler_error_count
     {
         var root "`tree`packages/`name`/`version`/`name`.scaly"
         if File.exists(root) = false
@@ -2579,6 +2585,7 @@ define tool
         o.output_file := String(dir)
         o.emit_interface := true
         o.emit_surface := true
+        o.surface_lenient := lenient
         o.selected_versions := Modeler.select_versions(root, false)
         if name.equals("scaly")
             o.no_prelude := true
@@ -2638,7 +2645,7 @@ define tool
             }
             before := "`history`/"
         }
-        let read_before tool.surface_of(before, name, prev, old_dir, &old_lines)
+        let read_before tool.surface_of(before, name, prev, true, old_dir, &old_lines)
         ; ... and what it declared of other packages
         var old_names Array[String]()
         var old_versions Array[String]()
@@ -2650,7 +2657,7 @@ define tool
             tool.quiet("git worktree remove --force \"`history`\"", log)
             unlink(log.to_c_string())
         }
-        if read_before = false or tool.surface_of(String(), name, next, new_dir, &new_lines) = false
+        if read_before = false or tool.surface_of(String(), name, next, false, new_dir, &new_lines) = false
             return false
         var gone_examples Array[String]()
         var added_examples Array[String]()
