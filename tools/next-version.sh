@@ -33,6 +33,15 @@ echo "$new" | grep -q '^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' || { echo "next-
 git mv "packages/$pkg/$old" "packages/$pkg/$new"
 n=0
 for f in $(git grep -lI -F "packages/$pkg/$old" -- . ':!seed' ':!packages/*/published' || true); do
+  # a file of a PUBLISHED version of another package is not this script's to
+  # touch -- a comment there that names the old directory stays as it was
+  # published (scalygpu's did not, the first time, and `scaly publish
+  # --check` said so)
+  case "$f" in
+    packages/*/*/*)
+      q="${f#packages/}"; v="${q#*/}"; q="${q%%/*}"; v="${v%%/*}"
+      if [ -f "packages/$q/published" ] && grep -q "^$v " "packages/$q/published"; then continue; fi ;;
+  esac
   before="$(cksum < "$f")"
   perl -pi -e "s{packages/\\Q$pkg\\E/\\Q$old\\E(?![0-9.])}{packages/$pkg/$new}g" "$f"
   [ "$(cksum < "$f")" = "$before" ] || n=$((n+1))

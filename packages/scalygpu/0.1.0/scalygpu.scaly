@@ -11,7 +11,7 @@
 ; so they are compiled ONLY into GPU programs - libscaly.a stays free
 ; of them (an archive member referencing scaly_mgpu_* would break
 ; every non-macOS link). The Obj-C shim stays out of the archive too:
-; tools/mgpu.sh compiles packages/scaly/0.1.1/scaly/tensor/mgpu.m and
+; tools/mgpu.sh compiles packages/scaly/0.1.0/scaly/tensor/mgpu.m and
 ; programs link the object plus -framework Metal -framework
 ; MetalPerformanceShaders -framework Foundation explicitly.
 
