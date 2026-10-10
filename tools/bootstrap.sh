@@ -56,13 +56,13 @@ LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME -lm"
 link_stage() {
   local tool; tool=$(tools/scaly-of.sh "$2")
   if [ "$SCALY_COFF" = 1 ]; then
-    "$1" -c -o "$2_main.o" packages/scalyc/0.1.0/main.scaly
+    "$1" -c -o "$2_main.o" packages/scalyc/0.1.1/main.scaly
     tools/win-link.sh --llvm --runtime "$2$SCALY_EXE" "$2_main.o" "$3"
-    "$1" -c -o "${tool}_main.o" packages/scalyc/0.1.0/scaly_main.scaly
+    "$1" -c -o "${tool}_main.o" packages/scalyc/0.1.1/scaly_main.scaly
     tools/win-link.sh --llvm --runtime "$tool$SCALY_EXE" "${tool}_main.o" "$3"
   else
-    "$1" -o "$2" packages/scalyc/0.1.0/main.scaly "$3" $LINK
-    "$1" -o "$tool" packages/scalyc/0.1.0/scaly_main.scaly "$3" $LINK
+    "$1" -o "$2" packages/scalyc/0.1.1/main.scaly "$3" $LINK
+    "$1" -o "$tool" packages/scalyc/0.1.1/scaly_main.scaly "$3" $LINK
   fi
 }
 
@@ -106,7 +106,7 @@ rm -f "/tmp/scalyc_stage1${SCALY_EXE:-}" "/tmp/scaly_stage1${SCALY_EXE:-}" /tmp/
 # the compiler package; the package must be compiled to an archive and linked
 # (the same two-step as stage1 -> stage2).
 ( ulimit -s 65520
-  "$ROOT" -c -o /tmp/sc0.o packages/scalyc/0.1.0/scalyc.scaly || exit 1
+  "$ROOT" -c -o /tmp/sc0.o packages/scalyc/0.1.1/scalyc.scaly || exit 1
   rm -f /tmp/libscalyc0.a; ar rcs /tmp/libscalyc0.a /tmp/sc0.o
   link_stage "$ROOT" /tmp/scalyc_stage1 /tmp/libscalyc0.a
 ) 2>&1 | grep -v 'ld: warning' || true
@@ -145,7 +145,7 @@ if [ "$SCALY_COFF" = 1 ]; then
 else
 echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive) and the scalyc package, side by side"
 # The package object does not need the archive, only stage2's link does.
-( ulimit -s 65520; /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.0/scalyc.scaly ) & sc1_pid=$!
+( ulimit -s 65520; /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.1/scalyc.scaly ) & sc1_pid=$!
 ( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.1/scaly.scaly )
 tools/fcontext.sh /tmp/fcontext.o
 tools/eio.sh /tmp/eio.o
@@ -159,7 +159,7 @@ echo "bootstrap: stage1 -> stage2"
 # A failed link must not leave the previous stage2 behind to be tested instead.
 rm -f /tmp/scalyc_stage2 /tmp/scaly_stage2
 ( ulimit -s 65520
-  [ "$SCALY_COFF" = 1 ] && /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.0/scalyc.scaly
+  [ "$SCALY_COFF" = 1 ] && /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.1/scalyc.scaly
   rm -f /tmp/libscalyc1.a; ar rcs /tmp/libscalyc1.a /tmp/sc1.o
   link_stage /tmp/scalyc_stage1 /tmp/scalyc_stage2 /tmp/libscalyc1.a
 ) 2>&1 | grep -v 'ld: warning' || true

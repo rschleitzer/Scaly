@@ -1,6 +1,6 @@
 #!/bin/bash
 # tests/write-report/run.sh — the gate for `scalyc --write-report`
-# (packages/scalyc/0.1.0/scalyc/compiler/WriteCensus.scaly).
+# (packages/scalyc/0.1.1/scalyc/compiler/WriteCensus.scaly).
 #
 # The census is an INSTRUMENT, and an instrument that cannot fail is worse than
 # none: this gate pins one site per write class, the transitive verdict through

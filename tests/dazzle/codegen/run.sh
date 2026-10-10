@@ -78,8 +78,8 @@ run_case codegen/test-choose.dsl tests/choose.sgm \
 # output for that same reason: it is read by the editor alone, and a broken
 # wordPattern degrades double-click and rename quietly rather than loudly.
 run_case codegen/scaly.dsl scaly.sgm \
-  packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly \
-  packages/scalyc/0.1.0/scalyc/compiler/parser.scaly \
+  packages/scalyc/0.1.1/scalyc/compiler/Syntax.scaly \
+  packages/scalyc/0.1.1/scalyc/compiler/parser.scaly \
   packages/scalyls/0.1.0/scalyls/grammar.scaly \
   editors/vscode/syntaxes/scaly.tmLanguage.json \
   editors/vscode/language-configuration.json || fail=1

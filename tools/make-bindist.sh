@@ -116,7 +116,7 @@ if [ "$PROFILE" != none ]; then
     root="${pair%%:*}"; prog="${pair##*:}"
     # shellcheck disable=SC2086
     SCALY_CC="$driver" SCALY_CACHE="$PGO/cache" SCALY_HOME= \
-      "$STAGE/libexec/scaly" build "packages/scalyc/0.1.0/$root.scaly" --pgo "$PROFILE" --export \
+      "$STAGE/libexec/scaly" build "packages/scalyc/0.1.1/$root.scaly" --pgo "$PROFILE" --export \
       "${archives[@]}" -L"$LLVM_LIBDIR" $static_libs "${system_libs[@]}" -o "$PGO/$prog" > "$PGO/$prog.log" 2>&1 \
       || { tail -20 "$PGO/$prog.log"; echo "make-bindist: FAIL — the profile build of $prog"; exit 1; }
     # a function whose control flow no longer matches the profile is built

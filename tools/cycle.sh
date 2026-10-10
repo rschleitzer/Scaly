@@ -16,10 +16,10 @@ LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME"
 # line that always stood here.
 link_stage() {
   if [ "$SCALY_COFF" = 1 ]; then
-    "$1" -c -o "$2_main.o" packages/scalyc/0.1.0/main.scaly
+    "$1" -c -o "$2_main.o" packages/scalyc/0.1.1/main.scaly
     tools/win-link.sh --llvm --runtime "$2$SCALY_EXE" "$2_main.o" "$3"
   else
-    "$1" -o "$2" packages/scalyc/0.1.0/main.scaly "$3" $LINK
+    "$1" -o "$2" packages/scalyc/0.1.1/main.scaly "$3" $LINK
   fi
 }
 
@@ -64,11 +64,11 @@ rebuild_runtime() {
 # The self-hosted ROOT needs the archive two-step to build stage1 (it emits
 # only main + external compiler-package refs).
 rebuild_runtime "$ROOT"
-bash -c "ulimit -s 65520; '$ROOT' -c -o /tmp/sc0n.o packages/scalyc/0.1.0/scalyc.scaly"
+bash -c "ulimit -s 65520; '$ROOT' -c -o /tmp/sc0n.o packages/scalyc/0.1.1/scalyc.scaly"
 rm -f /tmp/libscalyc0n.a; ar rcs /tmp/libscalyc0n.a /tmp/sc0n.o
 ( ulimit -s 65520; link_stage "$ROOT" /tmp/scalyc_stage1_new /tmp/libscalyc0n.a ) 2>&1 | grep -v "ld: warning" || true
 rebuild_runtime /tmp/scalyc_stage1_new
-bash -c 'ulimit -s 65520; /tmp/scalyc_stage1_new -c -o /tmp/sc1n.o packages/scalyc/0.1.0/scalyc.scaly'
+bash -c 'ulimit -s 65520; /tmp/scalyc_stage1_new -c -o /tmp/sc1n.o packages/scalyc/0.1.1/scalyc.scaly'
 rm -f /tmp/libscalyc1n.a; ar rcs /tmp/libscalyc1n.a /tmp/sc1n.o
 ( ulimit -s 65520; link_stage /tmp/scalyc_stage1_new /tmp/scalyc_stage2_new /tmp/libscalyc1n.a ) 2>&1 | grep -v "ld: warning" || true
 /tmp/scalyc_stage1_new -S --no-prelude -o /tmp/sl_s1.ll packages/scaly/0.1.1/scaly.scaly 2>/dev/null

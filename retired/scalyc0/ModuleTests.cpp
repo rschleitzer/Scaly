@@ -97,7 +97,7 @@ static llvm::Expected<int64_t> runPackageTestFunction(
 
 // Paths to package entry points (relative to project root)
 static const char* ScalyPackagePath = "packages/scaly/0.1.1/scaly.scaly";
-static const char* ScalycPackagePath = "packages/scalyc/0.1.0/scalyc.scaly";
+static const char* ScalycPackagePath = "packages/scalyc/0.1.1/scalyc.scaly";
 
 // ============================================================================
 // Optimized Test Runner - compiles package once, runs multiple tests

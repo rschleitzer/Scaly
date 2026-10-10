@@ -62,8 +62,8 @@ def only_pages(params):
 # A banner is not the test: codelens.scaly QUOTES one, and CharNames.scaly writes
 # it in lower case.
 GENERATED_FILES = {
-    'packages/scalyc/0.1.0/scalyc/compiler/parser.scaly',    # codegen/parser-scaly.scm
-    'packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly',    # codegen/syntax-scaly.scm
+    'packages/scalyc/0.1.1/scalyc/compiler/parser.scaly',    # codegen/parser-scaly.scm
+    'packages/scalyc/0.1.1/scalyc/compiler/Syntax.scaly',    # codegen/syntax-scaly.scm
     'packages/dazzle/0.1.0/dazzle/CharNames.scaly',          # tools/chartablegen.py
     'packages/dazzle/0.1.0/dazzle/Sdata.scaly',              # tools/chartablegen.py
 }

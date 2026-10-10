@@ -104,7 +104,7 @@ if [ "$MODE" = selfhosted ]; then
             || { echo "FAIL  llc $1"; return 1; }
     }
     pids=()
-    lsp_root scalyc       packages/scalyc/0.1.0/scalyc.scaly & pids+=($!)
+    lsp_root scalyc       packages/scalyc/0.1.1/scalyc.scaly & pids+=($!)
     # On Windows the runtime comes from the archive (tools/win-archive.sh): the
     # stdlib object and the five shims, as every other suite there links it.
     [ "$SCALY_COFF" = 1 ] || { lsp_root scaly packages/scaly/0.1.1/scaly.scaly & pids+=($!); }
@@ -3086,12 +3086,12 @@ import sys, glob, os, subprocess
 
 BIN = "/tmp/scalyls_format_test"
 ALLOWED = {
-    "packages/scalyc/0.1.0/scalyc/compiler/parser.scaly",
-    "packages/scalyc/0.1.0/scalyc/compiler/Planner.scaly",
+    "packages/scalyc/0.1.1/scalyc/compiler/parser.scaly",
+    "packages/scalyc/0.1.1/scalyc/compiler/Planner.scaly",
     "packages/scaly/0.1.1/scaly/containers/hashing.scaly",
     "packages/scaly/0.1.1/scaly/containers/StringIterator.scaly",
     "packages/scaly/0.1.1/scaly/fiber.scaly",
-    "packages/scalyc/0.1.0/scalyc/compiler/Plan.scaly",
+    "packages/scalyc/0.1.1/scalyc/compiler/Plan.scaly",
 }
 
 failures = 0
@@ -5514,8 +5514,8 @@ def rows(ls):   # (1-based line, title, command id, single argument or None)
 # The table in codelens.scaly mirrors ./mkp; these are three of mkp's four
 # output classes, and the fourth (docs/*.xml) is not a .scaly file.
 gen_cases = [
-    ("packages/scalyc/0.1.0/scalyc/compiler/parser.scaly", "codegen/parser-scaly.scm"),
-    ("packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly", "codegen/syntax-scaly.scm"),
+    ("packages/scalyc/0.1.1/scalyc/compiler/parser.scaly", "codegen/parser-scaly.scm"),
+    ("packages/scalyc/0.1.1/scalyc/compiler/Syntax.scaly", "codegen/syntax-scaly.scm"),
     ("packages/scalyls/0.1.0/scalyls/grammar.scaly",       "codegen/highlight-scaly.scm"),
     ("tests/selfhosted/controlflow__break-in-for.scaly",   "tests/controlflow.sgm"),
 ]
@@ -5552,8 +5552,8 @@ check(not [r for r in rows(lenses("packages/scaly/0.1.1/scaly.scaly")) if r[1].s
 # system must agree. This is the assertion that cannot rot.
 sweep = ["packages/scalyls/0.1.0/scalyls.scaly",
          "packages/scaly/0.1.1/scaly.scaly",
-         "packages/scalyc/0.1.0/scalyc/compiler.scaly",
-         "packages/scalyc/0.1.0/scalyc/compiler/parser.scaly"]
+         "packages/scalyc/0.1.1/scalyc/compiler.scaly",
+         "packages/scalyc/0.1.1/scalyc/compiler/parser.scaly"]
 opens = 0
 missing = 0
 wrong = []

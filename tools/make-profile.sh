@@ -43,12 +43,12 @@ unset SCALY_HOME
 
 # --export: the instrumented compiler is built as the distributed one will be,
 # so the counts fit the functions of that build.
-"$SCALY" build packages/scalyc/0.1.0/main.scaly --pgo-train --export \
+"$SCALY" build packages/scalyc/0.1.1/main.scaly --pgo-train --export \
   -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$W/scalyc_train" > "$W/build.log" 2>&1 \
   || { tail -10 "$W/build.log"; echo "make-profile: FAIL — the instrumented build"; exit 1; }
 
 export LLVM_PROFILE_FILE="$W/train-%p.profraw"
-"$W/scalyc_train" -S --no-tests -o "$W/scalyc.ll" packages/scalyc/0.1.0/scalyc.scaly > "$W/train1.log" 2>&1 \
+"$W/scalyc_train" -S --no-tests -o "$W/scalyc.ll" packages/scalyc/0.1.1/scalyc.scaly > "$W/train1.log" 2>&1 \
   || { tail -5 "$W/train1.log"; echo "make-profile: FAIL — training run 1 (the compiler's package)"; exit 1; }
 "$W/scalyc_train" -S --no-prelude --no-tests -o "$W/scaly.ll" packages/scaly/0.1.1/scaly.scaly > "$W/train2.log" 2>&1 \
   || { tail -5 "$W/train2.log"; echo "make-profile: FAIL — training run 2 (the stdlib)"; exit 1; }
