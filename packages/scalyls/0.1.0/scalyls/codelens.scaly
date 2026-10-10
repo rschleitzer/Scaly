@@ -304,18 +304,15 @@ define codelens
     procedure generated_banner(text: String, path: String) returns String mutable lc_col, lc_line, lc_off
     {
         ; The three compiler-side DSSSL outputs (mkp's `gen codegen/scaly.dsl`).
-        let parser_out "/packages/scalyc/0.1.0/scalyc/compiler/parser.scaly"
-        let root1 codelens.strip_suffix(path, parser_out)
+        let root1 codelens.strip_versioned(path, "scalyc", "/scalyc/compiler/parser.scaly")
         if root1.get_length() > 0
             return codelens.banner_lens(text, root1, "codegen/parser-scaly.scm")
 
-        let syntax_out "/packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly"
-        let root2 codelens.strip_suffix(path, syntax_out)
+        let root2 codelens.strip_versioned(path, "scalyc", "/scalyc/compiler/Syntax.scaly")
         if root2.get_length() > 0
             return codelens.banner_lens(text, root2, "codegen/syntax-scaly.scm")
 
-        let grammar_out "/packages/scalyls/0.1.0/scalyls/grammar.scaly"
-        let root3 codelens.strip_suffix(path, grammar_out)
+        let root3 codelens.strip_versioned(path, "scalyls", "/scalyls/grammar.scaly")
         if root3.get_length() > 0
             return codelens.banner_lens(text, root3, "codegen/highlight-scaly.scm")
 
@@ -742,6 +739,20 @@ define codelens
     ; <path minus suffix>, or "" when path does not end in suffix (or would be
     ; left empty — a suffix that IS the whole path answers nothing rather than
     ; a bare relative name).
+    ; `<root>/packages/<pkg>/<version><rest>` -> `<root>`, whatever the
+    ; version directory is at the time; "" for any other path
+    function strip_versioned(path: String, pkg: String, rest: String) returns String
+    {
+        let versioned codelens.strip_suffix(path, rest)
+        if versioned.get_length() = 0
+            return ""
+        let slash versioned.last_index_of(47)
+        if slash < 0
+            return ""
+        let holder "/packages/`pkg`"
+        codelens.strip_suffix(versioned.substring(0, slash as size_t), holder)
+    }
+
     function strip_suffix(path: String, suffix: String) returns String
     {
         if path.ends_with(suffix) = false

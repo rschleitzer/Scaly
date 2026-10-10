@@ -8,6 +8,7 @@ use scaly.memory.root_pages.getenv
 ; feeds the dotted-call extern-decl gate (typed declarations for
 ; cross-package File./Path. calls instead of varargs fallbacks).
 use scaly.os.File
+use scaly.os.Directory
 use scaly.os.Path
 use scaly.os.Console
 
@@ -3205,6 +3206,66 @@ define Modeler
         File.exists(root)
     }
 
+    ; version_at#: the version of `pkg_name` under `base`packages/ that a
+    ; declaration of `asked` takes -- `asked` where it has a directory, else
+    ; the highest one there of its line that is not lower; `asked` again
+    ; where there is none (the caller then finds nothing, and says so).
+    procedure version_at(base: String, pkg_name: String, asked: String) returns String
+    {
+        if has_package_root("`base`packages/`pkg_name`/`asked`", pkg_name)
+            return String(asked)
+        var best String(asked)
+        var found false
+        var dir "`base`packages/`pkg_name`"
+        let entries Directory.list(dir)
+        var i: size_t 0
+        while i < entries.length
+        {
+            let e entries.at(i)
+            i := i + 1
+            if e.is_directory = false or e.name.get_length() = 0 or e.name.get(0) < 48 or e.name.get(0) > 57
+                continue
+            if version_compatible(e.name, asked) = false or version_newer(asked, e.name)
+                continue
+            if has_package_root("`dir`/`e.name`", pkg_name) = false
+                continue
+            if found = false or version_newer(e.name, best)
+            {
+                best := String(e.name)
+                found := true
+            }
+        }
+        best
+    }
+
+    ; stdlib_directory#: the standard library of this installation, the
+    ; highest version there -- for what is loaded without a declaration (the
+    ; prelude, the library itself) and for the files the tool takes from it
+    procedure stdlib_directory() returns String
+    {
+        let home scaly_home_base()
+        var best String("0.1.0")
+        var found false
+        var dir "`home`packages/scaly"
+        let entries Directory.list(dir)
+        var i: size_t 0
+        while i < entries.length
+        {
+            let e entries.at(i)
+            i := i + 1
+            if e.is_directory = false or e.name.get_length() = 0 or e.name.get(0) < 48 or e.name.get(0) > 57
+                continue
+            if has_package_root("`dir`/`e.name`", String("scaly")) = false
+                continue
+            if found = false or version_newer(e.name, best)
+            {
+                best := String(e.name)
+                found := true
+            }
+        }
+        "`home`packages/scaly/`best`"
+    }
+
     ; package_directory#: where a declared package lives. The installation's
     ; packages come first, <SCALY_HOME>/packages/<name>/<version>; a package
     ; the installation does not have is the PROJECT's own,
@@ -3219,13 +3280,23 @@ define Modeler
     ; has a third place, after the two: what the tool fetched from that
     ; source, fetched_directory#. A local directory wins over a remote one --
     ; vendoring is copying a directory, patching a dependency is editing it.
+    ;
+    ; ★A declared version is a MINIMUM, also against what is THERE: where the
+    ; version itself has no directory in a base, the highest version of its
+    ; line there that is not lower stands in (version_at#). A package's
+    ; published versions leave its tree -- the directory is renamed for the
+    ; next one --, and `package scaly 0.1.0`, which every package says, must
+    ; go on finding the library an installation has.
     procedure package_directory(pkg_name: String, version_str: String, source: String) returns String
     {
         let home scaly_home_base()
-        let installed "`home`packages/`pkg_name`/`version_str`"
+        let installed_version version_at(home, pkg_name, version_str)
+        let installed "`home`packages/`pkg_name`/`installed_version`"
         if home.get_length() > 0 and has_package_root(installed, pkg_name)
             return installed
-        let own "packages/`pkg_name`/`version_str`"
+        var here ""
+        let own_version version_at(here, pkg_name, version_str)
+        let own "packages/`pkg_name`/`own_version`"
         if home.get_length() > 0 and has_package_root(own, pkg_name)
             return own
         if source.get_length() > 0
@@ -4285,7 +4356,7 @@ define Modeler
         var main_module: Module initial_module
         if enable_prelude
         {
-            let prelude_path "`scaly_home_base()`packages/scaly/0.1.0/scaly"
+            let prelude_path "`stdlib_directory()`/scaly"
             let prelude_module build_referenced_module(prelude_path, "prelude", false)
 
             if prelude_module.members.length > 0
@@ -4346,7 +4417,7 @@ define Modeler
             }
             if has_scaly = false
             {
-                let std_path "`scaly_home_base()`packages/scaly/0.1.0"
+                let std_path stdlib_directory()
                 let std_module build_referenced_module(interface_or_source(std_path, String("scaly"), String()), "scaly", false)
                 if std_module.members.length > 0
                     packages.add std_module

@@ -547,7 +547,7 @@ define cli
     ; packages at hand do not carry the file; the link then goes without.
     procedure utf8_resource() returns String
     {
-        let path "`Modeler.scaly_home_base()`packages/scaly/0.1.0/scaly/win32/utf8.res"
+        let path "`Modeler.stdlib_directory()`/scaly/win32/utf8.res"
         if File.exists(path)
             return path
         String()
@@ -1416,7 +1416,7 @@ define cli
             if cli.contains_string(&pkg_names, String("scaly")) = false
             {
                 pkg_names.add(String("scaly"))
-                pkg_roots.add("`Modeler.scaly_home_base()`packages/scaly/0.1.0/scaly.scaly")
+                pkg_roots.add("`Modeler.stdlib_directory()`/scaly.scaly")
             }
             if tool.package_objects(&pkg_names, &pkg_roots, opts.input_file, opts.target_triple, opts.target_cpu, opts.release, &package_objects, &package_bitcode, &library_link_flags) = false
                 return 9
