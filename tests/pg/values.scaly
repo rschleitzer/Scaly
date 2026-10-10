@@ -7,7 +7,9 @@
 ;             through a binary column, between text columns of the same row
 ;   null      a NULL parameter reads as NULL, an empty text does not
 ;   rollback  BEGIN, an insert, ROLLBACK through execute: the row is gone
-; Expected: script bytes null rollback
+;   reason    PgConn.open on a port nothing listens on answers null and says
+;             that the server was not reached
+; Expected: script bytes null rollback reason
 
 package scaly 0.1.0
 package tls 0.1.0
@@ -106,7 +108,13 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     c.param_int(4)
     if c.run() = false or c.next_row()
         return 18
-    Console.print "rollback"
+    Console.print "rollback "
     release(c)
+
+    var why Array[u8]()
+    var nowhere String("127.0.0.1")
+    if PgConn.open(nowhere, 1, "u", "p", "d", &why) <> null or why.as_slice().equals("the server cannot be reached") = false
+        return 19
+    Console.print "reason"
     0
 }

@@ -75,9 +75,18 @@ define PgConn
     var described: i64
 )
 {
-    ; Connect and authenticate; not is_open() when the server cannot be
-    ; reached or refuses. The connection lives on a page of its own.
+    ; Connect and authenticate; null when the server cannot be reached or
+    ; refuses. The connection lives on a page of its own.
     procedure connect(mutable host_name: String, port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8]) returns ref[PgConn]?
+    {
+        var reason Array[u8]()
+        PgConn.open(host_name, port, user, password, database, &reason)
+    }
+
+    ; connect, and why not: with a null answer `reason` has the server's
+    ; message (a wrong password, a database that is not there) or says
+    ; that the server was not reached.
+    procedure open(mutable host_name: String, port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8], mutable reason: ref[Array[u8]]) returns ref[PgConn]?
     {
         let page Page.allocate_page()
         var tcp TcpStream.connect(host_name, port)
@@ -85,12 +94,21 @@ define PgConn
         {
             page.deallocate_extensions()
             Page.release_page(page)
+            let unreached: Slice[u8] "the server cannot be reached"
+            reason.add(unreached)
             return null
         }
         tcp.set_nodelay(true)
         let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page(), allocate_slice[u32]^page(page, PG_ROW_INDEX), allocate_slice[i32]^page(page, PG_ROW_INDEX), 0, 0, Array[u32]^page(), Array[u32]^page(), Array[u32]^page(), 0)
         if c.startup(user, password, database) = false
         {
+            if c.error_message().length > 0
+                reason.add(c.error_message())
+            else
+            {
+                let ended: Slice[u8] "the server ended the connection"
+                reason.add(ended)
+            }
             c.close()
             return null
         }
