@@ -60,6 +60,9 @@
 #              run, each with its own types and globals, on all three routes;
 #              the program's own line whichever it declares first; refused: a
 #              value across the lines, one file declaring both, C files twice
+#   pkgglobals a package's global read from outside: the live cell on all three
+#              routes, a generic's own package's constant in either order of
+#              the program's declarations, a bare name of two packages refused
 #   source     `package name version "source"`: a package neither the
 #              installation nor the project has is taken from where a fetch
 #              lays it, $SCALY_PACKAGES/<host>/<path>/packages/<name>/<version>, on
@@ -505,9 +508,13 @@ out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run one.scaly 2>&1); rc=$?
 printf 'package alpha 0.1.0\n\nlet a Box(1)\nprint("`a.v`")\n' > "$tb/named.scaly"
 out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run named.scaly 2>&1); rc=$?
 [ "$rc" != 0 ] && echo "$out" | grep -q 'Box' && ok || bad "twobox: a construction of a type not used: rc=$rc '$(echo "$out" | head -1)'"
+# ... and the two are two types to a debugger: the debug info names each with
+# its package (lldb takes two types of one name for one)
+( cd "$tb" && SCALY_HOME="$here" "${scaly_abs%/*}/$(basename "$BIN")" -S -g -o "$TMP/tb_dbg.ll" main.scaly ) > /dev/null 2>&1
+grep -q 'name: "alpha.Box"' "$TMP/tb_dbg.ll" 2>/dev/null && grep -q 'name: "beta.Box"' "$TMP/tb_dbg.ll" && ok || bad "twobox: the debug info does not name the two records apart"
 printf 'package alpha 0.1.0\npackage beta 0.1.0\n\nlet b make_beta(1)\nprint("`alpha_of(b)`")\n' > "$tb/cross.scaly"
 out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run cross.scaly 2>&1); rc=$?
-[ "$rc" != 0 ] && echo "$out" | grep -q 'function not found: alpha_of' && ok || bad "twobox: one package's record handed to the other: rc=$rc '$(echo "$out" | head -1)'"
+[ "$rc" != 0 ] && echo "$out" | grep -q 'alpha_of takes the Box of alpha v0_1, and argument 1 is the Box of beta v0_1' && ok || bad "twobox: one package's record handed to the other: rc=$rc '$(echo "$out" | head -1)'"
 
 # diamond: two LINES of one package in one program. `a` declares jdoc 0.1,
 # `b` declares jdoc 0.2 (another record of the name, another answer, a global
@@ -548,13 +555,46 @@ for order in 'package b 0.1.0\npackage jdoc 0.1.0' 'package jdoc 0.1.0\npackage 
 done
 printf 'package a 0.1.0\npackage b 0.1.0\n\nlet y b_value(1)\nprint("`a_get(y)`")\n' > "$dm/cross.scaly"
 out=$(cd "$dm" && SCALY_HOME="$here" "$scaly_abs" run cross.scaly 2>&1); rc=$?
-[ "$rc" != 0 ] && echo "$out" | grep -q 'function not found: a_get' && ok || bad "diamond: one line's value handed to the other: rc=$rc '$(echo "$out" | head -1)'"
+[ "$rc" != 0 ] && echo "$out" | grep -q 'a_get takes the Value of jdoc v0_1, and argument 1 is the Value of jdoc v0_2' && ok || bad "diamond: one line's value handed to the other: rc=$rc '$(echo "$out" | head -1)'"
 printf 'package jdoc 0.1.0\npackage jdoc 0.2.0\n\nprint("x")\n' > "$dm/both.scaly"
 out=$(cd "$dm" && SCALY_HOME="$here" "$scaly_abs" run both.scaly 2>&1); rc=$?
 [ "$rc" != 0 ] && echo "$out" | grep -q 'package jdoc is declared in two lines here, 0.1.0 and 0.2.0' && ok || bad "diamond: one file declaring two lines: rc=$rc '$(echo "$out" | head -1)'"
 for v in 0.1.0 0.2.0; do printf 'int jdoc_c(void) { return 1; }\n' > "$dm/packages/jdoc/$v/jdoc/extra.c"; done
 out=$(cd "$dm" && SCALY_HOME="$here" "$scaly_abs" run main.scaly 2>&1); rc=$?
 [ "$rc" != 0 ] && echo "$out" | grep -q 'package jdoc is required in two lines .* and brings C or assembly files' && ok || bad "diamond: two lines of a package with C files: rc=$rc '$(echo "$out" | head -1)'"
+
+# pkgglobals: a package's constant and mutable global, read from outside it.
+# A program reads the package's LIVE cell (it had a second cell of its own, or
+# crashed under the JIT, until 2026-10-09); a generic routine of one package,
+# instantiated by the program, reads ITS package's constant whatever another
+# package calls the same (it read the other's by the order of the program's
+# `package` lines: 900 for 7); and a bare name two packages declare is refused
+# where neither is the writer's own.
+pg="$TMP/pkgglobals"
+for p in alpha beta; do
+  mkdir -p "$pg/packages/$p/0.1.0/$p"
+  printf 'package scaly 0.1.0\n\ndefine %s\n{\n    module vals\n}\n' "$p" > "$pg/packages/$p/0.1.0/$p.scaly"
+done
+printf 'define LIMIT: int 7\nmutable calls: int 1\n\nprocedure alpha_calls() returns int mutable calls\n{\n    calls := calls + 1\n    calls\n}\n\nfunction scaled[T](v: T) returns int\n    LIMIT\n' > "$pg/packages/alpha/0.1.0/alpha/vals.scaly"
+printf 'define LIMIT: int 900\nmutable calls: int 50\n\nfunction widened[T](v: T) returns int\n    LIMIT\n' > "$pg/packages/beta/0.1.0/beta/vals.scaly"
+printf 'package alpha 0.1.0\n\nlet first alpha_calls()\nprint("`LIMIT` `first` `calls`")\n' > "$pg/live.scaly"
+for route in "run live.scaly" "build live.scaly -o $TMP/pg_a$SCALY_EXE" "build live.scaly --release -o $TMP/pg_b$SCALY_EXE"; do
+  # shellcheck disable=SC2086
+  out=$(cd "$pg" && SCALY_HOME="$here" "$scaly_abs" $route 2>&1); rc=$?
+  case "$route" in
+    *pg_a*) [ "$rc" = 0 ] && out=$("$TMP/pg_a$SCALY_EXE") ;;
+    *pg_b*) [ "$rc" = 0 ] && out=$("$TMP/pg_b$SCALY_EXE") ;;
+  esac
+  [ "$out" = "7 2 2" ] && ok || bad "pkgglobals, the live cell (${route%% *} ${route##*live.scaly}): rc=$rc got '$(echo "$out" | head -1)'"
+done
+for order in 'package alpha 0.1.0\npackage beta 0.1.0' 'package beta 0.1.0\npackage alpha 0.1.0'; do
+  printf "$order"'\n\nprint("`scaled[int](1)` `widened[int](1)`")\n' > "$pg/generic.scaly"
+  out=$(cd "$pg" && SCALY_HOME="$here" "$scaly_abs" run generic.scaly 2>&1); rc=$?
+  [ "$out" = "7 900" ] && ok || bad "pkgglobals: a generic reads its own package's constant (${order%%\\n*} first): rc=$rc got '$(echo "$out" | head -1)'"
+done
+printf 'package alpha 0.1.0\npackage beta 0.1.0\n\nprint("`LIMIT`")\n' > "$pg/bare.scaly"
+out=$(cd "$pg" && SCALY_HOME="$here" "$scaly_abs" run bare.scaly 2>&1); rc=$?
+[ "$rc" != 0 ] && echo "$out" | grep -q 'LIMIT is declared by two packages, alpha v0_1 and beta v0_1' && ok || bad "pkgglobals: a bare name of two packages: rc=$rc '$(echo "$out" | head -1)'"
 
 # source: the third place a package is looked for, what a fetch laid down
 src="$TMP/source"

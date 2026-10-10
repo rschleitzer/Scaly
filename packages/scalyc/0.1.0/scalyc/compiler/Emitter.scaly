@@ -1247,7 +1247,7 @@ define Emitter
 
             ; The DWARF name for whatever composite this resolves to. Computed here
             ; because THIS is where the type arguments are still available.
-            var dname Planner.get_readable_name pt
+            var dname Planner.get_debug_name pt
 
             ; struct — prefer the specialised mangled name, else the bare name.
             if current_plan.structures <> null
@@ -7757,6 +7757,18 @@ define Emitter
 
                     let gv LLVMAddGlobal(llvm_module, global_type, global.mangled_name.c_data())
 
+                    ; Another package's mutable global, read here: that
+                    ; package's object has the cell and its initial value,
+                    ; this module only names it. Defined here too it was a
+                    ; SECOND cell -- a program read its own copy of a
+                    ; package's counter -- or a duplicate symbol.
+                    if global.is_foreign
+                    {
+                        if global.is_shared = false
+                            LLVMSetThreadLocal(gv, 1)
+                        continue
+                    }
+
                     ; Set initializer if present
                     if global.value <> null
                     {
@@ -8520,6 +8532,20 @@ define Emitter
             {
                 if LLVMIsDeclaration(gv) = 0 and LLVMIsThreadLocal(gv) <> 0
                     LLVMSetThreadLocal(gv, 0)
+                ; ... and so does the declaration of a PACKAGE's global
+                ; (`_Z5callsB5alphaB4v0_1`): its cell is in that package's
+                ; JIT object, where this same pass made it a plain one --
+                ; left thread-local here the read went through a descriptor
+                ; that does not exist (SIGBUS, 2026-10-09: a program reading
+                ; a package's counter under `scaly run`). The runtime's own,
+                ; bare-named, are the host's and keep the bit.
+                else if LLVMIsDeclaration(gv) <> 0 and LLVMIsThreadLocal(gv) <> 0
+                {
+                    var name_len: size_t 0
+                    let name_ptr LLVMGetValueName2(gv, &name_len)
+                    if name_ptr <> null and name_len > 2 and *name_ptr = 95 and *(name_ptr + 1) = 90
+                        LLVMSetThreadLocal(gv, 0)
+                }
                 gv := LLVMGetNextGlobal(gv)
             }
         }

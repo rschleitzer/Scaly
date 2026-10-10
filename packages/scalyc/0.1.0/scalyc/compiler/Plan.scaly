@@ -612,6 +612,9 @@ define PlannedGlobal
     value: ref[Vector[PlannedOperand]]?
     is_mutable: bool
     is_shared: bool
+    ; a mutable global of ANOTHER package than the root's, planned because
+    ; it is read here: its cell is that package's, this module declares it
+    is_foreign: bool
 )
 
 define PlannedStructure

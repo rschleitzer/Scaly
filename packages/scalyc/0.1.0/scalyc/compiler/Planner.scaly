@@ -1308,6 +1308,12 @@ define Planner
         declared_lines: ref[Array[String]]
         ; ... and whether two LINES of one package are among them
         var lines_doubled: bool
+        ; the package of each planned global (lockstep with
+        ; instantiated_globals), whether two share a name, and whether the
+        ; global being planned is another package's (plan_foreign_constant#)
+        global_packages: ref[Array[String]]
+        var global_dups: bool
+        var planning_foreign_global: bool
         var lookup_package: String
         var lookup_directed: bool
         ; set while the members of a VALUE's type are looked up (a method, a
@@ -1548,6 +1554,9 @@ define Planner
             cross_package_index := ConceptIndex()
             declared_lines := &Array[String]^this()
             lines_doubled := false
+            global_packages := &Array[String]^this()
+            global_dups := false
+            planning_foreign_global := false
             lookup_package := String^this("")
             lookup_directed := false
             value_access := false
@@ -2341,7 +2350,16 @@ define Planner
                         {
                             let directed_ptr concepts.get(directed as size_t)
                             if directed_ptr <> null
+                            {
+                                ; WHICH of them is settled; whether a name
+                                ; written in this file may SAY it is the
+                                ; ordinary question of `use` -- not asked of a
+                                ; directed lookup (its writer saw it) nor of a
+                                ; member reached through a value
+                                if lookup_directed = false and value_access = false and use_vis_enforce and this.use_vis_check(name, directed as size_t) = false
+                                    return null
                                 return &directed_ptr.value
+                            }
                         }
                     }
                     ; Use-visibility stage 2: advisory classification of
@@ -2415,6 +2433,10 @@ define Planner
             ; ... or of a package that one DECLARES: `Value` written in `a`,
             ; which declares json 0.1, is json 0.1's whatever other line of
             ; json the program holds
+            ; -- when ONE such package has it: two of them are an ambiguity
+            ; this lookup does not settle (the `use` clauses do, or nobody)
+            var found (0 - 1) as i64
+            var found_package ""
             i := concepts.length
             while i > 0
             {
@@ -2423,11 +2445,23 @@ define Planner
                 if kvp_ptr <> null and kvp_ptr.key = name and i < concept_origin_files.length
                 {
                     let of concept_origin_files.get i
-                    if of <> null and this.declares(wanted, Planner.package_of_file((*of)))
-                        return i as i64
+                    if of <> null
+                    {
+                        let pkg Planner.package_of_file((*of))
+                        if this.declares(wanted, pkg)
+                        {
+                            if found >= 0 and pkg.equals(found_package) = false
+                                return (0 - 1) as i64
+                            if found < 0
+                            {
+                                found := i as i64
+                                found_package := pkg
+                            }
+                        }
+                    }
                 }
             }
-            (0 - 1) as i64
+            found
         }
 
         ; declares#: does the package `who` ("" the program) declare the
@@ -2541,6 +2575,19 @@ define Planner
                 }
             }
             this.concept_package(name)
+        }
+
+        ; pointee_name#: the name of `t`, or of what it points at or holds
+        ; as an Option
+        function pointee_name(t: PlannedType) returns String
+        {
+            if (t.name = "pointer" or t.name = "ref" or t.name = "Option") and t.generics <> null
+            {
+                let gens (*t.generics)
+                if gens.length = 1
+                    return Planner.pointee_name(gens[0])
+            }
+            String(t.name)
         }
 
         ; package_of_type#: the package in the name of `t`, or of what it
@@ -3011,7 +3058,12 @@ define Planner
         procedure record_global(mutable this: Planner, g: PlannedGlobal)
         {
             let pos instantiated_globals.length
+            if global_index.table.lookup(g.name) >= 0
+                global_dups := true
             instantiated_globals.add g
+            ; whose it is (lockstep): two packages' globals of one name are
+            ; two globals, and lookup_global# asks which is meant
+            global_packages.add(String^this(Planner.package_of_file(this.file)))
             this.name_index_put(global_index, g.name, pos)
         }
 
@@ -3098,14 +3150,108 @@ define Planner
         ; constants. A constant is emitted `internal` into every module that
         ; reads it, as its own package does. Within the root's package the
         ; module order stays the rule (use_vis_hint# says so).
-        procedure plan_foreign_constant(mutable this: Planner, name: String)
+        ; other_package_hint#: why a call that names a real routine found
+        ; none, where the reason is the PACKAGE of an argument: a parameter
+        ; and its argument are records of one name from two packages (or two
+        ; lines of one) -- `a_get` takes jdoc 0.1's `Value`, the value came
+        ; from a package on jdoc 0.2. The types are right to differ; the
+        ; message must say so, or "function not found: a_get" sends the
+        ; reader looking for a missing `use`. "" where that is not the case.
+        procedure other_package_hint(mutable this: Planner, name: String, arg_types: Vector[PlannedType]) returns String
         {
-            if this.lookup_global(name) <> null
+            if cross_package_index.cap = 0
+                return ""
+            let candidates this.lookup_functions(name)
+            var c: size_t 0
+            while c < candidates.length
+            {
+                var f candidates[c]
+                c := c + 1
+                if f.input.length <> arg_types.length
+                    continue
+                let saved_package lookup_package
+                let saved_directed lookup_directed
+                lookup_package := String^this(this.function_package(f))
+                lookup_directed := true
+                var hint ""
+                var j: size_t 0
+                while j < arg_types.length and hint.get_length() = 0
+                {
+                    let item f.input[j]
+                    if item.type <> null
+                    {
+                        let wanted this.plan_type((*item.type))
+                        let given arg_types[j]
+                        let wanted_name Planner.pointee_name(wanted)
+                        let wanted_package Planner.package_of_type(wanted)
+                        let given_package Planner.package_of_type(given)
+                        if wanted_name.equals(Planner.pointee_name(given)) and wanted_package.equals(given_package) = false and wanted_package.get_length() > 0 and given_package.get_length() > 0
+                            hint := " - `name` takes the `wanted_name` of `wanted_package`, and argument `j + 1` is the `wanted_name` of `given_package`: two packages (or two lines of one) each declare it, and a value of the one is not a value of the other"
+                    }
+                    j := j + 1
+                }
+                lookup_package := saved_package
+                lookup_directed := saved_directed
+                if hint.get_length() > 0
+                    return String^this(hint)
+            }
+            ""
+        }
+
+        ; report_ambiguous_global#: a bare name that two packages declare as
+        ; a global or constant, written where neither is the writer's own and
+        ; the writer declares both (or neither): it was whichever came
+        ; first. Said only when it IS a global of two packages.
+        procedure report_ambiguous_global(mutable this: Planner, name: String, loc: Span)
+        {
+            var first ""
+            var second ""
+            var i: size_t 0
+            while i < concepts.length and i < concept_origin_files.length
+            {
+                let kvp_ptr concepts.get i
+                if kvp_ptr <> null and kvp_ptr.key = name
+                {
+                    choose kvp_ptr.value.definition
+                        when g: Global
+                        {
+                            let pkg Planner.package_of_file(concept_origin_files[i])
+                            if first.get_length() = 0
+                                first := pkg
+                            else if pkg.equals(first) = false
+                                second := pkg
+                        }
+                        else
+                            0
+                }
+                i := i + 1
+            }
+            if second.get_length() = 0
                 return
-            let idx concept_index.lookup name
+            let text "`name` is declared by two packages, `first` and `second`, and this file's package is neither: the bare name cannot say which - read it through a routine of the package meant"
+            this.add_diagnostic(loc, String^this(text))
+        }
+
+        procedure plan_foreign_constant(mutable this: Planner, name: String, loc: Span)
+        {
+            ; WHICH concept of the name: where two packages declare it, the
+            ; writer's own or one it declares (directed_concept_index#), as a
+            ; type of that name would be -- and planned once per PACKAGE, not
+            ; once per name
+            var idx concept_index.lookup name
             if idx < 0
                 return
+            if cross_package_index.cap > 0 and cross_package_index.lookup(name) >= 0
+            {
+                let directed this.directed_concept_index(name)
+                if directed >= 0
+                    idx := directed
+                else
+                    this.report_ambiguous_global(name, loc)
+            }
             let i idx as size_t
+            if i < concept_origin_files.length and this.global_planned(name, Planner.package_of_file(concept_origin_files[i]))
+                return
             if i >= concept_origin_files.length
                 return
             let of concept_origin_files.get i
@@ -3125,11 +3271,29 @@ define Planner
                     this.file := String^this((*of))
                     ; on the Planner's page: the global outlives this frame in
                     ; instantiated_globals (the 2026-07-08 pre-pass dangled)
+                    let was_foreign planning_foreign_global
+                    planning_foreign_global := true
                     let kept &^this this.plan_global(gv, ck.value.name)
+                    planning_foreign_global := was_foreign
                     this.file := saved
                 }
                 else
                     0
+        }
+
+        ; global_planned#: is the global `name` of the package `pkg` planned?
+        function global_planned(this: Planner, name: String, pkg: String) returns bool
+        {
+            if global_index.table.lookup(name) < 0
+                return false
+            var i: size_t 0
+            while i < instantiated_globals.length and i < global_packages.length
+            {
+                if instantiated_globals[i].name.equals(name) and global_packages[i].equals(pkg)
+                    return true
+                i := i + 1
+            }
+            false
         }
 
         function lookup_global(this: Planner, name: String) returns ref[PlannedGlobal]?
@@ -3137,7 +3301,52 @@ define Planner
             let at global_index.table.lookup(name)
             if at < 0
                 return null
+            if global_dups
+            {
+                ; several of the name: the writer's own package's -- the
+                ; package lookups are directed to, else that of the file
+                ; being planned --, then one of a package it declares; the
+                ; first only when neither is there (it was ALWAYS the first:
+                ; a generic body of one package read the other's constant by
+                ; the order of the program's `package` lines, 900 for 7)
+                let own this.global_of(name, false)
+                if own >= 0
+                    return instantiated_globals.get(own as size_t)
+                let declared this.global_of(name, true)
+                if declared >= 0
+                    return instantiated_globals.get(declared as size_t)
+            }
             instantiated_globals.get(at as size_t)
+        }
+
+        ; global_of#: the planned global `name` of the writer's package, or
+        ; (declared) of a package the writer declares; -1 for none.
+        function global_of(this: Planner, name: String, declared: bool) returns i64
+        {
+            var writer Planner.package_of_file(this.file)
+            if lookup_directed
+                writer := lookup_package
+            var found (0 - 1) as i64
+            var i: size_t 0
+            while i < instantiated_globals.length and i < global_packages.length
+            {
+                if instantiated_globals[i].name.equals(name)
+                {
+                    if declared = false and global_packages[i].equals(writer)
+                        return i as i64
+                    if declared and this.declares(writer, global_packages[i])
+                    {
+                        ; one declared package's, or none: two are the
+                        ; ambiguity plan_foreign_constant# reports
+                        if found >= 0 and global_packages[i].equals(global_packages[found as size_t]) = false
+                            return (0 - 1) as i64
+                        if found < 0
+                            found := i as i64
+                    }
+                }
+                i := i + 1
+            }
+            found
         }
 
         ; ================================================================
@@ -15560,6 +15769,7 @@ define Planner
                                 if vis_hint.get_length() > 0
                                     dsb.append vis_hint
                                 dsb.append(this.bare_variant_arg_hint(call_args_holder))
+                                dsb.append(this.other_package_hint(fn_name, arg_types))
                                 ; `set target: value` was the assignment
                                 ; until 2026-10-04; the word is a name now
                                 if fn_name = "set"
@@ -22656,7 +22866,7 @@ define Planner
                     ; Mirrors Planner.cpp:6950-6995. Single scalar
                     ; PlannedConstant inlines directly; non-constant or
                     ; multi-operand value falls back to PlannedGlobalRef.
-                    this.plan_foreign_constant(name)
+                    this.plan_foreign_constant(name, loc)
                     let g_ref this.lookup_global(name)
                     if g_ref <> null
                     {
@@ -52511,7 +52721,8 @@ define Planner
                 Planner.make_int_type(),
                 null,
                 g.is_mutable,
-                g.is_shared
+                g.is_shared,
+                g.is_mutable and planning_foreign_global
             )
             this.record_global(result)
             result
@@ -52655,7 +52866,8 @@ define Planner
                 global_type,
                 &value_holder,
                 g.is_mutable,
-                g.is_shared
+                g.is_shared,
+                g.is_mutable and planning_foreign_global
             )
             this.record_global(result)
             result
@@ -55933,6 +56145,61 @@ define Planner
             }
         }
         String(type_value.name)
+    }
+
+    ; get_debug_name#: get_readable_name with the PACKAGE in front of a
+    ; package's type -- `alpha.Box`, `Vector[alpha.Box]` -- for the debug
+    ; info, where a debugger takes two types of one name for one: two
+    ; packages' `Box` were one type to lldb. The package's NAME only: two
+    ; lines of one package still share it there.
+    function get_debug_name(type_value: PlannedType) returns String
+    {
+        var sb StringBuilder()
+        let pkg Planner.package_of_type_itself(type_value)
+        if pkg.get_length() > 0
+        {
+            sb.append pkg
+            sb.append("." as char)
+        }
+        sb.append type_value.name
+        if type_value.generics <> null
+        {
+            let gens (*type_value.generics)
+            if gens.length > 0
+            {
+                sb.append "["
+                var i: size_t 0
+                while i < gens.length
+                {
+                    if i > 0
+                        sb.append ", "
+                    sb.append(Planner.get_debug_name(gens[i]))
+                    i := i + 1
+                }
+                sb.append "]"
+            }
+        }
+        sb.to_string()
+    }
+
+    ; package_of_type_itself#: the package NAME in the tag of `t`'s own
+    ; name (not of what it points at), "" for none
+    function package_of_type_itself(t: PlannedType) returns String
+    {
+        let tag Planner.package_tag_in(t.mangled_name, t.name)
+        let n tag.get_length()
+        if n < 3
+            return ""
+        var i: size_t 1
+        var len: size_t 0
+        while i < n and tag.get(i) >= 48 and tag.get(i) <= 57
+        {
+            len := len * 10 + ((tag.get(i) - 48) as size_t)
+            i := i + 1
+        }
+        if i + len > n
+            return ""
+        tag.substring(i, len)
     }
 
     ; normalize_type_name: canonicalise builtin aliases.
