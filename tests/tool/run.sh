@@ -373,7 +373,7 @@ fi
 # (Modeler.package_directory#) -- and a project's package of an INSTALLED
 # name does not get in front of the installed one
 proj="$TMP/proj"
-mkdir -p "$proj/packages/mine/0.1.0/mine" "$proj/packages/json/0.1.0"
+mkdir -p "$proj/packages/mine/0.1.0/mine" "$proj/packages/json/0.1.1"
 cat > "$proj/packages/mine/0.1.0/mine.scaly" <<'PKG'
 define mine
 {
@@ -384,7 +384,7 @@ cat > "$proj/packages/mine/0.1.0/mine/greet.scaly" <<'PKG'
 function greeting(n: int) returns int
     n + 40
 PKG
-printf 'this is no package at all (\n' > "$proj/packages/json/0.1.0/json.scaly"
+printf 'this is no package at all (\n' > "$proj/packages/json/0.1.1/json.scaly"
 cat > "$proj/main.scaly" <<'PKG'
 package mine 0.1.0
 package json 0.1.0
