@@ -461,6 +461,7 @@ define cli
         Console.println "       scaly clean                      empty the cache of compiled packages and interfaces (they are made again when needed)"
         Console.println "       scaly publish [remote]           record the new versions of the packages here as published, commit and push (origin)"
         Console.println "       scaly publish --check [remote]   ... only check: no published version changed, each new number says its change"
+        Console.println "       scaly next <package> <version>   begin a package's next version: rename its directory, and what names it follows"
         Console.println ""
         Console.println "The compiler with a command line like a C compiler's is scalyc,"
         Console.println "the language server scalyls."
@@ -2662,6 +2663,15 @@ define cli
                 return 1
             }
             return tool.clean()
+        }
+        if command.equals("next")
+        {
+            if argc <> 4
+            {
+                Console.println "Usage: scaly next <package> <version>"
+                return 1
+            }
+            return tool.next_version(String(*(argv + 2)), String(*(argv + 3)))
         }
         if command.equals("publish")
         {

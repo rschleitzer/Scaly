@@ -5,7 +5,7 @@ What goes out, what its numbers mean, and the steps in order.
 ## What is released
 
 - **The toolchain**: the three programs `scalyc` (the compiler), `scaly` (the
-  tool: REPL, `run`, `build`, `test`, `install`, `publish`) and `scalyls` (the
+  tool: REPL, `run`, `build`, `test`, `install`, `next`, `publish`) and `scalyls` (the
   language server), as one archive per system with LLVM linked in, and one
   source archive that every system takes: the packages of this tree and the
   **seed** — the three programs as LLVM IR, from which the installer builds
@@ -49,10 +49,11 @@ for a change.)
   begins the next version:
 
   ```sh
-  tools/next-version.sh <package> <version>
+  scaly next <package> <version>
   ```
 
-  It renames the directory and rewrites every tracked file that names it.
+  (`tools/next-version.sh` is that with this tree's own tool.) It renames
+  the directory and rewrites every tracked file that names it.
   What it cannot see is a path built from a variable or a glob, and an
   expectation in a test that speaks of something else with the same
   spelling: run the bar after it and read the diff of the tests.

@@ -1535,6 +1535,219 @@ define tool
         setenv("SCALY_PACKAGE_SUMS", map.to_c_string(), 1)
     }
 
+    ; ---- scaly next ----------------------------------------------------------
+    ; `scaly next <package> <version>` begins the next version of a package of
+    ; the repository it runs in. A published version does not change, so the
+    ; first change after a publish belongs into a new version; the package's
+    ; directory is RENAMED to it (`git mv` -- the published one lives on at
+    ; its commit, publish_write# recorded which), and every tracked text file
+    ; that names the old directory follows. Not touched: a `published`
+    ; record, and a file inside ANOTHER package's published version, which
+    ; is frozen as well. Declarations stay -- `package json 0.1.3` names a
+    ; minimum and finds the new directory (Modeler.version_at#).
+    ; What this cannot see: a path made of a variable or a pattern, and a
+    ; text that spells the old directory and means something else. 0 done,
+    ; 1 refused, 2 no repository.
+
+    ; three numbers with a dot between them (is_version# asks less: that a
+    ; directory's name BEGINS like one)
+    function is_version_number(v: String) returns bool
+    {
+        var dots 0
+        var digits 0
+        var i: size_t 0
+        while i < v.get_length()
+        {
+            let c v.get(i)
+            if c = 46
+            {
+                if digits = 0
+                    return false
+                dots := dots + 1
+                digits := 0
+            }
+            else if c >= 48 and c <= 57
+                digits := digits + 1
+            else
+                return false
+            i := i + 1
+        }
+        dots = 2 and digits > 0
+    }
+
+    ; does `text` hold `needle` at `at`?
+    function holds_at(text: String, at: size_t, needle: String) returns bool
+    {
+        let n needle.get_length()
+        if at + n > text.get_length()
+            return false
+        var k: size_t 0
+        while k < n
+        {
+            if text.get(at + k) <> needle.get(k)
+                return false
+            k := k + 1
+        }
+        true
+    }
+
+    ; `text` with every `old_dir` that is not the beginning of a longer
+    ; version (a digit or a dot behind it) written as `new_dir`
+    procedure renamed_text(text: String, old_dir: String, new_dir: String) returns String
+    {
+        var sb StringBuilder()
+        let n text.get_length()
+        let m old_dir.get_length()
+        var from: size_t 0
+        var i: size_t 0
+        while i + m <= n
+        {
+            if text.get(i) = old_dir.get(0) and tool.holds_at(text, i, old_dir)
+            {
+                var longer false
+                if i + m < n
+                {
+                    let c text.get(i + m)
+                    longer := c = 46 or (c >= 48 and c <= 57)
+                }
+                if longer = false
+                {
+                    sb.append(text.substring(from, i - from))
+                    sb.append new_dir
+                    i := i + m
+                    from := i
+                    continue
+                }
+            }
+            i := i + 1
+        }
+        sb.append(text.substring(from, n - from))
+        sb.to_string()
+    }
+
+    ; is `file` a `published` record, or does it lie in a published version
+    ; of a package other than `pkg`?
+    procedure is_frozen_file(file: String, pkg: String) returns bool
+    {
+        if file.starts_with("packages/") = false
+            return false
+        let rest file.substring(9, file.get_length() - 9)
+        let s1 rest.index_of(47)
+        if s1 < 0
+            return false
+        let owner rest.substring(0, s1 as size_t)
+        let tail rest.substring((s1 as size_t) + 1, rest.get_length() - (s1 as size_t) - 1)
+        if tail.equals("published")
+            return true
+        let s2 tail.index_of(47)
+        if s2 < 0 or owner.equals(pkg)
+            return false
+        let version tail.substring(0, s2 as size_t)
+        var record "packages/`owner`/published"
+        if File.exists(record) = false
+            return false
+        let text File.read_to_string(record)
+        text.starts_with("`version` ") or text.contains("\n`version` ")
+    }
+
+    procedure next_version(pkg: String, version: String) returns int
+    {
+        if tool.source_is_safe(pkg) = false or pkg.contains("/") or tool.is_version_number(version) = false
+        {
+            Console.println "Usage: scaly next <package> <version>   (a version is three numbers: 0.1.4)"
+            return 1
+        }
+        let pid getpid() as int
+        let base tool.scratch_base()
+        var out "`base`/scaly-next.`pid`.out"
+        if tool.quiet("git rev-parse --show-prefix", out) = false
+        {
+            Console.println("Error: scaly next: this directory is in no git repository")
+            unlink(out.to_c_string())
+            return 2
+        }
+        var home "packages/`pkg`"
+        if tool.first_line(out).get_length() > 0 or Directory.is_directory(home) = false
+        {
+            Console.println("Error: scaly next: run it at the root of the repository, where packages/`pkg` is")
+            unlink(out.to_c_string())
+            return 2
+        }
+        ; the version being worked on: the highest directory there
+        var old ""
+        let entries Directory.list(home)
+        var e: size_t 0
+        while e < entries.length
+        {
+            let entry entries.at(e)
+            e := e + 1
+            if entry.is_directory and tool.is_version_number(entry.name) and (old.get_length() = 0 or Modeler.version_newer(entry.name, old))
+                old := String(entry.name)
+        }
+        if old.get_length() = 0
+        {
+            Console.println("Error: scaly next: packages/`pkg` holds no version directory")
+            unlink(out.to_c_string())
+            return 1
+        }
+        if Modeler.version_newer(version, old) = false
+        {
+            Console.println("Error: scaly next: `pkg` is at `old`, `version` is not higher")
+            unlink(out.to_c_string())
+            return 1
+        }
+        system("git status --porcelain > \"`out`\" 2>&1".to_c_string())
+        if tool.first_line(out).get_length() > 0
+        {
+            Console.println("Error: scaly next: the repository has changes that are not committed - commit them first, the rename is a change of its own")
+            unlink(out.to_c_string())
+            return 1
+        }
+        let old_dir "packages/`pkg`/`old`"
+        let new_dir "packages/`pkg`/`version`"
+        if tool.quiet("git mv \"`old_dir`\" \"`new_dir`\"", out) = false
+        {
+            Console.println("Error: scaly next: git could not rename `old_dir`: `tool.first_line(out)`")
+            unlink(out.to_c_string())
+            return 1
+        }
+        ; every tracked text file that names the old directory
+        system("git grep -lI -F \"`old_dir`\" > \"`out`\" 2> /dev/null".to_c_string())
+        var files Array[String]()
+        tool.read_lines(out, &files)
+        unlink(out.to_c_string())
+        var changed 0
+        var f: size_t 0
+        while f < files.length
+        {
+            var file String(files.at(f))
+            f := f + 1
+            if file.get_length() = 0 or tool.is_frozen_file(file, pkg)
+                continue
+            let text File.read_to_string(file)
+            let renamed tool.renamed_text(text, old_dir, new_dir)
+            if renamed.get_length() <> text.get_length() or renamed.equals(text) = false
+            {
+                File.write_from_string(file, renamed)
+                changed := changed + 1
+            }
+        }
+        Console.println("next: `pkg` `old` -> `version` (`new_dir`; `changed` files named the old directory)")
+        var record "packages/`pkg`/published"
+        var was_published false
+        if File.exists(record)
+        {
+            let text File.read_to_string(record)
+            was_published := text.starts_with("`old` ") or text.contains("\n`old` ")
+        }
+        if was_published
+            Console.println("  `old` is published: it stays what it was, at its commit.")
+        else
+            Console.println("  `old` was not published: this is a renumbering.")
+        Console.println("  Next: look at the diff, run the tests, commit.")
+        0
+    }
+
     ; ---- scaly clean ---------------------------------------------------------
     ; Everything under `dir`, the directories last; how many files went.
     ; Each entry is tried as a file first: a link is removed as the link it

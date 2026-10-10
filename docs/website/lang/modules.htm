@@ -771,14 +771,17 @@ CLASS="emphasis"
 CLASS="emphasis"
 >renamed</I
 ></SPAN
-> —
-        <KBD
+>, because the published one
+        lives on at its commit, and then the tree holds one directory per
+        package. <KBD
 CLASS="userinput"
->git mv packages/json/0.1.3 packages/json/0.1.4</KBD
->
-        — because the published one lives on at its commit. Then the tree
-        holds one directory per package, and what else names the old
-        directory (a script, a test) follows by hand. A package that is
+>scaly next json 0.1.4</KBD
+>, at the root
+        of the repository, does that: it renames the directory with git and
+        rewrites every tracked file that names it (a script, a test). It
+        wants a tree without uncommitted changes and a number higher than
+        the one that is there, and it leaves a published directory of
+        another package as it was published. A package that is
         released together with a program — a compiler with its parser, say —
         publishes a version with each release and works on the next one in
         between.</P
