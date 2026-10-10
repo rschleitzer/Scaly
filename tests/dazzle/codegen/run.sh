@@ -80,7 +80,7 @@ run_case codegen/test-choose.dsl tests/choose.sgm \
 run_case codegen/scaly.dsl scaly.sgm \
   packages/scalyc/0.1.1/scalyc/compiler/Syntax.scaly \
   packages/scalyc/0.1.1/scalyc/compiler/parser.scaly \
-  packages/scalyls/0.1.0/scalyls/grammar.scaly \
+  packages/scalyls/0.1.1/scalyls/grammar.scaly \
   editors/vscode/syntaxes/scaly.tmLanguage.json \
   editors/vscode/language-configuration.json || fail=1
 run_case codegen/test-expressions.dsl tests/expressions.sgm \

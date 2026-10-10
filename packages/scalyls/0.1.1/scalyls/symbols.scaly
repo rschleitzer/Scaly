@@ -8962,7 +8962,7 @@ define symbols
     }
 
     ; `path` truncated to include its last "/packages" segment (so
-    ; "/u/Scaly/packages/scalyls/0.1.0/x.scaly" -> "/u/Scaly/packages"), or ""
+    ; "/u/Scaly/packages/scalyls/0.1.1/x.scaly" -> "/u/Scaly/packages"), or ""
     ; when `path` is not under a packages/ directory.
     function packages_dir_from_path(path: String) returns String
     {
@@ -11487,7 +11487,7 @@ define symbols
 
     ; The current file's own package directory: the path prefix up to and
     ; including the package-name segment right after "/packages/" (e.g.
-    ; ".../packages/scalyls/0.1.0/x.scaly" -> ".../packages/scalyls"), or "" when
+    ; ".../packages/scalyls/0.1.1/x.scaly" -> ".../packages/scalyls"), or "" when
     ; the file is not under a packages/ tree. Used so a workspace-root walk
     ; INCLUDES the package being edited but EXCLUDES sibling dependency packages.
     function current_package_dir(path: String) returns String

@@ -2,7 +2,7 @@
 ;
 ; Speaks LSP JSON-RPC over stdin/stdout. Build it like the compiler, but
 ; linking LLVM (the diagnostics pipeline pulls in the scalyc package):
-;   scalyc -o scalyls packages/scalyls/0.1.0/main.scaly \
+;   scalyc -o scalyls packages/scalyls/0.1.1/main.scaly \
 ;       -L<llvm-libdir> -lLLVM-18
 
 package scaly 0.1.0
