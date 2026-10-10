@@ -26,7 +26,7 @@ mkdir -p "$OUT"
 # union.txt reads itself back in. A census whose residue nobody can refute is
 # worth nothing, so the instrument may not contaminate its own input.
 ROOTS=""
-for r in packages/*/0.1.0/*.scaly; do
+for r in packages/*/[0-9]*/*.scaly; do
   b=$(echo "$r" | sed 's#packages/##; s#/0.1.0/#_#; s#\.scaly$##')
   # dazzle needs the wide stack (stage2 cannot compile it at 8 MB)
   ( ulimit -s 65520; "$STAGE" --plan --no-prelude --no-tests --pointer-report "$r" ) > "$OUT/$b.txt" 2>&1

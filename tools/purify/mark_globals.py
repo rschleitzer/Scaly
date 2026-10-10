@@ -38,7 +38,7 @@ RUNTIME = re.compile(r'packages/scaly/0\.1\.0/scaly/(memory/|fiber|os|cluster)')
 def ambient_names():
     out = set()
     # `shared atomic` cells coordinate themselves and are never named
-    for f in glob.glob('packages/*/0.1.0/**/*.scaly', recursive=True):
+    for f in glob.glob('packages/*/[0-9]*/**/*.scaly', recursive=True):
         for m in re.finditer(r'^\s*shared\s+atomic\s+([A-Za-z][A-Za-z0-9_]*)\s*:',
                              open(f, errors='replace').read(), re.M):
             out.add(m.group(1))

@@ -27,9 +27,9 @@ export SCALYC_WRITE_SUMMARIES="$SUMMARIES"
 ORDER="scaly scalyc scalyls scalygpu"
 LIST=""
 for p in $ORDER; do
-  LIST="$LIST packages/$p/0.1.0/$p.scaly"
+  LIST="$LIST packages/$p/$(tools/version.sh "$p")/$p.scaly"
 done
-for r in packages/*/0.1.0/*.scaly; do
+for r in packages/*/[0-9]*/*.scaly; do
   case " $LIST " in *" $r "*) ;; *) LIST="$LIST $r" ;; esac
 done
 ROOTS=""

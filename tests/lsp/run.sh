@@ -5609,7 +5609,7 @@ check("missing module file: a/helper.scaly" not in mt,
 # No packages/ anywhere above the fixture, so there is no absolute base: the
 # package lens must state the path and offer NO command.
 pkg_rows = [r for r in root_rows if r[1].startswith("package")]
-check(len(pkg_rows) == 1 and pkg_rows[0][1] == "package: packages/scaly/0.1.1/scaly.scaly"
+check(len(pkg_rows) == 1 and pkg_rows[0][1] == "package: packages/scaly/0.1.0/scaly.scaly"
       and pkg_rows[0][2] == "" and pkg_rows[0][3] is None,
       "with no resolution base the package lens is plain text, not a link")
 # In the checkout the same declaration IS clickable and absolute.

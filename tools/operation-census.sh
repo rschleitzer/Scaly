@@ -23,7 +23,7 @@ one() {
   echo $? > "$OUT/$n.rc"
 }
 export -f one; export BIN OUT
-ls packages/*/0.1.0/*.scaly | xargs -P 6 -n 1 -I{} bash -c 'one {}'
+ls packages/*/[0-9]*/*.scaly | xargs -P 6 -n 1 -I{} bash -c 'one {}'
 bad=0
 for rc in "$OUT"/*.rc; do [ "$(cat "$rc")" = 0 ] || { bad=$((bad+1)); echo "FAILED: $(basename "$rc" .rc)"; }; done
 [ "$VERBOSE" = "-v" ] && for e in "$OUT"/*.err; do echo "== $(basename "$e" .err)"; grep '^operation-census ' "$e" | sed 's/^operation-census //'; done

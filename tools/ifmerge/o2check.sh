@@ -34,7 +34,7 @@ one() {
 }
 rc=0
 # O2CHECK_ROOTS narrows the run (a grep pattern over the root paths)
-for f in packages/*/0.1.0/*.scaly; do
+for f in packages/*/[0-9]*/*.scaly; do
   if [ -n "${O2CHECK_ROOTS:-}" ]; then echo "$f" | grep -qE "$O2CHECK_ROOTS" || continue; fi
   one "$f" || rc=1
 done

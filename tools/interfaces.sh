@@ -33,7 +33,7 @@ T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 rc=0
 for p in $PKGS; do
-  root="packages/$p/0.1.0/$p.scaly"; flags=""
+  root="packages/$p/$(tools/version.sh "$p")/$p.scaly"; flags=""
   [ "$p" = scaly ] && flags="--no-prelude"
   if ( ulimit -s 65520 2>/dev/null; SCALY_HOME="$PWD" "$BIN" $flags --emit-interface "$root" ) > "$T/$p.out" 2>&1; then
     sed "s#^#interfaces: $p: #" "$T/$p.out" | tail -1

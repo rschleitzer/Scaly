@@ -9,14 +9,14 @@
 # interface directory, so the loader falls back to the sources.
 set -u
 cd "$(dirname "$0")/../.."
-PKG="$1"; DEP="$2"; BIN="${3:-scalyc/build/scalyc}"
+PKG="$1"; DEP="$2"; BIN="${3:-scalyc/build/scalyc}"; V="$(tools/version.sh "$PKG")"
 case "$BIN" in /*) ;; *) BIN="$PWD/$BIN";; esac
 T="$(mktemp -d)"; H="$T/home"
-mkdir -p "$H/packages/$PKG/0.1.0"
+mkdir -p "$H/packages/$PKG/$V"
 for d in packages/*; do n=$(basename "$d"); [ "$n" = "$PKG" ] || ln -s "$PWD/$d" "$H/packages/$n"; done
 # the package WITHOUT its interface directory: sources only
-for f in packages/$PKG/0.1.0/*; do
-  [ "$(basename "$f")" = interface ] || ln -s "$PWD/$f" "$H/packages/$PKG/0.1.0/$(basename "$f")"
+for f in packages/$PKG/$V/*; do
+  [ "$(basename "$f")" = interface ] || ln -s "$PWD/$f" "$H/packages/$PKG/$V/$(basename "$f")"
 done
 DEPH="$DEP"; case "$DEP" in packages/*) ;; *) DEPH="$PWD/$DEP";; esac
 b=$(basename "$DEP" .scaly)

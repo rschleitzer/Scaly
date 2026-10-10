@@ -23,7 +23,7 @@ one() {
     SCALYC_PENDING=1 SCALYC_OPERATION_CENSUS=1 "$BIN" -S $fl -o "$OUT/$n.on.ll" "$r" > "$OUT/$n.on.out" 2> "$OUT/$n.on.err"; echo $? > "$OUT/$n.on.rc" )
 }
 export -f one; export BIN OUT
-ls packages/*/0.1.0/*.scaly | grep -e "$FILTER" | xargs -P 6 -n 1 -I{} bash -c 'one {}'
+ls packages/*/[0-9]*/*.scaly | grep -e "$FILTER" | xargs -P 6 -n 1 -I{} bash -c 'one {}'
 same=0; differ=0; failed=0
 for rc in "$OUT"/*.off.rc; do
   n="$(basename "$rc" .off.rc)"

@@ -625,7 +625,14 @@ define codelens
             return symbols.lens_object(text, pkg.start, 7, pt, "", "")
         }
 
-        let target codelens.join(base, relative)
+        ; A declared version is a minimum: the root the loader takes is that
+        ; of the highest version of its line that is there
+        ; (Modeler.version_at#), and that is the file a click opens.
+        var base_dir "`base`/"
+        var declared_name String(pkg.name.name)
+        let present Modeler.version_at(base_dir, declared_name, version)
+        let found "packages/`declared_name`/`present`/`declared_name`.scaly"
+        let target codelens.join(base, found)
         if File.exists(target) = false
         {
             var missing StringBuilder()
@@ -636,7 +643,7 @@ define codelens
         }
         var title StringBuilder()
         title.append "package root: "
-        title.append relative
+        title.append found
         let t title.to_string()
         symbols.lens_object(text, pkg.start, 7, t, "scaly.openPath", target)
     }
