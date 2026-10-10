@@ -1625,6 +1625,30 @@ define tool
         sb.to_string()
     }
 
+    ; does `text` hold `/<old>/` behind something other than a package's
+    ; written-out directory -- `"$PKG"/0.1.1/x`, where `packages/json/0.1.1/x`
+    ; is another package's own path and no business of this rename?
+    procedure spells_loosely(text: String, old: String) returns bool
+    {
+        let needle "/`old`/"
+        let n text.get_length()
+        let m needle.get_length()
+        var i: size_t 0
+        while i + m <= n
+        {
+            if text.get(i) = 47 and tool.holds_at(text, i, needle)
+            {
+                var j i
+                while j > 0 and text.get(j - 1) <> 47 and text.get(j - 1) > 32
+                    j := j - 1
+                if j < 9 or text.get(j - 1) <> 47 or tool.holds_at(text, j - 9, "packages/") = false
+                    return true
+            }
+            i := i + 1
+        }
+        false
+    }
+
     ; is `file` a `published` record, or does it lie in a published version
     ; of a package other than `pkg`?
     procedure is_frozen_file(file: String, pkg: String) returns bool
@@ -1733,6 +1757,34 @@ define tool
             }
         }
         Console.println("next: `pkg` `old` -> `version` (`new_dir`; `changed` files named the old directory)")
+        ; what the rename cannot follow: the number behind a variable
+        system("git grep -lI -F \"/`old`/\" > \"`out`\" 2> /dev/null".to_c_string())
+        var maybe Array[String]()
+        tool.read_lines(out, &maybe)
+        unlink(out.to_c_string())
+        var loose Array[String]()
+        var g: size_t 0
+        while g < maybe.length
+        {
+            var file String(maybe.at(g))
+            g := g + 1
+            if file.get_length() = 0 or tool.is_frozen_file(file, pkg)
+                continue
+            if tool.spells_loosely(File.read_to_string(file), old)
+                loose.add(file)
+        }
+        if loose.length > 0
+        {
+            Console.println("  `loose.length as int` more files spell /`old`/ in a path that is not written out (a variable, say) - they did not follow:")
+            var h: size_t 0
+            while h < loose.length and h < 12
+            {
+                Console.println("    `loose.at(h)`")
+                h := h + 1
+            }
+            if loose.length > 12
+                Console.println("    ...")
+        }
         var record "packages/`pkg`/published"
         var was_published false
         if File.exists(record)

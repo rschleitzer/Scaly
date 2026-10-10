@@ -64,7 +64,8 @@
 #              routes, a generic's own package's constant in either order of
 #              the program's declarations, a bare name of two packages refused
 #   next       `scaly next <package> <version>`: the directory renamed, what
-#              names it following, published things left alone; its three
+#              names it following, published things left alone, a path
+#              behind a variable named as not followed; its three
 #              refusals; a declaration of the old version builds on
 #   crlf       a package whose files end their lines CR LF (a checkout on
 #              Windows): built twice, the second time through its interface
@@ -616,6 +617,7 @@ if command -v git > /dev/null 2>&1; then
   printf '0.1.0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000\n' > "$nx/packages/demo/published"
   printf '#!/bin/sh\ncat packages/demo/0.1.0/demo.scaly packages/demo/0.1.0/demo.scaly\necho packages/demo/0.1.01 packages/demo/0.1.0.2\n' > "$nx/tools/show.sh"; chmod +x "$nx/tools/show.sh"
   printf 'package demo 0.1.0\n\nprint("`demo.answer()`")\n' > "$nx/main.scaly"
+  printf '#!/bin/sh\nPKG=packages/demo\ncat "$PKG"/0.1.0/demo.scaly\n' > "$nx/tools/var.sh"
   ng init -q && ng add -A && ng commit -q -m one
   nn() { ( cd "$nx" && SCALY_HOME="$here" "$scaly_abs" next "$@" ) 2>&1; }
   out=$(nn demo 0.1.0); rc=$?
@@ -629,6 +631,7 @@ if command -v git > /dev/null 2>&1; then
   out=$(nn demo 0.1.1); rc=$?
   if [ "$rc" = 0 ] && [ -f "$nx/packages/demo/0.1.1/demo.scaly" ] && [ ! -e "$nx/packages/demo/0.1.0" ] \
      && echo "$out" | grep -q 'demo 0.1.0 -> 0.1.1' && echo "$out" | grep -q '0.1.0 is published' \
+     && echo "$out" | grep -q '1 more files spell /0.1.0/' && echo "$out" | grep -q '^    tools/var.sh$' && ! echo "$out" | grep -q '^    packages/other' \
      && [ "$(grep -c 'packages/demo/0.1.1/demo.scaly' "$nx/tools/show.sh")" = 1 ] && grep -q 'packages/demo/0.1.01 packages/demo/0.1.0.2' "$nx/tools/show.sh" \
      && [ -x "$nx/tools/show.sh" ] && grep -q 'packages/demo/0.1.0/demo.scaly' "$nx/packages/other/0.1.0/other.scaly" \
      && grep -q '^0.1.0 ' "$nx/packages/demo/published" && grep -q '^package demo 0.1.0' "$nx/main.scaly"; then
