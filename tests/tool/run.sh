@@ -1056,6 +1056,29 @@ PY
   out=$(pv rule-0.1.0); rc=$?
   [ "$rc" = 0 ] && echo "$out" | grep -q 'function greeting of demo is written twice' && echo "$out" | grep -q 'demo 0.1.1 is new after 0.1.0: 0 declaration(s) gone or changed, 1 added' && ok \
     || bad "publish, a published version this compiler refuses: rc=$rc '$(echo "$out" | tail -3 | tr '\n' '|' | cut -c1-300)'"
+  # a package and one that declares it, both published; then both move to
+  # another line and the first version's directories leave the tree. The
+  # version before is read out of its commit, and what IT declared must be
+  # found there too -- this tree has only the new line of it
+  ln="$pub/lines"; mkdir -p "$ln/packages/dep/0.1.0" "$ln/packages/user/0.1.0"
+  lg() { git -C "$ln" -c user.name=t -c user.email=t@example.invalid -c init.defaultBranch=main "$@"; }
+  printf 'package scaly 0.1.0\n\ndefine dep\n{\n    function answer() returns int\n        42\n}\n' > "$ln/packages/dep/0.1.0/dep.scaly"
+  printf 'package scaly 0.1.0\npackage dep 0.1.0\n\ndefine user\n{\n    function twice() returns int\n        dep.answer() * 2\n}\n' > "$ln/packages/user/0.1.0/user.scaly"
+  lg init -q && lg add -A && lg commit -q -m one && lg clone -q --bare . "$ln.git" 2> /dev/null && lg remote add origin "$ln.git"
+  lp() { ( cd "$ln" && SCALY_HOME="$here" "$scaly_abs" publish "$@" ) 2>&1; }
+  out=$(lp); rc=$?
+  if [ "$rc" = 0 ]; then
+    lg mv packages/dep/0.1.0 packages/dep/0.2.0 && lg mv packages/user/0.1.0 packages/user/0.2.0
+    sed -i.bak 's/returns int$/returns i64/' "$ln/packages/dep/0.2.0/dep.scaly"
+    sed -i.bak 's/^package dep 0\.1\.0/package dep 0.2.0/; s/returns int$/returns i64/' "$ln/packages/user/0.2.0/user.scaly"
+    rm -f "$ln"/packages/*/0.2.0/*.bak
+    lg add -A && lg commit -q -m lines
+    out=$(lp --check); rc=$?
+    [ "$rc" = 0 ] && echo "$out" | grep -q 'user 0.2.0 is new after 0.1.0' && ! echo "$out" | grep -q 'package not found' && ok \
+      || bad "publish, the version before declares a line this tree no longer has: rc=$rc '$(echo "$out" | tail -3 | tr '\n' '|' | cut -c1-300)'"
+  else
+    bad "publish, two packages of one repository: rc=$rc '$(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)'"
+  fi
 fi
 
 # clean: the cache is emptied, what was fetched stays, and the next build

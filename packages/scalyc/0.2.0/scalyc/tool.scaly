@@ -2645,7 +2645,12 @@ define tool
             }
             before := "`history`/"
         }
+        ; ... where the packages IT declares are looked for too
+        ; (Modeler.project_base#): this tree may hold another line of one
+        if before.get_length() > 0
+            setenv("SCALY_PROJECT", history.to_c_string(), 1)
         let read_before tool.surface_of(before, name, prev, true, old_dir, &old_lines)
+        setenv("SCALY_PROJECT", "", 1)
         ; ... and what it declared of other packages
         var old_names Array[String]()
         var old_versions Array[String]()
