@@ -2013,7 +2013,12 @@ define tool
             File.write_from_string(record, "`text``version` `commit` `tree`\n")
             system("git add \"`record`\"".to_c_string())
         }
-        if tool.quiet("git commit --quiet -m \"Publish `what`\"", log) = false
+        ; one line, short: a single package by name and version, several by
+        ; their number -- the records the commit adds say which
+        var subject "Publish `what`"
+        if fresh.length > 1
+            subject := "Publish `fresh.length` packages"
+        if tool.quiet("git commit --quiet -m \"`subject`\"", log) = false
         {
             Console.println("Error: scaly publish: git could not commit the record: `tool.first_line(log)`")
             return 1
