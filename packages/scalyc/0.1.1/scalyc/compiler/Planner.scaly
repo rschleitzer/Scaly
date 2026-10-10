@@ -2016,6 +2016,7 @@ define Planner
                         i := i + 1
                     }
                     this.check_method_static_collisions(s, c.name, file)
+                    this.check_duplicate_methods(s, c.name, file)
                     var mi: size_t 0
                     while mi < s.members.length
                     {
@@ -2133,6 +2134,131 @@ define Planner
                 i := i + 1
             }
             true
+        }
+
+        ; ====================================================================
+        ; (d) THE SAME ROUTINE WRITTEN TWICE (2026-10-10): two functions of one
+        ; name and one parameter list in one concept, or two free ones in one
+        ; file and one namespace, mangle to ONE symbol. The emitter keeps the
+        ; first body and every call reaches it; the second is text. rc 0 and
+        ; nothing visible -- a helper added to the tool under a name it already
+        ; had took a suite red with no line to look at.
+        ;
+        ; Reported at the SECOND, the one to rename or delete. A routine with
+        ; no body of its own (an extern, an intrinsic) is left alone: the same
+        ; C prototype declared twice is harmless.
+        ; ====================================================================
+        procedure check_duplicate_methods(mutable this: Planner, s: Structure, owner: String, file: String)
+        {
+            var j: size_t 1
+            while j < s.members.length
+            {
+                let mj_ptr s.members.get j
+                if mj_ptr <> null
+                {
+                    let mj (*mj_ptr)
+                    choose mj
+                        when fj: Function
+                        {
+                            var i: size_t 0
+                            while i < j
+                            {
+                                let mi_ptr s.members.get i
+                                if mi_ptr <> null
+                                {
+                                    let mi (*mi_ptr)
+                                    choose mi
+                                        when fi: Function
+                                        {
+                                            if fi.name = fj.name and Planner.functions_share_signature(fi, fj)
+                                            {
+                                                this.report_member_collision(fj.span, file,
+                                                    "function ", fj.name, owner,
+                                                    " is written twice with one parameter list; both mangle to one symbol, the first body is kept and every call reaches it")
+                                                i := j
+                                            }
+                                        }
+                                        else
+                                            0
+                                }
+                                i := i + 1
+                            }
+                        }
+                        else
+                            0
+                }
+                j := j + 1
+            }
+        }
+
+        ; Both have a body of their own, both or neither take `this`, and
+        ; their parameters agree type by type -- what the mangled name holds.
+        function functions_share_signature(a: Function, b: Function) returns bool
+        {
+            if Planner.function_has_own_body(a) = false or Planner.function_has_own_body(b) = false
+                return false
+            if a.input.length <> b.input.length
+                return false
+            if Planner.function_declares_this(a) <> Planner.function_declares_this(b)
+                return false
+            var i: size_t 0
+            while i < a.input.length
+            {
+                let pa a.input.get i
+                let pb b.input.get i
+                if pa = null or pb = null
+                    return false
+                if Planner.model_types_equal(pa.type, pb.type) = false
+                    return false
+                i := i + 1
+            }
+            true
+        }
+
+        function function_has_own_body(f: Function) returns bool
+        {
+            choose f.implementation
+                when a: Action
+                    return true
+                when l: Linked
+                    return true
+                else
+                    return false
+        }
+
+        ; The free half of (d): the routine being registered against those of
+        ; its name already there. One file, one container path, another span --
+        ; a module tree is walked more than once, so a routine met again (the
+        ; same span) says nothing, and it is judged on its FIRST registration
+        ; only. A file whose origin is unknown is left alone.
+        procedure check_duplicate_function(mutable this: Planner, f: Function)
+        {
+            if registering_file.get_length() = 0
+                return
+            var twin: ref[Function]? null
+            var cur model_function_index.lookup_head f.name
+            while cur <> ((0 - 1) as i64)
+            {
+                let kvp_ptr model_functions.get(cur as size_t)
+                let fof function_origin_files.get(cur as size_t)
+                let fop function_origin_paths.get(cur as size_t)
+                if kvp_ptr <> null and fof <> null and fop <> null and (*fof) = registering_file and (*fop) = registering_path
+                {
+                    if kvp_ptr.value.span.start = f.span.start
+                        return
+                    if Planner.functions_share_signature(kvp_ptr.value, f)
+                        twin := &kvp_ptr.value
+                }
+                cur := model_function_index.next_of(cur as size_t)
+            }
+            if twin = null
+                return
+            var owner String("this file")
+            if registering_namespace.get_length() > 0
+                owner := String(registering_namespace)
+            this.report_member_collision(f.span, registering_file,
+                "function ", f.name, owner,
+                " is written twice with one parameter list; both mangle to one symbol, the first body is kept and every call reaches it")
         }
 
         ; Structural equality of two WRITTEN types: the name segments and the
@@ -6102,6 +6228,7 @@ define Planner
 
         procedure register_function(mutable this: Planner, f: Function)
         {
+            this.check_duplicate_function(f)
             model_functions.add(KeyValuePair[String, Function](f.name, f))
             model_function_index.insert(f.name, model_functions.length - 1)
             function_origin_paths.add(String^this(registering_path))

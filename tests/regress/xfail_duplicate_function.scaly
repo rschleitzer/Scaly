@@ -1,0 +1,16 @@
+; Regression (2026-10-10): a routine written TWICE in one namespace, same name
+; and same parameter list -- a helper added under a name the namespace already
+; had. The first body answers every call and nothing says so; the tool met it
+; as a suite gone red with no line to look at.
+; xfail: error: function twice of tools is written twice with one parameter list
+
+define tools
+{
+    function twice(n: int) returns int
+        n * 2
+
+    function twice(n: int) returns int
+        n * 3
+}
+
+print("`tools.twice(7)`")

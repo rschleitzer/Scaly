@@ -1,0 +1,20 @@
+; Regression (2026-10-10): a method written TWICE in one concept, same name
+; and same parameter list. Both mangle to one symbol, the first body is kept
+; and every call reaches it; the second is text. It compiled at rc 0 and
+; answered 14.
+; xfail: error: function twice of Box is written twice with one parameter list
+
+define Box
+(
+    v: int
+)
+{
+    function twice(this) returns int
+        v * 2
+
+    function twice(this) returns int
+        v * 3
+}
+
+let b Box(7)
+print("`b.twice()`")
