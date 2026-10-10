@@ -172,7 +172,7 @@ clang main.o scalyc.o scaly.o -L"$LIB" -lLLVM-20 -o scalyc
 compare against the shipped `.ll` — they must be byte-identical.
 
 ```sh
-./scalyc -S --no-tests -o r_scaly.ll packages/scaly/0.1.0/scaly.scaly
+./scalyc -S --no-tests -o r_scaly.ll packages/scaly/0.1.1/scaly.scaly
 cmp r_scaly.ll scaly.ll && echo "fixed point OK"
 ```
 

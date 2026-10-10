@@ -20,7 +20,7 @@
 # single rung: it forces brocken 1, 2 and 3 at once.
 #
 # ★SCOPE, and why it is wider than the runtime root (2026-08-10): it used to
-# emit ONLY packages/scaly/0.1.0/scaly.scaly while claiming "every symbol has a
+# emit ONLY packages/scaly/0.1.1/scaly.scaly while claiming "every symbol has a
 # provider" — and so it never saw `setenv` and `socketpair`, which are declared
 # `extern` in TEST sources (tests/fiber/{taskpool_default,trace_balance,echo,
 # echo_main}.scaly), not in packages/. An instrument whose scope is narrower
@@ -41,7 +41,7 @@ NM="${LLVM21:-/opt/homebrew/opt/llvm@21}/bin/llvm-nm"
 command -v llvm-nm > /dev/null 2>&1 && NM=$(command -v llvm-nm)
 
 "$SC" -c --target "$TRIPLE" --no-prelude --no-tests -o "$OBJ" \
-      packages/scaly/0.1.0/scaly.scaly > /dev/null 2>&1 \
+      packages/scaly/0.1.1/scaly.scaly > /dev/null 2>&1 \
   || { echo "win-undef: FAIL — cross-emit for $TRIPLE failed"; exit 1; }
 
 ALL=$("$NM" -u "$OBJ" | sed 's/^ *U //' | sort -u)
@@ -215,11 +215,11 @@ HAVE_LLVM=$(printf '%s\n' "$ALL" | grep -E "$LLVMLIB")
 # scaly_catch_*/scaly_panic_* symbols were reported MISSING and this tool said
 # INCOMPLETE — an advisory that is red for a known reason hides the next symbol
 # that is missing for a real one.
-WIN_C="packages/scaly/0.1.0/scaly/fiber/eio_windows.c
-packages/scaly/0.1.0/scaly/win32/posixcompat_windows.c
-packages/scaly/0.1.0/scaly/time/ctime.c
-packages/scaly/0.1.0/scaly/memory/panic.c"
-WIN_S="packages/scaly/0.1.0/scaly/fiber/fcontext_x86_64_windows.S"
+WIN_C="packages/scaly/0.1.1/scaly/fiber/eio_windows.c
+packages/scaly/0.1.1/scaly/win32/posixcompat_windows.c
+packages/scaly/0.1.1/scaly/time/ctime.c
+packages/scaly/0.1.1/scaly/memory/panic.c"
+WIN_S="packages/scaly/0.1.1/scaly/fiber/fcontext_x86_64_windows.S"
 
 # A definition is a non-indented line naming a function, whose body opens
 # either on the SAME line or on the next non-blank one. Both shapes are

@@ -42,7 +42,7 @@ fi
 echo "install: building runtime archive lib/libscaly.a"
 mkdir -p "$REPO/lib"
 "$BIN" -c --no-prelude --no-tests -o "$REPO/lib/libscaly.o" \
-    "$REPO/packages/scaly/0.1.0/scaly.scaly"
+    "$REPO/packages/scaly/0.1.1/scaly.scaly"
 tools/fcontext.sh "$REPO/lib/fcontext.o"
 tools/eio.sh "$REPO/lib/eio.o"
 tools/ctime.sh "$REPO/lib/ctime.o"
@@ -65,7 +65,7 @@ export SCALY_HOME="\${SCALY_HOME:-$REPO}"
 # is ever missing.
 if [ ! -f "\$SCALY_HOME/lib/libscaly.a" ]; then
     "\$SCALY_HOME/scalyc/build/scalyc" -c --no-prelude --no-tests \\
-        -o "\$SCALY_HOME/lib/libscaly.o" "\$SCALY_HOME/packages/scaly/0.1.0/scaly.scaly" >/dev/null 2>&1 \\
+        -o "\$SCALY_HOME/lib/libscaly.o" "\$SCALY_HOME/packages/scaly/0.1.1/scaly.scaly" >/dev/null 2>&1 \\
         && "\$SCALY_HOME/tools/fcontext.sh" "\$SCALY_HOME/lib/fcontext.o" >/dev/null 2>&1 \\
         && "\$SCALY_HOME/tools/eio.sh" "\$SCALY_HOME/lib/eio.o" >/dev/null 2>&1 \\
         && "\$SCALY_HOME/tools/ctime.sh" "\$SCALY_HOME/lib/ctime.o" >/dev/null 2>&1 \\

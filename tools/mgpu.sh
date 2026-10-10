@@ -16,4 +16,4 @@ if [ "$(uname -s)" != "Darwin" ]; then
 fi
 
 OUT=${1:-/tmp/mgpu.o}
-${CLANG:-clang} -fobjc-arc -O2 -c packages/scaly/0.1.0/scaly/tensor/mgpu.m -o "$OUT"
+${CLANG:-clang} -fobjc-arc -O2 -c packages/scaly/0.1.1/scaly/tensor/mgpu.m -o "$OUT"

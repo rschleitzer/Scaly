@@ -18,7 +18,7 @@ OUT=$(mktemp -d)
 trap 'rm -rf "$OUT"' EXIT
 one() {
   r="$1"; n="$(echo "$r" | sed 's|packages/||; s|/0.1.0/|-|; s|\.scaly$||')"
-  fl="--no-tests"; [ "$r" = packages/scaly/0.1.0/scaly.scaly ] && fl="--no-prelude --no-tests"
+  fl="--no-tests"; [ "$r" = packages/scaly/0.1.1/scaly.scaly ] && fl="--no-prelude --no-tests"
   ( ulimit -s 65520; SCALYC_OPERATION_CENSUS=1 "$BIN" -S $fl -o "$OUT/$n.ll" "$r" > "$OUT/$n.out" 2> "$OUT/$n.err" )
   echo $? > "$OUT/$n.rc"
 }

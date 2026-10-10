@@ -108,8 +108,8 @@ void Modeler::setEnablePrelude(bool Enable) {
 llvm::Expected<std::optional<Module>> Modeler::loadPrelude() {
     // Search for prelude.scaly in package search paths
     static const char* PreludePaths[] = {
-        "packages/scaly/0.1.0/scaly/prelude.scaly",
-        "/usr/share/scaly/packages/scaly/0.1.0/scaly/prelude.scaly"
+        "packages/scaly/0.1.1/scaly/prelude.scaly",
+        "/usr/share/scaly/packages/scaly/0.1.1/scaly/prelude.scaly"
     };
 
     std::string PreludePath;

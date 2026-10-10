@@ -73,7 +73,7 @@ private:
     const Module* loadPackageOnDemand(llvm::StringRef PackageName);
 
     // Load an intra-package module on demand (e.g., "containers" from within scaly package)
-    // BasePath: path to the parent directory (e.g., "packages/scaly/0.1.0/scaly")
+    // BasePath: path to the parent directory (e.g., "packages/scaly/0.1.1/scaly")
     // ModuleName: name of the module to load (e.g., "containers")
     const Module* loadIntraPackageModule(llvm::StringRef BasePath, llvm::StringRef ModuleName);
 

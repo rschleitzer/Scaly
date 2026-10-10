@@ -53,7 +53,7 @@ fi
 # whole-program opt route is for the shipped archive, not for this check.
 echo "rosetta: building the $TRIPLE runtime archive"
 "$SCALYC" --target "$TRIPLE" -c --no-prelude --no-tests \
-          -o "$WORK/libscaly.o" packages/scaly/0.1.0/scaly.scaly \
+          -o "$WORK/libscaly.o" packages/scaly/0.1.1/scaly.scaly \
     || { echo "rosetta: FAIL — runtime cross-emit"; exit 1; }
 for s in fcontext eio ctime panic; do
     SCALY_ARCH=x86_64 "tools/$s.sh" "$WORK/$s.o" \

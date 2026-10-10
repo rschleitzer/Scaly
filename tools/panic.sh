@@ -3,7 +3,7 @@
 # (default /tmp/panic.o). One C source for all four targets; nothing in it is
 # OS-conditional, but `jmp_buf` is an OS- and arch-specific struct layout AND
 # `setjmp` cannot be wrapped in a library function at all — see the header of
-# packages/scaly/0.1.0/scaly/memory/panic.c.
+# packages/scaly/0.1.1/scaly/memory/panic.c.
 # Every libscaly.a build archives this object next to fcontext.o and eio.o,
 # and every scalyc/scalyls link lists it explicitly (see tools/seed.sh,
 # tools/build-from-seed.sh, tools/verify-seed.sh, tools/install.sh).
@@ -39,4 +39,4 @@ if [ -n "${SCALY_ARCH:-}" ]; then
     ARCHFLAG="-arch $SCALY_ARCH"
 fi
 
-${CLANG:-clang} $ARCHFLAG -O2 -c packages/scaly/0.1.0/scaly/memory/panic.c -o "$OUT"
+${CLANG:-clang} $ARCHFLAG -O2 -c packages/scaly/0.1.1/scaly/memory/panic.c -o "$OUT"

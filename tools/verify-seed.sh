@@ -121,7 +121,7 @@ if [ -n "$VERIFY_FIXEDPOINT" ]; then
   for f in main scaly_main scalyc; do
     "$SC" -S --no-tests -o "$WORK/$f.ll" packages/scalyc/0.1.0/$f.scaly >/dev/null 2>&1 || fail "re-emit $f.ll"
   done
-  "$SC" -S --no-tests -o "$WORK/scaly.ll" packages/scaly/0.1.0/scaly.scaly >/dev/null 2>&1 || fail "re-emit scaly.ll"
+  "$SC" -S --no-tests -o "$WORK/scaly.ll" packages/scaly/0.1.1/scaly.scaly >/dev/null 2>&1 || fail "re-emit scaly.ll"
   for f in main scaly_main scalyc scaly; do
     cmp -s "$WORK/$f.ll" "seed/$f.ll" || fail "fixed point: $f.ll differs from committed seed"
   done

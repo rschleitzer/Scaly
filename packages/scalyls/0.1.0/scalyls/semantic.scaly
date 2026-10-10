@@ -394,7 +394,7 @@ define semantic
     ; the prelude's, and every method of every generic the document's own types
     ; pull in. Those spans index THOSE files, so they overlap the document's own
     ; offsets, and a walk that compares numbers alone will happily report one of
-    ; them. Measured 2026-08-12 on packages/scaly/0.1.0/scaly/containers/
+    ; them. Measured 2026-08-12 on packages/scaly/0.1.1/scaly/containers/
     ; Vector.scaly: EVERY hover answered `bool` — the return type of
     ; `Slice[T].equals`, whose span 1328..2073 in containers/Slice.scaly covers
     ; most of Vector.scaly's `define Vector[T]` (1614..4831). The file reads as

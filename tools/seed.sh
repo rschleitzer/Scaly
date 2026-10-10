@@ -128,7 +128,7 @@ llc_objs() {
 }
 C=packages/scalyc/0.1.0 L=packages/scalyls/0.1.0
 echo "seed: emitting .ll with $CC --no-tests --portable-simd --target $SEED_TARGET"
-emit_roots "$CC" main=$C/main.scaly scaly_main=$C/scaly_main.scaly scalyc=$C/scalyc.scaly scaly=packages/scaly/0.1.0/scaly.scaly || fail "emission"
+emit_roots "$CC" main=$C/main.scaly scaly_main=$C/scaly_main.scaly scalyc=$C/scalyc.scaly scaly=packages/scaly/0.1.1/scaly.scaly || fail "emission"
 
 if [ "$SCALY_COFF" = 1 ]; then
 # ★The Windows box: the seed text is Mach-O-targeted and carries no COMDATs,
@@ -204,7 +204,7 @@ echo "seed: hello.scaly, AOT corpus, fixed-point re-emission, scalyls roots"
   tools/aot_corpus.sh "$OUT/scalyc_seed" seed | tail -1
   [ "${PIPESTATUS[0]}" = "0" ] || { echo "AOT corpus"; exit 1; }
 ) > "$OUT/aot.log" 2>&1 & aot_pid=$!
-emit_roots "$OUT/scalyc_seed" r_main=$C/main.scaly r_scaly_main=$C/scaly_main.scaly r_scalyc=$C/scalyc.scaly r_scaly=packages/scaly/0.1.0/scaly.scaly & reemit_pid=$!
+emit_roots "$OUT/scalyc_seed" r_main=$C/main.scaly r_scaly_main=$C/scaly_main.scaly r_scalyc=$C/scalyc.scaly r_scaly=packages/scaly/0.1.1/scaly.scaly & reemit_pid=$!
 SCALY_REQUIRE_INTERFACES=1 emit_roots "$OUT/scalyc_seed" scalyls_main=$L/main.scaly scalyls=$L/scalyls.scaly json=packages/json/0.1.0/json.scaly & ls_pid=$!
 wait $aot_pid; aot_rc=$?
 cat "$OUT/aot.log"; rm -f "$OUT/aot.log"

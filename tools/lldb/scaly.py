@@ -18,7 +18,7 @@ a formatter would only re-implement what the type already says. See
 di_union_type in Emitter.scaly for why the mapping cannot live on the payload
 union instead.
 
-Layouts (packages/scaly/0.1.0/scaly/containers/) — every field is read BY NAME,
+Layouts (packages/scaly/0.1.1/scaly/containers/) — every field is read BY NAME,
 never by offset, so a layout change surfaces as a missing field rather than as
 silently wrong values:
     String    (data: pointer[u8])                    varint length, then bytes

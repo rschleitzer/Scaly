@@ -12,7 +12,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 OUT=${1:-/tmp/win32compat.o}
-SRC=packages/scaly/0.1.0/scaly/win32/posixcompat_windows.c
+SRC=packages/scaly/0.1.1/scaly/win32/posixcompat_windows.c
 
 # Link libraries the caller must add when this object is in the link:
 #   ws2_32   WSAPoll (poll)

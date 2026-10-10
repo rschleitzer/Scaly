@@ -17,7 +17,7 @@ mkdir -p "$OUT"
 [ -n "${OPERATION_KEEP:-}" ] || trap 'rm -rf "$OUT"' EXIT
 one() {
   r="$1"; n="$(echo "$r" | sed 's|packages/||; s|/0.1.0/|-|; s|\.scaly$||')"
-  fl="--no-tests"; [ "$r" = packages/scaly/0.1.0/scaly.scaly ] && fl="--no-prelude --no-tests"
+  fl="--no-tests"; [ "$r" = packages/scaly/0.1.1/scaly.scaly ] && fl="--no-prelude --no-tests"
   ( ulimit -s 65520
     "$BIN" -S $fl -o "$OUT/$n.off.ll" "$r" > "$OUT/$n.off.out" 2>&1; echo $? > "$OUT/$n.off.rc"
     SCALYC_PENDING=1 SCALYC_OPERATION_CENSUS=1 "$BIN" -S $fl -o "$OUT/$n.on.ll" "$r" > "$OUT/$n.on.out" 2> "$OUT/$n.on.err"; echo $? > "$OUT/$n.on.rc" )

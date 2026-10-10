@@ -20,8 +20,8 @@ OUT=${1:-/tmp/eio.o}
 # top of eio_windows.c. Selection is per OS here, as tools/fcontext.sh selects per
 # ABI; `uname -s` under Git Bash / MSYS reports MINGW64_NT-* or MSYS_NT-*.
 case "$(uname -s)" in
-  MINGW*|MSYS*|CYGWIN*|Windows*) SRC=packages/scaly/0.1.0/scaly/fiber/eio_windows.c ;;
-  *)                             SRC=packages/scaly/0.1.0/scaly/fiber/eio.c ;;
+  MINGW*|MSYS*|CYGWIN*|Windows*) SRC=packages/scaly/0.1.1/scaly/fiber/eio_windows.c ;;
+  *)                             SRC=packages/scaly/0.1.1/scaly/fiber/eio.c ;;
 esac
 
 # ★`SCALY_ARCH` cross-builds this shim for another ARCH on the same host. The

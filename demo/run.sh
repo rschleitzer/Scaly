@@ -25,7 +25,7 @@ fi
 if [ ! -f /tmp/libscaly.a ] || find packages/scaly -newer /tmp/libscaly.a | grep -q .; then
   echo "building -O2 runtime archive..."
   source tools/llvm-env.sh
-  "$SCALYC" -S --no-prelude --no-tests -o /tmp/libscaly.ll packages/scaly/0.1.0/scaly.scaly
+  "$SCALYC" -S --no-prelude --no-tests -o /tmp/libscaly.ll packages/scaly/0.1.1/scaly.scaly
   sed 's/^define linkonce_odr /define weak_odr /' /tmp/libscaly.ll > /tmp/libscaly_weak.ll
   opt -O2 /tmp/libscaly_weak.ll -o /tmp/libscaly_opt.bc
   llc -relocation-model=pic -O2 -filetype=obj /tmp/libscaly_opt.bc -o /tmp/libscaly.o

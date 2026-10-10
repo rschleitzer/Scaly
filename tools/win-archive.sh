@@ -19,10 +19,10 @@ cd "$(dirname "$0")/.." || exit 1
 SCALYC=${1:-scalyc/build/scalyc.exe}
 OUT=${2:-$(cygpath -u "${TMP:-${TEMP:-/tmp}}")}
 T=${SCALY_WIN_TRIPLE:-x86_64-pc-windows-msvc}
-P=packages/scaly/0.1.0/scaly
+P=packages/scaly/0.1.1/scaly
 if [ ! -x "$SCALYC" ]; then echo "win-archive: no compiler at $SCALYC" >&2; exit 1; fi
 
-"$SCALYC" -S --no-prelude --no-tests -o "$OUT/libscaly_win.ll" packages/scaly/0.1.0/scaly.scaly
+"$SCALYC" -S --no-prelude --no-tests -o "$OUT/libscaly_win.ll" packages/scaly/0.1.1/scaly.scaly
 sed 's/^define linkonce_odr /define weak_odr /' "$OUT/libscaly_win.ll" > "$OUT/libscaly_win_weak.ll"
 clang --target=$T -c -O2 -Wno-override-module -o "$OUT/libscaly_win.o" "$OUT/libscaly_win_weak.ll"
 case "$T" in

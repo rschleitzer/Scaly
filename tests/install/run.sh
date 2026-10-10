@@ -74,7 +74,7 @@ if "$ROOT/tools/make-dist.sh" "$VER" "$TMP/base/downloads" > "$TMP/dist.log" 2>&
   private=$(grep -cE 'packages/(scalyc|scalyls|scalygpu)/|\.o$|/\._|CLAUDE' "$TMP/payload.txt")
   missing=""
   for f in seed/main.ll seed/scaly_main.ll seed/scalyc.ll seed/scaly.ll seed/scalyls.ll seed/scalyls_main.ll \
-           seed/json.ll seed/SHA256SUMS packages/scaly/0.1.0/scaly.scaly packages/http/0.1.0/http.scaly \
+           seed/json.ll seed/SHA256SUMS packages/scaly/0.1.1/scaly.scaly packages/http/0.1.0/http.scaly \
            packages/https/0.1.0/https.scaly packages/tls/0.1.0/tls.scaly packages/json/0.1.0/json.scaly \
            LICENSE VERSION; do
     grep -q "^\./$f" "$TMP/payload.txt" || missing="$missing $f"

@@ -42,7 +42,7 @@ def ambient_names():
         for m in re.finditer(r'^\s*shared\s+atomic\s+([A-Za-z][A-Za-z0-9_]*)\s*:',
                              open(f, errors='replace').read(), re.M):
             out.add(m.group(1))
-    for f in glob.glob('packages/scaly/0.1.0/scaly/**/*.scaly', recursive=True):
+    for f in glob.glob('packages/scaly/0.1.1/scaly/**/*.scaly', recursive=True):
         if not RUNTIME.search(f):
             continue
         for m in re.finditer(r'^\s*(?:mutable|shared)\s+([A-Za-z][A-Za-z0-9_]*)\s*:',

@@ -2,7 +2,7 @@
 // Modeled on Boost.Context's fcontext design (jump_x86_64_sysv): a context
 // is a stack pointer to a 0x40-byte frame holding the callee-saved state.
 // Assembled by clang via tools/fcontext.sh and archived into libscaly.a;
-// the Scaly-side extern declarations live in packages/scaly/0.1.0/scaly/
+// the Scaly-side extern declarations live in packages/scaly/0.1.1/scaly/
 // fiber.scaly. One file serves both OSes: Mach-O mangles C names with a
 // leading underscore, ELF does not — SYM() below absorbs the difference.
 //

@@ -65,7 +65,7 @@ args+=("$@")
 # refuses a second one (CVT1100; lld-link merges them).
 case " $* " in
   *utf8.res\ *) ;;
-  *) args+=(packages/scaly/0.1.0/scaly/win32/utf8.res) ;;
+  *) args+=(packages/scaly/0.1.1/scaly/win32/utf8.res) ;;
 esac
 if [ "$RT" = 1 ]; then
   rt="$(cygpath -u "${TMP:-${TEMP:-/tmp}}")/libscaly.lib"

@@ -2,7 +2,7 @@
     // Build/run tasks for Scaly programs.
     //
     // The compiler resolves the prelude relative to its working directory
-    // (packages/scaly/0.1.0/scaly), so every task runs with the repository
+    // (packages/scaly/0.1.1/scaly), so every task runs with the repository
     // root as cwd. Build scalyc first: tools/build-from-seed.sh
     "version": "2.0.0",
     "tasks": [

@@ -78,7 +78,7 @@ if [ "$SCALY_COFF" != 1 ] && [ -f seed/scalyc.ll ] && [ -x /tmp/scalyc_seed_root
      && [ "$(cat /tmp/scalyc_seed_root.key 2>/dev/null)" = "$(root_key)" ]; then
   echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root (reused, seed unchanged)"
   ROOT=/tmp/scalyc_seed_root
-  ( ulimit -s 65520; "$ROOT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly )
+  ( ulimit -s 65520; "$ROOT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.1/scaly.scaly )
   tools/fcontext.sh /tmp/fcontext.o
   tools/eio.sh /tmp/eio.o
   tools/ctime.sh /tmp/ctime.o
@@ -119,7 +119,7 @@ if [ "$STAGE1_ONLY" = 1 ]; then
     tools/win-archive.sh /tmp/scalyc_stage1 > /dev/null
   else
     echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive)"
-    ( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly )
+    ( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.1/scaly.scaly )
     tools/fcontext.sh /tmp/fcontext.o
     tools/eio.sh /tmp/eio.o
     tools/ctime.sh /tmp/ctime.o
@@ -146,7 +146,7 @@ else
 echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive) and the scalyc package, side by side"
 # The package object does not need the archive, only stage2's link does.
 ( ulimit -s 65520; /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.0/scalyc.scaly ) & sc1_pid=$!
-( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly )
+( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.1/scaly.scaly )
 tools/fcontext.sh /tmp/fcontext.o
 tools/eio.sh /tmp/eio.o
 tools/ctime.sh /tmp/ctime.o

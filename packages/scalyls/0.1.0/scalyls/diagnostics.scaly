@@ -419,7 +419,7 @@ define diagnostics
     ; document itself for a program root), and it is what bounds the fan-out to
     ; the subtree that entry owns. The bound is not cosmetic: build_program#
     ; attaches the PRELUDE as a sub-module of the main module, so an unbounded
-    ; walk publishes into packages/scaly/0.1.0/scaly/prelude.scaly — a file of
+    ; walk publishes into packages/scaly/0.1.1/scaly/prelude.scaly — a file of
     ; another root, whose diagnostics this analysis has no business clearing.
     ; Measured on a two-module probe, where prelude.scaly was the only sibling
     ; the first version reported.

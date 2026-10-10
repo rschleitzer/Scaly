@@ -32,7 +32,7 @@ fi
 if [ ! -f /tmp/libscaly.a ] || find packages/scaly -name '*.scaly' -newer /tmp/libscaly.a | grep -q .; then
   echo "building -O2 runtime archive..."
   source tools/llvm-env.sh
-  "$SCALYC" -S --no-prelude --no-tests -o /tmp/libscaly.ll packages/scaly/0.1.0/scaly.scaly
+  "$SCALYC" -S --no-prelude --no-tests -o /tmp/libscaly.ll packages/scaly/0.1.1/scaly.scaly
   sed 's/^define linkonce_odr /define weak_odr /' /tmp/libscaly.ll > /tmp/libscaly_weak.ll
   opt -O2 /tmp/libscaly_weak.ll -o /tmp/libscaly_opt.bc
   llc -relocation-model=pic -O2 -filetype=obj /tmp/libscaly_opt.bc -o /tmp/libscaly.o
@@ -69,7 +69,7 @@ fi
 BIN=/tmp/scaly_mann_bpe_gpu
 if [ ! -x "$BIN" ] \
    || [ demo/mann_bpe_gpu.scaly -nt "$BIN" ] \
-   || [ packages/scaly/0.1.0/scaly/tensor/mgpu.m -nt "$BIN" ] \
+   || [ packages/scaly/0.1.1/scaly/tensor/mgpu.m -nt "$BIN" ] \
    || [ /tmp/libscalygpu.o -nt "$BIN" ] \
    || [ /tmp/libscaly.a -nt "$BIN" ]; then
   tools/mgpu.sh /tmp/mgpu.o

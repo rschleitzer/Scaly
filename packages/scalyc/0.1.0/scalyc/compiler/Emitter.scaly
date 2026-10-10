@@ -1087,7 +1087,7 @@ define Emitter
                 return cached
 
             ; `define String (data: pointer[u8](null))` — a single-pointer HANDLE
-            ; (packages/scaly/0.1.0/scaly/containers/String.scaly). The bytes it
+            ; (packages/scaly/0.1.1/scaly/containers/String.scaly). The bytes it
             ; points at carry a varint length prefix, so this member is only the
             ; buffer ADDRESS; decoding it into text is a debugger FORMATTER's job,
             ; not DWARF's.
@@ -1666,7 +1666,7 @@ define Emitter
         ; static frame for big functions like Planner.collapse_operand_sequence#
         ; ends up huge enough that a few levels of recursion blow past the 8MB
         ; main-thread stack on macOS (rc=139 when stage-1 compiles
-        ; packages/scaly/0.1.0/scaly.scaly). Saves the current insertion point
+        ; packages/scaly/0.1.1/scaly.scaly). Saves the current insertion point
         ; via LLVMGetInsertBlock, repositions to before the entry block's first
         ; instruction (or at-end if empty), emits the alloca, then restores
         ; the insertion point.
@@ -3820,7 +3820,7 @@ define Emitter
             ; Fallback: hardcoded layouts for stdlib generic containers
             ; (stage-1 doesn't fully instantiate generics, so Vector[T] etc.
             ; aren't in plan.structures). The layouts below match the
-            ; canonical struct definitions in packages/scaly/0.1.0/scaly/
+            ; canonical struct definitions in packages/scaly/0.1.1/scaly/
             ; containers/. Length, capacity, and counts are i64 (size_t);
             ; data, page, and slot pointers are ptr (opaque). All entries
             ; reflect actual stdlib field ORDER.
@@ -3856,7 +3856,7 @@ define Emitter
             }
             if name = "Array"
             {
-                ; Array[T] (packages/scaly/0.1.0/scaly/containers/Array.scaly):
+                ; Array[T] (packages/scaly/0.1.1/scaly/containers/Array.scaly):
                 ; { length: size_t, vector: pointer[Vector[T]] } — 2 fields.
                 ; Pre-s121 had a 4-field layout that didn't match the real
                 ; stdlib definition; corrected so deref-load through an
@@ -3868,7 +3868,7 @@ define Emitter
             }
             if name = "List"
             {
-                ; List[T] (packages/scaly/0.1.0/scaly/containers/List.scaly):
+                ; List[T] (packages/scaly/0.1.1/scaly/containers/List.scaly):
                 ; `(head: pointer[Node[T]] (null), tail: pointer[Node[T]] (null))` —
                 ; TWO fields, 16 bytes, since 2026-09-16 (the list appends). Node
                 ; carries (element, next); there is no cached length.
@@ -3910,7 +3910,7 @@ define Emitter
             ; walks Page chains from a user program). The literal shapes
             ; below give the fallback path correct GEP/extract offsets, the
             ; same pattern as the container entries above; layouts match
-            ; packages/scaly/0.1.0/scaly/memory/.
+            ; packages/scaly/0.1.1/scaly/memory/.
             if name = "Page"
             {
                 ; Page: { next_object: ptr, current_page: ptr, next_page: ptr,

@@ -126,8 +126,8 @@ if [ "$PROFILE" != none ]; then
   done
   # they replace step 1's only when they can do what step 1's can: the same
   # emission, and a program run in process (the reason for --export)
-  "$STAGE/libexec/scalyc" -S --no-prelude --no-tests -o "$PGO/a.ll" packages/scaly/0.1.0/scaly.scaly
-  "$PGO/scalyc" -S --no-prelude --no-tests -o "$PGO/b.ll" packages/scaly/0.1.0/scaly.scaly
+  "$STAGE/libexec/scalyc" -S --no-prelude --no-tests -o "$PGO/a.ll" packages/scaly/0.1.1/scaly.scaly
+  "$PGO/scalyc" -S --no-prelude --no-tests -o "$PGO/b.ll" packages/scaly/0.1.1/scaly.scaly
   cmp -s "$PGO/a.ll" "$PGO/b.ll" || { echo "make-bindist: FAIL — the profiled compiler emits differently"; exit 1; }
   out=$(SCALY_CACHE="$PGO/cache" SCALY_HOME= "$PGO/scaly" run tests/tool/hello.scaly one two 2>/dev/null || true)
   [ "$out" = "hello one two" ] || { echo "make-bindist: FAIL — the profiled tool cannot run a program in process: '$out'"; exit 1; }

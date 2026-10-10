@@ -175,7 +175,7 @@ fi
 # the scaly package needs both objects. The civil-time shim rides along: the
 # compiler calls none of it, but a dazzle stylesheet run through --jit
 # resolves the time primitives out of the compiler process, so the symbols
-# must be in the binary (see packages/scaly/0.1.0/scaly/time/ctime.c).
+# must be in the binary (see packages/scaly/0.1.1/scaly/time/ctime.c).
 tools/fcontext.sh "$WORK/fcontext.o"
 tools/eio.sh "$WORK/eio.o"
 tools/ctime.sh "$WORK/ctime.o"
@@ -346,7 +346,7 @@ fi
 # uninstantiated generics and would otherwise leave undefined symbols in the
 # single archive object). Built with the compiler we just produced — C++-free.
 # fcontext.o adds the fiber context-switch primitives (vendored assembly,
-# packages/scaly/0.1.0/scaly/fiber/) — clang assembles the host's ABI file.
+# packages/scaly/0.1.1/scaly/fiber/) — clang assembles the host's ABI file.
 # -O2 (5.3): the archive's opt level is what AOT programs feel for every
 # non-generic stdlib body (the tensor tape kernels above all) — the
 # program's own -O flag never touches code that lives in libscaly.a.
@@ -356,12 +356,12 @@ fi
 # promote definitions to weak_odr (kept, same ODR-merge at link), then
 # opt -O2 + llc. Falls back to the plain -O0 object when opt is absent.
 if [ "${SCALYC_NO_OPT:-0}" != "1" ] && [ -n "$OPT" ]; then
-    "$OUT" -S --no-prelude --no-tests -o "$WORK/libscaly.ll" packages/scaly/0.1.0/scaly.scaly
+    "$OUT" -S --no-prelude --no-tests -o "$WORK/libscaly.ll" packages/scaly/0.1.1/scaly.scaly
     sed 's/^define linkonce_odr /define weak_odr /' "$WORK/libscaly.ll" > "$WORK/libscaly_weak.ll"
     "$OPT" -O2 "$WORK/libscaly_weak.ll" -o "$WORK/libscaly_opt.bc"
     "$LLC" -relocation-model=pic -O2 -filetype=obj "$WORK/libscaly_opt.bc" -o /tmp/libscaly.o
 else
-    "$OUT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
+    "$OUT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.1/scaly.scaly
 fi
 cp "$WORK/fcontext.o" /tmp/fcontext.o
 cp "$WORK/eio.o" /tmp/eio.o

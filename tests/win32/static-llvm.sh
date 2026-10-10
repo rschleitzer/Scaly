@@ -146,8 +146,8 @@ out=$( cd "$W" && PATH="$BARE_PATH" SCALY_HOME="$ROOT" SCALY_CACHE="$W/cache" "$
 
 # ---------------------------------------------------------------- 4 same
 if [ -x scalyc/build/scalyc.exe ]; then
-  "$OUT/scalyc.exe" -S --no-prelude --no-tests -o "$W/static.ll" packages/scaly/0.1.0/scaly.scaly > "$W/emit1.log" 2>&1
-  scalyc/build/scalyc.exe -S --no-prelude --no-tests -o "$W/dynamic.ll" packages/scaly/0.1.0/scaly.scaly > "$W/emit2.log" 2>&1
+  "$OUT/scalyc.exe" -S --no-prelude --no-tests -o "$W/static.ll" packages/scaly/0.1.1/scaly.scaly > "$W/emit1.log" 2>&1
+  scalyc/build/scalyc.exe -S --no-prelude --no-tests -o "$W/dynamic.ll" packages/scaly/0.1.1/scaly.scaly > "$W/emit2.log" 2>&1
   if [ -s "$W/static.ll" ] && cmp -s "$W/static.ll" "$W/dynamic.ll"; then
     echo "4 same: OK - the stdlib's IR is byte-identical to scalyc/build/scalyc.exe's"
   else

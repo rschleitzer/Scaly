@@ -1,7 +1,7 @@
 #!/bin/bash
 # Assemble the fiber context-switch primitives for THIS host into an object
 # file (default /tmp/fcontext.o). The .S sources live in the scaly package
-# (packages/scaly/0.1.0/scaly/fiber/); one file per ABI — AAPCS64 and SysV
+# (packages/scaly/0.1.1/scaly/fiber/); one file per ABI — AAPCS64 and SysV
 # x86-64 cover all four LP64 targets, darwin/linux differences are absorbed
 # by cpp inside the files. Every libscaly.a build archives this object next
 # to libscaly.o (see tools/build-from-seed.sh, tools/bootstrap.sh,
@@ -19,7 +19,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 OUT=${1:-/tmp/fcontext.o}
-FIB=packages/scaly/0.1.0/scaly/fiber
+FIB=packages/scaly/0.1.1/scaly/fiber
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*|Windows*)
     # by the toolchain's target (tools/win-env.sh), not by `uname -m`

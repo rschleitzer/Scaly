@@ -53,7 +53,7 @@ rebuild_runtime() {
     tools/win-archive.sh "$1" > /dev/null
     return
   fi
-  bash -c "ulimit -s 65520; '$1' -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly"
+  bash -c "ulimit -s 65520; '$1' -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.1/scaly.scaly"
   tools/fcontext.sh /tmp/fcontext.o
   tools/eio.sh /tmp/eio.o
   tools/ctime.sh /tmp/ctime.o
@@ -71,6 +71,6 @@ rebuild_runtime /tmp/scalyc_stage1_new
 bash -c 'ulimit -s 65520; /tmp/scalyc_stage1_new -c -o /tmp/sc1n.o packages/scalyc/0.1.0/scalyc.scaly'
 rm -f /tmp/libscalyc1n.a; ar rcs /tmp/libscalyc1n.a /tmp/sc1n.o
 ( ulimit -s 65520; link_stage /tmp/scalyc_stage1_new /tmp/scalyc_stage2_new /tmp/libscalyc1n.a ) 2>&1 | grep -v "ld: warning" || true
-/tmp/scalyc_stage1_new -S --no-prelude -o /tmp/sl_s1.ll packages/scaly/0.1.0/scaly.scaly 2>/dev/null
-/tmp/scalyc_stage2_new -S --no-prelude -o /tmp/sl_s2.ll packages/scaly/0.1.0/scaly.scaly 2>/dev/null
+/tmp/scalyc_stage1_new -S --no-prelude -o /tmp/sl_s1.ll packages/scaly/0.1.1/scaly.scaly 2>/dev/null
+/tmp/scalyc_stage2_new -S --no-prelude -o /tmp/sl_s2.ll packages/scaly/0.1.1/scaly.scaly 2>/dev/null
 cmp -s /tmp/sl_s1.ll /tmp/sl_s2.ll && echo "RESULT: IDENTICAL" || echo "RESULT: DIVERGES"

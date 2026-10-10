@@ -30,7 +30,7 @@ add_definitions(-DLLVM_SHARED_LIB_PATH="${LLVM_SHARED_LIB}")
 
 
 # No C runtime shim needed — the page allocator and all diagnostic output
-# now live entirely in Scaly (packages/scaly/0.1.0/scaly/memory/root_pages.scaly).
+# now live entirely in Scaly (packages/scaly/0.1.1/scaly/memory/root_pages.scaly).
 
 # Source files
 set(SOURCES

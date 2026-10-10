@@ -3,7 +3,7 @@
 # /tmp/ctime.o). One C source for all four targets; nothing in it is
 # OS-conditional, but `struct tm` (a libc struct layout) and the variadic
 # sscanf/sprintf calls put it on the C side of the containment rule — see the
-# header of packages/scaly/0.1.0/scaly/time/ctime.c.
+# header of packages/scaly/0.1.1/scaly/time/ctime.c.
 # Every libscaly.a build archives this object next to fcontext.o and eio.o,
 # and every scalyc/scalyls link lists it explicitly (see tools/seed.sh,
 # tools/build-from-seed.sh, tools/verify-seed.sh, tools/install.sh).
@@ -39,4 +39,4 @@ if [ -n "${SCALY_ARCH:-}" ]; then
     ARCHFLAG="-arch $SCALY_ARCH"
 fi
 
-${CLANG:-clang} $ARCHFLAG -O2 -c packages/scaly/0.1.0/scaly/time/ctime.c -o "$OUT"
+${CLANG:-clang} $ARCHFLAG -O2 -c packages/scaly/0.1.1/scaly/time/ctime.c -o "$OUT"

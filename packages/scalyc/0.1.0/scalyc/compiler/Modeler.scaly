@@ -2428,8 +2428,8 @@ define Modeler
 
         ; `define <ns> { module foo }` resolves to <path>/<ns>/foo.scaly so
         ; sub-modules live under a directory matching the namespace name
-        ; (e.g. packages/scaly/0.1.0/scaly.scaly's `define scaly { module
-        ; memory }` resolves to packages/scaly/0.1.0/scaly/memory.scaly).
+        ; (e.g. packages/scaly/0.1.1/scaly.scaly's `define scaly { module
+        ; memory }` resolves to packages/scaly/0.1.1/scaly/memory.scaly).
         ; Skip the append when path's last component already equals name —
         ; happens when build_module# loaded a file whose define matches its
         ; own filename. Mirrors stage-0 Modeler.cpp:1864-1868.

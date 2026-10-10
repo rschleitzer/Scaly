@@ -57,7 +57,7 @@ if b.area() = 12
   <section xml:id="mod-package">
     <title>Packages</title>
     <para>A package is a source distribution. Its version is encoded in its
-      filesystem path — <filename>packages/scaly/0.1.0/</filename> — and that
+      filesystem path — <filename>packages/scaly/0.1.1/</filename> — and that
       path is the single source of truth; there is no separate version
       manifest. The statement</para>
     <programlisting>package scaly 0.1.0</programlisting>

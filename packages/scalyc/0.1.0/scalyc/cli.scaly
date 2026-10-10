@@ -1548,7 +1548,7 @@ define cli
         ; functions (Page.allocate_root_page etc.) that stage-1 emits
         ; as declarations only because it can't fully plan
         ; root_pages.scaly. Must be built with --no-prelude:
-        ;     scalyc -c --no-prelude -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
+        ;     scalyc -c --no-prelude -o /tmp/libscaly.o packages/scaly/0.1.1/scaly.scaly
         ;     ar rcs /tmp/libscaly.a /tmp/libscaly.o
         ; Without --no-prelude, libscaly.o also carries print/println
         ; (which the prelude defines as wrappers around puts), and
