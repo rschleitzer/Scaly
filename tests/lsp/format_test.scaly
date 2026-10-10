@@ -14,7 +14,7 @@
 ; only be checked by running it over all of them. tests/lsp/run.sh drives it.
 
 package scaly 0.1.0
-package scalyls 0.1.0
+package scalyls 0.2.0
 
 use scaly.containers.String
 use scaly.fiber.Io

@@ -1,7 +1,7 @@
 # Scaly for VS Code
 
 VS Code language support for [Scaly](https://scaly.io), backed by
-[scalyls](../../packages/scalyls/0.1.1) — the Scaly language server, itself
+[scalyls](../../packages/scalyls/0.2.0) — the Scaly language server, itself
 written in Scaly. The extension registers the `.scaly` language, provides
 TextMate syntax highlighting, launches the server over stdio, and ships a
 debugger backed by `lldb-dap`.

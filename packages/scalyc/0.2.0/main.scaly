@@ -4,7 +4,7 @@
 ; Compile: ./scalyc -o scalyc packages/scalyc/0.2.0/main.scaly
 
 package scaly 0.1.0
-package scalyc 0.1.0
+package scalyc 0.2.0
 use scalyc.cli
 
 procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count

@@ -4,7 +4,7 @@
 ;   printf 'Content-Length: 5\r\n\r\nhello' | echo  ->  same frame back
 
 package scaly 0.1.0
-package scalyls 0.1.0
+package scalyls 0.2.0
 
 use scaly.containers.String
 use scalyls.rpc

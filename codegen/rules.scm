@@ -12,7 +12,7 @@
         (file "packages/scalyc/0.2.0/scalyc/compiler/parser.scaly"
             (generate-parser-scaly)
         )
-        (file "packages/scalyls/0.1.1/scalyls/grammar.scaly"
+        (file "packages/scalyls/0.2.0/scalyls/grammar.scaly"
             (generate-highlight-scaly)
         )
         (file "editors/vscode/syntaxes/scaly.tmLanguage.json"

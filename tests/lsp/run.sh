@@ -108,9 +108,9 @@ if [ "$MODE" = selfhosted ]; then
     # On Windows the runtime comes from the archive (tools/win-archive.sh): the
     # stdlib object and the five shims, as every other suite there links it.
     [ "$SCALY_COFF" = 1 ] || { lsp_root scaly packages/scaly/0.1.1/scaly.scaly & pids+=($!); }
-    lsp_root scalyls      packages/scalyls/0.1.1/scalyls.scaly & pids+=($!)
+    lsp_root scalyls      packages/scalyls/0.2.0/scalyls.scaly & pids+=($!)
     lsp_root json         packages/json/0.1.0/json.scaly & pids+=($!)
-    lsp_root scalyls_main packages/scalyls/0.1.1/main.scaly & pids+=($!)
+    lsp_root scalyls_main packages/scalyls/0.2.0/main.scaly & pids+=($!)
     for p in "${pids[@]}"; do wait "$p" || exit 1; done
     # scaly.o references the fiber context-switch primitives (vendored asm)
     # and the evented-I/O backend shim (kqueue/epoll C); ctime.o is the
@@ -159,7 +159,7 @@ lsp_build_server() {
     elif [ "$MODE" = selfhosted ]; then
         lsp_link "$LSO/scalyls_main.o" "$1"
     else
-        "$SCALYC" -o "$1" packages/scalyls/0.1.1/main.scaly "${LINK[@]}" 2>/dev/null
+        "$SCALYC" -o "$1" packages/scalyls/0.2.0/main.scaly "${LINK[@]}" 2>/dev/null
     fi
 }
 
@@ -1209,7 +1209,7 @@ if [ $rc -eq 0 ]; then ok "lsp completion detail"; else bad "lsp completion deta
 # ---- completionItem/resolve: the doc block, one entry at a time ------------
 # The `;` block above a declaration is what hover shows, and it is the most
 # valuable thing a completion entry could carry. It is NOT sent with the list:
-# measured on packages/scalyls/0.1.1/scalyls/symbols.scaly, the flat list is 392
+# measured on packages/scalyls/0.2.0/scalyls/symbols.scaly, the flat list is 392
 # entries / 85 KB, and resolving all of them takes it to 182 KB — 2.1x, per
 # keystroke, for a reader who looks at one entry.
 #
@@ -5516,7 +5516,7 @@ def rows(ls):   # (1-based line, title, command id, single argument or None)
 gen_cases = [
     ("packages/scalyc/0.2.0/scalyc/compiler/parser.scaly", "codegen/parser-scaly.scm"),
     ("packages/scalyc/0.2.0/scalyc/compiler/Syntax.scaly", "codegen/syntax-scaly.scm"),
-    ("packages/scalyls/0.1.1/scalyls/grammar.scaly",       "codegen/highlight-scaly.scm"),
+    ("packages/scalyls/0.2.0/scalyls/grammar.scaly",       "codegen/highlight-scaly.scm"),
     ("tests/selfhosted/controlflow__break-in-for.scaly",   "tests/controlflow.sgm"),
 ]
 for (f, want) in gen_cases:
@@ -5535,7 +5535,7 @@ first = open("tests/selfhosted/controlflow__break-in-for.scaly").readline()
 check("tests/controlflow.sgm" in first,
       "the generated file's own header agrees with the table")
 # A hand-written file gets no banner.
-check(not [r for r in rows(lenses("packages/scalyls/0.1.1/scalyls/docstore.scaly"))
+check(not [r for r in rows(lenses("packages/scalyls/0.2.0/scalyls/docstore.scaly"))
            if r[1].startswith("generated from ")],
       "a hand-written file gets no banner")
 
@@ -5550,7 +5550,7 @@ check(not [r for r in rows(lenses("packages/scaly/0.1.1/scaly.scaly")) if r[1].s
 # ---- claims about the file system must be TRUE --------------------------
 # Over real tree files: whatever the lens says about a module file, the file
 # system must agree. This is the assertion that cannot rot.
-sweep = ["packages/scalyls/0.1.1/scalyls.scaly",
+sweep = ["packages/scalyls/0.2.0/scalyls.scaly",
          "packages/scaly/0.1.1/scaly.scaly",
          "packages/scalyc/0.2.0/scalyc/compiler.scaly",
          "packages/scalyc/0.2.0/scalyc/compiler/parser.scaly"]
@@ -5613,7 +5613,7 @@ check(len(pkg_rows) == 1 and pkg_rows[0][1] == "package: packages/scaly/0.1.0/sc
       and pkg_rows[0][2] == "" and pkg_rows[0][3] is None,
       "with no resolution base the package lens is plain text, not a link")
 # In the checkout the same declaration IS clickable and absolute.
-tree_pkg = [r for r in rows(lenses("packages/scalyls/0.1.1/scalyls.scaly")) if r[1].startswith("package root: ")]
+tree_pkg = [r for r in rows(lenses("packages/scalyls/0.2.0/scalyls.scaly")) if r[1].startswith("package root: ")]
 check(len(tree_pkg) == 3 and all(r[2] == "scaly.openPath" and os.path.isabs(r[3]) for r in tree_pkg),
       "in a checkout the package lens resolves absolutely and is clickable")
 sys.exit(1 if failures else 0)
@@ -7175,7 +7175,7 @@ bind_l, bind_c = loc("let a util.num()", "a")       # the binding bound to it
 brace_l = next(i for i, l in enumerate(lines) if l == "    {")  # body open brace
 
 # The real tree at real scale.
-srv = os.path.join(os.getcwd(), "packages/scalyls/0.1.1/scalyls/server.scaly")
+srv = os.path.join(os.getcwd(), "packages/scalyls/0.2.0/scalyls/server.scaly")
 srv_uri = "file://" + srv
 srv_doc = open(srv).read()
 srv_lines = srv_doc.split("\n")
