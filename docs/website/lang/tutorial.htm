@@ -176,6 +176,27 @@ CLASS="userinput"
         — and takes about half a minute; the installer says which of the two
         it is doing.</P
 ><P
+>The installer takes the newest version of the toolchain. A
+        version that is out does not change afterwards, so a particular one
+        can be asked for by its number and is the same every time:</P
+><PRE
+CLASS="programlisting"
+>curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</PRE
+><P
+>The toolchain's number is its own. The packages it brings — the
+        standard library among them — have theirs, and a program's
+        <TT
+CLASS="code"
+>package scaly 0.1.0</TT
+> goes on meaning the standard
+        library of whatever toolchain is installed, as long as that is of the
+        same line (<A
+HREF="modules.htm#mod-package-versions"
+>the Section called <I
+>Versions, and what publishing means</I
+> in Chapter 8</A
+>).</P
+><P
 >Either way it puts three commands on your <CODE
 CLASS="envar"
 >PATH</CODE

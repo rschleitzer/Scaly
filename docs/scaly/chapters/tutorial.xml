@@ -36,6 +36,15 @@ sudo apt install clang</programlisting>
         <userinput>sudo apt install llvm-21 llvm-21-dev lld-21 clang</userinput>
         — and takes about half a minute; the installer says which of the two
         it is doing.</para>
+      <para>The installer takes the newest version of the toolchain. A
+        version that is out does not change afterwards, so a particular one
+        can be asked for by its number and is the same every time:</para>
+      <programlisting>curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</programlisting>
+      <para>The toolchain's number is its own. The packages it brings — the
+        standard library among them — have theirs, and a program's
+        <code>package scaly 0.1.0</code> goes on meaning the standard
+        library of whatever toolchain is installed, as long as that is of the
+        same line (<xref linkend="mod-package-versions"/>).</para>
       <para>Either way it puts three commands on your <envar>PATH</envar>:</para>
       <itemizedlist>
         <listitem>

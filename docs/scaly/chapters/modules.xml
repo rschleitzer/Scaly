@@ -152,6 +152,13 @@ if b.area() = 12
         their methods and hand each back to its package; handing one
         package's record to the other is refused like any wrong type. The
         standard library's names and a program's own are not marked.</para>
+      <para>A package's constants and mutable globals are its own as well.
+        A mutable global is one cell wherever it is read: a program that
+        names a package's counter reads the counter the package's routines
+        write. A bare name means the global of the package it is written in
+        before another package's of the same name; written where two
+        packages in reach both declare it and neither is the writer's own,
+        it is refused, since nothing says which is meant.</para>
       <para>A <code>use</code> makes a name writable — as a type, in a
         construction, before a static call. A value brings its type along:
         its methods and fields are reached without naming the type, so
@@ -270,13 +277,30 @@ scaly publish</programlisting>
         the current one, so the version must be committed —, the record is
         committed, and both commits are pushed. From then on the version is
         fixed.</para>
-      <para>Making the next version of a package is therefore: copy
-        <filename>packages/json/0.1.3/</filename> to the directory of the
-        number the change takes, work and commit there as long as it takes,
-        and <userinput>scaly publish</userinput> when it is done. A package
-        that is released together with a program — a compiler with its
-        parser, say — publishes a version with each release and works on the
-        next one in between.</para>
+      <para>Making the next version of a package is therefore: give
+        <filename>packages/json/0.1.3/</filename> the number the change
+        takes, work and commit there as long as it takes, and
+        <userinput>scaly publish</userinput> when it is done. The directory
+        may be copied, and then both versions lie side by side; it may as
+        well be <emphasis>renamed</emphasis> —
+        <userinput>git mv packages/json/0.1.3 packages/json/0.1.4</userinput>
+        — because the published one lives on at its commit. Then the tree
+        holds one directory per package, and what else names the old
+        directory (a script, a test) follows by hand. A package that is
+        released together with a program — a compiler with its parser, say —
+        publishes a version with each release and works on the next one in
+        between.</para>
+      <para><emphasis>A declared version is a minimum.</emphasis>
+        <code>package json 0.1.3</code> asks for 0.1.3 or what stands in for
+        it. Among the declarations of one build that is the highest version
+        asked for; and where a place a package is looked for holds no
+        directory of the version itself, it is the highest version of that
+        line there that is not lower. So the declarations need not follow
+        when a package they name begins its next version: a program that
+        says <code>package json 0.1.3</code> builds against a tree or an
+        installation that has <filename>packages/json/0.1.4/</filename>
+        alone. A version of another line never stands in, and neither does a
+        lower one.</para>
     </section>
     <section xml:id="mod-package-new">
       <title>Starting a package</title>
