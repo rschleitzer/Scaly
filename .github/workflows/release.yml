@@ -1,7 +1,7 @@
 # The six binary archives the installers hand out, built natively, one runner
 # per system — and nothing else. Dispatch by hand:
 #
-#   gh workflow run release                    # version 0.1.0
+#   gh workflow run release                    # the version the tree's VERSION file names
 #   gh workflow run release -f version=0.1.1
 #   gh run download <run-id> -D dist           # the six archives, one directory each
 #
@@ -47,8 +47,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: the version in the archive names (packages/scaly/<version> must exist)
-        default: '0.1.0'
+        description: the version in the archive names (empty - the tree's VERSION file)
+        default: ''
 
 jobs:
   posix:
@@ -66,6 +66,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # the toolchain's version: asked for, or what the tree says
+      - name: version
+        shell: bash
+        run: |
+          v="${{ inputs.version }}"
+          [ -n "$v" ] || v="$(cat VERSION)"
+          echo "RELEASE_VERSION=$v" >> "$GITHUB_ENV"
+
       - name: LLVM 21 (Linux)
         if: runner.os == 'Linux'
         uses: ./.github/actions/llvm21
@@ -82,16 +90,16 @@ jobs:
         run: |
           set -e
           uname -a
-          tools/make-bindist.sh "${{ inputs.version }}" dist
+          tools/make-bindist.sh "${{ env.RELEASE_VERSION }}" dist
           ls -l dist
           # the name the installer asks for on this machine is the one we promised
-          [ -f "dist/scaly-${{ inputs.version }}-${{ matrix.system }}.tar.gz" ]
+          [ -f "dist/scaly-${{ env.RELEASE_VERSION }}-${{ matrix.system }}.tar.gz" ]
 
       - name: The unpacked compiler starts, with no LLVM beside it
         run: |
           set -e
           mkdir -p "$RUNNER_TEMP/home"
-          tar -xzf "dist/scaly-${{ inputs.version }}-${{ matrix.system }}.tar.gz" -C "$RUNNER_TEMP/home"
+          tar -xzf "dist/scaly-${{ env.RELEASE_VERSION }}-${{ matrix.system }}.tar.gz" -C "$RUNNER_TEMP/home"
           ls -l "$RUNNER_TEMP/home/libexec" "$RUNNER_TEMP/home/lib"
           # no loader path, no brew prefix: the checkout only lends its packages
           env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH SCALY_HOME="$PWD" \
@@ -102,8 +110,8 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: scaly-${{ inputs.version }}-${{ matrix.system }}
-          path: dist/scaly-${{ inputs.version }}-${{ matrix.system }}.tar.gz
+          name: scaly-${{ env.RELEASE_VERSION }}-${{ matrix.system }}
+          path: dist/scaly-${{ env.RELEASE_VERSION }}-${{ matrix.system }}.tar.gz
           if-no-files-found: error
           compression-level: 0
 
@@ -119,6 +127,14 @@ jobs:
           - { arch: arm64,  runner: windows-11-arm, installer: LLVM-21.1.8-woa64.exe, libs: aarch64 }
     steps:
       - uses: actions/checkout@v5
+
+      # the toolchain's version: asked for, or what the tree says
+      - name: version
+        shell: bash
+        run: |
+          v="${{ inputs.version }}"
+          [ -n "$v" ] || v="$(cat VERSION)"
+          echo "RELEASE_VERSION=$v" >> "$GITHUB_ENV"
 
       # The toolchain is the dev box's: clang 21.1.8 from the standalone LLVM
       # archive, UNPACKED, never installed: run silently on a runner, the
@@ -163,10 +179,10 @@ jobs:
         run: |
           set -e
           clang -dumpmachine
-          tools/make-bindist-windows.sh "${{ inputs.version }}" dist
+          tools/make-bindist-windows.sh "${{ env.RELEASE_VERSION }}" dist
           ls -l dist
           # the machine the toolchain builds for is the one this leg is named after
-          [ -f "dist/scaly-${{ inputs.version }}-windows-${{ matrix.arch }}.zip" ]
+          [ -f "dist/scaly-${{ env.RELEASE_VERSION }}-windows-${{ matrix.arch }}.zip" ]
 
       - name: The unpacked compiler starts, with no LLVM beside it
         shell: bash
@@ -174,7 +190,7 @@ jobs:
           set -e
           home="$(cygpath -u "$RUNNER_TEMP")/home"
           mkdir -p "$home"
-          7z x -bso0 -bsp0 "dist/scaly-${{ inputs.version }}-windows-${{ matrix.arch }}.zip" "-o$(cygpath -w "$home")"
+          7z x -bso0 -bsp0 "dist/scaly-${{ env.RELEASE_VERSION }}-windows-${{ matrix.arch }}.zip" "-o$(cygpath -w "$home")"
           ls -l "$home/libexec"
           [ ! -f "$home/libexec/LLVM-C.dll" ]
           # LLVM's bin off the PATH: what starts now loads no LLVM-C.dll
@@ -203,7 +219,7 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: scaly-${{ inputs.version }}-windows-${{ matrix.arch }}
-          path: dist/scaly-${{ inputs.version }}-windows-${{ matrix.arch }}.zip
+          name: scaly-${{ env.RELEASE_VERSION }}-windows-${{ matrix.arch }}
+          path: dist/scaly-${{ env.RELEASE_VERSION }}-windows-${{ matrix.arch }}.zip
           if-no-files-found: error
           compression-level: 0

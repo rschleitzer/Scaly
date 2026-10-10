@@ -25,7 +25,8 @@
 #
 # Environment overrides:
 #   SCALY_PREFIX          install location           (default ~/.scaly)
-#   SCALY_VERSION         version to fetch           (default 0.1.0)
+#   SCALY_VERSION         version to fetch           (default: the newest,
+#                         which <base>/downloads/latest names)
 #   SCALY_INSTALL_BASE    base URL for downloads     (default https://scaly.io)
 #   SCALY_NO_MODIFY_PATH  set to 1 to skip editing your shell profile
 #   SCALY_FROM_SEED       set to 1 to build from the seed in any case
@@ -50,10 +51,9 @@
 # to do.
 set -eu
 
-VERSION="${SCALY_VERSION:-0.1.0}"
+VERSION="${SCALY_VERSION:-}"
 PREFIX="${SCALY_PREFIX:-$HOME/.scaly}"
 BASE_URL="${SCALY_INSTALL_BASE:-https://scaly.io}"
-TARBALL="scaly-$VERSION.tar.gz"
 LLVM_MAJOR=21
 
 say()  { printf 'scaly-install: %s\n' "$1"; }
@@ -76,6 +76,16 @@ fetch() {
   if have curl; then curl -fsSL "$1" -o "$2" 2>/dev/null
   else wget -q -O "$2" "$1" 2>/dev/null; fi
 }
+
+# The version: the one asked for, else the newest published -- a version's
+# archives do not change once they are out, so the default must move.
+if [ -z "$VERSION" ]; then
+  LATEST="$(mktemp)"
+  fetch "$BASE_URL/downloads/latest" "$LATEST" || die "cannot read $BASE_URL/downloads/latest - set SCALY_VERSION to the version wanted"
+  VERSION="$(tr -d ' \r\n' < "$LATEST")"; rm -f "$LATEST"
+  [ -n "$VERSION" ] || die "$BASE_URL/downloads/latest names no version"
+fi
+TARBALL="scaly-$VERSION.tar.gz"
 
 # ---------------------------------------------------------------------------
 # 1. A C compiler: it links the programs you build and compiles a package's C

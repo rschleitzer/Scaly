@@ -42,7 +42,7 @@
 #      profile runtime and llvm-profdata of the LLVM install -- which a box
 #      that builds this has.
 #
-# Usage: tools/make-bindist-windows.sh [version] [outdir]   (default 0.1.0 dist)
+# Usage: tools/make-bindist-windows.sh [version] [outdir]   (default: the VERSION file, dist)
 set -e
 cd "$(dirname "$0")/.."
 case "$(uname -s)" in
@@ -51,7 +51,7 @@ case "$(uname -s)" in
 esac
 . tools/win-env.sh || exit 1
 source tools/llvm-env.sh > /dev/null
-VERSION="${1:-0.1.0}"
+VERSION="${1:-$(cat VERSION)}"
 OUT="${2:-dist}"
 case "$SCALY_WIN_TRIPLE" in
   aarch64*) ARCH=arm64 ;;

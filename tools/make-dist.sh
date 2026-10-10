@@ -21,13 +21,13 @@
 # of the website --delete sync so a routine docs deploy can't remove it);
 # tests/install/run.sh builds one into a scratch directory and installs from it.
 #
-# Usage: tools/make-dist.sh [version] [outdir]   (default 0.1.0 dist)
+# Usage: tools/make-dist.sh [version] [outdir]   (default: the VERSION file, dist)
 #
 # Run tools/seed.sh + tools/install-seed.sh first so seed/ is current; this
 # script packages whatever is committed under seed/.
 set -e
 cd "$(dirname "$0")/.."
-VERSION="${1:-0.1.0}"
+VERSION="${1:-$(cat VERSION)}"
 OUT="${2:-dist}"
 TARBALL="$OUT/scaly-$VERSION.tar.gz"
 
@@ -39,7 +39,7 @@ for f in $SEED_FILES; do
 done
 [ -f seed/SHA256SUMS ] || { echo "make-dist: FAIL — seed/SHA256SUMS missing"; exit 1; }
 [ -f LICENSE ] || { echo "make-dist: FAIL — LICENSE missing"; exit 1; }
-[ -d "packages/scaly/$VERSION" ] || { echo "make-dist: FAIL — packages/scaly/$VERSION missing"; exit 1; }
+[ -n "$(ls packages/scaly 2>/dev/null)" ] || { echo "make-dist: FAIL — no version of the standard library under packages/scaly"; exit 1; }
 
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT

@@ -63,9 +63,14 @@ install() {
     sh "$ROOT/docs/website/install.sh" > "$2" 2>&1
 }
 
+# The toolchain's version is the tree's (the VERSION file); the installer is
+# asked for none and takes what downloads/latest names, as a user's does.
+VER="$(cat "$ROOT/VERSION")"
+
 # payload
-if "$ROOT/tools/make-dist.sh" 0.1.0 "$TMP/base/downloads" > "$TMP/dist.log" 2>&1; then
-  tar -tzf "$TMP/base/downloads/scaly-0.1.0.tar.gz" > "$TMP/payload.txt"
+if "$ROOT/tools/make-dist.sh" "$VER" "$TMP/base/downloads" > "$TMP/dist.log" 2>&1; then
+  printf '%s\n' "$VER" > "$TMP/base/downloads/latest"
+  tar -tzf "$TMP/base/downloads/scaly-$VER.tar.gz" > "$TMP/payload.txt"
   private=$(grep -cE 'packages/(scalyc|scalyls|scalygpu)/|\.o$|/\._|CLAUDE' "$TMP/payload.txt")
   missing=""
   for f in seed/main.ll seed/scaly_main.ll seed/scalyc.ll seed/scaly.ll seed/scalyls.ll seed/scalyls_main.ll \
@@ -80,7 +85,7 @@ else
 fi
 
 # programs
-if "$ROOT/tools/make-bindist.sh" 0.1.0 "$TMP/base/downloads" > "$TMP/bindist.log" 2>&1; then
+if "$ROOT/tools/make-bindist.sh" "$VER" "$TMP/base/downloads" > "$TMP/bindist.log" 2>&1; then
   ok
 else
   bad "programs: make-bindist failed: $(tail -3 "$TMP/bindist.log" | tr '\n' ' ')"
@@ -193,11 +198,11 @@ fi
 
 # seed: the same packages, and "programs" that cannot start
 mkdir -p "$TMP/base2/downloads" "$TMP/broken/libexec" "$TMP/broken/lib"
-cp "$TMP/base/downloads/scaly-0.1.0.tar.gz" "$TMP/base2/downloads/"
+cp "$TMP/base/downloads/scaly-$VER.tar.gz" "$TMP/base/downloads/latest" "$TMP/base2/downloads/"
 printf '#!/bin/sh\nexit 1\n' > "$TMP/broken/libexec/scalyc"
 chmod 755 "$TMP/broken/libexec/scalyc"
 system="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
-tar -czf "$TMP/base2/downloads/scaly-0.1.0-$system.tar.gz" -C "$TMP/broken" libexec lib
+tar -czf "$TMP/base2/downloads/scaly-$VER-$system.tar.gz" -C "$TMP/broken" libexec lib
 if install "$TMP/base2" "$TMP/seed.log"; then
   grep -q 'do not start on this system' "$TMP/seed.log" && grep -q 'from the seed' "$TMP/seed.log" \
     && [ ! -e "$PREFIX/toolchain.new" ] \

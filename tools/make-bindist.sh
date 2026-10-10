@@ -41,10 +41,10 @@
 # Linux build carries the glibc version of its host as its floor — build it on
 # the OLDEST Ubuntu we support (26.04).
 #
-# Usage: tools/make-bindist.sh [version] [outdir]   (default 0.1.0 dist)
+# Usage: tools/make-bindist.sh [version] [outdir]   (default: the VERSION file, dist)
 set -e
 cd "$(dirname "$0")/.."
-VERSION="${1:-0.1.0}"
+VERSION="${1:-$(cat VERSION)}"
 OUT="${2:-dist}"
 SYSTEM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
 TARBALL="$OUT/scaly-$VERSION-$SYSTEM.tar.gz"

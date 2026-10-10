@@ -21,7 +21,8 @@
 #
 # Environment overrides:
 #   SCALY_PREFIX          install location            (default %USERPROFILE%\.scaly)
-#   SCALY_VERSION         version to fetch            (default 0.1.0)
+#   SCALY_VERSION         version to fetch            (default: the newest,
+#                         which <base>/downloads/latest names)
 #   SCALY_INSTALL_BASE    base URL for downloads, or a local directory holding
 #                         the two archives            (default https://scaly.io)
 #   SCALY_NO_MODIFY_PATH  set to 1 to leave PATH alone
@@ -47,9 +48,21 @@ function Install-Scaly {
     $ErrorActionPreference = 'Stop'
     function Say([string]$m) { Write-Host "scaly-install: $m" }
 
-    $version = if ($env:SCALY_VERSION) { $env:SCALY_VERSION } else { '0.1.0' }
     $prefix = if ($env:SCALY_PREFIX) { $env:SCALY_PREFIX } else { Join-Path $env:USERPROFILE '.scaly' }
     $base = if ($env:SCALY_INSTALL_BASE) { $env:SCALY_INSTALL_BASE } else { 'https://scaly.io' }
+    # The version: the one asked for, else the newest published -- a version's
+    # archives do not change once they are out, so the default must move.
+    $version = $env:SCALY_VERSION
+    if (-not $version) {
+        if (Test-Path $base -PathType Container) {
+            $latest = Join-Path $base 'latest'
+            if (Test-Path $latest) { $version = (Get-Content $latest -Raw).Trim() }
+        } else {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+            try { $version = ((Invoke-WebRequest -UseBasicParsing "$base/downloads/latest").Content | Out-String).Trim() } catch { $version = $null }
+        }
+        if (-not $version) { throw "cannot read which version is the newest ($base ... latest) - set SCALY_VERSION to the version wanted" }
+    }
     $toolsMode = if ($env:SCALY_BUILD_TOOLS) { $env:SCALY_BUILD_TOOLS } else { 'install' }
 
     # The machine's architecture, not this PowerShell's: an x64 PowerShell on

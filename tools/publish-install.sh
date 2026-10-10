@@ -25,13 +25,16 @@
 # the archives of the run's commit: the script says so when the two differ.
 #
 # Usage: tools/publish-install.sh [version] [--run <id>] [--dry-run] [--partial]
-#   version     default 0.1.0
+#   version     default: the tree's VERSION file
+#   --overwrite replace a version that is published already (a published
+#               version does not change: for a botched upload only)
 #   --run <id>  fetch the six archives of that release run into dist/ (gh)
 #   --dry-run   say what would be uploaded, upload and invalidate nothing
 #   --partial   go on although one of the six archives is missing
 set -e
 cd "$(dirname "$0")/.."
-VERSION=0.1.0
+VERSION="$(cat VERSION)"
+OVERWRITE=0
 RUN=""
 DRY=0
 PARTIAL=0
@@ -40,6 +43,7 @@ while [ $# -gt 0 ]; do
     --run) RUN="$2"; shift ;;
     --dry-run) DRY=1 ;;
     --partial) PARTIAL=1 ;;
+    --overwrite) OVERWRITE=1 ;;
     -*) echo "publish-install: unknown option $1"; exit 2 ;;
     *) VERSION="$1" ;;
   esac
@@ -98,6 +102,14 @@ if [ -n "$MISSING" ]; then
   fi
 fi
 
+# A published version does not change: its archives are out, installed and
+# cached under their names. What is there already is not replaced -- the next
+# upload is the next version (the VERSION file).
+if [ "$OVERWRITE" = 0 ] && [ "$DRY" = 0 ] && curl -fsSI "https://scaly.io/downloads/scaly-$VERSION.tar.gz?t=$(date +%s)" > /dev/null 2>&1; then
+  echo "publish-install: FAIL — version $VERSION is published: a published version does not change. Raise the VERSION file (or --overwrite for a botched upload)."
+  exit 1
+fi
+
 # What a careful reader checks: SHA256SUMS of the seven files, in the form
 # `shasum -a 256 -c` reads.
 ( cd dist && shasum -a 256 "scaly-$VERSION.tar.gz" $(for b in "${BINARIES[@]}"; do basename "$b"; done) | sed 's/ \*/  /' > SHA256SUMS )
@@ -112,13 +124,15 @@ upload() {
     aws s3 cp "$1" "s3://scaly.io/$2" --content-type "$3"
   fi
 }
-upload docs/website/install.sh  install.sh  'text/x-shellscript'
-upload docs/website/install.ps1 install.ps1 'text/plain; charset=utf-8'
 # under downloads/: docs/deploy.sh syncs the website with --delete and spares
 # only that prefix (the page docs/website/license/ links to both)
 upload LICENSE downloads/LICENSE 'text/plain; charset=utf-8'
 upload THIRD-PARTY-LICENSES.txt downloads/THIRD-PARTY-LICENSES.txt 'text/plain; charset=utf-8'
 upload dist/SHA256SUMS downloads/SHA256SUMS 'text/plain; charset=utf-8'
+# ... and the same under the version's name: an older version stays what it
+# was and stays there
+cp dist/SHA256SUMS "dist/SHA256SUMS-$VERSION"
+upload "dist/SHA256SUMS-$VERSION" "downloads/SHA256SUMS-$VERSION" 'text/plain; charset=utf-8'
 upload "$TARBALL" "downloads/scaly-$VERSION.tar.gz" 'application/gzip'
 for b in "${BINARIES[@]}"; do
   case "$b" in
@@ -126,6 +140,12 @@ for b in "${BINARIES[@]}"; do
     *)     upload "$b" "downloads/$(basename "$b")" 'application/gzip' ;;
   esac
 done
+# the pointer after the archives it names, and the installers LAST: they read
+# downloads/latest and fetch what it names, so all of it is there before them
+printf '%s\n' "$VERSION" > dist/latest
+upload dist/latest downloads/latest 'text/plain; charset=utf-8'
+upload docs/website/install.sh  install.sh  'text/x-shellscript'
+upload docs/website/install.ps1 install.ps1 'text/plain; charset=utf-8'
 
 # Publish the VS Code extension under a STABLE name so the tutorial's install
 # command never goes stale. Picks the newest committed .vsix; rebuild it with

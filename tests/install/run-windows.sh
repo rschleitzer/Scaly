@@ -81,24 +81,28 @@ user_env() {
 # $INSTALL_WINDOWS_ARCHIVES: a directory that already holds the two archives
 # (made by the two scripts below); they are taken as they are -- for working
 # on the installer without the five minutes of links each time.
+# The toolchain's version is the tree's; the installer is asked for none and
+# reads `latest` beside the archives, as a user's reads downloads/latest.
+VER="$(cat VERSION)"
 make_dist() {
+  mkdir -p "$TMP/downloads" && printf '%s\n' "$VER" > "$TMP/downloads/latest"
   if [ -n "${INSTALL_WINDOWS_ARCHIVES:-}" ]; then
-    mkdir -p "$TMP/downloads" && cp "$INSTALL_WINDOWS_ARCHIVES/scaly-0.1.0.tar.gz" "$TMP/downloads/"
+    mkdir -p "$TMP/downloads" && cp "$INSTALL_WINDOWS_ARCHIVES/scaly-$VER.tar.gz" "$TMP/downloads/"
   else
-    tools/make-dist.sh 0.1.0 "$TMP/downloads"
+    tools/make-dist.sh "$VER" "$TMP/downloads"
   fi
 }
 make_bindist() {
   if [ -n "${INSTALL_WINDOWS_ARCHIVES:-}" ]; then
-    cp "$INSTALL_WINDOWS_ARCHIVES/scaly-0.1.0-windows-$ARCH.zip" "$TMP/downloads/"
+    cp "$INSTALL_WINDOWS_ARCHIVES/scaly-$VER-windows-$ARCH.zip" "$TMP/downloads/"
   else
-    tools/make-bindist-windows.sh 0.1.0 "$TMP/downloads"
+    tools/make-bindist-windows.sh "$VER" "$TMP/downloads"
   fi
 }
 
 # payload
 if make_dist > "$TMP/dist.log" 2>&1; then
-  tar -tzf "$TMP/downloads/scaly-0.1.0.tar.gz" > "$TMP/payload.txt"
+  tar -tzf "$TMP/downloads/scaly-$VER.tar.gz" > "$TMP/payload.txt"
   private=$(grep -cE 'packages/(scalyc|scalyls|tscaly|scalygpu)/|\.o$|/\._|CLAUDE' "$TMP/payload.txt")
   missing=""
   for f in seed/scalyc.ll seed/SHA256SUMS packages/scaly/0.1.0/scaly.scaly packages/http/0.1.0/http.scaly \
@@ -111,7 +115,7 @@ else
 fi
 
 # programs
-ZIP="$TMP/downloads/scaly-0.1.0-windows-$ARCH.zip"
+ZIP="$TMP/downloads/scaly-$VER-windows-$ARCH.zip"
 if make_bindist > "$TMP/bindist.log" 2>&1; then
   n=$("$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32/tar.exe" -tf "$(cygpath -w "$ZIP")" | tr -d '\r' | grep -c "_native/windows-$ARCH/.*\.o$")
   [ "$n" -ge 4 ] && ok || bad "programs: the zip holds $n ready-made objects"
