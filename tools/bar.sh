@@ -14,7 +14,7 @@
 #
 # Phase 2 runs in lanes, all at once; inside a lane the steps are in order:
 #   compiler  regress, selfhosted, target, fiber, escape, pointer-report,
-#             write-report, abi, debuginfo
+#             write-report, abi, published, debuginfo
 #   lsp       tests/lsp/run.sh — once the tscaly lane has compiled its package
 #   ports     likewise; dazzle and opensp from THEIR repository (../dazzle or
 #             $DAZZLE_REPO, SKIPPED by name without it): its tests/run.sh with
@@ -151,6 +151,7 @@ lane_compiler() {
   step pointer-report tests/pointer-report/run.sh "$BIN" || rc=1
   step write-report tests/write-report/run.sh "$BIN" || rc=1
   step abi tests/abi/run.sh || rc=1
+  step published tools/published.sh || rc=1
   step debuginfo tests/debuginfo/run.sh "$BIN" || rc=1
   return $rc
 }
