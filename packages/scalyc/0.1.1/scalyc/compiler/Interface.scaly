@@ -427,7 +427,7 @@ define Interface
 
     ; a blank or a line break
     function is_ws_nl(c: u8) returns bool
-        c = 0x20 or c = 0x09 or c = 0x0A
+        c = 0x20 or c = 0x09 or c = 0x0A or c = 0x0D
 
     ; white space: space, tab, line feed, vertical tab, form feed, return
     function is_space(c: u8) returns bool

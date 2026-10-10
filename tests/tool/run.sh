@@ -63,6 +63,11 @@
 #   pkgglobals a package's global read from outside: the live cell on all three
 #              routes, a generic's own package's constant in either order of
 #              the program's declarations, a bare name of two packages refused
+#   next       `scaly next <package> <version>`: the directory renamed, what
+#              names it following, published things left alone; its three
+#              refusals; a declaration of the old version builds on
+#   crlf       a package whose files end their lines CR LF (a checkout on
+#              Windows): built twice, the second time through its interface
 #   source     `package name version "source"`: a package neither the
 #              installation nor the project has is taken from where a fetch
 #              lays it, $SCALY_PACKAGES/<host>/<path>/packages/<name>/<version>, on
@@ -595,6 +600,61 @@ done
 printf 'package alpha 0.1.0\npackage beta 0.1.0\n\nprint("`LIMIT`")\n' > "$pg/bare.scaly"
 out=$(cd "$pg" && SCALY_HOME="$here" "$scaly_abs" run bare.scaly 2>&1); rc=$?
 [ "$rc" != 0 ] && echo "$out" | grep -q 'LIMIT is declared by two packages, alpha v0_1 and beta v0_1' && ok || bad "pkgglobals: a bare name of two packages: rc=$rc '$(echo "$out" | head -1)'"
+
+# next: `scaly next <package> <version>` begins a package's next version -- the
+# directory renamed, every tracked file that names it following, a
+# `published` record and another package's published directory left alone, a
+# longer number that only begins alike left alone too; refused with
+# uncommitted changes, for a number that is not higher, for none at all. And
+# a program that still declares the old version builds against the new one.
+if command -v git > /dev/null 2>&1; then
+  nx="$TMP/next"; mkdir -p "$nx/packages/demo/0.1.0" "$nx/packages/other/0.1.0" "$nx/tools"
+  ng() { git -C "$nx" -c user.name=t -c user.email=t@example.invalid -c init.defaultBranch=main "$@"; }
+  printf 'package scaly 0.1.0\n\ndefine demo\n{\n    function answer() returns int\n        42\n}\n' > "$nx/packages/demo/0.1.0/demo.scaly"
+  printf '; reads packages/demo/0.1.0/demo.scaly\npackage scaly 0.1.0\n\ndefine other\n{\n}\n' > "$nx/packages/other/0.1.0/other.scaly"
+  printf '0.1.0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000\n' > "$nx/packages/other/published"
+  printf '0.1.0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000\n' > "$nx/packages/demo/published"
+  printf '#!/bin/sh\ncat packages/demo/0.1.0/demo.scaly packages/demo/0.1.0/demo.scaly\necho packages/demo/0.1.01 packages/demo/0.1.0.2\n' > "$nx/tools/show.sh"; chmod +x "$nx/tools/show.sh"
+  printf 'package demo 0.1.0\n\nprint("`demo.answer()`")\n' > "$nx/main.scaly"
+  ng init -q && ng add -A && ng commit -q -m one
+  nn() { ( cd "$nx" && SCALY_HOME="$here" "$scaly_abs" next "$@" ) 2>&1; }
+  out=$(nn demo 0.1.0); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'demo is at 0.1.0, 0.1.0 is not higher' && ok || bad "next: a number that is not higher: rc=$rc '$out'"
+  out=$(nn demo one); rc=$?
+  [ "$rc" = 1 ] && [ -d "$nx/packages/demo/0.1.0" ] && ok || bad "next: no version: rc=$rc '$out'"
+  echo "; edited" >> "$nx/main.scaly"
+  out=$(nn demo 0.1.1); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'changes that are not committed' && [ -d "$nx/packages/demo/0.1.0" ] && ok || bad "next: uncommitted changes: rc=$rc '$out'"
+  ng checkout -q -- main.scaly
+  out=$(nn demo 0.1.1); rc=$?
+  if [ "$rc" = 0 ] && [ -f "$nx/packages/demo/0.1.1/demo.scaly" ] && [ ! -e "$nx/packages/demo/0.1.0" ] \
+     && echo "$out" | grep -q 'demo 0.1.0 -> 0.1.1' && echo "$out" | grep -q '0.1.0 is published' \
+     && [ "$(grep -c 'packages/demo/0.1.1/demo.scaly' "$nx/tools/show.sh")" = 1 ] && grep -q 'packages/demo/0.1.01 packages/demo/0.1.0.2' "$nx/tools/show.sh" \
+     && [ -x "$nx/tools/show.sh" ] && grep -q 'packages/demo/0.1.0/demo.scaly' "$nx/packages/other/0.1.0/other.scaly" \
+     && grep -q '^0.1.0 ' "$nx/packages/demo/published" && grep -q '^package demo 0.1.0' "$nx/main.scaly"; then
+    ok
+  else
+    bad "next: the rename: rc=$rc '$(echo "$out" | head -2 | tr '\n' '|')' show.sh: $(tr '\n' '|' < "$nx/tools/show.sh")"
+  fi
+  out=$(cd "$nx" && SCALY_HOME="$here" "$scaly_abs" run main.scaly 2>&1); rc=$?
+  [ "$out" = "42" ] && ok || bad "next: a declaration of the old version against the new directory: rc=$rc '$(echo "$out" | head -1)'"
+else
+  echo "SKIP next (no git)"
+fi
+
+# crlf: a package whose lines end CR LF -- what git hands out on Windows where
+# nothing forbids it. The interface the first build writes into the cache is
+# what the second build reads; its writer took a CR for part of a name and set
+# a record's attribute before the break (`expected Concept` at the record's
+# parenthesis, on Windows only).
+cr="$TMP/crlf"; mkdir -p "$cr/packages/kit/0.1.0/kit"
+printf 'package scaly 0.1.0\r\n\r\ndefine kit\r\n{\r\n    module parts\r\n}\r\n' > "$cr/packages/kit/0.1.0/kit.scaly"
+printf 'define LIMIT: int 58\r\n\r\ndefine Bag\r\n(\r\n    var items: Array[int]\r\n)\r\n{\r\n    init()\r\n    {\r\n        items := Array[int]^this()\r\n    }\r\n\r\n    procedure put(mutable this, n: int)\r\n    {\r\n        items.add(n)\r\n    }\r\n\r\n    function count(this) returns int\r\n        items.length as int\r\n}\r\n\r\nprocedure make_bag() returns int\r\n{\r\n    var b Bag()\r\n    b.put(1)\r\n    b.put(2)\r\n    b.count() + LIMIT\r\n}\r\n' > "$cr/packages/kit/0.1.0/kit/parts.scaly"
+printf 'package kit 0.1.0\r\n\r\nprint("`make_bag()`")\r\n' > "$cr/main.scaly"
+for turn in first second; do
+  out=$(cd "$cr" && SCALY_CACHE="$TMP/crlf-cache" SCALY_HOME="$here" "$scaly_abs" build main.scaly -o "$TMP/crlf-bin" 2>&1 && "$TMP/crlf-bin"); rc=$?
+  [ "$out" = "60" ] && ok || bad "crlf: the $turn build: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)'"
+done
 
 # source: the third place a package is looked for, what a fetch laid down
 src="$TMP/source"

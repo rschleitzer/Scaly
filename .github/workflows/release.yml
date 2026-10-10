@@ -114,6 +114,7 @@ jobs:
           path: dist/scaly-${{ env.RELEASE_VERSION }}-${{ matrix.system }}.tar.gz
           if-no-files-found: error
           compression-level: 0
+          retention-days: 3
 
   windows:
     name: windows-${{ matrix.arch }}
@@ -223,3 +224,4 @@ jobs:
           path: dist/scaly-${{ env.RELEASE_VERSION }}-windows-${{ matrix.arch }}.zip
           if-no-files-found: error
           compression-level: 0
+          retention-days: 3
