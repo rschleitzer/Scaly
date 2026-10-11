@@ -1511,7 +1511,12 @@ define tool
     ; Before a program is compiled: every file of the packages it reaches is
     ; read once, here, and each package's sum left where the keys asked
     ; later find it (Modeler.known_sum#) -- the loader's for the interface,
-    ; this tool's for the objects.
+    ; this tool's for the objects. And each package that has no interface in
+    ; the cache yet gets it now, those it declares first: the program is
+    ; checked BEFORE its packages are compiled, and a package read from its
+    ; sources gives the checks less than its interface does (what a
+    ; routine's result reaches, WriteCensus.declared_reach#) -- a program
+    ; would be refused on its first build and taken on its second.
     procedure prepare_interfaces(mutable root_file: String) mutable modeler_error_count
     {
         setenv("SCALY_PACKAGE_SUMS", "", 1)
@@ -1533,6 +1538,29 @@ define tool
             map := "`map``dir`\n`tool.hex16(sum)`\n"
         }
         setenv("SCALY_PACKAGE_SUMS", map.to_c_string(), 1)
+        i := 0
+        while i < names.length
+        {
+            let name names.at(i)
+            var dir "`dirs.at(i)`"
+            var root "`dir`/`name`.scaly"
+            var files Array[String]()
+            tool.package_files(dir, "", &files)
+            if tool.interface_wanted(name, versions.at(i), dir, &files, root, selection).get_length() > 0
+            {
+                var o Options()
+                o.input_file := String(root)
+                o.emit_interface := true
+                o.interface_quiet := true
+                o.selected_versions := String(selection)
+                if name.equals("scaly")
+                    o.no_prelude := true
+                ; a package that does not compile says so here, and again
+                ; when the program reaches it
+                cli.run(o)
+            }
+            i := i + 1
+        }
     }
 
     ; ---- scaly next ----------------------------------------------------------

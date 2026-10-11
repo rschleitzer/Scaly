@@ -81,6 +81,7 @@ define Options
     purity_check: bool      ; --purity-check: a function may not write what its parameters reach
     emit_interface: bool    ; --emit-interface: write the package's interface (compiler/Interface.scaly)
     interface_dir: String   ; a package compiled into the tool's cache: write its interface here on the way (tool.interface_wanted#)
+    interface_quiet: bool   ; with emit_interface: say nothing of where it went (tool.prepare_interfaces#)
     emit_surface: bool      ; --emit-surface: ... its declarations alone, for `scaly publish` (with emit_interface)
     surface_lenient: bool   ; ... of a version PUBLISHED before a check of this compiler existed: its findings are said and the declarations written all the same
     debug: bool             ; -g: emit DWARF debug info
@@ -136,6 +137,7 @@ define Options
         emit_surface := false
         surface_lenient := false
         interface_dir := String()
+        interface_quiet := false
         debug := false
         run_mode := false
         run_function := String()
@@ -1151,7 +1153,7 @@ define cli
                         return 1
                 }
                 if opts.emit_interface
-                    return cli.emit_interface(opts.input_file, opts.output_file, opts.emit_surface, opts.emit_surface, false, opts.selected_versions, &planner, &model, &purity_gate)
+                    return cli.emit_interface(opts.input_file, opts.output_file, opts.emit_surface or opts.interface_quiet, opts.emit_surface, false, opts.selected_versions, &planner, &model, &purity_gate)
             }
         }
 

@@ -72,7 +72,8 @@
 #   reach      a package's routine answers a reference the caller writes
 #              through: its interface states which parameters the result
 #              reaches, and a caller that passed a member of its own is not
-#              said to write itself
+#              said to write itself -- on the first build too, the interface
+#              written before the program is checked
 #   source     `package name version "source"`: a package neither the
 #              installation nor the project has is taken from where a fetch
 #              lays it, $SCALY_PACKAGES/<host>/<path>/packages/<name>/<version>, on
@@ -672,12 +673,14 @@ rr="$TMP/reach"; mkdir -p "$rr/packages/kit/0.1.0/kit"
 printf 'package scaly 0.1.0\n\ndefine kit\n{\n    module parts\n}\n' > "$rr/packages/kit/0.1.0/kit.scaly"
 printf 'define Link\n(\n    var sent: int\n)\n{\n    procedure dial(name: String, port: int) returns ref[Link]\n    {\n        let page Page.allocate_page()\n        if name.get_length() = 0\n            return &Link^page(0)\n        &Link^page(port)\n    }\n\n    procedure send(mutable this, n: int)\n    {\n        sent := sent + n\n    }\n\n    function total(this) returns int\n        sent\n}\n' > "$rr/packages/kit/0.1.0/kit/parts.scaly"
 printf 'package kit 0.1.0\n\ndefine Client\n(\n    name: String\n)\n{\n    procedure reach(this) returns int\n    {\n        let l Link.dial(name, 40)\n        l.send(2)\n        l.total()\n    }\n}\n\nlet c Client(String("somewhere"))\nprint("`c.reach()`")\n' > "$rr/main.scaly"
-case "$BIN" in /*) rr_bin="$BIN" ;; *) rr_bin="$here/$BIN" ;; esac
-out=$(cd "$rr" && SCALY_CACHE="$TMP/reach-cache" SCALY_HOME="$here" "$rr_bin" --emit-interface packages/kit/0.1.0/kit.scaly 2>&1); rc=$?
+# (through the tool, from an empty cache: the interface is there before the
+# program is checked -- tool.prepare_interfaces#; else the FIRST build is refused)
+for turn in first second; do
+  out=$(cd "$rr" && SCALY_CACHE="$TMP/reach-cache" SCALY_HOME="$here" "$scaly_abs" build main.scaly -o "$TMP/reach-bin" 2>&1 && "$TMP/reach-bin"); rc=$?
+  [ "$out" = "42" ] && ok || bad "reach: the $turn build: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)'"
+done
 said=$(cat "$TMP/reach-cache"/kit-*.iface/interface/kit/parts.scaly 2>/dev/null | grep -c 'procedure dial(.*@ret_reach_0 true')
-[ "$rc" = 0 ] && [ "$said" = 1 ] && ok || bad "reach: the interface: rc=$rc, $said statement(s) of dial's reach '$(echo "$out" | head -1 | cut -c1-120)'"
-out=$(cd "$rr" && SCALY_CACHE="$TMP/reach-cache" SCALY_HOME="$here" "$rr_bin" -c -o "$TMP/reach.o" main.scaly 2>&1); rc=$?
-[ "$rc" = 0 ] && ok || bad "reach: the caller through the interface: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)'"
+[ "$said" = 1 ] && ok || bad "reach: the interface: $said statement(s) of dial's reach"
 
 # source: the third place a package is looked for, what a fetch laid down
 src="$TMP/source"
