@@ -1,7 +1,8 @@
 ; The json package's editing of a tree and its .NET writing:
 ;   edit    with_member sets a member in its place or appends it, and leaves
 ;           the tree it was called on as it was; a value that is no object
-;           answers itself; empty_object and of_text build what is set
+;           answers itself; empty_object and of_text build what is set;
+;           without_member takes a member out, every one of that name
 ;   dotnet  value_dotnet writes what System.Text.Json's default encoder
 ;           writes: the quote, the characters HTML reads, the controls, DEL
 ;           and everything beyond ASCII as \uXXXX in upper case, surrogate
@@ -55,6 +56,10 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     }
     if written(root.get("a").with_member("b", JsonValue.Null)).equals("1") = false
         return 6
+    if written(root.without_member("meta")).equals("{\"a\":1,\"z\":[true,null]}") = false or written(root.without_member("nope")).equals("{\"a\":1,\"meta\":{\"x\":\"y\"},\"z\":[true,null]}") = false
+        return 10
+    if written(JsonValue.parse("{\"a\":1,\"b\":2,\"a\":3}").value.without_member("a")).equals("{\"b\":2}") = false or written(root.get("a").without_member("a")).equals("1") = false
+        return 11
     Console.print "edit "
 
     let tricky JsonValue.parse("{\"t\":\"<a href=\\\"x\\\">Mü & 'q' 1+1 \`b\` / \\\\ \\u00e9 😀 \\t\\u0001\\u007f</a>\",\"n\":1.50,\"ké\":[]}")

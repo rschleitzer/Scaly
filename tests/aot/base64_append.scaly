@@ -1,0 +1,54 @@
+; Array.append and the standard library's base64.
+;   append  a routine that passes a view on to `append` may be handed a
+;           buffer of its caller's own (with `add` it is refused: the
+;           compiler knows `add` by its first routine, which keeps)
+;   base64  every length of padding encodes and decodes to itself; white
+;           space is passed over; a letter outside the alphabet, padding in
+;           the middle and a length that is no multiple of four are refused
+; Expected: append base64 done
+
+procedure put(mutable out: ref[Array[u8]], s: Slice[u8])
+    out.append(s)
+
+procedure fill(mutable out: ref[Array[u8]])
+{
+    var own Array[u8]()
+    own.add(65 as u8)
+    own.add(66 as u8)
+    put(out, own.as_slice())
+}
+
+function round_trips(text: Slice[u8], encoded: Slice[u8]) returns bool
+{
+    var e Array[u8]()
+    base64_encode(text, &e)
+    if e.as_slice().equals(encoded) = false
+        return false
+    var d Array[u8]()
+    base64_decode(encoded, &d) and d.as_slice().equals(text)
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var a Array[u8]()
+    fill(&a)
+    fill(&a)
+    if a.as_slice().equals("ABAB") = false
+        return 1
+    Console.print "append "
+
+    if round_trips("", "") = false or round_trips("f", "Zg==") = false or round_trips("fo", "Zm8=") = false
+        return 2
+    if round_trips("foo", "Zm9v") = false or round_trips("foob", "Zm9vYg==") = false or round_trips("hello>??? world", "aGVsbG8+Pz8/IHdvcmxk") = false
+        return 3
+    var spaced Array[u8]()
+    if base64_decode("Zm9v\nYmFy IA==", &spaced) = false or spaced.as_slice().equals("foobar ") = false
+        return 4
+    var bad Array[u8]()
+    if base64_decode("Zm9", &bad) or base64_decode("Zm9-", &bad) or base64_decode("Zg==Zg==", &bad) or base64_decode("Z===", &bad)
+        return 5
+    Console.print "base64 "
+
+    Console.print "done"
+    0
+}

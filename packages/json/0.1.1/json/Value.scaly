@@ -381,6 +381,32 @@ define JsonValue union
                 return this
     }
 
+    ; This object without its members named `key`; like with_member, the
+    ; answer has a member list of its own and the tree is not written. A
+    ; value that is no object, or an object without such a member, answers
+    ; itself.
+    procedure without_member(this, key: Slice[u8]) returns JsonValue
+    {
+        choose this
+            when o: Object
+            {
+                var arena JsonArena#()
+                var members Array[JsonMember]()
+                var i: size_t 0
+                while i < o.members.length
+                {
+                    if o.members[i].key.equals(key) = false
+                        members.add(o.members[i])
+                    i := i + 1
+                }
+                if members.length = o.members.length
+                    return this
+                return JsonValue.Object(JsonObject(arena.keep_members(members.as_slice())))
+            }
+            else
+                return this
+    }
+
     function has(this, key: Slice[u8]) returns bool
     {
         choose this

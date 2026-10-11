@@ -4396,6 +4396,16 @@ declare ptr @_ZN4Page23allocate_exclusive_pageEv(ptr)
 
 declare i64 @_ZN4Page12get_capacityEm(ptr, i64)
 
+define linkonce_odr void @_ZN5ArrayIcE6appendE5SliceIcE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayIcE7add_runEmPc(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayIcEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayIcE, ptr %0, i32 0, i32 0
@@ -6153,6 +6163,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6StringE6appendE5SliceI6StringE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6StringE7add_runEmP6String(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6StringEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
@@ -7451,6 +7471,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI6VectorI6StringEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI6StringEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE6appendE5SliceI6VectorI6StringEE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6VectorI6StringEE7add_runEmP6VectorI6StringE(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -8963,6 +8993,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI4ListI4SlotI6StringEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI4ListI4SlotI6StringEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI4ListI4SlotI6StringEEE6appendE5SliceI4ListI4SlotI6StringEEE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI4ListI4SlotI6StringEEE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI4ListI4SlotI6StringEEE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI4ListI4SlotI6StringEEE7add_runEmP4ListI4SlotI6StringEE(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -10965,6 +11005,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI15ExtensionSyntaxB6scalycB4v0_2E6appendE5SliceI15ExtensionSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI15ExtensionSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI15ExtensionSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI15ExtensionSyntaxB6scalycB4v0_2E7add_runEmP15ExtensionSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI15ExtensionSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI15ExtensionSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -12261,6 +12311,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI18MemberAccessSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI18MemberAccessSyntaxB6scalycB4v0_2E6appendE5SliceI18MemberAccessSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI18MemberAccessSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI18MemberAccessSyntaxB6scalycB4v0_2E7add_runEmP18MemberAccessSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -13563,6 +13623,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI13ElementSyntaxB6scalycB4v0_2E6appendE5SliceI13ElementSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI13ElementSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI13ElementSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI13ElementSyntaxB6scalycB4v0_2E7add_runEmP13ElementSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI13ElementSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI13ElementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -14859,6 +14929,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI15AttributeSyntaxB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI15AttributeSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI15AttributeSyntaxB6scalycB4v0_2E6appendE5SliceI15AttributeSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI15AttributeSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI15AttributeSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI15AttributeSyntaxB6scalycB4v0_2E7add_runEmP15AttributeSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -16161,6 +16241,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI15ComponentSyntaxB6scalycB4v0_2E6appendE5SliceI15ComponentSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI15ComponentSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI15ComponentSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI15ComponentSyntaxB6scalycB4v0_2E7add_runEmP15ComponentSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI15ComponentSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI15ComponentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -17457,6 +17547,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI9UseSyntaxB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9UseSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9UseSyntaxB6scalycB4v0_2E6appendE5SliceI9UseSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI9UseSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI9UseSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI9UseSyntaxB6scalycB4v0_2E7add_runEmP9UseSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -18759,6 +18859,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI10CaseSyntaxB6scalycB4v0_2E6appendE5SliceI10CaseSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI10CaseSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI10CaseSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI10CaseSyntaxB6scalycB4v0_2E7add_runEmP10CaseSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI10CaseSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI10CaseSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -20055,6 +20165,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI12BranchSyntaxB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12BranchSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12BranchSyntaxB6scalycB4v0_2E6appendE5SliceI12BranchSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12BranchSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12BranchSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12BranchSyntaxB6scalycB4v0_2E7add_runEmP12BranchSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -21357,6 +21477,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI10WhenSyntaxB6scalycB4v0_2E6appendE5SliceI10WhenSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI10WhenSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI10WhenSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI10WhenSyntaxB6scalycB4v0_2E7add_runEmP10WhenSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI10WhenSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI10WhenSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -22653,6 +22783,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI13OperandSyntaxB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI13OperandSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI13OperandSyntaxB6scalycB4v0_2E6appendE5SliceI13OperandSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI13OperandSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI13OperandSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI13OperandSyntaxB6scalycB4v0_2E7add_runEmP13OperandSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -23955,6 +24095,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI15StatementSyntaxB6scalycB4v0_2E6appendE5SliceI15StatementSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI15StatementSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI15StatementSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI15StatementSyntaxB6scalycB4v0_2E7add_runEmP15StatementSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI15StatementSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI15StatementSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -25251,6 +25401,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI13LibrarySyntaxB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI13LibrarySyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI13LibrarySyntaxB6scalycB4v0_2E6appendE5SliceI13LibrarySyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI13LibrarySyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI13LibrarySyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI13LibrarySyntaxB6scalycB4v0_2E7add_runEmP13LibrarySyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -26553,6 +26713,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI10PartSyntaxB6scalycB4v0_2E6appendE5SliceI10PartSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI10PartSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI10PartSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI10PartSyntaxB6scalycB4v0_2E7add_runEmP10PartSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI10PartSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI10PartSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -27852,6 +28022,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI13VariantSyntaxB6scalycB4v0_2E6appendE5SliceI13VariantSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI13VariantSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI13VariantSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI13VariantSyntaxB6scalycB4v0_2E7add_runEmP13VariantSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI13VariantSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI13VariantSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -29148,6 +29328,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI17DeclarationSyntaxB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI17DeclarationSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI17DeclarationSyntaxB6scalycB4v0_2E6appendE5SliceI17DeclarationSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI17DeclarationSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI17DeclarationSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI17DeclarationSyntaxB6scalycB4v0_2E7add_runEmP17DeclarationSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -31191,6 +31381,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI3UseB6scalycB4v0_2E6appendE5SliceI3UseB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI3UseB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI3UseB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI3UseB6scalycB4v0_2E7add_runEmP3UseB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI3UseB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI3UseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -32487,6 +32687,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI4TypeB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI4TypeB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI4TypeB6scalycB4v0_2E6appendE5SliceI4TypeB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI4TypeB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI4TypeB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI4TypeB6scalycB4v0_2E7add_runEmP4TypeB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -33789,6 +33999,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6VectorI7OperandB6scalycB4v0_2EE6appendE5SliceI6VectorI7OperandB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI7OperandB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6VectorI7OperandB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6VectorI7OperandB6scalycB4v0_2EE7add_runEmP6VectorI7OperandB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6VectorI7OperandB6scalycB4v0_2EEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI6VectorI7OperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
@@ -35085,6 +35305,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI9StatementB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9StatementB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9StatementB6scalycB4v0_2E6appendE5SliceI9StatementB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI9StatementB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI9StatementB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI9StatementB6scalycB4v0_2E7add_runEmP9StatementB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -36387,6 +36617,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI4CaseB6scalycB4v0_2E6appendE5SliceI4CaseB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI4CaseB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI4CaseB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI4CaseB6scalycB4v0_2E7add_runEmP4CaseB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI4CaseB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI4CaseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -37683,6 +37923,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI6BranchB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6BranchB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6BranchB6scalycB4v0_2E6appendE5SliceI6BranchB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6BranchB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6BranchB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6BranchB6scalycB4v0_2E7add_runEmP6BranchB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -38985,6 +39235,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI4WhenB6scalycB4v0_2E6appendE5SliceI4WhenB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI4WhenB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI4WhenB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI4WhenB6scalycB4v0_2E7add_runEmP4WhenB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI4WhenB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI4WhenB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -40281,6 +40541,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI4ItemB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI4ItemB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI4ItemB6scalycB4v0_2E6appendE5SliceI4ItemB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI4ItemB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI4ItemB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI4ItemB6scalycB4v0_2E7add_runEmP4ItemB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -41583,6 +41853,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI7OperandB6scalycB4v0_2E6appendE5SliceI7OperandB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI7OperandB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI7OperandB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI7OperandB6scalycB4v0_2E7add_runEmP7OperandB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI7OperandB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI7OperandB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -42879,6 +43159,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI9ComponentB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI9ComponentB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI9ComponentB6scalycB4v0_2E6appendE5SliceI9ComponentB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI9ComponentB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI9ComponentB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI9ComponentB6scalycB4v0_2E7add_runEmP9ComponentB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -44181,6 +44471,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI9AttributeB6scalycB4v0_2E6appendE5SliceI9AttributeB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI9AttributeB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI9AttributeB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI9AttributeB6scalycB4v0_2E7add_runEmP9AttributeB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI9AttributeB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI9AttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -45477,6 +45777,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI16GenericParameterB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI16GenericParameterB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI16GenericParameterB6scalycB4v0_2E6appendE5SliceI16GenericParameterB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI16GenericParameterB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI16GenericParameterB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI16GenericParameterB6scalycB4v0_2E7add_runEmP16GenericParameterB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -46779,6 +47089,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI8FunctionB6scalycB4v0_2E6appendE5SliceI8FunctionB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI8FunctionB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI8FunctionB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI8FunctionB6scalycB4v0_2E7add_runEmP8FunctionB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI8FunctionB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI8FunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -47278,6 +47598,11 @@ stub.entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K8NameableB6scalycB4v0_2EEE6appendE5SliceI6VectorI12KeyValuePairI1K8NameableB6scalycB4v0_2EEE(ptr %0, ptr %1) {
+stub.entry:
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K8NameableB6scalycB4v0_2EEEC1Ev(ptr %0) {
 stub.entry:
   ret void
@@ -47544,6 +47869,11 @@ stub.entry:
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K8NameableB6scalycB4v0_2EE8as_sliceEv(ptr noalias sret(%_Z5SliceI12KeyValuePairI1K8NameableB6scalycB4v0_2EE) %0, ptr %1) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K8NameableB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI1K8NameableB6scalycB4v0_2EE(ptr %0, ptr %1) {
 stub.entry:
   ret void
 }
@@ -47859,6 +48189,11 @@ stub.entry:
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K8NameableB6scalycB4v0_2EEEE8as_sliceEv(ptr noalias sret(%_Z5SliceI4ListI4SlotI12KeyValuePairI1K8NameableB6scalycB4v0_2EEEE) %0, ptr %1) {
+stub.entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K8NameableB6scalycB4v0_2EEEE6appendE5SliceI4ListI4SlotI12KeyValuePairI1K8NameableB6scalycB4v0_2EEEE(ptr %0, ptr %1) {
 stub.entry:
   ret void
 }
@@ -48970,6 +49305,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE6appendE5SliceI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EEE7add_runEmP6VectorI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -50269,6 +50614,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2EE7add_runEmP12KeyValuePairI8NameableB6scalycB4v0_28NameableB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -51581,6 +51936,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI8PropertyB6scalycB4v0_2E6appendE5SliceI8PropertyB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI8PropertyB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI8PropertyB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI8PropertyB6scalycB4v0_2E7add_runEmP8PropertyB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI8PropertyB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI8PropertyB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -52877,6 +53242,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI11InitializerB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11InitializerB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11InitializerB6scalycB4v0_2E6appendE5SliceI11InitializerB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11InitializerB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI11InitializerB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI11InitializerB6scalycB4v0_2E7add_runEmP11InitializerB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -54179,6 +54554,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI6String8NameableB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE7add_runEmP12KeyValuePairI6String8NameableB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String8NameableB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
@@ -55475,6 +55860,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE6appendE5SliceI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE7add_runEmP6VectorI12KeyValuePairI6String8NameableB6scalycB4v0_2EE(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -57013,6 +57408,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE6appendE5SliceI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEEE7add_runEmP4ListI4SlotI12KeyValuePairI6String8NameableB6scalycB4v0_2EEE(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -58795,6 +59200,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI7VariantB6scalycB4v0_2E6appendE5SliceI7VariantB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI7VariantB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI7VariantB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI7VariantB6scalycB4v0_2E7add_runEmP7VariantB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI7VariantB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI7VariantB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -60091,6 +60506,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI6MemberB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6MemberB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6MemberB6scalycB4v0_2E6appendE5SliceI6MemberB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6MemberB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6MemberB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6MemberB6scalycB4v0_2E7add_runEmP6MemberB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -61393,6 +61818,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6ModuleB6scalycB4v0_2E6appendE5SliceI6ModuleB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6ModuleB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6ModuleB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6ModuleB6scalycB4v0_2E7add_runEmP6ModuleB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6ModuleB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI6ModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -62691,6 +63126,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI11PlannedTypeB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11PlannedTypeB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11PlannedTypeB6scalycB4v0_2E6appendE5SliceI11PlannedTypeB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11PlannedTypeB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI11PlannedTypeB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI11PlannedTypeB6scalycB4v0_2E7add_runEmP11PlannedTypeB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -64225,6 +64670,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE7add_runEmP12KeyValuePairI6String12LocalBindingB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
@@ -65230,6 +65685,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceImE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceImE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayImE6appendE5SliceImE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceImE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceImE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayImE7add_runEmPm(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -66532,6 +66997,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE7add_runEmP12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
@@ -67828,6 +68303,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI14TypeConstraintB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI14TypeConstraintB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI14TypeConstraintB6scalycB4v0_2E6appendE5SliceI14TypeConstraintB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI14TypeConstraintB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI14TypeConstraintB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI14TypeConstraintB6scalycB4v0_2E7add_runEmP14TypeConstraintB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -69130,6 +69615,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE7add_runEmP12KeyValuePairIm11PlannedTypeB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
@@ -70429,6 +70924,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE7add_runEmP12KeyValuePairI6String7ConceptB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptB6scalycB4v0_2EEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
@@ -71493,6 +71998,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI19PlannedMemberAccessB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI19PlannedMemberAccessB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI19PlannedMemberAccessB6scalycB4v0_2E6appendE5SliceI19PlannedMemberAccessB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI19PlannedMemberAccessB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI19PlannedMemberAccessB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI19PlannedMemberAccessB6scalycB4v0_2E7add_runEmP19PlannedMemberAccessB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -72795,6 +73310,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI16PlannedAttributeB6scalycB4v0_2E6appendE5SliceI16PlannedAttributeB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI16PlannedAttributeB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI16PlannedAttributeB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI16PlannedAttributeB6scalycB4v0_2E7add_runEmP16PlannedAttributeB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI16PlannedAttributeB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI16PlannedAttributeB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -74091,6 +74616,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI16PlannedComponentB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI16PlannedComponentB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI16PlannedComponentB6scalycB4v0_2E6appendE5SliceI16PlannedComponentB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI16PlannedComponentB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI16PlannedComponentB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI16PlannedComponentB6scalycB4v0_2E7add_runEmP16PlannedComponentB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -75393,6 +75928,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI6VectorI14PlannedOperandB6scalycB4v0_2EE6appendE5SliceI6VectorI14PlannedOperandB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6VectorI14PlannedOperandB6scalycB4v0_2EE7add_runEmP6VectorI14PlannedOperandB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI6VectorI14PlannedOperandB6scalycB4v0_2EEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI6VectorI14PlannedOperandB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
@@ -76689,6 +77234,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI16PlannedStatementB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI16PlannedStatementB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI16PlannedStatementB6scalycB4v0_2E6appendE5SliceI16PlannedStatementB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI16PlannedStatementB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI16PlannedStatementB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI16PlannedStatementB6scalycB4v0_2E7add_runEmP16PlannedStatementB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -77991,6 +78546,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI11PlannedCaseB6scalycB4v0_2E6appendE5SliceI11PlannedCaseB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11PlannedCaseB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI11PlannedCaseB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI11PlannedCaseB6scalycB4v0_2E7add_runEmP11PlannedCaseB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI11PlannedCaseB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI11PlannedCaseB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -79287,6 +79852,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI13PlannedBranchB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI13PlannedBranchB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI13PlannedBranchB6scalycB4v0_2E6appendE5SliceI13PlannedBranchB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI13PlannedBranchB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI13PlannedBranchB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI13PlannedBranchB6scalycB4v0_2E7add_runEmP13PlannedBranchB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -80589,6 +81164,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI11PlannedWhenB6scalycB4v0_2E6appendE5SliceI11PlannedWhenB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11PlannedWhenB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI11PlannedWhenB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI11PlannedWhenB6scalycB4v0_2E7add_runEmP11PlannedWhenB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI11PlannedWhenB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI11PlannedWhenB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -81885,6 +82470,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI11PlannedItemB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI11PlannedItemB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI11PlannedItemB6scalycB4v0_2E6appendE5SliceI11PlannedItemB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI11PlannedItemB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI11PlannedItemB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI11PlannedItemB6scalycB4v0_2E7add_runEmP11PlannedItemB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -83187,6 +83782,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E6appendE5SliceI14PlannedOperandB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI14PlannedOperandB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI14PlannedOperandB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E7add_runEmP14PlannedOperandB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -84483,6 +85088,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI15PlannedPropertyB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI15PlannedPropertyB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI15PlannedPropertyB6scalycB4v0_2E6appendE5SliceI15PlannedPropertyB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI15PlannedPropertyB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI15PlannedPropertyB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI15PlannedPropertyB6scalycB4v0_2E7add_runEmP15PlannedPropertyB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -85785,6 +86400,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI18PlannedInitializerB6scalycB4v0_2E6appendE5SliceI18PlannedInitializerB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI18PlannedInitializerB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI18PlannedInitializerB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI18PlannedInitializerB6scalycB4v0_2E7add_runEmP18PlannedInitializerB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI18PlannedInitializerB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI18PlannedInitializerB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -87084,6 +87709,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI15PlannedFunctionB6scalycB4v0_2E6appendE5SliceI15PlannedFunctionB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI15PlannedFunctionB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI15PlannedFunctionB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI15PlannedFunctionB6scalycB4v0_2E7add_runEmP15PlannedFunctionB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI15PlannedFunctionB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -88380,6 +89015,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI15PlannedOperatorB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI15PlannedOperatorB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI15PlannedOperatorB6scalycB4v0_2E6appendE5SliceI15PlannedOperatorB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI15PlannedOperatorB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI15PlannedOperatorB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI15PlannedOperatorB6scalycB4v0_2E7add_runEmP15PlannedOperatorB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -89914,6 +90559,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI16PlannedStructureB6scalycB4v0_2E6appendE5SliceI16PlannedStructureB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI16PlannedStructureB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI16PlannedStructureB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI16PlannedStructureB6scalycB4v0_2E7add_runEmP16PlannedStructureB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI16PlannedStructureB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI16PlannedStructureB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -90978,6 +91633,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI14PlannedVariantB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI14PlannedVariantB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI14PlannedVariantB6scalycB4v0_2E6appendE5SliceI14PlannedVariantB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI14PlannedVariantB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI14PlannedVariantB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI14PlannedVariantB6scalycB4v0_2E7add_runEmP14PlannedVariantB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -92512,6 +93177,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12PlannedUnionB6scalycB4v0_2E6appendE5SliceI12PlannedUnionB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12PlannedUnionB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12PlannedUnionB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12PlannedUnionB6scalycB4v0_2E7add_runEmP12PlannedUnionB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12PlannedUnionB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12PlannedUnionB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -93808,6 +94483,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI6LambdaB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI6LambdaB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI6LambdaB6scalycB4v0_2E6appendE5SliceI6LambdaB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI6LambdaB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI6LambdaB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI6LambdaB6scalycB4v0_2E7add_runEmP6LambdaB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -95110,6 +95795,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI13PlannedGlobalB6scalycB4v0_2E6appendE5SliceI13PlannedGlobalB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI13PlannedGlobalB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI13PlannedGlobalB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI13PlannedGlobalB6scalycB4v0_2E7add_runEmP13PlannedGlobalB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI13PlannedGlobalB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI13PlannedGlobalB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -96406,6 +97101,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE7add_runEmP12KeyValuePairI6String8FunctionB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -97708,6 +98413,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE7add_runEmP12KeyValuePairI6String6LambdaB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaB6scalycB4v0_2EEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
@@ -99004,6 +99719,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE7add_runEmP12KeyValuePairI6String8OperatorB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -100306,6 +101031,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE6appendE5SliceI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE7add_runEmP12KeyValuePairI6String6ModuleB6scalycB4v0_2E(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleB6scalycB4v0_2EEC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
@@ -101602,6 +102337,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI17PlannerDiagnosticB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI17PlannerDiagnosticB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticB6scalycB4v0_2E6appendE5SliceI17PlannerDiagnosticB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI17PlannerDiagnosticB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI17PlannerDiagnosticB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI17PlannerDiagnosticB6scalycB4v0_2E7add_runEmP17PlannerDiagnosticB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -102904,6 +103649,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI7ProgramB6scalycB4v0_2E6appendE5SliceI7ProgramB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI7ProgramB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI7ProgramB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI7ProgramB6scalycB4v0_2E7add_runEmP7ProgramB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI7ProgramB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI7ProgramB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -104203,6 +104958,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI12EscapeRecordB6scalycB4v0_2E6appendE5SliceI12EscapeRecordB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12EscapeRecordB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12EscapeRecordB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12EscapeRecordB6scalycB4v0_2E7add_runEmP12EscapeRecordB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI12EscapeRecordB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -105491,6 +106256,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceIiE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIiE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayIiE6appendE5SliceIiE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceIiE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayIiE7add_runEmPi(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -106785,6 +107560,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI3u64E6appendE5SliceI3u64E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI3u64E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI3u64E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI3u64E7add_runEmP3u64(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI3u64EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %0, i32 0, i32 0
@@ -108073,6 +108858,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceIbE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIbE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayIbE6appendE5SliceIbE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceIbE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceIbE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayIbE7add_runEmPb(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -114793,6 +115588,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI12MemberSyntaxB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI12MemberSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI12MemberSyntaxB6scalycB4v0_2E6appendE5SliceI12MemberSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI12MemberSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI12MemberSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI12MemberSyntaxB6scalycB4v0_2E7add_runEmP12MemberSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -125013,6 +125818,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI10ItemSyntaxB6scalycB4v0_2E6appendE5SliceI10ItemSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI10ItemSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI10ItemSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI10ItemSyntaxB6scalycB4v0_2E7add_runEmP10ItemSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI10ItemSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI10ItemSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -128756,6 +129571,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI10TypeSyntaxB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI10TypeSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI10TypeSyntaxB6scalycB4v0_2E6appendE5SliceI10TypeSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI10TypeSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI10TypeSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI10TypeSyntaxB6scalycB4v0_2E7add_runEmP10TypeSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -139251,6 +140076,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI21GenericArgumentSyntaxB6scalycB4v0_2E6appendE5SliceI21GenericArgumentSyntaxB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI21GenericArgumentSyntaxB6scalycB4v0_2E7add_runEmP21GenericArgumentSyntaxB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI21GenericArgumentSyntaxB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI21GenericArgumentSyntaxB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -146390,6 +147225,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI14DirectoryEntryE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI14DirectoryEntryE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI14DirectoryEntryE6appendE5SliceI14DirectoryEntryE(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI14DirectoryEntryE, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI14DirectoryEntryE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI14DirectoryEntryE7add_runEmP14DirectoryEntry(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
@@ -165668,6 +166513,16 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN5ArrayI13PlannedModuleB6scalycB4v0_2E6appendE5SliceI13PlannedModuleB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI13PlannedModuleB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI13PlannedModuleB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI13PlannedModuleB6scalycB4v0_2E7add_runEmP13PlannedModuleB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
+  ret void
+}
+
 define linkonce_odr void @_ZN5ArrayI13PlannedModuleB6scalycB4v0_2EC1Ev(ptr %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z5ArrayI13PlannedModuleB6scalycB4v0_2E, ptr %0, i32 0, i32 0
@@ -166964,6 +167819,16 @@ entry:
   store ptr %call, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI14PlannedConceptB6scalycB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI14PlannedConceptB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayI14PlannedConceptB6scalycB4v0_2E6appendE5SliceI14PlannedConceptB6scalycB4v0_2E(ptr %0, ptr %1) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI14PlannedConceptB6scalycB4v0_2E, ptr %1, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %field.inplace1 = getelementptr inbounds nuw %_Z5SliceI14PlannedConceptB6scalycB4v0_2E, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace1, align 8
+  call void @_ZN5ArrayI14PlannedConceptB6scalycB4v0_2E7add_runEmP14PlannedConceptB6scalycB4v0_2(ptr %0, i64 %field.val, ptr %deref.recv)
   ret void
 }
 
