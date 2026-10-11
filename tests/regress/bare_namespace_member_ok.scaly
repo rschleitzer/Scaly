@@ -1,0 +1,20 @@
+; The positive control of xfail_bare_namespace_member: a namespace's member
+; is reached by its qualified name, by its bare name from a sibling inside
+; the namespace, and by its bare name where a `use` names it.
+define tools
+{
+    function twice(n: int) returns int
+        n * 2
+
+    function four() returns int
+        twice(2)
+}
+
+use tools.twice
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if tools.twice(21) = 42 and tools.four() = 4 and twice(3) = 6
+        print "PASS"
+    0
+}

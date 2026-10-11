@@ -1,0 +1,21 @@
+; xfail: function not found: twice - it is a member of the namespace 'tools': call it as tools.twice, or name it with 'use tools.twice'
+; Regression: a member of a namespace called by its bare name from outside
+; the namespace -- no `use` naming it -- was FOUND, planned and mangled as a
+; free function (`_Z5twicei`), a symbol nothing defines: the compile ended
+; at rc 0 and the first word came from the linker, without a file or a
+; line. The definition is `_ZN5tools5twiceEi`. A member answers a bare name
+; inside its namespace or through a `use`; from anywhere else the name is
+; not found, and the diagnostic says where the function is.
+; (bare_namespace_member_ok has the three calls that do reach it.)
+define tools
+{
+    function twice(n: int) returns int
+        n * 2
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if twice(21) = 42
+        print "FAIL"
+    0
+}

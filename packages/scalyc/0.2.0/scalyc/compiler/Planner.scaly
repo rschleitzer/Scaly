@@ -1018,6 +1018,10 @@ define Planner
         ; SCALYC_GATE_ALL: keep walking after a finding (a measurement of
         ; every site, not the one-at-a-time a fatal checker gives)
         var gate_all: bool
+        ; a call's qualifier was taken off and its last name is being resolved
+        ; (`tools.twice`, `Planner.f`): the name may then be a member of a
+        ; namespace the place of the call does not see (foreign_namespace_of#)
+        var qualified_lookup: bool
         var escape_fn_index: size_t
 
         ; Transitive Vector-3 (interprocedural pass-to-storing-callee closure).
@@ -1488,6 +1492,7 @@ define Planner
             escape_checking := false
             escape_found := false
             gate_all := false
+            qualified_lookup := false
             escape_fn_index := 0
             escape_forwarding := false
             escape_saw_indirect := false
@@ -6341,6 +6346,36 @@ define Planner
             Vector[Function](visible)
         }
 
+        ; foreign_namespace_of#: the namespace whose member a BARE call of
+        ; `name` would have to mean -- when every routine of that name is a
+        ; member of a namespace the call does not see (not its own, not one a
+        ; `use` names). Empty when some routine of the name is visible, or
+        ; none exists. Such a call was planned and mangled as a free
+        ; function, a symbol nothing defines: the linker said so, without a
+        ; place (2026-10-11; gate xfail_bare_namespace_member).
+        function foreign_namespace_of(this: Planner, name: String) returns String
+        {
+            var here: String ""
+            if current_namespace_name <> null
+                here := (*current_namespace_name)
+            let aliased this.lookup_use_alias_namespace(name)
+            var foreign: String ""
+            var cur model_function_index.lookup_head name
+            while cur <> ((0 - 1) as i64)
+            {
+                var ns: String ""
+                let nsp function_namespaces.get(cur as size_t)
+                if nsp <> null
+                    ns := (*nsp)
+                if ns.get_length() = 0 or ns = here or (aliased.get_length() > 0 and ns = aliased)
+                    return ""
+                if foreign.get_length() = 0
+                    foreign := ns
+                cur := model_function_index.next_of(cur as size_t)
+            }
+            foreign
+        }
+
         function lookup_operators(this: Planner, name: String) returns Vector[Operator]
         {
             var matches Array[Operator]()
@@ -10021,7 +10056,11 @@ define Planner
                     }
                     var tail_vec Vector[PlannedType](tail_arr)
                     var tail_ops Vector[PlannedOperand](tail_ops_arr)
-                    return this.resolve_function_call(suffix, tail_vec, tail_ops)
+                    let was_qualified qualified_lookup
+                    qualified_lookup := true
+                    let suffix_match this.resolve_function_call(suffix, tail_vec, tail_ops)
+                    qualified_lookup := was_qualified
+                    return suffix_match
                 }
             }
             null
@@ -10138,7 +10177,10 @@ define Planner
             ; from stealing a same-named free function.
             if this.concept_has_static(prefix, suffix)
                 return null
+            let was_qualified qualified_lookup
+            qualified_lookup := true
             let m this.resolve_function_call(suffix, arg_types, arg_ops)
+            qualified_lookup := was_qualified
             if m <> null
                 return m
             this.resolve_namespace_this_method(prefix, suffix, arg_types, arg_ops)
@@ -10591,6 +10633,12 @@ define Planner
                 sb.append "function not found: "
                 sb.append name
                 this.add_error(sb.to_string())
+                return null
+            }
+            ; a bare name that only a namespace out of sight has: not found
+            if qualified_lookup = false and this.foreign_namespace_of(name).get_length() > 0
+            {
+                this.add_error("function not found: `name`")
                 return null
             }
 
@@ -15897,6 +15945,23 @@ define Planner
                                     dsb.append vis_hint
                                 dsb.append(this.bare_variant_arg_hint(call_args_holder))
                                 dsb.append(this.other_package_hint(fn_name, arg_types))
+                                ; a member of a namespace out of sight
+                                ; (foreign_namespace_of#)
+                                let foreign_ns this.foreign_namespace_of(fn_name)
+                                if foreign_ns.get_length() > 0
+                                {
+                                    dsb.append " - it is a member of the namespace '"
+                                    dsb.append foreign_ns
+                                    dsb.append "': call it as "
+                                    dsb.append foreign_ns
+                                    dsb.append "."
+                                    dsb.append fn_name
+                                    dsb.append ", or name it with 'use "
+                                    dsb.append foreign_ns
+                                    dsb.append "."
+                                    dsb.append fn_name
+                                    dsb.append "'"
+                                }
                                 ; `set target: value` was the assignment
                                 ; until 2026-10-04; the word is a name now
                                 if fn_name = "set"
