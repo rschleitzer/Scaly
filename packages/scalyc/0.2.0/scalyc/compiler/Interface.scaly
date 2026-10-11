@@ -324,7 +324,14 @@ define Interface
             ; the body-derived facts as routine attributes, right after the
             ; parameter list (the grammar's place for them)
             let rel h.close + 1 - s
-            head := "`head.substring(0, rel)``f.text``head.substring(rel, head.get_length() - rel)`"
+            ; ... and what its result reaches of its parameters, where the
+            ; census found that to be less than all of them (a function or a
+            ; procedure: an init and an operator take no attributes)
+            var reach String()
+            let reached Interface.reach_of(facts, file_of, fi, s)
+            if f.kind = ("f" as char) and reached.get_length() > 0
+                reach := " @ret_reach_`reached` true"
+            head := "`head.substring(0, rel)``f.text``reach``head.substring(rel, head.get_length() - rel)`"
         }
         var off: size_t 0
         if h.has_close
@@ -396,6 +403,25 @@ define Interface
             i := i + 1
         }
         false
+    }
+
+    ; The mask of the parameters the result of the routine at `s` reaches (its
+    ; A fact), or "" when the census states none.
+    function reach_of(facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, s: size_t) returns String
+    {
+        var found String()
+        var i: size_t 0
+        while i < facts.length
+        {
+            if file_of[i] = fi
+            {
+                let f facts.at i
+                if f.tag = ("A" as char) and f.start = s
+                    found := f.text
+            }
+            i := i + 1
+        }
+        found
     }
 
     ; The changeable global the routine at `s` reads (the last R fact), or "".

@@ -211,6 +211,12 @@ define WriteCensus
         decl_read_keys: Array[String]
         decl_read_vals: Array[String]
         decl_io_keys: Array[String]
+        ; what a LINKED declaration says its result reaches (`@ret_reach_N`,
+        ; N the mask of its parameters), under the same keys; a declaration
+        ; that says nothing reaches every parameter (WC_PARAMS), and so does
+        ; a key two declarations share when one of them does
+        decl_reach_keys: Array[String]
+        decl_reach_vals: Array[u64]
         ; per plan.functions index: the global a body RETURNS ("" none), so a
         ; getter's result is an alias of that global
         ret_globals: Array[String]
@@ -331,6 +337,8 @@ define WriteCensus
             decl_read_keys := Array[String]^this()
             decl_read_vals := Array[String]^this()
             decl_io_keys := Array[String]^this()
+            decl_reach_keys := Array[String]^this()
+            decl_reach_vals := Array[u64]^this()
             ret_globals := Array[String]^this()
             cur_ret_global := String^this("")
             ret_params := Array[u64]^this()
@@ -388,6 +396,16 @@ define WriteCensus
                     w := w + 1
                 }
                 i := i + 1
+            }
+            ; what the interfaces say of the routines this root cannot follow
+            this.collect_reach_module(model.module_, String(""))
+            var rpi: size_t 0
+            while rpi < model.packages.length
+            {
+                let rpkg model.packages.get rpi
+                if rpkg <> null
+                    this.collect_reach_module((*rpkg), String(""))
+                rpi := rpi + 1
             }
             ; a call's result aliases the arguments its callee's returns reach
             this.learn_returned_params()
@@ -938,7 +956,7 @@ define WriteCensus
                         when action: Action
                             start := 0
                         else
-                            0
+                            start := this.declared_reach(f_ptr.unwrap())
                 }
                 ret_params.add start
                 ret_is.add start
@@ -2451,6 +2469,153 @@ define WriteCensus
         ; parameters are the result region and exempt, as the caller page is.
         ; ================================================================
 
+        ; ---- what a linked routine's result reaches ----------------------
+        ; A routine of another package is a stub here: no body to follow, so
+        ; its result was taken to reach EVERY argument -- a connection opened
+        ; with a record's strings was a part of that record ever after, and
+        ; the routine that used it "wrote this". Its package's interface
+        ; says what the census found with the body in hand (`@ret_reach_N`,
+        ; interface_facts#); a stub starts from that. Saying nothing still
+        ; means every argument.
+        procedure collect_reach_module(mutable this: WriteCensus, m: Module, owner: String)
+        {
+            this.collect_reach_members(m.members, owner)
+            var i: size_t 0
+            while i < m.modules.length
+            {
+                let sub m.modules.get i
+                if sub <> null
+                    this.collect_reach_module((*sub), owner)
+                i := i + 1
+            }
+        }
+
+        procedure collect_reach_members(mutable this: WriteCensus, members: Vector[Member], owner: String)
+        {
+            var i: size_t 0
+            while i < members.length
+            {
+                let m_ptr members.get i
+                if m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when f: Function
+                        {
+                            var linked_decl false
+                            choose f.implementation
+                                when lk: Linked
+                                    linked_decl := true
+                                else
+                                    0
+                            if linked_decl
+                            {
+                                var key WriteCensus.purity_key(f.name, f.input.length)
+                                if owner.get_length() > 0
+                                    key := WriteCensus.owned_key(owner, f.name, f.input.length)
+                                var reach: u64 WC_PARAMS
+                                let said WriteCensus.said_reach(f)
+                                if said >= 0
+                                    reach := said as u64
+                                this.note_reach(key, reach)
+                            }
+                        }
+                        when c: Concept
+                        {
+                            choose c.definition
+                                when st: Structure
+                                {
+                                    this.collect_reach_members(st.members, c.name)
+                                    var mi: size_t 0
+                                    while mi < st.modules.length
+                                    {
+                                        let sub st.modules.get mi
+                                        if sub <> null
+                                            this.collect_reach_module((*sub), c.name)
+                                        mi := mi + 1
+                                    }
+                                }
+                                when un: Union
+                                    this.collect_reach_members(un.members, c.name)
+                                when ns: Namespace
+                                {
+                                    this.collect_reach_members(ns.members, c.name)
+                                    var mi: size_t 0
+                                    while mi < ns.modules.length
+                                    {
+                                        let sub ns.modules.get mi
+                                        if sub <> null
+                                            this.collect_reach_module((*sub), c.name)
+                                        mi := mi + 1
+                                    }
+                                }
+                                else
+                                    0
+                        }
+                        else
+                            0
+                }
+                i := i + 1
+            }
+        }
+
+        ; The mask a declaration states (`@ret_reach_N true`), -1 for none.
+        function said_reach(f: Function) returns i64
+        {
+            var i: size_t 0
+            while i < f.attributes.length
+            {
+                let a_ptr f.attributes.get i
+                if a_ptr <> null
+                    if (*a_ptr).name.starts_with("ret_reach_")
+                    {
+                        let nm (*a_ptr).name
+                        let digits nm.substring(10, nm.get_length() - 10)
+                        return atoll(digits.to_c_string())
+                    }
+                i := i + 1
+            }
+            -1
+        }
+
+        ; File a declaration's reach under its key; two declarations of one
+        ; key (overloads of one arity) answer with what either reaches.
+        procedure note_reach(mutable this: WriteCensus, key: String, reach: u64)
+        {
+            var i: size_t 0
+            while i < decl_reach_keys.length
+            {
+                if decl_reach_keys[i] = key
+                {
+                    if decl_reach_vals[i] = WC_PARAMS or reach = WC_PARAMS
+                        decl_reach_vals.put(i, WC_PARAMS)
+                    else
+                        decl_reach_vals.put(i, decl_reach_vals[i] | reach)
+                    return
+                }
+                i := i + 1
+            }
+            decl_reach_keys.add(String^this(key))
+            decl_reach_vals.add reach
+        }
+
+        ; The parameters a stub's result reaches, by its declaration; every
+        ; one when it has none here (an extern of C, a synthesized routine).
+        function declared_reach(this: WriteCensus, f: PlannedFunction) returns u64
+        {
+            if f.mangled_name.starts_with(String("_Z")) = false
+                return WC_PARAMS
+            let key this.stub_key(f)
+            var i: size_t 0
+            while i < decl_reach_keys.length
+            {
+                if decl_reach_keys[i] = key
+                    return decl_reach_vals[i]
+                i := i + 1
+            }
+            WC_PARAMS
+        }
+
         procedure collect_purity_module(mutable this: WriteCensus, m: Module)
             this.collect_purity_module_in(m, String(""))
 
@@ -3393,6 +3558,33 @@ define WriteCensus
                     continue
                 facts.add(WriteCensus.fact("I" as char, g.file, g.loc.start, String()))
             }
+            ; and the parameters its result reaches, where that is not all of
+            ; them (collect_reach_members# reads it back for a stub)
+            i := 0
+            while i < fns.length
+            {
+                if i >= ret_params.length
+                    break
+                let reach ret_params[i]
+                let h_ptr fns.get i
+                i := i + 1
+                if h_ptr = null
+                    continue
+                if (reach & WC_PARAMS) = WC_PARAMS
+                    continue
+                let h h_ptr.unwrap()
+                if h.origin <> null
+                    continue
+                var hbody false
+                choose h.impl
+                    when a: Action
+                        hbody := true
+                    else
+                        0
+                if hbody = false
+                    continue
+                facts.add(WriteCensus.fact("A" as char, h.file, h.loc.start, "`(reach & WC_PARAMS) as int`"))
+            }
         }
 
         function fact(tag: char, file: String, start: size_t, text: String) returns InterfaceFact
@@ -3535,6 +3727,16 @@ define WriteCensus
                 pi := pi + 1
             }
             this.wc_mark("E0b-collected-ambient-purity")
+            ; what the interfaces say of the routines this root cannot follow
+            this.collect_reach_module(model.module_, String(""))
+            var rci: size_t 0
+            while rci < model.packages.length
+            {
+                let rcpkg model.packages.get rci
+                if rcpkg <> null
+                    this.collect_reach_module((*rcpkg), String(""))
+                rci := rci + 1
+            }
             this.learn_returned_params()
             this.wc_mark("E0c-learn-returned-params")
             this.learn_returned_globals()
