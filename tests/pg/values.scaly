@@ -7,9 +7,12 @@
 ;             through a binary column, between text columns of the same row
 ;   null      a NULL parameter reads as NULL, an empty text does not
 ;   rollback  BEGIN, an insert, ROLLBACK through execute: the row is gone
+;   unnamed   prepare_unnamed and the statement "": two texts one after the
+;             other, parameters and a binary column, and a named statement
+;             still there between them
 ;   reason    PgConn.open on a port nothing listens on answers null and says
 ;             that the server was not reached
-; Expected: script bytes null rollback reason
+; Expected: script bytes null rollback unnamed reason
 
 package scaly 0.1.0
 package tls 0.1.0
@@ -109,6 +112,27 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     if c.run() = false or c.next_row()
         return 18
     Console.print "rollback "
+
+    if c.prepare_unnamed("SELECT note, content FROM pg_values WHERE id = $1") = false
+        return 20
+    c.start("")
+    c.param_int(2)
+    c.binary_column(1)
+    if c.run() = false or c.next_row() = false or c.column(0).equals("two") = false or c.column(1).length <> 256
+        return 21
+    c.start("get")
+    c.param_int(1)
+    if c.run() = false or c.next_row() = false or c.column(2).equals("one") = false
+        return 22
+    if c.prepare_unnamed("SELECT COUNT(*) FROM pg_values WHERE id > $1") = false
+        return 23
+    c.start("")
+    c.param_int(1)
+    if c.run() = false or c.next_row() = false or c.column_int(0) <> 2
+        return 24
+    if c.prepare_unnamed("SELECT x FROM pg_no_such_table") or c.error_message().length = 0
+        return 25
+    Console.print "unnamed "
     release(c)
 
     var why Array[u8]()

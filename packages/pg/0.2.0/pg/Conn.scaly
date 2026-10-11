@@ -18,6 +18,9 @@
 ; the server's binary form (a BYTEA column's bytes, without the hex of its
 ; text form). column_is_null tells NULL from an empty value.
 ;
+; prepare_unnamed prepares a statement that is not kept: the next one takes
+; its place.
+;
 ; execute sends SQL without preparing it, through the simple query
 ; protocol: no parameters, any number of statements separated by
 ; semicolons (a schema script, BEGIN, COMMIT), text results.
@@ -73,6 +76,8 @@ define PgConn
     ; of the RowDescription drain met last
     var prepared_columns: Array[u32]
     var described: i64
+    ; the result columns of the unnamed statement (prepare_unnamed)
+    var unnamed_columns: u32
 )
 {
     ; Connect and authenticate; null when the server cannot be reached or
@@ -99,7 +104,7 @@ define PgConn
             return null
         }
         tcp.set_nodelay(true)
-        let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page(), allocate_slice[u32]^page(page, PG_ROW_INDEX), allocate_slice[i32]^page(page, PG_ROW_INDEX), 0, 0, Array[u32]^page(), Array[u32]^page(), Array[u32]^page(), 0)
+        let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page(), allocate_slice[u32]^page(page, PG_ROW_INDEX), allocate_slice[i32]^page(page, PG_ROW_INDEX), 0, 0, Array[u32]^page(), Array[u32]^page(), Array[u32]^page(), 0, 0)
         if c.startup(user, password, database) = false
         {
             if c.error_message().length > 0
@@ -345,6 +350,34 @@ define PgConn
         true
     }
 
+    ; Prepare sql as the connection's UNNAMED statement, which the next
+    ; prepare_unnamed replaces: for a statement whose text is made for one
+    ; query (a search built from a request) -- under a name every such text
+    ; would stay on the connection for as long as it lives. Run it as the
+    ; statement "": c.start(""), the parameters, c.run(). False when the
+    ; server refuses it.
+    procedure prepare_unnamed(mutable this, sql: Slice[u8]) returns bool
+    {
+        this.reset_input()
+        outb.clear()
+        let at outb.begin(80)
+        outb.append_byte(0)
+        outb.append_cstr(sql)
+        outb.append_i16(0)
+        outb.finish(at)
+        let describe outb.begin(68)
+        outb.append_byte(83)
+        outb.append_byte(0)
+        outb.finish(describe)
+        let sync outb.begin(83)
+        outb.finish(sync)
+        described := 0
+        if this.flush() = false or this.drain() = false
+            return false
+        unnamed_columns := described as u32
+        true
+    }
+
     ; Begin a query of the prepared statement `name`; the parameters follow
     ; with param_text / param_int, then run.
     procedure start(mutable this, name: Slice[u8])
@@ -404,6 +437,8 @@ define PgConn
     function statement_columns(this) returns size_t
     {
         let name outb.bytes().subslice(bind_at + 5, formats_at - 1)
+        if name.length = 0
+            return unnamed_columns as size_t
         var i: size_t 0
         while i < prepared.length
         {
