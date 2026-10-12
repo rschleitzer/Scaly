@@ -1,0 +1,17 @@
+; sqlite — SQLite's own library behind a connection: scripts, prepared
+; statements with text, integer, byte and NULL parameters, rows of text
+; and bytes. The database is a file (or ":memory:"); a call into the
+; library runs to its end on the calling thread -- there is no socket to
+; park a task on, and a statement on a local file is short.
+;
+; A connection belongs to the thread that opened it.
+
+package scaly 0.1.0
+
+extern sqlite3
+
+define sqlite
+{
+    module Conn
+    module Thread
+}

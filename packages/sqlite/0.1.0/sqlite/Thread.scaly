@@ -1,0 +1,42 @@
+; A connection per thread: SQLite's own way to many writers is a
+; connection each (it locks the file among them), and the tasks of one
+; scheduler thread take turns on theirs -- a call into the library does not
+; park, so a transaction that makes no other I/O between its statements is
+; not interleaved with another task's.
+
+use sqlite.Conn.SqliteConn
+
+; This thread's connection, opened at its first use.
+mutable sqlite_thread: ref[SqliteConn]? null
+
+; The database file configure named, as the address of a String on a page
+; of its own; 0 when the program named none. Stored before the threads
+; that read it start, and only through scaly_atomic_* (an ordinary global
+; would be thread-local).
+shared atomic sqlite_configured: u64 0
+
+; Name the database file every thread's connection opens. Before the first
+; thread_connection; the path is copied.
+procedure configure(path: Slice[u8])
+{
+    let page Page.allocate_page()
+    let kept &String^page(path.data as pointer[const_char], path.length)
+    scaly_atomic_store_u64(&sqlite_configured, kept as u64)
+}
+
+; This thread's connection to the configured file; null when none is
+; configured or the file cannot be opened.
+procedure thread_connection() returns ref[SqliteConn]? mutable sqlite_thread
+{
+    let existing sqlite_thread
+    if existing <> null
+        return existing
+    let configured scaly_atomic_load_u64(&sqlite_configured)
+    if configured = 0
+        return null
+    let path (configured as size_t) as ref[String]
+    var reason Array[u8]()
+    let opened SqliteConn.open(path.as_slice(), &reason)
+    sqlite_thread := opened
+    opened
+}

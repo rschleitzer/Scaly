@@ -1,0 +1,331 @@
+; The connection: sqlite3's C API bound directly. Its handles are opaque
+; pointers, its counts are C ints (i32 here) and sqlite3_int64 is 64 bits
+; on every target, so no `long` crosses the boundary and no C shim is
+; needed. The package root declares `extern sqlite3`.
+;
+;   var reason Array[u8]()
+;   let got SqliteConn.open("fire.db", &reason)      ; null: reason says why
+;   var c got as ref[SqliteConn]
+;   c.execute("CREATE TABLE t (id INTEGER, name TEXT); BEGIN")
+;   c.prepare("ins", "INSERT INTO t (id, name) VALUES ($1, $2)")
+;   c.start("ins")
+;   c.param_int(7)
+;   c.param_text("seven")
+;   c.run()
+;   c.prepare_unnamed("SELECT name FROM t WHERE id = $1")
+;   c.start("")
+;   c.param_int(7)
+;   if c.run()
+;       while c.next_row()
+;           ... c.column(0) ...
+;
+; A parameter's bytes are copied when it is given and bound when the
+; statement runs, so what was handed in need not live that long. What
+; column() answers is the library's own memory: good until the next row,
+; the next run of the statement, or close.
+
+define Sqlite3Opaque()
+define Sqlite3 pointer[Sqlite3Opaque]
+define Sqlite3StmtOpaque()
+define Sqlite3Stmt pointer[Sqlite3StmtOpaque]
+
+procedure sqlite3_open_v2(filename: pointer[const_char], mutable db: pointer[pointer[Sqlite3Opaque]], flags: i32, vfs: pointer[const_char]) returns i32 extern
+procedure sqlite3_close(mutable db: Sqlite3) returns i32 extern
+procedure sqlite3_busy_timeout(mutable db: Sqlite3, ms: i32) returns i32 extern
+procedure sqlite3_exec(mutable db: Sqlite3, sql: pointer[const_char], callback: pointer[void], arg: pointer[void], errmsg: pointer[void]) returns i32 extern
+procedure sqlite3_errmsg(db: Sqlite3) returns pointer[const_char] extern
+procedure sqlite3_changes(db: Sqlite3) returns i32 extern
+procedure sqlite3_prepare_v2(mutable db: Sqlite3, sql: pointer[const_char], bytes: i32, mutable statement: pointer[pointer[Sqlite3StmtOpaque]], tail: pointer[void]) returns i32 extern
+procedure sqlite3_finalize(mutable statement: Sqlite3Stmt) returns i32 extern
+procedure sqlite3_reset(mutable statement: Sqlite3Stmt) returns i32 extern
+procedure sqlite3_clear_bindings(mutable statement: Sqlite3Stmt) returns i32 extern
+procedure sqlite3_step(mutable statement: Sqlite3Stmt) returns i32 extern
+procedure sqlite3_bind_text(mutable statement: Sqlite3Stmt, index: i32, text: pointer[const_char], bytes: i32, destructor: pointer[void]) returns i32 extern
+procedure sqlite3_bind_blob(mutable statement: Sqlite3Stmt, index: i32, data: pointer[void], bytes: i32, destructor: pointer[void]) returns i32 extern
+procedure sqlite3_bind_int64(mutable statement: Sqlite3Stmt, index: i32, value: i64) returns i32 extern
+procedure sqlite3_bind_parameter_index(statement: Sqlite3Stmt, name: pointer[const_char]) returns i32 extern
+procedure sqlite3_bind_null(mutable statement: Sqlite3Stmt, index: i32) returns i32 extern
+procedure sqlite3_column_count(statement: Sqlite3Stmt) returns i32 extern
+procedure sqlite3_column_type(statement: Sqlite3Stmt, column: i32) returns i32 extern
+procedure sqlite3_column_text(statement: Sqlite3Stmt, column: i32) returns pointer[u8] extern
+procedure sqlite3_column_blob(statement: Sqlite3Stmt, column: i32) returns pointer[u8] extern
+procedure sqlite3_column_bytes(statement: Sqlite3Stmt, column: i32) returns i32 extern
+procedure sqlite3_column_int64(statement: Sqlite3Stmt, column: i32) returns i64 extern
+
+; sqlite3's result codes and open flags that are used here
+define SQLITE_OK: i32 0
+define SQLITE_ROW: i32 100
+define SQLITE_DONE: i32 101
+define SQLITE_OPEN_READWRITE_CREATE: i32 6
+define SQLITE_NULL: i32 5
+define SQLITE_BLOB: i32 4
+
+; what a parameter is, as start/param_* note it
+define SQLITE_PARAM_TEXT: i64 0
+define SQLITE_PARAM_BYTES: i64 1
+define SQLITE_PARAM_INT: i64 2
+define SQLITE_PARAM_NULL: i64 3
+
+define SqliteConn
+(
+    host: ref[Page]
+    var db: Sqlite3
+    ; the statements prepared by name, and the unnamed one
+    var names: Array[String]
+    var statements: Array[Sqlite3Stmt]
+    var unnamed: Sqlite3Stmt
+    ; the statement start() chose
+    var current: Sqlite3Stmt
+    ; its parameters until run(): the bytes, and for each its kind, where
+    ; its bytes begin (or its value, for an integer) and their length
+    var bytes: Array[u8]
+    var params: Array[i64]
+    ; the row run() already stepped to, not yet given to next_row()
+    var pending: bool
+    var done: bool
+)
+{
+    ; Open the database file `path` (made when it is not there); null when
+    ; the library refuses, and `reason` says why. The connection lives on a
+    ; page of its own.
+    procedure open(path: Slice[u8], mutable reason: ref[Array[u8]]) returns ref[SqliteConn]?
+    {
+        let host Page.allocate_page()
+        var name Array[u8]()
+        name.append(path)
+        name.add(0 as u8)
+        var handle: Sqlite3 null
+        ; (a bare null is not taken for a pointer[const_char] parameter)
+        let no_vfs: pointer[const_char] null
+        let rc sqlite3_open_v2(name.get_buffer() as pointer[const_char], &handle, SQLITE_OPEN_READWRITE_CREATE, no_vfs)
+        if rc <> SQLITE_OK
+        {
+            if handle <> null
+            {
+                let m sqlite3_errmsg(handle)
+                reason.append(Slice[u8](strlen(m), m as pointer[u8]))
+                sqlite3_close(handle)
+            }
+            host.deallocate_extensions()
+            Page.release_page(host)
+            return null
+        }
+        ; wait for another connection's write instead of failing at once
+        sqlite3_busy_timeout(handle, 30000)
+        let c &SqliteConn^host(host, handle, Array[String]^host(), Array[Sqlite3Stmt]^host(), null, null, Array[u8]^host(), Array[i64]^host(), false, true)
+        c
+    }
+
+    ; What the library says of the last operation that failed.
+    procedure error_message(this) returns Slice[u8]
+    {
+        let m sqlite3_errmsg(db)
+        Slice[u8](strlen(m), m as pointer[u8])
+    }
+
+    procedure close(mutable this)
+    {
+        var i: size_t 0
+        while i < statements.length
+        {
+            sqlite3_finalize(statements[i])
+            i := i + 1
+        }
+        if unnamed <> null
+            sqlite3_finalize(unnamed)
+        sqlite3_close(db)
+        host.deallocate_extensions()
+        Page.release_page(host)
+    }
+
+    ; Run a script: any number of statements, no parameters, no rows.
+    procedure execute(mutable this, sql: Slice[u8]) returns bool
+    {
+        var text Array[u8]()
+        text.append(sql)
+        text.add(0 as u8)
+        sqlite3_exec(db, text.get_buffer() as pointer[const_char], null, null, null) = SQLITE_OK
+    }
+
+    ; Prepare `sql` under `name`; a name that is prepared already stays as
+    ; it is (as pg's prepare: the name is the statement).
+    procedure prepare(mutable this, name: Slice[u8], sql: Slice[u8]) returns bool
+    {
+        var i: size_t 0
+        while i < names.length
+        {
+            if names[i].as_slice().equals(name)
+                return true
+            i := i + 1
+        }
+        var statement: Sqlite3Stmt null
+        if sqlite3_prepare_v2(db, sql.data as pointer[const_char], sql.length as i32, &statement, null) <> SQLITE_OK or statement = null
+            return false
+        names.add(String^host(name.data as pointer[const_char], name.length))
+        statements.add(statement)
+        true
+    }
+
+    ; Prepare `sql` as the unnamed statement, in place of the one before.
+    procedure prepare_unnamed(mutable this, sql: Slice[u8]) returns bool
+    {
+        if unnamed <> null
+        {
+            if current = unnamed
+                current := null
+            sqlite3_finalize(unnamed)
+            unnamed := null
+        }
+        var statement: Sqlite3Stmt null
+        if sqlite3_prepare_v2(db, sql.data as pointer[const_char], sql.length as i32, &statement, null) <> SQLITE_OK or statement = null
+            return false
+        unnamed := statement
+        true
+    }
+
+    ; Begin a run of the statement `name` ("" the unnamed one): its
+    ; parameters follow, in order.
+    procedure start(mutable this, name: Slice[u8])
+    {
+        current := null
+        if name.length = 0
+            current := unnamed
+        var i: size_t 0
+        while i < names.length and current = null
+        {
+            if names[i].as_slice().equals(name)
+                current := statements[i]
+            i := i + 1
+        }
+        bytes.length := 0
+        params.length := 0
+        pending := false
+        done := true
+    }
+
+    procedure param_text(mutable this, v: Slice[u8])
+    {
+        params.add(SQLITE_PARAM_TEXT)
+        params.add(bytes.length as i64)
+        params.add(v.length as i64)
+        bytes.append(v)
+    }
+
+    procedure param_bytes(mutable this, v: Slice[u8])
+    {
+        params.add(SQLITE_PARAM_BYTES)
+        params.add(bytes.length as i64)
+        params.add(v.length as i64)
+        bytes.append(v)
+    }
+
+    procedure param_int(mutable this, v: i64)
+    {
+        params.add(SQLITE_PARAM_INT)
+        params.add(v)
+        params.add(0)
+    }
+
+    procedure param_null(mutable this)
+    {
+        params.add(SQLITE_PARAM_NULL)
+        params.add(0)
+        params.add(0)
+    }
+
+    ; Run the statement with the parameters given since start(). True when
+    ; it ran; its rows are then next_row()'s.
+    procedure run(mutable this) returns bool
+    {
+        if current = null
+            return false
+        sqlite3_reset(current)
+        sqlite3_clear_bindings(current)
+        ; an empty parameter still needs an address: a null one binds NULL
+        bytes.add(0 as u8)
+        let base bytes.get_buffer()
+        var i: size_t 0
+        while i * 3 < params.length
+        {
+            let kind params[i * 3]
+            let at params[i * 3 + 1]
+            let n params[i * 3 + 2]
+            ; the i-th parameter is the one written $<i> (as pg's), wherever
+            ; it stands and however often; ?<i> and a bare ? by their place
+            var index (i + 1) as i32
+            var written Array[u8]()
+            written.add(36 as u8)
+            var digits (i + 1) as i64
+            var divisor: i64 1
+            while digits / divisor >= 10
+                divisor := divisor * 10
+            while divisor > 0
+            {
+                written.add((48 + (digits / divisor) % 10) as u8)
+                divisor := divisor / 10
+            }
+            written.add(0 as u8)
+            let named sqlite3_bind_parameter_index(current, written.get_buffer() as pointer[const_char])
+            if named > 0
+                index := named
+            var rc SQLITE_OK
+            if kind = SQLITE_PARAM_TEXT
+                rc := sqlite3_bind_text(current, index, (base + (at as size_t)) as pointer[const_char], n as i32, null)
+            if kind = SQLITE_PARAM_BYTES
+                rc := sqlite3_bind_blob(current, index, (base + (at as size_t)) as pointer[void], n as i32, null)
+            if kind = SQLITE_PARAM_INT
+                rc := sqlite3_bind_int64(current, index, at)
+            if kind = SQLITE_PARAM_NULL
+                rc := sqlite3_bind_null(current, index)
+            if rc <> SQLITE_OK
+                return false
+            i := i + 1
+        }
+        let rc sqlite3_step(current)
+        pending := rc = SQLITE_ROW
+        done := rc <> SQLITE_ROW
+        rc = SQLITE_ROW or rc = SQLITE_DONE
+    }
+
+    ; Go to the next row of the statement that ran; false past the last.
+    procedure next_row(mutable this) returns bool
+    {
+        if pending
+        {
+            pending := false
+            return true
+        }
+        if done or current = null
+            return false
+        let rc sqlite3_step(current)
+        if rc <> SQLITE_ROW
+            done := true
+        rc = SQLITE_ROW
+    }
+
+    ; The rows the last statement changed.
+    procedure affected(this) returns i64
+        sqlite3_changes(db) as i64
+
+    procedure column_is_null(this, i: int) returns bool
+        sqlite3_column_type(current, i as i32) = SQLITE_NULL
+
+    ; Column i of the current row: its bytes when it holds bytes, else its
+    ; text (a number as the library writes it); empty for NULL.
+    procedure column(this, i: int) returns Slice[u8]
+    {
+        let kind sqlite3_column_type(current, i as i32)
+        var data: pointer[u8] null
+        if kind = SQLITE_BLOB
+            data := sqlite3_column_blob(current, i as i32)
+        else
+            data := sqlite3_column_text(current, i as i32)
+        let n sqlite3_column_bytes(current, i as i32)
+        if data = null
+            return Slice[u8](0, data)
+        Slice[u8](n as size_t, data)
+    }
+
+    procedure column_int(this, i: int) returns i64
+        sqlite3_column_int64(current, i as i32)
+}

@@ -1,0 +1,84 @@
+; The sqlite package:
+;   script    a script of several statements; a transaction
+;   params    a prepared statement run three times with an integer, a text
+;             (and once NULL) and bytes; parameters are the ones written
+;             $1, $2 wherever they stand and however often
+;   rows      text, NULL, bytes and an integer read back, in order
+;   refused   a statement the library refuses, and its reason
+;   thread    the connection of the thread to a configured file, the same
+;             one at its second use
+; Expected: 2 NULL ab 2 3 näme ab 3 no such table: nowhere thread ok
+
+package scaly 0.1.0
+package sqlite 0.1.0
+
+use sqlite.Conn.SqliteConn
+
+procedure show(s: Slice[u8])
+{
+    Console.print(String(s.data as pointer[const_char], s.length))
+    Console.print(" ")
+}
+
+procedure main() returns int mutable sqlite_thread
+{
+    var reason Array[u8]()
+    let got SqliteConn.open(":memory:", &reason)
+    if got = null
+    {
+        show(reason.as_slice())
+        return 1
+    }
+    var c got as ref[SqliteConn]
+    if c.execute("CREATE TABLE t (id INTEGER, name TEXT, data BLOB); BEGIN") = false
+        return 2
+    if c.prepare("ins", "INSERT INTO t (id, name, data) VALUES ($1, $2, $3)") = false
+        return 3
+    var k 1
+    while k <= 3
+    {
+        c.start("ins")
+        c.param_int(k as i64)
+        if k = 2
+            c.param_null()
+        else
+            c.param_text("näme")
+        c.param_bytes("ab")
+        if c.run() = false
+            return 4
+        k := k + 1
+    }
+    c.execute("COMMIT")
+    if c.prepare_unnamed("SELECT id, name, data FROM t WHERE $2 = 'x' AND id >= $1 AND id >= $1 ORDER BY id") = false
+        return 5
+    c.start("")
+    c.param_int(2)
+    c.param_text("x")
+    if c.run() = false
+        return 6
+    while c.next_row()
+    {
+        show(c.column(0))
+        if c.column_is_null(1)
+            show("NULL")
+        else
+            show(c.column(1))
+        show(c.column(2))
+        Console.print("`c.column_int(0)` ")
+    }
+    if c.execute("SELECT nonsense FROM nowhere")
+        return 7
+    show(c.error_message())
+    c.close()
+    configure(":memory:")
+    let mine thread_connection()
+    if mine = null
+        return 8
+    var d mine as ref[SqliteConn]
+    d.execute("CREATE TABLE IF NOT EXISTS u (n INTEGER); INSERT INTO u VALUES (1)")
+    d.prepare_unnamed("SELECT COUNT(*) FROM u")
+    d.start("")
+    if d.run() and d.next_row() and thread_connection() = mine
+        Console.println("thread ok")
+    0
+}
