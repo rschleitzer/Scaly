@@ -8,7 +8,7 @@
 #   scalyc    the compiler, with a C compiler's command line (-o -c -S -O2)
 #   scalyls   the language server the VS Code extension starts
 # and beside them the standard library and the standard packages (http, https,
-# tls, json, compress, pg, redis, h3) as sources.
+# tls, json, compress, pg, redis, h3, sqlite) as sources.
 #
 # The programs are downloaded ready to run for
 #   macOS 26 (Apple silicon, Intel), Ubuntu 26.04 and newer (arm64, x86-64)

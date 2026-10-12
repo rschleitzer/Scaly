@@ -32,7 +32,7 @@ OUT="${2:-dist}"
 TARBALL="$OUT/scaly-$VERSION.tar.gz"
 
 SEED_FILES="main scaly_main scalyc scaly scalyls_main scalyls json"
-PACKAGES="scaly http https tls json compress pg redis h3"
+PACKAGES="scaly http https tls json compress pg redis h3 sqlite"
 
 for f in $SEED_FILES; do
   [ -f "seed/$f.ll" ] || { echo "make-dist: FAIL — seed/$f.ll missing (run tools/seed.sh + install-seed.sh)"; exit 1; }

@@ -79,6 +79,14 @@ if "$ROOT/tools/make-dist.sh" "$VER" "$TMP/base/downloads" > "$TMP/dist.log" 2>&
            LICENSE VERSION; do
     grep -q "^\./$f" "$TMP/payload.txt" || missing="$missing $f"
   done
+  # every package of the tree that is not the toolchain's own goes out: one
+  # that make-dist's list forgot is missing from every installation (sqlite
+  # was, in 0.2.8)
+  for d in "$ROOT"/packages/*/; do
+    n=$(basename "$d")
+    case "$n" in scalyc|scalyls|scalygpu) continue ;; esac
+    grep -q "^\./packages/$n/" "$TMP/payload.txt" || missing="$missing packages/$n"
+  done
   [ "$private" = 0 ] && [ -z "$missing" ] && ok || bad "payload: $private entries that must not ship; missing:$missing"
 else
   bad "payload: make-dist failed: $(tail -2 "$TMP/dist.log" | tr '\n' ' ')"
