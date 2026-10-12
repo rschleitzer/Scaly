@@ -70,7 +70,7 @@ procedure main() returns int mutable sqlite_thread
         return 7
     show(c.error_message())
     c.close()
-    configure(":memory:")
+    configure(":memory:", "PRAGMA foreign_keys = ON")
     let mine thread_connection()
     if mine = null
         return 8

@@ -22,7 +22,7 @@
 ; A parameter's bytes are copied when it is given and bound when the
 ; statement runs, so what was handed in need not live that long. What
 ; column() answers is the library's own memory: good until the next row,
-; the next run of the statement, or close.
+; the next start, execute or finish, or close.
 
 define Sqlite3Opaque()
 define Sqlite3 pointer[Sqlite3Opaque]
@@ -138,9 +138,23 @@ define SqliteConn
         Page.release_page(host)
     }
 
+    ; End the statement that ran: its rows are done with. A statement that
+    ; has rows left holds the database's read lock -- and a writer on
+    ; another connection waits for it -- until it is reset; start() and
+    ; execute() do this for the statement before, so only the last one of
+    ; a piece of work needs it said.
+    procedure finish(mutable this)
+    {
+        if current <> null and done = false
+            sqlite3_reset(current)
+        pending := false
+        done := true
+    }
+
     ; Run a script: any number of statements, no parameters, no rows.
     procedure execute(mutable this, sql: Slice[u8]) returns bool
     {
+        finish()
         var text Array[u8]()
         text.append(sql)
         text.add(0 as u8)
@@ -187,6 +201,7 @@ define SqliteConn
     ; parameters follow, in order.
     procedure start(mutable this, name: Slice[u8])
     {
+        finish()
         current := null
         if name.length = 0
             current := unnamed

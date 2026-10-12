@@ -9,23 +9,33 @@ use sqlite.Conn.SqliteConn
 ; This thread's connection, opened at its first use.
 mutable sqlite_thread: ref[SqliteConn]? null
 
-; The database file configure named, as the address of a String on a page
-; of its own; 0 when the program named none. Stored before the threads
-; that read it start, and only through scaly_atomic_* (an ordinary global
-; would be thread-local).
+; What configure named, as the address of a SqliteConfig on a page of its
+; own; 0 when the program named none. Stored before the threads that read
+; it start, and only through scaly_atomic_* (an ordinary global would be
+; thread-local).
+define SqliteConfig
+(
+    path: String
+    setup: String
+)
+
 shared atomic sqlite_configured: u64 0
 
-; Name the database file every thread's connection opens. Before the first
-; thread_connection; the path is copied.
-procedure configure(path: Slice[u8])
+; Name the database file every thread's connection opens, and a script
+; each connection runs when it is opened (its PRAGMAs; may be empty).
+; Before the first thread_connection; both are copied.
+procedure configure(path: Slice[u8], setup: Slice[u8])
 {
     let page Page.allocate_page()
-    let kept &String^page(path.data as pointer[const_char], path.length)
+    let kept &SqliteConfig^page(
+        String^page(path.data as pointer[const_char], path.length),
+        String^page(setup.data as pointer[const_char], setup.length)
+    )
     scaly_atomic_store_u64(&sqlite_configured, kept as u64)
 }
 
 ; This thread's connection to the configured file; null when none is
-; configured or the file cannot be opened.
+; configured, the file cannot be opened or the setup script is refused.
 procedure thread_connection() returns ref[SqliteConn]? mutable sqlite_thread
 {
     let existing sqlite_thread
@@ -34,9 +44,17 @@ procedure thread_connection() returns ref[SqliteConn]? mutable sqlite_thread
     let configured scaly_atomic_load_u64(&sqlite_configured)
     if configured = 0
         return null
-    let path (configured as size_t) as ref[String]
+    let config (configured as size_t) as ref[SqliteConfig]
     var reason Array[u8]()
-    let opened SqliteConn.open(path.as_slice(), &reason)
+    let opened SqliteConn.open(config.path.as_slice(), &reason)
+    if opened = null
+        return null
+    var c opened as ref[SqliteConn]
+    if config.setup.get_length() > 0 and c.execute(config.setup.as_slice()) = false
+    {
+        c.close()
+        return null
+    }
     sqlite_thread := opened
     opened
 }
