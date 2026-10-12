@@ -8,12 +8,13 @@
 ; task on the runtime's evented I/O and the scheduler runs other requests
 ; meanwhile.
 ;
-; NOT in it: encryption of the session (tds/Conn.scaly says what that
-; means), Windows authentication, the old text and image types, floating
+; The session can run inside TLS (tds/Conn.scaly says what that does and
+; does not give). NOT in it: TDS 8.0's strict form, Windows authentication, the old text and image types, floating
 ; point and money in a result, more than one result of a statement told
 ; apart.
 
 package scaly 0.1.0
+package tls 0.1.0
 
 define tds
 {

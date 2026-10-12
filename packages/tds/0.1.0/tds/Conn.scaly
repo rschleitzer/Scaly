@@ -28,10 +28,20 @@
 ; datetime2 as 2026-10-10 16:39:09.4208071 (its scale's digits), a decimal
 ; with its scale, character data as UTF-8; binary data as its bytes.
 ;
-; ★The session is NOT encrypted: the client says it has no encryption, and
-; a server that insists on it (Force Encryption) refuses the connection.
-; The password crosses the wire as TDS obfuscates it, which is no
-; protection. For a server on the same host or a network that is trusted.
+; Encryption: with open's `encrypt` the client asks for it in PRELOGIN and
+; the two sides shake hands -- TLS 1.2 or later, its records wrapped in TDS
+; packets as the protocol has it -- before the login; from then on the
+; whole session runs inside TLS. It is what SqlClient does with
+; Encrypt=True. ★The server's certificate is NOT verified: what crosses the
+; wire is hidden, but whom one speaks to is not proven -- SqlClient's
+; TrustServerCertificate=True. A server without encryption refuses such a
+; connection here (no silent step down). TDS 8.0's "strict" form, TLS
+; before any TDS, is not here.
+;
+; Without `encrypt` the client says it has no encryption, and a server that
+; insists on it (Force Encryption) refuses the connection. The password
+; then crosses the wire as TDS obfuscates it, which is no protection: for a
+; server on the same host or a network that is trusted.
 
 define TDS_PACKET: size_t 4096
 
@@ -56,6 +66,14 @@ define TdsConn
 (
     host: ref[Page]
     var tcp: TcpStream
+    ; the session inside TLS, once the handshake after PRELOGIN is done:
+    ; then every byte goes through `ssl`, whose two memory BIOs stand
+    ; between it and the TcpStream (what came in, what is to go out)
+    var encrypted: bool
+    var context: SslCtxRef
+    var ssl: SslRef
+    var incoming: BioRef
+    var outgoing: BioRef
     var open: bool
     ; the message being made (without packet headers), and the reply
     ; (likewise, every packet's payload one behind the other)
@@ -100,7 +118,7 @@ define TdsConn
     ; Connect and log in; null when the server cannot be reached or
     ; refuses, and `reason` says why. The connection lives on a page of
     ; its own.
-    procedure open(mutable host_name: String, port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8], mutable reason: ref[Array[u8]]) returns ref[TdsConn]?
+    procedure open(mutable host_name: String, port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8], encrypt: bool, mutable reason: ref[Array[u8]]) returns ref[TdsConn]?
     {
         let page Page.allocate_page()
         var tcp TcpStream.connect(host_name, port)
@@ -112,8 +130,8 @@ define TdsConn
             return null
         }
         tcp.set_nodelay(true)
-        let c &TdsConn^page(page, tcp, true, Array[u8]^page(), Array[u8]^page(), 0, 0, Array[String]^page(), Array[String]^page(), Array[u8]^page(), Array[u8]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), true, false, 0, false, Array[u8]^page(), 0)
-        if c.login(host_name.as_slice(), user, password, database) = false
+        let c &TdsConn^page(page, tcp, false, null, null, null, null, true, Array[u8]^page(), Array[u8]^page(), 0, 0, Array[String]^page(), Array[String]^page(), Array[u8]^page(), Array[u8]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), true, false, 0, false, Array[u8]^page(), 0)
+        if c.login(host_name.as_slice(), user, password, database, encrypt) = false
         {
             if c.message.length > 0
                 reason.append(c.message.as_slice())
@@ -141,6 +159,10 @@ define TdsConn
     procedure close(mutable this)
     {
         open := false
+        if ssl <> null
+            SSL_free(ssl)
+        if context <> null
+            SSL_CTX_free(context)
         tcp.close()
         host.deallocate_extensions()
         Page.release_page(host)
@@ -177,7 +199,7 @@ define TdsConn
             packet.add((number % 256) as u8)
             packet.add(0 as u8)
             packet.append(outb.as_slice().subslice(at, at + n))
-            if tcp.write(packet.as_slice()) = false
+            if this.write_all(packet.as_slice()) = false
             {
                 open := false
                 return false
@@ -191,6 +213,140 @@ define TdsConn
         true
     }
 
+    ; --- the session inside TLS ---
+
+    ; What OpenSSL has to send, out of its memory BIO: as it is, or (during
+    ; the handshake) as the payload of TDS PRELOGIN packets.
+    procedure send_tls(mutable this, wrapped: bool) returns bool
+    {
+        var record Array[u8]()
+        while BIO_ctrl_pending(outgoing) > 0
+        {
+            let n BIO_ctrl_pending(outgoing)
+            let room record.extend(n)
+            var got: size_t 0
+            if BIO_read_ex(outgoing, room.data as pointer[void], n, &got) <> 1
+                return false
+            record.length := record.length - (n - got)
+        }
+        if record.length = 0
+            return true
+        if wrapped = false
+            return tcp.write(record.as_slice())
+        var at: size_t 0
+        let most TDS_PACKET - 8
+        while at < record.length
+        {
+            var n record.length - at
+            var last: i64 1
+            if n > most
+            {
+                n := most
+                last := 0
+            }
+            var packet Array[u8]()
+            packet.add(TDS_PRELOGIN)
+            packet.add(last as u8)
+            packet.add(((n + 8) / 256) as u8)
+            packet.add(((n + 8) % 256) as u8)
+            packet.add(0 as u8)
+            packet.add(0 as u8)
+            packet.add(0 as u8)
+            packet.add(0 as u8)
+            packet.append(record.as_slice().subslice(at, at + n))
+            if tcp.write(packet.as_slice()) = false
+                return false
+            at := at + n
+        }
+        true
+    }
+
+    ; More of what the server sent into OpenSSL's memory BIO: bytes as they
+    ; come, or (during the handshake) the payload of one TDS packet.
+    procedure feed_tls(mutable this, wrapped: bool) returns bool
+    {
+        var bytes Array[u8]()
+        if wrapped
+        {
+            var head Array[u8]()
+            if this.read_exactly(&head, 8) = false
+                return false
+            let length (head[2] as size_t) * 256 + (head[3] as size_t)
+            if length < 8 or this.read_exactly(&bytes, length - 8) = false
+                return false
+        }
+        else
+        {
+            let room bytes.extend(4096)
+            let got tcp.read(room)
+            if got <= 0
+                return false
+            bytes.length := got as size_t
+        }
+        var taken: size_t 0
+        BIO_write_ex(incoming, bytes.get_buffer() as pointer[void], bytes.length, &taken) = 1
+    }
+
+    ; The TLS handshake after PRELOGIN, its records in TDS packets.
+    procedure secure(mutable this) returns bool
+    {
+        context := SSL_CTX_new(TLS_client_method())
+        if context = null
+            return false
+        ssl := SSL_new(context)
+        if ssl = null
+            return false
+        incoming := BIO_new(BIO_s_mem())
+        outgoing := BIO_new(BIO_s_mem())
+        ; (a memory BIO made so says "try again" when it is empty, not "the
+        ; stream ended")
+        SSL_set_bio(ssl, incoming, outgoing)
+        SSL_set_connect_state(ssl)
+        repeat
+        {
+            let done SSL_do_handshake(ssl)
+            if this.send_tls(true) = false
+                return false
+            if done = 1
+                break
+            if SSL_get_error(ssl, done) <> SSL_ERROR_WANT_READ
+                return false
+            if this.feed_tls(true) = false
+                return false
+        }
+        encrypted := true
+        true
+    }
+
+    ; Some bytes of the stream into room: the count, 0 or less at its end.
+    procedure read_some(mutable this, mutable room: Slice[u8]) returns int
+    {
+        if encrypted = false
+            return tcp.read(room)
+        repeat
+        {
+            var got: size_t 0
+            let done SSL_read_ex(ssl, room.data as pointer[void], room.length, &got)
+            if done = 1
+                return got as int
+            if SSL_get_error(ssl, done) <> SSL_ERROR_WANT_READ
+                return 0 - 1
+            if this.send_tls(false) = false or this.feed_tls(false) = false
+                return 0 - 1
+        }
+    }
+
+    ; All of data to the stream.
+    procedure write_all(mutable this, data: Slice[u8]) returns bool
+    {
+        if encrypted = false
+            return tcp.write(data)
+        var written: size_t 0
+        if SSL_write_ex(ssl, data.data as pointer[void], data.length, &written) <> 1
+            return false
+        this.send_tls(false)
+    }
+
     ; Exactly n bytes of the stream into `into`.
     procedure read_exactly(mutable this, mutable into: ref[Array[u8]], n: size_t) returns bool
     {
@@ -200,7 +356,7 @@ define TdsConn
             ; into the array's own room, which is given back where the
             ; read brought less
             let room into.extend(left)
-            let got tcp.read(room)
+            let got this.read_some(room)
             if got <= 0
             {
                 into.length := into.length - left
@@ -255,7 +411,7 @@ define TdsConn
 
     ; --- logging in ---
 
-    procedure login(mutable this, server: Slice[u8], user: Slice[u8], password: Slice[u8], database: Slice[u8]) returns bool
+    procedure login(mutable this, server: Slice[u8], user: Slice[u8], password: Slice[u8], database: Slice[u8], encrypt: bool) returns bool
     {
         ; PRELOGIN: version, encryption (2: none here), instance, thread, MARS
         outb.length := 0
@@ -283,7 +439,11 @@ define TdsConn
             outb.add(0 as u8)
             k := k + 1
         }
-        outb.add(2 as u8)
+        ; encryption: 1 asks for it, 2 says the client has none
+        if encrypt
+            outb.add(1 as u8)
+        else
+            outb.add(2 as u8)
         outb.add(0 as u8)
         k := 0
         while k < 4
@@ -296,18 +456,34 @@ define TdsConn
             return false
         ; the server's answer to the encryption option
         var at: size_t 0
+        var answer: i64 2
         while at + 5 <= inb.length and inb[at] <> 255
         {
             if inb[at] = 1
             {
                 let answered this.u8_at(at + 1) * 256 + this.u8_at(at + 2)
-                if (answered as size_t) < inb.length and inb[answered as size_t] = 3
-                {
-                    message.append("the server requires encryption, which this client does not have")
-                    return false
-                }
+                if (answered as size_t) < inb.length
+                    answer := inb[answered as size_t] as i64
             }
             at := at + 5
+        }
+        if encrypt = false and answer = 3
+        {
+            message.append("the server requires encryption: ask for it")
+            return false
+        }
+        if encrypt
+        {
+            if answer = 2
+            {
+                message.append("the server has no encryption, and the connection was to be encrypted")
+                return false
+            }
+            if this.secure() = false
+            {
+                message.append("the TLS handshake with the server failed")
+                return false
+            }
         }
 
         ; LOGIN7

@@ -12,6 +12,7 @@ define TdsConfig
     user: String
     password: String
     database: String
+    encrypt: bool
 )
 
 define TdsPool
@@ -28,9 +29,9 @@ mutable tds_pool: ref[TdsPool]? null
 ; be thread-local).
 shared atomic tds_configured: u64 0
 
-; Name the server every thread's pool connects to. Before the first
+; Name the server every thread's pool connects to, and whether inside TLS. Before the first
 ; tds_acquire; the parts are copied.
-procedure tds_configure(host_name: Slice[u8], port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8])
+procedure tds_configure(host_name: Slice[u8], port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8], encrypt: bool)
 {
     let page Page.allocate_page()
     let c &TdsConfig^page(
@@ -38,7 +39,8 @@ procedure tds_configure(host_name: Slice[u8], port: int, user: Slice[u8], passwo
         port,
         String^page(user.data as pointer[const_char], user.length),
         String^page(password.data as pointer[const_char], password.length),
-        String^page(database.data as pointer[const_char], database.length)
+        String^page(database.data as pointer[const_char], database.length),
+        encrypt
     )
     scaly_atomic_store_u64(&tds_configured, c as u64)
 }
@@ -68,7 +70,7 @@ procedure tds_acquire() returns ref[TdsConn]? mutable tds_pool
     let config (configured as size_t) as ref[TdsConfig]
     var h String(config.host)
     var reason Array[u8]()
-    TdsConn.open(h, config.port, config.user.as_slice(), config.password.as_slice(), config.database.as_slice(), &reason)
+    TdsConn.open(h, config.port, config.user.as_slice(), config.password.as_slice(), config.database.as_slice(), config.encrypt, &reason)
 }
 
 ; Give a connection back; one that broke is closed.

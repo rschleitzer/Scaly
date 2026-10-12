@@ -6,7 +6,9 @@
 ;             NULLs among them; values larger than a packet
 ;   refused   a statement the server refuses, and its message
 ;   rollback  a transaction rolled back leaves the rows
-; Expected: 2 -10000000000 NULL näme 😀 code ab NULL -12.500000 6000 6000 | 3 -15000000000 1 näme 😀 code ab 2026-01-02 03:04:05.6789012 -12.500000 9000 9000 | Invalid object name 'nowhere'. 3 done
+; -- once without encryption and once inside TLS; the server itself says
+; which it is (encrypt_option).
+; Expected: FALSE 2 -10000000000 NULL näme 😀 code ab NULL -12.500000 6000 6000 | 3 -15000000000 1 näme 😀 code ab 2026-01-02 03:04:05.6789012 -12.500000 9000 9000 | Invalid object name 'nowhere'. 3 | TRUE 2 -10000000000 NULL näme 😀 code ab NULL -12.500000 6000 6000 | 3 -15000000000 1 näme 😀 code ab 2026-01-02 03:04:05.6789012 -12.500000 9000 9000 | Invalid object name 'nowhere'. 3 done
 
 package scaly 0.1.0
 package tds 0.1.0
@@ -19,7 +21,8 @@ procedure show(s: Slice[u8])
     Console.print(" ")
 }
 
-procedure main() returns int
+; Everything once on a connection: its rows, an error, a transaction.
+procedure session(encrypt: bool) returns int
 {
     var reason Array[u8]()
     var host String("127.0.0.1")
@@ -31,13 +34,18 @@ procedure main() returns int
         port := port * 10 + ((port_text[d] as int) - 48)
         d := d + 1
     }
-    let got TdsConn.open(host, port, "sa", os.environment_variable("TDSTEST_PASSWORD"), "master", &reason)
+    let got TdsConn.open(host, port, "sa", os.environment_variable("TDSTEST_PASSWORD"), "master", encrypt, &reason)
     if got = null
     {
         show(reason.as_slice())
         return 1
     }
     var c got as ref[TdsConn]
+    ; what the server says of the connection: is it encrypted?
+    c.prepare_unnamed("SELECT encrypt_option FROM sys.dm_exec_connections WHERE session_id = @@SPID")
+    c.start("")
+    if c.run() and c.next_row()
+        show(c.column(0))
     if c.execute("IF OBJECT_ID('tempdb..#t') IS NOT NULL DROP TABLE #t; CREATE TABLE #t (id INT, big BIGINT, flag BIT, name NVARCHAR(450), code VARCHAR(64), data VARBINARY(MAX), at DATETIME2, amount DECIMAL(18,6), long NVARCHAR(MAX))") = false
     {
         show(c.error_message())
@@ -110,6 +118,18 @@ procedure main() returns int
     if c.run() and c.next_row()
         show(c.column(0))
     c.close()
+    0
+}
+
+procedure main() returns int
+{
+    let plain session(false)
+    if plain <> 0
+        return plain
+    Console.print("| ")
+    let encrypted session(true)
+    if encrypted <> 0
+        return encrypted
     Console.println("done")
     0
 }
