@@ -548,6 +548,83 @@ int scaly_eio_tcp_nodelay(int fd, int on)
     return setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (const char*)&v, (int)sizeof v) == 0 ? 0 : -1;
 }
 
+/* The connections a server thread serves, and the waking of those that only
+ * wait -- the eio.c twins (the reasoning is there). A read here is an
+ * overlapped WSARecv, which shutdown() does not complete: the pending
+ * operations of the socket are cancelled as well, and the read answers an
+ * error, which ends a connection's loop like the end of the stream does.
+ * ★Written beside the POSIX arm and NOT yet run on Windows. */
+#define SCALY_SERVED_MAX 65536
+static __declspec(thread) unsigned char *scaly_served;
+
+void scaly_eio_tcp_served(int fd)
+{
+    if (fd < 0 || fd >= SCALY_SERVED_MAX)
+        return;
+    if (scaly_served == NULL) {
+        scaly_served = (unsigned char*)calloc(SCALY_SERVED_MAX, 1);
+        if (scaly_served == NULL)
+            return;
+    }
+    scaly_served[fd] = 1;
+}
+
+void scaly_eio_tcp_unserved(int fd)
+{
+    if (scaly_served != NULL && fd >= 0 && fd < SCALY_SERVED_MAX)
+        scaly_served[fd] = 0;
+}
+
+int scaly_eio_tcp_wake_served(void)
+{
+    int n = 0;
+    if (scaly_served == NULL)
+        return 0;
+    for (int fd = 0; fd < SCALY_SERVED_MAX; fd++) {
+        if (scaly_served[fd] != 0) {
+            SOCKET s = (SOCKET)(intptr_t)fd;
+            shutdown(s, SD_RECEIVE);
+            CancelIoEx((HANDLE)s, NULL);
+            n++;
+        }
+    }
+    return n;
+}
+
+/* The end of the process asked for from outside -- the eio.c twins: Ctrl-C,
+ * Ctrl-Break, the console closed, a logoff or shutdown. block installs the
+ * handler, wait returns when one of them came, with the number POSIX gives
+ * the like (2 for Ctrl-C, 15 for the others). The handler answers TRUE, so
+ * the process is not ended by the default handler; for a closed console
+ * Windows ends it a few seconds after the handler returned, whatever it
+ * answered. A second event while the first is being acted on ends the
+ * process at once. ★NOT yet run on Windows. */
+static HANDLE scaly_termination_event;
+static volatile LONG scaly_termination_signal;
+
+static BOOL WINAPI scaly_termination_handler(DWORD type)
+{
+    if (InterlockedCompareExchange(&scaly_termination_signal, type == CTRL_C_EVENT ? 2 : 15, 0) != 0)
+        return FALSE;
+    SetEvent(scaly_termination_event);
+    return TRUE;
+}
+
+void scaly_eio_block_termination(void)
+{
+    if (scaly_termination_event != NULL)
+        return;
+    scaly_termination_event = CreateEventW(NULL, TRUE, FALSE, NULL);
+    SetConsoleCtrlHandler(scaly_termination_handler, TRUE);
+}
+
+int scaly_eio_wait_termination(void)
+{
+    scaly_eio_block_termination();
+    WaitForSingleObject(scaly_termination_event, INFINITE);
+    return (int)scaly_termination_signal;
+}
+
 /* ★A WSA ERROR AND A C errno ARE UNRELATED NUMBERINGS, and preferring the
  * former mislabelled every file diagnostic in the product. This used to answer
  * `WSAGetLastError()` when that was non-zero — but on Windows WSAGetLastError

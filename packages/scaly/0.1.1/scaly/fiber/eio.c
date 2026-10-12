@@ -1206,6 +1206,87 @@ int scaly_eio_tcp_nodelay(int fd, int on)
     return setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &v, sizeof v) == 0 ? 0 : -1;
 }
 
+/* The connections a server thread serves, so that a server that is told to
+ * stop can end the ones that only wait (scaly/os/Tcp.scaly, TcpServer.stop):
+ * a keep-alive connection parked in its read would otherwise keep its
+ * thread, and with it the server, for as long as the client likes. One byte
+ * per descriptor below SCALY_SERVED_MAX, per thread -- a connection is
+ * served and closed on the thread it was handed to. It lives here and not
+ * in Scaly because closing must clear it (the number names the next
+ * connection at once), and a close that wrote a Scaly global would make
+ * every routine above it one that writes shared state.
+ *
+ * wake: the read side of each is shut down. A read parked on it returns 0,
+ * the end of the stream; a handler in the middle of an answer is not
+ * touched and finds the end when it reads again. */
+#define SCALY_SERVED_MAX 65536
+static __thread unsigned char *scaly_served;
+
+void scaly_eio_tcp_served(int fd)
+{
+    if (fd < 0 || fd >= SCALY_SERVED_MAX)
+        return;
+    if (scaly_served == 0) {
+        scaly_served = calloc(SCALY_SERVED_MAX, 1);
+        if (scaly_served == 0)
+            return;
+    }
+    scaly_served[fd] = 1;
+}
+
+void scaly_eio_tcp_unserved(int fd)
+{
+    if (scaly_served != 0 && fd >= 0 && fd < SCALY_SERVED_MAX)
+        scaly_served[fd] = 0;
+}
+
+int scaly_eio_tcp_wake_served(void)
+{
+    int n = 0;
+    if (scaly_served == 0)
+        return 0;
+    for (int fd = 0; fd < SCALY_SERVED_MAX; fd++) {
+        if (scaly_served[fd] != 0) {
+            shutdown(fd, SHUT_RD);
+            n++;
+        }
+    }
+    return n;
+}
+
+/* The end of the process asked for from outside: SIGINT and SIGTERM.
+ * block keeps them from every thread started AFTER it (the mask is
+ * inherited), so it is called first thing in main; wait takes the next one
+ * on the calling thread and answers its number. No handler runs: nothing
+ * here is bound by what a signal handler may do. After wait the two are
+ * let through again on the calling thread, so a second one ends a process
+ * whose orderly end hangs. */
+#include <pthread.h>
+static void scaly_termination_set(sigset_t *set)
+{
+    sigemptyset(set);
+    sigaddset(set, SIGINT);
+    sigaddset(set, SIGTERM);
+}
+
+void scaly_eio_block_termination(void)
+{
+    sigset_t set;
+    scaly_termination_set(&set);
+    pthread_sigmask(SIG_BLOCK, &set, 0);
+}
+
+int scaly_eio_wait_termination(void)
+{
+    sigset_t set;
+    int sig = 0;
+    scaly_termination_set(&set);
+    while (sigwait(&set, &sig) != 0)
+        ;
+    pthread_sigmask(SIG_UNBLOCK, &set, 0);
+    return sig;
+}
+
 /* Fiber guard-page overflow diagnostics (shim-owned per containment rule
  * (a): struct sigaction and stack_t layouts are OS-specific, and the
  * handler must run on an alternate stack — the overflowed fiber stack has

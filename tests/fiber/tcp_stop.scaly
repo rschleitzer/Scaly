@@ -1,0 +1,94 @@
+; Stopping a TCP server that has clients which would not let go
+; (scaly.os.Tcp, TcpServer.stop), and the signals that ask for it:
+;   1. two keep-alive connections: one pings and then only waits, one is
+;      in the middle of a request (the handler sleeps before it answers).
+;      stop: the waiting one reads the end of its stream at once; the
+;      other still gets its answer and then the end; wait returns.
+;      (After shutdown instead, wait would not return before the waiting
+;      client closed.)
+;   2. Io.block_termination, then SIGTERM sent to this process:
+;      Io.wait_termination answers 15 and the process is still there.
+; Expected: pong ended slow ended stopped signal 15
+
+procedure kill(pid: i32, signal: i32) returns i32 extern
+procedure getpid() returns i32 extern
+
+; answer "ping" with "pong" at once and "slow" with "slow" after a while,
+; until the stream ends
+procedure handle()
+{
+    var c TcpStream.of_task()
+    var buf u8[8]
+    let view Slice[u8](8, &buf[0])
+    repeat
+    {
+        var got: size_t 0
+        while got < 4
+        {
+            let n c.read(view.slice_from(got))
+            if n <= 0
+                break
+            got := got + (n as size_t)
+        }
+        if got < 4
+            break
+        if buf[0] = 115
+        {
+            Scheduler.sleep(300)
+            c.write("slow")
+        }
+        else
+            c.write("pong")
+    }
+    c.close()
+}
+
+; Four bytes from s; false at the end of the stream.
+procedure answer(s: TcpStream, mutable buf: Slice[u8]) returns bool
+{
+    var got: size_t 0
+    while got < 4
+    {
+        let n s.read(buf.slice_from(got))
+        if n <= 0
+            return false
+        got := got + (n as size_t)
+    }
+    true
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    Io.block_termination()
+    var l TcpListener.listen(0)
+    let port l.port()
+    let server l.start(&handle)
+    var bytes u8[8]
+    var view Slice[u8](8, &bytes[0])
+
+    var idle TcpStream.connect("127.0.0.1", port)
+    idle.write("ping")
+    if answer(idle, view) and bytes[1] = 111
+        Console.print "pong "
+    var busy TcpStream.connect("127.0.0.1", port)
+    busy.write("slow")
+    ; (the request is with its handler before the server is stopped)
+    Scheduler.sleep(100)
+    server.stop()
+    if answer(idle, view) = false
+        Console.print "ended "
+    if answer(busy, view) and bytes[1] = 108
+        Console.print "slow "
+    if answer(busy, view) = false
+        Console.print "ended "
+    server.wait()
+    Console.print "stopped "
+    idle.close()
+    busy.close()
+    l.close()
+
+    kill(getpid(), 15)
+    let signal Io.wait_termination()
+    Console.println "signal `signal`"
+    0
+}

@@ -404,6 +404,11 @@ procedure scaly_eio_tcp_listen_any(port: i32) returns i32 extern
 procedure scaly_eio_tcp_connect_host(host: pointer[const_char], port: i32) returns i32 extern
 procedure scaly_eio_tcp_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 procedure scaly_eio_tcp_nodelay(fd: i32, on: i32) returns i32 extern
+procedure scaly_eio_tcp_served(fd: i32) extern
+procedure scaly_eio_tcp_unserved(fd: i32) extern
+procedure scaly_eio_tcp_wake_served() returns i32 extern
+procedure scaly_eio_block_termination() extern
+procedure scaly_eio_wait_termination() returns i32 extern
 procedure scaly_eio_tcp_listen_host(host: pointer[const_char], port: i32) returns i32 extern
 
 ; Guard-page overflow diagnostics (shim-owned: struct sigaction and
@@ -2284,6 +2289,31 @@ define Io
         }
         r
     }
+
+    ; A connection this thread serves from now on, and one it no longer
+    ; does (to be said before the descriptor is closed: its number names
+    ; the next connection at once).
+    procedure served(fd: i32)
+        scaly_eio_tcp_served(fd)
+
+    procedure unserved(fd: i32)
+        scaly_eio_tcp_unserved(fd)
+
+    ; End the reading of every connection this thread serves: a read parked
+    ; on one answers the end of the stream. How many there were.
+    procedure wake_served() returns int
+        scaly_eio_tcp_wake_served() as int
+
+    ; Keep the signals that ask the process to end (SIGINT, SIGTERM; on
+    ; Windows the console's events) from ending it: called first thing in
+    ; main, before any thread is started.
+    procedure block_termination()
+        scaly_eio_block_termination()
+
+    ; Wait for one of them on the calling thread, outside any scheduler;
+    ; its number (2 or 15). A second one afterwards ends the process.
+    procedure wait_termination() returns int
+        scaly_eio_wait_termination() as int
 
     ; TCP_NODELAY on (true: every write leaves at once) or off (false:
     ; Nagle coalesces small writes, the default). False on an error.

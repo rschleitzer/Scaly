@@ -26764,6 +26764,16 @@ declare i64 @scaly_eio_tcp_write(i32, ptr, i64)
 
 declare i32 @scaly_eio_tcp_nodelay(i32, i32)
 
+declare void @scaly_eio_tcp_served(i32)
+
+declare void @scaly_eio_tcp_unserved(i32)
+
+declare i32 @scaly_eio_tcp_wake_served()
+
+declare void @scaly_eio_block_termination()
+
+declare i32 @scaly_eio_wait_termination()
+
 declare i32 @scaly_eio_tcp_listen_host(ptr, i32)
 
 declare i32 @scaly_guard_install(ptr)
@@ -29932,6 +29942,38 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %r3 = load i64, ptr %r, align 8
   ret i64 %r3
+}
+
+define linkonce_odr void @_ZN2Io6servedE3i32(i32 %0) {
+entry:
+  call void @scaly_eio_tcp_served(i32 %0)
+  ret void
+}
+
+define linkonce_odr void @_ZN2Io8unservedE3i32(i32 %0) {
+entry:
+  call void @scaly_eio_tcp_unserved(i32 %0)
+  ret void
+}
+
+define linkonce_odr i64 @_ZN2Io11wake_servedEv() {
+entry:
+  %call = call i32 @scaly_eio_tcp_wake_served()
+  %as.sext = sext i32 %call to i64
+  ret i64 %as.sext
+}
+
+define linkonce_odr void @_ZN2Io17block_terminationEv() {
+entry:
+  call void @scaly_eio_block_termination()
+  ret void
+}
+
+define linkonce_odr i64 @_ZN2Io16wait_terminationEv() {
+entry:
+  %call = call i32 @scaly_eio_wait_termination()
+  %as.sext = sext i32 %call to i64
+  ret i64 %as.sext
 }
 
 define linkonce_odr i1 @_ZN2Io11set_nodelayE3i32b(i32 %0, i1 %1) {
@@ -34796,6 +34838,7 @@ entry:
 
 define linkonce_odr void @_Z12tcp_close_fd3i32(i32 %0) {
 entry:
+  call void @_ZN2Io8unservedE3i32(i32 %0)
   %as.sext = sext i32 %0 to i64
   %call = call i32 @close(i64 %as.sext)
   ret void
@@ -35018,8 +35061,11 @@ repeat.body:                                      ; preds = %if.end, %entry
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 repeat.exit:                                      ; preds = %if.then
-  %unwrap.isnull6 = icmp eq ptr %call, null
-  br i1 %unwrap.isnull6, label %unwrap.trap7, label %unwrap.ok8
+  %global.load6 = load ptr, ptr @tcp_current_serve, align 8
+  %call7 = call ptr @_Z8tcp_wordP3i643i64(ptr %global.load6, i64 2)
+  %atomic.load = load atomic i64, ptr %call7 seq_cst, align 8
+  %eq8 = icmp eq i64 %atomic.load, 2
+  br i1 %eq8, label %if.then9, label %if.end10
 
 unwrap.trap:                                      ; preds = %repeat.body
   call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.230)
@@ -35038,16 +35084,25 @@ if.end:                                           ; preds = %unwrap.ok
   %as.trunc = trunc i64 %deref3 to i32
   %call4 = call ptr @_ZN4Page3getEPv(ptr %call2)
   call void @_ZN4Page12release_pageER4Page(ptr %call4)
+  call void @_ZN2Io6servedE3i32(i32 %as.trunc)
   %as.sext = sext i32 %as.trunc to i64
   %as.inttoptr5 = inttoptr i64 %as.sext to ptr
   call void @_ZN9Scheduler14spawn_detachedEPvPv(ptr %as.inttoptr, ptr %as.inttoptr5)
   br label %repeat.body
 
-unwrap.trap7:                                     ; preds = %repeat.exit
+if.then9:                                         ; preds = %repeat.exit
+  %call11 = call i64 @_ZN2Io11wake_servedEv()
+  br label %if.end10
+
+if.end10:                                         ; preds = %if.then9, %repeat.exit
+  %unwrap.isnull12 = icmp eq ptr %call, null
+  br i1 %unwrap.isnull12, label %unwrap.trap13, label %unwrap.ok14
+
+unwrap.trap13:                                    ; preds = %if.end10
   call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.231)
   unreachable
 
-unwrap.ok8:                                       ; preds = %repeat.exit
+unwrap.ok14:                                      ; preds = %if.end10
   call void @_ZN7Channel7disposeER7Channel(ptr %call)
   ret void
 }
@@ -36898,6 +36953,46 @@ if.then1:                                         ; preds = %if.end
 
 if.end2:                                          ; preds = %if.end
   store atomic i64 1, ptr %call seq_cst, align 8
+  %load.struct3 = load %_Z9TcpServer, ptr %0, align 8
+  %cell4 = extractvalue %_Z9TcpServer %load.struct3, 0
+  %deref = load i64, ptr %cell4, align 8
+  %as.trunc = trunc i64 %deref to i32
+  %call5 = call i32 @_ZN2Io10local_portE3i32(i32 %as.trunc)
+  %call6 = call i32 @_ZN2Io7connectE3i32(i32 %call5)
+  %ge = icmp sge i32 %call6, 0
+  br i1 %ge, label %if.then7, label %if.end8
+
+if.then7:                                         ; preds = %if.end2
+  call void @_Z12tcp_close_fd3i32(i32 %call6)
+  br label %if.end8
+
+if.end8:                                          ; preds = %if.then7, %if.end2
+  ret void
+}
+
+define linkonce_odr void @_ZN9TcpServer4stopEv(ptr noalias %0) {
+entry:
+  %load.struct = load %_Z9TcpServer, ptr %0, align 8
+  %cell = extractvalue %_Z9TcpServer %load.struct, 0
+  %eq = icmp eq ptr %cell, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %field.inplace = getelementptr inbounds nuw %_Z9TcpServer, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @_Z8tcp_wordP3i643i64(ptr %deref.recv, i64 2)
+  %atomic.load = load atomic i64, ptr %call seq_cst, align 8
+  %ne = icmp ne i64 %atomic.load, 0
+  br i1 %ne, label %if.then1, label %if.end2
+
+if.then1:                                         ; preds = %if.end
+  ret void
+
+if.end2:                                          ; preds = %if.end
+  store atomic i64 2, ptr %call seq_cst, align 8
   %load.struct3 = load %_Z9TcpServer, ptr %0, align 8
   %cell4 = extractvalue %_Z9TcpServer %load.struct3, 0
   %deref = load i64, ptr %cell4, align 8

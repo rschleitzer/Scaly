@@ -105,6 +105,7 @@ procedure tcp_connect_worker(mutable arg: pointer[void]) returns pointer[void]
 ; a SOCKET from a CRT descriptor).
 procedure tcp_close_fd(fd: i32)
 {
+    Io.unserved(fd)
     close(fd as int)
 }
 
@@ -230,8 +231,13 @@ procedure tcp_dispatch()
             break
         let fd (*(msg as pointer[i64])) as i32
         Page.release_page(Page.get(msg))
+        Io.served(fd)
         Scheduler.spawn_detached(handler, (fd as size_t) as pointer[void])
     }
+    ; stopped by TcpServer.stop: the connections that only wait are ended
+    ; (the handlers started just above find the end at their first read)
+    if scaly_atomic_load_u64(tcp_word(tcp_current_serve, 2) as pointer[u64]) = 2
+        Io.wake_served()
     Channel.dispose(chp as ref[Channel])
 }
 
@@ -477,6 +483,26 @@ define TcpServer(cell: pointer[i64])
         if scaly_atomic_load_u64(stop) <> 0
             return
         scaly_atomic_store_u64(stop, 1 as u64)
+        let s Io.connect(Io.local_port((*cell) as i32))
+        if s >= 0
+            tcp_close_fd(s)
+    }
+
+    ; shutdown, and the reading of every connection ended: one that only
+    ; waits for its client (a keep-alive connection between two requests)
+    ; is closed by its handler at once, a handler in the middle of an
+    ; answer finishes it and finds the end at its next read. So wait
+    ; returns when the requests in flight are answered, however long the
+    ; clients would have kept their connections. Of the two, shutdown and
+    ; stop, the one called first decides.
+    procedure stop(this)
+    {
+        if cell = null
+            return
+        let flag tcp_word(cell, 2) as pointer[u64]
+        if scaly_atomic_load_u64(flag) <> 0
+            return
+        scaly_atomic_store_u64(flag, 2 as u64)
         let s Io.connect(Io.local_port((*cell) as i32))
         if s >= 0
             tcp_close_fd(s)
