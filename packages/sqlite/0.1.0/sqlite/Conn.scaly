@@ -52,6 +52,12 @@ procedure sqlite3_column_blob(statement: Sqlite3Stmt, column: i32) returns point
 procedure sqlite3_column_bytes(statement: Sqlite3Stmt, column: i32) returns i32 extern
 procedure sqlite3_column_int64(statement: Sqlite3Stmt, column: i32) returns i64 extern
 
+; sqlite/config.c: sqlite3_config is C varargs
+procedure scaly_sqlite_no_memory_statistics() returns i32 extern
+
+; Set once the library was told how to run, before its first use.
+shared atomic sqlite_prepared: u64 0
+
 ; sqlite3's result codes and open flags that are used here
 define SQLITE_OK: i32 0
 define SQLITE_ROW: i32 100
@@ -90,6 +96,15 @@ define SqliteConn
     ; page of its own.
     procedure open(path: Slice[u8], mutable reason: ref[Array[u8]]) returns ref[SqliteConn]?
     {
+        ; the library's own settings, before its first connection: without
+        ; its memory statistics, which cost every allocation a mutex the
+        ; whole process shares -- threads with a connection each then wait
+        ; for one another (measured: a third of the throughput of ten)
+        if scaly_atomic_load_u64(&sqlite_prepared) = 0
+        {
+            scaly_atomic_store_u64(&sqlite_prepared, 1)
+            scaly_sqlite_no_memory_statistics()
+        }
         let host Page.allocate_page()
         var name Array[u8]()
         name.append(path)
