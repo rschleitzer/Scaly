@@ -395,6 +395,34 @@ define PgConn
         binary_columns.length := 0
     }
 
+    ; Begin a query of sql itself: the statement's text travels WITH its
+    ; parameters, and run sends both and reads the answer -- one exchange
+    ; with the server where prepare_unnamed and start("") make two. For a
+    ; statement whose text is made for one query. `columns` is how many
+    ; columns it answers: the server is not asked first, and a
+    ; binary_column needs to know (0 will do when there is none). A text
+    ; the server refuses fails at run. It replaces the unnamed statement.
+    procedure start_unnamed(mutable this, sql: Slice[u8], columns: int)
+    {
+        outb.clear()
+        let at outb.begin(80)
+        outb.append_byte(0)
+        outb.append_cstr(sql)
+        outb.append_i16(0)
+        outb.finish(at)
+        unnamed_columns := columns as u32
+        bind_at := outb.begin(66)
+        outb.append_byte(0)
+        outb.append_byte(0)
+        formats_at := outb.length
+        outb.append_i16(0)
+        param_count_at := outb.length
+        outb.append_i16(0)
+        param_count := 0
+        binary_params.length := 0
+        binary_columns.length := 0
+    }
+
     ; A parameter sent as it stands, in the server's binary form: the bytes
     ; of a BYTEA value.
     procedure param_bytes(mutable this, v: Slice[u8])
