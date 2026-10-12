@@ -28,7 +28,7 @@
 set -u
 cd "$(dirname "$0")/.."
 BIN="${1:-scalyc/build/scalyc}"
-PKGS="scaly scalyc scalyls scalygpu http json compress tls pg https h3 redis sqlite"
+PKGS="scaly scalyc scalyls scalygpu http json compress tls pg https h3 redis sqlite tds"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 rc=0

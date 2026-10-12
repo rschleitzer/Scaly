@@ -1,0 +1,197 @@
+; What TDS puts on the wire: numbers with the lowest byte first, text as
+; UTF-16.
+
+procedure put_u16(mutable out: ref[Array[u8]], v: i64)
+{
+    out.add((v % 256) as u8)
+    out.add(((v / 256) % 256) as u8)
+}
+
+procedure put_u32(mutable out: ref[Array[u8]], v: i64)
+{
+    out.add((v % 256) as u8)
+    out.add(((v / 256) % 256) as u8)
+    out.add(((v / 65536) % 256) as u8)
+    out.add(((v / 16777216) % 256) as u8)
+}
+
+; A byte of the password as LOGIN7 hides it: each of its bits turned where
+; 0xA5 has one (the nibbles are swapped by the caller).
+function hidden_byte(v: int) returns u8
+{
+    var out 0
+    var bit 1
+    var mask 165
+    var rest v
+    var k 0
+    while k < 8
+    {
+        if rest % 2 <> mask % 2
+            out := out + bit
+        rest := rest / 2
+        mask := mask / 2
+        bit := bit * 2
+        k := k + 1
+    }
+    out as u8
+}
+
+; UTF-8 text as UTF-16, the lower byte of a unit first. A byte that begins
+; no character is passed over.
+procedure put_utf16(mutable out: ref[Array[u8]], text: Slice[u8])
+{
+    var i: size_t 0
+    while i < text.length
+    {
+        let b text[i] as i64
+        var point b
+        var more: size_t 0
+        if b >= 128 and b < 192
+        {
+            i := i + 1
+            continue
+        }
+        if b >= 240
+        {
+            point := b - 240
+            more := 3
+        }
+        else
+        {
+            if b >= 224
+            {
+                point := b - 224
+                more := 2
+            }
+            else
+            {
+                if b >= 192
+                {
+                    point := b - 192
+                    more := 1
+                }
+            }
+        }
+        var k: size_t 1
+        while k <= more and i + k < text.length
+        {
+            point := point * 64 + ((text[i + k] as i64) - 128)
+            k := k + 1
+        }
+        i := i + more + 1
+        if point >= 65536
+        {
+            let rest point - 65536
+            put_u16(out, 55296 + rest / 1024)
+            put_u16(out, 56320 + rest % 1024)
+        }
+        else
+            put_u16(out, point)
+    }
+}
+
+; A code point as UTF-8.
+procedure put_utf8(mutable out: ref[Array[u8]], point: i64)
+{
+    if point < 128
+    {
+        out.add(point as u8)
+        return
+    }
+    if point < 2048
+    {
+        out.add((192 + point / 64) as u8)
+        out.add((128 + point % 64) as u8)
+        return
+    }
+    if point < 65536
+    {
+        out.add((224 + point / 4096) as u8)
+        out.add((128 + (point / 64) % 64) as u8)
+        out.add((128 + point % 64) as u8)
+        return
+    }
+    out.add((240 + point / 262144) as u8)
+    out.add((128 + (point / 4096) % 64) as u8)
+    out.add((128 + (point / 64) % 64) as u8)
+    out.add((128 + point % 64) as u8)
+}
+
+; UTF-16 (the lower byte first) as UTF-8.
+procedure put_utf8_of_utf16(mutable out: ref[Array[u8]], wide: Slice[u8])
+{
+    var i: size_t 0
+    while i + 1 < wide.length
+    {
+        var point (wide[i] as i64) + (wide[i + 1] as i64) * 256
+        i := i + 2
+        if point >= 55296 and point <= 56319 and i + 1 < wide.length
+        {
+            let low (wide[i] as i64) + (wide[i + 1] as i64) * 256
+            i := i + 2
+            point := 65536 + (point - 55296) * 1024 + (low - 56320)
+        }
+        put_utf8(out, point)
+    }
+}
+
+; A whole number in digits, with its sign.
+procedure put_number(mutable out: ref[Array[u8]], v: i64)
+{
+    var rest v
+    if rest < 0
+    {
+        out.add(45 as u8)
+        rest := 0 - rest
+    }
+    var divisor: i64 1
+    while rest / divisor >= 10
+        divisor := divisor * 10
+    while divisor > 0
+    {
+        out.add((48 + (rest / divisor) % 10) as u8)
+        divisor := divisor / 10
+    }
+}
+
+; A number that is not negative in `width` digits, zeros before it.
+procedure put_padded(mutable out: ref[Array[u8]], v: i64, width: int)
+{
+    var divisor: i64 1
+    var k 1
+    while k < width
+    {
+        divisor := divisor * 10
+        k := k + 1
+    }
+    while divisor > 0
+    {
+        out.add((48 + (v / divisor) % 10) as u8)
+        divisor := divisor / 10
+    }
+}
+
+; The date `days` after 1970-01-01 as YYYY-MM-DD.
+procedure put_civil(mutable out: ref[Array[u8]], days: i64)
+{
+    let z days + 719468
+    var era z / 146097
+    if z < 0
+        era := (z - 146096) / 146097
+    let doe z - era * 146097
+    let yoe (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+    let doy doe - (365 * yoe + yoe / 4 - yoe / 100)
+    let mp (5 * doy + 2) / 153
+    let day doy - (153 * mp + 2) / 5 + 1
+    var month mp + 3
+    if mp >= 10
+        month := mp - 9
+    var year yoe + era * 400
+    if month <= 2
+        year := year + 1
+    put_padded(out, year, 4)
+    out.add(45 as u8)
+    put_padded(out, month, 2)
+    out.add(45 as u8)
+    put_padded(out, day, 2)
+}

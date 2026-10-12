@@ -1,0 +1,115 @@
+; The tds package against a SQL Server (TDSTEST_PORT on 127.0.0.1, the
+; password of `sa` in TDSTEST_PASSWORD; tests/tds/run.sh SKIPs without):
+;   types     an INT, a BIGINT, a BIT, NVARCHAR with a character beyond the
+;             basic plane, VARCHAR, VARBINARY(MAX), DATETIME2, DECIMAL and
+;             NVARCHAR(MAX) written by parameters and read back as text;
+;             NULLs among them; values larger than a packet
+;   refused   a statement the server refuses, and its message
+;   rollback  a transaction rolled back leaves the rows
+; Expected: 2 -10000000000 NULL näme 😀 code ab NULL -12.500000 6000 6000 | 3 -15000000000 1 näme 😀 code ab 2026-01-02 03:04:05.6789012 -12.500000 9000 9000 | Invalid object name 'nowhere'. 3 done
+
+package scaly 0.1.0
+package tds 0.1.0
+
+use tds.Conn.TdsConn
+
+procedure show(s: Slice[u8])
+{
+    Console.print(String(s.data as pointer[const_char], s.length))
+    Console.print(" ")
+}
+
+procedure main() returns int
+{
+    var reason Array[u8]()
+    var host String("127.0.0.1")
+    let port_text os.environment_variable("TDSTEST_PORT")
+    var port 0
+    var d: size_t 0
+    while d < port_text.length
+    {
+        port := port * 10 + ((port_text[d] as int) - 48)
+        d := d + 1
+    }
+    let got TdsConn.open(host, port, "sa", os.environment_variable("TDSTEST_PASSWORD"), "master", &reason)
+    if got = null
+    {
+        show(reason.as_slice())
+        return 1
+    }
+    var c got as ref[TdsConn]
+    if c.execute("IF OBJECT_ID('tempdb..#t') IS NOT NULL DROP TABLE #t; CREATE TABLE #t (id INT, big BIGINT, flag BIT, name NVARCHAR(450), code VARCHAR(64), data VARBINARY(MAX), at DATETIME2, amount DECIMAL(18,6), long NVARCHAR(MAX))") = false
+    {
+        show(c.error_message())
+        return 2
+    }
+    c.prepare("ins", "INSERT INTO #t (id, big, flag, name, code, data, at, amount, long) VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9)")
+    var k 1
+    while k <= 3
+    {
+        c.start("ins")
+        c.param_int(k as i64)
+        c.param_int(0 - 5000000000 * (k as i64))
+        if k = 2
+            c.param_null()
+        else
+            c.param_int(1)
+        c.param_text("näme 😀")
+        c.param_text("code")
+        c.param_bytes("ab")
+        if k = 2
+            c.param_null()
+        else
+            c.param_text("2026-01-02 03:04:05.6789012")
+        c.param_text("-12.5")
+        var long Array[u8]()
+        var n 0
+        while n < 3000 * k
+        {
+            long.add((97 + n % 26) as u8)
+            n := n + 1
+        }
+        c.param_text(long.as_slice())
+        if c.run() = false
+        {
+            show(c.error_message())
+            return 3
+        }
+        k := k + 1
+    }
+    c.prepare_unnamed("SELECT id, big, flag, name, code, data, at, amount, LEN(long), long FROM #t WHERE id >= @p1 ORDER BY id")
+    c.start("")
+    c.param_int(2)
+    if c.run() = false
+    {
+        show(c.error_message())
+        return 4
+    }
+    while c.next_row()
+    {
+        var i 0
+        while i < 9
+        {
+            if c.column_is_null(i)
+                show("NULL")
+            else
+                show(c.column(i))
+            i := i + 1
+        }
+        Console.print("`c.column(9).length` | ")
+    }
+    if c.execute("SELECT nonsense FROM nowhere")
+        return 5
+    show(c.error_message())
+    ; a transaction: what is rolled back is gone
+    c.execute("BEGIN TRANSACTION")
+    c.execute("DELETE FROM #t")
+    c.execute("ROLLBACK")
+    c.prepare_unnamed("SELECT COUNT(*) FROM #t")
+    c.start("")
+    if c.run() and c.next_row()
+        show(c.column(0))
+    c.close()
+    Console.println("done")
+    0
+}

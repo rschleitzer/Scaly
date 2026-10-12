@@ -1,0 +1,85 @@
+; The connections of a thread: one that is not in use is kept and handed
+; out again. A task that finds none idle opens another -- there is no
+; limit and no waiting here (pg's pool has both); a thread holds as many
+; connections as it ever had requests at once.
+
+use tds.Conn.TdsConn
+
+define TdsConfig
+(
+    host: String
+    port: int
+    user: String
+    password: String
+    database: String
+)
+
+define TdsPool
+(
+    var idle: Array[ref[TdsConn]]
+)
+
+; This thread's pool, made at its first acquire.
+mutable tds_pool: ref[TdsPool]? null
+
+; The server configure named, as the address of a TdsConfig on a page of
+; its own; 0 when the program named none. Stored before the threads that
+; read it start, and only through scaly_atomic_* (an ordinary global would
+; be thread-local).
+shared atomic tds_configured: u64 0
+
+; Name the server every thread's pool connects to. Before the first
+; acquire; the parts are copied.
+procedure configure(host_name: Slice[u8], port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8])
+{
+    let page Page.allocate_page()
+    let c &TdsConfig^page(
+        String^page(host_name.data as pointer[const_char], host_name.length),
+        port,
+        String^page(user.data as pointer[const_char], user.length),
+        String^page(password.data as pointer[const_char], password.length),
+        String^page(database.data as pointer[const_char], database.length)
+    )
+    scaly_atomic_store_u64(&tds_configured, c as u64)
+}
+
+; A connection of this thread's pool; null when no server is configured or
+; it cannot be reached. Give it back with release.
+procedure acquire() returns ref[TdsConn]? mutable tds_pool
+{
+    var p: ref[TdsPool]? tds_pool
+    if p = null
+    {
+        let host Page.allocate_page()
+        let made &TdsPool^host(Array[ref[TdsConn]]^host())
+        tds_pool := made
+        p := made
+    }
+    var pool p as ref[TdsPool]
+    if pool.idle.length > 0
+    {
+        let c pool.idle.at(pool.idle.length - 1)
+        pool.idle.length := pool.idle.length - 1
+        return c
+    }
+    let configured scaly_atomic_load_u64(&tds_configured)
+    if configured = 0
+        return null
+    let config (configured as size_t) as ref[TdsConfig]
+    var h String(config.host)
+    var reason Array[u8]()
+    TdsConn.open(h, config.port, config.user.as_slice(), config.password.as_slice(), config.database.as_slice(), &reason)
+}
+
+; Give a connection back; one that broke is closed.
+procedure release(mutable c: ref[TdsConn]) mutable tds_pool
+{
+    let p tds_pool
+    if c.is_open() = false or p = null
+    {
+        c.close()
+        return
+    }
+    var pool p as ref[TdsPool]
+    pool.idle.add(c)
+}

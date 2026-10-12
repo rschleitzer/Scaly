@@ -1,0 +1,23 @@
+; tds — a client of Microsoft SQL Server over its own protocol, the
+; Tabular Data Stream (version 7.4): logging in with a user and a password,
+; scripts, statements with parameters through sp_executesql, rows of what
+; a schema of the ordinary types holds. The modules: what goes on the wire,
+; the connection, a pool of connections per scheduler thread.
+;
+; A connection is a TcpStream like any other, so a statement parks its
+; task on the runtime's evented I/O and the scheduler runs other requests
+; meanwhile.
+;
+; NOT in it: encryption of the session (tds/Conn.scaly says what that
+; means), Windows authentication, the old text and image types, floating
+; point and money in a result, more than one result of a statement told
+; apart.
+
+package scaly 0.1.0
+
+define tds
+{
+    module Wire
+    module Conn
+    module Pool
+}

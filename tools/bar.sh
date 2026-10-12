@@ -196,6 +196,7 @@ lane_ports() {
   step json tests/json/run.sh "$BIN" || rc=1
   step compress tests/compress/run.sh "$BIN" || rc=1
   step sqlite tests/sqlite/run.sh "$BIN" || rc=1
+  step tds tests/tds/run.sh "$BIN" || rc=1
   step tls tests/tls/run.sh "$BIN" || rc=1
   step h3 tests/h3/run.sh "$BIN" || rc=1
   step pg tests/pg/run.sh "$BIN" || rc=1

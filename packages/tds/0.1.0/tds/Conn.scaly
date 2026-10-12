@@ -1,0 +1,1132 @@
+; The connection: TDS 7.4 over a TcpStream, so a statement parks its task on
+; the runtime's evented I/O and the scheduler runs other requests meanwhile.
+;
+;   var reason Array[u8]()
+;   let got TdsConn.open(host, 1433, "sa", password, "master", &reason)
+;   var c got as ref[TdsConn]
+;   c.execute("CREATE TABLE t (id INT, name NVARCHAR(100)); BEGIN TRANSACTION")
+;   c.prepare_unnamed("INSERT INTO t (id, name) VALUES (@p1, @p2)")
+;   c.start("")
+;   c.param_int(7)
+;   c.param_text("seven")
+;   c.run()
+;   c.prepare_unnamed("SELECT name FROM t WHERE id = @p1")
+;   c.start("")
+;   c.param_int(7)
+;   if c.run()
+;       while c.next_row()
+;           ... c.column(0) ...
+;
+; The operations have the names and meanings of pg's and sqlite's
+; connections. A statement's parameters are @p1, @p2, ... in the order they
+; are given; a text goes as NVARCHAR(MAX), an integer as BIGINT, bytes as
+; VARBINARY(MAX), and the server converts to what a column is. A statement
+; with parameters runs through sp_executesql, which keeps its plan by its
+; text -- "prepare" keeps the text here and asks the server nothing.
+;
+; What a column answers is text: a number in digits, a bit as 1 or 0, a
+; datetime2 as 2026-10-10 16:39:09.4208071 (its scale's digits), a decimal
+; with its scale, character data as UTF-8; binary data as its bytes.
+;
+; ★The session is NOT encrypted: the client says it has no encryption, and
+; a server that insists on it (Force Encryption) refuses the connection.
+; The password crosses the wire as TDS obfuscates it, which is no
+; protection. For a server on the same host or a network that is trusted.
+
+define TDS_PACKET: size_t 4096
+
+; packet types
+define TDS_BATCH: u8 1
+define TDS_RPC: u8 3
+define TDS_REPLY: u8 4
+define TDS_LOGIN: u8 16
+define TDS_PRELOGIN: u8 18
+
+; what a parameter is, as start/param_* note it
+define TDS_PARAM_TEXT: i64 0
+define TDS_PARAM_BYTES: i64 1
+define TDS_PARAM_INT: i64 2
+define TDS_PARAM_NULL: i64 3
+
+; The most columns of a result that are described (a result of more is
+; refused).
+define TDS_COLUMNS: size_t 64
+
+define TdsConn
+(
+    host: ref[Page]
+    var tcp: TcpStream
+    var open: bool
+    ; the message being made (without packet headers), and the reply
+    ; (likewise, every packet's payload one behind the other)
+    var outb: Array[u8]
+    var inb: Array[u8]
+    ; where the tokens of the reply are read
+    var rpos: size_t
+    ; the transaction the server says the session is in (ENVCHANGE 8, 9,
+    ; 10): every request names it
+    var transaction: u64
+    ; the statements prepared by name: name and text, and the unnamed one
+    var names: Array[String]
+    var texts: Array[String]
+    var unnamed: Array[u8]
+    ; the statement start() chose and its parameters: the bytes, and for
+    ; each its kind, where its bytes begin (or its value) and their length
+    var current: Array[u8]
+    var bytes: Array[u8]
+    var params: Array[i64]
+    ; the columns of the result being read: type, size, scale
+    var column_type: Array[i64]
+    var column_size: Array[i64]
+    var column_scale: Array[i64]
+    ; the current row as text: every column's bytes one behind the other,
+    ; where each begins and how long it is (-1: NULL)
+    var row: Array[u8]
+    var cell_start: Array[i64]
+    var cell_length: Array[i64]
+    ; the reply is read to its end, no row is left; and the row run()
+    ; stands at, not yet given to next_row()
+    var done: bool
+    var pending: bool
+    ; the rows the last statement changed, and the server's message of the
+    ; last operation that failed
+    var changed: i64
+    var failed: bool
+    var message: Array[u8]
+)
+{
+    ; Connect and log in; null when the server cannot be reached or
+    ; refuses, and `reason` says why. The connection lives on a page of
+    ; its own.
+    procedure open(mutable host_name: String, port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8], mutable reason: ref[Array[u8]]) returns ref[TdsConn]?
+    {
+        let page Page.allocate_page()
+        var tcp TcpStream.connect(host_name, port)
+        if tcp.is_open() = false
+        {
+            page.deallocate_extensions()
+            Page.release_page(page)
+            reason.append("the server cannot be reached")
+            return null
+        }
+        tcp.set_nodelay(true)
+        let c &TdsConn^page(page, tcp, true, Array[u8]^page(), Array[u8]^page(), 0, 0, Array[String]^page(), Array[String]^page(), Array[u8]^page(), Array[u8]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), true, false, 0, false, Array[u8]^page())
+        if c.login(host_name.as_slice(), user, password, database) = false
+        {
+            if c.message.length > 0
+                reason.append(c.message.as_slice())
+            else
+                reason.append("the server ended the connection")
+            c.close()
+            return null
+        }
+        c
+    }
+
+    function is_open(this) returns bool
+        open
+
+    ; The server's message of the last operation that failed; empty when
+    ; there was none.
+    function error_message(this) returns Slice[u8]
+        message.as_slice()
+
+    procedure close(mutable this)
+    {
+        open := false
+        tcp.close()
+        host.deallocate_extensions()
+        Page.release_page(host)
+    }
+
+    ; --- the wire ---
+
+    ; Send outb as a message of `type`, cut into packets; false (and
+    ; closed) on an error.
+    procedure send(mutable this, type: u8) returns bool
+    {
+        if open = false
+            return false
+        var packet Array[u8]()
+        var at: size_t 0
+        var number: i64 1
+        let most TDS_PACKET - 8
+        repeat
+        {
+            var n outb.length - at
+            var last: i64 1
+            if n > most
+            {
+                n := most
+                last := 0
+            }
+            packet.length := 0
+            packet.add(type)
+            packet.add(last as u8)
+            packet.add(((n + 8) / 256) as u8)
+            packet.add(((n + 8) % 256) as u8)
+            packet.add(0 as u8)
+            packet.add(0 as u8)
+            packet.add((number % 256) as u8)
+            packet.add(0 as u8)
+            packet.append(outb.as_slice().subslice(at, at + n))
+            if tcp.write(packet.as_slice()) = false
+            {
+                open := false
+                return false
+            }
+            at := at + n
+            number := number + 1
+            if last = 1
+                break
+        }
+        outb.length := 0
+        true
+    }
+
+    ; Exactly n bytes of the stream into `into`.
+    procedure read_exactly(mutable this, mutable into: ref[Array[u8]], n: size_t) returns bool
+    {
+        var left n
+        while left > 0
+        {
+            ; into the array's own room, which is given back where the
+            ; read brought less
+            let room into.extend(left)
+            let got tcp.read(room)
+            if got <= 0
+            {
+                into.length := into.length - left
+                open := false
+                return false
+            }
+            into.length := into.length - (left - (got as size_t))
+            left := left - (got as size_t)
+        }
+        true
+    }
+
+    ; Read a whole reply -- every packet up to the one that ends the
+    ; message -- into inb.
+    procedure receive(mutable this) returns bool
+    {
+        inb.length := 0
+        rpos := 0
+        var head Array[u8]()
+        repeat
+        {
+            head.length := 0
+            if this.read_exactly(&head, 8) = false
+                return false
+            let length (head[2] as size_t) * 256 + (head[3] as size_t)
+            if length < 8
+            {
+                open := false
+                return false
+            }
+            if this.read_exactly(&inb, length - 8) = false
+                return false
+            if (head[1] as int) % 2 = 1
+                break
+        }
+        true
+    }
+
+    ; --- the reply's bytes ---
+
+    function u8_at(this, at: size_t) returns i64
+        inb[at] as i64
+
+    function u16_at(this, at: size_t) returns i64
+        (inb[at] as i64) + (inb[at + 1] as i64) * 256
+
+    function u32_at(this, at: size_t) returns i64
+        (inb[at] as i64) + (inb[at + 1] as i64) * 256 + (inb[at + 2] as i64) * 65536 + (inb[at + 3] as i64) * 16777216
+
+    function u64_at(this, at: size_t) returns i64
+        this.u32_at(at) + this.u32_at(at + 4) * 4294967296
+
+    ; --- logging in ---
+
+    procedure login(mutable this, server: Slice[u8], user: Slice[u8], password: Slice[u8], database: Slice[u8]) returns bool
+    {
+        ; PRELOGIN: version, encryption (2: none here), instance, thread, MARS
+        outb.length := 0
+        ; five options, each its number, where its value stands and how long
+        ; it is; then the end mark, then the values
+        let lengths: Slice[u8] "61141"
+        var where: i64 26
+        var option: i64 0
+        while option < 5
+        {
+            let length ((lengths[option as size_t] as int) - 48) as i64
+            outb.add(option as u8)
+            outb.add(0 as u8)
+            outb.add(where as u8)
+            outb.add(0 as u8)
+            outb.add(length as u8)
+            where := where + length
+            option := option + 1
+        }
+        outb.add(255 as u8)
+        ; version 0.0.0.0 and sub-build, encryption, instance (empty), thread id, MARS off
+        var k 0
+        while k < 6
+        {
+            outb.add(0 as u8)
+            k := k + 1
+        }
+        outb.add(2 as u8)
+        outb.add(0 as u8)
+        k := 0
+        while k < 4
+        {
+            outb.add(0 as u8)
+            k := k + 1
+        }
+        outb.add(0 as u8)
+        if this.send(TDS_PRELOGIN) = false or this.receive() = false
+            return false
+        ; the server's answer to the encryption option
+        var at: size_t 0
+        while at + 5 <= inb.length and inb[at] <> 255
+        {
+            if inb[at] = 1
+            {
+                let answered this.u8_at(at + 1) * 256 + this.u8_at(at + 2)
+                if (answered as size_t) < inb.length and inb[answered as size_t] = 3
+                {
+                    message.append("the server requires encryption, which this client does not have")
+                    return false
+                }
+            }
+            at := at + 5
+        }
+
+        ; LOGIN7
+        outb.length := 0
+        var fixed: size_t 94
+        var data Array[u8]()
+        var header Array[u8]()
+        put_u32(&header, 0)
+        put_u32(&header, 1946157060)
+        put_u32(&header, TDS_PACKET as i64)
+        put_u32(&header, 7)
+        put_u32(&header, 0)
+        put_u32(&header, 0)
+        header.add(224 as u8)
+        header.add(3 as u8)
+        header.add(0 as u8)
+        header.add(0 as u8)
+        put_u32(&header, 0)
+        put_u32(&header, 1033)
+        ; host name, user, password, application, server, (extension), library, language, database
+        var part 0
+        while part < 9
+        {
+            var text: Slice[u8] ""
+            if part = 0
+                text := "scaly"
+            if part = 1
+                text := user
+            if part = 2
+                text := password
+            if part = 3
+                text := "scaly tds"
+            if part = 4
+                text := server
+            if part = 6
+                text := "scaly tds"
+            if part = 8
+                text := database
+            let begin data.length
+            put_utf16(&data, text)
+            if part = 2
+            {
+                ; the password as TDS hides it: the nibbles swapped, then 0xA5
+                var b begin
+                while b < data.length
+                {
+                    let v data[b] as int
+                    data.put(b, hidden_byte((v % 16) * 16 + v / 16))
+                    b := b + 1
+                }
+            }
+            put_u16(&header, (fixed + begin) as i64)
+            put_u16(&header, ((data.length - begin) / 2) as i64)
+            part := part + 1
+        }
+        ; the client's id (6 bytes), SSPI, a database file, a new password, SSPI long
+        k := 0
+        while k < 6
+        {
+            header.add(0 as u8)
+            k := k + 1
+        }
+        k := 0
+        while k < 3
+        {
+            put_u16(&header, (fixed + data.length) as i64)
+            put_u16(&header, 0)
+            k := k + 1
+        }
+        put_u32(&header, 0)
+        let total header.length + data.length
+        header.put(0, (total % 256) as u8)
+        header.put(1, ((total / 256) % 256) as u8)
+        outb.append(header.as_slice())
+        outb.append(data.as_slice())
+        if this.send(TDS_LOGIN) = false or this.receive() = false
+            return false
+        this.drain()
+    }
+
+    ; --- statements ---
+
+    ; The header every request begins with: the transaction it belongs to.
+    procedure begin_request(mutable this)
+    {
+        outb.length := 0
+        put_u32(&outb, 22)
+        put_u32(&outb, 18)
+        put_u16(&outb, 2)
+        put_u32(&outb, (transaction % 4294967296) as i64)
+        put_u32(&outb, (transaction / 4294967296) as i64)
+        put_u32(&outb, 1)
+        message.length := 0
+        failed := false
+        changed := 0
+        done := true
+        pending := false
+        column_type.length := 0
+    }
+
+    ; Run a script: any number of statements, no parameters; its rows, if
+    ; it has any, are passed over.
+    procedure execute(mutable this, sql: Slice[u8]) returns bool
+    {
+        this.begin_request()
+        put_utf16(&outb, sql)
+        if this.send(TDS_BATCH) = false or this.receive() = false
+            return false
+        this.drain()
+    }
+
+    ; Keep `sql` under `name`; a name that is kept already stays as it is.
+    procedure prepare(mutable this, name: Slice[u8], sql: Slice[u8]) returns bool
+    {
+        var i: size_t 0
+        while i < names.length
+        {
+            if names[i].as_slice().equals(name)
+                return true
+            i := i + 1
+        }
+        names.add(String^host(name.data as pointer[const_char], name.length))
+        texts.add(String^host(sql.data as pointer[const_char], sql.length))
+        true
+    }
+
+    ; Keep `sql` as the unnamed statement, in place of the one before.
+    procedure prepare_unnamed(mutable this, sql: Slice[u8]) returns bool
+    {
+        unnamed.length := 0
+        unnamed.append(sql)
+        true
+    }
+
+    ; Begin a run of the statement `name` ("" the unnamed one): its
+    ; parameters follow, in order.
+    procedure start(mutable this, name: Slice[u8])
+    {
+        current.length := 0
+        if name.length = 0
+            current.append(unnamed.as_slice())
+        var i: size_t 0
+        while i < names.length and name.length > 0
+        {
+            if names[i].as_slice().equals(name)
+                current.append(texts[i].as_slice())
+            i := i + 1
+        }
+        bytes.length := 0
+        params.length := 0
+    }
+
+    procedure param_text(mutable this, v: Slice[u8])
+    {
+        params.add(TDS_PARAM_TEXT)
+        params.add(bytes.length as i64)
+        params.add(v.length as i64)
+        bytes.append(v)
+    }
+
+    procedure param_bytes(mutable this, v: Slice[u8])
+    {
+        params.add(TDS_PARAM_BYTES)
+        params.add(bytes.length as i64)
+        params.add(v.length as i64)
+        bytes.append(v)
+    }
+
+    procedure param_int(mutable this, v: i64)
+    {
+        params.add(TDS_PARAM_INT)
+        params.add(v)
+        params.add(0)
+    }
+
+    procedure param_null(mutable this)
+    {
+        params.add(TDS_PARAM_NULL)
+        params.add(0)
+        params.add(0)
+    }
+
+    ; A result column as its bytes: every column is what the server holds.
+    procedure binary_column(mutable this, i: int)
+    {
+    }
+
+    ; An NVARCHAR(MAX) parameter of the request: its name's length is
+    ; written by the caller.
+    procedure put_text_value(mutable this, text: Slice[u8])
+    {
+        ; NVARCHAR, the size that says "large", a collation; then the value
+        ; in pieces: its whole length, one piece, the end
+        outb.add(231 as u8)
+        put_u16(&outb, 65535)
+        outb.add(9 as u8)
+        outb.add(4 as u8)
+        outb.add(208 as u8)
+        outb.add(0 as u8)
+        outb.add(52 as u8)
+        var wide Array[u8]()
+        put_utf16(&wide, text)
+        put_u32(&outb, wide.length as i64)
+        put_u32(&outb, 0)
+        if wide.length > 0
+        {
+            put_u32(&outb, wide.length as i64)
+            outb.append(wide.as_slice())
+        }
+        put_u32(&outb, 0)
+    }
+
+    ; "@p<n>" as a parameter's name: the count of its characters, then them.
+    procedure put_param_name(mutable this, n: size_t)
+    {
+        var name Array[u8]()
+        name.append("@p")
+        put_number(&name, n as i64)
+        outb.add(name.length as u8)
+        put_utf16(&outb, name.as_slice())
+        outb.add(0 as u8)
+    }
+
+    ; Run the statement with the parameters given since start(). True when
+    ; the server took it; its rows are then next_row()'s.
+    procedure run(mutable this) returns bool
+    {
+        this.begin_request()
+        ; sp_executesql by its number, no options
+        put_u16(&outb, 65535)
+        put_u16(&outb, 10)
+        put_u16(&outb, 0)
+        ; the statement
+        outb.add(0 as u8)
+        outb.add(0 as u8)
+        this.put_text_value(current.as_slice())
+        if params.length > 0
+        {
+            ; what the parameters are
+            var declared Array[u8]()
+            var i: size_t 0
+            while i * 3 < params.length
+            {
+                if i > 0
+                    declared.append(", ")
+                declared.append("@p")
+                put_number(&declared, (i + 1) as i64)
+                let kind params[i * 3]
+                if kind = TDS_PARAM_INT
+                    declared.append(" bigint")
+                else
+                {
+                    if kind = TDS_PARAM_BYTES
+                        declared.append(" varbinary(max)")
+                    else
+                        declared.append(" nvarchar(max)")
+                }
+                i := i + 1
+            }
+            outb.add(0 as u8)
+            outb.add(0 as u8)
+            this.put_text_value(declared.as_slice())
+            ; and their values
+            i := 0
+            while i * 3 < params.length
+            {
+                let kind params[i * 3]
+                let at params[i * 3 + 1]
+                let n params[i * 3 + 2]
+                this.put_param_name(i + 1)
+                if kind = TDS_PARAM_TEXT
+                    this.put_text_value(bytes.as_slice().subslice(at as size_t, (at + n) as size_t))
+                if kind = TDS_PARAM_NULL
+                {
+                    ; NVARCHAR(MAX), no value
+                    outb.add(231 as u8)
+                    put_u16(&outb, 65535)
+                    outb.add(9 as u8)
+                    outb.add(4 as u8)
+                    outb.add(208 as u8)
+                    outb.add(0 as u8)
+                    outb.add(52 as u8)
+                    put_u32(&outb, 4294967295)
+                    put_u32(&outb, 4294967295)
+                }
+                if kind = TDS_PARAM_INT
+                {
+                    ; an integer of eight bytes that may be null
+                    outb.add(38 as u8)
+                    outb.add(8 as u8)
+                    outb.add(8 as u8)
+                    var v at
+                    var b 0
+                    while b < 8
+                    {
+                        outb.add(((v % 256 + 256) % 256) as u8)
+                        v := (v - (v % 256 + 256) % 256) / 256
+                        b := b + 1
+                    }
+                }
+                if kind = TDS_PARAM_BYTES
+                {
+                    ; VARBINARY(MAX), in pieces as a text
+                    outb.add(165 as u8)
+                    put_u16(&outb, 65535)
+                    put_u32(&outb, n)
+                    put_u32(&outb, 0)
+                    if n > 0
+                    {
+                        put_u32(&outb, n)
+                        outb.append(bytes.as_slice().subslice(at as size_t, (at + n) as size_t))
+                    }
+                    put_u32(&outb, 0)
+                }
+                i := i + 1
+            }
+        }
+        if this.send(TDS_RPC) = false or this.receive() = false
+            return false
+        done := false
+        ; up to the first row, or the end: an error before any row fails
+        ; the statement
+        pending := this.advance()
+        failed = false
+    }
+
+    ; --- the reply's tokens ---
+
+    ; A character count's worth of UTF-16 at `at` as UTF-8 into `into`.
+    procedure take_utf16(mutable this, mutable into: ref[Array[u8]], at: size_t, units: size_t)
+    {
+        var i: size_t 0
+        while i < units
+        {
+            var point this.u16_at(at + i * 2)
+            i := i + 1
+            if point >= 55296 and point <= 56319 and i < units
+            {
+                let low this.u16_at(at + i * 2)
+                i := i + 1
+                point := 65536 + (point - 55296) * 1024 + (low - 56320)
+            }
+            put_utf8(into, point)
+        }
+    }
+
+    ; Read the description of a result's columns; rpos stands behind the
+    ; token's byte.
+    procedure take_columns(mutable this) returns bool
+    {
+        column_type.length := 0
+        column_size.length := 0
+        column_scale.length := 0
+        let count this.u16_at(rpos)
+        rpos := rpos + 2
+        if count = 65535
+            return true
+        if (count as size_t) > TDS_COLUMNS
+            return false
+        var i: i64 0
+        while i < count
+        {
+            rpos := rpos + 6
+            let type this.u8_at(rpos)
+            rpos := rpos + 1
+            var size: i64 0
+            var scale: i64 0
+            ; (the types that are described alike under one number)
+            var described type as int
+            if described = 104 or described = 36
+                described := 38
+            if described = 108
+                described := 106
+            if described = 42 or described = 43
+                described := 41
+            if described = 175 or described = 231 or described = 239
+                described := 167
+            if described = 173
+                described := 165
+            match described
+                case 48: size := 1
+                case 50: size := 1
+                case 52: size := 2
+                case 56: size := 4
+                case 127: size := 8
+                case 38
+                {
+                    size := this.u8_at(rpos)
+                    rpos := rpos + 1
+                }
+                case 106
+                {
+                    size := this.u8_at(rpos)
+                    scale := this.u8_at(rpos + 2)
+                    rpos := rpos + 3
+                }
+                case 40: size := 3
+                case 41
+                {
+                    scale := this.u8_at(rpos)
+                    rpos := rpos + 1
+                }
+                case 167
+                {
+                    size := this.u16_at(rpos)
+                    rpos := rpos + 7
+                }
+                case 165
+                {
+                    size := this.u16_at(rpos)
+                    rpos := rpos + 2
+                }
+                else: return false
+            column_type.add(type)
+            column_size.add(size)
+            column_scale.add(scale)
+            ; the column's name
+            let name this.u8_at(rpos)
+            rpos := rpos + 1 + (name as size_t) * 2
+            i := i + 1
+        }
+        true
+    }
+
+    ; A whole number of `n` bytes at `at`, the lowest first, with its sign.
+    function signed_at(this, at: size_t, n: size_t) returns i64
+    {
+        var v: i64 0
+        var i n
+        while i > 0
+        {
+            i := i - 1
+            v := v * 256 + (inb[at + i] as i64)
+        }
+        if n < 8 and n > 0 and inb[at + n - 1] >= 128
+        {
+            var range: i64 1
+            var k: size_t 0
+            while k < n
+            {
+                range := range * 256
+                k := k + 1
+            }
+            v := v - range
+        }
+        v
+    }
+
+    ; Note the next cell of the row as NULL.
+    procedure null_cell(mutable this)
+    {
+        cell_start.add(row.length as i64)
+        cell_length.add(0 - 1)
+    }
+
+    ; Read one value of column i at rpos into the row, as text.
+    procedure take_value(mutable this, i: size_t) returns bool
+    {
+        let type column_type[i]
+        let size column_size[i]
+        let scale column_scale[i]
+        let begin row.length
+        ; (the types that are read alike under one number)
+        var read type as int
+        if read = 50 or read = 52 or read = 56 or read = 127
+            read := 48
+        if read = 104
+            read := 38
+        if read = 108
+            read := 106
+        if read = 41 or read = 42 or read = 43
+            read := 40
+        if read = 175 or read = 231 or read = 239 or read = 165 or read = 173
+            read := 167
+        match read
+            case 48
+            {
+                if type = 48 or type = 50
+                    put_number(&row, this.u8_at(rpos))
+                else
+                    put_number(&row, this.signed_at(rpos, size as size_t))
+                rpos := rpos + (size as size_t)
+            }
+            case 38
+            {
+                let n this.u8_at(rpos) as size_t
+                rpos := rpos + 1
+                if n = 0
+                    {
+                        this.null_cell()
+                        return true
+                    }
+                if n = 1
+                    put_number(&row, this.u8_at(rpos))
+                else
+                    put_number(&row, this.signed_at(rpos, n))
+                rpos := rpos + n
+            }
+            case 36
+            {
+                let n this.u8_at(rpos) as size_t
+                rpos := rpos + 1
+                if n = 0
+                    {
+                        this.null_cell()
+                        return true
+                    }
+                row.append(inb.as_slice().subslice(rpos, rpos + n))
+                rpos := rpos + n
+            }
+            case 106
+            {
+                let n this.u8_at(rpos) as size_t
+                rpos := rpos + 1
+                if n = 0
+                    {
+                        this.null_cell()
+                        return true
+                    }
+                ; a sign, then the digits as a whole number of n - 1 bytes
+                ; (to 18 digits here: what eight bytes hold)
+                if this.u8_at(rpos) = 0
+                    row.add(45 as u8)
+                var m n - 1
+                if m > 8
+                    m := 8
+                let value this.signed_at(rpos + 1, m)
+                var unit: i64 1
+                var s: i64 0
+                while s < scale
+                {
+                    unit := unit * 10
+                    s := s + 1
+                }
+                put_number(&row, value / unit)
+                if scale > 0
+                {
+                    row.add(46 as u8)
+                    put_padded(&row, value % unit, scale as int)
+                }
+                rpos := rpos + n
+            }
+            case 40
+            {
+                let n this.u8_at(rpos) as size_t
+                rpos := rpos + 1
+                if n = 0
+                    {
+                        this.null_cell()
+                        return true
+                    }
+                var at rpos
+                var time_bytes: size_t 0
+                if type <> 40
+                {
+                    time_bytes := 3
+                    if scale >= 3
+                        time_bytes := 4
+                    if scale >= 5
+                        time_bytes := 5
+                }
+                let ticks this.signed_at(at, time_bytes) + 0
+                at := at + time_bytes
+                if type <> 41
+                {
+                    ; days since 0001-01-01
+                    let days this.u8_at(at) + this.u8_at(at + 1) * 256 + this.u8_at(at + 2) * 65536
+                    put_civil(&row, days - 719162)
+                    if type <> 40
+                        row.add(32 as u8)
+                }
+                if type <> 40
+                {
+                    ; the time in units of 10^-scale seconds
+                    var unit: i64 1
+                    var s: i64 0
+                    while s < scale
+                    {
+                        unit := unit * 10
+                        s := s + 1
+                    }
+                    var t ticks
+                    if time_bytes = 3 and t < 0
+                        t := t + 16777216
+                    if time_bytes = 4 and t < 0
+                        t := t + 4294967296
+                    if time_bytes = 5 and t < 0
+                        t := t + 1099511627776
+                    let seconds t / unit
+                    put_padded(&row, seconds / 3600, 2)
+                    row.add(58 as u8)
+                    put_padded(&row, (seconds / 60) % 60, 2)
+                    row.add(58 as u8)
+                    put_padded(&row, seconds % 60, 2)
+                    if scale > 0
+                    {
+                        row.add(46 as u8)
+                        put_padded(&row, t % unit, scale as int)
+                    }
+                }
+                rpos := rpos + n
+            }
+            case 167
+            {
+                let wide type = 231 or type = 239
+                if size = 65535
+                {
+                    ; a large value: its whole length (or NULL), then pieces
+                    ; up to an empty one
+                    if this.u64_at(rpos) = 0 - 1
+                    {
+                        rpos := rpos + 8
+                        {
+                            this.null_cell()
+                            return true
+                        }
+                    }
+                    rpos := rpos + 8
+                    var raw Array[u8]()
+                    repeat
+                    {
+                        let piece this.u32_at(rpos) as size_t
+                        rpos := rpos + 4
+                        if piece = 0
+                            break
+                        if wide
+                            raw.append(inb.as_slice().subslice(rpos, rpos + piece))
+                        else
+                            row.append(inb.as_slice().subslice(rpos, rpos + piece))
+                        rpos := rpos + piece
+                    }
+                    if wide
+                        put_utf8_of_utf16(&row, raw.as_slice())
+                }
+                else
+                {
+                    let n this.u16_at(rpos) as size_t
+                    rpos := rpos + 2
+                    if n = 65535
+                        {
+                            this.null_cell()
+                            return true
+                        }
+                    if wide
+                        this.take_utf16(&row, rpos, n / 2)
+                    else
+                        row.append(inb.as_slice().subslice(rpos, rpos + n))
+                    rpos := rpos + n
+                }
+            }
+            else: return false
+        cell_start.add(begin as i64)
+        cell_length.add((row.length - begin) as i64)
+        true
+    }
+
+    ; Go on through the reply to its next row -- true, and the row is read
+    ; -- or to its end. An error the server reports on the way is kept.
+    procedure advance(mutable this) returns bool
+    {
+        while rpos < inb.length
+        {
+            let token inb[rpos] as int
+            rpos := rpos + 1
+            ; (the tokens that are read alike under one number)
+            var kind token
+            if kind = 210
+                kind := 209
+            if kind = 254 or kind = 255
+                kind := 253
+            if kind = 173 or kind = 169 or kind = 164 or kind = 165
+                kind := 171
+            match kind
+                case 129
+                {
+                    if this.take_columns() = false
+                    {
+                        failed := true
+                        message.append("a result of a column type this client does not read")
+                        rpos := inb.length
+                    }
+                }
+                case 209
+                {
+                    row.length := 0
+                    cell_start.length := 0
+                    cell_length.length := 0
+                    var nulls rpos
+                    if token = 210
+                        rpos := rpos + (column_type.length + 7) / 8
+                    var i: size_t 0
+                    while i < column_type.length
+                    {
+                        if token = 210 and ((inb[nulls + i / 8] as int) >> ((i % 8) as int)) % 2 = 1
+                            this.null_cell()
+                        else
+                        {
+                            if this.take_value(i) = false
+                            {
+                                failed := true
+                                rpos := inb.length
+                                return false
+                            }
+                        }
+                        i := i + 1
+                    }
+                    return true
+                }
+                case 253
+                {
+                    let status this.u16_at(rpos)
+                    if (status / 2) % 2 = 1
+                        failed := true
+                    if (status / 16) % 2 = 1
+                        changed := this.u64_at(rpos + 4)
+                    rpos := rpos + 12
+                }
+                case 170
+                {
+                    let length this.u16_at(rpos) as size_t
+                    if message.length = 0
+                    {
+                        let units this.u16_at(rpos + 8) as size_t
+                        this.take_utf16(&message, rpos + 10, units)
+                    }
+                    failed := true
+                    rpos := rpos + 2 + length
+                }
+                case 227
+                {
+                    let length this.u16_at(rpos) as size_t
+                    let kind this.u8_at(rpos + 2)
+                    ; a transaction begun: its descriptor; ended: none
+                    if kind = 8 and this.u8_at(rpos + 3) = 8
+                        transaction := this.u64_at(rpos + 4) as u64
+                    if kind = 9 or kind = 10
+                        transaction := 0
+                    rpos := rpos + 2 + length
+                }
+                case 121: rpos := rpos + 4
+                case 171
+                {
+                    let length this.u16_at(rpos) as size_t
+                    rpos := rpos + 2 + length
+                }
+                else
+                {
+                    ; a token this client does not know: nothing after it
+                    ; can be read
+                    failed := true
+                    if message.length = 0
+                        message.append("a reply this client does not read")
+                    rpos := inb.length
+                }
+        }
+        done := true
+        false
+    }
+
+    ; Read the reply to its end, its rows passed over; true when the
+    ; server reported no error.
+    procedure drain(mutable this) returns bool
+    {
+        done := false
+        while this.advance()
+        {
+        }
+        failed = false
+    }
+
+    ; Go to the next row of the statement that ran; false past the last.
+    ; (run() stands at the first row already: it is given first.)
+    procedure next_row(mutable this) returns bool
+    {
+        if pending
+        {
+            pending := false
+            return true
+        }
+        if done
+            return false
+        this.advance()
+    }
+
+    ; The rows of the statement are done with (as sqlite's finish; here
+    ; the reply is all read already).
+    procedure finish(mutable this)
+    {
+        done := true
+        pending := false
+    }
+
+    ; The rows the last statement changed.
+    function affected(this) returns i64
+        changed
+
+    function column_is_null(this, i: int) returns bool
+        (i as size_t) >= cell_length.length or cell_length[i as size_t] < 0
+
+    ; Column i of the current row as text (see the head); empty for NULL.
+    function column(this, i: int) returns Slice[u8]
+    {
+        if (i as size_t) >= cell_length.length or cell_length[i as size_t] < 0
+            return row.as_slice().slice_to(0)
+        let at cell_start[i as size_t] as size_t
+        row.as_slice().subslice(at, at + (cell_length[i as size_t] as size_t))
+    }
+
+    function column_int(this, i: int) returns i64
+    {
+        let text this.column(i)
+        var n: i64 0
+        var at: size_t 0
+        var negative false
+        if at < text.length and text[at] = 45
+        {
+            negative := true
+            at := at + 1
+        }
+        while at < text.length and text[at] >= 48 and text[at] <= 57
+        {
+            n := n * 10 + (((text[at] as int) - 48) as i64)
+            at := at + 1
+        }
+        if negative
+            return 0 - n
+        n
+    }
+}
