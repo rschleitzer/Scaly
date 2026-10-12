@@ -29,8 +29,8 @@ mutable tds_pool: ref[TdsPool]? null
 shared atomic tds_configured: u64 0
 
 ; Name the server every thread's pool connects to. Before the first
-; acquire; the parts are copied.
-procedure configure(host_name: Slice[u8], port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8])
+; tds_acquire; the parts are copied.
+procedure tds_configure(host_name: Slice[u8], port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8])
 {
     let page Page.allocate_page()
     let c &TdsConfig^page(
@@ -44,8 +44,8 @@ procedure configure(host_name: Slice[u8], port: int, user: Slice[u8], password: 
 }
 
 ; A connection of this thread's pool; null when no server is configured or
-; it cannot be reached. Give it back with release.
-procedure acquire() returns ref[TdsConn]? mutable tds_pool
+; it cannot be reached. Give it back with tds_release.
+procedure tds_acquire() returns ref[TdsConn]? mutable tds_pool
 {
     var p: ref[TdsPool]? tds_pool
     if p = null
@@ -72,7 +72,7 @@ procedure acquire() returns ref[TdsConn]? mutable tds_pool
 }
 
 ; Give a connection back; one that broke is closed.
-procedure release(mutable c: ref[TdsConn]) mutable tds_pool
+procedure tds_release(mutable c: ref[TdsConn]) mutable tds_pool
 {
     let p tds_pool
     if c.is_open() = false or p = null

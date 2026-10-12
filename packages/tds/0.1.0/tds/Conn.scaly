@@ -93,6 +93,8 @@ define TdsConn
     var changed: i64
     var failed: bool
     var message: Array[u8]
+    ; ... and the server's number of that error
+    var number: i64
 )
 {
     ; Connect and log in; null when the server cannot be reached or
@@ -110,7 +112,7 @@ define TdsConn
             return null
         }
         tcp.set_nodelay(true)
-        let c &TdsConn^page(page, tcp, true, Array[u8]^page(), Array[u8]^page(), 0, 0, Array[String]^page(), Array[String]^page(), Array[u8]^page(), Array[u8]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), true, false, 0, false, Array[u8]^page())
+        let c &TdsConn^page(page, tcp, true, Array[u8]^page(), Array[u8]^page(), 0, 0, Array[String]^page(), Array[String]^page(), Array[u8]^page(), Array[u8]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[i64]^page(), Array[u8]^page(), Array[i64]^page(), Array[i64]^page(), true, false, 0, false, Array[u8]^page(), 0)
         if c.login(host_name.as_slice(), user, password, database) = false
         {
             if c.message.length > 0
@@ -130,6 +132,11 @@ define TdsConn
     ; there was none.
     function error_message(this) returns Slice[u8]
         message.as_slice()
+
+    ; ... and its number as the server counts its errors (2714: there is
+    ; already an object of that name); 0 when there was none.
+    function error_number(this) returns i64
+        number
 
     procedure close(mutable this)
     {
@@ -394,6 +401,7 @@ define TdsConn
         put_u32(&outb, (transaction / 4294967296) as i64)
         put_u32(&outb, 1)
         message.length := 0
+        number := 0
         failed := false
         changed := 0
         done := true
@@ -1023,6 +1031,7 @@ define TdsConn
                     let length this.u16_at(rpos) as size_t
                     if message.length = 0
                     {
+                        number := this.u32_at(rpos + 2)
                         let units this.u16_at(rpos + 8) as size_t
                         this.take_utf16(&message, rpos + 10, units)
                     }
