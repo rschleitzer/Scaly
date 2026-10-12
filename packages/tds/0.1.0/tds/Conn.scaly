@@ -897,7 +897,10 @@ define TdsConn
                     size := this.u16_at(rpos)
                     rpos := rpos + 2
                 }
-                else: return false
+                else
+                {
+                    return false
+                }
             column_type.add(type)
             column_size.add(size)
             column_scale.add(scale)
@@ -973,10 +976,10 @@ define TdsConn
                 let n this.u8_at(rpos) as size_t
                 rpos := rpos + 1
                 if n = 0
-                    {
-                        this.null_cell()
-                        return true
-                    }
+                {
+                    this.null_cell()
+                    return true
+                }
                 if n = 1
                     put_number(&row, this.u8_at(rpos))
                 else
@@ -988,10 +991,10 @@ define TdsConn
                 let n this.u8_at(rpos) as size_t
                 rpos := rpos + 1
                 if n = 0
-                    {
-                        this.null_cell()
-                        return true
-                    }
+                {
+                    this.null_cell()
+                    return true
+                }
                 row.append(inb.as_slice().subslice(rpos, rpos + n))
                 rpos := rpos + n
             }
@@ -1000,10 +1003,10 @@ define TdsConn
                 let n this.u8_at(rpos) as size_t
                 rpos := rpos + 1
                 if n = 0
-                    {
-                        this.null_cell()
-                        return true
-                    }
+                {
+                    this.null_cell()
+                    return true
+                }
                 ; a sign, then the digits as a whole number of n - 1 bytes
                 ; (to 18 digits here: what eight bytes hold)
                 if this.u8_at(rpos) = 0
@@ -1032,10 +1035,10 @@ define TdsConn
                 let n this.u8_at(rpos) as size_t
                 rpos := rpos + 1
                 if n = 0
-                    {
-                        this.null_cell()
-                        return true
-                    }
+                {
+                    this.null_cell()
+                    return true
+                }
                 var at rpos
                 var time_bytes: size_t 0
                 if type <> 40
@@ -1097,10 +1100,8 @@ define TdsConn
                     if this.u64_at(rpos) = 0 - 1
                     {
                         rpos := rpos + 8
-                        {
-                            this.null_cell()
-                            return true
-                        }
+                        this.null_cell()
+                        return true
                     }
                     rpos := rpos + 8
                     var raw Array[u8]()
@@ -1124,10 +1125,10 @@ define TdsConn
                     let n this.u16_at(rpos) as size_t
                     rpos := rpos + 2
                     if n = 65535
-                        {
-                            this.null_cell()
-                            return true
-                        }
+                    {
+                        this.null_cell()
+                        return true
+                    }
                     if wide
                         this.take_utf16(&row, rpos, n / 2)
                     else
@@ -1135,7 +1136,10 @@ define TdsConn
                     rpos := rpos + n
                 }
             }
-            else: return false
+            else
+            {
+                return false
+            }
         cell_start.add(begin as i64)
         cell_length.add((row.length - begin) as i64)
         true
