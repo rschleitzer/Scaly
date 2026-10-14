@@ -78,6 +78,13 @@ define PgConn
     var described: i64
     ; the result columns of the unnamed statement (prepare_unnamed)
     var unnamed_columns: u32
+    ; between begin_batch and send_batch: what prepare and run would send
+    ; is gathered in outb, and the statements prepared from batch_from on
+    ; are the batch's own
+    var batching: bool
+    var batch_from: size_t
+    ; the ParseComplete messages drain met last
+    var parsed: size_t
 )
 {
     ; Connect and authenticate; null when the server cannot be reached or
@@ -104,7 +111,7 @@ define PgConn
             return null
         }
         tcp.set_nodelay(true)
-        let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page(), allocate_slice[u32]^page(page, PG_ROW_INDEX), allocate_slice[i32]^page(page, PG_ROW_INDEX), 0, 0, Array[u32]^page(), Array[u32]^page(), Array[u32]^page(), 0, 0)
+        let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page(), allocate_slice[u32]^page(page, PG_ROW_INDEX), allocate_slice[i32]^page(page, PG_ROW_INDEX), 0, 0, Array[u32]^page(), Array[u32]^page(), Array[u32]^page(), 0, 0, false, 0, 0)
         if c.startup(user, password, database) = false
         {
             if c.error_message().length > 0
@@ -242,6 +249,8 @@ define PgConn
             }
             if t = 84
                 described := be_u16(inb.bytes(), msg_start)
+            if t = 49
+                parsed := parsed + 1
             if t = 90
                 return ok
         }
@@ -327,8 +336,11 @@ define PgConn
                 return true
             i := i + 1
         }
-        this.reset_input()
-        outb.clear()
+        if batching = false
+        {
+            this.reset_input()
+            outb.clear()
+        }
         let at outb.begin(80)
         outb.append_cstr(name)
         outb.append_cstr(sql)
@@ -340,6 +352,14 @@ define PgConn
         outb.append_byte(83)
         outb.append_cstr(name)
         outb.finish(describe)
+        if batching
+        {
+            ; (a statement prepared in a batch is one that writes: no
+            ; columns, and no answer before send_batch)
+            prepared.add(String^host(name.data as pointer[const_char], name.length))
+            prepared_columns.add(0)
+            return true
+        }
         let sync outb.begin(83)
         outb.finish(sync)
         described := 0
@@ -382,7 +402,8 @@ define PgConn
     ; with param_text / param_int, then run.
     procedure start(mutable this, name: Slice[u8])
     {
-        outb.clear()
+        if batching = false
+            outb.clear()
         bind_at := outb.begin(66)
         outb.append_byte(0)
         outb.append_cstr(name)
@@ -533,6 +554,9 @@ define PgConn
         outb.append_byte(0)
         outb.append_i32(0)
         outb.finish(ex)
+        ; in a batch the query waits for send_batch
+        if batching
+            return true
         let sync outb.begin(83)
         outb.finish(sync)
         this.reset_input()
@@ -540,6 +564,44 @@ define PgConn
             return false
         walk := 0
         true
+    }
+
+    ; Gather what follows -- prepare, start, the parameters, run -- and send
+    ; it in ONE exchange at send_batch, with one Sync: for statements that
+    ; only write (their rows are not read; run answers true at once). The
+    ; statements are what they would be one by one, in the same order; the
+    ; server runs them in the transaction that is open. Not for a query
+    ; whose rows are wanted, nor start_unnamed.
+    procedure begin_batch(mutable this)
+    {
+        outb.clear()
+        batching := true
+        batch_from := prepared.length
+    }
+
+    ; Send the batch and read its answer; false when the server refused a
+    ; statement (error_message: the first; the server passes over the rest
+    ; up to the Sync, and the transaction is then to be rolled back). Of
+    ; the statements the batch prepared, those the server did not come to
+    ; are forgotten again; one it did prepare stays, as the server keeps it
+    ; whatever became of the transaction.
+    procedure send_batch(mutable this) returns bool
+    {
+        batching := false
+        if outb.length = 0
+            return true
+        let sync outb.begin(83)
+        outb.finish(sync)
+        this.reset_input()
+        parsed := 0
+        if this.flush() and this.drain()
+        {
+            walk := 0
+            return true
+        }
+        prepared.length := batch_from + parsed
+        prepared_columns.length := batch_from + parsed
+        false
     }
 
     ; Send sql as it stands and read its whole answer; false on an error

@@ -15,7 +15,12 @@
 ;   direct    start_unnamed: text and parameters in one exchange, a binary
 ;             column by the stated count, a refused text failing at run,
 ;             and the connection taking the next statement
-; Expected: script bytes null rollback unnamed direct reason
+;   batch     begin_batch / send_batch: a statement prepared in the batch and
+;             three inserts in one exchange, all there; a batch whose second
+;             insert is refused answers false with the server's message,
+;             leaves none of its rows (one implicit transaction), forgets
+;             the statement it prepared, and the connection goes on
+; Expected: script bytes null rollback unnamed direct batch reason
 
 package scaly 0.1.0
 package tls 0.1.0
@@ -158,6 +163,51 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     if c.run() = false or c.next_row() = false or c.column(2).equals("one") = false
         return 30
     Console.print "direct "
+
+    c.begin_batch()
+    if c.prepare("in_batch", "INSERT INTO pg_values (id, note) VALUES ($1, $2)") = false
+        return 31
+    var b: i64 10
+    while b < 13
+    {
+        c.start("in_batch")
+        c.param_int(b)
+        c.param_text("batched")
+        if c.run() = false
+            return 32
+        b := b + 1
+    }
+    if c.send_batch() = false
+        return 33
+    c.start_unnamed("SELECT COUNT(*) FROM pg_values WHERE note = $1", 0)
+    c.param_text("batched")
+    if c.run() = false or c.next_row() = false or c.column_int(0) <> 3
+        return 34
+    c.begin_batch()
+    if c.prepare("in_batch_refused", "INSERT INTO pg_values (id, note) VALUES ($1, $2)") = false
+        return 35
+    c.start("in_batch_refused")
+    c.param_int(20)
+    c.param_text("refused")
+    c.run()
+    c.start("in_batch_refused")
+    c.param_int(20)
+    c.param_text("refused")
+    c.run()
+    if c.send_batch() or c.error_message().length = 0
+        return 36
+    c.start_unnamed("SELECT COUNT(*) FROM pg_values WHERE note = $1", 0)
+    c.param_text("refused")
+    if c.run() = false or c.next_row() = false or c.column_int(0) <> 0
+        return 37
+    if c.prepare("in_batch_refused", "INSERT INTO pg_values (id, note) VALUES ($1, $2)") = false
+        return 38
+    c.start("in_batch_refused")
+    c.param_int(21)
+    c.param_text("after")
+    if c.run() = false
+        return 39
+    Console.print "batch "
     release(c)
 
     var why Array[u8]()
