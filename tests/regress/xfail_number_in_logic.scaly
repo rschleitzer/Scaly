@@ -1,0 +1,12 @@
+; Regression: `and` and `or` are the LOGICAL operators and take bools
+; (2026-10-15). Between numbers the result was typed bool and the left
+; operand emitted as the branch condition: `br i64`, invalid IR that the
+; in-process object writer took and `llc` refused at the seed -- found as
+; `((h >> shift) and 15) as u8`, meant as the bitwise `&`.
+;
+; xfail: and takes bools, and its left operand is u64: the bitwise operator is &
+
+function low_bits(h: u64) returns u8
+    ((h >> 4) and 15) as u8
+
+low_bits(255)

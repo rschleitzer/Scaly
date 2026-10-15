@@ -18250,6 +18250,11 @@ define Planner
                             combined_type := Planner.make_bool_type()
                         if op_name = "or"
                             combined_type := Planner.make_bool_type()
+                        ; ...and they take bools: a number on either side was
+                        ; emitted as the branch condition it is not (`br i64`),
+                        ; which llc refused and nothing before it
+                        if op_name = "and" or op_name = "or" or op_name = "&&" or op_name = "||"
+                            this.report_number_in_logic(result, rhs, op_name)
 
                         ; s101: built-in arithmetic / bitwise operators on
                         ; primitive integer types return the left operand's
@@ -32186,6 +32191,25 @@ define Planner
         ; null argument (SIGSEGV), and `=` answered a constant. It runs before
         ; any operator resolves, because the member operator path never comes
         ; back to report_null_test_on_ref#.
+        ; `and`, `or` (and `&&`, `||`) between numbers: they are the LOGICAL
+        ; operators and take bools; bitwise is `&` and `|`. Said at the operand
+        ; that is a number. An operand whose type is not known yet is left to
+        ; the checks after.
+        procedure report_number_in_logic(mutable this: Planner, lhs: PlannedOperand, rhs: PlannedOperand, op_name: String)
+        {
+            var bitwise "&"
+            if op_name = "or" or op_name = "||"
+                bitwise := "|"
+            if Planner.is_number_type(lhs.result_type.name)
+                this.add_diagnostic(lhs.loc, String^this("`op_name` takes bools, and its left operand is `lhs.result_type.name`: the bitwise operator is `bitwise`"))
+            if Planner.is_number_type(rhs.result_type.name)
+                this.add_diagnostic(rhs.loc, String^this("`op_name` takes bools, and its right operand is `rhs.result_type.name`: the bitwise operator is `bitwise`"))
+        }
+
+        ; an integer or a floating-point type
+        function is_number_type(name: String) returns bool
+            Planner.is_integer_type(name) or name = "float" or name = "double" or name = "f32" or name = "f64"
+
         procedure report_null_test_on_view(
             mutable this: Planner,
             lhs: PlannedOperand,
