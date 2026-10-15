@@ -6,6 +6,9 @@
 #   spaced     the same build with a space in the output path
 #   cached     a second build compiles nothing: no cache file newer than the
 #              first build
+#   parts      the same program with the standard library's object
+#              code-generated in parts (Parts.scaly, a small part size): it
+#              runs, and a second cache gets the same parts byte for byte
 #   run        the same program through `scaly run`, arguments handed on;
 #              tests/tool/globals.scaly, whose narrow constants aborted the JIT
 #   native     the cache holds the C and assembly files THIS target takes,
@@ -204,6 +207,23 @@ if "$SCALY" build tests/tool/hello.scaly -o "$TMP/hello2$SCALY_EXE" > "$TMP/buil
   [ "$newer" = 0 ] && ok || bad "cached: $newer cache files rewritten"
 else
   bad "cached: rc=$?"
+fi
+
+# parts: a package object code-generated in parts (Parts.scaly), the standard
+# library cut into the most parts by a small part size -- the program runs,
+# and a build in another cache writes the same parts byte for byte
+if SCALY_CACHE="$TMP/parts-a" SCALYC_PART_INSTRUCTIONS=1000 "$SCALY" build tests/tool/hello.scaly -o "$TMP/hello_p$SCALY_EXE" > "$TMP/parts.log" 2>&1; then
+  out=$("$TMP/hello_p$SCALY_EXE" one two)
+  n=$(ls "$TMP/parts-a" | grep -cE '^scaly-.*\.p[0-9]+\.o$')
+  [ "$out" = "hello one two" ] && [ "$n" -ge 1 ] && ok || bad "parts: got '$out', $n further parts"
+  SCALY_CACHE="$TMP/parts-b" SCALYC_PART_INSTRUCTIONS=1000 "$SCALY" build tests/tool/hello.scaly -o "$TMP/hello_q$SCALY_EXE" > "$TMP/parts-b.log" 2>&1
+  differ=0
+  for f in "$TMP"/parts-a/scaly-*.o; do
+    cmp -s "$f" "$TMP/parts-b/$(basename "$f")" || differ=$((differ+1))
+  done
+  [ "$differ" = 0 ] && ok || bad "parts: $differ objects differ between two caches"
+else
+  bad "parts: rc=$? $(tail -3 "$TMP/parts.log" | tr '\n' ' ')"
 fi
 
 # run

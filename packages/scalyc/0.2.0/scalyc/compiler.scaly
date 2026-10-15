@@ -19,6 +19,7 @@ define compiler
     module PointerCensus ; --pointer-report: raw-pointer census off the Plan (reads Planner statics)
     module WriteCensus ; --write-report: writes through parameters off the Plan (reuses PointerCensus)
     module LLVM
+    module Parts  ; the code generation of a large module in parts, side by side
     module Emitter
 
     procedure test() returns int mutable modeler_error_count

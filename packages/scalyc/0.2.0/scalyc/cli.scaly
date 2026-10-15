@@ -27,6 +27,7 @@ procedure scaly_eio_self_path(mutable buffer: pointer[char], capacity: size_t) r
 
 ; Compiler module imports
 use scalyc.compiler.Modeler
+use scalyc.compiler.Parts.Parts
 use scalyc.tool
 use scalyc.repl
 use scalyc.compiler.Model.Program
@@ -101,6 +102,7 @@ define Options
     release: bool                   ; `scaly build --release`: the whole program as one module at -O2
     bitcode: bool                   ; with -c: write bitcode (a package for a release build)
     defs_file: String               ; with -c: also write what the module defines (tool.check_definitions#)
+    code_parts: bool                ; with -c: a large module code-generated in parts beside the object (Parts.scaly)
     selected_versions: String       ; a package compiled for a program: that program's selection (Modeler.select_versions#)
     pgo_train: bool                 ; `scaly build --pgo-train`: the release build instrumented
     pgo_profile: String             ; `scaly build --pgo <file>`: the release build with a profile
@@ -155,6 +157,7 @@ define Options
         release := false
         bitcode := false
         defs_file := String()
+        code_parts := false
         selected_versions := String()
         pgo_train := false
         pgo_profile := String()
@@ -1312,6 +1315,8 @@ define cli
         config.portable_simd := opts.portable_simd
         config.page_size := planner.page_size_constant()
         config.library_linkage := opts.library
+        config.code_parts := opts.code_parts
+        config.parts_tag := opts.input_file
         ; --release: the program and its packages are optimised as one module
         if opts.release and opts.tool_build
         {
@@ -2606,6 +2611,10 @@ define cli
 
     procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
     {
+        ; started again to emit a part of a module (Parts.run_if_worker#)
+        let part_worker Parts.run_if_worker(argc, argv)
+        if part_worker >= 0
+            return part_worker
         let adopted adopt_home()
         if argc = 1
         {
@@ -2622,6 +2631,9 @@ define cli
     ; or a flag is scalyc's command line, not this one's.
     procedure tool_main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
     {
+        let part_worker Parts.run_if_worker(argc, argv)
+        if part_worker >= 0
+            return part_worker
         let adopted adopt_home()
         if argc = 1
             return repl.main()

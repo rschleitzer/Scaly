@@ -18,6 +18,7 @@ use scalyc.compiler.StackVectors.StackVectors
 use scalyc.compiler.StackVectors.SV_MAX_BYTES
 use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
+use scalyc.compiler.Parts.Parts
 use scalyc.compiler.LLVM.*
 use scalyc.compiler.lexer.*
 use scalyc.compiler.parser.*
@@ -84,6 +85,8 @@ define Emitter
         pgo_train: bool             ; `--pgo-train`: the release module instrumented, its run writes a profile
         pgo_profile: String         ; `--pgo <file>`: the release module optimised with that profile (.profdata)
         export_symbols: bool        ; `--export`: a release module whose definitions all stay, visible to the process
+        code_parts: bool            ; a debug build's package object: a large module code-generated in parts (Parts.scaly)
+        parts_tag: String           ; what names its promoted locals apart from another module's (the package root)
     )
     {
         init()
@@ -103,6 +106,8 @@ define Emitter
             pgo_train := false
             pgo_profile := String()
             export_symbols := false
+            code_parts := false
+            parts_tag := String()
         }
     }
 
@@ -9174,6 +9179,7 @@ define Emitter
                 }
             }
 
+            this.phase_mark("F0-opt-start")
             if config.opt_level > 0
             {
                 ; The module carries the TM's datalayout (apply_target_layout)
@@ -9208,6 +9214,20 @@ define Emitter
             }
             if config.release and config.export_symbols
                 this.show_every_definition(llvm_module)
+            this.phase_mark("F1-optimised")
+            ; a large package object in parts, side by side (Parts.scaly):
+            ; part 0 to `filename`, part k to `<filename>.p<k>`
+            if config.code_parts
+            {
+                let parts Parts.part_count(llvm_module)
+                if parts > 1
+                {
+                    let parts_ok Parts.write_parts(llvm_module, tm, filename, parts, config.parts_tag, config.target_cpu, tm_level)
+                    LLVMDisposeTargetMachine tm
+                    this.phase_mark("F2-object-written")
+                    return parts_ok
+                }
+            }
 
             ; s175: to_c_string#, not c_data() — c_data() points into the
             ; varint-prefixed buffer with NO null terminator (s28 rule).
@@ -9217,8 +9237,22 @@ define Emitter
             let emit_err LLVMTargetMachineEmitToFile(tm, llvm_module, c_filename, 1,
                 null as pointer[pointer[char]])
             LLVMDisposeTargetMachine tm
+            this.phase_mark("F2-object-written")
 
             emit_err = 0
+        }
+
+        ; SCALYC_PHASE_TIMES: the optimisation and the code generation on the
+        ; planner's clock (Planner.phase_mark#)
+        procedure phase_mark(this, phase_name: pointer[const_char])
+        {
+            if getenv("SCALYC_PHASE_TIMES") = null
+                return
+            scaly_eputs "phase "
+            scaly_eputs phase_name
+            scaly_eputs " "
+            scaly_eputi(scaly_eio_now_ns())
+            scaly_eputnl()
         }
 
         ; A scalar global's initializer in the global's OWN type. A literal folds

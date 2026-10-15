@@ -571,6 +571,16 @@ define tool
             {
                 let obj_page Page.get(objects)
                 objects.add(String^obj_page("`base`.o"))
+                ; its further parts, when it was code-generated in parts
+                var part: size_t 1
+                repeat
+                {
+                    let part_obj "`base`.p`part`.o"
+                    if File.exists(part_obj) = false
+                        break
+                    objects.add(String^obj_page(part_obj))
+                    part := part + 1
+                }
             }
             if tool.native_objects(dir, &files, triple, base, given_triple, includes, objects) = false
                 return false
@@ -684,6 +694,7 @@ define tool
         {
             o.opt_level := 2
             o.library := true
+            o.code_parts := true
         }
         var root_for_deps String(root)
         var home tool.interface_wanted(name, version, dir, &files, root_for_deps, selection)
@@ -692,6 +703,18 @@ define tool
             o.interface_dir := "`home_tmp`/interface"
         if cli.run(o) <> 0
             return false
+        ; the further parts of a large object (Parts.write_parts#) before the
+        ; object itself, which says the package is there
+        var part: size_t 1
+        repeat
+        {
+            var part_tmp "`tmp`.p`part`"
+            if File.exists(part_tmp) = false
+                break
+            var part_final "`base`.p`part`.o"
+            tool.publish(part_tmp, part_final)
+            part := part + 1
+        }
         tool.publish(tmp, compiled)
         if home.get_length() > 0
             tool.publish(home_tmp, home)

@@ -885,6 +885,22 @@ procedure LLVMDisposeMemoryBuffer(buf: LLVMMemoryBufferRef) extern
 function LLVMWriteBitcodeToMemoryBuffer(mod: LLVMModuleRef) returns LLVMMemoryBufferRef extern
 function LLVMGetBufferStart(buf: LLVMMemoryBufferRef) returns pointer[const_char] extern
 function LLVMGetBufferSize(buf: LLVMMemoryBufferRef) returns size_t extern
+;
+; a module cut into parts that are code-generated side by side (Parts.scaly):
+; a definition turned into a declaration, a module's other pieces read and
+; removed
+function LLVMGetVisibility(global: LLVMValueRef) returns i32 extern
+function LLVMGetDLLStorageClass(global: LLVMValueRef) returns i32 extern
+function LLVMGetFunctionCallConv(func: LLVMValueRef) returns u32 extern
+procedure LLVMGetAttributesAtIndex(func: LLVMValueRef, idx: u32, attrs: pointer[LLVMAttributeRef]) extern
+procedure LLVMReplaceAllUsesWith(old_val: LLVMValueRef, new_val: LLVMValueRef) extern
+procedure LLVMDeleteFunction(func: LLVMValueRef) extern
+procedure LLVMDeleteGlobal(global_var: LLVMValueRef) extern
+function LLVMGetFirstGlobalAlias(mod: LLVMModuleRef) returns LLVMValueRef extern
+function LLVMGetFirstGlobalIFunc(mod: LLVMModuleRef) returns LLVMValueRef extern
+function LLVMGetModuleInlineAsm(mod: LLVMModuleRef, len: pointer[size_t]) returns pointer[const_char] extern
+procedure LLVMSetModuleInlineAsm2(mod: LLVMModuleRef, asm_text: pointer[const_char], len: size_t) extern
+function LLVMGetTarget(mod: LLVMModuleRef) returns pointer[const_char] extern
 ; `scaly build --release`: a package's cached bitcode read into the program's
 ; context (LLVMBool, 0 = success; the buffer stays the caller's), and linked
 ; into the program's module (LLVMBool, 0 = success; `src` is consumed)

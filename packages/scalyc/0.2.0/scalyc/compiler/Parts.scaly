@@ -1,0 +1,479 @@
+; Parts.scaly - the code generation of a large module in parts, side by side
+;
+; `scaly build` compiles a package into an object of the build cache
+; (tool.compile_package#). For a large package the code generation after the
+; optimisation is half of that time, and LLVM does it on one thread (tscaly:
+; 16 of 30 s). Here the OPTIMISED module is cut into parts that are
+; code-generated at once, each in a process of its own: this program started
+; again in worker mode (scaly_proc_spawn_self, the mechanism of the scalyls
+; worker) -- an LLVM context belongs to one thread, and a process keeps a
+; part's memory to itself. The optimisation stays one pass over the whole
+; module, so inlining across the parts is what it was.
+;
+; How a module is cut (the LLVM C API has no SplitModule):
+;   * every definition of a LOCAL linkage becomes a hidden global under a name
+;     of its own, `<name>.<tag>` -- the tag a hash of what is compiled, so that
+;     two packages' `.str.5` stay two symbols at the link (promote_locals#);
+;   * the function definitions are dealt out in module order, a run of them to
+;     a part, by their instruction counts (assign#); every global variable,
+;     the `llvm.*` globals and the module's inline assembly belong to part 0;
+;   * a part keeps its own definitions and makes every other one a
+;     declaration (keep_part#).
+; The parent writes the module once as bitcode, starts a worker for every
+; part but the first, emits part 0 itself and waits. A worker reads the
+; bitcode, deals the functions out the same way and emits its part.
+;
+; The number of parts follows from the module alone (PART_INSTRUCTIONS, at
+; most MAX_PARTS), never from the machine, so the objects are the same on
+; every machine. Only the package objects of a DEBUG build are cut
+; (Options.code_parts): parts cost a program 1-2 % of its speed (measured on
+; tscaly), and a release build's program is one module on purpose.
+
+use scaly.containers.String
+use scaly.memory.runtime.read
+use scaly.memory.runtime.write
+use scaly.memory.runtime.unlink
+use scaly.memory.root_pages.getenv
+use scalyc.compiler.LLVM.*
+use scalyc.compiler.Modeler
+
+; the process primitives (scaly/fiber/eio.c and eio_windows.c say what each
+; one promises)
+procedure scaly_proc_spawn_self(mode: pointer[const_char], mutable out_pid: pointer[i64], mutable out_write_fd: pointer[i32], mutable out_read_fd: pointer[i32]) returns i32 extern
+procedure scaly_proc_worker_fds(argc: int, argv: pointer[pointer[char]], mode: pointer[const_char], mutable in_fd: pointer[i32], mutable out_fd: pointer[i32]) returns i32 extern
+procedure scaly_proc_reap(pid: i64) returns i32 extern
+function close(fd: int) returns i32 extern
+
+; instructions a part is given; a module with fewer is not cut.
+; SCALYC_PART_INSTRUCTIONS sets another size (tests/tool: the standard
+; library cut into parts)
+define PART_INSTRUCTIONS size_t 150000
+define MAX_PARTS size_t 8
+
+; a worker started for a part: its process and the end its answer comes on
+define PartWorker
+(
+    pid: i64
+    answer_fd: i32
+)
+
+define Parts
+{
+    ; the instructions of a function's body
+    procedure instructions(mutable f: LLVMValueRef) returns size_t
+    {
+        var n: size_t 0
+        var bb LLVMGetFirstBasicBlock(f)
+        while bb <> null
+        {
+            var inst LLVMGetFirstInstruction(bb)
+            while inst <> null
+            {
+                n := n + 1
+                inst := LLVMGetNextInstruction(inst)
+            }
+            bb := LLVMGetNextBasicBlock(bb)
+        }
+        n
+    }
+
+    ; how many parts the module is cut into: 1 for a module that is not cut,
+    ; and for one that holds an alias or an ifunc (what it names would have
+    ; to stay in its part)
+    procedure part_count(mutable m: LLVMModuleRef) returns size_t
+    {
+        if LLVMGetFirstGlobalAlias(m) <> null or LLVMGetFirstGlobalIFunc(m) <> null
+            return 1
+        var total: size_t 0
+        var f LLVMGetFirstFunction(m)
+        while f <> null
+        {
+            if LLVMIsDeclaration(f) = 0
+                total := total + Parts.instructions(f)
+            f := LLVMGetNextFunction(f)
+        }
+        var size PART_INSTRUCTIONS
+        let asked getenv("SCALYC_PART_INSTRUCTIONS")
+        if asked <> null
+        {
+            let given Parts.number_of(String(asked))
+            if given > 0
+                size := given
+        }
+        var parts total / size
+        if parts < 1
+            parts := 1
+        if parts > MAX_PARTS
+            parts := MAX_PARTS
+        parts
+    }
+
+    ; the part of every function definition, in module order: a run of them a
+    ; part, by their instruction counts
+    procedure assign(mutable m: LLVMModuleRef, parts: size_t, mutable owner: ref[Array[size_t]])
+    {
+        var counts Array[size_t]()
+        var total: size_t 0
+        var f LLVMGetFirstFunction(m)
+        while f <> null
+        {
+            if LLVMIsDeclaration(f) = 0
+            {
+                let n Parts.instructions(f)
+                counts.add(n)
+                total := total + n
+            }
+            f := LLVMGetNextFunction(f)
+        }
+        var before: size_t 0
+        var i: size_t 0
+        while i < counts.length
+        {
+            owner.add((before * parts) / (total + 1))
+            before := before + counts[i]
+            i := i + 1
+        }
+    }
+
+    ; FNV-1a-64 of a text, as sixteen hex digits
+    function tag_of(text: String) returns String
+        Modeler.hex16(Modeler.fnv_string(0xcbf29ce484222325, text))
+
+    ; a definition of a local linkage made a hidden global of a name of its own
+    procedure promote(mutable v: LLVMValueRef, tag: String, mutable anonymous: ref[size_t])
+    {
+        if LLVMIsDeclaration(v) <> 0
+            return
+        let linkage LLVMGetLinkage(v)
+        if linkage <> LLVMLinkage.Internal() and linkage <> LLVMLinkage.Private()
+            return
+        var name_len: size_t 0
+        let name_ptr LLVMGetValueName2(v, &name_len)
+        var name String()
+        if name_len > 0
+            name := String(name_ptr as pointer[const_char], name_len)
+        else
+        {
+            name := "scaly.anon.`anonymous`"
+            anonymous := anonymous + 1
+        }
+        let renamed "`name`.`tag`"
+        LLVMSetValueName2(v, renamed.to_c_string(), renamed.get_length())
+        LLVMSetLinkage(v, LLVMLinkage.External())
+        LLVMSetVisibility(v, 1)
+    }
+
+    ; before the module is cut: every local definition a hidden global (a
+    ; part refers to what another part defines), named with `tag`
+    procedure promote_locals(mutable m: LLVMModuleRef, tag: String)
+    {
+        var anonymous: size_t 0
+        var f LLVMGetFirstFunction(m)
+        while f <> null
+        {
+            Parts.promote(f, tag, &anonymous)
+            f := LLVMGetNextFunction(f)
+        }
+        var g LLVMGetFirstGlobal(m)
+        while g <> null
+        {
+            Parts.promote(g, tag, &anonymous)
+            g := LLVMGetNextGlobal(g)
+        }
+    }
+
+    ; the attributes at one index (return 0, a parameter 1.., the function
+    ; 0xFFFFFFFF) copied to another function
+    procedure copy_attributes_at(mutable from: LLVMValueRef, mutable to: LLVMValueRef, idx: u32)
+    {
+        let n LLVMGetAttributeCountAtIndex(from, idx)
+        if n = 0
+            return
+        var attrs Vector[LLVMAttributeRef](n as size_t)
+        LLVMGetAttributesAtIndex(from, idx, attrs.data)
+        var i: size_t 0
+        while i < n as size_t
+        {
+            let a attrs.get i
+            if a <> null
+                LLVMAddAttributeAtIndex(to, idx, *a)
+            i := i + 1
+        }
+    }
+
+    ; a function another part defines: a declaration of the same name, type,
+    ; calling convention, visibility and attributes takes its place
+    procedure declare_function(mutable m: LLVMModuleRef, mutable f: LLVMValueRef)
+    {
+        var name_len: size_t 0
+        let name_ptr LLVMGetValueName2(f, &name_len)
+        let name String(name_ptr as pointer[const_char], name_len)
+        let fn_type LLVMGlobalGetValueType(f)
+        LLVMSetValueName2(f, "" as pointer[const_char], 0)
+        let decl LLVMAddFunction(m, name.to_c_string(), fn_type)
+        LLVMSetFunctionCallConv(decl, LLVMGetFunctionCallConv(f))
+        LLVMSetVisibility(decl, LLVMGetVisibility(f))
+        LLVMSetDLLStorageClass(decl, LLVMGetDLLStorageClass(f))
+        Parts.copy_attributes_at(f, decl, 0xFFFFFFFF)
+        let params LLVMCountParams(f)
+        var idx: u32 0
+        while idx <= params
+        {
+            Parts.copy_attributes_at(f, decl, idx)
+            idx := idx + 1
+        }
+        LLVMReplaceAllUsesWith(f, decl)
+        LLVMDeleteFunction(f)
+    }
+
+    ; the part `part` of the module: its own function definitions stay,
+    ; every other one becomes a declaration; beyond part 0 the global
+    ; variables become declarations too, the `llvm.*` globals and the inline
+    ; assembly go
+    procedure keep_part(mutable m: LLVMModuleRef, owner: ref[Array[size_t]], part: size_t)
+    {
+        var others Array[LLVMValueRef]()
+        var index: size_t 0
+        var f LLVMGetFirstFunction(m)
+        while f <> null
+        {
+            if LLVMIsDeclaration(f) = 0
+            {
+                if owner[index] <> part
+                    others.add(f)
+                index := index + 1
+            }
+            f := LLVMGetNextFunction(f)
+        }
+        var i: size_t 0
+        while i < others.length
+        {
+            Parts.declare_function(m, others[i])
+            i := i + 1
+        }
+        if part = 0
+            return
+        var gone Array[LLVMValueRef]()
+        var g LLVMGetFirstGlobal(m)
+        while g <> null
+        {
+            var name_len: size_t 0
+            let name_ptr LLVMGetValueName2(g, &name_len)
+            if name_len > 5 and String(name_ptr as pointer[const_char], 5).equals("llvm.")
+                gone.add(g)
+            else if LLVMIsDeclaration(g) = 0
+            {
+                LLVMSetInitializer(g, null as LLVMValueRef)
+                LLVMSetLinkage(g, LLVMLinkage.External())
+                LLVMSetComdat(g, null as LLVMComdatRef)
+            }
+            g := LLVMGetNextGlobal(g)
+        }
+        i := 0
+        while i < gone.length
+        {
+            LLVMDeleteGlobal(gone[i])
+            i := i + 1
+        }
+        var asm_len: size_t 0
+        LLVMGetModuleInlineAsm(m, &asm_len)
+        if asm_len > 0
+            LLVMSetModuleInlineAsm2(m, "" as pointer[const_char], 0)
+    }
+
+    ; the target machine of a part, as Emitter.create_target_machine# makes it
+    procedure target_machine(mutable target: LLVMTargetRef, mutable triple: pointer[const_char], mutable cpu: String, level: int) returns LLVMTargetMachineRef
+    {
+        if cpu.get_length() = 0
+            return LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "" as pointer[const_char], level as i32, 2, 0)
+        if cpu = "native"
+        {
+            let host_cpu LLVMGetHostCPUName()
+            let host_features LLVMGetHostCPUFeatures()
+            let tm LLVMCreateTargetMachine(target, triple, host_cpu as pointer[const_char], host_features as pointer[const_char], level as i32, 2, 0)
+            LLVMDisposeMessage host_cpu
+            LLVMDisposeMessage host_features
+            return tm
+        }
+        LLVMCreateTargetMachine(target, triple, cpu.to_c_string(), "" as pointer[const_char], level as i32, 2, 0)
+    }
+
+    ; a worker's work: the part `part` of `parts` out of the bitcode, emitted
+    ; as an object
+    procedure emit_part(mutable bitcode: String, part: size_t, parts: size_t, mutable output: String, mutable cpu: String, level: int) returns bool
+    {
+        LLVMInitializeAArch64TargetInfo()
+        LLVMInitializeAArch64Target()
+        LLVMInitializeAArch64TargetMC()
+        LLVMInitializeAArch64AsmPrinter()
+        LLVMInitializeX86TargetInfo()
+        LLVMInitializeX86Target()
+        LLVMInitializeX86TargetMC()
+        LLVMInitializeX86AsmPrinter()
+        let context LLVMContextCreate()
+        var buf: LLVMMemoryBufferRef null
+        if LLVMCreateMemoryBufferWithContentsOfFile(bitcode.to_c_string(), &buf, null as pointer[pointer[char]]) <> 0
+            return false
+        var m: LLVMModuleRef null
+        let parse_failed LLVMParseBitcodeInContext2(context, buf, &m)
+        LLVMDisposeMemoryBuffer(buf)
+        if parse_failed <> 0
+            return false
+        var owner Array[size_t]()
+        Parts.assign(m, parts, &owner)
+        Parts.keep_part(m, &owner, part)
+        let triple LLVMGetTarget(m)
+        var target: LLVMTargetRef null
+        if LLVMGetTargetFromTriple(triple, &target, null as pointer[pointer[char]]) <> 0
+            return false
+        let tm Parts.target_machine(target, triple, cpu, level)
+        if tm = null
+            return false
+        let emit_err LLVMTargetMachineEmitToFile(tm, m, output.to_c_string(), 1, null as pointer[pointer[char]])
+        LLVMDisposeTargetMachine tm
+        LLVMDisposeModule m
+        LLVMContextDispose context
+        emit_err = 0
+    }
+
+    ; everything a descriptor gives until its end, as text (a request or an
+    ; answer: a few lines)
+    procedure read_all(fd: i32) returns String
+    {
+        var buffer char[8192]
+        var used: size_t 0
+        while used < 8191
+        {
+            let n read(fd as int, (&buffer[0] as size_t + used) as pointer[void], 8191 - used)
+            if n = 0 or n > 8191
+                break
+            used := used + n
+        }
+        String(&buffer[0] as pointer[const_char], used)
+    }
+
+    procedure write_all(fd: i32, text: String)
+    {
+        var done: size_t 0
+        let len text.get_length()
+        while done < len
+        {
+            let n write(fd as int, (text.get_buffer() as size_t + done) as pointer[void], len - done)
+            if n = 0 or n > len - done
+                return
+            done := done + n
+        }
+    }
+
+    ; the line `index` of a text (counted from 0), without its line end
+    function line_of(text: String, index: size_t) returns String
+    {
+        var start: size_t 0
+        var k: size_t 0
+        while k < index
+        {
+            let nl text.index_of(10, start)
+            if nl < 0
+                return String()
+            start := (nl + 1) as size_t
+            k := k + 1
+        }
+        let end text.index_of(10, start)
+        if end < 0
+            return text.substring(start, text.get_length() - start)
+        text.substring(start, (end as size_t) - start)
+    }
+
+    function number_of(text: String) returns size_t
+    {
+        var n: size_t 0
+        var i: size_t 0
+        while i < text.get_length()
+        {
+            let c text.get(i)
+            if c >= 48 and c <= 57
+                n := n * 10 + ((c - 48) as size_t)
+            i := i + 1
+        }
+        n
+    }
+
+    ; When this process is a worker started for a part: read the request,
+    ; emit the part, answer `0` (done) or `1`, and return what the process
+    ; ends with. -1 when it is not a worker. The request, one field a line:
+    ; the bitcode, the part, the parts, the object to write, the cpu, the
+    ; level of the code generation.
+    procedure run_if_worker(argc: int, argv: pointer[pointer[char]]) returns int
+    {
+        var in_fd: i32 0
+        var out_fd: i32 0
+        if scaly_proc_worker_fds(argc, argv, "--scalyc-part", &in_fd as pointer[i32], &out_fd as pointer[i32]) = 0
+            return -1
+        let request Parts.read_all(in_fd)
+        close(in_fd as int)
+        let ok Parts.emit_part(Parts.line_of(request, 0), Parts.number_of(Parts.line_of(request, 1)), Parts.number_of(Parts.line_of(request, 2)), Parts.line_of(request, 3), Parts.line_of(request, 4), Parts.number_of(Parts.line_of(request, 5)) as int)
+        if ok
+            Parts.write_all(out_fd, String("0\n"))
+        else
+            Parts.write_all(out_fd, String("1\n"))
+        close(out_fd as int)
+        if ok
+            return 0
+        1
+    }
+
+    ; a worker started for the part `part`; a pid of 0 when it could not be
+    procedure start(bitcode: String, part: size_t, parts: size_t, output: String, cpu: String, level: int) returns PartWorker
+    {
+        var pid: i64 0
+        var to_worker: i32 0
+        var from_worker: i32 0
+        if scaly_proc_spawn_self("--scalyc-part", &pid as pointer[i64], &to_worker as pointer[i32], &from_worker as pointer[i32]) <> 0
+            return PartWorker(0, 0)
+        Parts.write_all(to_worker, "`bitcode`\n`part`\n`parts`\n`output`\n`cpu`\n`level`\n")
+        close(to_worker as int)
+        PartWorker(pid, from_worker)
+    }
+
+    ; the worker's answer, waited for; true when it wrote its part
+    procedure finish(w: PartWorker) returns bool
+    {
+        if w.pid = 0
+            return false
+        let answer Parts.read_all(w.answer_fd)
+        close(w.answer_fd as int)
+        scaly_proc_reap(w.pid)
+        answer.starts_with("0")
+    }
+
+    ; the module, optimised, written as `parts` objects: part 0 to `output`
+    ; with `tm` in this process, part k to `<output>.p<k>` by a worker each.
+    ; False when a part was not written; the module is cut either way.
+    procedure write_parts(mutable m: LLVMModuleRef, mutable tm: LLVMTargetMachineRef, mutable output: String, parts: size_t, tag: String, cpu: String, level: int) returns bool
+    {
+        Parts.promote_locals(m, Parts.tag_of(tag))
+        var owner Array[size_t]()
+        Parts.assign(m, parts, &owner)
+        let bitcode "`output`.parts.bc"
+        if LLVMWriteBitcodeToFile(m, bitcode.to_c_string()) <> 0
+            return false
+        var workers Array[PartWorker]()
+        var k: size_t 1
+        while k < parts
+        {
+            workers.add(Parts.start(bitcode, k, parts, "`output`.p`k`", cpu, level))
+            k := k + 1
+        }
+        Parts.keep_part(m, &owner, 0)
+        var ok LLVMTargetMachineEmitToFile(tm, m, output.to_c_string(), 1, null as pointer[pointer[char]]) = 0
+        var i: size_t 0
+        while i < workers.length
+        {
+            if Parts.finish(workers[i]) = false
+                ok := false
+            i := i + 1
+        }
+        unlink(bitcode.to_c_string())
+        ok
+    }
+}
