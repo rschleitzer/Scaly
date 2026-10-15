@@ -2632,7 +2632,7 @@ define cli
             if build_opts.has_input() and tool.fetch_declared(String(build_opts.input_file), &build_seen) = false
                 return 1
             if build_opts.has_input()
-                tool.prepare_interfaces(String(build_opts.input_file))
+                tool.prepare_packages(String(build_opts.input_file), true, build_opts.target_triple, build_opts.target_cpu, build_opts.release)
             if build_opts.output_file.get_length() = 0 and build_opts.has_input()
                 build_opts.output_file := cli.extract_program_name(build_opts.input_file)
             return cli.run(build_opts)

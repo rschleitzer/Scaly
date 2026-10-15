@@ -547,98 +547,127 @@ define tool
             if slash < 0
                 continue
             let dir root.substring(0, slash as size_t)
-            let vslash dir.last_index_of(47)
-            var version String("0")
-            if vslash >= 0
-                version := dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
             var files Array[String]()
             tool.package_files(dir, "", &files)
-            ; -mcpu is part of what a package is compiled for: it reaches the
-            ; IR (a SIMD operation's target form, every function's attribute)
-            var root_for_deps String(root)
-            let key tool.package_key(dir, &files, triple, "O2`cpu``tool.dependency_versions(root_for_deps, selection)`")
-            let base "`cache`/`np`-`version`-`tool.hex16(key)`"
-            let obj "`base`.o"
+            let base tool.package_base(np, root, triple, cpu, selection)
             ; what the package defines, written by whichever build comes first
             ; (check_definitions# below)
-            let defs "`base`.defs"
             def_owners.add(String(np))
-            def_files.add(String(defs))
+            def_files.add("`base`.defs")
+            if tool.compile_package(np, root, given_triple, cpu, release, selection) = false
+            {
+                Console.println("Error: package `np` did not build")
+                return false
+            }
             ; --release: the package as unoptimised bitcode, which the program's
             ; module takes in whole (Emitter.link_bitcode#); its C and assembly
             ; stay objects
             if release
             {
-                let bc "`base`.bc"
-                if File.exists(bc) = false or File.exists(defs) = false
-                {
-                    let btmp "`bc`.`getpid() as int`.tmp"
-                    var bo Options()
-                    bo.input_file := String(root)
-                    bo.output_file := String(btmp)
-                    bo.compile_only := true
-                    bo.bitcode := true
-                    bo.defs_file := String(defs)
-                    bo.selected_versions := String(selection)
-                    bo.no_prelude := true
-                    bo.no_tests := true
-                    bo.target_triple := String(given_triple)
-                    bo.target_cpu := String(cpu)
-                    var bi_dir String(dir)
-                    var bi_home tool.interface_wanted(np, version, bi_dir, &files, root_for_deps, selection)
-                    var bi_tmp "`bi_home`.`getpid() as int`.tmp"
-                    if bi_home.get_length() > 0
-                        bo.interface_dir := "`bi_tmp`/interface"
-                    if cli.run(bo) <> 0
-                    {
-                        Console.println("Error: package `np` did not build")
-                        return false
-                    }
-                    tool.publish(btmp, bc)
-                    if bi_home.get_length() > 0
-                        tool.publish(bi_tmp, bi_home)
-                }
                 let bc_page Page.get(bitcode)
-                bitcode.add(String^bc_page(bc))
-                if tool.native_objects(dir, &files, triple, base, given_triple, includes, objects) = false
-                    return false
-                continue
+                bitcode.add(String^bc_page("`base`.bc"))
             }
-            if File.exists(obj) = false or File.exists(defs) = false
+            else
             {
-                let tmp "`obj`.`getpid() as int`.tmp"
-                var o Options()
-                o.defs_file := String(defs)
-                o.selected_versions := String(selection)
-                o.input_file := String(root)
-                o.output_file := String(tmp)
-                o.compile_only := true
-                o.no_prelude := true
-                o.no_tests := true
-                o.opt_level := 2
-                o.library := true
-                o.target_triple := String(given_triple)
-                o.target_cpu := String(cpu)
-                var oi_dir String(dir)
-                var oi_home tool.interface_wanted(np, version, oi_dir, &files, root_for_deps, selection)
-                var oi_tmp "`oi_home`.`getpid() as int`.tmp"
-                if oi_home.get_length() > 0
-                    o.interface_dir := "`oi_tmp`/interface"
-                if cli.run(o) <> 0
-                {
-                    Console.println("Error: package `np` did not build")
-                    return false
-                }
-                tool.publish(tmp, obj)
-                if oi_home.get_length() > 0
-                    tool.publish(oi_tmp, oi_home)
+                let obj_page Page.get(objects)
+                objects.add(String^obj_page("`base`.o"))
             }
-            let obj_page Page.get(objects)
-            objects.add(String^obj_page(obj))
             if tool.native_objects(dir, &files, triple, base, given_triple, includes, objects) = false
                 return false
         }
         tool.check_definitions(&def_owners, &def_files)
+    }
+
+    ; where a package compiled for this build lies in the cache, without the
+    ; extension: `<cache>/<name>-<version>-<key>`
+    procedure package_base(name: String, root: String, triple: String, cpu: String, selection: String) returns String
+    {
+        let slash root.last_index_of(47)
+        var dir String(root)
+        if slash >= 0
+            dir := root.substring(0, slash as size_t)
+        let vslash dir.last_index_of(47)
+        var version String("0")
+        if vslash >= 0
+            version := dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
+        var files Array[String]()
+        tool.package_files(dir, "", &files)
+        ; -mcpu is part of what a package is compiled for: it reaches the
+        ; IR (a SIMD operation's target form, every function's attribute)
+        var root_for_deps String(root)
+        let key tool.package_key(dir, &files, triple, "O2`cpu``tool.dependency_versions(root_for_deps, selection)`")
+        "`tool.cache_root()`/`name`-`version`-`tool.hex16(key)`"
+    }
+
+    ; whether the cache holds the package as this build takes it: its
+    ; bitcode (--release) or its object, and what it defines
+    procedure package_compiled(name: String, root: String, given_triple: String, cpu: String, release: bool, selection: String) returns bool
+    {
+        let base tool.package_base(name, root, tool.target_triple(given_triple), cpu, selection)
+        var compiled "`base`.o"
+        if release
+            compiled := "`base`.bc"
+        File.exists(compiled) and File.exists("`base`.defs")
+    }
+
+    ; The package into the cache unless it is there already (package_compiled#):
+    ; with --release as unoptimised bitcode, else as an object, and what it
+    ; defines beside it. A package whose interface the cache lacks writes it
+    ; in the same compiler run (Options.interface_dir). False when it did not
+    ; compile.
+    procedure compile_package(name: String, root: String, given_triple: String, cpu: String, release: bool, selection: String) returns bool mutable modeler_error_count
+    {
+        if tool.package_compiled(name, root, given_triple, cpu, release, selection)
+            return true
+        var cache tool.cache_root()
+        if tool.ensure_directory(cache) = false
+        {
+            Console.println("Error: cannot create the build cache `cache`")
+            return false
+        }
+        let base tool.package_base(name, root, tool.target_triple(given_triple), cpu, selection)
+        let slash root.last_index_of(47)
+        var dir String(root)
+        if slash >= 0
+            dir := root.substring(0, slash as size_t)
+        let vslash dir.last_index_of(47)
+        var version String("0")
+        if vslash >= 0
+            version := dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
+        var files Array[String]()
+        tool.package_files(dir, "", &files)
+        var compiled "`base`.o"
+        if release
+            compiled := "`base`.bc"
+        let tmp "`compiled`.`getpid() as int`.tmp"
+        var o Options()
+        o.input_file := String(root)
+        o.output_file := String(tmp)
+        o.compile_only := true
+        o.defs_file := "`base`.defs"
+        o.selected_versions := String(selection)
+        o.no_prelude := true
+        o.no_tests := true
+        o.target_triple := String(given_triple)
+        o.target_cpu := String(cpu)
+        if release
+            o.bitcode := true
+        else
+        {
+            o.opt_level := 2
+            o.library := true
+        }
+        var root_for_deps String(root)
+        var home tool.interface_wanted(name, version, dir, &files, root_for_deps, selection)
+        var home_tmp "`home`.`getpid() as int`.tmp"
+        if home.get_length() > 0
+            o.interface_dir := "`home_tmp`/interface"
+        if cli.run(o) <> 0
+            return false
+        tool.publish(tmp, compiled)
+        if home.get_length() > 0
+            tool.publish(home_tmp, home)
+        true
     }
 
     ; the C and assembly files of a package this target takes, each compiled
@@ -1518,6 +1547,16 @@ define tool
     ; routine's result reaches, WriteCensus.declared_reach#) -- a program
     ; would be refused on its first build and taken on its second.
     procedure prepare_interfaces(mutable root_file: String) mutable modeler_error_count
+        tool.prepare_packages(root_file, false, String(), String(), false)
+
+    ; prepare_interfaces# for `scaly build` (`build`): a package without its
+    ; interface that the build will compile as well is compiled NOW, and the
+    ; same compiler run writes the interface (compile_package#) -- planning a
+    ; package once for the interface and again for the code cost the time
+    ; of a whole plan (9 s of 47 for a package of 300 000 lines). Only a
+    ; package already compiled without its interface is planned for the
+    ; interface alone.
+    procedure prepare_packages(mutable root_file: String, build: bool, given_triple: String, cpu: String, release: bool) mutable modeler_error_count
     {
         setenv("SCALY_PACKAGE_SUMS", "", 1)
         let selection Modeler.select_versions(root_file, false)
@@ -1548,6 +1587,12 @@ define tool
             tool.package_files(dir, "", &files)
             if tool.interface_wanted(name, versions.at(i), dir, &files, root, selection).get_length() > 0
             {
+                if build and tool.package_compiled(name, root, given_triple, cpu, release, selection) = false
+                {
+                    tool.compile_package(name, root, given_triple, cpu, release, selection)
+                    i := i + 1
+                    continue
+                }
                 var o Options()
                 o.input_file := String(root)
                 o.emit_interface := true
