@@ -1,0 +1,30 @@
+; Regression (2026-10-15): `add` on an array of SCALARS copies its elements
+; and keeps no reference -- also when the array is held behind a `ref` (a
+; parameter `ref[Array[u8]]`, a field `ref[Array[u8]]` on a page). The rule
+; that exempts such a receiver read the reference's ONE type argument
+; (`Array[u8]`, no scalar) instead of the array's, so `put` below counted as
+; keeping `s` in `out`, and a caller handing it a view of its own local was
+; refused ("escapes via call"). Its twin xfail_add_keeps_through_ref.scaly is
+; the array of SLICES, whose `add` keeps the view and stays refused.
+; Expected: PASS
+use scaly.containers.String
+
+define Fill
+{
+    procedure put(mutable out: ref[Array[u8]], s: Slice[u8])
+        out.add(s)
+
+    procedure fill(mutable dest: ref[Array[u8]]) returns size_t
+    {
+        let local String("bytes")
+        Fill.put(dest, local.as_slice())
+        dest.length
+    }
+}
+
+var into Array[u8]()
+let n Fill.fill(&into)
+if n = 5 and into[0] = 98 and into[4] = 115
+    print "PASS"
+else
+    print "FAIL"

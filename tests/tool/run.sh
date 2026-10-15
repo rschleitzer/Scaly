@@ -12,6 +12,9 @@
 #   dependent  a record changed in a local package under the same version:
 #              the package using it is compiled again (its key holds what
 #              its dependencies are, not only their versions)
+#   returned   a routine of another package hands back its argument and a
+#              method keeps the result: a local argument is refused, a fresh
+#              copy is not (the interface's `@ret_reach_N`)
 #   run        the same program through `scaly run`, arguments handed on;
 #              tests/tool/globals.scaly, whose narrow constants aborted the JIT
 #   native     the cache holds the C and assembly files THIS target takes,
@@ -241,6 +244,27 @@ printf 'package scaly 0.1.0\ndefine lower\n{\n    define Pair(z: int, a: int, b:
 ( cd "$TMP/dep" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "dep2$SCALY_EXE" > build2.log 2>&1 )
 out1=$("$TMP/dep/dep1$SCALY_EXE" 2>&1); out2=$("$TMP/dep/dep2$SCALY_EXE" 2>&1)
 [ "$out1" = 11 ] && [ "$out2" = 11 ] && ok || bad "dependent: got '$out1' and '$out2' $(tail -2 "$TMP/dep/build2.log" | tr '\n' ' ')"
+
+# returned: a routine of another package that hands back an argument, kept by
+# a method -- a local argument is refused (`@ret_reach_N` of the interface),
+# a fresh copy is not. Before 2026-10-15 a linked routine counted as handing
+# back whatever the routine scanned before it did, and the local was kept
+mkdir -p "$TMP/ret/packages/lower/0.1.0" "$TMP/ret/packages/upper/0.1.0"
+printf 'package scaly 0.1.0\nuse scaly.memory.Page\ndefine Paths\n{\n    function pick(a: Slice[char], b: Slice[char]) returns Slice[char]\n    {\n        if b.length > 0\n            return b\n        a\n    }\n\n    function fresh(host: ref[Page], a: Slice[char], b: Slice[char]) returns Slice[char]\n    {\n        let buf Slice[char](b.length, host.allocate(b.length, 1) as pointer[char])\n        var i: size_t 0\n        while i < b.length\n        {\n            buf.put(i, b[i])\n            i := i + 1\n        }\n        buf\n    }\n}\n' > "$TMP/ret/packages/lower/0.1.0/lower.scaly"
+printf 'package scaly 0.1.0\npackage upper 0.1.0\nuse scaly.memory.Page\nuse scaly.containers.String\nuse upper.Keeper\nuse upper.Use\nprocedure main() returns int io\n{\n    let anchor String("probe")\n    let host Page.get(anchor.get_buffer())\n    let k &Keeper^host(host, Slice[char]())\n    print "`Use.from_local(k)` `(k.kept[0] as int)`"\n    0\n}\n' > "$TMP/ret/main.scaly"
+for call in 'Paths.pick("x", other)' 'Paths.fresh(host, "x", other)'; do
+  printf 'package scaly 0.1.0\npackage lower 0.1.0\nuse scaly.memory.Page\nuse scaly.containers.String\nuse lower.Paths\n\ndefine Keeper(host: ref[Page], var kept: Slice[char])\n{\n    procedure take(mutable this, other: Slice[char])\n        kept := %s\n}\n\ndefine Use\n{\n    procedure from_local(mutable k: ref[Keeper]) returns size_t\n    {\n        let local String("temporary")\n        k.take(local.as_slice())\n        k.kept.length\n    }\n}\n' "$call" > "$TMP/ret/packages/upper/0.1.0/upper.scaly"
+  ( cd "$TMP/ret" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "ret$SCALY_EXE" > build.log 2>&1 )
+  rc=$?
+  case "$call" in
+    Paths.pick*)
+      [ $rc != 0 ] && grep -q 'escapes via call' "$TMP/ret/build.log" && ok \
+        || bad "returned: a kept argument of another package's routine was not refused (rc=$rc)" ;;
+    *)
+      out=$("$TMP/ret/ret$SCALY_EXE" 2>&1)
+      [ $rc = 0 ] && [ "$out" = "9 116" ] && ok || bad "returned: the fresh copy: rc=$rc '$out'" ;;
+  esac
+done
 
 # run
 if scaly_jit_available 2>/dev/null; then

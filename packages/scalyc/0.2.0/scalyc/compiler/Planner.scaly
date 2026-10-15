@@ -582,6 +582,10 @@ define Planner
         ; `Slice[char]`, `Vector[u8]`) — what is stored through or into it
         ; carries no reference
         persist_pelem_scalar: Array[bool]
+        ; per parameter: its `add`/`put` copies (an array of scalars, by value
+        ; or behind a `ref`, Planner.container_elem_scalar#) -- for that rule
+        ; alone: `*out := a` through a `ref[Array[u8]]` keeps a's buffer
+        persist_padd_copies: Array[bool]
         ; locals that ALIAS a parameter's guts (`let a this.need_aux()`,
         ; `let e p.entry`): a store into them lands in that parameter
         persist_alias_names: Array[String]
@@ -620,6 +624,7 @@ define Planner
                 persist_twhole := Array[u64]^this()
                 persist_last_whole := 0
                 persist_pelem_scalar := Array[bool]^this()
+                persist_padd_copies := Array[bool]^this()
                 persist_alias_names := Array[String]^this()
                 persist_alias_dest := Array[int]^this()
                 persist_masked := false
@@ -39280,6 +39285,33 @@ define Planner
                 gate.deep_persist_mask := 0
                 gate.deep_this_mask := 0
                 gate.deep_whole_mask := 0
+                ; what the result hands back of the arguments: the census's
+                ; verdict with the body in hand (`@ret_reach_N`, N the mask of
+                ; the inputs, `this` bit 0), every input where the interface
+                ; says nothing. Set here, not left: these were the PREVIOUS
+                ; body's (the reset below comes after this branch), so a
+                ; routine of another package counted as handing back whatever
+                ; the routine scanned before it did -- every argument of
+                ; tspath's get_normalized_absolute_path, which hands back none
+                ; (tscaly cut into two packages, 2026-10-15), and nothing
+                ; where it was one that hands one back
+                persistence.persist_ret_hit := false
+                gate.deep_ret_mask := 0
+                gate.deep_ret_whole.cur := 0
+                ; (the interface leaves the fact out where the result reaches
+                ; every input -- of a routine without inputs, none)
+                var reach: u64 (0 as u64) - (1 as u64)
+                if f.input.length < 63
+                    reach := ((1 as u64) << (f.input.length as u64)) - (1 as u64)
+                let said Planner.linked_return_prefixed(f, "ret_reach_")
+                if said >= 0
+                    reach := said as u64
+                if reach <> (0 as u64)
+                {
+                    persistence.persist_ret_hit := true
+                    gate.deep_ret_mask := reach
+                    gate.deep_ret_whole.cur := reach
+                }
                 ; a generated interface that states the deep masks (`@deep`):
                 ; the body's own verdict, per position and destination
                 if Planner.attributes_have(f.attributes, "deep")
@@ -39318,6 +39350,7 @@ define Planner
             persistence.persist_pnames.length := 0
             persistence.persist_pconcepts.length := 0
             persistence.persist_pelem_scalar.length := 0
+            persistence.persist_padd_copies.length := 0
             persistence.persist_alias_names.length := 0
             persistence.persist_alias_dest.length := 0
             var pi: size_t 0
@@ -39350,6 +39383,9 @@ define Planner
                             }
                         persistence.persist_pconcepts.add pcn
                         var elem_scalar false
+                        ; and for `p.add(…)`/`p.put(…)` alone: an array of
+                        ; scalars behind the reference copies too
+                        var putadd_copies false
                         if (*ip).type <> null
                         {
                             let et (*ip).type
@@ -39363,8 +39399,11 @@ define Planner
                                         elem_scalar := true
                                 }
                             }
+                            if this.container_elem_scalar(et)
+                                putadd_copies := true
                         }
                         persistence.persist_pelem_scalar.add elem_scalar
+                        persistence.persist_padd_copies.add(elem_scalar or putadd_copies)
                         var scalar false
                         if elem_scalar
                             if (*ip).type <> null
@@ -39782,6 +39821,26 @@ define Planner
             String("")
         }
 
+        ; the parameter's `add`/`put` copies (persist_padd_copies)
+        function persist_param_add_copies(this: Planner, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < persistence.persist_pnames.length
+            {
+                let np persistence.persist_pnames.get i
+                if np <> null
+                    if (*np) = name
+                    {
+                        let bp persistence.persist_padd_copies.get i
+                        if bp <> null
+                            return (*bp)
+                        return false
+                    }
+                i := i + 1
+            }
+            false
+        }
+
         function persist_param_elem_scalar(this: Planner, name: String) returns bool
         {
             var i: size_t 0
@@ -39820,7 +39879,7 @@ define Planner
                 let hp name.get 0
                 if hp = null
                     return false
-                if this.persist_param_elem_scalar((*hp))
+                if this.persist_param_add_copies((*hp))
                     return true
                 if Planner.persist_names_contain(persistence.persist_pnames, (*hp))
                     return false
@@ -39879,6 +39938,38 @@ define Planner
 
         ; a property of the receiver's concept whose ONE generic is a scalar
         ; (`buffer: Array[char]`): an add or put on it copies, keeps no guts
+        ; The one type argument of a container is a scalar: its `add` and
+        ; `put` copy elements and keep no reference -- `Array[u8].add(Slice)`
+        ; copies bytes, where `Array[Slice[u8]].add(s)` keeps `s`. Held by
+        ; value or behind a `ref` (`ref[Array[u8]]`, a field or a parameter
+        ; that holds an Array on a page): read through the reference that
+        ; was not, every `out.add(s)` into such an array counted as keeping
+        ; `s`, and dazzle's `this.family_names.add(path.as_slice())` read as
+        ; an escape once the linked routines' return facts were read honestly
+        ; (2026-10-15). Behind a reference only Array and Vector, whose `add`
+        ; is the standard library's.
+        function container_elem_scalar(this: Planner, t: scalyc.compiler.Model.Type) returns bool
+        {
+            if t.generics = null
+                return false
+            let gs (*t.generics)
+            if gs.length <> 1
+                return false
+            let g0 gs.get 0
+            if g0 = null
+                return false
+            let n0 t.name.get 0
+            if t.name.length = 1 and n0 <> null and (*n0) = "ref"
+            {
+                let in0 (*g0).name.get 0
+                if (*g0).name.length = 1 and in0 <> null
+                    if (*in0) = "Array" or (*in0) = "Vector"
+                        return this.container_elem_scalar((*g0))
+                return false
+            }
+            this.rr_model_type_is_scalar((*g0), 0)
+        }
+
         function persist_this_field_elem_scalar(this: Planner, name: String) returns bool
         {
             if persistence.persist_pnames.length = 0
@@ -39911,15 +40002,7 @@ define Planner
                                 if (*prp).type <> null
                                 {
                                     let pt (*prp).type
-                                    if pt.generics = null
-                                        return false
-                                    let gs (*pt.generics)
-                                    if gs.length <> 1
-                                        return false
-                                    let g0 gs.get 0
-                                    if g0 = null
-                                        return false
-                                    return this.rr_model_type_is_scalar((*g0), 0)
+                                    return this.container_elem_scalar(pt)
                                 }
                         qi := qi + 1
                     }
@@ -41411,7 +41494,7 @@ define Planner
                                     let shn shty.name.get 0
                                     if shn <> null
                                     {
-                                        if this.persist_param_elem_scalar((*shn))
+                                        if this.persist_param_add_copies((*shn))
                                             putadd_scalar := true
                                         ; a bare field of the owner (`buffer.add(…)` on
                                         ; StringBuilder's Array[char]): chars are copied
@@ -51449,12 +51532,15 @@ define Planner
                             var gtakes false
                             if result.input <> null
                                 gplen := result.input.length
+                            ; the deep scan takes input 0 for the receiver
+                            ; whatever its name (`into dest=0` is the `this`
+                            ; mask), so what is kept there escapes only where
+                            ; argument 0 outlives the frame -- for a free
+                            ; routine too: dazzle's `add_usage_row(&rows, …)`
+                            ; filling a LOCAL array read as an escape once the
+                            ; linked routines' return facts were read honestly
                             if f.input.length > 0
-                            {
-                                let ip0 f.input.get 0
-                                if ip0 <> null and (*ip0).name <> null and (*(*ip0).name) = "this"
-                                    gtakes := true
-                            }
+                                gtakes := true
                             var gthis: u64 0
                             var gbeyond: u64 (*gst) as u64
                             var gwhole: u64 (0 as u64) - (1 as u64)

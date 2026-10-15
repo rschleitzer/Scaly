@@ -1,0 +1,24 @@
+; Regression (2026-10-15), the twin of add_copies_through_ref.scaly: `add` on
+; an array of SLICES keeps the slice itself, so a view of the caller's local
+; handed to `put` and kept in the parameter's array escapes -- behind a `ref`
+; as without one. Only an array of scalars copies.
+;
+; xfail: reference into a local page escapes via call
+
+use scaly.containers.String
+
+define Keep
+{
+    procedure put(mutable out: ref[Array[Slice[u8]]], s: Slice[u8])
+        out.add(s)
+
+    procedure fill(mutable dest: ref[Array[Slice[u8]]]) returns size_t
+    {
+        let local String("bytes")
+        Keep.put(dest, local.as_slice())
+        dest.length
+    }
+}
+
+var into Array[Slice[u8]]()
+Keep.fill(&into)
