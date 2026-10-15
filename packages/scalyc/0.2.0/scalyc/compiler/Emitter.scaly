@@ -8180,6 +8180,29 @@ define Emitter
         ; the FNV-1a-64 of the module's IR text without the lines that name
         ; the checkout or the target (stamp_line_skipped#); 0 when the text
         ; cannot be had
+        ; FNV-1a-64 of the module as bitcode: with the packages' bitcode and
+        ; the settings, the key under which `scaly build --release` keeps the
+        ; program's optimised object (tool.program_object#). 0 when LLVM
+        ; writes nothing.
+        procedure module_bitcode_hash(mutable this) returns u64
+        {
+            let buf LLVMWriteBitcodeToMemoryBuffer(llvm_module)
+            if buf = null
+                return 0
+            let start LLVMGetBufferStart(buf)
+            let size LLVMGetBufferSize(buf)
+            var hash: u64 0xcbf29ce484222325
+            var i: size_t 0
+            while i < size
+            {
+                let b (*(((start as size_t) + i) as pointer[char])) as u8
+                hash := (hash xor (b as u64)) * 0x100000001b3
+                i := i + 1
+            }
+            LLVMDisposeMemoryBuffer(buf)
+            hash
+        }
+
         procedure module_text_hash(mutable this) returns u64
         {
             let text LLVMPrintModuleToString(llvm_module)

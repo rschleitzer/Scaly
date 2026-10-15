@@ -880,6 +880,11 @@ function LLVMOrcLLJITAddObjectFile(j: LLVMOrcLLJITRef, jd: LLVMOrcJITDylibRef, o
 ; JIT). Returns an LLVMBool (0 = success); writes the buffer to *out.
 function LLVMCreateMemoryBufferWithContentsOfFile(path: pointer[const_char], out: pointer[LLVMMemoryBufferRef], msg: pointer[pointer[char]]) returns i32 extern
 procedure LLVMDisposeMemoryBuffer(buf: LLVMMemoryBufferRef) extern
+; the module as bitcode in memory (`scaly build --release`: the key of the
+; program's optimised object, Emitter.module_bitcode_hash#)
+function LLVMWriteBitcodeToMemoryBuffer(mod: LLVMModuleRef) returns LLVMMemoryBufferRef extern
+function LLVMGetBufferStart(buf: LLVMMemoryBufferRef) returns pointer[const_char] extern
+function LLVMGetBufferSize(buf: LLVMMemoryBufferRef) returns size_t extern
 ; `scaly build --release`: a package's cached bitcode read into the program's
 ; context (LLVMBool, 0 = success; the buffer stays the caller's), and linked
 ; into the program's module (LLVMBool, 0 = success; `src` is consumed)

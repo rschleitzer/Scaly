@@ -578,6 +578,34 @@ define tool
         tool.check_definitions(&def_owners, &def_files)
     }
 
+    ; Where `scaly build --release` keeps a program's optimised object: under
+    ; a key over the compiling compiler, the program's own module as bitcode
+    ; (`module_hash`, Emitter.module_bitcode_hash#), the packages' bitcode in
+    ; link order (each file is named by its key, package_base#) and what the
+    ; optimisation and the code generation are asked for. A build that
+    ; changes nothing finds it and neither links, optimises nor emits again.
+    ; "" where it is not kept: with a profile, trained or used -- the
+    ; profile's contents are not part of the key.
+    procedure program_object(name: String, module_hash: u64, bitcode: ref[Array[String]], triple: String, cpu: String, export_symbols: bool, profiled: bool) returns String
+    {
+        if module_hash = 0 or profiled
+            return String()
+        var h: u64 0xcbf29ce484222325
+        h := (h xor Modeler.compiler_stamp()) * 0x100000001b3
+        h := (h xor module_hash) * 0x100000001b3
+        h := tool.fnv_string(h, triple)
+        h := tool.fnv_string(h, "O2`cpu`")
+        if export_symbols
+            h := tool.fnv_string(h, "export")
+        var i: size_t 0
+        while i < bitcode.length
+        {
+            h := tool.fnv_string(h, bitcode.at(i))
+            i := i + 1
+        }
+        "`tool.cache_root()`/`name`-program-`tool.hex16(h)`.o"
+    }
+
     ; where a package compiled for this build lies in the cache, without the
     ; extension: `<cache>/<name>-<version>-<key>`
     procedure package_base(name: String, root: String, triple: String, cpu: String, selection: String) returns String

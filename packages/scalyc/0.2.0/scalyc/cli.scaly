@@ -1403,6 +1403,10 @@ define cli
         var package_objects Array[String]()
         var package_bitcode Array[String]()
         var library_link_flags StringBuilder()
+        ; --release: the program's optimised object, kept in the cache under a
+        ; key over what it is made of (tool.program_object#); "" when not kept
+        var program_obj String()
+        var program_cached false
         if opts.tool_build
         {
             var pkg_names Array[String]()
@@ -1427,6 +1431,14 @@ define cli
             }
             if tool.package_objects(&pkg_names, &pkg_roots, opts.input_file, opts.target_triple, opts.target_cpu, opts.release, &package_objects, &package_bitcode, &library_link_flags) = false
                 return 9
+            ; asked before the packages join the module: a build that changes
+            ; nothing then neither links, optimises nor emits
+            if opts.release
+            {
+                let profiled opts.pgo_train or opts.pgo_profile.get_length() > 0
+                program_obj := tool.program_object(cli.extract_program_name(opts.input_file), emitter.module_bitcode_hash(), &package_bitcode, tool.target_triple(opts.target_triple), opts.target_cpu, opts.export_symbols, profiled)
+                program_cached := program_obj.get_length() > 0 and File.exists(program_obj)
+            }
             ; --release: the packages' Scaly code joins the program's module;
             ; what is left in package_objects is their C and assembly
             ; ★Dependents before what they use, the stdlib last: the linker
@@ -1434,6 +1446,8 @@ define cli
             ; destination already REFERENCES it, so a package linked before
             ; its user leaves the user's calls into it undefined.
             var bi package_bitcode.length
+            if program_cached
+                bi := 0
             while bi > 0
             {
                 bi := bi - 1
@@ -1466,11 +1480,35 @@ define cli
         tb.append(getpid() as int)
         tb.append ".o"
         var tmp_obj tb.to_string()
-        let obj_ok emitter.write_object_to_file tmp_obj
-        if obj_ok = false
+        ; the object the link takes is the cache's when it is kept there:
+        ; written beside its place and moved in whole (tool.publish#)
+        var kept false
+        if program_cached
         {
-            Console.println "Error: Could not write object file"
-            return 8
+            tmp_obj := String(program_obj)
+            kept := true
+        }
+        else
+        {
+            var write_to String(tmp_obj)
+            if program_obj.get_length() > 0
+                write_to := "`program_obj`.`getpid() as int`.tmp"
+            let obj_ok emitter.write_object_to_file write_to
+            if obj_ok = false
+            {
+                Console.println "Error: Could not write object file"
+                return 8
+            }
+            if program_obj.get_length() > 0
+            {
+                if tool.publish(write_to, program_obj)
+                {
+                    tmp_obj := String(program_obj)
+                    kept := true
+                }
+                else
+                    tmp_obj := String(write_to)
+            }
         }
 
         ; ★A COFF program is linked by the Build Tools' link.exe, called
@@ -1741,7 +1779,8 @@ define cli
                 let dsym_rc system(dsym_str.c_data())
             }
 
-        let unlink_rc unlink(tmp_obj.c_data())
+        if kept = false
+            unlink(tmp_obj.c_data())
 
         if link_rc <> 0
         {
