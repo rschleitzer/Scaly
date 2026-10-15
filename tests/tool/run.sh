@@ -9,6 +9,9 @@
 #   parts      the same program with the standard library's object
 #              code-generated in parts (Parts.scaly, a small part size): it
 #              runs, and a second cache gets the same parts byte for byte
+#   dependent  a record changed in a local package under the same version:
+#              the package using it is compiled again (its key holds what
+#              its dependencies are, not only their versions)
 #   run        the same program through `scaly run`, arguments handed on;
 #              tests/tool/globals.scaly, whose narrow constants aborted the JIT
 #   native     the cache holds the C and assembly files THIS target takes,
@@ -225,6 +228,19 @@ if SCALY_CACHE="$TMP/parts-a" SCALYC_PART_INSTRUCTIONS=1000 "$SCALY" build tests
 else
   bad "parts: rc=$? $(tail -3 "$TMP/parts.log" | tr '\n' ' ')"
 fi
+
+# dependent: a record changed in a local package of an unchanged version --
+# the package that uses it is compiled again, not taken out of the cache with
+# the old layout (it crashed: Modeler.dependency_text#)
+mkdir -p "$TMP/dep/packages/lower/0.1.0" "$TMP/dep/packages/upper/0.1.0"
+printf 'package scaly 0.1.0\ndefine lower\n{\n    define Pair(a: int, b: int)\n    function make(n: int) returns Pair\n        Pair(n, n + 1)\n}\n' > "$TMP/dep/packages/lower/0.1.0/lower.scaly"
+printf 'package scaly 0.1.0\npackage lower 0.1.0\ndefine upper\n{\n    function second(n: int) returns int\n        lower.make(n).b\n}\n' > "$TMP/dep/packages/upper/0.1.0/upper.scaly"
+printf 'package scaly 0.1.0\npackage upper 0.1.0\nprocedure main() returns int io\n{\n    print "`upper.second(10)`"\n    0\n}\n' > "$TMP/dep/main.scaly"
+( cd "$TMP/dep" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "dep1$SCALY_EXE" > build1.log 2>&1 )
+printf 'package scaly 0.1.0\ndefine lower\n{\n    define Pair(z: int, a: int, b: int)\n    function make(n: int) returns Pair\n        Pair(0, n, n + 1)\n}\n' > "$TMP/dep/packages/lower/0.1.0/lower.scaly"
+( cd "$TMP/dep" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "dep2$SCALY_EXE" > build2.log 2>&1 )
+out1=$("$TMP/dep/dep1$SCALY_EXE" 2>&1); out2=$("$TMP/dep/dep2$SCALY_EXE" 2>&1)
+[ "$out1" = 11 ] && [ "$out2" = 11 ] && ok || bad "dependent: got '$out1' and '$out2' $(tail -2 "$TMP/dep/build2.log" | tr '\n' ' ')"
 
 # run
 if scaly_jit_available 2>/dev/null; then

@@ -3054,8 +3054,18 @@ define Modeler
     }
 
     ; The versions the packages a root declares are taken in, as ` name=version`
-    ; each: part of that package's keys. `selection` holds lines `name version`.
+    ; each, and what those packages ARE: the sum of their files and, the same
+    ; way, of what they declare in turn -- part of that package's keys.
+    ; `selection` holds lines `name version`. A version names a package that
+    ; does not change only once it is published; a package being worked on
+    ; changes under one version, and what was compiled against it holds its
+    ; layouts, constants, generic bodies and facts: with the version alone,
+    ; a record changed in one local package left the object of a package
+    ; using it in the cache, and the program crashed (2026-10-15).
     procedure dependency_text(mutable root: String, selection: String) returns String
+        dependency_text_below(root, selection, 0)
+
+    procedure dependency_text_below(mutable root: String, selection: String, depth: size_t) returns String
     {
         var names Array[String]()
         var versions Array[String]()
@@ -3070,6 +3080,24 @@ define Modeler
             if version.get_length() = 0
                 version := String(versions.at(i))
             sb.append " `name`=`version`"
+            ; a cycle of declarations is refused elsewhere; here it ends
+            if depth < 64
+            {
+                var source "`sources.at(i)`"
+                if source.get_length() = 0
+                    source := inherited_source(root)
+                var dir package_directory(name, version, source)
+                var dep_root "`dir`/`name`.scaly"
+                if File.exists(dep_root)
+                {
+                    var files Array[String]()
+                    package_files(dir, "", &files)
+                    sb.append ":`hex16(files_sum(dir, &files))`"
+                    let below dependency_text_below(dep_root, selection, depth + 1)
+                    if below.get_length() > 0
+                        sb.append "(`below` )"
+                }
+            }
             i := i + 1
         }
         sb.to_string()
