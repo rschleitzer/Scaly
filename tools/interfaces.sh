@@ -23,17 +23,26 @@
 # root that uses a library package comes out differently without.
 #
 # Packages go in DEPENDENCY order: the facts of a package are computed with
-# its dependencies loaded through THEIR interfaces. One whose interface is
-# there already costs a compile and writes nothing.
+# its dependencies loaded through THEIR interfaces, and its interface's key
+# holds their interfaces' sums (Modeler.interface_sum#) -- written before
+# one of them, it lies under a key no later reader asks for. A package
+# declared by one that comes before it in the list is refused here (scalyls
+# stood before json until 2026-10-15). One whose interface is there already
+# costs a compile and writes nothing.
 set -u
 cd "$(dirname "$0")/.."
 BIN="${1:-scalyc/build/scalyc}"
-PKGS="scaly scalyc scalyls scalygpu http json compress tls pg https h3 redis sqlite tds"
+PKGS="scaly scalyc json scalyls scalygpu http compress tls pg https h3 redis sqlite tds"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 rc=0
+done_pkgs=" "
 for p in $PKGS; do
   root="packages/$p/$(tools/version.sh "$p")/$p.scaly"; flags=""
+  for d in $(sed -n 's/^package \([a-z0-9_]*\) .*/\1/p' "$root"); do
+    case "$done_pkgs" in *" $d "*) ;; *) echo "interfaces: FAIL ($p declares $d, which comes after it in PKGS)"; exit 1 ;; esac
+  done
+  done_pkgs="$done_pkgs$p "
   [ "$p" = scaly ] && flags="--no-prelude"
   if ( ulimit -s 65520 2>/dev/null; SCALY_HOME="$PWD" "$BIN" $flags --emit-interface "$root" ) > "$T/$p.out" 2>&1; then
     sed "s#^#interfaces: $p: #" "$T/$p.out" | tail -1

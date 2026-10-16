@@ -3054,14 +3054,18 @@ define Modeler
     }
 
     ; The versions the packages a root declares are taken in, as ` name=version`
-    ; each, and what those packages ARE: the sum of their files and, the same
-    ; way, of what they declare in turn -- part of that package's keys.
-    ; `selection` holds lines `name version`. A version names a package that
-    ; does not change only once it is published; a package being worked on
-    ; changes under one version, and what was compiled against it holds its
-    ; layouts, constants, generic bodies and facts: with the version alone,
-    ; a record changed in one local package left the object of a package
-    ; using it in the cache, and the program crashed (2026-10-15).
+    ; each, and what those packages ARE to it: the sum of their interfaces
+    ; (interface_sum#), else of their files, and, the same way, of what they
+    ; declare in turn -- part of that package's keys. `selection` holds lines
+    ; `name version`. A version names a package that does not change only
+    ; once it is published; a package being worked on changes under one
+    ; version, and what was compiled against it holds its layouts, constants,
+    ; generic bodies and facts: with the version alone, a record changed in
+    ; one local package left the object of a package using it in the cache,
+    ; and the program crashed (2026-10-15). With the files' sum, a body
+    ; changed down there compiled every package above it again, though none
+    ; of them sees a body that is not generic (6.6 of 27 s for tscaly's
+    ; driver after a change in its checker).
     procedure dependency_text(mutable root: String, selection: String) returns String
         dependency_text_below(root, selection, 0)
 
@@ -3090,10 +3094,16 @@ define Modeler
                 var dep_root "`dir`/`name`.scaly"
                 if File.exists(dep_root)
                 {
-                    var files Array[String]()
-                    package_files(dir, "", &files)
-                    sb.append ":`hex16(files_sum(dir, &files))`"
                     let below dependency_text_below(dep_root, selection, depth + 1)
+                    let seen interface_sum(dir, name, below)
+                    if seen.get_length() > 0
+                        sb.append ":i`seen`"
+                    else
+                    {
+                        var files Array[String]()
+                        package_files(dir, "", &files)
+                        sb.append ":`hex16(files_sum(dir, &files))`"
+                    }
                     if below.get_length() > 0
                         sb.append "(`below` )"
                 }
@@ -3101,6 +3111,47 @@ define Modeler
             i := i + 1
         }
         sb.to_string()
+    }
+
+    ; What a package compiled against the one in `dir` takes of it: that
+    ; package's interface in the cache (for its state with `deps` below it),
+    ; every file summed as files_sum# sums sources -- but `positions` and
+    ; `origin`, where its lines stand in the sources: they reach a dependent
+    ; only as -g line information, and the tool compiles a package without
+    ; (tool.compile_package#). "" when the cache holds no such interface --
+    ; the dependent is compiled against the sources then, and its key holds
+    ; their sum. The tool compiles a package's dependencies first, so their
+    ; interfaces are there when its key is asked (tool.prepare_packages#).
+    ; An interface in the cache does not change (its key holds what it is
+    ; made of): the sum is taken once per home and process.
+    procedure interface_sum(dir: String, name: String, deps: String) returns String
+    {
+        let home interface_home(dir, name, deps)
+        var root "`home`/interface"
+        var probe "`root`/`name`.scaly"
+        if File.exists(probe) = false
+            return String()
+        let known table_value(String("SCALY_INTERFACE_SUMS"), home)
+        if known.get_length() = 16
+            return known
+        var files Array[String]()
+        package_files(root, "", &files)
+        var sum: u64 0
+        var i: size_t 0
+        while i < files.length
+        {
+            let f files.at i
+            i := i + 1
+            if f.equals("positions") or f.equals("origin")
+                continue
+            let content File.read_to_string("`root`/`f`")
+            var fh fnv_string(0xcbf29ce484222325, f)
+            fh := hash_text(fh * 0x100000001b3, content)
+            sum := sum + fh
+        }
+        let text hex16(sum)
+        table_add(String("SCALY_INTERFACE_SUMS"), home, text)
+        text
     }
 
     ; the same out of the loader's list, where the selection stands as

@@ -12,6 +12,9 @@
 #   dependent  a record changed in a local package under the same version:
 #              the package using it is compiled again (its key holds what
 #              its dependencies are, not only their versions)
+#   body       a body changed in that package, its interface the same: the
+#              package above it is taken out of the cache, the program has
+#              the new body
 #   returned   a routine of another package hands back its argument and a
 #              method keeps the result: a local argument is refused, a fresh
 #              copy is not (the interface's `@ret_reach_N`)
@@ -244,6 +247,16 @@ printf 'package scaly 0.1.0\ndefine lower\n{\n    define Pair(z: int, a: int, b:
 ( cd "$TMP/dep" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "dep2$SCALY_EXE" > build2.log 2>&1 )
 out1=$("$TMP/dep/dep1$SCALY_EXE" 2>&1); out2=$("$TMP/dep/dep2$SCALY_EXE" 2>&1)
 [ "$out1" = 11 ] && [ "$out2" = 11 ] && ok || bad "dependent: got '$out1' and '$out2' $(tail -2 "$TMP/dep/build2.log" | tr '\n' ' ')"
+
+# body: a BODY changed in that package, its interface the same -- the package
+# above it is not compiled again (its key holds the interface's sum, not the
+# files': Modeler.interface_sum#), and the program has the new body
+uppers1=$(ls "$SCALY_CACHE" | grep -c '^upper-0\.1\.0-.*\.o$')
+printf 'package scaly 0.1.0\ndefine lower\n{\n    define Pair(z: int, a: int, b: int)\n    function make(n: int) returns Pair\n        Pair(0, n, n + 2)\n}\n' > "$TMP/dep/packages/lower/0.1.0/lower.scaly"
+( cd "$TMP/dep" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "dep3$SCALY_EXE" > build3.log 2>&1 )
+uppers2=$(ls "$SCALY_CACHE" | grep -c '^upper-0\.1\.0-.*\.o$')
+out3=$("$TMP/dep/dep3$SCALY_EXE" 2>&1)
+[ "$out3" = 12 ] && [ "$uppers1" = 2 ] && [ "$uppers2" = 2 ] && ok || bad "body: got '$out3', upper objects $uppers1 -> $uppers2 $(tail -2 "$TMP/dep/build3.log" | tr '\n' ' ')"
 
 # returned: a routine of another package that hands back an argument, kept by
 # a method -- a local argument is refused (`@ret_reach_N` of the interface),
