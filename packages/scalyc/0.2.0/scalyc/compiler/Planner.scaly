@@ -1023,6 +1023,15 @@ define Planner
         esc_index: ref[EscIndex]
         ; lookup_global#: name -> first position in instantiated_globals
         global_index: ref[NameIndex]
+        ; has_instantiated_structure#, lookup_instantiated_structure# and their
+        ; union twins: mangled name and name -> first position in
+        ; instantiated_structures / instantiated_unions (a linear scan each
+        ; until 2026-10-16: the most-asked of the compiler's name comparisons,
+        ; ensure_member_layout# alone 0.8 s of tscaly's 9.6 s plan)
+        struct_by_mangled: ref[NameIndex]
+        struct_by_name: ref[NameIndex]
+        union_by_mangled: ref[NameIndex]
+        union_by_name: ref[NameIndex]
         ; is_concept_parameter_name#: every generic parameter name of every
         ; registered concept (the position is unused)
         concept_param_index: ref[NameIndex]
@@ -1501,6 +1510,10 @@ define Planner
             escape_records := Array[EscapeRecord]^this()
             esc_index := &EscIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this(), Array[size_t]^this(), Array[size_t]^this(), Array[String]^this(), Array[size_t]^this(), Array[size_t]^this(), false)
             global_index := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
+            struct_by_mangled := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
+            struct_by_name := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
+            union_by_mangled := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
+            union_by_name := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
             concept_param_index := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
             member_index := &MemberIndex^this(0, 0, Array[u64]^this(), Array[size_t]^this(), Array[ConceptIndex]^this(), Array[size_t]^this(), Array[size_t]^this())
             escape_checking := false
@@ -2957,7 +2970,10 @@ define Planner
         procedure record_structure(mutable this: Planner, s: PlannedStructure)
         {
             this.check_layout_collision(s)
+            let pos instantiated_structures.length
             instantiated_structures.add s
+            this.name_index_put(struct_by_mangled, s.mangled_name, pos)
+            this.name_index_put(struct_by_name, s.name, pos)
         }
 
         procedure check_layout_collision(mutable this: Planner, s: PlannedStructure)
@@ -3081,43 +3097,20 @@ define Planner
 
         procedure record_union(mutable this: Planner, u: scalyc.compiler.Plan.PlannedUnion)
         {
+            let pos instantiated_unions.length
             instantiated_unions.add u
+            this.name_index_put(union_by_mangled, u.mangled_name, pos)
+            this.name_index_put(union_by_name, u.name, pos)
         }
 
         ; Lookups against the instantiation caches, keyed by mangled
         ; name. Used by instantiate_generic to avoid re-planning an
         ; already-instantiated concept.
         function has_instantiated_structure(this: Planner, mangled: String) returns bool
-        {
-            var i: size_t 0
-            while i < instantiated_structures.length
-            {
-                let s_ptr instantiated_structures.get i
-                if s_ptr <> null
-                {
-                    if s_ptr.mangled_name = mangled
-                        return true
-                }
-                i := i + 1
-            }
-            false
-        }
+            struct_by_mangled.table.lookup(mangled) >= 0
 
         function has_instantiated_union(this: Planner, mangled: String) returns bool
-        {
-            var i: size_t 0
-            while i < instantiated_unions.length
-            {
-                let u_ptr instantiated_unions.get i
-                if u_ptr <> null
-                {
-                    if u_ptr.mangled_name = mangled
-                        return true
-                }
-                i := i + 1
-            }
-            false
-        }
+            union_by_mangled.table.lookup(mangled) >= 0
 
         ; Stage 7.2: instantiation-cache lookups returning the entry itself.
         ; Mangled-first two-pass (the Emitter's map_type order): generic
@@ -3128,29 +3121,13 @@ define Planner
         {
             if mangled.get_length() > 0
             {
-                var i: size_t 0
-                while i < instantiated_structures.length
-                {
-                    let s_ptr instantiated_structures.get i
-                    if s_ptr <> null
-                    {
-                        if s_ptr.mangled_name = mangled
-                            return s_ptr
-                    }
-                    i := i + 1
-                }
+                let at struct_by_mangled.table.lookup(mangled)
+                if at >= 0
+                    return instantiated_structures.get(at as size_t)
             }
-            var k: size_t 0
-            while k < instantiated_structures.length
-            {
-                let s_ptr instantiated_structures.get k
-                if s_ptr <> null
-                {
-                    if s_ptr.name = name
-                        return s_ptr
-                }
-                k := k + 1
-            }
+            let by struct_by_name.table.lookup(name)
+            if by >= 0
+                return instantiated_structures.get(by as size_t)
             null
         }
 
@@ -3158,29 +3135,13 @@ define Planner
         {
             if mangled.get_length() > 0
             {
-                var i: size_t 0
-                while i < instantiated_unions.length
-                {
-                    let u_ptr instantiated_unions.get i
-                    if u_ptr <> null
-                    {
-                        if u_ptr.mangled_name = mangled
-                            return u_ptr
-                    }
-                    i := i + 1
-                }
+                let at union_by_mangled.table.lookup(mangled)
+                if at >= 0
+                    return instantiated_unions.get(at as size_t)
             }
-            var k: size_t 0
-            while k < instantiated_unions.length
-            {
-                let u_ptr instantiated_unions.get k
-                if u_ptr <> null
-                {
-                    if u_ptr.name = name
-                        return u_ptr
-                }
-                k := k + 1
-            }
+            let by union_by_name.table.lookup(name)
+            if by >= 0
+                return instantiated_unions.get(by as size_t)
             null
         }
 
