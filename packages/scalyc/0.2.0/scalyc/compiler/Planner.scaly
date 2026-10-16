@@ -45471,6 +45471,7 @@ define Planner
                 this.escape_walk_function_body(func)
                 i := i + 1
             }
+            this.phase_mark("D2a-escape-summary")
 
             ; Clean code with no summary AND no indirect calls has nothing to
             ; check. An indirect call is checked argument-by-argument (no record),
@@ -45496,6 +45497,8 @@ define Planner
                     k := k + 1
                 }
                 changed := escape_records.length <> before
+                ; one line per round: how often the closure walks everything
+                this.phase_mark("D2b-escape-forwarding-round")
             }
             escape_forwarding := false
 
