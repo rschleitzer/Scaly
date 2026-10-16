@@ -214,6 +214,11 @@ define MemberIndex
 ; record, positions stored +1 so 0 ends a chain; `names` per chain for the
 ; rebuild past half load). Every call used to test EVERY record's callee
 ; name -- ~15 % of the tscaly root's plan time (2026-09-26, `sample`).
+; And the forwarding fixpoint's worklist (check_interprocedural_escapes#):
+; the callee names each function's calls read (`calls`, function k's from
+; `from[k]` to `from[k + 1]`, gathered in the first round while `collect`),
+; and how many records there were when function k's last walk began
+; (`start`).
 define EscIndex
 (
     var table: ConceptIndex
@@ -221,6 +226,10 @@ define EscIndex
     heads: Array[size_t]
     tails: Array[size_t]
     next: Array[size_t]
+    calls: Array[String]
+    from: Array[size_t]
+    start: Array[size_t]
+    var collect: bool
 )
 
 ; the residence table's two lookups (return_residence_index#: name and span;
@@ -1490,7 +1499,7 @@ define Planner
             program_use_namespaces := Array[String]^this()
             next_lambda_id := 0
             escape_records := Array[EscapeRecord]^this()
-            esc_index := &EscIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this(), Array[size_t]^this(), Array[size_t]^this())
+            esc_index := &EscIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this(), Array[size_t]^this(), Array[size_t]^this(), Array[String]^this(), Array[size_t]^this(), Array[size_t]^this(), false)
             global_index := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
             concept_param_index := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
             member_index := &MemberIndex^this(0, 0, Array[u64]^this(), Array[size_t]^this(), Array[ConceptIndex]^this(), Array[size_t]^this(), Array[size_t]^this())
@@ -37123,6 +37132,31 @@ define Planner
             esc_index.heads[at as size_t]
         }
 
+        ; Must function `k` be walked again in the forwarding fixpoint? Only
+        ; when a chain one of its calls reads holds a record entered since its
+        ; last walk began: a walk reads records through those chains alone
+        ; (escape_forward_call#; escape_record_exists# only refuses doubles),
+        ; so a walk over records it has seen enters nothing. A function the
+        ; first round did not meet is walked.
+        function escape_forward_stale(this: Planner, k: size_t) returns bool
+        {
+            let ix esc_index
+            if k + 1 >= ix.from.length
+                return true
+            let since ix.start[k]
+            var c ix.from[k]
+            let end ix.from[k + 1]
+            while c < end
+            {
+                let at ix.table.lookup(ix.calls[c])
+                if at >= 0
+                    if ix.tails[at as size_t] > since
+                        return true
+                c := c + 1
+            }
+            false
+        }
+
         ; Forwarding fixpoint (pass 0.5): a call may forward several params into
         ; several persisting callee slots; test the current summary against each
         ; matching record. Snapshot the length so records added during this call
@@ -37133,6 +37167,8 @@ define Planner
             ; the order they were entered, and only those that existed before
             ; this call (it may add more).
             let n escape_records.length
+            if esc_index.collect
+                esc_index.calls.add(String^this(call.mangled_name))
             var pos this.esc_chain_head(call.mangled_name)
             while pos > 0 and pos - 1 < n
             {
@@ -45489,7 +45525,18 @@ define Planner
             ; than storing it itself) inherits a persist-parameter fact. Repeat
             ; the whole-program walk until no new fact is recorded — the summary
             ; only grows and dedup bounds it, so this terminates.
+            ; From the second round on, a function is walked only when what its
+            ; calls read has grown since its last walk began
+            ; (escape_forward_stale#): the walks skipped would enter nothing,
+            ; so the records come out the same and in the same order. Every
+            ; round walked everything until 2026-10-16 (8 rounds for tscaly).
             escape_forwarding := true
+            let ix esc_index
+            ix.calls.length := 0
+            ix.from.length := 0
+            ix.start.length := 0
+            ix.collect := true
+            var round: size_t 0
             var changed true
             while changed
             {
@@ -45497,12 +45544,30 @@ define Planner
                 var k: size_t 0
                 for func in instantiated_functions
                 {
-                    escape_fn_index := k
-                    this.escape_walk_function_body(func)
+                    if round = 0
+                    {
+                        ix.from.add(ix.calls.length)
+                        ix.start.add(escape_records.length)
+                        escape_fn_index := k
+                        this.escape_walk_function_body(func)
+                    }
+                    else if this.escape_forward_stale(k)
+                    {
+                        if k < ix.start.length
+                            ix.start.put(k, escape_records.length)
+                        escape_fn_index := k
+                        this.escape_walk_function_body(func)
+                    }
                     k := k + 1
                 }
+                if round = 0
+                {
+                    ix.from.add(ix.calls.length)
+                    ix.collect := false
+                }
+                round := round + 1
                 changed := escape_records.length <> before
-                ; one line per round: how often the closure walks everything
+                ; one line per round of the closure
                 this.phase_mark("D2b-escape-forwarding-round")
             }
             escape_forwarding := false

@@ -1255,7 +1255,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13PlannedRepeatB6scalycB4v0_2 = type { %_Z4SpanB6scalycB4v0_2, %_Z13PlannedActionB6scalycB4v0_2, { ptr }, %_Z11PlannedTypeB6scalycB4v0_2 }
 %_Z16UnitVariantIndexB6scalycB4v0_2 = type { %_Z12ConceptIndexB6scalycB4v0_2, i64, i64 }
 %_Z12EscapeAccessB6scalycB4v0_2 = type { i64, i64, i64, i64 }
-%_Z8EscIndexB6scalycB4v0_2 = type { %_Z12ConceptIndexB6scalycB4v0_2, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayImE }
+%_Z8EscIndexB6scalycB4v0_2 = type { %_Z12ConceptIndexB6scalycB4v0_2, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, i1 }
 %_Z6VectorI21PlannedImplementationB6scalycB4v0_2E = type { i64, ptr }
 %_Z14VectorIteratorI21PlannedImplementationB6scalycB4v0_2E = type { ptr, i64 }
 %_Z5SliceI21PlannedImplementationB6scalycB4v0_2E = type { i64, ptr }
@@ -1416,7 +1416,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 2985008446557908803
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 7631114923485096972
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -320951,36 +320951,71 @@ land.rhs:                                         ; preds = %if.then23
 
 define linkonce_odr void @_ZN7PlannerB6scalycB4v0_219escape_forward_callE11PlannedCallB6scalycB4v0_2(ptr %0, ptr %1) {
 entry:
+  %pos = alloca i64, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  %wrapped_frame = alloca { ptr, ptr }, align 8
   %load.struct = load %_Z7PlannerB6scalycB4v0_2, ptr %0, align 8
   %escape_records = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct, 66
   %length = extractvalue %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E %escape_records, 0
-  %field.inplace = getelementptr inbounds nuw %_Z11PlannedCallB6scalycB4v0_2, ptr %1, i32 0, i32 2
-  %call = call i64 @_ZN7PlannerB6scalycB4v0_214esc_chain_headE6String(ptr %0, ptr %field.inplace)
-  %pos = alloca i64, align 8
+  %load.struct1 = load %_Z7PlannerB6scalycB4v0_2, ptr %0, align 8
+  %esc_index = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct1, 67
+  %deref = load %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, align 8
+  %collect = extractvalue %_Z8EscIndexB6scalycB4v0_2 %deref, 8
+  br i1 %collect, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %field.inplace = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 67
+  %field.ref = load ptr, ptr %field.inplace, align 8
+  %field.inplace2 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %field.ref, i32 0, i32 5
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page, ptr %wrapped_frame, align 8
+  %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent, align 8
+  %frame.page = load ptr, ptr %wrapped_frame, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+if.end:                                           ; preds = %frame.forced, %entry
+  %field.inplace5 = getelementptr inbounds nuw %_Z11PlannedCallB6scalycB4v0_2, ptr %1, i32 0, i32 2
+  %call = call i64 @_ZN7PlannerB6scalycB4v0_214esc_chain_headE6String(ptr %0, ptr %field.inplace5)
   store i64 %call, ptr %pos, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end, %entry
-  %pos1 = load i64, ptr %pos, align 8
-  %gt = icmp ugt i64 %pos1, 0
+frame.force:                                      ; preds = %if.then
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %if.then
+  %forced_page3 = phi ptr [ %frame.page, %if.then ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page3, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %load.struct4 = load %_Z11PlannedCallB6scalycB4v0_2, ptr %1, align 8
+  %mangled_name = extractvalue %_Z11PlannedCallB6scalycB4v0_2 %load.struct4, 2
+  store { ptr } %mangled_name, ptr %arg.tmp, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %field.inplace2, ptr %struct.region)
+  br label %if.end
+
+while.cond:                                       ; preds = %if.end13, %if.end
+  %pos6 = load i64, ptr %pos, align 8
+  %gt = icmp ugt i64 %pos6, 0
   br i1 %gt, label %lor.rhs, label %lor.end
 
 while.body:                                       ; preds = %lor.end
-  %field.inplace3 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 66
-  %pos4 = load i64, ptr %pos, align 8
-  %sub5 = sub i64 %pos4, 1
-  %call6 = call ptr @_ZN5ArrayI12EscapeRecordB6scalycB4v0_2E3getEm(ptr %field.inplace3, i64 %sub5)
-  %ne = icmp ne ptr %call6, null
-  br i1 %ne, label %if.then, label %if.end
+  %field.inplace8 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 66
+  %pos9 = load i64, ptr %pos, align 8
+  %sub10 = sub i64 %pos9, 1
+  %call11 = call ptr @_ZN5ArrayI12EscapeRecordB6scalycB4v0_2E3getEm(ptr %field.inplace8, i64 %sub10)
+  %ne = icmp ne ptr %call11, null
+  br i1 %ne, label %if.then12, label %if.end13
 
 while.exit:                                       ; preds = %lor.end
-  %load.struct12 = load %_Z11PlannedCallB6scalycB4v0_2, ptr %1, align 8
-  %is_indirect = extractvalue %_Z11PlannedCallB6scalycB4v0_2 %load.struct12, 11
-  br i1 %is_indirect, label %if.then13, label %if.end14
+  %load.struct20 = load %_Z11PlannedCallB6scalycB4v0_2, ptr %1, align 8
+  %is_indirect = extractvalue %_Z11PlannedCallB6scalycB4v0_2 %load.struct20, 11
+  br i1 %is_indirect, label %if.then21, label %if.end22
 
 lor.rhs:                                          ; preds = %while.cond
-  %pos2 = load i64, ptr %pos, align 8
-  %sub = sub i64 %pos2, 1
+  %pos7 = load i64, ptr %pos, align 8
+  %sub = sub i64 %pos7, 1
   %lt = icmp ult i64 %sub, %length
   br label %lor.end
 
@@ -320988,25 +321023,25 @@ lor.end:                                          ; preds = %lor.rhs, %while.con
   %lor.result = phi i1 [ false, %while.cond ], [ %lt, %lor.rhs ]
   br i1 %lor.result, label %while.body, label %while.exit
 
-if.then:                                          ; preds = %while.body
-  call void @_ZN7PlannerB6scalycB4v0_226escape_forward_call_recordE11PlannedCallB6scalycB4v0_212EscapeRecordB6scalycB4v0_2(ptr %0, ptr %1, ptr %call6)
-  br label %if.end
+if.then12:                                        ; preds = %while.body
+  call void @_ZN7PlannerB6scalycB4v0_226escape_forward_call_recordE11PlannedCallB6scalycB4v0_212EscapeRecordB6scalycB4v0_2(ptr %0, ptr %1, ptr %call11)
+  br label %if.end13
 
-if.end:                                           ; preds = %if.then, %while.body
-  %field.inplace7 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 67
-  %field.ref = load ptr, ptr %field.inplace7, align 8
-  %field.inplace8 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %field.ref, i32 0, i32 4
-  %pos9 = load i64, ptr %pos, align 8
-  %sub10 = sub i64 %pos9, 1
-  %call11 = call i64 @_ZN5ArrayImEixEm(ptr %field.inplace8, i64 %sub10)
-  store i64 %call11, ptr %pos, align 1
+if.end13:                                         ; preds = %if.then12, %while.body
+  %field.inplace14 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 67
+  %field.ref15 = load ptr, ptr %field.inplace14, align 8
+  %field.inplace16 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %field.ref15, i32 0, i32 4
+  %pos17 = load i64, ptr %pos, align 8
+  %sub18 = sub i64 %pos17, 1
+  %call19 = call i64 @_ZN5ArrayImEixEm(ptr %field.inplace16, i64 %sub18)
+  store i64 %call19, ptr %pos, align 1
   br label %while.cond
 
-if.then13:                                        ; preds = %while.exit
+if.then21:                                        ; preds = %while.exit
   call void @_ZN7PlannerB6scalycB4v0_228escape_forward_indirect_callE11PlannedCallB6scalycB4v0_2(ptr %0, ptr %1)
-  br label %if.end14
+  br label %if.end22
 
-if.end14:                                         ; preds = %if.then13, %while.exit
+if.end22:                                         ; preds = %if.then21, %while.exit
   ret void
 }
 
@@ -322784,6 +322819,69 @@ land.rhs:                                         ; preds = %if.then15
   %src_field1 = extractvalue %_Z12EscapeRecordB6scalycB4v0_2 %grp.deref.val, 7
   %eq20 = icmp eq i64 %src_field1, %7
   br i1 %eq20, label %if.then17, label %if.end18
+}
+
+define linkonce_odr i1 @_ZN7PlannerB6scalycB4v0_220escape_forward_staleEm(ptr %0, i64 %1) {
+entry:
+  %sret.result = alloca { ptr }, align 8
+  %c = alloca i64, align 8
+  %load.struct = load %_Z7PlannerB6scalycB4v0_2, ptr %0, align 8
+  %esc_index = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct, 67
+  %add = add i64 %1, 1
+  %load.struct1 = load %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, align 8
+  %from = extractvalue %_Z8EscIndexB6scalycB4v0_2 %load.struct1, 6
+  %length = extractvalue %_Z5ArrayImE %from, 0
+  %ge = icmp uge i64 %add, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 true
+
+if.end:                                           ; preds = %entry
+  %field.inplace = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 7
+  %call = call i64 @_ZN5ArrayImEixEm(ptr %field.inplace, i64 %1)
+  %field.inplace2 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 6
+  %call3 = call i64 @_ZN5ArrayImEixEm(ptr %field.inplace2, i64 %1)
+  store i64 %call3, ptr %c, align 1
+  %field.inplace4 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 6
+  %add5 = add i64 %1, 1
+  %call6 = call i64 @_ZN5ArrayImEixEm(ptr %field.inplace4, i64 %add5)
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end14, %if.end
+  %c7 = load i64, ptr %c, align 8
+  %lt = icmp ult i64 %c7, %call6
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %field.inplace8 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 0
+  %field.inplace9 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 5
+  %c10 = load i64, ptr %c, align 8
+  call void @_ZN5ArrayI6StringEixEm(ptr noalias sret({ ptr }) %sret.result, ptr %field.inplace9, i64 %c10)
+  %call11 = call i64 @_ZN12ConceptIndexB6scalycB4v0_26lookupE6String(ptr %field.inplace8, ptr %sret.result)
+  %ge12 = icmp sge i64 %call11, 0
+  br i1 %ge12, label %if.then13, label %if.end14
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then13:                                        ; preds = %while.body
+  %field.inplace15 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 3
+  %call16 = call i64 @_ZN5ArrayImEixEm(ptr %field.inplace15, i64 %call11)
+  %gt = icmp ugt i64 %call16, %call
+  br i1 %gt, label %if.then17, label %if.end18
+
+if.end14:                                         ; preds = %if.end18, %while.body
+  %c19 = load i64, ptr %c, align 8
+  %add20 = add i64 %c19, 1
+  store i64 %add20, ptr %c, align 1
+  br label %while.cond
+
+if.then17:                                        ; preds = %if.then13
+  ret i1 true
+
+if.end18:                                         ; preds = %if.then13
+  br label %if.end14
 }
 
 define linkonce_odr void @_ZN7PlannerB6scalycB4v0_226escape_forward_call_recordE11PlannedCallB6scalycB4v0_212EscapeRecordB6scalycB4v0_2(ptr %0, ptr %1, ptr %2) {
@@ -351566,12 +351664,13 @@ land.rhs14:                                       ; preds = %while.body
 
 define linkonce_odr void @_ZN7PlannerB6scalycB4v0_229check_interprocedural_escapesEPN4scaly6memory4PageE(ptr %0, ptr %1) {
 entry:
-  %iter.alloca41 = alloca %_Z13ArrayIteratorI15PlannedFunctionB6scalycB4v0_2E, align 8
-  %coll.tmp40 = alloca %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E, align 8
-  %iter.alloca21 = alloca %_Z13ArrayIteratorI15PlannedFunctionB6scalycB4v0_2E, align 8
-  %coll.tmp20 = alloca %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E, align 8
+  %iter.alloca83 = alloca %_Z13ArrayIteratorI15PlannedFunctionB6scalycB4v0_2E, align 8
+  %coll.tmp82 = alloca %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E, align 8
+  %iter.alloca25 = alloca %_Z13ArrayIteratorI15PlannedFunctionB6scalycB4v0_2E, align 8
+  %coll.tmp24 = alloca %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E, align 8
   %k = alloca i64, align 8
   %changed = alloca i1, align 1
+  %round = alloca i64, align 8
   %iter.alloca = alloca %_Z13ArrayIteratorI15PlannedFunctionB6scalycB4v0_2E, align 8
   %coll.tmp = alloca %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E, align 8
   %i = alloca i64, align 8
@@ -351625,6 +351724,20 @@ if.then4:                                         ; preds = %land.rhs
 if.end5:                                          ; preds = %land.rhs, %land.rhs6, %for.exit
   %escape_forwarding = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 76
   store i1 true, ptr %escape_forwarding, align 1
+  %load.struct14 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
+  %esc_index = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct14, 67
+  %calls = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 5
+  %length15 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %calls, i32 0, i32 0
+  store i64 0, ptr %length15, align 8
+  %from = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 6
+  %length16 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %from, i32 0, i32 0
+  store i64 0, ptr %length16, align 8
+  %start = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 7
+  %length17 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %start, i32 0, i32 0
+  store i64 0, ptr %length17, align 8
+  %collect = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 8
+  store i1 true, ptr %collect, align 1
+  store i64 0, ptr %round, align 1
   store i1 true, ptr %changed, align 1
   br label %while.cond
 
@@ -351643,106 +351756,174 @@ land.rhs6:                                        ; preds = %for.exit
   %eq10 = icmp eq i1 %escape_saw_indirect9, false
   br i1 %eq10, label %land.rhs, label %if.end5
 
-while.cond:                                       ; preds = %for.exit24, %if.end5
-  %changed14 = load i1, ptr %changed, align 1
-  br i1 %changed14, label %while.body, label %while.exit
+while.cond:                                       ; preds = %if.end64, %if.end5
+  %changed18 = load i1, ptr %changed, align 1
+  br i1 %changed18, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %load.struct15 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
-  %escape_records16 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct15, 66
-  %length17 = extractvalue %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E %escape_records16, 0
+  %load.struct19 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
+  %escape_records20 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct19, 66
+  %length21 = extractvalue %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E %escape_records20, 0
   store i64 0, ptr %k, align 1
-  %load.struct18 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
-  %instantiated_functions19 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct18, 43
-  store %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E %instantiated_functions19, ptr %coll.tmp20, align 8
-  call void @_ZN5ArrayI15PlannedFunctionB6scalycB4v0_2E12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca21, ptr null, ptr %coll.tmp20)
-  br label %for.cond22
+  %load.struct22 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
+  %instantiated_functions23 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct22, 43
+  store %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E %instantiated_functions23, ptr %coll.tmp24, align 8
+  call void @_ZN5ArrayI15PlannedFunctionB6scalycB4v0_2E12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca25, ptr null, ptr %coll.tmp24)
+  br label %for.cond26
 
 while.exit:                                       ; preds = %while.cond
-  %escape_forwarding34 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 76
-  store i1 false, ptr %escape_forwarding34, align 1
-  %escape_checking35 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 71
-  store i1 true, ptr %escape_checking35, align 1
-  %call = call ptr @getenv(ptr @.str.2688)
-  %call36 = call ptr @getenv(ptr @.str.2689)
-  %ne37 = icmp ne ptr %call36, null
+  %escape_forwarding75 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 76
+  store i1 false, ptr %escape_forwarding75, align 1
+  %escape_checking76 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 71
+  store i1 true, ptr %escape_checking76, align 1
+  %call77 = call ptr @getenv(ptr @.str.2688)
+  %call78 = call ptr @getenv(ptr @.str.2689)
+  %ne79 = icmp ne ptr %call78, null
   %bv_trace = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 88
-  store i1 %ne37, ptr %bv_trace, align 1
+  store i1 %ne79, ptr %bv_trace, align 1
   store i64 0, ptr %k, align 1
-  %load.struct38 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
-  %instantiated_functions39 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct38, 43
-  store %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E %instantiated_functions39, ptr %coll.tmp40, align 8
-  call void @_ZN5ArrayI15PlannedFunctionB6scalycB4v0_2E12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca41, ptr null, ptr %coll.tmp40)
-  br label %for.cond42
+  %load.struct80 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
+  %instantiated_functions81 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct80, 43
+  store %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E %instantiated_functions81, ptr %coll.tmp82, align 8
+  call void @_ZN5ArrayI15PlannedFunctionB6scalycB4v0_2E12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca83, ptr null, ptr %coll.tmp82)
+  br label %for.cond84
 
-for.cond22:                                       ; preds = %for.body23, %while.body
-  %next25 = call ptr @_ZN13ArrayIteratorI15PlannedFunctionB6scalycB4v0_2E4nextEv(ptr %iter.alloca21)
-  %is.done26 = icmp eq ptr %next25, null
-  br i1 %is.done26, label %for.exit24, label %for.body23
+for.cond26:                                       ; preds = %if.end34, %while.body
+  %next29 = call ptr @_ZN13ArrayIteratorI15PlannedFunctionB6scalycB4v0_2E4nextEv(ptr %iter.alloca25)
+  %is.done30 = icmp eq ptr %next29, null
+  br i1 %is.done30, label %for.exit28, label %for.body27
 
-for.body23:                                       ; preds = %for.cond22
-  %k27 = load i64, ptr %k, align 8
-  %escape_fn_index28 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 75
-  store i64 %k27, ptr %escape_fn_index28, align 8
-  call void @_ZN7PlannerB6scalycB4v0_225escape_walk_function_bodyEPN4scaly6memory4PageE15PlannedFunctionB6scalycB4v0_2(ptr %0, ptr %1, ptr %next25)
-  %k29 = load i64, ptr %k, align 8
-  %add30 = add i64 %k29, 1
-  store i64 %add30, ptr %k, align 1
-  br label %for.cond22
+for.body27:                                       ; preds = %for.cond26
+  %round31 = load i64, ptr %round, align 8
+  %eq32 = icmp eq i64 %round31, 0
+  br i1 %eq32, label %if.then33, label %if.else
 
-for.exit24:                                       ; preds = %for.cond22
-  %load.struct31 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
-  %escape_records32 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct31, 66
-  %length33 = extractvalue %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E %escape_records32, 0
-  %ne = icmp ne i64 %length33, %length17
+for.exit28:                                       ; preds = %for.cond26
+  %round61 = load i64, ptr %round, align 8
+  %eq62 = icmp eq i64 %round61, 0
+  br i1 %eq62, label %if.then63, label %if.end64
+
+if.then33:                                        ; preds = %for.body27
+  %field.inplace = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 6
+  %field.inplace35 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 5
+  %field.inplace36 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %field.inplace35, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace36, align 8
+  call void @_ZN5ArrayImE3addEm(ptr %field.inplace, i64 %field.val)
+  %field.inplace37 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 7
+  %field.inplace38 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 66
+  %field.inplace39 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E, ptr %field.inplace38, i32 0, i32 0
+  %field.val40 = load i64, ptr %field.inplace39, align 8
+  call void @_ZN5ArrayImE3addEm(ptr %field.inplace37, i64 %field.val40)
+  %k41 = load i64, ptr %k, align 8
+  %escape_fn_index42 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 75
+  store i64 %k41, ptr %escape_fn_index42, align 8
+  call void @_ZN7PlannerB6scalycB4v0_225escape_walk_function_bodyEPN4scaly6memory4PageE15PlannedFunctionB6scalycB4v0_2(ptr %0, ptr %1, ptr %next29)
+  br label %if.end34
+
+if.else:                                          ; preds = %for.body27
+  %k43 = load i64, ptr %k, align 8
+  %call = call i1 @_ZN7PlannerB6scalycB4v0_220escape_forward_staleEm(ptr %1, i64 %k43)
+  br i1 %call, label %if.then44, label %if.end45
+
+if.end34:                                         ; preds = %if.end45, %if.then33
+  %k59 = load i64, ptr %k, align 8
+  %add60 = add i64 %k59, 1
+  store i64 %add60, ptr %k, align 1
+  br label %for.cond26
+
+if.then44:                                        ; preds = %if.else
+  %k46 = load i64, ptr %k, align 8
+  %load.struct47 = load %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, align 8
+  %start48 = extractvalue %_Z8EscIndexB6scalycB4v0_2 %load.struct47, 7
+  %length49 = extractvalue %_Z5ArrayImE %start48, 0
+  %lt = icmp ult i64 %k46, %length49
+  br i1 %lt, label %if.then50, label %if.end51
+
+if.end45:                                         ; preds = %if.end51, %if.else
+  br label %if.end34
+
+if.then50:                                        ; preds = %if.then44
+  %field.inplace52 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 7
+  %k53 = load i64, ptr %k, align 8
+  %field.inplace54 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 66
+  %field.inplace55 = getelementptr inbounds nuw %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E, ptr %field.inplace54, i32 0, i32 0
+  %field.val56 = load i64, ptr %field.inplace55, align 8
+  call void @_ZN5ArrayImE3putEmm(ptr %field.inplace52, i64 %k53, i64 %field.val56)
+  br label %if.end51
+
+if.end51:                                         ; preds = %if.then50, %if.then44
+  %k57 = load i64, ptr %k, align 8
+  %escape_fn_index58 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 75
+  store i64 %k57, ptr %escape_fn_index58, align 8
+  call void @_ZN7PlannerB6scalycB4v0_225escape_walk_function_bodyEPN4scaly6memory4PageE15PlannedFunctionB6scalycB4v0_2(ptr %0, ptr %1, ptr %next29)
+  br label %if.end45
+
+if.then63:                                        ; preds = %for.exit28
+  %field.inplace65 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 6
+  %field.inplace66 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 5
+  %field.inplace67 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %field.inplace66, i32 0, i32 0
+  %field.val68 = load i64, ptr %field.inplace67, align 8
+  call void @_ZN5ArrayImE3addEm(ptr %field.inplace65, i64 %field.val68)
+  %collect69 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %esc_index, i32 0, i32 8
+  store i1 false, ptr %collect69, align 1
+  br label %if.end64
+
+if.end64:                                         ; preds = %if.then63, %for.exit28
+  %round70 = load i64, ptr %round, align 8
+  %add71 = add i64 %round70, 1
+  store i64 %add71, ptr %round, align 1
+  %load.struct72 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
+  %escape_records73 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct72, 66
+  %length74 = extractvalue %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E %escape_records73, 0
+  %ne = icmp ne i64 %length74, %length21
   store i1 %ne, ptr %changed, align 1
   call void @_ZN7PlannerB6scalycB4v0_210phase_markEP10const_char(ptr %1, ptr @.str.2687)
   br label %while.cond
 
-for.cond42:                                       ; preds = %if.end51, %while.exit
-  %next45 = call ptr @_ZN13ArrayIteratorI15PlannedFunctionB6scalycB4v0_2E4nextEv(ptr %iter.alloca41)
-  %is.done46 = icmp eq ptr %next45, null
-  br i1 %is.done46, label %for.exit44, label %for.body43
+for.cond84:                                       ; preds = %if.end93, %while.exit
+  %next87 = call ptr @_ZN13ArrayIteratorI15PlannedFunctionB6scalycB4v0_2E4nextEv(ptr %iter.alloca83)
+  %is.done88 = icmp eq ptr %next87, null
+  br i1 %is.done88, label %for.exit86, label %for.body85
 
-for.body43:                                       ; preds = %for.cond42
-  %load.struct47 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
-  %escape_found48 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct47, 72
-  %eq49 = icmp eq i1 %escape_found48, false
-  br i1 %eq49, label %if.then50, label %if.end51
+for.body85:                                       ; preds = %for.cond84
+  %load.struct89 = load %_Z7PlannerB6scalycB4v0_2, ptr %1, align 8
+  %escape_found90 = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct89, 72
+  %eq91 = icmp eq i1 %escape_found90, false
+  br i1 %eq91, label %if.then92, label %if.end93
 
-for.exit44:                                       ; preds = %for.cond42
+for.exit86:                                       ; preds = %for.cond84
   ret void
 
-if.then50:                                        ; preds = %for.body43
+if.then92:                                        ; preds = %for.body85
   %j = load i64, ptr %k, align 8
-  %escape_fn_index52 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 75
-  store i64 %j, ptr %escape_fn_index52, align 8
+  %escape_fn_index94 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 75
+  store i64 %j, ptr %escape_fn_index94, align 8
   %census_trace = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 87
   store i1 false, ptr %census_trace, align 1
-  %ne56 = icmp ne ptr %call, null
-  br i1 %ne56, label %land.rhs55, label %if.end54
+  %ne98 = icmp ne ptr %call77, null
+  br i1 %ne98, label %land.rhs97, label %if.end96
 
-if.end51:                                         ; preds = %if.end54, %for.body43
-  %j60 = load i64, ptr %k, align 8
-  %add61 = add i64 %j60, 1
-  store i64 %add61, ptr %k, align 1
-  br label %for.cond42
+if.end93:                                         ; preds = %if.end96, %for.body85
+  %j103 = load i64, ptr %k, align 8
+  %add104 = add i64 %j103, 1
+  store i64 %add104, ptr %k, align 1
+  br label %for.cond84
 
-if.then53:                                        ; preds = %land.rhs55
-  %census_trace58 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 87
-  store i1 true, ptr %census_trace58, align 1
-  br label %if.end54
+if.then95:                                        ; preds = %land.rhs97
+  %census_trace101 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 87
+  store i1 true, ptr %census_trace101, align 1
+  br label %if.end96
 
-if.end54:                                         ; preds = %if.then53, %land.rhs55, %if.then50
-  call void @_ZN7PlannerB6scalycB4v0_225escape_walk_function_bodyEPN4scaly6memory4PageE15PlannedFunctionB6scalycB4v0_2(ptr %0, ptr %1, ptr %next45)
-  %census_trace59 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 87
-  store i1 false, ptr %census_trace59, align 1
-  br label %if.end51
+if.end96:                                         ; preds = %if.then95, %land.rhs97, %if.then92
+  call void @_ZN7PlannerB6scalycB4v0_225escape_walk_function_bodyEPN4scaly6memory4PageE15PlannedFunctionB6scalycB4v0_2(ptr %0, ptr %1, ptr %next87)
+  %census_trace102 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 87
+  store i1 false, ptr %census_trace102, align 1
+  br label %if.end93
 
-land.rhs55:                                       ; preds = %if.then50
-  %field.inplace = getelementptr inbounds nuw %_Z15PlannedFunctionB6scalycB4v0_2, ptr %next45, i32 0, i32 3
-  %call57 = call i1 @_ZN6String6equalsEP10const_char(ptr %field.inplace, ptr %call)
-  br i1 %call57, label %if.then53, label %if.end54
+land.rhs97:                                       ; preds = %if.then92
+  %field.inplace99 = getelementptr inbounds nuw %_Z15PlannedFunctionB6scalycB4v0_2, ptr %next87, i32 0, i32 3
+  %call100 = call i1 @_ZN6String6equalsEP10const_char(ptr %field.inplace99, ptr %call77)
+  br i1 %call100, label %if.then95, label %if.end96
 }
 
 define linkonce_odr i64 @_ZN7PlannerB6scalycB4v0_216move_alias_indexE6String(ptr %0, ptr %1) {
@@ -376607,39 +376788,42 @@ frame.forced:                                     ; preds = %frame.force, %if.en
 
 define linkonce_odr void @_ZN7PlannerB6scalycB4v0_2C1E6String(ptr %0, ptr %1) {
 entry:
-  %arg.tmp704 = alloca { ptr }, align 8
-  %arg.tmp703 = alloca { ptr }, align 8
-  %arg.tmp702 = alloca { ptr }, align 8
-  %wrapped_frame690 = alloca { ptr, ptr }, align 8
-  %wrapped_frame677 = alloca { ptr, ptr }, align 8
-  %wrapped_frame664 = alloca { ptr, ptr }, align 8
-  %arg.tmp650 = alloca { ptr }, align 8
-  %wrapped_frame638 = alloca { ptr, ptr }, align 8
-  %wrapped_frame625 = alloca { ptr, ptr }, align 8
+  %arg.tmp750 = alloca { ptr }, align 8
+  %arg.tmp749 = alloca { ptr }, align 8
+  %arg.tmp748 = alloca { ptr }, align 8
+  %wrapped_frame736 = alloca { ptr, ptr }, align 8
+  %wrapped_frame723 = alloca { ptr, ptr }, align 8
+  %wrapped_frame710 = alloca { ptr, ptr }, align 8
+  %arg.tmp696 = alloca { ptr }, align 8
+  %wrapped_frame684 = alloca { ptr, ptr }, align 8
+  %wrapped_frame671 = alloca { ptr, ptr }, align 8
   %tuple = alloca %_Z12ConceptIndexB6scalycB4v0_2, align 8
-  %sret.result620 = alloca %_Z12ConceptIndexB6scalycB4v0_2, align 8
-  %wrapped_frame587 = alloca { ptr, ptr }, align 8
-  %wrapped_frame574 = alloca { ptr, ptr }, align 8
-  %wrapped_frame561 = alloca { ptr, ptr }, align 8
-  %wrapped_frame548 = alloca { ptr, ptr }, align 8
-  %sret.result545 = alloca %_Z12ConceptIndexB6scalycB4v0_2, align 8
-  %wrapped_frame533 = alloca { ptr, ptr }, align 8
-  %wrapped_frame520 = alloca { ptr, ptr }, align 8
-  %wrapped_frame462 = alloca { ptr, ptr }, align 8
-  %wrapped_frame449 = alloca { ptr, ptr }, align 8
-  %wrapped_frame433 = alloca { ptr, ptr }, align 8
-  %wrapped_frame408 = alloca { ptr, ptr }, align 8
-  %wrapped_frame395 = alloca { ptr, ptr }, align 8
+  %sret.result666 = alloca %_Z12ConceptIndexB6scalycB4v0_2, align 8
+  %wrapped_frame633 = alloca { ptr, ptr }, align 8
+  %wrapped_frame620 = alloca { ptr, ptr }, align 8
+  %wrapped_frame607 = alloca { ptr, ptr }, align 8
+  %wrapped_frame594 = alloca { ptr, ptr }, align 8
+  %sret.result591 = alloca %_Z12ConceptIndexB6scalycB4v0_2, align 8
+  %wrapped_frame579 = alloca { ptr, ptr }, align 8
+  %wrapped_frame566 = alloca { ptr, ptr }, align 8
+  %wrapped_frame508 = alloca { ptr, ptr }, align 8
+  %wrapped_frame495 = alloca { ptr, ptr }, align 8
+  %wrapped_frame479 = alloca { ptr, ptr }, align 8
+  %wrapped_frame454 = alloca { ptr, ptr }, align 8
+  %wrapped_frame441 = alloca { ptr, ptr }, align 8
   %dik = alloca i64, align 8
-  %wrapped_frame356 = alloca { ptr, ptr }, align 8
-  %wrapped_frame343 = alloca { ptr, ptr }, align 8
-  %wrapped_frame330 = alloca { ptr, ptr }, align 8
-  %wrapped_frame317 = alloca { ptr, ptr }, align 8
-  %wrapped_frame304 = alloca { ptr, ptr }, align 8
-  %wrapped_frame283 = alloca { ptr, ptr }, align 8
-  %wrapped_frame270 = alloca { ptr, ptr }, align 8
-  %wrapped_frame245 = alloca { ptr, ptr }, align 8
-  %wrapped_frame232 = alloca { ptr, ptr }, align 8
+  %wrapped_frame402 = alloca { ptr, ptr }, align 8
+  %wrapped_frame389 = alloca { ptr, ptr }, align 8
+  %wrapped_frame376 = alloca { ptr, ptr }, align 8
+  %wrapped_frame363 = alloca { ptr, ptr }, align 8
+  %wrapped_frame350 = alloca { ptr, ptr }, align 8
+  %wrapped_frame329 = alloca { ptr, ptr }, align 8
+  %wrapped_frame316 = alloca { ptr, ptr }, align 8
+  %wrapped_frame291 = alloca { ptr, ptr }, align 8
+  %wrapped_frame278 = alloca { ptr, ptr }, align 8
+  %wrapped_frame242 = alloca { ptr, ptr }, align 8
+  %wrapped_frame229 = alloca { ptr, ptr }, align 8
+  %wrapped_frame216 = alloca { ptr, ptr }, align 8
   %wrapped_frame203 = alloca { ptr, ptr }, align 8
   %wrapped_frame190 = alloca { ptr, ptr }, align 8
   %wrapped_frame177 = alloca { ptr, ptr }, align 8
@@ -377176,274 +377360,348 @@ frame.forced208:                                  ; preds = %frame.force207, %fr
   %tuple.field214 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region211, i32 0, i32 2
   store ptr null, ptr %tuple.field214, align 8
   %own_page215 = call ptr @_Z3getPv(ptr %0)
-  %tuple.region216 = call ptr @_ZN4Page8allocateEmm(ptr %own_page215, i64 ptrtoint (ptr getelementptr (%_Z8EscIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8EscIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
-  %field.load217 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region160, align 8
-  %tuple.field218 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region216, i32 0, i32 0
-  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load217, ptr %tuple.field218, align 1
-  %field.load219 = load %_Z5ArrayI6StringE, ptr %struct.region172, align 8
-  %tuple.field220 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region216, i32 0, i32 1
-  store %_Z5ArrayI6StringE %field.load219, ptr %tuple.field220, align 1
-  %field.load221 = load %_Z5ArrayImE, ptr %struct.region185, align 8
-  %tuple.field222 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region216, i32 0, i32 2
-  store %_Z5ArrayImE %field.load221, ptr %tuple.field222, align 1
-  %field.load223 = load %_Z5ArrayImE, ptr %struct.region198, align 8
-  %tuple.field224 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region216, i32 0, i32 3
-  store %_Z5ArrayImE %field.load223, ptr %tuple.field224, align 1
-  %field.load225 = load %_Z5ArrayImE, ptr %struct.region211, align 8
-  %tuple.field226 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region216, i32 0, i32 4
-  store %_Z5ArrayImE %field.load225, ptr %tuple.field226, align 1
+  store ptr %own_page215, ptr %wrapped_frame216, align 8
+  %wrapped.parent217 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame216, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent217, align 8
+  %frame.page218 = load ptr, ptr %wrapped_frame216, align 8
+  %frame.has_page219 = icmp ne ptr %frame.page218, null
+  br i1 %frame.has_page219, label %frame.forced221, label %frame.force220
+
+frame.force220:                                   ; preds = %frame.forced208
+  %forced_page222 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame216)
+  br label %frame.forced221
+
+frame.forced221:                                  ; preds = %frame.force220, %frame.forced208
+  %forced_page223 = phi ptr [ %frame.page218, %frame.forced208 ], [ %forced_page222, %frame.force220 ]
+  %struct.region224 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page223, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field225 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region224, i32 0, i32 0
+  store i64 0, ptr %tuple.field225, align 8
+  %tuple.field226 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region224, i32 0, i32 1
+  store i64 0, ptr %tuple.field226, align 8
+  %tuple.field227 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region224, i32 0, i32 2
+  store ptr null, ptr %tuple.field227, align 8
+  %own_page228 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page228, ptr %wrapped_frame229, align 8
+  %wrapped.parent230 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame229, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent230, align 8
+  %frame.page231 = load ptr, ptr %wrapped_frame229, align 8
+  %frame.has_page232 = icmp ne ptr %frame.page231, null
+  br i1 %frame.has_page232, label %frame.forced234, label %frame.force233
+
+frame.force233:                                   ; preds = %frame.forced221
+  %forced_page235 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame229)
+  br label %frame.forced234
+
+frame.forced234:                                  ; preds = %frame.force233, %frame.forced221
+  %forced_page236 = phi ptr [ %frame.page231, %frame.forced221 ], [ %forced_page235, %frame.force233 ]
+  %struct.region237 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page236, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field238 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region237, i32 0, i32 0
+  store i64 0, ptr %tuple.field238, align 8
+  %tuple.field239 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region237, i32 0, i32 1
+  store i64 0, ptr %tuple.field239, align 8
+  %tuple.field240 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region237, i32 0, i32 2
+  store ptr null, ptr %tuple.field240, align 8
+  %own_page241 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page241, ptr %wrapped_frame242, align 8
+  %wrapped.parent243 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame242, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent243, align 8
+  %frame.page244 = load ptr, ptr %wrapped_frame242, align 8
+  %frame.has_page245 = icmp ne ptr %frame.page244, null
+  br i1 %frame.has_page245, label %frame.forced247, label %frame.force246
+
+frame.force246:                                   ; preds = %frame.forced234
+  %forced_page248 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame242)
+  br label %frame.forced247
+
+frame.forced247:                                  ; preds = %frame.force246, %frame.forced234
+  %forced_page249 = phi ptr [ %frame.page244, %frame.forced234 ], [ %forced_page248, %frame.force246 ]
+  %struct.region250 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page249, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field251 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region250, i32 0, i32 0
+  store i64 0, ptr %tuple.field251, align 8
+  %tuple.field252 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region250, i32 0, i32 1
+  store i64 0, ptr %tuple.field252, align 8
+  %tuple.field253 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region250, i32 0, i32 2
+  store ptr null, ptr %tuple.field253, align 8
+  %own_page254 = call ptr @_Z3getPv(ptr %0)
+  %tuple.region255 = call ptr @_ZN4Page8allocateEmm(ptr %own_page254, i64 ptrtoint (ptr getelementptr (%_Z8EscIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8EscIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
+  %field.load256 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region160, align 8
+  %tuple.field257 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region255, i32 0, i32 0
+  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load256, ptr %tuple.field257, align 1
+  %field.load258 = load %_Z5ArrayI6StringE, ptr %struct.region172, align 8
+  %tuple.field259 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region255, i32 0, i32 1
+  store %_Z5ArrayI6StringE %field.load258, ptr %tuple.field259, align 1
+  %field.load260 = load %_Z5ArrayImE, ptr %struct.region185, align 8
+  %tuple.field261 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region255, i32 0, i32 2
+  store %_Z5ArrayImE %field.load260, ptr %tuple.field261, align 1
+  %field.load262 = load %_Z5ArrayImE, ptr %struct.region198, align 8
+  %tuple.field263 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region255, i32 0, i32 3
+  store %_Z5ArrayImE %field.load262, ptr %tuple.field263, align 1
+  %field.load264 = load %_Z5ArrayImE, ptr %struct.region211, align 8
+  %tuple.field265 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region255, i32 0, i32 4
+  store %_Z5ArrayImE %field.load264, ptr %tuple.field265, align 1
+  %field.load266 = load %_Z5ArrayI6StringE, ptr %struct.region224, align 8
+  %tuple.field267 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region255, i32 0, i32 5
+  store %_Z5ArrayI6StringE %field.load266, ptr %tuple.field267, align 1
+  %field.load268 = load %_Z5ArrayImE, ptr %struct.region237, align 8
+  %tuple.field269 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region255, i32 0, i32 6
+  store %_Z5ArrayImE %field.load268, ptr %tuple.field269, align 1
+  %field.load270 = load %_Z5ArrayImE, ptr %struct.region250, align 8
+  %tuple.field271 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region255, i32 0, i32 7
+  store %_Z5ArrayImE %field.load270, ptr %tuple.field271, align 1
+  %tuple.field272 = getelementptr inbounds nuw %_Z8EscIndexB6scalycB4v0_2, ptr %tuple.region255, i32 0, i32 8
+  store i1 false, ptr %tuple.field272, align 1
   %esc_index = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 67
-  store ptr %tuple.region216, ptr %esc_index, align 8
-  %own_page227 = call ptr @_Z3getPv(ptr %0)
-  %tuple.region228 = call ptr @_ZN4Page8allocateEmm(ptr %own_page227, i64 ptrtoint (ptr getelementptr (%_Z12ConceptIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12ConceptIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field229 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region228, i32 0, i32 0
-  store ptr null, ptr %tuple.field229, align 1
-  %tuple.field230 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region228, i32 0, i32 1
-  store i64 0, ptr %tuple.field230, align 1
-  %own_page231 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page231, ptr %wrapped_frame232, align 8
-  %wrapped.parent233 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame232, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent233, align 8
-  %frame.page234 = load ptr, ptr %wrapped_frame232, align 8
-  %frame.has_page235 = icmp ne ptr %frame.page234, null
-  br i1 %frame.has_page235, label %frame.forced237, label %frame.force236
+  store ptr %tuple.region255, ptr %esc_index, align 8
+  %own_page273 = call ptr @_Z3getPv(ptr %0)
+  %tuple.region274 = call ptr @_ZN4Page8allocateEmm(ptr %own_page273, i64 ptrtoint (ptr getelementptr (%_Z12ConceptIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12ConceptIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field275 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region274, i32 0, i32 0
+  store ptr null, ptr %tuple.field275, align 1
+  %tuple.field276 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region274, i32 0, i32 1
+  store i64 0, ptr %tuple.field276, align 1
+  %own_page277 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page277, ptr %wrapped_frame278, align 8
+  %wrapped.parent279 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame278, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent279, align 8
+  %frame.page280 = load ptr, ptr %wrapped_frame278, align 8
+  %frame.has_page281 = icmp ne ptr %frame.page280, null
+  br i1 %frame.has_page281, label %frame.forced283, label %frame.force282
 
-frame.force236:                                   ; preds = %frame.forced208
-  %forced_page238 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame232)
-  br label %frame.forced237
+frame.force282:                                   ; preds = %frame.forced247
+  %forced_page284 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame278)
+  br label %frame.forced283
 
-frame.forced237:                                  ; preds = %frame.force236, %frame.forced208
-  %forced_page239 = phi ptr [ %frame.page234, %frame.forced208 ], [ %forced_page238, %frame.force236 ]
-  %struct.region240 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page239, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field241 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region240, i32 0, i32 0
-  store i64 0, ptr %tuple.field241, align 8
-  %tuple.field242 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region240, i32 0, i32 1
-  store i64 0, ptr %tuple.field242, align 8
-  %tuple.field243 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region240, i32 0, i32 2
-  store ptr null, ptr %tuple.field243, align 8
-  %own_page244 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page244, ptr %wrapped_frame245, align 8
-  %wrapped.parent246 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame245, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent246, align 8
-  %frame.page247 = load ptr, ptr %wrapped_frame245, align 8
-  %frame.has_page248 = icmp ne ptr %frame.page247, null
-  br i1 %frame.has_page248, label %frame.forced250, label %frame.force249
+frame.forced283:                                  ; preds = %frame.force282, %frame.forced247
+  %forced_page285 = phi ptr [ %frame.page280, %frame.forced247 ], [ %forced_page284, %frame.force282 ]
+  %struct.region286 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page285, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field287 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region286, i32 0, i32 0
+  store i64 0, ptr %tuple.field287, align 8
+  %tuple.field288 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region286, i32 0, i32 1
+  store i64 0, ptr %tuple.field288, align 8
+  %tuple.field289 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region286, i32 0, i32 2
+  store ptr null, ptr %tuple.field289, align 8
+  %own_page290 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page290, ptr %wrapped_frame291, align 8
+  %wrapped.parent292 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame291, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent292, align 8
+  %frame.page293 = load ptr, ptr %wrapped_frame291, align 8
+  %frame.has_page294 = icmp ne ptr %frame.page293, null
+  br i1 %frame.has_page294, label %frame.forced296, label %frame.force295
 
-frame.force249:                                   ; preds = %frame.forced237
-  %forced_page251 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame245)
-  br label %frame.forced250
+frame.force295:                                   ; preds = %frame.forced283
+  %forced_page297 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame291)
+  br label %frame.forced296
 
-frame.forced250:                                  ; preds = %frame.force249, %frame.forced237
-  %forced_page252 = phi ptr [ %frame.page247, %frame.forced237 ], [ %forced_page251, %frame.force249 ]
-  %struct.region253 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page252, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field254 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region253, i32 0, i32 0
-  store i64 0, ptr %tuple.field254, align 8
-  %tuple.field255 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region253, i32 0, i32 1
-  store i64 0, ptr %tuple.field255, align 8
-  %tuple.field256 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region253, i32 0, i32 2
-  store ptr null, ptr %tuple.field256, align 8
-  %own_page257 = call ptr @_Z3getPv(ptr %0)
-  %tuple.region258 = call ptr @_ZN4Page8allocateEmm(ptr %own_page257, i64 ptrtoint (ptr getelementptr (%_Z9NameIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z9NameIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
-  %field.load259 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region228, align 8
-  %tuple.field260 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region258, i32 0, i32 0
-  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load259, ptr %tuple.field260, align 1
-  %field.load261 = load %_Z5ArrayI6StringE, ptr %struct.region240, align 8
-  %tuple.field262 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region258, i32 0, i32 1
-  store %_Z5ArrayI6StringE %field.load261, ptr %tuple.field262, align 1
-  %field.load263 = load %_Z5ArrayImE, ptr %struct.region253, align 8
-  %tuple.field264 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region258, i32 0, i32 2
-  store %_Z5ArrayImE %field.load263, ptr %tuple.field264, align 1
-  %global_index = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 68
-  store ptr %tuple.region258, ptr %global_index, align 8
-  %own_page265 = call ptr @_Z3getPv(ptr %0)
-  %tuple.region266 = call ptr @_ZN4Page8allocateEmm(ptr %own_page265, i64 ptrtoint (ptr getelementptr (%_Z12ConceptIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12ConceptIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field267 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region266, i32 0, i32 0
-  store ptr null, ptr %tuple.field267, align 1
-  %tuple.field268 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region266, i32 0, i32 1
-  store i64 0, ptr %tuple.field268, align 1
-  %own_page269 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page269, ptr %wrapped_frame270, align 8
-  %wrapped.parent271 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame270, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent271, align 8
-  %frame.page272 = load ptr, ptr %wrapped_frame270, align 8
-  %frame.has_page273 = icmp ne ptr %frame.page272, null
-  br i1 %frame.has_page273, label %frame.forced275, label %frame.force274
-
-frame.force274:                                   ; preds = %frame.forced250
-  %forced_page276 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame270)
-  br label %frame.forced275
-
-frame.forced275:                                  ; preds = %frame.force274, %frame.forced250
-  %forced_page277 = phi ptr [ %frame.page272, %frame.forced250 ], [ %forced_page276, %frame.force274 ]
-  %struct.region278 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page277, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field279 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region278, i32 0, i32 0
-  store i64 0, ptr %tuple.field279, align 8
-  %tuple.field280 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region278, i32 0, i32 1
-  store i64 0, ptr %tuple.field280, align 8
-  %tuple.field281 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region278, i32 0, i32 2
-  store ptr null, ptr %tuple.field281, align 8
-  %own_page282 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page282, ptr %wrapped_frame283, align 8
-  %wrapped.parent284 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame283, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent284, align 8
-  %frame.page285 = load ptr, ptr %wrapped_frame283, align 8
-  %frame.has_page286 = icmp ne ptr %frame.page285, null
-  br i1 %frame.has_page286, label %frame.forced288, label %frame.force287
-
-frame.force287:                                   ; preds = %frame.forced275
-  %forced_page289 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame283)
-  br label %frame.forced288
-
-frame.forced288:                                  ; preds = %frame.force287, %frame.forced275
-  %forced_page290 = phi ptr [ %frame.page285, %frame.forced275 ], [ %forced_page289, %frame.force287 ]
-  %struct.region291 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page290, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field292 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region291, i32 0, i32 0
-  store i64 0, ptr %tuple.field292, align 8
-  %tuple.field293 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region291, i32 0, i32 1
-  store i64 0, ptr %tuple.field293, align 8
-  %tuple.field294 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region291, i32 0, i32 2
-  store ptr null, ptr %tuple.field294, align 8
-  %own_page295 = call ptr @_Z3getPv(ptr %0)
-  %tuple.region296 = call ptr @_ZN4Page8allocateEmm(ptr %own_page295, i64 ptrtoint (ptr getelementptr (%_Z9NameIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z9NameIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
-  %field.load297 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region266, align 8
-  %tuple.field298 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region296, i32 0, i32 0
-  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load297, ptr %tuple.field298, align 1
-  %field.load299 = load %_Z5ArrayI6StringE, ptr %struct.region278, align 8
-  %tuple.field300 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region296, i32 0, i32 1
-  store %_Z5ArrayI6StringE %field.load299, ptr %tuple.field300, align 1
-  %field.load301 = load %_Z5ArrayImE, ptr %struct.region291, align 8
-  %tuple.field302 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region296, i32 0, i32 2
-  store %_Z5ArrayImE %field.load301, ptr %tuple.field302, align 1
-  %concept_param_index = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 69
-  store ptr %tuple.region296, ptr %concept_param_index, align 8
+frame.forced296:                                  ; preds = %frame.force295, %frame.forced283
+  %forced_page298 = phi ptr [ %frame.page293, %frame.forced283 ], [ %forced_page297, %frame.force295 ]
+  %struct.region299 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page298, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field300 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region299, i32 0, i32 0
+  store i64 0, ptr %tuple.field300, align 8
+  %tuple.field301 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region299, i32 0, i32 1
+  store i64 0, ptr %tuple.field301, align 8
+  %tuple.field302 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region299, i32 0, i32 2
+  store ptr null, ptr %tuple.field302, align 8
   %own_page303 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page303, ptr %wrapped_frame304, align 8
-  %wrapped.parent305 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame304, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent305, align 8
-  %frame.page306 = load ptr, ptr %wrapped_frame304, align 8
-  %frame.has_page307 = icmp ne ptr %frame.page306, null
-  br i1 %frame.has_page307, label %frame.forced309, label %frame.force308
+  %tuple.region304 = call ptr @_ZN4Page8allocateEmm(ptr %own_page303, i64 ptrtoint (ptr getelementptr (%_Z9NameIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z9NameIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
+  %field.load305 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region274, align 8
+  %tuple.field306 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region304, i32 0, i32 0
+  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load305, ptr %tuple.field306, align 1
+  %field.load307 = load %_Z5ArrayI6StringE, ptr %struct.region286, align 8
+  %tuple.field308 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region304, i32 0, i32 1
+  store %_Z5ArrayI6StringE %field.load307, ptr %tuple.field308, align 1
+  %field.load309 = load %_Z5ArrayImE, ptr %struct.region299, align 8
+  %tuple.field310 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region304, i32 0, i32 2
+  store %_Z5ArrayImE %field.load309, ptr %tuple.field310, align 1
+  %global_index = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 68
+  store ptr %tuple.region304, ptr %global_index, align 8
+  %own_page311 = call ptr @_Z3getPv(ptr %0)
+  %tuple.region312 = call ptr @_ZN4Page8allocateEmm(ptr %own_page311, i64 ptrtoint (ptr getelementptr (%_Z12ConceptIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12ConceptIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field313 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region312, i32 0, i32 0
+  store ptr null, ptr %tuple.field313, align 1
+  %tuple.field314 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region312, i32 0, i32 1
+  store i64 0, ptr %tuple.field314, align 1
+  %own_page315 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page315, ptr %wrapped_frame316, align 8
+  %wrapped.parent317 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame316, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent317, align 8
+  %frame.page318 = load ptr, ptr %wrapped_frame316, align 8
+  %frame.has_page319 = icmp ne ptr %frame.page318, null
+  br i1 %frame.has_page319, label %frame.forced321, label %frame.force320
 
-frame.force308:                                   ; preds = %frame.forced288
-  %forced_page310 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame304)
-  br label %frame.forced309
+frame.force320:                                   ; preds = %frame.forced296
+  %forced_page322 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame316)
+  br label %frame.forced321
 
-frame.forced309:                                  ; preds = %frame.force308, %frame.forced288
-  %forced_page311 = phi ptr [ %frame.page306, %frame.forced288 ], [ %forced_page310, %frame.force308 ]
-  %struct.region312 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page311, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI3u64E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI3u64E }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field313 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region312, i32 0, i32 0
-  store i64 0, ptr %tuple.field313, align 8
-  %tuple.field314 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region312, i32 0, i32 1
-  store i64 0, ptr %tuple.field314, align 8
-  %tuple.field315 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region312, i32 0, i32 2
-  store ptr null, ptr %tuple.field315, align 8
-  %own_page316 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page316, ptr %wrapped_frame317, align 8
-  %wrapped.parent318 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame317, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent318, align 8
-  %frame.page319 = load ptr, ptr %wrapped_frame317, align 8
-  %frame.has_page320 = icmp ne ptr %frame.page319, null
-  br i1 %frame.has_page320, label %frame.forced322, label %frame.force321
-
-frame.force321:                                   ; preds = %frame.forced309
-  %forced_page323 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame317)
-  br label %frame.forced322
-
-frame.forced322:                                  ; preds = %frame.force321, %frame.forced309
-  %forced_page324 = phi ptr [ %frame.page319, %frame.forced309 ], [ %forced_page323, %frame.force321 ]
-  %struct.region325 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page324, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field326 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region325, i32 0, i32 0
+frame.forced321:                                  ; preds = %frame.force320, %frame.forced296
+  %forced_page323 = phi ptr [ %frame.page318, %frame.forced296 ], [ %forced_page322, %frame.force320 ]
+  %struct.region324 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page323, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field325 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region324, i32 0, i32 0
+  store i64 0, ptr %tuple.field325, align 8
+  %tuple.field326 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region324, i32 0, i32 1
   store i64 0, ptr %tuple.field326, align 8
-  %tuple.field327 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region325, i32 0, i32 1
-  store i64 0, ptr %tuple.field327, align 8
-  %tuple.field328 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region325, i32 0, i32 2
-  store ptr null, ptr %tuple.field328, align 8
-  %own_page329 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page329, ptr %wrapped_frame330, align 8
-  %wrapped.parent331 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame330, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent331, align 8
-  %frame.page332 = load ptr, ptr %wrapped_frame330, align 8
-  %frame.has_page333 = icmp ne ptr %frame.page332, null
-  br i1 %frame.has_page333, label %frame.forced335, label %frame.force334
+  %tuple.field327 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region324, i32 0, i32 2
+  store ptr null, ptr %tuple.field327, align 8
+  %own_page328 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page328, ptr %wrapped_frame329, align 8
+  %wrapped.parent330 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame329, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent330, align 8
+  %frame.page331 = load ptr, ptr %wrapped_frame329, align 8
+  %frame.has_page332 = icmp ne ptr %frame.page331, null
+  br i1 %frame.has_page332, label %frame.forced334, label %frame.force333
 
-frame.force334:                                   ; preds = %frame.forced322
-  %forced_page336 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame330)
-  br label %frame.forced335
+frame.force333:                                   ; preds = %frame.forced321
+  %forced_page335 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame329)
+  br label %frame.forced334
 
-frame.forced335:                                  ; preds = %frame.force334, %frame.forced322
-  %forced_page337 = phi ptr [ %frame.page332, %frame.forced322 ], [ %forced_page336, %frame.force334 ]
-  %struct.region338 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page337, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field339 = getelementptr inbounds nuw %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr %struct.region338, i32 0, i32 0
+frame.forced334:                                  ; preds = %frame.force333, %frame.forced321
+  %forced_page336 = phi ptr [ %frame.page331, %frame.forced321 ], [ %forced_page335, %frame.force333 ]
+  %struct.region337 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page336, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field338 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region337, i32 0, i32 0
+  store i64 0, ptr %tuple.field338, align 8
+  %tuple.field339 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region337, i32 0, i32 1
   store i64 0, ptr %tuple.field339, align 8
-  %tuple.field340 = getelementptr inbounds nuw %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr %struct.region338, i32 0, i32 1
-  store i64 0, ptr %tuple.field340, align 8
-  %tuple.field341 = getelementptr inbounds nuw %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr %struct.region338, i32 0, i32 2
-  store ptr null, ptr %tuple.field341, align 8
-  %own_page342 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page342, ptr %wrapped_frame343, align 8
-  %wrapped.parent344 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame343, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent344, align 8
-  %frame.page345 = load ptr, ptr %wrapped_frame343, align 8
-  %frame.has_page346 = icmp ne ptr %frame.page345, null
-  br i1 %frame.has_page346, label %frame.forced348, label %frame.force347
+  %tuple.field340 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region337, i32 0, i32 2
+  store ptr null, ptr %tuple.field340, align 8
+  %own_page341 = call ptr @_Z3getPv(ptr %0)
+  %tuple.region342 = call ptr @_ZN4Page8allocateEmm(ptr %own_page341, i64 ptrtoint (ptr getelementptr (%_Z9NameIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z9NameIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
+  %field.load343 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple.region312, align 8
+  %tuple.field344 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region342, i32 0, i32 0
+  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load343, ptr %tuple.field344, align 1
+  %field.load345 = load %_Z5ArrayI6StringE, ptr %struct.region324, align 8
+  %tuple.field346 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region342, i32 0, i32 1
+  store %_Z5ArrayI6StringE %field.load345, ptr %tuple.field346, align 1
+  %field.load347 = load %_Z5ArrayImE, ptr %struct.region337, align 8
+  %tuple.field348 = getelementptr inbounds nuw %_Z9NameIndexB6scalycB4v0_2, ptr %tuple.region342, i32 0, i32 2
+  store %_Z5ArrayImE %field.load347, ptr %tuple.field348, align 1
+  %concept_param_index = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 69
+  store ptr %tuple.region342, ptr %concept_param_index, align 8
+  %own_page349 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page349, ptr %wrapped_frame350, align 8
+  %wrapped.parent351 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame350, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent351, align 8
+  %frame.page352 = load ptr, ptr %wrapped_frame350, align 8
+  %frame.has_page353 = icmp ne ptr %frame.page352, null
+  br i1 %frame.has_page353, label %frame.forced355, label %frame.force354
 
-frame.force347:                                   ; preds = %frame.forced335
-  %forced_page349 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame343)
-  br label %frame.forced348
+frame.force354:                                   ; preds = %frame.forced334
+  %forced_page356 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame350)
+  br label %frame.forced355
 
-frame.forced348:                                  ; preds = %frame.force347, %frame.forced335
-  %forced_page350 = phi ptr [ %frame.page345, %frame.forced335 ], [ %forced_page349, %frame.force347 ]
-  %struct.region351 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page350, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field352 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region351, i32 0, i32 0
-  store i64 0, ptr %tuple.field352, align 8
-  %tuple.field353 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region351, i32 0, i32 1
-  store i64 0, ptr %tuple.field353, align 8
-  %tuple.field354 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region351, i32 0, i32 2
-  store ptr null, ptr %tuple.field354, align 8
-  %own_page355 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page355, ptr %wrapped_frame356, align 8
-  %wrapped.parent357 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame356, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent357, align 8
-  %frame.page358 = load ptr, ptr %wrapped_frame356, align 8
-  %frame.has_page359 = icmp ne ptr %frame.page358, null
-  br i1 %frame.has_page359, label %frame.forced361, label %frame.force360
+frame.forced355:                                  ; preds = %frame.force354, %frame.forced334
+  %forced_page357 = phi ptr [ %frame.page352, %frame.forced334 ], [ %forced_page356, %frame.force354 ]
+  %struct.region358 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page357, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI3u64E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI3u64E }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field359 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region358, i32 0, i32 0
+  store i64 0, ptr %tuple.field359, align 8
+  %tuple.field360 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region358, i32 0, i32 1
+  store i64 0, ptr %tuple.field360, align 8
+  %tuple.field361 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region358, i32 0, i32 2
+  store ptr null, ptr %tuple.field361, align 8
+  %own_page362 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page362, ptr %wrapped_frame363, align 8
+  %wrapped.parent364 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame363, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent364, align 8
+  %frame.page365 = load ptr, ptr %wrapped_frame363, align 8
+  %frame.has_page366 = icmp ne ptr %frame.page365, null
+  br i1 %frame.has_page366, label %frame.forced368, label %frame.force367
 
-frame.force360:                                   ; preds = %frame.forced348
-  %forced_page362 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame356)
-  br label %frame.forced361
+frame.force367:                                   ; preds = %frame.forced355
+  %forced_page369 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame363)
+  br label %frame.forced368
 
-frame.forced361:                                  ; preds = %frame.force360, %frame.forced348
-  %forced_page363 = phi ptr [ %frame.page358, %frame.forced348 ], [ %forced_page362, %frame.force360 ]
-  %struct.region364 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page363, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field365 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region364, i32 0, i32 0
-  store i64 0, ptr %tuple.field365, align 8
-  %tuple.field366 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region364, i32 0, i32 1
-  store i64 0, ptr %tuple.field366, align 8
-  %tuple.field367 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region364, i32 0, i32 2
-  store ptr null, ptr %tuple.field367, align 8
-  %own_page368 = call ptr @_Z3getPv(ptr %0)
-  %tuple.region369 = call ptr @_ZN4Page8allocateEmm(ptr %own_page368, i64 ptrtoint (ptr getelementptr (%_Z11MemberIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11MemberIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field370 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region369, i32 0, i32 0
-  store i64 0, ptr %tuple.field370, align 1
-  %tuple.field371 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region369, i32 0, i32 1
-  store i64 0, ptr %tuple.field371, align 1
-  %field.load372 = load %_Z5ArrayI3u64E, ptr %struct.region312, align 8
-  %tuple.field373 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region369, i32 0, i32 2
-  store %_Z5ArrayI3u64E %field.load372, ptr %tuple.field373, align 1
-  %field.load374 = load %_Z5ArrayImE, ptr %struct.region325, align 8
-  %tuple.field375 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region369, i32 0, i32 3
-  store %_Z5ArrayImE %field.load374, ptr %tuple.field375, align 1
-  %field.load376 = load %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr %struct.region338, align 8
-  %tuple.field377 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region369, i32 0, i32 4
-  store %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E %field.load376, ptr %tuple.field377, align 1
-  %field.load378 = load %_Z5ArrayImE, ptr %struct.region351, align 8
-  %tuple.field379 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region369, i32 0, i32 5
-  store %_Z5ArrayImE %field.load378, ptr %tuple.field379, align 1
-  %field.load380 = load %_Z5ArrayImE, ptr %struct.region364, align 8
-  %tuple.field381 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region369, i32 0, i32 6
-  store %_Z5ArrayImE %field.load380, ptr %tuple.field381, align 1
+frame.forced368:                                  ; preds = %frame.force367, %frame.forced355
+  %forced_page370 = phi ptr [ %frame.page365, %frame.forced355 ], [ %forced_page369, %frame.force367 ]
+  %struct.region371 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page370, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field372 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region371, i32 0, i32 0
+  store i64 0, ptr %tuple.field372, align 8
+  %tuple.field373 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region371, i32 0, i32 1
+  store i64 0, ptr %tuple.field373, align 8
+  %tuple.field374 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region371, i32 0, i32 2
+  store ptr null, ptr %tuple.field374, align 8
+  %own_page375 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page375, ptr %wrapped_frame376, align 8
+  %wrapped.parent377 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame376, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent377, align 8
+  %frame.page378 = load ptr, ptr %wrapped_frame376, align 8
+  %frame.has_page379 = icmp ne ptr %frame.page378, null
+  br i1 %frame.has_page379, label %frame.forced381, label %frame.force380
+
+frame.force380:                                   ; preds = %frame.forced368
+  %forced_page382 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame376)
+  br label %frame.forced381
+
+frame.forced381:                                  ; preds = %frame.force380, %frame.forced368
+  %forced_page383 = phi ptr [ %frame.page378, %frame.forced368 ], [ %forced_page382, %frame.force380 ]
+  %struct.region384 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page383, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field385 = getelementptr inbounds nuw %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr %struct.region384, i32 0, i32 0
+  store i64 0, ptr %tuple.field385, align 8
+  %tuple.field386 = getelementptr inbounds nuw %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr %struct.region384, i32 0, i32 1
+  store i64 0, ptr %tuple.field386, align 8
+  %tuple.field387 = getelementptr inbounds nuw %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr %struct.region384, i32 0, i32 2
+  store ptr null, ptr %tuple.field387, align 8
+  %own_page388 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page388, ptr %wrapped_frame389, align 8
+  %wrapped.parent390 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame389, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent390, align 8
+  %frame.page391 = load ptr, ptr %wrapped_frame389, align 8
+  %frame.has_page392 = icmp ne ptr %frame.page391, null
+  br i1 %frame.has_page392, label %frame.forced394, label %frame.force393
+
+frame.force393:                                   ; preds = %frame.forced381
+  %forced_page395 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame389)
+  br label %frame.forced394
+
+frame.forced394:                                  ; preds = %frame.force393, %frame.forced381
+  %forced_page396 = phi ptr [ %frame.page391, %frame.forced381 ], [ %forced_page395, %frame.force393 ]
+  %struct.region397 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page396, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field398 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region397, i32 0, i32 0
+  store i64 0, ptr %tuple.field398, align 8
+  %tuple.field399 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region397, i32 0, i32 1
+  store i64 0, ptr %tuple.field399, align 8
+  %tuple.field400 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region397, i32 0, i32 2
+  store ptr null, ptr %tuple.field400, align 8
+  %own_page401 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page401, ptr %wrapped_frame402, align 8
+  %wrapped.parent403 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame402, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent403, align 8
+  %frame.page404 = load ptr, ptr %wrapped_frame402, align 8
+  %frame.has_page405 = icmp ne ptr %frame.page404, null
+  br i1 %frame.has_page405, label %frame.forced407, label %frame.force406
+
+frame.force406:                                   ; preds = %frame.forced394
+  %forced_page408 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame402)
+  br label %frame.forced407
+
+frame.forced407:                                  ; preds = %frame.force406, %frame.forced394
+  %forced_page409 = phi ptr [ %frame.page404, %frame.forced394 ], [ %forced_page408, %frame.force406 ]
+  %struct.region410 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page409, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field411 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region410, i32 0, i32 0
+  store i64 0, ptr %tuple.field411, align 8
+  %tuple.field412 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region410, i32 0, i32 1
+  store i64 0, ptr %tuple.field412, align 8
+  %tuple.field413 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region410, i32 0, i32 2
+  store ptr null, ptr %tuple.field413, align 8
+  %own_page414 = call ptr @_Z3getPv(ptr %0)
+  %tuple.region415 = call ptr @_ZN4Page8allocateEmm(ptr %own_page414, i64 ptrtoint (ptr getelementptr (%_Z11MemberIndexB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11MemberIndexB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field416 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region415, i32 0, i32 0
+  store i64 0, ptr %tuple.field416, align 1
+  %tuple.field417 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region415, i32 0, i32 1
+  store i64 0, ptr %tuple.field417, align 1
+  %field.load418 = load %_Z5ArrayI3u64E, ptr %struct.region358, align 8
+  %tuple.field419 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region415, i32 0, i32 2
+  store %_Z5ArrayI3u64E %field.load418, ptr %tuple.field419, align 1
+  %field.load420 = load %_Z5ArrayImE, ptr %struct.region371, align 8
+  %tuple.field421 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region415, i32 0, i32 3
+  store %_Z5ArrayImE %field.load420, ptr %tuple.field421, align 1
+  %field.load422 = load %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E, ptr %struct.region384, align 8
+  %tuple.field423 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region415, i32 0, i32 4
+  store %_Z5ArrayI12ConceptIndexB6scalycB4v0_2E %field.load422, ptr %tuple.field423, align 1
+  %field.load424 = load %_Z5ArrayImE, ptr %struct.region397, align 8
+  %tuple.field425 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region415, i32 0, i32 5
+  store %_Z5ArrayImE %field.load424, ptr %tuple.field425, align 1
+  %field.load426 = load %_Z5ArrayImE, ptr %struct.region410, align 8
+  %tuple.field427 = getelementptr inbounds nuw %_Z11MemberIndexB6scalycB4v0_2, ptr %tuple.region415, i32 0, i32 6
+  store %_Z5ArrayImE %field.load426, ptr %tuple.field427, align 1
   %member_index = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 70
-  store ptr %tuple.region369, ptr %member_index, align 8
+  store ptr %tuple.region415, ptr %member_index, align 8
   %escape_checking = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 71
   store i1 false, ptr %escape_checking, align 1
   %escape_found = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 72
@@ -377459,219 +377717,219 @@ frame.forced361:                                  ; preds = %frame.force360, %fr
   %escape_saw_indirect = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 77
   store i1 false, ptr %escape_saw_indirect, align 1
   store i64 0, ptr %dik, align 1
-  br label %while.cond382
+  br label %while.cond428
 
-while.cond382:                                    ; preds = %while.body383, %frame.forced361
-  %dik385 = load i64, ptr %dik, align 8
-  %lt386 = icmp ult i64 %dik385, 16
-  br i1 %lt386, label %while.body383, label %while.exit384
+while.cond428:                                    ; preds = %while.body429, %frame.forced407
+  %dik431 = load i64, ptr %dik, align 8
+  %lt432 = icmp ult i64 %dik431, 16
+  br i1 %lt432, label %while.body429, label %while.exit430
 
-while.body383:                                    ; preds = %while.cond382
-  %field.inplace387 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 78
-  %field.ref = load ptr, ptr %field.inplace387, align 8
-  %field.inplace388 = getelementptr inbounds nuw %_Z13DeepGateStateB6scalycB4v0_2, ptr %field.ref, i32 0, i32 6
-  call void @_ZN5ArrayI3u64E3addE3u64(ptr %field.inplace388, i64 0)
-  %dik389 = load i64, ptr %dik, align 8
-  %add390 = add i64 %dik389, 1
-  store i64 %add390, ptr %dik, align 1
-  br label %while.cond382
+while.body429:                                    ; preds = %while.cond428
+  %field.inplace433 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 78
+  %field.ref = load ptr, ptr %field.inplace433, align 8
+  %field.inplace434 = getelementptr inbounds nuw %_Z13DeepGateStateB6scalycB4v0_2, ptr %field.ref, i32 0, i32 6
+  call void @_ZN5ArrayI3u64E3addE3u64(ptr %field.inplace434, i64 0)
+  %dik435 = load i64, ptr %dik, align 8
+  %add436 = add i64 %dik435, 1
+  store i64 %add436, ptr %dik, align 1
+  br label %while.cond428
 
-while.exit384:                                    ; preds = %while.cond382
+while.exit430:                                    ; preds = %while.cond428
   %ret_res_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 81
-  %tuple.field391 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field391, align 8
-  %tuple.field392 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field392, align 8
-  %tuple.field393 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field393, align 8
-  %own_page394 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page394, ptr %wrapped_frame395, align 8
-  %wrapped.parent396 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame395, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent396, align 8
-  %frame.page397 = load ptr, ptr %wrapped_frame395, align 8
-  %frame.has_page398 = icmp ne ptr %frame.page397, null
-  br i1 %frame.has_page398, label %frame.forced400, label %frame.force399
+  %tuple.field437 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field437, align 8
+  %tuple.field438 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field438, align 8
+  %tuple.field439 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field439, align 8
+  %own_page440 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page440, ptr %wrapped_frame441, align 8
+  %wrapped.parent442 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame441, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent442, align 8
+  %frame.page443 = load ptr, ptr %wrapped_frame441, align 8
+  %frame.has_page444 = icmp ne ptr %frame.page443, null
+  br i1 %frame.has_page444, label %frame.forced446, label %frame.force445
 
-frame.force399:                                   ; preds = %while.exit384
-  %forced_page401 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame395)
-  br label %frame.forced400
+frame.force445:                                   ; preds = %while.exit430
+  %forced_page447 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame441)
+  br label %frame.forced446
 
-frame.forced400:                                  ; preds = %frame.force399, %while.exit384
-  %forced_page402 = phi ptr [ %frame.page397, %while.exit384 ], [ %forced_page401, %frame.force399 ]
-  %struct.region403 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page402, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field404 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region403, i32 0, i32 0
-  store i64 0, ptr %tuple.field404, align 8
-  %tuple.field405 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region403, i32 0, i32 1
-  store i64 0, ptr %tuple.field405, align 8
-  %tuple.field406 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region403, i32 0, i32 2
-  store ptr null, ptr %tuple.field406, align 8
+frame.forced446:                                  ; preds = %frame.force445, %while.exit430
+  %forced_page448 = phi ptr [ %frame.page443, %while.exit430 ], [ %forced_page447, %frame.force445 ]
+  %struct.region449 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page448, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field450 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region449, i32 0, i32 0
+  store i64 0, ptr %tuple.field450, align 8
+  %tuple.field451 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region449, i32 0, i32 1
+  store i64 0, ptr %tuple.field451, align 8
+  %tuple.field452 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region449, i32 0, i32 2
+  store ptr null, ptr %tuple.field452, align 8
   %ret_res_starts = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 82
-  store ptr %struct.region403, ptr %ret_res_starts, align 8
-  %own_page407 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page407, ptr %wrapped_frame408, align 8
-  %wrapped.parent409 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame408, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent409, align 8
-  %frame.page410 = load ptr, ptr %wrapped_frame408, align 8
-  %frame.has_page411 = icmp ne ptr %frame.page410, null
-  br i1 %frame.has_page411, label %frame.forced413, label %frame.force412
+  store ptr %struct.region449, ptr %ret_res_starts, align 8
+  %own_page453 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page453, ptr %wrapped_frame454, align 8
+  %wrapped.parent455 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame454, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent455, align 8
+  %frame.page456 = load ptr, ptr %wrapped_frame454, align 8
+  %frame.has_page457 = icmp ne ptr %frame.page456, null
+  br i1 %frame.has_page457, label %frame.forced459, label %frame.force458
 
-frame.force412:                                   ; preds = %frame.forced400
-  %forced_page414 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame408)
-  br label %frame.forced413
+frame.force458:                                   ; preds = %frame.forced446
+  %forced_page460 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame454)
+  br label %frame.forced459
 
-frame.forced413:                                  ; preds = %frame.force412, %frame.forced400
-  %forced_page415 = phi ptr [ %frame.page410, %frame.forced400 ], [ %forced_page414, %frame.force412 ]
-  %struct.region416 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page415, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field417 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region416, i32 0, i32 0
-  store i64 0, ptr %tuple.field417, align 8
-  %tuple.field418 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region416, i32 0, i32 1
-  store i64 0, ptr %tuple.field418, align 8
-  %tuple.field419 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region416, i32 0, i32 2
-  store ptr null, ptr %tuple.field419, align 8
+frame.forced459:                                  ; preds = %frame.force458, %frame.forced446
+  %forced_page461 = phi ptr [ %frame.page456, %frame.forced446 ], [ %forced_page460, %frame.force458 ]
+  %struct.region462 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page461, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field463 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region462, i32 0, i32 0
+  store i64 0, ptr %tuple.field463, align 8
+  %tuple.field464 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region462, i32 0, i32 1
+  store i64 0, ptr %tuple.field464, align 8
+  %tuple.field465 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region462, i32 0, i32 2
+  store ptr null, ptr %tuple.field465, align 8
   %ret_res_ends = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 83
-  store ptr %struct.region416, ptr %ret_res_ends, align 8
+  store ptr %struct.region462, ptr %ret_res_ends, align 8
   %ret_res_class = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 84
-  %tuple.field420 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_class, i32 0, i32 0
-  store i64 0, ptr %tuple.field420, align 8
-  %tuple.field421 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_class, i32 0, i32 1
-  store i64 0, ptr %tuple.field421, align 8
-  %tuple.field422 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_class, i32 0, i32 2
-  store ptr null, ptr %tuple.field422, align 8
+  %tuple.field466 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_class, i32 0, i32 0
+  store i64 0, ptr %tuple.field466, align 8
+  %tuple.field467 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_class, i32 0, i32 1
+  store i64 0, ptr %tuple.field467, align 8
+  %tuple.field468 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_class, i32 0, i32 2
+  store ptr null, ptr %tuple.field468, align 8
   %ret_res_arg = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 85
-  %tuple.field423 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_arg, i32 0, i32 0
-  store i64 0, ptr %tuple.field423, align 8
-  %tuple.field424 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_arg, i32 0, i32 1
-  store i64 0, ptr %tuple.field424, align 8
-  %tuple.field425 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_arg, i32 0, i32 2
-  store ptr null, ptr %tuple.field425, align 8
+  %tuple.field469 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_arg, i32 0, i32 0
+  store i64 0, ptr %tuple.field469, align 8
+  %tuple.field470 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_arg, i32 0, i32 1
+  store i64 0, ptr %tuple.field470, align 8
+  %tuple.field471 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ret_res_arg, i32 0, i32 2
+  store ptr null, ptr %tuple.field471, align 8
   %ret_res_owner = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 86
-  %tuple.field426 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_owner, i32 0, i32 0
-  store i64 0, ptr %tuple.field426, align 8
-  %tuple.field427 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_owner, i32 0, i32 1
-  store i64 0, ptr %tuple.field427, align 8
-  %tuple.field428 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_owner, i32 0, i32 2
-  store ptr null, ptr %tuple.field428, align 8
+  %tuple.field472 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_owner, i32 0, i32 0
+  store i64 0, ptr %tuple.field472, align 8
+  %tuple.field473 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_owner, i32 0, i32 1
+  store i64 0, ptr %tuple.field473, align 8
+  %tuple.field474 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %ret_res_owner, i32 0, i32 2
+  store ptr null, ptr %tuple.field474, align 8
   %census_trace = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 87
   store i1 false, ptr %census_trace, align 1
   %current_fn_bind_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 89
-  %tuple.field429 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_bind_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field429, align 8
-  %tuple.field430 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_bind_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field430, align 8
-  %tuple.field431 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_bind_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field431, align 8
-  %own_page432 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page432, ptr %wrapped_frame433, align 8
-  %wrapped.parent434 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame433, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent434, align 8
-  %frame.page435 = load ptr, ptr %wrapped_frame433, align 8
-  %frame.has_page436 = icmp ne ptr %frame.page435, null
-  br i1 %frame.has_page436, label %frame.forced438, label %frame.force437
+  %tuple.field475 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_bind_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field475, align 8
+  %tuple.field476 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_bind_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field476, align 8
+  %tuple.field477 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_bind_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field477, align 8
+  %own_page478 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page478, ptr %wrapped_frame479, align 8
+  %wrapped.parent480 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame479, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent480, align 8
+  %frame.page481 = load ptr, ptr %wrapped_frame479, align 8
+  %frame.has_page482 = icmp ne ptr %frame.page481, null
+  br i1 %frame.has_page482, label %frame.forced484, label %frame.force483
 
-frame.force437:                                   ; preds = %frame.forced413
-  %forced_page439 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame433)
-  br label %frame.forced438
+frame.force483:                                   ; preds = %frame.forced459
+  %forced_page485 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame479)
+  br label %frame.forced484
 
-frame.forced438:                                  ; preds = %frame.force437, %frame.forced413
-  %forced_page440 = phi ptr [ %frame.page435, %frame.forced413 ], [ %forced_page439, %frame.force437 ]
-  %struct.region441 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page440, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field442 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region441, i32 0, i32 0
-  store i64 0, ptr %tuple.field442, align 8
-  %tuple.field443 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region441, i32 0, i32 1
-  store i64 0, ptr %tuple.field443, align 8
-  %tuple.field444 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region441, i32 0, i32 2
-  store ptr null, ptr %tuple.field444, align 8
+frame.forced484:                                  ; preds = %frame.force483, %frame.forced459
+  %forced_page486 = phi ptr [ %frame.page481, %frame.forced459 ], [ %forced_page485, %frame.force483 ]
+  %struct.region487 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page486, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field488 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region487, i32 0, i32 0
+  store i64 0, ptr %tuple.field488, align 8
+  %tuple.field489 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region487, i32 0, i32 1
+  store i64 0, ptr %tuple.field489, align 8
+  %tuple.field490 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region487, i32 0, i32 2
+  store ptr null, ptr %tuple.field490, align 8
   %current_fn_local_filled = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 90
-  store ptr %struct.region441, ptr %current_fn_local_filled, align 8
+  store ptr %struct.region487, ptr %current_fn_local_filled, align 8
   %current_fn_bind_local = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 91
-  %tuple.field445 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_bind_local, i32 0, i32 0
-  store i64 0, ptr %tuple.field445, align 8
-  %tuple.field446 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_bind_local, i32 0, i32 1
-  store i64 0, ptr %tuple.field446, align 8
-  %tuple.field447 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_bind_local, i32 0, i32 2
-  store ptr null, ptr %tuple.field447, align 8
-  %own_page448 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page448, ptr %wrapped_frame449, align 8
-  %wrapped.parent450 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame449, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent450, align 8
-  %frame.page451 = load ptr, ptr %wrapped_frame449, align 8
-  %frame.has_page452 = icmp ne ptr %frame.page451, null
-  br i1 %frame.has_page452, label %frame.forced454, label %frame.force453
+  %tuple.field491 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_bind_local, i32 0, i32 0
+  store i64 0, ptr %tuple.field491, align 8
+  %tuple.field492 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_bind_local, i32 0, i32 1
+  store i64 0, ptr %tuple.field492, align 8
+  %tuple.field493 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_bind_local, i32 0, i32 2
+  store ptr null, ptr %tuple.field493, align 8
+  %own_page494 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page494, ptr %wrapped_frame495, align 8
+  %wrapped.parent496 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame495, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent496, align 8
+  %frame.page497 = load ptr, ptr %wrapped_frame495, align 8
+  %frame.has_page498 = icmp ne ptr %frame.page497, null
+  br i1 %frame.has_page498, label %frame.forced500, label %frame.force499
 
-frame.force453:                                   ; preds = %frame.forced438
-  %forced_page455 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame449)
-  br label %frame.forced454
+frame.force499:                                   ; preds = %frame.forced484
+  %forced_page501 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame495)
+  br label %frame.forced500
 
-frame.forced454:                                  ; preds = %frame.force453, %frame.forced438
-  %forced_page456 = phi ptr [ %frame.page451, %frame.forced438 ], [ %forced_page455, %frame.force453 ]
-  %struct.region457 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page456, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIiE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIiE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field458 = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %struct.region457, i32 0, i32 0
-  store i64 0, ptr %tuple.field458, align 8
-  %tuple.field459 = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %struct.region457, i32 0, i32 1
-  store i64 0, ptr %tuple.field459, align 8
-  %tuple.field460 = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %struct.region457, i32 0, i32 2
-  store ptr null, ptr %tuple.field460, align 8
+frame.forced500:                                  ; preds = %frame.force499, %frame.forced484
+  %forced_page502 = phi ptr [ %frame.page497, %frame.forced484 ], [ %forced_page501, %frame.force499 ]
+  %struct.region503 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page502, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIiE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIiE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field504 = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %struct.region503, i32 0, i32 0
+  store i64 0, ptr %tuple.field504, align 8
+  %tuple.field505 = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %struct.region503, i32 0, i32 1
+  store i64 0, ptr %tuple.field505, align 8
+  %tuple.field506 = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %struct.region503, i32 0, i32 2
+  store ptr null, ptr %tuple.field506, align 8
   %current_fn_bind_refv = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 92
-  store ptr %struct.region457, ptr %current_fn_bind_refv, align 8
-  %own_page461 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page461, ptr %wrapped_frame462, align 8
-  %wrapped.parent463 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame462, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent463, align 8
-  %frame.page464 = load ptr, ptr %wrapped_frame462, align 8
-  %frame.has_page465 = icmp ne ptr %frame.page464, null
-  br i1 %frame.has_page465, label %frame.forced467, label %frame.force466
+  store ptr %struct.region503, ptr %current_fn_bind_refv, align 8
+  %own_page507 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page507, ptr %wrapped_frame508, align 8
+  %wrapped.parent509 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame508, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent509, align 8
+  %frame.page510 = load ptr, ptr %wrapped_frame508, align 8
+  %frame.has_page511 = icmp ne ptr %frame.page510, null
+  br i1 %frame.has_page511, label %frame.forced513, label %frame.force512
 
-frame.force466:                                   ; preds = %frame.forced454
-  %forced_page468 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame462)
-  br label %frame.forced467
+frame.force512:                                   ; preds = %frame.forced500
+  %forced_page514 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame508)
+  br label %frame.forced513
 
-frame.forced467:                                  ; preds = %frame.force466, %frame.forced454
-  %forced_page469 = phi ptr [ %frame.page464, %frame.forced454 ], [ %forced_page468, %frame.force466 ]
-  %struct.region470 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page469, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field471 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region470, i32 0, i32 0
-  store i64 0, ptr %tuple.field471, align 8
-  %tuple.field472 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region470, i32 0, i32 1
-  store i64 0, ptr %tuple.field472, align 8
-  %tuple.field473 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region470, i32 0, i32 2
-  store ptr null, ptr %tuple.field473, align 8
+frame.forced513:                                  ; preds = %frame.force512, %frame.forced500
+  %forced_page515 = phi ptr [ %frame.page510, %frame.forced500 ], [ %forced_page514, %frame.force512 ]
+  %struct.region516 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page515, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field517 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region516, i32 0, i32 0
+  store i64 0, ptr %tuple.field517, align 8
+  %tuple.field518 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region516, i32 0, i32 1
+  store i64 0, ptr %tuple.field518, align 8
+  %tuple.field519 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region516, i32 0, i32 2
+  store ptr null, ptr %tuple.field519, align 8
   %current_fn_frame_objects = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 93
-  store ptr %struct.region470, ptr %current_fn_frame_objects, align 8
+  store ptr %struct.region516, ptr %current_fn_frame_objects, align 8
   %escape_census = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 94
   store i1 false, ptr %escape_census, align 1
   %host_report = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 95
   store i1 false, ptr %host_report, align 1
   %census_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 96
-  %tuple.field474 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field474, align 8
-  %tuple.field475 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field475, align 8
-  %tuple.field476 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field476, align 8
+  %tuple.field520 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field520, align 8
+  %tuple.field521 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field521, align 8
+  %tuple.field522 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field522, align 8
   %census_box_start = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 97
   store i64 0, ptr %census_box_start, align 8
   %census_escaped = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 98
   store i1 false, ptr %census_escaped, align 1
   %census_files = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 101
-  %tuple.field477 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_files, i32 0, i32 0
-  store i64 0, ptr %tuple.field477, align 8
-  %tuple.field478 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_files, i32 0, i32 1
-  store i64 0, ptr %tuple.field478, align 8
-  %tuple.field479 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_files, i32 0, i32 2
-  store ptr null, ptr %tuple.field479, align 8
+  %tuple.field523 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_files, i32 0, i32 0
+  store i64 0, ptr %tuple.field523, align 8
+  %tuple.field524 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_files, i32 0, i32 1
+  store i64 0, ptr %tuple.field524, align 8
+  %tuple.field525 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_files, i32 0, i32 2
+  store ptr null, ptr %tuple.field525, align 8
   %census_offsets = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 102
-  %tuple.field480 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %census_offsets, i32 0, i32 0
-  store i64 0, ptr %tuple.field480, align 8
-  %tuple.field481 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %census_offsets, i32 0, i32 1
-  store i64 0, ptr %tuple.field481, align 8
-  %tuple.field482 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %census_offsets, i32 0, i32 2
-  store ptr null, ptr %tuple.field482, align 8
+  %tuple.field526 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %census_offsets, i32 0, i32 0
+  store i64 0, ptr %tuple.field526, align 8
+  %tuple.field527 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %census_offsets, i32 0, i32 1
+  store i64 0, ptr %tuple.field527, align 8
+  %tuple.field528 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %census_offsets, i32 0, i32 2
+  store ptr null, ptr %tuple.field528, align 8
   %census_texts = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 103
-  %tuple.field483 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_texts, i32 0, i32 0
-  store i64 0, ptr %tuple.field483, align 8
-  %tuple.field484 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_texts, i32 0, i32 1
-  store i64 0, ptr %tuple.field484, align 8
-  %tuple.field485 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_texts, i32 0, i32 2
-  store ptr null, ptr %tuple.field485, align 8
+  %tuple.field529 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_texts, i32 0, i32 0
+  store i64 0, ptr %tuple.field529, align 8
+  %tuple.field530 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_texts, i32 0, i32 1
+  store i64 0, ptr %tuple.field530, align 8
+  %tuple.field531 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %census_texts, i32 0, i32 2
+  store ptr null, ptr %tuple.field531, align 8
   %census_total = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 104
   store i64 0, ptr %census_total, align 8
   %census_local = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 105
@@ -377683,487 +377941,487 @@ frame.forced467:                                  ; preds = %frame.force466, %fr
   %bv_trace = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 88
   store i1 false, ptr %bv_trace, align 1
   %current_fn_closure_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 106
-  %tuple.field486 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_closure_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field486, align 8
-  %tuple.field487 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_closure_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field487, align 8
-  %tuple.field488 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_closure_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field488, align 8
+  %tuple.field532 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_closure_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field532, align 8
+  %tuple.field533 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_closure_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field533, align 8
+  %tuple.field534 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_closure_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field534, align 8
   %current_fn_alias_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 107
-  %tuple.field489 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_alias_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field489, align 8
-  %tuple.field490 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_alias_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field490, align 8
-  %tuple.field491 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_alias_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field491, align 8
+  %tuple.field535 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_alias_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field535, align 8
+  %tuple.field536 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_alias_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field536, align 8
+  %tuple.field537 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_alias_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field537, align 8
   %current_fn_alias_params = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 108
-  %tuple.field492 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_alias_params, i32 0, i32 0
-  store i64 0, ptr %tuple.field492, align 8
-  %tuple.field493 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_alias_params, i32 0, i32 1
-  store i64 0, ptr %tuple.field493, align 8
-  %tuple.field494 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_alias_params, i32 0, i32 2
-  store ptr null, ptr %tuple.field494, align 8
+  %tuple.field538 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_alias_params, i32 0, i32 0
+  store i64 0, ptr %tuple.field538, align 8
+  %tuple.field539 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_alias_params, i32 0, i32 1
+  store i64 0, ptr %tuple.field539, align 8
+  %tuple.field540 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_alias_params, i32 0, i32 2
+  store ptr null, ptr %tuple.field540, align 8
   %current_fn_fpt_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 109
-  %tuple.field495 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_fpt_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field495, align 8
-  %tuple.field496 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_fpt_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field496, align 8
-  %tuple.field497 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_fpt_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field497, align 8
+  %tuple.field541 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_fpt_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field541, align 8
+  %tuple.field542 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_fpt_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field542, align 8
+  %tuple.field543 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_fpt_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field543, align 8
   %current_fn_fpt_fields = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 110
-  %tuple.field498 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_fields, i32 0, i32 0
-  store i64 0, ptr %tuple.field498, align 8
-  %tuple.field499 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_fields, i32 0, i32 1
-  store i64 0, ptr %tuple.field499, align 8
-  %tuple.field500 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_fields, i32 0, i32 2
-  store ptr null, ptr %tuple.field500, align 8
+  %tuple.field544 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_fields, i32 0, i32 0
+  store i64 0, ptr %tuple.field544, align 8
+  %tuple.field545 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_fields, i32 0, i32 1
+  store i64 0, ptr %tuple.field545, align 8
+  %tuple.field546 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_fields, i32 0, i32 2
+  store ptr null, ptr %tuple.field546, align 8
   %current_fn_fpt_regions = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 111
-  %tuple.field501 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_regions, i32 0, i32 0
-  store i64 0, ptr %tuple.field501, align 8
-  %tuple.field502 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_regions, i32 0, i32 1
-  store i64 0, ptr %tuple.field502, align 8
-  %tuple.field503 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_regions, i32 0, i32 2
-  store ptr null, ptr %tuple.field503, align 8
+  %tuple.field547 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_regions, i32 0, i32 0
+  store i64 0, ptr %tuple.field547, align 8
+  %tuple.field548 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_regions, i32 0, i32 1
+  store i64 0, ptr %tuple.field548, align 8
+  %tuple.field549 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %current_fn_fpt_regions, i32 0, i32 2
+  store ptr null, ptr %tuple.field549, align 8
   %current_fn_ctor_locals = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 112
-  %tuple.field504 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_ctor_locals, i32 0, i32 0
-  store i64 0, ptr %tuple.field504, align 8
-  %tuple.field505 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_ctor_locals, i32 0, i32 1
-  store i64 0, ptr %tuple.field505, align 8
-  %tuple.field506 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_ctor_locals, i32 0, i32 2
-  store ptr null, ptr %tuple.field506, align 8
+  %tuple.field550 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_ctor_locals, i32 0, i32 0
+  store i64 0, ptr %tuple.field550, align 8
+  %tuple.field551 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_ctor_locals, i32 0, i32 1
+  store i64 0, ptr %tuple.field551, align 8
+  %tuple.field552 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %current_fn_ctor_locals, i32 0, i32 2
+  store ptr null, ptr %tuple.field552, align 8
   %move_moved_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 113
-  %tuple.field507 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_moved_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field507, align 8
-  %tuple.field508 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_moved_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field508, align 8
-  %tuple.field509 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_moved_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field509, align 8
+  %tuple.field553 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_moved_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field553, align 8
+  %tuple.field554 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_moved_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field554, align 8
+  %tuple.field555 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_moved_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field555, align 8
   %move_alias_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 114
-  %tuple.field510 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field510, align 8
-  %tuple.field511 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field511, align 8
-  %tuple.field512 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field512, align 8
+  %tuple.field556 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field556, align 8
+  %tuple.field557 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field557, align 8
+  %tuple.field558 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field558, align 8
   %move_alias_roots = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 115
-  %tuple.field513 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_roots, i32 0, i32 0
-  store i64 0, ptr %tuple.field513, align 8
-  %tuple.field514 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_roots, i32 0, i32 1
-  store i64 0, ptr %tuple.field514, align 8
-  %tuple.field515 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_roots, i32 0, i32 2
-  store ptr null, ptr %tuple.field515, align 8
+  %tuple.field559 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_roots, i32 0, i32 0
+  store i64 0, ptr %tuple.field559, align 8
+  %tuple.field560 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_roots, i32 0, i32 1
+  store i64 0, ptr %tuple.field560, align 8
+  %tuple.field561 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %move_alias_roots, i32 0, i32 2
+  store ptr null, ptr %tuple.field561, align 8
   %move_found = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 116
   store i1 false, ptr %move_found, align 1
   %transitive_page_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 117
-  %tuple.field516 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %transitive_page_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field516, align 8
-  %tuple.field517 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %transitive_page_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field517, align 8
-  %tuple.field518 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %transitive_page_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field518, align 8
-  %own_page519 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page519, ptr %wrapped_frame520, align 8
-  %wrapped.parent521 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame520, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent521, align 8
-  %frame.page522 = load ptr, ptr %wrapped_frame520, align 8
-  %frame.has_page523 = icmp ne ptr %frame.page522, null
-  br i1 %frame.has_page523, label %frame.forced525, label %frame.force524
+  %tuple.field562 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %transitive_page_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field562, align 8
+  %tuple.field563 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %transitive_page_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field563, align 8
+  %tuple.field564 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %transitive_page_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field564, align 8
+  %own_page565 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page565, ptr %wrapped_frame566, align 8
+  %wrapped.parent567 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame566, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent567, align 8
+  %frame.page568 = load ptr, ptr %wrapped_frame566, align 8
+  %frame.has_page569 = icmp ne ptr %frame.page568, null
+  br i1 %frame.has_page569, label %frame.forced571, label %frame.force570
 
-frame.force524:                                   ; preds = %frame.forced467
-  %forced_page526 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame520)
-  br label %frame.forced525
+frame.force570:                                   ; preds = %frame.forced513
+  %forced_page572 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame566)
+  br label %frame.forced571
 
-frame.forced525:                                  ; preds = %frame.force524, %frame.forced467
-  %forced_page527 = phi ptr [ %frame.page522, %frame.forced467 ], [ %forced_page526, %frame.force524 ]
-  %struct.region528 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page527, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field529 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region528, i32 0, i32 0
-  store i64 0, ptr %tuple.field529, align 8
-  %tuple.field530 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region528, i32 0, i32 1
-  store i64 0, ptr %tuple.field530, align 8
-  %tuple.field531 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region528, i32 0, i32 2
-  store ptr null, ptr %tuple.field531, align 8
+frame.forced571:                                  ; preds = %frame.force570, %frame.forced513
+  %forced_page573 = phi ptr [ %frame.page568, %frame.forced513 ], [ %forced_page572, %frame.force570 ]
+  %struct.region574 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page573, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field575 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region574, i32 0, i32 0
+  store i64 0, ptr %tuple.field575, align 8
+  %tuple.field576 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region574, i32 0, i32 1
+  store i64 0, ptr %tuple.field576, align 8
+  %tuple.field577 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region574, i32 0, i32 2
+  store ptr null, ptr %tuple.field577, align 8
   %store_page_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 118
-  store ptr %struct.region528, ptr %store_page_names, align 8
-  %own_page532 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page532, ptr %wrapped_frame533, align 8
-  %wrapped.parent534 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame533, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent534, align 8
-  %frame.page535 = load ptr, ptr %wrapped_frame533, align 8
-  %frame.has_page536 = icmp ne ptr %frame.page535, null
-  br i1 %frame.has_page536, label %frame.forced538, label %frame.force537
+  store ptr %struct.region574, ptr %store_page_names, align 8
+  %own_page578 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page578, ptr %wrapped_frame579, align 8
+  %wrapped.parent580 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame579, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent580, align 8
+  %frame.page581 = load ptr, ptr %wrapped_frame579, align 8
+  %frame.has_page582 = icmp ne ptr %frame.page581, null
+  br i1 %frame.has_page582, label %frame.forced584, label %frame.force583
 
-frame.force537:                                   ; preds = %frame.forced525
-  %forced_page539 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame533)
-  br label %frame.forced538
+frame.force583:                                   ; preds = %frame.forced571
+  %forced_page585 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame579)
+  br label %frame.forced584
 
-frame.forced538:                                  ; preds = %frame.force537, %frame.forced525
-  %forced_page540 = phi ptr [ %frame.page535, %frame.forced525 ], [ %forced_page539, %frame.force537 ]
-  %struct.region541 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page540, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI3u64E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI3u64E }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field542 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region541, i32 0, i32 0
-  store i64 0, ptr %tuple.field542, align 8
-  %tuple.field543 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region541, i32 0, i32 1
-  store i64 0, ptr %tuple.field543, align 8
-  %tuple.field544 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region541, i32 0, i32 2
-  store ptr null, ptr %tuple.field544, align 8
+frame.forced584:                                  ; preds = %frame.force583, %frame.forced571
+  %forced_page586 = phi ptr [ %frame.page581, %frame.forced571 ], [ %forced_page585, %frame.force583 ]
+  %struct.region587 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page586, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI3u64E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI3u64E }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field588 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region587, i32 0, i32 0
+  store i64 0, ptr %tuple.field588, align 8
+  %tuple.field589 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region587, i32 0, i32 1
+  store i64 0, ptr %tuple.field589, align 8
+  %tuple.field590 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region587, i32 0, i32 2
+  store ptr null, ptr %tuple.field590, align 8
   %store_page_masks = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 119
-  store ptr %struct.region541, ptr %store_page_masks, align 8
-  call void @_ZN12ConceptIndexB6scalycB4v0_26createEPN4scaly6memory4PageEm(ptr noalias sret(%_Z12ConceptIndexB6scalycB4v0_2) %sret.result545, ptr null, i64 4096)
+  store ptr %struct.region587, ptr %store_page_masks, align 8
+  call void @_ZN12ConceptIndexB6scalycB4v0_26createEPN4scaly6memory4PageEm(ptr noalias sret(%_Z12ConceptIndexB6scalycB4v0_2) %sret.result591, ptr null, i64 4096)
   %store_name_index = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 120
-  %field.load546 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %sret.result545, align 8
-  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load546, ptr %store_name_index, align 8
-  %own_page547 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page547, ptr %wrapped_frame548, align 8
-  %wrapped.parent549 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame548, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent549, align 8
-  %frame.page550 = load ptr, ptr %wrapped_frame548, align 8
-  %frame.has_page551 = icmp ne ptr %frame.page550, null
-  br i1 %frame.has_page551, label %frame.forced553, label %frame.force552
+  %field.load592 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %sret.result591, align 8
+  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load592, ptr %store_name_index, align 8
+  %own_page593 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page593, ptr %wrapped_frame594, align 8
+  %wrapped.parent595 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame594, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent595, align 8
+  %frame.page596 = load ptr, ptr %wrapped_frame594, align 8
+  %frame.has_page597 = icmp ne ptr %frame.page596, null
+  br i1 %frame.has_page597, label %frame.forced599, label %frame.force598
 
-frame.force552:                                   ; preds = %frame.forced538
-  %forced_page554 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame548)
-  br label %frame.forced553
+frame.force598:                                   ; preds = %frame.forced584
+  %forced_page600 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame594)
+  br label %frame.forced599
 
-frame.forced553:                                  ; preds = %frame.force552, %frame.forced538
-  %forced_page555 = phi ptr [ %frame.page550, %frame.forced538 ], [ %forced_page554, %frame.force552 ]
-  %struct.region556 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page555, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field557 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region556, i32 0, i32 0
-  store i64 0, ptr %tuple.field557, align 8
-  %tuple.field558 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region556, i32 0, i32 1
-  store i64 0, ptr %tuple.field558, align 8
-  %tuple.field559 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region556, i32 0, i32 2
-  store ptr null, ptr %tuple.field559, align 8
+frame.forced599:                                  ; preds = %frame.force598, %frame.forced584
+  %forced_page601 = phi ptr [ %frame.page596, %frame.forced584 ], [ %forced_page600, %frame.force598 ]
+  %struct.region602 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page601, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field603 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region602, i32 0, i32 0
+  store i64 0, ptr %tuple.field603, align 8
+  %tuple.field604 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region602, i32 0, i32 1
+  store i64 0, ptr %tuple.field604, align 8
+  %tuple.field605 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region602, i32 0, i32 2
+  store ptr null, ptr %tuple.field605, align 8
   %store_mangled_recv = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 121
-  store ptr %struct.region556, ptr %store_mangled_recv, align 8
-  %own_page560 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page560, ptr %wrapped_frame561, align 8
-  %wrapped.parent562 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame561, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent562, align 8
-  %frame.page563 = load ptr, ptr %wrapped_frame561, align 8
-  %frame.has_page564 = icmp ne ptr %frame.page563, null
-  br i1 %frame.has_page564, label %frame.forced566, label %frame.force565
+  store ptr %struct.region602, ptr %store_mangled_recv, align 8
+  %own_page606 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page606, ptr %wrapped_frame607, align 8
+  %wrapped.parent608 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame607, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent608, align 8
+  %frame.page609 = load ptr, ptr %wrapped_frame607, align 8
+  %frame.has_page610 = icmp ne ptr %frame.page609, null
+  br i1 %frame.has_page610, label %frame.forced612, label %frame.force611
 
-frame.force565:                                   ; preds = %frame.forced553
-  %forced_page567 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame561)
-  br label %frame.forced566
+frame.force611:                                   ; preds = %frame.forced599
+  %forced_page613 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame607)
+  br label %frame.forced612
 
-frame.forced566:                                  ; preds = %frame.force565, %frame.forced553
-  %forced_page568 = phi ptr [ %frame.page563, %frame.forced553 ], [ %forced_page567, %frame.force565 ]
-  %struct.region569 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page568, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI3u64E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI3u64E }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field570 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region569, i32 0, i32 0
-  store i64 0, ptr %tuple.field570, align 8
-  %tuple.field571 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region569, i32 0, i32 1
-  store i64 0, ptr %tuple.field571, align 8
-  %tuple.field572 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region569, i32 0, i32 2
-  store ptr null, ptr %tuple.field572, align 8
+frame.forced612:                                  ; preds = %frame.force611, %frame.forced599
+  %forced_page614 = phi ptr [ %frame.page609, %frame.forced599 ], [ %forced_page613, %frame.force611 ]
+  %struct.region615 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page614, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI3u64E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI3u64E }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field616 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region615, i32 0, i32 0
+  store i64 0, ptr %tuple.field616, align 8
+  %tuple.field617 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region615, i32 0, i32 1
+  store i64 0, ptr %tuple.field617, align 8
+  %tuple.field618 = getelementptr inbounds nuw %_Z5ArrayI3u64E, ptr %struct.region615, i32 0, i32 2
+  store ptr null, ptr %tuple.field618, align 8
   %store_mangled_masks = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 122
-  store ptr %struct.region569, ptr %store_mangled_masks, align 8
-  %own_page573 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page573, ptr %wrapped_frame574, align 8
-  %wrapped.parent575 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame574, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent575, align 8
-  %frame.page576 = load ptr, ptr %wrapped_frame574, align 8
-  %frame.has_page577 = icmp ne ptr %frame.page576, null
-  br i1 %frame.has_page577, label %frame.forced579, label %frame.force578
+  store ptr %struct.region615, ptr %store_mangled_masks, align 8
+  %own_page619 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page619, ptr %wrapped_frame620, align 8
+  %wrapped.parent621 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame620, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent621, align 8
+  %frame.page622 = load ptr, ptr %wrapped_frame620, align 8
+  %frame.has_page623 = icmp ne ptr %frame.page622, null
+  br i1 %frame.has_page623, label %frame.forced625, label %frame.force624
 
-frame.force578:                                   ; preds = %frame.forced566
-  %forced_page580 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame574)
-  br label %frame.forced579
+frame.force624:                                   ; preds = %frame.forced612
+  %forced_page626 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame620)
+  br label %frame.forced625
 
-frame.forced579:                                  ; preds = %frame.force578, %frame.forced566
-  %forced_page581 = phi ptr [ %frame.page576, %frame.forced566 ], [ %forced_page580, %frame.force578 ]
-  %struct.region582 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page581, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIbE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIbE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field583 = getelementptr inbounds nuw %_Z5ArrayIbE, ptr %struct.region582, i32 0, i32 0
-  store i64 0, ptr %tuple.field583, align 8
-  %tuple.field584 = getelementptr inbounds nuw %_Z5ArrayIbE, ptr %struct.region582, i32 0, i32 1
-  store i64 0, ptr %tuple.field584, align 8
-  %tuple.field585 = getelementptr inbounds nuw %_Z5ArrayIbE, ptr %struct.region582, i32 0, i32 2
-  store ptr null, ptr %tuple.field585, align 8
+frame.forced625:                                  ; preds = %frame.force624, %frame.forced612
+  %forced_page627 = phi ptr [ %frame.page622, %frame.forced612 ], [ %forced_page626, %frame.force624 ]
+  %struct.region628 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page627, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIbE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIbE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field629 = getelementptr inbounds nuw %_Z5ArrayIbE, ptr %struct.region628, i32 0, i32 0
+  store i64 0, ptr %tuple.field629, align 8
+  %tuple.field630 = getelementptr inbounds nuw %_Z5ArrayIbE, ptr %struct.region628, i32 0, i32 1
+  store i64 0, ptr %tuple.field630, align 8
+  %tuple.field631 = getelementptr inbounds nuw %_Z5ArrayIbE, ptr %struct.region628, i32 0, i32 2
+  store ptr null, ptr %tuple.field631, align 8
   %store_mangled_this = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 123
-  store ptr %struct.region582, ptr %store_mangled_this, align 8
-  %own_page586 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page586, ptr %wrapped_frame587, align 8
-  %wrapped.parent588 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame587, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent588, align 8
-  %frame.page589 = load ptr, ptr %wrapped_frame587, align 8
-  %frame.has_page590 = icmp ne ptr %frame.page589, null
-  br i1 %frame.has_page590, label %frame.forced592, label %frame.force591
+  store ptr %struct.region628, ptr %store_mangled_this, align 8
+  %own_page632 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page632, ptr %wrapped_frame633, align 8
+  %wrapped.parent634 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame633, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent634, align 8
+  %frame.page635 = load ptr, ptr %wrapped_frame633, align 8
+  %frame.has_page636 = icmp ne ptr %frame.page635, null
+  br i1 %frame.has_page636, label %frame.forced638, label %frame.force637
 
-frame.force591:                                   ; preds = %frame.forced579
-  %forced_page593 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame587)
-  br label %frame.forced592
+frame.force637:                                   ; preds = %frame.forced625
+  %forced_page639 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame633)
+  br label %frame.forced638
 
-frame.forced592:                                  ; preds = %frame.force591, %frame.forced579
-  %forced_page594 = phi ptr [ %frame.page589, %frame.forced579 ], [ %forced_page593, %frame.force591 ]
-  %struct.region595 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page594, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI9StatementB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI9StatementB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field596 = getelementptr inbounds nuw %_Z5ArrayI9StatementB6scalycB4v0_2E, ptr %struct.region595, i32 0, i32 0
-  store i64 0, ptr %tuple.field596, align 8
-  %tuple.field597 = getelementptr inbounds nuw %_Z5ArrayI9StatementB6scalycB4v0_2E, ptr %struct.region595, i32 0, i32 1
-  store i64 0, ptr %tuple.field597, align 8
-  %tuple.field598 = getelementptr inbounds nuw %_Z5ArrayI9StatementB6scalycB4v0_2E, ptr %struct.region595, i32 0, i32 2
-  store ptr null, ptr %tuple.field598, align 8
+frame.forced638:                                  ; preds = %frame.force637, %frame.forced625
+  %forced_page640 = phi ptr [ %frame.page635, %frame.forced625 ], [ %forced_page639, %frame.force637 ]
+  %struct.region641 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page640, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI9StatementB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI9StatementB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field642 = getelementptr inbounds nuw %_Z5ArrayI9StatementB6scalycB4v0_2E, ptr %struct.region641, i32 0, i32 0
+  store i64 0, ptr %tuple.field642, align 8
+  %tuple.field643 = getelementptr inbounds nuw %_Z5ArrayI9StatementB6scalycB4v0_2E, ptr %struct.region641, i32 0, i32 1
+  store i64 0, ptr %tuple.field643, align 8
+  %tuple.field644 = getelementptr inbounds nuw %_Z5ArrayI9StatementB6scalycB4v0_2E, ptr %struct.region641, i32 0, i32 2
+  store ptr null, ptr %tuple.field644, align 8
   %store_scope = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 125
-  store ptr %struct.region595, ptr %store_scope, align 8
+  store ptr %struct.region641, ptr %store_scope, align 8
   %store_acc = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 124
   store i64 0, ptr %store_acc, align 8
   %return_page_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 126
-  %tuple.field599 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %return_page_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field599, align 8
-  %tuple.field600 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %return_page_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field600, align 8
-  %tuple.field601 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %return_page_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field601, align 8
+  %tuple.field645 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %return_page_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field645, align 8
+  %tuple.field646 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %return_page_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field646, align 8
+  %tuple.field647 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %return_page_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field647, align 8
   %return_page_starts = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 127
-  %tuple.field602 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_starts, i32 0, i32 0
-  store i64 0, ptr %tuple.field602, align 8
-  %tuple.field603 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_starts, i32 0, i32 1
-  store i64 0, ptr %tuple.field603, align 8
-  %tuple.field604 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_starts, i32 0, i32 2
-  store ptr null, ptr %tuple.field604, align 8
+  %tuple.field648 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_starts, i32 0, i32 0
+  store i64 0, ptr %tuple.field648, align 8
+  %tuple.field649 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_starts, i32 0, i32 1
+  store i64 0, ptr %tuple.field649, align 8
+  %tuple.field650 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_starts, i32 0, i32 2
+  store ptr null, ptr %tuple.field650, align 8
   %return_page_ends = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 128
-  %tuple.field605 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_ends, i32 0, i32 0
-  store i64 0, ptr %tuple.field605, align 8
-  %tuple.field606 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_ends, i32 0, i32 1
-  store i64 0, ptr %tuple.field606, align 8
-  %tuple.field607 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_ends, i32 0, i32 2
-  store ptr null, ptr %tuple.field607, align 8
+  %tuple.field651 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_ends, i32 0, i32 0
+  store i64 0, ptr %tuple.field651, align 8
+  %tuple.field652 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_ends, i32 0, i32 1
+  store i64 0, ptr %tuple.field652, align 8
+  %tuple.field653 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %return_page_ends, i32 0, i32 2
+  store ptr null, ptr %tuple.field653, align 8
   %prepass_direct_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 129
-  %tuple.field608 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_direct_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field608, align 8
-  %tuple.field609 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_direct_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field609, align 8
-  %tuple.field610 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_direct_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field610, align 8
+  %tuple.field654 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_direct_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field654, align 8
+  %tuple.field655 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_direct_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field655, align 8
+  %tuple.field656 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_direct_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field656, align 8
   %prepass_veto_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 130
-  %tuple.field611 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_veto_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field611, align 8
-  %tuple.field612 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_veto_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field612, align 8
-  %tuple.field613 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_veto_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field613, align 8
+  %tuple.field657 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_veto_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field657, align 8
+  %tuple.field658 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_veto_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field658, align 8
+  %tuple.field659 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %prepass_veto_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field659, align 8
   %transitive_page_built = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 131
   store i1 false, ptr %transitive_page_built, align 1
   %concept_origin_files = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 132
-  %tuple.field614 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_files, i32 0, i32 0
-  store i64 0, ptr %tuple.field614, align 8
-  %tuple.field615 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_files, i32 0, i32 1
-  store i64 0, ptr %tuple.field615, align 8
-  %tuple.field616 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_files, i32 0, i32 2
-  store ptr null, ptr %tuple.field616, align 8
+  %tuple.field660 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_files, i32 0, i32 0
+  store i64 0, ptr %tuple.field660, align 8
+  %tuple.field661 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_files, i32 0, i32 1
+  store i64 0, ptr %tuple.field661, align 8
+  %tuple.field662 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_files, i32 0, i32 2
+  store ptr null, ptr %tuple.field662, align 8
   %concept_origin_paths = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 133
-  %tuple.field617 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_paths, i32 0, i32 0
-  store i64 0, ptr %tuple.field617, align 8
-  %tuple.field618 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_paths, i32 0, i32 1
-  store i64 0, ptr %tuple.field618, align 8
-  %tuple.field619 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_paths, i32 0, i32 2
-  store ptr null, ptr %tuple.field619, align 8
-  call void @_ZN12ConceptIndexB6scalycB4v0_26createEPN4scaly6memory4PageEm(ptr noalias sret(%_Z12ConceptIndexB6scalycB4v0_2) %sret.result620, ptr null, i64 4096)
+  %tuple.field663 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_paths, i32 0, i32 0
+  store i64 0, ptr %tuple.field663, align 8
+  %tuple.field664 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_paths, i32 0, i32 1
+  store i64 0, ptr %tuple.field664, align 8
+  %tuple.field665 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %concept_origin_paths, i32 0, i32 2
+  store ptr null, ptr %tuple.field665, align 8
+  call void @_ZN12ConceptIndexB6scalycB4v0_26createEPN4scaly6memory4PageEm(ptr noalias sret(%_Z12ConceptIndexB6scalycB4v0_2) %sret.result666, ptr null, i64 4096)
   %ambiguous_index = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 151
-  %field.load621 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %sret.result620, align 8
-  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load621, ptr %ambiguous_index, align 8
-  %tuple.field622 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple, i32 0, i32 0
-  store ptr null, ptr %tuple.field622, align 1
-  %tuple.field623 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple, i32 0, i32 1
-  store i64 0, ptr %tuple.field623, align 1
+  %field.load667 = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %sret.result666, align 8
+  store %_Z12ConceptIndexB6scalycB4v0_2 %field.load667, ptr %ambiguous_index, align 8
+  %tuple.field668 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple, i32 0, i32 0
+  store ptr null, ptr %tuple.field668, align 1
+  %tuple.field669 = getelementptr inbounds nuw %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple, i32 0, i32 1
+  store i64 0, ptr %tuple.field669, align 1
   %tuple.val = load %_Z12ConceptIndexB6scalycB4v0_2, ptr %tuple, align 8
   %cross_package_index = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 152
   store %_Z12ConceptIndexB6scalycB4v0_2 %tuple.val, ptr %cross_package_index, align 8
-  %own_page624 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page624, ptr %wrapped_frame625, align 8
-  %wrapped.parent626 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame625, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent626, align 8
-  %frame.page627 = load ptr, ptr %wrapped_frame625, align 8
-  %frame.has_page628 = icmp ne ptr %frame.page627, null
-  br i1 %frame.has_page628, label %frame.forced630, label %frame.force629
+  %own_page670 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page670, ptr %wrapped_frame671, align 8
+  %wrapped.parent672 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame671, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent672, align 8
+  %frame.page673 = load ptr, ptr %wrapped_frame671, align 8
+  %frame.has_page674 = icmp ne ptr %frame.page673, null
+  br i1 %frame.has_page674, label %frame.forced676, label %frame.force675
 
-frame.force629:                                   ; preds = %frame.forced592
-  %forced_page631 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame625)
-  br label %frame.forced630
+frame.force675:                                   ; preds = %frame.forced638
+  %forced_page677 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame671)
+  br label %frame.forced676
 
-frame.forced630:                                  ; preds = %frame.force629, %frame.forced592
-  %forced_page632 = phi ptr [ %frame.page627, %frame.forced592 ], [ %forced_page631, %frame.force629 ]
-  %struct.region633 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page632, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field634 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region633, i32 0, i32 0
-  store i64 0, ptr %tuple.field634, align 8
-  %tuple.field635 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region633, i32 0, i32 1
-  store i64 0, ptr %tuple.field635, align 8
-  %tuple.field636 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region633, i32 0, i32 2
-  store ptr null, ptr %tuple.field636, align 8
+frame.forced676:                                  ; preds = %frame.force675, %frame.forced638
+  %forced_page678 = phi ptr [ %frame.page673, %frame.forced638 ], [ %forced_page677, %frame.force675 ]
+  %struct.region679 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page678, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field680 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region679, i32 0, i32 0
+  store i64 0, ptr %tuple.field680, align 8
+  %tuple.field681 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region679, i32 0, i32 1
+  store i64 0, ptr %tuple.field681, align 8
+  %tuple.field682 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region679, i32 0, i32 2
+  store ptr null, ptr %tuple.field682, align 8
   %declared_lines = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 153
-  store ptr %struct.region633, ptr %declared_lines, align 8
+  store ptr %struct.region679, ptr %declared_lines, align 8
   %lines_doubled = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 154
   store i1 false, ptr %lines_doubled, align 1
-  %own_page637 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page637, ptr %wrapped_frame638, align 8
-  %wrapped.parent639 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame638, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent639, align 8
-  %frame.page640 = load ptr, ptr %wrapped_frame638, align 8
-  %frame.has_page641 = icmp ne ptr %frame.page640, null
-  br i1 %frame.has_page641, label %frame.forced643, label %frame.force642
+  %own_page683 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page683, ptr %wrapped_frame684, align 8
+  %wrapped.parent685 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame684, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent685, align 8
+  %frame.page686 = load ptr, ptr %wrapped_frame684, align 8
+  %frame.has_page687 = icmp ne ptr %frame.page686, null
+  br i1 %frame.has_page687, label %frame.forced689, label %frame.force688
 
-frame.force642:                                   ; preds = %frame.forced630
-  %forced_page644 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame638)
-  br label %frame.forced643
+frame.force688:                                   ; preds = %frame.forced676
+  %forced_page690 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame684)
+  br label %frame.forced689
 
-frame.forced643:                                  ; preds = %frame.force642, %frame.forced630
-  %forced_page645 = phi ptr [ %frame.page640, %frame.forced630 ], [ %forced_page644, %frame.force642 ]
-  %struct.region646 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page645, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field647 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region646, i32 0, i32 0
-  store i64 0, ptr %tuple.field647, align 8
-  %tuple.field648 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region646, i32 0, i32 1
-  store i64 0, ptr %tuple.field648, align 8
-  %tuple.field649 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region646, i32 0, i32 2
-  store ptr null, ptr %tuple.field649, align 8
+frame.forced689:                                  ; preds = %frame.force688, %frame.forced676
+  %forced_page691 = phi ptr [ %frame.page686, %frame.forced676 ], [ %forced_page690, %frame.force688 ]
+  %struct.region692 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page691, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field693 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region692, i32 0, i32 0
+  store i64 0, ptr %tuple.field693, align 8
+  %tuple.field694 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region692, i32 0, i32 1
+  store i64 0, ptr %tuple.field694, align 8
+  %tuple.field695 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region692, i32 0, i32 2
+  store ptr null, ptr %tuple.field695, align 8
   %global_packages = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 155
-  store ptr %struct.region646, ptr %global_packages, align 8
+  store ptr %struct.region692, ptr %global_packages, align 8
   %global_dups = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 156
   store i1 false, ptr %global_dups, align 1
   %planning_foreign_global = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 157
   store i1 false, ptr %planning_foreign_global, align 1
   %lookup_package = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 158
-  store { ptr } zeroinitializer, ptr %arg.tmp650, align 1
-  call void @_ZN6StringC1E6String(ptr %lookup_package, ptr %arg.tmp650)
+  store { ptr } zeroinitializer, ptr %arg.tmp696, align 1
+  call void @_ZN6StringC1E6String(ptr %lookup_package, ptr %arg.tmp696)
   %lookup_directed = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 159
   store i1 false, ptr %lookup_directed, align 1
   %value_access = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 160
   store i1 false, ptr %value_access, align 1
   %file_explicit_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 161
-  %tuple.field651 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %file_explicit_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field651, align 8
-  %tuple.field652 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %file_explicit_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field652, align 8
-  %tuple.field653 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %file_explicit_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field653, align 8
+  %tuple.field697 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %file_explicit_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field697, align 8
+  %tuple.field698 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %file_explicit_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field698, align 8
+  %tuple.field699 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %file_explicit_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field699, align 8
   %disambiguation_active = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 162
   store i1 false, ptr %disambiguation_active, align 1
   %scope_isolation_base = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 163
   store i64 0, ptr %scope_isolation_base, align 8
   %use_vis_starts = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 164
-  %tuple.field654 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_starts, i32 0, i32 0
-  store i64 0, ptr %tuple.field654, align 8
-  %tuple.field655 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_starts, i32 0, i32 1
-  store i64 0, ptr %tuple.field655, align 8
-  %tuple.field656 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_starts, i32 0, i32 2
-  store ptr null, ptr %tuple.field656, align 8
-  %module_paths = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 165
-  %tuple.field657 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %module_paths, i32 0, i32 0
-  store i64 0, ptr %tuple.field657, align 8
-  %tuple.field658 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %module_paths, i32 0, i32 1
-  store i64 0, ptr %tuple.field658, align 8
-  %tuple.field659 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %module_paths, i32 0, i32 2
-  store ptr null, ptr %tuple.field659, align 8
-  %function_origin_paths = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 166
-  %tuple.field660 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %function_origin_paths, i32 0, i32 0
-  store i64 0, ptr %tuple.field660, align 8
-  %tuple.field661 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %function_origin_paths, i32 0, i32 1
-  store i64 0, ptr %tuple.field661, align 8
-  %tuple.field662 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %function_origin_paths, i32 0, i32 2
-  store ptr null, ptr %tuple.field662, align 8
-  %own_page663 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page663, ptr %wrapped_frame664, align 8
-  %wrapped.parent665 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame664, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent665, align 8
-  %frame.page666 = load ptr, ptr %wrapped_frame664, align 8
-  %frame.has_page667 = icmp ne ptr %frame.page666, null
-  br i1 %frame.has_page667, label %frame.forced669, label %frame.force668
-
-frame.force668:                                   ; preds = %frame.forced643
-  %forced_page670 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame664)
-  br label %frame.forced669
-
-frame.forced669:                                  ; preds = %frame.force668, %frame.forced643
-  %forced_page671 = phi ptr [ %frame.page666, %frame.forced643 ], [ %forced_page670, %frame.force668 ]
-  %struct.region672 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page671, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field673 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region672, i32 0, i32 0
-  store i64 0, ptr %tuple.field673, align 8
-  %tuple.field674 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region672, i32 0, i32 1
-  store i64 0, ptr %tuple.field674, align 8
-  %tuple.field675 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region672, i32 0, i32 2
-  store ptr null, ptr %tuple.field675, align 8
-  %function_namespaces = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 167
-  store ptr %struct.region672, ptr %function_namespaces, align 8
-  %own_page676 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page676, ptr %wrapped_frame677, align 8
-  %wrapped.parent678 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame677, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent678, align 8
-  %frame.page679 = load ptr, ptr %wrapped_frame677, align 8
-  %frame.has_page680 = icmp ne ptr %frame.page679, null
-  br i1 %frame.has_page680, label %frame.forced682, label %frame.force681
-
-frame.force681:                                   ; preds = %frame.forced669
-  %forced_page683 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame677)
-  br label %frame.forced682
-
-frame.forced682:                                  ; preds = %frame.force681, %frame.forced669
-  %forced_page684 = phi ptr [ %frame.page679, %frame.forced669 ], [ %forced_page683, %frame.force681 ]
-  %struct.region685 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page684, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field686 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region685, i32 0, i32 0
-  store i64 0, ptr %tuple.field686, align 8
-  %tuple.field687 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region685, i32 0, i32 1
-  store i64 0, ptr %tuple.field687, align 8
-  %tuple.field688 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region685, i32 0, i32 2
-  store ptr null, ptr %tuple.field688, align 8
-  %function_origin_files = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 169
-  store ptr %struct.region685, ptr %function_origin_files, align 8
-  %own_page689 = call ptr @_Z3getPv(ptr %0)
-  store ptr %own_page689, ptr %wrapped_frame690, align 8
-  %wrapped.parent691 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame690, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent691, align 8
-  %frame.page692 = load ptr, ptr %wrapped_frame690, align 8
-  %frame.has_page693 = icmp ne ptr %frame.page692, null
-  br i1 %frame.has_page693, label %frame.forced695, label %frame.force694
-
-frame.force694:                                   ; preds = %frame.forced682
-  %forced_page696 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame690)
-  br label %frame.forced695
-
-frame.forced695:                                  ; preds = %frame.force694, %frame.forced682
-  %forced_page697 = phi ptr [ %frame.page692, %frame.forced682 ], [ %forced_page696, %frame.force694 ]
-  %struct.region698 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page697, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field699 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region698, i32 0, i32 0
-  store i64 0, ptr %tuple.field699, align 8
-  %tuple.field700 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region698, i32 0, i32 1
+  %tuple.field700 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_starts, i32 0, i32 0
   store i64 0, ptr %tuple.field700, align 8
-  %tuple.field701 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region698, i32 0, i32 2
-  store ptr null, ptr %tuple.field701, align 8
-  %bare_variant_starts = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 170
-  store ptr %struct.region698, ptr %bare_variant_starts, align 8
-  %registering_namespace = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 168
-  store { ptr } zeroinitializer, ptr %arg.tmp702, align 1
-  call void @_ZN6StringC1E6String(ptr %registering_namespace, ptr %arg.tmp702)
-  %registering_file = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 134
-  store { ptr } zeroinitializer, ptr %arg.tmp703, align 1
-  call void @_ZN6StringC1E6String(ptr %registering_file, ptr %arg.tmp703)
-  %registering_path = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 135
-  store { ptr } zeroinitializer, ptr %arg.tmp704, align 1
-  call void @_ZN6StringC1E6String(ptr %registering_path, ptr %arg.tmp704)
-  %use_vis_files = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 136
-  %tuple.field705 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_files, i32 0, i32 0
-  store i64 0, ptr %tuple.field705, align 8
-  %tuple.field706 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_files, i32 0, i32 1
+  %tuple.field701 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_starts, i32 0, i32 1
+  store i64 0, ptr %tuple.field701, align 8
+  %tuple.field702 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_starts, i32 0, i32 2
+  store ptr null, ptr %tuple.field702, align 8
+  %module_paths = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 165
+  %tuple.field703 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %module_paths, i32 0, i32 0
+  store i64 0, ptr %tuple.field703, align 8
+  %tuple.field704 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %module_paths, i32 0, i32 1
+  store i64 0, ptr %tuple.field704, align 8
+  %tuple.field705 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %module_paths, i32 0, i32 2
+  store ptr null, ptr %tuple.field705, align 8
+  %function_origin_paths = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 166
+  %tuple.field706 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %function_origin_paths, i32 0, i32 0
   store i64 0, ptr %tuple.field706, align 8
-  %tuple.field707 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_files, i32 0, i32 2
-  store ptr null, ptr %tuple.field707, align 8
+  %tuple.field707 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %function_origin_paths, i32 0, i32 1
+  store i64 0, ptr %tuple.field707, align 8
+  %tuple.field708 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %function_origin_paths, i32 0, i32 2
+  store ptr null, ptr %tuple.field708, align 8
+  %own_page709 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page709, ptr %wrapped_frame710, align 8
+  %wrapped.parent711 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame710, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent711, align 8
+  %frame.page712 = load ptr, ptr %wrapped_frame710, align 8
+  %frame.has_page713 = icmp ne ptr %frame.page712, null
+  br i1 %frame.has_page713, label %frame.forced715, label %frame.force714
+
+frame.force714:                                   ; preds = %frame.forced689
+  %forced_page716 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame710)
+  br label %frame.forced715
+
+frame.forced715:                                  ; preds = %frame.force714, %frame.forced689
+  %forced_page717 = phi ptr [ %frame.page712, %frame.forced689 ], [ %forced_page716, %frame.force714 ]
+  %struct.region718 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page717, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field719 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region718, i32 0, i32 0
+  store i64 0, ptr %tuple.field719, align 8
+  %tuple.field720 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region718, i32 0, i32 1
+  store i64 0, ptr %tuple.field720, align 8
+  %tuple.field721 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region718, i32 0, i32 2
+  store ptr null, ptr %tuple.field721, align 8
+  %function_namespaces = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 167
+  store ptr %struct.region718, ptr %function_namespaces, align 8
+  %own_page722 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page722, ptr %wrapped_frame723, align 8
+  %wrapped.parent724 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame723, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent724, align 8
+  %frame.page725 = load ptr, ptr %wrapped_frame723, align 8
+  %frame.has_page726 = icmp ne ptr %frame.page725, null
+  br i1 %frame.has_page726, label %frame.forced728, label %frame.force727
+
+frame.force727:                                   ; preds = %frame.forced715
+  %forced_page729 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame723)
+  br label %frame.forced728
+
+frame.forced728:                                  ; preds = %frame.force727, %frame.forced715
+  %forced_page730 = phi ptr [ %frame.page725, %frame.forced715 ], [ %forced_page729, %frame.force727 ]
+  %struct.region731 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page730, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field732 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region731, i32 0, i32 0
+  store i64 0, ptr %tuple.field732, align 8
+  %tuple.field733 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region731, i32 0, i32 1
+  store i64 0, ptr %tuple.field733, align 8
+  %tuple.field734 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region731, i32 0, i32 2
+  store ptr null, ptr %tuple.field734, align 8
+  %function_origin_files = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 169
+  store ptr %struct.region731, ptr %function_origin_files, align 8
+  %own_page735 = call ptr @_Z3getPv(ptr %0)
+  store ptr %own_page735, ptr %wrapped_frame736, align 8
+  %wrapped.parent737 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame736, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent737, align 8
+  %frame.page738 = load ptr, ptr %wrapped_frame736, align 8
+  %frame.has_page739 = icmp ne ptr %frame.page738, null
+  br i1 %frame.has_page739, label %frame.forced741, label %frame.force740
+
+frame.force740:                                   ; preds = %frame.forced728
+  %forced_page742 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame736)
+  br label %frame.forced741
+
+frame.forced741:                                  ; preds = %frame.force740, %frame.forced728
+  %forced_page743 = phi ptr [ %frame.page738, %frame.forced728 ], [ %forced_page742, %frame.force740 ]
+  %struct.region744 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page743, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field745 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region744, i32 0, i32 0
+  store i64 0, ptr %tuple.field745, align 8
+  %tuple.field746 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region744, i32 0, i32 1
+  store i64 0, ptr %tuple.field746, align 8
+  %tuple.field747 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region744, i32 0, i32 2
+  store ptr null, ptr %tuple.field747, align 8
+  %bare_variant_starts = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 170
+  store ptr %struct.region744, ptr %bare_variant_starts, align 8
+  %registering_namespace = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 168
+  store { ptr } zeroinitializer, ptr %arg.tmp748, align 1
+  call void @_ZN6StringC1E6String(ptr %registering_namespace, ptr %arg.tmp748)
+  %registering_file = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 134
+  store { ptr } zeroinitializer, ptr %arg.tmp749, align 1
+  call void @_ZN6StringC1E6String(ptr %registering_file, ptr %arg.tmp749)
+  %registering_path = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 135
+  store { ptr } zeroinitializer, ptr %arg.tmp750, align 1
+  call void @_ZN6StringC1E6String(ptr %registering_path, ptr %arg.tmp750)
+  %use_vis_files = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 136
+  %tuple.field751 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_files, i32 0, i32 0
+  store i64 0, ptr %tuple.field751, align 8
+  %tuple.field752 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_files, i32 0, i32 1
+  store i64 0, ptr %tuple.field752, align 8
+  %tuple.field753 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_files, i32 0, i32 2
+  store ptr null, ptr %tuple.field753, align 8
   %use_vis_names = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 137
-  %tuple.field708 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_names, i32 0, i32 0
-  store i64 0, ptr %tuple.field708, align 8
-  %tuple.field709 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_names, i32 0, i32 1
-  store i64 0, ptr %tuple.field709, align 8
-  %tuple.field710 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_names, i32 0, i32 2
-  store ptr null, ptr %tuple.field710, align 8
+  %tuple.field754 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_names, i32 0, i32 0
+  store i64 0, ptr %tuple.field754, align 8
+  %tuple.field755 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_names, i32 0, i32 1
+  store i64 0, ptr %tuple.field755, align 8
+  %tuple.field756 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_names, i32 0, i32 2
+  store ptr null, ptr %tuple.field756, align 8
   %use_vis_paths = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 138
-  %tuple.field711 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_paths, i32 0, i32 0
-  store i64 0, ptr %tuple.field711, align 8
-  %tuple.field712 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_paths, i32 0, i32 1
-  store i64 0, ptr %tuple.field712, align 8
-  %tuple.field713 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_paths, i32 0, i32 2
-  store ptr null, ptr %tuple.field713, align 8
+  %tuple.field757 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_paths, i32 0, i32 0
+  store i64 0, ptr %tuple.field757, align 8
+  %tuple.field758 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_paths, i32 0, i32 1
+  store i64 0, ptr %tuple.field758, align 8
+  %tuple.field759 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_paths, i32 0, i32 2
+  store ptr null, ptr %tuple.field759, align 8
   %use_vis_recorded_files = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 139
-  %tuple.field714 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_files, i32 0, i32 0
-  store i64 0, ptr %tuple.field714, align 8
-  %tuple.field715 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_files, i32 0, i32 1
-  store i64 0, ptr %tuple.field715, align 8
-  %tuple.field716 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_files, i32 0, i32 2
-  store ptr null, ptr %tuple.field716, align 8
+  %tuple.field760 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_files, i32 0, i32 0
+  store i64 0, ptr %tuple.field760, align 8
+  %tuple.field761 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_files, i32 0, i32 1
+  store i64 0, ptr %tuple.field761, align 8
+  %tuple.field762 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_files, i32 0, i32 2
+  store ptr null, ptr %tuple.field762, align 8
   %use_vis_measure = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 140
   store i1 false, ptr %use_vis_measure, align 1
   %use_vis_hits = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 141
@@ -378171,49 +378429,49 @@ frame.forced695:                                  ; preds = %frame.force694, %fr
   %use_vis_misses = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 142
   store i64 0, ptr %use_vis_misses, align 8
   %use_vis_miss_idx = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 143
-  %tuple.field717 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_idx, i32 0, i32 0
-  store i64 0, ptr %tuple.field717, align 8
-  %tuple.field718 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_idx, i32 0, i32 1
-  store i64 0, ptr %tuple.field718, align 8
-  %tuple.field719 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_idx, i32 0, i32 2
-  store ptr null, ptr %tuple.field719, align 8
+  %tuple.field763 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_idx, i32 0, i32 0
+  store i64 0, ptr %tuple.field763, align 8
+  %tuple.field764 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_idx, i32 0, i32 1
+  store i64 0, ptr %tuple.field764, align 8
+  %tuple.field765 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_idx, i32 0, i32 2
+  store ptr null, ptr %tuple.field765, align 8
   %use_vis_miss_files = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 144
-  %tuple.field720 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_miss_files, i32 0, i32 0
-  store i64 0, ptr %tuple.field720, align 8
-  %tuple.field721 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_miss_files, i32 0, i32 1
-  store i64 0, ptr %tuple.field721, align 8
-  %tuple.field722 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_miss_files, i32 0, i32 2
-  store ptr null, ptr %tuple.field722, align 8
+  %tuple.field766 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_miss_files, i32 0, i32 0
+  store i64 0, ptr %tuple.field766, align 8
+  %tuple.field767 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_miss_files, i32 0, i32 1
+  store i64 0, ptr %tuple.field767, align 8
+  %tuple.field768 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_miss_files, i32 0, i32 2
+  store ptr null, ptr %tuple.field768, align 8
   %use_vis_miss_lazy = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 145
-  %tuple.field723 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_lazy, i32 0, i32 0
-  store i64 0, ptr %tuple.field723, align 8
-  %tuple.field724 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_lazy, i32 0, i32 1
-  store i64 0, ptr %tuple.field724, align 8
-  %tuple.field725 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_lazy, i32 0, i32 2
-  store ptr null, ptr %tuple.field725, align 8
+  %tuple.field769 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_lazy, i32 0, i32 0
+  store i64 0, ptr %tuple.field769, align 8
+  %tuple.field770 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_lazy, i32 0, i32 1
+  store i64 0, ptr %tuple.field770, align 8
+  %tuple.field771 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_miss_lazy, i32 0, i32 2
+  store ptr null, ptr %tuple.field771, align 8
   %use_vis_recorded_paths = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 146
-  %tuple.field726 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_paths, i32 0, i32 0
-  store i64 0, ptr %tuple.field726, align 8
-  %tuple.field727 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_paths, i32 0, i32 1
-  store i64 0, ptr %tuple.field727, align 8
-  %tuple.field728 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_paths, i32 0, i32 2
-  store ptr null, ptr %tuple.field728, align 8
+  %tuple.field772 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_paths, i32 0, i32 0
+  store i64 0, ptr %tuple.field772, align 8
+  %tuple.field773 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_paths, i32 0, i32 1
+  store i64 0, ptr %tuple.field773, align 8
+  %tuple.field774 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_recorded_paths, i32 0, i32 2
+  store ptr null, ptr %tuple.field774, align 8
   %use_vis_enforce = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 147
   store i1 true, ptr %use_vis_enforce, align 1
   %use_vis_verdict_file = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 148
-  %tuple.field729 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_verdict_file, i32 0, i32 0
-  store i64 0, ptr %tuple.field729, align 8
-  %tuple.field730 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_verdict_file, i32 0, i32 1
-  store i64 0, ptr %tuple.field730, align 8
-  %tuple.field731 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_verdict_file, i32 0, i32 2
-  store ptr null, ptr %tuple.field731, align 8
+  %tuple.field775 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_verdict_file, i32 0, i32 0
+  store i64 0, ptr %tuple.field775, align 8
+  %tuple.field776 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_verdict_file, i32 0, i32 1
+  store i64 0, ptr %tuple.field776, align 8
+  %tuple.field777 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %use_vis_verdict_file, i32 0, i32 2
+  store ptr null, ptr %tuple.field777, align 8
   %use_vis_verdict_ok = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 149
-  %tuple.field732 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_verdict_ok, i32 0, i32 0
-  store i64 0, ptr %tuple.field732, align 8
-  %tuple.field733 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_verdict_ok, i32 0, i32 1
-  store i64 0, ptr %tuple.field733, align 8
-  %tuple.field734 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_verdict_ok, i32 0, i32 2
-  store ptr null, ptr %tuple.field734, align 8
+  %tuple.field778 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_verdict_ok, i32 0, i32 0
+  store i64 0, ptr %tuple.field778, align 8
+  %tuple.field779 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_verdict_ok, i32 0, i32 1
+  store i64 0, ptr %tuple.field779, align 8
+  %tuple.field780 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %use_vis_verdict_ok, i32 0, i32 2
+  store ptr null, ptr %tuple.field780, align 8
   %jit_dep_bodies = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 150
   store i1 false, ptr %jit_dep_bodies, align 1
   call void @_ZN7PlannerB6scalycB4v0_226register_runtime_functionsEv(ptr %0)
