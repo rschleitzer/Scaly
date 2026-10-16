@@ -1,0 +1,42 @@
+; Regression (2026-10-16): String.equals compares the length prefixes byte by
+; byte before the content, instead of decoding both lengths -- the other's
+; through get_length, most of what the compiler's name comparisons cost. The
+; cases that has to keep right: no buffer against an empty one, the same
+; buffer, a length above 127 (a prefix of two bytes), and two lengths whose
+; FIRST prefix bytes agree (200 and 328 share their low seven bits).
+; Expected: PASS
+use scaly.containers.String
+use scaly.containers.StringBuilder
+
+function repeated(piece: String, n: size_t, last: String) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < n
+    {
+        sb.append(piece)
+        i := i + 1
+    }
+    sb.append(last)
+    sb.to_string()
+}
+
+let none String()
+let empty String(0 as size_t)
+let abc String("abc")
+let a200 repeated("a", 199, "a")
+let b200 repeated("a", 199, "a")
+let c200 repeated("a", 199, "b")
+let a328 repeated("a", 327, "a")
+var ok none.equals(empty) and empty.equals(none) and none.equals(none)
+ok := ok and empty.equals(String(""))
+ok := ok and abc.equals(abc) and abc.equals("abc") and abc.equals(repeated("ab", 1, "c"))
+ok := ok and abc.equals("abd") = false and abc.equals("ab") = false and abc.equals(none) = false
+ok := ok and none.equals(abc) = false
+ok := ok and a200.equals(b200) and a200.get_length() = 200
+ok := ok and a200.equals(c200) = false
+ok := ok and a200.equals(a328) = false and a328.equals(a200) = false and a328.get_length() = 328
+if ok
+    print "PASS"
+else
+    print "FAIL"

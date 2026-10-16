@@ -271,31 +271,39 @@ define String (data: pointer[u8](null))
 
     function equals(this: String, other: String) returns bool
     {
-        var length: size_t 0
-        var index: size_t 0
-        if data <> null
-        {
-            var bit_count: size_t 0
-            while true
-            {
-                if bit_count = ((PACKED_SIZE * 7) as size_t)
-                    scaly_panic_string("String.equals(String)", data as size_t)
-
-                var byte: u8 *(data + index)
-                length := length | (((byte & 0x7F) as size_t)) << bit_count
-                if (byte & 0x80) = 0
-                    break
-
-                bit_count := bit_count + 7
-                index := index + 1
-            }
-        }
-
-        if length <> other.get_length()
-            return false
-
-        if data = null
+        ; the same buffer, or both empty without one
+        if data = other.data
             return true
+        if data = null
+            return other.get_length() = 0
+        if other.data = null
+            return get_length() = 0
+
+        ; The length prefixes first, a byte at a time: every String writes its
+        ; length the one way (LEB128, the inits above; the emitter's literals
+        ; mirror them; a copy takes the bytes as they are), so equal strings
+        ; have equal prefixes -- and most unequal ones differ in the first
+        ; byte, which is the whole length below 128. Decoding both lengths,
+        ; the other's through get_length#, was most of what the compiler's
+        ; name comparisons cost (2026-10-16).
+        var length: size_t 0
+        var bit_count: size_t 0
+        var index: size_t 0
+        while true
+        {
+            if bit_count = ((PACKED_SIZE * 7) as size_t)
+                scaly_panic_string("String.equals(String)", data as size_t)
+
+            var byte: u8 *(data + index)
+            if byte <> *(other.data + index)
+                return false
+            length := length | (((byte & 0x7F) as size_t)) << bit_count
+            if (byte & 0x80) = 0
+                break
+
+            bit_count := bit_count + 7
+            index := index + 1
+        }
 
         memcmp(data + index + 1, other.data + index + 1, length) = 0
     }
