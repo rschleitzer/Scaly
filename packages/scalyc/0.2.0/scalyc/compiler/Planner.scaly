@@ -42627,6 +42627,7 @@ define Planner
                 i := i + 1
             }
             this.rr_build_residence_index()
+            this.phase_mark("B2a-residence-gathered")
             ; on by default; SCALYC_RR_OFF=1 restores the flat Local stamp
             residence.rr_armed := getenv("SCALYC_RR_OFF") = null
             var round: size_t 0
@@ -42664,9 +42665,12 @@ define Planner
                 round := round + 1
                 if round >= 8
                     changed := false
+                ; one line per round of the residence fixpoint
+                this.phase_mark("B2b-residence-round")
             }
             this.rr_resolve_pending()
             this.rr_rebuild_name_buckets()
+            this.phase_mark("B2c-residence-resolved")
             gate.deep_gate := getenv("SCALYC_DEEP_GATE_OFF") = null
             gate_all := getenv("SCALYC_GATE_ALL") <> null
             if gate.deep_gate or gate.deep_facts
@@ -42725,6 +42729,7 @@ define Planner
                             }
                     qi := qi + 1
                 }
+                this.phase_mark("B2d-deep-gate-prepared")
                 this.deep_persist_fixpoint()
                 var gcap: size_t 1024
                 while gcap < residence.rr_fns.length * 4
@@ -55720,6 +55725,7 @@ define Planner
                 ai := ai + 1
             }
 
+            this.phase_mark("B1a-direct-and-veto")
             ; Fixpoint propagation up the call graph.
             var grew: bool true
             while grew
@@ -55796,8 +55802,11 @@ define Planner
                     }
                     ii := ii + 1
                 }
+                ; one line per round of the page fixpoint
+                this.phase_mark("B1b-page-round")
             }
             this.build_store_page_set(all, owners)
+            this.phase_mark("B1c-store-page-set")
             this.index_store_names()
         }
     }
