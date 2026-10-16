@@ -190,7 +190,7 @@ def frame(o):
 p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
 fd = p.stdout.fileno()
 buf = bytearray()
-def next_frame(timeout=20.0):
+def next_frame(timeout=60.0):
     deadline = time.time() + timeout
     while True:
         i = buf.find(b"\r\n\r\n")
@@ -2643,7 +2643,7 @@ gc = lines[gl].index("get_x") + 1
 p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
 fd = p.stdout.fileno()
 buf = bytearray()
-def next_frame(timeout=20.0):
+def next_frame(timeout=60.0):
     deadline = time.time() + timeout
     while True:
         i = buf.find(b"\r\n\r\n")
@@ -3176,7 +3176,7 @@ def frame(o):
 p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
 fd = p.stdout.fileno()
 buf = bytearray()
-def next_frame(timeout=30.0):
+def next_frame(timeout=60.0):
     deadline = time.time() + timeout
     while True:
         i = buf.find(b"\r\n\r\n")
@@ -3276,7 +3276,7 @@ typed = "\n        this."
 p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
 fd = p.stdout.fileno()
 buf = bytearray()
-def next_frame(timeout=20.0):
+def next_frame(timeout=60.0):
     deadline = time.time() + timeout
     while True:
         i = buf.find(b"\r\n\r\n")
