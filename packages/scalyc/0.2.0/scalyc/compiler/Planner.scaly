@@ -190,6 +190,19 @@ define NameIndex
     poss: Array[size_t]
 )
 
+; A name -> the CHAIN of positions entered under it, for a set keyed by a name
+; and something beside it (return_page_has#: name and span): `heads`/`tails`
+; per name (positions +1, 0 ends a chain), `next` per position, `names` per
+; chain for the rebuild past half load.
+define ChainIndex
+(
+    var table: ConceptIndex
+    names: Array[String]
+    heads: Array[size_t]
+    tails: Array[size_t]
+    next: Array[size_t]
+)
+
 ; Method tables per member list (collect_methods_in#, member_list_store_mask#):
 ; a list is known by its buffer's address -> `map_keys`/`map_vals` (open
 ; addressing, 0 = empty) -> its table number; table k maps a method name to
@@ -1028,6 +1041,9 @@ define Planner
         ; instantiated_structures / instantiated_unions (a linear scan each
         ; until 2026-10-16: the most-asked of the compiler's name comparisons,
         ; ensure_member_layout# alone 0.8 s of tscaly's 9.6 s plan)
+        ; lookup_namespace_concept#: name -> the LAST position in `concepts`
+        ; whose definition is a Namespace (a backward scan until 2026-10-16)
+        namespace_index: ref[NameIndex]
         struct_by_mangled: ref[NameIndex]
         struct_by_name: ref[NameIndex]
         union_by_mangled: ref[NameIndex]
@@ -1221,6 +1237,9 @@ define Planner
         return_page_names: Array[String]
         return_page_starts: Array[size_t]
         return_page_ends: Array[size_t]
+        ; the three by name (return_page_add#, return_page_has#): a linear
+        ; scan of the names until 2026-10-16, asked at every page question
+        return_page_index: ref[ChainIndex]
         ; build_transitive_page_set's two scratch sets for the NAME-KEYED
         ; FALLBACK path of the return-position rule (a receiver whose type this
         ; pre-pass cannot resolve — a local bound to a call, a deref hop). Fields
@@ -1510,6 +1529,7 @@ define Planner
             escape_records := Array[EscapeRecord]^this()
             esc_index := &EscIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this(), Array[size_t]^this(), Array[size_t]^this(), Array[String]^this(), Array[size_t]^this(), Array[size_t]^this(), false)
             global_index := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
+            namespace_index := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
             struct_by_mangled := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
             struct_by_name := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
             union_by_mangled := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
@@ -1577,6 +1597,7 @@ define Planner
             return_page_names := Array[String]^this()
             return_page_starts := Array[size_t]^this()
             return_page_ends := Array[size_t]^this()
+            return_page_index := &ChainIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this(), Array[size_t]^this(), Array[size_t]^this())
             prepass_direct_names := Array[String]^this()
             prepass_veto_names := Array[String]^this()
             transitive_page_built := false
@@ -2455,7 +2476,16 @@ define Planner
             if prev_idx < 0
                 this.check_concept_member_names(c, registering_file)
 
+            let concept_pos concepts.length
             concepts.add(KeyValuePair[String, Concept](c.name, c))
+            var is_ns: bool false
+            choose c.definition
+                when nsd: Namespace
+                    is_ns := true
+                else
+                    0
+            if is_ns
+                this.name_index_set(namespace_index, c.name, concept_pos)
             var cpi: size_t 0
             while cpi < c.parameters.length
             {
@@ -2831,33 +2861,17 @@ define Planner
         ; holds the Namespace for the colliding name.
         function lookup_namespace_concept(this: Planner, name: String) returns ref[Concept]?
         {
-            ; Stays a backward linear scan: it filters by definition == Namespace,
-            ; so concept_index's single last-index-per-name can't serve it (the
-            ; last entry for a name may be a Structure). A future multi-index
-            ; (name -> all indices) could serve this.
-            if concepts.length = 0
+            ; It filters by definition == Namespace, so concept_index's
+            ; last-index-per-name cannot serve it (the last entry for a name
+            ; may be a Structure): namespace_index holds the last NAMESPACE
+            ; of each name, entered where `concepts` grows.
+            let at namespace_index.table.lookup(name)
+            if at < 0
                 return null
-            var i: size_t concepts.length
-            while i > 0
-            {
-                i := i - 1
-                let kvp_ptr concepts.get i
-                if kvp_ptr <> null
-                {
-                    if kvp_ptr.key = name
-                    {
-                        var is_ns: bool false
-                        choose kvp_ptr.value.definition
-                            when n: Namespace
-                                is_ns := true
-                            else
-                                0
-                        if is_ns
-                            return &kvp_ptr.value
-                    }
-                }
-            }
-            null
+            let kvp_ptr concepts.get(at as size_t)
+            if kvp_ptr = null
+                return null
+            &kvp_ptr.value
         }
 
         procedure has_concept(mutable this: Planner, name: String) returns bool
@@ -3196,6 +3210,93 @@ define Planner
             ix.keys.add key
             ix.poss.add pos
             ix.table.insert_if_absent(key, pos)
+        }
+
+        ; Enter `name` at `pos`, OVERWRITING an earlier entry (the last entry
+        ; wins, as a backward scan answers); past half load the table doubles
+        ; and every entry is entered again in order.
+        procedure name_index_set(mutable this: Planner, mutable ix: ref[NameIndex], name: String, pos: size_t)
+        {
+            if (ix.keys.length + 1) * 2 > ix.table.cap
+            {
+                var ncap: size_t 1024
+                while ncap < (ix.keys.length + 1) * 4
+                    ncap := ncap * 2
+                ix.table := ConceptIndex.create(ncap)
+                var k: size_t 0
+                while k < ix.keys.length
+                {
+                    ix.table.insert(ix.keys[k], ix.poss[k])
+                    k := k + 1
+                }
+            }
+            let key String^this(name)
+            ix.keys.add key
+            ix.poss.add pos
+            ix.table.insert(key, pos)
+        }
+
+        ; Enter position `pos` under `name` at the end of its chain; positions
+        ; come in order, one per call.
+        procedure chain_index_add(mutable this: Planner, mutable ix: ref[ChainIndex], name: String, pos: size_t)
+        {
+            ix.next.add(0)
+            let at ix.table.lookup(name)
+            if at >= 0
+            {
+                let id at as size_t
+                ix.next.put(ix.tails[id] - 1, pos + 1)
+                ix.tails.put(id, pos + 1)
+                return
+            }
+            let id ix.heads.length
+            if (id + 1) * 2 > ix.table.cap
+            {
+                var ncap: size_t 1024
+                while ncap < (id + 1) * 4
+                    ncap := ncap * 2
+                ix.table := ConceptIndex.create(ncap)
+                var k: size_t 0
+                while k < ix.names.length
+                {
+                    ix.table.insert(ix.names[k], k)
+                    k := k + 1
+                }
+            }
+            let key String^this(name)
+            ix.names.add key
+            ix.heads.add(pos + 1)
+            ix.tails.add(pos + 1)
+            ix.table.insert(key, id)
+        }
+
+        ; Enter `f` into the return-page set: name and span, by name.
+        procedure return_page_add(mutable this: Planner, f: Function)
+        {
+            let pos return_page_names.length
+            return_page_names.add(String^this(f.name))
+            return_page_starts.add(f.span.start)
+            return_page_ends.add(f.span.end)
+            this.chain_index_add(return_page_index, f.name, pos)
+        }
+
+        ; Is `func` in the return-page set? Its name's chain, then the span:
+        ; the name plus the source span pin exactly one function (two
+        ; same-named functions would have to start AND end at the same byte
+        ; offset of two different files to collide).
+        function return_page_has(this: Planner, func: Function) returns bool
+        {
+            let at return_page_index.table.lookup(func.name)
+            if at < 0
+                return false
+            var pos return_page_index.heads[at as size_t]
+            while pos > 0
+            {
+                if return_page_starts[pos - 1] = func.span.start and return_page_ends[pos - 1] = func.span.end
+                    return true
+                pos := return_page_index.next[pos - 1]
+            }
+            false
         }
 
         ; lookup_global: locate a previously planned PlannedGlobal by name.
@@ -7428,7 +7529,7 @@ define Planner
                 if Planner.body_returns_value_ctor_as_pointer(f)
                     direct := true
                 transitive := this.array_contains_name(transitive_page_names, f.name)
-                returnpage := Planner.static_func_in_set(return_page_names, return_page_starts, return_page_ends, f)
+                returnpage := this.return_page_has(f)
             }
             ; the attributes, in the order a linked caller reads them; the
             ; caller page only where the source does not name its page
@@ -55636,11 +55737,7 @@ define Planner
                         if this.array_contains_name(transitive_page_names, f.name) = false
                             transitive_page_names.add(String^this(f.name))
                     if Planner.linked_says(f, "returnpage")
-                    {
-                        return_page_names.add(String^this(f.name))
-                        return_page_starts.add(f.span.start)
-                        return_page_ends.add(f.span.end)
-                    }
+                        this.return_page_add(f)
                 }
                 si := si + 1
             }
@@ -55777,7 +55874,7 @@ define Planner
                             known := true
                         ; identity, not name: a same-named sibling of an already
                         ; promoted function still has to be judged on its own.
-                        if Planner.static_func_in_set(return_page_names, return_page_starts, return_page_ends, f)
+                        if this.return_page_has(f)
                             known := true
                         if known = false
                         {
@@ -55817,9 +55914,7 @@ define Planner
                                     if ow <> null
                                         if Planner.body_returns_page_needing_call(this, ow, f)
                                         {
-                                            return_page_names.add(String^this(f.name))
-                                            return_page_starts.add(f.span.start)
-                                            return_page_ends.add(f.span.end)
+                                            this.return_page_add(f)
                                             grew := true
                                         }
                                 }
@@ -63728,7 +63823,7 @@ define Planner
         ; result must own the caller page, or the result lives on its own frame.
         ; Keyed by IDENTITY — a same-named sibling that returns a borrowed pointer
         ; must not inherit the page.
-        if Planner.static_func_in_set(pl.return_page_names, pl.return_page_starts, pl.return_page_ends, func)
+        if pl.return_page_has(func)
         {
             Planner.page_probe(func, "R7")
             return true
@@ -63740,29 +63835,6 @@ define Planner
         {
             Planner.page_probe(func, "R8")
             return true
-        }
-        false
-    }
-
-    ; membership in an identity-keyed function set: the name plus the source span,
-    ; which together pin exactly one function (two same-named functions would have
-    ; to start AND end at the same byte offset of two different files to collide).
-    ; The three arrays are parallel.
-    function static_func_in_set(names: Array[String], starts: Array[size_t], ends: Array[size_t], func: Function) returns bool
-    {
-        var i: size_t 0
-        while i < names.length
-        {
-            let np names.get i
-            if np <> null
-                if (*np) = func.name
-                {
-                    let stp starts.get i
-                    let enp ends.get i
-                    if stp <> null and enp <> null and (*stp) = func.span.start and (*enp) = func.span.end
-                        return true
-                }
-            i := i + 1
         }
         false
     }
