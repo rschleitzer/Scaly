@@ -74,6 +74,7 @@ define Parser
         keywords_builder.add("io")
         keywords_builder.add("is")
         keywords_builder.add("label")
+        keywords_builder.add("lazy")
         keywords_builder.add("let")
         keywords_builder.add("linked")
         keywords_builder.add("loop")
@@ -1309,8 +1310,8 @@ define Parser
         }
 
         let annotation_start lexer.position
-        var annotation: ref[TypeAnnotationSyntax]? null
-        choose parse_typeannotation()
+        var annotation: ref[ParameterAnnotationSyntax]? null
+        choose parse_parameterannotation()
             when err: Error
             {
                 choose err
@@ -1319,7 +1320,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                annotation := TypeAnnotationSyntax(success.start, success.end, success.type)
+                annotation := ParameterAnnotationSyntax(success.start, success.end, success.lazy_, success.type)
 
         lexer.parse_punctuation(",")
 
@@ -4343,6 +4344,57 @@ define Parser
         let end lexer.position
 
         TypeAnnotationSyntax(start, end, type)
+    }
+
+    procedure parse_parameterannotation(mutable this: Parser) returns ParameterAnnotationSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_punctuation(":")
+            throw ParserError.Different(DifferentSyntax())
+
+        let lazy__start lexer.position
+        var lazy_: ref[LazySyntax]? null
+        choose parse_lazy()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                lazy_ := LazySyntax(success.start, success.end)
+
+        let type_start lexer.position
+        var type: TypeSyntax
+        choose parse_type()
+            when err: Error
+            {
+                choose err
+                    when d: Different
+                        throw ParserError.Invalid(InvalidSyntax(type_start, lexer.position, "expected Type"))
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                type := success
+
+        let end lexer.position
+
+        ParameterAnnotationSyntax(start, end, lazy_, type)
+    }
+
+    procedure parse_lazy(mutable this: Parser) returns LazySyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("lazy")
+            throw ParserError.Different(DifferentSyntax())
+
+        let end lexer.position
+
+        LazySyntax(start, end)
     }
 
     procedure parse_mutability(mutable this: Parser) returns MutabilitySyntax throws ParserError

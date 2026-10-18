@@ -9725,6 +9725,11 @@ define Emitter
                 }
                 when i: If
                 {
+                    ; the `if` an `and`/`or` of the standard library was put
+                    ; in as: the short-circuit value (logical_kind#)
+                    let kind Emitter.if_logical_kind(i)
+                    if kind >= 3
+                        return this.emit_logical_value(kind = 4, (*i.condition)[0], Emitter.if_logical_right(i, kind))
                     return emit_if i
                 }
                 when m: Match
@@ -13144,56 +13149,7 @@ define Emitter
                         is_or := true
                     if call.name = "or"
                         is_or := true
-                    var lc emit_operand(left_arg.unwrap())
-                    let i1_ty LLVMInt1TypeInContext(context)
-                    ; If the LHS operand can't be emitted (the same pre-existing
-                    ; emit gap the RHS if below handles — e.g. a literal-param
-                    ; generic stub like `Array<KeyValuePair<K,V>>::add` where the
-                    ; field type is unresolved, so `vector = null` plans to null),
-                    ; route to the RHS block instead of emitting `br <null>`: a
-                    ; false LHS evaluates the RHS for `||`, a true LHS for `&&`.
-                    ; These dead stubs never run, but the IR must stay valid so a
-                    ; textual `.ll` round-trips through clang (Step D seed build).
-                    if lc = null
-                    {
-                        if is_or
-                            lc := LLVMConstInt(i1_ty, 0, 0)
-                        if is_or = false
-                            lc := LLVMConstInt(i1_ty, 1, 0)
-                    }
-                    let entry_blk LLVMGetInsertBlock(builder)
-                    let rhs_blk LLVMAppendBasicBlockInContext(context, current_function, "lor.rhs")
-                    let end_blk LLVMAppendBasicBlockInContext(context, current_function, "lor.end")
-                    if is_or
-                        LLVMBuildCondBr(builder, lc, end_blk, rhs_blk)
-                    if is_or = false
-                        LLVMBuildCondBr(builder, lc, rhs_blk, end_blk)
-                    ; Short-circuit value from the entry block: `||`
-                    ; contributes constant true, `&&` contributes false.
-                    var shortcut LLVMConstInt(i1_ty, 1, 0)
-                    if is_or = false
-                        shortcut := LLVMConstInt(i1_ty, 0, 0)
-                    LLVMPositionBuilderAtEnd(builder, rhs_blk)
-                    var rc emit_operand(right_arg.unwrap())
-                    ; If the RHS operand can't be emitted (a pre-existing
-                    ; emit gap for that sub-expression), fall back to the
-                    ; shortcut constant so the phi stays well-formed instead
-                    ; of carrying a null operand. These cases were dropped
-                    ; outright before short-circuiting existed.
-                    if rc = null
-                        rc := shortcut
-                    let rhs_end LLVMGetInsertBlock(builder)
-                    LLVMBuildBr(builder, end_blk)
-                    LLVMPositionBuilderAtEnd(builder, end_blk)
-                    let phi LLVMBuildPhi(builder, i1_ty, "lor.result")
-                    var lvalues Vector[LLVMValueRef](2)
-                    var lblocks Vector[LLVMBasicBlockRef](2)
-                    lvalues.put(0, shortcut)
-                    lvalues.put(1, rc)
-                    lblocks.put(0, entry_blk)
-                    lblocks.put(1, rhs_end)
-                    LLVMAddIncoming(phi, lvalues.data, lblocks.data, 2)
-                    return phi
+                    return this.emit_logical_value(is_or, left_arg.unwrap(), right_arg.unwrap())
                 }
 
                 let lhs_op left_arg.unwrap()
@@ -13212,6 +13168,64 @@ define Emitter
             }
 
             null
+        }
+
+        ; The short-circuit value of `left and right` / `left or right`: a
+        ; conditional branch on the left, the right in its own block, a phi
+        ; of the two -- for the compiler's operator on bool and for the `if`
+        ; the standard library's `and`/`or` are put in as (logical_kind#).
+        procedure emit_logical_value(mutable this, is_or: bool, mutable left_op: PlannedOperand, mutable right_op: PlannedOperand) returns LLVMValueRef
+        {
+            var lc emit_operand(left_op)
+            let i1_ty LLVMInt1TypeInContext(context)
+            ; If the LHS operand can't be emitted (the same pre-existing
+            ; emit gap the RHS if below handles — e.g. a literal-param
+            ; generic stub like `Array<KeyValuePair<K,V>>::add` where the
+            ; field type is unresolved, so `vector = null` plans to null),
+            ; route to the RHS block instead of emitting `br <null>`: a
+            ; false LHS evaluates the RHS for `||`, a true LHS for `&&`.
+            ; These dead stubs never run, but the IR must stay valid so a
+            ; textual `.ll` round-trips through clang (Step D seed build).
+            if lc = null
+            {
+                if is_or
+                    lc := LLVMConstInt(i1_ty, 0, 0)
+                if is_or = false
+                    lc := LLVMConstInt(i1_ty, 1, 0)
+            }
+            let entry_blk LLVMGetInsertBlock(builder)
+            let rhs_blk LLVMAppendBasicBlockInContext(context, current_function, "lor.rhs")
+            let end_blk LLVMAppendBasicBlockInContext(context, current_function, "lor.end")
+            if is_or
+                LLVMBuildCondBr(builder, lc, end_blk, rhs_blk)
+            if is_or = false
+                LLVMBuildCondBr(builder, lc, rhs_blk, end_blk)
+            ; Short-circuit value from the entry block: `||`
+            ; contributes constant true, `&&` contributes false.
+            var shortcut LLVMConstInt(i1_ty, 1, 0)
+            if is_or = false
+                shortcut := LLVMConstInt(i1_ty, 0, 0)
+            LLVMPositionBuilderAtEnd(builder, rhs_blk)
+            var rc emit_operand(right_op)
+            ; If the RHS operand can't be emitted (a pre-existing
+            ; emit gap for that sub-expression), fall back to the
+            ; shortcut constant so the phi stays well-formed instead
+            ; of carrying a null operand. These cases were dropped
+            ; outright before short-circuiting existed.
+            if rc = null
+                rc := shortcut
+            let rhs_end LLVMGetInsertBlock(builder)
+            LLVMBuildBr(builder, end_blk)
+            LLVMPositionBuilderAtEnd(builder, end_blk)
+            let phi LLVMBuildPhi(builder, i1_ty, "lor.result")
+            var lvalues Vector[LLVMValueRef](2)
+            var lblocks Vector[LLVMBasicBlockRef](2)
+            lvalues.put(0, shortcut)
+            lvalues.put(1, rc)
+            lblocks.put(0, entry_blk)
+            lblocks.put(1, rhs_end)
+            LLVMAddIncoming(phi, lvalues.data, lblocks.data, 2)
+            return phi
         }
 
         ; Emit an intrinsic unary operator
@@ -15776,21 +15790,85 @@ define Emitter
         }
 
         function operand_is_logical(op: PlannedOperand) returns bool
+            Emitter.logical_kind(op) <> 0
+
+        ; What op is as a short-circuit operation: 0 none; 1 `and`, 2 `or` --
+        ; the compiler's operator on bool; 3 `and`, 4 `or` -- the `if` the
+        ; standard library's operators are put in as (`if a: b else false`,
+        ; `if a: true else b`, Planner.lazy_operation#).
+        function logical_kind(op: PlannedOperand) returns int
         {
             if op.member_access <> null and op.member_access.length > 0
-                return false
+                return 0
             choose op.expr
                 when c: Call
                 {
                     if c.args = null
-                        return false
+                        return 0
                     if (*c.args).length <> 2
-                        return false
-                    return c.name = "and" or c.name = "&&" or c.name = "or" or c.name = "||"
+                        return 0
+                    if c.name = "and" or c.name = "&&"
+                        return 1
+                    if c.name = "or" or c.name = "||"
+                        return 2
                 }
+                when pif: PlannedIf
+                    return Emitter.if_logical_kind(pif)
                 else
-                    return false
-            false
+                    0
+            0
+        }
+
+        ; ... and of an `if`: 3 `if a: b else false`, 4 `if a: true else b`
+        function if_logical_kind(pif: PlannedIf) returns int
+        {
+            if pif.condition = null or pif.consequent = null or pif.alternative = null
+                return 0
+            if (*pif.condition).length <> 1
+                return 0
+            let then_value Planner.statement_value((*pif.consequent))
+            let else_value Planner.statement_value((*pif.alternative))
+            if then_value.length <> 1 or else_value.length <> 1
+                return 0
+            if Planner.planned_is_bool(else_value[0], false)
+                return 3
+            if Planner.planned_is_bool(then_value[0], true)
+                return 4
+            0
+        }
+
+        function if_logical_right(pif: PlannedIf, kind: int) returns PlannedOperand
+        {
+            if kind = 3
+                return Planner.statement_value((*pif.consequent))[0]
+            Planner.statement_value((*pif.alternative))[0]
+        }
+
+        ; the operand a short-circuit operation decides on, and the one it
+        ; runs only where that does not decide (logical_kind# not 0)
+        function logical_left(op: PlannedOperand) returns PlannedOperand
+        {
+            choose op.expr
+                when c: Call
+                    return (*c.args)[0]
+                when pif: PlannedIf
+                    return (*pif.condition)[0]
+                else
+                    0
+            op
+        }
+
+        function logical_right(op: PlannedOperand) returns PlannedOperand
+        {
+            let kind Emitter.logical_kind(op)
+            choose op.expr
+                when c: Call
+                    return (*c.args)[1]
+                when pif: PlannedIf
+                    return Emitter.if_logical_right(pif, kind)
+                else
+                    0
+            op
         }
 
         ; emit_cond_branch#: branch to `on_true`/`on_false` on the value of `op`,
@@ -15801,35 +15879,26 @@ define Emitter
         ; fallback: an `and` left side reads as true, anything else as false).
         procedure emit_cond_branch(mutable this, mutable op: PlannedOperand, mutable on_true: LLVMBasicBlockRef, mutable on_false: LLVMBasicBlockRef, null_true: bool)
         {
-            if Emitter.operand_is_logical(op)
+            let kind Emitter.logical_kind(op)
+            if kind <> 0
             {
-                choose op.expr
-                    when c: Call
-                    {
-                        let args (*c.args)
-                        let lp args.get 0
-                        let rp_arg args.get 1
-                        if lp <> null and rp_arg <> null
-                        {
-                            let is_or c.name = "or" or c.name = "||"
-                            if is_or
-                            {
-                                let mid create_block("lor.rhs")
-                                this.emit_cond_branch((*lp), on_true, mid, false)
-                                LLVMPositionBuilderAtEnd(builder, mid)
-                            }
-                            else
-                            {
-                                let mid create_block("land.rhs")
-                                this.emit_cond_branch((*lp), mid, on_false, true)
-                                LLVMPositionBuilderAtEnd(builder, mid)
-                            }
-                            this.emit_cond_branch((*rp_arg), on_true, on_false, false)
-                            return
-                        }
-                    }
-                    else
-                        0
+                var lp Emitter.logical_left(op)
+                var rp_arg Emitter.logical_right(op)
+                let is_or kind = 2 or kind = 4
+                if is_or
+                {
+                    let mid create_block("lor.rhs")
+                    this.emit_cond_branch(lp, on_true, mid, false)
+                    LLVMPositionBuilderAtEnd(builder, mid)
+                }
+                else
+                {
+                    let mid create_block("land.rhs")
+                    this.emit_cond_branch(lp, mid, on_false, true)
+                    LLVMPositionBuilderAtEnd(builder, mid)
+                }
+                this.emit_cond_branch(rp_arg, on_true, on_false, false)
+                return
             }
             let i1_ty LLVMInt1TypeInContext(context)
             var v emit_operand(op)

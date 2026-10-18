@@ -230,6 +230,20 @@ define MutabilitySyntax union (
     Variable: VariableSyntax
 )
 
+define LazySyntax
+(
+    start: size_t
+    end: size_t
+)
+
+define ParameterAnnotationSyntax
+(
+    start: size_t
+    end: size_t
+    lazy_: ref[LazySyntax]?
+    type: TypeSyntax
+)
+
 define TypeAnnotationSyntax
 (
     start: size_t
@@ -754,7 +768,7 @@ define ItemSyntax
     end: size_t
     writable: ref[WritableSyntax]?
     name: String
-    annotation: ref[TypeAnnotationSyntax]?
+    annotation: ref[ParameterAnnotationSyntax]?
     attributes: ref[Vector[AttributeSyntax]]?
 )
 

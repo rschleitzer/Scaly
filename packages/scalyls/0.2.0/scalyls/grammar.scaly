@@ -58,6 +58,8 @@ define grammar
             return true
         if word = "label"
             return true
+        if word = "lazy"
+            return true
         if word = "let"
             return true
         if word = "linked"

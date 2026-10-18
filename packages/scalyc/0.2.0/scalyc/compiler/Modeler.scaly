@@ -1606,21 +1606,42 @@ define Modeler
     function handle_item(is_private: bool, syntax: ItemSyntax) returns Item
     {
         var item_type: ref[Type]? null
+        ; `lazy` before a parameter's type (`right: lazy bool`): the caller's
+        ; argument is handed over unevaluated and runs where the body names
+        ; it (ROADMAP-operation.md, delayed operands)
+        var lazy_at: ref[LazySyntax]? null
         if syntax.annotation <> null
         {
             let annotation (*syntax.annotation)
             item_type := handle_type(annotation.type)
+            lazy_at := annotation.lazy_
         }
 
         var name_holder Vector[String](1)
         name_holder.put(0, String(syntax.name))
         ; `mutable` before a parameter (R1): the procedure may write what it
-        ; reaches. Carried as an attribute, so no Item consumer changes shape.
+        ; reaches. Carried as an attribute, so no Item consumer changes shape;
+        ; and so is `lazy`.
+        var mark_count: size_t 0
         if syntax.writable <> null
+            mark_count := mark_count + 1
+        if lazy_at <> null
+            mark_count := mark_count + 1
+        if mark_count > 0
         {
-            let w (*syntax.writable)
-            var marks Vector[Attribute](1)
-            marks.put(0, Attribute(Span(w.start, w.end), String("mutable"), Model.Constant(Constant.Boolean(BooleanConstant(Span(w.start, w.end), true)))))
+            var marks Vector[Attribute](mark_count)
+            var mk: size_t 0
+            if syntax.writable <> null
+            {
+                let w (*syntax.writable)
+                marks.put(mk, Attribute(Span(w.start, w.end), String("mutable"), Model.Constant(Constant.Boolean(BooleanConstant(Span(w.start, w.end), true)))))
+                mk := mk + 1
+            }
+            if lazy_at <> null
+            {
+                let lz (*lazy_at)
+                marks.put(mk, Attribute(Span(lz.start, lz.end), String("lazy"), Model.Constant(Constant.Boolean(BooleanConstant(Span(lz.start, lz.end), true)))))
+            }
             return Item(
                 Span(syntax.start, syntax.end),
                 is_private,

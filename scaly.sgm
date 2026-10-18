@@ -141,7 +141,7 @@
 <syntax id = Item                         multiple
     <content link = Writable                       optional property = writable
     <content identifier                                     property = name
-    <content link = TypeAnnotation                 optional property = annotation
+    <content link = ParameterAnnotation            optional property = annotation
     <content link = comma                          optional
     <content colon                                 optional
     <content link = Attribute             multiple optional property = attributes
@@ -500,6 +500,14 @@
     <content link = colon_sign
     <content link = Type                                    property = type
 
+<syntax id = ParameterAnnotation
+    <content link = colon_sign
+    <content link = Lazy                           optional property = lazy_
+    <content link = Type                                    property = type
+
+<syntax id = Lazy
+    <content link = lazy
+
 <syntax id = Mutability                            abstract
     <content link = Immutable
     <content link = Variable
@@ -647,6 +655,7 @@
 <keyword id = io
 <keyword id = is
 <keyword id = label
+<keyword id = lazy
 <keyword id = let
 <keyword id = linked
 <keyword id = loop

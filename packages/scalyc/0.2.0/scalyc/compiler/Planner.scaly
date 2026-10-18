@@ -381,6 +381,29 @@ define Planner
         post_length: Array[size_t]
         ; 2k the k-th term, 2k + 1 the k-th operator, in planning order
         post: Array[size_t]
+        ; the operators whose right operand is lazy (scaly/logic.scaly): name
+        ; -> its entry; the type its left operand has, whether the delayed
+        ; operand is the consequent of the body's `if`, the other arm
+        lazy_names: ref[NameIndex]
+        lazy_left: Array[String]
+        lazy_in_then: Array[bool]
+        lazy_other: Array[Vector[Operand]]
+    )
+
+    ; an operation read for its delayed operands (lazy_operation#): its terms
+    ; (model ranges) and operator names, and the tree the protocol answers --
+    ; a node is a term (kind 1, index) or an operator (kind 2, index, left,
+    ; right)
+    define LazyOperation
+    (
+        term_start: Array[size_t]
+        term_end: Array[size_t]
+        op_at: Array[size_t]
+        names: Array[String]
+        n_kind: Array[size_t]
+        n_index: Array[size_t]
+        n_left: Array[size_t]
+        n_right: Array[size_t]
     )
 
     ; one evaluation of the protocol: its values, a state of a pending type
@@ -1517,7 +1540,7 @@ define Planner
             ; (`&T^this()`) would answer with garbage
             let gate_state DeepGateState^this()
             gate := &gate_state
-            let protocol_state OperationProtocol^this(0, String^this(""), &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this()), Array[String]^this(), String^this(""), String^this(""), &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this()), Array[size_t]^this(), Array[size_t]^this(), Array[size_t]^this())
+            let protocol_state OperationProtocol^this(0, String^this(""), &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this()), Array[String]^this(), String^this(""), String^this(""), &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this()), Array[size_t]^this(), Array[size_t]^this(), Array[size_t]^this(), &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this()), Array[String]^this(), Array[bool]^this(), Array[Vector[Operand]]^this())
             protocol := &protocol_state
             let residence_state ResidenceState^this()
             residence := &residence_state
@@ -1555,9 +1578,9 @@ define Planner
             address_taken_locals := Array[String]^this()
             field_written_locals := Array[String]^this()
             pending_mode := 0
-            operation_counts := Vector[size_t]^this(82)
+            operation_counts := Vector[size_t]^this(85)
             var oc_i: size_t 0
-            while oc_i < 82
+            while oc_i < 85
             {
                 operation_counts.put(oc_i, 0)
                 oc_i := oc_i + 1
@@ -6528,7 +6551,9 @@ define Planner
             while cur <> ((0 - 1) as i64)
             {
                 let kvp_ptr model_operators.get(cur as size_t)
-                if kvp_ptr <> null
+                ; one with a lazy parameter is put in where it stands
+                ; (lazy_operation#), never called
+                if kvp_ptr <> null and Planner.items_have_attribute(kvp_ptr.value.input, "lazy") = false
                     matches.add kvp_ptr.value
                 cur := model_operator_index.next_of(cur as size_t)
             }
@@ -7548,8 +7573,11 @@ define Planner
                                 op_body := true
                             else
                                 0
+                        ; one with a lazy parameter keeps its body, as a generic
+                        ; does: it is what a caller puts in
+                        let op_written generic or Planner.items_have_attribute(op.input, "lazy")
                         if op_body
-                            facts.add(Planner.fact("F" as char, file, op.span.start, op.span.end, "o" as char, op.name, generic, false, false, String()))
+                            facts.add(Planner.fact("F" as char, file, op.span.start, op.span.end, "o" as char, op.name, op_written, false, false, String()))
                     }
                     when c: Concept
                         this.facts_concept(file, c, generic, facts)
@@ -24410,7 +24438,18 @@ define Planner
             ; `x <> null and f(x)`: each `and` segment is planned under the
             ; null tests before it -- plan_condition_operands#
             var and_facts Array[String]()
-            let planned_cond_flat this.plan_condition_operands(f.condition, &and_facts)
+            var planned_cond_flat: Vector[PlannedOperand] Vector[PlannedOperand](0)
+            if this.driver_on() and protocol.state = 2 and protocol.lazy_left.length > 0
+            {
+                ; `and` is the standard library's (lazy_operation#): what the
+                ; condition proves where it is true comes from the planned
+                ; condition, through every `and` put in
+                planned_cond_flat := this.plan_operands(f.condition)
+                if planned_cond_flat.length = 1
+                    this.lazy_facts(planned_cond_flat[0], true, &and_facts)
+            }
+            else
+                planned_cond_flat := this.plan_condition_operands(f.condition, &and_facts)
             ; A `ref[bool]` condition is the VALUE -- deref_ref_into_pointee#.
             ; `var`, not `let`: a `set` on a let-bound local is silently
             ; dropped, which is how the store-through rewrite spent a build.
@@ -28005,6 +28044,9 @@ define Planner
                 this.operation_census_line("driver-tuple-after-sibling-static-gives-else", 79)
                 this.operation_census_line("driver-table-by-protocol", 80)
                 this.operation_census_line("driver-table-by-table", 81)
+                this.operation_census_line("driver-lazy-operations", 82)
+                this.operation_census_line("driver-lazy-put-in", 83)
+                this.operation_census_line("driver-lazy-declined", 84)
             }
         }
 
@@ -28952,6 +28994,104 @@ define Planner
             }
             if protocol.other.get_length() = 0
                 protocol.state := 1
+            this.read_lazy_operators()
+        }
+
+        ; The operators whose right operand is lazy: `operator and(left: bool,
+        ; right: lazy bool)` with the body `if left: right else false` -- an
+        ; `if` on the eager operand, the delayed one an arm of it, the other
+        ; arm what the operation answers where the left decides.
+        procedure read_lazy_operators(mutable this: Planner)
+        {
+            var oi: size_t 0
+            while oi < model_operators.length
+            {
+                let o model_operators[oi].value
+                oi := oi + 1
+                if o.input.length <> 2 or Planner.attributes_have(o.input[1].attributes, "lazy") = false
+                    continue
+                if o.input[0].name = null or o.input[1].name = null or o.input[0].type = null
+                    continue
+                let eager_name (*o.input[0].name)
+                let lazy_name (*o.input[1].name)
+                let left_type (*o.input[0].type)
+                if left_type.name.length <> 1
+                    continue
+                choose o.implementation
+                    when a: Action
+                    {
+                        if a.source.length = 1
+                        {
+                            choose a.source[0].expression
+                                when f: If
+                                {
+                                    if f.alternative <> null and Planner.operand_word_is(f.condition, eager_name)
+                                    {
+                                        let then_ops Planner.statement_operands(f.consequent)
+                                        let else_ops Planner.statement_operands((*f.alternative))
+                                        var in_then false
+                                        var found false
+                                        if Planner.operand_word_is(then_ops, lazy_name)
+                                        {
+                                            in_then := true
+                                            found := true
+                                        }
+                                        else if Planner.operand_word_is(else_ops, lazy_name)
+                                            found := true
+                                        if found and protocol.lazy_names.table.lookup(o.name) < 0
+                                        {
+                                            this.name_index_put(protocol.lazy_names, String^this(o.name), protocol.lazy_left.length)
+                                            protocol.lazy_left.add(String^this(left_type.name[0]))
+                                            protocol.lazy_in_then.add in_then
+                                            if in_then
+                                                protocol.lazy_other.add(this.operands_here(else_ops))
+                                            else
+                                                protocol.lazy_other.add(this.operands_here(then_ops))
+                                        }
+                                    }
+                                }
+                                else
+                                    0
+                        }
+                    }
+                    else
+                        0
+            }
+        }
+
+        ; a copy of ops on the Planner's page, to keep beyond the call
+        procedure operands_here(mutable this: Planner, ops: Vector[Operand]) returns Vector[Operand]
+        {
+            var copy Vector[Operand]^this(ops.length)
+            var i: size_t 0
+            while i < ops.length
+            {
+                copy.put(i, ops[i])
+                i := i + 1
+            }
+            copy
+        }
+
+        ; are the operands the one word `name`?
+        function operand_word_is(ops: Vector[Operand], name: String) returns bool
+        {
+            if ops.length <> 1
+                return false
+            Planner.operand_word(ops[0]).equals(name)
+        }
+
+        ; the source of an expression statement, else none
+        function statement_operands(st: Statement) returns Vector[Operand]
+        {
+            choose st
+                when a: Action
+                {
+                    if a.target.length = 0
+                        return a.source
+                }
+                else
+                    0
+            Vector[Operand](0)
         }
 
         ; Is `name` an operator the protocol's levels name? Before the
@@ -29281,23 +29421,19 @@ define Planner
             order
         }
 
-        ; The driver's table step by the protocol: the terms and operator
-        ; names of out from base on, folded in the order the protocol
-        ; answers, one raw operation `[left, operator, right]` at a time.
-        ; `answered` is false where the protocol has no answer.
-        procedure operation_by_protocol(mutable this: Planner, out: Array[PlannedOperand], base: size_t, mutable answered: ref[bool]) returns PlannedOperand
+        ; The order the protocol plans a sequence of operator names in, out
+        ; of the cache (each sequence evaluated once): its start in
+        ; `protocol.post`, and its length -- 0 where the protocol does not
+        ; answer.
+        procedure protocol_order_cached(mutable this: Planner, names: Array[String], mutable start: ref[size_t]) returns size_t
         {
-            answered := false
-            var names Array[String]()
             var key StringBuilder()
-            var k base + 1
-            while k < out.length
+            var k: size_t 0
+            while k < names.length
             {
-                let name Planner.operand_type_name(out[k])
-                names.add name
-                key.append name
+                key.append(names[k])
                 key.append("\n" as char)
-                k := k + 2
+                k := k + 1
             }
             let key_text key.to_string()
             var at protocol.patterns.table.lookup(key_text)
@@ -29315,8 +29451,268 @@ define Planner
                 }
                 at := protocol.patterns.table.lookup(key_text)
             }
-            let start protocol.post_start[at as size_t]
-            let length protocol.post_length[at as size_t]
+            start := protocol.post_start[at as size_t]
+            protocol.post_length[at as size_t]
+        }
+
+        ; ================================================================
+        ; Delayed operands (ROADMAP-operation.md, step 3): an operation that
+        ; holds an operator whose right operand is lazy (`and`, `or`:
+        ; scaly/logic.scaly) is read here, on the MODEL, before its terms
+        ; are planned. The protocol answers the tree from the operator names;
+        ; the left of such an operator is planned first, and where its type
+        ; is the one the operator takes, the operator's body is put in --
+        ; `if left: right else false` -- with the right planned where the body
+        ; puts it, knowing what the left proved there (a null test narrows
+        ; its name, as an `if` narrows its arm). Anywhere else the two are
+        ; planned and met as the table step meets them.
+        ; ================================================================
+
+        ; the operator name a model operand spells in operator position, or ""
+        procedure model_operator_word(mutable this: Planner, op: Operand) returns String
+        {
+            let w Planner.operand_word(op)
+            if w.get_length() = 0
+                return w
+            if this.operator_by_protocol(w) or Planner.is_operator_name(w) or this.is_operator(w)
+                return w
+            String("")
+        }
+
+        ; does the operation hold an operator with a lazy operand?
+        procedure holds_lazy_operator(mutable this: Planner, ops: Vector[Operand]) returns bool
+        {
+            if protocol.state <> 2 or protocol.lazy_left.length = 0 or ops.length < 3
+                return false
+            var i: size_t 1
+            while i + 1 < ops.length
+            {
+                if protocol.lazy_names.table.lookup(Planner.operand_word(ops[i])) >= 0
+                    return true
+                i := i + 1
+            }
+            false
+        }
+
+        ; The operation ops read by its delayed operands; `ok` is false where
+        ; it is not one this reads (a postfix in it, an operator at its end),
+        ; and nothing is planned then.
+        procedure lazy_operation(mutable this: Planner, ops: Vector[Operand], mutable ok: ref[bool]) returns PlannedOperand
+        {
+            ok := false
+            var lo LazyOperation(Array[size_t](), Array[size_t](), Array[size_t](), Array[String](), Array[size_t](), Array[size_t](), Array[size_t](), Array[size_t]())
+            let n ops.length
+            var i: size_t 0
+            while i < n
+            {
+                choose ops[i].expression
+                    when a: As
+                        return PlannedOperand(ops[0].span, PlannedExpression.Type(Planner.make_void_type()), null, Planner.make_void_type())
+                    when t: Is
+                        return PlannedOperand(ops[0].span, PlannedExpression.Type(Planner.make_void_type()), null, Planner.make_void_type())
+                    else
+                        0
+                i := i + 1
+            }
+            i := 0
+            while i < n
+            {
+                ; a term: its prefix operators, its first thing, and what
+                ; follows up to the next operator name
+                let start i
+                while i < n and this.model_operator_word(ops[i]).get_length() > 0
+                    i := i + 1
+                if i >= n
+                    return PlannedOperand(ops[0].span, PlannedExpression.Type(Planner.make_void_type()), null, Planner.make_void_type())
+                i := i + 1
+                while i < n and this.model_operator_word(ops[i]).get_length() = 0
+                    i := i + 1
+                lo.term_start.add start
+                lo.term_end.add i
+                if i < n
+                {
+                    lo.names.add(this.model_operator_word(ops[i]))
+                    lo.op_at.add i
+                    i := i + 1
+                    if i >= n
+                        return PlannedOperand(ops[0].span, PlannedExpression.Type(Planner.make_void_type()), null, Planner.make_void_type())
+                }
+            }
+            if lo.names.length = 0
+                return PlannedOperand(ops[0].span, PlannedExpression.Type(Planner.make_void_type()), null, Planner.make_void_type())
+            ; the tree, off the protocol's order
+            var start: size_t 0
+            let length this.protocol_order_cached(lo.names, &start)
+            if length = 0
+                return PlannedOperand(ops[0].span, PlannedExpression.Type(Planner.make_void_type()), null, Planner.make_void_type())
+            var stack Vector[size_t](length + 1)
+            var sp: size_t 0
+            var pi: size_t 0
+            while pi < length
+            {
+                let code protocol.post[start + pi]
+                pi := pi + 1
+                lo.n_index.add(code / 2)
+                if code % 2 = 0
+                {
+                    lo.n_kind.add 1
+                    lo.n_left.add PROTO_NONE
+                    lo.n_right.add PROTO_NONE
+                }
+                else
+                {
+                    if sp < 2
+                        return PlannedOperand(ops[0].span, PlannedExpression.Type(Planner.make_void_type()), null, Planner.make_void_type())
+                    lo.n_kind.add 2
+                    lo.n_left.add(stack[sp - 2])
+                    lo.n_right.add(stack[sp - 1])
+                    sp := sp - 2
+                }
+                stack.put(sp, lo.n_kind.length - 1)
+                sp := sp + 1
+            }
+            if sp <> 1
+                return PlannedOperand(ops[0].span, PlannedExpression.Type(Planner.make_void_type()), null, Planner.make_void_type())
+            ok := true
+            this.lazy_fold(&lo, ops, stack[0])
+        }
+
+        ; one node of the tree, planned
+        procedure lazy_fold(mutable this: Planner, mutable lo: ref[LazyOperation], ops: Vector[Operand], node: size_t) returns PlannedOperand
+        {
+            let index lo.n_index[node]
+            if lo.n_kind[node] = 1
+            {
+                let from lo.term_start[index]
+                let to lo.term_end[index]
+                var term Vector[Operand](to - from)
+                var ti: size_t from
+                while ti < to
+                {
+                    term.put(ti - from, ops[ti])
+                    ti := ti + 1
+                }
+                return this.collapse_operand_sequence(this.plan_operands(term))
+            }
+            var left this.lazy_fold(lo, ops, lo.n_left[node])
+            let name lo.names[index]
+            let op_model ops[lo.op_at[index]]
+            let entry protocol.lazy_names.table.lookup(name)
+            if entry >= 0 and left.result_type.name.equals(protocol.lazy_left[entry as size_t])
+            {
+                let in_then protocol.lazy_in_then[entry as size_t]
+                ; what the left proves where the delayed operand runs
+                var facts Array[String]()
+                this.lazy_facts(left, in_then, &facts)
+                var scopes: size_t 0
+                var fi: size_t 0
+                while fi < facts.length
+                {
+                    this.push_scope()
+                    if this.define_narrowed(facts[fi])
+                        scopes := scopes + 1
+                    else
+                        this.pop_scope()
+                    fi := fi + 1
+                }
+                let right this.lazy_fold(lo, ops, lo.n_right[node])
+                while scopes > 0
+                {
+                    this.pop_scope()
+                    scopes := scopes - 1
+                }
+                let other this.collapse_operand_sequence(this.plan_operands(protocol.lazy_other[entry as size_t]))
+                let bool_ty Planner.make_bool_type()
+                var cond_holder Vector[PlannedOperand](1)
+                cond_holder.put(0, left)
+                var then_ops Vector[PlannedOperand](1)
+                var else_ops Vector[PlannedOperand](1)
+                if in_then
+                {
+                    then_ops.put(0, right)
+                    else_ops.put(0, other)
+                }
+                else
+                {
+                    then_ops.put(0, other)
+                    else_ops.put(0, right)
+                }
+                var then_holder Vector[PlannedStatement](1)
+                then_holder.put(0, PlannedStatement.Action(PlannedAction(op_model.span, &then_ops, null, bool_ty)))
+                var else_holder Vector[PlannedStatement](1)
+                else_holder.put(0, PlannedStatement.Action(PlannedAction(op_model.span, &else_ops, null, bool_ty)))
+                let pif PlannedIf(op_model.span, &cond_holder, null, then_holder.get 0, else_holder.get 0)
+                this.operation_count(83)
+                return PlannedOperand(left.loc, PlannedExpression.If pif, null, bool_ty)
+            }
+            let right this.lazy_fold(lo, ops, lo.n_right[node])
+            var op_vec Vector[Operand](1)
+            op_vec.put(0, op_model)
+            let planned_op this.plan_operands(op_vec)
+            var raw Vector[PlannedOperand](3)
+            raw.put(0, left)
+            raw.put(1, planned_op[0])
+            raw.put(2, right)
+            this.operation_apply(raw, left, 43)
+        }
+
+        ; The null tests op proves where it is true (`want_true`) or false:
+        ; a test of its own, and through the shape an `and` or an `or` was
+        ; put in as -- `a and b` is true where both are, `a or b` false where
+        ; both are.
+        procedure lazy_facts(mutable this: Planner, mutable op: PlannedOperand, want_true: bool, mutable facts: ref[Array[String]])
+        {
+            var nm String()
+            var pos false
+            if this.narrow_null_test(op, &nm, &pos)
+            {
+                if pos = want_true
+                    facts.add(String^this(nm))
+                return
+            }
+            choose op.expr
+                when pif: PlannedIf
+                {
+                    if pif.condition = null or pif.consequent = null or pif.alternative = null
+                        return
+                    let cond (*pif.condition)
+                    if cond.length <> 1
+                        return
+                    let then_value Planner.statement_value((*pif.consequent))
+                    let else_value Planner.statement_value((*pif.alternative))
+                    if then_value.length <> 1 or else_value.length <> 1
+                        return
+                    if want_true and Planner.planned_is_bool(else_value[0], false)
+                    {
+                        this.lazy_facts(cond[0], true, facts)
+                        this.lazy_facts(then_value[0], true, facts)
+                    }
+                    if want_true = false and Planner.planned_is_bool(then_value[0], true)
+                    {
+                        this.lazy_facts(cond[0], false, facts)
+                        this.lazy_facts(else_value[0], false, facts)
+                    }
+                }
+                else
+                    0
+        }
+
+        ; The driver's table step by the protocol: the terms and operator
+        ; names of out from base on, folded in the order the protocol
+        ; answers, one raw operation `[left, operator, right]` at a time.
+        ; `answered` is false where the protocol has no answer.
+        procedure operation_by_protocol(mutable this: Planner, out: Array[PlannedOperand], base: size_t, mutable answered: ref[bool]) returns PlannedOperand
+        {
+            answered := false
+            var names Array[String]()
+            var k base + 1
+            while k < out.length
+            {
+                names.add(Planner.operand_type_name(out[k]))
+                k := k + 2
+            }
+            var start: size_t 0
+            let length this.protocol_order_cached(names, &start)
             var first: PlannedOperand out[base]
             if length = 0
                 return first
@@ -29833,6 +30229,24 @@ define Planner
                 let folded this.pending_rewrite(ops)
                 if folded.length > 0
                     return this.plan_operands(folded)
+            }
+            ; an operation with a delayed operand (`and`, `or`): read on the
+            ; model, its right side planned where the body puts it
+            ; (lazy_operation#)
+            if this.driver_on() and this.holds_lazy_operator(ops)
+            {
+                var lazy_ok false
+                let folded this.lazy_operation(ops, &lazy_ok)
+                if lazy_ok
+                    this.operation_count(82)
+                else
+                    this.operation_count(84)
+                if lazy_ok
+                {
+                    var one Vector[PlannedOperand](1)
+                    one.put(0, folded)
+                    return one
+                }
             }
             this.report_absorbed_after_control(ops)
             var result Vector[PlannedOperand](ops.length)
@@ -54344,9 +54758,14 @@ define Planner
                             ; parent) and must be recorded like a top-level one —
                             ; otherwise its body is never emitted (undefined
                             ; symbol at link).
-                            let po this.plan_operator(o, null)
-                            operators.add po
-                            this.record_free_operator(o, po)
+                            ; a routine with a lazy parameter is never a routine:
+                            ; it is put in where it is called (logic.scaly)
+                            if Planner.items_have_attribute(o.input, "lazy") = false
+                            {
+                                let po this.plan_operator(o, null)
+                                operators.add po
+                                this.record_free_operator(o, po)
+                            }
                             0
                         }
                         when c: Concept
@@ -54848,9 +55267,14 @@ define Planner
                         }
                         when o: Operator
                         {
-                            let po this.plan_operator(o, null)
-                            operators.add po
-                            this.record_free_operator(o, po)
+                            ; a routine with a lazy parameter is never a routine:
+                            ; it is put in where it is called (logic.scaly)
+                            if Planner.items_have_attribute(o.input, "lazy") = false
+                            {
+                                let po this.plan_operator(o, null)
+                                operators.add po
+                                this.record_free_operator(o, po)
+                            }
                             0
                         }
                         when c: Concept
@@ -58205,6 +58629,39 @@ define Planner
             case "f32x16" case "u8x16" case "mask16": return 16
             case "u8x32" case "mask32": return 32
         0
+    }
+
+    ; the value operands of a planned expression statement, else none
+    function statement_value(st: PlannedStatement) returns Vector[PlannedOperand]
+    {
+        choose st
+            when a: PlannedAction
+            {
+                if a.source <> null and a.target = null
+                    return (*a.source)
+            }
+            else
+                0
+        Vector[PlannedOperand](0)
+    }
+
+    ; is op the constant `value`?
+    function planned_is_bool(op: PlannedOperand, value: bool) returns bool
+    {
+        if op.member_access <> null
+            return false
+        choose op.expr
+            when pc: scalyc.compiler.Plan.PlannedConstant
+            {
+                choose pc.value
+                    when b: BooleanConstant
+                        return b.value = value
+                    else
+                        return false
+            }
+            else
+                return false
+        false
     }
 
     function is_simd_type_name(name: String) returns bool
