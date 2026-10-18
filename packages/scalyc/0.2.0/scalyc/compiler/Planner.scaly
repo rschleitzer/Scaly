@@ -811,6 +811,9 @@ define Planner
         ; unconditional concept lookup there would be paid by every compile.
         ; False for a tree with no aliases => plan_type# is byte-identical.
         var has_type_aliases: bool
+        ; a function was bound to a name somewhere (`let g twice`,
+        ; function_alias_target#); until then no name is looked up as one
+        var has_function_aliases: bool
         ; Recursion bound for an alias CHAIN (`define A B` / `define B A`),
         ; threaded as a field rather than a parameter only because plan_type#
         ; has ~500 call sites; 16 is far past any honest chain.
@@ -1559,6 +1562,7 @@ define Planner
             instantiated_unions := Array[scalyc.compiler.Plan.PlannedUnion]^this()
             delegate_names := Array[String]^this()
             has_type_aliases := false
+            has_function_aliases := false
             alias_depth := 0
             current_return_type := null
             planning_template := false
@@ -23299,8 +23303,39 @@ define Planner
         ;     call resolution)
         ;   - an actual type name → PlannedExpression.Type with the
         ;     planned type
+        ; function_alias_target#: the function a name was bound to in scope
+        ; (`let g twice`), or ""
+        function function_alias_target(this: Planner, name: String) returns String
+        {
+            if has_function_aliases = false
+                return ""
+            var key StringBuilder()
+            key.append "fn$"
+            key.append name
+            let found this.lookup_local_binding(key.to_string())
+            if found = null
+                return ""
+            String(found.binding_type.name)
+        }
+
         procedure plan_type_operand(mutable this: Planner, mutable t: Type, loc: Span) returns PlannedOperand
         {
+            ; a name bound to a function plans as that function's name
+            if has_function_aliases and t.name.length = 1 and t.generics = null
+            {
+                let fa_name t.name.get 0
+                if fa_name <> null and this.lookup_local_binding((*fa_name)) = null
+                {
+                    let fa_target this.function_alias_target((*fa_name))
+                    if fa_target.get_length() > 0
+                    {
+                        var fa_path Vector[String](1)
+                        fa_path.put(0, fa_target)
+                        var fa_type Type(t.span, fa_path, null, t.lifetime)
+                        return this.plan_type_operand(fa_type, loc)
+                    }
+                }
+            }
             ; Single-name references are candidates for local-variable
             ; resolution. Dotted names always go to plan_type.
             if t.name.length = 1
@@ -30131,6 +30166,65 @@ define Planner
                             }
                             else
                                 0
+                }
+            }
+
+            ; A function bound to a name (ROADMAP-operation.md, Functions):
+            ; `let g twice` costs nothing and `g(21)` is a direct call of
+            ; `twice` -- a value known at plan time, recorded as a binding of
+            ; the scope under a key no identifier can spell (`fn$g`), so it
+            ; ends with its block, and resolved where a name is planned
+            ; (function_alias_target#). A `var`, an annotation (a delegate
+            ; type), a name that is also a local or a type keep their meaning.
+            if b.operation.length = 1 and b.binding_type = "const" and b.item.type = null and b.item.name <> null
+            {
+                let fa_ptr b.operation.get 0
+                if fa_ptr <> null and (*fa_ptr).member_access = null
+                {
+                    choose (*fa_ptr).expression
+                        when fa_ty: Type
+                        {
+                            let fa_head fa_ty.name.get 0
+                            if fa_ty.name.length = 1 and fa_ty.generics = null and fa_head <> null
+                            {
+                                var target String((*fa_head))
+                                let chained this.function_alias_target(target)
+                                if chained.get_length() > 0
+                                    target := chained
+                                ; what the name PLANS to decides: a field of the
+                                ; receiver (`let decoded list` in a method), a
+                                ; global, a local stay what they are
+                                var plans_as_name false
+                                if this.lookup_local_binding(target) = null and this.lookup_concept_any(target) = null and this.is_function(target)
+                                {
+                                    var probe_op (*fa_ptr)
+                                    let probe this.plan_operand(probe_op)
+                                    if probe.member_access = null
+                                        choose probe.expr
+                                            when pt: PlannedType
+                                                plans_as_name := pt.name = target
+                                            else
+                                                0
+                                }
+                                if plans_as_name
+                                {
+                                    var key StringBuilder()
+                                    key.append "fn$"
+                                    key.append (*b.item.name)
+                                    let key_str key.to_string()
+                                    this.define_local(String^this(key_str), Planner.make_primitive_type(target.as_slice(), ""), false, false)
+                                    has_function_aliases := true
+                                    return PlannedBinding(
+                                        b.span,
+                                        b.binding_type,
+                                        PlannedItem(b.span, false, null, null, null),
+                                        null
+                                    )
+                                }
+                            }
+                        }
+                        else
+                            0
                 }
             }
 

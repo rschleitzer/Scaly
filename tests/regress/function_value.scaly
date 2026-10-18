@@ -1,0 +1,37 @@
+; A function is a value known at plan time (2026-10-19, ROADMAP-operation.md,
+; Functions): `let g twice` costs nothing and `g(5)` is a direct call of
+; `twice` (Planner.function_alias_target#); an overloaded name binds the set
+; and the call chooses; the name ends with its block, so after `inner` the
+; program's own `g` answers again. Before, `let g twice` bound a value of
+; the TYPE `twice` and every call of `g` was refused.
+; Expected: PASS
+function twice(n: int) returns int
+    n * 2
+
+function show(n: int) returns String
+    "int `n`"
+
+function show(s: String) returns String
+    "text `s`"
+
+function g(n: int) returns int
+    n + 1000
+
+procedure inner() returns int
+{
+    let g twice
+    g(5)
+}
+
+procedure run() returns bool
+{
+    let h twice
+    let k h
+    let s show
+    h 4 = 8 and k(10) = 20 and inner() = 10 and g(1) = 1001 and s(7).equals("int 7") and s("sieben").equals("text sieben")
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"
