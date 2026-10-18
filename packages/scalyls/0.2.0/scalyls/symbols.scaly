@@ -2317,7 +2317,7 @@ define symbols
         var prev_line: size_t 0
         var prev_col: size_t 0
         var first true
-        var pending: i64 (0 - 1)                   ; -1 none, 1 type-name, 2 fn-name
+        var pending_: i64 (0 - 1)                   ; -1 none, 1 type-name, 2 fn-name
         var prev_was_dot false                     ; previous emitted token was `.`
 
         ; Modifier state, with the same lifetime as `pending`: whatever the
@@ -2409,7 +2409,7 @@ define symbols
                         first := false
                     }
                     i := k
-                    pending := 0 - 1
+                    pending_ := 0 - 1
                     pmod := 0 - 1
                     prev_was_dot := false
                     continue
@@ -2432,7 +2432,7 @@ define symbols
                 first := false
                 col := col + clen
                 i := j
-                pending := 0 - 1
+                pending_ := 0 - 1
                 pmod := 0 - 1
                 prev_was_dot := false
                 continue
@@ -2470,7 +2470,7 @@ define symbols
                     j := n
                 tlen := j - i
                 tok_type := 5                 ; string
-                pending := 0 - 1
+                pending_ := 0 - 1
                 pmod := 0 - 1
             }
 
@@ -2487,7 +2487,7 @@ define symbols
                 }
                 tlen := j - i
                 tok_type := 6                 ; number
-                pending := 0 - 1
+                pending_ := 0 - 1
                 pmod := 0 - 1
             }
 
@@ -2508,9 +2508,9 @@ define symbols
                 var t: i64 (3)                     ; variable
                 if symbols.is_upper(c)
                     t := 1                ; lexical: uppercase -> type
-                if pending = 1
+                if pending_ = 1
                     t := 1                ; after define/union/... -> type
-                if pending = 2
+                if pending_ = 2
                     t := 2                ; after function/procedure -> function
                 ; semantic override: resolve the USE to its declared kind via
                 ; the hashed name set (1 type / 2 function, function wins).
@@ -2626,7 +2626,7 @@ define symbols
                         nm := 5                      ; declaration|static
                     if word = "shared"
                         nm := 5
-                    pending := np
+                    pending_ := np
                     pmod := nm
 
                     ; A routine keyword opens a new scope for the readonly set.
@@ -2644,7 +2644,7 @@ define symbols
                 }
                 if t <> 0
                 {
-                    pending := 0 - 1
+                    pending_ := 0 - 1
                     pmod := 0 - 1
                 }
             }
@@ -2665,7 +2665,7 @@ define symbols
                 }
                 tlen := j - i
                 tok_type := 4
-                pending := 0 - 1
+                pending_ := 0 - 1
                 pmod := 0 - 1
             }
 
@@ -2692,7 +2692,7 @@ define symbols
             prev_was_dot := is_dot
             col := col + 1
             i := i + 1
-            pending := 0 - 1
+            pending_ := 0 - 1
             pmod := 0 - 1
         }
 

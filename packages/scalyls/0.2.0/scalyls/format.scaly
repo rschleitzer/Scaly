@@ -479,7 +479,7 @@ define format
         ; Comment and blank lines whose level is not known yet (it is the level
         ; of the next structural line). Held as their stripped text; a blank is
         ; the empty string.
-        var pending Array[String]()
+        var pending_ Array[String]()
         var pending_level: size_t 0
 
         var wrote_line false
@@ -534,8 +534,8 @@ define format
                 {
                     ; A blank line. It has no level of its own, but it may sit
                     ; between comments, so it queues with them to keep the order.
-                    if pending.get_length() > 0
-                        pending.add(String(""))
+                    if pending_.get_length() > 0
+                        pending_.add(String(""))
                     else
                     {
                         if wrote_line
@@ -550,9 +550,9 @@ define format
 
                     if sc.kind = LK_COMMENT
                     {
-                        if pending.get_length() = 0
+                        if pending_.get_length() = 0
                             pending_level := level
-                        pending.add stripped
+                        pending_.add stripped
                     }
                     else
                     {
@@ -608,9 +608,9 @@ define format
                         if sc.kind = LK_CLOSER
                             flush_level := pending_level
                         var pi: size_t 0
-                        while pi < pending.get_length()
+                        while pi < pending_.get_length()
                         {
-                            let pt pending.get pi
+                            let pt pending_.get pi
                             if pt <> null
                             {
                                 if wrote_line
@@ -630,7 +630,7 @@ define format
                             }
                             pi := pi + 1
                         }
-                        pending.clear()
+                        pending_.clear()
 
                         ; ---- emit ---------------------------------------------
                         if wrote_line
@@ -713,9 +713,9 @@ define format
         ; Comments at the very end have no structural line after them, so they
         ; keep the level they were written at.
         var qi: size_t 0
-        while qi < pending.get_length()
+        while qi < pending_.get_length()
         {
-            let pt pending.get qi
+            let pt pending_.get qi
             if pt <> null
             {
                 if wrote_line

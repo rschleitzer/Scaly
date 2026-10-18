@@ -355,7 +355,7 @@ define H2Conn
     var send_window: i64
     var last_stream: u64
     var streams: Array[ref[H2Stream]]
-    var pending: Array[ref[H2Pending]]
+    var pending_: Array[ref[H2Pending]]
     ; the requests complete in the frames of the last read
     var jobs: Array[ref[H2Job]]
     ; how many of them still run in tasks of their own
@@ -504,9 +504,9 @@ define H2Conn
     procedure push_pending(mutable this)
     {
         var i: size_t 0
-        while i < pending.length
+        while i < pending_.length
         {
-            var p pending.at(i)
+            var p pending_.at(i)
             if this.push_data(p)
             {
                 if p.trailers.length > 0
@@ -514,12 +514,12 @@ define H2Conn
                 p.page.deallocate_extensions()
                 Page.release_page(p.page)
                 var j i
-                while j + 1 < pending.length
+                while j + 1 < pending_.length
                 {
-                    pending.put(j, pending.at(j + 1))
+                    pending_.put(j, pending_.at(j + 1))
                     j := j + 1
                 }
-                pending.length := pending.length - 1
+                pending_.length := pending_.length - 1
             }
             else
                 i := i + 1
@@ -686,7 +686,7 @@ define H2Conn
         if trailers.length > 0
             memcpy(kept.data as pointer[void], trailers.data as pointer[void], trailers.length)
         var q &H2Pending^page(stream, page, rest, sent, window, has_trailers = false, kept)
-        pending.add(q)
+        pending_.add(q)
     }
 
     ; Answer the request in `text` on `stream` -- at once, unless its route
@@ -962,9 +962,9 @@ define H2Conn
                                 let delta (value as i64) - peer_window
                                 peer_window := value as i64
                                 var i: size_t 0
-                                while i < pending.length
+                                while i < pending_.length
                                 {
-                                    var p pending.at(i)
+                                    var p pending_.at(i)
                                     p.window := p.window + delta
                                     i := i + 1
                                 }
@@ -1007,9 +1007,9 @@ define H2Conn
                     else
                     {
                         var i: size_t 0
-                        while i < pending.length
+                        while i < pending_.length
                         {
-                            var p pending.at(i)
+                            var p pending_.at(i)
                             if p.id = stream
                                 p.window := p.window + increment
                             i := i + 1
@@ -1102,9 +1102,9 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
         i := i + 1
     }
     i := 0
-    while i < h.pending.length
+    while i < h.pending_.length
     {
-        let p h.pending.at(i)
+        let p h.pending_.at(i)
         p.page.deallocate_extensions()
         Page.release_page(p.page)
         i := i + 1

@@ -43907,7 +43907,7 @@ define Planner
         {
             if getenv("SCALYC_RR_NO_PENDING") <> null
                 return
-            var pending Array[size_t]()
+            var pending_ Array[size_t]()
             var k: size_t 0
             while k < residence.rr_fns.length
             {
@@ -43918,13 +43918,13 @@ define Planner
                         if (*st) = 0
                             if Planner.is_linked((*fp)) = false
                             {
-                                pending.add k
+                                pending_.add k
                                 ret_res_class.put(k, 6)
                                 ret_res_arg.put(k, 0)
                             }
                 k := k + 1
             }
-            if pending.length = 0
+            if pending_.length = 0
                 return
             var rounds: size_t 0
             var moved true
@@ -43935,9 +43935,9 @@ define Planner
                 moved := false
                 this.rr_rebuild_name_buckets()
                 var pi: size_t 0
-                while pi < pending.length
+                while pi < pending_.length
                 {
-                    let kp pending.get pi
+                    let kp pending_.get pi
                     if kp <> null
                     {
                         let pk (*kp)
@@ -43971,9 +43971,9 @@ define Planner
             if moved
             {
                 var ri: size_t 0
-                while ri < pending.length
+                while ri < pending_.length
                 {
-                    let kp pending.get ri
+                    let kp pending_.get ri
                     if kp <> null
                     {
                         ret_res_class.put((*kp), 0)
@@ -43985,7 +43985,7 @@ define Planner
             if getenv("SCALYC_RR_PROBE") <> null
             {
                 scaly_eputs "rr pending "
-                scaly_eputi pending.length
+                scaly_eputi pending_.length
                 scaly_eputs " rounds "
                 scaly_eputi rounds
                 if moved
@@ -58725,7 +58725,7 @@ define Planner
         ; pending op codes: 1 + | 2 - | 3 * | 4 / | 5 % |
         ; 6 << | 7 >> | 8 & | 9 '|' | 10 xor
         var folded: size_t 0
-        var pending: int 0
+        var pending_: int 0
         var seq_prec: int 0
         var neg: bool false
         var expect_value: bool true
@@ -58767,15 +58767,15 @@ define Planner
                                         if neg
                                             fv := 0 - fv
                                         var applied: bool true
-                                        if pending = 0
+                                        if pending_ = 0
                                             folded := fv
-                                        if pending = 1
+                                        if pending_ = 1
                                             folded := folded + fv
-                                        if pending = 2
+                                        if pending_ = 2
                                             folded := folded - fv
-                                        if pending = 3
+                                        if pending_ = 3
                                             folded := folded * fv
-                                        if pending = 4
+                                        if pending_ = 4
                                         {
                                             ; division by a folded zero can't
                                             ; constant-fold — diagnose, never trap
@@ -58784,22 +58784,22 @@ define Planner
                                             if fv <> 0
                                                 folded := folded / fv
                                         }
-                                        if pending = 5
+                                        if pending_ = 5
                                         {
                                             if fv = 0
                                                 applied := false
                                             if fv <> 0
                                                 folded := folded % fv
                                         }
-                                        if pending = 6
+                                        if pending_ = 6
                                             folded := folded << fv
-                                        if pending = 7
+                                        if pending_ = 7
                                             folded := folded >> fv
-                                        if pending = 8
+                                        if pending_ = 8
                                             folded := folded & fv
-                                        if pending = 9
+                                        if pending_ = 9
                                             folded := folded | fv
-                                        if pending = 10
+                                        if pending_ = 10
                                             folded := folded xor fv
                                         if applied
                                         {
@@ -58860,7 +58860,7 @@ define Planner
                                         if prec_ok
                                         {
                                             seq_prec := p
-                                            pending := opc
+                                            pending_ := opc
                                             expect_value := true
                                             f_handled := true
                                         }

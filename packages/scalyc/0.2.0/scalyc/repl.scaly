@@ -951,7 +951,7 @@ define repl
         tail.append("    let repl_sizes argv as pointer[size_t]\n")
         var slots Array[int]()
         var types Array[String]()
-        var pending Array[ReplField]()
+        var pending_ Array[ReplField]()
         var offset_slots Array[int]()
         var firsts Array[int]()
         var counts Array[int]()
@@ -979,17 +979,17 @@ define repl
             tail.append("    *(repl_table + `slot`) := repl_cell_`slot`\n")
             tail.append("    *(repl_sizes + `slot + 1`) := sizeof `t`\n")
             ; a record: the entry measures where each field stands in it
-            var first pending.length
+            var first pending_.length
             if repl.is_record(&probe, t)
             {
-                repl.flatten(&probe, t, String(), 0, &pending)
+                repl.flatten(&probe, t, String(), 0, &pending_)
                 tail.append("    let repl_ref_`slot` &repl_value_`slot`\n")
             }
             firsts.add(first as int)
-            counts.add((pending.length - first) as int)
-            while first < pending.length
+            counts.add((pending_.length - first) as int)
+            while first < pending_.length
             {
-                let pf pending.at first
+                let pf pending_.at first
                 first := first + 1
                 if pf.kind <> 0
                 {
@@ -1042,7 +1042,7 @@ define repl
             let fend fi + (counts[vi - 1] as size_t)
             while fi < fend
             {
-                let pf pending.at fi
+                let pf pending_.at fi
                 var offset: size_t 0
                 if pf.kind = 0
                     offset := (*(table + offset_slots[fi])) as size_t

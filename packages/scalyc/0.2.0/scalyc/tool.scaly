@@ -2543,7 +2543,7 @@ define tool
         let flat tool.surface_text(text)
         var scopes Array[String]()
         var depth: size_t 0
-        var pending ""
+        var pending_ ""
         let n flat.get_length()
         var from: size_t 0
         var at: size_t 0
@@ -2557,20 +2557,20 @@ define tool
                     if line.equals("{")
                     {
                         if depth < scopes.length
-                            scopes.put(depth, "`pending`")
+                            scopes.put(depth, "`pending_`")
                         else
-                            scopes.add("`pending`")
+                            scopes.add("`pending_`")
                         depth := depth + 1
-                        pending := ""
+                        pending_ := ""
                     }
                     else if line.equals("}")
                     {
                         if depth > 0
                             depth := depth - 1
-                        pending := ""
+                        pending_ := ""
                     }
                     else if line.starts_with("use ") or line.starts_with("package ") or line.starts_with("module ")
-                        pending := ""
+                        pending_ := ""
                     else
                     {
                         var path ""
@@ -2581,21 +2581,21 @@ define tool
                             k := k + 1
                         }
                         ; a record's fields on the lines after its name belong to it
-                        if line.starts_with("(") and pending.get_length() > 0
+                        if line.starts_with("(") and pending_.get_length() > 0
                         {
-                            lines.add("`rel` `path`| `pending` `line`")
+                            lines.add("`rel` `path`| `pending_` `line`")
                             from := at + 1
                             at := at + 1
                             continue
                         }
                         lines.add("`rel` `path`| `line`")
-                        pending := ""
+                        pending_ := ""
                         if line.starts_with("define ")
                         {
                             var e: size_t 7
                             while e < line.get_length() and line.get(e) <> 32 and line.get(e) <> 40 and line.get(e) <> 91 and line.get(e) <> 58
                                 e := e + 1
-                            pending := "`line.substring(7, e - 7)`"
+                            pending_ := "`line.substring(7, e - 7)`"
                         }
                     }
                 }

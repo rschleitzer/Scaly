@@ -239,7 +239,7 @@ define QListener
     var conns: Array[ref[QConn]?]
     var generation: u32
     ; unacknowledged response bytes of every connection (H3_OUTPUT_BUDGET)
-    var pending: size_t
+    var pending_: size_t
     var rx: Slice[u8]
     var tx: Slice[u8]
     ; a connection's packets of a round, back to back (h3_flush)
@@ -348,7 +348,7 @@ procedure h3_acked(mutable conn: pointer[void], stream_id: i64, offset: u64, dat
     {
         let c user_data as ref[QConn]
         var l c.listener as ref[QListener]
-        l.pending := l.pending - (datalen as size_t)
+        l.pending_ := l.pending_ - (datalen as size_t)
     }
     0
 }
@@ -477,7 +477,7 @@ procedure h3_drop_stream(mutable c: ref[QConn], s: ref[QStream])
     if s.answered
     {
         var l c.listener as ref[QListener]
-        l.pending := l.pending - (s.output.length - s.acked)
+        l.pending_ := l.pending_ - (s.output.length - s.acked)
     }
     ; out of streams by its index, out of the queues only when it is in one
     ; (a search of all three was 4 % of the samples in baseline-h3)
@@ -829,13 +829,13 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
 ; Answer a connection's complete requests, as the budget allows.
 procedure h3_answer_ready(mutable l: ref[QListener], mutable c: ref[QConn])
 {
-    while c.readyq.length > 0 and l.pending < H3_OUTPUT_BUDGET
+    while c.readyq.length > 0 and l.pending_ < H3_OUTPUT_BUDGET
     {
         var s: ref[QStream] c.readyq[0]
         c.readyq.put(0, c.readyq[c.readyq.length - 1])
         c.readyq.length := c.readyq.length - 1
         h3_answer(l.work, c, s)
-        l.pending := l.pending + s.output.length
+        l.pending_ := l.pending_ + s.output.length
         if s.in_sendq = false
         {
             s.in_sendq := true

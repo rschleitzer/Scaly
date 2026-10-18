@@ -87,7 +87,7 @@ define SqliteConn
     var bytes: Array[u8]
     var params: Array[i64]
     ; the row run() already stepped to, not yet given to next_row()
-    var pending: bool
+    var pending_: bool
     var done: bool
 )
 {
@@ -162,7 +162,7 @@ define SqliteConn
     {
         if current <> null and done = false
             sqlite3_reset(current)
-        pending := false
+        pending_ := false
         done := true
     }
 
@@ -229,7 +229,7 @@ define SqliteConn
         }
         bytes.length := 0
         params.length := 0
-        pending := false
+        pending_ := false
         done := true
     }
 
@@ -312,7 +312,7 @@ define SqliteConn
             i := i + 1
         }
         let rc sqlite3_step(current)
-        pending := rc = SQLITE_ROW
+        pending_ := rc = SQLITE_ROW
         done := rc <> SQLITE_ROW
         rc = SQLITE_ROW or rc = SQLITE_DONE
     }
@@ -320,9 +320,9 @@ define SqliteConn
     ; Go to the next row of the statement that ran; false past the last.
     procedure next_row(mutable this) returns bool
     {
-        if pending
+        if pending_
         {
-            pending := false
+            pending_ := false
             return true
         }
         if done or current = null

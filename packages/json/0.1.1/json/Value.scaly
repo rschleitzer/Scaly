@@ -658,8 +658,8 @@ define JsonValue union
             if in_object
             {
                 let last members.length - 1
-                let pending members[last]
-                members.put(last, JsonMember(pending.key, v, pending.verbatim_key))
+                let pending_ members[last]
+                members.put(last, JsonMember(pending_.key, v, pending_.verbatim_key))
             }
             else
                 values.add(v)

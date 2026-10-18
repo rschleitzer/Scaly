@@ -105,7 +105,7 @@ define TdsConn
     ; the reply is read to its end, no row is left; and the row run()
     ; stands at, not yet given to next_row()
     var done: bool
-    var pending: bool
+    var pending_: bool
     ; the rows the last statement changed, and the server's message of the
     ; last operation that failed
     var changed: i64
@@ -581,7 +581,7 @@ define TdsConn
         failed := false
         changed := 0
         done := true
-        pending := false
+        pending_ := false
         column_type.length := 0
     }
 
@@ -807,7 +807,7 @@ define TdsConn
         done := false
         ; up to the first row, or the end: an error before any row fails
         ; the statement
-        pending := this.advance()
+        pending_ := this.advance()
         failed = false
     }
 
@@ -1264,9 +1264,9 @@ define TdsConn
     ; (run() stands at the first row already: it is given first.)
     procedure next_row(mutable this) returns bool
     {
-        if pending
+        if pending_
         {
-            pending := false
+            pending_ := false
             return true
         }
         if done
@@ -1279,7 +1279,7 @@ define TdsConn
     procedure finish(mutable this)
     {
         done := true
-        pending := false
+        pending_ := false
     }
 
     ; The rows the last statement changed.

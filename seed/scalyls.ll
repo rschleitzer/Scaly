@@ -123069,7 +123069,7 @@ entry:
   %arg.tmp28 = alloca { ptr }, align 8
   %pmod = alloca i64, align 8
   %prev_was_dot = alloca i1, align 1
-  %pending = alloca i64, align 8
+  %pending_ = alloca i64, align 8
   %first = alloca i1, align 1
   %prev_col = alloca i64, align 8
   %prev_line = alloca i64, align 8
@@ -123156,7 +123156,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store i64 0, ptr %prev_line, align 1
   store i64 0, ptr %prev_col, align 1
   store i1 true, ptr %first, align 1
-  store i64 -1, ptr %pending, align 1
+  store i64 -1, ptr %pending_, align 1
   store i1 false, ptr %prev_was_dot, align 1
   store i64 -1, ptr %pmod, align 1
   %frame.page21 = load ptr, ptr %frame, align 8
@@ -123393,7 +123393,7 @@ if.then120:                                       ; preds = %while.exit62
 if.end121:                                        ; preds = %if.end125, %while.exit62
   %k135 = load i64, ptr %k, align 8
   store i64 %k135, ptr %i, align 1
-  store i64 -1, ptr %pending, align 1
+  store i64 -1, ptr %pending_, align 1
   store i64 -1, ptr %pmod, align 1
   store i1 false, ptr %prev_was_dot, align 1
   br label %while.cond
@@ -123469,7 +123469,7 @@ if.end154:                                        ; preds = %if.then153, %while.
   store i64 %add165, ptr %col, align 1
   %j166 = load i64, ptr %seg_col, align 8
   store i64 %j166, ptr %i, align 1
-  store i64 -1, ptr %pending, align 1
+  store i64 -1, ptr %pending_, align 1
   store i64 -1, ptr %pmod, align 1
   store i1 false, ptr %prev_was_dot, align 1
   br label %while.cond
@@ -123539,7 +123539,7 @@ if.end199:                                        ; preds = %if.then198, %while.
   %sub202 = sub i64 %j200, %i201
   store i64 %sub202, ptr %k, align 1
   store i64 5, ptr %seg_col, align 1
-  store i64 -1, ptr %pending, align 1
+  store i64 -1, ptr %pending_, align 1
   store i64 -1, ptr %pmod, align 1
   br label %if.end170
 
@@ -123571,7 +123571,7 @@ while.exit210:                                    ; preds = %if.then217, %while.
   %sub223 = sub i64 %j221, %i222
   store i64 %sub223, ptr %k, align 1
   store i64 6, ptr %seg_col, align 1
-  store i64 -1, ptr %pending, align 1
+  store i64 -1, ptr %pending_, align 1
   store i64 -1, ptr %pmod, align 1
   br label %if.end205
 
@@ -123633,8 +123633,8 @@ if.then250:                                       ; preds = %while.exit231
   br label %if.end251
 
 if.end251:                                        ; preds = %if.then250, %while.exit231
-  %pending252 = load i64, ptr %pending, align 8
-  %eq253 = icmp eq i64 %pending252, 1
+  %pending_252 = load i64, ptr %pending_, align 8
+  %eq253 = icmp eq i64 %pending_252, 1
   br i1 %eq253, label %if.then254, label %if.end255
 
 if.then254:                                       ; preds = %if.end251
@@ -123642,8 +123642,8 @@ if.then254:                                       ; preds = %if.end251
   br label %if.end255
 
 if.end255:                                        ; preds = %if.then254, %if.end251
-  %pending256 = load i64, ptr %pending, align 8
-  %eq257 = icmp eq i64 %pending256, 2
+  %pending_256 = load i64, ptr %pending_, align 8
+  %eq257 = icmp eq i64 %pending_256, 2
   br i1 %eq257, label %if.then258, label %if.end259
 
 if.then258:                                       ; preds = %if.end255
@@ -123988,7 +123988,7 @@ if.then411:                                       ; preds = %if.end408
 
 if.end412:                                        ; preds = %if.then411, %if.end408
   %np413 = load i64, ptr %np, align 8
-  store i64 %np413, ptr %pending, align 1
+  store i64 %np413, ptr %pending_, align 1
   %nm414 = load i64, ptr %nm, align 8
   store i64 %nm414, ptr %pmod, align 1
   store i1 false, ptr %is_multi, align 1
@@ -124054,7 +124054,7 @@ frame.forced436:                                  ; preds = %frame.force435, %if
   br label %if.end432
 
 if.then445:                                       ; preds = %if.end368
-  store i64 -1, ptr %pending, align 1
+  store i64 -1, ptr %pending_, align 1
   store i64 -1, ptr %pmod, align 1
   br label %if.end446
 
@@ -124090,7 +124090,7 @@ while.exit454:                                    ; preds = %if.then461, %while.
   %sub467 = sub i64 %j465, %i466
   store i64 %sub467, ptr %k, align 1
   store i64 4, ptr %seg_col, align 1
-  store i64 -1, ptr %pending, align 1
+  store i64 -1, ptr %pending_, align 1
   store i64 -1, ptr %pmod, align 1
   br label %if.end449
 
@@ -124156,7 +124156,7 @@ if.end490:                                        ; preds = %if.then489, %if.end
   %i493 = load i64, ptr %i, align 8
   %add494 = add i64 %i493, 1
   store i64 %add494, ptr %i, align 1
-  store i64 -1, ptr %pending, align 1
+  store i64 -1, ptr %pending_, align 1
   store i64 -1, ptr %pmod, align 1
   br label %while.cond
 }
@@ -162376,7 +162376,7 @@ entry:
   %pos = alloca i64, align 8
   %wrote_line = alloca i1, align 1
   %pending_level = alloca i64, align 8
-  %pending = alloca ptr, align 8
+  %pending_ = alloca ptr, align 8
   %in_block = alloca i1, align 1
   %level = alloca i64, align 8
   %stack = alloca ptr, align 8
@@ -162435,7 +162435,7 @@ frame.forced14:                                   ; preds = %frame.force13, %fra
   store i64 0, ptr %tuple.field19, align 8
   %tuple.field20 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %struct.region17, i32 0, i32 2
   store ptr null, ptr %tuple.field20, align 8
-  store ptr %struct.region17, ptr %pending, align 1
+  store ptr %struct.region17, ptr %pending_, align 1
   store i64 0, ptr %pending_level, align 1
   store i1 false, ptr %wrote_line, align 1
   %call = call i64 @_ZN6String10get_lengthEv(ptr %2)
@@ -162589,8 +162589,8 @@ while.exit73:                                     ; preds = %while.cond71
   br label %if.end62
 
 if.then85:                                        ; preds = %if.else
-  %pending88 = load ptr, ptr %pending, align 8
-  %call89 = call i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %pending88)
+  %pending_88 = load ptr, ptr %pending_, align 8
+  %call89 = call i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %pending_88)
   %gt90 = icmp ugt i64 %call89, 0
   br i1 %gt90, label %if.then91, label %if.else92
 
@@ -162613,7 +162613,7 @@ if.end87:                                         ; preds = %if.end118, %if.end9
   br label %if.end62
 
 if.then91:                                        ; preds = %if.then85
-  %pending94 = load ptr, ptr %pending, align 8
+  %pending_94 = load ptr, ptr %pending_, align 8
   %frame.page95 = load ptr, ptr %1, align 8
   %frame.has_page96 = icmp ne ptr %frame.page95, null
   br i1 %frame.has_page96, label %frame.forced98, label %frame.force97
@@ -162634,7 +162634,7 @@ frame.forced98:                                   ; preds = %frame.force97, %if.
   %struct.region101 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page100, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region101, ptr %arg.tmp)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %pending94, ptr %struct.region101)
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %pending_94, ptr %struct.region101)
   br label %if.end93
 
 if.then103:                                       ; preds = %if.else92
@@ -162647,8 +162647,8 @@ if.end104:                                        ; preds = %if.then103, %if.els
   br label %if.end93
 
 if.then116:                                       ; preds = %if.else86
-  %pending119 = load ptr, ptr %pending, align 8
-  %call120 = call i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %pending119)
+  %pending_119 = load ptr, ptr %pending_, align 8
+  %call120 = call i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %pending_119)
   %eq121 = icmp eq i64 %call120, 0
   br i1 %eq121, label %if.then122, label %if.end123
 
@@ -162670,8 +162670,8 @@ if.then122:                                       ; preds = %if.then116
   br label %if.end123
 
 if.end123:                                        ; preds = %if.then122, %if.then116
-  %pending125 = load ptr, ptr %pending, align 8
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %pending125, ptr %sret.result109)
+  %pending_125 = load ptr, ptr %pending_, align 8
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %pending_125, ptr %sret.result109)
   br label %if.end118
 
 if.then130:                                       ; preds = %if.else117
@@ -162812,21 +162812,21 @@ if.end195:                                        ; preds = %if.then194, %if.end
 
 while.cond197:                                    ; preds = %if.end209, %if.end195
   %pi200 = load i64, ptr %pi, align 8
-  %pending201 = load ptr, ptr %pending, align 8
-  %call202 = call i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %pending201)
+  %pending_201 = load ptr, ptr %pending_, align 8
+  %call202 = call i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %pending_201)
   %lt203 = icmp ult i64 %pi200, %call202
   br i1 %lt203, label %while.body198, label %while.exit199
 
 while.body198:                                    ; preds = %while.cond197
-  %pending204 = load ptr, ptr %pending, align 8
+  %pending_204 = load ptr, ptr %pending_, align 8
   %pi205 = load i64, ptr %pi, align 8
-  %call206 = call ptr @_ZN5ArrayI6StringE3getEm(ptr %pending204, i64 %pi205)
+  %call206 = call ptr @_ZN5ArrayI6StringE3getEm(ptr %pending_204, i64 %pi205)
   %ne207 = icmp ne ptr %call206, null
   br i1 %ne207, label %if.then208, label %if.end209
 
 while.exit199:                                    ; preds = %while.cond197
-  %pending229 = load ptr, ptr %pending, align 8
-  call void @_ZN5ArrayI6StringE5clearEv(ptr %pending229)
+  %pending_229 = load ptr, ptr %pending_, align 8
+  call void @_ZN5ArrayI6StringE5clearEv(ptr %pending_229)
   %wrote_line230 = load i1, ptr %wrote_line, align 1
   br i1 %wrote_line230, label %if.then231, label %if.end232
 
@@ -163089,15 +163089,15 @@ if.end339:                                        ; preds = %if.else338, %if.the
 
 while.cond342:                                    ; preds = %if.end353, %while.exit
   %qi = load i64, ptr %eol, align 8
-  %pending345 = load ptr, ptr %pending, align 8
-  %call346 = call i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %pending345)
+  %pending_345 = load ptr, ptr %pending_, align 8
+  %call346 = call i64 @_ZN5ArrayI6StringE10get_lengthEv(ptr %pending_345)
   %lt347 = icmp ult i64 %qi, %call346
   br i1 %lt347, label %while.body343, label %while.exit344
 
 while.body343:                                    ; preds = %while.cond342
-  %pending348 = load ptr, ptr %pending, align 8
+  %pending_348 = load ptr, ptr %pending_, align 8
   %qi349 = load i64, ptr %eol, align 8
-  %call350 = call ptr @_ZN5ArrayI6StringE3getEm(ptr %pending348, i64 %qi349)
+  %call350 = call ptr @_ZN5ArrayI6StringE3getEm(ptr %pending_348, i64 %qi349)
   %ne351 = icmp ne ptr %call350, null
   br i1 %ne351, label %if.then352, label %if.end353
 

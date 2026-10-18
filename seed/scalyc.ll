@@ -1419,7 +1419,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 8209541282483805246
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -5292265969186859842
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -344339,7 +344339,7 @@ entry:
   %moved = alloca i1, align 1
   %rounds = alloca i64, align 8
   %k = alloca i64, align 8
-  %pending = alloca ptr, align 8
+  %pending_ = alloca ptr, align 8
   %call = call ptr @getenv(ptr @.str.2649)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
@@ -344366,7 +344366,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   store i64 0, ptr %tuple.field2, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region, i32 0, i32 2
   store ptr null, ptr %tuple.field3, align 8
-  store ptr %struct.region, ptr %pending, align 1
+  store ptr %struct.region, ptr %pending_, align 1
   store i64 0, ptr %k, align 1
   br label %while.cond
 
@@ -344393,8 +344393,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %ne11, label %if.then12, label %if.end13
 
 while.exit:                                       ; preds = %while.cond
-  %pending31 = load ptr, ptr %pending, align 8
-  %load.struct32 = load %_Z5ArrayImE, ptr %pending31, align 8
+  %pending_31 = load ptr, ptr %pending_, align 8
+  %load.struct32 = load %_Z5ArrayImE, ptr %pending_31, align 8
   %length33 = extractvalue %_Z5ArrayImE %load.struct32, 0
   %eq34 = icmp eq i64 %length33, 0
   br i1 %eq34, label %if.then35, label %if.end36
@@ -344426,9 +344426,9 @@ if.end19:                                         ; preds = %if.end23, %if.then1
   br label %if.end16
 
 if.then22:                                        ; preds = %if.then18
-  %pending24 = load ptr, ptr %pending, align 8
+  %pending_24 = load ptr, ptr %pending_, align 8
   %k25 = load i64, ptr %k, align 8
-  call void @_ZN5ArrayImE3addEm(ptr %pending24, i64 %k25)
+  call void @_ZN5ArrayImE3addEm(ptr %pending_24, i64 %k25)
   %field.inplace26 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %1, i32 0, i32 89
   %k27 = load i64, ptr %k, align 8
   call void @_ZN5ArrayImE3putEmm(ptr %field.inplace26, i64 %k27, i64 6)
@@ -344473,16 +344473,16 @@ if.end43:                                         ; preds = %while.body38
 
 while.cond44:                                     ; preds = %if.end57, %if.end43
   %pi47 = load i64, ptr %pi, align 8
-  %pending48 = load ptr, ptr %pending, align 8
-  %load.struct49 = load %_Z5ArrayImE, ptr %pending48, align 8
+  %pending_48 = load ptr, ptr %pending_, align 8
+  %load.struct49 = load %_Z5ArrayImE, ptr %pending_48, align 8
   %length50 = extractvalue %_Z5ArrayImE %load.struct49, 0
   %lt51 = icmp ult i64 %pi47, %length50
   br i1 %lt51, label %while.body45, label %while.exit46
 
 while.body45:                                     ; preds = %while.cond44
-  %pending52 = load ptr, ptr %pending, align 8
+  %pending_52 = load ptr, ptr %pending_, align 8
   %pi53 = load i64, ptr %pi, align 8
-  %call54 = call ptr @_ZN5ArrayImE3getEm(ptr %pending52, i64 %pi53)
+  %call54 = call ptr @_ZN5ArrayImE3getEm(ptr %pending_52, i64 %pi53)
   %ne55 = icmp ne ptr %call54, null
   br i1 %ne55, label %if.then56, label %if.end57
 
@@ -344597,16 +344597,16 @@ if.end109:                                        ; preds = %while.exit112, %whi
 
 while.cond110:                                    ; preds = %if.end122, %if.then108
   %ri = load i64, ptr %pi, align 8
-  %pending113 = load ptr, ptr %pending, align 8
-  %load.struct114 = load %_Z5ArrayImE, ptr %pending113, align 8
+  %pending_113 = load ptr, ptr %pending_, align 8
+  %load.struct114 = load %_Z5ArrayImE, ptr %pending_113, align 8
   %length115 = extractvalue %_Z5ArrayImE %load.struct114, 0
   %lt116 = icmp ult i64 %ri, %length115
   br i1 %lt116, label %while.body111, label %while.exit112
 
 while.body111:                                    ; preds = %while.cond110
-  %pending117 = load ptr, ptr %pending, align 8
+  %pending_117 = load ptr, ptr %pending_, align 8
   %ri118 = load i64, ptr %pi, align 8
-  %call119 = call ptr @_ZN5ArrayImE3getEm(ptr %pending117, i64 %ri118)
+  %call119 = call ptr @_ZN5ArrayImE3getEm(ptr %pending_117, i64 %ri118)
   %ne120 = icmp ne ptr %call119, null
   br i1 %ne120, label %if.then121, label %if.end122
 
@@ -344630,7 +344630,7 @@ if.end122:                                        ; preds = %if.then121, %while.
 
 if.then131:                                       ; preds = %if.end109
   call void @_Z11scaly_eputsP10const_char(ptr @.str.2651)
-  %base.deref = load ptr, ptr %pending, align 8
+  %base.deref = load ptr, ptr %pending_, align 8
   %field.inplace133 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %base.deref, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace133, align 8
   call void @_Z11scaly_eputi3i64(i64 %field.val)
@@ -371248,8 +371248,8 @@ entry:
   %f_handled = alloca i1, align 1
   %folded = alloca i64, align 8
   store i64 0, ptr %folded, align 1
-  %pending = alloca i64, align 8
-  store i64 0, ptr %pending, align 1
+  %pending_ = alloca i64, align 8
+  store i64 0, ptr %pending_, align 1
   %seq_prec = alloca i64, align 8
   store i64 0, ptr %seq_prec, align 1
   %neg = alloca i1, align 1
@@ -371382,8 +371382,8 @@ if.then28:                                        ; preds = %if.then25
 
 if.end29:                                         ; preds = %if.then28, %if.then25
   store i1 true, ptr %applied, align 1
-  %pending31 = load i64, ptr %pending, align 8
-  %eq32 = icmp eq i64 %pending31, 0
+  %pending_31 = load i64, ptr %pending_, align 8
+  %eq32 = icmp eq i64 %pending_31, 0
   br i1 %eq32, label %if.then33, label %if.end34
 
 if.then33:                                        ; preds = %if.end29
@@ -371392,8 +371392,8 @@ if.then33:                                        ; preds = %if.end29
   br label %if.end34
 
 if.end34:                                         ; preds = %if.then33, %if.end29
-  %pending36 = load i64, ptr %pending, align 8
-  %eq37 = icmp eq i64 %pending36, 1
+  %pending_36 = load i64, ptr %pending_, align 8
+  %eq37 = icmp eq i64 %pending_36, 1
   br i1 %eq37, label %if.then38, label %if.end39
 
 if.then38:                                        ; preds = %if.end34
@@ -371404,8 +371404,8 @@ if.then38:                                        ; preds = %if.end34
   br label %if.end39
 
 if.end39:                                         ; preds = %if.then38, %if.end34
-  %pending42 = load i64, ptr %pending, align 8
-  %eq43 = icmp eq i64 %pending42, 2
+  %pending_42 = load i64, ptr %pending_, align 8
+  %eq43 = icmp eq i64 %pending_42, 2
   br i1 %eq43, label %if.then44, label %if.end45
 
 if.then44:                                        ; preds = %if.end39
@@ -371416,8 +371416,8 @@ if.then44:                                        ; preds = %if.end39
   br label %if.end45
 
 if.end45:                                         ; preds = %if.then44, %if.end39
-  %pending49 = load i64, ptr %pending, align 8
-  %eq50 = icmp eq i64 %pending49, 3
+  %pending_49 = load i64, ptr %pending_, align 8
+  %eq50 = icmp eq i64 %pending_49, 3
   br i1 %eq50, label %if.then51, label %if.end52
 
 if.then51:                                        ; preds = %if.end45
@@ -371428,8 +371428,8 @@ if.then51:                                        ; preds = %if.end45
   br label %if.end52
 
 if.end52:                                         ; preds = %if.then51, %if.end45
-  %pending55 = load i64, ptr %pending, align 8
-  %eq56 = icmp eq i64 %pending55, 4
+  %pending_55 = load i64, ptr %pending_, align 8
+  %eq56 = icmp eq i64 %pending_55, 4
   br i1 %eq56, label %if.then57, label %if.end58
 
 if.then57:                                        ; preds = %if.end52
@@ -371438,8 +371438,8 @@ if.then57:                                        ; preds = %if.end52
   br i1 %eq60, label %if.then61, label %if.end62
 
 if.end58:                                         ; preds = %if.end66, %if.end52
-  %pending69 = load i64, ptr %pending, align 8
-  %eq70 = icmp eq i64 %pending69, 5
+  %pending_69 = load i64, ptr %pending_, align 8
+  %eq70 = icmp eq i64 %pending_69, 5
   br i1 %eq70, label %if.then71, label %if.end72
 
 if.then61:                                        ; preds = %if.then57
@@ -371467,8 +371467,8 @@ if.then71:                                        ; preds = %if.end58
   br i1 %eq74, label %if.then75, label %if.end76
 
 if.end72:                                         ; preds = %if.end80, %if.end58
-  %pending83 = load i64, ptr %pending, align 8
-  %eq84 = icmp eq i64 %pending83, 6
+  %pending_83 = load i64, ptr %pending_, align 8
+  %eq84 = icmp eq i64 %pending_83, 6
   br i1 %eq84, label %if.then85, label %if.end86
 
 if.then75:                                        ; preds = %if.then71
@@ -371498,8 +371498,8 @@ if.then85:                                        ; preds = %if.end72
   br label %if.end86
 
 if.end86:                                         ; preds = %if.then85, %if.end72
-  %pending89 = load i64, ptr %pending, align 8
-  %eq90 = icmp eq i64 %pending89, 7
+  %pending_89 = load i64, ptr %pending_, align 8
+  %eq90 = icmp eq i64 %pending_89, 7
   br i1 %eq90, label %if.then91, label %if.end92
 
 if.then91:                                        ; preds = %if.end86
@@ -371510,8 +371510,8 @@ if.then91:                                        ; preds = %if.end86
   br label %if.end92
 
 if.end92:                                         ; preds = %if.then91, %if.end86
-  %pending95 = load i64, ptr %pending, align 8
-  %eq96 = icmp eq i64 %pending95, 8
+  %pending_95 = load i64, ptr %pending_, align 8
+  %eq96 = icmp eq i64 %pending_95, 8
   br i1 %eq96, label %if.then97, label %if.end98
 
 if.then97:                                        ; preds = %if.end92
@@ -371522,8 +371522,8 @@ if.then97:                                        ; preds = %if.end92
   br label %if.end98
 
 if.end98:                                         ; preds = %if.then97, %if.end92
-  %pending101 = load i64, ptr %pending, align 8
-  %eq102 = icmp eq i64 %pending101, 9
+  %pending_101 = load i64, ptr %pending_, align 8
+  %eq102 = icmp eq i64 %pending_101, 9
   br i1 %eq102, label %if.then103, label %if.end104
 
 if.then103:                                       ; preds = %if.end98
@@ -371534,8 +371534,8 @@ if.then103:                                       ; preds = %if.end98
   br label %if.end104
 
 if.end104:                                        ; preds = %if.then103, %if.end98
-  %pending107 = load i64, ptr %pending, align 8
-  %eq108 = icmp eq i64 %pending107, 10
+  %pending_107 = load i64, ptr %pending_, align 8
+  %eq108 = icmp eq i64 %pending_107, 10
   br i1 %eq108, label %if.then109, label %if.end110
 
 if.then109:                                       ; preds = %if.end104
@@ -371731,7 +371731,7 @@ if.end195:                                        ; preds = %if.then194, %if.the
 if.then196:                                       ; preds = %if.end191
   store i64 %call187, ptr %seq_prec, align 1
   %opc198 = load i64, ptr %fv, align 8
-  store i64 %opc198, ptr %pending, align 1
+  store i64 %opc198, ptr %pending_, align 1
   store i1 true, ptr %expect_value, align 1
   store i1 true, ptr %f_handled, align 1
   br label %if.end197
@@ -531095,7 +531095,7 @@ entry:
   %sret.result13 = alloca { ptr }, align 8
   %at = alloca i64, align 8
   %from = alloca i64, align 8
-  %pending = alloca { ptr }, align 8
+  %pending_ = alloca { ptr }, align 8
   %depth = alloca i64, align 8
   %scopes = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -531123,7 +531123,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store ptr null, ptr %tuple.field3, align 8
   store ptr %struct.region, ptr %scopes, align 1
   store i64 0, ptr %depth, align 1
-  store { ptr } zeroinitializer, ptr %pending, align 1
+  store { ptr } zeroinitializer, ptr %pending_, align 1
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   store i64 0, ptr %from, align 1
   store i64 0, ptr %at, align 1
@@ -531210,7 +531210,7 @@ if.end24:                                         ; preds = %frame.forced41, %fr
   %depth48 = load i64, ptr %depth, align 8
   %add = add i64 %depth48, 1
   store i64 %add, ptr %depth, align 1
-  store { ptr } zeroinitializer, ptr %pending, align 1
+  store { ptr } zeroinitializer, ptr %pending_, align 1
   br label %if.end19
 
 frame.force29:                                    ; preds = %if.then22
@@ -531221,8 +531221,8 @@ frame.forced30:                                   ; preds = %frame.force29, %if.
   %forced_page32 = phi ptr [ %frame.page27, %if.then22 ], [ %forced_page31, %frame.force29 ]
   %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page32, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region33)
-  %pending34 = load { ptr }, ptr %pending, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp35, ptr align 1 %pending, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %pending_34 = load { ptr }, ptr %pending_, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp35, ptr align 1 %pending_, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region33, ptr %arg.tmp35)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result36, ptr %frame, ptr %struct.region33)
   call void @_ZN5ArrayI6StringE3putEm6String(ptr %scopes25, i64 %depth26, ptr %sret.result36)
@@ -531236,8 +531236,8 @@ frame.forced41:                                   ; preds = %frame.force40, %if.
   %forced_page43 = phi ptr [ %frame.page38, %if.else23 ], [ %forced_page42, %frame.force40 ]
   %struct.region44 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page43, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region44)
-  %pending45 = load { ptr }, ptr %pending, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp46, ptr align 1 %pending, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %pending_45 = load { ptr }, ptr %pending_, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp46, ptr align 1 %pending_, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region44, ptr %arg.tmp46)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result47, ptr %frame, ptr %struct.region44)
   call void @_ZN5ArrayI6StringE3addE6String(ptr %scopes37, ptr %sret.result47)
@@ -531263,11 +531263,11 @@ if.then56:                                        ; preds = %if.then51
   br label %if.end57
 
 if.end57:                                         ; preds = %if.then56, %if.then51
-  store { ptr } zeroinitializer, ptr %pending, align 1
+  store { ptr } zeroinitializer, ptr %pending_, align 1
   br label %if.end53
 
 if.then60:                                        ; preds = %lor.rhs63, %lor.rhs64, %if.else52
-  store { ptr } zeroinitializer, ptr %pending, align 1
+  store { ptr } zeroinitializer, ptr %pending_, align 1
   br label %if.end62
 
 if.else61:                                        ; preds = %lor.rhs63
@@ -531339,7 +531339,7 @@ if.end93:                                         ; preds = %land.rhs, %while.ex
   br i1 %frame.has_page116, label %frame.forced118, label %frame.force117
 
 land.rhs:                                         ; preds = %while.exit73
-  %call96 = call i64 @_ZN6String10get_lengthEv(ptr %pending)
+  %call96 = call i64 @_ZN6String10get_lengthEv(ptr %pending_)
   %gt97 = icmp ugt i64 %call96, 0
   br i1 %gt97, label %if.then92, label %if.end93
 
@@ -531358,8 +531358,8 @@ frame.forced101:                                  ; preds = %frame.force100, %if
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region104, ptr %arg.tmp106)
   store { ptr } { ptr @.sconst.6473 }, ptr %arg.tmp107, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region104, ptr %arg.tmp107)
-  %pending108 = load { ptr }, ptr %pending, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp109, ptr align 1 %pending, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %pending_108 = load { ptr }, ptr %pending_, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp109, ptr align 1 %pending_, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region104, ptr %arg.tmp109)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region104, i8 32)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region104, ptr %sret.result13)
@@ -531391,7 +531391,7 @@ frame.forced118:                                  ; preds = %frame.force117, %if
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region121, ptr %sret.result13)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result125, ptr %0, ptr %struct.region121)
   call void @_ZN5ArrayI6StringE3addE6String(ptr %3, ptr %sret.result125)
-  store { ptr } zeroinitializer, ptr %pending, align 1
+  store { ptr } zeroinitializer, ptr %pending_, align 1
   store { ptr } { ptr @.sconst.6475 }, ptr %arg.tmp126, align 1
   %call127 = call i1 @_ZN6String11starts_withE6String(ptr %sret.result13, ptr %arg.tmp126)
   br i1 %call127, label %if.then128, label %if.end129
@@ -531474,7 +531474,7 @@ frame.forced162:                                  ; preds = %frame.force161, %wh
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region165, ptr %sret.result166)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result169, ptr %frame, ptr %struct.region165)
   %set.load170 = load { ptr }, ptr %sret.result169, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %pending, ptr align 1 %sret.result169, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %pending_, ptr align 1 %sret.result169, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   br label %if.end129
 }
 
@@ -538911,7 +538911,7 @@ entry:
   %counts = alloca ptr, align 8
   %firsts = alloca ptr, align 8
   %offset_slots = alloca ptr, align 8
-  %pending = alloca ptr, align 8
+  %pending_ = alloca ptr, align 8
   %types = alloca ptr, align 8
   %slots = alloca ptr, align 8
   %arg.tmp243 = alloca { ptr }, align 8
@@ -539503,7 +539503,7 @@ frame.forced267:                                  ; preds = %frame.force266, %fr
   store i64 0, ptr %tuple.field272, align 8
   %tuple.field273 = getelementptr inbounds nuw %_Z5ArrayI9ReplFieldB6scalycB4v0_2E, ptr %struct.region270, i32 0, i32 2
   store ptr null, ptr %tuple.field273, align 8
-  store ptr %struct.region270, ptr %pending, align 1
+  store ptr %struct.region270, ptr %pending_, align 1
   %frame.page274 = load ptr, ptr %frame, align 8
   %frame.has_page275 = icmp ne ptr %frame.page274, null
   br i1 %frame.has_page275, label %frame.forced277, label %frame.force276
@@ -539761,8 +539761,8 @@ frame.forced399:                                  ; preds = %frame.force398, %fr
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region402, i8 10)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result407, ptr %frame, ptr %struct.region402)
   call void @_ZN13StringBuilder6appendE6String(ptr %tail395, ptr %sret.result407)
-  %pending408 = load ptr, ptr %pending, align 8
-  %load.struct409 = load %_Z5ArrayI9ReplFieldB6scalycB4v0_2E, ptr %pending408, align 8
+  %pending_408 = load ptr, ptr %pending_, align 8
+  %load.struct409 = load %_Z5ArrayI9ReplFieldB6scalycB4v0_2E, ptr %pending_408, align 8
   %length410 = extractvalue %_Z5ArrayI9ReplFieldB6scalycB4v0_2E %load.struct409, 0
   store i64 %length410, ptr %first, align 1
   %addr.heap411 = load ptr, ptr %probe, align 8
@@ -539782,8 +539782,8 @@ if.end415:                                        ; preds = %frame.forced430, %f
   %first438 = load i64, ptr %first, align 8
   call void @_ZN5ArrayIiE3addEi(ptr %firsts437, i64 %first438)
   %counts439 = load ptr, ptr %counts, align 8
-  %pending440 = load ptr, ptr %pending, align 8
-  %load.struct441 = load %_Z5ArrayI9ReplFieldB6scalycB4v0_2E, ptr %pending440, align 8
+  %pending_440 = load ptr, ptr %pending_, align 8
+  %load.struct441 = load %_Z5ArrayI9ReplFieldB6scalycB4v0_2E, ptr %pending_440, align 8
   %length442 = extractvalue %_Z5ArrayI9ReplFieldB6scalycB4v0_2E %load.struct441, 0
   %first443 = load i64, ptr %first, align 8
   %sub444 = sub i64 %length442, %first443
@@ -539798,7 +539798,7 @@ frame.forced421:                                  ; preds = %frame.force420, %if
   %forced_page423 = phi ptr [ %frame.page418, %if.then414 ], [ %forced_page422, %frame.force420 ]
   %struct.region424 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page423, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1Ev(ptr %struct.region424)
-  %addr.heap425 = load ptr, ptr %pending, align 8
+  %addr.heap425 = load ptr, ptr %pending_, align 8
   call void @_ZN4replB6scalycB4v0_27flattenEPN4scaly6memory4PageER9ReplProbeB6scalycB4v0_26String6StringiR5ArrayI9ReplFieldB6scalycB4v0_2E(ptr %0, ptr %addr.heap416, ptr %t417, ptr %struct.region424, i64 0, ptr %addr.heap425)
   %tail426 = load ptr, ptr %tail, align 8
   %frame.page427 = load ptr, ptr %frame, align 8
@@ -539826,16 +539826,16 @@ frame.forced430:                                  ; preds = %frame.force429, %fr
 
 while.cond445:                                    ; preds = %frame.forced469, %if.then459, %if.end415
   %first448 = load i64, ptr %first, align 8
-  %pending449 = load ptr, ptr %pending, align 8
-  %load.struct450 = load %_Z5ArrayI9ReplFieldB6scalycB4v0_2E, ptr %pending449, align 8
+  %pending_449 = load ptr, ptr %pending_, align 8
+  %load.struct450 = load %_Z5ArrayI9ReplFieldB6scalycB4v0_2E, ptr %pending_449, align 8
   %length451 = extractvalue %_Z5ArrayI9ReplFieldB6scalycB4v0_2E %load.struct450, 0
   %lt452 = icmp ult i64 %first448, %length451
   br i1 %lt452, label %while.body446, label %while.exit447
 
 while.body446:                                    ; preds = %while.cond445
-  %pending453 = load ptr, ptr %pending, align 8
+  %pending_453 = load ptr, ptr %pending_, align 8
   %first454 = load i64, ptr %first, align 8
-  %call455 = call ptr @_ZN5ArrayI9ReplFieldB6scalycB4v0_2E2atEm(ptr %pending453, i64 %first454)
+  %call455 = call ptr @_ZN5ArrayI9ReplFieldB6scalycB4v0_2E2atEm(ptr %pending_453, i64 %first454)
   %first456 = load i64, ptr %first, align 8
   %add457 = add i64 %first456, 1
   store i64 %add457, ptr %first, align 1
@@ -540147,9 +540147,9 @@ while.cond640:                                    ; preds = %frame.forced688, %w
   br i1 %lt644, label %while.body641, label %while.exit642
 
 while.body641:                                    ; preds = %while.cond640
-  %pending645 = load ptr, ptr %pending, align 8
+  %pending_645 = load ptr, ptr %pending_, align 8
   %fi646 = load i64, ptr %fi, align 8
-  %call647 = call ptr @_ZN5ArrayI9ReplFieldB6scalycB4v0_2E2atEm(ptr %pending645, i64 %fi646)
+  %call647 = call ptr @_ZN5ArrayI9ReplFieldB6scalycB4v0_2E2atEm(ptr %pending_645, i64 %fi646)
   store i64 0, ptr %offset, align 1
   %load.struct648 = load %_Z9ReplFieldB6scalycB4v0_2, ptr %call647, align 8
   %kind649 = extractvalue %_Z9ReplFieldB6scalycB4v0_2 %load.struct648, 3

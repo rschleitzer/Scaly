@@ -3137,7 +3137,7 @@ define Thread
 ; submit a wave, wait, submit the next.
 define TaskGroup
 (
-    pending: u64                 ; in-flight tasks (atomic)
+    pending_: u64                 ; in-flight tasks (atomic)
     active: u64                  ; finishers inside finish_one (atomic;
                                  ; the dispose barrier — see below)
     pipe_read: i32               ; wait blocks reading here
@@ -3235,7 +3235,7 @@ define TaskGroup
     {
         let ap &g.active
         let prev scaly_atomic_add_u64(ap, 1 as u64)
-        let pp &g.pending
+        let pp &g.pending_
         let old scaly_atomic_add_u64(pp, (0 - 1) as u64)
         if old = 1
         {
@@ -3252,7 +3252,7 @@ define TaskGroup
     ; the whole thread — main-context use, not inside a scheduled task.
     procedure wait(mutable g: pointer[TaskGroup])
     {
-        let pp &g.pending
+        let pp &g.pending_
         while scaly_atomic_load_u64(pp) > 0
         {
             var byte u8[1]
@@ -3438,7 +3438,7 @@ define TaskPool
     {
         let sc &pl.submitted
         scaly_atomic_add_u64(sc, 1 as u64)
-        let pp &g.pending
+        let pp &g.pending_
         let old scaly_atomic_add_u64(pp, 1 as u64)
         let host Page.get(g)
         let w &TaskItem^host(null, fn, arg, g)
