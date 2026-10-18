@@ -71,6 +71,26 @@ let d 84 'divided by' 2     ; infix -> 42
       right operand from its left,
       <literal>20 'minus' 3 + 5</literal> parses as
       <literal>20 'minus' (3 + 5)</literal> and yields <literal>12</literal>.</para>
+
+    <para>An operator's right parameter may be declared <literal>lazy</literal>:
+      the caller's operand is handed over unevaluated, and the operator's body
+      is put in where the operator stands. The standard library declares
+      <literal>and</literal> and <literal>or</literal> on
+      <literal>bool</literal> this way, so the right operand runs only where
+      the left one does not decide:</para>
+
+    <programlisting>
+operator and(left: bool, right: lazy bool) returns bool
+    if left: right else false
+
+let ok p &lt;&gt; null and p.x = 7   ; p.x is read only where p is there
+    </programlisting>
+
+    <para>The right operand is planned where the body puts it, so a null test
+      on the left proves its name for it, as an <literal>if</literal> proves it
+      for its branch. So far a lazy parameter is taken only by such a binary
+      operator, whose body is an <literal>if</literal> on its other
+      operand.</para>
   </section>
 
   &generated-definitions;

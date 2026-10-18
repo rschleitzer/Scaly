@@ -1,0 +1,54 @@
+; `and` and `or` are the standard library's (scaly/logic.scaly, 2026-10-18):
+; `operator and(left: bool, right: lazy bool)` with the body `if left: right
+; else false`, put in where the operator stands (Planner.lazy_operation#). The
+; right side runs only where the left does not decide -- counted here -- and
+; is planned knowing what the left proved: a null test narrows its name for
+; the right side of `and` where it is true, of `or` where it is false, in an
+; `if` and in a value alike (before, only an `if` condition's `and` chain
+; narrowed).
+; Expected: PASS
+define P (x: int)
+define Judge (want: int)
+{
+    function seven(this, p: ref[P]) returns bool
+        p.x = want
+}
+
+mutable touched: int 0
+
+procedure touch(answer: bool) returns bool mutable touched
+{
+    touched := touched + 1
+    answer
+}
+
+function none_or_seven(j: Judge, p: ref[P]?) returns bool
+    p = null or j.seven(p)
+
+function some_and_seven(j: Judge, p: ref[P]?) returns bool
+    p <> null and j.seven(p)
+
+procedure check() returns int mutable touched
+{
+    let a P(7)
+    let b P(3)
+    let j Judge(7)
+    if none_or_seven(j, null) = false or none_or_seven(j, &a) = false or none_or_seven(j, &b)
+        return 1
+    if some_and_seven(j, &a) = false or some_and_seven(j, null)
+        return 2
+    let no false and touch(true)
+    let yes true or touch(false)
+    if no or yes = false or touched <> 0
+        return 3
+    let both true and touch(true)
+    let either false or touch(true)
+    if both = false or either = false or touched <> 2
+        return 4
+    0
+}
+
+if check() = 0
+    print "PASS"
+else
+    print "FAIL"

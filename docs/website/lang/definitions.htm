@@ -222,6 +222,44 @@ CLASS="literal"
 CLASS="literal"
 >12</TT
 >.</P
+><P
+>An operator's right parameter may be declared <TT
+CLASS="literal"
+>lazy</TT
+>:
+      the caller's operand is handed over unevaluated, and the operator's body
+      is put in where the operator stands. The standard library declares
+      <TT
+CLASS="literal"
+>and</TT
+> and <TT
+CLASS="literal"
+>or</TT
+> on
+      <TT
+CLASS="literal"
+>bool</TT
+> this way, so the right operand runs only where
+      the left one does not decide:</P
+><PRE
+CLASS="programlisting"
+>&#13;operator and(left: bool, right: lazy bool) returns bool
+    if left: right else false
+
+let ok p &#60;&#62; null and p.x = 7   ; p.x is read only where p is there
+    </PRE
+><P
+>The right operand is planned where the body puts it, so a null test
+      on the left proves its name for it, as an <TT
+CLASS="literal"
+>if</TT
+> proves it
+      for its branch. So far a lazy parameter is taken only by such a binary
+      operator, whose body is an <TT
+CLASS="literal"
+>if</TT
+> on its other
+      operand.</P
 ></DIV
 ><DIV
 CLASS="section"
@@ -248,7 +286,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1546"
+NAME="AEN1555"
 ></A
 ><TABLE
 BORDER="0"
@@ -345,7 +383,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1578"
+NAME="AEN1587"
 ></A
 ><TABLE
 BORDER="0"
@@ -458,7 +496,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1615"
+NAME="AEN1624"
 ></A
 ><TABLE
 BORDER="0"
@@ -532,7 +570,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1637"
+NAME="AEN1646"
 ></A
 ><TABLE
 BORDER="0"

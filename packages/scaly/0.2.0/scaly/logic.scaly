@@ -1,0 +1,23 @@
+; logic.scaly - the short-circuit operators of bool
+;
+; `and` and `or` are no part of the compiler (ROADMAP-operation.md, delayed
+; operands): their right operand is `lazy`, handed over unevaluated, and the
+; planner puts the body in where the operator stands. `p <> null and p.x = 7`
+; is `if p <> null: p.x = 7 else false`, so the right side runs only where the
+; left does not decide, and it is planned knowing what the left proved -- the
+; null test narrows `p` for it as an `if` narrows its consequent. A routine
+; with a lazy parameter is never a routine of its own: there is nothing to
+; call, link or emit. `and` and `or` on SIMD masks stay the compiler's, lane
+; by lane, both sides evaluated.
+
+operator and(left: bool, right: lazy bool) returns bool
+    if left: right else false
+
+operator &&(left: bool, right: lazy bool) returns bool
+    if left: right else false
+
+operator or(left: bool, right: lazy bool) returns bool
+    if left: true else right
+
+operator ||(left: bool, right: lazy bool) returns bool
+    if left: true else right

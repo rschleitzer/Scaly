@@ -29008,15 +29008,27 @@ define Planner
             {
                 let o model_operators[oi].value
                 oi := oi + 1
-                if o.input.length <> 2 or Planner.attributes_have(o.input[1].attributes, "lazy") = false
+                if Planner.items_have_attribute(o.input, "lazy") = false
                     continue
+                let before protocol.lazy_left.length
+                this.read_lazy_operator(o)
+                if protocol.lazy_left.length = before and protocol.lazy_names.table.lookup(o.name) < 0
+                    this.add_diagnostic(o.span, String^this("an operator with a lazy parameter takes two, the lazy one on the right, and its body is an if on the left one with the lazy one as an arm"))
+            }
+        }
+
+        procedure read_lazy_operator(mutable this: Planner, o: Operator)
+        {
+            {
+                if o.input.length <> 2 or Planner.attributes_have(o.input[1].attributes, "lazy") = false or Planner.attributes_have(o.input[0].attributes, "lazy")
+                    return
                 if o.input[0].name = null or o.input[1].name = null or o.input[0].type = null
-                    continue
+                    return
                 let eager_name (*o.input[0].name)
                 let lazy_name (*o.input[1].name)
                 let left_type (*o.input[0].type)
                 if left_type.name.length <> 1
-                    continue
+                    return
                 choose o.implementation
                     when a: Action
                     {
@@ -52410,6 +52422,11 @@ define Planner
             this.report_declared_caller_page(f.input)
             if f.pure
                 this.report_mutable_in_function(f)
+            ; a lazy parameter is put in where its routine is called, and so
+            ; far only an operator's is (read_lazy_operators#): a function's
+            ; would be evaluated before the call without a word
+            if Planner.items_have_attribute(f.input, "lazy")
+                this.add_diagnostic(f.span, String^this("a lazy parameter is so far taken only by a binary operator whose body is an if on its other operand, as the standard library's and and or are; a function would evaluate it before the call"))
 
             ; For generic functions with no explicit instantiation,
             ; seed each type parameter with a fresh type variable so

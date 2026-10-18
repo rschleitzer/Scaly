@@ -1,0 +1,9 @@
+; A lazy parameter is put in where its routine is called (2026-10-18), and so
+; far only a binary operator's is -- `operator and(left: bool, right: lazy
+; bool)` in scaly/logic.scaly. A function's would be evaluated before the call
+; without a word, so it is refused (Planner.plan_function#).
+; xfail: a lazy parameter is so far taken only by a binary operator
+function or_else(value: int, fallback: lazy int) returns int
+    if value <> 0: value else fallback
+
+print "`or_else(0, 5)`"

@@ -432,7 +432,16 @@ define format
                         else
                         {
                             if format.is_one_word w
+                            {
                                 kind := LK_HEADER_ONE
+                                ; `if a: b else c` carries its body on the line
+                                ; (the standard library's `and`, logic.scaly):
+                                ; opening a one-line body for it pushed every
+                                ; line after it two levels deeper -- the same
+                                ; question `case` asks (2026-10-18)
+                                if w = "if" and format.case_has_inline_body(source, first_word_end, end)
+                                    kind := LK_STMT
+                            }
                             else
                             {
                                 if format.is_routine_word w
