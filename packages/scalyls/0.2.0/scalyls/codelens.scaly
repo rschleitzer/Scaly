@@ -314,7 +314,7 @@ define codelens
 
         let root3 codelens.strip_versioned(path, "scalyls", "/scalyls/grammar.scaly")
         if root3.get_length() > 0
-            return codelens.banner_lens(text, root3, "codegen/highlight-scaly.scm")
+            return codelens.banner_lens(text, root3, "codegen/highlight.scm")
 
         ; tests/selfhosted/<topic>__<name>.scaly comes from tests/<topic>.sgm
         ; (mkp's four `gen codegen/test-<topic>.dsl` lines). The .sgm is what an

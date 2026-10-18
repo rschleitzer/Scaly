@@ -3,7 +3,7 @@
 <!ENTITY fodeclare    SYSTEM "fodeclare.scm"    >
 <!ENTITY syntax       SYSTEM "syntax.scm"       >
 <!ENTITY parser       SYSTEM "parser.scm"       >
-<!ENTITY highlight-scaly SYSTEM "highlight-scaly.scm" >
+<!ENTITY highlight    SYSTEM "highlight.scm"    >
 <!ENTITY rules        SYSTEM "rules.scm"        >
 ]>
 
@@ -14,7 +14,7 @@
 &fodeclare;
 &syntax;
 &parser;
-&highlight-scaly;
+&highlight;
 &rules;
 
 </STYLE-SPECIFICATION>

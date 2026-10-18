@@ -2650,7 +2650,7 @@ define symbols
             }
 
             ; operator: a run of operator characters. The class is generated
-            ; from ONE table (codegen/highlight-scaly.scm) and must match the
+            ; from ONE table (codegen/highlight.scm) and must match the
             ; lexer's; note it excludes '^', which is the lifetime sigil and
             ; never an operator character (lexer.scaly:330).
             if grammar.is_op_char(c)

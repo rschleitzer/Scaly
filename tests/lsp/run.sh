@@ -5516,7 +5516,7 @@ def rows(ls):   # (1-based line, title, command id, single argument or None)
 gen_cases = [
     ("packages/scalyc/0.2.0/scalyc/compiler/parser.scaly", "codegen/parser.scm"),
     ("packages/scalyc/0.2.0/scalyc/compiler/Syntax.scaly", "codegen/syntax.scm"),
-    ("packages/scalyls/0.2.0/scalyls/grammar.scaly",       "codegen/highlight-scaly.scm"),
+    ("packages/scalyls/0.2.0/scalyls/grammar.scaly",       "codegen/highlight.scm"),
     ("tests/selfhosted/controlflow__break-in-for.scaly",   "tests/controlflow.sgm"),
 ]
 for (f, want) in gen_cases:
@@ -6783,7 +6783,7 @@ if [ $rc -eq 0 ]; then ok "lsp semanticTokens modifiers"; else bad "lsp semantic
 # exclusively of operator characters (lexer.scaly:326,:338 return
 # Token.Identifier from scan_operator). So the character class IS the
 # definition, and it is generated into grammar.is_op_char by
-# codegen/highlight-scaly.scm; the four WORD operators are the only exceptions
+# codegen/highlight.scm; the four WORD operators are the only exceptions
 # to it and the only ones that need a name test.
 #
 # Three ways this used to be wrong, all silent, all fixed 2026-08-11:

@@ -11,7 +11,7 @@
             (generate-parser)
         )
         (file "packages/scalyls/0.2.0/scalyls/grammar.scaly"
-            (generate-highlight-scaly)
+            (generate-highlight)
         )
         (file "editors/vscode/syntaxes/scaly.tmLanguage.json"
             (generate-textmate)
