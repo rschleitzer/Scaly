@@ -1,0 +1,31 @@
+; A bound tuple applied to a function is its argument list (2026-10-18,
+; ROADMAP-operation.md, Tuples; Planner.spread_tuple_argument#): `let args
+; (3, 4)`, then `add(args)` and `add args` are `add(3, 4)`; a labelled tuple
+; and a field holding one alike. A function declared over the tuple itself
+; takes it whole.
+; Expected: PASS
+define Holder (pair: (int, int))
+
+function add(a: int, b: int) returns int
+    a * 10 + b
+
+function tag(n: int, s: String) returns String
+    "`s`=`n`"
+
+function sum(p: (x: int, y: int)) returns int
+    p.x + p.y
+
+procedure run() returns bool
+{
+    let args (3, 4)
+    let parenless add args
+    let named (n: 5, s: "fuenf")
+    let h Holder((7, 8))
+    let m (x: 1, y: 2)
+    add(args) = 34 and parenless = 34 and tag(named).equals("fuenf=5") and add(h.pair) = 78 and sum(m) = 3
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

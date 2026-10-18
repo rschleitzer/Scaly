@@ -1,0 +1,12 @@
+; A tuple applied to a function is a bound one (2026-10-18,
+; Planner.spread_tuple_argument#): each component reads the tuple again, so a
+; computed one is bound first and evaluated once.
+; xfail: a tuple applied to a function is a bound one
+function add(a: int, b: int) returns int
+    a * 10 + b
+
+function make() returns (int, int)
+    (5, 6)
+
+let r add(make())
+print "`r`"

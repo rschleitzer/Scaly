@@ -14316,7 +14316,7 @@ define Planner
                 let second_ptr ops.get 1
                 if second_ptr <> null
                 {
-                    let second (*second_ptr)
+                    var second (*second_ptr)
                     var is_call: bool false
                     var fn_name: String ""
                     ; The call is a METHOD of a VALUE receiver (`b.tag(5)` with
@@ -14416,6 +14416,9 @@ define Planner
 
                         if is_variant_ctor
                             return this.collapse_variant(ops, result, second, ctor_union_type, ctor_variant_name, ctor_variant_tag)
+
+                        ; a bound tuple applied to a function: `f args`
+                        second := this.spread_tuple_argument(second, fn_name)
 
                         ; s90: collapse each tuple component's operand
                         ; sequence before reading result_type so binary
@@ -27207,6 +27210,133 @@ define Planner
                 }
                 else
                     return op
+        }
+
+        ; spread_tuple_argument#: a function applied to ONE bound tuple takes
+        ; its components as its arguments -- `let args (3, 4)`, then
+        ; `f(args)` is `f(3, 4)` (ROADMAP-operation.md, Tuples: a function
+        ; with one tuple parameter and the function with those parameters are
+        ; the same function). Only where no routine of that name takes one
+        ; parameter and one takes as many as the tuple has components, so a
+        ; function declared over the tuple itself (`sum(p: (int, int))`) gets
+        ; it whole; and only over a name or a field path, which each component
+        ; reads again -- a computed tuple is bound first, so that it is
+        ; evaluated once.
+        procedure spread_tuple_argument(mutable this: Planner, second: PlannedOperand, fn_name: String) returns PlannedOperand
+        {
+            choose second.expr
+                when tp: PlannedTuple
+                {
+                    if tp.components = null
+                        return second
+                    let comps (*tp.components)
+                    if comps.length <> 1
+                        return second
+                    let cp comps.get 0
+                    if cp = null or cp.name <> null or cp.value = null
+                        return second
+                    let vals (*cp.value)
+                    if vals.length <> 1
+                        return second
+                    let vp vals.get 0
+                    if vp = null
+                        return second
+                    let v (*vp)
+                    let tt v.result_type
+                    if tt.name <> "()" or tt.generics = null
+                        return second
+                    let count (*tt.generics).length
+                    if count < 2
+                        return second
+                    var bound false
+                    choose v.expr
+                        when pv: PlannedVariable
+                            bound := true
+                        else
+                            0
+                    if bound and v.member_access <> null
+                    {
+                        let hops (*v.member_access)
+                        var hi: size_t 0
+                        while hi < hops.length
+                        {
+                            let hp hops.get hi
+                            if hp <> null and (*hp).is_method
+                                bound := false
+                            hi := hi + 1
+                        }
+                    }
+                    ; the routines the name can mean: none of one parameter,
+                    ; one of `count`
+                    let candidates this.lookup_functions(fn_name)
+                    var takes_count false
+                    var ci: size_t 0
+                    while ci < candidates.length
+                    {
+                        let fp candidates.get ci
+                        if fp <> null
+                        {
+                            var arity: size_t 0
+                            var ii: size_t 0
+                            while ii < fp.input.length
+                            {
+                                let ip fp.input.get ii
+                                if ip <> null
+                                {
+                                    var is_this false
+                                    if ip.name <> null and (*ip.name) = "this"
+                                        is_this := true
+                                    if is_this = false
+                                        arity := arity + 1
+                                }
+                                ii := ii + 1
+                            }
+                            if arity = 1
+                                return second
+                            if arity = count
+                                takes_count := true
+                        }
+                        ci := ci + 1
+                    }
+                    if takes_count = false
+                        return second
+                    if bound = false
+                    {
+                        this.add_diagnostic(tp.loc, String^this("a tuple applied to a function is a bound one, so that it is evaluated once: let args <the tuple>, then f(args)"))
+                        return second
+                    }
+                    var built Array[PlannedComponent]()
+                    var k: size_t 0
+                    while k < count
+                    {
+                        let component_type Planner.tuple_component_type(tt, k)
+                        var hops_arr Array[PlannedMemberAccess]()
+                        if v.member_access <> null
+                        {
+                            let old_hops (*v.member_access)
+                            var oh: size_t 0
+                            while oh < old_hops.length
+                            {
+                                let ohp old_hops.get oh
+                                if ohp <> null
+                                    hops_arr.add((*ohp))
+                                oh := oh + 1
+                            }
+                        }
+                        hops_arr.add(PlannedMemberAccess(String("$`k`"), k, false, false, tt, component_type))
+                        var hops_vec Vector[PlannedMemberAccess](hops_arr)
+                        var one_arr Array[PlannedOperand]()
+                        one_arr.add(PlannedOperand(v.loc, v.expr, &hops_vec, component_type))
+                        var one_vec Vector[PlannedOperand](one_arr)
+                        built.add(PlannedComponent(cp.loc, null, &one_vec, cp.attributes))
+                        k := k + 1
+                    }
+                    var built_vec Vector[PlannedComponent](built)
+                    let spread PlannedTuple(tp.loc, &built_vec, Planner.make_void_type(), false, tp.life, tp.region_arg)
+                    return PlannedOperand(second.loc, PlannedExpression.Tuple spread, second.member_access, Planner.make_void_type())
+                }
+                else
+                    return second
         }
 
         procedure plan_matrix(mutable this: Planner, mutable m: Matrix) returns scalyc.compiler.Plan.PlannedMatrix
