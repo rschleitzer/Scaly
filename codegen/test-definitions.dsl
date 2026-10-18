@@ -1,5 +1,5 @@
 <!DOCTYPE STYLE-SHEET PUBLIC "-//James Clark//DTD DSSSL Style Sheet//EN" [
-<!ENTITY testcpp   SYSTEM "testcpp.scm">
+<!ENTITY testhelpers SYSTEM "testhelpers.scm">
 <!ENTITY testscaly SYSTEM "testscaly.scm">
 <!ENTITY testdoc   SYSTEM "testdoc.scm">
 <!ENTITY helpers   SYSTEM "helpers.scm">
@@ -11,16 +11,15 @@
 
 &fodeclare;
 &helpers;
-&testcpp;
+&testhelpers;
 &testscaly;
 &testdoc;
 
 <![CDATA[
 (element suite
     (sosofo-append
-        ; C++ DefinitionTests.{h,cpp} retired from --test (s198): the literate
-        ; suite now runs through the self-hosted in-process JIT via
-        ; tests/selfhosted/run.sh (generate-selfhosted-tests below).
+        ; the literate suite runs through the self-hosted in-process JIT
+        ; (tests/selfhosted/run.sh, generate-selfhosted-tests below)
         (file "docs/scaly/generated-definitions.xml"
             (generate-testdoc)
         )

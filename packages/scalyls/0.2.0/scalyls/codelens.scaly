@@ -6,7 +6,7 @@
 ; families HERE need no plan at all — a path table, one parse, and a length
 ; check — which is why they answer on a buffer the planner could not touch:
 ;
-;   GENERATED FILE   "generated from codegen/parser-scaly.scm - edit the
+;   GENERATED FILE   "generated from codegen/parser.scm - edit the
 ;                    generator, then ./mkp" at the top of every file ./mkp
 ;                    writes. The rule it states is one this repo breaks often
 ;                    enough; a lens states it where
@@ -306,11 +306,11 @@ define codelens
         ; The three compiler-side DSSSL outputs (mkp's `gen codegen/scaly.dsl`).
         let root1 codelens.strip_versioned(path, "scalyc", "/scalyc/compiler/parser.scaly")
         if root1.get_length() > 0
-            return codelens.banner_lens(text, root1, "codegen/parser-scaly.scm")
+            return codelens.banner_lens(text, root1, "codegen/parser.scm")
 
         let root2 codelens.strip_versioned(path, "scalyc", "/scalyc/compiler/Syntax.scaly")
         if root2.get_length() > 0
-            return codelens.banner_lens(text, root2, "codegen/syntax-scaly.scm")
+            return codelens.banner_lens(text, root2, "codegen/syntax.scm")
 
         let root3 codelens.strip_versioned(path, "scalyls", "/scalyls/grammar.scaly")
         if root3.get_length() > 0

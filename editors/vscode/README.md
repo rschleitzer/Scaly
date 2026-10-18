@@ -58,7 +58,7 @@ What you get:
   - **Run** — `Run (scalyc --jit)` at the top of any file that has top-level
     statements, i.e. a program rather than a library. Runs it in a terminal
     through the in-process JIT; nothing is written to disk.
-  - **Generated file** — `generated from codegen/parser-scaly.scm - edit the
+  - **Generated file** — `generated from codegen/parser.scm - edit the
     generator, then ./mkp` at the top of every file `./mkp` writes, with a click
     that opens the generator. The list mirrors `mkp` itself.
   - **Package / module resolution** — the file a `package NAME VERSION` or

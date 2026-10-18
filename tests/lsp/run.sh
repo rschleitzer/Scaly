@@ -3070,7 +3070,7 @@ bg_add $! "lsp package-root diagnostics" "$BGDIR/lsp_package_root_diagnostics.ou
 #
 #   * the outermost `define` body at column 0, still in parser.scaly, hashing
 #     and StringIterator. parser.scaly is GENERATED (byte-exact output of
-#     codegen/parser-scaly.scm), so reformatting it would be undone by ./mkp and
+#     codegen/parser.scm), so reformatting it would be undone by ./mkp and
 #     would break the codegen byte-identity gate -- it can only change by
 #     changing the generator.
 #   * chained single-condition `if`s written at one indent (Planner).
@@ -5514,8 +5514,8 @@ def rows(ls):   # (1-based line, title, command id, single argument or None)
 # The table in codelens.scaly mirrors ./mkp; these are three of mkp's four
 # output classes, and the fourth (docs/*.xml) is not a .scaly file.
 gen_cases = [
-    ("packages/scalyc/0.2.0/scalyc/compiler/parser.scaly", "codegen/parser-scaly.scm"),
-    ("packages/scalyc/0.2.0/scalyc/compiler/Syntax.scaly", "codegen/syntax-scaly.scm"),
+    ("packages/scalyc/0.2.0/scalyc/compiler/parser.scaly", "codegen/parser.scm"),
+    ("packages/scalyc/0.2.0/scalyc/compiler/Syntax.scaly", "codegen/syntax.scm"),
     ("packages/scalyls/0.2.0/scalyls/grammar.scaly",       "codegen/highlight-scaly.scm"),
     ("tests/selfhosted/controlflow__break-in-for.scaly",   "tests/controlflow.sgm"),
 ]
@@ -5579,7 +5579,7 @@ for w in wrong[:5]: print("      ", w)
 # missing-module claim at all — and it is the lens that made that true: it reported
 # a dead `module lexer` inside the generated parser.scaly (resolving to
 # compiler/parser/lexer.scaly, which never existed, silently stubbed by the
-# Modeler), and codegen/parser-scaly.scm stopped emitting it. So "claims are true"
+# Modeler), and codegen/parser.scm stopped emitting it. So "claims are true"
 # is proved on the OTHER outcome by the fixture group below, which declares a
 # module with no file on purpose; asserting a wart here would pin the tree to it.
 check(missing == 0, "no module of this tree fails to resolve (%d)" % missing)
