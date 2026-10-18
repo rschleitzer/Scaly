@@ -14424,7 +14424,7 @@ define Planner
                             return this.collapse_variant(ops, result, second, ctor_union_type, ctor_variant_name, ctor_variant_tag)
 
                         ; a bound tuple applied to a function: `f args`
-                        second := this.spread_tuple_argument(second, fn_name)
+                        second := this.spread_tuple_argument(second, fn_name, result)
 
                         ; s90: collapse each tuple component's operand
                         ; sequence before reading result_type so binary
@@ -27230,8 +27230,9 @@ define Planner
         ; function declared over the tuple itself (`sum(p: (int, int))`) gets
         ; it whole; and only over a name or a field path, which each component
         ; reads again -- a computed tuple is bound first, so that it is
-        ; evaluated once.
-        procedure spread_tuple_argument(mutable this: Planner, second: PlannedOperand, fn_name: String) returns PlannedOperand
+        ; evaluated once. A method spreads alike (`c.add(args)`), its
+        ; receiver no part of the tuple.
+        procedure spread_tuple_argument(mutable this: Planner, second: PlannedOperand, fn_name: String, head: PlannedOperand) returns PlannedOperand
         {
             choose second.expr
                 when tp: PlannedTuple
@@ -27276,8 +27277,19 @@ define Planner
                         }
                     }
                     ; the routines the name can mean: none of one parameter,
-                    ; one of `count`
-                    let candidates this.lookup_functions(fn_name)
+                    ; one of `count` -- a method's of the receiver's type (the
+                    ; method hop's parent), a free routine's otherwise
+                    var candidates this.lookup_functions(fn_name)
+                    if head.member_access <> null
+                    {
+                        let head_hops (*head.member_access)
+                        if head_hops.length > 0
+                        {
+                            let lp head_hops.get(head_hops.length - 1)
+                            if lp <> null and (*lp).is_method
+                                candidates := this.lookup_methods((*lp).parent_type.name, fn_name)
+                        }
+                    }
                     var takes_count false
                     var ci: size_t 0
                     while ci < candidates.length
