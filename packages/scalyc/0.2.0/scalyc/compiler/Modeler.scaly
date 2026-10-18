@@ -1269,14 +1269,21 @@ define Modeler
             }
             when let_syntax: LetSyntax
             {
-                let item handle_binding_item(let_syntax.binding)
-                let operation handle_operands(let_syntax.binding.operation)
-                Binding(
-                    Span(let_syntax.start, let_syntax.end),
-                    "const",
-                    item,
-                    operation
-                )
+                choose let_syntax.binding
+                    when named: BindingSyntax
+                    {
+                        let item handle_binding_item(named)
+                        let operation handle_operands(named.operation)
+                        return Binding(
+                            Span(let_syntax.start, let_syntax.end),
+                            "const",
+                            item,
+                            operation
+                        )
+                    }
+                    when parts: DecompositionSyntax
+                        refuse_decomposition()
+                Binding(Span(0, 0), "const", Item(Span(0, 0), false, null, null, Vector[Attribute](0)), Vector[Operand](0))
             }
             else
                 Binding(Span(0, 0), "const", Item(Span(0, 0), false, null, null, Vector[Attribute](0)), Vector[Operand](0))
@@ -1476,33 +1483,79 @@ define Modeler
         )
     }
 
+    ; a `let`/`var` with one name; a decomposition stands only in a statement
+    ; list (handle_statements#), where it becomes several bindings
+    procedure handle_let_binding(mutable syntax: LetBindingSyntax, kind: String, span: Span) returns Statement mutable modeler_error_count
+    {
+        choose syntax
+            when named: BindingSyntax
+            {
+                let item handle_binding_item(named)
+                let operation handle_operands(named.operation)
+                return Statement.Binding(Binding(span, kind, item, operation))
+            }
+            when parts: DecompositionSyntax
+                refuse_decomposition()
+        Statement.Action(Action(Vector[Operand](0), Vector[Operand](0)))
+    }
+
+    procedure refuse_decomposition() mutable modeler_error_count
+        report_load_error(String("error: a decomposition like 'let (a, b) t' binds names for the statements after it - it stands in a block, not as a condition or a braceless body"))
+
+    ; decomposition_statements: `let (a, b) t` binds the tuple once, under a
+    ; name no source can write that carries the number of names (the planner
+    ; checks it, Planner.report_decomposition#), and then each name to its component by
+    ; POSITION -- the member `$0`, `$1`, ..., which only a tuple answers
+    ; (Planner.tuple_label_index#) and no source can spell either: a
+    ; component without a label is reached by decomposition alone
+    ; (ROADMAP-operation.md, Tuples).
+    procedure decomposition_statements(mutable d: DecompositionSyntax, kind: String) returns Vector[Statement] mutable modeler_error_count
+    {
+        let span Span(d.start, d.end)
+        let operation handle_operands(d.operation)
+        var count: size_t 0
+        if d.names <> null
+            count := (*d.names).length
+        var hidden_holder Vector[String](1)
+        hidden_holder.put(0, String("decomposed$`num_to_string(d.start)`$`num_to_string(count)`"))
+        let hidden_ref hidden_holder.get 0
+        var out Vector[Statement](1 + count)
+        out.put(0, Statement.Binding(Binding(span, "const", Item(span, false, hidden_ref, null, Vector[Attribute](0)), operation)))
+        if d.names <> null
+        {
+            let names (*d.names)
+            var i: size_t 0
+            while i < names.length
+            {
+                let np names.get i
+                if np <> null
+                {
+                    let n (*np)
+                    let nspan Span(n.start, n.end)
+                    var path Vector[String](2)
+                    path.put(0, String("decomposed$`num_to_string(d.start)`$`num_to_string(count)`"))
+                    path.put(1, String("$`num_to_string(i)`"))
+                    var ops Vector[Operand](1)
+                    ops.put(0, Operand(nspan, Expression.Type(Type(nspan, path, null, Lifetime.Unspecified(Unspecified()))), null))
+                    var name_holder Vector[String](1)
+                    name_holder.put(0, String(n.name))
+                    out.put(1 + i, Statement.Binding(Binding(nspan, kind, Item(nspan, false, name_holder.get 0, null, Vector[Attribute](0)), ops)))
+                }
+                i := i + 1
+            }
+        }
+        out
+    }
+
     procedure handle_command(mutable syntax: StatementSyntax) returns Statement mutable modeler_error_count
     {
         choose syntax
             when op: OperationSyntax
                 Statement.Action(operation_action(op))
             when let_syntax: LetSyntax
-            {
-                let item handle_binding_item(let_syntax.binding)
-                let operation handle_operands(let_syntax.binding.operation)
-                Statement.Binding(Binding(
-                    Span(let_syntax.start, let_syntax.end),
-                    "const",
-                    item,
-                    operation
-                ))
-            }
+                handle_let_binding(let_syntax.binding, "const", Span(let_syntax.start, let_syntax.end))
             when var_syntax: VarSyntax
-            {
-                let item handle_binding_item(var_syntax.binding)
-                let operation handle_operands(var_syntax.binding.operation)
-                Statement.Binding(Binding(
-                    Span(var_syntax.start, var_syntax.end),
-                    "var",
-                    item,
-                    operation
-                ))
-            }
+                handle_let_binding(var_syntax.binding, "var", Span(var_syntax.start, var_syntax.end))
             when mut_syntax: MutableSyntax
             {
                 let item handle_binding_item(mut_syntax.binding)
@@ -1546,6 +1599,27 @@ define Modeler
     procedure handle_statement(mutable syntax: StatementSyntax) returns Statement mutable modeler_error_count
         handle_command(syntax)
 
+    ; a `let`/`var` of a statement list: one binding, or those of a
+    ; decomposition
+    procedure add_let_statements(mutable result: ref[Array[Statement]], mutable binding: LetBindingSyntax, kind: String, mutable syntax: StatementSyntax) mutable modeler_error_count
+    {
+        choose binding
+            when parts: DecompositionSyntax
+            {
+                let stmts decomposition_statements(parts, kind)
+                var i: size_t 0
+                while i < stmts.length
+                {
+                    let sp stmts.get i
+                    if sp <> null
+                        result.add((*sp))
+                    i := i + 1
+                }
+            }
+            else
+                result.add(handle_statement(syntax))
+    }
+
     procedure handle_statements(mutable syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement] mutable modeler_error_count
     {
         if syntax = null
@@ -1569,6 +1643,10 @@ define Modeler
                 let stmt_syntax (*stmt_ptr)
                 choose stmt_syntax
                     when e: EmptySyntax {}
+                    when let_syntax: LetSyntax
+                        add_let_statements(&result, let_syntax.binding, "const", stmt_syntax)
+                    when var_syntax: VarSyntax
+                        add_let_statements(&result, var_syntax.binding, "var", stmt_syntax)
                     when op: OperationSyntax
                     {
                         var did_split: bool false

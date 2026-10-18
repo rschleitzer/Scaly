@@ -29861,6 +29861,52 @@ define Planner
             ops
         }
 
+        ; report_decomposition#: `let (a, b) t` names one component each, so t
+        ; is a tuple of exactly as many. The Modeler binds t under
+        ; `decomposed$<offset>$<names>` (decomposition_statements); without the
+        ; check one name too many died in the emitter without a location, one
+        ; too few or a value that is no tuple bound garbage at rc 0.
+        procedure report_decomposition(mutable this: Planner, name: String, t: PlannedType, at: Span)
+        {
+            if name.starts_with("decomposed$") = false
+                return
+            var names: size_t 0
+            var seen_dollar false
+            var i: size_t 11
+            while i < name.get_length()
+            {
+                let c name.get i
+                if seen_dollar
+                    names := names * 10 + (c - ("0" as char)) as size_t
+                if c = ("$" as char)
+                    seen_dollar := true
+                i := i + 1
+            }
+            var components: size_t 0
+            if t.name = "()" and t.generics <> null
+                components := (*t.generics).length
+            if t.name = "()" and components = names
+                return
+            var sb StringBuilder()
+            sb.append "a decomposition names "
+            sb.append(names as int)
+            if names = 1
+                sb.append " component"
+            else
+                sb.append " components"
+            if t.name = "()"
+            {
+                sb.append ", and the tuple has "
+                sb.append(components as int)
+                sb.append ": "
+            }
+            else
+                sb.append " of a value that is no tuple: "
+            sb.append(Planner.get_readable_name(t))
+            let msg sb.to_string()
+            this.add_diagnostic(at, String^this(msg))
+        }
+
         procedure plan_binding(mutable this: Planner, mutable b: Binding) returns PlannedBinding
         {
             ; Names starting with `_` are reserved for compiler internals —
@@ -30477,6 +30523,7 @@ define Planner
             if planned_item.name <> null
             {
                 let n (*planned_item.name)
+                this.report_decomposition(n, binding_type, b.span)
                 var scope_type binding_type
                 if is_stack_array_decl = false
                     if this.operand_holds_local_ref(collapsed)
@@ -59035,7 +59082,27 @@ define Planner
     ; wanted names, -1 where t is no tuple or no component carries it
     function tuple_label_index(t: PlannedType, wanted: String) returns int
     {
-        if t.name <> "()" or t.labels = null
+        if t.name <> "()"
+            return 0 - 1
+        ; `$i`, the component at position i -- what a decomposition reads
+        ; (Modeler.decomposition_statements); no source can spell it
+        if wanted.get_length() > 1 and wanted.get(0) = ("$" as char)
+        {
+            var index: size_t 0
+            var di: size_t 1
+            while di < wanted.get_length()
+            {
+                let digit wanted.get di
+                if digit < ("0" as char) or digit > ("9" as char)
+                    return 0 - 1
+                index := index * 10 + (digit - ("0" as char)) as size_t
+                di := di + 1
+            }
+            if t.generics = null or index >= (*t.generics).length
+                return 0 - 1
+            return index as int
+        }
+        if t.labels = null
             return 0 - 1
         let labels (*t.labels)
         var i: size_t 0

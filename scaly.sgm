@@ -435,11 +435,25 @@
 
 <syntax id = Let
     <content link = let
-    <content link = Binding                                 property = binding
+    <content link = LetBinding                              property = binding
 
 <syntax id = Var
     <content link = var
-    <content link = Binding                                 property = binding
+    <content link = LetBinding                              property = binding
+
+<syntax id = LetBinding                            abstract
+    <content link = Binding
+    <content link = Decomposition
+
+<syntax id = Decomposition
+    <content link = left_paren
+    <content link = DecomposedName        multiple optional property = names
+    <content link = right_paren
+    <content link = Operand               multiple optional property = operation
+
+<syntax id = DecomposedName               multiple
+    <content identifier                                     property = name
+    <content link = comma                          optional
 
 <syntax id = Mutable
     <content link = mutable

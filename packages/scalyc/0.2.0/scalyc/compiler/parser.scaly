@@ -3805,13 +3805,13 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let binding_start lexer.position
-        var binding: BindingSyntax
-        choose parse_binding()
+        var binding: LetBindingSyntax
+        choose parse_letbinding()
             when err: Error
             {
                 choose err
                     when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(binding_start, lexer.position, "expected Binding"))
+                        throw ParserError.Invalid(InvalidSyntax(binding_start, lexer.position, "expected LetBinding"))
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
@@ -3831,13 +3831,13 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let binding_start lexer.position
-        var binding: BindingSyntax
-        choose parse_binding()
+        var binding: LetBindingSyntax
+        choose parse_letbinding()
             when err: Error
             {
                 choose err
                     when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(binding_start, lexer.position, "expected Binding"))
+                        throw ParserError.Invalid(InvalidSyntax(binding_start, lexer.position, "expected LetBinding"))
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
@@ -3847,6 +3847,116 @@ define Parser
         let end lexer.position
 
         VarSyntax(start, end, binding)
+    }
+
+    procedure parse_letbinding(mutable this: Parser) returns LetBindingSyntax throws ParserError
+    {
+        choose parse_binding()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return LetBindingSyntax.Binding(node)
+        choose parse_decomposition()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return LetBindingSyntax.Decomposition(node)
+        throw ParserError.Different(DifferentSyntax())
+    }
+
+    procedure parse_decomposition(mutable this: Parser) returns DecompositionSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_punctuation("(")
+            throw ParserError.Different(DifferentSyntax())
+
+        let names_start lexer.position
+        var names: ref[Vector[DecomposedNameSyntax]]? null
+        choose parse_decomposedname_list()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                names := success
+
+        if ~lexer.parse_punctuation(")")
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
+
+        let operation_start lexer.position
+        var operation: ref[Vector[OperandSyntax]]? null
+        choose parse_operand_list()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                operation := success
+
+        let end lexer.position
+
+        DecompositionSyntax(start, end, names, operation)
+    }
+
+    procedure parse_decomposedname_list(mutable this: Parser) returns ref[Vector[DecomposedNameSyntax]]? throws ParserError
+    {
+        var acc List[DecomposedNameSyntax]()
+        var parsing: bool true
+        while parsing
+        {
+            choose parse_decomposedname()
+                when err: Error
+                {
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            if acc.head = null
+                                throw err
+                            parsing := false
+                        }
+                }
+                when node: Success
+                    acc.add(node)
+        }
+        Vector[DecomposedNameSyntax](acc)
+    }
+
+    procedure parse_decomposedname(mutable this: Parser) returns DecomposedNameSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        let name lexer.parse_identifier(keywords)
+        if name.length() = 0
+            throw ParserError.Different(DifferentSyntax())
+
+        lexer.parse_punctuation(",")
+
+        let end lexer.position
+
+        DecomposedNameSyntax(start, end, name)
     }
 
     procedure parse_mutable(mutable this: Parser) returns MutableSyntax throws ParserError

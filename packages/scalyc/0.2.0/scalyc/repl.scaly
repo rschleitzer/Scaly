@@ -209,6 +209,17 @@ define repl
 
     ; braces, parentheses and brackets a line opens minus those it closes,
     ; outside strings and comments
+    ; the name a `let`/`var` binds; a decomposition binds several and is
+    ; named by none
+    function let_binding_name(binding: LetBindingSyntax) returns String
+    {
+        choose binding
+            when named: BindingSyntax
+                return named.name
+            else
+                return ""
+    }
+
     function open_count(line: String) returns int
     {
         var d 0
@@ -472,9 +483,9 @@ define repl
                 when o: OperationSyntax
                     out.add(ReplStatement(o.start, o.end, String(), o.becomes = null))
                 when l: LetSyntax
-                    out.add(ReplStatement(l.start, l.end, String(l.binding.name), false))
+                    out.add(ReplStatement(l.start, l.end, String(repl.let_binding_name(l.binding)), false))
                 when v: VarSyntax
-                    out.add(ReplStatement(v.start, v.end, String(v.binding.name), false))
+                    out.add(ReplStatement(v.start, v.end, String(repl.let_binding_name(v.binding)), false))
                 when m: MutableSyntax
                     out.add(ReplStatement(m.start, m.end, String(), false))
                 when c: ContinueSyntax

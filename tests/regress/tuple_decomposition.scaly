@@ -1,0 +1,30 @@
+; A tuple's unlabelled components are reached by DECOMPOSITION (2026-10-18,
+; ROADMAP-operation.md, Tuples): `let (a, b) t` binds the tuple once and each
+; name to its component by position (Modeler.decomposition_statements), `var`
+; alike; a function hands back several results as one tuple.
+; Expected: PASS
+function divmod(a: int, b: int) returns (int, int)
+    (a / b, a % b)
+
+function pair_of(n: int) returns (int, String)
+    (n, "zahl `n`")
+
+procedure inner() returns int
+{
+    let (a, b) divmod(100, 7)
+    a * 100 + b
+}
+
+procedure run() returns bool
+{
+    let (q, r) divmod(17, 5)
+    let (n, s) pair_of(9)
+    var (x, y) (1, 2)
+    x := x + 10
+    q = 3 and r = 2 and n = 9 and s.equals("zahl 9") and x = 11 and y = 2 and inner() = 1402
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

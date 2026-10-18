@@ -352,18 +352,38 @@ define MutableSyntax
     linked_mark: ref[LinkedSyntax]?
 )
 
+define DecomposedNameSyntax
+(
+    start: size_t
+    end: size_t
+    name: String
+)
+
+define DecompositionSyntax
+(
+    start: size_t
+    end: size_t
+    names: ref[Vector[DecomposedNameSyntax]]?
+    operation: ref[Vector[OperandSyntax]]?
+)
+
+define LetBindingSyntax union (
+    Binding: BindingSyntax
+    Decomposition: DecompositionSyntax
+)
+
 define VarSyntax
 (
     start: size_t
     end: size_t
-    binding: BindingSyntax
+    binding: LetBindingSyntax
 )
 
 define LetSyntax
 (
     start: size_t
     end: size_t
-    binding: BindingSyntax
+    binding: LetBindingSyntax
 )
 
 define StatementSyntax union (

@@ -1,0 +1,10 @@
+; A decomposition names one component each, so the value is a tuple of
+; exactly as many (2026-10-18, Planner.report_decomposition#): one name too
+; many died in the emitter without a location, one too few or a value that is
+; no tuple bound garbage at rc 0.
+; xfail: a decomposition names 1 component, and the tuple has 2: (int, int)
+function divmod(a: int, b: int) returns (int, int)
+    (a / b, a % b)
+
+let (a) divmod(17, 5)
+print "`a`"
