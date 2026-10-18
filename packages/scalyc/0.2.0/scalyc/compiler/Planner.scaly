@@ -1511,9 +1511,9 @@ define Planner
             address_taken_locals := Array[String]^this()
             field_written_locals := Array[String]^this()
             pending_mode := 0
-            operation_counts := Vector[size_t]^this(72)
+            operation_counts := Vector[size_t]^this(80)
             var oc_i: size_t 0
-            while oc_i < 72
+            while oc_i < 80
             {
                 operation_counts.put(oc_i, 0)
                 oc_i := oc_i + 1
@@ -15453,6 +15453,8 @@ define Planner
                 case 3: return arm = 1 or arm = 6
                 case 5: return arm = 3 or arm = 5
                 case 6: return arm = 6
+                case 7: return arm = 6
+                case 8: return false
             true
         }
 
@@ -27944,6 +27946,14 @@ define Planner
                 this.operation_census_line("driver-tuple-after-unknown-gives-tuple", 68)
                 this.operation_census_line("driver-tuple-after-unknown-gives-variant", 69)
                 this.operation_census_line("driver-tuple-after-unknown-gives-else", 70)
+                this.operation_census_line("driver-tuple-after-sibling-gives-call", 72)
+                this.operation_census_line("driver-tuple-after-sibling-gives-tuple", 73)
+                this.operation_census_line("driver-tuple-after-sibling-gives-variant", 74)
+                this.operation_census_line("driver-tuple-after-sibling-gives-else", 75)
+                this.operation_census_line("driver-tuple-after-sibling-static-gives-call", 76)
+                this.operation_census_line("driver-tuple-after-sibling-static-gives-tuple", 77)
+                this.operation_census_line("driver-tuple-after-sibling-static-gives-variant", 78)
+                this.operation_census_line("driver-tuple-after-sibling-static-gives-else", 79)
             }
         }
 
@@ -28014,7 +28024,10 @@ define Planner
         ; the rule reads the current value's type, the old collapse the
         ; operand's shape: 1 a method on a chain, 2 a value (a local, a
         ; field, a call's result), 3 a function, 4 a type, 5 a qualified name
-        ; (`Owner.member`), 6 a bare name that is none of these here.
+        ; (`Owner.member`), 6 a bare name that is none of these here, 7 a
+        ; sibling of `this` (`read_character()` in a method), 8 a sibling of
+        ; the enclosing structure (`bit(...)` in a static) --
+        ; operation_sibling#.
         function operation_name(this: Planner, op: PlannedOperand) returns size_t
         {
             if op.member_access <> null
@@ -28038,6 +28051,10 @@ define Planner
                         return 3
                     if this.lookup_concept_any(ty.name) <> null
                         return 4
+                    ; a SIMD vector type is a primitive name, no concept
+                    ; (`u8x16(48, 32, ...)`)
+                    if Planner.is_simd_type_name(ty.name)
+                        return 4
                     ; a qualified name: a static, a namespace's function, a
                     ; union's variant
                     var d: size_t 0
@@ -28047,11 +28064,45 @@ define Planner
                             return 5
                         d := d + 1
                     }
+                    let sibling this.operation_sibling(ty.name)
+                    if sibling > 0
+                        return sibling
                     return 6
                 }
                 else
                     return 2
             6
+        }
+
+        ; A bare name inside a concept, by its declarations alone: 7 when the
+        ; concept of `this` declares a routine of that name (the sibling arm,
+        ; call_arm_sibling#, looks it up there), 8 when the enclosing
+        ; structure does (the sibling static, resolve_static_method_on#), 0
+        ; neither.
+        function operation_sibling(this: Planner, name: String) returns size_t
+        {
+            let this_ref this.lookup_local("this")
+            if this_ref <> null
+            {
+                let this_ty (*this_ref)
+                if Planner.is_this_wrapper_name(this_ty.name) and this_ty.generics <> null
+                {
+                    let gens (*this_ty.generics)
+                    if gens.length > 0
+                    {
+                        let owner this.lookup_concept_any(gens[0].name)
+                        if owner <> null and this.concept_has_member((*owner), name)
+                            return 7
+                    }
+                }
+            }
+            if current_structure_name <> null
+            {
+                let owner this.lookup_concept_any((*current_structure_name))
+                if owner <> null and this.concept_has_member((*owner), name)
+                    return 8
+            }
+            0
         }
 
         ; ... and what the machinery made of it: a call, a tuple (the
@@ -28070,7 +28121,12 @@ define Planner
                     what := 2
                 else
                     0
-            this.operation_count(47 + (named - 1) * 4 + what)
+            ; slots 47 to 70 for the kinds 1 to 6, 72 to 79 for 7 and 8 (71
+            ; is the driver's own construction or variant)
+            if named <= 6
+                this.operation_count(47 + (named - 1) * 4 + what)
+            else
+                this.operation_count(72 + (named - 7) * 4 + what)
             ; the places the name lookup does not explain, for reading
             if (named = 6 or named = 2) and this.operation_census_on()
             {
