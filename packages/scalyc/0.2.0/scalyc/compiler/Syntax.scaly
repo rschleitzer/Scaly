@@ -77,11 +77,31 @@ define NameSyntax
     extensions: ref[Vector[ExtensionSyntax]]?
 )
 
+define TupleTypeComponentSyntax
+(
+    start: size_t
+    end: size_t
+    type: TypeSyntax
+    annotation: ref[TypeAnnotationSyntax]?
+)
+
+define TupleTypeSyntax
+(
+    start: size_t
+    end: size_t
+    components: ref[Vector[TupleTypeComponentSyntax]]?
+)
+
+define TypeNameSyntax union (
+    Name: NameSyntax
+    TupleType: TupleTypeSyntax
+)
+
 define TypeSyntax
 (
     start: size_t
     end: size_t
-    name: NameSyntax
+    name: TypeNameSyntax
     generics: ref[GenericArgumentsSyntax]?
     optional: ref[OptionalSyntax]?
     lifetime: ref[LifetimeSyntax]?
@@ -289,7 +309,6 @@ define ArraySyntax
 )
 
 define BindingSpecSyntax union (
-    Structure: StructureSyntax
     Type: TypeSyntax
     Array: ArraySyntax
 )

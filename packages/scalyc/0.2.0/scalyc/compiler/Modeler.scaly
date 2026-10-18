@@ -233,19 +233,102 @@ define Modeler
 
     function handle_type(syntax: TypeSyntax) returns ref[Type]?
     {
+        choose syntax.name
+            when tuple: TupleTypeSyntax
+                return handle_tuple_type(syntax, tuple)
+            when name: NameSyntax
+                return handle_named_type(syntax, name)
+    }
+
+    ; type_head_name: the identifier a type is written with -- a definition's
+    ; generic parameter (`define Box[T]`) is one; a tuple type answers `()`
+    function type_head_name(syntax: TypeSyntax) returns String
+    {
+        choose syntax.name
+            when name: NameSyntax
+                return String(name.name)
+            else
+                return String("()")
+    }
+
+    ; handle_tuple_type: `(int, String)` is the type `()` with the component
+    ; types as its generic arguments (ROADMAP-operation.md, Tuples). A label
+    ; (`(x: int, y: int)`) is no part of the type: the labels follow the
+    ; name `()` as further path segments, "" for a component without one,
+    ; and only where one has a label (Planner.plan_type# reads them).
+    function handle_tuple_type(syntax: TypeSyntax, tuple: TupleTypeSyntax) returns ref[Type]?
+    {
+        var count: size_t 0
+        if tuple.components <> null
+            count := (*tuple.components).length
+        var labelled false
+        var types Vector[Type](count)
+        var labels Vector[String](count)
+        if tuple.components <> null
+        {
+            let comps (*tuple.components)
+            var i: size_t 0
+            while i < comps.length
+            {
+                let cp comps.get i
+                if cp <> null
+                {
+                    let c (*cp)
+                    ; `x: int`: the type before the annotation is the label
+                    var component_syntax c.type
+                    labels.put(i, String())
+                    if c.annotation <> null
+                    {
+                        choose c.type.name
+                            when label_name: NameSyntax
+                                labels.put(i, String(label_name.name))
+                            else {}
+                        labelled := true
+                        component_syntax := (*c.annotation).type
+                    }
+                    let component handle_type(component_syntax)
+                    if component <> null
+                        types.put(i, *component)
+                }
+                i := i + 1
+            }
+        }
+        var path_length: size_t 1
+        if labelled
+            path_length := 1 + count
+        var path Vector[String](path_length)
+        path.put(0, "()")
+        if labelled
+        {
+            var li: size_t 0
+            while li < count
+            {
+                let lp labels.get li
+                if lp <> null
+                    path.put(1 + li, String((*lp)))
+                li := li + 1
+            }
+        }
+        var gens_holder Vector[Vector[Type]](1)
+        gens_holder.put(0, types)
+        handle_optional_type(syntax, path, gens_holder.get(0))
+    }
+
+    function handle_named_type(syntax: TypeSyntax, name: NameSyntax) returns ref[Type]?
+    {
         ; Count extensions to determine path size
         var ext_count: size_t 0
-        if syntax.name.extensions <> null
-            ext_count := (*syntax.name.extensions).length
+        if name.extensions <> null
+            ext_count := (*name.extensions).length
 
         ; Create path with correct size
         var path Vector[String](1 + ext_count)
-        path.put(0, syntax.name.name)
+        path.put(0, name.name)
 
         ; Add extensions
-        if syntax.name.extensions <> null
+        if name.extensions <> null
         {
-            let exts (*syntax.name.extensions)
+            let exts (*name.extensions)
             var i: size_t 0
             while i < exts.length
             {
@@ -287,6 +370,13 @@ define Modeler
             }
         }
 
+        handle_optional_type(syntax, path, generics)
+    }
+
+    ; the type of syntax built from its path and generics, wrapped in an
+    ; Option where the syntax ends in `?`
+    function handle_optional_type(syntax: TypeSyntax, path: Vector[String], generics: ref[Vector[Type]]?) returns ref[Type]?
+    {
         let life handle_lifetime syntax.lifetime
         let base_type Type(Span(syntax.start, syntax.end), path, generics, life)
 
@@ -1950,7 +2040,7 @@ define Modeler
                                 let ga (*ga_ptr)
                                 gp_arr.put(gi, GenericParameter(
                                     Span(ga.start, ga.end),
-                                    ga.type.name.name,
+                                    type_head_name(ga.type),
                                     Vector[Attribute](0)
                                 ))
                             }
@@ -2127,7 +2217,7 @@ define Modeler
                                 let ga (*ga_ptr)
                                 gp_arr.put(gi, GenericParameter(
                                     Span(ga.start, ga.end),
-                                    ga.type.name.name,
+                                    type_head_name(ga.type),
                                     Vector[Attribute](0)
                                 ))
                             }

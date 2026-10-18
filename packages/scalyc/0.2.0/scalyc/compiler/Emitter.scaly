@@ -3475,6 +3475,28 @@ define Emitter
                 return ptr_type
             }
 
+            ; A tuple type (Planner.tuple_type#) is the literal struct of its
+            ; components, the struct emit_tuple builds for a tuple value.
+            if planned_type.name = "()" and planned_type.generics <> null
+            {
+                let tgens (*planned_type.generics)
+                if tgens.length > 0
+                {
+                    var telems Array[LLVMTypeRef]()
+                    var ti: size_t 0
+                    while ti < tgens.length
+                    {
+                        let tgp tgens.get ti
+                        if tgp <> null
+                            telems.add(this.map_type((*tgp)))
+                        ti := ti + 1
+                    }
+                    let tuple_struct LLVMStructTypeInContext(context, telems.get_buffer(), telems.length as u32, 0)
+                    cache_type(planned_type.mangled_name, tuple_struct)
+                    return tuple_struct
+                }
+            }
+
             if id_probe
                 this.identity_probe(planned_type)
 
@@ -15263,6 +15285,10 @@ define Emitter
                 return null
             ; Get or create struct type
             var struct_type lookup_struct_cache tuple.tuple_type.mangled_name
+            ; a tuple VALUE (Planner.tuple_value#) has its type: a record
+            ; component is held by value there, as in a record
+            if struct_type = null and tuple.tuple_type.name = "()"
+                struct_type := map_type(tuple.tuple_type)
             if struct_type = null
             {
                 ; Create anonymous struct type

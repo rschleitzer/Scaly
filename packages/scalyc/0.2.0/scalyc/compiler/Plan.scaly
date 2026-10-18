@@ -41,7 +41,7 @@ define PlannedType
     mangled_name: String             ; Itanium: "_Z4ListIiE"
     generics: ref[Vector[PlannedType]]?   ; Resolved generic args (if any)
     life: Lifetime
-    origin: ref[InstantiationInfo]?  ; null if not from generic
+    labels: ref[Vector[String]]?     ; a tuple type: its components' labels ("" where none)
     ; For fixed-size array types: stores the size reference
     array_size: String
     ; For inference: may contain unresolved type variables

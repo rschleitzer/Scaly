@@ -5847,15 +5847,16 @@ os.makedirs(ws)
 # Every state the family can answer, and the two spellings for each.
 # `pair` / `spair` are the case that makes the condition more than a colon
 # test: the colon IS there and the global is still dropped, because a
-# BindingSpec has a Structure arm and only the Type arm models to a type.
+# BindingSpec has an Array arm and only the Type arm models to a type (a
+# parenthesised spec is a tuple TYPE since 2026-10-18).
 src = ("mutable counter: int 7\n"                    # 1  thread-local
        "shared table: pointer[void] null\n"          # 2  process-global
        "mutable flag: bool false\n"                  # 3  thread-local
        "shared ticket: int 0\n"                      # 4  process-global
        "mutable nameless 9\n"                        # 5  dropped (no colon)
        "shared unnamed 11\n"                         # 6  dropped (no colon)
-       "mutable pair: (x: int) 0\n"                  # 7  dropped (colon, no type)
-       "shared spair: (y: int) 0\n"                  # 8  dropped (colon, no type)
+       "mutable pair: [int] 0\n"                     # 7  dropped (colon, no type)
+       "shared spair: [int] 0\n"                     # 8  dropped (colon, no type)
        "\n"
        "define ns\n"
        "{\n"
@@ -5929,7 +5930,7 @@ if os.path.exists(ir):
     check(ir_state("pair") == "dropped" and ir_state("spair") == "dropped"
           and rows.get(7, ("", ))[0].startswith("no type:")
           and rows.get(8, ("", ))[0].startswith("no type:"),
-          "a colon is not enough: `: (x: int)` is no type and the lens says so")
+          "a colon is not enough: `: [int]` is no type and the lens says so")
     # The namespace pair: a namespace `mutable` is not rejected, so the lens
     # must cover it.
     check(ir_state("inner") == "thread-local" and ir_state("outer") == "process-global",

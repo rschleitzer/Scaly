@@ -1,0 +1,58 @@
+; A tuple is a value (2026-10-18, ROADMAP-operation.md, Tuples): `(1, 2)` and
+; `(x: 1, y: 2)` are anonymous records of the structural type `(int, int)`,
+; written so in a result, a parameter and an annotation. A tuple that is a
+; whole operation by itself is typed (Planner.tuple_value#), and a label
+; names its component (`t.y`). Before, a tuple of more than one component had
+; no type: `let p (x: 5, y: 6)` and `p.y` read component 0 at rc 0, and a
+; tuple type did not parse. A String built into a tuple and kept by a
+; container takes the caller's page as a record's does (R8); run under poison.
+; run-env: SCALY_POISON=1
+; Expected: PASS
+define Keeper (var items: Array[(n: int, s: String)])
+
+function make(a: int, b: int) returns (x: int, y: int)
+    (x: a, y: b)
+
+function sum(p: (x: int, y: int)) returns int
+    p.x * 10 + p.y
+
+function named(n: int) returns (n: int, s: String)
+    (n: n, s: "zahl `n`")
+
+procedure keep(mutable k: ref[Keeper], i: int)
+{
+    let t (n: i, s: "v`i`")
+    k.items.add(t)
+}
+
+function churn() returns int
+{
+    var k 0
+    var i 0
+    while i < 200
+    {
+        let w "x`i`y`i`z"
+        k := k + w.length() as int
+        i := i + 1
+    }
+    k
+}
+
+procedure run() returns bool
+{
+    let p (x: 5, y: 6)
+    let typed: (x: int, y: int) (x: 1, y: 2)
+    let m make(3, 4)
+    let a named(42)
+    var k Keeper(Array[(n: int, s: String)]())
+    keep(&k, 1)
+    keep(&k, 2)
+    churn()
+    let second k.items[1]
+    p.x = 5 and p.y = 6 and typed.y = 2 and m.x = 3 and m.y = 4 and sum(m) = 34 and sum((x: 7, y: 8)) = 78 and sum(make(1, 2)) = 12 and a.n = 42 and a.s.equals("zahl 42") and second.n = 2 and second.s.equals("v2") and k.items[0].s.equals("v1")
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

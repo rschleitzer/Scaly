@@ -4048,16 +4048,6 @@ define Parser
 
     procedure parse_bindingspec(mutable this: Parser) returns BindingSpecSyntax throws ParserError
     {
-        choose parse_structure()
-            when err: Error
-            {
-                choose err
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-                    when d: Different {}
-            }
-            when node: Success
-                return BindingSpecSyntax.Structure(node)
         choose parse_type()
             when err: Error
             {
@@ -5042,8 +5032,8 @@ define Parser
         let start lexer.previous_position
 
         let name_start lexer.position
-        var name: NameSyntax
-        choose parse_name()
+        var name: TypeNameSyntax
+        choose parse_typename()
             when err: Error
                 throw err
             when success: Success
@@ -5091,6 +5081,120 @@ define Parser
         let end lexer.position
 
         TypeSyntax(start, end, name, generics, optional, lifetime)
+    }
+
+    procedure parse_typename(mutable this: Parser) returns TypeNameSyntax throws ParserError
+    {
+        choose parse_name()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return TypeNameSyntax.Name(node)
+        choose parse_tupletype()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return TypeNameSyntax.TupleType(node)
+        throw ParserError.Different(DifferentSyntax())
+    }
+
+    procedure parse_tupletype(mutable this: Parser) returns TupleTypeSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_punctuation("(")
+            throw ParserError.Different(DifferentSyntax())
+
+        let components_start lexer.position
+        var components: ref[Vector[TupleTypeComponentSyntax]]? null
+        choose parse_tupletypecomponent_list()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                components := success
+
+        if ~lexer.parse_punctuation(")")
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
+
+        let end lexer.position
+
+        TupleTypeSyntax(start, end, components)
+    }
+
+    procedure parse_tupletypecomponent_list(mutable this: Parser) returns ref[Vector[TupleTypeComponentSyntax]]? throws ParserError
+    {
+        var acc List[TupleTypeComponentSyntax]()
+        var parsing: bool true
+        while parsing
+        {
+            choose parse_tupletypecomponent()
+                when err: Error
+                {
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            if acc.head = null
+                                throw err
+                            parsing := false
+                        }
+                }
+                when node: Success
+                    acc.add(node)
+        }
+        Vector[TupleTypeComponentSyntax](acc)
+    }
+
+    procedure parse_tupletypecomponent(mutable this: Parser) returns TupleTypeComponentSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        let type_start lexer.position
+        var type: TypeSyntax
+        choose parse_type()
+            when err: Error
+                throw err
+            when success: Success
+                type := success
+
+        let annotation_start lexer.position
+        var annotation: ref[TypeAnnotationSyntax]? null
+        choose parse_typeannotation()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                annotation := TypeAnnotationSyntax(success.start, success.end, success.type)
+
+        lexer.parse_punctuation(",")
+
+        let end lexer.position
+
+        TupleTypeComponentSyntax(start, end, type, annotation)
     }
 
     procedure parse_name(mutable this: Parser) returns NameSyntax throws ParserError

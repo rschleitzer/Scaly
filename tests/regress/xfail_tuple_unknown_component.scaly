@@ -1,0 +1,8 @@
+; A tuple type is known where its components are (2026-10-18,
+; Planner.unknown_type_name#): a component that names no type is reported as
+; any annotation is.
+; xfail: unknown type: nosuchtype
+function pair() returns (int, nosuchtype)
+    (1, 2)
+
+let p pair()

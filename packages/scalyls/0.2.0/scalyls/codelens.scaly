@@ -583,8 +583,6 @@ define codelens
         choose a.spec
             when t: TypeSyntax
                 return true
-            when s: StructureSyntax
-                return false
             when arr: ArraySyntax
                 return false
     }

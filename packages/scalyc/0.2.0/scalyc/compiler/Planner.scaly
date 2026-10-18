@@ -12098,7 +12098,7 @@ define Planner
                         }
                     }
                 }
-                return (*only_ptr)
+                return this.tuple_value(only_op)
             }
 
             ; The operation driver (operation#): the sequence is read from the
@@ -13187,7 +13187,7 @@ define Planner
                                             prev_ty.mangled_name,
                                             prev_ty.generics,
                                             marker_life,
-                                            prev_ty.origin,
+                                            prev_ty.labels,
                                             prev_ty.array_size,
                                             prev_ty.variable
                                         )
@@ -15150,7 +15150,7 @@ define Planner
                                 when u: Unspecified
                                     0
                                 else
-                                    rt := PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, call_life, rt.origin, rt.array_size, rt.variable)
+                                    rt := PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, call_life, rt.labels, rt.array_size, rt.variable)
                         }
                         ; Return residence (build_return_residence_set#): the
                         ; Local stamp says "the result's guts live on the page
@@ -15164,7 +15164,7 @@ define Planner
                                 if match_ref <> null
                                     if Planner.lifetime_is_local(rt.life)
                                         if this.rr_result_not_local((*match_ref), call_args, fn_name)
-                                            rt := PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, Lifetime.Unspecified(Unspecified()), rt.origin, rt.array_size, rt.variable)
+                                            rt := PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, Lifetime.Unspecified(Unspecified()), rt.labels, rt.array_size, rt.variable)
                         ; The same question for a PAGE-FREE callee that hands back
                         ; an argument (class 3/5): with a page the result started
                         ; Local and the residence could only lift that; without one
@@ -15179,7 +15179,7 @@ define Planner
                         if residence.rr_armed and call_requires_page = false and match_ref <> null and rt.name = "Slice"
                             if (*match_ref).return_class = 3 or (*match_ref).return_class = 5
                                 if this.rr_result_not_local((*match_ref), call_args, fn_name) = false
-                                    rt := PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, Lifetime.Local(scalyc.compiler.Model.Local(Span(0, 0))), rt.origin, rt.array_size, rt.variable)
+                                    rt := PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, Lifetime.Local(scalyc.compiler.Model.Local(Span(0, 0))), rt.labels, rt.array_size, rt.variable)
                         ; Page inference (put/add into an escaping receiver): an
                         ; INLINE construction passed as a put/add VALUE argument
                         ; into a receiver container that escapes (returned or
@@ -20994,9 +20994,22 @@ define Planner
                         }
                     }
 
+                    ; A tuple's label names its component (tuple_label_index#).
+                    let label_index Planner.tuple_label_index(lookup_type, m)
+                    if label_index >= 0
+                    {
+                        matched := true
+                        let component_type Planner.tuple_component_type(lookup_type, label_index as size_t)
+                        result.add(PlannedMemberAccess(
+                            m, label_index as size_t, false, false, lookup_type,
+                            component_type
+                        ))
+                        current := component_type
+                    }
+
                     ; Property lookup.
                     let prop_ref this.lookup_property(lookup_type.name, m)
-                    if prop_ref <> null
+                    if matched = false and prop_ref <> null
                     {
                         matched := true
                         ; Ensure the parent struct's LLVM layout is planned so
@@ -21914,6 +21927,26 @@ define Planner
             let tname t.name
             if tname.get_length() = 0
                 return ""
+            ; a tuple type is known where its components are
+            if tname = "()"
+            {
+                if t.generics = null
+                    return ""
+                let gens (*t.generics)
+                var gi: size_t 0
+                while gi < gens.length
+                {
+                    let gp gens.get gi
+                    if gp <> null
+                    {
+                        let inner this.unknown_type_name((*gp))
+                        if inner.get_length() > 0
+                            return inner
+                    }
+                    gi := gi + 1
+                }
+                return ""
+            }
             if tname.contains(".")
                 return ""
             if Planner.is_primitive_type_name(tname)
@@ -22111,8 +22144,46 @@ define Planner
             Type(t.span, t.name, &out, t.lifetime)
         }
 
+        ; plan_tuple_type#: a written tuple type, `(int, String)` -- the
+        ; Modeler's `()` with the component types as generic arguments and the
+        ; labels, where any, as the further path segments (Modeler
+        ; handle_tuple_type)
+        procedure plan_tuple_type(mutable this: Planner, mutable t: Type) returns PlannedType
+        {
+            var types Array[PlannedType]()
+            var labels Array[String]()
+            let labelled t.name.length > 1
+            if t.generics <> null
+            {
+                let gens (*t.generics)
+                var i: size_t 0
+                while i < gens.length
+                {
+                    let gp gens.get i
+                    if gp <> null
+                    {
+                        var g (*gp)
+                        types.add(this.plan_type(g))
+                        let lp t.name.get(i + 1)
+                        if lp <> null
+                            labels.add(String((*lp)))
+                        else
+                            labels.add(String())
+                    }
+                    i := i + 1
+                }
+            }
+            let types_vec Vector[PlannedType](types)
+            let labels_vec Vector[String](labels)
+            let tt Planner.tuple_type(types_vec, labelled, labels_vec)
+            PlannedType(tt.loc, tt.name, tt.mangled_name, tt.generics, t.lifetime, tt.labels, tt.array_size, tt.variable)
+        }
+
         procedure plan_type(mutable this: Planner, mutable t: Type) returns PlannedType
         {
+            let head t.name.get 0
+            if head <> null and (*head) = "()"
+                return this.plan_tuple_type(t)
             this.report_unknown_page_name(t)
             var mt: Type t
             if has_type_aliases and this.model_type_has_alias(t, 0)
@@ -22263,7 +22334,7 @@ define Planner
                             sb.to_string(),
                             &canon_gens,
                             after_subst.life,
-                            after_subst.origin,
+                            after_subst.labels,
                             after_subst.array_size,
                             after_subst.variable
                         )
@@ -22475,7 +22546,7 @@ define Planner
                     hidden_name,
                     other_gens,
                     after_subst.life,
-                    after_subst.origin,
+                    after_subst.labels,
                     after_subst.array_size,
                     after_subst.variable
                 )
@@ -22732,7 +22803,7 @@ define Planner
                                         inst.mangled_name,
                                         inst.generics,
                                         after_subst.life,
-                                        after_subst.origin,
+                                        after_subst.labels,
                                         after_subst.array_size,
                                         after_subst.variable
                                     )
@@ -22755,7 +22826,7 @@ define Planner
                 mangled,
                 tail_gens,
                 after_subst.life,
-                after_subst.origin,
+                after_subst.labels,
                 after_subst.array_size,
                 after_subst.variable
             )
@@ -23844,7 +23915,7 @@ define Planner
                                 ; residence stamp of the same call outside a block
                                 ; would, so the persist promotion sees it
                                 if Planner.result_owns_page_guts(tt) and Planner.operand_is_unplaced_build((*s0))
-                                    return PlannedType(tt.loc, String(tt.name), String(tt.mangled_name), tt.generics, Lifetime.Local(scalyc.compiler.Model.Local(tt.loc)), tt.origin, String(tt.array_size), tt.variable)
+                                    return PlannedType(tt.loc, String(tt.name), String(tt.mangled_name), tt.generics, Lifetime.Local(scalyc.compiler.Model.Local(tt.loc)), tt.labels, String(tt.array_size), tt.variable)
                                 return tt
                             }
                         }
@@ -27070,6 +27141,72 @@ define Planner
                 Lifetime.Unspecified(Unspecified()),
                 null
             )
+        }
+
+        ; tuple_value#: a tuple that is a whole operation by itself is a VALUE
+        ; (ROADMAP-operation.md, Tuples) -- `let t (1, 2)`, `return (x: 1,
+        ; y: 2)`, a tuple handed on as one argument. Its components are
+        ; collapsed one by one, as a call's arguments are (s90), and the
+        ; operand carries the tuple's type, `()` over the component types with
+        ; the labels beside them (tuple_type#). A tuple after a function or a
+        ; type is an argument list and never reaches here alone; one component
+        ; without a label is a grouping and stays what it holds. The
+        ; PlannedTuple carries the type too: emit_tuple lays the value out by
+        ; it, a record component held by value.
+        procedure tuple_value(mutable this: Planner, op: PlannedOperand) returns PlannedOperand
+        {
+            choose op.expr
+                when tp: PlannedTuple
+                {
+                    if tp.components = null or tp.is_region_alloc or tp.tuple_type.name <> "void"
+                        return op
+                    let cv (*tp.components)
+                    var labelled false
+                    var li: size_t 0
+                    while li < cv.length
+                    {
+                        let lp cv.get li
+                        if lp <> null and lp.name <> null
+                            labelled := true
+                        li := li + 1
+                    }
+                    if cv.length = 0 or (cv.length = 1 and labelled = false)
+                        return op
+                    var built Array[PlannedComponent]()
+                    var types Array[PlannedType]()
+                    var labels Array[String]()
+                    var ci: size_t 0
+                    while ci < cv.length
+                    {
+                        let cp cv.get ci
+                        if cp = null or cp.value = null
+                            return op
+                        let c (*cp)
+                        let vals (*c.value)
+                        if vals.length = 0
+                            return op
+                        let collapsed this.collapse_operand_sequence(vals)
+                        this.report_unknown_identifier(collapsed)
+                        var one_arr Array[PlannedOperand]()
+                        one_arr.add collapsed
+                        var one_vec Vector[PlannedOperand](one_arr)
+                        built.add(PlannedComponent(c.loc, c.name, &one_vec, c.attributes))
+                        types.add collapsed.result_type
+                        if c.name <> null
+                            labels.add(String((*c.name)))
+                        else
+                            labels.add(String())
+                        ci := ci + 1
+                    }
+                    var built_vec Vector[PlannedComponent](built)
+                    let types_vec Vector[PlannedType](types)
+                    let labels_vec Vector[String](labels)
+                    let tt Planner.tuple_type(types_vec, labelled, labels_vec)
+                    let value PlannedTuple(tp.loc, &built_vec, tt, false, tp.life, tp.region_arg)
+                    return PlannedOperand(op.loc, PlannedExpression.Tuple value, op.member_access, tt)
+                }
+                else
+                    return op
         }
 
         procedure plan_matrix(mutable this: Planner, mutable m: Matrix) returns scalyc.compiler.Plan.PlannedMatrix
@@ -55669,8 +55806,8 @@ define Planner
 
         ; does this operand sequence BUILD a value that lives on the page it is
         ; built on? A construction of a concept through an `init` of that arity
-        ; (String(t) copies), a positional construction with such a part, a
-        ; block (an interpolated string) -- a string LITERAL is a static
+        ; (String(t) copies), a positional construction or a tuple value with
+        ; such a part, a block (an interpolated string) -- a string LITERAL is a static
         ; constant (`@.sconst`) and builds nothing. NOT a positional
         ; view like `Vector[char](n, p)` -- it allocates nothing, and
         ; StringBuilder.append hands exactly that to Array.add, which copies the
@@ -55686,6 +55823,22 @@ define Planner
             choose head.expression
                 when b: Block
                     return true
+                when tv: Tuple
+                {
+                    ; a tuple VALUE carries its parts as a positional
+                    ; construction does
+                    if ops.length <> 1 or head.member_access <> null or Planner.model_tuple_is_value(tv) = false
+                        return false
+                    var vi: size_t 0
+                    while vi < tv.components.length
+                    {
+                        let vp tv.components.get vi
+                        if vp <> null and this.ops_build_page_value((*vp).value, depth + 1)
+                            return true
+                        vi := vi + 1
+                    }
+                    return false
+                }
                 when t: scalyc.compiler.Model.Type
                 {
                     if ops.length < 2 or head.member_access <> null or t.name.length = 0
@@ -55758,6 +55911,17 @@ define Planner
             false
         }
 
+        ; model_tuple_is_value#: a tuple of the Model that is a VALUE -- more
+        ; than one component, or a labelled one; `(a)` is a grouping and IS
+        ; `a` (Planner.tuple_value# draws the same line)
+        function model_tuple_is_value(tup: Tuple) returns bool
+        {
+            if tup.components.length > 1
+                return true
+            let cp tup.components.get 0
+            cp <> null and cp.name <> null
+        }
+
         function model_operand_is_tuple(op: Operand) returns bool
         {
             choose op.expression
@@ -55804,6 +55968,23 @@ define Planner
                         if np = null
                             return false
                         return this.local_stores_build(f, owner, (*np), depth)
+                    }
+                    when tv: Tuple
+                    {
+                        ; a tuple value: one of its parts built (a grouping
+                        ; is what it holds, and ops_build_page_value# above
+                        ; asked that)
+                        if Planner.model_tuple_is_value(tv) = false
+                            return false
+                        var vi: size_t 0
+                        while vi < tv.components.length
+                        {
+                            let vp tv.components.get vi
+                            if vp <> null and this.stored_value_builds(f, owner, (*vp).value, depth + 1)
+                                return true
+                            vi := vi + 1
+                        }
+                        return false
                     }
                     else
                         return false
@@ -57254,6 +57435,24 @@ define Planner
         if type_value.generics <> null
         {
             let gens (*type_value.generics)
+            if gens.length > 0 and type_value.name = "()"
+            {
+                ; a tuple type is written as its components: `(int, String)`
+                var tb StringBuilder()
+                tb.append("(" as char)
+                var ti: size_t 0
+                while ti < gens.length
+                {
+                    if ti > 0
+                        tb.append ", "
+                    let tg gens.get ti
+                    if tg <> null
+                        tb.append(Planner.get_readable_name((*tg)))
+                    ti := ti + 1
+                }
+                tb.append(")" as char)
+                return tb.to_string()
+            }
             if gens.length > 0
             {
                 var sb StringBuilder()
@@ -58516,7 +58715,7 @@ define Planner
                 Planner.mangled_over(t, &new_gens),
                 &new_gens,
                 t.life,
-                t.origin,
+                t.labels,
                 t.array_size,
                 t.variable
             )
@@ -58728,7 +58927,7 @@ define Planner
                     replacement.mangled_name,
                     replacement.generics,
                     replacement.life,
-                    replacement.origin,
+                    replacement.labels,
                     replacement.array_size,
                     replacement.variable
                 )
@@ -58757,7 +58956,7 @@ define Planner
                 Planner.mangled_over(t, &new_gens),
                 &new_gens,
                 t.life,
-                t.origin,
+                t.labels,
                 t.array_size,
                 t.variable
             )
@@ -58792,6 +58991,76 @@ define Planner
 
     function make_void_type() returns PlannedType
         Planner.make_primitive_type("void", "v")
+
+    ; tuple_type#: the type of a tuple (ROADMAP-operation.md, Tuples) -- a
+    ; structural type, named `()` with the component types as its generic
+    ; arguments, and mangled as C++ mangles `std::tuple<...>`
+    ; (`St5tupleIJ...EE`), so two tuples of one shape are one type wherever
+    ; they are written. The labels are no part of it (types_equal# compares
+    ; names): they ride beside the types for `t.x`, "" where a component
+    ; has none, null where none has one.
+    function tuple_type(components: Vector[PlannedType], labelled: bool, labels: Vector[String]) returns PlannedType
+    {
+        var sb StringBuilder()
+        sb.append "_ZSt5tupleIJ"
+        var i: size_t 0
+        while i < components.length
+        {
+            let cp components.get i
+            if cp <> null
+                sb.append(Planner.encode_type((*cp)))
+            i := i + 1
+        }
+        sb.append "EE"
+        var gens Vector[PlannedType](components)
+        var labels_ref: ref[Vector[String]]? null
+        if labelled
+        {
+            var held Vector[String](labels)
+            labels_ref := &held
+        }
+        PlannedType(
+            Span(0, 0),
+            String("()"),
+            sb.to_string(),
+            &gens,
+            Lifetime.Unspecified(Unspecified()),
+            labels_ref,
+            "",
+            null
+        )
+    }
+
+    ; tuple_label_index#: the component of the tuple type t that the label
+    ; wanted names, -1 where t is no tuple or no component carries it
+    function tuple_label_index(t: PlannedType, wanted: String) returns int
+    {
+        if t.name <> "()" or t.labels = null
+            return 0 - 1
+        let labels (*t.labels)
+        var i: size_t 0
+        while i < labels.length
+        {
+            let lp labels.get i
+            if lp <> null and lp.get_length() > 0 and (*lp) = wanted
+                return i as int
+            i := i + 1
+        }
+        0 - 1
+    }
+
+    ; tuple_component_type#: the type of component i of the tuple type t
+    function tuple_component_type(t: PlannedType, i: size_t) returns PlannedType
+    {
+        if t.generics <> null
+        {
+            let gens (*t.generics)
+            let gp gens.get i
+            if gp <> null
+                return (*gp)
+        }
+        Planner.make_void_type()
+    }
 
     ; The prelude's RuntimeFault (scaly/memory/runtime.scaly) -- the union a
     ; `try` catches a runtime panic through. Built by hand rather than looked
@@ -58858,7 +59127,7 @@ define Planner
             String(inner.mangled_name),
             inner.generics,
             Lifetime.Local(scalyc.compiler.Model.Local(inner.loc)),
-            inner.origin,
+            inner.labels,
             String(inner.array_size),
             inner.variable
         )
@@ -58903,7 +59172,7 @@ define Planner
             String(inner.mangled_name),
             inner.generics,
             Lifetime.Local(scalyc.compiler.Model.Local(inner.loc)),
-            inner.origin,
+            inner.labels,
             String(inner.array_size),
             inner.variable
         )
@@ -58935,7 +59204,7 @@ define Planner
             String(inner.mangled_name),
             inner.generics,
             Lifetime.Local(scalyc.compiler.Model.Local(inner.loc)),
-            inner.origin,
+            inner.labels,
             String(inner.array_size),
             inner.variable
         )
@@ -58947,7 +59216,7 @@ define Planner
             String(t.mangled_name),
             &new_gens,
             t.life,
-            t.origin,
+            t.labels,
             String(t.array_size),
             t.variable
         )
@@ -58997,7 +59266,7 @@ define Planner
             String(t.mangled_name),
             &new_gens,
             t.life,
-            t.origin,
+            t.labels,
             String(t.array_size),
             t.variable
         )
@@ -59040,7 +59309,7 @@ define Planner
             String(t.mangled_name),
             gens_ref,
             t.life,
-            t.origin,
+            t.labels,
             String(t.array_size),
             t.variable
         )
@@ -59907,7 +60176,7 @@ define Planner
             t.mangled_name,
             t.generics,
             t.life,
-            t.origin,
+            t.labels,
             t.array_size,
             t.variable
         )

@@ -465,7 +465,6 @@
     <content link = BindingSpec                                property = spec
 
 <syntax id = BindingSpec                  multiple abstract
-    <content link = Structure
     <content link = Type
     <content link = Array
 
@@ -601,10 +600,24 @@
     <content link = Type                                    property = type
 
 <syntax id = Type                        multiple
-    <content link = Name                                    property = name
+    <content link = TypeName                                property = name
     <content link = GenericArguments               optional property = generics
     <content link = Optional                       optional property = optional
     <content link = Lifetime                       optional property = lifetime
+
+<syntax id = TypeName                              abstract
+    <content link = Name
+    <content link = TupleType
+
+<syntax id = TupleType
+    <content link = left_paren
+    <content link = TupleTypeComponent    multiple optional property = components
+    <content link = right_paren
+
+<syntax id = TupleTypeComponent           multiple
+    <content link = Type                                    property = type
+    <content link = TypeAnnotation                 optional property = annotation
+    <content link = comma                          optional
 
 <syntax id = Name
     <content identifier                                     property = name

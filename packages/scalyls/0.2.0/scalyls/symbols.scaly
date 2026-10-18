@@ -3779,8 +3779,6 @@ define symbols
         choose ann.spec
             when ty: TypeSyntax
                 return symbols.type_text(source, ty)
-            when st: StructureSyntax
-                return ""
             when ar: ArraySyntax
                 return ""
     }
@@ -5148,8 +5146,11 @@ define symbols
     ; dotted extensions dropped) — e.g. `Vector` from `Vector[char]`.
     function type_base_name(ty: TypeSyntax) returns String
     {
-        let nms ty.name
-        String(nms.name)
+        choose ty.name
+            when nms: NameSyntax
+                return String(nms.name)
+            else
+                return String("()")
     }
 
     ; The base name of a routine's declared return type, or "" when it returns
@@ -14039,38 +14040,11 @@ define symbols
     function type_text(source: String, ty: TypeSyntax) returns String
     {
         var sb StringBuilder()
-        let nms ty.name
-        let bn nms.name
-        var i: size_t 0
-        let bl bn.get_length()
-        while i < bl
-        {
-            sb.append(bn.get(i) as char)
-            i := i + 1
-        }
-        if nms.extensions <> null
-        {
-            let exts (*nms.extensions)
-            var ei: size_t 0
-            while ei < exts.length
-            {
-                let eptr exts.get ei
-                if eptr <> null
-                {
-                    let ex (*eptr)
-                    sb.append("." as char)
-                    let en ex.name
-                    var xi: size_t 0
-                    let xl en.get_length()
-                    while xi < xl
-                    {
-                        sb.append(en.get(xi) as char)
-                        xi := xi + 1
-                    }
-                }
-                ei := ei + 1
-            }
-        }
+        choose ty.name
+            when tuple: TupleTypeSyntax
+                symbols.tuple_type_text(source, tuple, &sb)
+            when nms: NameSyntax
+                symbols.name_type_text(nms, &sb)
         if ty.generics <> null
         {
             let g (*ty.generics)
@@ -14109,6 +14083,76 @@ define symbols
         if ty.optional <> null
             sb.append("?" as char)
         sb.to_string()
+    }
+
+    ; type_text's head of a named type: the base name and its dotted
+    ; extensions
+    procedure name_type_text(nms: NameSyntax, mutable sb: ref[StringBuilder])
+    {
+        var i: size_t 0
+        let bn nms.name
+        let bl bn.get_length()
+        while i < bl
+        {
+            sb.append(bn.get(i) as char)
+            i := i + 1
+        }
+        if nms.extensions <> null
+        {
+            let exts (*nms.extensions)
+            var ei: size_t 0
+            while ei < exts.length
+            {
+                let eptr exts.get ei
+                if eptr <> null
+                {
+                    let ex (*eptr)
+                    sb.append("." as char)
+                    let en ex.name
+                    var xi: size_t 0
+                    let xl en.get_length()
+                    while xi < xl
+                    {
+                        sb.append(en.get(xi) as char)
+                        xi := xi + 1
+                    }
+                }
+                ei := ei + 1
+            }
+        }
+    }
+
+    ; type_text's head of a tuple type: `(x: int, String)`
+    procedure tuple_type_text(source: String, tuple: TupleTypeSyntax, mutable sb: ref[StringBuilder])
+    {
+        sb.append("(" as char)
+        if tuple.components <> null
+        {
+            let comps (*tuple.components)
+            var ci: size_t 0
+            while ci < comps.length
+            {
+                let cp comps.get ci
+                if cp <> null
+                {
+                    if ci > 0
+                    {
+                        sb.append("," as char)
+                        sb.append(" " as char)
+                    }
+                    let c (*cp)
+                    sb.append(symbols.type_text(source, c.type))
+                    if c.annotation <> null
+                    {
+                        sb.append(":" as char)
+                        sb.append(" " as char)
+                        sb.append(symbols.type_text(source, (*c.annotation).type))
+                    }
+                }
+                ci := ci + 1
+            }
+        }
+        sb.append(")" as char)
     }
 
     ; A {"label":<text>} parameter object.
