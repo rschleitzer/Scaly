@@ -1,0 +1,8 @@
+; A diagnostic inside an interpolated string names the SOURCE (2026-10-18):
+; the Modeler reparses a desugared text (handle_interpolated_string), and its
+; offsets were taken for the file's -- `nosuch` below was reported at 2:3,
+; inside this comment. The text carries the source's positions now
+; (Lexer.use_positions#, as an interface does).
+; xfail: xfail_interpolation_location.scaly:8:21: error: unknown identifier: nosuch
+let n 1
+print "a `n` b `n + nosuch` c"

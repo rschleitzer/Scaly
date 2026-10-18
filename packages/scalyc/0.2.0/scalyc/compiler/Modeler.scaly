@@ -619,6 +619,20 @@ define Modeler
     ; it by accident. On a malformed payload the error is reported through
     ; modeler_error_count (cli fails the compile) and the literal is returned
     ; verbatim so modeling continues.
+    ; interpolation_mark: from byte `at` of the desugared text on, the
+    ; positions are the source's from `source` (Lexer.use_positions# takes
+    ; the pairs ascending, so one at a byte already marked replaces it)
+    procedure interpolation_mark(mutable pairs: ref[Array[size_t]], at: size_t, source: size_t)
+    {
+        if pairs.length >= 2 and pairs[pairs.length - 2] = at
+        {
+            pairs.put(pairs.length - 1, source)
+            return
+        }
+        pairs.add at
+        pairs.add source
+    }
+
     procedure handle_interpolated_string(mutable syntax: LiteralSyntax, raw: String) returns Expression mutable modeler_error_count
     {
         let len raw.get_length()
@@ -695,8 +709,19 @@ define Modeler
         ; Build the block source. Boundaries are unescaped backticks plus the
         ; end of the payload; segments alternate literal/expression.
         var src StringBuilder()
+        ; Where the block's text stands in the SOURCE (Lexer.use_positions#,
+        ; the interface's mechanism): an embedded expression at its own
+        ; offset, everything the desugar writes around it at the literal's
+        ; start -- a diagnostic in `"`nosuch(1)`"` named an offset of this
+        ; text before, a well-formed location somewhere else in the file.
+        ; (The first pair at byte 1: the lexer stands on byte 0 when the pairs
+        ; arrive, and a pair it is already on is never reached.)
+        var pairs Array[size_t]()
+        pairs.add 1
+        pairs.add syntax.start
         src.append("{\n")
         src.append("let 'isb$' StringBuilder()\n")
+        interpolation_mark(&pairs, src.get_length(), syntax.start)
 
         var seg_start: size_t 0
         in_expr := false
@@ -728,7 +753,16 @@ define Modeler
             {
                 if in_expr
                 {
-                    src.append("'isb$'.append((")
+                    ; the parentheses around the expression stand just before
+                    ; it, so what is reported at them names the backtick
+                    let expr_at syntax.start + 1 + seg_start
+                    src.append("'isb$'.append")
+                    var parens_at syntax.start
+                    if expr_at > syntax.start + 2
+                        parens_at := expr_at - 2
+                    interpolation_mark(&pairs, src.get_length(), parens_at)
+                    src.append("((")
+                    interpolation_mark(&pairs, src.get_length(), expr_at)
                     var k seg_start
                     while k < i
                     {
@@ -757,6 +791,7 @@ define Modeler
                         }
                     }
                     src.append("))\n")
+                    interpolation_mark(&pairs, src.get_length(), syntax.start)
                     in_expr := false
                 }
                 else
@@ -764,6 +799,7 @@ define Modeler
                     if i > seg_start
                     {
                         src.append("'isb$'.append(\"")
+                        interpolation_mark(&pairs, src.get_length(), syntax.start + 1 + seg_start)
                         var k seg_start
                         while k < i
                         {
@@ -783,6 +819,7 @@ define Modeler
                             src.append("\" as char)\n")
                         else
                             src.append("\")\n")
+                        interpolation_mark(&pairs, src.get_length(), syntax.start)
                     }
                     in_expr := true
                 }
@@ -799,6 +836,7 @@ define Modeler
 
         let src_str src.to_string()
         var p Parser(src_str)
+        p.lexer.use_positions(pairs.as_slice())
         choose p.parse_expression()
             when err: Error
             {
