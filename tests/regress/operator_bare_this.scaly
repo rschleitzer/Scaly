@@ -34,7 +34,7 @@ let q Pair[int](1, 3)
 let r Pair[int](1, 2)
 let x Row(3, 100)
 let c Cnt(5) + 4
-if p == q = false and p == r and x[2] = 102 and x[5] = 0 - 1 and c.k = 9
+if (p == q) = false and (p == r) and x[2] = 102 and x[5] = 0 - 1 and c.k = 9
     print "PASS"
 else
     print "FAIL"

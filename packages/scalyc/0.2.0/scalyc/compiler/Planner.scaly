@@ -360,6 +360,46 @@ define Planner
         ns_return_valid: bool
     )
 
+    ; The protocol of an operation as the planner reads it off the standard
+    ; library's pending types (read_operation_protocol#): the operator names
+    ; the levels name and their level, the stand-in of the level that takes
+    ; the others, the type an operation starts in; and per sequence of
+    ; operator names the order its raw operations are planned in
+    ; (operation_by_protocol#), each sequence evaluated once
+    define OperationProtocol
+    (
+        ; 0 not read yet, 1 there is none (a root without the standard
+        ; library), 2 read
+        var state: int
+        var start: String
+        names: ref[NameIndex]
+        levels: Array[String]
+        var other: String
+        var other_level: String
+        patterns: ref[NameIndex]
+        post_start: Array[size_t]
+        post_length: Array[size_t]
+        ; 2k the k-th term, 2k + 1 the k-th operator, in planning order
+        post: Array[size_t]
+    )
+
+    ; one evaluation of the protocol: its values, a state of a pending type
+    ; (kind 0), a term of the operation (1) or a raw operation (2)
+    define ProtocolRun
+    (
+        kind: Array[size_t]
+        concept: Array[String]
+        ; the operator a state or a raw operation belongs to, PROTO_NONE
+        opos: Array[size_t]
+        ; a state's fields in property order; a term's index; a raw
+        ; operation's left and right
+        f0: Array[size_t]
+        f1: Array[size_t]
+        f2: Array[size_t]
+        var failed: bool
+    )
+    define PROTO_NONE size_t 0x4000000000000000
+
     ; what application_target# answers
     define ApplicationTarget
     (
@@ -839,6 +879,8 @@ define Planner
         ; (operation_census#); from slot 23 the operation driver's state and
         ; counters (operation#)
         var operation_counts: Vector[size_t]
+        ; the protocol of an operation (OperationProtocol)
+        protocol: ref[OperationProtocol]
         ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
         ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
         ; reach an argument or return position un-dereferenced — directly or
@@ -1475,6 +1517,8 @@ define Planner
             ; (`&T^this()`) would answer with garbage
             let gate_state DeepGateState^this()
             gate := &gate_state
+            let protocol_state OperationProtocol^this(0, String^this(""), &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this()), Array[String]^this(), String^this(""), String^this(""), &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this()), Array[size_t]^this(), Array[size_t]^this(), Array[size_t]^this())
+            protocol := &protocol_state
             let residence_state ResidenceState^this()
             residence := &residence_state
             let persist_state PersistState^this()
@@ -1511,9 +1555,9 @@ define Planner
             address_taken_locals := Array[String]^this()
             field_written_locals := Array[String]^this()
             pending_mode := 0
-            operation_counts := Vector[size_t]^this(80)
+            operation_counts := Vector[size_t]^this(82)
             var oc_i: size_t 0
-            while oc_i < 80
+            while oc_i < 82
             {
                 operation_counts.put(oc_i, 0)
                 oc_i := oc_i + 1
@@ -7657,6 +7701,11 @@ define Planner
         {
             var g generic
             if c.parameters.length > 0
+                g := true
+            ; a pending type has no routines to link: its members are what
+            ; the planner evaluates where it reads an operation, so they
+            ; stay written out as a generic's do
+            if Planner.attributes_have(c.attributes, "pending")
                 g := true
             choose c.definition
                 when s: Structure
@@ -27069,7 +27118,7 @@ define Planner
                                     ; name WITH a precedence at k>=1 sits in
                                     ; operator position — collapse so the
                                     ; binary loop can build the call.
-                                    if Planner.get_operator_precedence(ty.name) > 0
+                                    if this.operator_by_protocol(ty.name)
                                         should_collapse := true
                                     ; A declared text-named operator (e.g.
                                     ; `'minus'`) is neither operator-shaped nor
@@ -27954,6 +28003,8 @@ define Planner
                 this.operation_census_line("driver-tuple-after-sibling-static-gives-tuple", 77)
                 this.operation_census_line("driver-tuple-after-sibling-static-gives-variant", 78)
                 this.operation_census_line("driver-tuple-after-sibling-static-gives-else", 79)
+                this.operation_census_line("driver-table-by-protocol", 80)
+                this.operation_census_line("driver-table-by-table", 81)
             }
         }
 
@@ -27992,7 +28043,7 @@ define Planner
                                 return 2
                             return 1
                         }
-                        if this.is_operator(ty.name) or Planner.get_operator_precedence(ty.name) > 0
+                        if this.is_operator(ty.name) or this.operator_by_protocol(ty.name)
                             return 1
                     }
                     return 2
@@ -28600,18 +28651,36 @@ define Planner
             {
                 if this.operation_thing(out[k]) = 5
                     plain := false
+                ; the census: every operator name the table meets
+                if (k - base) % 2 = 1 and this.operation_census_on()
+                {
+                    scaly_eputs("operation-op ")
+                    scaly_eputs(Planner.operand_type_name(out[k]).to_c_string())
+                    scaly_eputs("\n")
+                }
                 arr.add(out[k])
                 k := k + 1
             }
             var vec Vector[PlannedOperand](arr)
             var folded: PlannedOperand out[base]
-            if plain
+            ; which operator takes which operands is the protocol's answer
+            ; (operation_by_protocol#); without one, the table's
+            var answered false
+            if plain and protocol.state = 2
+                folded := this.operation_by_protocol(out, base, &answered)
+            if answered
+                this.operation_count(80)
+            if answered = false
             {
-                var first: PlannedOperand out[base]
-                folded := this.operation_apply(vec, first, 43)
+                this.operation_count(81)
+                if plain
+                {
+                    var first: PlannedOperand out[base]
+                    folded := this.operation_apply(vec, first, 43)
+                }
+                else
+                    folded := this.operation_step(vec, 43)
             }
-            else
-                folded := this.operation_step(vec, 43)
             this.report_undeclared_operator(folded)
             folded
         }
@@ -28803,6 +28872,484 @@ define Planner
             this.operation_count(26)
             operation_counts.put(23, 1)
             cur
+        }
+
+        ; ================================================================
+        ; The protocol of an operation (ROADMAP-operation.md, step 2): what
+        ; a sequence of terms and operator names means is written in the
+        ; standard library as pending types (scaly/operation.scaly,
+        ; generated from scaly.sgm's levels); the compiler has no table.
+        ; The driver's table step evaluates it on the NAMES of the operators
+        ; -- a sequence of names gives the same order whatever the terms
+        ; are, so each is evaluated once -- and plans the raw operations it
+        ; answers one at a time (operation_by_protocol#).
+        ; ================================================================
+
+        ; the text of the attribute `name` (`@operator "+"`), "" when there
+        ; is none
+        function attribute_text(attrs: Vector[Attribute], name: Slice[char]) returns String
+        {
+            var i: size_t 0
+            while i < attrs.length
+            {
+                let a attrs[i]
+                i := i + 1
+                if a.name.equals(String(name.data, name.length))
+                {
+                    choose a.model
+                        when k: scalyc.compiler.Model.Constant
+                        {
+                            choose k
+                                when s: StringConstant
+                                    return s.value
+                                else
+                                    0
+                        }
+                        else
+                            0
+                }
+            }
+            String("")
+        }
+
+        ; Reads the protocol off the registered pending types: the operator
+        ; each declares (`@operator`), its level (`@level`), the level that
+        ; takes the operators no level names (`@others`), and the type an
+        ; operation starts in (`@start`). Without one (a root compiled
+        ; without the standard library) the table stays.
+        procedure read_operation_protocol(mutable this: Planner)
+        {
+            if protocol.state <> 0
+                return
+            protocol.state := 1
+            var ci: size_t 0
+            while ci < concepts.length
+            {
+                let c concepts[ci].value
+                ci := ci + 1
+                if Planner.attributes_have(c.attributes, "pending") = false
+                    continue
+                if Planner.attributes_have(c.attributes, "start")
+                {
+                    protocol.start := String^this(c.name)
+                    protocol.state := 2
+                }
+                let op Planner.attribute_text(c.attributes, "operator")
+                if op.get_length() = 0
+                    continue
+                let level Planner.attribute_text(c.attributes, "level")
+                if Planner.attributes_have(c.attributes, "others")
+                {
+                    protocol.other := String^this(op)
+                    protocol.other_level := String^this(level)
+                    continue
+                }
+                if protocol.names.table.lookup(op) < 0
+                {
+                    this.name_index_put(protocol.names, String^this(op), protocol.levels.length)
+                    protocol.levels.add(String^this(level))
+                }
+            }
+            if protocol.other.get_length() = 0
+                protocol.state := 1
+        }
+
+        ; Is `name` an operator the protocol's levels name? Before the
+        ; protocol is read, and without one, the table answers.
+        function operator_by_protocol(this: Planner, name: String) returns bool
+        {
+            if protocol.state = 2
+                return protocol.names.table.lookup(name) >= 0
+            Planner.get_operator_precedence(name) > 0
+        }
+
+        ; Do the operators a and b stand on one level? (the constant fold
+        ; of a global, fold_constant_ops#)
+        function protocol_same_level(proto: ref[OperationProtocol], a: String, b: String) returns bool
+        {
+            if proto.state = 2
+            {
+                let ia proto.names.table.lookup(a)
+                let ib proto.names.table.lookup(b)
+                if ia < 0 or ib < 0
+                    return false
+                return proto.levels[ia as size_t].equals(proto.levels[ib as size_t])
+            }
+            Planner.get_operator_precedence(a) = Planner.get_operator_precedence(b)
+        }
+
+        procedure proto_node(mutable run: ref[ProtocolRun], kind: size_t, concept: String, opos: size_t, a: size_t, b: size_t, c: size_t) returns size_t
+        {
+            run.kind.add kind
+            run.concept.add concept
+            run.opos.add opos
+            run.f0.add a
+            run.f1.add b
+            run.f2.add c
+            run.kind.length - 1
+        }
+
+        ; the field `name` of the state `state`, by its pending type's
+        ; property order
+        procedure proto_field(mutable this: Planner, mutable run: ref[ProtocolRun], state: size_t, name: String) returns size_t
+        {
+            if state >= run.kind.length or run.kind[state] <> 0
+            {
+                run.failed := true
+                return PROTO_NONE
+            }
+            let cref this.lookup_concept_any(run.concept[state])
+            if cref = null
+            {
+                run.failed := true
+                return PROTO_NONE
+            }
+            choose cref.definition
+                when st: Structure
+                {
+                    var pi: size_t 0
+                    while pi < st.properties.length
+                    {
+                        if st.properties[pi].name = name
+                        {
+                            match pi
+                                case 0: return run.f0[state]
+                                case 1: return run.f1[state]
+                                case 2: return run.f2[state]
+                        }
+                        pi := pi + 1
+                    }
+                }
+                else
+                    0
+            run.failed := true
+            PROTO_NONE
+        }
+
+        ; a name in a body: `this`, the member's parameter, or a field
+        procedure proto_name(mutable this: Planner, mutable run: ref[ProtocolRun], name: String, self: size_t, pname: String, pnode: size_t) returns size_t
+        {
+            if name = "this"
+                return self
+            if pname.get_length() > 0 and name = pname
+                return pnode
+            this.proto_field(run, self, name)
+        }
+
+        ; the operator a state belongs to (`@operator`), "" for a term, a raw
+        ; operation, or a state of none
+        procedure proto_operator_of(mutable this: Planner, mutable run: ref[ProtocolRun], node: size_t) returns String
+        {
+            if node >= run.kind.length or run.kind[node] <> 0
+                return String("")
+            let cref this.lookup_concept_any(run.concept[node])
+            if cref = null
+                return String("")
+            Planner.attribute_text(cref.attributes, "operator")
+        }
+
+        ; The member `member` of the state `recv` -- a function (`apply`,
+        ; `finish`) with its one argument, or an operator taking only `this`
+        ; -- evaluated. `cur_name`/`cur_pos` is the operator being met.
+        procedure proto_member(mutable this: Planner, mutable run: ref[ProtocolRun], recv: size_t, is_operator: bool, member: String, arg: size_t, cur_name: String, cur_pos: size_t) returns size_t
+        {
+            if run.failed or recv >= run.kind.length or run.kind[recv] <> 0 or run.kind.length > 65536
+            {
+                run.failed := true
+                return PROTO_NONE
+            }
+            let cref this.lookup_concept_any(run.concept[recv])
+            if cref = null
+            {
+                run.failed := true
+                return PROTO_NONE
+            }
+            var params Array[String]()
+            let body this.pending_member_body(cref, is_operator, member, &params)
+            if body.length = 0
+            {
+                run.failed := true
+                return PROTO_NONE
+            }
+            var pname String("")
+            if params.length > 0
+                pname := params[0]
+            this.proto_eval(run, body, recv, pname, arg, cur_name, cur_pos)
+        }
+
+        ; the state `state` meets the operator `cur_name`: its member of that
+        ; name, or the stand-in of the others for a name no level names
+        procedure proto_meet(mutable this: Planner, mutable run: ref[ProtocolRun], state: size_t, cur_name: String, cur_pos: size_t) returns size_t
+        {
+            var member cur_name
+            if protocol.names.table.lookup(cur_name) < 0
+                member := protocol.other
+            this.proto_member(run, state, true, member, PROTO_NONE, cur_name, cur_pos)
+        }
+
+        ; `recv.m(args)`: a member of a state, or the raw operation `m` of a
+        ; term (`left.+(right)`), which belongs to the operator of `self`
+        procedure proto_call(mutable this: Planner, mutable run: ref[ProtocolRun], recv: size_t, m: String, tp: Tuple, self: size_t, pname: String, pnode: size_t, cur_name: String, cur_pos: size_t) returns size_t
+        {
+            var arg PROTO_NONE
+            if tp.components.length > 0
+                arg := this.proto_eval(run, tp.components[0].value, self, pname, pnode, cur_name, cur_pos)
+            if run.failed or recv >= run.kind.length
+            {
+                run.failed := true
+                return PROTO_NONE
+            }
+            if run.kind[recv] = 0
+                return this.proto_member(run, recv, false, m, arg, cur_name, cur_pos)
+            Planner.proto_node(run, 2, String(""), run.opos[self], recv, arg, PROTO_NONE)
+        }
+
+        ; `T(a, b, c)`: a state of the pending type T. It belongs to the
+        ; operator of `self` when T declares that one, else to the operator
+        ; being met; a type of no operator (OpValue) to none.
+        procedure proto_construct(mutable this: Planner, mutable run: ref[ProtocolRun], name: String, tp: Tuple, self: size_t, pname: String, pnode: size_t, cur_name: String, cur_pos: size_t) returns size_t
+        {
+            let cref this.lookup_concept_any(name)
+            if cref = null or Planner.attributes_have(cref.attributes, "pending") = false
+            {
+                run.failed := true
+                return PROTO_NONE
+            }
+            let c_op Planner.attribute_text(cref.attributes, "operator")
+            var opos PROTO_NONE
+            if c_op.get_length() > 0
+            {
+                opos := cur_pos
+                if c_op.equals(this.proto_operator_of(run, self))
+                    opos := run.opos[self]
+            }
+            var fields Vector[size_t](3)
+            fields.put(0, PROTO_NONE)
+            fields.put(1, PROTO_NONE)
+            fields.put(2, PROTO_NONE)
+            var ci: size_t 0
+            while ci < tp.components.length and ci < 3
+            {
+                fields.put(ci, this.proto_eval(run, tp.components[ci].value, self, pname, pnode, cur_name, cur_pos))
+                ci := ci + 1
+            }
+            if tp.components.length > 3
+                run.failed := true
+            Planner.proto_node(run, 0, name, opos, fields[0], fields[1], fields[2])
+        }
+
+        ; One body of the protocol, evaluated: a name; `T(...)`; `x.m(...)`
+        ; with calls riding on its tuple (`.finish()`); and a trailing
+        ; operator name the value so far meets.
+        procedure proto_eval(mutable this: Planner, mutable run: ref[ProtocolRun], seq: Vector[Operand], self: size_t, pname: String, pnode: size_t, cur_name: String, cur_pos: size_t) returns size_t
+        {
+            if run.failed or seq.length = 0
+            {
+                run.failed := true
+                return PROTO_NONE
+            }
+            var cur PROTO_NONE
+            var i: size_t 1
+            let head seq[0]
+            var hop: ref[Vector[String]]? null
+            choose head.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    var tuple_next false
+                    if seq.length > 1
+                    {
+                        choose seq[1].expression
+                            when tp: Tuple
+                                tuple_next := true
+                            else
+                                0
+                    }
+                    if head.member_access <> null
+                        run.failed := true
+                    else if t.name.length = 1 and tuple_next
+                    {
+                        choose seq[1].expression
+                            when tp: Tuple
+                                cur := this.proto_construct(run, t.name[0], tp, self, pname, pnode, cur_name, cur_pos)
+                            else
+                                0
+                        hop := seq[1].member_access
+                        i := 2
+                    }
+                    else if t.name.length = 1
+                        cur := this.proto_name(run, t.name[0], self, pname, pnode)
+                    else if t.name.length = 2 and tuple_next
+                    {
+                        let recv this.proto_name(run, t.name[0], self, pname, pnode)
+                        choose seq[1].expression
+                            when tp: Tuple
+                                cur := this.proto_call(run, recv, t.name[1], tp, self, pname, pnode, cur_name, cur_pos)
+                            else
+                                0
+                        hop := seq[1].member_access
+                        i := 2
+                    }
+                    else
+                        run.failed := true
+                }
+                else
+                    run.failed := true
+            ; calls riding on the tuple: `outer.apply(x).finish()`
+            while run.failed = false and hop <> null and i < seq.length
+            {
+                let hops (*hop)
+                if hops.length <> 1
+                {
+                    run.failed := true
+                    return PROTO_NONE
+                }
+                var next_hop: ref[Vector[String]]? null
+                choose seq[i].expression
+                    when tp: Tuple
+                    {
+                        cur := this.proto_call(run, cur, hops[0], tp, self, pname, pnode, cur_name, cur_pos)
+                        next_hop := seq[i].member_access
+                    }
+                    else
+                        run.failed := true
+                hop := next_hop
+                i := i + 1
+            }
+            ; a trailing operator name: the value so far meets the operator
+            ; being met (`outer.apply(left.+(right)) *`)
+            while run.failed = false and i < seq.length
+            {
+                cur := this.proto_meet(run, cur, cur_name, cur_pos)
+                i := i + 1
+            }
+            cur
+        }
+
+        ; The order the protocol plans a sequence of operators in: for the
+        ; operator names `names` (terms in between, one before the first),
+        ; the raw operations in planning order -- 2k the k-th term, 2k + 1
+        ; the k-th operator. Empty when the protocol does not answer.
+        procedure protocol_order(mutable this: Planner, names: Array[String]) returns Array[size_t]
+        {
+            var order Array[size_t]()
+            var run ProtocolRun(Array[size_t](), Array[String](), Array[size_t](), Array[size_t](), Array[size_t](), Array[size_t](), false)
+            let top Planner.proto_node(&run, 0, protocol.start, PROTO_NONE, PROTO_NONE, PROTO_NONE, PROTO_NONE)
+            var state this.proto_member(&run, top, false, String("apply"), Planner.proto_node(&run, 1, String(""), PROTO_NONE, 0, PROTO_NONE, PROTO_NONE), String(""), PROTO_NONE)
+            var k: size_t 0
+            while k < names.length and run.failed = false
+            {
+                state := this.proto_meet(&run, state, names[k], k)
+                let term Planner.proto_node(&run, 1, String(""), PROTO_NONE, k + 1, PROTO_NONE, PROTO_NONE)
+                state := this.proto_member(&run, state, false, String("apply"), term, String(""), PROTO_NONE)
+                k := k + 1
+            }
+            let value this.proto_member(&run, state, false, String("finish"), PROTO_NONE, String(""), PROTO_NONE)
+            if run.failed or value >= run.kind.length or run.kind[value] = 0
+                return order
+            ; the value in planning order: the left, the right, the operation
+            var stack Vector[size_t](run.kind.length + 1)
+            var visited Vector[bool](run.kind.length + 1)
+            var sp: size_t 0
+            stack.put(0, value)
+            visited.put(0, false)
+            sp := 1
+            while sp > 0
+            {
+                let node stack[sp - 1]
+                if run.kind[node] = 1
+                {
+                    order.add(2 * run.f0[node])
+                    sp := sp - 1
+                }
+                else if visited[sp - 1]
+                {
+                    order.add(2 * run.opos[node] + 1)
+                    sp := sp - 1
+                }
+                else
+                {
+                    visited.put(sp - 1, true)
+                    if run.f1[node] >= run.kind.length or run.f0[node] >= run.kind.length or run.opos[node] = PROTO_NONE or sp + 2 > run.kind.length + 1
+                        return Array[size_t]()
+                    stack.put(sp, run.f1[node])
+                    visited.put(sp, false)
+                    stack.put(sp + 1, run.f0[node])
+                    visited.put(sp + 1, false)
+                    sp := sp + 2
+                }
+            }
+            order
+        }
+
+        ; The driver's table step by the protocol: the terms and operator
+        ; names of out from base on, folded in the order the protocol
+        ; answers, one raw operation `[left, operator, right]` at a time.
+        ; `answered` is false where the protocol has no answer.
+        procedure operation_by_protocol(mutable this: Planner, out: Array[PlannedOperand], base: size_t, mutable answered: ref[bool]) returns PlannedOperand
+        {
+            answered := false
+            var names Array[String]()
+            var key StringBuilder()
+            var k base + 1
+            while k < out.length
+            {
+                let name Planner.operand_type_name(out[k])
+                names.add name
+                key.append name
+                key.append("\n" as char)
+                k := k + 2
+            }
+            let key_text key.to_string()
+            var at protocol.patterns.table.lookup(key_text)
+            if at < 0
+            {
+                let order this.protocol_order(names)
+                this.name_index_put(protocol.patterns, String^this(key_text), protocol.post_start.length)
+                protocol.post_start.add(protocol.post.length)
+                protocol.post_length.add(order.length)
+                var oi: size_t 0
+                while oi < order.length
+                {
+                    protocol.post.add(order[oi])
+                    oi := oi + 1
+                }
+                at := protocol.patterns.table.lookup(key_text)
+            }
+            let start protocol.post_start[at as size_t]
+            let length protocol.post_length[at as size_t]
+            var first: PlannedOperand out[base]
+            if length = 0
+                return first
+            var stack Vector[PlannedOperand](names.length + 1)
+            var sp: size_t 0
+            var pi: size_t 0
+            while pi < length
+            {
+                let code protocol.post[start + pi]
+                pi := pi + 1
+                if code % 2 = 0
+                {
+                    stack.put(sp, out[base + code])
+                    sp := sp + 1
+                }
+                else
+                {
+                    if sp < 2
+                        return first
+                    var left: PlannedOperand stack[sp - 2]
+                    let right stack[sp - 1]
+                    var raw Vector[PlannedOperand](3)
+                    raw.put(0, left)
+                    raw.put(1, out[base + code])
+                    raw.put(2, right)
+                    stack.put(sp - 2, this.operation_apply(raw, left, 43))
+                    sp := sp - 1
+                }
+            }
+            if sp <> 1
+                return first
+            answered := true
+            stack[0]
         }
 
         ; ================================================================
@@ -30146,7 +30693,7 @@ define Planner
                         return ""
                     if this.is_operator(name)
                         return ""
-                    if Planner.get_operator_precedence(name) > 0
+                    if this.operator_by_protocol(name)
                         return ""
                     if Planner.is_primitive_type_name(name)
                         return ""
@@ -30613,7 +31160,7 @@ define Planner
                 return true
             if this.is_operator(name)
                 return true
-            if Planner.get_operator_precedence(name) > 0
+            if this.operator_by_protocol(name)
                 return true
             if Planner.is_primitive_type_name(name)
                 return true
@@ -53565,7 +54112,7 @@ define Planner
                 arr_count := Planner.global_array_count(value_holder)
                 if arr_count > 0
                 {
-                    let bad_elem Planner.fold_array_elements(value_holder, planned_type)
+                    let bad_elem Planner.fold_array_elements(protocol, value_holder, planned_type)
                     if bad_elem > 0
                     {
                         var asb StringBuilder()
@@ -53626,7 +54173,7 @@ define Planner
                     if is_plain_const = false
                     {
                         var folded: size_t 0
-                        let fold_ok Planner.fold_constant_ops(value_holder, &folded)
+                        let fold_ok Planner.fold_constant_ops(protocol, value_holder, &folded)
                         if fold_ok
                         {
                             let fold_const Constant.Integer(IntegerConstant(g.span, folded))
@@ -54258,6 +54805,8 @@ define Planner
             ; explicit `#`/rp is removed from their declaration.
             if transitive_page_built = false
             {
+                ; the protocol of an operation, before any body is read
+                this.read_operation_protocol()
                 ; residence first: R8 asks where a stored call result lives
                 ; (stored_value_builds#), and residence asks no page set
                 this.build_return_residence_set()
@@ -58721,13 +59270,14 @@ define Planner
     ; value. Writes the value to `out` and answers true, or answers false for
     ; any other shape. Shared by a scalar global's initializer and by every
     ; element of a const ARRAY global.
-    procedure fold_constant_ops(ops: Vector[PlannedOperand], mutable out: ref[size_t]) returns bool
+    procedure fold_constant_ops(proto: ref[OperationProtocol], ops: Vector[PlannedOperand], mutable out: ref[size_t]) returns bool
     {
         ; pending op codes: 1 + | 2 - | 3 * | 4 / | 5 % |
         ; 6 << | 7 >> | 8 & | 9 '|' | 10 xor
         var folded: size_t 0
         var pending_: int 0
-        var seq_prec: int 0
+        ; the first operator: every other must stand on its level
+        var seq_op String("")
         var neg: bool false
         var expect_value: bool true
         var fold_ok: bool true
@@ -58851,16 +59401,15 @@ define Planner
                                         opc := 10
                                     if opc > 0
                                     {
-                                        let p Planner.get_operator_precedence(opn)
                                         var prec_ok: bool true
-                                        if seq_prec > 0
+                                        if seq_op.get_length() > 0
                                         {
-                                            if p <> seq_prec
+                                            if Planner.protocol_same_level(proto, seq_op, opn) = false
                                                 prec_ok := false
                                         }
                                         if prec_ok
                                         {
-                                            seq_prec := p
+                                            seq_op := opn
                                             pending_ := opc
                                             expect_value := true
                                             f_handled := true
@@ -58927,7 +59476,7 @@ define Planner
     ; element; it used to take every constant CELL of a row and skip the rest,
     ; so `[0x10, 0 - 0x5, 0x30]` emitted `[16, 0, 5]` and `-2` emitted 2, rc 0,
     ; the tail dropped to keep the declared count.
-    procedure fold_array_elements(value: Vector[PlannedOperand], elem: PlannedType) returns size_t
+    procedure fold_array_elements(proto: ref[OperationProtocol], value: Vector[PlannedOperand], elem: PlannedType) returns size_t
     {
         let op_ptr value.get 0
         if op_ptr = null
@@ -58975,7 +59524,7 @@ define Planner
                                 if plain = false
                                 {
                                     var folded: size_t 0
-                                    if Planner.fold_constant_ops(row, &folded)
+                                    if Planner.fold_constant_ops(proto, row, &folded)
                                     {
                                         let first_ptr row.get 0
                                         var at mx.loc

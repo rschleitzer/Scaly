@@ -5517,6 +5517,7 @@ gen_cases = [
     ("packages/scalyc/0.2.0/scalyc/compiler/parser.scaly", "codegen/parser.scm"),
     ("packages/scalyc/0.2.0/scalyc/compiler/Syntax.scaly", "codegen/syntax.scm"),
     ("packages/scalyls/0.2.0/scalyls/grammar.scaly",       "codegen/highlight.scm"),
+    ("packages/scaly/0.2.0/scaly/operation.scaly",         "codegen/operation.scm"),
     ("tests/selfhosted/controlflow__break-in-for.scaly",   "tests/controlflow.sgm"),
 ]
 for (f, want) in gen_cases:

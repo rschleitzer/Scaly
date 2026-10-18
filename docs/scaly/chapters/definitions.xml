@@ -62,9 +62,11 @@ let d 84 'divided by' 2     ; infix -> 42
     </programlisting>
 
     <para>Built-in arithmetic, comparison, and logical operators carry their
-      usual precedences. A custom operator with a text or single-quoted name
-      binds most weakly of all — at the same level as <literal>||</literal> —
-      so the built-in arithmetic in an expression combines before it. For
+      usual precedences. A custom operator that no level of the operation
+      names — a text or single-quoted name, or a symbol such as
+      <literal>==</literal> — binds most weakly of all, on a level of its own
+      below <literal>||</literal>, so the built-in arithmetic in an expression
+      combines before it. For
       example, given an operator <literal>'minus'</literal> that subtracts its
       right operand from its left,
       <literal>20 'minus' 3 + 5</literal> parses as

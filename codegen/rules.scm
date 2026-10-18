@@ -1,6 +1,7 @@
 <![CDATA[
-;; Rules for generating the parser, the syntax tree, the highlighter inputs
-;; and the editor configuration from scaly.sgm.
+;; Rules for generating the parser, the syntax tree, the protocol of an
+;; operation, the highlighter inputs and the editor configuration from
+;; scaly.sgm.
 
 (element grammar
     (sosofo-append
@@ -9,6 +10,9 @@
         )
         (file "packages/scalyc/0.2.0/scalyc/compiler/parser.scaly"
             (generate-parser)
+        )
+        (file "packages/scaly/0.2.0/scaly/operation.scaly"
+            (generate-operation)
         )
         (file "packages/scalyls/0.2.0/scalyls/grammar.scaly"
             (generate-highlight)

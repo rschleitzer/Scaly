@@ -4,6 +4,7 @@
 <!ENTITY syntax       SYSTEM "syntax.scm"       >
 <!ENTITY parser       SYSTEM "parser.scm"       >
 <!ENTITY highlight    SYSTEM "highlight.scm"    >
+<!ENTITY operation    SYSTEM "operation.scm"    >
 <!ENTITY rules        SYSTEM "rules.scm"        >
 ]>
 
@@ -15,6 +16,7 @@
 &syntax;
 &parser;
 &highlight;
+&operation;
 &rules;
 
 </STYLE-SPECIFICATION>

@@ -303,7 +303,7 @@ define codelens
     ; ====================================================================
     procedure generated_banner(text: String, path: String) returns String mutable lc_col, lc_line, lc_off
     {
-        ; The three compiler-side DSSSL outputs (mkp's `gen codegen/scaly.dsl`).
+        ; The four DSSSL outputs of `gen codegen/scaly.dsl` in ./mkp that are .scaly files.
         let root1 codelens.strip_versioned(path, "scalyc", "/scalyc/compiler/parser.scaly")
         if root1.get_length() > 0
             return codelens.banner_lens(text, root1, "codegen/parser.scm")
@@ -311,6 +311,10 @@ define codelens
         let root2 codelens.strip_versioned(path, "scalyc", "/scalyc/compiler/Syntax.scaly")
         if root2.get_length() > 0
             return codelens.banner_lens(text, root2, "codegen/syntax.scm")
+
+        let root_op codelens.strip_versioned(path, "scaly", "/scaly/operation.scaly")
+        if root_op.get_length() > 0
+            return codelens.banner_lens(text, root_op, "codegen/operation.scm")
 
         let root3 codelens.strip_versioned(path, "scalyls", "/scalyls/grammar.scaly")
         if root3.get_length() > 0

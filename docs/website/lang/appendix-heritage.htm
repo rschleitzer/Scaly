@@ -265,9 +265,10 @@ CLASS="literal"
 ><P
 >The order of the levels — multiplication before
           addition, then shifts, comparisons, equality, and the bitwise
-          operators below those — is C's table, which C has from B. The
-          planner resolves it by precedence climbing, the method Martin
-          Richards used in the BCPL compiler.</P
+          operators below those — is C's table, which C has from B. It is
+          not a table in the compiler: the levels are written in the
+          standard library as types whose values wait for what follows, and
+          the planner reads an operation by them.</P
 ></DD
 ><DT
 >Hexadecimal literals with <TT
@@ -1223,8 +1224,10 @@ CLASS="emphasis"
           so far says what the next thing means — an argument, a member, an
           operator that leaves a value waiting for its right side, as a
           section does in Haskell. That combination has no model that the
-          author knows of. It is also not finished: today's compiler still
-          climbs a precedence table.</P
+          author knows of. It is also not finished: the binding strength of
+          the operators is such a protocol of waiting types already, but a
+          step is still chosen by the shape of what follows as well as by
+          the type.</P
 ></DD
 ><DT
 >No semicolons</DT

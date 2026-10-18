@@ -9,6 +9,7 @@ define scaly
     module os
     module cluster
     module tensor
+    module operation
 
     ; Test entry point that calls all module tests
     procedure test() returns int

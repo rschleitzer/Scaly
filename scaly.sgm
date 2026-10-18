@@ -691,4 +691,39 @@
 <punctuation id = caret             value = "^"
 <punctuation id = backslash         value = "\\"
 
+<level name = product
+    <operator name = Times              value = "*"
+    <operator name = Divide             value = "/"
+    <operator name = Remainder          value = "%"
+    <operator name = Div                value = "div"
+    <operator name = Mod                value = "mod"
+<level name = sum
+    <operator name = Plus               value = "+"
+    <operator name = Minus              value = "-"
+<level name = shift
+    <operator name = ShiftLeft          value = "<<"
+    <operator name = ShiftRight         value = ">>"
+<level name = relation
+    <operator name = Less               value = "<"
+    <operator name = Greater            value = ">"
+    <operator name = LessOrEqual        value = "<="
+    <operator name = GreaterOrEqual     value = ">="
+<level name = equality
+    <operator name = Equal              value = "="
+    <operator name = Unequal            value = "<>"
+<level name = bit_and
+    <operator name = BitAnd             value = "&"
+<level name = bit_xor
+    <operator name = Xor                value = "xor"
+<level name = bit_or
+    <operator name = BitOr              value = "|"
+<level name = conjunction
+    <operator name = And                value = "and"
+    <operator name = AndAnd             value = "&&"
+<level name = disjunction
+    <operator name = Or                 value = "or"
+    <operator name = OrOr               value = "||"
+<level name = declared                  others
+    <operator name = Other              value = "other"
+
 </grammar>

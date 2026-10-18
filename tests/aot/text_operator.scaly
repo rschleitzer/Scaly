@@ -2,8 +2,10 @@
 ; A binary operator declared with a text name ('minus') or a single-quoted
 ; name with spaces ('divided by') is recognized in INFIX position by its
 ; DECLARATION (not the first character) and dispatched as a real call. A
-; text-named operator binds weakest — precedence 1, like || — so arithmetic
-; binds tighter: `a 'minus' b + c` parses as `a 'minus' (b + c)`. The space
+; text-named operator binds weakest — no level of the operation names it, so
+; it stands on the level that takes the others (scaly.sgm, the protocol in
+; scaly/operation.scaly) — and arithmetic binds tighter: `a 'minus' b + c`
+; parses as `a 'minus' (b + c)`. The space
 ; in 'divided by' round-trips through the Itanium mangler and the quoted
 ; textual-IR symbol. Verified identical on stage-0 and the self-hosted
 ; compiler.

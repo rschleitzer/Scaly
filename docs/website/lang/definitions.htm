@@ -195,12 +195,17 @@ let d 84 'divided by' 2     ; infix -&#62; 42
     </PRE
 ><P
 >Built-in arithmetic, comparison, and logical operators carry their
-      usual precedences. A custom operator with a text or single-quoted name
-      binds most weakly of all — at the same level as <TT
+      usual precedences. A custom operator that no level of the operation
+      names — a text or single-quoted name, or a symbol such as
+      <TT
+CLASS="literal"
+>==</TT
+> — binds most weakly of all, on a level of its own
+      below <TT
 CLASS="literal"
 >||</TT
-> —
-      so the built-in arithmetic in an expression combines before it. For
+>, so the built-in arithmetic in an expression
+      combines before it. For
       example, given an operator <TT
 CLASS="literal"
 >'minus'</TT
@@ -243,7 +248,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1545"
+NAME="AEN1546"
 ></A
 ><TABLE
 BORDER="0"
@@ -340,7 +345,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1577"
+NAME="AEN1578"
 ></A
 ><TABLE
 BORDER="0"
@@ -453,7 +458,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1614"
+NAME="AEN1615"
 ></A
 ><TABLE
 BORDER="0"
@@ -527,7 +532,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1636"
+NAME="AEN1637"
 ></A
 ><TABLE
 BORDER="0"
