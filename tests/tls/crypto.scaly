@@ -4,7 +4,7 @@
 ; that are not all zero.
 ; Expected: sha256 hmac pbkdf2-1 pbkdf2-4096 random
 
-package scaly 0.1.0
+package scaly 0.2.0
 package tls 0.1.0
 
 

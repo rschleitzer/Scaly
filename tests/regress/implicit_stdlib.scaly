@@ -1,9 +1,9 @@
 ; Implicit stdlib: the scaly package (String, Vector, Option, Result, …) is
-; usable WITHOUT an explicit `package scaly 0.1.0` — the Modeler auto-loads
+; usable WITHOUT an explicit `package scaly 0.2.0` — the Modeler auto-loads
 ; the package whenever the prelude is enabled (dedup'd against an explicit
 ; declaration, skipped under --no-prelude). Before the fix, prelude.scaly
 ; supplied only print/println/puts and every stdlib TYPE reference failed
-; with "function not found". No `package scaly 0.1.0` line here on purpose.
+; with "function not found". No `package scaly 0.2.0` line here on purpose.
 ; Expected: PASS
 
 function opt_roundtrip() returns int

@@ -46,13 +46,13 @@
 ; JsonWriter on the handler's frame page -- nothing is prepared for a count
 ; or a multiplier.
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 package json 0.1.0
 package compress 0.1.0
 package tls 0.1.0
 package https 0.1.0
-package h3 0.1.0
+package h3 0.2.0
 package pg 0.2.0
 package redis 0.1.0
 

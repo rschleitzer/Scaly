@@ -6,7 +6,7 @@
 ; SOURCE TEXT, so a FHIR decimal (`1.50`) goes out as it came in; the
 ; conversions to i64 and f64 are accessors. The modules, in dependency order:
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 define json
 {

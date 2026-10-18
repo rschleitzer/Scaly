@@ -13,8 +13,8 @@
 ;   query     repeated parameters, percent-decoding
 ; Expected: priority params rest 405 404 head middleware query done
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 
 use http.Buffer.ByteBuf
 use http.Request.Request

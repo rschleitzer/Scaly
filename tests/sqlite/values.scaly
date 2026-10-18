@@ -9,7 +9,7 @@
 ;             one at its second use
 ; Expected: 2 NULL ab 2 3 näme ab 3 no such table: nowhere thread ok
 
-package scaly 0.1.0
+package scaly 0.2.0
 package sqlite 0.1.0
 
 use sqlite.Conn.SqliteConn

@@ -21,7 +21,7 @@
 ; five tscaly yardsticks stayed green over 17962 units with such a construction
 ; in the tree. What found it was ONE init call missing from the emitted IR.
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 define Leaf (v: int)
 

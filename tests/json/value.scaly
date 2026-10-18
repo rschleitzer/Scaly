@@ -10,7 +10,7 @@
 ;            parse changes nothing; escaped strings and names decoded in place
 ; Expected: access numbers order refuse big owned done
 
-package scaly 0.1.0
+package scaly 0.2.0
 package json 0.1.0
 
 use json.Value.JsonValue

@@ -9,8 +9,8 @@
 ;   4. shutdown, and wait returns.
 ; Expected: pipelined 3|72|20 404-close 400-close stopped
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 
 use http.Request.Request
 use http.Response.Response

@@ -10,7 +10,7 @@
 ; which it is (encrypt_option).
 ; Expected: FALSE 2 -10000000000 NULL näme 😀 code ab NULL -12.500000 6000 6000 | 3 -15000000000 1 näme 😀 code ab 2026-01-02 03:04:05.6789012 -12.500000 9000 9000 | Invalid object name 'nowhere'. 3 | TRUE 2 -10000000000 NULL näme 😀 code ab NULL -12.500000 6000 6000 | 3 -15000000000 1 näme 😀 code ab 2026-01-02 03:04:05.6789012 -12.500000 9000 9000 | Invalid object name 'nowhere'. 3 done
 
-package scaly 0.1.0
+package scaly 0.2.0
 package tds 0.1.0
 
 use tds.Conn.TdsConn

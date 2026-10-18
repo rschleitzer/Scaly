@@ -15,7 +15,7 @@
 ; require a caller page (a region frame is contagious across the function).
 ; Self-hosted-only. Expected: PASS
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.String
 use scaly.containers.Array

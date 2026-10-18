@@ -8,8 +8,8 @@
 ;   stopped    shutdown, and wait returns
 ; Expected: alpn pipelined 3|72 404-close stopped
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 package tls 0.1.0
 package https 0.1.0
 

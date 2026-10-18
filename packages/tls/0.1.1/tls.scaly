@@ -4,7 +4,7 @@
 ; not link libssl. Crypto holds the hashes and key derivations a protocol above
 ; it needs (SCRAM for Postgres) from the same libcrypto.
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 ; libssl and libcrypto, found and linked by the tool (OpenSSL 3)
 extern ssl, crypto

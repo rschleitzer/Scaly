@@ -25,7 +25,7 @@
 ; back garbage after the churn); the assertions below cover all seven so a future
 ; partial regression on any one of them trips the test.
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 define Rec (a: int  b: int)
 {

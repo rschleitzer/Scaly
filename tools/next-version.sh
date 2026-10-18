@@ -9,7 +9,7 @@
 # commit --, and every tracked file that names the old directory follows: the
 # scripts, the suites and their expected outputs, the documents.
 #
-# What does NOT follow: a declaration. `package scaly 0.1.0` names a minimum,
+# What does NOT follow: a declaration. `package scaly 0.2.0` names a minimum,
 # and the loader gives it the highest version of that line that is there, so
 # this tree's roots, the fixtures and every published package go on saying
 # what they said.

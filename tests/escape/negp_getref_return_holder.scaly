@@ -5,7 +5,7 @@
 ; promotes cleanly). The getref scan proves the ref reaches a return
 ; position; promotion is impossible (no rp), so the holder binding must be
 ; REJECTED (previously a silent dangle — the lambda-machinery class).
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.Vector
 

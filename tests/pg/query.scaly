@@ -12,7 +12,7 @@
 ;             one of a missing id 0
 ; Expected: items empty fortunes error again update
 
-package scaly 0.1.0
+package scaly 0.2.0
 package tls 0.1.0
 package pg 0.2.0
 

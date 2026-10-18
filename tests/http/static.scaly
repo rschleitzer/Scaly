@@ -13,8 +13,8 @@
 ;   fresh     the .br twin rewritten on disk is served after a second
 ; Expected: br gzip identity q0 binary 404 fresh
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 
 use http.Request.Request
 use http.Response.Response

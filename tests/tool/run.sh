@@ -239,11 +239,11 @@ fi
 # the package that uses it is compiled again, not taken out of the cache with
 # the old layout (it crashed: Modeler.dependency_text#)
 mkdir -p "$TMP/dep/packages/lower/0.1.0" "$TMP/dep/packages/upper/0.1.0"
-printf 'package scaly 0.1.0\ndefine lower\n{\n    define Pair(a: int, b: int)\n    function make(n: int) returns Pair\n        Pair(n, n + 1)\n}\n' > "$TMP/dep/packages/lower/0.1.0/lower.scaly"
-printf 'package scaly 0.1.0\npackage lower 0.1.0\ndefine upper\n{\n    function second(n: int) returns int\n        lower.make(n).b\n}\n' > "$TMP/dep/packages/upper/0.1.0/upper.scaly"
-printf 'package scaly 0.1.0\npackage upper 0.1.0\nprocedure main() returns int io\n{\n    print "`upper.second(10)`"\n    0\n}\n' > "$TMP/dep/main.scaly"
+printf 'package scaly 0.2.0\ndefine lower\n{\n    define Pair(a: int, b: int)\n    function make(n: int) returns Pair\n        Pair(n, n + 1)\n}\n' > "$TMP/dep/packages/lower/0.1.0/lower.scaly"
+printf 'package scaly 0.2.0\npackage lower 0.1.0\ndefine upper\n{\n    function second(n: int) returns int\n        lower.make(n).b\n}\n' > "$TMP/dep/packages/upper/0.1.0/upper.scaly"
+printf 'package scaly 0.2.0\npackage upper 0.1.0\nprocedure main() returns int io\n{\n    print "`upper.second(10)`"\n    0\n}\n' > "$TMP/dep/main.scaly"
 ( cd "$TMP/dep" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "dep1$SCALY_EXE" > build1.log 2>&1 )
-printf 'package scaly 0.1.0\ndefine lower\n{\n    define Pair(z: int, a: int, b: int)\n    function make(n: int) returns Pair\n        Pair(0, n, n + 1)\n}\n' > "$TMP/dep/packages/lower/0.1.0/lower.scaly"
+printf 'package scaly 0.2.0\ndefine lower\n{\n    define Pair(z: int, a: int, b: int)\n    function make(n: int) returns Pair\n        Pair(0, n, n + 1)\n}\n' > "$TMP/dep/packages/lower/0.1.0/lower.scaly"
 ( cd "$TMP/dep" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "dep2$SCALY_EXE" > build2.log 2>&1 )
 out1=$("$TMP/dep/dep1$SCALY_EXE" 2>&1); out2=$("$TMP/dep/dep2$SCALY_EXE" 2>&1)
 [ "$out1" = 11 ] && [ "$out2" = 11 ] && ok || bad "dependent: got '$out1' and '$out2' $(tail -2 "$TMP/dep/build2.log" | tr '\n' ' ')"
@@ -252,7 +252,7 @@ out1=$("$TMP/dep/dep1$SCALY_EXE" 2>&1); out2=$("$TMP/dep/dep2$SCALY_EXE" 2>&1)
 # above it is not compiled again (its key holds the interface's sum, not the
 # files': Modeler.interface_sum#), and the program has the new body
 uppers1=$(ls "$SCALY_CACHE" | grep -c '^upper-0\.1\.0-.*\.o$')
-printf 'package scaly 0.1.0\ndefine lower\n{\n    define Pair(z: int, a: int, b: int)\n    function make(n: int) returns Pair\n        Pair(0, n, n + 2)\n}\n' > "$TMP/dep/packages/lower/0.1.0/lower.scaly"
+printf 'package scaly 0.2.0\ndefine lower\n{\n    define Pair(z: int, a: int, b: int)\n    function make(n: int) returns Pair\n        Pair(0, n, n + 2)\n}\n' > "$TMP/dep/packages/lower/0.1.0/lower.scaly"
 ( cd "$TMP/dep" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "dep3$SCALY_EXE" > build3.log 2>&1 )
 uppers2=$(ls "$SCALY_CACHE" | grep -c '^upper-0\.1\.0-.*\.o$')
 out3=$("$TMP/dep/dep3$SCALY_EXE" 2>&1)
@@ -263,10 +263,10 @@ out3=$("$TMP/dep/dep3$SCALY_EXE" 2>&1)
 # a fresh copy is not. Before 2026-10-15 a linked routine counted as handing
 # back whatever the routine scanned before it did, and the local was kept
 mkdir -p "$TMP/ret/packages/lower/0.1.0" "$TMP/ret/packages/upper/0.1.0"
-printf 'package scaly 0.1.0\nuse scaly.memory.Page\ndefine Paths\n{\n    function pick(a: Slice[char], b: Slice[char]) returns Slice[char]\n    {\n        if b.length > 0\n            return b\n        a\n    }\n\n    function fresh(host: ref[Page], a: Slice[char], b: Slice[char]) returns Slice[char]\n    {\n        let buf Slice[char](b.length, host.allocate(b.length, 1) as pointer[char])\n        var i: size_t 0\n        while i < b.length\n        {\n            buf.put(i, b[i])\n            i := i + 1\n        }\n        buf\n    }\n}\n' > "$TMP/ret/packages/lower/0.1.0/lower.scaly"
-printf 'package scaly 0.1.0\npackage upper 0.1.0\nuse scaly.memory.Page\nuse scaly.containers.String\nuse upper.Keeper\nuse upper.Use\nprocedure main() returns int io\n{\n    let anchor String("probe")\n    let host Page.get(anchor.get_buffer())\n    let k &Keeper^host(host, Slice[char]())\n    print "`Use.from_local(k)` `(k.kept[0] as int)`"\n    0\n}\n' > "$TMP/ret/main.scaly"
+printf 'package scaly 0.2.0\nuse scaly.memory.Page\ndefine Paths\n{\n    function pick(a: Slice[char], b: Slice[char]) returns Slice[char]\n    {\n        if b.length > 0\n            return b\n        a\n    }\n\n    function fresh(host: ref[Page], a: Slice[char], b: Slice[char]) returns Slice[char]\n    {\n        let buf Slice[char](b.length, host.allocate(b.length, 1) as pointer[char])\n        var i: size_t 0\n        while i < b.length\n        {\n            buf.put(i, b[i])\n            i := i + 1\n        }\n        buf\n    }\n}\n' > "$TMP/ret/packages/lower/0.1.0/lower.scaly"
+printf 'package scaly 0.2.0\npackage upper 0.1.0\nuse scaly.memory.Page\nuse scaly.containers.String\nuse upper.Keeper\nuse upper.Use\nprocedure main() returns int io\n{\n    let anchor String("probe")\n    let host Page.get(anchor.get_buffer())\n    let k &Keeper^host(host, Slice[char]())\n    print "`Use.from_local(k)` `(k.kept[0] as int)`"\n    0\n}\n' > "$TMP/ret/main.scaly"
 for call in 'Paths.pick("x", other)' 'Paths.fresh(host, "x", other)'; do
-  printf 'package scaly 0.1.0\npackage lower 0.1.0\nuse scaly.memory.Page\nuse scaly.containers.String\nuse lower.Paths\n\ndefine Keeper(host: ref[Page], var kept: Slice[char])\n{\n    procedure take(mutable this, other: Slice[char])\n        kept := %s\n}\n\ndefine Use\n{\n    procedure from_local(mutable k: ref[Keeper]) returns size_t\n    {\n        let local String("temporary")\n        k.take(local.as_slice())\n        k.kept.length\n    }\n}\n' "$call" > "$TMP/ret/packages/upper/0.1.0/upper.scaly"
+  printf 'package scaly 0.2.0\npackage lower 0.1.0\nuse scaly.memory.Page\nuse scaly.containers.String\nuse lower.Paths\n\ndefine Keeper(host: ref[Page], var kept: Slice[char])\n{\n    procedure take(mutable this, other: Slice[char])\n        kept := %s\n}\n\ndefine Use\n{\n    procedure from_local(mutable k: ref[Keeper]) returns size_t\n    {\n        let local String("temporary")\n        k.take(local.as_slice())\n        k.kept.length\n    }\n}\n' "$call" > "$TMP/ret/packages/upper/0.1.0/upper.scaly"
   ( cd "$TMP/ret" && SCALY_HOME="$ROOT" "$SCALY" build main.scaly -o "ret$SCALY_EXE" > build.log 2>&1 )
   rc=$?
   case "$call" in
@@ -525,7 +525,7 @@ done
 col="$TMP/collide"
 for p in alpha beta; do
   mkdir -p "$col/packages/$p/0.1.0/$p"
-  printf 'package scaly 0.1.0\n\ndefine %s\n{\n    module util\n    module Box\n}\n' "$p" > "$col/packages/$p/0.1.0/$p.scaly"
+  printf 'package scaly 0.2.0\n\ndefine %s\n{\n    module util\n    module Box\n}\n' "$p" > "$col/packages/$p/0.1.0/$p.scaly"
 done
 write_pair() {  # write_pair <helper of beta> <record of beta>
   printf 'function helper(n: int) returns int\n    n + 1\n\nfunction from_alpha(n: int) returns int\n    helper(n)\n\nmutable calls: int 0\n\nprocedure bump_alpha() returns int mutable calls\n{\n    calls := calls + 1\n    calls\n}\n' > "$col/packages/alpha/0.1.0/alpha/util.scaly"
@@ -567,7 +567,7 @@ done
 tb="$TMP/twobox"
 for p in alpha beta; do
   mkdir -p "$tb/packages/$p/0.1.0/$p"
-  printf 'package scaly 0.1.0\n\ndefine %s\n{\n    module Box\n}\n' "$p" > "$tb/packages/$p/0.1.0/$p.scaly"
+  printf 'package scaly 0.2.0\n\ndefine %s\n{\n    module Box\n}\n' "$p" > "$tb/packages/$p/0.1.0/$p.scaly"
 done
 printf 'define Box\n(\n    v: int\n)\n{\n    function grown(this) returns int\n        v + 1\n}\n\nfunction make_alpha(n: int) returns Box\n    Box(n)\n\nfunction alpha_of(b: Box) returns int\n    b.v\n' > "$tb/packages/alpha/0.1.0/alpha/Box.scaly"
 printf 'define Box\n(\n    v: int\n    w: int\n    x: int\n)\n{\n    function grown(this) returns int\n        v + w + x + 100\n}\n\nfunction make_beta(n: int) returns Box\n    Box(n, 10, 20)\n\nfunction beta_of(b: Box) returns int\n    b.x\n' > "$tb/packages/beta/0.1.0/beta/Box.scaly"
@@ -611,14 +611,14 @@ out=$(cd "$tb" && SCALY_HOME="$here" "$scaly_abs" run cross.scaly 2>&1); rc=$?
 dm="$TMP/diamond"
 for v in 0.1.0 0.2.0; do
   mkdir -p "$dm/packages/jdoc/$v/jdoc"
-  printf 'package scaly 0.1.0\n\ndefine jdoc\n{\n    module api\n}\n' > "$dm/packages/jdoc/$v/jdoc.scaly"
+  printf 'package scaly 0.2.0\n\ndefine jdoc\n{\n    module api\n}\n' > "$dm/packages/jdoc/$v/jdoc.scaly"
 done
 printf 'define Value\n(\n    n: int\n)\n\nmutable made: int 0\n\nprocedure make(n: int) returns Value mutable made\n{\n    made := made + 1\n    Value(n)\n}\n\nfunction get(v: Value) returns int\n    v.n\n\nprocedure count() returns int\n    made\n' > "$dm/packages/jdoc/0.1.0/jdoc/api.scaly"
 printf 'define Value\n(\n    n: int\n    m: int\n)\n\nmutable made: int 0\n\nprocedure make(n: int) returns Value mutable made\n{\n    made := made + 10\n    Value(n, 1000)\n}\n\nfunction get(v: Value) returns int\n    v.n + v.m\n\nprocedure count() returns int\n    made\n' > "$dm/packages/jdoc/0.2.0/jdoc/api.scaly"
 for p in a b; do
   v=0.1.0; [ "$p" = b ] && v=0.2.0
   mkdir -p "$dm/packages/$p/0.1.0/$p"
-  printf 'package scaly 0.1.0\npackage jdoc %s\n\ndefine %s\n{\n    module use_it\n}\n' "$v" "$p" > "$dm/packages/$p/0.1.0/$p.scaly"
+  printf 'package scaly 0.2.0\npackage jdoc %s\n\ndefine %s\n{\n    module use_it\n}\n' "$v" "$p" > "$dm/packages/$p/0.1.0/$p.scaly"
   printf 'use jdoc.api.Value\n\nprocedure %s_value(n: int) returns Value mutable made\n    make(n)\n\nfunction %s_get(v: Value) returns int\n    get(v)\n\nprocedure %s_count() returns int\n    count()\n' "$p" "$p" "$p" > "$dm/packages/$p/0.1.0/$p/use_it.scaly"
 done
 printf 'package a 0.1.0\npackage b 0.1.0\n\nlet x a_value(1)\nlet y b_value(1)\nlet z a_value(2)\nprint("`a_get(x)` `b_get(y)` `a_get(z)` `a_count()` `b_count()`")\n' > "$dm/main.scaly"
@@ -657,7 +657,7 @@ out=$(cd "$dm" && SCALY_HOME="$here" "$scaly_abs" run main.scaly 2>&1); rc=$?
 pg="$TMP/pkgglobals"
 for p in alpha beta; do
   mkdir -p "$pg/packages/$p/0.1.0/$p"
-  printf 'package scaly 0.1.0\n\ndefine %s\n{\n    module vals\n}\n' "$p" > "$pg/packages/$p/0.1.0/$p.scaly"
+  printf 'package scaly 0.2.0\n\ndefine %s\n{\n    module vals\n}\n' "$p" > "$pg/packages/$p/0.1.0/$p.scaly"
 done
 printf 'define LIMIT: int 7\nmutable calls: int 1\n\nprocedure alpha_calls() returns int mutable calls\n{\n    calls := calls + 1\n    calls\n}\n\nfunction scaled[T](v: T) returns int\n    LIMIT\n' > "$pg/packages/alpha/0.1.0/alpha/vals.scaly"
 printf 'define LIMIT: int 900\nmutable calls: int 50\n\nfunction widened[T](v: T) returns int\n    LIMIT\n' > "$pg/packages/beta/0.1.0/beta/vals.scaly"
@@ -689,8 +689,8 @@ out=$(cd "$pg" && SCALY_HOME="$here" "$scaly_abs" run bare.scaly 2>&1); rc=$?
 if command -v git > /dev/null 2>&1; then
   nx="$TMP/next"; mkdir -p "$nx/packages/demo/0.1.0" "$nx/packages/other/0.1.0" "$nx/tools"
   ng() { git -C "$nx" -c user.name=t -c user.email=t@example.invalid -c init.defaultBranch=main "$@"; }
-  printf 'package scaly 0.1.0\n\ndefine demo\n{\n    function answer() returns int\n        42\n}\n' > "$nx/packages/demo/0.1.0/demo.scaly"
-  printf '; reads packages/demo/0.1.0/demo.scaly\npackage scaly 0.1.0\n\ndefine other\n{\n}\n' > "$nx/packages/other/0.1.0/other.scaly"
+  printf 'package scaly 0.2.0\n\ndefine demo\n{\n    function answer() returns int\n        42\n}\n' > "$nx/packages/demo/0.1.0/demo.scaly"
+  printf '; reads packages/demo/0.1.0/demo.scaly\npackage scaly 0.2.0\n\ndefine other\n{\n}\n' > "$nx/packages/other/0.1.0/other.scaly"
   printf '0.1.0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000\n' > "$nx/packages/other/published"
   printf '0.1.0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000\n' > "$nx/packages/demo/published"
   printf '#!/bin/sh\ncat packages/demo/0.1.0/demo.scaly packages/demo/0.1.0/demo.scaly\necho packages/demo/0.1.01 packages/demo/0.1.0.2\n' > "$nx/tools/show.sh"; chmod +x "$nx/tools/show.sh"
@@ -729,7 +729,7 @@ fi
 # a record's attribute before the break (`expected Concept` at the record's
 # parenthesis, on Windows only).
 cr="$TMP/crlf"; mkdir -p "$cr/packages/kit/0.1.0/kit"
-printf 'package scaly 0.1.0\r\n\r\ndefine kit\r\n{\r\n    module parts\r\n}\r\n' > "$cr/packages/kit/0.1.0/kit.scaly"
+printf 'package scaly 0.2.0\r\n\r\ndefine kit\r\n{\r\n    module parts\r\n}\r\n' > "$cr/packages/kit/0.1.0/kit.scaly"
 printf 'define LIMIT: int 58\r\n\r\ndefine Bag\r\n(\r\n    var items: Array[int]\r\n)\r\n{\r\n    init()\r\n    {\r\n        items := Array[int]^this()\r\n    }\r\n\r\n    procedure put(mutable this, n: int)\r\n    {\r\n        items.add(n)\r\n    }\r\n\r\n    function count(this) returns int\r\n        items.length as int\r\n}\r\n\r\nprocedure make_bag() returns int\r\n{\r\n    var b Bag()\r\n    b.put(1)\r\n    b.put(2)\r\n    b.count() + LIMIT\r\n}\r\n' > "$cr/packages/kit/0.1.0/kit/parts.scaly"
 printf 'package kit 0.1.0\r\n\r\nprint("`make_bag()`")\r\n' > "$cr/main.scaly"
 for turn in first second; do
@@ -743,7 +743,7 @@ done
 # every argument: the caller that passed a member of its own "wrote this".
 # The interface says what the result reaches (`@ret_reach_N`).
 rr="$TMP/reach"; mkdir -p "$rr/packages/kit/0.1.0/kit"
-printf 'package scaly 0.1.0\n\ndefine kit\n{\n    module parts\n}\n' > "$rr/packages/kit/0.1.0/kit.scaly"
+printf 'package scaly 0.2.0\n\ndefine kit\n{\n    module parts\n}\n' > "$rr/packages/kit/0.1.0/kit.scaly"
 printf 'define Link\n(\n    var sent: int\n)\n{\n    procedure dial(name: String, port: int) returns ref[Link]\n    {\n        let page Page.allocate_page()\n        if name.get_length() = 0\n            return &Link^page(0)\n        &Link^page(port)\n    }\n\n    procedure send(mutable this, n: int)\n    {\n        sent := sent + n\n    }\n\n    function total(this) returns int\n        sent\n}\n' > "$rr/packages/kit/0.1.0/kit/parts.scaly"
 printf 'package kit 0.1.0\n\ndefine Client\n(\n    name: String\n)\n{\n    procedure reach(this) returns int\n    {\n        let l Link.dial(name, 40)\n        l.send(2)\n        l.total()\n    }\n}\n\nlet c Client(String("somewhere"))\nprint("`c.reach()`")\n' > "$rr/main.scaly"
 # (through the tool, from an empty cache: the interface is there before the
@@ -813,7 +813,7 @@ else
   ( cd "$fr" && SCALY_HOME="$here" "$scaly_abs" new inner --lib ) > /dev/null 2>&1
   ( cd "$fr/inner" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
   mkdir -p "$fr/outer/packages/outer/0.1.0"
-  printf 'package scaly 0.1.0\npackage inner 0.1.0 "%s"\n\ndefine outer\n{\n    function twice(name: String) returns String\n        inner.greeting(inner.greeting(name))\n}\n' "$fr/inner" > "$fr/outer/packages/outer/0.1.0/outer.scaly"
+  printf 'package scaly 0.2.0\npackage inner 0.1.0 "%s"\n\ndefine outer\n{\n    function twice(name: String) returns String\n        inner.greeting(inner.greeting(name))\n}\n' "$fr/inner" > "$fr/outer/packages/outer/0.1.0/outer.scaly"
   printf 'int outer_c(void) { return 7; }\n' > "$fr/outer/packages/outer/0.1.0/extra.c"
   ( cd "$fr/outer" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
   printf 'package outer 0.1.0 "%s"\n\nprint(outer.twice("git"))\n' "$fr/outer" > "$fp/main.scaly"
@@ -858,11 +858,11 @@ else
   vr="$fr/mini"; mkdir -p "$vr"
   for v in 0.1.2 0.1.5 0.2.0 1.0.0; do
     mkdir -p "$vr/packages/mini/$v"
-    printf 'package scaly 0.1.0\n\ndefine mini\n{\n    function version() returns String\n        "%s"\n}\n' "$v" > "$vr/packages/mini/$v/mini.scaly"
+    printf 'package scaly 0.2.0\n\ndefine mini\n{\n    function version() returns String\n        "%s"\n}\n' "$v" > "$vr/packages/mini/$v/mini.scaly"
   done
   ( cd "$vr" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
   mkdir -p "$fr/via/packages/via/0.1.0"
-  printf 'package scaly 0.1.0\npackage mini 0.1.2 "%s"\n\ndefine via\n{\n    function seen() returns String\n        mini.version()\n}\n' "$vr" > "$fr/via/packages/via/0.1.0/via.scaly"
+  printf 'package scaly 0.2.0\npackage mini 0.1.2 "%s"\n\ndefine via\n{\n    function seen() returns String\n        mini.version()\n}\n' "$vr" > "$fr/via/packages/via/0.1.0/via.scaly"
   ( cd "$fr/via" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
   printf 'package via 0.1.0 "%s"\npackage mini 0.1.5 "%s"\n\nprint("`mini.version()` `via.seen()`")\n' "$fr/via" "$vr" > "$fp/newer.scaly"
   printf 'package via 0.1.0 "%s"\n\nprint(via.seen())\n' "$fr/via" > "$fp/older.scaly"
@@ -913,14 +913,14 @@ else
   # find them (Modeler.inherited_source#)
   kr="$fr/kit"; mkdir -p "$kr/packages/kit/0.1.0/programs" "$kr/packages/kithelp/0.1.0" "$kr/packages/bare/0.1.0"
   mkdir -p "$kr/packages/kithelp/0.1.0/kithelp"
-  printf 'package scaly 0.1.0\n\ndefine kithelp\n{\n    module marks\n}\n' > "$kr/packages/kithelp/0.1.0/kithelp.scaly"
+  printf 'package scaly 0.2.0\n\ndefine kithelp\n{\n    module marks\n}\n' > "$kr/packages/kithelp/0.1.0/kithelp.scaly"
   # a module-level constant of the sibling, read by the package beside it: the
   # planner finds a file's package by the `packages` segment of its path
   printf 'define KIT_MARKS: int 1\n\nfunction mark() returns String\n    "!"\n' > "$kr/packages/kithelp/0.1.0/kithelp/marks.scaly"
-  printf 'package scaly 0.1.0\npackage kithelp 0.1.0\n\ndefine kit\n{\n    function say(what: String) returns String\n        "kit says `what``mark()``KIT_MARKS`"\n}\n' > "$kr/packages/kit/0.1.0/kit.scaly"
+  printf 'package scaly 0.2.0\npackage kithelp 0.1.0\n\ndefine kit\n{\n    function say(what: String) returns String\n        "kit says `what``mark()``KIT_MARKS`"\n}\n' > "$kr/packages/kit/0.1.0/kit.scaly"
   printf 'package kit 0.1.0\n\nprint(kit.say("hello"))\n' > "$kr/packages/kit/0.1.0/programs/kit.scaly"
   printf 'package kit 0.1.0\n\nprint(kit.say("twice twice"))\n' > "$kr/packages/kit/0.1.0/programs/kit_twice.scaly"
-  printf 'package scaly 0.1.0\n\ndefine bare\n{\n    function one() returns int\n        1\n}\n' > "$kr/packages/bare/0.1.0/bare.scaly"
+  printf 'package scaly 0.2.0\n\ndefine bare\n{\n    function one() returns int\n        1\n}\n' > "$kr/packages/bare/0.1.0/bare.scaly"
   ( cd "$kr" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
   kb="$TMP/kitbin"
   out=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 2> "$TMP/install.err"); rc=$?
@@ -1072,7 +1072,7 @@ else
   # a package that declares one whose newer LINE is published is told so
   # (demo 0.2.0 beside the declared 0.1.0), and is published all the same
   ( cd "$pub" && SCALY_HOME="$here" "$scaly_abs" new client --lib && cd client \
-      && sed -i.bak "s|^package scaly 0.1.0\$|package scaly 0.1.0\\
+      && sed -i.bak "s|^package scaly 0.2.0\$|package scaly 0.2.0\\
 package demo 0.1.0 \"$pub/work.git\"|" packages/client/0.1.0/client.scaly && rm -f packages/client/0.1.0/client.scaly.bak \
       && pg init -q && git config user.name t && git config user.email t@example.invalid \
       && pg add -A && pg commit -q -m one && pg clone -q --bare . "$pub/client.git" && pg remote add origin "$pub/client.git"
@@ -1158,8 +1158,8 @@ PY
   # found there too -- this tree has only the new line of it
   ln="$pub/lines"; mkdir -p "$ln/packages/dep/0.1.0" "$ln/packages/user/0.1.0"
   lg() { git -C "$ln" -c user.name=t -c user.email=t@example.invalid -c init.defaultBranch=main "$@"; }
-  printf 'package scaly 0.1.0\n\ndefine dep\n{\n    function answer() returns int\n        42\n}\n' > "$ln/packages/dep/0.1.0/dep.scaly"
-  printf 'package scaly 0.1.0\npackage dep 0.1.0\n\ndefine user\n{\n    function twice() returns int\n        dep.answer() * 2\n}\n' > "$ln/packages/user/0.1.0/user.scaly"
+  printf 'package scaly 0.2.0\n\ndefine dep\n{\n    function answer() returns int\n        42\n}\n' > "$ln/packages/dep/0.1.0/dep.scaly"
+  printf 'package scaly 0.2.0\npackage dep 0.1.0\n\ndefine user\n{\n    function twice() returns int\n        dep.answer() * 2\n}\n' > "$ln/packages/user/0.1.0/user.scaly"
   lg init -q && lg add -A && lg commit -q -m one && lg clone -q --bare . "$ln.git" 2> /dev/null && lg remote add origin "$ln.git"
   lp() { ( cd "$ln" && SCALY_HOME="$here" "$scaly_abs" publish "$@" ) 2>&1; }
   out=$(lp); rc=$?

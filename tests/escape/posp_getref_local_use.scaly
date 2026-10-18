@@ -3,7 +3,7 @@
 ; shape must NOT be recorded by the getref scan (deref'd-paren fix — the `*`
 ; sits before the paren group), and the stamped local alias never escapes.
 ; Must COMPILE (no false positive; mirrors containers.scaly's test_vector).
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.Vector
 

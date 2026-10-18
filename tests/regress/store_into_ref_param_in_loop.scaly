@@ -13,7 +13,7 @@
 ; ours, and granting one propagates into dazzle's `Primitive::dispatch`, whose
 ; thin-shell arms may not require a caller page. Self-hosted-only. Expected: PASS
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.String
 use scaly.containers.Array

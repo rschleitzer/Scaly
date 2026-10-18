@@ -5589,7 +5589,7 @@ ws = "/tmp/lsp_ws/codelens_paths"
 shutil.rmtree(ws, ignore_errors=True)
 os.makedirs(ws + "/pkg/0.1.0/pkg")
 open(ws + "/pkg/0.1.0/pkg.scaly", "w").write(
-    "package scaly 0.1.0\n\ndefine pkg\n{\n    module a\n    module gone\n}\n")
+    "package scaly 0.2.0\n\ndefine pkg\n{\n    module a\n    module gone\n}\n")
 # a.scaly declares a TOP-LEVEL module: the Modeler looks for it beside a.scaly,
 # NOT under a/.
 open(ws + "/pkg/0.1.0/pkg/a.scaly", "w").write("module helper\n\ndefine a\n{\n}\n")
@@ -5609,7 +5609,7 @@ check("missing module file: a/helper.scaly" not in mt,
 # No packages/ anywhere above the fixture, so there is no absolute base: the
 # package lens must state the path and offer NO command.
 pkg_rows = [r for r in root_rows if r[1].startswith("package")]
-check(len(pkg_rows) == 1 and pkg_rows[0][1] == "package: packages/scaly/0.1.0/scaly.scaly"
+check(len(pkg_rows) == 1 and pkg_rows[0][1] == "package: packages/scaly/0.2.0/scaly.scaly"
       and pkg_rows[0][2] == "" and pkg_rows[0][3] is None,
       "with no resolution base the package lens is plain text, not a link")
 # In the checkout the same declaration IS clickable and absolute.
@@ -7129,7 +7129,7 @@ shutil.rmtree(ws, ignore_errors=True)
 os.makedirs(ws + "/app")
 # A minimal PACKAGE: the root names two modules, one calls the other.
 open(ws + "/app.scaly", "w").write(
-    "package scaly 0.1.0\n\ndefine app\n{\n    module util\n    module user\n}\n")
+    "package scaly 0.2.0\n\ndefine app\n{\n    module util\n    module user\n}\n")
 open(ws + "/app/util.scaly", "w").write(
     "define util\n"
     "{\n"
@@ -7278,7 +7278,7 @@ def build(name, mark):
     shutil.rmtree(ws, ignore_errors=True)
     os.makedirs(ws + "/app")
     open(ws + "/app.scaly", "w").write(
-        "package scaly 0.1.0\n\ndefine app\n{\n    module util\n    module user\n}\n")
+        "package scaly 0.2.0\n\ndefine app\n{\n    module util\n    module user\n}\n")
     open(ws + "/app/util.scaly", "w").write(
         "define util\n"
         "{\n"

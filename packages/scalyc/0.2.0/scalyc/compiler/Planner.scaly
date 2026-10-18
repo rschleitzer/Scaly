@@ -1344,7 +1344,7 @@ define Planner
         use_vis_verdict_ok: Array[size_t]
 
         ; --jit only: plan the BODIES of non-prelude loaded packages (so a
-        ; program that imports e.g. `package opensp 0.1.0` and calls into it
+        ; program that imports e.g. `package opensp 0.2.0` and calls into it
         ; actually JIT-compiles and RUNS those bodies, instead of leaving them
         ; as undefined externals that the ORC JIT resolves to a 0-returning
         ; stub — the false-pass that hid every opensp unit test). OFF for AOT /

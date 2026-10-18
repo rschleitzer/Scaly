@@ -42,7 +42,7 @@ sudo apt install clang</programlisting>
       <programlisting>curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</programlisting>
       <para>The toolchain's number is its own. The packages it brings — the
         standard library among them — have theirs, and a program's
-        <code>package scaly 0.1.0</code> goes on meaning the standard
+        <code>package scaly 0.2.0</code> goes on meaning the standard
         library of whatever toolchain is installed, as long as that is of the
         same line (<xref linkend="mod-package-versions"/>).</para>
       <para>Either way it puts three commands on your <envar>PATH</envar>:</para>

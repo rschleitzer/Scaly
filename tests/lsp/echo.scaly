@@ -3,7 +3,7 @@
 ; back out as a frame, until EOF. Drives the framing end-to-end:
 ;   printf 'Content-Length: 5\r\n\r\nhello' | echo  ->  same frame back
 
-package scaly 0.1.0
+package scaly 0.2.0
 package scalyls 0.2.0
 
 use scaly.containers.String

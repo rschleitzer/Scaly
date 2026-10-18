@@ -6,8 +6,8 @@
 ; binding cannot do without -- see that file), which the tool compiles with
 ; the include directories of those libraries.
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 package tls 0.1.0
 
 ; ngtcp2's crypto helper before ngtcp2; libssl and libcrypto come with tls

@@ -36,7 +36,7 @@
 ; procedure its allocations land on that procedure's own frame and never reuse the
 ; released page, which hides the bug.
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 define Rec (a: int  b: int)
 {

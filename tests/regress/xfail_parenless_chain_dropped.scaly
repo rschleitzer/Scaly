@@ -18,7 +18,7 @@
 ;
 ; xfail: this statement did not resolve to a call
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 function probe() returns int
 {

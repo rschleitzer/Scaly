@@ -7,8 +7,8 @@
 ; the error answers, and the field and query lookups.
 ; Expected: split pipelined errors fields done
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 
 use http.Request.Request
 

@@ -13,7 +13,7 @@
 ; point and money in a result, more than one result of a statement told
 ; apart.
 
-package scaly 0.1.0
+package scaly 0.2.0
 package tls 0.1.0
 
 define tds

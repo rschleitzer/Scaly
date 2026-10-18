@@ -4,7 +4,7 @@
 ; scan does not see this shape (no arg/return position), so the STAMPED Local
 ; pointee on the call result — pierced through the Option wrapper by
 ; is_reference_to_local_page# — is what must reject the store.
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.Vector
 

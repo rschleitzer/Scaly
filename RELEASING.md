@@ -57,7 +57,7 @@ for a change.)
   What it cannot see is a path built from a variable or a glob, and an
   expectation in a test that speaks of something else with the same
   spelling: run the bar after it and read the diff of the tests.
-- Declarations do not follow. `package scaly 0.1.0` names a minimum, and the
+- Declarations do not follow. `package scaly 0.2.0` names a minimum, and the
   loader gives it the highest version of that line that is there.
 
 The toolchain's number and the standard library's are different numbers on

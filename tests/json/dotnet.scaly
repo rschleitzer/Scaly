@@ -10,7 +10,7 @@
 ;           member name like a string
 ; Expected: edit dotnet done
 
-package scaly 0.1.0
+package scaly 0.2.0
 package json 0.1.1
 
 use json.Value.JsonValue

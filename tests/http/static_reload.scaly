@@ -10,8 +10,8 @@
 ; bytes").
 ; Expected: reload follow
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 
 use http.Static.StaticEntry
 

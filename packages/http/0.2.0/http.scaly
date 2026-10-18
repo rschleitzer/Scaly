@@ -6,7 +6,7 @@
 ; its parser, the Date field, the response writer, the router and the
 ; connection loop.
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 define http
 {

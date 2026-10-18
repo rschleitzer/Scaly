@@ -20,7 +20,7 @@
 ; spellable in construction position the same day.
 ; Self-hosted-only. Expected: PASS
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.memory.Page
 use scaly.containers.Array

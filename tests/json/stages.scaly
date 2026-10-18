@@ -13,7 +13,7 @@
 ;   deep       MAX_DEPTH nested arrays and one more
 ; Expected: shifted mutated truncated deep done
 
-package scaly 0.1.0
+package scaly 0.2.0
 package json 0.1.0
 
 use json.Reader.JsonReader

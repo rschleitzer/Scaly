@@ -7,7 +7,7 @@
 ; async-db answered nothing at 512 connections, at full CPU.
 ; Expected: 200
 
-package scaly 0.1.0
+package scaly 0.2.0
 package tls 0.1.0
 package pg 0.2.0
 

@@ -9,7 +9,7 @@
 ; `return localVar` still reject (see tests/escape/neg_return_*).
 ; Expected: PASS
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.StringBuilder
 use scaly.containers.String

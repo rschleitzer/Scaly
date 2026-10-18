@@ -1,7 +1,7 @@
 ; Modeler.scaly - Syntax to semantic model transformation
 ; Ported from retired proto-Scaly Modeler.scaly
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.memory.root_pages.getenv
 ; scaly.io imports are load-bearing beyond visibility: the use alias
@@ -3364,7 +3364,7 @@ define Modeler
     ; version itself has no directory in a base, the highest version of its
     ; line there that is not lower stands in (version_at#). A package's
     ; published versions leave its tree -- the directory is renamed for the
-    ; next one --, and `package scaly 0.1.0`, which every package says, must
+    ; next one --, and `package scaly 0.2.0`, which every package says, must
     ; go on finding the library an installation has.
     ; project_base#: the directory whose ./packages is the project's own --
     ; the current one ("") unless $SCALY_PROJECT names another, with its
@@ -4492,7 +4492,7 @@ define Modeler
 
         ; Implicit stdlib: auto-load the scaly package so its types (String,
         ; Vector, Option, Result, HashMap, …) are usable WITHOUT an explicit
-        ; `package scaly 0.1.0` — the prelude.scaly submodule above only
+        ; `package scaly 0.2.0` — the prelude.scaly submodule above only
         ; supplies print/println/puts. Loaded exactly like handle_package_decl#
         ; (same path/name), so register_packages# registers its concepts and
         ; the used ones instantiate on demand (unused ones are never emitted;

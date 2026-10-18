@@ -7,7 +7,7 @@
 ; escaping-target rule now collects it via collect_store_value_locals#'s
 ; inline-ctor recursion. Self-hosted-only. Expected: PASS
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.String
 use scaly.containers.Vector

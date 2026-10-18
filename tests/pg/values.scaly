@@ -22,7 +22,7 @@
 ;             the statement it prepared, and the connection goes on
 ; Expected: script bytes null rollback unnamed direct batch reason
 
-package scaly 0.1.0
+package scaly 0.2.0
 package tls 0.1.0
 package pg 0.2.0
 

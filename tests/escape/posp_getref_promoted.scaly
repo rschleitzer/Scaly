@@ -3,7 +3,7 @@
 ; getref scan + plan_binding# promotion place the holder's guts on rp, so
 ; nothing dangles. Must COMPILE (the de-sigiled compiler holder sites are
 ; exactly this shape).
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.Vector
 

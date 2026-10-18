@@ -5,7 +5,7 @@
 ; test does not depend on lexer escape decoding. Statements are one per
 ; line (';' starts a comment in Scaly, it is not a separator).
 
-package scaly 0.1.0
+package scaly 0.2.0
 package json 0.1.0
 package scalyls 0.2.0
 

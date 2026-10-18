@@ -1,7 +1,7 @@
 ; AOT Test: a ref[String]? built on the caller page (^rp) and handed back
 ; Expected: PASS
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.String
 use scaly.containers.Vector

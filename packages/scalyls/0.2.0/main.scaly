@@ -5,7 +5,7 @@
 ;   scalyc -o scalyls packages/scalyls/0.2.0/main.scaly \
 ;       -L<llvm-libdir> -lLLVM-18
 
-package scaly 0.1.0
+package scaly 0.2.0
 package scalyc 0.2.0
 package json 0.1.0
 package scalyls 0.2.0

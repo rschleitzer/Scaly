@@ -1226,7 +1226,7 @@ define tool
             sb.append ";\n"
             sb.append ";   package `name` 0.1.0\n"
             sb.append "\n"
-            sb.append "package scaly 0.1.0\n"
+            sb.append "package scaly 0.2.0\n"
             sb.append "\n"
             sb.append "define `name`\n"
             sb.append "{\n"

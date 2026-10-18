@@ -5,7 +5,7 @@
 ; language server scalyls (packages/scalyls); the three are built from one
 ; seed in one build and each links its code statically.
 
-package scaly 0.1.0
+package scaly 0.2.0
 package scalyc 0.2.0
 use scalyc.cli
 

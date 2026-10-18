@@ -6,7 +6,7 @@
 ;
 ; A connection belongs to the thread that opened it.
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 extern sqlite3
 

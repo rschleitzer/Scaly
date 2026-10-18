@@ -3,8 +3,8 @@
 ; Its own package, so that http alone never links OpenSSL and tls alone never
 ; links http.
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 package tls 0.1.0
 
 define https

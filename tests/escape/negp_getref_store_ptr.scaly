@@ -2,7 +2,7 @@
 ; ref (pointer[T]) out of a frame-local-page holder stored into a PARAMETER's
 ; field. Scan-blind shape (no arg/return position); the stamped Local pointee
 ; on the pointer result must reject the store.
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.Vector
 

@@ -9,7 +9,7 @@
 ; extern-LLVM unwrap chain. Self-hosted-only. Expected: PASS
 ; link: llvm
 
-package scaly 0.1.0
+package scaly 0.2.0
 
 define LLVMContextRef(handle: pointer[void])
 define LLVMTypeRef(handle: pointer[void])

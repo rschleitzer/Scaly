@@ -10,7 +10,7 @@
 ;            whitespace of every length before a value
 ; Expected: tokens refuse depth skip decode blocks done
 
-package scaly 0.1.0
+package scaly 0.2.0
 package json 0.1.0
 
 use json.Reader.JsonReader

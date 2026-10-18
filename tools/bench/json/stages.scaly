@@ -10,7 +10,7 @@
 ;   parse     JsonValue.parse
 ; Picoseconds per byte of the file, best of five rounds.
 
-package scaly 0.1.0
+package scaly 0.2.0
 package json 0.1.0
 
 use json.Value.JsonValue

@@ -18,8 +18,8 @@
 ; HeaderList.header answers as the HTTP/1.1 text of the request would.
 ; Expected: c41 c42 c43 table encoder huffman views fields
 
-package scaly 0.1.0
-package http 0.1.0
+package scaly 0.2.0
+package http 0.2.0
 
 use http.Buffer.ByteBuf
 use http.Hpack.HeaderList

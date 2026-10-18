@@ -2,7 +2,7 @@
 ; page holder reaches an ARGUMENT position in a function with no caller page
 ; (rp) in scope. Promotion is impossible, so the holder binding must be
 ; REJECTED instead of handing out a reference into the soon-freed local page.
-package scaly 0.1.0
+package scaly 0.2.0
 
 use scaly.containers.Vector
 

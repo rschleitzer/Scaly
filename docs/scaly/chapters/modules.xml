@@ -60,7 +60,7 @@ if b.area() = 12
       filesystem path — <filename>packages/scaly/0.2.0/</filename> — and that
       path is the single source of truth; there is no separate version
       manifest. The statement</para>
-    <programlisting>package scaly 0.1.0</programlisting>
+    <programlisting>package scaly 0.2.0</programlisting>
     <para>declares a dependency on that package. A package is looked for
       among the packages of the installation,
       <filename>$SCALY_HOME/packages/</filename> (the installed programs set
@@ -312,7 +312,7 @@ scaly publish</programlisting>
         a package with one function and its test. Its root file declares the
         packages it uses — the standard library too, which only a program gets
         without saying so:</para>
-      <programlisting>package scaly 0.1.0
+      <programlisting>package scaly 0.2.0
 
 define shapes
 {
