@@ -1,0 +1,36 @@
+; An operator a type does not declare is reported at the step that meets it
+; (Planner.report_undeclared_operator#). The table fell back to the built-in
+; operator, which on a record is the machine's operation on its ADDRESS:
+; `p = q` compared two pointers and `p + 1` stepped one at rc 0, `1 + p` and
+; `p * q` were a broken module. Each function below is one diagnostic; the
+; last two are the shapes that stay legal -- a field's value, and a record on
+; a page compared with a reference (the identity test).
+define Pt
+(
+    x: int
+)
+
+function same(p: Pt, q: Pt) returns bool
+    p = q
+
+function differs(p: Pt, q: Pt) returns bool
+    p <> q
+
+function step(p: Pt) returns Pt
+    p + 1
+
+function left_number(p: Pt) returns int
+    1 + p
+
+function product(p: Pt, q: Pt) returns int
+    p * q + 1
+
+function field_value(p: Pt) returns bool
+    p.x + 1 = 2
+
+function identity(r: ref[Pt]?) returns bool
+{
+    let page Page.get(r as ref[Pt])
+    let made Pt^page(1)
+    r <> made
+}

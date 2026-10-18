@@ -192,7 +192,7 @@ define Parts
         var attrs Vector[LLVMAttributeRef](n as size_t)
         LLVMGetAttributesAtIndex(from, idx, attrs.data)
         var i: size_t 0
-        while i < n as size_t
+        while i < (n as size_t)
         {
             let a attrs.get i
             if a <> null

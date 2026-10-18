@@ -9,7 +9,10 @@
 #           written out -- nothing of the protocol reaches the plan
 #   off     without the switch the operators are not answered by the protocol
 #   driver  the operation driver (Planner.operation#) reads a right side that
-#           holds a call to its precedence boundary (precedence_call.scaly)
+#           holds a call to its precedence boundary (precedence_call.scaly),
+#           and a grouping with a member hop as what it groups
+#           (grouping_hop.scaly), and an operator a record does not
+#           declare as rc 4 (undeclared_operator.scaly)
 # Not in the bar: an experiment. Usage: tests/pending/run.sh [scalyc]
 set -u
 cd "$(dirname "$0")/../.."
@@ -42,6 +45,20 @@ SCALYC_PENDING=1 "$BIN" -S -o "$W/use.ll" "$W/use.scaly" > "$W/use.log" 2>&1 \
 # next weaker operator -- the old collapse runs past it
 got=$(SCALYC_PENDING=1 "$TOOL" run tests/pending/precedence_call.scaly 2>&1 | tr '\n' ' ')
 [ "$got" = "T1 F2 " ] && ok || bad "driver: precedence_call answered '$got', expected 'T1 F2'"
+
+# the driver: `(a)` is `a` -- a grouping with a member hop works on the
+# grouped value, not on a copy
+got=$(SCALYC_PENDING=1 "$TOOL" run tests/pending/grouping_hop.scaly 2>&1 | tr '\n' ' ')
+[ "$got" = "PASS " ] && ok || bad "driver: grouping_hop answered '$got', expected 'PASS'"
+
+# the driver: an operator a record does not declare is rc 4 at its line --
+# five errors, none for a field's value or for the identity test
+SCALYC_PENDING=1 "$BIN" -S -o "$W/undeclared.ll" tests/pending/undeclared_operator.scaly > "$W/undeclared.log" 2>&1
+rc=$?
+lines=$(grep -c 'error: .*declares no' "$W/undeclared.log")
+lines14=$(grep -c ':14:5: error: Pt declares no operator' "$W/undeclared.log")
+lines23=$(grep -c ":23:5: error: no operator '+' takes int and Pt" "$W/undeclared.log")
+[ $rc = 4 ] && [ "$lines" = 5 ] && [ "$lines14" = 1 ] && [ "$lines23" = 1 ] && ok || bad "driver: undeclared_operator rc $rc, $lines errors (expected rc 4, 5)"
 
 echo "pending: $pass PASS, $fail FAIL"
 [ $fail = 0 ]

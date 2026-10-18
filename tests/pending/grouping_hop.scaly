@@ -1,0 +1,64 @@
+; `(a)` IS `a`: a grouping that carries a member hop hands the hop to what
+; it groups. The old collapse built `(a)` as a tuple -- a COPY of the
+; record --, so `(a).add(41)` added to the copy and `a` kept its value; with
+; a reference and a cast inside the parentheses it died with SIGBUS. The
+; operation driver peels the grouping (Planner.tuple_is_grouping#) and leaves
+; a construction by position alone (`Wrap(7).inc()`, a record of one field,
+; which the machinery hands back as a tuple too).
+define Acc
+(
+    var total: int
+    var inner: Inner
+)
+{
+    procedure add(mutable this, n: int)
+        total := total + n
+    function get(this) returns int
+        total
+}
+
+define Inner
+(
+    var count: int
+)
+{
+    procedure bump(mutable this, n: int)
+        count := count + n
+}
+
+define Wrap
+(
+    n: int
+)
+{
+    function inc(this) returns Wrap
+        Wrap(this.n + 1)
+    function get(this) returns int
+        this.n
+}
+
+procedure through_ref(mutable r: ref[Acc])
+{
+    (r).add(100)
+    ((r)).add(1000)
+}
+
+procedure through_cast(mutable p: pointer[Acc])
+    (p as ref[Acc]).add(10000)
+
+function value_of(a: Acc) returns int
+    (a).get() + 1
+
+var a Acc(1, Inner(0))
+(a).add(41)
+((a)).add(0)
+(a.inner).bump(7)
+through_ref(&a)
+through_cast(&a as pointer[Acc])
+var xs Array[int]()
+(xs).add(5)
+let ok (a).total = 11142 and a.inner.count = 7 and value_of(a) = 11143 and xs.length = 1 and Wrap(7).inc().get() = 8
+if ok
+    print "PASS"
+else
+    print "FAIL `a.total` `a.inner.count`"

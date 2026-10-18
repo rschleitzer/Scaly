@@ -28177,6 +28177,34 @@ define Planner
             String("")
         }
 
+        ; Is op the parentheses around ONE value? plan_tuple# gives such a
+        ; tuple the type of what it holds; a construction by position of a
+        ; record of one field, which the machinery hands back as a tuple too
+        ; (`Wrap(7)` in a rewritten sequence), has the record's type and a
+        ; component of the field's.
+        function tuple_is_grouping(op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when tup: PlannedTuple
+                {
+                    if tup.components = null
+                        return false
+                    let comps (*tup.components)
+                    if comps.length <> 1
+                        return false
+                    let cp comps[0]
+                    if cp.name <> null or cp.value = null
+                        return false
+                    let vops (*cp.value)
+                    if vops.length <> 1
+                        return false
+                    return Planner.types_equal(vops[0].result_type, tup.tuple_type)
+                }
+                else
+                    return false
+            false
+        }
+
         ; a tuple or a vector literal with a member hop riding on it
         ; (`a.b(1).c`, `files[k].equals`)
         function thing_carries_hop(op: PlannedOperand) returns bool
@@ -28206,6 +28234,12 @@ define Planner
         procedure operation_term(mutable this: Planner, mutable ops: Vector[PlannedOperand], first: size_t, limit: size_t) returns PlannedOperand
         {
             var cur: PlannedOperand ops[first]
+            ; `(a)` IS `a`: a grouping that carries a member hop hands the hop
+            ; to what it groups (collapse_grouping_target#, as a `set` target
+            ; does) -- built as a tuple it was a COPY, and `(a).add(c)` added
+            ; to the copy
+            if Planner.thing_carries_hop(cur) and Planner.tuple_is_grouping(cur)
+                cur := this.collapse_grouping_target(cur)
             var k first + 1
             while k < limit
             {
@@ -28304,12 +28338,54 @@ define Planner
                 k := k + 1
             }
             var vec Vector[PlannedOperand](arr)
+            var folded: PlannedOperand out[base]
             if plain
             {
                 var first: PlannedOperand out[base]
-                return this.operation_apply(vec, first, 43)
+                folded := this.operation_apply(vec, first, 43)
             }
-            this.operation_step(vec, 43)
+            else
+                folded := this.operation_step(vec, 43)
+            this.report_undeclared_operator(folded)
+            folded
+        }
+
+        ; An operator a type does not declare is reported at the step that
+        ; meets it. The table falls back to the built-in operator wherever
+        ; nothing resolves, and on a record that is the machine's operation
+        ; on the record's ADDRESS: `p = q` compared two pointers and
+        ; `p + 1` stepped one at rc 0, `1 + p` and `p * q` were a broken
+        ; module. Walks the operator calls of one table step; a term was
+        ; folded before and is not entered.
+        procedure report_undeclared_operator(mutable this: Planner, op: PlannedOperand)
+        {
+            choose op.expr
+                when c: PlannedCall
+                {
+                    if c.is_operator = false or c.is_intrinsic = false or c.args = null
+                        return
+                    let args (*c.args)
+                    if args.length <> 2
+                        return
+                    this.report_undeclared_operator(args[0])
+                    this.report_undeclared_operator(args[1])
+                    let left args[0].result_type
+                    let right args[1].result_type
+                    ; a record on a page compared with a reference is the
+                    ; identity test (`dtd.lookup(name) <> para`, para built by
+                    ; `ElementType^host(...)`)
+                    if (c.name = "=" or c.name = "<>") and (Planner.type_is_reference_shaped(left) or Planner.type_is_reference_shaped(right))
+                        return
+                    if this.is_structure_name(left.name)
+                    {
+                        this.add_diagnostic(c.loc, String^this("`left.name` declares no operator '`c.name`'"))
+                        return
+                    }
+                    if this.is_structure_name(right.name)
+                        this.add_diagnostic(c.loc, String^this("no operator '`c.name`' takes `left.name` and `right.name`: `right.name` declares none"))
+                }
+                else
+                    0
         }
 
         ; a lone thing between an operator and a postfix: where the source
