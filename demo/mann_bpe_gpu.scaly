@@ -34,7 +34,7 @@
 ; Run via demo/run_bpe_gpu.sh (pins the cwd; SKIPs off macOS) or
 ; demo/showcase_gpu.sh (train once, then prompt-driven generation).
 
-package scalygpu 0.1.0
+package scalygpu 0.2.0
 
 use scalygpu.gputape.GpuTape
 

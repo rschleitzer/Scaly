@@ -17,7 +17,7 @@
 ; Run via tests/tensor/bench/run_gpu_ops.sh (darwin-only; SKIPs off
 ; macOS / without a Metal device).
 
-package scalygpu 0.1.0
+package scalygpu 0.2.0
 
 use scalygpu.gputape.GpuTape
 
