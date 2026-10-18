@@ -465,7 +465,7 @@ PKG
 printf 'this is no package at all (\n' > "$proj/packages/json/0.2.0/json.scaly"
 cat > "$proj/main.scaly" <<'PKG'
 package mine 0.1.0
-package json 0.1.0
+package json 0.2.0
 
 print("project `greeting(2)`")
 PKG

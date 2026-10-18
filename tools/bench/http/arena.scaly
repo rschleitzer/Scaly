@@ -48,13 +48,13 @@
 
 package scaly 0.2.0
 package http 0.2.0
-package json 0.1.0
-package compress 0.1.0
-package tls 0.1.0
-package https 0.1.0
+package json 0.2.0
+package compress 0.2.0
+package tls 0.2.0
+package https 0.2.0
 package h3 0.2.0
 package pg 0.2.0
-package redis 0.1.0
+package redis 0.2.0
 
 use http.Request.Request
 use http.Response.Response

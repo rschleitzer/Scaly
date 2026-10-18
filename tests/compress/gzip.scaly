@@ -7,7 +7,7 @@
 ; Expected: round ratio limits done
 
 package scaly 0.2.0
-package compress 0.1.0
+package compress 0.2.0
 
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable gzip_compressor, gzip_decompressor
 {

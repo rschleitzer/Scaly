@@ -1419,7 +1419,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -5292265969186859842
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -5997357802144463535
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -7625,7 +7625,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.sconst.6176 = private constant [14 x i8] c"\0C;   package \00"
 @.sconst.6177 = private constant [9 x i8] c"\07 0.1.0\0A\00"
 @.sconst.6178 = private constant [3 x i8] c"\01\0A\00"
-@.sconst.6179 = private constant [22 x i8] c"\14package scaly 0.1.0\0A\00"
+@.sconst.6179 = private constant [22 x i8] c"\14package scaly 0.2.0\0A\00"
 @.sconst.6180 = private constant [3 x i8] c"\01\0A\00"
 @.sconst.6181 = private constant [9 x i8] c"\07define \00"
 @.sconst.6182 = private constant [4 x i8] c"\02{\0A\00"

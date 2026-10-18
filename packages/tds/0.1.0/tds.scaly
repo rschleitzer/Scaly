@@ -14,7 +14,7 @@
 ; apart.
 
 package scaly 0.2.0
-package tls 0.1.0
+package tls 0.2.0
 
 define tds
 {

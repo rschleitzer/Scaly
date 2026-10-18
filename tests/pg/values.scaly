@@ -23,7 +23,7 @@
 ; Expected: script bytes null rollback unnamed direct batch reason
 
 package scaly 0.2.0
-package tls 0.1.0
+package tls 0.2.0
 package pg 0.2.0
 
 use pg.Conn.PgConn

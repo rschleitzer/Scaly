@@ -11,7 +11,7 @@
 ; Expected: access numbers order refuse big owned done
 
 package scaly 0.2.0
-package json 0.1.0
+package json 0.2.0
 
 use json.Value.JsonValue
 use json.Value.JsonParsed

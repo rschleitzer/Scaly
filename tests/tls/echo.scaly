@@ -9,7 +9,7 @@
 ; Expected: handshake hello big close done
 
 package scaly 0.2.0
-package tls 0.1.0
+package tls 0.2.0
 
 use tls.Tls.TlsContext
 use tls.Tls.TlsStream

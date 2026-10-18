@@ -6,7 +6,7 @@
 ; Expected: 200
 
 package scaly 0.2.0
-package redis 0.1.0
+package redis 0.2.0
 
 use redis.Conn.RedisConn
 

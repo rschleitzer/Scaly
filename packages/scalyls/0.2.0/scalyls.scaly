@@ -10,7 +10,7 @@ package scaly 0.2.0
 package scalyc 0.2.0
 
 ; JSON: the reader, the value tree and the quoting of hand-built replies.
-package json 0.1.0
+package json 0.2.0
 
 define scalyls
 {

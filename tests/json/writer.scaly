@@ -23,7 +23,7 @@
 ; Expected: build escape integer round grow string blocks verbatim done
 
 package scaly 0.2.0
-package json 0.1.0
+package json 0.2.0
 
 use json.Value.JsonValue
 use json.Value.JsonParsed

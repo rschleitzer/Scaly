@@ -8,7 +8,7 @@
 
 package scaly 0.2.0
 package http 0.2.0
-package tls 0.1.0
+package tls 0.2.0
 
 ; ngtcp2's crypto helper before ngtcp2; libssl and libcrypto come with tls
 extern ngtcp2_crypto_ossl, ngtcp2

@@ -9,7 +9,7 @@
 ; the runtime's evented I/O and the scheduler runs other requests meanwhile.
 
 package scaly 0.2.0
-package tls 0.1.0
+package tls 0.2.0
 
 define pg
 {

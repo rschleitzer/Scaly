@@ -14,7 +14,7 @@
 ; Expected: shifted mutated truncated deep done
 
 package scaly 0.2.0
-package json 0.1.0
+package json 0.2.0
 
 use json.Reader.JsonReader
 use json.Reader.JsonToken
