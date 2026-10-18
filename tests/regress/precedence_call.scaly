@@ -5,18 +5,15 @@
 ; condition: a broken module under the JIT, and compiled to a program it
 ; answers F1 at rc 0. The operation driver folds each
 ; term before the table sees the operators, so every operator stands where
-; the search looks (2026-10-04).
+; the search looks (2026-10-04); the default since 2026-10-18.
+; Expected: PASS
 function g(n: int) returns int
     n
 
 function probe(a: int, b: bool) returns bool
     a = 0 - g(1) and b
 
-if probe(0 - 1, true)
-    print "T1"
+if probe(0 - 1, true) and probe(5, true) = false
+    print "PASS"
 else
-    print "F1"
-if probe(5, true)
-    print "T2"
-else
-    print "F2"
+    print "FAIL"

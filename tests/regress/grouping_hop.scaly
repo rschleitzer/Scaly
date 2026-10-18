@@ -4,7 +4,8 @@
 ; a reference and a cast inside the parentheses it died with SIGBUS. The
 ; operation driver peels the grouping (Planner.tuple_is_grouping#) and leaves
 ; a construction by position alone (`Wrap(7).inc()`, a record of one field,
-; which the machinery hands back as a tuple too).
+; which the machinery hands back as a tuple too). 2026-10-18.
+; Expected: PASS
 define Acc
 (
     var total: int

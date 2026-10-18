@@ -807,8 +807,10 @@ define Planner
         ; of such a name is planned as "slot": the emitter gives a record held
         ; as a VALUE a slot, so the store has an address (emit_binding#).
         field_written_locals: Array[String]
-        ; the pending-type experiment: 0 not asked yet, 1 off, 2 on
-        ; (SCALYC_PENDING, pending_on#)
+        ; the two switches of the operation: 0 not asked yet, else 1 plus 2
+        ; for the pending-type experiment (SCALYC_PENDING, pending_on#) plus
+        ; 4 for the old collapse instead of the driver (SCALYC_OPERATION_OLD,
+        ; driver_on#)
         var pending_mode: int
         ; the operation census: slot 0 the switch, the rest its counters
         ; (operation_census#); from slot 23 the operation driver's state and
@@ -12005,10 +12007,10 @@ define Planner
                 return (*only_ptr)
             }
 
-            ; The operation driver (SCALYC_PENDING=1, operation#): the
-            ; sequence is read from the left, step by step, and what the
-            ; driver does not understand comes back here as a whole.
-            if this.pending_on()
+            ; The operation driver (operation#; SCALYC_OPERATION_OLD=1 turns it
+            ; off): the sequence is read from the left, step by step, and what
+            ; the driver does not understand comes back here as a whole.
+            if this.driver_on()
             {
                 let driven this.operation(ops)
                 if operation_counts[23] = 1
@@ -27708,7 +27710,7 @@ define Planner
             this.operation_census_line("method+empty-tuple", 17)
             this.operation_census_line("method+value", 19)
             this.operation_census_line("method-bare", 13)
-            if this.pending_on()
+            if this.driver_on()
             {
                 this.operation_census_line("driver-sequences", 25)
                 this.operation_census_line("driver-answered", 26)
@@ -27759,8 +27761,8 @@ define Planner
         }
 
         ; ================================================================
-        ; The operation driver (SCALYC_PENDING=1; step 1,
-        ; part 2): the loop that reads a sequence from the left, in front of
+        ; The operation driver (step 1, part 2; the default since
+        ; 2026-10-18, SCALYC_OPERATION_OLD=1 turns it off): the loop that reads a sequence from the left, in front of
         ; collapse_operand_sequence#. It knows WHICH step comes next -- a name
         ; and its tuple, a value and its vector literal, a prefix at the
         ; start, a postfix -- and hands each step to the machinery there is,
@@ -28560,14 +28562,27 @@ define Planner
         ; the table.
         ; ================================================================
         procedure pending_on(mutable this: Planner) returns bool
+            (this.operation_switches() & 2) <> 0
+
+        ; The operation driver (operation#) reads every sequence since
+        ; 2026-10-18; SCALYC_OPERATION_OLD=1 hands them to the old collapse
+        ; as a whole, as before -- the yardstick tools/operation-compare.sh
+        ; compares the two.
+        procedure driver_on(mutable this: Planner) returns bool
+            (this.operation_switches() & 4) = 0
+
+        procedure operation_switches(mutable this: Planner) returns int
         {
             if pending_mode = 0
             {
-                pending_mode := 1
+                var mode 1
                 if getenv("SCALYC_PENDING") <> null
-                    pending_mode := 2
+                    mode := mode | 2
+                if getenv("SCALYC_OPERATION_OLD") <> null
+                    mode := mode | 4
+                pending_mode := mode
             }
-            pending_mode = 2
+            pending_mode
         }
 
         ; Is op the bare name `=`?

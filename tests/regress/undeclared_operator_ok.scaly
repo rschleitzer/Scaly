@@ -1,0 +1,24 @@
+; What report_undeclared_operator# (xfail_undeclared_operator.scaly) leaves
+; alone: an operator on a record's FIELD, and a record on a page compared
+; with a reference -- the identity test (`dtd.lookup_element_type(name) <>
+; para` in opensp, para built by `ElementType^host(...)`). 2026-10-18.
+; Expected: PASS
+define Pt
+(
+    x: int
+)
+
+function field_value(p: Pt) returns bool
+    p.x + 1 = 2
+
+function identity(r: ref[Pt]) returns bool
+{
+    let made Pt#(1)
+    r <> made
+}
+
+let first Pt(1)
+if field_value(first) and identity(&first)
+    print "PASS"
+else
+    print "FAIL"

@@ -1,8 +1,9 @@
 #!/bin/bash
 # tools/operation-compare.sh — the yardstick of the operation driver
 # (Planner.operation#): every package
-# root is emitted twice, by the old collapse alone and with the driver in
-# front of it (SCALYC_PENDING=1), and the two IR files must be the same bytes.
+# root is emitted twice, by the old collapse alone (SCALYC_OPERATION_OLD=1)
+# and with the driver in front of it (the default since 2026-10-18), and the
+# two IR files must be the same bytes -- each difference is judged.
 # With it the driver's counters: how many sequences it answered, the steps it
 # took, and why it left the others to the old collapse.
 #
@@ -37,8 +38,8 @@ one() {
   fl="--no-tests"
   case "$r" in packages/scaly/*/scaly.scaly) fl="--no-prelude --no-tests";; esac
   ( cd "$repo"; ulimit -s 65520
-    SCALY_HOME="$HOME_DIR" "$BIN" -S $fl -o "$OUT/$n.off.ll" "$r" > "$OUT/$n.off.out" 2>&1; echo $? > "$OUT/$n.off.rc"
-    SCALY_HOME="$HOME_DIR" SCALYC_PENDING=1 SCALYC_OPERATION_CENSUS=1 "$BIN" -S $fl -o "$OUT/$n.on.ll" "$r" > "$OUT/$n.on.out" 2> "$OUT/$n.on.err"; echo $? > "$OUT/$n.on.rc" )
+    SCALY_HOME="$HOME_DIR" SCALYC_OPERATION_OLD=1 "$BIN" -S $fl -o "$OUT/$n.off.ll" "$r" > "$OUT/$n.off.out" 2>&1; echo $? > "$OUT/$n.off.rc"
+    SCALY_HOME="$HOME_DIR" SCALYC_OPERATION_CENSUS=1 "$BIN" -S $fl -o "$OUT/$n.on.ll" "$r" > "$OUT/$n.on.out" 2> "$OUT/$n.on.err"; echo $? > "$OUT/$n.on.rc" )
 }
 export -f one; export BIN OUT HOME_DIR
 roots | grep -e "$FILTER" | xargs -P 6 -L 1 bash -c 'one $0 $1'
