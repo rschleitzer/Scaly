@@ -1,0 +1,17 @@
+; A returned record carries its components (2026-10-19,
+; Planner.check_tail_ref_escape#): `Holder(1, &x)` hands back the address of a
+; frame local as surely as `&x` does, which was refused while the record was
+; not -- it compiled at rc 0 and the caller read a dead stack slot (100 for 5
+; after one more call).
+; xfail: reference into a local page escapes via return
+define Holder (n: int, r: ref[int])
+
+function bad() returns Holder
+{
+    var x 5
+    Holder(1, &x)
+}
+
+let h bad()
+let v: int h.r
+print "`v`"

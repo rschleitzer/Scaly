@@ -1,0 +1,11 @@
+; A returned tuple carries its components as a record does (2026-10-19,
+; Planner.check_tail_ref_escape#, an explicit `return` through plan_return#).
+; xfail: reference into a local page escapes via return
+function bad() returns (n: int, r: ref[int])
+{
+    var x 5
+    return (n: 1, r: &x)
+}
+
+let t bad()
+print "`t.n`"

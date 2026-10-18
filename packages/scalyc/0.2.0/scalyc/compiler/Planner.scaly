@@ -877,6 +877,11 @@ define Planner
         ; binding hands out a frame address -> rejected. Coarse (taints the
         ; whole binding, not a specific field); truncated per function.
         local_tainted_struct_bindings: Array[String]
+        ; ... and of those, the bindings whose &-argument points at something
+        ; that STAYS in this frame (region_of_operand#, which knows a promoted
+        ; holder): returned whole, such a record hands back a dead address
+        ; (operand_is_tainted_local_struct#)
+        local_frame_ref_struct_bindings: Array[String]
         ; deep-R2 store-escape: locals bound with an escaping init lifetime
         ; (`^name`/`#`) or already-promoted, into which a put/add stores a value
         ; that must therefore also live on a non-local page.
@@ -1569,6 +1574,7 @@ define Planner
             lambda_arg_models := Array[Lambda]^this()
             lambda_arg_starts := Array[size_t]^this()
             local_tainted_struct_bindings := Array[String]^this()
+            local_frame_ref_struct_bindings := Array[String]^this()
             escaping_targets := Array[String]^this()
             address_taken_locals := Array[String]^this()
             field_written_locals := Array[String]^this()
@@ -30461,6 +30467,10 @@ define Planner
                     if this.construction_has_local_ref_arg(collapsed)
                         if this.array_contains_name(local_tainted_struct_bindings, tbn) = false
                             local_tainted_struct_bindings.add(String(tbn))
+                if this.result_type_is_value_struct(collapsed.result_type)
+                    if this.construction_has_frame_ref_arg(collapsed)
+                        if this.array_contains_name(local_frame_ref_struct_bindings, tbn) = false
+                            local_frame_ref_struct_bindings.add(String^this(tbn))
             }
 
             ; Option B (2026-07-02h): record a container holder whose
@@ -35786,6 +35796,74 @@ define Planner
                 else
                     0
             result
+        }
+
+        ; operand_is_tainted_local_struct#: the WHOLE of a local record built
+        ; with a &<frame-local> argument (`let h Holder(1, &x)`, then `h`):
+        ; returned, it hands the frame address back as its field read does
+        function operand_is_tainted_local_struct(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when v: Variable
+                    return this.array_contains_name(local_frame_ref_struct_bindings, v.name)
+                else
+                    return false
+        }
+
+        ; construction_has_frame_ref_arg#: a construction handed the address of
+        ; something that stays in this frame -- construction_has_local_ref_arg#
+        ; asks the argument's type alone, and a holder the planner moves to the
+        ; caller page (`var gens ...`, `PlannedType(..., &gens, ...)`) carries
+        ; the Local stamp too
+        function construction_has_frame_ref_arg(this: Planner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when t: Tuple
+                {
+                    if t.components = null
+                        return false
+                    let comps (*t.components)
+                    var i: size_t 0
+                    while i < comps.length
+                    {
+                        let cp comps.get i
+                        if cp <> null and cp.value <> null
+                        {
+                            let vals (*cp.value)
+                            var j: size_t 0
+                            while j < vals.length
+                            {
+                                let vp vals.get j
+                                if vp <> null and Planner.is_local_ref_pointer(vp.result_type) and this.region_of_operand((*vp)) < Planner.required_region_for_escape()
+                                    return true
+                                j := j + 1
+                            }
+                        }
+                        i := i + 1
+                    }
+                }
+                when c: Call
+                {
+                    ; an initializer's arguments only: an ordinary call's
+                    ; result does not hold what it was handed (an out-cell
+                    ; `&done` least of all)
+                    if c.args = null or c.name <> "init"
+                        return false
+                    let args (*c.args)
+                    var i: size_t 0
+                    while i < args.length
+                    {
+                        let ap args.get i
+                        if ap <> null and Planner.is_local_ref_pointer(ap.result_type) and this.region_of_operand((*ap)) < Planner.required_region_for_escape()
+                            return true
+                        i := i + 1
+                    }
+                }
+                else
+                    0
+            false
         }
 
         ; taint_field_read_by_name#: at the member-access read site, if the base
@@ -48510,6 +48588,38 @@ define Planner
                     if vc.value <> null
                         this.check_tail_ref_escape((*vc.value), loc)
                 }
+                when tup: PlannedTuple
+                {
+                    ; a returned VALUE carries its components: `Holder(1, &x)`
+                    ; and `(n: 1, r: &x)` hand back the address of a frame
+                    ; local as surely as `&x` does (2026-10-19; both compiled
+                    ; at rc 0 and read a dead stack slot). A one-component
+                    ; grouping is what it holds and is judged as that. An
+                    ; INITIALIZER's arguments are not judged: whether it keeps
+                    ; one is the persist analysis' question (`StringC#(view)`
+                    ; over a stack buffer copies).
+                    if tup.components <> null
+                    {
+                        recursed := true
+                        let comps (*tup.components)
+                        var ci: size_t 0
+                        while ci < comps.length
+                        {
+                            let cp comps.get ci
+                            if cp <> null and cp.value <> null
+                            {
+                                let vals (*cp.value)
+                                if vals.length = 1
+                                {
+                                    let vp vals.get 0
+                                    if vp <> null
+                                        this.check_tail_ref_escape((*vp), loc)
+                                }
+                            }
+                            ci := ci + 1
+                        }
+                    }
+                }
                 when ch: PlannedChoose
                 {
                     recursed := true
@@ -48620,6 +48730,11 @@ define Planner
                     leaf_escapes := true
             if leaf_escapes = false and this.operand_reads_tainted_local_field(op)
                 leaf_escapes := true
+            if leaf_escapes = false and this.operand_is_tainted_local_struct(op)
+            {
+                this.add_diagnostic(loc, "reference into a local page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
+                return
+            }
             if leaf_escapes = false
                 return
             ; Gap-1 parity with plan_return#: a bare Variable whose binding was
@@ -48848,6 +48963,15 @@ define Planner
             ; page misses because the construction blocks leave result_type.life
             ; Unspecified. The latter closes `return Vector[T](0)` /
             ; `return SomeStruct(...)` directly-returned-construction dangling.
+            ; a returned construction or tuple carries its components, a
+            ; local record built with `&x` the address (check_tail_ref_escape#)
+            choose planned_collapsed.expr
+                when rtup: PlannedTuple
+                    this.check_tail_ref_escape(planned_collapsed, r.span)
+                else
+                    0
+            if this.operand_is_tainted_local_struct(planned_collapsed)
+                this.add_diagnostic(r.span, "reference into a local page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
             var return_needs_promotion false
             if this.region_of_operand(planned_collapsed) < Planner.required_region_for_escape()
                 return_needs_promotion := true
@@ -52301,6 +52425,7 @@ define Planner
             let saved_pbn promoted_binding_names.length
             let saved_etg escaping_targets.length
             let saved_lts local_tainted_struct_bindings.length
+            let saved_lfr local_frame_ref_struct_bindings.length
             let saved_atl address_taken_locals.length
             let saved_fwl field_written_locals.length
             let saved_gra getref_arg_locals.length
@@ -52400,6 +52525,7 @@ define Planner
             promoted_binding_names.length := saved_pbn
             escaping_targets.length := saved_etg
             local_tainted_struct_bindings.length := saved_lts
+            local_frame_ref_struct_bindings.length := saved_lfr
             address_taken_locals.length := saved_atl
             field_written_locals.length := saved_fwl
             getref_arg_locals.length := saved_gra

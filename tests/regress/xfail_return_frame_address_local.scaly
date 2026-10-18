@@ -1,0 +1,17 @@
+; A local record built with `&x` and returned WHOLE hands the address back
+; (2026-10-19, Planner.operand_is_tainted_local_struct#); an Array held this
+; way read freed memory under SCALY_POISON (rc 139) with the previous
+; compiler.
+; xfail: reference into a local page escapes via return
+define Wrap (a: ref[Array[int]])
+
+function bad() returns Wrap
+{
+    var items Array[int]()
+    items.add 3
+    let w Wrap(&items)
+    w
+}
+
+let w bad()
+print "`w.a.length`"

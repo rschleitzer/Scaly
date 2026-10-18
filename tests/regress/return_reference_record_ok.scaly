@@ -1,0 +1,30 @@
+; The negative control of xfail_return_frame_address_*: a returned record or
+; tuple whose reference points at what the CALLER owns, or a String an
+; initializer copies out of a stack buffer, is fine (2026-10-19).
+; Expected: PASS
+define Holder (n: int, r: ref[int])
+
+function keep(p: ref[int]) returns Holder
+    Holder(1, p)
+
+function pair(p: ref[int]) returns (n: int, r: ref[int])
+    (n: 2, r: p)
+
+function copied() returns String
+{
+    var buf char[8]
+    buf[0] := "o" as char
+    buf[1] := "k" as char
+    let view Slice[char](2, &buf[0])
+    String(view.data, view.length)
+}
+
+var target 7
+let h keep(&target)
+let t pair(&target)
+let hv: int h.r
+let tv: int t.r
+if hv = 7 and tv = 7 and h.n = 1 and t.n = 2 and copied().equals("ok")
+    print "PASS"
+else
+    print "FAIL"
