@@ -893,11 +893,6 @@ define Planner
         ; of such a name is planned as "slot": the emitter gives a record held
         ; as a VALUE a slot, so the store has an address (emit_binding#).
         field_written_locals: Array[String]
-        ; the two switches of the operation: 0 not asked yet, else 1 plus 2
-        ; for the pending-type experiment (SCALYC_PENDING, pending_on#) plus
-        ; 4 for the old collapse instead of the driver (SCALYC_OPERATION_OLD,
-        ; driver_on#)
-        var pending_mode: int
         ; the operation census: slot 0 the switch, the rest its counters
         ; (operation_census#); from slot 23 the operation driver's state and
         ; counters (operation#)
@@ -1577,7 +1572,6 @@ define Planner
             escaping_targets := Array[String]^this()
             address_taken_locals := Array[String]^this()
             field_written_locals := Array[String]^this()
-            pending_mode := 0
             operation_counts := Vector[size_t]^this(85)
             var oc_i: size_t 0
             while oc_i < 85
@@ -12107,15 +12101,13 @@ define Planner
                 return (*only_ptr)
             }
 
-            ; The operation driver (operation#; SCALYC_OPERATION_OLD=1 turns it
-            ; off): the sequence is read from the left, step by step, and what
-            ; the driver does not understand comes back here as a whole.
-            if this.driver_on()
-            {
-                let driven this.operation(ops)
-                if operation_counts[23] = 1
-                    return driven
-            }
+            ; The operation driver (operation#): the sequence is read from the
+            ; left, step by step. What reaches the code below is ONE STEP the
+            ; driver hands to the machinery here (operation_step#), or a
+            ; sequence it refused, which it reported.
+            let driven this.operation(ops)
+            if operation_counts[23] = 1
+                return driven
 
             ; Indirect call through a function pointer (Phase-1 JIT): `f()`
             ; where f is a local binding of type pointer[void] and `()` is
@@ -14534,8 +14526,7 @@ define Planner
                         ; namespace's function, 6 a sibling method (call_arm_applies#). The
                         ; old path (named 0) tries them all in their order.
                         var named: size_t 0
-                        if this.driver_on()
-                            named := this.operation_name(result)
+                        named := this.operation_name(result)
                         var match_ref: ref[MethodMatch]? null
                         if Planner.call_arm_applies(named, 1)
                             match_ref := this.resolve_free_call(value_method_hop, fn_name, arg_types, arg_ops, call_generics)
@@ -17706,14 +17697,15 @@ define Planner
                         ; loop recognises one: a symbolic operator name
                         ; (is_operator_name, char-based), a user-declared
                         ; operator (is_operator, registry — name-operators like
-                        ; `mod`/`div`), or a word operator with precedence
-                        ; (`and`/`or`, get_operator_precedence > 0). Missing any
-                        ; of these mis-flags valid infix uses as orphans.
+                        ; `mod`/`div`), or a word operator a level of the
+                        ; protocol names (`and`/`or`, operator_by_protocol#).
+                        ; Missing any of these mis-flags valid infix uses as
+                        ; orphans.
                         if Planner.is_operator_name(opvty.name)
                             op_is_operator := true
                         if this.is_operator(opvty.name)
                             op_is_operator := true
-                        if Planner.get_operator_precedence(opvty.name) > 0
+                        if this.operator_by_protocol(opvty.name)
                             op_is_operator := true
                     }
                     else
@@ -17975,138 +17967,11 @@ define Planner
                         }
                     }
 
-                    ; Precedence look-ahead. If ops[i+2] is an operator with
-                    ; HIGHER precedence than op_name, recursively collapse
-                    ; [rhs, ops[i+2], ops[i+3], ...] first so the binary
-                    ; call uses the precedence-correct right side. Without
-                    ; this, the left-associative fold turns
-                    ; `A <> X & B <> Y` into `((A <> X) & B) <> Y` rather
-                    ; than `(A <> X) & (B <> Y)`. Mirrors
-                    ; Planner.cpp:4298-4322. Sets consumed_rest so the outer
-                    ; loop breaks after this iteration since the entire
-                    ; right side has been folded into rhs.
-                    ; s175: when the rhs call-fold (or as-fold) above
-                    ; consumed ops[i+2], the next operator sits at i+3 —
-                    ; checking i+2 saw the consumed Tuple, never an
-                    ; operator, so `starts_with(p) & len() > 2` left-
-                    ; folded to `(bool & len) > 2` = `1 > 2` = false and
-                    ; stage-2's parse_args rejected every -L/-l arg as
-                    ; "Unknown option".
-                    var prec_next: size_t i + 2
-                    if rhs_call_consumed
-                        prec_next := i + 3 + rhs_extra
-                    ; A text-named (non-operator-char) declared operator binds
-                    ; weakest — precedence 1, like ||. Gated on NOT
-                    ; is_operator_name so opchar operators (incl. source `==`
-                    ; / `[]`, deliberately left at their table/0 precedence)
-                    ; are unaffected — fixpoint-safe. The source has no
-                    ; text-named operators, so this never fires during
-                    ; self-compile.
-                    var current_prec Planner.get_operator_precedence(op_name)
-                    if current_prec = 0 and Planner.is_operator_name(op_name) = false and this.is_operator(op_name)
-                        current_prec := 1
-                    if current_prec > 0
-                    {
-                        if prec_next < ops.length
-                        {
-                            let next_op_ptr ops.get prec_next
-                            if next_op_ptr <> null
-                            {
-                                let next_op (*next_op_ptr)
-                                choose next_op.expr
-                                    when nty: PlannedType
-                                    {
-                                        var next_is_op: bool false
-                                        if Planner.is_operator_name(nty.name)
-                                            next_is_op := true
-                                        if Planner.is_operator_name(nty.name) = false and this.is_operator(nty.name)
-                                            next_is_op := true
-                                        ; Word operators (`and`/`or`/`xor`) are
-                                        ; neither operator-shaped nor registered;
-                                        ; recognise them by table precedence so a
-                                        ; higher-prec word op on the right climbs
-                                        ; (`a | b xor c`, `a or b and c`). Same
-                                        ; triple as the loop-entry recognition.
-                                        if Planner.get_operator_precedence(nty.name) > 0
-                                            next_is_op := true
-                                        if next_is_op
-                                        {
-                                            var next_prec Planner.get_operator_precedence(nty.name)
-                                            if next_prec = 0
-                                                if Planner.is_operator_name(nty.name) = false
-                                                    if this.is_operator(nty.name)
-                                                        next_prec := 1
-                                            if next_prec > current_prec
-                                            {
-                                                ; Bound the right-side collapse to
-                                                ; the precedence boundary — the
-                                                ; first LATER operator whose
-                                                ; precedence is <= current_prec.
-                                                ; Collapsing to the end would
-                                                ; swallow a following lower-prec
-                                                ; operator: `a = 0 - 5 && b`
-                                                ; (`=`6, `-`9, `&&`2) must stop the
-                                                ; `=` right side at `&&`, giving
-                                                ; `(a = (0-5)) && b`, not
-                                                ; `a = ((0-5) && b)`. Operators sit
-                                                ; every 2 positions from prec_next.
-                                                var climb_b: size_t ops.length
-                                                var bnd: size_t prec_next
-                                                var found_b: bool false
-                                                while found_b = false
-                                                {
-                                                    if bnd >= ops.length
-                                                        found_b := true
-                                                    else
-                                                    {
-                                                        let bp ops.get bnd
-                                                        var bnd_prec: int 0
-                                                        if bp <> null
-                                                            choose (*bp).expr
-                                                                when bty: PlannedType
-                                                                {
-                                                                    bnd_prec := Planner.get_operator_precedence(bty.name)
-                                                                    if bnd_prec = 0
-                                                                        if Planner.is_operator_name(bty.name) = false
-                                                                            if this.is_operator(bty.name)
-                                                                                bnd_prec := 1
-                                                                }
-                                                                else
-                                                                    0
-                                                        var is_b: bool false
-                                                        if bnd_prec > 0 and bnd_prec <= current_prec
-                                                            is_b := true
-                                                        if is_b
-                                                        {
-                                                            climb_b := bnd
-                                                            found_b := true
-                                                        }
-                                                        else
-                                                            bnd := bnd + 2
-                                                    }
-                                                }
-                                                var right_arr Array[PlannedOperand]()
-                                                right_arr.add rhs
-                                                var rr: size_t prec_next
-                                                while rr < climb_b
-                                                {
-                                                    let p_ptr ops.get rr
-                                                    if p_ptr <> null
-                                                        right_arr.add((*p_ptr))
-                                                    rr := rr + 1
-                                                }
-                                                var right_vec Vector[PlannedOperand](right_arr)
-                                                rhs := this.collapse_operand_sequence(right_vec)
-                                                consumed_rest := true
-                                                climb_to := climb_b
-                                            }
-                                        }
-                                    }
-                                    else
-                                        0
-                            }
-                        }
-                    }
+                    ; Which operator takes which operands is the protocol's answer
+                    ; (operation_by_protocol#, lazy_fold#): a binary operator meets
+                    ; this routine with its two operands alone, so there is nothing
+                    ; to climb -- the compiler has no precedence table
+                    ; (ROADMAP-operation.md, step 5).
 
                     ; Double-quoted char literals: when one side of a binary
                     ; operator is char/u8-typed and the other side is a bare
@@ -24301,117 +24166,6 @@ define Planner
                     0
         }
 
-        ; plan_condition_operands#: plan an `if` condition so that a null test
-        ; proves its name for the rest of an `and` chain, as a nested `if`
-        ; proves it for its body: `if e <> null and cs.excluded(e)` handed an
-        ; Option to a `ref` parameter (rc 4) where `if e <> null / if
-        ; cs.excluded(e)` compiled -- the one real reason the tree nested its
-        ; conditions (2026-09-24). The operands are split at every top-level
-        ; `and`; each segment is planned and collapsed on its own, under a
-        ; scope that carries the null tests of the segments before it; the
-        ; positive tests land in `facts` for the consequent. A chain with a
-        ; top-level `or` is planned as before -- `a and b or c` proves nothing
-        ; about c.
-        procedure plan_condition_operands(mutable this: Planner, mutable ops: Vector[Operand], mutable facts: ref[Array[String]]) returns Vector[PlannedOperand]
-        {
-            var n_and: size_t 0
-            var has_or: bool false
-            var i: size_t 0
-            while i < ops.length
-            {
-                let p ops.get i
-                if p <> null
-                {
-                    let w Planner.operand_word((*p))
-                    if w = "and" or w = "&&"
-                    {
-                        ; an `and` at either end, or two in a row: not ours
-                        if i = 0 or i + 1 = ops.length
-                            has_or := true
-                        n_and := n_and + 1
-                    }
-                    if w = "or" or w = "||"
-                        has_or := true
-                }
-                i := i + 1
-            }
-            if n_and = 0 or has_or
-                return this.plan_operands(ops)
-            var out Array[PlannedOperand]()
-            var scopes: size_t 0
-            var start: size_t 0
-            i := 0
-            while i <= ops.length
-            {
-                var at_split: bool false
-                if i = ops.length
-                    at_split := true
-                else
-                {
-                    let p ops.get i
-                    if p <> null
-                    {
-                        let w Planner.operand_word((*p))
-                        if w = "and" or w = "&&"
-                            at_split := true
-                    }
-                }
-                if at_split
-                {
-                    var seg Vector[Operand](i - start)
-                    var k: size_t start
-                    while k < i
-                    {
-                        let sp ops.get k
-                        if sp <> null
-                            seg.put(k - start, (*sp))
-                        k := k + 1
-                    }
-                    let planned this.plan_operands(seg)
-                    let collapsed this.collapse_operand_sequence(planned)
-                    out.add(collapsed)
-                    var nm String()
-                    var pos: bool false
-                    if this.narrow_null_test(collapsed, &nm, &pos)
-                        if pos
-                        {
-                            this.push_scope()
-                            if this.define_narrowed(nm)
-                            {
-                                scopes := scopes + 1
-                                facts.add(String^this(nm))
-                            }
-                            else
-                                this.pop_scope()
-                        }
-                    if i < ops.length
-                    {
-                        var opv Vector[Operand](1)
-                        let op_ptr ops.get i
-                        if op_ptr <> null
-                            opv.put(0, (*op_ptr))
-                        let planned_op this.plan_operands(opv)
-                        var pi: size_t 0
-                        while pi < planned_op.length
-                        {
-                            let pp planned_op.get pi
-                            if pp <> null
-                                out.add((*pp))
-                            pi := pi + 1
-                        }
-                    }
-                    start := i + 1
-                }
-                i := i + 1
-            }
-            while scopes > 0
-            {
-                this.pop_scope()
-                scopes := scopes - 1
-            }
-            Vector[PlannedOperand](out)
-        }
-
         ; operand_word#: the single-segment name an operand spells, or "".
         function operand_word(op: Operand) returns String
         {
@@ -24435,21 +24189,13 @@ define Planner
         procedure plan_if(mutable this: Planner, mutable f: If) returns PlannedIf
         {
             this.report_block_in_condition(f.condition, "if")
-            ; `x <> null and f(x)`: each `and` segment is planned under the
-            ; null tests before it -- plan_condition_operands#
+            ; `x <> null and f(x)`: `and` is the standard library's, put in
+            ; as an `if` (lazy_operation#); what the condition proves where it
+            ; is true comes from the planned condition, through every `and`
             var and_facts Array[String]()
-            var planned_cond_flat: Vector[PlannedOperand] Vector[PlannedOperand](0)
-            if this.driver_on() and protocol.state = 2 and protocol.lazy_left.length > 0
-            {
-                ; `and` is the standard library's (lazy_operation#): what the
-                ; condition proves where it is true comes from the planned
-                ; condition, through every `and` put in
-                planned_cond_flat := this.plan_operands(f.condition)
-                if planned_cond_flat.length = 1
-                    this.lazy_facts(planned_cond_flat[0], true, &and_facts)
-            }
-            else
-                planned_cond_flat := this.plan_condition_operands(f.condition, &and_facts)
+            let planned_cond_flat this.plan_operands(f.condition)
+            if planned_cond_flat.length = 1
+                this.lazy_facts(planned_cond_flat[0], true, &and_facts)
             ; A `ref[bool]` condition is the VALUE -- deref_ref_into_pointee#.
             ; `var`, not `let`: a `set` on a let-bound local is silently
             ; dropped, which is how the store-through rewrite spent a build.
@@ -27987,7 +27733,7 @@ define Planner
             this.operation_census_line("method+empty-tuple", 17)
             this.operation_census_line("method+value", 19)
             this.operation_census_line("method-bare", 13)
-            if this.driver_on()
+            if true
             {
                 this.operation_census_line("driver-sequences", 25)
                 this.operation_census_line("driver-answered", 26)
@@ -28051,8 +27797,9 @@ define Planner
         }
 
         ; ================================================================
-        ; The operation driver (step 1, part 2; the default since
-        ; 2026-10-18, SCALYC_OPERATION_OLD=1 turns it off): the loop that reads a sequence from the left, in front of
+        ; The operation driver (step 1, part 2; the only reading of an
+        ; operation since 2026-10-18): the loop that reads a sequence from the
+        ; left, in front of
         ; collapse_operand_sequence#. It knows WHICH step comes next -- a name
         ; and its tuple, a value and its vector literal, a prefix at the
         ; start, a postfix -- and hands each step to the machinery there is,
@@ -28351,6 +28098,19 @@ define Planner
             ; a postfix takes the operation so far (`a + b as T` is
             ; `(a + b) as T`; the author, 2026-10-04)
             0
+        }
+
+        ; A sequence the driver refuses is reported: since 2026-10-18 there
+        ; is no other reading of it (the old collapse and its precedence
+        ; table are gone).
+        procedure report_unread_operation(mutable this: Planner, at: Span, reason: size_t)
+        {
+            if reason = 31
+            {
+                this.add_diagnostic(at, String^this("a call without parentheses takes exactly one thing; an argument that is more - an indexing, a call, a construction - takes its parentheses: f(v[i])"))
+                return
+            }
+            this.add_diagnostic(at, String^this("this sequence is not one an operation reads: a prefix, a postfix or a sigil stands where no value is expected, or an operator ends it"))
         }
 
         ; One step, handed to the machinery there is: its things are a
@@ -28708,20 +28468,13 @@ define Planner
             ; which operator takes which operands is the protocol's answer
             ; (operation_by_protocol#); without one, the table's
             var answered false
-            if plain and protocol.state = 2
-                folded := this.operation_by_protocol(out, base, &answered)
+            folded := this.operation_by_protocol(out, base, &answered)
             if answered
                 this.operation_count(80)
-            if answered = false
+            else
             {
                 this.operation_count(81)
-                if plain
-                {
-                    var first: PlannedOperand out[base]
-                    folded := this.operation_apply(vec, first, 43)
-                }
-                else
-                    folded := this.operation_step(vec, 43)
+                this.add_diagnostic(out[base].loc, String^this("the protocol of an operation (scaly/operation.scaly) does not answer this sequence of operators"))
             }
             this.report_undeclared_operator(folded)
             folded
@@ -28797,6 +28550,7 @@ define Planner
             if reason <> 0
             {
                 this.operation_count(reason)
+                this.report_unread_operation(cur.loc, reason)
                 if this.operation_census_on()
                 {
                     scaly_eputs("operation-left ")
@@ -29106,14 +28860,9 @@ define Planner
             Vector[Operand](0)
         }
 
-        ; Is `name` an operator the protocol's levels name? Before the
-        ; protocol is read, and without one, the table answers.
+        ; Is `name` an operator the protocol's levels name?
         function operator_by_protocol(this: Planner, name: String) returns bool
-        {
-            if protocol.state = 2
-                return protocol.names.table.lookup(name) >= 0
-            Planner.get_operator_precedence(name) > 0
-        }
+            protocol.state = 2 and protocol.names.table.lookup(name) >= 0
 
         ; Do the operators a and b stand on one level? (the constant fold
         ; of a global, fold_constant_ops#)
@@ -29127,7 +28876,7 @@ define Planner
                     return false
                 return proto.levels[ia as size_t].equals(proto.levels[ib as size_t])
             }
-            Planner.get_operator_precedence(a) = Planner.get_operator_precedence(b)
+            false
         }
 
         procedure proto_node(mutable run: ref[ProtocolRun], kind: size_t, concept: String, opos: size_t, a: size_t, b: size_t, c: size_t) returns size_t
@@ -29217,7 +28966,7 @@ define Planner
                 return PROTO_NONE
             }
             var params Array[String]()
-            let body this.pending_member_body(cref, is_operator, member, &params)
+            let body this.protocol_member_body(cref, is_operator, member, &params)
             if body.length = 0
             {
                 run.failed := true
@@ -29750,7 +29499,12 @@ define Planner
                     raw.put(0, left)
                     raw.put(1, out[base + code])
                     raw.put(2, right)
-                    stack.put(sp - 2, this.operation_apply(raw, left, 43))
+                    ; a vector literal on either side: the pair pre-passes of
+                    ; the machinery read it (operation_step#)
+                    if this.operation_thing(left) = 5 or this.operation_thing(right) = 5
+                        stack.put(sp - 2, this.operation_step(raw, 43))
+                    else
+                        stack.put(sp - 2, this.operation_apply(raw, left, 43))
                     sp := sp - 1
                 }
             }
@@ -29758,50 +29512,6 @@ define Planner
                 return first
             answered := true
             stack[0]
-        }
-
-        ; ================================================================
-        ; EXPERIMENT (2026-10-04, behind SCALYC_PENDING=1): operator
-        ; precedence as a protocol of PENDING types written in Scaly
-        ; (tests/pending/protocol.scaly) instead of the table in
-        ; collapse_operand_sequence#. `a +` answers a value of a type marked
-        ; `@pending true` that waits for what follows; such a value is never
-        ; bound, stored or laid out. The planner evaluates the protocol on the
-        ; MODEL -- an operator name after a value is that value's operator
-        ; taking only `this`, a value after a pending value is its `apply`,
-        ; the end of the sequence its `finish` -- and plans what is left, an
-        ; ordinary expression of real calls. Nothing of the protocol reaches
-        ; the plan.
-        ;
-        ; Deliberately narrow: an operand of the sequence is ONE model
-        ; operand; a protocol body is a name, a construction `P(args)` or a
-        ; call `f(args)` / `x.m(args)`; types are not checked, a pending type's
-        ; type arguments are not read; an operand a body names twice is
-        ; evaluated twice. A sequence the protocol does not answer is left to
-        ; the table.
-        ; ================================================================
-        procedure pending_on(mutable this: Planner) returns bool
-            (this.operation_switches() & 2) <> 0
-
-        ; The operation driver (operation#) reads every sequence since
-        ; 2026-10-18; SCALYC_OPERATION_OLD=1 hands them to the old collapse
-        ; as a whole, as before -- the yardstick tools/operation-compare.sh
-        ; compares the two.
-        procedure driver_on(mutable this: Planner) returns bool
-            (this.operation_switches() & 4) = 0
-
-        procedure operation_switches(mutable this: Planner) returns int
-        {
-            if pending_mode = 0
-            {
-                var mode 1
-                if getenv("SCALYC_PENDING") <> null
-                    mode := mode | 2
-                if getenv("SCALYC_OPERATION_OLD") <> null
-                    mode := mode | 4
-                pending_mode := mode
-            }
-            pending_mode
         }
 
         ; Is op the bare name `=`?
@@ -29817,66 +29527,10 @@ define Planner
             false
         }
 
-        ; Is op a bare name made of operator characters?
-        function pending_is_operator_name(op: Operand) returns bool
-        {
-            if op.member_access <> null
-                return false
-            choose op.expression
-                when t: scalyc.compiler.Model.Type
-                    return t.generics = null and t.name.length = 1 and Planner.name_reads_as_operator(t.name[0])
-                else
-                    return false
-            false
-        }
-
-        function pending_env_index(names: ref[Array[String]], name: String) returns int
-        {
-            var i: size_t names.length
-            while i > 0
-            {
-                i := i - 1
-                if names[i] = name
-                    return i as int
-            }
-            0 - 1
-        }
-
-        ; The pending concept seq constructs (`P[...](...)`), or null.
-        function pending_construction(this: Planner, seq: Vector[Operand]) returns ref[Concept]?
-        {
-            if seq.length <> 2
-                return null
-            let head seq[0]
-            if head.member_access <> null
-                return null
-            var args_follow false
-            choose seq[1].expression
-                when tp: Tuple
-                    args_follow := true
-                else
-                    0
-            if args_follow = false
-                return null
-            choose head.expression
-                when t: scalyc.compiler.Model.Type
-                {
-                    if t.name.length <> 1
-                        return null
-                    let cref this.lookup_concept_any(t.name[0])
-                    if cref <> null and Planner.attributes_have(cref.attributes, "pending")
-                        return cref
-                    return null
-                }
-                else
-                    return null
-            null
-        }
-
         ; The body of c's member `name` -- an operator taking only `this`, or
         ; a function -- with the names of its parameters after `this`; an
         ; empty sequence when c has none.
-        procedure pending_member_body(mutable this: Planner, c: ref[Concept], is_operator: bool, name: String, mutable params: ref[Array[String]]) returns Vector[Operand]
+        procedure protocol_member_body(mutable this: Planner, c: ref[Concept], is_operator: bool, name: String, mutable params: ref[Array[String]]) returns Vector[Operand]
         {
             choose c.definition
                 when st: Structure
@@ -29926,296 +29580,6 @@ define Planner
             Vector[Operand]^this(0)
         }
 
-        ; `recv.method(args)` for a REAL receiver: a name takes the method as
-        ; one more segment, a call takes it as its member access.
-        procedure pending_real_call(mutable this: Planner, recv: Vector[Operand], method: String, args: Operand, mutable ok: ref[bool]) returns Vector[Operand]
-        {
-            let last recv[recv.length - 1]
-            if recv.length = 1 and last.member_access = null
-            {
-                choose last.expression
-                    when t: scalyc.compiler.Model.Type
-                    {
-                        if t.generics = null
-                        {
-                            var dotted Vector[String]^this(t.name.length + 1)
-                            var ni: size_t 0
-                            while ni < t.name.length
-                            {
-                                dotted.put(ni, t.name[ni])
-                                ni := ni + 1
-                            }
-                            dotted.put(t.name.length, String^this(method))
-                            var out Vector[Operand]^this(2)
-                            out.put(0, Operand(last.span, Expression.Type(scalyc.compiler.Model.Type(t.span, dotted, null, t.lifetime)), null))
-                            out.put(1, args)
-                            return out
-                        }
-                    }
-                    else
-                        0
-            }
-            var tail_is_call false
-            choose last.expression
-                when tp: Tuple
-                    tail_is_call := last.member_access = null and recv.length > 1
-                else
-                    0
-            if tail_is_call = false
-            {
-                ok := false
-                return recv
-            }
-            var hop Vector[String]^this(1)
-            hop.put(0, String^this(method))
-            var hop_holder Vector[Vector[String]]^this(1)
-            hop_holder.put(0, hop)
-            var chained Vector[Operand]^this(recv.length + 1)
-            var ri: size_t 0
-            while ri + 1 < recv.length
-            {
-                chained.put(ri, recv[ri])
-                ri := ri + 1
-            }
-            chained.put(recv.length - 1, Operand(last.span, last.expression, hop_holder.get(0)))
-            chained.put(recv.length, args)
-            chained
-        }
-
-        ; A member of the pending value recv (a construction of c), its fields
-        ; and the arguments bound by name.
-        procedure pending_call(mutable this: Planner, c: ref[Concept], recv: Vector[Operand], is_operator: bool, name: String, args: ref[Array[Vector[Operand]]], mutable ok: ref[bool], depth: int) returns Vector[Operand]
-        {
-            var names Array[String]()
-            var vals Array[Vector[Operand]]()
-            choose c.definition
-                when st: Structure
-                {
-                    choose recv[1].expression
-                        when tp: Tuple
-                        {
-                            var fi: size_t 0
-                            while fi < st.properties.length and fi < tp.components.length
-                            {
-                                names.add(String^this(st.properties[fi].name))
-                                vals.add(tp.components[fi].value)
-                                fi := fi + 1
-                            }
-                        }
-                        else
-                            0
-                }
-                else
-                    0
-            var params Array[String]()
-            let body this.pending_member_body(c, is_operator, name, &params)
-            if body.length = 0 or params.length <> args.length
-            {
-                ok := false
-                return recv
-            }
-            var ai: size_t 0
-            while ai < params.length
-            {
-                names.add(String^this(params[ai]))
-                vals.add(args[ai])
-                ai := ai + 1
-            }
-            this.pending_eval(body, &names, &vals, ok, depth + 1)
-        }
-
-        ; One expression of the protocol's own language. The answer is in
-        ; normal form: a real expression, or the construction of a pending
-        ; type whose components are in normal form.
-        procedure pending_eval(mutable this: Planner, seq_in: Vector[Operand], names: ref[Array[String]], vals: ref[Array[Vector[Operand]]], mutable ok: ref[bool], depth: int) returns Vector[Operand]
-        {
-            var seq seq_in
-            if depth > 64
-            {
-                ok := false
-                return seq
-            }
-            ; `P[O, T](...)`: in expression position the type arguments are
-            ; a vector literal between the name and the tuple; the protocol
-            ; does not read them
-            if seq.length = 3
-            {
-                var generic_args false
-                choose seq[1].expression
-                    when mx: Matrix
-                        generic_args := seq[1].member_access = null
-                    else
-                        0
-                if generic_args
-                {
-                    var two Vector[Operand]^this(2)
-                    two.put(0, seq[0])
-                    two.put(1, seq[2])
-                    seq := two
-                }
-            }
-            ; `*this`: the receiver by value
-            if seq.length = 2
-            {
-                var star false
-                if seq[0].member_access = null
-                    choose seq[0].expression
-                        when st: scalyc.compiler.Model.Type
-                            star := st.name.length = 1 and st.name[0] = "*"
-                        else
-                            0
-                if star
-                {
-                    var one Vector[Operand]^this(1)
-                    one.put(0, seq[1])
-                    seq := one
-                }
-            }
-            if seq.length = 1
-            {
-                let only seq[0]
-                if only.member_access = null
-                {
-                    choose only.expression
-                        when t: scalyc.compiler.Model.Type
-                        {
-                            if t.name.length = 1 and t.generics = null
-                            {
-                                let idx Planner.pending_env_index(names, t.name[0])
-                                if idx >= 0
-                                    return vals[idx as size_t]
-                            }
-                        }
-                        else
-                            0
-                }
-                return seq
-            }
-            if seq.length <> 2 or seq[0].member_access <> null
-            {
-                ok := false
-                return seq
-            }
-            choose seq[1].expression
-                when tp: Tuple
-                {
-                    ; the arguments, in normal form
-                    var arg_vals Array[Vector[Operand]]()
-                    var comps Vector[scalyc.compiler.Model.Component]^this(tp.components.length)
-                    var ci: size_t 0
-                    while ci < tp.components.length
-                    {
-                        let comp tp.components[ci]
-                        let v this.pending_eval(comp.value, names, vals, ok, depth + 1)
-                        arg_vals.add v
-                        comps.put(ci, scalyc.compiler.Model.Component(comp.span, comp.name, v, comp.attributes))
-                        ci := ci + 1
-                    }
-                    let new_args Operand(seq[1].span, Expression.Tuple(scalyc.compiler.Model.Tuple(tp.span, comps)), seq[1].member_access)
-                    choose seq[0].expression
-                        when t: scalyc.compiler.Model.Type
-                        {
-                            if t.name.length = 2
-                            {
-                                let idx Planner.pending_env_index(names, t.name[0])
-                                if idx >= 0
-                                {
-                                    let recv vals[idx as size_t]
-                                    let rc this.pending_construction(recv)
-                                    if rc <> null
-                                        return this.pending_call(rc, recv, false, t.name[1], &arg_vals, ok, depth)
-                                    ; a real receiver: `recv.m(args)`
-                                    return this.pending_real_call(recv, t.name[1], new_args, ok)
-                                }
-                            }
-                            ; a construction or a real call: the head as written
-                            var out Vector[Operand]^this(2)
-                            out.put(0, seq[0])
-                            out.put(1, new_args)
-                            return out
-                        }
-                        else
-                            0
-                }
-                else
-                    0
-            ok := false
-            seq
-        }
-
-        ; The operand sequence ops read by the protocol: the real expression
-        ; it folds to, or an empty sequence when the protocol does not answer.
-        procedure pending_rewrite(mutable this: Planner, ops: Vector[Operand]) returns Vector[Operand]
-        {
-            let none Vector[Operand]^this(0)
-            if ops.length < 3 or Planner.pending_is_operator_name(ops[1]) = false
-                return none
-            var ok true
-            var cur Vector[Operand]^this(1)
-            cur.put(0, ops[0])
-            var i: size_t 1
-            while i < ops.length and ok
-            {
-                let e ops[i]
-                i := i + 1
-                let pc this.pending_construction(cur)
-                if Planner.pending_is_operator_name(e)
-                {
-                    var op_name String()
-                    choose e.expression
-                        when t: scalyc.compiler.Model.Type
-                            op_name := t.name[0]
-                        else
-                            0
-                    if pc <> null
-                    {
-                        var no_args Array[Vector[Operand]]()
-                        cur := this.pending_call(pc, cur, true, op_name, &no_args, &ok, 0)
-                    }
-                    else
-                    {
-                        ; a real value: its own type says what `value OP` answers
-                        let planned this.collapse_operand_sequence(this.plan_operands(cur))
-                        let rc this.lookup_concept_any(planned.result_type.name)
-                        if rc = null
-                            return none
-                        var params Array[String]()
-                        let body this.pending_member_body(rc, true, op_name, &params)
-                        if body.length = 0
-                            return none
-                        var names Array[String]()
-                        var vals Array[Vector[Operand]]()
-                        names.add(String^this("this"))
-                        vals.add cur
-                        cur := this.pending_eval(body, &names, &vals, &ok, 0)
-                    }
-                }
-                else
-                {
-                    if pc = null
-                        return none
-                    var one_arg Array[Vector[Operand]]()
-                    var arg Vector[Operand]^this(1)
-                    arg.put(0, e)
-                    one_arg.add arg
-                    cur := this.pending_call(pc, cur, false, "apply", &one_arg, &ok, 0)
-                }
-            }
-            var rounds 0
-            while ok and rounds < 16
-            {
-                let fc this.pending_construction(cur)
-                if fc = null
-                    break
-                var end_args Array[Vector[Operand]]()
-                cur := this.pending_call(fc, cur, false, "finish", &end_args, &ok, 0)
-                rounds := rounds + 1
-            }
-            if ok = false or this.pending_construction(cur) <> null
-                return none
-            cur
-        }
-
         procedure plan_operands(
             mutable this: Planner,
             mutable ops: Vector[scalyc.compiler.Model.Operand]
@@ -30235,17 +29599,10 @@ define Planner
                 }
                 return this.plan_operands(rest)
             }
-            ; the pending-type experiment (SCALYC_PENDING=1, pending_rewrite#)
-            if ops.length > 2 and this.pending_on()
-            {
-                let folded this.pending_rewrite(ops)
-                if folded.length > 0
-                    return this.plan_operands(folded)
-            }
             ; an operation with a delayed operand (`and`, `or`): read on the
             ; model, its right side planned where the body puts it
             ; (lazy_operation#)
-            if this.driver_on() and this.holds_lazy_operator(ops)
+            if this.holds_lazy_operator(ops)
             {
                 var lazy_ok false
                 let folded this.lazy_operation(ops, &lazy_ok)
@@ -53952,11 +53309,7 @@ define Planner
                         }
                         when o: Operator
                         {
-                            ; the pending-type experiment: an operator taking
-                            ; only `this` and stating no return type starts
-                            ; the protocol and is never a call
-                            if (this.pending_on() and o.returns_ = null and o.input.length = 1) = false
-                                planned_operators.add(this.plan_operator(o, parent_ref))
+                            planned_operators.add(this.plan_operator(o, parent_ref))
                             0
                         }
                         else
@@ -60948,62 +60301,6 @@ define Planner
         false
     }
 
-    ; get_operator_precedence: higher = binds tighter. Mirrors
-    ; Planner.cpp:1418-1431 exactly. Used by collapse_operand_sequence#
-    ; to climb precedence so `A <> X & B <> Y` collapses as
-    ; `(A <> X) & (B <> Y)` rather than `((A <> X) & B) <> Y`.
-    function get_operator_precedence(name: String) returns int
-    {
-        if name = "||"
-            return 1
-        if name = "or"
-            return 1
-        if name = "&&"
-            return 2
-        if name = "and"
-            return 2
-        if name = "|"
-            return 3
-        if name = "^"
-            return 4
-        ; Word synonym for `^` (bitwise XOR) — same precedence.
-        if name = "xor"
-            return 4
-        if name = "&"
-            return 5
-        if name = "="
-            return 6
-        if name = "<>"
-            return 6
-        if name = "<"
-            return 7
-        if name = ">"
-            return 7
-        if name = "<="
-            return 7
-        if name = ">="
-            return 7
-        if name = "<<"
-            return 8
-        if name = ">>"
-            return 8
-        if name = "+"
-            return 9
-        if name = "-"
-            return 9
-        if name = "*"
-            return 10
-        if name = "/"
-            return 10
-        if name = "%"
-            return 10
-        if name = "div"
-            return 10
-        if name = "mod"
-            return 10
-        0
-    }
-
     ; ========================================================================
     ; Function-signature helpers.
     ; ========================================================================
@@ -63107,8 +62404,8 @@ define Planner
         String("an operand sequence reads left to right, so 'f x.m()' is '(f x.m)()' - an argument that is itself a call takes parentheses: 'f(x.m())'")
 
     ; A name only a FUNCTION can have: it begins with a letter and is none of
-    ; the six word operators (the list of get_operator_precedence#: `div` and `mod`
-    ; beside the four). `[]` and `!` are operator names of the compiler's own
+    ; the six word operators (`div` and `mod` beside the four -- the levels of
+    ; scaly.sgm name them). `[]` and `!` are operator names of the compiler's own
     ; that are neither -- 2 515 sites answered to the first version of this,
     ; which asked "no operator characters".
     function name_is_function_name(n: String) returns bool
@@ -65931,16 +65228,6 @@ define Planner
             return 50
         if Planner.is_operator_name("")
             return 51
-
-        ; get_operator_precedence - canonical ranks plus the 'unknown' zero.
-        if Planner.get_operator_precedence("||") <> 1
-            return 52
-        if Planner.get_operator_precedence("*") <> 10
-            return 53
-        if Planner.get_operator_precedence("<>") <> 6
-            return 54
-        if Planner.get_operator_precedence("???") <> 0
-            return 55
 
         ; get_pointer_element_type - pointer[int] -> int.
         let pe_int Planner.get_pointer_element_type(ptr_int_ty)

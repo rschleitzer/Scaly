@@ -3359,8 +3359,11 @@ define Modeler
     ; highest version there -- for what is loaded without a declaration (the
     ; prelude, the library itself) and for the files the tool takes from it
     procedure stdlib_directory() returns String
+        stdlib_directory_in(scaly_home_base())
+
+    ; the highest version of the standard library under `base`packages/scaly
+    procedure stdlib_directory_in(home: String) returns String
     {
-        let home scaly_home_base()
         var best String("0.1.0")
         var found false
         var dir "`home`packages/scaly"
@@ -4525,6 +4528,63 @@ define Modeler
                 perr.append "/prelude.scaly - run from a directory containing packages/scaly, set SCALY_HOME (tools/install.sh does), or pass --no-prelude to compile without the standard library"
                 let perr_str perr.to_string()
                 report_load_error(perr_str)
+            }
+        }
+
+        ; The operation and its short-circuit operators -- the protocol of
+        ; pending types the planner reads an operation by (scaly/operation.scaly)
+        ; and `and`/`or` (scaly/logic.scaly) -- are part of the language, not of
+        ; the library: a root compiled without the standard library
+        ; (--no-prelude) gets them too, unless it declares the library or IS it
+        ; (its own modules hold them). Without them it would have no operators
+        ; at all: the compiler has no table (ROADMAP-operation.md, step 5).
+        if enable_prelude = false
+        {
+            var has_library: bool false
+            var pk: size_t 0
+            while pk < packages.length
+            {
+                let pkp packages.get pk
+                if pkp <> null and pkp.name = "scaly"
+                    has_library := true
+                pk := pk + 1
+            }
+            var mi: size_t 0
+            while mi < initial_module.modules.length
+            {
+                if initial_module.modules[mi].name = "operation"
+                    has_library := true
+                mi := mi + 1
+            }
+            if has_library = false
+            {
+                ; found as a declared package is: in the installation, else
+                ; in the project's own ./packages (package_directory#) -- an
+                ; installation of a few packages and no library has it there
+                var core_path "`stdlib_directory()`/scaly"
+                if File.exists("`core_path`/operation.scaly") = false
+                    core_path := "`stdlib_directory_in(project_base())`/scaly"
+                let operation_module build_referenced_module(core_path, "operation", false)
+                let logic_module build_referenced_module(core_path, "logic", false)
+                let had main_module.modules.length
+                var with_core Vector[Module](had + 2)
+                var ci: size_t 0
+                while ci < had
+                {
+                    with_core.put(ci, main_module.modules[ci])
+                    ci := ci + 1
+                }
+                with_core.put(had, operation_module)
+                with_core.put(had + 1, logic_module)
+                main_module := Module(
+                    main_module.private_,
+                    main_module.file,
+                    main_module.name,
+                    with_core,
+                    main_module.uses,
+                    main_module.members,
+                    main_module.symbols
+                )
             }
         }
 
