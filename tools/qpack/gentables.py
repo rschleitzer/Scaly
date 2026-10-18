@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate packages/http/0.1.0/http/QpackTables.scaly from RFC 9204.
+"""Generate packages/http/0.1.1/http/QpackTables.scaly from RFC 9204.
 
 usage: tools/qpack/gentables.py <rfc9204.txt> [nghttp3_qpack.c]
        (https://www.rfc-editor.org/rfc/rfc9204.txt; the optional second file,
@@ -53,5 +53,5 @@ for i, n, v in rows:
     if v:
         out.append(f'        case {i}: return {lit(v)}\n')
 out.append('    ""\n}\n')
-open('packages/http/0.1.0/http/QpackTables.scaly', 'w').write(''.join(out))
+open('packages/http/0.1.1/http/QpackTables.scaly', 'w').write(''.join(out))
 print('99 entries, cross-checked' if len(sys.argv) > 2 else '99 entries')
