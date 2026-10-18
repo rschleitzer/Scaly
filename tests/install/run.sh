@@ -75,7 +75,7 @@ if "$ROOT/tools/make-dist.sh" "$VER" "$TMP/base/downloads" > "$TMP/dist.log" 2>&
   missing=""
   for f in seed/main.ll seed/scaly_main.ll seed/scalyc.ll seed/scaly.ll seed/scalyls.ll seed/scalyls_main.ll \
            seed/json.ll seed/SHA256SUMS packages/scaly/0.2.0/scaly.scaly packages/http/0.2.0/http.scaly \
-           packages/https/0.1.1/https.scaly packages/tls/0.1.1/tls.scaly packages/json/0.1.1/json.scaly \
+           packages/https/0.2.0/https.scaly packages/tls/0.1.1/tls.scaly packages/json/0.1.1/json.scaly \
            LICENSE VERSION; do
     grep -q "^\./$f" "$TMP/payload.txt" || missing="$missing $f"
   done
