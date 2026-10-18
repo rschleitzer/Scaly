@@ -42,6 +42,23 @@ one() {
     SCALY_HOME="$HOME_DIR" SCALYC_OPERATION_CENSUS=1 "$BIN" -S $fl -o "$OUT/$n.on.ll" "$r" > "$OUT/$n.on.out" 2> "$OUT/$n.on.err"; echo $? > "$OUT/$n.on.rc" )
 }
 export -f one; export BIN OUT HOME_DIR
+# The interfaces of the ports' library packages first, in dependency order,
+# as their own builds lay them down (tscaly's tests/packages.sh): read from
+# its sources a package tells the checks less, and tsdriver is refused on
+# that (tools/interfaces.sh covers this tree's packages only).
+port_interfaces() {
+  repo="$1"; shift
+  [ -d "$repo/packages" ] || return 0
+  for p in "$@"; do
+    root=$(ls "$repo"/packages/"$p"/[0-9]*/"$p".scaly 2>/dev/null | sort -V | tail -1)
+    [ -n "$root" ] || continue
+    ( cd "$repo"; ulimit -s 65520
+      SCALY_HOME="$HOME_DIR" "$BIN" --emit-interface "${root#$repo/}" > /dev/null 2>&1 ) \
+      || echo "operation-compare: no interface for $p" >&2
+  done
+}
+port_interfaces "$DAZZLE" opensp pdf
+port_interfaces "$TSCALY" tsbase tscaly
 roots | grep -e "$FILTER" | xargs -P 6 -L 1 bash -c 'one $0 $1'
 same=0; differ=0; failed=0
 for rc in "$OUT"/*.off.rc; do
