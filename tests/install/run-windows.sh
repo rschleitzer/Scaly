@@ -106,7 +106,7 @@ if make_dist > "$TMP/dist.log" 2>&1; then
   private=$(grep -cE 'packages/(scalyc|scalyls|tscaly|scalygpu)/|\.o$|/\._|CLAUDE' "$TMP/payload.txt")
   missing=""
   for f in seed/scalyc.ll seed/SHA256SUMS packages/scaly/0.2.0/scaly.scaly packages/http/0.2.0/http.scaly \
-           packages/json/0.1.1/json.scaly LICENSE VERSION; do
+           packages/json/0.2.0/json.scaly LICENSE VERSION; do
     grep -q "^\./$f" "$TMP/payload.txt" || missing="$missing $f"
   done
   [ "$private" = 0 ] && [ -z "$missing" ] && ok || bad "payload: $private entries that must not ship; missing:$missing"

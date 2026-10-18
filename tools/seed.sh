@@ -205,7 +205,7 @@ echo "seed: hello.scaly, AOT corpus, fixed-point re-emission, scalyls roots"
   [ "${PIPESTATUS[0]}" = "0" ] || { echo "AOT corpus"; exit 1; }
 ) > "$OUT/aot.log" 2>&1 & aot_pid=$!
 emit_roots "$OUT/scalyc_seed" r_main=$C/main.scaly r_scaly_main=$C/scaly_main.scaly r_scalyc=$C/scalyc.scaly r_scaly=packages/scaly/0.2.0/scaly.scaly & reemit_pid=$!
-SCALY_REQUIRE_INTERFACES=1 emit_roots "$OUT/scalyc_seed" scalyls_main=$L/main.scaly scalyls=$L/scalyls.scaly json=packages/json/0.1.1/json.scaly & ls_pid=$!
+SCALY_REQUIRE_INTERFACES=1 emit_roots "$OUT/scalyc_seed" scalyls_main=$L/main.scaly scalyls=$L/scalyls.scaly json=packages/json/0.2.0/json.scaly & ls_pid=$!
 wait $aot_pid; aot_rc=$?
 cat "$OUT/aot.log"; rm -f "$OUT/aot.log"
 [ $aot_rc = 0 ] || fail "hello / AOT corpus"

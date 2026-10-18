@@ -1750,7 +1750,7 @@ define tool
     }
 
     ; does `text` hold `/<old>/` behind something other than a package's
-    ; written-out directory -- `"$PKG"/0.1.1/x`, where `packages/json/0.1.1/x`
+    ; written-out directory -- `"$PKG"/0.1.1/x`, where `packages/json/0.2.0/x`
     ; is another package's own path and no business of this rename?
     procedure spells_loosely(text: String, old: String) returns bool
     {

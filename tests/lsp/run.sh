@@ -109,7 +109,7 @@ if [ "$MODE" = selfhosted ]; then
     # stdlib object and the five shims, as every other suite there links it.
     [ "$SCALY_COFF" = 1 ] || { lsp_root scaly packages/scaly/0.2.0/scaly.scaly & pids+=($!); }
     lsp_root scalyls      packages/scalyls/0.2.0/scalyls.scaly & pids+=($!)
-    lsp_root json         packages/json/0.1.1/json.scaly & pids+=($!)
+    lsp_root json         packages/json/0.2.0/json.scaly & pids+=($!)
     lsp_root scalyls_main packages/scalyls/0.2.0/main.scaly & pids+=($!)
     for p in "${pids[@]}"; do wait "$p" || exit 1; done
     # scaly.o references the fiber context-switch primitives (vendored asm)
