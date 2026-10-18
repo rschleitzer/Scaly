@@ -47,6 +47,7 @@
     <content link = define
     <content identifier                                     property = name
     <content link = GenericParameters              optional property = parameters
+    <content link = Pending                        optional property = pending_
     <content colon                                 optional
     <content link = Attribute             multiple optional property = attributes
     <content link = Concept                                 property = concept_
@@ -60,6 +61,9 @@
     <content identifier                                     property = name
     <content link = Attribute             multiple optional property = attributes
     <content link = comma                          optional
+
+<syntax id = Pending
+    <content link = pending
 
 <syntax id = Concept                               abstract
     <content link = Class
@@ -668,6 +672,7 @@
 <keyword id = when
 <keyword id = while
 <keyword id = package
+<keyword id = pending
 <keyword id = shared
 
 <punctuation id = dot               value = "."

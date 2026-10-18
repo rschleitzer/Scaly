@@ -108,6 +108,8 @@ define grammar
             return true
         if word = "package"
             return true
+        if word = "pending"
+            return true
         if word = "shared"
             return true
         false

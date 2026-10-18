@@ -99,6 +99,7 @@ define Parser
         keywords_builder.add("when")
         keywords_builder.add("while")
         keywords_builder.add("package")
+        keywords_builder.add("pending")
         keywords_builder.add("shared")
         Vector[String](keywords_builder)
     }
@@ -573,6 +574,19 @@ define Parser
             when success: Success
                 parameters := GenericParametersSyntax(success.start, success.end, success.parameters)
 
+        let pending__start lexer.position
+        var pending_: ref[PendingSyntax]? null
+        choose parse_pending()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                pending_ := PendingSyntax(success.start, success.end)
+
         lexer.parse_colon()
 
         let attributes_start lexer.position
@@ -604,7 +618,7 @@ define Parser
 
         let end lexer.position
 
-        DefinitionSyntax(start, end, name, parameters, attributes, concept_)
+        DefinitionSyntax(start, end, name, parameters, pending_, attributes, concept_)
     }
 
     procedure parse_genericparameters(mutable this: Parser) returns GenericParametersSyntax throws ParserError
@@ -691,6 +705,18 @@ define Parser
         let end lexer.position
 
         GenericParameterSyntax(start, end, name, attributes)
+    }
+
+    procedure parse_pending(mutable this: Parser) returns PendingSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("pending")
+            throw ParserError.Different(DifferentSyntax())
+
+        let end lexer.position
+
+        PendingSyntax(start, end)
     }
 
     procedure parse_concept(mutable this: Parser) returns ConceptSyntax throws ParserError

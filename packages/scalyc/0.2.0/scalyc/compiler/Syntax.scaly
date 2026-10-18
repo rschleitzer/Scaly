@@ -858,6 +858,12 @@ define ConceptSyntax union (
     Intrinsic: IntrinsicSyntax
 )
 
+define PendingSyntax
+(
+    start: size_t
+    end: size_t
+)
+
 define GenericParameterSyntax
 (
     start: size_t
@@ -879,6 +885,7 @@ define DefinitionSyntax
     end: size_t
     name: String
     parameters: ref[GenericParametersSyntax]?
+    pending_: ref[PendingSyntax]?
     attributes: ref[Vector[AttributeSyntax]]?
     concept_: ConceptSyntax
 )

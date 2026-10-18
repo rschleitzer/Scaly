@@ -2731,6 +2731,23 @@ define Modeler
                 i := i + 1
             }
         }
+        ; `pending` in the head (`define Sum[O, L, R] pending (...)`): the
+        ; type of a value that waits for what follows in an operation
+        ; (ROADMAP-operation.md); carried as an attribute, as `mutable` on
+        ; a parameter is
+        if syntax.pending_ <> null
+        {
+            let pm (*syntax.pending_)
+            var marked Vector[Attribute](attributes.length + 1)
+            marked.put(0, Attribute(Span(pm.start, pm.end), String("pending"), Model.Constant(Constant.Boolean(BooleanConstant(Span(pm.start, pm.end), true)))))
+            var mi: size_t 0
+            while mi < attributes.length
+            {
+                marked.put(mi + 1, attributes[mi])
+                mi := mi + 1
+            }
+            attributes := marked
+        }
 
         ; Create the Definition variant based on concept type
         let definition choose syntax.concept_

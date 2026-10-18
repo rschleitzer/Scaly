@@ -1,0 +1,21 @@
+; `pending` in the head of a definition (2026-10-18): the type of a value
+; that waits for what follows in an operation (ROADMAP-operation.md). Such a
+; type is never laid out and its members are never routines -- a generic
+; one and a plain one, with a member that would not plan as a routine, are
+; declared here and the program around them runs.
+; Expected: PASS
+define Waits[O, L] pending (outer: O, left: L)
+{
+    function apply(this, right: L)
+        nothing_here(right)
+}
+
+define Plain pending (count: int)
+
+define Real (x: int)
+
+let r Real(42)
+if r.x = 42
+    print "PASS"
+else
+    print "FAIL"

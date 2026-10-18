@@ -54390,9 +54390,10 @@ define Planner
                     var skip: bool false
                     if c.parameters.length > 0 and s.members.length = 0 and s.initializers.length = 0
                         skip := true
-                    ; the pending-type experiment: a pending type is never
-                    ; laid out and its members are never routines
-                    if this.pending_on() and Planner.attributes_have(c.attributes, "pending")
+                    ; a `pending` type is never laid out and its members are
+                    ; never routines: a value of it lives inside one operation
+                    ; and is folded away (ROADMAP-operation.md)
+                    if Planner.attributes_have(c.attributes, "pending")
                         skip := true
                     if skip
                         return PlannedConcept(

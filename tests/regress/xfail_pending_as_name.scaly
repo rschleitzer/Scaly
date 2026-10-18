@@ -1,0 +1,6 @@
+; `pending` is a keyword since 2026-10-18 (the head of a definition says it,
+; `define Sum[O, L, R] pending (...)`), so it is no name any more: the tree's
+; 245 such names became `pending_`, as `returns_` and `export_` are.
+; xfail: expected Binding
+let pending 1
+print "FAIL"
