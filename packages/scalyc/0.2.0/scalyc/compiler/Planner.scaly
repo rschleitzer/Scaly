@@ -22153,6 +22153,9 @@ define Planner
         ; handle_tuple_type)
         procedure plan_tuple_type(mutable this: Planner, mutable t: Type) returns PlannedType
         {
+            ; (`()` itself arrives as `void`: Modeler handle_tuple_type)
+            if t.generics = null or (*t.generics).length = 0
+                return Planner.make_void_type()
             var types Array[PlannedType]()
             var labels Array[String]()
             let labelled t.name.length > 1

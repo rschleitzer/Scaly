@@ -1,0 +1,38 @@
+; `()`, the empty tuple's type, is what "no value" means (2026-10-19,
+; ROADMAP-operation.md, Tuples): `returns ()` is a routine that answers
+; nothing, and so is a delegate's. The Modeler models it as `void`
+; (handle_tuple_type); before, it was a record of no fields, and every such
+; routine took a caller page and returned a pointer.
+; Expected: PASS
+mutable count: int 0
+
+define Step delegate(int) returns ()
+
+procedure bump(by: int) returns () mutable count
+    count := count + by
+
+procedure each(n: int, f: Step)
+{
+    var i 0
+    while i < n
+    {
+        f(i)
+        i := i + 1
+    }
+}
+
+function nothing() returns ()
+    ()
+
+function ignore(i: int) returns ()
+    ()
+
+let g: Step \i: ignore(i)
+each(4, g)
+nothing()
+bump(2)
+bump(4)
+if count = 6
+    print "PASS"
+else
+    print "FAIL"

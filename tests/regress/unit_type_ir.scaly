@@ -1,0 +1,10 @@
+; `returns ()` is `void` in the IR (2026-10-19, Modeler handle_tuple_type):
+; no caller page, no result -- the previous compiler made it
+; `ptr @_Z4bumpPN4scaly6memory4PageE(ptr %0)`, a record of no fields.
+; expect-ir: define linkonce_odr void @_Z4bumpv()
+mutable count: int 0
+
+procedure bump() returns () mutable count
+    count := count + 1
+
+bump()

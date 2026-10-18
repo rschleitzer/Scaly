@@ -298,6 +298,15 @@ define Modeler
             path_length := 1 + count
         var path Vector[String](path_length)
         path.put(0, "()")
+        ; `()`, the empty tuple's type, is what "no value" means
+        ; (ROADMAP-operation.md, Tuples): the type `void`, so every reader of
+        ; the model -- the page rules among them -- takes `returns ()` for a
+        ; routine that answers nothing
+        if count = 0
+        {
+            path.put(0, "void")
+            return handle_optional_type(syntax, path, null)
+        }
         if labelled
         {
             var li: size_t 0
