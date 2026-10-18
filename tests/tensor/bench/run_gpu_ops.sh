@@ -41,7 +41,7 @@ if [ ! -f /tmp/libscalygpu.o ] || find packages/scalygpu -name '*.scaly' -newer 
    || [ /tmp/libscaly.a -nt /tmp/libscalygpu.o ]; then
   echo "building -O2 scalygpu package object..."
   source tools/llvm-env.sh
-  "$SCALYC" -S --no-tests -o /tmp/libscalygpu.ll packages/scalygpu/0.1.1/scalygpu.scaly
+  "$SCALYC" -S --no-tests -o /tmp/libscalygpu.ll packages/scalygpu/0.2.0/scalygpu.scaly
   sed 's/^define linkonce_odr /define weak_odr /' /tmp/libscalygpu.ll > /tmp/libscalygpu_weak.ll
   opt -O2 /tmp/libscalygpu_weak.ll -o /tmp/libscalygpu_opt.bc
   llc -relocation-model=pic -O2 -filetype=obj /tmp/libscalygpu_opt.bc -o /tmp/libscalygpu.o
