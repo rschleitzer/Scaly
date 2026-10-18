@@ -1,0 +1,30 @@
+; A named function into a delegate parameter, and a delegate with a record
+; parameter, through `scaly run` (tests/tool/run.sh): the JIT verifies its
+; module, which the textual pipeline does not. Before 2026-10-19 a closure
+; call was typed from the plan (`{ ptr }` for a String) where the argument
+; travels as a pointer -- the IR text printed it right, the module in memory
+; was invalid and the JIT aborted.
+define IntFn delegate(int) returns int
+define TextFn delegate(String) returns int
+
+function twice(n: int) returns int
+    n * 2
+
+function measure(n: int) returns int
+    n * 3
+
+function measure(s: String) returns int
+    s.length() as int
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+procedure apply_text(f: TextFn, mutable s: String) returns int
+    f(s)
+
+let word String("abcd")
+let typed: IntFn twice
+let a apply(twice, 3)
+let b apply(measure, 5)
+let c apply_text(measure, word)
+print "`a` `b` `c` `typed(9)`"

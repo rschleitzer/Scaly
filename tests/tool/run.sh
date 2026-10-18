@@ -285,6 +285,8 @@ if scaly_jit_available 2>/dev/null; then
   [ "$out" = "hello three" ] && ok || bad "run: got '$out'"
   out=$("$SCALY" run tests/tool/globals.scaly 2>&1)
   [ "$out" = "18 7 5" ] && ok || bad "run globals: got '$(echo "$out" | tail -1)'"
+  out=$("$SCALY" run tests/tool/delegates.scaly 2>&1)
+  [ "$out" = "6 15 4 18" ] && ok || bad "run delegates: got '$(echo "$out" | tail -1)'"
 fi
 
 # native

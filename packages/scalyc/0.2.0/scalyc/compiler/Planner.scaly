@@ -4615,7 +4615,80 @@ define Planner
                 }
                 else
                     0
+            ; a named function becomes the closure of the lambda that calls it
+            ; (closure_for_lambda_arg#), where it takes the delegate's arity
+            if this.function_arg_name((*ap)).get_length() > 0
+            {
+                var dn String(pt.name)
+                let dparams this.delegate_param_types(dn)
+                return this.function_takes_arity(this.function_arg_name((*ap)), dparams.length)
+            }
             false
+        }
+
+        ; function_arg_name#: the name of the free function an argument names
+        ; (`apply(twice, 3)`), or "" -- a local, a type, a member path is none
+        function function_arg_name(this: Planner, a: PlannedOperand) returns String
+        {
+            if a.member_access <> null
+                return ""
+            choose a.expr
+                when t: PlannedType
+                {
+                    if t.generics <> null or t.name.contains(".")
+                        return ""
+                    if this.lookup_concept_any(t.name) <> null or this.is_function(t.name) = false
+                        return ""
+                    return String(t.name)
+                }
+                else
+                    return ""
+        }
+
+        ; function_takes_arity#: does a free routine of that name take n
+        ; parameters
+        function function_takes_arity(this: Planner, name: String, n: size_t) returns bool
+        {
+            let candidates this.lookup_functions(name)
+            var i: size_t 0
+            while i < candidates.length
+            {
+                let fp candidates.get i
+                if fp <> null and fp.input.length = n
+                    return true
+                i := i + 1
+            }
+            false
+        }
+
+        ; function_lambda#: `\a$0 a$1: f(a$0, a$1)`, the lambda that calls the
+        ; named function -- its parameters take the delegate's types, so the
+        ; call inside chooses f's overload by the delegate's signature
+        ; (ROADMAP-operation.md, Functions)
+        procedure function_lambda(mutable this: Planner, name: String, n: size_t, span: Span) returns Lambda
+        {
+            ; on the Planner's page: the closure keeps this model
+            var inputs Vector[Item]^this(n)
+            var comps Vector[Component]^this(n)
+            var i: size_t 0
+            while i < n
+            {
+                var nh Vector[String]^this(1)
+                nh.put(0, String^this("a$`i`"))
+                inputs.put(i, Item(span, false, nh.get(0), null, Vector[Attribute]^this(0)))
+                var arg_path Vector[String]^this(1)
+                arg_path.put(0, String^this("a$`i`"))
+                var arg_ops Vector[Operand]^this(1)
+                arg_ops.put(0, Operand(span, Expression.Type(scalyc.compiler.Model.Type(span, arg_path, null, Lifetime.Unspecified(Unspecified()))), null))
+                comps.put(i, Component(span, null, arg_ops, Vector[Attribute]^this(0)))
+                i := i + 1
+            }
+            var fn_path Vector[String]^this(1)
+            fn_path.put(0, String^this(name))
+            var call_ops Vector[Operand]^this(2)
+            call_ops.put(0, Operand(span, Expression.Type(scalyc.compiler.Model.Type(span, fn_path, null, Lifetime.Unspecified(Unspecified()))), null))
+            call_ops.put(1, Operand(span, Expression.Tuple(Tuple(span, comps)), null))
+            Lambda(span, inputs, Action(call_ops, Vector[Operand]^this(0)))
         }
 
         ; closure_for_lambda_arg#: a lambda literal handed straight to a
@@ -4626,6 +4699,19 @@ define Planner
         ; literal this planner recorded.
         procedure closure_for_lambda_arg(mutable this: Planner, a: PlannedOperand, pt: PlannedType) returns ref[PlannedOperand]?
         {
+            ; a named function: the closure of the lambda that calls it
+            let named this.function_arg_name(a)
+            if named.get_length() > 0
+            {
+                var dn String(pt.name)
+                let dparams this.delegate_param_types(dn)
+                let dret this.delegate_return_type(dn)
+                if this.function_takes_arity(named, dparams.length) = false
+                    return null
+                var lm this.function_lambda(named, dparams.length, a.loc)
+                let clo this.make_closure("fn", lm, dparams, dret, pt, Lifetime.Local(scalyc.compiler.Model.Local(a.loc)))
+                return PlannedOperand^this(a.loc, PlannedExpression.Closure clo, null, pt)
+            }
             choose a.expr
                 when pl: PlannedLambda
                     0
@@ -30093,6 +30179,44 @@ define Planner
             this.add_diagnostic(at, String^this(msg))
         }
 
+        ; delegate_binding#: `let g: Callback <lambda>` -- the closure of the
+        ; lambda monomorphized against the delegate's signature, a value g holds
+        procedure delegate_binding(mutable this: Planner, mutable b: Binding, mutable del_name: String, mutable dl: Lambda) returns PlannedBinding
+        {
+            var dparams this.delegate_param_types(del_name)
+            var base_name "lam"
+            if b.item.name <> null
+                base_name := String((*b.item.name))
+            let del_pt this.plan_type((*b.item.type))
+            let dret this.delegate_return_type(del_name)
+            let clo this.make_closure(base_name, dl, dparams, dret, del_pt, Lifetime.Local(scalyc.compiler.Model.Local(b.span)))
+            let fref_op PlannedOperand(b.span, PlannedExpression.Closure clo, null, del_pt)
+            var op_arr Array[PlannedOperand]()
+            op_arr.add fref_op
+            var op_vec Vector[PlannedOperand](op_arr)
+            var name_ref: ref[String]? null
+            if b.item.name <> null
+            {
+                var nh Vector[String](1)
+                nh.put(0, String((*b.item.name)))
+                name_ref := nh.get(0)
+            }
+            var pt_h Vector[PlannedType](1)
+            pt_h.put(0, del_pt)
+            let pitem PlannedItem(b.span, false, name_ref, pt_h.get(0), null)
+            ; Register the local so later references resolve
+            ; to the delegate type (e.g. passing g to apply,
+            ; or calling g(...) indirectly).
+            if b.item.name <> null
+            {
+                this.define_local((*b.item.name), del_pt, b.binding_type = "var", false)
+                ; Track it as a stack closure for escape
+                ; checking (returning it would dangle).
+                local_closure_names.add(String((*b.item.name)))
+            }
+            return PlannedBinding(b.span, b.binding_type, pitem, &op_vec)
+        }
+
         procedure plan_binding(mutable this: Planner, mutable b: Binding) returns PlannedBinding
         {
             ; Names starting with `_` are reserved for compiler internals —
@@ -30130,39 +30254,29 @@ define Planner
                     if dop_ptr <> null
                         choose (*dop_ptr).expression
                             when dl: Lambda
+                                return this.delegate_binding(b, del_name, dl)
+                            when dft: Type
                             {
-                                var dparams this.delegate_param_types(del_name)
-                                var base_name "lam"
-                                if b.item.name <> null
-                                    base_name := String((*b.item.name))
-                                let del_pt this.plan_type((*b.item.type))
-                                let dret this.delegate_return_type(del_name)
-                                let clo this.make_closure(base_name, dl, dparams, dret, del_pt, Lifetime.Local(scalyc.compiler.Model.Local(b.span)))
-                                let fref_op PlannedOperand(b.span, PlannedExpression.Closure clo, null, del_pt)
-                                var op_arr Array[PlannedOperand]()
-                                op_arr.add fref_op
-                                var op_vec Vector[PlannedOperand](op_arr)
-                                var name_ref: ref[String]? null
-                                if b.item.name <> null
+                                ; a named function (`let g: IntFn twice`): the
+                                ; closure of the lambda that calls it -- it
+                                ; was a closure without a thunk, a broken
+                                ; module with no location
+                                var dft_name ""
+                                if dft.name.length = 1 and dft.generics = null
                                 {
-                                    var nh Vector[String](1)
-                                    nh.put(0, String((*b.item.name)))
-                                    name_ref := nh.get(0)
+                                    let dhp dft.name.get 0
+                                    if dhp <> null
+                                        dft_name := String((*dhp))
                                 }
-                                var pt_h Vector[PlannedType](1)
-                                pt_h.put(0, del_pt)
-                                let pitem PlannedItem(b.span, false, name_ref, pt_h.get(0), null)
-                                ; Register the local so later references resolve
-                                ; to the delegate type (e.g. passing g to apply,
-                                ; or calling g(...) indirectly).
-                                if b.item.name <> null
+                                if dft_name.get_length() > 0 and this.lookup_local_binding(dft_name) = null and this.lookup_concept_any(dft_name) = null and this.is_function(dft_name)
                                 {
-                                    this.define_local((*b.item.name), del_pt, b.binding_type = "var", false)
-                                    ; Track it as a stack closure for escape
-                                    ; checking (returning it would dangle).
-                                    local_closure_names.add(String((*b.item.name)))
+                                    let fdparams this.delegate_param_types(del_name)
+                                    if this.function_takes_arity(dft_name, fdparams.length)
+                                    {
+                                        var flm this.function_lambda(dft_name, fdparams.length, b.span)
+                                        return this.delegate_binding(b, del_name, flm)
+                                    }
                                 }
-                                return PlannedBinding(b.span, b.binding_type, pitem, &op_vec)
                             }
                             else
                                 0

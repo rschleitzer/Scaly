@@ -1,0 +1,38 @@
+; A named function where a delegate type is declared is a run-time value
+; (2026-10-19, ROADMAP-operation.md, Functions): the closure of the lambda
+; that calls it (Planner.function_lambda#), so an overloaded name is chosen
+; by the delegate's signature -- `measure` is `measure(int)` for an IntFn and
+; `measure(String)` for a TextFn. Before, `apply(twice, 3)` was "function not
+; found: apply", and `let f: IntFn twice` a closure without a thunk: a broken
+; module, no location.
+; Expected: PASS
+define IntFn delegate(int) returns int
+define TextFn delegate(String) returns int
+
+function twice(n: int) returns int
+    n * 2
+
+function measure(n: int) returns int
+    n * 3
+
+function measure(s: String) returns int
+    s.length() as int
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+procedure apply_text(f: TextFn, mutable s: String) returns int
+    f(s)
+
+procedure run() returns bool
+{
+    var word String("abcd")
+    let g twice
+    let typed: IntFn twice
+    apply(twice, 3) = 6 and apply(g, 4) = 8 and apply(measure, 5) = 15 and apply_text(measure, word) = 4 and typed(9) = 18
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

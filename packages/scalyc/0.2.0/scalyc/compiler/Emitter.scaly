@@ -11999,9 +11999,23 @@ define Emitter
                                 let a_ptr ic_args.get k
                                 if a_ptr <> null
                                 {
-                                    let av emit_operand(*a_ptr)
+                                    ; the VALUE's type, as for the indirect call
+                                    ; above: the thunk is a lambda, which takes a
+                                    ; record by pointer, and a record argument
+                                    ; travels as one -- typed from the plan the
+                                    ; call said `{ ptr }` for a String handed as
+                                    ; `ptr`, a module the JIT's verifier refused
+                                    ; (the text printed each argument with its own
+                                    ; type and read back right; 2026-10-19)
+                                    var av emit_operand(*a_ptr)
+                                    if av <> null and LLVMGetTypeKind(LLVMTypeOf av) = LLVMTypeKind.Struct()
+                                    {
+                                        let aspill entry_alloca(LLVMTypeOf av, "clo.arg")
+                                        LLVMBuildStore(builder, av, aspill)
+                                        av := aspill
+                                    }
                                     arg_vals.put(k, av)
-                                    arg_tys.put(k, map_type((*a_ptr).result_type))
+                                    arg_tys.put(k, LLVMTypeOf av)
                                 }
                                 k := k + 1
                             }
