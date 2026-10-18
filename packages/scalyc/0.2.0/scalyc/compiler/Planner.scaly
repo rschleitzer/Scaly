@@ -337,6 +337,29 @@ define Planner
     ; search paths, loaded-package cache, and error accumulator.
     ; ========================================================================
 
+    ; what a call arm of collapse_application# hands back (call_arm_*#):
+    ; the match, and whether the call goes on a receiver -- the state
+    ; of the cascade the arms write
+    define CallArm
+    (
+        found: ref[MethodMatch]?
+        is_method_dispatch: bool
+        receiver_op: PlannedOperand
+        stamp_getref_local: bool
+    )
+
+    ; ... and what its namespace arm hands back (call_arm_namespace#)
+    define NamespaceArm
+    (
+        found: ref[MethodMatch]?
+        ns_mangled: String
+        has_ns_mangled: bool
+        ns_mangled_page: bool
+        ns_coerce_valid: bool
+        ns_return_type: PlannedType
+        ns_return_valid: bool
+    )
+
     ; what application_target# answers
     define ApplicationTarget
     (
@@ -14428,13 +14451,30 @@ define Planner
                                     call_generics := cgt.generics
                                 else
                                     0
-                        var match_ref this.resolve_free_call(value_method_hop, fn_name, arg_types, arg_ops, call_generics)
+                        ; The step by what the head IS (operation_name#): the operation driver
+                        ; takes only the arms of the cascade that resolve such a head -- 1
+                        ; the free resolution, 3 a dotted local, 4 a method on a chain, 5 a
+                        ; namespace's function, 6 a sibling method (call_arm_applies#). The
+                        ; old path (named 0) tries them all in their order.
+                        var named: size_t 0
+                        if this.driver_on()
+                            named := this.operation_name(result)
+                        var match_ref: ref[MethodMatch]? null
+                        if Planner.call_arm_applies(named, 1)
+                            match_ref := this.resolve_free_call(value_method_hop, fn_name, arg_types, arg_ops, call_generics)
                         if match_ref = null and static_on_type
                         {
                             let sm_ref this.lookup_method(static_type, fn_name, arg_types, arg_ops)
                             if sm_ref <> null and sm_ref.takes_this = false
                                 match_ref := sm_ref
                         }
+
+                        ; which arm of the cascade resolves the call (the census, operation_arm#)
+                        var call_arm: size_t 0
+                        if match_ref <> null
+                            call_arm := 1
+                        if match_ref <> null and static_on_type
+                            call_arm := 2
 
                         ; First-hop method dispatch (s75): when fn_name
                         ; is a dotted name `arg.starts_with` and `arg`
@@ -14458,216 +14498,17 @@ define Planner
                         ; from the match) so the escape checks see the frame-
                         ; bound reference.
                         var stamp_getref_local: bool false
-                        if match_ref = null
+                        if match_ref = null and Planner.call_arm_applies(named, 3)
                         {
-                            let dot_idx fn_name.last_index_of(46)
-                            if dot_idx > 0
-                            {
-                                let dot_pos dot_idx as size_t
-                                let prefix fn_name.substring(0, dot_pos)
-                                let suffix fn_name.substring(
-                                    dot_pos + 1,
-                                    fn_name.get_length() - dot_pos - 1
-                                )
-                                let local_ref this.lookup_local_binding(prefix)
-                                if local_ref <> null
-                                {
-                                    let local (*local_ref)
-                                    ; s109: dispatch on generic receivers
-                                    ; (Container[int], Box[int]). encode_type#
-                                    ; handles `Name[args]` → `<len><name>I<args>E`,
-                                    ; so mangle_method# already produces the
-                                    ; specialised symbol (e.g. `_ZN9ContainerIiE`
-                                    ; `8set_itemEmi`). The previous skip was
-                                    ; written before encode_type# learned
-                                    ; generics; lifting it lets user-defined
-                                    ; `Container[int].set_item(...)` resolve
-                                    ; against the spec'd body emitted via
-                                    ; instantiate_generic#. Stdlib generics
-                                    ; (Vector / HashMap / etc.) are still
-                                    ; excluded because their bodies aren't
-                                    ; specialised in the planner walk — keep
-                                    ; them on the unspec'd dispatch path so
-                                    ; the existing extern-decl shim continues
-                                    ; to work.
-                                    var skip_dispatch: bool false
-                                    if local.binding_type.generics <> null
-                                    {
-                                        if local.binding_type.name <> "pointer"
-                                        {
-                                            if local.binding_type.name <> "ref"
-                                            {
-                                                ; s137-INVESTIGATE: Vector removed
-                                                if local.binding_type.name = "HashMap"
-                                                    skip_dispatch := true
-                                                if local.binding_type.name = "HashMapBuilder"
-                                                    skip_dispatch := true
-                                                if local.binding_type.name = "HashSet"
-                                                    skip_dispatch := true
-                                                if local.binding_type.name = "HashSetBuilder"
-                                                    skip_dispatch := true
-                                                ; s154: Array removed from skip_dispatch, mirroring
-                                                ; the s137 Vector lift. Array[T] is specialised via
-                                                ; instantiate_generic# (s129), so the s109 method-
-                                                ; dispatch path (lookup_method# + extern-decl record)
-                                                ; produces the right `_ZN5ArrayI<T>E3addE<T>` symbol.
-                                                ; Without this, `functions.add(this.plan_function#(f,
-                                                ; null))` in plan_module#'s member loop skipped
-                                                ; dispatch entirely and the whole statement dropped —
-                                                ; so plan_function# was never called, instantiated_
-                                                ; functions stayed empty, and stage-2 emitted zero
-                                                ; functions.
-                                                ; s148: List removed alongside the is_stdlib_generic lift.
-                                                ; Specialised List<T>::add/count/get_iterator bodies are
-                                                ; now emitted via instantiate_generic#, so dispatch can
-                                                ; route through the s109 extern-decl + record_function
-                                                ; path the same way Vector does (skip_dispatch on Vector
-                                                ; was lifted in s137, no regression there).
-                                                ; if local.binding_type.name.equals("List")
-                                                ;     set skip_dispatch: true
-                                                if local.binding_type.name = "ListIterator"
-                                                    skip_dispatch := true
-                                                if local.binding_type.name = "Option"
-                                                    skip_dispatch := true
-                                                if local.binding_type.name = "Result"
-                                                    skip_dispatch := true
-                                                if local.binding_type.name = "Slice"
-                                                    skip_dispatch := true
-                                                if local.binding_type.name = "Slot"
-                                                    skip_dispatch := true
-                                                if local.binding_type.name = "Node"
-                                                    skip_dispatch := true
-                                                if local.binding_type.name = "KeyValuePair"
-                                                    skip_dispatch := true
-                                            }
-                                        }
-                                    }
-                                    if skip_dispatch = false
-                                    {
-                                    let mm_ref this.lookup_method(local.binding_type, suffix, arg_types, arg_ops)
-                                    if mm_ref <> null
-                                    {
-                                        let mm (*mm_ref)
-                                        ; Build receiver as Variable(prefix).
-                                        let recv PlannedOperand(
-                                            result.loc,
-                                            PlannedExpression.Variable(PlannedVariable(
-                                                result.loc,
-                                                prefix,
-                                                local.binding_type,
-                                                local.is_mutable
-                                            )),
-                                            null,
-                                            local.binding_type
-                                        )
-                                        receiver_op := recv
-                                        is_method_dispatch := true
-
-                                        ; s78: record an extern PlannedFunction
-                                        ; for the dispatched method so
-                                        ; emit_function_decl emits an LLVM
-                                        ; declare and emit_call's
-                                        ; LLVMGetNamedFunction resolves it.
-                                        ; Same-package methods (Options.*) are
-                                        ; declared via the regular plan path;
-                                        ; cross-package methods (String.*,
-                                        ; Vector.*) need this. Skipped when
-                                        ; already recorded (mirrors the
-                                        ; dotted-namespace dedup at line ~2949).
-                                        if this.has_recorded_function(mm.mangled_name) = false
-                                        {
-                                            var items_arr Array[PlannedItem]()
-                                            items_arr.add(PlannedItem(
-                                                result.loc,
-                                                false,
-                                                null,
-                                                &^this local.binding_type,
-                                                null
-                                            ))
-                                            if mm.parameter_types <> null
-                                            {
-                                                let pt_vec_ref mm.parameter_types
-                                                let pt_vec (*pt_vec_ref)
-                                                var ai: size_t 0
-                                                while ai < pt_vec.length
-                                                {
-                                                    let p_ptr pt_vec.get ai
-                                                    if p_ptr <> null
-                                                    {
-                                                        items_arr.add(PlannedItem(
-                                                            result.loc,
-                                                            false,
-                                                            null,
-                                                            &^this (*p_ptr),
-                                                            null
-                                                        ))
-                                                    }
-                                                    ai := ai + 1
-                                                }
-                                            }
-                                            var items_holder Vector[PlannedItem](items_arr)
-                                            let extern_impl PlannedImplementation.Extern(
-                                                PlannedExternImpl result.loc
-                                            )
-                                            ; s119: honor mm.requires_page_param so cross-package /
-                                            ; recursive-mid-planning stub IR signature matches the
-                                            ; proper PlannedFunction emitted later. Without this,
-                                            ; an early stub locks in a no-page-slot LLVM signature
-                                            ; for any function whose body recursively calls itself
-                                            ; (or is called before plan_function# records it).
-                                            var pp_ref_a: ref[String]? null
-                                            if mm.requires_page_param
-                                            {
-                                                var pp_h_a Vector[String](1)
-                                                pp_h_a.put(0, "_rp")
-                                                pp_ref_a := pp_h_a.get(0)
-                                            }
-                                            this.record_function(PlannedFunction(
-                                                result.loc,
-                                                false,
-                                                false,
-                                                suffix,
-                                                mm.mangled_name,
-                                                pp_ref_a,
-                                                &items_holder,
-                                                &^this mm.return_type,
-                                                mm.throws_type,
-                                                Lifetime.Unspecified(Unspecified()),
-                                                extern_impl,
-                                                null,
-                                                false,
-                                                mm.can_throw,
-                                                null,
-                                                this.file,
-                                                null
-                                            ))
-                                        }
-                                        match_ref := mm_ref
-
-                                        ; Option B: a get/get_ptr ref out of a
-                                        ; frame-local-page holder — flag the
-                                        ; result for the Local-pointee stamp.
-                                        ; The name array is entry-truncated per
-                                        ; function (NOT cleared), so a lazily-
-                                        ; instantiated generic method planned
-                                        ; MID-function sees the outer entries —
-                                        ; require the receiver to be a genuine
-                                        ; non-parameter local Vector binding of
-                                        ; THIS scope (a field/param receiver
-                                        ; is caller-lived, never stamped).
-                                        var sfx_is_getref suffix = "get"
-                                        if sfx_is_getref = false
-                                            sfx_is_getref := suffix = "get_ptr"
-                                        if sfx_is_getref
-                                            if local.is_parameter = false
-                                                if local.binding_type.name = "Vector"
-                                                    if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, prefix)
-                                                        stamp_getref_local := true
-                                    }
-                                    }
-                                }
-                            }
+                            let arm this.call_arm_dotted_local(result, fn_name, arg_types, arg_ops, CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local))
+                            match_ref := arm.found
+                            is_method_dispatch := arm.is_method_dispatch
+                            receiver_op := arm.receiver_op
+                            stamp_getref_local := arm.stamp_getref_local
                         }
+
+                        if match_ref <> null and call_arm = 0
+                            call_arm := 3
 
                         ; Method-on-chain dispatch (s83): when the first
                         ; operand has a member_access chain whose last hop
@@ -14680,176 +14521,17 @@ define Planner
                         ; in method bodies (after the implicit-this
                         ; multi-segment fallback in plan_type_operand# returns
                         ; a chain ending in a method hop).
-                        if match_ref = null
+                        if match_ref = null and Planner.call_arm_applies(named, 4)
                         {
-                            if result.member_access <> null
-                            {
-                                let ma_outer (*result.member_access)
-                                if ma_outer.length > 0
-                                {
-                                    let last_p ma_outer.get(ma_outer.length - 1)
-                                    if last_p <> null
-                                    {
-                                        let last_acc (*last_p)
-                                        if last_acc.is_method
-                                        {
-                                            let recv_type last_acc.parent_type
-                                            let mm_ref this.lookup_method(recv_type, last_acc.name, arg_types, arg_ops)
-                                            if mm_ref <> null
-                                            {
-                                                let mm3 (*mm_ref)
-                                                ; Build truncated chain (drop last hop).
-                                                var trunc_arr Array[PlannedMemberAccess]()
-                                                var ti: size_t 0
-                                                while ti + 1 < ma_outer.length
-                                                {
-                                                    let mp ma_outer.get ti
-                                                    if mp <> null
-                                                        trunc_arr.add((*mp))
-                                                    ti := ti + 1
-                                                }
-                                                if trunc_arr.length > 0
-                                                {
-                                                    var trunc_holder Vector[PlannedMemberAccess](trunc_arr)
-                                                    receiver_op := PlannedOperand(
-                                                        result.loc,
-                                                        result.expr,
-                                                        &trunc_holder,
-                                                        recv_type
-                                                    )
-                                                }
-                                                else
-                                                {
-                                                    receiver_op := PlannedOperand(
-                                                        result.loc,
-                                                        result.expr,
-                                                        null,
-                                                        recv_type
-                                                    )
-                                                }
-
-                                                ; Option B stamp (s83 chain path
-                                                ; — THE live path for `H.get(i)`
-                                                ; on a local receiver: plan_type_
-                                                ; operand resolves the hop to a
-                                                ; method chain, so fn_name is the
-                                                ; bare method name and the s75
-                                                ; dotted branch never runs). Only
-                                                ; a chain-free Variable receiver
-                                                ; can be a holder binding; field
-                                                ; receivers (non-empty truncated
-                                                ; chain) are caller-lived and
-                                                ; never stamped.
-                                                var s83_is_getref last_acc.name = "get"
-                                                if s83_is_getref = false
-                                                    s83_is_getref := last_acc.name = "get_ptr"
-                                                if s83_is_getref and trunc_arr.length = 0
-                                                    choose result.expr
-                                                        when s83v: Variable
-                                                        {
-                                                            ; The name array is entry-
-                                                            ; truncated per function (NOT
-                                                            ; cleared), so a lazily-
-                                                            ; instantiated generic method
-                                                            ; planned MID-function sees the
-                                                            ; outer entries (VectorIterator.
-                                                            ; next's `vector` FIELD collided
-                                                            ; with test_vector's holder).
-                                                            ; Require a genuine non-parameter
-                                                            ; local Vector binding of THIS
-                                                            ; scope — a field name misses
-                                                            ; lookup_local_binding.
-                                                            if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, s83v.name)
-                                                            {
-                                                                let s83lb this.lookup_local_binding(s83v.name)
-                                                                if s83lb <> null
-                                                                    if s83lb.is_parameter = false
-                                                                        if s83lb.binding_type.name = "Vector"
-                                                                            stamp_getref_local := true
-                                                            }
-                                                        }
-                                                        else
-                                                            0
-
-                                                ; Record extern PlannedFunction so
-                                                ; emit_function_decl emits an LLVM
-                                                ; declare and emit_call resolves it
-                                                ; via LLVMGetNamedFunction. Mirrors
-                                                ; the s78 record at the s75 site
-                                                ; (line ~2794). Skipped if already
-                                                ; recorded.
-                                                if this.has_recorded_function(mm3.mangled_name) = false
-                                                {
-                                                    var items_arr2 Array[PlannedItem]()
-                                                    items_arr2.add(PlannedItem(
-                                                        result.loc,
-                                                        false,
-                                                        null,
-                                                        &^this recv_type,
-                                                        null
-                                                    ))
-                                                    if mm3.parameter_types <> null
-                                                    {
-                                                        let pt_vec_ref2 mm3.parameter_types
-                                                        let pt_vec2 (*pt_vec_ref2)
-                                                        var ai2: size_t 0
-                                                        while ai2 < pt_vec2.length
-                                                        {
-                                                            let p_ptr2 pt_vec2.get ai2
-                                                            if p_ptr2 <> null
-                                                            {
-                                                                items_arr2.add(PlannedItem(
-                                                                    result.loc,
-                                                                    false,
-                                                                    null,
-                                                                    &^this (*p_ptr2),
-                                                                    null
-                                                                ))
-                                                            }
-                                                            ai2 := ai2 + 1
-                                                        }
-                                                    }
-                                                    var items_holder2 Vector[PlannedItem](items_arr2)
-                                                    let extern_impl2 PlannedImplementation.Extern(
-                                                        PlannedExternImpl result.loc
-                                                    )
-                                                    ; s119: see stub-A site above.
-                                                    var pp_ref_b: ref[String]? null
-                                                    if mm3.requires_page_param
-                                                    {
-                                                        var pp_h_b Vector[String](1)
-                                                        pp_h_b.put(0, "_rp")
-                                                        pp_ref_b := pp_h_b.get(0)
-                                                    }
-                                                    this.record_function(PlannedFunction(
-                                                        result.loc,
-                                                        false,
-                                                        false,
-                                                        last_acc.name,
-                                                        mm3.mangled_name,
-                                                        pp_ref_b,
-                                                        &items_holder2,
-                                                        &^this mm3.return_type,
-                                                        mm3.throws_type,
-                                                        Lifetime.Unspecified(Unspecified()),
-                                                        extern_impl2,
-                                                        null,
-                                                        false,
-                                                        mm3.can_throw,
-                                                        null,
-                                                        this.file,
-                                                        null
-                                                    ))
-                                                }
-
-                                                match_ref := mm_ref
-                                                is_method_dispatch := true
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            let arm this.call_arm_chain(result, fn_name, arg_types, arg_ops, CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local))
+                            match_ref := arm.found
+                            is_method_dispatch := arm.is_method_dispatch
+                            receiver_op := arm.receiver_op
+                            stamp_getref_local := arm.stamp_getref_local
                         }
+
+                        if match_ref <> null and call_arm = 0
+                            call_arm := 4
 
                         ; Dotted call fallback: `cli.main(args)` arrives
                         ; with fn_name="cli.main"; the function is registered
@@ -14893,725 +14575,20 @@ define Planner
                         ; own return type.
                         var ns_return_type: PlannedType this.fresh_type_var("")
                         var ns_return_valid: bool false
-                        if match_ref = null
+                        if match_ref = null and Planner.call_arm_applies(named, 5)
                         {
-                            let dot_idx fn_name.last_index_of(46)
-                            if dot_idx > 0
-                            {
-                                let dot_pos dot_idx as size_t
-                                let prefix fn_name.substring(0, dot_pos)
-                                let suffix fn_name.substring(
-                                    dot_pos + 1,
-                                    fn_name.get_length() - dot_pos - 1
-                                )
-                                ; s-LSP: resolve the dotted call. resolve_dotted_call#
-                                ; first tries the normal this-implicit overload,
-                                ; then — for a namespace this-method invoked
-                                ; qualified with an EXPLICIT receiver
-                                ; (`NS.f(recv, ...)` for `f(this: T, ...)`, where
-                                ; `recv` is in arg_types but the this-implicit
-                                ; matcher skips `this` and arity-fails) — retries
-                                ; with the receiver arg dropped. Mirrors stage-0's
-                                ; name-only Namespace path (Planner.cpp:8663); the
-                                ; namespace-mangling block below then drops `this`
-                                ; from the name (`_ZN<ns><fn>Ev`) and the call
-                                ; still passes every explicit arg, so `recv` fills
-                                ; `this`. This stays ONE statement — one call, one
-                                ; store to match_ref, exactly as the old single
-                                ; resolve_function_call# — so collapse_operand_
-                                ; sequence#'s s178 alloca pool keeps match_ref in a
-                                ; stable slot. An earlier two-statement form (a
-                                ; `if match_ref = null { set match_ref: ... }`
-                                ; diamond) perturbed the pool's liveness and aliased
-                                ; match_ref onto a recycled slot (two_vec), losing
-                                ; the value before the final mangled-name read.
-                                match_ref := this.resolve_dotted_call(prefix, suffix, arg_types, arg_ops)
-
-                                if match_ref <> null
-                                {
-                                    ; s177: prefer the Namespace concept for the
-                                    ; prefix. lookup_concept returns the inner
-                                    ; same-named Structure for `define Planner {
-                                    ; define Planner(...) }`, so `Planner.x()`
-                                    ; from another namespace never took the
-                                    ; namespace-mangling branch and the whole
-                                    ; statement dropped.
-                                    let ns_ref this.lookup_namespace_concept(prefix)
-                                    if ns_ref <> null
-                                    {
-                                        let nsc (*ns_ref)
-                                        var is_ns: bool false
-                                        choose nsc.definition
-                                            when n: Namespace
-                                                is_ns := true
-                                            else
-                                                0
-                                        if is_ns
-                                        {
-                                            ; Build PlannedType for the
-                                            ; namespace as a parent and
-                                            ; rebuild the mangled name.
-                                            let ns_parent_ref &^this PlannedType(
-                                                result.loc,
-                                                String(prefix),
-                                                this.type_symbol(prefix, null),
-                                                null,
-                                                Lifetime.Unspecified(Unspecified()),
-                                                null,
-                                                "",
-                                                null
-                                            )
-
-                                            ; Build items from the matched
-                                            ; function's declared parameter
-                                            ; types (not arg_types). Stage-0
-                                            ; mangles using the declared
-                                            ; param types — e.g. Console.println's
-                                            ; signature is
-                                            ; `(text: pointer[const_char])`,
-                                            ; so the mangled name is
-                                            ; `_ZN7Console7printlnEP10const_char`.
-                                            ; Using arg_types instead would
-                                            ; produce `_ZN7Console7printlnEP2i8`
-                                            ; (string-literal type) which
-                                            ; doesn't match libscaly's symbol.
-                                            ;
-                                            ; s129: when the prefix is a
-                                            ; Namespace concept, look up the
-                                            ; function within ITS members
-                                            ; first. resolve_function_call#
-                                            ; uses the global model_functions
-                                            ; registry (keyed by bare name),
-                                            ; so for Console.println it can
-                                            ; resolve to the PRELUDE's
-                                            ; `println(pointer[i8])` via
-                                            ; exact-match — even though we're
-                                            ; trying to dispatch to
-                                            ; Console.println(pointer[const_char]).
-                                            ; Without this carve-out, the
-                                            ; rebuild produces
-                                            ; `_ZN7Console7printlnEP2i8` (using
-                                            ; prelude's `pointer[i8]`) rather
-                                            ; than `...P10const_char`, and
-                                            ; the link fails against
-                                            ; libscaly's `..P10const_char`.
-                                            var items_arr Array[PlannedItem]()
-                                            var used_ns_local: bool false
-                                            ; When the prefix namespace declares
-                                            ; the member itself (used_ns_local),
-                                            ; the page requirement must come from
-                                            ; THAT member, not from the global
-                                            ; bare-name match — a same-named
-                                            ; function in another package (e.g.
-                                            ; scalyc.compiler's no-`#`
-                                            ; is_primitive_type_name vs symbols'
-                                            ; `#` one) can win the registry scan
-                                            ; with requires_page_param=false,
-                                            ; dropping `PN4scaly6memory4PageE` and
-                                            ; leaving the call referencing a
-                                            ; never-defined no-page symbol.
-                                            var used_ns_page: bool false
-                                            choose nsc.definition
-                                                when ns_def: Namespace
-                                                {
-                                                    var mi_ns: size_t 0
-                                                    while mi_ns < ns_def.members.length
-                                                    {
-                                                        let m_ptr ns_def.members.get mi_ns
-                                                        if m_ptr <> null
-                                                        {
-                                                            let mem (*m_ptr)
-                                                            choose mem
-                                                                when nf: Function
-                                                                {
-                                                                    if used_ns_local = false
-                                                                    {
-                                                                        if nf.name = suffix
-                                                                        {
-                                                                            ; Skip leading 'this'.
-                                                                            var pstart: size_t 0
-                                                                            if nf.input.length > 0
-                                                                            {
-                                                                                let fi0 nf.input.get 0
-                                                                                if fi0 <> null
-                                                                                {
-                                                                                    if fi0.name <> null
-                                                                                    {
-                                                                                        let fname (*fi0.name)
-                                                                                        if fname = "this"
-                                                                                            pstart := 1
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            let expected_arity nf.input.length - pstart
-                                                                            ; Two callable forms for a namespace function
-                                                                            ; with an explicit `this` receiver param:
-                                                                            ;   (a) receiver-separate: arg_types holds the
-                                                                            ;       non-`this` args (expected_arity match);
-                                                                            ;   (b) this-inclusive: the receiver is passed
-                                                                            ;       as the first arg (json.stringify(v)),
-                                                                            ;       so arg_types.length == nf.input.length.
-                                                                            ; For (b) build from the FULL input (build_start
-                                                                            ; 0) so the recorded stub's param list MATCHES
-                                                                            ; the real PlannedFunction (plan_function# keeps
-                                                                            ; `this` in input; mangle_function# skips the
-                                                                            ; `this`-named item). Without this, a function
-                                                                            ; whose ONLY param is `this` got an empty-input
-                                                                            ; extern stub recorded first, locking in a
-                                                                            ; signature missing the `this` LLVM arg.
-                                                                            var build_start: size_t pstart
-                                                                            var arity_ok: bool false
-                                                                            if expected_arity = arg_types.length
-                                                                                arity_ok := true
-                                                                            if pstart > 0
-                                                                            {
-                                                                                if nf.input.length = arg_types.length
-                                                                                {
-                                                                                    arity_ok := true
-                                                                                    build_start := 0
-                                                                                }
-                                                                            }
-                                                                            if arity_ok
-                                                                            {
-                                                                                var pi_ns: size_t build_start
-                                                                                while pi_ns < nf.input.length
-                                                                                {
-                                                                                    let p_ptr nf.input.get pi_ns
-                                                                                    if p_ptr <> null
-                                                                                    {
-                                                                                        if p_ptr.type <> null
-                                                                                        {
-                                                                                            let pt (*p_ptr.type)
-                                                                                            let planned_p this.plan_type(pt)
-                                                                                            var ity_holder Vector[PlannedType](1)
-                                                                                            ity_holder.put(0, planned_p)
-                                                                                            ; Preserve the param NAME so the
-                                                                                            ; `this` item is recognised and
-                                                                                            ; skipped by mangle_function#.
-                                                                                            items_arr.add(PlannedItem(
-                                                                                                result.loc,
-                                                                                                false,
-                                                                                                p_ptr.name,
-                                                                                                ity_holder.get 0,
-                                                                                                null
-                                                                                            ))
-                                                                                            ; Record this member's planned param
-                                                                                            ; for the String→const_char coercion.
-                                                                                            ns_coerce_params.add planned_p
-                                                                                            ns_coerce_valid := true
-                                                                                        }
-                                                                                    }
-                                                                                    pi_ns := pi_ns + 1
-                                                                                }
-                                                                                used_ns_local := true
-                                                                                if nf.page_parameter <> null
-                                                                                    used_ns_page := true
-                                                                                if Planner.function_needs_caller_page(this, nf)
-                                                                                    used_ns_page := true
-                                                                                ; Capture the member's real return type so
-                                                                                ; the call's sret slot is sized correctly
-                                                                                ; (the bare-name match may have a wrong one).
-                                                                                if nf.returns_ <> null
-                                                                                {
-                                                                                    let nf_rt this.plan_type((*nf.returns_))
-                                                                                    this.ensure_type_layout nf_rt
-                                                                                    ns_return_type := nf_rt
-                                                                                    ns_return_valid := true
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                else
-                                                                    0
-                                                        }
-                                                        mi_ns := mi_ns + 1
-                                                    }
-                                                }
-                                                else
-                                                    0
-                                            let mm_for_params (*match_ref)
-                                            let param_types_ref mm_for_params.parameter_types
-                                            if used_ns_local = false
-                                            {
-                                                if param_types_ref <> null
-                                                {
-                                                    let pts (*param_types_ref)
-                                                    var ai: size_t 0
-                                                    while ai < pts.length
-                                                    {
-                                                        let pt_ptr pts.get ai
-                                                        if pt_ptr <> null
-                                                        {
-                                                            items_arr.add(PlannedItem(
-                                                                result.loc,
-                                                                false,
-                                                                null,
-                                                                &^this (*pt_ptr),
-                                                                null
-                                                            ))
-                                                        }
-                                                        ai := ai + 1
-                                                    }
-                                                }
-                                                if param_types_ref = null
-                                                {
-                                                    var ai: size_t 0
-                                                    while ai < arg_types.length
-                                                    {
-                                                        let at_ptr arg_types.get ai
-                                                        if at_ptr <> null
-                                                        {
-                                                            items_arr.add(PlannedItem(
-                                                                result.loc,
-                                                                false,
-                                                                null,
-                                                                &^this (*at_ptr),
-                                                                null
-                                                            ))
-                                                        }
-                                                        ai := ai + 1
-                                                    }
-                                                }
-                                            }
-                                            var items_holder Vector[PlannedItem](items_arr)
-                                            ; Honor the matched function's
-                                            ; page-param flag in the mangled
-                                            ; name. parse_args# in cli.scaly
-                                            ; has has_page=true so the symbol
-                                            ; needs `PN4scaly6memory4PageE`
-                                            ; after the function name; without
-                                            ; this stage-1 produced
-                                            ; `_ZN3cli10parse_argsEiPPc` which
-                                            ; doesn't match libscalyc's real
-                                            ; `_ZN3cli10parse_argsEPN4scaly6memory4PageEiPPc`.
-                                            let mm_pp (*match_ref)
-                                            ; Page requirement: when the prefix
-                                            ; namespace itself declared the member
-                                            ; (used_ns_local), trust THAT member's
-                                            ; page flag; otherwise the resolved
-                                            ; global match.
-                                            var ns_has_page: bool mm_pp.requires_page_param
-                                            if used_ns_local
-                                                ns_has_page := used_ns_page
-                                            ns_mangled := Planner.mangle_function(
-                                                suffix, &items_holder, ns_parent_ref, ns_has_page
-                                            )
-                                            has_ns_mangled := true
-                                            ns_mangled_page := ns_has_page
-
-                                            ; Declare the namespaced
-                                            ; function as extern in the
-                                            ; instantiation cache so the
-                                            ; Emitter generates an LLVM
-                                            ; declaration that emit_call
-                                            ; can resolve via
-                                            ; LLVMGetNamedFunction. The
-                                            ; function's body comes from
-                                            ; the linked package binary
-                                            ; (libscalyc / libscaly) at
-                                            ; link time. plan_namespace#
-                                            ; itself doesn't recurse
-                                            ; into ns.modules — calling
-                                            ; plan_module# on stdlib
-                                            ; modules crashes stage-1
-                                            ; on body-level features it
-                                            ; doesn't yet support, but
-                                            ; an extern declaration
-                                            ; needs only types we've
-                                            ; already resolved here.
-                                            ;
-                                            ; Skip the declaration when
-                                            ; we're inside a loaded
-                                            ; package's namespace body
-                                            ; (current_namespace is set)
-                                            ; UNLESS the prefix matches
-                                            ; a Use-imported alias of
-                                            ; the program's main module.
-                                            ; Without the gate, externs
-                                            ; emitted from e.g.
-                                            ; scaly.test()'s body for
-                                            ; memory.test/containers.test/
-                                            ; io.test break AOT tests
-                                            ; that don't link libscaly.
-                                            ; The Use-alias carve-out
-                                            ; lets explicitly imported
-                                            ; namespaces (e.g.
-                                            ; main.scaly's
-                                            ; `use scalyc.cli` -> "cli")
-                                            ; emit real call
-                                            ; instructions; the linker
-                                            ; resolves them against the
-                                            ; package binary at link
-                                            ; time. Mirrors stage-0's
-                                            ; check at
-                                            ; Planner.cpp:7752-7789.
-                                            ; Gate now relies solely on
-                                            ; the program's Use aliases.
-                                            ; Previously this also opened
-                                            ; on `current_namespace = null`
-                                            ; to handle top-level call
-                                            ; sites in the main program;
-                                            ; that was load-bearing only
-                                            ; while libscaly wasn't linked
-                                            ; into the AOT pipeline. Now
-                                            ; that cli.run links libscaly
-                                            ; unconditionally, the
-                                            ; current_namespace clause is
-                                            ; no longer required: any
-                                            ; legitimate top-level call
-                                            ; into a loaded package goes
-                                            ; through a Use-imported
-                                            ; alias. main.scaly's
-                                            ; `use scalyc.cli` puts "cli"
-                                            ; in program_use_aliases, so
-                                            ; `cli.main(...)` still opens
-                                            ; the gate.
-                                            ; Also opens the gate when the
-                                            ; prefix matches the currently-
-                                            ; active namespace (sibling call
-                                            ; like cli.parse_args# from
-                                            ; inside cli.main). Mirrors
-                                            ; stage-0's flatten-current-
-                                            ; namespace pre-pass at
-                                            ; Planner.cpp:7313-7327.
-                                            var prefix_is_current_ns: bool false
-                                            if current_namespace_name <> null
-                                            {
-                                                let cnsn (*current_namespace_name)
-                                                if cnsn = prefix
-                                                    prefix_is_current_ns := true
-                                            }
-                                            var gate_open: bool false
-                                            if this.is_program_use_alias(prefix)
-                                                gate_open := true
-                                            if prefix_is_current_ns
-                                                gate_open := true
-                                            if gate_open
-                                            if this.has_recorded_function(ns_mangled) = false
-                                            {
-                                                let mm (*match_ref)
-                                                let extern_impl PlannedImplementation.Extern(
-                                                    PlannedExternImpl result.loc
-                                                )
-                                                ; s78: propagate page_parameter when the
-                                                ; matched function has has_page=true.
-                                                ; Without this, function# callees recorded
-                                                ; via the dotted fallback get null
-                                                ; page_parameter, so emit_function_decl
-                                                ; emits a 1-param signature for what
-                                                ; should be 2-param (Page* + user param).
-                                                ; A later call that goes through the body
-                                                ; uses LLVMGetParam(func, 1) on a 1-param
-                                                ; function and gets a bogus pointer.
-                                                var pp_ref: ref[String]? null
-                                                if ns_has_page
-                                                {
-                                                    var pp_h Vector[String](1)
-                                                    pp_h.put(0, "_rp")
-                                                    pp_ref := pp_h.get(0)
-                                                }
-                                                this.record_function(PlannedFunction(
-                                                    result.loc,
-                                                    false,
-                                                    false,
-                                                    suffix,
-                                                    ns_mangled,
-                                                    pp_ref,
-                                                    &items_holder,
-                                                    &^this mm.return_type,
-                                                    mm.throws_type,
-                                                    Lifetime.Unspecified(Unspecified()),
-                                                    extern_impl,
-                                                    null,
-                                                    false,
-                                                    mm.can_throw,
-                                                    null,
-                                                    this.file,
-                                                    null
-                                                ))
-                                            }
-                                        }
-                                    }
-                                }
-
-                                ; s155: Static method call `Type.method(args)`
-                                ; where Type is a Structure concept and method
-                                ; is a this-less function member. Mirrors stage-0
-                                ; Planner.cpp:8421-8517. resolve_function_call#
-                                ; (suffix) above misses these because struct
-                                ; static methods aren't in the free-function
-                                ; registry. Without this, `Page.get(this as
-                                ; pointer[void])` inside Vector/Array.add resolves
-                                ; to null and the whole `let own_page` binding
-                                ; plus every downstream statement (allocate, the
-                                ; item store, `set data`) silently drops — leaving
-                                ; container .add() bodies that only bump `length`.
-                                if match_ref = null
-                                {
-                                    ; A module-dotted prefix
-                                    ; (`Message.MessageFormatter.test()`) names the
-                                    ; concept in its LAST segment; concepts register
-                                    ; under their simple name, and the def mangles
-                                    ; with the simple name as parent
-                                    ; (`_ZN16MessageFormatter4testEv`). Use the last
-                                    ; segment for the lookup AND the mangled parent.
-                                    var sconcept prefix
-                                    let sc_dot prefix.last_index_of(46)
-                                    if sc_dot > 0
-                                        sconcept := prefix.substring(sc_dot as size_t + 1, prefix.get_length() - (sc_dot as size_t) - 1)
-                                    ; Gated-first, raw fallback: a qualified
-                                    ; static call names the concept explicitly, so
-                                    ; a use-visibility miss must not hide it (see
-                                    ; concept_has_static#). Byte-identical for the
-                                    ; compiler (fires only where lookup_concept was
-                                    ; null).
-                                    var smc_ref this.lookup_concept(sconcept)
-                                    if smc_ref = null
-                                        smc_ref := this.lookup_concept_any(sconcept)
-                                    if smc_ref <> null
-                                    {
-                                        let smc (*smc_ref)
-                                        var static_fn: ref[Function]? null
-                                        ; Arity gate for the QUALIFIED STATIC path. Selection
-                                        ; below takes the FIRST same-named this-less member and
-                                        ; never compared its parameter count with the call's, so
-                                        ; `Box.twice(1, 2, 3)` on a one-parameter static and
-                                        ; `ns.greet(1, 2)` on a one-parameter namespace function
-                                        ; both planned CLEAN (rc 0) and handed the surplus
-                                        ; arguments to a signature with no slots for them —
-                                        ; emit_call synthesizes the callee type from the
-                                        ; ARGUMENTS, so LLVM had nothing to verify against
-                                        ; either. The this-method path (lookup_method#), the
-                                        ; free-function path (check_function_match#) and the
-                                        ; namespace-function path above have all had this gate
-                                        ; for a long time; the qualified static was the one
-                                        ; direction left silent, and only the TOO MANY direction
-                                        ; is silent at all (too few loses the candidate and
-                                        ; surfaces as "function not found").
-                                        ;
-                                        ; Record and CONTINUE, exactly as lookup_method#'s gate
-                                        ; does: add_diagnostic is fatal at the cli.scaly gate, so
-                                        ; resolution proceeds unchanged and no path that expects
-                                        ; a hit for a method it just found by name is disturbed.
-                                        var static_arity_seen: bool false
-                                        ; s155 + union: a this-less static can live
-                                        ; on a Structure OR a Union concept (opensp's
-                                        ; CodingSystem is a union with a `test()`
-                                        ; static). Both store members in `members`,
-                                        ; so iterate whichever this concept has.
-                                        var smmembers_ref: ref[Vector[Member]]? null
-                                        choose smc.definition
-                                            when sst: Structure
-                                                smmembers_ref := &^this sst.members
-                                            when suu: Union
-                                                smmembers_ref := &^this suu.members
-                                            when snn: Namespace
-                                                smmembers_ref := &^this snn.members
-                                            else
-                                                0
-                                        if smmembers_ref <> null
-                                        {
-                                            let smmembers (*smmembers_ref)
-                                            var smi: size_t 0
-                                            while smi < smmembers.length
-                                            {
-                                                let sm_ptr smmembers.get smi
-                                                if sm_ptr <> null
-                                                {
-                                                    let sm (*sm_ptr)
-                                                    choose sm
-                                                        when sf: Function
-                                                        {
-                                                            if sf.name = suffix
-                                                            {
-                                                                var is_static: bool true
-                                                                if sf.input.length > 0
-                                                                {
-                                                                    let i0 sf.input.get 0
-                                                                    if i0 <> null
-                                                                    {
-                                                                        if i0.name <> null
-                                                                        {
-                                                                            if (*i0.name) = "this"
-                                                                                is_static := false
-                                                                        }
-                                                                    }
-                                                                }
-                                                                if is_static
-                                                                {
-                                                                    ; The first same-named static is
-                                                                    ; the fallback; the first whose
-                                                                    ; ARITY matches wins. Before, the
-                                                                    ; fallback was the only rule, so
-                                                                    ; two same-named statics of
-                                                                    ; different arity always resolved
-                                                                    ; to the one declared first —
-                                                                    ; `Box.pick(4, 5)` ran the
-                                                                    ; one-parameter `pick` and
-                                                                    ; answered 4, with rc 0 and no
-                                                                    ; word said. Mirrors
-                                                                    ; resolve_static_method_on#,
-                                                                    ; which has always preferred the
-                                                                    ; arity match on the sibling path.
-                                                                    if static_fn = null
-                                                                        static_fn := &^this sf
-                                                                    if sf.input.length = arg_types.length
-                                                                    {
-                                                                        if static_arity_seen = false
-                                                                            static_fn := &^this sf
-                                                                        static_arity_seen := true
-                                                                    }
-                                                                }
-                                                            }
-                                                            0
-                                                        }
-                                                        else
-                                                            0
-                                                }
-                                                smi := smi + 1
-                                            }
-                                        }
-
-                                        if static_fn <> null
-                                        {
-                                            if static_arity_seen
-                                                static_fn := this.refine_static_overload(smc, suffix, arg_types, arg_ops, static_fn)
-                                            let sfn (*static_fn)
-                                            if static_arity_seen = false
-                                            {
-                                                var qa_sb StringBuilder()
-                                                qa_sb.append "wrong number of arguments for "
-                                                qa_sb.append sconcept
-                                                qa_sb.append "."
-                                                qa_sb.append suffix
-                                                qa_sb.append ": got "
-                                                qa_sb.append arg_types.length
-                                                qa_sb.append ", expected "
-                                                qa_sb.append sfn.input.length
-                                                this.add_diagnostic(result.loc, qa_sb.to_string())
-                                            }
-                                            let sparent_ref &^this PlannedType(
-                                                result.loc,
-                                                String(sconcept),
-                                                this.type_symbol(sconcept, null),
-                                                null,
-                                                Lifetime.Unspecified(Unspecified()),
-                                                null,
-                                                "",
-                                                null
-                                            )
-                                            var sitems_arr Array[PlannedItem]()
-                                            ; Collected alongside sitems_arr so the MethodMatch
-                                            ; carries parameter_types — the String→const_char /
-                                            ; char-fold coercions below key off it; with null a
-                                            ; string LITERAL bound to a pointer[const_char] static
-                                            ; param passed the String { ptr } record address
-                                            ; instead of the cstr (history Finding 3).
-                                            var sparams_arr Array[PlannedType]()
-                                            var spi: size_t 0
-                                            while spi < sfn.input.length
-                                            {
-                                                let p_ptr sfn.input.get spi
-                                                if p_ptr <> null
-                                                {
-                                                    if p_ptr.type <> null
-                                                    {
-                                                        let pt (*p_ptr.type)
-                                                        let spt this.plan_type(pt)
-                                                        sitems_arr.add(PlannedItem(
-                                                            result.loc, false, null, &^this spt, null
-                                                        ))
-                                                        sparams_arr.add spt
-                                                    }
-                                                }
-                                                spi := spi + 1
-                                            }
-                                            var sitems_holder Vector[PlannedItem](sitems_arr)
-                                            var sparams_holder Vector[PlannedType](sparams_arr)
-                                            ; Page-param flag mirrors plan_function#'s
-                                            ; has_page: explicit page_parameter OR an
-                                            ; implicit return-page (struct-returning fns
-                                            ; like statement_result_type get an rp arg in
-                                            ; the mangled name even with no `#`). Without
-                                            ; the implicit check, the call site mangles
-                                            ; `...E16PlannedStatement` while the def is
-                                            ; `...PageE16PlannedStatement` → link failure.
-                                            var s_pp: bool false
-                                            if sfn.page_parameter <> null
-                                                s_pp := true
-                                            if Planner.function_needs_caller_page(this, sfn)
-                                                s_pp := true
-                                            let smangled Planner.mangle_function(
-                                                suffix, &sitems_holder, sparent_ref, s_pp
-                                            )
-                                            var s_rt: PlannedType Planner.make_void_type()
-                                            if sfn.returns_ <> null
-                                            {
-                                                s_rt := this.plan_type((*sfn.returns_))
-                                                ; the sret slot of a record returned by
-                                                ; value (see lookup_method#)
-                                                this.ensure_type_layout(s_rt)
-                                            }
-                                            var s_throws: ref[PlannedType]? null
-                                            var s_can_throw: bool false
-                                            if sfn.throws_ <> null
-                                            {
-                                                s_can_throw := true
-                                                s_throws := &^this this.plan_type((*sfn.throws_))
-                                            }
-                                            var srt_holder Vector[PlannedType](1)
-                                            srt_holder.put(0, s_rt)
-                                            match_ref := MethodMatch^this(
-                                                null,
-                                                smangled,
-                                                s_rt,
-                                                &sparams_holder,
-                                                s_pp,
-                                                s_can_throw,
-                                                s_throws,
-                                                false,
-                                                false,
-                                                false,
-                                                this.return_residence_class(sfn), this.return_residence_arg(sfn)
-                                            )
-                                            if this.has_recorded_function(smangled) = false
-                                            {
-                                                var spp_ref: ref[String]? null
-                                                if s_pp
-                                                {
-                                                    var spph Vector[String](1)
-                                                    spph.put(0, "_rp")
-                                                    spp_ref := spph.get(0)
-                                                }
-                                                let sextern PlannedImplementation.Extern(
-                                                    PlannedExternImpl result.loc
-                                                )
-                                                this.record_function(PlannedFunction(
-                                                    result.loc,
-                                                    false,
-                                                    false,
-                                                    suffix,
-                                                    smangled,
-                                                    spp_ref,
-                                                    &sitems_holder,
-                                                    srt_holder.get 0,
-                                                    s_throws,
-                                                    Lifetime.Unspecified(Unspecified()),
-                                                    sextern,
-                                                    null,
-                                                    false,
-                                                    s_can_throw,
-                                                    null,
-                                                    this.file,
-                                                    null
-                                                ))
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            let ns_arm this.call_arm_namespace(result, fn_name, arg_types, arg_ops, ns_return_type, &ns_coerce_params)
+                            match_ref := ns_arm.found
+                            ns_mangled := ns_arm.ns_mangled
+                            has_ns_mangled := ns_arm.has_ns_mangled
+                            ns_mangled_page := ns_arm.ns_mangled_page
+                            ns_coerce_valid := ns_arm.ns_coerce_valid
+                            ns_return_type := ns_arm.ns_return_type
+                            ns_return_valid := ns_arm.ns_return_valid
                         }
+
+                        if (match_ref <> null or has_ns_mangled) and call_arm = 0
+                            call_arm := 5
 
                         ; s101: Implicit-this sibling method dispatch.
                         ; When the standard lookup didn't find `fn_name`
@@ -15623,58 +14600,17 @@ define Planner
                         ; where `a()` from inside `b()` is a sibling method.
                         ; Without this, sibling method calls fall through
                         ; to mangled="" and the call drops out of the IR.
-                        if match_ref = null
+                        if match_ref = null and Planner.call_arm_applies(named, 6)
                         {
-                            if has_ns_mangled = false
-                            {
-                                let this_ref this.lookup_local("this")
-                                if this_ref <> null
-                                {
-                                    let this_ty (*this_ref)
-                                    if Planner.is_this_wrapper_name(this_ty.name)
-                                    {
-                                        if this_ty.generics <> null
-                                        {
-                                            let gens_t (*this_ty.generics)
-                                            if gens_t.length > 0
-                                            {
-                                                let inner_ptr gens_t.get 0
-                                                if inner_ptr <> null
-                                                {
-                                                    let inner_t (*inner_ptr)
-                                                    let mm_ref this.lookup_method(inner_t, fn_name, arg_types, arg_ops)
-                                                    if mm_ref <> null
-                                                    {
-                                                        match_ref := mm_ref
-                                                        ; Prepend the `this` receiver ONLY for instance
-                                                        ; methods. A STATIC sibling method (Page::get,
-                                                        ; Page::allocate_page) takes no `this` — prepending
-                                                        ; it passes the wrong arg0 (s189: `get(object)` →
-                                                        ; `get(this, object)` → current_page self-loop).
-                                                        if (*mm_ref).takes_this
-                                                        {
-                                                            ; Build receiver_op as `this`.
-                                                            receiver_op := PlannedOperand(
-                                                                result.loc,
-                                                                PlannedExpression.Variable(PlannedVariable(
-                                                                    result.loc,
-                                                                    "this",
-                                                                    this_ty,
-                                                                    false
-                                                                )),
-                                                                null,
-                                                                this_ty
-                                                            )
-                                                            is_method_dispatch := true
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            let arm this.call_arm_sibling(result, fn_name, arg_types, arg_ops, has_ns_mangled, CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local))
+                            match_ref := arm.found
+                            is_method_dispatch := arm.is_method_dispatch
+                            receiver_op := arm.receiver_op
+                            stamp_getref_local := arm.stamp_getref_local
                         }
+
+                        if match_ref <> null and call_arm = 0
+                            call_arm := 6
 
                         ; Enclosing-struct sibling STATIC fallback. When the
                         ; call is still unresolved and there is no `this` to
@@ -15689,6 +14625,9 @@ define Planner
                         ; already-resolving bodies are byte-identical.
                         if match_ref = null and has_ns_mangled = false and current_structure_name <> null
                             match_ref := this.resolve_static_method_on((*current_structure_name), fn_name, arg_types, arg_ops, result.loc)
+                        if match_ref <> null and call_arm = 0
+                            call_arm := 7
+                        this.operation_arm(result, call_arm)
 
                         var rt: PlannedType this.fresh_type_var("")
                         var mangled: String ""
@@ -16497,6 +15436,1254 @@ define Planner
             }
             fell := true
             result
+        }
+
+        ; Does arm (1 free, 3 dotted local, 4 chain, 5 namespace, 6 sibling) of
+        ; collapse_application#'s cascade resolve a head operation_name# calls
+        ; `named`? Measured over the 36 roots (operation_arm#, 2026-10-18): a
+        ; method on a chain met arm 4 only (128 321 calls), a qualified name
+        ; arm 5 (44 417), a function arm 1 (32 390) and 6 or 7 (76), a bare
+        ; name 6 or 7 (8 145); the arms a kind never meets are not tried. A
+        ; value, a type and the old path (0) take every arm. The sibling
+        ; static (7) is open to every head.
+        function call_arm_applies(named: size_t, arm: size_t) returns bool
+        {
+            match named
+                case 1: return arm = 4
+                case 3: return arm = 1 or arm = 6
+                case 5: return arm = 3 or arm = 5
+                case 6: return arm = 6
+            true
+        }
+
+        ; The arm for a dotted name whose prefix is a local (`arg.starts_with`,
+        ; s75): the method on that receiver. Cut out of collapse_application#
+        ; 2026-10-18 with the arms below; each takes the state of the cascade
+        ; it reads and hands back the state it writes.
+        procedure call_arm_dotted_local(
+            mutable this: Planner,
+            mutable result: PlannedOperand,
+            mutable fn_name: String,
+            mutable arg_types: Vector[PlannedType],
+            mutable arg_ops: Vector[PlannedOperand],
+            state: CallArm
+        ) returns CallArm
+        {
+            var match_ref: ref[MethodMatch]? state.found
+            var is_method_dispatch: bool state.is_method_dispatch
+            var receiver_op: PlannedOperand state.receiver_op
+            var stamp_getref_local: bool state.stamp_getref_local
+            if match_ref = null
+            {
+                let dot_idx fn_name.last_index_of(46)
+                if dot_idx > 0
+                {
+                    let dot_pos dot_idx as size_t
+                    let prefix fn_name.substring(0, dot_pos)
+                    let suffix fn_name.substring(
+                        dot_pos + 1,
+                        fn_name.get_length() - dot_pos - 1
+                    )
+                    let local_ref this.lookup_local_binding(prefix)
+                    if local_ref <> null
+                    {
+                        let local (*local_ref)
+                        ; s109: dispatch on generic receivers
+                        ; (Container[int], Box[int]). encode_type#
+                        ; handles `Name[args]` → `<len><name>I<args>E`,
+                        ; so mangle_method# already produces the
+                        ; specialised symbol (e.g. `_ZN9ContainerIiE`
+                        ; `8set_itemEmi`). The previous skip was
+                        ; written before encode_type# learned
+                        ; generics; lifting it lets user-defined
+                        ; `Container[int].set_item(...)` resolve
+                        ; against the spec'd body emitted via
+                        ; instantiate_generic#. Stdlib generics
+                        ; (Vector / HashMap / etc.) are still
+                        ; excluded because their bodies aren't
+                        ; specialised in the planner walk — keep
+                        ; them on the unspec'd dispatch path so
+                        ; the existing extern-decl shim continues
+                        ; to work.
+                        var skip_dispatch: bool false
+                        if local.binding_type.generics <> null
+                        {
+                            if local.binding_type.name <> "pointer"
+                            {
+                                if local.binding_type.name <> "ref"
+                                {
+                                    ; s137-INVESTIGATE: Vector removed
+                                    if local.binding_type.name = "HashMap"
+                                        skip_dispatch := true
+                                    if local.binding_type.name = "HashMapBuilder"
+                                        skip_dispatch := true
+                                    if local.binding_type.name = "HashSet"
+                                        skip_dispatch := true
+                                    if local.binding_type.name = "HashSetBuilder"
+                                        skip_dispatch := true
+                                    ; s154: Array removed from skip_dispatch, mirroring
+                                    ; the s137 Vector lift. Array[T] is specialised via
+                                    ; instantiate_generic# (s129), so the s109 method-
+                                    ; dispatch path (lookup_method# + extern-decl record)
+                                    ; produces the right `_ZN5ArrayI<T>E3addE<T>` symbol.
+                                    ; Without this, `functions.add(this.plan_function#(f,
+                                    ; null))` in plan_module#'s member loop skipped
+                                    ; dispatch entirely and the whole statement dropped —
+                                    ; so plan_function# was never called, instantiated_
+                                    ; functions stayed empty, and stage-2 emitted zero
+                                    ; functions.
+                                    ; s148: List removed alongside the is_stdlib_generic lift.
+                                    ; Specialised List<T>::add/count/get_iterator bodies are
+                                    ; now emitted via instantiate_generic#, so dispatch can
+                                    ; route through the s109 extern-decl + record_function
+                                    ; path the same way Vector does (skip_dispatch on Vector
+                                    ; was lifted in s137, no regression there).
+                                    ; if local.binding_type.name.equals("List")
+                                    ;     set skip_dispatch: true
+                                    if local.binding_type.name = "ListIterator"
+                                        skip_dispatch := true
+                                    if local.binding_type.name = "Option"
+                                        skip_dispatch := true
+                                    if local.binding_type.name = "Result"
+                                        skip_dispatch := true
+                                    if local.binding_type.name = "Slice"
+                                        skip_dispatch := true
+                                    if local.binding_type.name = "Slot"
+                                        skip_dispatch := true
+                                    if local.binding_type.name = "Node"
+                                        skip_dispatch := true
+                                    if local.binding_type.name = "KeyValuePair"
+                                        skip_dispatch := true
+                                }
+                            }
+                        }
+                        if skip_dispatch = false
+                        {
+                        let mm_ref this.lookup_method(local.binding_type, suffix, arg_types, arg_ops)
+                        if mm_ref <> null
+                        {
+                            let mm (*mm_ref)
+                            ; Build receiver as Variable(prefix).
+                            let recv PlannedOperand(
+                                result.loc,
+                                PlannedExpression.Variable(PlannedVariable(
+                                    result.loc,
+                                    prefix,
+                                    local.binding_type,
+                                    local.is_mutable
+                                )),
+                                null,
+                                local.binding_type
+                            )
+                            receiver_op := recv
+                            is_method_dispatch := true
+
+                            ; s78: record an extern PlannedFunction
+                            ; for the dispatched method so
+                            ; emit_function_decl emits an LLVM
+                            ; declare and emit_call's
+                            ; LLVMGetNamedFunction resolves it.
+                            ; Same-package methods (Options.*) are
+                            ; declared via the regular plan path;
+                            ; cross-package methods (String.*,
+                            ; Vector.*) need this. Skipped when
+                            ; already recorded (mirrors the
+                            ; dotted-namespace dedup at line ~2949).
+                            if this.has_recorded_function(mm.mangled_name) = false
+                            {
+                                var items_arr Array[PlannedItem]()
+                                items_arr.add(PlannedItem(
+                                    result.loc,
+                                    false,
+                                    null,
+                                    &^this local.binding_type,
+                                    null
+                                ))
+                                if mm.parameter_types <> null
+                                {
+                                    let pt_vec_ref mm.parameter_types
+                                    let pt_vec (*pt_vec_ref)
+                                    var ai: size_t 0
+                                    while ai < pt_vec.length
+                                    {
+                                        let p_ptr pt_vec.get ai
+                                        if p_ptr <> null
+                                        {
+                                            items_arr.add(PlannedItem(
+                                                result.loc,
+                                                false,
+                                                null,
+                                                &^this (*p_ptr),
+                                                null
+                                            ))
+                                        }
+                                        ai := ai + 1
+                                    }
+                                }
+                                var items_holder Vector[PlannedItem](items_arr)
+                                let extern_impl PlannedImplementation.Extern(
+                                    PlannedExternImpl result.loc
+                                )
+                                ; s119: honor mm.requires_page_param so cross-package /
+                                ; recursive-mid-planning stub IR signature matches the
+                                ; proper PlannedFunction emitted later. Without this,
+                                ; an early stub locks in a no-page-slot LLVM signature
+                                ; for any function whose body recursively calls itself
+                                ; (or is called before plan_function# records it).
+                                var pp_ref_a: ref[String]? null
+                                if mm.requires_page_param
+                                {
+                                    var pp_h_a Vector[String](1)
+                                    pp_h_a.put(0, "_rp")
+                                    pp_ref_a := pp_h_a.get(0)
+                                }
+                                this.record_function(PlannedFunction(
+                                    result.loc,
+                                    false,
+                                    false,
+                                    suffix,
+                                    mm.mangled_name,
+                                    pp_ref_a,
+                                    &items_holder,
+                                    &^this mm.return_type,
+                                    mm.throws_type,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    extern_impl,
+                                    null,
+                                    false,
+                                    mm.can_throw,
+                                    null,
+                                    this.file,
+                                    null
+                                ))
+                            }
+                            match_ref := mm_ref
+
+                            ; Option B: a get/get_ptr ref out of a
+                            ; frame-local-page holder — flag the
+                            ; result for the Local-pointee stamp.
+                            ; The name array is entry-truncated per
+                            ; function (NOT cleared), so a lazily-
+                            ; instantiated generic method planned
+                            ; MID-function sees the outer entries —
+                            ; require the receiver to be a genuine
+                            ; non-parameter local Vector binding of
+                            ; THIS scope (a field/param receiver
+                            ; is caller-lived, never stamped).
+                            var sfx_is_getref suffix = "get"
+                            if sfx_is_getref = false
+                                sfx_is_getref := suffix = "get_ptr"
+                            if sfx_is_getref
+                                if local.is_parameter = false
+                                    if local.binding_type.name = "Vector"
+                                        if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, prefix)
+                                            stamp_getref_local := true
+                        }
+                        }
+                    }
+                }
+            }
+            CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local)
+        }
+
+        ; The arm for a method on a chain (`inner.get_value()`, s83): the
+        ; method on the chain without its last hop.
+        procedure call_arm_chain(
+            mutable this: Planner,
+            mutable result: PlannedOperand,
+            mutable fn_name: String,
+            mutable arg_types: Vector[PlannedType],
+            mutable arg_ops: Vector[PlannedOperand],
+            state: CallArm
+        ) returns CallArm
+        {
+            var match_ref: ref[MethodMatch]? state.found
+            var is_method_dispatch: bool state.is_method_dispatch
+            var receiver_op: PlannedOperand state.receiver_op
+            var stamp_getref_local: bool state.stamp_getref_local
+            if match_ref = null
+            {
+                if result.member_access <> null
+                {
+                    let ma_outer (*result.member_access)
+                    if ma_outer.length > 0
+                    {
+                        let last_p ma_outer.get(ma_outer.length - 1)
+                        if last_p <> null
+                        {
+                            let last_acc (*last_p)
+                            if last_acc.is_method
+                            {
+                                let recv_type last_acc.parent_type
+                                let mm_ref this.lookup_method(recv_type, last_acc.name, arg_types, arg_ops)
+                                if mm_ref <> null
+                                {
+                                    let mm3 (*mm_ref)
+                                    ; Build truncated chain (drop last hop).
+                                    var trunc_arr Array[PlannedMemberAccess]()
+                                    var ti: size_t 0
+                                    while ti + 1 < ma_outer.length
+                                    {
+                                        let mp ma_outer.get ti
+                                        if mp <> null
+                                            trunc_arr.add((*mp))
+                                        ti := ti + 1
+                                    }
+                                    if trunc_arr.length > 0
+                                    {
+                                        var trunc_holder Vector[PlannedMemberAccess](trunc_arr)
+                                        receiver_op := PlannedOperand(
+                                            result.loc,
+                                            result.expr,
+                                            &trunc_holder,
+                                            recv_type
+                                        )
+                                    }
+                                    else
+                                    {
+                                        receiver_op := PlannedOperand(
+                                            result.loc,
+                                            result.expr,
+                                            null,
+                                            recv_type
+                                        )
+                                    }
+
+                                    ; Option B stamp (s83 chain path
+                                    ; — THE live path for `H.get(i)`
+                                    ; on a local receiver: plan_type_
+                                    ; operand resolves the hop to a
+                                    ; method chain, so fn_name is the
+                                    ; bare method name and the s75
+                                    ; dotted branch never runs). Only
+                                    ; a chain-free Variable receiver
+                                    ; can be a holder binding; field
+                                    ; receivers (non-empty truncated
+                                    ; chain) are caller-lived and
+                                    ; never stamped.
+                                    var s83_is_getref last_acc.name = "get"
+                                    if s83_is_getref = false
+                                        s83_is_getref := last_acc.name = "get_ptr"
+                                    if s83_is_getref and trunc_arr.length = 0
+                                        choose result.expr
+                                            when s83v: Variable
+                                            {
+                                                ; The name array is entry-
+                                                ; truncated per function (NOT
+                                                ; cleared), so a lazily-
+                                                ; instantiated generic method
+                                                ; planned MID-function sees the
+                                                ; outer entries (VectorIterator.
+                                                ; next's `vector` FIELD collided
+                                                ; with test_vector's holder).
+                                                ; Require a genuine non-parameter
+                                                ; local Vector binding of THIS
+                                                ; scope — a field name misses
+                                                ; lookup_local_binding.
+                                                if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, s83v.name)
+                                                {
+                                                    let s83lb this.lookup_local_binding(s83v.name)
+                                                    if s83lb <> null
+                                                        if s83lb.is_parameter = false
+                                                            if s83lb.binding_type.name = "Vector"
+                                                                stamp_getref_local := true
+                                                }
+                                            }
+                                            else
+                                                0
+
+                                    ; Record extern PlannedFunction so
+                                    ; emit_function_decl emits an LLVM
+                                    ; declare and emit_call resolves it
+                                    ; via LLVMGetNamedFunction. Mirrors
+                                    ; the s78 record at the s75 site
+                                    ; (line ~2794). Skipped if already
+                                    ; recorded.
+                                    if this.has_recorded_function(mm3.mangled_name) = false
+                                    {
+                                        var items_arr2 Array[PlannedItem]()
+                                        items_arr2.add(PlannedItem(
+                                            result.loc,
+                                            false,
+                                            null,
+                                            &^this recv_type,
+                                            null
+                                        ))
+                                        if mm3.parameter_types <> null
+                                        {
+                                            let pt_vec_ref2 mm3.parameter_types
+                                            let pt_vec2 (*pt_vec_ref2)
+                                            var ai2: size_t 0
+                                            while ai2 < pt_vec2.length
+                                            {
+                                                let p_ptr2 pt_vec2.get ai2
+                                                if p_ptr2 <> null
+                                                {
+                                                    items_arr2.add(PlannedItem(
+                                                        result.loc,
+                                                        false,
+                                                        null,
+                                                        &^this (*p_ptr2),
+                                                        null
+                                                    ))
+                                                }
+                                                ai2 := ai2 + 1
+                                            }
+                                        }
+                                        var items_holder2 Vector[PlannedItem](items_arr2)
+                                        let extern_impl2 PlannedImplementation.Extern(
+                                            PlannedExternImpl result.loc
+                                        )
+                                        ; s119: see stub-A site above.
+                                        var pp_ref_b: ref[String]? null
+                                        if mm3.requires_page_param
+                                        {
+                                            var pp_h_b Vector[String](1)
+                                            pp_h_b.put(0, "_rp")
+                                            pp_ref_b := pp_h_b.get(0)
+                                        }
+                                        this.record_function(PlannedFunction(
+                                            result.loc,
+                                            false,
+                                            false,
+                                            last_acc.name,
+                                            mm3.mangled_name,
+                                            pp_ref_b,
+                                            &items_holder2,
+                                            &^this mm3.return_type,
+                                            mm3.throws_type,
+                                            Lifetime.Unspecified(Unspecified()),
+                                            extern_impl2,
+                                            null,
+                                            false,
+                                            mm3.can_throw,
+                                            null,
+                                            this.file,
+                                            null
+                                        ))
+                                    }
+
+                                    match_ref := mm_ref
+                                    is_method_dispatch := true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local)
+        }
+
+        ; The arm for a dotted name a namespace declares (`cli.main(args)`,
+        ; s129): the namespace's function, mangled into its namespace.
+        procedure call_arm_namespace(
+            mutable this: Planner,
+            mutable result: PlannedOperand,
+            mutable fn_name: String,
+            mutable arg_types: Vector[PlannedType],
+            mutable arg_ops: Vector[PlannedOperand],
+            return_type: PlannedType,
+            mutable ns_coerce_params: ref[Array[PlannedType]]
+        ) returns NamespaceArm
+        {
+            var match_ref: ref[MethodMatch]? null
+            var ns_mangled: String ""
+            var has_ns_mangled: bool false
+            var ns_mangled_page: bool false
+            var ns_coerce_valid: bool false
+            var ns_return_type: PlannedType return_type
+            var ns_return_valid: bool false
+            if match_ref = null
+            {
+                let dot_idx fn_name.last_index_of(46)
+                if dot_idx > 0
+                {
+                    let dot_pos dot_idx as size_t
+                    let prefix fn_name.substring(0, dot_pos)
+                    let suffix fn_name.substring(
+                        dot_pos + 1,
+                        fn_name.get_length() - dot_pos - 1
+                    )
+                    ; s-LSP: resolve the dotted call. resolve_dotted_call#
+                    ; first tries the normal this-implicit overload,
+                    ; then — for a namespace this-method invoked
+                    ; qualified with an EXPLICIT receiver
+                    ; (`NS.f(recv, ...)` for `f(this: T, ...)`, where
+                    ; `recv` is in arg_types but the this-implicit
+                    ; matcher skips `this` and arity-fails) — retries
+                    ; with the receiver arg dropped. Mirrors stage-0's
+                    ; name-only Namespace path (Planner.cpp:8663); the
+                    ; namespace-mangling block below then drops `this`
+                    ; from the name (`_ZN<ns><fn>Ev`) and the call
+                    ; still passes every explicit arg, so `recv` fills
+                    ; `this`. This stays ONE statement — one call, one
+                    ; store to match_ref, exactly as the old single
+                    ; resolve_function_call# — so collapse_operand_
+                    ; sequence#'s s178 alloca pool keeps match_ref in a
+                    ; stable slot. An earlier two-statement form (a
+                    ; `if match_ref = null { set match_ref: ... }`
+                    ; diamond) perturbed the pool's liveness and aliased
+                    ; match_ref onto a recycled slot (two_vec), losing
+                    ; the value before the final mangled-name read.
+                    match_ref := this.resolve_dotted_call(prefix, suffix, arg_types, arg_ops)
+
+                    if match_ref <> null
+                    {
+                        ; s177: prefer the Namespace concept for the
+                        ; prefix. lookup_concept returns the inner
+                        ; same-named Structure for `define Planner {
+                        ; define Planner(...) }`, so `Planner.x()`
+                        ; from another namespace never took the
+                        ; namespace-mangling branch and the whole
+                        ; statement dropped.
+                        let ns_ref this.lookup_namespace_concept(prefix)
+                        if ns_ref <> null
+                        {
+                            let nsc (*ns_ref)
+                            var is_ns: bool false
+                            choose nsc.definition
+                                when n: Namespace
+                                    is_ns := true
+                                else
+                                    0
+                            if is_ns
+                            {
+                                ; Build PlannedType for the
+                                ; namespace as a parent and
+                                ; rebuild the mangled name.
+                                let ns_parent_ref &^this PlannedType(
+                                    result.loc,
+                                    String(prefix),
+                                    this.type_symbol(prefix, null),
+                                    null,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    null,
+                                    "",
+                                    null
+                                )
+
+                                ; Build items from the matched
+                                ; function's declared parameter
+                                ; types (not arg_types). Stage-0
+                                ; mangles using the declared
+                                ; param types — e.g. Console.println's
+                                ; signature is
+                                ; `(text: pointer[const_char])`,
+                                ; so the mangled name is
+                                ; `_ZN7Console7printlnEP10const_char`.
+                                ; Using arg_types instead would
+                                ; produce `_ZN7Console7printlnEP2i8`
+                                ; (string-literal type) which
+                                ; doesn't match libscaly's symbol.
+                                ;
+                                ; s129: when the prefix is a
+                                ; Namespace concept, look up the
+                                ; function within ITS members
+                                ; first. resolve_function_call#
+                                ; uses the global model_functions
+                                ; registry (keyed by bare name),
+                                ; so for Console.println it can
+                                ; resolve to the PRELUDE's
+                                ; `println(pointer[i8])` via
+                                ; exact-match — even though we're
+                                ; trying to dispatch to
+                                ; Console.println(pointer[const_char]).
+                                ; Without this carve-out, the
+                                ; rebuild produces
+                                ; `_ZN7Console7printlnEP2i8` (using
+                                ; prelude's `pointer[i8]`) rather
+                                ; than `...P10const_char`, and
+                                ; the link fails against
+                                ; libscaly's `..P10const_char`.
+                                var items_arr Array[PlannedItem]()
+                                var used_ns_local: bool false
+                                ; When the prefix namespace declares
+                                ; the member itself (used_ns_local),
+                                ; the page requirement must come from
+                                ; THAT member, not from the global
+                                ; bare-name match — a same-named
+                                ; function in another package (e.g.
+                                ; scalyc.compiler's no-`#`
+                                ; is_primitive_type_name vs symbols'
+                                ; `#` one) can win the registry scan
+                                ; with requires_page_param=false,
+                                ; dropping `PN4scaly6memory4PageE` and
+                                ; leaving the call referencing a
+                                ; never-defined no-page symbol.
+                                var used_ns_page: bool false
+                                choose nsc.definition
+                                    when ns_def: Namespace
+                                    {
+                                        var mi_ns: size_t 0
+                                        while mi_ns < ns_def.members.length
+                                        {
+                                            let m_ptr ns_def.members.get mi_ns
+                                            if m_ptr <> null
+                                            {
+                                                let mem (*m_ptr)
+                                                choose mem
+                                                    when nf: Function
+                                                    {
+                                                        if used_ns_local = false
+                                                        {
+                                                            if nf.name = suffix
+                                                            {
+                                                                ; Skip leading 'this'.
+                                                                var pstart: size_t 0
+                                                                if nf.input.length > 0
+                                                                {
+                                                                    let fi0 nf.input.get 0
+                                                                    if fi0 <> null
+                                                                    {
+                                                                        if fi0.name <> null
+                                                                        {
+                                                                            let fname (*fi0.name)
+                                                                            if fname = "this"
+                                                                                pstart := 1
+                                                                        }
+                                                                    }
+                                                                }
+                                                                let expected_arity nf.input.length - pstart
+                                                                ; Two callable forms for a namespace function
+                                                                ; with an explicit `this` receiver param:
+                                                                ;   (a) receiver-separate: arg_types holds the
+                                                                ;       non-`this` args (expected_arity match);
+                                                                ;   (b) this-inclusive: the receiver is passed
+                                                                ;       as the first arg (json.stringify(v)),
+                                                                ;       so arg_types.length == nf.input.length.
+                                                                ; For (b) build from the FULL input (build_start
+                                                                ; 0) so the recorded stub's param list MATCHES
+                                                                ; the real PlannedFunction (plan_function# keeps
+                                                                ; `this` in input; mangle_function# skips the
+                                                                ; `this`-named item). Without this, a function
+                                                                ; whose ONLY param is `this` got an empty-input
+                                                                ; extern stub recorded first, locking in a
+                                                                ; signature missing the `this` LLVM arg.
+                                                                var build_start: size_t pstart
+                                                                var arity_ok: bool false
+                                                                if expected_arity = arg_types.length
+                                                                    arity_ok := true
+                                                                if pstart > 0
+                                                                {
+                                                                    if nf.input.length = arg_types.length
+                                                                    {
+                                                                        arity_ok := true
+                                                                        build_start := 0
+                                                                    }
+                                                                }
+                                                                if arity_ok
+                                                                {
+                                                                    var pi_ns: size_t build_start
+                                                                    while pi_ns < nf.input.length
+                                                                    {
+                                                                        let p_ptr nf.input.get pi_ns
+                                                                        if p_ptr <> null
+                                                                        {
+                                                                            if p_ptr.type <> null
+                                                                            {
+                                                                                let pt (*p_ptr.type)
+                                                                                let planned_p this.plan_type(pt)
+                                                                                var ity_holder Vector[PlannedType](1)
+                                                                                ity_holder.put(0, planned_p)
+                                                                                ; Preserve the param NAME so the
+                                                                                ; `this` item is recognised and
+                                                                                ; skipped by mangle_function#.
+                                                                                items_arr.add(PlannedItem(
+                                                                                    result.loc,
+                                                                                    false,
+                                                                                    p_ptr.name,
+                                                                                    ity_holder.get 0,
+                                                                                    null
+                                                                                ))
+                                                                                ; Record this member's planned param
+                                                                                ; for the String→const_char coercion.
+                                                                                ns_coerce_params.add planned_p
+                                                                                ns_coerce_valid := true
+                                                                            }
+                                                                        }
+                                                                        pi_ns := pi_ns + 1
+                                                                    }
+                                                                    used_ns_local := true
+                                                                    if nf.page_parameter <> null
+                                                                        used_ns_page := true
+                                                                    if Planner.function_needs_caller_page(this, nf)
+                                                                        used_ns_page := true
+                                                                    ; Capture the member's real return type so
+                                                                    ; the call's sret slot is sized correctly
+                                                                    ; (the bare-name match may have a wrong one).
+                                                                    if nf.returns_ <> null
+                                                                    {
+                                                                        let nf_rt this.plan_type((*nf.returns_))
+                                                                        this.ensure_type_layout nf_rt
+                                                                        ns_return_type := nf_rt
+                                                                        ns_return_valid := true
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    else
+                                                        0
+                                            }
+                                            mi_ns := mi_ns + 1
+                                        }
+                                    }
+                                    else
+                                        0
+                                let mm_for_params (*match_ref)
+                                let param_types_ref mm_for_params.parameter_types
+                                if used_ns_local = false
+                                {
+                                    if param_types_ref <> null
+                                    {
+                                        let pts (*param_types_ref)
+                                        var ai: size_t 0
+                                        while ai < pts.length
+                                        {
+                                            let pt_ptr pts.get ai
+                                            if pt_ptr <> null
+                                            {
+                                                items_arr.add(PlannedItem(
+                                                    result.loc,
+                                                    false,
+                                                    null,
+                                                    &^this (*pt_ptr),
+                                                    null
+                                                ))
+                                            }
+                                            ai := ai + 1
+                                        }
+                                    }
+                                    if param_types_ref = null
+                                    {
+                                        var ai: size_t 0
+                                        while ai < arg_types.length
+                                        {
+                                            let at_ptr arg_types.get ai
+                                            if at_ptr <> null
+                                            {
+                                                items_arr.add(PlannedItem(
+                                                    result.loc,
+                                                    false,
+                                                    null,
+                                                    &^this (*at_ptr),
+                                                    null
+                                                ))
+                                            }
+                                            ai := ai + 1
+                                        }
+                                    }
+                                }
+                                var items_holder Vector[PlannedItem](items_arr)
+                                ; Honor the matched function's
+                                ; page-param flag in the mangled
+                                ; name. parse_args# in cli.scaly
+                                ; has has_page=true so the symbol
+                                ; needs `PN4scaly6memory4PageE`
+                                ; after the function name; without
+                                ; this stage-1 produced
+                                ; `_ZN3cli10parse_argsEiPPc` which
+                                ; doesn't match libscalyc's real
+                                ; `_ZN3cli10parse_argsEPN4scaly6memory4PageEiPPc`.
+                                let mm_pp (*match_ref)
+                                ; Page requirement: when the prefix
+                                ; namespace itself declared the member
+                                ; (used_ns_local), trust THAT member's
+                                ; page flag; otherwise the resolved
+                                ; global match.
+                                var ns_has_page: bool mm_pp.requires_page_param
+                                if used_ns_local
+                                    ns_has_page := used_ns_page
+                                ns_mangled := Planner.mangle_function(
+                                    suffix, &items_holder, ns_parent_ref, ns_has_page
+                                )
+                                has_ns_mangled := true
+                                ns_mangled_page := ns_has_page
+
+                                ; Declare the namespaced
+                                ; function as extern in the
+                                ; instantiation cache so the
+                                ; Emitter generates an LLVM
+                                ; declaration that emit_call
+                                ; can resolve via
+                                ; LLVMGetNamedFunction. The
+                                ; function's body comes from
+                                ; the linked package binary
+                                ; (libscalyc / libscaly) at
+                                ; link time. plan_namespace#
+                                ; itself doesn't recurse
+                                ; into ns.modules — calling
+                                ; plan_module# on stdlib
+                                ; modules crashes stage-1
+                                ; on body-level features it
+                                ; doesn't yet support, but
+                                ; an extern declaration
+                                ; needs only types we've
+                                ; already resolved here.
+                                ;
+                                ; Skip the declaration when
+                                ; we're inside a loaded
+                                ; package's namespace body
+                                ; (current_namespace is set)
+                                ; UNLESS the prefix matches
+                                ; a Use-imported alias of
+                                ; the program's main module.
+                                ; Without the gate, externs
+                                ; emitted from e.g.
+                                ; scaly.test()'s body for
+                                ; memory.test/containers.test/
+                                ; io.test break AOT tests
+                                ; that don't link libscaly.
+                                ; The Use-alias carve-out
+                                ; lets explicitly imported
+                                ; namespaces (e.g.
+                                ; main.scaly's
+                                ; `use scalyc.cli` -> "cli")
+                                ; emit real call
+                                ; instructions; the linker
+                                ; resolves them against the
+                                ; package binary at link
+                                ; time. Mirrors stage-0's
+                                ; check at
+                                ; Planner.cpp:7752-7789.
+                                ; Gate now relies solely on
+                                ; the program's Use aliases.
+                                ; Previously this also opened
+                                ; on `current_namespace = null`
+                                ; to handle top-level call
+                                ; sites in the main program;
+                                ; that was load-bearing only
+                                ; while libscaly wasn't linked
+                                ; into the AOT pipeline. Now
+                                ; that cli.run links libscaly
+                                ; unconditionally, the
+                                ; current_namespace clause is
+                                ; no longer required: any
+                                ; legitimate top-level call
+                                ; into a loaded package goes
+                                ; through a Use-imported
+                                ; alias. main.scaly's
+                                ; `use scalyc.cli` puts "cli"
+                                ; in program_use_aliases, so
+                                ; `cli.main(...)` still opens
+                                ; the gate.
+                                ; Also opens the gate when the
+                                ; prefix matches the currently-
+                                ; active namespace (sibling call
+                                ; like cli.parse_args# from
+                                ; inside cli.main). Mirrors
+                                ; stage-0's flatten-current-
+                                ; namespace pre-pass at
+                                ; Planner.cpp:7313-7327.
+                                var prefix_is_current_ns: bool false
+                                if current_namespace_name <> null
+                                {
+                                    let cnsn (*current_namespace_name)
+                                    if cnsn = prefix
+                                        prefix_is_current_ns := true
+                                }
+                                var gate_open: bool false
+                                if this.is_program_use_alias(prefix)
+                                    gate_open := true
+                                if prefix_is_current_ns
+                                    gate_open := true
+                                if gate_open
+                                if this.has_recorded_function(ns_mangled) = false
+                                {
+                                    let mm (*match_ref)
+                                    let extern_impl PlannedImplementation.Extern(
+                                        PlannedExternImpl result.loc
+                                    )
+                                    ; s78: propagate page_parameter when the
+                                    ; matched function has has_page=true.
+                                    ; Without this, function# callees recorded
+                                    ; via the dotted fallback get null
+                                    ; page_parameter, so emit_function_decl
+                                    ; emits a 1-param signature for what
+                                    ; should be 2-param (Page* + user param).
+                                    ; A later call that goes through the body
+                                    ; uses LLVMGetParam(func, 1) on a 1-param
+                                    ; function and gets a bogus pointer.
+                                    var pp_ref: ref[String]? null
+                                    if ns_has_page
+                                    {
+                                        var pp_h Vector[String](1)
+                                        pp_h.put(0, "_rp")
+                                        pp_ref := pp_h.get(0)
+                                    }
+                                    this.record_function(PlannedFunction(
+                                        result.loc,
+                                        false,
+                                        false,
+                                        suffix,
+                                        ns_mangled,
+                                        pp_ref,
+                                        &items_holder,
+                                        &^this mm.return_type,
+                                        mm.throws_type,
+                                        Lifetime.Unspecified(Unspecified()),
+                                        extern_impl,
+                                        null,
+                                        false,
+                                        mm.can_throw,
+                                        null,
+                                        this.file,
+                                        null
+                                    ))
+                                }
+                            }
+                        }
+                    }
+
+                    ; s155: Static method call `Type.method(args)`
+                    ; where Type is a Structure concept and method
+                    ; is a this-less function member. Mirrors stage-0
+                    ; Planner.cpp:8421-8517. resolve_function_call#
+                    ; (suffix) above misses these because struct
+                    ; static methods aren't in the free-function
+                    ; registry. Without this, `Page.get(this as
+                    ; pointer[void])` inside Vector/Array.add resolves
+                    ; to null and the whole `let own_page` binding
+                    ; plus every downstream statement (allocate, the
+                    ; item store, `set data`) silently drops — leaving
+                    ; container .add() bodies that only bump `length`.
+                    if match_ref = null
+                    {
+                        ; A module-dotted prefix
+                        ; (`Message.MessageFormatter.test()`) names the
+                        ; concept in its LAST segment; concepts register
+                        ; under their simple name, and the def mangles
+                        ; with the simple name as parent
+                        ; (`_ZN16MessageFormatter4testEv`). Use the last
+                        ; segment for the lookup AND the mangled parent.
+                        var sconcept prefix
+                        let sc_dot prefix.last_index_of(46)
+                        if sc_dot > 0
+                            sconcept := prefix.substring(sc_dot as size_t + 1, prefix.get_length() - (sc_dot as size_t) - 1)
+                        ; Gated-first, raw fallback: a qualified
+                        ; static call names the concept explicitly, so
+                        ; a use-visibility miss must not hide it (see
+                        ; concept_has_static#). Byte-identical for the
+                        ; compiler (fires only where lookup_concept was
+                        ; null).
+                        var smc_ref this.lookup_concept(sconcept)
+                        if smc_ref = null
+                            smc_ref := this.lookup_concept_any(sconcept)
+                        if smc_ref <> null
+                        {
+                            let smc (*smc_ref)
+                            var static_fn: ref[Function]? null
+                            ; Arity gate for the QUALIFIED STATIC path. Selection
+                            ; below takes the FIRST same-named this-less member and
+                            ; never compared its parameter count with the call's, so
+                            ; `Box.twice(1, 2, 3)` on a one-parameter static and
+                            ; `ns.greet(1, 2)` on a one-parameter namespace function
+                            ; both planned CLEAN (rc 0) and handed the surplus
+                            ; arguments to a signature with no slots for them —
+                            ; emit_call synthesizes the callee type from the
+                            ; ARGUMENTS, so LLVM had nothing to verify against
+                            ; either. The this-method path (lookup_method#), the
+                            ; free-function path (check_function_match#) and the
+                            ; namespace-function path above have all had this gate
+                            ; for a long time; the qualified static was the one
+                            ; direction left silent, and only the TOO MANY direction
+                            ; is silent at all (too few loses the candidate and
+                            ; surfaces as "function not found").
+                            ;
+                            ; Record and CONTINUE, exactly as lookup_method#'s gate
+                            ; does: add_diagnostic is fatal at the cli.scaly gate, so
+                            ; resolution proceeds unchanged and no path that expects
+                            ; a hit for a method it just found by name is disturbed.
+                            var static_arity_seen: bool false
+                            ; s155 + union: a this-less static can live
+                            ; on a Structure OR a Union concept (opensp's
+                            ; CodingSystem is a union with a `test()`
+                            ; static). Both store members in `members`,
+                            ; so iterate whichever this concept has.
+                            var smmembers_ref: ref[Vector[Member]]? null
+                            choose smc.definition
+                                when sst: Structure
+                                    smmembers_ref := &^this sst.members
+                                when suu: Union
+                                    smmembers_ref := &^this suu.members
+                                when snn: Namespace
+                                    smmembers_ref := &^this snn.members
+                                else
+                                    0
+                            if smmembers_ref <> null
+                            {
+                                let smmembers (*smmembers_ref)
+                                var smi: size_t 0
+                                while smi < smmembers.length
+                                {
+                                    let sm_ptr smmembers.get smi
+                                    if sm_ptr <> null
+                                    {
+                                        let sm (*sm_ptr)
+                                        choose sm
+                                            when sf: Function
+                                            {
+                                                if sf.name = suffix
+                                                {
+                                                    var is_static: bool true
+                                                    if sf.input.length > 0
+                                                    {
+                                                        let i0 sf.input.get 0
+                                                        if i0 <> null
+                                                        {
+                                                            if i0.name <> null
+                                                            {
+                                                                if (*i0.name) = "this"
+                                                                    is_static := false
+                                                            }
+                                                        }
+                                                    }
+                                                    if is_static
+                                                    {
+                                                        ; The first same-named static is
+                                                        ; the fallback; the first whose
+                                                        ; ARITY matches wins. Before, the
+                                                        ; fallback was the only rule, so
+                                                        ; two same-named statics of
+                                                        ; different arity always resolved
+                                                        ; to the one declared first —
+                                                        ; `Box.pick(4, 5)` ran the
+                                                        ; one-parameter `pick` and
+                                                        ; answered 4, with rc 0 and no
+                                                        ; word said. Mirrors
+                                                        ; resolve_static_method_on#,
+                                                        ; which has always preferred the
+                                                        ; arity match on the sibling path.
+                                                        if static_fn = null
+                                                            static_fn := &^this sf
+                                                        if sf.input.length = arg_types.length
+                                                        {
+                                                            if static_arity_seen = false
+                                                                static_fn := &^this sf
+                                                            static_arity_seen := true
+                                                        }
+                                                    }
+                                                }
+                                                0
+                                            }
+                                            else
+                                                0
+                                    }
+                                    smi := smi + 1
+                                }
+                            }
+
+                            if static_fn <> null
+                            {
+                                if static_arity_seen
+                                    static_fn := this.refine_static_overload(smc, suffix, arg_types, arg_ops, static_fn)
+                                let sfn (*static_fn)
+                                if static_arity_seen = false
+                                {
+                                    var qa_sb StringBuilder()
+                                    qa_sb.append "wrong number of arguments for "
+                                    qa_sb.append sconcept
+                                    qa_sb.append "."
+                                    qa_sb.append suffix
+                                    qa_sb.append ": got "
+                                    qa_sb.append arg_types.length
+                                    qa_sb.append ", expected "
+                                    qa_sb.append sfn.input.length
+                                    this.add_diagnostic(result.loc, qa_sb.to_string())
+                                }
+                                let sparent_ref &^this PlannedType(
+                                    result.loc,
+                                    String(sconcept),
+                                    this.type_symbol(sconcept, null),
+                                    null,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    null,
+                                    "",
+                                    null
+                                )
+                                var sitems_arr Array[PlannedItem]()
+                                ; Collected alongside sitems_arr so the MethodMatch
+                                ; carries parameter_types — the String→const_char /
+                                ; char-fold coercions below key off it; with null a
+                                ; string LITERAL bound to a pointer[const_char] static
+                                ; param passed the String { ptr } record address
+                                ; instead of the cstr (history Finding 3).
+                                var sparams_arr Array[PlannedType]()
+                                var spi: size_t 0
+                                while spi < sfn.input.length
+                                {
+                                    let p_ptr sfn.input.get spi
+                                    if p_ptr <> null
+                                    {
+                                        if p_ptr.type <> null
+                                        {
+                                            let pt (*p_ptr.type)
+                                            let spt this.plan_type(pt)
+                                            sitems_arr.add(PlannedItem(
+                                                result.loc, false, null, &^this spt, null
+                                            ))
+                                            sparams_arr.add spt
+                                        }
+                                    }
+                                    spi := spi + 1
+                                }
+                                var sitems_holder Vector[PlannedItem](sitems_arr)
+                                var sparams_holder Vector[PlannedType](sparams_arr)
+                                ; Page-param flag mirrors plan_function#'s
+                                ; has_page: explicit page_parameter OR an
+                                ; implicit return-page (struct-returning fns
+                                ; like statement_result_type get an rp arg in
+                                ; the mangled name even with no `#`). Without
+                                ; the implicit check, the call site mangles
+                                ; `...E16PlannedStatement` while the def is
+                                ; `...PageE16PlannedStatement` → link failure.
+                                var s_pp: bool false
+                                if sfn.page_parameter <> null
+                                    s_pp := true
+                                if Planner.function_needs_caller_page(this, sfn)
+                                    s_pp := true
+                                let smangled Planner.mangle_function(
+                                    suffix, &sitems_holder, sparent_ref, s_pp
+                                )
+                                var s_rt: PlannedType Planner.make_void_type()
+                                if sfn.returns_ <> null
+                                {
+                                    s_rt := this.plan_type((*sfn.returns_))
+                                    ; the sret slot of a record returned by
+                                    ; value (see lookup_method#)
+                                    this.ensure_type_layout(s_rt)
+                                }
+                                var s_throws: ref[PlannedType]? null
+                                var s_can_throw: bool false
+                                if sfn.throws_ <> null
+                                {
+                                    s_can_throw := true
+                                    s_throws := &^this this.plan_type((*sfn.throws_))
+                                }
+                                var srt_holder Vector[PlannedType](1)
+                                srt_holder.put(0, s_rt)
+                                match_ref := MethodMatch^this(
+                                    null,
+                                    smangled,
+                                    s_rt,
+                                    &sparams_holder,
+                                    s_pp,
+                                    s_can_throw,
+                                    s_throws,
+                                    false,
+                                    false,
+                                    false,
+                                    this.return_residence_class(sfn), this.return_residence_arg(sfn)
+                                )
+                                if this.has_recorded_function(smangled) = false
+                                {
+                                    var spp_ref: ref[String]? null
+                                    if s_pp
+                                    {
+                                        var spph Vector[String](1)
+                                        spph.put(0, "_rp")
+                                        spp_ref := spph.get(0)
+                                    }
+                                    let sextern PlannedImplementation.Extern(
+                                        PlannedExternImpl result.loc
+                                    )
+                                    this.record_function(PlannedFunction(
+                                        result.loc,
+                                        false,
+                                        false,
+                                        suffix,
+                                        smangled,
+                                        spp_ref,
+                                        &sitems_holder,
+                                        srt_holder.get 0,
+                                        s_throws,
+                                        Lifetime.Unspecified(Unspecified()),
+                                        sextern,
+                                        null,
+                                        false,
+                                        s_can_throw,
+                                        null,
+                                        this.file,
+                                        null
+                                    ))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            NamespaceArm(match_ref, ns_mangled, has_ns_mangled, ns_mangled_page, ns_coerce_valid, ns_return_type, ns_return_valid)
+        }
+
+        ; The arm for a bare name inside a concept (`read_character()`, s101):
+        ; a sibling method on `this`.
+        procedure call_arm_sibling(
+            mutable this: Planner,
+            mutable result: PlannedOperand,
+            mutable fn_name: String,
+            mutable arg_types: Vector[PlannedType],
+            mutable arg_ops: Vector[PlannedOperand],
+            has_ns_mangled: bool,
+            state: CallArm
+        ) returns CallArm
+        {
+            var match_ref: ref[MethodMatch]? state.found
+            var is_method_dispatch: bool state.is_method_dispatch
+            var receiver_op: PlannedOperand state.receiver_op
+            var stamp_getref_local: bool state.stamp_getref_local
+            if match_ref = null
+            {
+                if has_ns_mangled = false
+                {
+                    let this_ref this.lookup_local("this")
+                    if this_ref <> null
+                    {
+                        let this_ty (*this_ref)
+                        if Planner.is_this_wrapper_name(this_ty.name)
+                        {
+                            if this_ty.generics <> null
+                            {
+                                let gens_t (*this_ty.generics)
+                                if gens_t.length > 0
+                                {
+                                    let inner_ptr gens_t.get 0
+                                    if inner_ptr <> null
+                                    {
+                                        let inner_t (*inner_ptr)
+                                        let mm_ref this.lookup_method(inner_t, fn_name, arg_types, arg_ops)
+                                        if mm_ref <> null
+                                        {
+                                            match_ref := mm_ref
+                                            ; Prepend the `this` receiver ONLY for instance
+                                            ; methods. A STATIC sibling method (Page::get,
+                                            ; Page::allocate_page) takes no `this` — prepending
+                                            ; it passes the wrong arg0 (s189: `get(object)` →
+                                            ; `get(this, object)` → current_page self-loop).
+                                            if (*mm_ref).takes_this
+                                            {
+                                                ; Build receiver_op as `this`.
+                                                receiver_op := PlannedOperand(
+                                                    result.loc,
+                                                    PlannedExpression.Variable(PlannedVariable(
+                                                        result.loc,
+                                                        "this",
+                                                        this_ty,
+                                                        false
+                                                    )),
+                                                    null,
+                                                    this_ty
+                                                )
+                                                is_method_dispatch := true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local)
         }
 
         ; What a name applied to a tuple IS, decided from the name, its concept
@@ -27897,6 +28084,27 @@ define Planner
                 scaly_eputi(made.loc.start as i64)
                 scaly_eputs("\n")
             }
+        }
+
+        ; Which arm of collapse_application#'s cascade resolved a call -- 1
+        ; the free resolution, 2 a static of the type, 3 a method on a
+        ; dotted local, 4 a method on a chain, 5 a namespace's function by
+        ; its dotted name, 6 a sibling method, 7 a sibling static, 0 none --
+        ; against what operation_name# says the head IS: where every kind
+        ; meets one arm, the step by type can take that arm alone.
+        procedure operation_arm(mutable this: Planner, head: PlannedOperand, arm: size_t)
+        {
+            if this.operation_census_on() = false
+                return
+            scaly_eputs("operation-arm ")
+            scaly_eputi(this.operation_name(head) as i64)
+            scaly_eputs(" ")
+            scaly_eputi(arm as i64)
+            scaly_eputs(" ")
+            scaly_eputs(this.file.to_c_string())
+            scaly_eputs(" ")
+            scaly_eputi(head.loc.start as i64)
+            scaly_eputs("\n")
         }
 
         ; the prefix test of the old collapse: an operator by its characters
