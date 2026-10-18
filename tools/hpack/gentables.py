@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate packages/http/0.1.1/http/HpackTables.scaly from RFC 7541.
+"""Generate packages/http/0.2.0/http/HpackTables.scaly from RFC 7541.
 
 usage: tools/hpack/gentables.py <rfc7541.txt>   (https://www.rfc-editor.org/rfc/rfc7541.txt)
 
@@ -100,4 +100,4 @@ for i in range(1, 62):
     if static[i][1]:
         out.append(f'        case {i}: return {lit(static[i][1])}\n')
 out.append('    ""\n}\n')
-open('packages/http/0.1.1/http/HpackTables.scaly', 'w').write(''.join(out))
+open('packages/http/0.2.0/http/HpackTables.scaly', 'w').write(''.join(out))
