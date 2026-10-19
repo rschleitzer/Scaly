@@ -853,7 +853,7 @@ define repl
                 else
                     0
         }
-        if last_is_action and last_type.get_length() > 0 and last_type.equals("void") = false
+        if last_is_action and last_type.get_length() > 0 and last_type.equals("void") = false and last_type.equals("()") = false
         {
             ; `n` of a session value is a ref[int]: `it` holds the int
             let page Page.get(out)

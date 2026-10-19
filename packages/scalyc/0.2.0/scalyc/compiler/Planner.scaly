@@ -317,7 +317,7 @@ define Planner
             null,
             PlannedType(
                 Span(0, 0),
-                "void",
+                "()",
                 "v",
                 null,
                 Lifetime.Unspecified(Unspecified()),
@@ -7454,7 +7454,7 @@ define Planner
                             {
                                 if at_ptr.name.length() = 0
                                     report_exact := false
-                                if at_ptr.name = "void"
+                                if Planner.is_unit_type((*at_ptr))
                                     report_exact := false
                                 if Planner.type_mentions_generic_param((*at_ptr))
                                     report_exact := false
@@ -11701,7 +11701,7 @@ define Planner
             let at a.result_type
             if at.name.length() = 0
                 return
-            if at.name = "void"
+            if Planner.is_unit_type(at)
                 return
             if at.variable <> null
                 return
@@ -12250,7 +12250,7 @@ define Planner
                                             let g0_ptr (*vt.generics).get(0)
                                             if g0_ptr <> null
                                             {
-                                                if (*g0_ptr).name = "void"
+                                                if Planner.is_unit_type((*g0_ptr))
                                                     ic_is_void_ptr := true
                                             }
                                         }
@@ -12974,7 +12974,7 @@ define Planner
                                                                                 let rc (*rp_ptr)
                                                                                 if rc.is_method
                                                                                     all_props2 := false
-                                                                                if rc.result_type.name = "void"
+                                                                                if Planner.is_unit_type(rc.result_type)
                                                                                     all_props2 := false
                                                                             }
                                                                             rpi := rpi + 1
@@ -13544,7 +13544,7 @@ define Planner
                                                                     if pel_ref <> null
                                                                     {
                                                                         let pel (*pel_ref)
-                                                                        if pel.name <> "void"
+                                                                        if Planner.is_unit_type(pel) = false
                                                                         {
                                                                             let pidx_op this.subscript_index_value(this.collapse_operand_sequence(row))
                                                                             let plus_ty PlannedType(sx_op.loc, String("+"), String(""), null, Lifetime.Unspecified(Unspecified()), null, String(""), null)
@@ -15235,7 +15235,7 @@ define Planner
                                     ; the line read on this frame, and the
                                     ; history dangled (tests/regress/
                                     ; store_call_in_condition.scaly).
-                                    if rt.name <> "void" and Planner.result_owns_page_guts(rt) and this.callee_stores(fn_name) = false
+                                    if Planner.is_unit_type(rt) = false and Planner.result_owns_page_guts(rt) and this.callee_stores(fn_name) = false
                                         call_life := Lifetime.Local(scalyc.compiler.Model.Local(Span(0, 0)))
                                 else
                                     0
@@ -15560,7 +15560,7 @@ define Planner
                                         let tc (*tc_ptr)
                                         if tc.is_method
                                             all_props := false
-                                        if tc.result_type.name = "void"
+                                        if Planner.is_unit_type(tc.result_type)
                                             all_props := false
                                     }
                                     tci := tci + 1
@@ -19380,7 +19380,7 @@ define Planner
         ; aggregates recurse.
         procedure check_message_pointee(mutable this: Planner, mutable inner: PlannedType, loc: Span, mutable seen: ref[Array[String]]) returns bool
         {
-            if inner.name = "void"
+            if Planner.is_unit_type(inner)
                 return true
             if inner.name = "const_char"
                 return true
@@ -20889,7 +20889,7 @@ define Planner
                         is_last := true
                     if tc.is_method
                         all_props := false
-                    if tc.result_type.name = "void"
+                    if Planner.is_unit_type(tc.result_type)
                         all_props := false
                     ; method_tail_ok: every hop before the last must be a
                     ; resolved non-void property; the last hop must be a
@@ -20903,7 +20903,7 @@ define Planner
                     {
                         if tc.is_method
                             method_tail_ok := false
-                        if tc.result_type.name = "void"
+                        if Planner.is_unit_type(tc.result_type)
                             method_tail_ok := false
                     }
                 }
@@ -22031,7 +22031,7 @@ define Planner
             if tname.get_length() = 0
                 return ""
             ; a tuple type is known where its components are
-            if tname = "()"
+            if tname = "(,)"
             {
                 if t.generics = null
                     return ""
@@ -24207,7 +24207,7 @@ define Planner
                 if chain.length = 1
                 {
                     let c0 chain.get 0
-                    if c0 <> null and c0.is_method = false and c0.result_type.name <> "void"
+                    if c0 <> null and c0.is_method = false and Planner.is_unit_type(c0.result_type) = false
                         prop := c0
                 }
                 if prop <> null
@@ -24527,7 +24527,7 @@ define Planner
                 ; voids (pure statements contribute no constraint).
                 let cons_ty Planner.statement_result_type(planned_consequent)
                 let alt_ty Planner.statement_result_type(planned_alt)
-                if cons_ty.name <> "void" and alt_ty.name <> "void"
+                if Planner.is_unit_type(cons_ty) = false and Planner.is_unit_type(alt_ty) = false
                     this.add_equality_constraint(cons_ty, alt_ty, f.span)
 
                 ; The join's third step: a name the CONSEQUENT assigned is an
@@ -25409,7 +25409,7 @@ define Planner
                 if op_ptr <> null
                 {
                     let t this.find_break_type_in_expr((*op_ptr).expr)
-                    if t.name <> "void"
+                    if Planner.is_unit_type(t) = false
                         return t
                 }
                 i := i + 1
@@ -25460,7 +25460,7 @@ define Planner
                         if sp <> null
                         {
                             let t this.find_break_type_in_statement(*sp)
-                            if t.name <> "void"
+                            if Planner.is_unit_type(t) = false
                                 return t
                         }
                         i := i + 1
@@ -25470,7 +25470,7 @@ define Planner
                 when ife: PlannedIf
                 {
                     let tc this.find_break_type_in_stmt_ref(ife.consequent)
-                    if tc.name <> "void"
+                    if Planner.is_unit_type(tc) = false
                         return tc
                     this.find_break_type_in_stmt_ref(ife.alternative)
                 }
@@ -25486,7 +25486,7 @@ define Planner
                             if cp <> null
                             {
                                 let t this.find_break_type_in_stmt_ref((*cp).consequent)
-                                if t.name <> "void"
+                                if Planner.is_unit_type(t) = false
                                     return t
                             }
                             i := i + 1
@@ -25506,7 +25506,7 @@ define Planner
                             if bp <> null
                             {
                                 let t this.find_break_type_in_stmt_ref((*bp).consequent)
-                                if t.name <> "void"
+                                if Planner.is_unit_type(t) = false
                                     return t
                             }
                             i := i + 1
@@ -25530,7 +25530,7 @@ define Planner
                             if cp <> null
                             {
                                 let t this.find_break_type_in_stmt_ref((*cp).consequent)
-                                if t.name <> "void"
+                                if Planner.is_unit_type(t) = false
                                     return t
                             }
                             i := i + 1
@@ -26253,7 +26253,7 @@ define Planner
                     variant_name := (*last_ptr)
             }
 
-            if union_type.name <> "void"
+            if Planner.is_unit_type(union_type) = false
             {
                 ; s184: bind the union's generic parameters to the
                 ; scrutinee's generic args before planning the payload
@@ -26353,7 +26353,7 @@ define Planner
             ; → Success arm); emit_throw stores tag=1 at offset 0 → Error
             ; arm. Result union wrapping is the proper fix (1-2 day
             ; refactor) but isn't required for hello.scaly's narrow path.
-            if variant_type.name = "void"
+            if Planner.is_unit_type(variant_type)
             {
                 if is_throws_call
                 {
@@ -26687,7 +26687,7 @@ define Planner
                         {
                             let cons_ref (*pw.consequent)
                             let arm_ty Planner.statement_result_type(cons_ref)
-                            if arm_ty.name <> "void"
+                            if Planner.is_unit_type(arm_ty) = false
                             {
                                 if have_first = false
                                 {
@@ -26709,7 +26709,7 @@ define Planner
                     {
                         let alt (*alternative_ref)
                         let alt_ty Planner.statement_result_type(alt)
-                        if alt_ty.name <> "void"
+                        if Planner.is_unit_type(alt_ty) = false
                             this.add_equality_constraint(first_ty, alt_ty, c.span)
                     }
                 }
@@ -26771,7 +26771,7 @@ define Planner
         {
             if t.name.get_length() = 0
                 return false
-            if t.name = "void"
+            if Planner.is_unit_type(t)
                 return false
             if Planner.is_value_scalar_name(t.name)
                 return false
@@ -26961,7 +26961,7 @@ define Planner
                         {
                             let cons (*br.consequent)
                             let br_ty Planner.statement_result_type(cons)
-                            if br_ty.name <> "void"
+                            if Planner.is_unit_type(br_ty) = false
                             {
                                 if have_first = false
                                 {
@@ -26983,7 +26983,7 @@ define Planner
                     {
                         let alt (*alternative_ref)
                         let alt_ty Planner.statement_result_type(alt)
-                        if alt_ty.name <> "void"
+                        if Planner.is_unit_type(alt_ty) = false
                             this.add_equality_constraint(first_ty, alt_ty, m.span)
                     }
                 }
@@ -27295,7 +27295,7 @@ define Planner
             choose op.expr
                 when tp: PlannedTuple
                 {
-                    if tp.components = null or tp.is_region_alloc or tp.tuple_type.name <> "void"
+                    if tp.components = null or tp.is_region_alloc or Planner.is_unit_type(tp.tuple_type) = false
                         return op
                     let cv (*tp.components)
                     var labelled false
@@ -27479,7 +27479,7 @@ define Planner
                     if vp = null
                         return 0
                     let tt vp.result_type
-                    if tt.name <> "()" or tt.generics = null
+                    if tt.name <> "(,)" or tt.generics = null
                         return 0
                     let count (*tt.generics).length
                     if count < 2
@@ -28643,7 +28643,7 @@ define Planner
                     if v.variable_type.name = "pointer" and v.variable_type.generics <> null
                     {
                         let gens (*v.variable_type.generics)
-                        if gens.length = 1 and gens[0].name = "void"
+                        if gens.length = 1 and Planner.is_unit_type(gens[0])
                             return false
                     }
                 }
@@ -30239,9 +30239,9 @@ define Planner
                 i := i + 1
             }
             var components: size_t 0
-            if t.name = "()" and t.generics <> null
+            if t.name = "(,)" and t.generics <> null
                 components := (*t.generics).length
-            if t.name = "()" and components = names
+            if t.name = "(,)" and components = names
                 return
             var sb StringBuilder()
             sb.append "a decomposition names "
@@ -30250,7 +30250,7 @@ define Planner
                 sb.append " component"
             else
                 sb.append " components"
-            if t.name = "()"
+            if t.name = "(,)"
             {
                 sb.append ", and the tuple has "
                 sb.append(components as int)
@@ -32171,7 +32171,7 @@ define Planner
                 return true
             if t.name = "Option"
                 return true
-            if t.name = "void"
+            if Planner.is_unit_type(t)
                 return true
             if t.name = "bool" or t.name = "const_char" or t.name = "delegate" or this.lookup_concept(t.name) <> null
                 return true
@@ -32225,7 +32225,7 @@ define Planner
                 return true
 
             ; A void return type carries no value to judge.
-            if target_type.name = "void"
+            if Planner.is_unit_type(target_type)
                 return true
 
             ; ★ A void SOURCE at a tail position is not a value either: a body
@@ -32239,7 +32239,7 @@ define Planner
             ; a value is NOT reported here, because the planner gives that
             ; body the same void type as the well-formed shape. Telling the
             ; two apart is a separate question about ACTIONS, not types.
-            if source_type.name = "void"
+            if Planner.is_unit_type(source_type)
                 return true
 
             false
@@ -32258,7 +32258,7 @@ define Planner
             if inner_ptr = null
                 return false
             let inner (*inner_ptr)
-            inner.name = "void"
+            Planner.is_unit_type(inner)
         }
 
         ; Strip one `Option` wrapper and then one `pointer`/`ref` wrapper off
@@ -34044,9 +34044,9 @@ define Planner
                                 let bare_a Planner.gate_strip_indirection(arg)
                                 ; void is what an unresolved result plans to;
                                 ; it is a miss of the planner's, not of the call.
-                                if bare_p.name = "void"
+                                if Planner.is_unit_type(bare_p)
                                     judge := false
-                                if bare_a.name = "void"
+                                if Planner.is_unit_type(bare_a)
                                     judge := false
                                 if Planner.type_mentions_generic_param(bare_p)
                                     judge := false
@@ -34289,7 +34289,7 @@ define Planner
             let rumc_last (*rumc_last_ptr)
             if rumc_last.is_method
                 return
-            if rumc_last.result_type.name <> "void"
+            if Planner.is_unit_type(rumc_last.result_type) = false
                 return
             if rumc_last.parent_type.name.get_length() = 0
                 return
@@ -57462,7 +57462,7 @@ define Planner
     function encode_type(type_value: PlannedType) returns String
     {
         ; Built-in primitive types.
-        if type_value.name = "void"
+        if Planner.is_unit_type(type_value)
             return "v"
         if type_value.name = "bool"
             return "b"
@@ -58045,7 +58045,7 @@ define Planner
         if type_value.generics <> null
         {
             let gens (*type_value.generics)
-            if gens.length > 0 and type_value.name = "()"
+            if gens.length > 0 and type_value.name = "(,)"
             {
                 ; a tuple type is written as its components: `(int, String)`
                 var tb StringBuilder()
@@ -58078,8 +58078,12 @@ define Planner
                     if g_ptr <> null
                     {
                         let g (*g_ptr)
-                        let inner Planner.get_readable_name(g)
-                        sb.append inner
+                        ; what a pointer to "no value" points at is written
+                        ; `void`, the word of the C boundary: `pointer[void]`
+                        if Planner.is_unit_type(g) and (type_value.name = "pointer" or type_value.name = "ref")
+                            sb.append "void"
+                        else
+                            sb.append(Planner.get_readable_name(g))
                     }
                     i := i + 1
                 }
@@ -58097,6 +58101,9 @@ define Planner
     ; lines of one package still share it there.
     function get_debug_name(type_value: PlannedType) returns String
     {
+        ; a debugger knows "no value" as `void`
+        if Planner.is_unit_type(type_value)
+            return String("void")
         var sb StringBuilder()
         let pkg Planner.package_of_type_itself(type_value)
         if pkg.get_length() > 0
@@ -58642,7 +58649,7 @@ define Planner
                             let p0 (*p0_ptr)
 
                             ; Rule 6: any pointer[T] coerces to pointer[void].
-                            if p0.name = "void"
+                            if Planner.is_unit_type(p0)
                                 return true
 
                             ; Rule 5: char-family pointer cross-compatibility.
@@ -58678,7 +58685,7 @@ define Planner
                     if a0_ptr <> null
                     {
                         let a0 (*a0_ptr)
-                        if a0.name = "void"
+                        if Planner.is_unit_type(a0)
                         {
                             if param_type.name = "Option" or param_type.name.starts_with("Option.")
                                 return true
@@ -58786,7 +58793,7 @@ define Planner
 
     function is_scalar_value_type_name(name: String) returns bool
     {
-        if name = "void"
+        if name = "void" or name = "()"
             return false
         if name = "pointer"
             return false
@@ -59041,7 +59048,7 @@ define Planner
         if Planner.is_simd_type_name(name)
             return true
         match name
-            case "void" case "bool" case "int" case "uint" case "char" case "i8" case "i16": return true
+            case "void" case "()" case "bool" case "int" case "uint" case "char" case "i8" case "i16": return true
             case "i32" case "i64" case "u8" case "u16" case "u32" case "u64" case "f32" case "f64": return true
             case "float" case "double" case "size_t" case "size" case "pointer" case "ref": return true
         false
@@ -59600,11 +59607,24 @@ define Planner
     }
 
     function make_void_type() returns PlannedType
-        Planner.make_primitive_type("void", "v")
+        Planner.make_primitive_type("()", "v")
+
+    ; is_unit_type#: whether `t` is `()`, the type of the empty tuple, which is
+    ; what "no value" means and what the word `void` names
+    ; (ROADMAP-operation.md, Tuples) -- a routine that answers nothing answers
+    ; it, `pointer[void]` points at it. The planner's own name is `()` since
+    ; 2026-10-19; `void` is the model's word for it and is accepted beside.
+    function is_unit_type(t: PlannedType) returns bool
+    {
+        if t.name = "()"
+            return true
+        t.name = "void"
+    }
 
     ; tuple_type#: the type of a tuple (ROADMAP-operation.md, Tuples) -- a
-    ; structural type, named `()` with the component types as its generic
-    ; arguments, and mangled as C++ mangles `std::tuple<...>`
+    ; structural type, named `(,)` with the component types as its generic
+    ; arguments (a tuple has two components or more: `(a)` IS `a`, and `()`
+    ; is the type "no value", is_unit_type#), and mangled as C++ mangles `std::tuple<...>`
     ; (`St5tupleIJ...EE`), so two tuples of one shape are one type wherever
     ; they are written. The labels are no part of it (types_equal# compares
     ; names): they ride beside the types for `t.x`, "" where a component
@@ -59631,7 +59651,7 @@ define Planner
         }
         PlannedType(
             Span(0, 0),
-            String("()"),
+            String("(,)"),
             sb.to_string(),
             &gens,
             Lifetime.Unspecified(Unspecified()),
@@ -59645,7 +59665,7 @@ define Planner
     ; wanted names, -1 where t is no tuple or no component carries it
     function tuple_label_index(t: PlannedType, wanted: String) returns int
     {
-        if t.name <> "()"
+        if t.name <> "(,)"
             return 0 - 1
         ; `$i`, the component at position i -- what a decomposition reads
         ; (Modeler.decomposition_statements); no source can spell it
@@ -60427,7 +60447,10 @@ define Planner
     ;     fills that in once the Concepts table is available)
     function resolve_type_base(t: Type) returns PlannedType
     {
-        let joined Planner.join_dotted_name(t.name)
+        var joined Planner.join_dotted_name(t.name)
+        ; the word `void` names `()`, the type "no value" (is_unit_type#)
+        if joined = "void"
+            joined := "()"
 
         var resolved_gens: ref[Vector[PlannedType]]? null
         if t.generics <> null
@@ -60841,7 +60864,7 @@ define Planner
         if g0 = null
             return false
 
-        (*g0).name = "void"
+        Planner.is_unit_type((*g0))
     }
 
     ; unify: produce the most-general substitution that makes `left` and
@@ -60905,12 +60928,12 @@ define Planner
         ; Case 4: both concrete.
 
         ; `void` unifies with anything (null literal compatibility).
-        if left.name = "void"
+        if Planner.is_unit_type(left)
         {
             var empty Vector[KeyValuePair[size_t, PlannedType]](0)
             return &empty
         }
-        if right.name = "void"
+        if Planner.is_unit_type(right)
         {
             var empty Vector[KeyValuePair[size_t, PlannedType]](0)
             return &empty
@@ -61149,7 +61172,7 @@ define Planner
             return false
         if last.is_union_value
             return false
-        last.result_type.name <> "void"
+        Planner.is_unit_type(last.result_type) = false
     }
 
     ; ========================================================================
@@ -65510,7 +65533,7 @@ define Planner
         var gens Vector[PlannedType](1)
         let void_ty PlannedType(
             sp,
-            "void",
+            "()",
             "v",
             null,
             Lifetime.Unspecified(Unspecified()),
@@ -66033,7 +66056,7 @@ define Planner
         ; types_compatible - pointer[void] accepts any pointer.
         let void_ty PlannedType(
             Span(0, 0),
-            "void",
+            "()",
             "",
             null,
             Lifetime.Unspecified(Unspecified()),

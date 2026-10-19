@@ -1410,7 +1410,7 @@ define semantic
             return ""
         if pt.name.get_length() = 0
             return ""
-        if pt.name = "void"
+        if Planner.is_unit_type(pt)
             return ""
         Planner.get_readable_name pt
     }

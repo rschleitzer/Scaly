@@ -358,7 +358,7 @@ define PointerCensus
         }
 
         function void_type() returns PlannedType
-            PlannedType(Span(0, 0), "void", "v", null, Lifetime.Unspecified(Unspecified()), null, "", null)
+            PlannedType(Span(0, 0), "()", "v", null, Lifetime.Unspecified(Unspecified()), null, "", null)
 
         ; `pointer[T]` or `pointer[T]?`.
         function is_pointer_shaped(t: PlannedType) returns bool

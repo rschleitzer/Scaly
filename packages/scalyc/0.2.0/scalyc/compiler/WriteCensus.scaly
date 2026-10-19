@@ -1388,7 +1388,7 @@ define WriteCensus
             match n
                 case "int" case "i8" case "i16" case "i32" case "i64" case "u8": return true
                 case "u16" case "u32" case "u64" case "size_t" case "bool" case "char": return true
-                case "float" case "double" case "f32" case "f64" case "void": return true
+                case "float" case "double" case "f32" case "f64" case "void" case "()": return true
             false
         }
 

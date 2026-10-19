@@ -1562,6 +1562,7 @@ define Emitter
         {
             ; void
             register_intrinsic_type("void", LLVMVoidTypeInContext context, 0, 0, false)
+            register_intrinsic_type("()", LLVMVoidTypeInContext context, 0, 0, false)
 
             ; bool (i1)
             register_intrinsic_type("bool", LLVMInt1TypeInContext context, 1, 1, false)
@@ -3477,7 +3478,7 @@ define Emitter
 
             ; A tuple type (Planner.tuple_type#) is the literal struct of its
             ; components, the struct emit_tuple builds for a tuple value.
-            if planned_type.name = "()" and planned_type.generics <> null
+            if planned_type.name = "(,)" and planned_type.generics <> null
             {
                 let tgens (*planned_type.generics)
                 if tgens.length > 0
@@ -4696,7 +4697,7 @@ define Emitter
             ; SIMD vectors: <lanes x element>
             if Planner.is_simd_type_name(name)
                 return LLVMVectorType(this.map_intrinsic_type_by_name(Planner.simd_element_name(name)), Planner.simd_lanes(name) as u32)
-            if name = "void"
+            if name = "void" or name = "()"
                 return LLVMVoidTypeInContext context
             if name = "bool"
                 return LLVMInt1TypeInContext context
@@ -9517,7 +9518,7 @@ define Emitter
                     ; never runs the Emitter, so it is unaffected.
                     if access.is_method = false
                         if access.is_union_value = false
-                            if access.result_type.name = "void"
+                            if Planner.is_unit_type(access.result_type)
                                 if access.parent_type.name.get_length() > 0
                                 {
                                     let mac_pty map_type access.parent_type
@@ -9640,7 +9641,7 @@ define Emitter
                                 ; keep the lenient bail.
                                 if access.is_method = false
                                     if access.is_union_value = false
-                                        if access.result_type.name <> "void"
+                                        if Planner.is_unit_type(access.result_type) = false
                                             if deref_parent.name.get_length() > 0
                                             {
                                                 scaly_eputs "Emitter: no layout for field access: "
@@ -9706,7 +9707,7 @@ define Emitter
                     ; Use void type as placeholder when no type info available
                     let void_type PlannedType(
                         Span(0, 0),
-                        "void",
+                        "()",
                         "v",
                         null,
                         Lifetime.Unspecified(Unspecified()),
@@ -10041,7 +10042,7 @@ define Emitter
                 LLVMSetLinkage(real_fn, LLVMLinkage.External())
             }
             let result LLVMBuildCall2(builder, real_ty, real_fn, real_args.data, n_real as u32, "")
-            if clo.return_type.name = "void"
+            if Planner.is_unit_type(clo.return_type)
                 LLVMBuildRetVoid builder
             else
                 LLVMBuildRet(builder, result)
@@ -10837,7 +10838,7 @@ define Emitter
                             ; content pointer exactly like the cstr targets.
                             ; Without this the 43ef7ef2 loud-cast trap fires
                             ; on `"..." as pointer[void]` (io.scaly tests).
-                            if inner.name = "void"
+                            if Planner.is_unit_type(inner)
                                 result := true
                         }
                     }
@@ -11291,7 +11292,7 @@ define Emitter
         ; fix-only.
         function region_walker_descends(this, target: PlannedType) returns bool
         {
-            if target.name = "void"
+            if Planner.is_unit_type(target)
                 return false
             if target.name = "const_char"
                 return false
@@ -13485,7 +13486,7 @@ define Emitter
                                         ; s105: pointer[void] uses byte stride.
                                         ; map_type(void) returns LLVMVoidType
                                         ; which GEP rejects; fall back to i8.
-                                        if (*inner_ptr).name <> "void"
+                                        if Planner.is_unit_type((*inner_ptr)) = false
                                             elem_ty := stride_type(*inner_ptr)
                                     }
                                 }
@@ -15301,7 +15302,7 @@ define Emitter
             var struct_type lookup_struct_cache tuple.tuple_type.mangled_name
             ; a tuple VALUE (Planner.tuple_value#) has its type: a record
             ; component is held by value there, as in a record
-            if struct_type = null and tuple.tuple_type.name = "()"
+            if struct_type = null and tuple.tuple_type.name = "(,)"
                 struct_type := map_type(tuple.tuple_type)
             if struct_type = null
             {
@@ -16670,7 +16671,7 @@ define Emitter
                                         if rc_ptr <> null
                                         {
                                             let rc (*rc_ptr)
-                                            if rc.variant_type.name <> "void"
+                                            if Planner.is_unit_type(rc.variant_type) = false
                                                 has_resolved_variant := true
                                         }
                                         ri := ri + 1
@@ -20305,7 +20306,7 @@ define Emitter
             ; Allocate the break-value slot unless the repeat is value-less (void).
             var result_slot: LLVMValueRef null
             var value_llvm_ty: LLVMTypeRef null
-            if repeat_expr.value_type.name <> "void"
+            if Planner.is_unit_type(repeat_expr.value_type) = false
             {
                 value_llvm_ty := map_type(repeat_expr.value_type)
                 var slot_name "repeat.result"
@@ -20455,7 +20456,7 @@ define Emitter
 
                     if arm.name.length() > 0
                     {
-                        if arm.variant_type.name <> "void"
+                        if Planner.is_unit_type(arm.variant_type) = false
                         {
                             let pay_ty map_type arm.variant_type
                             let pay_slot entry_alloca(pay_ty, "panic.payload")
@@ -20713,7 +20714,7 @@ define Emitter
                         ; void type is invalid IR.
                         if catch_case.name.length() > 0
                         {
-                            if catch_case.variant_type.name <> "void"
+                            if Planner.is_unit_type(catch_case.variant_type) = false
                             {
                                 let err_ty map_type catch_case.variant_type
                                 let err_value LLVMBuildLoad2(builder, err_ty, payload_ptr, "err.val")
