@@ -1,0 +1,55 @@
+; More forms of a put-in (2026-10-19, Planner.put_in_lazy_call#): a lazy
+; argument holding another put-in, a lazy parameter handed on to the next
+; function with one (evaluated where THAT body names it), a body with a
+; binding of its own, records as lazy arguments, a put-in inside a lambda.
+; Expected: PASS
+mutable count: int 0
+
+procedure bump(by: int) returns int mutable count
+{
+    count := count + by
+    by
+}
+
+function or_else(value: int, fallback: lazy int) returns int
+    if value <> 0: value else fallback
+
+function twice(x: lazy int) returns int
+    x + x
+
+function either(a: lazy int, b: lazy int) returns int
+    or_else(a, b)
+
+function scaled(x: int, y: lazy int) returns int
+{
+    let t x * 2
+    t + y
+}
+
+function name_or(s: String, other: lazy String) returns String
+    if s.get_length() > 0: s else other
+
+define IntFn delegate(int) returns int
+
+function apply(f: IntFn, v: int) returns int
+    f(v)
+
+procedure run() returns bool mutable count
+{
+    let n1 twice(or_else(0, bump(1)))
+    let c1 count
+    let n2 either(0, bump(10))
+    let c2 count
+    let n3 either(4, bump(100))
+    let c3 count
+    let n4 scaled(5, 1)
+    let s1 name_or(String(""), String("fallback"))
+    let s2 name_or(String("given"), String("unused"))
+    let n5 apply(\v: or_else(v, 9), 0)
+    n1 = 2 and c1 = 2 and n2 = 10 and c2 = 12 and n3 = 4 and c3 = 12 and n4 = 11 and s1.equals("fallback") and s2.equals("given") and n5 = 9
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

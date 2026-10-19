@@ -1,0 +1,11 @@
+; A function with a lazy parameter answers its body's last value; a return
+; would leave the routine it is put in (2026-10-19, Planner.plan_return#).
+; xfail: a function with a lazy parameter answers its body's last value
+function or_else(value: int, fallback: lazy int) returns int
+{
+    if value <> 0
+        return value
+    fallback
+}
+
+print "`or_else(0, 5)`"

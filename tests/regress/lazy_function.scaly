@@ -1,0 +1,42 @@
+; A free function with a lazy parameter is put in where it is called
+; (2026-10-19, ROADMAP-operation.md, Short circuit: "it holds for every
+; routine"; Planner.put_in_lazy_call#): its body stands at the call, an
+; ordinary argument is evaluated once, in the order written, a lazy one where
+; the body names it -- never where the body does not, twice where it names it
+; twice. Before, a lazy parameter of a function was refused (rc 4).
+; Expected: PASS
+mutable count: int 0
+
+procedure bump(by: int) returns int mutable count
+{
+    count := count + by
+    by
+}
+
+function or_else(value: int, fallback: lazy int) returns int
+    if value <> 0: value else fallback
+
+function twice(x: lazy int) returns int
+    x + x
+
+function pick(first: int, second: int, chosen: lazy int) returns int
+    first * 100 + second * 10 + chosen
+
+procedure run() returns bool mutable count
+{
+    let a or_else(3, bump(1))
+    let skipped count
+    let b or_else(0, bump(5))
+    let once count
+    let c twice(bump(2))
+    let doubled count
+    let d pick(bump(1), bump(2), 7)
+    let g or_else
+    let e g(0, 4)
+    a = 3 and skipped = 0 and b = 5 and once = 5 and c = 4 and doubled = 9 and d = 127 and count = 12 and e = 4
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

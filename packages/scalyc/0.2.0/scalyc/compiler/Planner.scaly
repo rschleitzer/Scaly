@@ -435,6 +435,21 @@ define Planner
         var taken: bool
     )
 
+    ; the argument of a lazy parameter of a function being put in
+    ; (put_in_lazy_call#): its operation, planned where the body names it, in
+    ; the scopes of the caller (plan_lazy_arg#)
+    define LazyArg
+    (
+        name: String
+        ops: Vector[Operand]
+        caller_len: size_t
+        caller_bnd: size_t
+        caller_iso: size_t
+        caller_frame: size_t
+        own_frame: size_t
+        caller_ret: ref[PlannedType]?
+    )
+
     ; what application_target# answers
     define ApplicationTarget
     (
@@ -888,6 +903,16 @@ define Planner
         ; methods named without a tuple, waiting for a delegate (BareMethod)
         var bare_methods: Array[BareMethod]
         var statement_depth: size_t
+        ; functions with a lazy parameter, put in where they are called
+        ; (put_in_lazy_call#): whether there is one, the arguments of the
+        ; put-ins under way, the first of the innermost one's, the names
+        ; being put in, and the names an argument must not mention because
+        ; the put-in binds them where it is evaluated (lazy_shadows)
+        var has_lazy_functions: bool
+        var lazy_args: Array[LazyArg]
+        var lazy_frame: size_t
+        var lazy_putins: Array[String]
+        var lazy_shadows: Array[String]
         ; Hole-1 field provenance (escape soundness): names of frame-local
         ; VALUE-struct bindings constructed with a Local-ref argument
         ; (`let h Holder(&b)` where &b points into this frame). A later
@@ -1594,6 +1619,11 @@ define Planner
             lambda_arg_starts := Array[size_t]^this()
             bare_methods := Array[BareMethod]^this()
             statement_depth := 0
+            has_lazy_functions := false
+            lazy_args := Array[LazyArg]^this()
+            lazy_frame := 0
+            lazy_putins := Array[String]^this()
+            lazy_shadows := Array[String]^this()
             local_tainted_struct_bindings := Array[String]^this()
             local_frame_ref_struct_bindings := Array[String]^this()
             escaping_targets := Array[String]^this()
@@ -6593,6 +6623,8 @@ define Planner
         procedure register_function(mutable this: Planner, f: Function)
         {
             this.check_duplicate_function(f)
+            if Planner.items_have_attribute(f.input, "lazy")
+                has_lazy_functions := true
             model_functions.add(KeyValuePair[String, Function](f.name, f))
             model_function_index.insert(f.name, model_functions.length - 1)
             function_origin_paths.add(String^this(registering_path))
@@ -7789,6 +7821,10 @@ define Planner
                 return
             var g generic
             if f.parameters.length > 0
+                g := true
+            ; one with a lazy parameter keeps its body, as a generic does: it
+            ; is what a caller puts in
+            if Planner.items_have_attribute(f.input, "lazy")
                 g := true
             var explicit false
             if f.page_parameter <> null
@@ -23530,6 +23566,42 @@ define Planner
 
         procedure plan_type_operand(mutable this: Planner, mutable t: Type, loc: Span) returns PlannedOperand
         {
+            ; the lazy parameter of a function being put in: its argument,
+            ; planned where it is named (plan_lazy_arg#)
+            if lazy_args.length > lazy_frame and t.name.length = 1 and t.generics = null
+            {
+                let lname t.name[0]
+                if this.lookup_local_binding(lname) = null
+                {
+                    var lk lazy_args.length
+                    while lk > lazy_frame
+                    {
+                        lk := lk - 1
+                        if lazy_args[lk].name.equals(lname)
+                            return this.plan_lazy_arg(lk)
+                    }
+                }
+            }
+            ; an argument of a put-in naming a caller's local that the put-in
+            ; binds too: the emitted block would read its own (lazy_shadows)
+            if lazy_shadows.length > 0 and t.name.length >= 1
+            {
+                let sname t.name[0]
+                if this.lookup_local_binding(sname) <> null
+                {
+                    var sk: size_t 0
+                    while sk < lazy_shadows.length
+                    {
+                        if lazy_shadows[sk].equals(sname)
+                        {
+                            this.add_diagnostic(loc, String^this("this argument of a function with a lazy parameter names `sname`, which the function binds where the argument is evaluated: rename one of them"))
+                            sk := lazy_shadows.length
+                        }
+                        else
+                            sk := sk + 1
+                    }
+                }
+            }
             ; a name bound to a function plans as that function's name
             if has_function_aliases and t.name.length = 1 and t.generics = null
             {
@@ -30406,6 +30478,8 @@ define Planner
             }
             this.report_absorbed_after_control(ops)
             var result Vector[PlannedOperand](ops.length)
+            ; the tuples a put-in took (put_in_lazy_call#), left out below
+            var lazy_taken Array[size_t]()
             var i: size_t 0
             while i < ops.length
             {
@@ -30413,6 +30487,25 @@ define Planner
                 if op_ptr <> null
                 {
                     let op (*op_ptr)
+                    ; a call of a function with a lazy parameter is its body,
+                    ; put in where it stands
+                    if has_lazy_functions and i + 1 < ops.length
+                    {
+                        let lcallee this.lazy_callee(op)
+                        if lcallee.get_length() > 0
+                        {
+                            choose ops[i + 1].expression
+                                when ltp: Tuple
+                                {
+                                    result.put(i, this.put_in_lazy_call(lcallee, ltp, op.span))
+                                    lazy_taken.add(i + 1)
+                                    i := i + 2
+                                    continue
+                                }
+                                else
+                                    0
+                        }
+                    }
                     ; s184 unit-variant lookahead: only a Type operand
                     ; NOT followed by an argument Tuple and carrying no
                     ; member chain qualifies — `Union.Unit()` (with
@@ -30455,9 +30548,273 @@ define Planner
                 }
                 i := i + 1
             }
+            if lazy_taken.length > 0
+            {
+                var compact Vector[PlannedOperand](ops.length - lazy_taken.length)
+                var ci: size_t 0
+                var ri: size_t 0
+                var ti: size_t 0
+                while ri < ops.length
+                {
+                    if ti < lazy_taken.length and lazy_taken[ti] = ri
+                        ti := ti + 1
+                    else
+                    {
+                        compact.put(ci, result[ri])
+                        ci := ci + 1
+                    }
+                    ri := ri + 1
+                }
+                return compact
+            }
             if this.operation_census_on()
                 this.operation_census(ops, result)
             result
+        }
+
+        ; lazy_callee#: the function a bare name before a tuple calls when one
+        ; of its parameters is lazy -- through a name it is bound to
+        ; (`let g or_else`) --, "" otherwise
+        procedure lazy_callee(mutable this: Planner, op: Operand) returns String
+        {
+            if op.member_access <> null
+                return ""
+            choose op.expression
+                when t: Type
+                {
+                    if t.name.length <> 1 or t.generics <> null
+                        return ""
+                    let head t.name[0]
+                    if this.lookup_local_binding(head) <> null
+                        return ""
+                    var target String(head)
+                    let aliased this.function_alias_target(head)
+                    if aliased.get_length() > 0
+                        target := aliased
+                    if this.lazy_candidates(target).length > 0
+                        return target
+                    return ""
+                }
+                else
+                    return ""
+        }
+
+        ; the free functions of that name of which a parameter is lazy
+        function lazy_candidates(this: Planner, name: String) returns Vector[Function]
+        {
+            let all this.lookup_functions(name)
+            var found Array[Function]()
+            var i: size_t 0
+            while i < all.length
+            {
+                if Planner.items_have_attribute(all[i].input, "lazy")
+                    found.add(all[i])
+                i := i + 1
+            }
+            Vector[Function](found)
+        }
+
+        ; put_in_lazy_call#: a call of a function with a lazy parameter
+        ; (ROADMAP-operation.md, Short circuit: it holds for every routine):
+        ; the function's body, put in where the call stands, as a block --
+        ; each ordinary argument evaluated once, in the order written, and
+        ; bound to its parameter; a lazy one planned wherever the body names
+        ; it, and evaluated there (plan_lazy_arg#), never if the body does
+        ; not. The body sees its own names only (scope_isolation_base), an
+        ; argument the caller's only; a name the emitter would resolve to the
+        ; wrong binding is refused (lazy_shadows). So far: a free function,
+        ; not generic, whose body is here and holds no `return`; the function
+        ; itself is never a routine (plan_module#).
+        procedure put_in_lazy_call(mutable this: Planner, name: String, mutable args: Tuple, span: Span) returns PlannedOperand
+        {
+            let none PlannedOperand(span, PlannedExpression.Type(Planner.make_void_type()), null, Planner.make_void_type())
+            let cands this.lazy_candidates(name)
+            if cands.length <> 1
+            {
+                this.add_diagnostic(span, String^this("a function with a lazy parameter is put in where it is called, so it has ONE declaration: `name` has `cands.length`"))
+                return none
+            }
+            let f cands[0]
+            if f.parameters.length > 0
+            {
+                this.add_diagnostic(span, String^this("a generic function with a lazy parameter is not put in yet: `name`"))
+                return none
+            }
+            var has_body false
+            var act Action(Vector[Operand](0), Vector[Operand](0))
+            choose f.implementation
+                when a: Action
+                {
+                    act := a
+                    has_body := true
+                }
+                else
+                    0
+            if has_body = false
+            {
+                this.add_diagnostic(span, String^this("`name` takes a lazy parameter and its body is not here to put in"))
+                return none
+            }
+            if args.components.length <> f.input.length
+            {
+                this.add_diagnostic(span, String^this("wrong number of arguments for `name`: got `args.components.length`, expected `f.input.length`"))
+                return none
+            }
+            var pi: size_t 0
+            while pi < lazy_putins.length
+            {
+                if lazy_putins[pi].equals(name)
+                {
+                    this.add_diagnostic(span, String^this("`name` takes a lazy parameter and calls itself: a body put in where it is called cannot put itself in"))
+                    return none
+                }
+                pi := pi + 1
+            }
+            ; the ordinary arguments, once, in the order written -- each
+            ; evaluated after the parameters before it are bound, so it may
+            ; not mention their names (lazy_shadows)
+            var planned Array[PlannedOperand]()
+            let shadows_before lazy_shadows.length
+            var k: size_t 0
+            while k < f.input.length
+            {
+                let it f.input[k]
+                if Planner.attributes_have(it.attributes, "lazy") = false
+                {
+                    planned.add(this.collapse_operand_sequence(this.plan_operands(args.components[k].value)))
+                    if it.name <> null
+                        lazy_shadows.add(String^this((*it.name)))
+                }
+                k := k + 1
+            }
+            lazy_shadows.length := shadows_before
+            ; the body
+            let caller_len scope_bindings.length
+            let caller_bnd scope_boundaries.length
+            let caller_iso scope_isolation_base
+            let caller_frame lazy_frame
+            let caller_ret current_return_type
+            this.push_scope()
+            scope_isolation_base := scope_bindings.length
+            lazy_frame := lazy_args.length
+            var stmts Array[PlannedStatement]()
+            var pk: size_t 0
+            k := 0
+            while k < f.input.length
+            {
+                let it f.input[k]
+                if it.name <> null
+                {
+                    let pname String^this((*it.name))
+                    if Planner.attributes_have(it.attributes, "lazy")
+                        lazy_args.add(LazyArg(pname, this.operands_here(args.components[k].value), caller_len, caller_bnd, caller_iso, caller_frame, lazy_frame, caller_ret))
+                    else
+                    {
+                        let pa planned[pk]
+                        pk := pk + 1
+                        var ptype: PlannedType pa.result_type
+                        if it.type <> null
+                            ptype := this.plan_type((*it.type))
+                        this.define_local(pname, ptype, false, false)
+                        var ops_vec Vector[PlannedOperand]^this(1)
+                        ops_vec.put(0, pa)
+                        var name_h Vector[String]^this(1)
+                        name_h.put(0, pname)
+                        var type_h Vector[PlannedType]^this(1)
+                        type_h.put(0, ptype)
+                        stmts.add(PlannedStatement.Binding(PlannedBinding(span, "const", PlannedItem(span, false, name_h.get(0), type_h.get(0), null), &ops_vec)))
+                    }
+                }
+                k := k + 1
+            }
+            current_return_type := null
+            if f.returns_ <> null
+                current_return_type := &^this this.plan_type((*f.returns_))
+            lazy_putins.add(String^this(name))
+            let body this.plan_statement(Statement.Action(act))
+            lazy_putins.length := lazy_putins.length - 1
+            current_return_type := caller_ret
+            lazy_args.length := lazy_frame
+            lazy_frame := caller_frame
+            scope_isolation_base := caller_iso
+            this.pop_scope()
+            stmts.add body
+            var stmts_vec Vector[PlannedStatement]^this(stmts)
+            let block PlannedBlock(span, &stmts_vec)
+            PlannedOperand(span, PlannedExpression.Block block, null, Planner.block_tail_type(body))
+        }
+
+        ; plan_lazy_arg#: the argument of a lazy parameter where the body
+        ; names it -- planned in the scopes of the CALLER, the body's own
+        ; bindings set aside meanwhile; a caller's name that one of them
+        ; would hide in the emitted block is refused (lazy_shadows)
+        procedure plan_lazy_arg(mutable this: Planner, k: size_t) returns PlannedOperand
+        {
+            let e lazy_args[k]
+            var saved_b Array[KeyValuePair[String, LocalBinding]]()
+            var bi e.caller_len
+            while bi < scope_bindings.length
+            {
+                saved_b.add(scope_bindings[bi])
+                bi := bi + 1
+            }
+            var saved_d Array[size_t]()
+            var di e.caller_bnd
+            while di < scope_boundaries.length
+            {
+                saved_d.add(scope_boundaries[di])
+                di := di + 1
+            }
+            var saved_l Array[LazyArg]()
+            var li e.own_frame
+            while li < lazy_args.length
+            {
+                saved_l.add(lazy_args[li])
+                li := li + 1
+            }
+            let shadows_before lazy_shadows.length
+            var si: size_t 0
+            while si < saved_b.length
+            {
+                lazy_shadows.add(String^this(saved_b[si].key))
+                si := si + 1
+            }
+            let saved_iso scope_isolation_base
+            let saved_frame lazy_frame
+            let saved_ret current_return_type
+            scope_bindings.length := e.caller_len
+            scope_boundaries.length := e.caller_bnd
+            lazy_args.length := e.own_frame
+            scope_isolation_base := e.caller_iso
+            lazy_frame := e.caller_frame
+            current_return_type := e.caller_ret
+            let arg this.collapse_operand_sequence(this.plan_operands(e.ops))
+            scope_bindings.length := e.caller_len
+            scope_boundaries.length := e.caller_bnd
+            lazy_args.length := e.own_frame
+            bi := 0
+            while bi < saved_b.length
+            {
+                scope_bindings.add(saved_b[bi])
+                bi := bi + 1
+            }
+            di := 0
+            while di < saved_d.length
+            {
+                scope_boundaries.add(saved_d[di])
+                di := di + 1
+            }
+            li := 0
+            while li < saved_l.length
+            {
+                lazy_args.add(saved_l[li])
+                li := li + 1
+            }
+            lazy_shadows.length := shadows_before
+            scope_isolation_base := saved_iso
+            lazy_frame := saved_frame
+            current_return_type := saved_ret
+            arg
         }
 
         ; ================================================================
@@ -49483,6 +49840,8 @@ define Planner
 
         procedure plan_return(mutable this: Planner, mutable r: Return) returns PlannedReturn
         {
+            if lazy_putins.length > 0
+                this.add_diagnostic(r.span, String^this("a function with a lazy parameter answers its body's last value: a return would leave the routine it is put in"))
             ; GAP B: `return \x: …` where the function's return type is a delegate
             ; yields an ESCAPING closure — env on the caller page (`#`) so it
             ; outlives this frame. Mirrors the typed-binding closure path, but
@@ -52984,11 +53343,12 @@ define Planner
             this.report_declared_caller_page(f.input)
             if f.pure
                 this.report_mutable_in_function(f)
-            ; a lazy parameter is put in where its routine is called, and so
-            ; far only an operator's is (read_lazy_operators#): a function's
-            ; would be evaluated before the call without a word
+            ; a lazy parameter is put in where its routine is called: an
+            ; operator's (read_lazy_operators#) and a free function's
+            ; (put_in_lazy_call#), which are never planned as routines -- a
+            ; method's would be evaluated before the call without a word
             if Planner.items_have_attribute(f.input, "lazy")
-                this.add_diagnostic(f.span, String^this("a lazy parameter is so far taken only by a binary operator whose body is an if on its other operand, as the standard library's and and or are; a function would evaluate it before the call"))
+                this.add_diagnostic(f.span, String^this("a lazy parameter is so far taken by an operator and by a free function, which are put in where they are called; a method would evaluate it before the call"))
 
             ; For generic functions with no explicit instantiation,
             ; seed each type parameter with a fresh type variable so
@@ -55839,7 +56199,11 @@ define Planner
                     choose mem
                         when f: Function
                         {
-                            functions.add(this.plan_function(f, null))
+                            ; a function with a lazy parameter is never a
+                            ; routine: it is put in where it is called
+                            ; (put_in_lazy_call#)
+                            if Planner.items_have_attribute(f.input, "lazy") = false
+                                functions.add(this.plan_function(f, null))
                             0
                         }
                         when o: Operator

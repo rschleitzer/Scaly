@@ -1,0 +1,14 @@
+; An argument of a function with a lazy parameter that names a caller's local
+; the function binds where the argument is evaluated is refused (2026-10-19,
+; Planner.lazy_shadows): the emitted block would read the function's own.
+; xfail: names value, which the function binds where the argument is evaluated
+function or_else(value: int, fallback: lazy int) returns int
+    if value <> 0: value else fallback
+
+procedure run() returns int
+{
+    let value 7
+    or_else(0, value)
+}
+
+print "`run()`"
