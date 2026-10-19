@@ -29,7 +29,7 @@ define rpc
     {
         var c: u8 0
         let cp &c
-        let n read(RPC_STDIN_FD, cp as pointer[void], 1 as size_t)
+        let n read(RPC_STDIN_FD, cp as pointer[void], 1)
         ; Read the byte back THROUGH the pointer: `read` wrote it via cp,
         ; and stage-0 does not reload an escaped local (`c as int` returns
         ; the stale pre-read value), so deref cp to force a memory load.
@@ -53,15 +53,15 @@ define rpc
         while total < n
         {
             let dst (buf as pointer[u8] + total) as pointer[void]
-            let got read(RPC_STDIN_FD, dst, n - total)
+            let got read(RPC_STDIN_FD, dst, n - total as c_size)
 
             if got = 0          ; EOF
                 return
 
-            if got > (n - total)            ; (size_t)-1 error wraps high
+            if got > (n - total as c_size)            ; (size_t)-1 error wraps high
                 return
 
-            total := total + got
+            total := total + (got as size_t)
         }
     }
 
@@ -169,15 +169,15 @@ define rpc
         while total < len
         {
             let dst (buf + total) as pointer[void]
-            let w write(RPC_STDOUT_FD, dst, len - total)
+            let w write(RPC_STDOUT_FD, dst, len - total as c_size)
 
             if w = 0
                 return
 
-            if w > (len - total)        ; (size_t)-1 error wraps high
+            if w > (len - total as c_size)        ; (size_t)-1 error wraps high
                 return
 
-            total := total + w
+            total := total + (w as size_t)
         }
     }
 
@@ -218,7 +218,7 @@ define rpc
     {
         var c: u8 0
         let cp &c
-        let n read(fd, cp as pointer[void], 1 as size_t)
+        let n read(fd as i32, cp as pointer[void], 1)
         if n = 1
         {
             ; The typed binding is what performs the LOAD: an `as` cast on a
@@ -238,15 +238,15 @@ define rpc
         while total < n
         {
             let dst (buf as pointer[u8] + total) as pointer[void]
-            let got read(fd, dst, n - total)
+            let got read(fd as i32, dst, n - total as c_size)
 
             if got = 0
                 return
 
-            if got > (n - total)
+            if got > (n - total as c_size)
                 return
 
-            total := total + got
+            total := total + (got as size_t)
         }
     }
 
@@ -306,20 +306,20 @@ define rpc
         while total < len
         {
             let dst (buf + total) as pointer[void]
-            let w write(fd, dst, len - total)
+            let w write(fd as i32, dst, len - total as c_size)
 
             ; write() is C's ssize_t: -1 on error (EPIPE when the worker pipe's
             ; reader has died — the crash-isolation path), 0 at EOF. As a size_t,
             ; (size_t)-1 wraps high, so `w > remaining` detects the error — now
             ; correct under both compilers (the self-hosted emitter emits an
             ; unsigned `ugt` for size_t comparisons).
-            if w > (len - total)        ; (size_t)-1 error wraps high
+            if w > (len - total as c_size)        ; (size_t)-1 error wraps high
                 return
 
             if w = 0
                 return
 
-            total := total + w
+            total := total + (w as size_t)
         }
     }
 

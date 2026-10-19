@@ -8,7 +8,7 @@
 ; current block is such a page of its own.
 
 ; memmove(3) — the input buffer slides its unconsumed tail to the front.
-function memmove(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
+function memmove(dest: pointer[void], src: pointer[void], count: c_size) returns pointer[void] extern
 
 define ByteBuf
 (
@@ -69,7 +69,7 @@ define ByteBuf
             owned := true
         }
         if length > 0
-            memcpy(data.data as pointer[void], old.data as pointer[void], length)
+            memcpy(data.data as pointer[void], old.data as pointer[void], length as c_size)
         if old_owned
             host.deallocate_exclusive_page(Page.get(old.data))
     }
@@ -85,7 +85,7 @@ define ByteBuf
             return
         }
         let rest length - n
-        memmove(data.data as pointer[void], data.slice_from(n).data as pointer[void], rest)
+        memmove(data.data as pointer[void], data.slice_from(n).data as pointer[void], rest as c_size)
         length := rest
     }
 
@@ -94,7 +94,7 @@ define ByteBuf
         if s.length = 0
             return
         this.reserve(s.length)
-        memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length)
+        memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length as c_size)
         length := length + s.length
     }
 

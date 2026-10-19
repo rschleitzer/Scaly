@@ -130,7 +130,7 @@ function scaly_fmt_scratch_ptr() returns pointer[char]
 
 procedure scaly_eputs(s: pointer[const_char])
 {
-    write(2 as int, s as pointer[void], strlen s)
+    write(2, s as pointer[void], strlen s)
 }
 
 procedure scaly_eputnl()
@@ -140,7 +140,7 @@ procedure scaly_eputnl()
     ; (garbage), not the newline. Write the LF byte from the scratch buffer.
     let buf scaly_fmt_scratch_ptr()
     *buf := ("\n" as char)
-    write(2 as int, buf as pointer[void], 1 as size_t)
+    write(2, buf as pointer[void], 1)
 }
 
 ; Unsigned decimal. It exists because scaly_eputi takes an i64, and a SIZE
@@ -165,7 +165,7 @@ procedure scaly_eputu(n: u64)
         val := val / 10
     }
     let len 31 - pos
-    write(2 as int, (buf + pos) as pointer[void], len as size_t)
+    write(2, (buf + pos) as pointer[void], len as c_size)
 }
 
 procedure scaly_eputi(n: i64)
@@ -200,7 +200,7 @@ procedure scaly_eputi(n: i64)
         *(buf + pos) := "-" as char
     }
     let len 31 - pos
-    write(2 as int, (buf + pos) as pointer[void], len as size_t)
+    write(2, (buf + pos) as pointer[void], len as c_size)
 }
 
 ; The catch-point shim (scaly/memory/panic.c). scaly_panic_jump answers 0 when
@@ -650,7 +650,7 @@ procedure scaly_eputp(p: pointer[void])
         val := val >> 4
         i := i - 1
     }
-    write(2 as int, buf as pointer[void], 18 as size_t)
+    write(2, buf as pointer[void], 18)
 }
 
 ; --------------------------------------------------------------------------
@@ -1016,7 +1016,7 @@ procedure scaly_release_root_page(p: pointer[Page])
     ; without this a dangling read of a frame-local value survived unpoisoned
     ; (measured 2026-09-22, tests/escape/pending/bound_result.scaly).
     if page_poison
-        memset(p as pointer[void], 0xDD, PAGE_SIZE)
+        memset(p as pointer[void], 0xDD, PAGE_SIZE as c_size)
 
     let bucket stack_bucket_of p
     let first first_usable_page bucket

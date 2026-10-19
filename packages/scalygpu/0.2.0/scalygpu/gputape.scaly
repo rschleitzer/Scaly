@@ -50,8 +50,8 @@ function exit(code: i32) extern
 function powf(x: float, y: float) returns float extern
 function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[OpaqueFile] extern
 function fclose(stream: pointer[OpaqueFile]) returns i32 extern
-function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
-function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
+function fread(ptr: pointer[void], size: c_size, count: c_size, stream: pointer[OpaqueFile]) returns c_size extern
+function fwrite(ptr: pointer[void], size: c_size, count: c_size, stream: pointer[OpaqueFile]) returns c_size extern
 
 function scaly_mgpu_available() returns i32 extern
 function scaly_mgpu_init() returns i32 extern
@@ -616,14 +616,14 @@ define GpuTape
         let f fopen(path, "wb")
         if f = null
             return 0
-        fwrite(cfg.data as pointer[void], 4, cfg.length, f)
+        fwrite(cfg.data as pointer[void], 4, cfg.length as c_size, f)
         let pp pids.data
         var i 0
         while i < nparam
         {
             let node tape.nodes.at(pp[i])
             let total node.rows * node.cols
-            fwrite(node.value.data as pointer[void], 4, total as size_t, f)
+            fwrite(node.value.data as pointer[void], 4, total as c_size, f)
             i := i + 1
         }
         fclose(f)
@@ -642,7 +642,7 @@ define GpuTape
             return 0
         let clen cfg.length as int
         var hdr Vector[i32](cfg.length)
-        let got fread(hdr.data as pointer[void], 4, cfg.length, f)
+        let got fread(hdr.data as pointer[void], 4, cfg.length as c_size, f)
         var ok 1
         if (got as int) <> clen
             ok := 0
@@ -666,7 +666,7 @@ define GpuTape
         {
             let node tape.nodes.at(pp[li])
             let total node.rows * node.cols
-            fread(node.value.data as pointer[void], 4, total as size_t, f)
+            fread(node.value.data as pointer[void], 4, total as c_size, f)
             li := li + 1
         }
         fclose(f)

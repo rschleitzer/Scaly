@@ -47,7 +47,7 @@ define StringBuilder
 
     procedure append(mutable this: StringBuilder, c_string: pointer[const_char])
     {
-        let length strlen c_string
+        let length strlen(c_string) as size_t
         if length = 0
             return
 

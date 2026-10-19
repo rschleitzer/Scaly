@@ -130,7 +130,7 @@ define Slice[T](var length: size_t, var data: pointer[T])
         if length = 0
             return true
 
-        memcmp(data as pointer[void], other.data as pointer[void], length * sizeof T) = 0
+        memcmp(data as pointer[void], other.data as pointer[void], length * sizeof T as c_size) = 0
     }
 
     ; Bodies inlined from equals() as call-free byte loops: stage-1's

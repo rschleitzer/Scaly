@@ -29,7 +29,7 @@ define RedisPool
 ; This thread's pool, made at its first acquire.
 mutable redis_pool: ref[RedisPool]? null
 
-procedure strlen(s: pointer[const_char]) returns size_t extern
+procedure strlen(s: pointer[const_char]) returns c_size extern
 
 ; The environment variable name as bytes, empty when unset.
 procedure redis_env(name: pointer[const_char]) returns Slice[u8]

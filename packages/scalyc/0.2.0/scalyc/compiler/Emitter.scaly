@@ -8761,7 +8761,7 @@ define Emitter
         ; caller must dispose; do NOT also call LLVMConsumeError.
         procedure report_jit_error(this, mutable err: LLVMErrorRef, ctx: Slice[char])
         {
-            write(1, ctx.data as pointer[void], ctx.length)
+            write(1, ctx.data as pointer[void], ctx.length as c_size)
             Console.println("")
             let msg LLVMGetErrorMessage(err)
             if msg <> null

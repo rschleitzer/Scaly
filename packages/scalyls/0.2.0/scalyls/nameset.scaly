@@ -32,7 +32,7 @@ use scaly.memory.runtime
 
 ; libc allocator (free comes from scaly.memory.runtime; malloc is declared
 ; locally — fixpoint-safe, no scaly/scalyc source is touched).
-function malloc(size: size_t) returns pointer[void] extern
+function malloc(size: c_size) returns pointer[void] extern
 
 ; Slot count: a power of two so the probe mask is cap-1. Sized for the whole
 ; packages/ tree (a few thousand distinct fn/type names across stdlib + the
@@ -104,7 +104,7 @@ define nameset
     function create(cap: size_t) returns pointer[NameSlot]
     {
         let bytes cap * sizeof NameSlot
-        let slots malloc(bytes) as pointer[NameSlot]
+        let slots malloc(bytes as c_size) as pointer[NameSlot]
         if slots = null
             return null
         var i: size_t 0

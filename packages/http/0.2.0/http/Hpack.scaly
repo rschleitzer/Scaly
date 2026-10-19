@@ -423,7 +423,7 @@ define HpackDecoder
             let from ring_start[s] as size_t
             let n (ring_name[s] as size_t) + (ring_value[s] as size_t)
             if n > 0 and from <> to
-                memmove(data.slice_from(to).data as pointer[void], data.slice_from(from).data as pointer[void], n)
+                memmove(data.slice_from(to).data as pointer[void], data.slice_from(from).data as pointer[void], n as c_size)
             ring_start.put(s, to as u32)
             to := to + n
         }
@@ -445,8 +445,8 @@ define HpackDecoder
         if used + name.length + value.length > data.length
             this.compact()
         let at used
-        memcpy(data.slice_from(at).data as pointer[void], name.data as pointer[void], name.length)
-        memcpy(data.slice_from(at + name.length).data as pointer[void], value.data as pointer[void], value.length)
+        memcpy(data.slice_from(at).data as pointer[void], name.data as pointer[void], name.length as c_size)
+        memcpy(data.slice_from(at + name.length).data as pointer[void], value.data as pointer[void], value.length as c_size)
         ring_start.put(head, at as u32)
         ring_name.put(head, name.length as u32)
         ring_value.put(head, value.length as u32)

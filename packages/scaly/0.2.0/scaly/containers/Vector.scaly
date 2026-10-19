@@ -73,7 +73,7 @@ define Vector[T]
         if len > 0
         {
             data := own_page.allocate(len * sizeof T, alignof T) as pointer[T]
-            memset(data, 0, len * sizeof T)
+            memset(data, 0, len * sizeof T as c_size)
         }
         else
             data := null
@@ -86,7 +86,7 @@ define Vector[T]
         if length > 0
         {
             data := own_page.allocate(length * sizeof T, alignof T) as pointer[T]
-            memcpy(data, other.data, length * sizeof T)
+            memcpy(data, other.data, length * sizeof T as c_size)
         }
         else
             data := null
@@ -99,7 +99,7 @@ define Vector[T]
         if length > 0
         {
             data := own_page.allocate(length * sizeof T, alignof T) as pointer[T]
-            memcpy(data, array.get_buffer(), length * sizeof T)
+            memcpy(data, array.get_buffer(), length * sizeof T as c_size)
         }
         else
             data := null

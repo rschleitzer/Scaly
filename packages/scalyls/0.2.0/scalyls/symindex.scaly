@@ -40,7 +40,7 @@ use scaly.memory.runtime
 ; libc allocator. free + memcpy come from scaly.memory.runtime; malloc is not
 ; declared there, so declare it here (fixpoint-safe — no scaly/scalyc source
 ; is touched).
-function malloc(size: size_t) returns pointer[void] extern
+function malloc(size: c_size) returns pointer[void] extern
 
 ; Max number of files tracked. The scaly + scalyc packages total ~30 files; a
 ; large monorepo workspace could have more, so allow generous headroom. A full
@@ -115,7 +115,7 @@ define symindex
         if idx_slots = null
         {
             let bytes (IDX_CAP as size_t) * sizeof IdxSlot
-            idx_slots := malloc(bytes) as pointer[IdxSlot]
+            idx_slots := malloc(bytes as c_size) as pointer[IdxSlot]
             if idx_slots = null
                 return
 
@@ -230,10 +230,10 @@ define symindex
         let len blob.get_length()
         if len > 0
         {
-            let dst malloc(len) as pointer[u8]
+            let dst malloc(len as c_size) as pointer[u8]
             if dst <> null
             {
-                memcpy(dst as pointer[void], blob.get_buffer() as pointer[void], len)
+                memcpy(dst as pointer[void], blob.get_buffer() as pointer[void], len as c_size)
                 s.blob_data := dst
                 s.blob_len := len
             }
@@ -252,10 +252,10 @@ define symindex
         let len path.get_length()
         if len > 0
         {
-            let dst malloc(len) as pointer[u8]
+            let dst malloc(len as c_size) as pointer[u8]
             if dst <> null
             {
-                memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len)
+                memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len as c_size)
                 s.path_data := dst
                 s.path_len := len
             }
@@ -314,7 +314,7 @@ define symindex
         if dir_slots = null
         {
             let bytes (DIR_CAP as size_t) * sizeof DirSlot
-            dir_slots := malloc(bytes) as pointer[DirSlot]
+            dir_slots := malloc(bytes as c_size) as pointer[DirSlot]
             if dir_slots = null
                 return
             var i 0
@@ -410,10 +410,10 @@ define symindex
         let len dir.get_length()
         if len > 0
         {
-            let dst malloc(len) as pointer[u8]
+            let dst malloc(len as c_size) as pointer[u8]
             if dst <> null
             {
-                memcpy(dst as pointer[void], dir.get_buffer() as pointer[void], len)
+                memcpy(dst as pointer[void], dir.get_buffer() as pointer[void], len as c_size)
                 s.path_data := dst
                 s.path_len := len
             }
@@ -429,10 +429,10 @@ define symindex
         let len listing.get_length()
         if len > 0
         {
-            let dst malloc(len) as pointer[u8]
+            let dst malloc(len as c_size) as pointer[u8]
             if dst <> null
             {
-                memcpy(dst as pointer[void], listing.get_buffer() as pointer[void], len)
+                memcpy(dst as pointer[void], listing.get_buffer() as pointer[void], len as c_size)
                 s.list_data := dst
                 s.list_len := len
             }

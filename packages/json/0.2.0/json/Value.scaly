@@ -25,7 +25,7 @@ define STAGE_COMPLETE: int 2
 ; strtod(3) — fixed prototype, errno not consulted.
 function strtod(s: pointer[const_char], endp: pointer[pointer[u8]]) returns f64 extern
 ; memcpy(3): the document's copy
-procedure memcpy(mutable dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
+procedure memcpy(mutable dest: pointer[void], src: pointer[void], count: c_size) returns pointer[void] extern
 
 ; How many bytes a parse's document copy carries past its end: a VERBATIM
 ; string (below) may be read that far past any of its bytes, so the writer
@@ -71,7 +71,7 @@ define JsonArena
     {
         let padded allocate_slice[u8](Page.get(this), items.length + JSON_PADDING)
         if items.length > 0
-            memcpy(padded.data as pointer[void], items.data as pointer[void], items.length)
+            memcpy(padded.data as pointer[void], items.data as pointer[void], items.length as c_size)
         var i items.length
         while i < padded.length
         {
@@ -87,7 +87,7 @@ define JsonArena
         if n > JSON_CHUNK
         {
             let own allocate_slice[JsonValue](Page.get(this), n)
-            memcpy(own.data as pointer[void], items.data as pointer[void], n * sizeof JsonValue)
+            memcpy(own.data as pointer[void], items.data as pointer[void], n * sizeof JsonValue as c_size)
             return own
         }
         if value_used + n > value_room.length
@@ -112,7 +112,7 @@ define JsonArena
         if n > JSON_CHUNK
         {
             let own allocate_slice[JsonMember](Page.get(this), n)
-            memcpy(own.data as pointer[void], items.data as pointer[void], n * sizeof JsonMember)
+            memcpy(own.data as pointer[void], items.data as pointer[void], n * sizeof JsonMember as c_size)
             return own
         }
         if member_used + n > member_room.length

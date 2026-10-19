@@ -80,7 +80,7 @@ define String (data: pointer[u8](null))
             wi := wi + 1
         }
         *(data + wi) := wrest as u8
-        memcpy((data + counter + 1) as pointer[void], other, length)
+        memcpy((data + counter + 1) as pointer[void], other, length as c_size)
         *(data + overall_length) := 0
     }
 
@@ -108,14 +108,14 @@ define String (data: pointer[u8](null))
         }
         *(data + wi) := wrest as u8
         if other.length > 0
-            memcpy((data + counter + 1) as pointer[void], other.data, other.length)
+            memcpy((data + counter + 1) as pointer[void], other.data, other.length as c_size)
         *(data + overall_length) := 0
 
     }
 
     init(c_string: pointer[const_char])
     {
-        let length strlen c_string
+        let length strlen(c_string) as size_t
         if length = 0
         {
             data := null
@@ -142,7 +142,7 @@ define String (data: pointer[u8](null))
             wi := wi + 1
         }
         *(data + wi) := wrest as u8
-        memcpy((data + counter + 1) as pointer[void], c_string, length)
+        memcpy((data + counter + 1) as pointer[void], c_string, length as c_size)
         *(data + overall_length) := 0
     }
 
@@ -173,7 +173,7 @@ define String (data: pointer[u8](null))
         var overall_length index + 1 + length
         let own_page Page.get(this)
         data := own_page.allocate(overall_length + 1, 1) as pointer[u8]
-        memcpy(data, other.data, overall_length)
+        memcpy(data, other.data, overall_length as c_size)
         *(data + overall_length) := 0
     }
 
@@ -305,7 +305,7 @@ define String (data: pointer[u8](null))
             index := index + 1
         }
 
-        memcmp(data + index + 1, other.data + index + 1, length) = 0
+        memcmp(data + index + 1, other.data + index + 1, length as c_size) = 0
     }
 
     function equals(this: String, other: pointer[const_char]) returns bool
@@ -330,13 +330,13 @@ define String (data: pointer[u8](null))
             }
         }
 
-        if length <> strlen(other)
+        if length <> (strlen(other) as size_t)
             return false
 
         if data = null
             return true
 
-        memcmp(data + index + 1, other, length) = 0
+        memcmp(data + index + 1, other, length as c_size) = 0
     }
 
     function equals (this: String, other: Vector[char]) returns bool
@@ -361,7 +361,7 @@ define String (data: pointer[u8](null))
         if length <> other.length
             return false
 
-        memcmp(data + index + 1, other.data, length) = 0
+        memcmp(data + index + 1, other.data, length as c_size) = 0
     }
 
     function hash(this: String) returns size_t
@@ -457,7 +457,7 @@ define String (data: pointer[u8](null))
         var i: size_t 0
         while i <= this_len - other_len
         {
-            if memcmp(buf + i, other_buf, other_len) = 0
+            if memcmp(buf + i, other_buf, other_len as c_size) = 0
                 return true
 
             i := i + 1
@@ -478,14 +478,14 @@ define String (data: pointer[u8](null))
 
         let buf get_buffer()
         let prefix_buf prefix.get_buffer()
-        memcmp(buf, prefix_buf, prefix_len) = 0
+        memcmp(buf, prefix_buf, prefix_len as c_size) = 0
     }
 
     ; Check if string starts with C string prefix
     function starts_with(this: String, prefix: pointer[const_char]) returns bool
     {
         let this_len get_length()
-        let prefix_len strlen prefix
+        let prefix_len strlen(prefix) as size_t
         if prefix_len > this_len
             return false
 
@@ -493,7 +493,7 @@ define String (data: pointer[u8](null))
             return true
 
         let buf get_buffer()
-        memcmp(buf, prefix, prefix_len) = 0
+        memcmp(buf, prefix, prefix_len as c_size) = 0
     }
 
     ; Check if string ends with suffix
@@ -509,14 +509,14 @@ define String (data: pointer[u8](null))
 
         let buf get_buffer()
         let suffix_buf suffix.get_buffer()
-        memcmp(buf + this_len - suffix_len, suffix_buf, suffix_len) = 0
+        memcmp(buf + this_len - suffix_len, suffix_buf, suffix_len as c_size) = 0
     }
 
     ; Check if string ends with C string suffix
     function ends_with(this: String, suffix: pointer[const_char]) returns bool
     {
         let this_len get_length()
-        let suffix_len strlen suffix
+        let suffix_len strlen(suffix) as size_t
         if suffix_len > this_len
             return false
 
@@ -524,7 +524,7 @@ define String (data: pointer[u8](null))
             return true
 
         let buf get_buffer()
-        memcmp(buf + this_len - suffix_len, suffix, suffix_len) = 0
+        memcmp(buf + this_len - suffix_len, suffix, suffix_len as c_size) = 0
     }
 
     ; Find first occurrence of character, returns -1 if not found

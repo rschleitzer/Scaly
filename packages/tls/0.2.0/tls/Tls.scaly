@@ -108,7 +108,7 @@ define TlsOut
     {
         if length + bytes.length > data.length
             this.grow(bytes.length)
-        memcpy(data.slice_from(length).data as pointer[void], bytes.data as pointer[void], bytes.length)
+        memcpy(data.slice_from(length).data as pointer[void], bytes.data as pointer[void], bytes.length as c_size)
         length := length + bytes.length
     }
 
@@ -131,7 +131,7 @@ define TlsOut
             owned := true
         }
         if length > 0
-            memcpy(data.data as pointer[void], old.data as pointer[void], length)
+            memcpy(data.data as pointer[void], old.data as pointer[void], length as c_size)
         if old_owned
             page.deallocate_exclusive_page(Page.get(old.data))
     }

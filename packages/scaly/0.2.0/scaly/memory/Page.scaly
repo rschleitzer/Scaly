@@ -142,7 +142,7 @@ define Page
             if page_poison
             {
                 let osz Page.oversized_size(p)
-                memset(p as pointer[void], 0xDD, osz)
+                memset(p as pointer[void], 0xDD, osz as c_size)
                 scaly_aligned_free(p as pointer[void])
                 return
             }
@@ -168,7 +168,7 @@ define Page
         let b heap_bucket_of p
         let slot (((p as size_t) - (b as size_t)) / PAGE_SIZE) - 1
         if page_poison
-            memset(p as pointer[void], 0xDD, PAGE_SIZE)
+            memset(p as pointer[void], 0xDD, PAGE_SIZE as c_size)
 
         bucket_lock b
         let was_full b.bitmap = 0
@@ -692,7 +692,7 @@ define Page
         ; released, so overwrite it here — a dangling read into it survived
         ; SCALY_POISON otherwise (asked 2026-09-23, the dazzle frame mark)
         if page_poison and (now as size_t) > (mark as size_t)
-            memset(mark, 0xDD, (now as size_t) - (mark as size_t))
+            memset(mark, 0xDD, (now as size_t) - (mark as size_t) as c_size)
         mark_page.next_object := mark
         true
     }

@@ -799,7 +799,7 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
             ; a longer packet cannot ride behind shorter ones: the train
             ; goes, and this packet begins the next one
             h3_send_train(l, c, train_length, segment)
-            memmove(l.train.data as pointer[void], dest.data as pointer[void], size)
+            memmove(l.train.data as pointer[void], dest.data as pointer[void], size as c_size)
             train_length := 0
             segments := 0
         }

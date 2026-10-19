@@ -42,7 +42,7 @@ use scalyc.compiler.Modeler
 procedure scaly_proc_spawn_self(mode: pointer[const_char], mutable out_pid: pointer[i64], mutable out_write_fd: pointer[i32], mutable out_read_fd: pointer[i32]) returns i32 extern
 procedure scaly_proc_worker_fds(argc: int, argv: pointer[pointer[char]], mode: pointer[const_char], mutable in_fd: pointer[i32], mutable out_fd: pointer[i32]) returns i32 extern
 procedure scaly_proc_reap(pid: i64) returns i32 extern
-function close(fd: int) returns i32 extern
+function close(fd: i32) returns i32 extern
 
 ; instructions a part is given; a module with fewer is not cut.
 ; SCALYC_PART_INSTRUCTIONS sets another size (tests/tool: the standard
@@ -360,7 +360,7 @@ define Parts
         var used: size_t 0
         while used < 8191
         {
-            let n read(fd as int, (&buffer[0] as size_t + used) as pointer[void], 8191 - used)
+            let n read(fd, (&buffer[0] as size_t + used) as pointer[void], 8191 - used as c_size) as size_t
             if n = 0 or n > 8191
                 break
             used := used + n
@@ -374,7 +374,7 @@ define Parts
         let len text.get_length()
         while done < len
         {
-            let n write(fd as int, (text.get_buffer() as size_t + done) as pointer[void], len - done)
+            let n write(fd, (text.get_buffer() as size_t + done) as pointer[void], len - done as c_size) as size_t
             if n = 0 or n > len - done
                 return
             done := done + n
@@ -426,13 +426,13 @@ define Parts
         if scaly_proc_worker_fds(argc, argv, "--scalyc-part", &in_fd as pointer[i32], &out_fd as pointer[i32]) = 0
             return -1
         let request Parts.read_all(in_fd)
-        close(in_fd as int)
+        close(in_fd as i32)
         let ok Parts.emit_part(Parts.line_of(request, 0), Parts.number_of(Parts.line_of(request, 1)), Parts.number_of(Parts.line_of(request, 2)), Parts.line_of(request, 3), Parts.line_of(request, 4), Parts.number_of(Parts.line_of(request, 5)) as int)
         if ok
             Parts.write_all(out_fd, String("0\n"))
         else
             Parts.write_all(out_fd, String("1\n"))
-        close(out_fd as int)
+        close(out_fd as i32)
         if ok
             return 0
         1
@@ -447,7 +447,7 @@ define Parts
         if scaly_proc_spawn_self("--scalyc-part", &pid as pointer[i64], &to_worker as pointer[i32], &from_worker as pointer[i32]) <> 0
             return PartWorker(0, 0)
         Parts.write_all(to_worker, "`bitcode`\n`part`\n`parts`\n`output`\n`cpu`\n`level`\n")
-        close(to_worker as int)
+        close(to_worker as i32)
         PartWorker(pid, from_worker)
     }
 
@@ -457,7 +457,7 @@ define Parts
         if w.pid = 0
             return false
         let answer Parts.read_all(w.answer_fd)
-        close(w.answer_fd as int)
+        close(w.answer_fd as i32)
         scaly_proc_reap(w.pid)
         answer.starts_with("0")
     }

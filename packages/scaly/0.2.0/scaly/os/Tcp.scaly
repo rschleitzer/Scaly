@@ -106,7 +106,7 @@ procedure tcp_connect_worker(mutable arg: pointer[void]) returns pointer[void]
 procedure tcp_close_fd(fd: i32)
 {
     Io.unserved(fd)
-    close(fd as int)
+    close(fd as i32)
 }
 
 ; The serve cell of the thread running this code (TcpServer.current):

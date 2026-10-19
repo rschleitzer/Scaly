@@ -375,10 +375,11 @@ function scaly_eio_ncpu() returns i32 extern
 function scaly_eio_now_ns() returns i64 extern
 
 ; POSIX close(2) — pool pipes and pollers at thread exit (milestone 2.5
-; residual). Declared (int)->(int) to MATCH scalyls's existing declare:
-; the whole-program llvm-link sees ONE `close` declaration across the
-; linked roots (a type-mismatched pair would conflict).
-function close(fd: int) returns i32 extern
+; residual). Declared (i32)->(i32) like every other declaration of it
+; (scalyls, the compiler, dazzle): the whole-program llvm-link sees ONE
+; `close` declaration across the linked roots (a type-mismatched pair would
+; conflict), and on wasm32 a C int is 32 bits that wasm-ld checks.
+function close(fd: i32) returns i32 extern
 
 ; Atomic load (milestone 2.4; cas/store are declared in root_pages.scaly).
 ; Like all scaly_atomic_* names this is emitter-lowered, never a symbol.
@@ -583,7 +584,7 @@ define pollfd
     events: i16
     revents: i16
 )
-procedure poll(fds: pointer[pollfd], nfds: u64, timeout: i32) returns i32 extern
+procedure poll(fds: pointer[pollfd], nfds: c_size, timeout: i32) returns i32 extern
 
 ; POSIX pipe(2) — the worker pool's blocking wait channel (milestone
 ; 2.5). int[2] on both OSes: direct extern.
@@ -595,9 +596,9 @@ define IO_POOL_WORKERS i64 4
 
 ; Stack provisioning. 32-bit C params must be i32, not int (Apple arm64
 ; stack-arg ABI); mmap's offset is 64-bit on both OSes.
-function mmap(addr: pointer[void], length: size_t, prot: i32, flags: i32, fd: i32, offset: i64) returns pointer[void] extern
-function munmap(addr: pointer[void], length: size_t) returns i32 extern
-function mprotect(addr: pointer[void], len: size_t, prot: i32) returns i32 extern
+function mmap(addr: pointer[void], length: c_size, prot: i32, flags: i32, fd: i32, offset: i64) returns pointer[void] extern
+function munmap(addr: pointer[void], length: c_size) returns i32 extern
+function mprotect(addr: pointer[void], len: c_size, prot: i32) returns i32 extern
 function getpagesize() returns i32 extern
 
 ; MAP_PRIVATE (0x2, both OSes) | MAP_ANON (darwin, 0x1000) | MAP_ANONYMOUS
@@ -734,7 +735,7 @@ define Fiber
             let next (*entry) as pointer[void]
             let size *(((e as size_t) + 8) as pointer[size_t])
             let base ((e as size_t) - guard_page_size) as pointer[void]
-            let mrc munmap(base, size)
+            let mrc munmap(base, size as c_size)
             if mrc <> 0
                 exit 105
             fiber_stacks_pooled := fiber_stacks_pooled - 1
@@ -807,7 +808,7 @@ define Fiber
         var base Fiber.take_pooled_stack(size)
         if base = null
         {
-            base := mmap(null, size, PROT_READ_WRITE, MAP_ANON_PRIVATE, (0 - 1) as i32, 0 as i64)
+            base := mmap(null, size as c_size, PROT_READ_WRITE, MAP_ANON_PRIVATE, (0 - 1) as i32, 0 as i64)
             if (base as i64) = ((0 - 1) as i64)
                 scaly_panic_resource("Fiber.create: stack mmap", size, 103 as i32)
             ; Through the shim, not mprotect directly: "make this the stack's
@@ -935,7 +936,7 @@ define Fiber
         }
         else
         {
-            let mrc munmap(f.stack_base, f.stack_size)
+            let mrc munmap(f.stack_base, f.stack_size as c_size)
             if mrc <> 0
                 exit 105
         }
@@ -1923,7 +1924,7 @@ define Io
             ev := 4
         ; events is the u16 at offset 4 (revents at 6 is poll's to fill).
         *(((pfd as size_t) + 4) as pointer[u16]) := ev as u16
-        poll(pfd as pointer[pollfd], 1 as u64, (0 - 1) as i32)
+        poll(pfd as pointer[pollfd], 1, (0 - 1) as i32)
     }
 
     ; Park until fd is ready. A task arms the fd (oneshot, tagged with
@@ -2004,9 +2005,9 @@ define Io
                 cap := cap * 2
             let h s.host
             let t h.allocate(cap * 8, 8) as pointer[size_t]
-            memset(t as pointer[void], 0 as i32, cap * 8)
+            memset(t as pointer[void], 0 as i32, cap * 8 as c_size)
             if s.watch_cap > 0
-                memcpy(t as pointer[void], s.watches as pointer[void], s.watch_cap * 8)
+                memcpy(t as pointer[void], s.watches as pointer[void], s.watch_cap * 8 as c_size)
             s.watches := t
             s.watch_cap := cap
         }
@@ -2494,7 +2495,7 @@ define Io
         let pl io_pool as ref[IoPool]?
         if pl = null
             return
-        close(pl.pipe_write as int)
+        close(pl.pipe_write as i32)
         var i: i64 0
         while i < pl.workers
         {
@@ -2502,7 +2503,7 @@ define Io
             Thread.join(h)
             i := i + 1
         }
-        close(pl.pipe_read as int)
+        close(pl.pipe_read as i32)
         let pp Page.get(pl)
         pp.deallocate_extensions()
         Page.release_page_traced(pp, "Io.pool_page")
@@ -2808,7 +2809,7 @@ define Channel
                 if current_scheduler <> null
                     ran := Scheduler.step()
                 if not ran
-                    poll(null as pointer[pollfd], 0 as u64, 1 as i32)
+                    poll(null as pointer[pollfd], 0, 1 as i32)
             }
             else
             {
@@ -3295,8 +3296,8 @@ define TaskGroup
             if scaly_atomic_load_u64(ap) = 0
                 break
         }
-        close(g.pipe_write as int)
-        close(g.pipe_read as int)
+        close(g.pipe_write as i32)
+        close(g.pipe_read as i32)
         let gp Page.get(g)
         gp.deallocate_extensions()
         Page.release_page_traced(gp, "TaskGroup.record_page")
@@ -3513,7 +3514,7 @@ define TaskPool
     ; continue.
     procedure shutdown(mutable pl: ref[TaskPool])
     {
-        close(pl.pipe_write as int)
+        close(pl.pipe_write as i32)
         var i: i64 0
         while i < pl.nworkers
         {
@@ -3521,7 +3522,7 @@ define TaskPool
             Thread.join(h)
             i := i + 1
         }
-        close(pl.pipe_read as int)
+        close(pl.pipe_read as i32)
         let pp Page.get(pl)
         pp.deallocate_extensions()
         Page.release_page_traced(pp, "TaskPool.pool_page")

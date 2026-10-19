@@ -40,7 +40,7 @@ define RespBuf
             cap := length + n
         let fresh allocate_slice[u8]^host(host, cap)
         if length > 0
-            memcpy(fresh.data as pointer[void], data.data as pointer[void], length)
+            memcpy(fresh.data as pointer[void], data.data as pointer[void], length as c_size)
         data := fresh
     }
 
@@ -49,7 +49,7 @@ define RespBuf
         if s.length = 0
             return
         this.reserve(s.length)
-        memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length)
+        memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length as c_size)
         length := length + s.length
     }
 

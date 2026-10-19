@@ -154,7 +154,7 @@ define Array[T]
         ; caller with a wider element (opensp's follow sets, pointer[CmNode]):
         ; an instant SIGSEGV, since the write lands sizeof-T times too far out.
         if n > 0
-            memcpy(buffer + length, items_data, n * sizeof T)
+            memcpy(buffer + length, items_data, n * sizeof T as c_size)
 
         length := length + n
     }
@@ -200,7 +200,7 @@ define Array[T]
                 buffer := own_page.allocate_exclusive_buffer(new_length * size, alignof T) as pointer[T]
             capacity := new_length
             if length > 0
-                memcpy(buffer, old_data, length * size)
+                memcpy(buffer, old_data, length * size as c_size)
             if old_small = false
             {
                 let old_exclusive_page Page.get(old_data)
@@ -359,7 +359,7 @@ define Array[T]
             ; abandoned to the region (never an exclusive page).
             buffer := own_page.allocate(new_capacity * size, alignof T) as pointer[T]
             capacity := new_capacity
-            memcpy(buffer, old_data, old_capacity * size)
+            memcpy(buffer, old_data, old_capacity * size as c_size)
             return
         }
         ; big destination: a buffer with a page of its own — never carrying
@@ -372,7 +372,7 @@ define Array[T]
             new_capacity := page_room / size
         buffer := own_page.allocate_exclusive_buffer(new_capacity * size, alignof T) as pointer[T]
         capacity := new_capacity
-        memcpy(buffer, old_data, old_capacity * size)
+        memcpy(buffer, old_data, old_capacity * size as c_size)
         if old_small = false
         {
             let old_exclusive_page Page.get(old_data)

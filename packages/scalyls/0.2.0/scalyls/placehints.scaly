@@ -73,7 +73,7 @@ use scalyc.compiler.Syntax.*
 ; libc allocator for the cache slot (symindex.scaly declares malloc the same way
 ; and for the same reason: free/memcpy come from scaly.memory.runtime, malloc does
 ; not, and declaring it here touches no scaly/scalyc source).
-function malloc(size: size_t) returns pointer[void] extern
+function malloc(size: c_size) returns pointer[void] extern
 
 ; The one cache slot: the path and blob bytes are malloc'd copies, `hash` is the
 ; content hash they were built from, `used` says whether they mean anything.
@@ -1123,17 +1123,17 @@ define placehints
         }
         let pn path.get_length()
         let bn blob.get_length()
-        let pd malloc(pn + 1) as pointer[u8]
+        let pd malloc(pn + 1 as c_size) as pointer[u8]
         if pd = null
             return
-        let bd malloc(bn + 1) as pointer[u8]
+        let bd malloc(bn + 1 as c_size) as pointer[u8]
         if bd = null
         {
             free(pd as pointer[void])
             return
         }
-        memcpy(pd as pointer[void], path.get_buffer() as pointer[void], pn)
-        memcpy(bd as pointer[void], blob.get_buffer() as pointer[void], bn)
+        memcpy(pd as pointer[void], path.get_buffer() as pointer[void], pn as c_size)
+        memcpy(bd as pointer[void], blob.get_buffer() as pointer[void], bn as c_size)
         ph_path_data := pd
         ph_path_len := pn
         ph_blob_data := bd

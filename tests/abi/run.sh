@@ -42,8 +42,18 @@
 #      silently, and the RESULT direction flips the sign exactly as in check 1.
 #      Six of these were fixed in eio.c on 2026-08-09 (ctime.c was written
 #      portable from the start); zero is the only acceptable number. Fix on the
-#      C SIDE — `long long` for results, `size_t` for counts — which leaves the
-#      Scaly declaration alone and needs no seed refresh.
+#      C SIDE — `long long` for results, `unsigned long long` for counts —
+#      which leaves the Scaly declaration alone and needs no seed refresh.
+#
+#   5. WASM32 — the same widths against wasi-libc and our shims' definitions,
+#      as `tools/abi-audit.py --target wasm32` sees them. The C side is ILP32
+#      there (`size_t`, `long` 32 bits) while Scaly's `int` and `size_t` stay
+#      64, so a C `size_t` is declared `c_size`; and wasm-ld checks every
+#      signature, so a PARAMETER finding fails here too. Over the packages
+#      that go to the browser: the standard library, json, and dazzle, opensp
+#      and pdf from ../dazzle (or $DAZZLE_REPO) where that checkout is there.
+#      Needs a wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*); SKIPPED by name
+#      without one.
 #
 # Usage: tests/abi/run.sh
 #
@@ -77,12 +87,15 @@ cd "$(dirname "$0")/../.." || exit 1
 #           1 since 2026-10-01 — close (fd), measured in an ubuntu:26.04 container
 #           (aarch64): the worker's signal and waitpid are gone, and close shows
 #           now that tools/abi-audit.py skips the C++ trees under /usr/include
+#   Both    0 since 2026-10-19 — the wasm32 sweep declared every `close` fd and
+#           every `access`/`mkdir` mode `i32`, as C has them (Linux derived
+#           from that: its one position was `close`; not yet measured there)
 # Both sets are the same benign direction. The RESULT, consistency and LLP64
 # checks are NOT host-dependent in this way and stay at 0 everywhere; a finding
 # there is a real defect on any machine.
 case "$(uname -s)" in
-  Darwin) EXPECTED_PARAM_FINDINGS=3 ;;
-  Linux)  EXPECTED_PARAM_FINDINGS=1 ;;
+  Darwin) EXPECTED_PARAM_FINDINGS=0 ;;
+  Linux)  EXPECTED_PARAM_FINDINGS=0 ;;
   # No pin for this host yet. Fail loudly rather than pass quietly: an
   # unpinned count is exactly the number that drifts unnoticed.
   *)      EXPECTED_PARAM_FINDINGS="" ;;
@@ -149,8 +162,38 @@ out=$(python3 tools/llp64-audit.py --quiet) || fail=1
 echo "$out" | sed 's/^/    /'
 if ! echo "$out" | grep -q "^LLP64 FINDINGS: 0$"; then
   echo "abi: FAIL — \`long\` is 32 bits on Win64; fix it on the C side" \
-       "(\`long long\` for results, \`size_t\` for counts)"
+       "(\`long long\` for results, \`unsigned long long\` for counts)"
   fail=1
+fi
+
+echo
+echo "abi: 5) wasm32 — widths against wasi-libc and the shims' definitions"
+wasi="${WASI_SDK:-}"
+if [ -z "$wasi" ]; then
+  for cand in "$HOME"/opt/wasi-sdk-*; do [ -d "$cand" ] && wasi="$cand"; done
+fi
+wasi_inc="$wasi/share/wasi-sysroot/include/wasm32-wasip1"
+if [ -z "$wasi" ] || [ ! -d "$wasi_inc" ]; then
+  echo "    SKIP (no wasi-sdk: set WASI_SDK — wasm32 width check skipped)"
+else
+  dz="${DAZZLE_REPO:-../dazzle}"
+  roots=(packages/scaly/[0-9]* packages/json/[0-9]*)
+  for p in dazzle opensp pdf; do
+    for d in "$dz"/packages/$p/[0-9]*; do [ -d "$d" ] && roots+=("$d"); done
+  done
+  shims=(--sources packages/scaly/[0-9]*/scaly/fiber/eio.c
+         --sources packages/scaly/[0-9]*/scaly/time/ctime.c
+         --sources packages/scaly/[0-9]*/scaly/memory/panic.c)
+  wout=$(python3 tools/abi-audit.py --target wasm32 --quiet --headers "$wasi_inc" "${shims[@]}" \
+           $(find "${roots[@]}" -name '*.scaly' -not -path '*/interface/*'))
+  rc=$?
+  echo "$wout" | head -4 | sed 's/^/    /'
+  if [ "$rc" -ne 0 ]; then
+    python3 tools/abi-audit.py --target wasm32 --headers "$wasi_inc" "${shims[@]}" \
+      $(find "${roots[@]}" -name '*.scaly' -not -path '*/interface/*') | head -40
+    echo "abi: FAIL — a width differs on wasm32 (a C size_t is declared c_size)"
+    fail=1
+  fi
 fi
 
 echo

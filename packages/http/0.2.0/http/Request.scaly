@@ -458,7 +458,7 @@ procedure decode_chunked(mutable buf: Slice[u8], at: size_t, mutable body_len: r
         if size = 0
             break
         if w <> data
-            memmove(buf.slice_from(w).data as pointer[void], buf.slice_from(data).data as pointer[void], size)
+            memmove(buf.slice_from(w).data as pointer[void], buf.slice_from(data).data as pointer[void], size as c_size)
         w := w + size
         r := data + size
         if buf[r] = 13

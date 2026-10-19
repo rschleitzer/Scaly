@@ -64,7 +64,7 @@ let flen Region.frame_length(hdr)
 if flen < (32 as size_t)
     exit 4
 let frame host.allocate(flen, 8 as size_t) as pointer[u8]
-memcpy(frame as pointer[void], hdr as pointer[void], 32 as size_t)
+memcpy(frame as pointer[void], hdr as pointer[void], 32)
 let rest ((frame as size_t) + (32 as size_t)) as pointer[void]
 if read_exact(fd, rest, flen - (32 as size_t)) = false
     exit 4

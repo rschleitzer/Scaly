@@ -8,7 +8,7 @@ define Console
 {
     procedure print(message: pointer[const_char])
     {
-        var len strlen message
+        var len strlen(message) as size_t
         Io.write_all(1, message as pointer[void], len)
     }
 

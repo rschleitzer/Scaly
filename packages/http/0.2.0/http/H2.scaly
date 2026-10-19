@@ -681,10 +681,10 @@ define H2Conn
         ; the output buffer and the trailers are reused
         let page Page.allocate_page()
         let rest allocate_slice[u8]^page(page, body.length)
-        memcpy(rest.data as pointer[void], body.data as pointer[void], body.length)
+        memcpy(rest.data as pointer[void], body.data as pointer[void], body.length as c_size)
         let kept allocate_slice[u8]^page(page, trailers.length)
         if trailers.length > 0
-            memcpy(kept.data as pointer[void], trailers.data as pointer[void], trailers.length)
+            memcpy(kept.data as pointer[void], trailers.data as pointer[void], trailers.length as c_size)
         var q &H2Pending^page(stream, page, rest, sent, window, has_trailers = false, kept)
         pending_.add(q)
     }

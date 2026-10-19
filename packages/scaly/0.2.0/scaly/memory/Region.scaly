@@ -253,7 +253,7 @@ define Region
         h[1] := total as u64
         h[2] := n as u64
         h[3] := (root as size_t) as u64
-        memcpy(((frame as size_t) + 32) as pointer[void], table as pointer[void], n * 16)
+        memcpy(((frame as size_t) + 32) as pointer[void], table as pointer[void], n * 16 as c_size)
 
         var off 32 + n * 16
         var r: size_t 0
@@ -263,7 +263,7 @@ define Region
             r := r + 1
             let len table[r]
             r := r + 1
-            memcpy(((frame as size_t) + off) as pointer[void], base as pointer[void], len)
+            memcpy(((frame as size_t) + off) as pointer[void], base as pointer[void], len as c_size)
             off := off + len
         }
         frame
@@ -338,7 +338,7 @@ define Region
 
                 np := a as pointer[Page]
             }
-            memcpy(np as pointer[void], ((frame as size_t) + off) as pointer[void], len)
+            memcpy(np as pointer[void], ((frame as size_t) + off) as pointer[void], len as c_size)
             ob[i] := base
             nb[i] := np as size_t
             ln[i] := len

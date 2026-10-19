@@ -2696,7 +2696,7 @@ define linkonce_odr i64 @_ZN3rpcB7scalylsB4v0_29read_byteEv() {
 entry:
   %c = alloca i8, align 1
   store i8 0, ptr %c, align 1
-  %call = call i64 @read(i64 0, ptr %c, i64 1)
+  %call = call i64 @read(i32 0, ptr %c, i64 1)
   %eq = icmp eq i64 %call, 1
   br i1 %eq, label %if.then, label %if.end
 
@@ -2725,7 +2725,7 @@ while.body:                                       ; preds = %while.cond
   %ptr.add = getelementptr inbounds i8, ptr %0, i64 %total2
   %total3 = load i64, ptr %total, align 8
   %sub = sub i64 %1, %total3
-  %call = call i64 @read(i64 0, ptr %ptr.add, i64 %sub)
+  %call = call i64 @read(i32 0, ptr %ptr.add, i64 %sub)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
@@ -3149,7 +3149,7 @@ while.body:                                       ; preds = %while.cond
   %ptr.add = getelementptr inbounds i8, ptr %call1, i64 %total3
   %total4 = load i64, ptr %total, align 8
   %sub = sub i64 %call, %total4
-  %call5 = call i64 @write(i64 1, ptr %ptr.add, i64 %sub)
+  %call5 = call i64 @write(i32 1, ptr %ptr.add, i64 %sub)
   %eq6 = icmp eq i64 %call5, 0
   br i1 %eq6, label %if.then7, label %if.end8
 
@@ -4538,7 +4538,8 @@ define linkonce_odr i64 @_ZN3rpcB7scalylsB4v0_212read_byte_fdEi(i64 %0) {
 entry:
   %c = alloca i8, align 1
   store i8 0, ptr %c, align 1
-  %call = call i64 @read(i64 %0, ptr %c, i64 1)
+  %as.trunc = trunc i64 %0 to i32
+  %call = call i64 @read(i32 %as.trunc, ptr %c, i64 1)
   %eq = icmp eq i64 %call, 1
   br i1 %eq, label %if.then, label %if.end
 
@@ -4565,9 +4566,10 @@ while.cond:                                       ; preds = %if.end7, %entry
 while.body:                                       ; preds = %while.cond
   %total2 = load i64, ptr %total, align 8
   %ptr.add = getelementptr inbounds i8, ptr %1, i64 %total2
+  %as.trunc = trunc i64 %0 to i32
   %total3 = load i64, ptr %total, align 8
   %sub = sub i64 %2, %total3
-  %call = call i64 @read(i64 %0, ptr %ptr.add, i64 %sub)
+  %call = call i64 @read(i32 %as.trunc, ptr %ptr.add, i64 %sub)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
@@ -4776,9 +4778,10 @@ while.cond:                                       ; preds = %if.end12, %if.end
 while.body:                                       ; preds = %while.cond
   %total3 = load i64, ptr %total, align 8
   %ptr.add = getelementptr inbounds i8, ptr %call1, i64 %total3
+  %as.trunc = trunc i64 %0 to i32
   %total4 = load i64, ptr %total, align 8
   %sub = sub i64 %call, %total4
-  %call5 = call i64 @write(i64 %0, ptr %ptr.add, i64 %sub)
+  %call5 = call i64 @write(i32 %as.trunc, ptr %ptr.add, i64 %sub)
   %total6 = load i64, ptr %total, align 8
   %sub7 = sub i64 %call, %total6
   %gt = icmp ugt i64 %call5, %sub7
@@ -151006,7 +151009,7 @@ if.then3:                                         ; preds = %if.end
 
 if.end4:                                          ; preds = %frame.forced26, %if.end
   %call31 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %base)
-  %call32 = call i32 @access(ptr %call31, i64 0)
+  %call32 = call i32 @access(ptr %call31, i32 0)
   %ne33 = icmp ne i32 %call32, 0
   br i1 %ne33, label %if.then34, label %if.end35
 
@@ -185589,7 +185592,7 @@ declare i32 @scaly_proc_wait_readable(i32, i32)
 
 declare void @scaly_proc_stdio_binary()
 
-declare i32 @close(i64)
+declare i32 @close(i32)
 
 declare i32 @setenv(ptr, ptr, i32)
 
@@ -186135,7 +186138,8 @@ if.end:                                           ; preds = %if.then, %entry
 
 if.then4:                                         ; preds = %if.end
   %global.load6 = load i64, ptr @_Z9worker_inB7scalylsB4v0_2, align 8
-  %call7 = call i32 @close(i64 %global.load6)
+  %as.trunc = trunc i64 %global.load6 to i32
+  %call7 = call i32 @close(i32 %as.trunc)
   br label %if.end5
 
 if.end5:                                          ; preds = %if.then4, %if.end
@@ -186145,7 +186149,8 @@ if.end5:                                          ; preds = %if.then4, %if.end
 
 if.then10:                                        ; preds = %if.end5
   %global.load12 = load i64, ptr @_Z10worker_outB7scalylsB4v0_2, align 8
-  %call13 = call i32 @close(i64 %global.load12)
+  %as.trunc13 = trunc i64 %global.load12 to i32
+  %call14 = call i32 @close(i32 %as.trunc13)
   br label %if.end11
 
 if.end11:                                         ; preds = %if.then10, %if.end5
@@ -186166,7 +186171,7 @@ entry:
   store i64 0, ptr %attempts, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end21, %entry
+while.cond:                                       ; preds = %if.end23, %entry
   %attempts1 = load i64, ptr %attempts, align 8
   %lt = icmp slt i64 %attempts1, 2
   br i1 %lt, label %while.body, label %while.exit
@@ -186181,7 +186186,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %le, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %sret.body23 = load { ptr }, ptr %6, align 8
+  %sret.body25 = load { ptr }, ptr %6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
@@ -186228,33 +186233,33 @@ if.then12:                                        ; preds = %frame.forced
   call void @_Z11scaly_eputsP10const_char(ptr @.str.1302)
   %load.struct14 = load %_Z5SliceIcE, ptr %2, align 8
   %data15 = extractvalue %_Z5SliceIcE %load.struct14, 1
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %2, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  %call16 = call i64 @write(i64 2, ptr %data15, i64 %field.val)
+  %load.struct16 = load %_Z5SliceIcE, ptr %2, align 8
+  %length17 = extractvalue %_Z5SliceIcE %load.struct16, 0
+  %call18 = call i64 @write(i32 2, ptr %data15, i64 %length17)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.1303)
   %as.sext = sext i32 %call to i64
   call void @_Z11scaly_eputi3i64(i64 %as.sext)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.1304)
   call void @_ZN6workerB7scalylsB4v0_28shutdownEv()
-  %sret.body17 = load { ptr }, ptr %6, align 8
+  %sret.body19 = load { ptr }, ptr %6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end13:                                         ; preds = %frame.forced
-  %global.load18 = load i64, ptr @_Z10worker_outB7scalylsB4v0_2, align 8
-  call void @_ZN3rpcB7scalylsB4v0_215read_message_fdEPN4scaly6memory4PageEi(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %global.load18)
-  %call19 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
-  %gt = icmp ugt i64 %call19, 0
-  br i1 %gt, label %if.then20, label %if.end21
+  %global.load20 = load i64, ptr @_Z10worker_outB7scalylsB4v0_2, align 8
+  call void @_ZN3rpcB7scalylsB4v0_215read_message_fdEPN4scaly6memory4PageEi(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %global.load20)
+  %call21 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %gt = icmp ugt i64 %call21, 0
+  br i1 %gt, label %if.then22, label %if.end23
 
-if.then20:                                        ; preds = %if.end13
-  %sret.body22 = load { ptr }, ptr %sret.result, align 8
+if.then22:                                        ; preds = %if.end13
+  %sret.body24 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-if.end21:                                         ; preds = %if.end13
+if.end23:                                         ; preds = %if.end13
   call void @_ZN6workerB7scalylsB4v0_28shutdownEv()
   br label %while.cond
 }

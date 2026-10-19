@@ -268,7 +268,7 @@ var mi 0 as i64
 let m0 scaly_eio_now_ns()
 while mi < (256 as i64)
 {
-    let r memcpy(dst, src, 1048576 as size_t)
+    let r memcpy(dst, src, 1048576)
     mi := mi + (1 as i64)
 }
 let m1 scaly_eio_now_ns()

@@ -16,13 +16,13 @@ define os
         let v getenv(name)
         if v = null
             return Slice[u8](0, null)
-        Slice[u8](strlen(v), v as pointer[u8])
+        Slice[u8](strlen(v) as size_t, v as pointer[u8])
     }
 
     procedure test_direct() returns int
     {
         ; Direct write call to test if external functions work in os module
-        let result write(1, "Direct test\n" as pointer[void], 12 as size_t)
+        let result write(1, "Direct test\n" as pointer[void], 12)
         if result <> 12
             return -1
 
@@ -50,7 +50,7 @@ define os
         if file = null
             return -10
 
-        let written fwrite(test_content as pointer[void], 1, content_len, file)
+        let written fwrite(test_content as pointer[void], 1, content_len as c_size, file) as size_t
         fclose file
         if written <> content_len
             return -11
@@ -61,7 +61,7 @@ define os
             return -12
 
         var buffer char[64]
-        let read_count fread(buffer, 1 as size_t, 64 as size_t, file)
+        let read_count fread(buffer, 1, 64, file) as size_t
         fclose file
 
         if read_count <> content_len

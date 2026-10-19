@@ -622,7 +622,7 @@ define JsonWriter
         while j < n and JsonWriter.plain(bytes[j])
             j := j + 1
         if j > i
-            memcpy(out.slice_from(i + 1).data as pointer[void], bytes.slice_from(i).data as pointer[void], j - i)
+            memcpy(out.slice_from(i + 1).data as pointer[void], bytes.slice_from(i).data as pointer[void], j - i as c_size)
         i := j
         if i = n
         {

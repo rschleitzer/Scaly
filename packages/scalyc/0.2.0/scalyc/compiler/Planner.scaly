@@ -296,7 +296,7 @@ define Planner
     procedure not_implemented(method_name: Slice[char]) returns int
     {
         scaly_eputs "scalyc Planner stub not implemented: "
-        write(2, method_name.data as pointer[void], method_name.length)
+        write(2, method_name.data as pointer[void], method_name.length as c_size)
         scaly_eputs "\n"
         exit 111
         0

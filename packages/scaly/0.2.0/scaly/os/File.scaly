@@ -42,7 +42,7 @@ procedure file_read_close_worker(arg: pointer[void]) returns pointer[void]
     let size *(((cell as size_t) + 8) as pointer[size_t])
     let buf (*(((cell as size_t) + 16) as pointer[size_t])) as pointer[void]
     if size > 0
-        fread(buf, 1, size, file)
+        fread(buf, 1, size as c_size, file)
     fclose file
     1 as pointer[void]
 }
@@ -69,7 +69,7 @@ procedure file_write_worker(arg: pointer[void]) returns pointer[void]
     var file fopen(path, "wb")
     if file = null
         return null
-    fwrite(data, 1, len, file)
+    fwrite(data, 1, len as c_size, file)
     fclose file
     1 as pointer[void]
 }
@@ -107,7 +107,7 @@ define File
         rewind file
         var ret String(size as size_t)
         let buffer ret.get_buffer()
-        fread(buffer, 1, size as size_t, file)
+        fread(buffer, 1, size as c_size, file)
         fclose file
         ret
     }
@@ -150,7 +150,7 @@ define File
         if file = null
             return false
 
-        fwrite(contents.get_buffer(), 1, contents.get_length(), file)
+        fwrite(contents.get_buffer(), 1, contents.get_length() as c_size, file)
         fclose file
         true
     }

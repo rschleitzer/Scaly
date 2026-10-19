@@ -25,10 +25,12 @@ ONLY exported (non-`static`) definitions are checked, because only those
 are the ABI boundary. A `long` in a local intermediate value is fine
 and sometimes even right (sysconf() returns `long`).
 
-The fix is always on the C SIDE: `long long` for results, `size_t` for
-sizes/counts — both 64 bits on every target we ship. The
-Scaly declaration stays untouched, so there is no emission change
-and no seed refresh.
+The fix is always on the C SIDE: `long long` for results, `unsigned long
+long` for a size or count the Scaly side declares `size_t` — both 64 bits
+on every target we ship. (C's own `size_t` is not: it is 32 bits on
+wasm32, so a shim that takes one is declared `c_size` on the Scaly side;
+tools/abi-audit.py --target wasm32 judges that.) The Scaly declaration
+stays untouched, so there is no emission change and no seed refresh.
 
 Usage: tools/llp64-audit.py [--quiet] [file.c ...]
        without files: every .c under packages/

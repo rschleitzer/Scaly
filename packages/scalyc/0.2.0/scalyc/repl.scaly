@@ -986,7 +986,7 @@ define repl
             ; an Array or a StringBuilder finds its page from its own address
             ; when it grows (`xs.add` in a later entry)
             tail.append("    let repl_cell_`slot` repl_page.allocate(sizeof `t`, 8)\n")
-            tail.append("    memcpy(repl_cell_`slot`, &repl_value_`slot` as pointer[void], sizeof `t`)\n")
+            tail.append("    memcpy(repl_cell_`slot`, &repl_value_`slot` as pointer[void], sizeof `t` as c_size)\n")
             tail.append("    *(repl_table + `slot`) := repl_cell_`slot`\n")
             tail.append("    *(repl_sizes + `slot + 1`) := sizeof `t`\n")
             ; a record: the entry measures where each field stands in it

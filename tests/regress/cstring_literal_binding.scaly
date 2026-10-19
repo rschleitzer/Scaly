@@ -19,12 +19,12 @@
 ;
 ; Expected: PASS
 
-function strlen(s: pointer[const_char]) returns size_t extern
+function strlen(s: pointer[const_char]) returns c_size extern
 
 ; A literal reaching a pointer[const_char] PARAMETER through a binding must be
 ; the same string the direct call sees.
 function measure(p: pointer[const_char]) returns size_t
-    strlen(p)
+    strlen(p) as size_t
 
 let ok_direct strlen("hello") = 5
 

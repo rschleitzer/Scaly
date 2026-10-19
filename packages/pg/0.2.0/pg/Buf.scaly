@@ -4,7 +4,7 @@
 ; old one to the page.
 
 ; memmove(3) — a consumed prefix is dropped by sliding the rest forward.
-function memmove(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
+function memmove(dest: pointer[void], src: pointer[void], count: c_size) returns pointer[void] extern
 
 define PgBuf
 (
@@ -44,7 +44,7 @@ define PgBuf
             cap := length + n
         let fresh allocate_slice[u8]^host(host, cap)
         if length > 0
-            memcpy(fresh.data as pointer[void], data.data as pointer[void], length)
+            memcpy(fresh.data as pointer[void], data.data as pointer[void], length as c_size)
         data := fresh
     }
 
@@ -57,7 +57,7 @@ define PgBuf
             return
         }
         let rest length - n
-        memmove(data.data as pointer[void], data.slice_from(n).data as pointer[void], rest)
+        memmove(data.data as pointer[void], data.slice_from(n).data as pointer[void], rest as c_size)
         length := rest
     }
 
@@ -69,7 +69,7 @@ define PgBuf
             return
         this.reserve(n)
         if length > at
-            memmove(data.slice_from(at + n).data as pointer[void], data.slice_from(at).data as pointer[void], length - at)
+            memmove(data.slice_from(at + n).data as pointer[void], data.slice_from(at).data as pointer[void], length - at as c_size)
         length := length + n
     }
 
@@ -78,7 +78,7 @@ define PgBuf
         if s.length = 0
             return
         this.reserve(s.length)
-        memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length)
+        memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length as c_size)
         length := length + s.length
     }
 

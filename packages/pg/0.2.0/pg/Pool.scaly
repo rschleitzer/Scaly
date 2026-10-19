@@ -139,7 +139,7 @@ procedure env_bytes(name: pointer[const_char]) returns Slice[u8]
     Slice[u8](strlen(v), v as pointer[u8])
 }
 
-procedure strlen(s: pointer[const_char]) returns size_t extern
+procedure strlen(s: pointer[const_char]) returns c_size extern
 
 ; This thread's pool, made from the environment on first use.
 procedure pool() returns ref[PgPool] mutable pg_pool

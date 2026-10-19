@@ -4685,7 +4685,7 @@ entry:
 
 define linkonce_odr void @_ZN9JsonArenaB4jsonB4v0_213keep_documentEPN4scaly6memory4PageE5SliceI2u8E(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %arg.tmp14 = alloca %_Z5SliceI2u8E, align 8
+  %arg.tmp16 = alloca %_Z5SliceI2u8E, align 8
   %sret.result = alloca %_Z5SliceI2u8E, align 8
   %arg.tmp = alloca %_Z5SliceI2u8E, align 8
   %i = alloca i64, align 8
@@ -4703,37 +4703,37 @@ if.then:                                          ; preds = %entry
   %data = extractvalue %_Z5SliceI2u8E %call1, 1
   %load.struct4 = load %_Z5SliceI2u8E, ptr %3, align 8
   %data5 = extractvalue %_Z5SliceI2u8E %load.struct4, 1
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %3, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  %call6 = call ptr @memcpy(ptr %data, ptr %data5, i64 %field.val)
+  %load.struct6 = load %_Z5SliceI2u8E, ptr %3, align 8
+  %length7 = extractvalue %_Z5SliceI2u8E %load.struct6, 0
+  %call8 = call ptr @memcpy(ptr %data, ptr %data5, i64 %length7)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct7 = load %_Z5SliceI2u8E, ptr %3, align 8
-  %length8 = extractvalue %_Z5SliceI2u8E %load.struct7, 0
-  store i64 %length8, ptr %i, align 1
+  %load.struct9 = load %_Z5SliceI2u8E, ptr %3, align 8
+  %length10 = extractvalue %_Z5SliceI2u8E %load.struct9, 0
+  store i64 %length10, ptr %i, align 1
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %if.end
-  %i9 = load i64, ptr %i, align 8
-  %length10 = extractvalue %_Z5SliceI2u8E %call1, 0
-  %lt = icmp ult i64 %i9, %length10
+  %i11 = load i64, ptr %i, align 8
+  %length12 = extractvalue %_Z5SliceI2u8E %call1, 0
+  %lt = icmp ult i64 %i11, %length12
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   store %_Z5SliceI2u8E %call1, ptr %arg.tmp, align 1
-  %i11 = load i64, ptr %i, align 8
-  call void @_ZN5SliceI2u8E3putEm2u8(ptr %arg.tmp, i64 %i11, i8 0)
-  %i12 = load i64, ptr %i, align 8
-  %add13 = add i64 %i12, 1
-  store i64 %add13, ptr %i, align 1
+  %i13 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI2u8E3putEm2u8(ptr %arg.tmp, i64 %i13, i8 0)
+  %i14 = load i64, ptr %i, align 8
+  %add15 = add i64 %i14, 1
+  store i64 %add15, ptr %i, align 1
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  store %_Z5SliceI2u8E %call1, ptr %arg.tmp14, align 1
-  %field.inplace15 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %3, i32 0, i32 0
-  %field.val16 = load i64, ptr %field.inplace15, align 8
-  call void @_ZN5SliceI2u8E8subsliceEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr %arg.tmp14, i64 0, i64 %field.val16)
+  store %_Z5SliceI2u8E %call1, ptr %arg.tmp16, align 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %3, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  call void @_ZN5SliceI2u8E8subsliceEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr %arg.tmp16, i64 0, i64 %field.val)
   %sret.body = load %_Z5SliceI2u8E, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   ret void

@@ -24,7 +24,7 @@
 
 ; libc allocator. malloc declared locally (fixpoint-safe — touches no scaly
 ; source); the tables are leaked at process exit (one set per compile).
-function malloc(size: size_t) returns pointer[void] extern
+function malloc(size: c_size) returns pointer[void] extern
 
 ; Slot count: a power of two so the probe mask is cap-1. Generous for the
 ; registry's distinct-name set (low thousands) at a low load factor.
@@ -59,7 +59,7 @@ define FunctionIndex
     function create(cap: size_t, entry_cap: size_t) returns FunctionIndex
     {
         let bytes cap * sizeof FnSlot
-        let slots malloc(bytes) as pointer[FnSlot]
+        let slots malloc(bytes as c_size) as pointer[FnSlot]
         if slots = null
         {
             scaly_eputs "FunctionIndex: malloc failed\n"
@@ -75,7 +75,7 @@ define FunctionIndex
             i := i + 1
         }
         let nbytes entry_cap * sizeof size_t
-        let next malloc(nbytes) as pointer[size_t]
+        let next malloc(nbytes as c_size) as pointer[size_t]
         if next = null
         {
             scaly_eputs "FunctionIndex: malloc failed\n"

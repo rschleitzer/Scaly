@@ -30,7 +30,7 @@
 
 ; libc allocator. malloc declared locally (fixpoint-safe — touches no scaly
 ; source); the table is leaked at process exit (one table per compile).
-function malloc(size: size_t) returns pointer[void] extern
+function malloc(size: c_size) returns pointer[void] extern
 
 ; Slot count: a power of two so the probe mask is cap-1. Generous for the whole
 ; cross-package scalyc concept set (low thousands) at a low load factor. On a
@@ -54,7 +54,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
     function create(cap: size_t) returns ConceptIndex
     {
         let bytes cap * sizeof ConceptSlot
-        let slots malloc(bytes) as pointer[ConceptSlot]
+        let slots malloc(bytes as c_size) as pointer[ConceptSlot]
         if slots = null
         {
             scaly_eputs "ConceptIndex: malloc failed\n"

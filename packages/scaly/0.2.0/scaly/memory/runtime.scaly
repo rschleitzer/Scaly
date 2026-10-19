@@ -21,16 +21,20 @@ function scaly_aligned_free(ptr: pointer[void]) extern
 function exit(code: i32) extern
 procedure abort() extern
 
-; I/O and string functions
-function strlen(s: pointer[const_char]) returns size_t extern
-function write(fd: int, buf: pointer[void], count: size_t) returns size_t extern
-; POSIX read(2). Returns bytes read, 0 at EOF, or (size_t)-1 on error.
+; I/O and string functions. A C `size_t` or `ssize_t` is `c_size` here, the C
+; side's pointer width (64 bits on the LP64 targets, 32 on wasm32, where
+; wasm-ld checks every signature), and a C `int` is `i32`; a caller converts
+; with `as` (2026-10-19). An error result of ssize_t's -1 is the c_size of
+; all ones.
+function strlen(s: pointer[const_char]) returns c_size extern
+function write(fd: i32, buf: pointer[void], count: c_size) returns c_size extern
+; POSIX read(2). Returns bytes read, 0 at EOF, or all ones (-1) on error.
 ; Unreferenced by the scaly package itself, so it emits no `declare` into
 ; scaly.ll (fixpoint-safe); consumers (e.g. the LSP stdin transport)
 ; reference it and get the declaration in their own module.
-function read(fd: int, buf: pointer[void], count: size_t) returns size_t extern
-function memset(dest: pointer[void], value: i32, count: size_t) returns pointer[void] extern
-function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
+function read(fd: i32, buf: pointer[void], count: c_size) returns c_size extern
+function memset(dest: pointer[void], value: i32, count: c_size) returns pointer[void] extern
+function memcpy(dest: pointer[void], src: pointer[void], count: c_size) returns pointer[void] extern
 
 ; ---- Opaque C stream/directory handles -------------------------------------
 ; C names these types; it does not hand out `void*` for them. `FILE` is
@@ -106,8 +110,8 @@ define OpaqueDir()
 ; File I/O functions (stdio.h)
 function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[OpaqueFile] extern
 function fclose(stream: pointer[OpaqueFile]) returns i32 extern
-function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
-function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
+function fread(ptr: pointer[void], size: c_size, count: c_size, stream: pointer[OpaqueFile]) returns c_size extern
+function fwrite(ptr: pointer[void], size: c_size, count: c_size, stream: pointer[OpaqueFile]) returns c_size extern
 ; Seeking and telling go through the eio shim, NOT through libc's fseek/ftell.
 ; Those carry `long` offsets — 64-bit on LP64, 32-bit on LLP64 (Win64) — and one
 ; committed seed serves every target, so a single declaration cannot describe
@@ -145,10 +149,10 @@ function scaly_eio_term_raw(fd: i32) returns i32 extern
 function scaly_eio_term_restore(fd: i32) returns i32 extern
 
 ; File system functions (unistd.h)
-function access(path: pointer[const_char], mode: int) returns i32 extern
+function access(path: pointer[const_char], mode: i32) returns i32 extern
 function unlink(path: pointer[const_char]) returns i32 extern
 function rmdir(path: pointer[const_char]) returns i32 extern
-function mkdir(path: pointer[const_char], mode: int) returns i32 extern
+function mkdir(path: pointer[const_char], mode: i32) returns i32 extern
 
 ; Subprocess spawn (stdlib.h) - runs command via /bin/sh
 function system(command: pointer[const_char]) returns i32 extern
@@ -159,7 +163,7 @@ function basename(path: pointer[char]) returns pointer[char] extern
 
 ; String comparison (string.h)
 function strcmp(s1: pointer[const_char], s2: pointer[const_char]) returns i32 extern
-function memcmp(s1: pointer[void], s2: pointer[void], n: size_t) returns i32 extern
+function memcmp(s1: pointer[void], s2: pointer[void], n: c_size) returns i32 extern
 
 ; Page allocator entry points are defined in scaly/memory/root_pages.scaly
 ; (Scaly). The only C surface left is in scalyc/page_runtime.cpp: state

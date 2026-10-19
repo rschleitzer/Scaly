@@ -1469,7 +1469,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 4060558570593021715
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -258762233823987536
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -8443,7 +8443,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.sconst.6943 = private constant [23 x i8] c"\15    memcpy(repl_cell_\00"
 @.sconst.6944 = private constant [16 x i8] c"\0E, &repl_value_\00"
 @.sconst.6945 = private constant [28 x i8] c"\1A as pointer[void], sizeof \00"
-@.sconst.6946 = private constant [4 x i8] c"\02)\0A\00"
+@.sconst.6946 = private constant [14 x i8] c"\0C as c_size)\0A\00"
 @.sconst.6947 = private constant [21 x i8] c"\13    *(repl_table + \00"
 @.sconst.6948 = private constant [17 x i8] c"\0F) := repl_cell_\00"
 @.sconst.6949 = private constant [21 x i8] c"\13    *(repl_sizes + \00"
@@ -184698,9 +184698,9 @@ entry:
   call void @_Z11scaly_eputsP10const_char(ptr @.str.1120)
   %load.struct = load %_Z5SliceIcE, ptr %0, align 8
   %data = extractvalue %_Z5SliceIcE %load.struct, 1
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %0, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  %call = call i64 @write(i64 2, ptr %data, i64 %field.val)
+  %load.struct1 = load %_Z5SliceIcE, ptr %0, align 8
+  %length = extractvalue %_Z5SliceIcE %load.struct1, 0
+  %call = call i64 @write(i32 2, ptr %data, i64 %length)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.1121)
   call void @exit(i64 111)
   ret i64 0
@@ -463007,7 +463007,7 @@ declare i32 @scaly_proc_worker_fds(i64, ptr, ptr, ptr, ptr)
 
 declare i32 @scaly_proc_reap(i64)
 
-declare i32 @close(i64)
+declare i32 @close(i32)
 
 define linkonce_odr i64 @_ZN5PartsB6scalycB4v0_212instructionsEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0) {
 entry:
@@ -466666,7 +466666,6 @@ while.cond:                                       ; preds = %if.end, %entry
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %as.sext = sext i32 %2 to i64
   %buffer3 = load ptr, ptr %buffer1, align 8
   %ptr.add = getelementptr inbounds i8, ptr %buffer3, i64 0
   %as.ptrtoint = ptrtoint ptr %ptr.add to i64
@@ -466675,7 +466674,7 @@ while.body:                                       ; preds = %while.cond
   %as.inttoptr = inttoptr i64 %add to ptr
   %used5 = load i64, ptr %used, align 8
   %sub = sub i64 8191, %used5
-  %call = call i64 @read(i64 %as.sext, ptr %as.inttoptr, i64 %sub)
+  %call = call i64 @read(i32 %2, ptr %as.inttoptr, i64 %sub)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %lor.rhs
 
@@ -466726,7 +466725,6 @@ while.cond:                                       ; preds = %if.end, %entry
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %as.sext = sext i32 %0 to i64
   %call2 = call ptr @_ZN6String10get_bufferEv(ptr %1)
   %as.ptrtoint = ptrtoint ptr %call2 to i64
   %done3 = load i64, ptr %done, align 8
@@ -466734,7 +466732,7 @@ while.body:                                       ; preds = %while.cond
   %as.inttoptr = inttoptr i64 %add to ptr
   %done4 = load i64, ptr %done, align 8
   %sub = sub i64 %call, %done4
-  %call5 = call i64 @write(i64 %as.sext, ptr %as.inttoptr, i64 %sub)
+  %call5 = call i64 @write(i32 %0, ptr %as.inttoptr, i64 %sub)
   %eq = icmp eq i64 %call5, 0
   br i1 %eq, label %if.then, label %lor.rhs
 
@@ -466857,8 +466855,7 @@ if.end:                                           ; preds = %entry
   %in_fd1 = load i32, ptr %in_fd, align 4
   call void @_ZN5PartsB6scalycB4v0_28read_allEPN4scaly6memory4PageE3i32(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i32 %in_fd1)
   %in_fd2 = load i32, ptr %in_fd, align 4
-  %as.sext = sext i32 %in_fd2 to i64
-  %call3 = call i32 @close(i64 %as.sext)
+  %call3 = call i32 @close(i32 %in_fd2)
   call void @_ZN5PartsB6scalycB4v0_27line_ofEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result4, ptr %frame, ptr %sret.result, i64 0)
   call void @_ZN5PartsB6scalycB4v0_27line_ofEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result, i64 1)
   %call6 = call i64 @_ZN5PartsB6scalycB4v0_29number_ofE6String(ptr %sret.result5)
@@ -466885,9 +466882,8 @@ if.else:                                          ; preds = %if.end
 
 if.end15:                                         ; preds = %frame.forced22, %frame.forced
   %out_fd26 = load i32, ptr %out_fd, align 4
-  %as.sext27 = sext i32 %out_fd26 to i64
-  %call28 = call i32 @close(i64 %as.sext27)
-  br i1 %call13, label %if.then29, label %if.end30
+  %call27 = call i32 @close(i32 %out_fd26)
+  br i1 %call13, label %if.then28, label %if.end29
 
 frame.force:                                      ; preds = %if.then14
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
@@ -466913,11 +466909,11 @@ frame.forced22:                                   ; preds = %frame.force21, %if.
   call void @_ZN5PartsB6scalycB4v0_29write_allE3i326String(i32 %out_fd18, ptr %struct.region25)
   br label %if.end15
 
-if.then29:                                        ; preds = %if.end15
+if.then28:                                        ; preds = %if.end15
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 0
 
-if.end30:                                         ; preds = %if.end15
+if.end29:                                         ; preds = %if.end15
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 }
@@ -466979,8 +466975,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %struct.region)
   call void @_ZN5PartsB6scalycB4v0_29write_allE3i326String(i32 %to_worker2, ptr %sret.result)
   %to_worker4 = load i32, ptr %to_worker, align 4
-  %as.sext = sext i32 %to_worker4 to i64
-  %call5 = call i32 @close(i64 %as.sext)
+  %call5 = call i32 @close(i32 %to_worker4)
   %pid6 = load i64, ptr %pid, align 8
   %from_worker7 = load i32, ptr %from_worker, align 4
   %tuple.field8 = getelementptr inbounds nuw %_Z10PartWorkerB6scalycB4v0_2, ptr %tuple, i32 0, i32 0
@@ -467016,8 +467011,7 @@ if.end:                                           ; preds = %entry
   call void @_ZN5PartsB6scalycB4v0_28read_allEPN4scaly6memory4PageE3i32(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i32 %field.val)
   %load.struct1 = load %_Z10PartWorkerB6scalycB4v0_2, ptr %0, align 8
   %answer_fd = extractvalue %_Z10PartWorkerB6scalycB4v0_2 %load.struct1, 1
-  %as.sext = sext i32 %answer_fd to i64
-  %call = call i32 @close(i64 %as.sext)
+  %call = call i32 @close(i32 %answer_fd)
   %field.inplace2 = getelementptr inbounds nuw %_Z10PartWorkerB6scalycB4v0_2, ptr %0, i32 0, i32 0
   %field.val3 = load i64, ptr %field.inplace2, align 8
   %call4 = call i32 @scaly_proc_reap(i64 %field.val3)
@@ -495936,17 +495930,17 @@ define linkonce_odr void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpa
 entry:
   %load.struct = load %_Z5SliceIcE, ptr %2, align 8
   %data = extractvalue %_Z5SliceIcE %load.struct, 1
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %2, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  %call = call i64 @write(i64 1, ptr %data, i64 %field.val)
+  %load.struct1 = load %_Z5SliceIcE, ptr %2, align 8
+  %length = extractvalue %_Z5SliceIcE %load.struct1, 0
+  %call = call i64 @write(i32 1, ptr %data, i64 %length)
   call void @_ZN7Console7printlnEP10const_char(ptr @.scaly.empty.cstr)
-  %call1 = call ptr @LLVMGetErrorMessage(ptr %1)
-  %ne = icmp ne ptr %call1, null
+  %call2 = call ptr @LLVMGetErrorMessage(ptr %1)
+  %ne = icmp ne ptr %call2, null
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN7Console7printlnEP10const_char(ptr %call1)
-  call void @LLVMDisposeErrorMessage(ptr %call1)
+  call void @_ZN7Console7printlnEP10const_char(ptr %call2)
+  call void @LLVMDisposeErrorMessage(ptr %call2)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry

@@ -28,7 +28,7 @@ use scaly.memory.runtime
 ; libc allocator. free + memcpy come from scaly.memory.runtime; malloc is not
 ; declared there, so declare it here (fixpoint-safe — no scaly/scalyc source
 ; is touched).
-function malloc(size: size_t) returns pointer[void] extern
+function malloc(size: c_size) returns pointer[void] extern
 
 ; Max number of simultaneously-open documents tracked. An editor rarely keeps
 ; more than a handful open; a full table just falls back to reading disk.
@@ -75,10 +75,10 @@ define docstore
         let len path.get_length()
         if len > 0
         {
-            let dst malloc(len) as pointer[u8]
+            let dst malloc(len as c_size) as pointer[u8]
             if dst <> null
             {
-                memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len)
+                memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len as c_size)
                 ws_root_data := dst
                 ws_root_len := len
             }
@@ -101,7 +101,7 @@ define docstore
         if doc_slots = null
         {
             let bytes (DOC_CAP as size_t) * sizeof DocSlot
-            doc_slots := malloc(bytes) as pointer[DocSlot]
+            doc_slots := malloc(bytes as c_size) as pointer[DocSlot]
             if doc_slots = null
                 return
 
@@ -154,10 +154,10 @@ define docstore
         let len text.get_length()
         if len > 0
         {
-            let dst malloc(len) as pointer[u8]
+            let dst malloc(len as c_size) as pointer[u8]
             if dst <> null
             {
-                memcpy(dst as pointer[void], text.get_buffer() as pointer[void], len)
+                memcpy(dst as pointer[void], text.get_buffer() as pointer[void], len as c_size)
                 s.text_data := dst
                 s.text_len := len
             }
@@ -176,10 +176,10 @@ define docstore
         let len uri.get_length()
         if len > 0
         {
-            let dst malloc(len) as pointer[u8]
+            let dst malloc(len as c_size) as pointer[u8]
             if dst <> null
             {
-                memcpy(dst as pointer[void], uri.get_buffer() as pointer[void], len)
+                memcpy(dst as pointer[void], uri.get_buffer() as pointer[void], len as c_size)
                 s.uri_data := dst
                 s.uri_len := len
             }
