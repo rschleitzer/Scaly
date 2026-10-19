@@ -28512,6 +28512,7 @@ define Planner
                 this.operation_census_line("driver-left-other", 30)
                 this.operation_census_line("driver-left-parenless-inside", 31)
                 this.operation_census_line("driver-left-postfix-with-operators", 32)
+                this.operation_census_line("driver-left-operator-ends", 33)
                 this.operation_census_line("driver-step-name+tuple", 34)
                 this.operation_census_line("driver-step-name+vector", 35)
                 this.operation_census_line("driver-step-sigil", 36)
@@ -28805,8 +28806,9 @@ define Planner
                     if Planner.operand_is_symbol_operator(ops[i]) = false
                         return 30
                     i := i + 1
+                    ; a prefix that ends the operation: its operand is missing
                     if i >= n
-                        return 30
+                        return 33
                     kind := this.operation_thing(ops[i])
                     if kind = 1
                         return 28
@@ -28860,8 +28862,9 @@ define Planner
                         return 30
                     operators := operators + 1
                     i := i + 1
+                    ; an operator that ends the operation (`let x a +`)
                     if i >= n
-                        return 30
+                        return 33
                 }
             }
             ; a postfix takes the operation so far (`a + b as T` is
@@ -28872,8 +28875,22 @@ define Planner
         ; A sequence the driver refuses is reported: since 2026-10-18 there
         ; is no other reading of it (the old collapse and its precedence
         ; table are gone).
-        procedure report_unread_operation(mutable this: Planner, at: Span, reason: size_t)
+        procedure report_unread_operation(mutable this: Planner, at: Span, reason: size_t, ops: Vector[PlannedOperand])
         {
+            ; the operation ends in an operator, which waits for its operand
+            ; (ROADMAP-operation.md: "an operand is missing after `+`", at
+            ; that place, never by the pending type's name)
+            if reason = 33 and ops.length > 0
+            {
+                let last ops[ops.length - 1]
+                var sb StringBuilder()
+                sb.append "an operand is missing after '"
+                sb.append(Planner.operand_type_name(last))
+                sb.append "'"
+                let msg sb.to_string()
+                this.add_diagnostic(last.loc, String^this(msg))
+                return
+            }
             if reason = 31
             {
                 this.add_diagnostic(at, String^this("a call without parentheses takes exactly one thing; an argument that is more - an indexing, a call, a construction - takes its parentheses: f(v[i])"))
@@ -29320,7 +29337,7 @@ define Planner
             if reason <> 0
             {
                 this.operation_count(reason)
-                this.report_unread_operation(cur.loc, reason)
+                this.report_unread_operation(cur.loc, reason, ops)
                 if this.operation_census_on()
                 {
                     scaly_eputs("operation-left ")

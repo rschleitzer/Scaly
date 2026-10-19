@@ -1,0 +1,5 @@
+; The same for a prefix that ends the operation (2026-10-19).
+; xfail: an operand is missing after '-'
+let a 2
+let x a * -
+print "`x`"

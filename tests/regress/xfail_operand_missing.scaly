@@ -1,0 +1,9 @@
+; An operation that ends in an operator waits for an operand that never comes:
+; "an operand is missing after '+'", at the operator (2026-10-19,
+; ROADMAP-operation.md: in the author's words, never by the pending type's
+; name; Planner.report_unread_operation#). Before, the general refusal named
+; prefixes, postfixes and sigils at the start of the line.
+; xfail: an operand is missing after '+'
+let a 1
+let x a +
+print "`x`"
