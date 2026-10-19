@@ -33150,6 +33150,47 @@ define Planner
             this.add_diagnostic(loc, String^this(nmsg))
         }
 
+        ; report_unit_call_value#: a call of a routine that answers no value
+        ; -- `()`, ROADMAP-operation.md, Tuples -- where a declared type wants
+        ; one (a typed binding, an assignment, a return). The conformance
+        ; judge accepts every `()` source, for a body whose last action is a
+        ; statement; a resolved CALL is a value position, and before
+        ; 2026-10-19 `let n: int bump()` bound 0 at rc 0 in a routine and
+        ; killed the compiler among a program's own statements (an alloca of
+        ; `void`). True when it reported.
+        procedure report_unit_call_value(
+            mutable this: Planner,
+            target_type: PlannedType,
+            source: PlannedOperand,
+            loc: Span,
+            position: String
+        ) returns bool
+        {
+            if target_type.name.get_length() = 0 or target_type.variable <> null or Planner.is_unit_type(target_type)
+                return false
+            if source.member_access <> null
+                return false
+            choose source.expr
+                when c: PlannedCall
+                {
+                    if c.mangled_name.get_length() = 0 or Planner.is_unit_type(c.result_type) = false
+                        return false
+                    let tname Planner.get_readable_name(target_type)
+                    var sb StringBuilder()
+                    sb.append position
+                    sb.append " is a call of "
+                    sb.append c.name
+                    sb.append ", which answers no value: () where "
+                    sb.append tname
+                    sb.append " is declared"
+                    let msg sb.to_string()
+                    this.add_diagnostic(loc, String^this(msg))
+                    return true
+                }
+                else
+                    return false
+        }
+
         procedure report_type_mismatch(
             mutable this: Planner,
             target_type: PlannedType,
@@ -33158,6 +33199,8 @@ define Planner
             position: String
         )
         {
+            if this.report_unit_call_value(target_type, source, loc, position)
+                return
             if this.type_conformance_unjudgeable(target_type, source)
                 return
             if Planner.type_conformance_accepted(target_type, source.result_type)

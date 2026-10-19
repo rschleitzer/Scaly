@@ -1,0 +1,14 @@
+; The same for a returned value and an assigned one (2026-10-19,
+; Planner.report_unit_call_value#).
+; xfail: the returned value is a call of bump, which answers no value: () where int is declared
+procedure bump()
+    print "x"
+
+procedure twice() returns int
+{
+    var k 1
+    k := bump()
+    return bump()
+}
+
+print "`twice()`"

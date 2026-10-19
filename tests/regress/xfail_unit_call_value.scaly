@@ -1,0 +1,10 @@
+; A call of a routine that answers no value -- `()` -- where a declared type
+; wants one is rc 4 (2026-10-19, Planner.report_unit_call_value#): in a routine
+; `let n: int bump()` bound 0 at rc 0, among a program's own statements the
+; compiler died on an alloca of `void` without a word.
+; xfail: the initializer is a call of bump, which answers no value: () where int is declared
+procedure bump() returns ()
+    print "x"
+
+let n: int bump()
+print "`n`"
