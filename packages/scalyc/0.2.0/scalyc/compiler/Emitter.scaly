@@ -3431,8 +3431,56 @@ define Emitter
                 Console.println("id-diff `planned_type.name` has `planned_type.mangled_name` want `want`")
         }
 
+        ; map_return_type#: the LLVM type a routine answers -- `void` for one
+        ; that answers `()`, map_type# otherwise -- and so the type of what a
+        ; variant's arm binds, where `void` says there is nothing to bind. A VALUE of `()` held anywhere
+        ; (a field, a slot, an element, a parameter) is the empty struct
+        ; (map_type#); only the answer of a routine is `void`
+        ; (ROADMAP-operation.md, Tuples).
+        procedure map_return_type(mutable this, planned_type: PlannedType) returns LLVMTypeRef
+        {
+            if Planner.is_unit_type(planned_type)
+                return LLVMVoidTypeInContext context
+            map_type planned_type
+        }
+
+        ; unit_fill#: the value of `()` where one is needed -- an argument, a
+        ; component, a binding. An operation answering `()` emits no value (a
+        ; routine answering it is `void`), so `v.put(1, ())`, `H(1, (), 2)`
+        ; and `let u ()` met a null and dropped the call, the construction or
+        ; the binding at rc 0; the value is the empty struct's constant.
+        procedure unit_fill(mutable this, mutable value: LLVMValueRef, planned_type: PlannedType) returns LLVMValueRef
+        {
+            if Planner.is_unit_type(planned_type) = false
+                return value
+            if value <> null
+                if LLVMGetTypeKind(LLVMTypeOf value) <> LLVMTypeKind.Void()
+                    return value
+            LLVMConstNull(map_type planned_type)
+        }
+
+        ; unit_operands#: whether the operation `ops` answers `()` -- its last
+        ; operand's type, as emit_operands# answers its last operand
+        function unit_operands(ops: ref[Vector[PlannedOperand]]?) returns bool
+        {
+            if ops = null
+                return false
+            let v (*ops)
+            if v.length = 0
+                return false
+            let last v.get(v.length - 1)
+            if last = null
+                return false
+            Planner.is_unit_type((*last).result_type)
+        }
+
         procedure map_type(mutable this, planned_type: PlannedType) returns LLVMTypeRef
         {
+            ; `()` held as a value has no bytes: the empty struct. Until
+            ; 2026-10-19 it was LLVM `void`, and every method of a
+            ; `Vector[()]` that loads or stores a `T` died in LLVM (SIGTRAP).
+            if Planner.is_unit_type(planned_type)
+                return LLVMStructTypeInContext(context, null as pointer[LLVMTypeRef], 0, 0)
             ; Check type cache first — under the key cache_type# writes, the
             ; MANGLED name. It was looked up by the type's NAME, and the only
             ; entries are pointer/ref types keyed `P…`/`R…`: a concept whose
@@ -5310,7 +5358,7 @@ define Emitter
             if func.return_type <> null
             {
                 let rt func.return_type.unwrap()
-                let mapped map_type rt
+                let mapped map_return_type rt
                 if use_sret
                 {
                     ; s194: throws wrapper base. The wrapper data field is sized
@@ -9974,7 +10022,7 @@ define Emitter
             ; by-ptr param straight to an extern call is NOT covered by the fix.
             var clo_ty clo_ty_param
             let ptr_ty LLVMPointerTypeInContext(context, 0)
-            let ret_ty map_type(clo.return_type)
+            let ret_ty map_return_type(clo.return_type)
 
             var pcount: size_t 0
             if clo.param_types <> null
@@ -10654,7 +10702,7 @@ define Emitter
                     let aptr argv.get ai
                     if aptr <> null
                     {
-                        var arg_value emit_operand((*aptr))
+                        var arg_value unit_fill(emit_operand((*aptr)), (*aptr).result_type)
                         if arg_value = null
                             return null
                         let arg_kind LLVMGetTypeKind(LLVMTypeOf arg_value)
@@ -12020,7 +12068,7 @@ define Emitter
                                 }
                                 k := k + 1
                             }
-                            let ret_ty map_type(call.result_type)
+                            let ret_ty map_return_type(call.result_type)
                             let fn_ty LLVMFunctionType(ret_ty, arg_tys.data, n_args as u32, 0)
                             return LLVMBuildCall2(builder, fn_ty, thunk, arg_vals.data, n_args as u32, "")
                         }
@@ -12099,7 +12147,7 @@ define Emitter
                         return null
                     var decl_ret map_intrinsic_type_by_name call.result_type.name
                     if decl_ret = null
-                        decl_ret := map_type(call.result_type)
+                        decl_ret := map_return_type(call.result_type)
                     let decl_ty LLVMFunctionType(decl_ret, null as pointer[LLVMTypeRef], 0, 1)
                     func := LLVMAddFunction(llvm_module, call.mangled_name.c_data(), decl_ty)
                     LLVMSetLinkage(func, LLVMLinkage.External())
@@ -12187,7 +12235,7 @@ define Emitter
                     LLVMAddCallSiteAttribute(cv, 1, na_attr)
                     return sret_slot
                 }
-                var result_type map_type call.result_type
+                var result_type map_return_type call.result_type
                 ; s124: when the declared function returns void (procedure),
                 ; force result_type to void here too so the call name is
                 ; empty. map_type falls back to opaque ptr for empty/unknown
@@ -12240,7 +12288,7 @@ define Emitter
                         LLVMAddCallSiteAttribute(cv, 1, na_attr)
                         return sret_slot
                     }
-                    var result_type map_type call.result_type
+                    var result_type map_return_type call.result_type
                     ; s124: same void-return if as the call.args=null path.
                     let fn_ty LLVMGlobalGetValueType(func)
                     if fn_ty <> null
@@ -12330,7 +12378,7 @@ define Emitter
             ; result types.
             var result_type map_intrinsic_type_by_name call.result_type.name
             if result_type = null
-                result_type := map_type(call.result_type)
+                result_type := map_return_type(call.result_type)
             ; s89: when sret applies, the IR call returns void.
             if use_sret
                 result_type := LLVMVoidTypeInContext(context)
@@ -12644,7 +12692,7 @@ define Emitter
                     ; generic instantiated method's param is invisible to a scan of
                     ; current_plan.functions.)
                     if direct_alloca = false
-                        arg_value := emit_operand(arg_operand)
+                        arg_value := unit_fill(emit_operand(arg_operand), arg_operand.result_type)
 
                     ; Guard against arg emission returning a null handle
                     ; (e.g. an unsupported cast or unresolved sub-expression).
@@ -15282,7 +15330,9 @@ define Emitter
                 if comp_ptr <> null
                 {
                     let comp comp_ptr.unwrap()
-                    let comp_value emit_operands comp.value
+                    var comp_value emit_operands comp.value
+                    if comp_value = null and Emitter.unit_operands(comp.value)
+                        comp_value := LLVMConstNull(LLVMStructTypeInContext(context, null as pointer[LLVMTypeRef], 0, 0))
                     comp_values.put(i, comp_value)
 
                     if comp_value = null
@@ -17104,7 +17154,7 @@ define Emitter
                                 {
                                     if when_case.variant_index = 0
                                     {
-                                        let rt_ty map_type throws_call_return_type
+                                        let rt_ty map_return_type throws_call_return_type
                                         if LLVMGetTypeKind(rt_ty) = LLVMTypeKind.Void()
                                         {
                                             let ptr_ty_s LLVMPointerTypeInContext(context, 0)
@@ -17121,7 +17171,7 @@ define Emitter
                                     }
                                     if when_case.variant_index <> 0
                                     {
-                                        let var_ty_e map_type when_case.variant_type
+                                        let var_ty_e map_return_type when_case.variant_type
                                         if LLVMGetTypeKind(var_ty_e) = LLVMTypeKind.Void()
                                         {
                                             let ptr_ty_e LLVMPointerTypeInContext(context, 0)
@@ -17161,7 +17211,7 @@ define Emitter
                                     if n_fields >= 2
                                     {
                                         let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
-                                        let var_ty map_type when_case.variant_type
+                                        let var_ty map_return_type when_case.variant_type
                                         ; s114: bail when variant_type is unresolved (mapped
                                         ; to void). LLVMBuildLoad2 of void calls into
                                         ; DataLayout::getTypeSizeInBits which SIGTRAPs on
@@ -20458,7 +20508,7 @@ define Emitter
                     {
                         if Planner.is_unit_type(arm.variant_type) = false
                         {
-                            let pay_ty map_type arm.variant_type
+                            let pay_ty map_return_type arm.variant_type
                             let pay_slot entry_alloca(pay_ty, "panic.payload")
                             var fill_args Vector[LLVMValueRef](1)
                             fill_args.put(0, pay_slot)
@@ -20716,7 +20766,7 @@ define Emitter
                         {
                             if Planner.is_unit_type(catch_case.variant_type) = false
                             {
-                                let err_ty map_type catch_case.variant_type
+                                let err_ty map_return_type catch_case.variant_type
                                 let err_value LLVMBuildLoad2(builder, err_ty, payload_ptr, "err.val")
                                 LLVMSetAlignment(err_value, 1)
                                 define_variable(catch_case.name, err_value)
@@ -22983,6 +23033,8 @@ define Emitter
                 if binding.operation.length > 0
                 {
                     value := emit_operands(binding.operation)
+                    if value = null and Emitter.unit_operands(binding.operation)
+                        value := LLVMConstNull(LLVMStructTypeInContext(context, null as pointer[LLVMTypeRef], 0, 0))
                     if value = null
                         return false
 

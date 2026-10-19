@@ -1,0 +1,43 @@
+; `()` held as a VALUE -- an element, a field, a parameter, a binding
+; (2026-10-19, ROADMAP-operation.md, Tuples): it has no bytes, the empty struct
+; (Emitter.map_type#); only a routine answering it is LLVM `void`
+; (map_return_type#), and where a value of it is needed one is made
+; (unit_fill#). Before, a `Vector[()]` died in LLVM on a `load void` (SIGTRAP,
+; rc 133, no output), and `a.add(())`, `H(1, (), 2)` and `p(u)` with `let u ()`
+; dropped the call, the construction or the binding at rc 0.
+; Expected: PASS
+define Holder (n: int, nothing: (), m: int)
+
+mutable signals: int 0
+
+procedure signal() returns () mutable signals
+    signals := signals + 1
+
+function pass(u: ()) returns int
+    7
+
+procedure run() returns bool mutable signals
+{
+    var v Vector[()](3)
+    v.put(1, ())
+    let e v[2]
+    var a Array[()]()
+    a.add(())
+    a.add(())
+    let h Holder(1, (), 2)
+    let u ()
+    let w { signal() }
+    let o Option[()].Some(())
+    var seen 0
+    choose o
+        when s: Some
+            seen := 1
+        else
+            seen := 2
+    v.length = 3 and a.length = 2 and h.n = 1 and h.m = 2 and pass(u) = 7 and pass(w) = 7 and seen = 1 and pass(e) = 7 and signals = 1
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"
