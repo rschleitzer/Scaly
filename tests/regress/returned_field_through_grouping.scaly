@@ -1,0 +1,57 @@
+; Regression (2026-10-19): a field read through PARENTHESES, the hop riding on
+; the grouping -- `Out((*it).text)` -- in a construction a routine returns was
+; not followed back by the pre-scan of returned locals
+; (Planner.collect_flow_locals#), so `chain`, the call result `it` points into,
+; stayed on the routine's own frame and the returned String dangled: FAIL at
+; rc 0 under poison (the compiler of the commit before). The compiler's own
+; apply_call_result_hops# had the shape and was right only because an unrelated
+; block happened to end in `prop := c0`, which the pre-scan reads as a tail; one
+; statement more in that block and scalyls' IR named a garbage symbol.
+; Expected: PASS
+define Item (text: String)
+define Out (text: String)
+
+function items(n: int) returns Vector[Item]
+{
+    var v Vector[Item](1)
+    v.put(0, Item(String("item-text-long-enough")))
+    v
+}
+
+procedure pick(n: int) returns Out
+{
+    var out Out(String(""))
+    let chain items(n)
+    var it: ref[Item]? null
+    if chain.length = 1
+    {
+        let c0 chain.get 0
+        if c0 <> null
+            it := c0
+        if n > 5
+            print "never"
+    }
+    if it <> null
+        out := Out((*it).text)
+    out
+}
+
+procedure churn() returns int
+{
+    var sb StringBuilder()
+    var i 0
+    while i < 200
+    {
+        sb.append "xxxxxxxxxxxxxxxx"
+        i := i + 1
+    }
+    sb.to_string().get_length() as int
+}
+
+Page.enable_poison()
+let o pick(1)
+let c churn()
+if o.text = "item-text-long-enough" and c > 0
+    print "PASS"
+else
+    print "FAIL"

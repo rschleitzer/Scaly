@@ -52459,6 +52459,27 @@ define Planner
                                         this.add_escaping_local((*bp))
                                 }
                             }
+                            when htup: scalyc.compiler.Model.Tuple
+                            {
+                                ; ... and a field read through PARENTHESES, the
+                                ; hop riding on the grouping: `(*prop).result_type`
+                                ; stored into a returned construction aliases what
+                                ; `prop` points to. Missed until 2026-10-19: the
+                                ; grouping arm above runs only without a hop, so
+                                ; apply_call_result_hops# kept `chain` (a call
+                                ; result whose types it returns) on the caller page
+                                ; only because an unrelated block's last statement
+                                ; happened to be `prop := c0` -- one statement more
+                                ; in that block and the types it returned dangled
+                                var hi: size_t 0
+                                while hi < htup.components.length
+                                {
+                                    let hcp htup.components.get hi
+                                    if hcp <> null
+                                        this.collect_flow_locals((*hcp).value)
+                                    hi := hi + 1
+                                }
+                            }
                             else
                                 0
                 }
