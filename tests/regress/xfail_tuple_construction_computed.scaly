@@ -1,0 +1,11 @@
+; A tuple applied to a record is a bound one too (2026-10-19,
+; Planner.spread_construction_tuple#): each component reads the tuple again,
+; so a computed one is bound first and evaluated once.
+; xfail: a tuple applied to a function is a bound one
+define Point (x: int, y: int)
+
+function make() returns (int, int)
+    (5, 6)
+
+let p Point(make())
+print "`p.x`"

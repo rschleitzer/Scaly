@@ -14508,7 +14508,11 @@ define Planner
                         ; own since 2026-10-04: what a
                         ; tuple is applied to decides the step
                         if is_struct_ctor
+                        {
+                            ; a bound tuple applied to a record: `Point args`
+                            second := this.spread_construction_tuple(second, fn_name)
                             return this.collapse_construction(ops, result, second, fn_name, ctor_struct_type)
+                        }
 
                         if is_variant_ctor
                             return this.collapse_variant(ops, result, second, ctor_union_type, ctor_variant_name, ctor_variant_tag)
@@ -27355,30 +27359,154 @@ define Planner
         ; receiver no part of the tuple.
         procedure spread_tuple_argument(mutable this: Planner, second: PlannedOperand, fn_name: String, head: PlannedOperand) returns PlannedOperand
         {
+            let count Planner.lone_tuple_count(second)
+            if count = 0
+                return second
+            ; the routines the name can mean: none of one parameter,
+            ; one of `count` -- a method's of the receiver's type (the
+            ; method hop's parent), a free routine's otherwise
+            var candidates this.lookup_functions(fn_name)
+            if head.member_access <> null
+            {
+                let head_hops (*head.member_access)
+                if head_hops.length > 0
+                {
+                    let lp head_hops.get(head_hops.length - 1)
+                    if lp <> null and (*lp).is_method
+                        candidates := this.lookup_methods((*lp).parent_type.name, fn_name)
+                }
+            }
+            var takes_count false
+            var ci: size_t 0
+            while ci < candidates.length
+            {
+                let fp candidates.get ci
+                if fp <> null
+                {
+                    var arity: size_t 0
+                    var ii: size_t 0
+                    while ii < fp.input.length
+                    {
+                        let ip fp.input.get ii
+                        if ip <> null
+                        {
+                            var is_this false
+                            if ip.name <> null and (*ip.name) = "this"
+                                is_this := true
+                            if is_this = false
+                                arity := arity + 1
+                        }
+                        ii := ii + 1
+                    }
+                    if arity = 1
+                        return second
+                    if arity = count
+                        takes_count := true
+                }
+                ci := ci + 1
+            }
+            if takes_count = false
+                return second
+            this.spread_lone_tuple(second, count)
+        }
+
+        ; spread_construction_tuple#: a record applied to ONE bound tuple is
+        ; built from its components -- `let args (3, 4)`, then `Point(args)`
+        ; and `Point args` are `Point(3, 4)` (ROADMAP-operation.md, Tuples),
+        ; the twin of spread_tuple_argument#. Only where the record has no
+        ; init of one parameter and is no record of one field, so a record
+        ; holding the tuple (`Holder(pair)`) gets it whole; and only where an
+        ; init or the field list takes as many as the tuple has components.
+        procedure spread_construction_tuple(mutable this: Planner, second: PlannedOperand, fn_name: String) returns PlannedOperand
+        {
+            let count Planner.lone_tuple_count(second)
+            if count = 0
+                return second
+            let concept_ref this.lookup_concept(fn_name)
+            if concept_ref = null
+                return second
+            let c (*concept_ref)
+            var takes_count false
+            choose c.definition
+                when s: Structure
+                {
+                    if s.properties.length = 1
+                        return second
+                    if s.properties.length = count
+                        takes_count := true
+                    var i: size_t 0
+                    while i < s.initializers.length
+                    {
+                        let ip s.initializers.get i
+                        if ip <> null
+                        {
+                            if ip.input.length = 1
+                                return second
+                            if ip.input.length = count
+                                takes_count := true
+                        }
+                        i := i + 1
+                    }
+                }
+                else
+                    return second
+            if takes_count = false
+                return second
+            this.spread_lone_tuple(second, count)
+        }
+
+        ; lone_tuple_count#: how many components the one value of `second`
+        ; has, where `second` is an argument list of ONE unlabelled operand
+        ; whose type is a tuple of at least two -- the shape both spreads ask
+        ; for; 0 otherwise.
+        function lone_tuple_count(second: PlannedOperand) returns size_t
+        {
             choose second.expr
                 when tp: PlannedTuple
                 {
                     if tp.components = null
-                        return second
+                        return 0
                     let comps (*tp.components)
                     if comps.length <> 1
-                        return second
+                        return 0
                     let cp comps.get 0
                     if cp = null or cp.name <> null or cp.value = null
-                        return second
+                        return 0
                     let vals (*cp.value)
                     if vals.length <> 1
-                        return second
+                        return 0
                     let vp vals.get 0
+                    if vp = null
+                        return 0
+                    let tt vp.result_type
+                    if tt.name <> "()" or tt.generics = null
+                        return 0
+                    let count (*tt.generics).length
+                    if count < 2
+                        return 0
+                    return count
+                }
+                else
+                    return 0
+        }
+
+        ; spread_lone_tuple#: the argument list of `count` components that
+        ; reads the one tuple of `second` again, component by component (the
+        ; member `$k`). A tuple reached only through a call is refused, rc 4:
+        ; each component would call again.
+        procedure spread_lone_tuple(mutable this: Planner, second: PlannedOperand, count: size_t) returns PlannedOperand
+        {
+            choose second.expr
+                when tp: PlannedTuple
+                {
+                    let cp (*tp.components).get 0
+                    if cp = null
+                        return second
+                    let vp (*cp.value).get 0
                     if vp = null
                         return second
                     let v (*vp)
                     let tt v.result_type
-                    if tt.name <> "()" or tt.generics = null
-                        return second
-                    let count (*tt.generics).length
-                    if count < 2
-                        return second
                     var bound false
                     choose v.expr
                         when pv: PlannedVariable
@@ -27397,51 +27525,6 @@ define Planner
                             hi := hi + 1
                         }
                     }
-                    ; the routines the name can mean: none of one parameter,
-                    ; one of `count` -- a method's of the receiver's type (the
-                    ; method hop's parent), a free routine's otherwise
-                    var candidates this.lookup_functions(fn_name)
-                    if head.member_access <> null
-                    {
-                        let head_hops (*head.member_access)
-                        if head_hops.length > 0
-                        {
-                            let lp head_hops.get(head_hops.length - 1)
-                            if lp <> null and (*lp).is_method
-                                candidates := this.lookup_methods((*lp).parent_type.name, fn_name)
-                        }
-                    }
-                    var takes_count false
-                    var ci: size_t 0
-                    while ci < candidates.length
-                    {
-                        let fp candidates.get ci
-                        if fp <> null
-                        {
-                            var arity: size_t 0
-                            var ii: size_t 0
-                            while ii < fp.input.length
-                            {
-                                let ip fp.input.get ii
-                                if ip <> null
-                                {
-                                    var is_this false
-                                    if ip.name <> null and (*ip.name) = "this"
-                                        is_this := true
-                                    if is_this = false
-                                        arity := arity + 1
-                                }
-                                ii := ii + 1
-                            }
-                            if arity = 1
-                                return second
-                            if arity = count
-                                takes_count := true
-                        }
-                        ci := ci + 1
-                    }
-                    if takes_count = false
-                        return second
                     if bound = false
                     {
                         this.add_diagnostic(tp.loc, String^this("a tuple applied to a function is a bound one, so that it is evaluated once: let args <the tuple>, then f(args)"))
@@ -28680,7 +28763,8 @@ define Planner
                         this.operation_count(71)
                         var built: PlannedType target.type
                         var built_name: String target.name
-                        return this.collapse_construction(vec, cur, next, built_name, built)
+                        var args this.spread_construction_tuple(next, built_name)
+                        return this.collapse_construction(vec, cur, args, built_name, built)
                     }
                     if target.kind = 2
                     {

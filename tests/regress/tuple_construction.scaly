@@ -1,0 +1,42 @@
+; A bound tuple applied to a record builds it from its components
+; (2026-10-19, ROADMAP-operation.md, Tuples; Planner.spread_construction_tuple#):
+; `let args (3, 4)`, then `Point(args)` and `Point args` are `Point(3, 4)`,
+; through the field list or through an init of that arity; a labelled tuple
+; and a field holding one alike. A record of one field takes the tuple whole.
+; Expected: PASS
+define Point (x: int, y: int)
+
+define Holder (pair: (int, int))
+
+define Tagged
+(
+    n: int
+    s: String
+)
+{
+    init(s: String, n: int)
+    {
+        this.n := n
+        this.s := s
+    }
+}
+
+procedure run() returns bool
+{
+    let args (3, 4)
+    let p Point(args)
+    let q Point args
+    let named (x: 5, y: 6)
+    let r Point(named)
+    let h Holder((7, 8))
+    let f Point(h.pair)
+    let whole Holder(args)
+    let st ("acht", 8)
+    let t Tagged(st)
+    p.x = 3 and p.y = 4 and q.x = 3 and q.y = 4 and r.x = 5 and r.y = 6 and f.x = 7 and f.y = 8 and Point(whole.pair).y = 4 and t.n = 8 and t.s.equals("acht")
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"
