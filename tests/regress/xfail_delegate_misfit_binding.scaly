@@ -1,0 +1,11 @@
+; And for a delegate-typed binding of a named function (2026-10-19): `let f:
+; IntFn add` with `add` of two parameters killed the compiler (SIGSEGV,
+; rc 139, no output).
+; xfail: no overload of add takes what the delegate IntFn hands it: (int)
+define IntFn delegate(int) returns int
+
+function add(a: int, b: int) returns int
+    a + b
+
+let f: IntFn add
+print "`f(3)`"

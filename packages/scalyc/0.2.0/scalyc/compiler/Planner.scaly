@@ -4616,13 +4616,10 @@ define Planner
                 else
                     0
             ; a named function becomes the closure of the lambda that calls it
-            ; (closure_for_lambda_arg#), where it takes the delegate's arity
+            ; (closure_for_lambda_arg#), which says so where none of its
+            ; overloads takes the delegate's parameters
             if this.function_arg_name((*ap)).get_length() > 0
-            {
-                var dn String(pt.name)
-                let dparams this.delegate_param_types(dn)
-                return this.function_takes_arity(this.function_arg_name((*ap)), dparams.length)
-            }
+                return true
             false
         }
 
@@ -4645,20 +4642,68 @@ define Planner
                     return ""
         }
 
-        ; function_takes_arity#: does a free routine of that name take n
-        ; parameters
-        function function_takes_arity(this: Planner, name: String, n: size_t) returns bool
+        ; function_fits_delegate#: does an overload of the free routine `name`
+        ; take the delegate's parameters -- as many, each a parameter type the
+        ; delegate's argument fits (a generic parameter fits anything)
+        procedure function_fits_delegate(mutable this: Planner, name: String, dparams: Vector[PlannedType]) returns bool
         {
             let candidates this.lookup_functions(name)
             var i: size_t 0
             while i < candidates.length
             {
                 let fp candidates.get i
-                if fp <> null and fp.input.length = n
-                    return true
+                if fp <> null and fp.input.length = dparams.length
+                {
+                    var fits true
+                    var k: size_t 0
+                    while k < dparams.length
+                    {
+                        let ip fp.input.get k
+                        let dp dparams.get k
+                        if ip = null or dp = null
+                            fits := false
+                        else if ip.type <> null
+                        {
+                            let it this.plan_type((*ip.type))
+                            if Planner.type_mentions_generic_param(it) = false and Planner.types_compatible(it, (*dp)) = false
+                                fits := false
+                        }
+                        k := k + 1
+                    }
+                    if fits
+                        return true
+                }
                 i := i + 1
             }
             false
+        }
+
+        ; report_delegate_misfit#: a named function where a delegate is
+        ; declared, none of whose overloads takes the delegate's parameters.
+        ; Until 2026-10-19 the call it was an argument of was "function not
+        ; found" (`apply`, or the function itself), and `let f: IntFn add`
+        ; killed the compiler (SIGSEGV, rc 139).
+        procedure report_delegate_misfit(mutable this: Planner, name: String, del_name: String, dparams: Vector[PlannedType], loc: Span)
+        {
+            var sb StringBuilder()
+            sb.append "no overload of "
+            sb.append name
+            sb.append " takes what the delegate "
+            sb.append del_name
+            sb.append " hands it: ("
+            var i: size_t 0
+            while i < dparams.length
+            {
+                if i > 0
+                    sb.append ", "
+                let dp dparams.get i
+                if dp <> null
+                    sb.append(Planner.get_readable_name((*dp)))
+                i := i + 1
+            }
+            sb.append(")" as char)
+            let msg sb.to_string()
+            this.add_diagnostic(loc, String^this(msg))
         }
 
         ; function_lambda#: `\a$0 a$1: f(a$0, a$1)`, the lambda that calls the
@@ -4706,8 +4751,13 @@ define Planner
                 var dn String(pt.name)
                 let dparams this.delegate_param_types(dn)
                 let dret this.delegate_return_type(dn)
-                if this.function_takes_arity(named, dparams.length) = false
-                    return null
+                if this.function_fits_delegate(named, dparams) = false
+                {
+                    ; reported here, and the argument stands as it is: the
+                    ; compile ends at rc 4 without a second word about the call
+                    this.report_delegate_misfit(named, dn, dparams, a.loc)
+                    return PlannedOperand^this(a.loc, a.expr, null, pt)
+                }
                 var lm this.function_lambda(named, dparams.length, a.loc)
                 let clo this.make_closure("fn", lm, dparams, dret, pt, Lifetime.Local(scalyc.compiler.Model.Local(a.loc)))
                 return PlannedOperand^this(a.loc, PlannedExpression.Closure clo, null, pt)
@@ -30355,11 +30405,15 @@ define Planner
                                 if dft_name.get_length() > 0 and this.lookup_local_binding(dft_name) = null and this.lookup_concept_any(dft_name) = null and this.is_function(dft_name)
                                 {
                                     let fdparams this.delegate_param_types(del_name)
-                                    if this.function_takes_arity(dft_name, fdparams.length)
+                                    if this.function_fits_delegate(dft_name, fdparams) = false
                                     {
-                                        var flm this.function_lambda(dft_name, fdparams.length, b.span)
-                                        return this.delegate_binding(b, del_name, flm)
+                                        this.report_delegate_misfit(dft_name, del_name, fdparams, b.span)
+                                        if b.item.name <> null
+                                            this.define_local((*b.item.name), this.plan_type((*b.item.type)), false, false)
+                                        return PlannedBinding(b.span, b.binding_type, PlannedItem(b.span, false, null, null, null), null)
                                     }
+                                    var flm this.function_lambda(dft_name, fdparams.length, b.span)
+                                    return this.delegate_binding(b, del_name, flm)
                                 }
                             }
                             else

@@ -1,0 +1,13 @@
+; The same for a parameter TYPE the delegate's argument does not fit
+; (2026-10-19, Planner.function_fits_delegate#) -- before, "function not
+; found: half", for a function that exists.
+; xfail: no overload of half takes what the delegate IntFn hands it: (int)
+define IntFn delegate(int) returns int
+
+function half(s: String) returns int
+    s.length() as int
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+print "`apply(half, 3)`"

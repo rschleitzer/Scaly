@@ -1,0 +1,14 @@
+; A named function where a delegate is declared, none of whose overloads takes
+; what the delegate hands it, is rc 4 at the argument (2026-10-19,
+; Planner.report_delegate_misfit#) -- before, the call was "function not
+; found: apply", naming the wrong routine.
+; xfail: no overload of add takes what the delegate IntFn hands it: (int)
+define IntFn delegate(int) returns int
+
+function add(a: int, b: int) returns int
+    a + b
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+print "`apply(add, 3)`"
