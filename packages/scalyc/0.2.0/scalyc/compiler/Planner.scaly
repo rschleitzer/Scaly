@@ -5628,7 +5628,10 @@ define Planner
         ; complement is a bit operation and only means something at a width,
         ; so `flags & ~F` with a u32 `flags` is `F`'s complement in 32 bits
         ; where without one `~v` is `-v - 1` (Go's untyped `^`)
-        procedure constant_integer(mutable this: Planner, op: PlannedOperand, bits: size_t, mutable negative: ref[bool], mutable magnitude: ref[size_t]) returns bool
+        ; `defines`: read the value of EVERY define as its type says, typed
+        ; or not -- in a constant's initializer, which folds what it names
+        ; (fold_initializer#)
+        procedure constant_integer(mutable this: Planner, op: PlannedOperand, bits: size_t, defines: bool, mutable negative: ref[bool], mutable magnitude: ref[size_t]) returns bool
         {
             if op.member_access <> null
                 return false
@@ -5654,11 +5657,11 @@ define Planner
                         }
                         else
                             return false
-                    if at <> op.loc.start and Planner.constant_type_is_untyped(op.result_type) = false
+                    if at <> op.loc.start and defines = false and Planner.constant_type_is_untyped(op.result_type) = false
                         return false
                     negative := false
                     magnitude := v
-                    if at <> op.loc.start and (v >> (63 as size_t)) = 1
+                    if at <> op.loc.start and Planner.integer_type_is_unsigned(op.result_type) = false and (v >> (63 as size_t)) = 1
                     {
                         negative := true
                         magnitude := (0 as size_t) - v
@@ -5675,7 +5678,7 @@ define Planner
                     let inner (*comps[0].value)
                     if inner.length <> 1
                         return false
-                    return this.constant_integer(inner[0], bits, negative, magnitude)
+                    return this.constant_integer(inner[0], bits, defines, negative, magnitude)
                 }
                 when call: PlannedCall
                 {
@@ -5688,7 +5691,7 @@ define Planner
                     {
                         if call.name <> "-" and call.name <> "~"
                             return false
-                        if this.constant_integer(args[0], bits, &an, &am) = false
+                        if this.constant_integer(args[0], bits, defines, &an, &am) = false
                             return false
                         if call.name = "~"
                         {
@@ -5714,7 +5717,7 @@ define Planner
                         return false
                     var bn false
                     var bm: size_t 0
-                    if this.constant_integer(args[0], bits, &an, &am) = false or this.constant_integer(args[1], bits, &bn, &bm) = false
+                    if this.constant_integer(args[0], bits, defines, &an, &am) = false or this.constant_integer(args[1], bits, defines, &bn, &bm) = false
                         return false
                     return Planner.constant_operation(call.name, an, am, bn, bm, negative, magnitude)
                 }
@@ -5731,6 +5734,9 @@ define Planner
         ; computes in it), groupings, the operators constant_integer#
         ; evaluates --, whether or not its value is in range
         function constant_shape(this: Planner, op: PlannedOperand) returns bool
+            this.constant_shape_of(op, false)
+
+        function constant_shape_of(this: Planner, op: PlannedOperand, defines: bool) returns bool
         {
             if op.member_access <> null
                 return false
@@ -5745,7 +5751,7 @@ define Planner
                             at := h.span.start
                         else
                             return false
-                    return at = op.loc.start or Planner.constant_type_is_untyped(op.result_type)
+                    return at = op.loc.start or defines or Planner.constant_type_is_untyped(op.result_type)
                 }
                 when tp: PlannedTuple
                 {
@@ -5757,7 +5763,7 @@ define Planner
                     let inner (*comps[0].value)
                     if inner.length <> 1
                         return false
-                    return this.constant_shape(inner[0])
+                    return this.constant_shape_of(inner[0], defines)
                 }
                 when call: PlannedCall
                 {
@@ -5765,18 +5771,108 @@ define Planner
                         return false
                     let args (*call.args)
                     if args.length = 1
-                        return (call.name = "-" or call.name = "~") and this.constant_shape(args[0])
+                        return (call.name = "-" or call.name = "~") and this.constant_shape_of(args[0], defines)
                     if args.length <> 2
                         return false
                     let oname call.name
                     match oname
                         case "+" case "-" case "*" case "/" case "%" case "div" case "mod" case "<<" case ">>" case "&" case "|" case "xor"
-                            return this.constant_shape(args[0]) and this.constant_shape(args[1])
+                            return this.constant_shape_of(args[0], defines) and this.constant_shape_of(args[1], defines)
                     return false
                 }
                 else
                     return false
             false
+        }
+
+        ; fold_initializer#: a constant's initializer -- a scalar global's,
+        ; one element of a constant array's -- folded EXACTLY by
+        ; constant_integer#, any shape (`1 << 4 | 1`, `(A + B) * 2`, the
+        ; values of other defines read as their types say), and checked
+        ; against the declared type: 1 folded into `out` (the bits of that
+        ; type), 2 refused and reported, 0 no constant expression (the caller
+        ; asks fold_constant_ops# then). Before 2026-10-19 only operators of
+        ; one precedence level folded, and a value too large wrapped.
+        procedure fold_initializer(mutable this: Planner, ops: Vector[PlannedOperand], t: PlannedType, mutable out: ref[size_t]) returns size_t
+        {
+            if Planner.type_is_integer_like(t) = false or ops.length = 0
+                return 0
+            var run Vector[PlannedOperand](ops.length)
+            var k: size_t 0
+            while k < ops.length
+            {
+                run.put(k, ops[k])
+                k := k + 1
+            }
+            let one this.collapse_operand_sequence(run)
+            if this.constant_shape_of(one, true) = false
+                return 0
+            var bits: size_t 0
+            if Planner.integer_type_is_unsigned(t)
+                bits := Planner.integer_type_width(t)
+            var neg false
+            var mag: size_t 0
+            if this.constant_integer(one, bits, true, &neg, &mag) = false
+            {
+                this.add_diagnostic(one.loc, String^this("this constant divides by zero, shifts by a count out of range, or leaves the integers a constant holds: -(2^64 - 1) to 2^64 - 1"))
+                return 2
+            }
+            if Planner.constant_fits(neg, mag, t.name) = false
+            {
+                var sb StringBuilder()
+                sb.append "the constant "
+                if neg
+                    sb.append("-" as char)
+                sb.append(mag as u64)
+                sb.append " does not fit "
+                sb.append(Planner.get_readable_name(t))
+                sb.append ", the type it is declared"
+                let msg sb.to_string()
+                this.add_diagnostic(one.loc, String^this(msg))
+                return 2
+            }
+            out := mag
+            if neg
+                out := (0 as size_t) - mag
+            1
+        }
+
+        ; prefold_array_rows#: each element of a constant array that is more
+        ; than a literal, folded by fold_initializer# in place, so that
+        ; fold_array_elements# meets literals; a refused one stands as it is
+        ; (reported)
+        procedure prefold_array_rows(mutable this: Planner, value: Vector[PlannedOperand], elem: PlannedType)
+        {
+            if value.length = 0
+                return
+            choose value[0].expr
+                when mx: scalyc.compiler.Plan.PlannedMatrix
+                {
+                    if mx.operations = null
+                        return
+                    var rows (*mx.operations)
+                    if rows.length < 2
+                        return
+                    var ri: size_t 0
+                    while ri < rows.length
+                    {
+                        var row rows[ri]
+                        if row.length > 1
+                        {
+                            var folded: size_t 0
+                            if this.fold_initializer(row, elem, &folded) = 1
+                            {
+                                let at row[0].loc
+                                let fc Constant.Integer(IntegerConstant(at, folded))
+                                row.put(0, PlannedOperand(at, PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant(fc)), null, elem))
+                                rows.put(ri, Vector[PlannedOperand](1, row.data))
+                            }
+                        }
+                        ri := ri + 1
+                    }
+                }
+                else
+                    0
         }
 
         ; settle_constant#: an untyped integer constant meeting the integer
@@ -5801,7 +5897,7 @@ define Planner
             var bits: size_t 0
             if Planner.integer_type_is_unsigned(target)
                 bits := Planner.integer_type_width(target)
-            if this.constant_integer(op, bits, &neg, &mag) = false
+            if this.constant_integer(op, bits, false, &neg, &mag) = false
             {
                 this.add_diagnostic(op.loc, String^this("this constant divides by zero, shifts by a count out of range, or leaves the integers a constant holds: -(2^64 - 1) to 2^64 - 1"))
                 return op
@@ -56129,6 +56225,7 @@ define Planner
                 arr_count := Planner.global_array_count(value_holder)
                 if arr_count > 0
                 {
+                    this.prefold_array_rows(value_holder, planned_type)
                     let bad_elem Planner.fold_array_elements(protocol, value_holder, planned_type)
                     if bad_elem > 0
                     {
@@ -56137,7 +56234,7 @@ define Planner
                         asb.append bad_elem
                         asb.append " of "
                         asb.append name
-                        asb.append " does not fold to an integer constant (use integer literals, optionally combined with operators of a single precedence level, one element per comma)"
+                        asb.append " does not fold to an integer constant (an expression of integer literals and constants, one element per comma)"
                         this.add_diagnostic(g.span, asb.to_string())
                     }
                     let ptr_ty Planner.make_pointer_type(planned_type)
@@ -56190,7 +56287,12 @@ define Planner
                     if is_plain_const = false
                     {
                         var folded: size_t 0
-                        let fold_ok Planner.fold_constant_ops(protocol, value_holder, &folded)
+                        let exact this.fold_initializer(value_holder, planned_type, &folded)
+                        var fold_ok exact = 1
+                        if exact = 0
+                            fold_ok := Planner.fold_constant_ops(protocol, value_holder, &folded)
+                        if exact = 2
+                            fold_ok := true
                         if fold_ok
                         {
                             let fold_const Constant.Integer(IntegerConstant(g.span, folded))
@@ -56209,7 +56311,7 @@ define Planner
                             var gsb StringBuilder()
                             gsb.append "module global initializer does not fold to a constant: "
                             gsb.append name
-                            gsb.append " (use integer literals, optionally combined with operators of a single precedence level)"
+                            gsb.append " (an expression of integer literals and constants)"
                             this.add_diagnostic(g.span, gsb.to_string())
                         }
                     }

@@ -1,0 +1,19 @@
+; A constant's initializer folds exactly, any shape (2026-10-19,
+; ROADMAP-operation.md, the literal rules, way 1; Planner.fold_initializer#):
+; mixed precedence (`1 + 2 * 3` is 7 -- the old fold refused it), groupings,
+; other defines read as their types say (`define WORD: size_t PAGE * 2`), the
+; complement in an unsigned type's width, and the elements of a constant array
+; alike.
+; Expected: PASS
+define MIXED: int 1 + 2 * 3
+define FLAGS: int (1 << 4) | 1
+define PAGE: size_t 0x1000
+define WORD: size_t PAGE * 2 + 8
+define LOW: u32 ~(1 << 31)
+define NEG: i8 0 - 2 * 64
+define TABLE: int[] [1, 2 + 3 * 4, (5 - 1) * 2]
+
+if MIXED = 7 and FLAGS = 17 and WORD = 8200 and LOW = 0x7FFFFFFF and NEG = 0 - 128 and TABLE[1] = 14 and TABLE[2] = 8
+    print "PASS"
+else
+    print "FAIL"
