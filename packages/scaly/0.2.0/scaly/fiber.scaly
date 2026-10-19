@@ -1616,7 +1616,9 @@ define Scheduler
         var i 0
         while i < (n as i64)
         {
-            let raw *(((tagbuf as size_t) + ((i * 8) as size_t)) as pointer[size_t])
+            ; the C side fills `void*` entries: read at the pointer's stride,
+            ; not at 8 (4 on a 32-bit target)
+            let raw (*((tagbuf as pointer[pointer[void]]) + i)) as size_t
             if raw = 0
             {
                 main_woke := true
@@ -2980,7 +2982,9 @@ define Channel
         var i 0
         while i < (n as i64)
         {
-            let raw *(((tagbuf as size_t) + ((i * 8) as size_t)) as pointer[size_t])
+            ; the C side fills `void*` entries: read at the pointer's stride,
+            ; not at 8 (4 on a 32-bit target)
+            let raw (*((tagbuf as pointer[pointer[void]]) + i)) as size_t
             ; 0 = main-context own-event tag, 1 = wake sentinel (the
             ; caller re-checks its queue on return) — both BEFORE the
             ; low-bit test, which the sentinel 1 would pass; then an

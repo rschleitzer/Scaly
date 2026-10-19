@@ -643,6 +643,10 @@ procedure LLVMInitializeX86TargetInfo() extern
 procedure LLVMInitializeX86Target() extern
 procedure LLVMInitializeX86TargetMC() extern
 procedure LLVMInitializeX86AsmPrinter() extern
+procedure LLVMInitializeWebAssemblyTargetInfo() extern
+procedure LLVMInitializeWebAssemblyTarget() extern
+procedure LLVMInitializeWebAssemblyTargetMC() extern
+procedure LLVMInitializeWebAssemblyAsmPrinter() extern
 
 ; Get default target triple for the host
 function LLVMGetDefaultTargetTriple() returns pointer[char] extern
@@ -680,6 +684,7 @@ function LLVMCreateTargetDataLayout(machine: LLVMTargetMachineRef) returns LLVMT
 
 ; String representation of a DataLayout (dispose with LLVMDisposeMessage)
 function LLVMCopyStringRepOfTargetData(td: LLVMTargetDataRef) returns pointer[char] extern
+function LLVMPointerSize(td: LLVMTargetDataRef) returns u32 extern
 
 ; Dispose target data
 procedure LLVMDisposeTargetData(td: LLVMTargetDataRef) extern

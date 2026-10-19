@@ -64,15 +64,17 @@ define ReceivedRegion
     ; outside the region means the region was NOT closed — fail loud.
     procedure fix(this: ReceivedRegion, mutable slot: pointer[void])
     {
-        let s slot as pointer[size_t]
-        let old *s
+        ; the slot holds a POINTER, read and written as one: as a size_t it
+        ; was 8 bytes, and on a 32-bit target half of the next field
+        let s slot as pointer[pointer[void]]
+        let old (*s) as size_t
         if old = 0
             return
 
         let mapped map(old)
         if mapped = 0
             scaly_panic_region("ReceivedRegion.fix: pointer outside the received region", old)
-        *s := mapped
+        *s := mapped as pointer[void]
     }
 
     ; Map one pointer VALUE instead of a slot — the 7.2 compiler-generated
@@ -102,8 +104,9 @@ define ReceivedRegion
     ; so this half frees first and then raises.
     procedure fix_owned(this: ReceivedRegion, mutable slot: pointer[void])
     {
-        let s slot as pointer[size_t]
-        let old *s
+        ; a pointer slot, as in fix#
+        let s slot as pointer[pointer[void]]
+        let old (*s) as size_t
         if old = 0
             return
 
@@ -113,7 +116,7 @@ define ReceivedRegion
             release_pages()
             scaly_panic_region("ReceivedRegion.fix: pointer outside the received region", old)
         }
-        *s := mapped
+        *s := mapped as pointer[void]
     }
 
     ; Give back every page this record allocated, through the TABLE.
@@ -360,13 +363,12 @@ define Region
         ; next_object points one past the page end, which the range check
         ; rightly excludes.
         ;
-        ; The slots are addressed BY BYTE OFFSET, matching the Page
-        ; definition in Page.scaly: next_object 0, current_page 8,
-        ; next_page 16, exclusive_pages.head 24, region 32. `region` is
-        ; a plain intra-region address on every non-oversized page — its
-        ; own base on a head page, the head's on an extension page — so
-        ; it maps like any other page pointer, and a received region's
-        ; head keeps pointing at itself.
+        ; The slots are addressed by their FIELDS (until 2026-10-19 by byte
+        ; offsets 8/16/24/32, which are 4/8/12/16 with 32-bit pointers).
+        ; `region` is a plain intra-region address on every non-oversized
+        ; page — its own base on a head page, the head's on an extension
+        ; page — so it maps like any other page pointer, and a received
+        ; region's head keeps pointing at itself.
         i := 0
         while i < n
         {
@@ -376,20 +378,15 @@ define Region
             {
                 let obase ob[i]
                 np.next_object := (nb[i] + (no - obase)) as pointer[void]
-                let cp_slot ((np as size_t) + 8) as pointer[void]
-                rr.fix_owned(cp_slot)
-                let npg_slot ((np as size_t) + 16) as pointer[void]
-                rr.fix_owned(npg_slot)
-                let ex_slot ((np as size_t) + 24) as pointer[void]
-                rr.fix_owned(ex_slot)
-                let rg_slot ((np as size_t) + 32) as pointer[void]
-                rr.fix_owned(rg_slot)
+                rr.fix_owned(&np.current_page as pointer[void])
+                rr.fix_owned(&np.next_page as pointer[void])
+                rr.fix_owned(&np.exclusive_pages.head as pointer[void])
+                rr.fix_owned(&np.region as pointer[void])
                 var nd np.exclusive_pages.head
                 while nd <> null
                 {
-                    rr.fix_owned(nd as pointer[void])
-                    let next_slot ((nd as size_t) + 8) as pointer[void]
-                    rr.fix_owned(next_slot)
+                    rr.fix_owned(&nd.page as pointer[void])
+                    rr.fix_owned(&nd.next as pointer[void])
                     nd := nd.next
                 }
             }

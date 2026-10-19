@@ -191,6 +191,11 @@ define Emitter
         ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
         ; must set it and a native Mac build must not.
         var target_is_coff: bool
+        ; The bytes of a pointer on the emission triple: 8 on the LP64 targets,
+        ; 4 on wasm32. From the target's datalayout (apply_target_layout#);
+        ; read wherever the emitter measures a type itself (the abi size and
+        ; alignment walkers, the debug info, the region walker's slots).
+        var pointer_bytes: size_t
         ; The emission triple is AArch64, whatever --portable-simd says.
         var target_is_arm64: bool
         ; The emission triple is AArch64 and --portable-simd is off: the SIMD
@@ -458,6 +463,7 @@ define Emitter
             external_context := null
             has_external_context := false
             target_is_coff := false
+            pointer_bytes := 8
             target_is_arm64 := false
             simd_neon := false
             simd_ssse3 := false
@@ -594,6 +600,9 @@ define Emitter
             LLVMInitializeX86TargetInfo()
             LLVMInitializeX86Target()
             LLVMInitializeX86TargetMC()
+            LLVMInitializeWebAssemblyTargetInfo()
+            LLVMInitializeWebAssemblyTarget()
+            LLVMInitializeWebAssemblyTargetMC()
 
             var triple (LLVMGetDefaultTargetTriple() as pointer[const_char])
             if config.target_triple.get_length() > 0
@@ -636,17 +645,20 @@ define Emitter
                 }
             }
 
+            ; A triple LLVM cannot resolve is an error, said here: without a
+            ; datalayout LLVM's default -- 64-bit pointers -- would fold every
+            ; size of the module, silently wrong on a 32-bit target (2026-10-19)
             var target: LLVMTargetRef null
             let lookup_err LLVMGetTargetFromTriple(triple, &target, null as pointer[pointer[char]])
             if lookup_err <> 0
-                return
+                this.refuse_target(triple)
 
             let tm LLVMCreateTargetMachine(target, triple,
                 "generic" as pointer[const_char],
                 "" as pointer[const_char],
-                0, 2, 0)
+                0, this.relocation_model(triple), 0)
             if tm = null
-                return
+                this.refuse_target(triple)
 
             let td LLVMCreateTargetDataLayout(tm)
             if td <> null
@@ -657,9 +669,39 @@ define Emitter
                     LLVMSetDataLayout(llvm_module, dl_str as pointer[const_char])
                     LLVMDisposeMessage dl_str
                 }
+                pointer_bytes := LLVMPointerSize(td) as size_t
                 LLVMDisposeTargetData td
             }
             LLVMDisposeTargetMachine tm
+        }
+
+        ; A target the compiler cannot emit for: said, and the compile ends.
+        procedure refuse_target(mutable this, t: pointer[const_char])
+        {
+            scaly_eputs "scalyc: no target for the triple '"
+            scaly_eputs t
+            scaly_eputs "' (the backends are AArch64, X86 and WebAssembly)\n"
+            exit 2
+        }
+
+        ; Does this triple name WebAssembly (`wasm32-wasip1`, `wasm32-unknown-unknown`)?
+        procedure triple_is_wasm(mutable this, t: pointer[const_char]) returns bool
+        {
+            if t = null
+                return false
+            let sp String^this(t)
+            let s *sp
+            s.starts_with("wasm")
+        }
+
+        ; The relocation model of a target machine: PIC (2), but STATIC (1)
+        ; for WebAssembly, where PIC means code for dynamic linking
+        ; (`__memory_base`) that only a shared module links.
+        procedure relocation_model(mutable this, t: pointer[const_char]) returns i32
+        {
+            if this.triple_is_wasm(t)
+                return 1
+            2
         }
 
         ; Does this triple emit COFF? The OS component is the whole answer: every
@@ -1100,11 +1142,12 @@ define Emitter
             var u8_name "u8"
             let u8_ty di_basic_type u8_name
             var data_name "data"
-            let data_ty LLVMDIBuilderCreatePointerType(di_builder, u8_ty, 64, 64, 0, empty.c_data(), 0)
-            let member LLVMDIBuilderCreateMemberType(di_builder, di_cu, data_name.c_data(), data_name.get_length(), di_file, 0, 64, 0, 0, 0, data_ty)
+            let pbits pointer_bytes * 8
+            let data_ty LLVMDIBuilderCreatePointerType(di_builder, u8_ty, pbits, pbits as i32, 0, empty.c_data(), 0)
+            let member LLVMDIBuilderCreateMemberType(di_builder, di_cu, data_name.c_data(), data_name.get_length(), di_file, 0, pbits, 0, 0, 0, data_ty)
             var member_vec Vector[LLVMMetadataRef](1)
             member_vec.put(0, member)
-            let final LLVMDIBuilderCreateStructType(di_builder, di_cu, name.c_data(), name.get_length(), di_file, 0, 64, 0, 0, null as LLVMMetadataRef, member_vec.data, 1, 0, null as LLVMMetadataRef, empty.c_data(), 0)
+            let final LLVMDIBuilderCreateStructType(di_builder, di_cu, name.c_data(), name.get_length(), di_file, 0, pbits, 0, 0, null as LLVMMetadataRef, member_vec.data, 1, 0, null as LLVMMetadataRef, empty.c_data(), 0)
 
             let idx di_type_cache_names.length
             di_type_cache_names.add name
@@ -1243,7 +1286,7 @@ define Emitter
                             inner := di_type_for((*g0p))
                     }
                 }
-                return LLVMDIBuilderCreatePointerType(di_builder, inner, 64, 64, 0, pt.name.c_data(), pt.name.get_length())
+                return LLVMDIBuilderCreatePointerType(di_builder, inner, pointer_bytes * 8, (pointer_bytes * 8) as i32, 0, pt.name.c_data(), pt.name.get_length())
             }
 
             let basic di_basic_type pt.name
@@ -4983,7 +5026,7 @@ define Emitter
                 return 8
             }
             if kind = LLVMTypeKind.Pointer()
-                return 8
+                return pointer_bytes
             if kind = LLVMTypeKind.Double()
                 return 8
             if kind = LLVMTypeKind.Float()
@@ -5037,7 +5080,7 @@ define Emitter
                 return 16
             }
             if kind = LLVMTypeKind.Pointer()
-                return 8
+                return pointer_bytes
             if kind = LLVMTypeKind.Double()
                 return 8
             if kind = LLVMTypeKind.Float()
@@ -9178,13 +9221,15 @@ define Emitter
             LLVMInitializeX86Target()
             LLVMInitializeX86TargetMC()
             LLVMInitializeX86AsmPrinter()
+            LLVMInitializeWebAssemblyTargetInfo()
+            LLVMInitializeWebAssemblyTarget()
+            LLVMInitializeWebAssemblyTargetMC()
+            LLVMInitializeWebAssemblyAsmPrinter()
 
             ; --target <triple>: when config.target_triple is set, cross-emit for
-            ; that triple instead of the host default. The AArch64 + X86 backends
-            ; above are both initialized, so any LP64 "fabulous four" target
-            ; (arm64/x86_64, darwin/linux) works; the IR is target-neutral (no
-            ; datalayout line, LP64 sizes baked in), so llc/TargetMachine retargets
-            ; it cleanly.
+            ; that triple instead of the host default -- an LP64 one (arm64,
+            ; x86_64 on darwin, linux, windows) or WebAssembly (wasm32). The
+            ; module carries the triple's datalayout (apply_target_layout#).
             var triple (LLVMGetDefaultTargetTriple() as pointer[const_char])
             if config.target_triple.get_length() > 0
             {
@@ -11424,18 +11469,30 @@ define Emitter
         }
 
         ; Fix one slot in place: load old (align 1), map through fix_value,
-        ; store back (align 1). Returns the NEW value as i64.
+        ; store back (align 1). Returns the NEW value as i64. The slot holds a
+        ; pointer, so it is loaded and stored in the target's pointer width
+        ; (pointer_bytes) and widened to fix_value's i64 around the call: as
+        ; i64 on wasm32 it read 8 bytes of a 4-byte slot and wrote the next
+        ; field back (2026-10-19).
         procedure emit_region_fix_slot(mutable this, rr: LLVMValueRef, mutable slot: LLVMValueRef) returns LLVMValueRef
         {
             let i64_ty LLVMInt64TypeInContext(context)
-            let old LLVMBuildLoad2(builder, i64_ty, slot, "walk.old")
+            var slot_ty i64_ty
+            if pointer_bytes <> 8
+                slot_ty := LLVMIntTypeInContext(context, (pointer_bytes * 8) as u32)
+            var old LLVMBuildLoad2(builder, slot_ty, slot, "walk.old")
             LLVMSetAlignment(old, 1)
+            if pointer_bytes <> 8
+                old := LLVMBuildZExt(builder, old, i64_ty, "walk.wide")
             let fv region_fix_value_fn()
             var fargs Vector[LLVMValueRef](2)
             fargs.put(0, rr)
             fargs.put(1, old)
             let nv LLVMBuildCall2(builder, region_fix_value_type(), fv, fargs.data, 2, "walk.new")
-            let st LLVMBuildStore(builder, nv, slot)
+            var back nv
+            if pointer_bytes <> 8
+                back := LLVMBuildTrunc(builder, nv, slot_ty, "walk.narrow")
+            let st LLVMBuildStore(builder, back, slot)
             LLVMSetAlignment(st, 1)
             nv
         }
@@ -18215,17 +18272,17 @@ define Emitter
         {
             let cpu config.target_cpu
             if cpu.get_length() = 0
-                return LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "" as pointer[const_char], level as i32, 2, 0)
+                return LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "" as pointer[const_char], level as i32, this.relocation_model(triple), 0)
             if cpu = "native"
             {
                 let host_cpu LLVMGetHostCPUName()
                 let host_features LLVMGetHostCPUFeatures()
-                let tm LLVMCreateTargetMachine(target, triple, host_cpu as pointer[const_char], host_features as pointer[const_char], level as i32, 2, 0)
+                let tm LLVMCreateTargetMachine(target, triple, host_cpu as pointer[const_char], host_features as pointer[const_char], level as i32, this.relocation_model(triple), 0)
                 LLVMDisposeMessage host_cpu
                 LLVMDisposeMessage host_features
                 return tm
             }
-            LLVMCreateTargetMachine(target, triple, cpu.to_c_string(), "" as pointer[const_char], level as i32, 2, 0)
+            LLVMCreateTargetMachine(target, triple, cpu.to_c_string(), "" as pointer[const_char], level as i32, this.relocation_model(triple), 0)
         }
 
         procedure get_parfor_runtime_fn(mutable this, mutable mangled: String, mutable fn_ty: LLVMTypeRef) returns LLVMValueRef

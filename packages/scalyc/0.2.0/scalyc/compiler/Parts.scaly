@@ -281,21 +281,33 @@ define Parts
             LLVMSetModuleInlineAsm2(m, "" as pointer[const_char], 0)
     }
 
+    ; the relocation model of a part's target machine, as
+    ; Emitter.relocation_model# chooses it: STATIC for WebAssembly, else PIC
+    function part_relocation(triple: pointer[const_char]) returns i32
+    {
+        if triple = null
+            return 2
+        let t String(triple)
+        if t.starts_with("wasm")
+            return 1
+        2
+    }
+
     ; the target machine of a part, as Emitter.create_target_machine# makes it
     procedure target_machine(mutable target: LLVMTargetRef, mutable triple: pointer[const_char], mutable cpu: String, level: int) returns LLVMTargetMachineRef
     {
         if cpu.get_length() = 0
-            return LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "" as pointer[const_char], level as i32, 2, 0)
+            return LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "" as pointer[const_char], level as i32, part_relocation(triple), 0)
         if cpu = "native"
         {
             let host_cpu LLVMGetHostCPUName()
             let host_features LLVMGetHostCPUFeatures()
-            let tm LLVMCreateTargetMachine(target, triple, host_cpu as pointer[const_char], host_features as pointer[const_char], level as i32, 2, 0)
+            let tm LLVMCreateTargetMachine(target, triple, host_cpu as pointer[const_char], host_features as pointer[const_char], level as i32, part_relocation(triple), 0)
             LLVMDisposeMessage host_cpu
             LLVMDisposeMessage host_features
             return tm
         }
-        LLVMCreateTargetMachine(target, triple, cpu.to_c_string(), "" as pointer[const_char], level as i32, 2, 0)
+        LLVMCreateTargetMachine(target, triple, cpu.to_c_string(), "" as pointer[const_char], level as i32, part_relocation(triple), 0)
     }
 
     ; a worker's work: the part `part` of `parts` out of the bitcode, emitted
@@ -310,6 +322,10 @@ define Parts
         LLVMInitializeX86Target()
         LLVMInitializeX86TargetMC()
         LLVMInitializeX86AsmPrinter()
+        LLVMInitializeWebAssemblyTargetInfo()
+        LLVMInitializeWebAssemblyTarget()
+        LLVMInitializeWebAssemblyTargetMC()
+        LLVMInitializeWebAssemblyAsmPrinter()
         let context LLVMContextCreate()
         var buf: LLVMMemoryBufferRef null
         if LLVMCreateMemoryBufferWithContentsOfFile(bitcode.to_c_string(), &buf, null as pointer[pointer[char]]) <> 0

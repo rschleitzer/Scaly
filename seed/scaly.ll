@@ -3781,24 +3781,26 @@ if.end13:                                         ; preds = %if.then6
 
 define linkonce_odr void @_ZN14ReceivedRegion3fixEPv(ptr %0, ptr %1) {
 entry:
-  %deref = load i64, ptr %1, align 8
-  %eq = icmp eq i64 %deref, 0
+  %deref = load ptr, ptr %1, align 8
+  %as.ptrtoint = ptrtoint ptr %deref to i64
+  %eq = icmp eq i64 %as.ptrtoint, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %call = call i64 @_ZN14ReceivedRegion3mapEm(ptr %0, i64 %deref)
+  %call = call i64 @_ZN14ReceivedRegion3mapEm(ptr %0, i64 %as.ptrtoint)
   %eq1 = icmp eq i64 %call, 0
   br i1 %eq1, label %if.then2, label %if.end3
 
 if.then2:                                         ; preds = %if.end
-  call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.39, i64 %deref)
+  call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.39, i64 %as.ptrtoint)
   br label %if.end3
 
 if.end3:                                          ; preds = %if.then2, %if.end
-  store i64 %call, ptr %1, align 8
+  %as.inttoptr = inttoptr i64 %call to ptr
+  store ptr %as.inttoptr, ptr %1, align 8
   ret void
 }
 
@@ -3825,25 +3827,27 @@ if.end3:                                          ; preds = %if.then2, %if.end
 
 define linkonce_odr void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %0, ptr %1) {
 entry:
-  %deref = load i64, ptr %1, align 8
-  %eq = icmp eq i64 %deref, 0
+  %deref = load ptr, ptr %1, align 8
+  %as.ptrtoint = ptrtoint ptr %deref to i64
+  %eq = icmp eq i64 %as.ptrtoint, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %call = call i64 @_ZN14ReceivedRegion3mapEm(ptr %0, i64 %deref)
+  %call = call i64 @_ZN14ReceivedRegion3mapEm(ptr %0, i64 %as.ptrtoint)
   %eq1 = icmp eq i64 %call, 0
   br i1 %eq1, label %if.then2, label %if.end3
 
 if.then2:                                         ; preds = %if.end
   call void @_ZN14ReceivedRegion13release_pagesEv(ptr %0)
-  call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.41, i64 %deref)
+  call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.41, i64 %as.ptrtoint)
   br label %if.end3
 
 if.end3:                                          ; preds = %if.then2, %if.end
-  store i64 %call, ptr %1, align 8
+  %as.inttoptr = inttoptr i64 %call to ptr
+  store ptr %as.inttoptr, ptr %1, align 8
   ret void
 }
 
@@ -4388,9 +4392,9 @@ while.body72:                                     ; preds = %while.cond71
   br i1 %ne81, label %if.then82, label %if.end83
 
 while.exit73:                                     ; preds = %while.cond71
-  %call119 = call i64 @_ZN14ReceivedRegion3mapEm(ptr %call67, i64 %deref6)
-  %eq120 = icmp eq i64 %call119, 0
-  br i1 %eq120, label %if.then121, label %if.end122
+  %call110 = call i64 @_ZN14ReceivedRegion3mapEm(ptr %call67, i64 %deref6)
+  %eq111 = icmp eq i64 %call110, 0
+  br i1 %eq111, label %if.then112, label %if.end113
 
 if.then82:                                        ; preds = %while.body72
   %i84 = load i64, ptr %i, align 8
@@ -4404,65 +4408,57 @@ if.then82:                                        ; preds = %while.body72
   %as.inttoptr91 = inttoptr i64 %add90 to ptr
   %next_object92 = getelementptr inbounds nuw %_Z4Page, ptr %as.inttoptr79, i32 0, i32 0
   store ptr %as.inttoptr91, ptr %next_object92, align 8
-  %as.ptrtoint93 = ptrtoint ptr %as.inttoptr79 to i64
-  %add94 = add i64 %as.ptrtoint93, 8
-  %as.inttoptr95 = inttoptr i64 %add94 to ptr
-  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr95)
-  %as.ptrtoint96 = ptrtoint ptr %as.inttoptr79 to i64
-  %add97 = add i64 %as.ptrtoint96, 16
-  %as.inttoptr98 = inttoptr i64 %add97 to ptr
-  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr98)
-  %as.ptrtoint99 = ptrtoint ptr %as.inttoptr79 to i64
-  %add100 = add i64 %as.ptrtoint99, 24
-  %as.inttoptr101 = inttoptr i64 %add100 to ptr
-  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr101)
-  %as.ptrtoint102 = ptrtoint ptr %as.inttoptr79 to i64
-  %add103 = add i64 %as.ptrtoint102, 32
-  %as.inttoptr104 = inttoptr i64 %add103 to ptr
-  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr104)
-  %load.struct105 = load %_Z4Page, ptr %as.inttoptr79, align 8
-  %exclusive_pages = extractvalue %_Z4Page %load.struct105, 3
+  %addr.gep = getelementptr inbounds nuw %_Z4Page, ptr %as.inttoptr79, i32 0, i32 1
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %addr.gep)
+  %addr.gep93 = getelementptr inbounds nuw %_Z4Page, ptr %as.inttoptr79, i32 0, i32 2
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %addr.gep93)
+  %addr.gep94 = getelementptr inbounds nuw %_Z4Page, ptr %as.inttoptr79, i32 0, i32 3
+  %addr.gep95 = getelementptr inbounds nuw %_Z8PageList, ptr %addr.gep94, i32 0, i32 0
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %addr.gep95)
+  %addr.gep96 = getelementptr inbounds nuw %_Z4Page, ptr %as.inttoptr79, i32 0, i32 4
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %addr.gep96)
+  %load.struct97 = load %_Z4Page, ptr %as.inttoptr79, align 8
+  %exclusive_pages = extractvalue %_Z4Page %load.struct97, 3
   %head = extractvalue %_Z8PageList %exclusive_pages, 0
   store ptr %head, ptr %np, align 1
-  br label %while.cond106
+  br label %while.cond98
 
-if.end83:                                         ; preds = %while.exit108, %while.body72
-  %i117 = load i64, ptr %i, align 8
-  %add118 = add i64 %i117, 1
-  store i64 %add118, ptr %i, align 1
+if.end83:                                         ; preds = %while.exit100, %while.body72
+  %i108 = load i64, ptr %i, align 8
+  %add109 = add i64 %i108, 1
+  store i64 %add109, ptr %i, align 1
   br label %while.cond71
 
-while.cond106:                                    ; preds = %while.body107, %if.then82
+while.cond98:                                     ; preds = %while.body99, %if.then82
   %nd = load ptr, ptr %np, align 8
-  %ne109 = icmp ne ptr %nd, null
-  br i1 %ne109, label %while.body107, label %while.exit108
+  %ne101 = icmp ne ptr %nd, null
+  br i1 %ne101, label %while.body99, label %while.exit100
 
-while.body107:                                    ; preds = %while.cond106
-  %nd110 = load ptr, ptr %np, align 8
-  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %nd110)
-  %nd111 = load ptr, ptr %np, align 8
-  %as.ptrtoint112 = ptrtoint ptr %nd111 to i64
-  %add113 = add i64 %as.ptrtoint112, 8
-  %as.inttoptr114 = inttoptr i64 %add113 to ptr
-  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr114)
-  %nd115 = load ptr, ptr %np, align 8
-  %load.struct116 = load %_Z8PageNode, ptr %nd115, align 8
-  %next = extractvalue %_Z8PageNode %load.struct116, 1
+while.body99:                                     ; preds = %while.cond98
+  %nd102 = load ptr, ptr %np, align 8
+  %addr.gep103 = getelementptr inbounds nuw %_Z8PageNode, ptr %nd102, i32 0, i32 0
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %addr.gep103)
+  %nd104 = load ptr, ptr %np, align 8
+  %addr.gep105 = getelementptr inbounds nuw %_Z8PageNode, ptr %nd104, i32 0, i32 1
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %addr.gep105)
+  %nd106 = load ptr, ptr %np, align 8
+  %load.struct107 = load %_Z8PageNode, ptr %nd106, align 8
+  %next = extractvalue %_Z8PageNode %load.struct107, 1
   store ptr %next, ptr %np, align 1
-  br label %while.cond106
+  br label %while.cond98
 
-while.exit108:                                    ; preds = %while.cond106
+while.exit100:                                    ; preds = %while.cond98
   br label %if.end83
 
-if.then121:                                       ; preds = %while.exit73
+if.then112:                                       ; preds = %while.exit73
   call void @_ZN14ReceivedRegion13release_pagesEv(ptr %call67)
   call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.44, i64 %deref6)
-  br label %if.end122
+  br label %if.end113
 
-if.end122:                                        ; preds = %if.then121, %while.exit73
-  %as.inttoptr123 = inttoptr i64 %call119 to ptr
-  %root124 = getelementptr inbounds nuw %_Z14ReceivedRegion, ptr %call67, i32 0, i32 1
-  store ptr %as.inttoptr123, ptr %root124, align 8
+if.end113:                                        ; preds = %if.then112, %while.exit73
+  %as.inttoptr114 = inttoptr i64 %call110 to ptr
+  %root115 = getelementptr inbounds nuw %_Z14ReceivedRegion, ptr %call67, i32 0, i32 1
+  store ptr %as.inttoptr114, ptr %root115, align 8
   ret ptr %call67
 }
 
@@ -28250,7 +28246,7 @@ if.end68:                                         ; preds = %if.then67, %if.end1
   store i64 0, ptr %ns, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end77, %if.end68
+while.cond:                                       ; preds = %if.end76, %if.end68
   %i = load i64, ptr %ns, align 8
   %n69 = load i32, ptr %n, align 4
   %as.sext = sext i32 %n69 to i64
@@ -28259,74 +28255,72 @@ while.cond:                                       ; preds = %if.end77, %if.end68
 
 while.body:                                       ; preds = %while.cond
   %tagbuf71 = load ptr, ptr %tagbuf1, align 8
-  %as.ptrtoint = ptrtoint ptr %tagbuf71 to i64
   %i72 = load i64, ptr %ns, align 8
-  %mul73 = mul i64 %i72, 8
-  %add = add i64 %as.ptrtoint, %mul73
-  %as.inttoptr = inttoptr i64 %add to ptr
-  %deref = load i64, ptr %as.inttoptr, align 8
-  %eq74 = icmp eq i64 %deref, 0
-  br i1 %eq74, label %if.then75, label %if.else76
+  %ptr.add = getelementptr inbounds ptr, ptr %tagbuf71, i64 %i72
+  %deref = load ptr, ptr %ptr.add, align 8
+  %as.ptrtoint = ptrtoint ptr %deref to i64
+  %eq73 = icmp eq i64 %as.ptrtoint, 0
+  br i1 %eq73, label %if.then74, label %if.else75
 
 while.exit:                                       ; preds = %while.cond
-  %load.struct96 = load %_Z9Scheduler, ptr %global.load, align 8
-  %sleeping97 = extractvalue %_Z9Scheduler %load.struct96, 11
-  %gt98 = icmp sgt i64 %sleeping97, 0
-  br i1 %gt98, label %if.then99, label %if.end100
+  %load.struct93 = load %_Z9Scheduler, ptr %global.load, align 8
+  %sleeping94 = extractvalue %_Z9Scheduler %load.struct93, 11
+  %gt95 = icmp sgt i64 %sleeping94, 0
+  br i1 %gt95, label %if.then96, label %if.end97
 
-if.then75:                                        ; preds = %while.body
+if.then74:                                        ; preds = %while.body
   store i1 true, ptr %moved, align 1
-  br label %if.end77
+  br label %if.end76
 
-if.else76:                                        ; preds = %while.body
-  %eq78 = icmp eq i64 %deref, 1
-  br i1 %eq78, label %if.then79, label %if.else80
+if.else75:                                        ; preds = %while.body
+  %eq77 = icmp eq i64 %as.ptrtoint, 1
+  br i1 %eq77, label %if.then78, label %if.else79
 
-if.end77:                                         ; preds = %if.end81, %if.then75
-  %i94 = load i64, ptr %ns, align 8
-  %add95 = add i64 %i94, 1
-  store i64 %add95, ptr %ns, align 1
+if.end76:                                         ; preds = %if.end80, %if.then74
+  %i92 = load i64, ptr %ns, align 8
+  %add = add i64 %i92, 1
+  store i64 %add, ptr %ns, align 1
   br label %while.cond
 
-if.then79:                                        ; preds = %if.else76
-  br label %if.end81
+if.then78:                                        ; preds = %if.else75
+  br label %if.end80
 
-if.else80:                                        ; preds = %if.else76
-  %and = and i64 %deref, 7
-  %ne82 = icmp ne i64 %and, 0
-  br i1 %ne82, label %if.then83, label %if.else84
+if.else79:                                        ; preds = %if.else75
+  %and = and i64 %as.ptrtoint, 7
+  %ne81 = icmp ne i64 %and, 0
+  br i1 %ne81, label %if.then82, label %if.else83
 
-if.end81:                                         ; preds = %if.end85, %if.then79
-  br label %if.end77
+if.end80:                                         ; preds = %if.end84, %if.then78
+  br label %if.end76
 
-if.then83:                                        ; preds = %if.else80
-  call void @_ZN9Scheduler19deliver_watch_eventEm(i64 %deref)
-  br label %if.end85
+if.then82:                                        ; preds = %if.else79
+  call void @_ZN9Scheduler19deliver_watch_eventEm(i64 %as.ptrtoint)
+  br label %if.end84
 
-if.else84:                                        ; preds = %if.else80
-  %as.inttoptr86 = inttoptr i64 %deref to ptr
-  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %as.inttoptr86)
-  %load.struct87 = load %_Z9Scheduler, ptr %global.load, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct87, 3
-  %sub88 = sub i64 %blocked, 1
-  %blocked89 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 3
-  store i64 %sub88, ptr %blocked89, align 8
-  %load.struct90 = load %_Z9Scheduler, ptr %global.load, align 8
-  %io_waiting91 = extractvalue %_Z9Scheduler %load.struct90, 5
-  %sub92 = sub i64 %io_waiting91, 1
-  %io_waiting93 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 5
-  store i64 %sub92, ptr %io_waiting93, align 8
-  br label %if.end85
+if.else83:                                        ; preds = %if.else79
+  %as.inttoptr = inttoptr i64 %as.ptrtoint to ptr
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %as.inttoptr)
+  %load.struct85 = load %_Z9Scheduler, ptr %global.load, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct85, 3
+  %sub86 = sub i64 %blocked, 1
+  %blocked87 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 3
+  store i64 %sub86, ptr %blocked87, align 8
+  %load.struct88 = load %_Z9Scheduler, ptr %global.load, align 8
+  %io_waiting89 = extractvalue %_Z9Scheduler %load.struct88, 5
+  %sub90 = sub i64 %io_waiting89, 1
+  %io_waiting91 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 5
+  store i64 %sub90, ptr %io_waiting91, align 8
+  br label %if.end84
 
-if.end85:                                         ; preds = %if.else84, %if.then83
-  br label %if.end81
+if.end84:                                         ; preds = %if.else83, %if.then82
+  br label %if.end80
 
-if.then99:                                        ; preds = %while.exit
-  %call101 = call i64 @scaly_eio_now_ns()
-  call void @_ZN9Scheduler11fire_timersE3i64(i64 %call101)
-  br label %if.end100
+if.then96:                                        ; preds = %while.exit
+  %call98 = call i64 @scaly_eio_now_ns()
+  call void @_ZN9Scheduler11fire_timersE3i64(i64 %call98)
+  br label %if.end97
 
-if.end100:                                        ; preds = %if.then99, %while.exit
+if.end97:                                         ; preds = %if.then96, %while.exit
   %main_woke = load i1, ptr %moved, align 1
   ret i1 %main_woke
 }
@@ -30983,46 +30977,44 @@ while.cond:                                       ; preds = %if.end7, %if.end
 
 while.body:                                       ; preds = %while.cond
   %tagbuf4 = load ptr, ptr %tagbuf1, align 8
-  %as.ptrtoint = ptrtoint ptr %tagbuf4 to i64
   %i5 = load i64, ptr %i, align 8
-  %mul = mul i64 %i5, 8
-  %add = add i64 %as.ptrtoint, %mul
-  %as.inttoptr = inttoptr i64 %add to ptr
-  %deref = load i64, ptr %as.inttoptr, align 8
-  %gt = icmp ugt i64 %deref, 1
+  %ptr.add = getelementptr inbounds ptr, ptr %tagbuf4, i64 %i5
+  %deref = load ptr, ptr %ptr.add, align 8
+  %as.ptrtoint = ptrtoint ptr %deref to i64
+  %gt = icmp ugt i64 %as.ptrtoint, 1
   br i1 %gt, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
   ret void
 
 if.then6:                                         ; preds = %while.body
-  %and = and i64 %deref, 7
+  %and = and i64 %as.ptrtoint, 7
   %ne = icmp ne i64 %and, 0
   br i1 %ne, label %if.then8, label %if.else
 
 if.end7:                                          ; preds = %if.end9, %while.body
-  %i15 = load i64, ptr %i, align 8
-  %add16 = add i64 %i15, 1
-  store i64 %add16, ptr %i, align 1
+  %i14 = load i64, ptr %i, align 8
+  %add = add i64 %i14, 1
+  store i64 %add, ptr %i, align 1
   br label %while.cond
 
 if.then8:                                         ; preds = %if.then6
-  call void @_ZN9Scheduler19deliver_watch_eventEm(i64 %deref)
+  call void @_ZN9Scheduler19deliver_watch_eventEm(i64 %as.ptrtoint)
   br label %if.end9
 
 if.else:                                          ; preds = %if.then6
-  %as.inttoptr10 = inttoptr i64 %deref to ptr
-  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %as.inttoptr10)
+  %as.inttoptr = inttoptr i64 %as.ptrtoint to ptr
+  call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %as.inttoptr)
   %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
   %blocked = extractvalue %_Z9Scheduler %load.struct, 3
   %sub = sub i64 %blocked, 1
-  %blocked11 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 3
-  store i64 %sub, ptr %blocked11, align 8
-  %load.struct12 = load %_Z9Scheduler, ptr %global.load, align 8
-  %io_waiting = extractvalue %_Z9Scheduler %load.struct12, 5
-  %sub13 = sub i64 %io_waiting, 1
-  %io_waiting14 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 5
-  store i64 %sub13, ptr %io_waiting14, align 8
+  %blocked10 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 3
+  store i64 %sub, ptr %blocked10, align 8
+  %load.struct11 = load %_Z9Scheduler, ptr %global.load, align 8
+  %io_waiting = extractvalue %_Z9Scheduler %load.struct11, 5
+  %sub12 = sub i64 %io_waiting, 1
+  %io_waiting13 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 5
+  store i64 %sub12, ptr %io_waiting13, align 8
   br label %if.end9
 
 if.end9:                                          ; preds = %if.else, %if.then8

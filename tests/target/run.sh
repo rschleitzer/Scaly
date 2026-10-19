@@ -1,7 +1,7 @@
 #!/bin/bash
 # --target cross-emit suite: prove `scalyc -c --target <triple>` emits object
-# code for a target other than the host — the four LP64 "fabulous four", plus
-# the two Windows targets (stage 7).
+# code for a target other than the host — the four LP64 "fabulous four", the
+# two Windows targets (stage 7) and WebAssembly (wasm32, 2026-10-19).
 #
 # The self-hosted compiler is host-only for LINKING (write_object_to_file used
 # to hardcode LLVMGetDefaultTargetTriple), but the emitted IR carries no
@@ -68,6 +68,34 @@ check x86_64-apple-darwin Mach-O  x86_64   x86mac
 check arm64-apple-darwin  Mach-O  arm64    arm64mac
 check_coff x86_64-pc-windows-msvc  6486  x86win
 check_coff aarch64-pc-windows-msvc 64aa  arm64win
+
+# WebAssembly (2026-10-19, the browser target, 32-bit pointers): the object
+# begins with the magic `\0asm`, version 1, and the module's datalayout says
+# 32-bit pointers -- a module without one would fold every size as LP64.
+check_wasm() {
+  local triple=$1 obj=/tmp/target_$2.o ll=/tmp/target_$2.ll
+  rm -f "$obj" "$ll"
+  "$STAGE" -c --target "$triple" -o "$obj" "$SRC" >/dev/null 2>&1
+  local got; got=$(od -A n -t x1 -N 8 "$obj" 2>/dev/null | tr -d ' \n')
+  "$STAGE" -S --target "$triple" -o "$ll" "$SRC" >/dev/null 2>&1
+  if [ "$got" = "0061736d01000000" ] && grep -q '^target datalayout = ".*-p:32:32' "$ll"; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$triple: magic '$got', datalayout '$(grep '^target datalayout' "$ll" 2>/dev/null)'")
+  fi
+  rm -f "$obj" "$ll"
+}
+check_wasm wasm32-wasip1 wasm32wasi
+
+# A triple no backend answers is refused, rc 2, with its name -- before
+# 2026-10-19 the module silently kept no datalayout
+out=$("$STAGE" -c --target no-such-triple -o /tmp/target_none_$$.o "$SRC" 2>&1); rc=$?
+rm -f /tmp/target_none_$$.o
+if [ $rc -eq 2 ] && printf '%s' "$out" | grep -qF "no target for the triple 'no-such-triple'"; then
+  pass=$((pass+1))
+else
+  fail=$((fail+1)); failures+=("unknown triple: rc $rc, '$out'")
+fi
 
 # -mcpu reaches codegen: the same f64x4 function for
 # x86-64 is SSE (xmm only) for the generic CPU and AVX (ymm) for haswell. The
