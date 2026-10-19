@@ -15333,130 +15333,92 @@ define Planner
                                     call_generics := cgt.generics
                                 else
                                     0
-                        ; The step by what the head IS (operation_name#): the operation driver
-                        ; takes only the arms of the cascade that resolve such a head -- 1
-                        ; the free resolution, 3 a dotted local, 4 a method on a chain, 5 a
-                        ; namespace's function, 6 a sibling method (call_arm_applies#). The
-                        ; old path (named 0) tries them all in their order.
-                        var named: size_t 0
-                        named := this.operation_name(result)
+                        ; The arm of the head's kind (operation_name#): what the
+                        ; name before the tuple IS says which routine resolves the
+                        ; call, ONE per kind since 2026-10-19 -- before, a cascade
+                        ; tried the arms in turn, each where nothing had matched
+                        ; yet. Measured over the 36 roots and every fixture before
+                        ; the cut: each kind met exactly the arm it takes now, and
+                        ; the arm for a method on a dotted local name resolved
+                        ; nothing anywhere (it is gone). The one kind with a
+                        ; fallback is a function's name, which in a concept may
+                        ; also name a sibling: the free function where the
+                        ; arguments fit it, else the sibling method, else the
+                        ; sibling static (76 calls in the roots).
+                        let named this.operation_name(result)
                         var match_ref: ref[MethodMatch]? null
-                        if Planner.call_arm_applies(named, 1)
-                            match_ref := this.resolve_free_call(value_method_hop, fn_name, arg_types, arg_ops, call_generics)
-                        if match_ref = null and static_on_type
+                        ; which arm resolved the call (the census, operation_arm#)
+                        var call_arm: size_t 0
+                        var is_method_dispatch: bool false
+                        var receiver_op: PlannedOperand result
+                        ; Option B (2026-07-02h): set when the resolved call is a
+                        ; container get/get_ptr whose receiver holder's guts live
+                        ; on the frame's LOCAL page (local_frame_holder_names);
+                        ; the result type is then stamped Local-pointee below.
+                        var stamp_getref_local: bool false
+                        ; what the namespace arm hands back beside the match:
+                        ; the re-mangled name, its page, the member's own
+                        ; parameter and return types (call_arm_namespace#)
+                        var ns_mangled: String ""
+                        var has_ns_mangled: bool false
+                        var ns_mangled_page: bool false
+                        var ns_coerce_params Array[PlannedType]()
+                        var ns_coerce_valid: bool false
+                        var ns_return_type: PlannedType this.fresh_type_var("")
+                        var ns_return_valid: bool false
+                        ; a method on a chain (`x.m(...)`, s83)
+                        if named = 1
+                        {
+                            let arm this.call_arm_chain(result, fn_name, arg_types, arg_ops, CallArm(null, false, result, false))
+                            match_ref := arm.found
+                            is_method_dispatch := arm.is_method_dispatch
+                            receiver_op := arm.receiver_op
+                            stamp_getref_local := arm.stamp_getref_local
+                            if match_ref <> null
+                                call_arm := 4
+                        }
+                        ; a static of a generic type (`Stack[int].make(5)`)
+                        if named = 2 and static_on_type
                         {
                             let sm_ref this.lookup_method(static_type, fn_name, arg_types, arg_ops)
                             if sm_ref <> null and sm_ref.takes_this = false
                                 match_ref := sm_ref
+                            if match_ref <> null
+                                call_arm := 2
                         }
-
-                        ; which arm of the cascade resolves the call (the census, operation_arm#)
-                        var call_arm: size_t 0
-                        if match_ref <> null
-                            call_arm := 1
-                        if match_ref <> null and static_on_type
-                            call_arm := 2
-
-                        ; First-hop method dispatch (s75): when fn_name
-                        ; is a dotted name `arg.starts_with` and `arg`
-                        ; resolves to a local binding (not a Concept),
-                        ; treat the call as a method on the receiver.
-                        ; Without this, free-function lookup on the full
-                        ; dotted name fails, the dotted-namespace
-                        ; fallback below skips because `arg` isn't a
-                        ; Concept, and the call drops with mangled="".
-                        ; The receiver is prepended to the args list
-                        ; below when is_method_dispatch is true.
-                        ; Mirrors stage-0 Planner.cpp:7920-7940 method-
-                        ; on-local-variable resolution.
-                        var is_method_dispatch: bool false
-                        var receiver_op: PlannedOperand result
-                        ; Option B (2026-07-02h): set when the resolved call is
-                        ; a container get/get_ptr whose receiver holder's guts
-                        ; live on the frame's LOCAL page (local_frame_holder_
-                        ; names, recorded by plan_binding#). The result type is
-                        ; then stamped Local-pointee below (where rt is read
-                        ; from the match) so the escape checks see the frame-
-                        ; bound reference.
-                        var stamp_getref_local: bool false
-                        if match_ref = null and Planner.call_arm_applies(named, 3)
+                        ; a function's name -- or a sibling's of the same name
+                        if named = 3
                         {
-                            let arm this.call_arm_dotted_local(result, fn_name, arg_types, arg_ops, CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local))
-                            match_ref := arm.found
-                            is_method_dispatch := arm.is_method_dispatch
-                            receiver_op := arm.receiver_op
-                            stamp_getref_local := arm.stamp_getref_local
+                            match_ref := this.resolve_free_call(value_method_hop, fn_name, arg_types, arg_ops, call_generics)
+                            if match_ref <> null
+                                call_arm := 1
+                            if match_ref = null
+                            {
+                                let arm this.call_arm_sibling(result, fn_name, arg_types, arg_ops, false, CallArm(null, false, result, false))
+                                match_ref := arm.found
+                                is_method_dispatch := arm.is_method_dispatch
+                                receiver_op := arm.receiver_op
+                                stamp_getref_local := arm.stamp_getref_local
+                                if match_ref <> null
+                                    call_arm := 6
+                            }
+                            if match_ref = null and current_structure_name <> null
+                            {
+                                match_ref := this.resolve_static_method_on((*current_structure_name), fn_name, arg_types, arg_ops, result.loc)
+                                if match_ref <> null
+                                    call_arm := 7
+                            }
                         }
-
-                        if match_ref <> null and call_arm = 0
-                            call_arm := 3
-
-                        ; Method-on-chain dispatch (s83): when the first
-                        ; operand has a member_access chain whose last hop
-                        ; is_method=true, the call is an instance method on
-                        ; the chain's truncated receiver. Truncate the chain
-                        ; (drop the method hop), use last_acc.parent_type as
-                        ; the receiver type, and look up the method.
-                        ; Mirrors stage-0 Planner.cpp:4534-4607. Required
-                        ; for `inner.get_value()` and `input_file.get_length()`
-                        ; in method bodies (after the implicit-this
-                        ; multi-segment fallback in plan_type_operand# returns
-                        ; a chain ending in a method hop).
-                        if match_ref = null and Planner.call_arm_applies(named, 4)
+                        ; a type's name that builds nothing: a function of that
+                        ; name
+                        if named = 4
                         {
-                            let arm this.call_arm_chain(result, fn_name, arg_types, arg_ops, CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local))
-                            match_ref := arm.found
-                            is_method_dispatch := arm.is_method_dispatch
-                            receiver_op := arm.receiver_op
-                            stamp_getref_local := arm.stamp_getref_local
+                            match_ref := this.resolve_free_call(value_method_hop, fn_name, arg_types, arg_ops, call_generics)
+                            if match_ref <> null
+                                call_arm := 1
                         }
-
-                        if match_ref <> null and call_arm = 0
-                            call_arm := 4
-
-                        ; Dotted call fallback: `cli.main(args)` arrives
-                        ; with fn_name="cli.main"; the function is registered
-                        ; in model_functions under its short name "main"
-                        ; (register_concept_recursive flattens namespace
-                        ; members; register_module_concepts recurses into
-                        ; sub-modules with register_function). Retry with
-                        ; the suffix; if the prefix resolves to a Namespace
-                        ; concept, also override mangled_name to
-                        ; `_ZN<prefix><name>E<args>` so the call links to
-                        ; the namespaced function (otherwise
-                        ; check_function_match's mangle_free_function path
-                        ; produces the bare `_Z<name>` and collides with
-                        ; the program's own free function of the same
-                        ; name). Plain modules don't add a namespace
-                        ; segment to the mangled name, so the suffix-only
-                        ; resolve already returns the right MethodMatch
-                        ; for `compiler.test()` etc.
-                        var ns_mangled: String ""
-                        var has_ns_mangled: bool false
-                        ; Hoisted out of the nested ns-resolution block so the
-                        ; call_requires_page computation below can honor the
-                        ; prefix namespace member's own page flag (used_ns_page)
-                        ; when the dotted re-mangle fired — otherwise the symbol
-                        ; gets the page in its name but the call omits the rp
-                        ; argument (wrong slot / missing page).
-                        var ns_mangled_page: bool false
-                        ; The actual namespace member's planned parameter types,
-                        ; recorded when the s129 dotted re-mangle resolves to a
-                        ; namespace member (used_ns_local). Used to drive the
-                        ; String→const_char argument coercion correctly even when
-                        ; the bare-name match picked a wrong same-named overload.
-                        var ns_coerce_params Array[PlannedType]()
-                        var ns_coerce_valid: bool false
-                        ; The namespace member's actual return type, captured on
-                        ; the s129 dotted re-mangle. The bare-name match may have
-                        ; picked a wrong same-named overload whose return type
-                        ; maps to the { ptr } cross-package placeholder; using it
-                        ; for the call's sret slot undersizes it and the callee's
-                        ; write overflows into adjacent stack. Prefer the member's
-                        ; own return type.
-                        var ns_return_type: PlannedType this.fresh_type_var("")
-                        var ns_return_valid: bool false
-                        if match_ref = null and Planner.call_arm_applies(named, 5)
+                        ; a namespace's function by its qualified name (s129)
+                        if named = 5
                         {
                             let ns_arm this.call_arm_namespace(result, fn_name, arg_types, arg_ops, ns_return_type, &ns_coerce_params)
                             match_ref := ns_arm.found
@@ -15466,54 +15428,35 @@ define Planner
                             ns_coerce_valid := ns_arm.ns_coerce_valid
                             ns_return_type := ns_arm.ns_return_type
                             ns_return_valid := ns_arm.ns_return_valid
+                            if match_ref <> null or has_ns_mangled
+                                call_arm := 5
                         }
-
-                        if (match_ref <> null or has_ns_mangled) and call_arm = 0
-                            call_arm := 5
-
-                        ; a concept's static (s155), its own kind since 2026-10-19
-                        if match_ref = null and Planner.call_arm_applies(named, 8)
-                            match_ref := this.call_arm_static(result, fn_name, arg_types, arg_ops)
-                        if match_ref <> null and call_arm = 0
-                            call_arm := 8
-
-                        ; s101: Implicit-this sibling method dispatch.
-                        ; When the standard lookup didn't find `fn_name`
-                        ; and `this: pointer[T]` is in scope, try resolving
-                        ; as T's method. Mirrors stage-0 Planner.cpp:1257-
-                        ; 1277 (lookupFunction's struct-member walk) +
-                        ; 9747-9786 (mangleFunction with parent = struct).
-                        ; Required for `define T { fn a() ... fn b() a() }`
-                        ; where `a()` from inside `b()` is a sibling method.
-                        ; Without this, sibling method calls fall through
-                        ; to mangled="" and the call drops out of the IR.
-                        if match_ref = null and Planner.call_arm_applies(named, 6)
+                        ; a sibling method without `this.` (s101)
+                        if named = 7
                         {
-                            let arm this.call_arm_sibling(result, fn_name, arg_types, arg_ops, has_ns_mangled, CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local))
+                            let arm this.call_arm_sibling(result, fn_name, arg_types, arg_ops, false, CallArm(null, false, result, false))
                             match_ref := arm.found
                             is_method_dispatch := arm.is_method_dispatch
                             receiver_op := arm.receiver_op
                             stamp_getref_local := arm.stamp_getref_local
+                            if match_ref <> null
+                                call_arm := 6
                         }
-
-                        if match_ref <> null and call_arm = 0
-                            call_arm := 6
-
-                        ; Enclosing-struct sibling STATIC fallback. When the
-                        ; call is still unresolved and there is no `this` to
-                        ; drive the s101 dispatch — i.e. a this-less static
-                        ; calling a this-less static sibling of the SAME
-                        ; property-bearing Structure (opensp ModeInfo's
-                        ; `bit`/`add`/`build_table`) — resolve it against the
-                        ; enclosing struct's statics. Kept a single
-                        ; `set match_ref:` so the s178 alloca pool is left
-                        ; undisturbed (see resolve_dotted_call). Fires only on
-                        ; code that would otherwise be "function not found", so
-                        ; already-resolving bodies are byte-identical.
-                        if match_ref = null and has_ns_mangled = false and current_structure_name <> null
+                        ; a static of the enclosing structure, from a static
+                        ; (`bit(...)`, opensp's ModeInfo)
+                        if named = 8 and current_structure_name <> null
+                        {
                             match_ref := this.resolve_static_method_on((*current_structure_name), fn_name, arg_types, arg_ops, result.loc)
-                        if match_ref <> null and call_arm = 0
-                            call_arm := 7
+                            if match_ref <> null
+                                call_arm := 7
+                        }
+                        ; a qualified static (s155)
+                        if named = 9
+                        {
+                            match_ref := this.call_arm_static(result, fn_name, arg_types, arg_ops)
+                            if match_ref <> null
+                                call_arm := 8
+                        }
                         this.operation_arm(result, call_arm)
 
                         var rt: PlannedType this.fresh_type_var("")
@@ -16325,259 +16268,10 @@ define Planner
             result
         }
 
-        ; Does arm (1 free, 3 dotted local, 4 chain, 5 namespace, 6 sibling, 8
-        ; a concept's static) of
-        ; collapse_application#'s cascade resolve a head operation_name# calls
-        ; `named`? Measured over the 36 roots (operation_arm#, 2026-10-18): a
-        ; method on a chain met arm 4 only (128 321 calls), a qualified name
-        ; arm 5 (44 417), a function arm 1 (32 390) and 6 or 7 (76), a bare
-        ; name 6 or 7 (8 145); the arms a kind never meets are not tried; a
-        ; concept's static (9) meets arm 8 since 2026-10-19. A
-        ; value, a type and the old path (0) take every arm. The sibling
-        ; static (7) is open to every head.
-        function call_arm_applies(named: size_t, arm: size_t) returns bool
-        {
-            match named
-                case 1: return arm = 4
-                case 3: return arm = 1 or arm = 6
-                case 5: return arm = 3 or arm = 5
-                case 9: return arm = 3 or arm = 8
-                case 6: return arm = 6
-                case 7: return arm = 6
-                case 8: return false
-            true
-        }
-
-        ; The arm for a dotted name whose prefix is a local (`arg.starts_with`,
-        ; s75): the method on that receiver. Cut out of collapse_application#
-        ; 2026-10-18 with the arms below; each takes the state of the cascade
-        ; it reads and hands back the state it writes.
-        procedure call_arm_dotted_local(
-            mutable this: Planner,
-            mutable result: PlannedOperand,
-            mutable fn_name: String,
-            mutable arg_types: Vector[PlannedType],
-            mutable arg_ops: Vector[PlannedOperand],
-            state: CallArm
-        ) returns CallArm
-        {
-            var match_ref: ref[MethodMatch]? state.found
-            var is_method_dispatch: bool state.is_method_dispatch
-            var receiver_op: PlannedOperand state.receiver_op
-            var stamp_getref_local: bool state.stamp_getref_local
-            if match_ref = null
-            {
-                let dot_idx fn_name.last_index_of(46)
-                if dot_idx > 0
-                {
-                    let dot_pos dot_idx as size_t
-                    let prefix fn_name.substring(0, dot_pos)
-                    let suffix fn_name.substring(
-                        dot_pos + 1,
-                        fn_name.get_length() - dot_pos - 1
-                    )
-                    let local_ref this.lookup_local_binding(prefix)
-                    if local_ref <> null
-                    {
-                        let local (*local_ref)
-                        ; s109: dispatch on generic receivers
-                        ; (Container[int], Box[int]). encode_type#
-                        ; handles `Name[args]` → `<len><name>I<args>E`,
-                        ; so mangle_method# already produces the
-                        ; specialised symbol (e.g. `_ZN9ContainerIiE`
-                        ; `8set_itemEmi`). The previous skip was
-                        ; written before encode_type# learned
-                        ; generics; lifting it lets user-defined
-                        ; `Container[int].set_item(...)` resolve
-                        ; against the spec'd body emitted via
-                        ; instantiate_generic#. Stdlib generics
-                        ; (Vector / HashMap / etc.) are still
-                        ; excluded because their bodies aren't
-                        ; specialised in the planner walk — keep
-                        ; them on the unspec'd dispatch path so
-                        ; the existing extern-decl shim continues
-                        ; to work.
-                        var skip_dispatch: bool false
-                        if local.binding_type.generics <> null
-                        {
-                            if local.binding_type.name <> "pointer"
-                            {
-                                if local.binding_type.name <> "ref"
-                                {
-                                    ; s137-INVESTIGATE: Vector removed
-                                    if local.binding_type.name = "HashMap"
-                                        skip_dispatch := true
-                                    if local.binding_type.name = "HashMapBuilder"
-                                        skip_dispatch := true
-                                    if local.binding_type.name = "HashSet"
-                                        skip_dispatch := true
-                                    if local.binding_type.name = "HashSetBuilder"
-                                        skip_dispatch := true
-                                    ; s154: Array removed from skip_dispatch, mirroring
-                                    ; the s137 Vector lift. Array[T] is specialised via
-                                    ; instantiate_generic# (s129), so the s109 method-
-                                    ; dispatch path (lookup_method# + extern-decl record)
-                                    ; produces the right `_ZN5ArrayI<T>E3addE<T>` symbol.
-                                    ; Without this, `functions.add(this.plan_function#(f,
-                                    ; null))` in plan_module#'s member loop skipped
-                                    ; dispatch entirely and the whole statement dropped —
-                                    ; so plan_function# was never called, instantiated_
-                                    ; functions stayed empty, and stage-2 emitted zero
-                                    ; functions.
-                                    ; s148: List removed alongside the is_stdlib_generic lift.
-                                    ; Specialised List<T>::add/count/get_iterator bodies are
-                                    ; now emitted via instantiate_generic#, so dispatch can
-                                    ; route through the s109 extern-decl + record_function
-                                    ; path the same way Vector does (skip_dispatch on Vector
-                                    ; was lifted in s137, no regression there).
-                                    ; if local.binding_type.name.equals("List")
-                                    ;     set skip_dispatch: true
-                                    if local.binding_type.name = "ListIterator"
-                                        skip_dispatch := true
-                                    if local.binding_type.name = "Option"
-                                        skip_dispatch := true
-                                    if local.binding_type.name = "Result"
-                                        skip_dispatch := true
-                                    if local.binding_type.name = "Slice"
-                                        skip_dispatch := true
-                                    if local.binding_type.name = "Slot"
-                                        skip_dispatch := true
-                                    if local.binding_type.name = "Node"
-                                        skip_dispatch := true
-                                    if local.binding_type.name = "KeyValuePair"
-                                        skip_dispatch := true
-                                }
-                            }
-                        }
-                        if skip_dispatch = false
-                        {
-                        let mm_ref this.lookup_method(local.binding_type, suffix, arg_types, arg_ops)
-                        if mm_ref <> null
-                        {
-                            let mm (*mm_ref)
-                            ; Build receiver as Variable(prefix).
-                            let recv PlannedOperand(
-                                result.loc,
-                                PlannedExpression.Variable(PlannedVariable(
-                                    result.loc,
-                                    prefix,
-                                    local.binding_type,
-                                    local.is_mutable
-                                )),
-                                null,
-                                local.binding_type
-                            )
-                            receiver_op := recv
-                            is_method_dispatch := true
-
-                            ; s78: record an extern PlannedFunction
-                            ; for the dispatched method so
-                            ; emit_function_decl emits an LLVM
-                            ; declare and emit_call's
-                            ; LLVMGetNamedFunction resolves it.
-                            ; Same-package methods (Options.*) are
-                            ; declared via the regular plan path;
-                            ; cross-package methods (String.*,
-                            ; Vector.*) need this. Skipped when
-                            ; already recorded (mirrors the
-                            ; dotted-namespace dedup at line ~2949).
-                            if this.has_recorded_function(mm.mangled_name) = false
-                            {
-                                var items_arr Array[PlannedItem]()
-                                items_arr.add(PlannedItem(
-                                    result.loc,
-                                    false,
-                                    null,
-                                    &^this local.binding_type,
-                                    null
-                                ))
-                                if mm.parameter_types <> null
-                                {
-                                    let pt_vec_ref mm.parameter_types
-                                    let pt_vec (*pt_vec_ref)
-                                    var ai: size_t 0
-                                    while ai < pt_vec.length
-                                    {
-                                        let p_ptr pt_vec.get ai
-                                        if p_ptr <> null
-                                        {
-                                            items_arr.add(PlannedItem(
-                                                result.loc,
-                                                false,
-                                                null,
-                                                &^this (*p_ptr),
-                                                null
-                                            ))
-                                        }
-                                        ai := ai + 1
-                                    }
-                                }
-                                var items_holder Vector[PlannedItem](items_arr)
-                                let extern_impl PlannedImplementation.Extern(
-                                    PlannedExternImpl result.loc
-                                )
-                                ; s119: honor mm.requires_page_param so cross-package /
-                                ; recursive-mid-planning stub IR signature matches the
-                                ; proper PlannedFunction emitted later. Without this,
-                                ; an early stub locks in a no-page-slot LLVM signature
-                                ; for any function whose body recursively calls itself
-                                ; (or is called before plan_function# records it).
-                                var pp_ref_a: ref[String]? null
-                                if mm.requires_page_param
-                                {
-                                    var pp_h_a Vector[String](1)
-                                    pp_h_a.put(0, "_rp")
-                                    pp_ref_a := pp_h_a.get(0)
-                                }
-                                this.record_function(PlannedFunction(
-                                    result.loc,
-                                    false,
-                                    false,
-                                    suffix,
-                                    mm.mangled_name,
-                                    pp_ref_a,
-                                    &items_holder,
-                                    &^this mm.return_type,
-                                    mm.throws_type,
-                                    Lifetime.Unspecified(Unspecified()),
-                                    extern_impl,
-                                    null,
-                                    false,
-                                    mm.can_throw,
-                                    null,
-                                    this.file,
-                                    null
-                                ))
-                            }
-                            match_ref := mm_ref
-
-                            ; Option B: a get/get_ptr ref out of a
-                            ; frame-local-page holder — flag the
-                            ; result for the Local-pointee stamp.
-                            ; The name array is entry-truncated per
-                            ; function (NOT cleared), so a lazily-
-                            ; instantiated generic method planned
-                            ; MID-function sees the outer entries —
-                            ; require the receiver to be a genuine
-                            ; non-parameter local Vector binding of
-                            ; THIS scope (a field/param receiver
-                            ; is caller-lived, never stamped).
-                            var sfx_is_getref suffix = "get"
-                            if sfx_is_getref = false
-                                sfx_is_getref := suffix = "get_ptr"
-                            if sfx_is_getref
-                                if local.is_parameter = false
-                                    if local.binding_type.name = "Vector"
-                                        if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, prefix)
-                                            stamp_getref_local := true
-                        }
-                        }
-                    }
-                }
-            }
-            CallArm(match_ref, is_method_dispatch, receiver_op, stamp_getref_local)
-        }
-
+        ; The arms of collapse_application#, one for each kind of head
+        ; operation_name# answers (the dispatch there): each takes the state
+        ; it reads and hands back the state it writes. Cut out of the cascade
+        ; 2026-10-18; a cascade no more since 2026-10-19.
         ; The arm for a method on a chain (`inner.get_value()`, s83): the
         ; method on the chain without its last hop.
         procedure call_arm_chain(
@@ -29218,12 +28912,12 @@ define Planner
             }
         }
 
-        ; Which arm of collapse_application#'s cascade resolved a call -- 1
-        ; the free resolution, 2 a static of the type, 3 a method on a
-        ; dotted local, 4 a method on a chain, 5 a namespace's function by
-        ; its dotted name, 6 a sibling method, 7 a sibling static, 0 none --
-        ; against what operation_name# says the head IS: where every kind
-        ; meets one arm, the step by type can take that arm alone.
+        ; Which arm of collapse_application# resolved a call -- 1 the free
+        ; resolution, 2 a static of the type, 4 a method on a chain, 5 a
+        ; namespace's function by its dotted name, 6 a sibling method, 7 a
+        ; sibling static, 8 a qualified static, 0 none -- against what
+        ; operation_name# says the head IS. The census that showed every kind
+        ; meeting one arm, and so let the cascade go (2026-10-19).
         procedure operation_arm(mutable this: Planner, head: PlannedOperand, arm: size_t)
         {
             if this.operation_census_on() = false
