@@ -187,11 +187,38 @@ def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 
-p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0)
+# The server's stderr goes to a FILE: a give-up ("exceeded its ... budget") is
+# answered with a well-formed EMPTY result, which the checks below cannot tell
+# from a real answer -- with the default 30 s budget a stalled worker passed
+# "valid doc -> no diagnostics" -- so the file is read at the end.
+_errpath = "/tmp/scalyls_lifecycle_%d.err" % os.getpid()
+_err = open(_errpath, "w")
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=_err, bufsize=0)
 fd = p.stdout.fileno()
 buf = bytearray()
+def stall_report(why, waited):
+    # A frame that did not come: say who the server was waiting on, so a red
+    # under the bar (where SCALYLS_BUDGET_MS outlasts this deadline) carries
+    # the state of the server and of its worker instead of a bare None.
+    print("STALL  %s after %.1f s, frame %d, server %s" % (why, waited, len(frames) + 1,
+          "alive" if p.poll() is None else "exited %s" % p.poll()), flush=True)
+    kids = subprocess.run(["pgrep", "-P", str(p.pid)], capture_output=True, text=True).stdout.split()
+    pids = [str(p.pid)] + kids
+    out = subprocess.run(["ps", "-o", "pid,ppid,etime,pcpu,rss,state,command", "-p", ",".join(pids)],
+                         capture_output=True, text=True).stdout
+    for line in out.splitlines():
+        print("STALL  " + line, flush=True)
+    if sys.platform == "darwin":
+        for pid in pids:
+            res = subprocess.run(["sample", pid, "2"], capture_output=True, text=True)
+            top = [l.strip() for l in res.stdout.splitlines()
+                   if l.strip()[:1].isdigit() and not l.strip().startswith("0x")][:12]
+            for l in top:
+                print("STALL  [%s] %s" % (pid, l[:160]), flush=True)
+    return None
 def next_frame(timeout=60.0):
-    deadline = time.time() + timeout
+    start = time.time()
+    deadline = start + timeout
     while True:
         i = buf.find(b"\r\n\r\n")
         if i >= 0:
@@ -200,10 +227,10 @@ def next_frame(timeout=60.0):
                 body = bytes(buf[i+4:i+4+n]); del buf[:i+4+n]
                 return json.loads(body)
         left = deadline - time.time()
-        if left <= 0: return None
-        if not select.select([fd], [], [], left)[0]: return None
+        if left <= 0: return stall_report("deadline", time.time() - start)
+        if not select.select([fd], [], [], left)[0]: return stall_report("timeout", time.time() - start)
         chunk = os.read(fd, 65536)
-        if not chunk: return None
+        if not chunk: return stall_report("end of output", time.time() - start)
         buf.extend(chunk)
 def send(o): p.stdin.write(frame(o))
 
@@ -237,6 +264,18 @@ def check(cond, label):
 
 check(all(f is not None for f in frames) and len(frames) == 5,
       "frame count == 5 (init, didOpen diag, didChange diag, didClose clear, shutdown)")
+try:
+    p.wait(timeout=10)
+except Exception:
+    p.kill()
+_err.close()
+_gaveup = [l for l in open(_errpath).read().splitlines() if "exceeded its" in l]
+os.remove(_errpath)
+for l in _gaveup:
+    print("STALL  server: " + l)
+check(not _gaveup, "no request gave up on its budget (an empty answer is no answer)")
+if failures:
+    sys.exit(1)
 check(frames[0].get("id") == 1 and "capabilities" in frames[0].get("result", {}), "initialize -> capabilities")
 check(frames[0]["result"]["capabilities"].get("textDocumentSync") == 2, "textDocumentSync == 2 (incremental)")
 check(frames[1].get("method") == "textDocument/publishDiagnostics", "didOpen -> publishDiagnostics")
