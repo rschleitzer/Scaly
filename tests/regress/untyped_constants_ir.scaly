@@ -1,0 +1,11 @@
+; An untyped constant expression into a narrow parameter is a constant of the
+; parameter's width (2026-10-19, Planner.settle_constant#): `take32(0 - 1)`
+; passes `i32 -1`. Before it passed `i64 -1` into the i32 parameter -- the
+; callee type is built from the arguments, so nothing objected, and a callee
+; that reads the whole register saw 2^32 - 1 (the http package's
+; scaly_eio_stat call did exactly this).
+; expect-ir: call i64 @_Z6take323i32(i32 -1)
+function take32(n: i32) returns int
+    n as int
+
+print "`take32(0 - 1)`"

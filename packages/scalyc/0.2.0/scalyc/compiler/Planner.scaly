@@ -5617,6 +5617,394 @@ define Planner
             0
         }
 
+        ; constant_integer#: the exact value of an UNTYPED integer constant
+        ; (ROADMAP-operation.md, the literal rules) -- an integer or hex
+        ; literal, a grouping of one, or an operator over such: `0 - 1`,
+        ; `1 << 4`, `(3 * 4) + 1` -- as a sign and a magnitude, so every value
+        ; from -(2^64 - 1) to 2^64 - 1 is exact. False where op is none, or
+        ; where it divides by zero, shifts by a negative or too wide count, or
+        ; leaves that range.
+        ; `bits` is the width of an UNSIGNED target, 0 for any other: a
+        ; complement is a bit operation and only means something at a width,
+        ; so `flags & ~F` with a u32 `flags` is `F`'s complement in 32 bits
+        ; where without one `~v` is `-v - 1` (Go's untyped `^`)
+        procedure constant_integer(mutable this: Planner, op: PlannedOperand, bits: size_t, mutable negative: ref[bool], mutable magnitude: ref[size_t]) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    ; a literal written here is its value; a `define`'s value
+                    ; put in where it is named keeps the define's place and is
+                    ; held as the bits of the define's type -- read as that
+                    ; type says (`define TC_NONE: int -1` is -1, not 2^64 - 1)
+                    var v: size_t 0
+                    var at: size_t 0
+                    choose pc.value
+                        when i: IntegerConstant
+                        {
+                            v := i.value
+                            at := i.span.start
+                        }
+                        when h: HexConstant
+                        {
+                            v := h.value
+                            at := h.span.start
+                        }
+                        else
+                            return false
+                    if at <> op.loc.start and Planner.constant_type_is_untyped(op.result_type) = false
+                        return false
+                    negative := false
+                    magnitude := v
+                    if at <> op.loc.start and (v >> (63 as size_t)) = 1
+                    {
+                        negative := true
+                        magnitude := (0 as size_t) - v
+                    }
+                    return true
+                }
+                when tp: PlannedTuple
+                {
+                    if tp.components = null
+                        return false
+                    let comps (*tp.components)
+                    if comps.length <> 1 or comps[0].name <> null or comps[0].value = null
+                        return false
+                    let inner (*comps[0].value)
+                    if inner.length <> 1
+                        return false
+                    return this.constant_integer(inner[0], bits, negative, magnitude)
+                }
+                when call: PlannedCall
+                {
+                    if call.is_operator = false or call.args = null
+                        return false
+                    let args (*call.args)
+                    var an false
+                    var am: size_t 0
+                    if args.length = 1
+                    {
+                        if call.name <> "-" and call.name <> "~"
+                            return false
+                        if this.constant_integer(args[0], bits, &an, &am) = false
+                            return false
+                        if call.name = "~"
+                        {
+                            if bits > 0 and an = false
+                            {
+                                var mask: size_t (0 as size_t) - (1 as size_t)
+                                if bits < 64
+                                    mask := ((1 as size_t) << bits) - (1 as size_t)
+                                if am > mask
+                                    return false
+                                negative := false
+                                magnitude := mask - am
+                                return true
+                            }
+                            ; `~v` is `-v - 1` for a constant of no width
+                            return Planner.constant_operation(String("-"), an = false and am <> 0, am, false, 1, negative, magnitude)
+                        }
+                        negative := an = false and am <> 0
+                        magnitude := am
+                        return true
+                    }
+                    if args.length <> 2
+                        return false
+                    var bn false
+                    var bm: size_t 0
+                    if this.constant_integer(args[0], bits, &an, &am) = false or this.constant_integer(args[1], bits, &bn, &bm) = false
+                        return false
+                    return Planner.constant_operation(call.name, an, am, bn, bm, negative, magnitude)
+                }
+                else
+                    return false
+            false
+        }
+
+        ; constant_shape#: is op an untyped integer constant by its SHAPE --
+        ; a literal, or the value of a `define` declared `int` (the type a
+        ; constant has where nothing else decides: such a define is a
+        ; constant of no width, as `const X = 1 << 15` in Go; one declared
+        ; `size_t`, `u32`, .. is a constant OF that type, `~(PAGE_SIZE - 1)`
+        ; computes in it), groupings, the operators constant_integer#
+        ; evaluates --, whether or not its value is in range
+        function constant_shape(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    var at: size_t 0
+                    choose pc.value
+                        when i: IntegerConstant
+                            at := i.span.start
+                        when h: HexConstant
+                            at := h.span.start
+                        else
+                            return false
+                    return at = op.loc.start or Planner.constant_type_is_untyped(op.result_type)
+                }
+                when tp: PlannedTuple
+                {
+                    if tp.components = null
+                        return false
+                    let comps (*tp.components)
+                    if comps.length <> 1 or comps[0].name <> null or comps[0].value = null
+                        return false
+                    let inner (*comps[0].value)
+                    if inner.length <> 1
+                        return false
+                    return this.constant_shape(inner[0])
+                }
+                when call: PlannedCall
+                {
+                    if call.is_operator = false or call.args = null
+                        return false
+                    let args (*call.args)
+                    if args.length = 1
+                        return (call.name = "-" or call.name = "~") and this.constant_shape(args[0])
+                    if args.length <> 2
+                        return false
+                    let oname call.name
+                    match oname
+                        case "+" case "-" case "*" case "/" case "%" case "div" case "mod" case "<<" case ">>" case "&" case "|" case "xor"
+                            return this.constant_shape(args[0]) and this.constant_shape(args[1])
+                    return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; settle_constant#: an untyped integer constant meeting the integer
+        ; type `target` -- at an argument, an assignment, a typed binding, a
+        ; return, a `case`, beside a typed operand -- is a constant of that
+        ; type (ROADMAP-operation.md, the literal rules, way 1): its exact
+        ; value must fit, or it is rc 4; where it fits, a literal is retyped
+        ; as it always was, and an expression becomes the one constant of the
+        ; target's width -- unless the target has `int`'s width and sign, where
+        ; the expression already computes the value it stands for. Before
+        ; 2026-10-19 a literal that did not fit kept `int` and was cut at the
+        ; store (`let x: u8 300` held 44), and an expression folded at `int`
+        ; whatever its target (`0 - 1` into an `i32` parameter went as i64).
+        procedure settle_constant(mutable this: Planner, op: PlannedOperand, target: PlannedType) returns PlannedOperand
+        {
+            if Planner.type_is_integer_like(target) = false
+                return op
+            if this.constant_shape(op) = false
+                return op
+            var neg false
+            var mag: size_t 0
+            var bits: size_t 0
+            if Planner.integer_type_is_unsigned(target)
+                bits := Planner.integer_type_width(target)
+            if this.constant_integer(op, bits, &neg, &mag) = false
+            {
+                this.add_diagnostic(op.loc, String^this("this constant divides by zero, shifts by a count out of range, or leaves the integers a constant holds: -(2^64 - 1) to 2^64 - 1"))
+                return op
+            }
+            if Planner.constant_fits(neg, mag, target.name) = false
+            {
+                var sb StringBuilder()
+                sb.append "the constant "
+                if neg
+                    sb.append("-" as char)
+                sb.append(mag as u64)
+                sb.append " does not fit "
+                sb.append(Planner.get_readable_name(target))
+                sb.append ": a value of another width or sign is spelled with its cast"
+                let msg sb.to_string()
+                this.add_diagnostic(op.loc, String^this(msg))
+                return op
+            }
+            if this.operand_is_integer_constant(op)
+                return this.retype_integer_operand(op, target)
+            let tn Planner.normalize_type_name(target.name)
+            if tn = "int" or tn = "i64"
+                return op
+            var bits mag
+            if neg
+                bits := (0 as size_t) - mag
+            let c scalyc.compiler.Plan.PlannedConstant(Constant.Integer(IntegerConstant(op.loc, bits)))
+            PlannedOperand(op.loc, PlannedExpression.Constant c, null, target)
+        }
+
+        ; constant_operation#: one operator of constant_integer#, exact or
+        ; false
+        procedure constant_operation(name: String, an: bool, am: size_t, bn0: bool, bm: size_t, mutable negative: ref[bool], mutable magnitude: ref[size_t]) returns bool
+        {
+            let top: size_t (0 as size_t) - (1 as size_t)
+            var bn bn0
+            if name = "-"
+            {
+                bn := bn0 = false and bm <> 0
+                return Planner.constant_operation(String("+"), an, am, bn, bm, negative, magnitude)
+            }
+            if name = "+"
+            {
+                if an = bn
+                {
+                    if am > top - bm
+                        return false
+                    magnitude := am + bm
+                    negative := an and am + bm <> 0
+                    return true
+                }
+                if am >= bm
+                {
+                    magnitude := am - bm
+                    negative := an and am <> bm
+                    return true
+                }
+                magnitude := bm - am
+                negative := bn
+                return true
+            }
+            if name = "*"
+            {
+                if am <> 0 and bm > top / am
+                    return false
+                magnitude := am * bm
+                negative := an <> bn and am * bm <> 0
+                return true
+            }
+            if name = "/" or name = "div"
+            {
+                if bm = 0
+                    return false
+                magnitude := am / bm
+                negative := an <> bn and am / bm <> 0
+                return true
+            }
+            if name = "%" or name = "mod"
+            {
+                if bm = 0
+                    return false
+                magnitude := am % bm
+                negative := an and am % bm <> 0
+                return true
+            }
+            if name = "<<"
+            {
+                if bn or bm >= 64
+                    return false
+                let shifted am << bm
+                if (shifted >> bm) <> am
+                    return false
+                magnitude := shifted
+                negative := an and shifted <> 0
+                return true
+            }
+            if name = ">>"
+            {
+                if bn or bm >= 64
+                    return false
+                if an and am <> 0
+                {
+                    ; an arithmetic shift rounds toward minus infinity
+                    magnitude := ((am - 1) >> bm) + 1
+                    negative := true
+                    return true
+                }
+                magnitude := am >> bm
+                negative := false
+                return true
+            }
+            if name = "&" or name = "|" or name = "xor"
+            {
+                ; in 64-bit two's complement: a negative value is one only down
+                ; to -2^63
+                let limit: size_t (1 as size_t) << (63 as size_t)
+                if (an and am > limit) or (bn and bm > limit)
+                    return false
+                var x am
+                if an
+                    x := (0 as size_t) - am
+                var y bm
+                if bn
+                    y := (0 as size_t) - bm
+                var r: size_t 0
+                if name = "&"
+                    r := x & y
+                if name = "|"
+                    r := x | y
+                if name = "xor"
+                    r := x xor y
+                if (an or bn) and (r >> (63 as size_t)) = 1
+                {
+                    magnitude := (0 as size_t) - r
+                    negative := true
+                    return true
+                }
+                magnitude := r
+                negative := false
+                return true
+            }
+            false
+        }
+
+        ; integer_type_is_unsigned#, integer_type_width#: of an integer type
+        function integer_type_is_unsigned(t: PlannedType) returns bool
+        {
+            let n Planner.normalize_type_name(t.name)
+            match n
+                case "u8" case "u16" case "u32" case "u64" case "uint" case "size_t" case "size": return true
+            false
+        }
+
+        function integer_type_width(t: PlannedType) returns size_t
+        {
+            let n Planner.normalize_type_name(t.name)
+            match n
+                case "u8" case "i8" case "char": return 8
+                case "u16" case "i16": return 16
+                case "u32" case "i32": return 32
+            64
+        }
+
+        ; constant_type_is_untyped#: is a define of type t an untyped constant
+        ; -- `int` and `i64`, the width and sign a constant has where nothing
+        ; decides (constant_shape#)
+        function constant_type_is_untyped(t: PlannedType) returns bool
+        {
+            let n Planner.normalize_type_name(t.name)
+            n = "int" or n = "i64"
+        }
+
+        ; constant_fits#: does the exact value fit the integer type named
+        ; (`int` and `i64` signed 64, `size_t`, `u64` and `uint` unsigned 64)?
+        function constant_fits(negative: bool, magnitude: size_t, type_name: String) returns bool
+        {
+            let n Planner.normalize_type_name(type_name)
+            var bits: size_t 64
+            var signed true
+            match n
+                case "u8": bits := 8
+                case "u16": bits := 16
+                case "u32": bits := 32
+                case "u64" case "uint" case "size_t" case "size": bits := 64
+                case "i8" case "char": bits := 8
+                case "i16": bits := 16
+                case "i32": bits := 32
+            match n
+                case "u8" case "u16" case "u32" case "u64" case "uint" case "size_t" case "size": signed := false
+            if signed = false
+            {
+                if negative
+                    return false
+                if bits = 64
+                    return true
+                return magnitude <= ((1 as size_t) << bits) - (1 as size_t)
+            }
+            let half: size_t (1 as size_t) << (bits - (1 as size_t))
+            if negative
+                return magnitude <= half
+            magnitude <= half - (1 as size_t)
+        }
+
         ; operand_retypes_to_integer: the whole gate in one predicate — is
         ; `op` a bare integer/hex literal whose payload fits integer target
         ; `t`? Callers that answer true then call retype_integer_operand.
@@ -12106,9 +12494,9 @@ define Planner
                             ; at that width, which is what made `5 as u32`
                             ; mandatory at every such call site.
                             if folded = false
-                                if this.operand_retypes_to_integer(a, pt)
+                                if Planner.type_is_integer_like(pt) and this.constant_shape(a)
                                 {
-                                    out.add(this.retype_integer_operand(a, pt))
+                                    out.add(this.settle_constant(a, pt))
                                     folded := true
                                 }
                             ; A `ref[T]` argument into a `T` parameter is the
@@ -18425,12 +18813,10 @@ define Planner
                     ; literal too: two literals keep int and fold as before.
                     if Planner.is_integer_comparison_operator(op_name)
                     {
-                        if this.operand_is_integer_constant(result) = false
-                            if this.operand_retypes_to_integer(rhs, result.result_type)
-                                rhs := this.retype_integer_operand(rhs, result.result_type)
-                        if this.operand_is_integer_constant(rhs) = false
-                            if this.operand_retypes_to_integer(result, rhs.result_type)
-                                result := this.retype_integer_operand(result, rhs.result_type)
+                        if this.constant_shape(result) = false
+                            rhs := this.settle_constant(rhs, result.result_type)
+                        if this.constant_shape(rhs) = false
+                            result := this.settle_constant(result, rhs.result_type)
                     }
 
                     ; Same for ARITHMETIC, but only across a 64-bit sibling
@@ -18455,12 +18841,10 @@ define Planner
                     ; truncated behind the author's back.
                     if Planner.is_integer_arithmetic_operator(op_name)
                     {
-                        if this.operand_is_integer_constant(result) = false
-                            if this.operand_retypes_to_integer(rhs, result.result_type)
-                                rhs := this.retype_integer_operand(rhs, result.result_type)
-                        if this.operand_is_integer_constant(rhs) = false
-                            if this.operand_retypes_to_integer(result, rhs.result_type)
-                                result := this.retype_integer_operand(result, rhs.result_type)
+                        if this.constant_shape(result) = false
+                            rhs := this.settle_constant(rhs, result.result_type)
+                        if this.constant_shape(rhs) = false
+                            result := this.settle_constant(result, rhs.result_type)
                     }
 
                     ; Unknown identifier on either side of a binary
@@ -27171,10 +27555,10 @@ define Planner
                                     ; u8 emitted `icmp eq i8 %c, i64 40`,
                                     ; invalid IR (2026-09-24, first `match` on
                                     ; a narrow integer in the tree)
-                                    if this.operand_retypes_to_integer(collapsed_case, cond_type)
+                                    if this.constant_shape(collapsed_case)
                                     {
                                         let cvec case_cond.condition
-                                        (*cvec).put(0, this.retype_integer_operand(collapsed_case, cond_type))
+                                        (*cvec).put(0, this.settle_constant(collapsed_case, cond_type))
                                     }
                                     this.add_equality_constraint(
                                         cond_type,
@@ -31916,6 +32300,11 @@ define Planner
             if is_stack_array_decl = false
                 collapsed := this.deref_ref_into_pointee(binding_type, collapsed)
 
+            ; an untyped integer constant takes the annotation's type, or is
+            ; rc 4 (settle_constant#) -- ahead of the type checks below
+            if is_stack_array_decl = false and b.item.type <> null
+                collapsed := this.settle_constant(collapsed, binding_type)
+
             ; Emit an equality constraint between the declared binding
             ; type and the collapsed initializer's result type. Solvable
             ; cases either confirm the annotation or fix the fresh var.
@@ -35766,8 +36155,7 @@ define Planner
             ; following a u32 field read back as 0). A plain typed local was
             ; already correct; only the member path took the wrong width.
             if a.target.length > 0
-                if this.operand_retypes_to_integer(planned_source_collapsed, planned_target_collapsed.result_type)
-                    planned_source_collapsed := this.retype_integer_operand(planned_source_collapsed, planned_target_collapsed.result_type)
+                planned_source_collapsed := this.settle_constant(planned_source_collapsed, planned_target_collapsed.result_type)
 
             ; String literal assigned into a pointer[const_char]-like target
             ; (`set s: "text"` with s a pointer[const_char]): wrap in PlannedAs
@@ -49673,6 +50061,15 @@ define Planner
                 }
             if Planner.type_is_float_like(rt) and this.operand_is_float_constant(op)
                 return PlannedOperand^this(op.loc, op.expr, null, rt)
+            ; an untyped integer constant takes the return type, or is rc 4
+            ; (settle_constant#)
+            if Planner.type_is_integer_like(rt) and this.constant_shape(op)
+            {
+                let settled this.settle_constant(op, rt)
+                if Planner.types_equal(settled.result_type, op.result_type)
+                    return null
+                return PlannedOperand^this(settled.loc, settled.expr, settled.member_access, settled.result_type)
+            }
             ; A narrower integer reaching `ret` through a block or an arm widens
             ; by its own signedness, as a direct return does
             ; (integer_operand_widens#). Without it `{ if n = null  return 0

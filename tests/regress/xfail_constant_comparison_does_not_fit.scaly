@@ -1,0 +1,10 @@
+; A constant compared with a value it cannot be is rc 4 (2026-10-19,
+; Planner.settle_constant#): the literal takes the operand's type and must
+; fit it. Before, `u8_of(44) = 300` kept the literal's `int`, widened the u8
+; and was always false at rc 0.
+; xfail: the constant 300 does not fit u8
+function u8_of(n: int) returns u8
+    n as u8
+
+if u8_of(44) = 300
+    print "equal"

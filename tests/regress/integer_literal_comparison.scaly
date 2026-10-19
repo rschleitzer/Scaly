@@ -106,12 +106,10 @@ if (zero = 0) = false
     exit 27
 
 ; --- a literal too large for the operand's type -------------------------
-; 300 does not fit a u8, so the literal keeps its width and the operand is
-; widened as before. Truncating 300 to 44 would make this compare equal.
-if u8_of(44) = 300
-    exit 28
-if (u8_of(44) < 300) = false
-    exit 29
+; 300 does not fit a u8: since 2026-10-19 that is rc 4 (an untyped constant
+; must fit what it meets; xfail_constant_comparison_does_not_fit). Before, the
+; literal kept its width, the operand was widened and the comparison was
+; always false.
 
 ; --- arithmetic: the literal follows the typed side, and that is CONSISTENT --
 ; This block used to pin the opposite (the typed side widening to i64), which
@@ -153,7 +151,7 @@ let bit 1 << n32
 if (bit = 1099511627776) = false
     exit 34
 let mask ~(1 << n32)
-if (mask = 18446742974197923839) = false
+if (mask = 0 - 1099511627777) = false
     exit 35
 
 print "PASS"

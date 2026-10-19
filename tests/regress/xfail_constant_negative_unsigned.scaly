@@ -1,0 +1,8 @@
+; A negative constant into an unsigned target is rc 4 (2026-10-19,
+; Planner.settle_constant#) -- before, `0 - 1` returned as a u32 was
+; 4294967295 at rc 0. A maximum is spelled typed: `(0 as u32) - (1 as u32)`.
+; xfail: the constant -1 does not fit u32
+function top() returns u32
+    0 - 1
+
+print "`top() as int`"

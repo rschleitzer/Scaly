@@ -2807,7 +2807,7 @@ define TaskPlanner
 
         function wm_all() returns size_t
         {
-            0 - 1
+            (0 as size_t) - (1 as size_t)
         }
 
         procedure memo_written(mutable this: TaskPlanner, mangled: String, mask: size_t)

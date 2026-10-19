@@ -1,0 +1,5 @@
+; A constant whose exact value does not fit its target is rc 4 (2026-10-19,
+; Planner.settle_constant#) -- before, `let x: u8 300` held 44 at rc 0.
+; xfail: the constant 300 does not fit u8
+let x: u8 300
+print "`x as int`"

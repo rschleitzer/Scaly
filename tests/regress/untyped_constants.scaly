@@ -1,0 +1,38 @@
+; An integer constant has no width until it meets one (2026-10-19,
+; ROADMAP-operation.md, the literal rules, way 1; Planner.settle_constant#):
+; a literal, a `define` of type `int` and an operator over such take the type
+; of their target -- a parameter, a binding, an assignment, a return, the
+; other side of an operator -- with their EXACT value; a complement takes an
+; unsigned target's width. Before, an expression folded at `int` whatever its
+; target (`0 - 1` into an `i32` parameter went as i64) and `F1 | F2` beside a
+; u32 widened the u32.
+; Expected: PASS
+define FLAG_A: int 1 << 4
+define FLAG_B: int 1 << 8
+define LIMIT: u32 0x10FFFF
+
+define Node (var flags: u32)
+
+function take8(n: u8) returns int
+    n as int
+
+function take32(n: i32) returns int
+    n as int
+
+function low() returns i8
+    0 - 128
+
+procedure run() returns bool
+{
+    var node Node(0xFFFF)
+    node.flags := node.flags & ~FLAG_A
+    let both node.flags & (FLAG_A | FLAG_B)
+    let c: u8 (1 << 4) | 3
+    let m: u32 ~FLAG_B
+    take8(255) = 255 and take32(0 - 1) = 0 - 1 and take32((3 * 4) + 1) = 13 and low() = 0 - 128 and node.flags = 0xFFEF and both = 256 and c = 19 and m = 0xFFFFFEFF and ((LIMIT + 1) as int) = 0x110000
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"
