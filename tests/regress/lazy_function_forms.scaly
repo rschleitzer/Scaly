@@ -34,6 +34,15 @@ define IntFn delegate(int) returns int
 function apply(f: IntFn, v: int) returns int
     f(v)
 
+; a parameter named like a caller's local: the caller reads its own after
+; the call (the put-in's bindings end with its block, PlannedBlock.scoped)
+procedure after_the_call() returns int
+{
+    let value 9
+    let r or_else(0, 3)
+    r * 100 + value
+}
+
 procedure run() returns bool mutable count
 {
     let n1 twice(or_else(0, bump(1)))
@@ -46,7 +55,7 @@ procedure run() returns bool mutable count
     let s1 name_or(String(""), String("fallback"))
     let s2 name_or(String("given"), String("unused"))
     let n5 apply(\v: or_else(v, 9), 0)
-    n1 = 2 and c1 = 2 and n2 = 10 and c2 = 12 and n3 = 4 and c3 = 12 and n4 = 11 and s1.equals("fallback") and s2.equals("given") and n5 = 9
+    n1 = 2 and c1 = 2 and n2 = 10 and c2 = 12 and n3 = 4 and c3 = 12 and n4 = 11 and s1.equals("fallback") and s2.equals("given") and n5 = 9 and after_the_call() = 309
 }
 
 if run()

@@ -194,6 +194,10 @@ define PlannedBlock
 (
     loc: Span
     statements: ref[Vector[PlannedStatement]]?
+    ; the bindings end with the block in the emitter too: a function put in
+    ; where it is called (Planner.put_in_lazy_call#) binds its parameters and
+    ; `this` there, which would otherwise read on after it
+    scoped: bool
 )
 
 define PlannedIf

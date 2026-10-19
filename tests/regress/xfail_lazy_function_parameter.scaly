@@ -1,13 +1,18 @@
-; A lazy parameter is put in where its routine is called (2026-10-18): an
-; operator's (scaly/logic.scaly) and, since 2026-10-19, a free function's
-; (Planner.put_in_lazy_call#). A METHOD's would be evaluated before the call
-; without a word, so it is refused (Planner.plan_function#).
-; xfail: a lazy parameter is so far taken by an operator and by a free function
+; An argument of a method's put-in that reads a field of the CALLER's `this`
+; is refused (2026-10-19, Planner.check_lazy_shadow#): the put-in binds `this`
+; to the receiver where the argument is evaluated, so the emitted block would
+; read the receiver's field. The way is a local: `let mine base`.
+; xfail: names this, which the function binds where the argument is evaluated
 define Box (v: int)
 {
     function or_else(this, fallback: lazy int) returns int
         if v <> 0: v else fallback
 }
 
-let b Box(0)
-print "`b.or_else(5)`"
+define Calc (base: int)
+{
+    function first(this, other: Box) returns int
+        other.or_else(base)
+}
+
+print "`Calc(20).first(Box(0))`"

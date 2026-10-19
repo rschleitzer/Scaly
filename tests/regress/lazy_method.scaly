@@ -1,0 +1,55 @@
+; A method with a lazy parameter is put in where it is called, as a free
+; function is (2026-10-19, ROADMAP-operation.md, Short circuit:
+; `value.or_else(costly())`; Planner.lazy_method_call#, put_in_lazy_call#):
+; the receiver -- a local or a parameter and its fields, or `this` of a
+; sibling call -- is bound as the body's `this`, the ordinary arguments
+; once, a lazy one where the body names it. Before, rc 4.
+; Expected: PASS
+mutable count: int 0
+
+procedure bump(by: int) returns int mutable count
+{
+    count := count + by
+    by
+}
+
+define Box (v: int)
+{
+    function or_else(this, fallback: lazy int) returns int
+        if v <> 0: v else fallback
+
+    function both(this, fallback: lazy int) returns int
+        or_else(fallback) + this.or_else(fallback)
+}
+
+define Holder (box: Box)
+
+define Calc (base: int)
+{
+    function first(this, other: Box) returns int
+    {
+        let mine base
+        other.or_else(mine) + base
+    }
+}
+
+procedure run() returns bool mutable count
+{
+    let z Box(0)
+    let three Box(3)
+    let h Holder(Box(0))
+    let a z.or_else(bump(5))
+    let after_a count
+    let b three.or_else(bump(1))
+    let after_b count
+    let c h.box.or_else(7)
+    let d z.both(bump(1))
+    let after_d count
+    let e Calc(20).first(z)
+    a = 5 and after_a = 5 and b = 3 and after_b = 5 and c = 7 and d = 2 and after_d = 7 and e = 40
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

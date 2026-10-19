@@ -15841,6 +15841,20 @@ define Emitter
         ; Emit a block
         procedure emit_block(mutable this, mutable block: PlannedBlock) returns LLVMValueRef
         {
+            ; a put-in's block ends its bindings (PlannedBlock.scoped)
+            if block.scoped
+            {
+                enter_scope()
+                let scoped_value this.emit_block_statements(block)
+                pin_temp_value scoped_value
+                exit_scope()
+                return scoped_value
+            }
+            this.emit_block_statements(block)
+        }
+
+        procedure emit_block_statements(mutable this, mutable block: PlannedBlock) returns LLVMValueRef
+        {
             var last_value: LLVMValueRef null
 
             if block.statements <> null
