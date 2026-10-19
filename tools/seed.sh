@@ -162,13 +162,14 @@ CLANG="$CLANG" tools/fcontext.sh "$OUT/fcontext.o" || fail "fcontext assembly"
 CLANG="$CLANG" tools/eio.sh "$OUT/eio.o" || fail "eio shim compile"
 CLANG="$CLANG" tools/ctime.sh "$OUT/ctime.o" || fail "ctime shim compile"
 CLANG="$CLANG" tools/panic.sh "$OUT/panic.o" || fail "panic shim compile"
-if ! "$CLANG" "${LINKARGS[@]}" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" \
+tools/wasmeh.sh "$OUT/wasm_eh.o" || fail "wasm_eh.cpp compile"
+if ! "$CLANG" "${LINKARGS[@]}" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" "$OUT/wasm_eh.o" \
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT/scalyc_seed" 2> "$OUT/link.log"; then
   grep -v 'reexported library' "$OUT/link.log" || true
   fail "link (undefined symbols)"
 fi
 # The tool beside it (tools/scaly-of.sh): its own root over the same objects.
-if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scaly_main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" \
+if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scaly_main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" "$OUT/wasm_eh.o" \
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT/scaly_seed" 2> "$OUT/tool_link.log"; then
   grep -v 'reexported library' "$OUT/tool_link.log" || true
   fail "link scaly (undefined symbols)"
@@ -262,7 +263,7 @@ if ! tools/win-lto.sh --llvm "$OUT/scalyls$SCALY_EXE" "$OUT/scalyls_main.ll" "$O
 fi
 else
 llc_objs scalyls_main scalyls json || fail "llc scalyls"
-if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/json.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" \
+if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/json.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" "$OUT/wasm_eh.o" \
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
   grep -v 'reexported library' "$OUT/scalyls_link.log" || true
   fail "scalyls link (undefined symbols)"

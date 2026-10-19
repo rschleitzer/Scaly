@@ -181,7 +181,9 @@ else
   for p in dazzle opensp pdf; do
     for d in "$dz"/packages/$p/[0-9]*; do [ -d "$d" ] && roots+=("$d"); done
   done
-  shims=(--sources packages/scaly/[0-9]*/scaly/fiber/eio.c
+  # the shims the wasm profile links: its own eio and fcontext (`_wasm`)
+  shims=(--sources packages/scaly/[0-9]*/scaly/fiber/eio_wasm.c
+         --sources packages/scaly/[0-9]*/scaly/fiber/fcontext_wasm.c
          --sources packages/scaly/[0-9]*/scaly/time/ctime.c
          --sources packages/scaly/[0-9]*/scaly/memory/panic.c)
   wout=$(python3 tools/abi-audit.py --target wasm32 --quiet --headers "$wasi_inc" "${shims[@]}" \

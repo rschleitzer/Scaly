@@ -1,0 +1,66 @@
+; The wasm profile (W1 slice 4): one core, no fibers, no threads -- and what a
+; program does there all the same: allocate on its pages, grow containers,
+; build strings, write and read a file and ask the clocks over WASI, run a
+; `for` the planner would run in parallel (inline, on the one core), and get
+; the arguments it was started with.
+; Expected: PASS
+
+define Point (x: int  y: int)
+
+function total(xs: ref[Array[int]]) returns int
+{
+    var sum 0
+    for x in xs
+        sum := sum + x
+    sum
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var xs Array[int]()
+    var i 0
+    while i < 10000
+    {
+        xs.add(i)
+        i := i + 1
+    }
+    if total(&xs) <> 49995000
+        return 1
+
+    let p Point(3, 4)
+    var sb StringBuilder()
+    for k in 5
+        sb.append(k)
+    let digits sb.to_string()
+    if digits <> "01234" or p.x + p.y <> 7
+        return 2
+
+    ; the pure body the TaskPlanner admits: on one core it runs inline
+    var squares Vector[int](1000)
+    for j in 1000
+        squares.put(j, j * j)
+    if squares[999] <> 998001
+        return 3
+
+    let path "/tmp/scaly_wasm_profile.txt"
+    if File.write_from_string(path, "written in wasm") = false
+        return 4
+    let back File.read_to_string(path)
+    if back <> "written in wasm"
+        return 5
+
+    let t0 scaly_eio_now_ns()
+    let t1 scaly_eio_now_ns()
+    if t1 < t0
+        return 6
+
+    ; argv[0] is the module, argv[1] the first argument
+    if argc <> 2
+        return 7
+    let a1 String(*(argv + 1))
+    if a1 <> "one"
+        return 8
+
+    print "PASS"
+    0
+}

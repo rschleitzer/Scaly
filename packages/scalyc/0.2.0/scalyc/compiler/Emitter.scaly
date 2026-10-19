@@ -198,6 +198,8 @@ define Emitter
         var pointer_bytes: size_t
         ; The emission triple is AArch64, whatever --portable-simd says.
         var target_is_arm64: bool
+        ; The emission triple is WebAssembly (apply_target_layout#).
+        var target_is_wasm: bool
         ; The emission triple is AArch64 and --portable-simd is off: the SIMD
         ; operations with a NEON form take it (SIMD phase 6).
         ; Decided once in apply_target_layout.
@@ -465,6 +467,7 @@ define Emitter
             target_is_coff := false
             pointer_bytes := 8
             target_is_arm64 := false
+            target_is_wasm := false
             simd_neon := false
             simd_ssse3 := false
             simd_avx2 := false
@@ -623,6 +626,7 @@ define Emitter
             target_is_coff := triple_is_coff(triple)
             let triple_name String(triple)
             target_is_arm64 := triple_name.starts_with("aarch64") or triple_name.starts_with("arm64")
+            target_is_wasm := this.triple_is_wasm(triple)
             simd_neon := config.portable_simd = false and target_is_arm64
             if config.portable_simd = false and triple_name.starts_with("x86_64")
             {
@@ -762,6 +766,12 @@ define Emitter
         function target_is_coff_format(this) returns bool
         {
             target_is_coff
+        }
+
+        ; the same for WebAssembly: its link takes wasi-libc's setjmp and mman
+        function target_is_wasm_format(this) returns bool
+        {
+            target_is_wasm
         }
 
         procedure set_linkonce_odr(mutable this, mutable fn: LLVMValueRef)
@@ -8113,7 +8123,115 @@ define Emitter
             ; to exist before a callee's parameter uses can be read.
             elide_unused_pages()
 
+            if target_is_wasm
+            {
+                this.type_wasm_declarations()
+                this.name_wasm_entry()
+            }
+
             true
+        }
+
+        ; WebAssembly checks every call against its callee's signature, and
+        ; wasm-ld puts a trap where they differ. A callee this module only calls
+        ; is declared `(...)` (emit_call#), a type every other target ignores
+        ; and WebAssembly passes through a buffer: each such declaration takes
+        ; the type of its first call, which emit_call builds from the arguments.
+        procedure type_wasm_declarations(mutable this)
+        {
+            var f LLVMGetFirstFunction(llvm_module)
+            while f <> null
+            {
+                let next LLVMGetNextFunction(f)
+                let fty LLVMGlobalGetValueType(f)
+                if LLVMIsDeclaration(f) <> 0 and LLVMIsFunctionVarArg(fty) <> 0 and LLVMCountParamTypes(fty) = 0
+                {
+                    let call_ty this.first_call_type(f)
+                    if call_ty <> null
+                    {
+                        var len: size_t 0
+                        let raw LLVMGetValueName2(f, &len as pointer[size_t])
+                        let name String(raw as pointer[const_char], len)
+                        LLVMSetValueName2(f, "" as pointer[const_char], 0)
+                        let typed LLVMAddFunction(llvm_module, name.to_c_string(), call_ty)
+                        LLVMSetLinkage(typed, LLVMGetLinkage(f))
+                        this.mark_noreturn_callee(typed, name)
+                        LLVMReplaceAllUsesWith(f, typed)
+                        LLVMDeleteFunction f
+                    }
+                }
+                f := next
+            }
+        }
+
+        ; the function type of the first call to f, or null when nothing calls it
+        procedure first_call_type(mutable this, mutable f: LLVMValueRef) returns LLVMTypeRef
+        {
+            var u LLVMGetFirstUse(f)
+            while u <> null
+            {
+                let user LLVMGetUser(u)
+                if LLVMIsACallInst(user) <> null and LLVMGetCalledValue(user) = f
+                    return LLVMGetCalledFunctionType(user)
+                u := LLVMGetNextUse(u)
+            }
+            null
+        }
+
+        ; WASI's start code calls `__main_void`, which libc defines weakly to
+        ; read the arguments and call `__main_argc_argv`, and WebAssembly holds
+        ; a call to its callee's exact type: `i32 ()` and `i32 (i32, ptr)`. A
+        ; program's main takes `int` and answers `int` (64 bits), so the entry
+        ; is a function of its own that converts and calls it -- `__main_void`
+        ; for a main without parameters, `__main_argc_argv` otherwise; the
+        ; program's main keeps its body as `scaly.main`. Last, because
+        ; everything before looks the entry up as `main`.
+        procedure name_wasm_entry(mutable this)
+        {
+            let f LLVMGetNamedFunction(llvm_module, "main" as pointer[const_char])
+            if f = null or LLVMIsDeclaration(f) <> 0
+                return
+            let fty LLVMGlobalGetValueType(f)
+            let n LLVMCountParams(f)
+            LLVMSetValueName2(f, "scaly.main" as pointer[const_char], 10)
+            LLVMSetLinkage(f, LLVMLinkage.Internal())
+            let i32_ty LLVMInt32TypeInContext(context)
+            var ptys Vector[LLVMTypeRef](2)
+            ptys.put(0, i32_ty)
+            ptys.put(1, LLVMPointerTypeInContext(context, 0))
+            var entry: LLVMValueRef null
+            if n = 0
+                entry := LLVMAddFunction(llvm_module, "__main_void" as pointer[const_char], LLVMFunctionType(i32_ty, ptys.data, 0, 0))
+            else
+                entry := LLVMAddFunction(llvm_module, "__main_argc_argv" as pointer[const_char], LLVMFunctionType(i32_ty, ptys.data, 2, 0))
+            let bb LLVMAppendBasicBlockInContext(context, entry, "entry" as pointer[const_char])
+            LLVMPositionBuilderAtEnd(builder, bb)
+            var main_ptys Vector[LLVMTypeRef](2)
+            if n > 0
+                LLVMGetParamTypes(fty, main_ptys.data)
+            var args Vector[LLVMValueRef](2)
+            var k: u32 0
+            while k < n and k < 2
+            {
+                var a LLVMGetParam(entry, k)
+                let want main_ptys[k as size_t]
+                if k = 0 and LLVMGetTypeKind(want) = LLVMTypeKind.Integer() and LLVMGetIntTypeWidth(want) > 32
+                    a := LLVMBuildSExt(builder, a, want, "argc" as pointer[const_char])
+                args.put(k as size_t, a)
+                k := k + 1
+            }
+            let ret_ty LLVMGetReturnType(fty)
+            var rc: LLVMValueRef null
+            if LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
+                rc := LLVMBuildCall2(builder, fty, f, args.data, k, "" as pointer[const_char])
+            else
+                rc := LLVMBuildCall2(builder, fty, f, args.data, k, "rc" as pointer[const_char])
+            if LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
+                LLVMBuildRet(builder, LLVMConstInt(i32_ty, 0, 0))
+            else if LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Integer() and LLVMGetIntTypeWidth(ret_ty) > 32
+                LLVMBuildRet(builder, LLVMBuildTrunc(builder, rc, i32_ty, "rc32" as pointer[const_char]))
+            else
+                LLVMBuildRet(builder, rc)
         }
 
         ; s187: define the free-form page-get intrinsic `_Z3getPv`. The s181
@@ -18316,6 +18434,8 @@ define Emitter
         ; generates for the generic CPU.
         procedure create_target_machine(mutable this, mutable target: LLVMTargetRef, mutable triple: pointer[const_char], level: int) returns LLVMTargetMachineRef
         {
+            if this.triple_is_wasm(triple)
+                return Parts.wasm_target_machine(target, triple, level)
             let cpu config.target_cpu
             if cpu.get_length() = 0
                 return LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "" as pointer[const_char], level as i32, this.relocation_model(triple), 0)

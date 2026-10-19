@@ -428,8 +428,8 @@ procedure scaly_stack_guard(base: pointer[void], len: size_t) returns i32 extern
 ; Thread primitive (milestone 2.1). Direct externs per the containment
 ; rule: fixed prototypes, POSIX-uniform, no errno. pthread_t is opaque
 ; and pointer-sized on all four LP64 targets — carried as size_t.
-procedure pthread_create(thread: pointer[size_t], attr: pointer[void], start: pointer[void], arg: pointer[void]) returns i32 extern
-procedure pthread_join(thread: size_t, retval: pointer[pointer[void]]) returns i32 extern
+procedure pthread_create(thread: pointer[c_size], attr: pointer[void], start: pointer[void], arg: pointer[void]) returns i32 extern
+procedure pthread_join(thread: c_size, retval: pointer[pointer[void]]) returns i32 extern
 ; The sized spawn is a shim (scaly/fiber/eio.c, eio_windows.c): pthread_attr_t is
 ; OS-specific, and a Win64 thread's reservation needs a flag pthread has no
 ; word for. stack_size 0 = the platform default. The stack limit is the same
@@ -3125,7 +3125,7 @@ define Thread
     ; Wait until the thread's entry returned (its result is discarded).
     procedure join(t: size_t)
     {
-        let rc pthread_join(t, null as pointer[pointer[void]])
+        let rc pthread_join(t as c_size, null as pointer[pointer[void]])
         if rc <> 0
             scaly_panic_resource("Thread.join: pthread_join", 0 as size_t, 109 as i32)
     }

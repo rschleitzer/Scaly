@@ -96,6 +96,9 @@ else
 fi
 
 echo "bootstrap: ROOT -> stage1"
+# The compiler's one C++ object (compiler/wasm_eh.cpp): it goes into the
+# package archive beside the package's object, for both stages.
+tools/wasmeh.sh /tmp/wasm_eh.o || { echo "bootstrap: FAIL — tools/wasmeh.sh"; exit 1; }
 # The exit status of the block below is lost in its filter pipe, so nothing a
 # previous run left may survive into this one: a compile error in the tree used
 # to leave the OLD /tmp/sc0.o in place, the archive took it, and a freshly
@@ -107,7 +110,7 @@ rm -f "/tmp/scalyc_stage1${SCALY_EXE:-}" "/tmp/scaly_stage1${SCALY_EXE:-}" /tmp/
 # (the same two-step as stage1 -> stage2).
 ( ulimit -s 65520
   "$ROOT" -c -o /tmp/sc0.o packages/scalyc/0.2.0/scalyc.scaly || exit 1
-  rm -f /tmp/libscalyc0.a; ar rcs /tmp/libscalyc0.a /tmp/sc0.o
+  rm -f /tmp/libscalyc0.a; ar rcs /tmp/libscalyc0.a /tmp/sc0.o /tmp/wasm_eh.o
   link_stage "$ROOT" /tmp/scalyc_stage1 /tmp/libscalyc0.a
 ) 2>&1 | grep -v 'ld: warning' || true
 [ -f /tmp/sc0.o ] && [ -x "/tmp/scalyc_stage1${SCALY_EXE:-}" ] && [ -x "/tmp/scaly_stage1${SCALY_EXE:-}" ] \
@@ -160,7 +163,7 @@ echo "bootstrap: stage1 -> stage2"
 rm -f /tmp/scalyc_stage2 /tmp/scaly_stage2
 ( ulimit -s 65520
   [ "$SCALY_COFF" = 1 ] && /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.2.0/scalyc.scaly
-  rm -f /tmp/libscalyc1.a; ar rcs /tmp/libscalyc1.a /tmp/sc1.o
+  rm -f /tmp/libscalyc1.a; ar rcs /tmp/libscalyc1.a /tmp/sc1.o /tmp/wasm_eh.o
   link_stage /tmp/scalyc_stage1 /tmp/scalyc_stage2 /tmp/libscalyc1.a
 ) 2>&1 | grep -v 'ld: warning' || true
 

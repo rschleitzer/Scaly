@@ -180,6 +180,8 @@ tools/fcontext.sh "$WORK/fcontext.o"
 tools/eio.sh "$WORK/eio.o"
 tools/ctime.sh "$WORK/ctime.o"
 tools/panic.sh "$WORK/panic.o"
+# the compiler's one C++ object (compiler/wasm_eh.cpp), on all three links
+tools/wasmeh.sh "$WORK/wasm_eh.o"
 
 # Build the scalyls language server from its seed, when committed. scalyls is
 # a separate program with its own two roots (scalyls_main.ll + scalyls.ll);
@@ -218,7 +220,7 @@ build_scalyls() {
         fi
         SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/json.o" "$WORK/scalyc.o" "$WORK/scaly.o")
     fi
-    "$LINKER" "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
+    "$LINKER" "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" "$WORK/wasm_eh.o" \
         "${LLVM_LINK_ARGS[@]}" -lm -o "$LSOUT"
     echo "build-from-seed: OK — $LSOUT (language server)"
 }
@@ -245,7 +247,7 @@ build_tool() {
         "$LLC" -relocation-model=pic -filetype=obj "$SEED/scaly_main.ll" -o "$WORK/scaly_main.o"
         TOOL_OBJS=("$WORK/scaly_main.o" "$WORK/scalyc.o" "$WORK/scaly.o")
     fi
-    "$LINKER" "${LINKARGS[@]}" "${TOOL_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
+    "$LINKER" "${LINKARGS[@]}" "${TOOL_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" "$WORK/wasm_eh.o" \
         "${LLVM_LINK_ARGS[@]}" -lm -o "$TOOLOUT"
     echo "build-from-seed: OK — $TOOLOUT (the tool)"
 }
@@ -325,10 +327,10 @@ fi
 # still undefined, so the library must FOLLOW its references. Harmless on macOS
 # (/usr/lib/libm.dylib re-exports libSystem).
 mkdir -p "$(dirname "$OUT")"
-"$LINKER" "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
+"$LINKER" "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" "$WORK/wasm_eh.o" \
     "${LLVM_LINK_ARGS[@]}" -lm -o "$OUT"
 
-echo "build-from-seed: OK — $OUT (from seed/, no C++)"
+echo "build-from-seed: OK — $OUT (from seed/)"
 
 # This compiler IS the bootstrap ROOT for the seed it was built from
 # (tools/seed-root-key.sh): cache it, so the next tools/bootstrap.sh reuses it

@@ -154,7 +154,7 @@ def clean_c(text):
     text = re.sub(r"__attribute__\s*\(\(.*?\)\)", " ", text)
     text = re.sub(r"__(THROW|THROWNL|nonnull|wur|attribute_pure__|nothrow__)\b", " ", text)
     text = re.sub(r"\b(__restrict|restrict|volatile|_Nullable|_Nonnull|"
-                  r"__unused|__deprecated|const|extern)\b", " ", text)
+                  r"__unused|__deprecated|const|extern|_Noreturn)\b", " ", text)
     text = re.sub(r"__API_\w+\s*\([^)]*\)", " ", text)
     text = re.sub(r"__OSX_AVAILABLE\w*\s*\([^)]*\)", " ", text)
     return re.sub(r"\s+", " ", text)

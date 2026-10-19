@@ -187340,7 +187340,7 @@ if.end25:                                         ; preds = %if.then24, %if.then
   ret void
 
 if.then29:                                        ; preds = %if.end22
-  call void @exit(i64 0)
+  call void @exit(i32 0)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 

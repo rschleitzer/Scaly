@@ -123,14 +123,15 @@ if [ "$MODE" = selfhosted ]; then
         tools/ctime.sh "$LSO/ctime.o" || { echo "FAIL  ctime shim compile"; exit 1; }
         tools/panic.sh "$LSO/panic.o" || { echo "FAIL  panic shim compile"; exit 1; }
     fi
+    tools/wasmeh.sh "$LSO/wasm_eh.o" || { echo "FAIL  wasm_eh.cpp compile"; exit 1; }
 fi
 
 # Link a scalyls consumer from its main object ($1) beside the shared roots: $2=out.
 lsp_link() {
     if [ "$SCALY_COFF" = 1 ]; then
-        tools/win-link.sh --llvm --runtime "$2" "$1" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" > /dev/null 2>&1
+        tools/win-link.sh --llvm --runtime "$2" "$1" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" "$LSO/wasm_eh.o" > /dev/null 2>&1
     else
-        clang "$1" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "${LINK[@]}" -o "$2" 2>/dev/null
+        clang "$1" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "$LSO/wasm_eh.o" "${LINK[@]}" -o "$2" 2>/dev/null
     fi
 }
 

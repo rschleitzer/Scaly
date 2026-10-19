@@ -261,6 +261,7 @@ function LLVMGetElementType(type: LLVMTypeRef) returns LLVMTypeRef extern
 function LLVMGetReturnType(func_type: LLVMTypeRef) returns LLVMTypeRef extern
 function LLVMCountParamTypes(function_type: LLVMTypeRef) returns u32 extern
 procedure LLVMGetParamTypes(function_type: LLVMTypeRef, dest: pointer[LLVMTypeRef]) extern
+function LLVMIsFunctionVarArg(function_type: LLVMTypeRef) returns i32 extern
 function LLVMCountStructElementTypes(struct_type: LLVMTypeRef) returns u32 extern
 function LLVMGetStructElementTypes(struct_type: LLVMTypeRef, dest: pointer[LLVMTypeRef]) extern
 function LLVMStructGetTypeAtIndex(struct_type: LLVMTypeRef, index: u32) returns LLVMTypeRef extern
@@ -609,6 +610,7 @@ function LLVMGetAttributeCountAtIndex(f: LLVMValueRef, index: u32) returns u32 e
 function LLVMGetNumOperands(val: LLVMValueRef) returns i32 extern
 function LLVMSetOperand(user: LLVMValueRef, index: u32, val: LLVMValueRef) extern
 function LLVMGetCalledValue(instr: LLVMValueRef) returns LLVMValueRef extern
+function LLVMGetCalledFunctionType(call: LLVMValueRef) returns LLVMTypeRef extern
 function LLVMInstructionEraseFromParent(inst: LLVMValueRef) extern
 
 ; s178: struct copies through memcpy instead of load+store pairs. A

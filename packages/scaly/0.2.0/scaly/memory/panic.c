@@ -18,7 +18,8 @@
  * for — loses one request rather than itself.
  *
  * ★No `long` crosses this boundary (the LLP64 rule): `long long` for values,
- * `size_t` for counts. `__thread` matches the spelling eio.c already uses.
+ * `unsigned long long` for counts -- a Scaly `size_t` is 64 bits on every
+ * target, C's is 32 on wasm32. `__thread` matches the spelling eio.c already uses.
  *
  * ★★It must land in the SCALYC BINARY, not only in libscaly.a, and that is
  * why panic.o stands EXPLICITLY on every scalyc/scalyls link line
@@ -96,7 +97,7 @@ typedef struct scaly_catch_frame {
     void *mark;                    /* region watermark at entry */
     scaly_unwind_fn unwind;
     const char *what;              /* the panic value, allocation-free: */
-    size_t index, length;          /* everything between here and the trap */
+    unsigned long long index, length; /* everything between here and the trap */
     int kind;                      /* which RuntimeFault variant it is */
     int code;                      /* the exit code the raiser would have used */
     int reserve_slot;              /* >=0: a reserve slot, not malloc'd */
@@ -104,8 +105,8 @@ typedef struct scaly_catch_frame {
 
 static __thread scaly_catch_frame *scaly_catch_top = 0;
 static __thread const char *scaly_last_what = 0;
-static __thread size_t scaly_last_index = 0;
-static __thread size_t scaly_last_length = 0;
+static __thread unsigned long long scaly_last_index = 0;
+static __thread unsigned long long scaly_last_length = 0;
 static __thread int scaly_last_kind_v = 0;
 static __thread int scaly_last_code_v = 0;
 
@@ -426,7 +427,9 @@ int scaly_panic_last_kind(void) { return scaly_last_kind_v; }
  * whose tag equals this kind. A third trap kind therefore appends a variant in
  * the prelude and a case here, and touches no compiler code at all.
  *
- * The layouts, each in declaration order:
+ * The layouts, each in declaration order (a Scaly record, so a pointer and a
+ * 64-bit count are laid out as the struct below on every target, its padding
+ * on wasm32 included):
  *   OutOfBoundsFault   (index: size_t, length: size_t)
  *   NullReferenceFault (where: pointer[const_char])
  *   InvalidRegionFault (what: pointer[const_char], address: size_t)
@@ -449,15 +452,15 @@ void scaly_panic_fill(void *dst)
     case SCALY_FAULT_INVALID_REGION:
     case SCALY_FAULT_OUT_OF_MEMORY:
     case SCALY_FAULT_RESOURCE: {
-        const char **out = (const char **)dst;
-        out[0] = scaly_last_what ? scaly_last_what : "";
-        ((size_t *)dst)[1] = scaly_last_index;
+        struct { const char *what; unsigned long long count; } *out = dst;
+        out->what = scaly_last_what ? scaly_last_what : "";
+        out->count = scaly_last_index;
         break;
     }
     case SCALY_FAULT_OUT_OF_BOUNDS:
     case SCALY_FAULT_SIZE_OVERFLOW:
     default: {
-        size_t *out = (size_t *)dst;
+        unsigned long long *out = (unsigned long long *)dst;
         out[0] = scaly_last_index;
         out[1] = scaly_last_length;
         break;

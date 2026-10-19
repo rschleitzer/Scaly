@@ -7381,9 +7381,10 @@ define Planner
             )
             this.register_function(free_fn)
 
-            ; exit(code: int)
+            ; exit(code: i32), C's prototype: as `int` every call handed it 64
+            ; bits, which WebAssembly holds against libc's `(i32)` as a trap
             var int_path Vector[String]^this(1)
-            int_path.put(0, "int")
+            int_path.put(0, "i32")
             let int_ref Type^this(
                 Span(0, 0), int_path, null,
                 Lifetime.Unspecified(Unspecified())

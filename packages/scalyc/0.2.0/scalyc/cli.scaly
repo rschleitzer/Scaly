@@ -1471,6 +1471,7 @@ define cli
         ; single source of truth; every branch below leaves the POSIX command
         ; byte-for-byte as it was, because POSIX never takes one.
         let coff emitter.target_is_coff_format()
+        let wasm emitter.target_is_wasm_format()
 
         ; Emit the object to a temp path UNIQUE PER PROCESS (the pid in the
         ; name), link with clang, then unlink it. It was ONE fixed path until
@@ -1744,6 +1745,10 @@ define cli
             else
                 cmd_builder.append " -lm"
         }
+        ; WebAssembly: a catch point's longjmp is wasi-libc's libsetjmp (the
+        ; exception tag it throws), and munmap its emulated mman
+        if wasm
+            cmd_builder.append " -lsetjmp -lwasi-emulated-mman"
 
         ; `scaly build --target <triple>`: the link is for that target too.
         ; Until 2026-10-01 only the objects were -- the program and the

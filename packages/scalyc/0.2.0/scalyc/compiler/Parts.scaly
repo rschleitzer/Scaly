@@ -42,6 +42,8 @@ use scalyc.compiler.Modeler
 procedure scaly_proc_spawn_self(mode: pointer[const_char], mutable out_pid: pointer[i64], mutable out_write_fd: pointer[i32], mutable out_read_fd: pointer[i32]) returns i32 extern
 procedure scaly_proc_worker_fds(argc: int, argv: pointer[pointer[char]], mode: pointer[const_char], mutable in_fd: pointer[i32], mutable out_fd: pointer[i32]) returns i32 extern
 procedure scaly_proc_reap(pid: i64) returns i32 extern
+; the exception model of a target machine, Wasm (compiler/wasm_eh.cpp)
+procedure scalyc_target_machine_wasm_eh(mutable tm: LLVMTargetMachineRef) extern
 function close(fd: i32) returns i32 extern
 
 ; instructions a part is given; a module with fewer is not cut.
@@ -56,6 +58,10 @@ define PartWorker
     pid: i64
     answer_fd: i32
 )
+
+; LLVM's SjLj lowering for WebAssembly is one of its command-line options,
+; which a process may give once (Parts.enable_wasm_sjlj#)
+shared atomic wasm_sjlj_given: u64 0
 
 define Parts
 {
@@ -293,9 +299,38 @@ define Parts
         2
     }
 
+    ; WebAssembly: `-wasm-enable-sjlj` turns every `setjmp` the emitter
+    ; writes at a catch point into wasm exception handling -- `__wasm_setjmp`
+    ; and a catch of `__c_longjmp`, the tag panic.c's longjmp throws through
+    ; wasi-libc's libsetjmp. An option of LLVM's, given once in a process
+    ; before a target machine generates code.
+    procedure enable_wasm_sjlj()
+    {
+        if scaly_atomic_cas_u64(&wasm_sjlj_given, 0, 1) <> 0
+            return
+        var args Vector[pointer[const_char]](2)
+        args.put(0, "scalyc" as pointer[const_char])
+        args.put(1, "-wasm-enable-sjlj" as pointer[const_char])
+        LLVMParseCommandLineOptions(2, args.data, null as pointer[const_char])
+    }
+
+    ; the target machine of WebAssembly: its exception handling, for the
+    ; catch points (above), and the generic CPU. The exception model is set
+    ; by wasm_eh.cpp, as the C API cannot say it.
+    procedure wasm_target_machine(mutable target: LLVMTargetRef, mutable triple: pointer[const_char], level: int) returns LLVMTargetMachineRef
+    {
+        Parts.enable_wasm_sjlj()
+        let tm LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "+exception-handling" as pointer[const_char], level as i32, 1, 0)
+        if tm <> null
+            scalyc_target_machine_wasm_eh(tm)
+        tm
+    }
+
     ; the target machine of a part, as Emitter.create_target_machine# makes it
     procedure target_machine(mutable target: LLVMTargetRef, mutable triple: pointer[const_char], mutable cpu: String, level: int) returns LLVMTargetMachineRef
     {
+        if Parts.part_relocation(triple) = 1
+            return Parts.wasm_target_machine(target, triple, level)
         if cpu.get_length() = 0
             return LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "" as pointer[const_char], level as i32, part_relocation(triple), 0)
         if cpu = "native"

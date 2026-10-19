@@ -47,6 +47,10 @@ trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/seed"
 for f in $SEED_FILES; do cp "seed/$f.ll" "$STAGE/seed/"; done
 cp seed/SHA256SUMS "$STAGE/seed/"
+# the compiler's one C++ file, which the seed route compiles beside the seed
+# (it is no part of the packages the tarball carries)
+mkdir -p "$STAGE/native"
+cp packages/scalyc/0.2.0/scalyc/compiler/wasm_eh.cpp "$STAGE/native/"
 
 # Every version directory a package has: a program names the version it wants.
 for p in $PACKAGES; do

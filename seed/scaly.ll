@@ -1066,7 +1066,7 @@ if.then1:                                         ; preds = %if.end
   call void @_Z12scaly_eputnlv()
   call void @_Z11scaly_eputsP10const_char(ptr @.str.5)
   call void @_Z12scaly_eputnlv()
-  call void @exit(i64 19)
+  call void @exit(i32 19)
   br label %if.end2
 
 if.end2:                                          ; preds = %if.then1, %if.end
@@ -1797,7 +1797,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @exit(i64 2)
+  call void @exit(i32 2)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -2193,7 +2193,7 @@ entry:
   call void @_Z11scaly_eputi3i64(i64 %2)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.9)
   call void @_Z12scaly_eputnlv()
-  call void @exit(i64 15)
+  call void @exit(i32 15)
   ret void
 }
 
@@ -2213,7 +2213,7 @@ entry:
   call void @_Z11scaly_eputsP10const_char(ptr @.str.10)
   call void @_Z11scaly_eputsP10const_char(ptr %0)
   call void @_Z12scaly_eputnlv()
-  call void @exit(i64 21)
+  call void @exit(i32 21)
   ret void
 }
 
@@ -2243,7 +2243,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   call void @_Z12scaly_eputnlv()
-  call void @exit(i64 18)
+  call void @exit(i32 18)
   ret void
 }
 
@@ -2267,7 +2267,7 @@ entry:
   call void @_Z11scaly_eputu3u64(i64 %2)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.15)
   call void @_Z12scaly_eputnlv()
-  call void @exit(i64 22)
+  call void @exit(i32 22)
   ret void
 }
 
@@ -2288,7 +2288,7 @@ entry:
   %as.inttoptr = inttoptr i64 %1 to ptr
   call void @_Z11scaly_eputpPv(ptr %as.inttoptr)
   call void @_Z12scaly_eputnlv()
-  call void @exit(i64 11)
+  call void @exit(i32 11)
   ret void
 }
 
@@ -2310,7 +2310,7 @@ entry:
   call void @_Z11scaly_eputu3u64(i64 %1)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.18)
   call void @_Z12scaly_eputnlv()
-  call void @exit(i64 23)
+  call void @exit(i32 23)
   ret void
 }
 
@@ -26982,7 +26982,7 @@ while.exit:                                       ; preds = %while.cond
   ret void
 
 if.then:                                          ; preds = %while.body
-  call void @exit(i64 105)
+  call void @exit(i32 105)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %while.body
@@ -27445,7 +27445,7 @@ if.end36:                                         ; preds = %if.end58, %if.then3
   ret i64 %pages_freed64
 
 if.then57:                                        ; preds = %if.else
-  call void @exit(i64 105)
+  call void @exit(i32 105)
   br label %if.end58
 
 if.end58:                                         ; preds = %if.then57, %if.else
@@ -28236,7 +28236,7 @@ if.end61:                                         ; preds = %if.then60, %if.else
   br label %if.end56
 
 if.then67:                                        ; preds = %if.end15
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end68
 
 if.end68:                                         ; preds = %if.then67, %if.end15
@@ -28781,7 +28781,7 @@ if.end:                                           ; preds = %if.end5, %unwrap.ok
   ret i32 %q12
 
 if.then4:                                         ; preds = %if.then
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end5
 
 if.end5:                                          ; preds = %if.then4, %if.then
@@ -29103,7 +29103,7 @@ if.end:                                           ; preds = %if.end6, %unwrap.ok
   ret i32 %w10
 
 if.then5:                                         ; preds = %if.then
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end6
 
 if.end6:                                          ; preds = %if.then5, %if.then
@@ -29124,7 +29124,7 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -29247,7 +29247,7 @@ if.end6:                                          ; preds = %repeat.exit, %if.en
   br i1 %ne33, label %if.then34, label %if.end35
 
 if.then9:                                         ; preds = %if.then5
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end10
 
 if.end10:                                         ; preds = %if.then9, %if.then5
@@ -29311,7 +29311,7 @@ if.end25:                                         ; preds = %if.end15
   br label %repeat.body
 
 if.then34:                                        ; preds = %if.end6
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end35
 
 if.end35:                                         ; preds = %if.then34, %if.end6
@@ -29546,7 +29546,7 @@ if.end13:                                         ; preds = %if.then7
   br i1 %ne, label %if.then14, label %if.end15
 
 if.then14:                                        ; preds = %if.end13
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end15
 
 if.end15:                                         ; preds = %if.then14, %if.end13
@@ -29648,7 +29648,7 @@ if.end:                                           ; preds = %entry
   br i1 %eq, label %if.then9, label %if.end10
 
 if.then4:                                         ; preds = %if.then
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end5
 
 if.end5:                                          ; preds = %if.then4, %if.then
@@ -29769,7 +29769,7 @@ while.exit:                                       ; preds = %while.cond
   ret i1 true
 
 if.then7:                                         ; preds = %while.body
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end8
 
 if.end8:                                          ; preds = %if.then7, %while.body
@@ -30532,7 +30532,7 @@ repeat.exit:                                      ; No predecessors!
 
 if.then4:                                         ; preds = %repeat.body
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  call void @exit(i64 110)
+  call void @exit(i32 110)
   br label %if.end5
 
 if.end5:                                          ; preds = %if.then4, %repeat.body
@@ -30960,7 +30960,7 @@ unwrap.ok:                                        ; preds = %entry
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %unwrap.ok
-  call void @exit(i64 107)
+  call void @exit(i32 107)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %unwrap.ok
@@ -31347,7 +31347,7 @@ while.exit:                                       ; preds = %while.cond
   br i1 %ne3, label %if.then4, label %if.end5
 
 if.then:                                          ; preds = %while.body
-  call void @exit(i64 112)
+  call void @exit(i32 112)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %while.body

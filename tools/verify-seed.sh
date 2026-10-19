@@ -81,12 +81,13 @@ if [ -f seed/scalyls.ll ] && [ -f seed/scalyls_main.ll ] && [ -f seed/json.ll ];
     CLANG="${CLANG:-clang}" tools/eio.sh "$WORK/eio.o" >/dev/null 2>&1 || fail "eio shim compile"
     CLANG="${CLANG:-clang}" tools/ctime.sh "$WORK/ctime.o" >/dev/null 2>&1 || fail "ctime shim compile"
     CLANG="${CLANG:-clang}" tools/panic.sh "$WORK/panic.o" >/dev/null 2>&1 || fail "panic shim compile"
+    tools/wasmeh.sh "$WORK/wasm_eh.o" >/dev/null 2>&1 || fail "wasm_eh.cpp compile"
     # Keep the linker's stderr and PRINT it on failure (seed.sh's idiom): this
     # link used to discard it, so a missing -lm on Linux reported a bare
     # "VERIFY: FAIL — link scalyls" with no undefined symbol named.
     # shellcheck disable=SC2086
     if ! "${CLANG:-clang}" $LD_ARG "$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/json.o" "$WORK/scalyc.o" \
-      "$WORK/scaly.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" \
+      "$WORK/scaly.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" "$WORK/wasm_eh.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" \
       -lm -o "$WORK/scalyls" 2> "$WORK/scalyls_link.log"; then
       grep -v 'reexported library' "$WORK/scalyls_link.log" || true
       fail "link scalyls"

@@ -254,6 +254,15 @@ say "compiling the runtime's native files"
 "$CC" -O2 -c "$STDLIB/scaly/fiber/eio.c"   -o "$WORK/eio.o"        || die "compiling eio.c failed"
 "$CC" -O2 -c "$STDLIB/scaly/time/ctime.c"  -o "$WORK/ctime.o"      || die "compiling ctime.c failed"
 "$CC" -O2 -c "$STDLIB/scaly/memory/panic.c" -o "$WORK/panic.o"     || die "compiling panic.c failed"
+# the compiler's one C++ file (WebAssembly's exception model): the C
+# compiler's C++ twin, against the headers of the LLVM found above
+[ -f "$LLVM_PREFIX/include/llvm/Target/TargetMachine.h" ] || prerequisites "LLVM $LLVM_MAJOR has no C++ headers under $LLVM_PREFIX/include (its development package)."
+case "$CC" in
+  *clang*) CXX="${CXX:-${CC%clang*}clang++${CC##*clang}}" ;;
+  *)       CXX="${CXX:-c++}" ;;
+esac
+"$CXX" -std=c++17 -O2 -fno-rtti -fno-exceptions -I"$LLVM_PREFIX/include" \
+  -c "$NEW/native/wasm_eh.cpp" -o "$WORK/wasm_eh.o"                || die "compiling wasm_eh.cpp failed"
 
 # ---------------------------------------------------------------------------
 # 5. (seed) The three programs, each its roots linked into one module and optimised
@@ -289,7 +298,7 @@ build_program() {
   # -lm last: on Linux the math functions are a library of their own, and the
   # linker takes from a library only what is still undefined when it reads it.
   # shellcheck disable=SC2086
-  "$CC" $LINK_FLAGS "$WORK/$name.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
+  "$CC" $LINK_FLAGS "$WORK/$name.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" "$WORK/wasm_eh.o" \
     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$NEW/libexec/$name"
 }
 

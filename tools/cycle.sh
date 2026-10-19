@@ -65,11 +65,12 @@ rebuild_runtime() {
 # only main + external compiler-package refs).
 rebuild_runtime "$ROOT"
 bash -c "ulimit -s 65520; '$ROOT' -c -o /tmp/sc0n.o packages/scalyc/0.2.0/scalyc.scaly"
-rm -f /tmp/libscalyc0n.a; ar rcs /tmp/libscalyc0n.a /tmp/sc0n.o
+tools/wasmeh.sh /tmp/wasm_eh.o || { echo "cycle: FAIL — tools/wasmeh.sh"; exit 1; }
+rm -f /tmp/libscalyc0n.a; ar rcs /tmp/libscalyc0n.a /tmp/sc0n.o /tmp/wasm_eh.o
 ( ulimit -s 65520; link_stage "$ROOT" /tmp/scalyc_stage1_new /tmp/libscalyc0n.a ) 2>&1 | grep -v "ld: warning" || true
 rebuild_runtime /tmp/scalyc_stage1_new
 bash -c 'ulimit -s 65520; /tmp/scalyc_stage1_new -c -o /tmp/sc1n.o packages/scalyc/0.2.0/scalyc.scaly'
-rm -f /tmp/libscalyc1n.a; ar rcs /tmp/libscalyc1n.a /tmp/sc1n.o
+rm -f /tmp/libscalyc1n.a; ar rcs /tmp/libscalyc1n.a /tmp/sc1n.o /tmp/wasm_eh.o
 ( ulimit -s 65520; link_stage /tmp/scalyc_stage1_new /tmp/scalyc_stage2_new /tmp/libscalyc1n.a ) 2>&1 | grep -v "ld: warning" || true
 /tmp/scalyc_stage1_new -S --no-prelude -o /tmp/sl_s1.ll packages/scaly/0.2.0/scaly.scaly 2>/dev/null
 /tmp/scalyc_stage2_new -S --no-prelude -o /tmp/sl_s2.ll packages/scaly/0.2.0/scaly.scaly 2>/dev/null

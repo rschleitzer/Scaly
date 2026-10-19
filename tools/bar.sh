@@ -13,7 +13,7 @@
 # stronger gate and its bootstrap is the same one.
 #
 # Phase 2 runs in lanes, all at once; inside a lane the steps are in order:
-#   compiler  regress, selfhosted, target, fiber, escape, pointer-report,
+#   compiler  regress, selfhosted, target, wasm, fiber, escape, pointer-report,
 #             write-report, abi, published, debuginfo
 #   lsp       tests/lsp/run.sh — once the tscaly lane has compiled its package
 #   ports     likewise; dazzle and opensp from THEIR repository (../dazzle or
@@ -146,6 +146,7 @@ lane_compiler() {
   step regress tests/regress/run.sh "$BIN" || rc=1
   step selfhosted tests/selfhosted/run.sh "$BIN" || rc=1
   step target tests/target/run.sh "$BIN" || rc=1
+  step wasm tests/wasm/run.sh "$BIN" || rc=1
   step fiber tests/fiber/run.sh "$BIN" || rc=1
   step escape tests/escape/run.sh "$BIN" || rc=1
   step pointer-report tests/pointer-report/run.sh "$BIN" || rc=1

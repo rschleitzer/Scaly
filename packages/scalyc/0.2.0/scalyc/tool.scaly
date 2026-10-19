@@ -107,7 +107,7 @@ define tool
         Modeler.hex16(k)
 
     ; a native file's stem read as base name and target tags: `_windows`,
-    ; `_linux`, `_darwin` name the system, `_arm64` (`_aarch64`) and `_x86_64`
+    ; `_linux`, `_darwin`, `_wasm` name the system, `_arm64` (`_aarch64`) and `_x86_64`
     ; the architecture, stripped from the end in any order
     function native_name(stem: String) returns NativeName
     {
@@ -123,6 +123,12 @@ define tool
             {
                 os := String("windows")
                 base := base.substring(0, n - 8)
+                again := true
+            }
+            else if os.get_length() = 0 and base.ends_with("_wasm")
+            {
+                os := String("wasm")
+                base := base.substring(0, n - 5)
                 again := true
             }
             else if os.get_length() = 0 and base.ends_with("_linux")
@@ -170,6 +176,8 @@ define tool
 
     function triple_os(triple: String) returns String
     {
+        if triple.starts_with("wasm")
+            return String("wasm")
         if triple.contains(String("windows"))
             return String("windows")
         if triple.contains(String("linux"))
@@ -803,6 +811,10 @@ define tool
                     cmd.append(" --target=")
                     cmd.append(given_triple)
                 }
+                ; WebAssembly: a setjmp (panic.c's catch points) becomes wasm
+                ; exception handling, as the compiler's own code does
+                if tool.triple_os(triple) = "wasm"
+                    cmd.append(" -mllvm -wasm-enable-sjlj")
                 if cmd_wrap
                     cmd.append("\"")
                 let cmd_str cmd.to_string()

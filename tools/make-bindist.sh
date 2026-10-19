@@ -109,6 +109,8 @@ if [ "$PROFILE" != none ]; then
     system_libs=()
   fi
   PGO="$STAGE/pgo"; mkdir -p "$PGO"
+  # the compiler's one C++ object, named outright like the archives
+  tools/wasmeh.sh "$PGO/wasm_eh.o"
   driver="$PGO/cc"
   printf '#!/bin/sh\nexec %s %s "$@"\n' "${CLANG:-clang}" "$driver_flags" > "$driver"
   chmod 755 "$driver"
@@ -117,7 +119,7 @@ if [ "$PROFILE" != none ]; then
     # shellcheck disable=SC2086
     SCALY_CC="$driver" SCALY_CACHE="$PGO/cache" SCALY_HOME= \
       "$STAGE/libexec/scaly" build "packages/scalyc/0.2.0/$root.scaly" --pgo "$PROFILE" --export \
-      "${archives[@]}" -L"$LLVM_LIBDIR" $static_libs "${system_libs[@]}" -o "$PGO/$prog" > "$PGO/$prog.log" 2>&1 \
+      "$PGO/wasm_eh.o" "${archives[@]}" -L"$LLVM_LIBDIR" $static_libs "${system_libs[@]}" -o "$PGO/$prog" > "$PGO/$prog.log" 2>&1 \
       || { tail -20 "$PGO/$prog.log"; echo "make-bindist: FAIL — the profile build of $prog"; exit 1; }
     # a function whose control flow no longer matches the profile is built
     # without one: say how many, a stale profile is a slow compiler

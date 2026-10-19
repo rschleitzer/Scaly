@@ -92,11 +92,19 @@ long long scaly_time_now_usec(void)
  * a hard error there. Both operands are constants, so -O2 folds it away. */
 long long scaly_time_cpu_usec(void)
 {
+#ifdef __wasi__
+  /* WASI has no process clock (wasi-libc deprecates clock()): the one-thread
+   * wasm profile measures by the monotonic clock, wall time like Windows */
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (long long)ts.tv_sec * 1000000LL + ts.tv_nsec / 1000;
+#else
   long long ticks = (long long)clock();
   long long per_sec = (long long)CLOCKS_PER_SEC;
   if (per_sec == 1000000LL)
     return ticks;
   return ticks * 1000000LL / per_sec;
+#endif
 }
 
 /* `(time->string k gmt?)` — primitive.cxx:1571. Writes the ISO8601 form into

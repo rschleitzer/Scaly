@@ -72,6 +72,12 @@ tools/eio.sh         "$W/eio.o"
 tools/ctime.sh       "$W/ctime.o"
 tools/panic.sh       "$W/panic.o"
 tools/posixcompat.sh "$W/posixcompat.o"
+# a program holding the compiler (--llvm) links its one C++ object as well
+CXXOBJ=()
+if [ ${#LLVM[@]} -gt 0 ]; then
+  tools/wasmeh.sh "$W/wasm_eh.o"
+  CXXOBJ=("$W/wasm_eh.o")
+fi
 
 # A JIT host (--llvm) exports the runtime it carries -- the stdlib root and the
 # shims -- for the in-process JIT's GetProcAddress (tools/win-link.sh --export).
@@ -81,4 +87,4 @@ if [ ${#LLVM[@]} -gt 0 ]; then
   for o in fcontext eio ctime panic posixcompat; do EXP+=(--export "$W/$o.o"); done
 fi
 tools/win-link.sh --lto ${LLVM[@]+"${LLVM[@]}"} ${EXP[@]+"${EXP[@]}"} "$OUT" "${objs[@]}" \
-  "$W/fcontext.o" "$W/eio.o" "$W/ctime.o" "$W/panic.o" "$W/posixcompat.o"
+  "$W/fcontext.o" "$W/eio.o" "$W/ctime.o" "$W/panic.o" "$W/posixcompat.o" ${CXXOBJ[@]+"${CXXOBJ[@]}"}
