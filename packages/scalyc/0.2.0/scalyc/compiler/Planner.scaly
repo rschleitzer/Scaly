@@ -12360,13 +12360,109 @@ define Planner
             }
 
             ; The operation driver (operation#): the sequence is read from the
-            ; left, step by step. What reaches the code below is ONE STEP the
-            ; driver hands to the machinery here (operation_step#), or a
-            ; sequence it refused, which it reported.
+            ; left, step by step; each step is taken by the routines of the
+            ; old collapse (operation_machinery# and its parts).
             let driven this.operation(ops)
             if operation_counts[23] = 1
                 return driven
 
+            ; a sequence it refused goes on through the machinery as it
+            ; stands, so that what follows is judged as before
+            this.operation_machinery(ops)
+        }
+
+        ; operation_machinery#: one step the driver hands over, or a sequence
+        ; it refused -- the routines of the old collapse in their order: the
+        ; pair pre-passes of the indirect call, the lambda bound to a name and
+        ; the delegate value, then the generic arguments, the sigil and the
+        ; subscript, the prefix, the call without parentheses, the
+        ; application, and the operators. A routine of its own since
+        ; 2026-10-19: before, a step went through collapse_operand_sequence#
+        ; and a switch that had the driver hand it straight back.
+        procedure operation_machinery(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand]
+        ) returns PlannedOperand
+        {
+            var no_indirect false
+            let indirect_call this.collapse_indirect_call(ops, &no_indirect)
+            if no_indirect = false
+                return indirect_call
+            var no_lambda false
+            let lambda_call this.collapse_lambda_calls(ops, &no_lambda)
+            if no_lambda = false
+                return lambda_call
+            var no_delegate false
+            let delegate_call this.collapse_delegate_calls(ops, &no_delegate)
+            if no_delegate = false
+                return delegate_call
+
+            ; The three pair pre-passes -- generic arguments, the sigil, the
+            ; subscript -- are routines of their own since 2026-10-04
+            ; (collapse_generics#, collapse_sigils#, collapse_subscripts#): each
+            ; rewrites its pairs and collapses what is left, or says that
+            ; there was nothing for it. The operation driver takes the step
+            ; of a vector literal and of a sigil on them.
+            var no_generics false
+            let generic this.collapse_generics(ops, &no_generics)
+            if no_generics = false
+                return generic
+            var no_sigils false
+            let sigiled this.collapse_sigils(ops, &no_sigils)
+            if no_sigils = false
+                return sigiled
+            var no_subscripts false
+            let indexed this.collapse_subscripts(ops, &no_subscripts)
+            if no_subscripts = false
+                return indexed
+
+            let first_ptr ops.get 0
+            if first_ptr = null
+            {
+                let void_ty Planner.make_void_type()
+                return PlannedOperand(
+                    Span(0, 0),
+                    PlannedExpression.Type void_ty,
+                    null,
+                    void_ty
+                )
+            }
+            var result: PlannedOperand (*first_ptr)
+
+            ; The prefix at the start (collapse_prefix#) and the call without
+            ; parentheses (collapse_parenless#) are routines of their own since
+            ; 2026-10-04, as the two parts below: the operation driver takes
+            ; each as a step without the pre-passes above.
+            var no_prefix false
+            let prefixed this.collapse_prefix(ops, result, &no_prefix)
+            if no_prefix = false
+                return prefixed
+            var no_single false
+            let single this.collapse_parenless(ops, result, &no_single)
+            if no_single = false
+                return single
+
+            ; The application of the first thing to the tuple after it
+            ; (collapse_application#), and what is left goes by the table
+            ; (collapse_operators#): the two parts are routines of their own
+            ; since 2026-10-04, so the operation driver can take a step
+            ; without the pre-passes above.
+            var fell false
+            let applied this.collapse_application(ops, result, &fell)
+            if fell = false
+                return applied
+            this.collapse_operators(ops, applied)
+        }
+
+        ; A pair pre-pass of collapse_operand_sequence#: the call through a
+        ; `pointer[void]` local or a delegate value when it is the whole
+        ; sequence. `fell`: it was none.
+        procedure collapse_indirect_call(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable fell: ref[bool]
+        ) returns PlannedOperand
+        {
             ; Indirect call through a function pointer (Phase-1 JIT): `f()`
             ; where f is a local binding of type pointer[void] and `()` is
             ; empty. The self-hosted JIT (cli --run) invokes an ORC-resolved
@@ -12606,6 +12702,18 @@ define Planner
                 }
             }
 
+            fell := true
+            ops[0]
+        }
+
+        ; A pair pre-pass of collapse_operand_sequence#: a lambda bound to a
+        ; name and its tuple, anywhere in the sequence. `fell`: none.
+        procedure collapse_lambda_calls(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable fell: ref[bool]
+        ) returns PlannedOperand
+        {
             ; Phase-1 lambda call: resolve any adjacent `[lambdaName, Tuple]`
             ; pair anywhere in the flat operand list into a single direct call
             ; to the monomorphized lambda function — BEFORE the precedence /
@@ -12693,6 +12801,18 @@ define Planner
                 }
             }
 
+            fell := true
+            ops[0]
+        }
+
+        ; A pair pre-pass of collapse_operand_sequence#: a delegate value and
+        ; its tuple, anywhere in the sequence. `fell`: none.
+        procedure collapse_delegate_calls(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable fell: ref[bool]
+        ) returns PlannedOperand
+        {
             ; Delegate-call pre-pass: fuse any adjacent `[delegateVar, Tuple]`
             ; pair anywhere in the flat list into an is_indirect PlannedCall
             ; (same construction as the length-2 GAP-B block above, which
@@ -12827,61 +12947,8 @@ define Planner
                 }
             }
 
-            ; The three pair pre-passes -- generic arguments, the sigil, the
-            ; subscript -- are routines of their own since 2026-10-04
-            ; (collapse_generics#, collapse_sigils#, collapse_subscripts#): each
-            ; rewrites its pairs and collapses what is left, or says that
-            ; there was nothing for it. The operation driver takes the step
-            ; of a vector literal and of a sigil on them.
-            var no_generics false
-            let generic this.collapse_generics(ops, &no_generics)
-            if no_generics = false
-                return generic
-            var no_sigils false
-            let sigiled this.collapse_sigils(ops, &no_sigils)
-            if no_sigils = false
-                return sigiled
-            var no_subscripts false
-            let indexed this.collapse_subscripts(ops, &no_subscripts)
-            if no_subscripts = false
-                return indexed
-
-            let first_ptr ops.get 0
-            if first_ptr = null
-            {
-                let void_ty Planner.make_void_type()
-                return PlannedOperand(
-                    Span(0, 0),
-                    PlannedExpression.Type void_ty,
-                    null,
-                    void_ty
-                )
-            }
-            var result: PlannedOperand (*first_ptr)
-
-            ; The prefix at the start (collapse_prefix#) and the call without
-            ; parentheses (collapse_parenless#) are routines of their own since
-            ; 2026-10-04, as the two parts below: the operation driver takes
-            ; each as a step without the pre-passes above.
-            var no_prefix false
-            let prefixed this.collapse_prefix(ops, result, &no_prefix)
-            if no_prefix = false
-                return prefixed
-            var no_single false
-            let single this.collapse_parenless(ops, result, &no_single)
-            if no_single = false
-                return single
-
-            ; The application of the first thing to the tuple after it
-            ; (collapse_application#), and what is left goes by the table
-            ; (collapse_operators#): the two parts are routines of their own
-            ; since 2026-10-04, so the operation driver can take a step
-            ; without the pre-passes above.
-            var fell false
-            let applied this.collapse_application(ops, result, &fell)
-            if fell = false
-                return applied
-            this.collapse_operators(ops, applied)
+            fell := true
+            ops[0]
         }
 
         ; A pair pre-pass of collapse_operand_sequence#: a bare name and the
@@ -28969,15 +29036,13 @@ define Planner
             this.add_diagnostic(at, String^this("this sequence is not one an operation reads: a prefix, a postfix or a sigil stands where no value is expected, or an operator ends it"))
         }
 
-        ; One step, handed to the machinery there is: its things are a
-        ; sequence of their own, and collapse_operand_sequence# does not ask
-        ; the driver about that one again.
+        ; One step, handed to the machinery there is (operation_machinery#)
         procedure operation_step(mutable this: Planner, mutable things: Vector[PlannedOperand], slot: size_t) returns PlannedOperand
         {
             this.operation_count(slot)
-            if things.length >= 2
-                operation_counts.put(24, 1)
-            this.collapse_operand_sequence(things)
+            if things.length < 2
+                return this.collapse_operand_sequence(things)
+            this.operation_machinery(things)
         }
 
         ; the step of a current value and the ONE thing after it
@@ -29397,11 +29462,6 @@ define Planner
         {
             var cur: PlannedOperand ops[0]
             operation_counts.put(23, 0)
-            if operation_counts[24] = 1
-            {
-                operation_counts.put(24, 0)
-                return cur
-            }
             this.operation_count(25)
             let reason this.operation_read(ops)
             if reason <> 0
