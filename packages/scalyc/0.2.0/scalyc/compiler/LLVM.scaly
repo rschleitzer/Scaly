@@ -584,6 +584,7 @@ function LLVMIsAArgument(val: LLVMValueRef) returns LLVMValueRef extern
 function LLVMGetFirstUse(val: LLVMValueRef) returns LLVMUseRef extern
 function LLVMGetNextUse(u: LLVMUseRef) returns LLVMUseRef extern
 function LLVMGetUser(u: LLVMUseRef) returns LLVMValueRef extern
+function LLVMBasicBlockAsValue(block: LLVMBasicBlockRef) returns LLVMValueRef extern
 function LLVMGetOperand(val: LLVMValueRef, index: u32) returns LLVMValueRef extern
 function LLVMIsAStoreInst(val: LLVMValueRef) returns LLVMValueRef extern
 function LLVMIsACallInst(val: LLVMValueRef) returns LLVMValueRef extern

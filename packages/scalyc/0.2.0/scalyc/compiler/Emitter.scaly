@@ -17244,7 +17244,7 @@ define Emitter
                                                     {
                                                         let s164_parent LLVMGetInstructionParent(s164_inst)
                                                         let s164_cur LLVMGetInsertBlock(builder)
-                                                        if s164_parent <> s164_cur
+                                                        if block_dominates(s164_parent, s164_cur) = false
                                                             s164_dom := false
                                                     }
                                                 }
@@ -17294,7 +17294,7 @@ define Emitter
                                         if cv_inst <> null
                                         {
                                             let cv_parent LLVMGetInstructionParent(cv_inst)
-                                            if cv_parent <> case_end_block
+                                            if block_dominates(cv_parent, case_end_block) = false
                                                 dominates := false
                                         }
                                         if dominates = true
@@ -17405,7 +17405,7 @@ define Emitter
                             if av_inst <> null
                             {
                                 let av_parent LLVMGetInstructionParent(av_inst)
-                                if av_parent <> alt_end_block
+                                if block_dominates(av_parent, alt_end_block) = false
                                     alt_dominates := false
                             }
                             if alt_dominates = true
@@ -17479,6 +17479,46 @@ define Emitter
             }
 
             null
+        }
+
+        ; block_dominates#: whether every path from the entry into `at` runs
+        ; through `dom`, so a value made in `dom` is a value at the end of `at`.
+        ; Followed back from `at` while a block has ONE predecessor (the
+        ; terminators branching to it are its uses); at a block with none or
+        ; several the answer is no. Exact where it says yes -- a chain of
+        ; single predecessors is a chain of dominators --, and where it says
+        ; no the value is left out of the merge, as it always was. Until
+        ; 2026-10-19 the choose merge asked `dom = at` only, and an arm whose
+        ; value was made before its last block (`let n c + 1`, an early
+        ; `return`, `n`) or before the choose gave `undef`, rc 0.
+        procedure block_dominates(this, mutable dom: LLVMBasicBlockRef, mutable at: LLVMBasicBlockRef) returns bool
+        {
+            var cur at
+            var steps: size_t 0
+            while steps < 100000
+            {
+                if cur = dom
+                    return true
+                var pred: LLVMBasicBlockRef null
+                var u LLVMGetFirstUse(LLVMBasicBlockAsValue(cur))
+                while u <> null
+                {
+                    let user LLVMGetUser(u)
+                    if LLVMIsAInstruction(user) = null
+                        return false
+                    let from LLVMGetInstructionParent(user)
+                    if pred = null
+                        pred := from
+                    else if pred <> from
+                        return false
+                    u := LLVMGetNextUse(u)
+                }
+                if pred = null
+                    return false
+                cur := pred
+                steps := steps + 1
+            }
+            false
         }
 
         ; Emit a for loop

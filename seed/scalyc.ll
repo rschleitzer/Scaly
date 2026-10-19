@@ -1449,7 +1449,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 8632154780605923764
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -2936968443194294547
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -451773,6 +451773,8 @@ declare ptr @LLVMGetNextUse(ptr)
 
 declare ptr @LLVMGetUser(ptr)
 
+declare ptr @LLVMBasicBlockAsValue(ptr)
+
 declare ptr @LLVMGetOperand(ptr, i32)
 
 declare ptr @LLVMIsAStoreInst(ptr)
@@ -479342,7 +479344,7 @@ entry:
   ]
 
 choose.end:                                       ; preds = %choose.else, %choose.when
-  %choose.value = phi i64 [ 0, %choose.else ], [ undef, %choose.when ]
+  %choose.value = phi ptr [ %addr.tmp, %choose.when ], [ undef, %choose.else ]
   %lcall1 = load ptr, ptr %lcall, align 8
   %eq = icmp eq ptr %lcall1, null
   br i1 %eq, label %if.then, label %if.end
@@ -507845,9 +507847,9 @@ if.end69:                                         ; preds = %if.then68, %if.end4
 
 define linkonce_odr ptr @_ZN7EmitterB6scalycB4v0_211emit_chooseE13PlannedChooseB6scalycB4v0_2(ptr %0, ptr %1) {
 entry:
-  %arg.tmp761 = alloca %_Z13PlannedActionB6scalycB4v0_2, align 8
-  %choose.union753 = alloca %_Z16PlannedStatementB6scalycB4v0_2, align 8
-  %deref.tmp751 = alloca %_Z16PlannedStatementB6scalycB4v0_2, align 8
+  %arg.tmp763 = alloca %_Z13PlannedActionB6scalycB4v0_2, align 8
+  %choose.union755 = alloca %_Z16PlannedStatementB6scalycB4v0_2, align 8
+  %deref.tmp753 = alloca %_Z16PlannedStatementB6scalycB4v0_2, align 8
   %dominates = alloca i1, align 1
   %s164_dom = alloca i1, align 1
   %arg.tmp634 = alloca %_Z13PlannedActionB6scalycB4v0_2, align 8
@@ -508815,15 +508817,15 @@ if.then439:                                       ; preds = %frame.forced427
   br label %for.cond
 
 if.end440:                                        ; preds = %for.exit, %frame.forced427
-  %load.struct743 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder744 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct743, 10
-  call void @LLVMPositionBuilderAtEnd(ptr %builder744, ptr %call390)
+  %load.struct745 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder746 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct745, 10
+  call void @LLVMPositionBuilderAtEnd(ptr %builder746, ptr %call390)
   call void @_ZN7EmitterB6scalycB4v0_211enter_scopeEv(ptr %0)
   store ptr null, ptr %case_value, align 1
-  %load.struct745 = load %_Z13PlannedChooseB6scalycB4v0_2, ptr %1, align 8
-  %alternative = extractvalue %_Z13PlannedChooseB6scalycB4v0_2 %load.struct745, 3
-  %ne746 = icmp ne ptr %alternative, null
-  br i1 %ne746, label %if.then747, label %if.end748
+  %load.struct747 = load %_Z13PlannedChooseB6scalycB4v0_2, ptr %1, align 8
+  %alternative = extractvalue %_Z13PlannedChooseB6scalycB4v0_2 %load.struct747, 3
+  %ne748 = icmp ne ptr %alternative, null
+  br i1 %ne748, label %if.then749, label %if.end750
 
 for.cond:                                         ; preds = %if.end469, %if.then439
   %next = call ptr @_ZN14VectorIteratorI11PlannedWhenB6scalycB4v0_2E4nextEv(ptr %iter.alloca)
@@ -508903,7 +508905,7 @@ if.then468:                                       ; preds = %if.end465
   %eq480 = icmp eq ptr %first_case_block479, null
   br i1 %eq480, label %if.then481, label %if.end482
 
-if.end469:                                        ; preds = %if.end687, %if.end465
+if.end469:                                        ; preds = %if.end688, %if.end465
   br label %for.cond
 
 if.then481:                                       ; preds = %if.then468
@@ -509145,19 +509147,19 @@ if.then620:                                       ; preds = %if.end489
   ]
 
 if.end621:                                        ; preds = %choose.end629, %if.end489
-  %load.struct681 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder682 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct681, 10
-  %call683 = call ptr @LLVMGetInsertBlock(ptr %builder682)
-  %call684 = call ptr @LLVMGetBasicBlockTerminator(ptr %call683)
-  %eq685 = icmp eq ptr %call684, null
-  br i1 %eq685, label %if.then686, label %if.end687
+  %load.struct682 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder683 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct682, 10
+  %call684 = call ptr @LLVMGetInsertBlock(ptr %builder683)
+  %call685 = call ptr @LLVMGetBasicBlockTerminator(ptr %call684)
+  %eq686 = icmp eq ptr %call685, null
+  br i1 %eq686, label %if.then687, label %if.end688
 
 choose.end629:                                    ; preds = %choose.else630, %if.end639
-  %choose.value = phi i1 [ %call680, %choose.else630 ], [ undef, %if.end639 ]
+  %choose.value = phi i1 [ %call681, %choose.else630 ], [ undef, %if.end639 ]
   br label %if.end621
 
 choose.else630:                                   ; preds = %if.then620
-  %call680 = call i1 @_ZN7EmitterB6scalycB4v0_214emit_statementE16PlannedStatementB6scalycB4v0_2(ptr %0, ptr %consequent623)
+  %call681 = call i1 @_ZN7EmitterB6scalycB4v0_214emit_statementE16PlannedStatementB6scalycB4v0_2(ptr %0, ptr %consequent623)
   br label %choose.end629
 
 choose.when631:                                   ; preds = %if.then620
@@ -509202,7 +509204,7 @@ if.then654:                                       ; preds = %if.then646
   %ne658 = icmp ne ptr %call657, null
   br i1 %ne658, label %if.then659, label %if.end660
 
-if.end655:                                        ; preds = %if.end675, %if.then646
+if.end655:                                        ; preds = %if.end676, %if.then646
   br label %if.end647
 
 if.then659:                                       ; preds = %if.then654
@@ -509212,446 +509214,542 @@ if.then659:                                       ; preds = %if.then654
   br i1 %eq663, label %if.then664, label %if.end665
 
 if.end660:                                        ; preds = %if.end665, %if.then654
-  %s164_dom673 = load i1, ptr %s164_dom, align 1
-  br i1 %s164_dom673, label %if.then674, label %if.end675
+  %s164_dom674 = load i1, ptr %s164_dom, align 1
+  br i1 %s164_dom674, label %if.then675, label %if.end676
 
 if.then664:                                       ; preds = %if.then659
   %call666 = call ptr @LLVMGetInstructionParent(ptr %call657)
   %load.struct667 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder668 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct667, 10
   %call669 = call ptr @LLVMGetInsertBlock(ptr %builder668)
-  %ne670 = icmp ne ptr %call666, %call669
-  br i1 %ne670, label %if.then671, label %if.end672
+  %call670 = call i1 @_ZN7EmitterB6scalycB4v0_215block_dominatesEP20LLVMOpaqueBasicBlockB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %0, ptr %call666, ptr %call669)
+  %eq671 = icmp eq i1 %call670, false
+  br i1 %eq671, label %if.then672, label %if.end673
 
-if.end665:                                        ; preds = %if.end672, %if.then659
+if.end665:                                        ; preds = %if.end673, %if.then659
   br label %if.end660
 
-if.then671:                                       ; preds = %if.then664
+if.then672:                                       ; preds = %if.then664
   store i1 false, ptr %s164_dom, align 1
-  br label %if.end672
+  br label %if.end673
 
-if.end672:                                        ; preds = %if.then671, %if.then664
+if.end673:                                        ; preds = %if.then672, %if.then664
   br label %if.end665
 
-if.then674:                                       ; preds = %if.end660
-  %load.struct676 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder677 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct676, 10
-  %case_value678 = load ptr, ptr %case_value, align 8
-  %call679 = call ptr @LLVMBuildLoad2(ptr %builder677, ptr %call641, ptr %case_value678, ptr @.str.5569)
-  store ptr %call679, ptr %case_value, align 1
-  br label %if.end675
+if.then675:                                       ; preds = %if.end660
+  %load.struct677 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder678 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct677, 10
+  %case_value679 = load ptr, ptr %case_value, align 8
+  %call680 = call ptr @LLVMBuildLoad2(ptr %builder678, ptr %call641, ptr %case_value679, ptr @.str.5569)
+  store ptr %call680, ptr %case_value, align 1
+  br label %if.end676
 
-if.end675:                                        ; preds = %if.then674, %if.end660
+if.end676:                                        ; preds = %if.then675, %if.end660
   br label %if.end655
 
-if.then686:                                       ; preds = %if.end621
-  %load.struct688 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder689 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct688, 10
-  %call690 = call ptr @LLVMGetInsertBlock(ptr %builder689)
+if.then687:                                       ; preds = %if.end621
+  %load.struct689 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder690 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct689, 10
+  %call691 = call ptr @LLVMGetInsertBlock(ptr %builder690)
   store i1 false, ptr %s164_dom, align 1
-  %case_value691 = load ptr, ptr %case_value, align 8
-  %ne692 = icmp ne ptr %case_value691, null
-  br i1 %ne692, label %if.then693, label %if.end694
+  %case_value692 = load ptr, ptr %case_value, align 8
+  %ne693 = icmp ne ptr %case_value692, null
+  br i1 %ne693, label %if.then694, label %if.end695
 
-if.end687:                                        ; preds = %if.end734, %if.end621
-  %case_value742 = load ptr, ptr %case_value, align 8
-  call void @_ZN7EmitterB6scalycB4v0_214pin_temp_valueEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %case_value742)
+if.end688:                                        ; preds = %if.end736, %if.end621
+  %case_value744 = load ptr, ptr %case_value, align 8
+  call void @_ZN7EmitterB6scalycB4v0_214pin_temp_valueEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %case_value744)
   call void @_ZN7EmitterB6scalycB4v0_210exit_scopeEv(ptr %0)
   br label %if.end469
 
-if.then693:                                       ; preds = %if.then686
-  %case_value695 = load ptr, ptr %case_value, align 8
-  %call696 = call ptr @LLVMTypeOf(ptr %case_value695)
-  %ne697 = icmp ne ptr %call696, null
-  br i1 %ne697, label %if.then698, label %if.end699
+if.then694:                                       ; preds = %if.then687
+  %case_value696 = load ptr, ptr %case_value, align 8
+  %call697 = call ptr @LLVMTypeOf(ptr %case_value696)
+  %ne698 = icmp ne ptr %call697, null
+  br i1 %ne698, label %if.then699, label %if.end700
 
-if.end694:                                        ; preds = %if.end699, %if.then686
+if.end695:                                        ; preds = %if.end700, %if.then687
   %added_phi = load i1, ptr %s164_dom, align 1
-  %eq732 = icmp eq i1 %added_phi, false
-  br i1 %eq732, label %if.then733, label %if.end734
+  %eq734 = icmp eq i1 %added_phi, false
+  br i1 %eq734, label %if.then735, label %if.end736
 
-if.then698:                                       ; preds = %if.then693
-  %call700 = call i32 @LLVMGetTypeKind(ptr %call696)
-  %call701 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_24VoidEv()
-  %sext702 = sext i32 %call700 to i64
-  %ne703 = icmp ne i64 %sext702, %call701
-  br i1 %ne703, label %if.then704, label %if.end705
+if.then699:                                       ; preds = %if.then694
+  %call701 = call i32 @LLVMGetTypeKind(ptr %call697)
+  %call702 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_24VoidEv()
+  %sext703 = sext i32 %call701 to i64
+  %ne704 = icmp ne i64 %sext703, %call702
+  br i1 %ne704, label %if.then705, label %if.end706
 
-if.end699:                                        ; preds = %if.end705, %if.then693
-  br label %if.end694
+if.end700:                                        ; preds = %if.end706, %if.then694
+  br label %if.end695
 
-if.then704:                                       ; preds = %if.then698
+if.then705:                                       ; preds = %if.then699
   store i1 true, ptr %dominates, align 1
-  %case_value706 = load ptr, ptr %case_value, align 8
-  %call707 = call ptr @LLVMIsAInstruction(ptr %case_value706)
-  %ne708 = icmp ne ptr %call707, null
-  br i1 %ne708, label %if.then709, label %if.end710
+  %case_value707 = load ptr, ptr %case_value, align 8
+  %call708 = call ptr @LLVMIsAInstruction(ptr %case_value707)
+  %ne709 = icmp ne ptr %call708, null
+  br i1 %ne709, label %if.then710, label %if.end711
 
-if.end705:                                        ; preds = %if.end718, %if.then698
-  br label %if.end699
+if.end706:                                        ; preds = %if.end720, %if.then699
+  br label %if.end700
 
-if.then709:                                       ; preds = %if.then704
-  %call711 = call ptr @LLVMGetInstructionParent(ptr %call707)
-  %ne712 = icmp ne ptr %call711, %call690
-  br i1 %ne712, label %if.then713, label %if.end714
+if.then710:                                       ; preds = %if.then705
+  %call712 = call ptr @LLVMGetInstructionParent(ptr %call708)
+  %call713 = call i1 @_ZN7EmitterB6scalycB4v0_215block_dominatesEP20LLVMOpaqueBasicBlockB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %0, ptr %call712, ptr %call691)
+  %eq714 = icmp eq i1 %call713, false
+  br i1 %eq714, label %if.then715, label %if.end716
 
-if.end710:                                        ; preds = %if.end714, %if.then704
-  %dominates715 = load i1, ptr %dominates, align 1
-  %eq716 = icmp eq i1 %dominates715, true
-  br i1 %eq716, label %if.then717, label %if.end718
+if.end711:                                        ; preds = %if.end716, %if.then705
+  %dominates717 = load i1, ptr %dominates, align 1
+  %eq718 = icmp eq i1 %dominates717, true
+  br i1 %eq718, label %if.then719, label %if.end720
 
-if.then713:                                       ; preds = %if.then709
+if.then715:                                       ; preds = %if.then710
   store i1 false, ptr %dominates, align 1
-  br label %if.end714
+  br label %if.end716
 
-if.end714:                                        ; preds = %if.then713, %if.then709
-  br label %if.end710
+if.end716:                                        ; preds = %if.then715, %if.then710
+  br label %if.end711
 
-if.then717:                                       ; preds = %if.end710
-  %phi_ref_type719 = load ptr, ptr %phi_ref_type, align 8
-  %eq720 = icmp eq ptr %phi_ref_type719, null
-  br i1 %eq720, label %if.then721, label %if.end722
+if.then719:                                       ; preds = %if.end711
+  %phi_ref_type721 = load ptr, ptr %phi_ref_type, align 8
+  %eq722 = icmp eq ptr %phi_ref_type721, null
+  br i1 %eq722, label %if.then723, label %if.end724
 
-if.end718:                                        ; preds = %if.end726, %if.end710
-  br label %if.end705
+if.end720:                                        ; preds = %if.end728, %if.end711
+  br label %if.end706
 
-if.then721:                                       ; preds = %if.then717
-  store ptr %call696, ptr %phi_ref_type, align 1
-  br label %if.end722
+if.then723:                                       ; preds = %if.then719
+  store ptr %call697, ptr %phi_ref_type, align 1
+  br label %if.end724
 
-if.end722:                                        ; preds = %if.then721, %if.then717
-  %phi_ref_type723 = load ptr, ptr %phi_ref_type, align 8
-  %eq724 = icmp eq ptr %call696, %phi_ref_type723
-  br i1 %eq724, label %if.then725, label %if.end726
+if.end724:                                        ; preds = %if.then723, %if.then719
+  %phi_ref_type725 = load ptr, ptr %phi_ref_type, align 8
+  %eq726 = icmp eq ptr %call697, %phi_ref_type725
+  br i1 %eq726, label %if.then727, label %if.end728
 
-if.then725:                                       ; preds = %if.end722
+if.then727:                                       ; preds = %if.end724
   %phi_values = load ptr, ptr %idx_vec, align 8
   %phi_count = load i64, ptr %ri, align 8
-  %case_value727 = load ptr, ptr %case_value, align 8
-  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %phi_values, i64 %phi_count, ptr %case_value727)
-  %phi_blocks728 = load ptr, ptr %phi_blocks, align 8
-  %phi_count729 = load i64, ptr %ri, align 8
-  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %phi_blocks728, i64 %phi_count729, ptr %call690)
-  %phi_count730 = load i64, ptr %ri, align 8
-  %add731 = add i64 %phi_count730, 1
-  store i64 %add731, ptr %ri, align 1
+  %case_value729 = load ptr, ptr %case_value, align 8
+  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %phi_values, i64 %phi_count, ptr %case_value729)
+  %phi_blocks730 = load ptr, ptr %phi_blocks, align 8
+  %phi_count731 = load i64, ptr %ri, align 8
+  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %phi_blocks730, i64 %phi_count731, ptr %call691)
+  %phi_count732 = load i64, ptr %ri, align 8
+  %add733 = add i64 %phi_count732, 1
+  store i64 %add733, ptr %ri, align 1
   store i1 true, ptr %s164_dom, align 1
-  br label %if.end726
+  br label %if.end728
 
-if.end726:                                        ; preds = %if.then725, %if.end722
-  br label %if.end718
+if.end728:                                        ; preds = %if.then727, %if.end724
+  br label %if.end720
 
-if.then733:                                       ; preds = %if.end694
-  %undef_blocks735 = load ptr, ptr %undef_blocks, align 8
-  %undef_count736 = load i64, ptr %undef_count, align 8
-  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %undef_blocks735, i64 %undef_count736, ptr %call690)
-  %undef_count737 = load i64, ptr %undef_count, align 8
-  %add738 = add i64 %undef_count737, 1
-  store i64 %add738, ptr %undef_count, align 1
-  br label %if.end734
+if.then735:                                       ; preds = %if.end695
+  %undef_blocks737 = load ptr, ptr %undef_blocks, align 8
+  %undef_count738 = load i64, ptr %undef_count, align 8
+  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %undef_blocks737, i64 %undef_count738, ptr %call691)
+  %undef_count739 = load i64, ptr %undef_count, align 8
+  %add740 = add i64 %undef_count739, 1
+  store i64 %add740, ptr %undef_count, align 1
+  br label %if.end736
 
-if.end734:                                        ; preds = %if.then733, %if.end694
-  %load.struct739 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder740 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct739, 10
-  %call741 = call ptr @LLVMBuildBr(ptr %builder740, ptr %call389)
-  br label %if.end687
+if.end736:                                        ; preds = %if.then735, %if.end695
+  %load.struct741 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder742 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct741, 10
+  %call743 = call ptr @LLVMBuildBr(ptr %builder742, ptr %call389)
+  br label %if.end688
 
-if.then747:                                       ; preds = %if.end440
-  %load.struct749 = load %_Z13PlannedChooseB6scalycB4v0_2, ptr %1, align 8
-  %alternative750 = extractvalue %_Z13PlannedChooseB6scalycB4v0_2 %load.struct749, 3
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp751, ptr align 1 %alternative750, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatementB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  %grp.deref.val752 = load %_Z16PlannedStatementB6scalycB4v0_2, ptr %deref.tmp751, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union753, ptr align 1 %deref.tmp751, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatementB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr754 = getelementptr inbounds nuw %_Z16PlannedStatementB6scalycB4v0_2, ptr %choose.union753, i32 0, i32 0
-  %tag755 = load i8, ptr %tag.ptr754, align 1
-  switch i8 %tag755, label %choose.else757 [
-    i8 0, label %choose.when758
+if.then749:                                       ; preds = %if.end440
+  %load.struct751 = load %_Z13PlannedChooseB6scalycB4v0_2, ptr %1, align 8
+  %alternative752 = extractvalue %_Z13PlannedChooseB6scalycB4v0_2 %load.struct751, 3
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp753, ptr align 1 %alternative752, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatementB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val754 = load %_Z16PlannedStatementB6scalycB4v0_2, ptr %deref.tmp753, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union755, ptr align 1 %deref.tmp753, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatementB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr756 = getelementptr inbounds nuw %_Z16PlannedStatementB6scalycB4v0_2, ptr %choose.union755, i32 0, i32 0
+  %tag757 = load i8, ptr %tag.ptr756, align 1
+  switch i8 %tag757, label %choose.else759 [
+    i8 0, label %choose.when760
   ]
 
-if.end748:                                        ; preds = %choose.end756, %if.end440
-  %has_duplicates788 = load i1, ptr %has_duplicates, align 1
-  br i1 %has_duplicates788, label %if.then789, label %if.end790
+if.end750:                                        ; preds = %choose.end758, %if.end440
+  %has_duplicates790 = load i1, ptr %has_duplicates, align 1
+  br i1 %has_duplicates790, label %if.then791, label %if.end792
 
-choose.end756:                                    ; preds = %choose.else757, %if.end765
-  %choose.value787 = phi i1 [ %call786, %choose.else757 ], [ undef, %if.end765 ]
-  br label %if.end748
+choose.end758:                                    ; preds = %choose.else759, %if.end767
+  %choose.value789 = phi i1 [ %call788, %choose.else759 ], [ undef, %if.end767 ]
+  br label %if.end750
 
-choose.else757:                                   ; preds = %if.then747
-  %call786 = call i1 @_ZN7EmitterB6scalycB4v0_214emit_statementE16PlannedStatementB6scalycB4v0_2(ptr %0, ptr %alternative750)
-  br label %choose.end756
+choose.else759:                                   ; preds = %if.then749
+  %call788 = call i1 @_ZN7EmitterB6scalycB4v0_214emit_statementE16PlannedStatementB6scalycB4v0_2(ptr %0, ptr %alternative752)
+  br label %choose.end758
 
-choose.when758:                                   ; preds = %if.then747
-  %"variant.c_data().ptr759" = getelementptr inbounds nuw %_Z16PlannedStatementB6scalycB4v0_2, ptr %choose.union753, i32 0, i32 1
-  %variant.val760 = load %_Z13PlannedActionB6scalycB4v0_2, ptr %"variant.c_data().ptr759", align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp761, ptr align 1 %"variant.c_data().ptr759", i64 ptrtoint (ptr getelementptr (%_Z13PlannedActionB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  %call762 = call ptr @_ZN7EmitterB6scalycB4v0_211emit_actionE13PlannedActionB6scalycB4v0_2(ptr %0, ptr %arg.tmp761)
-  store ptr %call762, ptr %case_value, align 1
+choose.when760:                                   ; preds = %if.then749
+  %"variant.c_data().ptr761" = getelementptr inbounds nuw %_Z16PlannedStatementB6scalycB4v0_2, ptr %choose.union755, i32 0, i32 1
+  %variant.val762 = load %_Z13PlannedActionB6scalycB4v0_2, ptr %"variant.c_data().ptr761", align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp763, ptr align 1 %"variant.c_data().ptr761", i64 ptrtoint (ptr getelementptr (%_Z13PlannedActionB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  %call764 = call ptr @_ZN7EmitterB6scalycB4v0_211emit_actionE13PlannedActionB6scalycB4v0_2(ptr %0, ptr %arg.tmp763)
+  store ptr %call764, ptr %case_value, align 1
   %alt_value = load ptr, ptr %case_value, align 8
-  %ne763 = icmp ne ptr %alt_value, null
-  br i1 %ne763, label %if.then764, label %if.end765
+  %ne765 = icmp ne ptr %alt_value, null
+  br i1 %ne765, label %if.then766, label %if.end767
 
-if.then764:                                       ; preds = %choose.when758
-  %result_type766 = extractvalue %_Z13PlannedActionB6scalycB4v0_2 %variant.val760, 3
-  store %_Z11PlannedTypeB6scalycB4v0_2 %result_type766, ptr %rt, align 1
-  %call767 = call ptr @_ZN7EmitterB6scalycB4v0_28map_typeE11PlannedTypeB6scalycB4v0_2(ptr %0, ptr %rt)
-  %call768 = call i32 @LLVMGetTypeKind(ptr %call767)
-  %call769 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_26StructEv()
-  %sext770 = sext i32 %call768 to i64
-  %eq771 = icmp eq i64 %sext770, %call769
-  br i1 %eq771, label %if.then772, label %if.end773
+if.then766:                                       ; preds = %choose.when760
+  %result_type768 = extractvalue %_Z13PlannedActionB6scalycB4v0_2 %variant.val762, 3
+  store %_Z11PlannedTypeB6scalycB4v0_2 %result_type768, ptr %rt, align 1
+  %call769 = call ptr @_ZN7EmitterB6scalycB4v0_28map_typeE11PlannedTypeB6scalycB4v0_2(ptr %0, ptr %rt)
+  %call770 = call i32 @LLVMGetTypeKind(ptr %call769)
+  %call771 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_26StructEv()
+  %sext772 = sext i32 %call770 to i64
+  %eq773 = icmp eq i64 %sext772, %call771
+  br i1 %eq773, label %if.then774, label %if.end775
 
-if.end765:                                        ; preds = %if.end773, %choose.when758
-  br label %choose.end756
+if.end767:                                        ; preds = %if.end775, %choose.when760
+  br label %choose.end758
 
-if.then772:                                       ; preds = %if.then764
-  %alt_value774 = load ptr, ptr %case_value, align 8
-  %call775 = call ptr @LLVMTypeOf(ptr %alt_value774)
-  %call776 = call i32 @LLVMGetTypeKind(ptr %call775)
-  %call777 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_27PointerEv()
-  %sext778 = sext i32 %call776 to i64
-  %eq779 = icmp eq i64 %sext778, %call777
-  br i1 %eq779, label %if.then780, label %if.end781
+if.then774:                                       ; preds = %if.then766
+  %alt_value776 = load ptr, ptr %case_value, align 8
+  %call777 = call ptr @LLVMTypeOf(ptr %alt_value776)
+  %call778 = call i32 @LLVMGetTypeKind(ptr %call777)
+  %call779 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_27PointerEv()
+  %sext780 = sext i32 %call778 to i64
+  %eq781 = icmp eq i64 %sext780, %call779
+  br i1 %eq781, label %if.then782, label %if.end783
 
-if.end773:                                        ; preds = %if.end781, %if.then764
-  br label %if.end765
+if.end775:                                        ; preds = %if.end783, %if.then766
+  br label %if.end767
 
-if.then780:                                       ; preds = %if.then772
-  %load.struct782 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder783 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct782, 10
-  %alt_value784 = load ptr, ptr %case_value, align 8
-  %call785 = call ptr @LLVMBuildLoad2(ptr %builder783, ptr %call767, ptr %alt_value784, ptr @.str.5570)
-  store ptr %call785, ptr %case_value, align 1
-  br label %if.end781
+if.then782:                                       ; preds = %if.then774
+  %load.struct784 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder785 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct784, 10
+  %alt_value786 = load ptr, ptr %case_value, align 8
+  %call787 = call ptr @LLVMBuildLoad2(ptr %builder785, ptr %call769, ptr %alt_value786, ptr @.str.5570)
+  store ptr %call787, ptr %case_value, align 1
+  br label %if.end783
 
-if.end781:                                        ; preds = %if.then780, %if.then772
-  br label %if.end773
+if.end783:                                        ; preds = %if.then782, %if.then774
+  br label %if.end775
 
-if.then789:                                       ; preds = %if.end748
-  %load.struct791 = load %_Z13PlannedChooseB6scalycB4v0_2, ptr %1, align 8
-  %alternative792 = extractvalue %_Z13PlannedChooseB6scalycB4v0_2 %load.struct791, 3
-  %eq793 = icmp eq ptr %alternative792, null
-  br i1 %eq793, label %if.then794, label %if.end795
+if.then791:                                       ; preds = %if.end750
+  %load.struct793 = load %_Z13PlannedChooseB6scalycB4v0_2, ptr %1, align 8
+  %alternative794 = extractvalue %_Z13PlannedChooseB6scalycB4v0_2 %load.struct793, 3
+  %eq795 = icmp eq ptr %alternative794, null
+  br i1 %eq795, label %if.then796, label %if.end797
 
-if.end790:                                        ; preds = %if.end795, %if.end748
-  %load.struct811 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder812 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct811, 10
-  %call813 = call ptr @LLVMGetInsertBlock(ptr %builder812)
-  %call814 = call ptr @LLVMGetBasicBlockTerminator(ptr %call813)
-  %eq815 = icmp eq ptr %call814, null
-  br i1 %eq815, label %if.then816, label %if.end817
+if.end792:                                        ; preds = %if.end797, %if.end750
+  %load.struct813 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder814 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct813, 10
+  %call815 = call ptr @LLVMGetInsertBlock(ptr %builder814)
+  %call816 = call ptr @LLVMGetBasicBlockTerminator(ptr %call815)
+  %eq817 = icmp eq ptr %call816, null
+  br i1 %eq817, label %if.then818, label %if.end819
 
-if.then794:                                       ; preds = %if.then789
-  %first_case_block796 = load ptr, ptr %first_case_block, align 8
-  %ne797 = icmp ne ptr %first_case_block796, null
-  br i1 %ne797, label %if.then798, label %if.end799
+if.then796:                                       ; preds = %if.then791
+  %first_case_block798 = load ptr, ptr %first_case_block, align 8
+  %ne799 = icmp ne ptr %first_case_block798, null
+  br i1 %ne799, label %if.then800, label %if.end801
 
-if.end795:                                        ; preds = %if.end799, %if.then789
-  br label %if.end790
+if.end797:                                        ; preds = %if.end801, %if.then791
+  br label %if.end792
 
-if.then798:                                       ; preds = %if.then794
-  %load.struct800 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder801 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct800, 10
-  %call802 = call ptr @LLVMGetInsertBlock(ptr %builder801)
-  %call803 = call ptr @LLVMGetBasicBlockTerminator(ptr %call802)
-  %eq804 = icmp eq ptr %call803, null
-  br i1 %eq804, label %if.then805, label %if.end806
+if.then800:                                       ; preds = %if.then796
+  %load.struct802 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder803 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct802, 10
+  %call804 = call ptr @LLVMGetInsertBlock(ptr %builder803)
+  %call805 = call ptr @LLVMGetBasicBlockTerminator(ptr %call804)
+  %eq806 = icmp eq ptr %call805, null
+  br i1 %eq806, label %if.then807, label %if.end808
 
-if.end799:                                        ; preds = %if.end806, %if.then794
-  br label %if.end795
+if.end801:                                        ; preds = %if.end808, %if.then796
+  br label %if.end797
 
-if.then805:                                       ; preds = %if.then798
-  %load.struct807 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder808 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct807, 10
-  %first_case_block809 = load ptr, ptr %first_case_block, align 8
-  %call810 = call ptr @LLVMBuildBr(ptr %builder808, ptr %first_case_block809)
-  br label %if.end806
+if.then807:                                       ; preds = %if.then800
+  %load.struct809 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder810 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct809, 10
+  %first_case_block811 = load ptr, ptr %first_case_block, align 8
+  %call812 = call ptr @LLVMBuildBr(ptr %builder810, ptr %first_case_block811)
+  br label %if.end808
 
-if.end806:                                        ; preds = %if.then805, %if.then798
-  br label %if.end799
+if.end808:                                        ; preds = %if.then807, %if.then800
+  br label %if.end801
 
-if.then816:                                       ; preds = %if.end790
-  %load.struct818 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder819 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct818, 10
-  %call820 = call ptr @LLVMGetInsertBlock(ptr %builder819)
+if.then818:                                       ; preds = %if.end792
+  %load.struct820 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder821 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct820, 10
+  %call822 = call ptr @LLVMGetInsertBlock(ptr %builder821)
   store i1 false, ptr %dup, align 1
-  %alt_value821 = load ptr, ptr %case_value, align 8
-  %ne822 = icmp ne ptr %alt_value821, null
-  br i1 %ne822, label %if.then823, label %if.end824
+  %alt_value823 = load ptr, ptr %case_value, align 8
+  %ne824 = icmp ne ptr %alt_value823, null
+  br i1 %ne824, label %if.then825, label %if.end826
 
-if.end817:                                        ; preds = %if.end865, %if.end790
-  %alt_value873 = load ptr, ptr %case_value, align 8
-  call void @_ZN7EmitterB6scalycB4v0_214pin_temp_valueEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %alt_value873)
+if.end819:                                        ; preds = %if.end868, %if.end792
+  %alt_value876 = load ptr, ptr %case_value, align 8
+  call void @_ZN7EmitterB6scalycB4v0_214pin_temp_valueEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %alt_value876)
   call void @_ZN7EmitterB6scalycB4v0_210exit_scopeEv(ptr %0)
-  %load.struct874 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder875 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct874, 10
-  call void @LLVMPositionBuilderAtEnd(ptr %builder875, ptr %call389)
-  %phi_count876 = load i64, ptr %ri, align 8
-  %gt877 = icmp ugt i64 %phi_count876, 0
-  br i1 %gt877, label %if.then878, label %if.end879
+  %load.struct877 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder878 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct877, 10
+  call void @LLVMPositionBuilderAtEnd(ptr %builder878, ptr %call389)
+  %phi_count879 = load i64, ptr %ri, align 8
+  %gt880 = icmp ugt i64 %phi_count879, 0
+  br i1 %gt880, label %if.then881, label %if.end882
 
-if.then823:                                       ; preds = %if.then816
-  %alt_value825 = load ptr, ptr %case_value, align 8
-  %call826 = call ptr @LLVMTypeOf(ptr %alt_value825)
-  %ne827 = icmp ne ptr %call826, null
-  br i1 %ne827, label %if.then828, label %if.end829
+if.then825:                                       ; preds = %if.then818
+  %alt_value827 = load ptr, ptr %case_value, align 8
+  %call828 = call ptr @LLVMTypeOf(ptr %alt_value827)
+  %ne829 = icmp ne ptr %call828, null
+  br i1 %ne829, label %if.then830, label %if.end831
 
-if.end824:                                        ; preds = %if.end829, %if.then816
+if.end826:                                        ; preds = %if.end831, %if.then818
   %added_alt_phi = load i1, ptr %dup, align 1
-  %eq863 = icmp eq i1 %added_alt_phi, false
-  br i1 %eq863, label %if.then864, label %if.end865
+  %eq866 = icmp eq i1 %added_alt_phi, false
+  br i1 %eq866, label %if.then867, label %if.end868
 
-if.then828:                                       ; preds = %if.then823
-  %call830 = call i32 @LLVMGetTypeKind(ptr %call826)
-  %call831 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_24VoidEv()
-  %sext832 = sext i32 %call830 to i64
-  %ne833 = icmp ne i64 %sext832, %call831
-  br i1 %ne833, label %if.then834, label %if.end835
+if.then830:                                       ; preds = %if.then825
+  %call832 = call i32 @LLVMGetTypeKind(ptr %call828)
+  %call833 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_24VoidEv()
+  %sext834 = sext i32 %call832 to i64
+  %ne835 = icmp ne i64 %sext834, %call833
+  br i1 %ne835, label %if.then836, label %if.end837
 
-if.end829:                                        ; preds = %if.end835, %if.then823
-  br label %if.end824
+if.end831:                                        ; preds = %if.end837, %if.then825
+  br label %if.end826
 
-if.then834:                                       ; preds = %if.then828
+if.then836:                                       ; preds = %if.then830
   store i1 true, ptr %s164_dom, align 1
-  %alt_value836 = load ptr, ptr %case_value, align 8
-  %call837 = call ptr @LLVMIsAInstruction(ptr %alt_value836)
-  %ne838 = icmp ne ptr %call837, null
-  br i1 %ne838, label %if.then839, label %if.end840
+  %alt_value838 = load ptr, ptr %case_value, align 8
+  %call839 = call ptr @LLVMIsAInstruction(ptr %alt_value838)
+  %ne840 = icmp ne ptr %call839, null
+  br i1 %ne840, label %if.then841, label %if.end842
 
-if.end835:                                        ; preds = %if.end847, %if.then828
-  br label %if.end829
+if.end837:                                        ; preds = %if.end850, %if.then830
+  br label %if.end831
 
-if.then839:                                       ; preds = %if.then834
-  %call841 = call ptr @LLVMGetInstructionParent(ptr %call837)
-  %ne842 = icmp ne ptr %call841, %call820
-  br i1 %ne842, label %if.then843, label %if.end844
-
-if.end840:                                        ; preds = %if.end844, %if.then834
-  %alt_dominates = load i1, ptr %s164_dom, align 1
-  %eq845 = icmp eq i1 %alt_dominates, true
+if.then841:                                       ; preds = %if.then836
+  %call843 = call ptr @LLVMGetInstructionParent(ptr %call839)
+  %call844 = call i1 @_ZN7EmitterB6scalycB4v0_215block_dominatesEP20LLVMOpaqueBasicBlockB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %0, ptr %call843, ptr %call822)
+  %eq845 = icmp eq i1 %call844, false
   br i1 %eq845, label %if.then846, label %if.end847
 
-if.then843:                                       ; preds = %if.then839
+if.end842:                                        ; preds = %if.end847, %if.then836
+  %alt_dominates = load i1, ptr %s164_dom, align 1
+  %eq848 = icmp eq i1 %alt_dominates, true
+  br i1 %eq848, label %if.then849, label %if.end850
+
+if.then846:                                       ; preds = %if.then841
   store i1 false, ptr %s164_dom, align 1
-  br label %if.end844
-
-if.end844:                                        ; preds = %if.then843, %if.then839
-  br label %if.end840
-
-if.then846:                                       ; preds = %if.end840
-  %phi_ref_type848 = load ptr, ptr %phi_ref_type, align 8
-  %eq849 = icmp eq ptr %phi_ref_type848, null
-  br i1 %eq849, label %if.then850, label %if.end851
-
-if.end847:                                        ; preds = %if.end855, %if.end840
-  br label %if.end835
-
-if.then850:                                       ; preds = %if.then846
-  store ptr %call826, ptr %phi_ref_type, align 1
-  br label %if.end851
-
-if.end851:                                        ; preds = %if.then850, %if.then846
-  %phi_ref_type852 = load ptr, ptr %phi_ref_type, align 8
-  %eq853 = icmp eq ptr %call826, %phi_ref_type852
-  br i1 %eq853, label %if.then854, label %if.end855
-
-if.then854:                                       ; preds = %if.end851
-  %phi_values856 = load ptr, ptr %idx_vec, align 8
-  %phi_count857 = load i64, ptr %ri, align 8
-  %alt_value858 = load ptr, ptr %case_value, align 8
-  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %phi_values856, i64 %phi_count857, ptr %alt_value858)
-  %phi_blocks859 = load ptr, ptr %phi_blocks, align 8
-  %phi_count860 = load i64, ptr %ri, align 8
-  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %phi_blocks859, i64 %phi_count860, ptr %call820)
-  %phi_count861 = load i64, ptr %ri, align 8
-  %add862 = add i64 %phi_count861, 1
-  store i64 %add862, ptr %ri, align 1
-  store i1 true, ptr %dup, align 1
-  br label %if.end855
-
-if.end855:                                        ; preds = %if.then854, %if.end851
   br label %if.end847
 
-if.then864:                                       ; preds = %if.end824
-  %undef_blocks866 = load ptr, ptr %undef_blocks, align 8
-  %undef_count867 = load i64, ptr %undef_count, align 8
-  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %undef_blocks866, i64 %undef_count867, ptr %call820)
-  %undef_count868 = load i64, ptr %undef_count, align 8
-  %add869 = add i64 %undef_count868, 1
-  store i64 %add869, ptr %undef_count, align 1
-  br label %if.end865
+if.end847:                                        ; preds = %if.then846, %if.then841
+  br label %if.end842
 
-if.end865:                                        ; preds = %if.then864, %if.end824
-  %load.struct870 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder871 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct870, 10
-  %call872 = call ptr @LLVMBuildBr(ptr %builder871, ptr %call389)
-  br label %if.end817
+if.then849:                                       ; preds = %if.end842
+  %phi_ref_type851 = load ptr, ptr %phi_ref_type, align 8
+  %eq852 = icmp eq ptr %phi_ref_type851, null
+  br i1 %eq852, label %if.then853, label %if.end854
 
-if.then878:                                       ; preds = %if.end817
-  %phi_values880 = load ptr, ptr %idx_vec, align 8
-  %call881 = call ptr @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3getEm(ptr %phi_values880, i64 0)
-  %ne882 = icmp ne ptr %call881, null
-  br i1 %ne882, label %if.then883, label %if.end884
+if.end850:                                        ; preds = %if.end858, %if.end842
+  br label %if.end837
 
-if.end879:                                        ; preds = %if.end884, %if.end817
+if.then853:                                       ; preds = %if.then849
+  store ptr %call828, ptr %phi_ref_type, align 1
+  br label %if.end854
+
+if.end854:                                        ; preds = %if.then853, %if.then849
+  %phi_ref_type855 = load ptr, ptr %phi_ref_type, align 8
+  %eq856 = icmp eq ptr %call828, %phi_ref_type855
+  br i1 %eq856, label %if.then857, label %if.end858
+
+if.then857:                                       ; preds = %if.end854
+  %phi_values859 = load ptr, ptr %idx_vec, align 8
+  %phi_count860 = load i64, ptr %ri, align 8
+  %alt_value861 = load ptr, ptr %case_value, align 8
+  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %phi_values859, i64 %phi_count860, ptr %alt_value861)
+  %phi_blocks862 = load ptr, ptr %phi_blocks, align 8
+  %phi_count863 = load i64, ptr %ri, align 8
+  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %phi_blocks862, i64 %phi_count863, ptr %call822)
+  %phi_count864 = load i64, ptr %ri, align 8
+  %add865 = add i64 %phi_count864, 1
+  store i64 %add865, ptr %ri, align 1
+  store i1 true, ptr %dup, align 1
+  br label %if.end858
+
+if.end858:                                        ; preds = %if.then857, %if.end854
+  br label %if.end850
+
+if.then867:                                       ; preds = %if.end826
+  %undef_blocks869 = load ptr, ptr %undef_blocks, align 8
+  %undef_count870 = load i64, ptr %undef_count, align 8
+  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %undef_blocks869, i64 %undef_count870, ptr %call822)
+  %undef_count871 = load i64, ptr %undef_count, align 8
+  %add872 = add i64 %undef_count871, 1
+  store i64 %add872, ptr %undef_count, align 1
+  br label %if.end868
+
+if.end868:                                        ; preds = %if.then867, %if.end826
+  %load.struct873 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder874 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct873, 10
+  %call875 = call ptr @LLVMBuildBr(ptr %builder874, ptr %call389)
+  br label %if.end819
+
+if.then881:                                       ; preds = %if.end819
+  %phi_values883 = load ptr, ptr %idx_vec, align 8
+  %call884 = call ptr @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3getEm(ptr %phi_values883, i64 0)
+  %ne885 = icmp ne ptr %call884, null
+  br i1 %ne885, label %if.then886, label %if.end887
+
+if.end882:                                        ; preds = %if.end887, %if.end819
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr null
 
-if.then883:                                       ; preds = %if.then878
-  %deref885 = load ptr, ptr %call881, align 8
-  %call886 = call ptr @LLVMTypeOf(ptr %deref885)
-  %call887 = call ptr @LLVMGetUndef(ptr %call886)
+if.then886:                                       ; preds = %if.then881
+  %deref888 = load ptr, ptr %call884, align 8
+  %call889 = call ptr @LLVMTypeOf(ptr %deref888)
+  %call890 = call ptr @LLVMGetUndef(ptr %call889)
   store i64 0, ptr %si, align 1
-  br label %while.cond888
+  br label %while.cond891
 
-if.end884:                                        ; preds = %if.then878
-  br label %if.end879
+if.end887:                                        ; preds = %if.then881
+  br label %if.end882
 
-while.cond888:                                    ; preds = %if.end898, %if.then883
+while.cond891:                                    ; preds = %if.end901, %if.then886
   %ui = load i64, ptr %si, align 8
-  %undef_count891 = load i64, ptr %undef_count, align 8
-  %lt892 = icmp ult i64 %ui, %undef_count891
-  br i1 %lt892, label %while.body889, label %while.exit890
+  %undef_count894 = load i64, ptr %undef_count, align 8
+  %lt895 = icmp ult i64 %ui, %undef_count894
+  br i1 %lt895, label %while.body892, label %while.exit893
 
-while.body889:                                    ; preds = %while.cond888
-  %undef_blocks893 = load ptr, ptr %undef_blocks, align 8
-  %ui894 = load i64, ptr %si, align 8
-  %call895 = call ptr @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3getEm(ptr %undef_blocks893, i64 %ui894)
-  %ne896 = icmp ne ptr %call895, null
-  br i1 %ne896, label %if.then897, label %if.end898
+while.body892:                                    ; preds = %while.cond891
+  %undef_blocks896 = load ptr, ptr %undef_blocks, align 8
+  %ui897 = load i64, ptr %si, align 8
+  %call898 = call ptr @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3getEm(ptr %undef_blocks896, i64 %ui897)
+  %ne899 = icmp ne ptr %call898, null
+  br i1 %ne899, label %if.then900, label %if.end901
 
-while.exit890:                                    ; preds = %while.cond888
-  %load.struct908 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder909 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct908, 10
-  %call910 = call ptr @LLVMBuildPhi(ptr %builder909, ptr %call886, ptr @.str.5571)
-  %phi_values911 = load ptr, ptr %idx_vec, align 8
-  %load.struct912 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %phi_values911, align 8
-  %data913 = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct912, 1
-  %phi_blocks914 = load ptr, ptr %phi_blocks, align 8
-  %load.struct915 = load %_Z6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E, ptr %phi_blocks914, align 8
-  %data916 = extractvalue %_Z6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E %load.struct915, 1
-  %phi_count917 = load i64, ptr %ri, align 8
-  call void @LLVMAddIncoming(ptr %call910, ptr %data913, ptr %data916, i64 %phi_count917)
+while.exit893:                                    ; preds = %while.cond891
+  %load.struct911 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder912 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct911, 10
+  %call913 = call ptr @LLVMBuildPhi(ptr %builder912, ptr %call889, ptr @.str.5571)
+  %phi_values914 = load ptr, ptr %idx_vec, align 8
+  %load.struct915 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %phi_values914, align 8
+  %data916 = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct915, 1
+  %phi_blocks917 = load ptr, ptr %phi_blocks, align 8
+  %load.struct918 = load %_Z6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E, ptr %phi_blocks917, align 8
+  %data919 = extractvalue %_Z6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E %load.struct918, 1
+  %phi_count920 = load i64, ptr %ri, align 8
+  call void @LLVMAddIncoming(ptr %call913, ptr %data916, ptr %data919, i64 %phi_count920)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret ptr %call910
+  ret ptr %call913
 
-if.then897:                                       ; preds = %while.body889
-  %phi_values899 = load ptr, ptr %idx_vec, align 8
-  %phi_count900 = load i64, ptr %ri, align 8
-  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %phi_values899, i64 %phi_count900, ptr %call887)
-  %phi_blocks901 = load ptr, ptr %phi_blocks, align 8
-  %phi_count902 = load i64, ptr %ri, align 8
-  %deref903 = load ptr, ptr %call895, align 8
-  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %phi_blocks901, i64 %phi_count902, ptr %deref903)
-  %phi_count904 = load i64, ptr %ri, align 8
-  %add905 = add i64 %phi_count904, 1
-  store i64 %add905, ptr %ri, align 1
-  br label %if.end898
+if.then900:                                       ; preds = %while.body892
+  %phi_values902 = load ptr, ptr %idx_vec, align 8
+  %phi_count903 = load i64, ptr %ri, align 8
+  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %phi_values902, i64 %phi_count903, ptr %call890)
+  %phi_blocks904 = load ptr, ptr %phi_blocks, align 8
+  %phi_count905 = load i64, ptr %ri, align 8
+  %deref906 = load ptr, ptr %call898, align 8
+  call void @_ZN6VectorIP20LLVMOpaqueBasicBlockB6scalycB4v0_2E3putEmP20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %phi_blocks904, i64 %phi_count905, ptr %deref906)
+  %phi_count907 = load i64, ptr %ri, align 8
+  %add908 = add i64 %phi_count907, 1
+  store i64 %add908, ptr %ri, align 1
+  br label %if.end901
 
-if.end898:                                        ; preds = %if.then897, %while.body889
-  %ui906 = load i64, ptr %si, align 8
-  %add907 = add i64 %ui906, 1
-  store i64 %add907, ptr %si, align 1
-  br label %while.cond888
+if.end901:                                        ; preds = %if.then900, %while.body892
+  %ui909 = load i64, ptr %si, align 8
+  %add910 = add i64 %ui909, 1
+  store i64 %add910, ptr %si, align 1
+  br label %while.cond891
+}
+
+define linkonce_odr i1 @_ZN7EmitterB6scalycB4v0_215block_dominatesEP20LLVMOpaqueBasicBlockB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2(ptr %0, ptr %1, ptr %2) {
+entry:
+  %u = alloca ptr, align 8
+  %pred = alloca ptr, align 8
+  %cur = alloca ptr, align 8
+  store ptr %2, ptr %cur, align 1
+  %steps = alloca i64, align 8
+  store i64 0, ptr %steps, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end29, %entry
+  %steps1 = load i64, ptr %steps, align 8
+  %lt = icmp ult i64 %steps1, 100000
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %cur2 = load ptr, ptr %cur, align 8
+  %eq = icmp eq ptr %cur2, %1
+  br i1 %eq, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then:                                          ; preds = %while.body
+  ret i1 true
+
+if.end:                                           ; preds = %while.body
+  store ptr null, ptr %pred, align 1
+  %cur3 = load ptr, ptr %cur, align 8
+  %call = call ptr @LLVMBasicBlockAsValue(ptr %cur3)
+  %call4 = call ptr @LLVMGetFirstUse(ptr %call)
+  store ptr %call4, ptr %u, align 1
+  br label %while.cond5
+
+while.cond5:                                      ; preds = %if.end19, %if.end
+  %u8 = load ptr, ptr %u, align 8
+  %ne = icmp ne ptr %u8, null
+  br i1 %ne, label %while.body6, label %while.exit7
+
+while.body6:                                      ; preds = %while.cond5
+  %u9 = load ptr, ptr %u, align 8
+  %call10 = call ptr @LLVMGetUser(ptr %u9)
+  %call11 = call ptr @LLVMIsAInstruction(ptr %call10)
+  %eq12 = icmp eq ptr %call11, null
+  br i1 %eq12, label %if.then13, label %if.end14
+
+while.exit7:                                      ; preds = %while.cond5
+  %pred26 = load ptr, ptr %pred, align 8
+  %eq27 = icmp eq ptr %pred26, null
+  br i1 %eq27, label %if.then28, label %if.end29
+
+if.then13:                                        ; preds = %while.body6
+  ret i1 false
+
+if.end14:                                         ; preds = %while.body6
+  %call15 = call ptr @LLVMGetInstructionParent(ptr %call10)
+  %pred16 = load ptr, ptr %pred, align 8
+  %eq17 = icmp eq ptr %pred16, null
+  br i1 %eq17, label %if.then18, label %if.else
+
+if.then18:                                        ; preds = %if.end14
+  store ptr %call15, ptr %pred, align 1
+  br label %if.end19
+
+if.else:                                          ; preds = %if.end14
+  %pred20 = load ptr, ptr %pred, align 8
+  %ne21 = icmp ne ptr %pred20, %call15
+  br i1 %ne21, label %if.then22, label %if.end23
+
+if.end19:                                         ; preds = %if.end23, %if.then18
+  %u24 = load ptr, ptr %u, align 8
+  %call25 = call ptr @LLVMGetNextUse(ptr %u24)
+  store ptr %call25, ptr %u, align 1
+  br label %while.cond5
+
+if.then22:                                        ; preds = %if.else
+  ret i1 false
+
+if.end23:                                         ; preds = %if.else
+  br label %if.end19
+
+if.then28:                                        ; preds = %while.exit7
+  ret i1 false
+
+if.end29:                                         ; preds = %while.exit7
+  %pred30 = load ptr, ptr %pred, align 8
+  store ptr %pred30, ptr %cur, align 1
+  %steps31 = load i64, ptr %steps, align 8
+  %add = add i64 %steps31, 1
+  store i64 %add, ptr %steps, align 1
+  br label %while.cond
 }
 
 define linkonce_odr ptr @_ZN7EmitterB6scalycB4v0_28emit_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1) {

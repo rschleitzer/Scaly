@@ -1,0 +1,67 @@
+; A choose arm's value made in an EARLIER block of the arm, or before the
+; choose, is the arm's value (2026-10-19, Emitter.block_dominates#). The
+; merge took only a value made in the arm's LAST block and gave `undef` for
+; every other: `let count c + 1`, `if count < 2  return 0`, `count` answered
+; garbage at rc 0, and so did an arm naming a value bound before the choose.
+; Expected: PASS
+define Shape union (
+    Circle: int
+    Square: int
+)
+
+function after_early_return(s: Shape) returns int
+{
+    choose s
+        when c: Circle
+        {
+            let count c + 1
+            if count < 2
+                return 0
+            count
+        }
+        else
+            0
+}
+
+function bound_before(s: Shape, x: int) returns int
+{
+    let n x + 1
+    choose s
+        when c: Circle
+            n
+        else
+            0
+}
+
+function in_the_else(s: Shape, x: int) returns int
+{
+    choose s
+        when c: Circle
+            0
+        else
+        {
+            let count x + 1
+            if count < 2
+                return 0
+            count
+        }
+}
+
+function wide(s: Shape) returns size_t
+{
+    choose s
+        when c: Circle
+        {
+            let count: size_t (c as size_t) + 1
+            if count < 2
+                return 0
+            count
+        }
+        else
+            0
+}
+
+if after_early_return(Shape.Circle(2)) = 3 and bound_before(Shape.Circle(1), 4) = 5 and in_the_else(Shape.Square(1), 4) = 5 and wide(Shape.Circle(6)) = 7 and after_early_return(Shape.Square(2)) = 0
+    print "PASS"
+else
+    print "FAIL"
