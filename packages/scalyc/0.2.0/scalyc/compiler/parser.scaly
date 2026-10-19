@@ -4683,13 +4683,12 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 
         let input_start lexer.position
-        var input: ref[Vector[OperandSyntax]]?
+        var input: ref[Vector[OperandSyntax]]? null
         choose parse_operand_list()
             when err: Error
             {
                 choose err
-                    when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(input_start, lexer.position, "expected Operand"))
+                    when d: Different {}
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }

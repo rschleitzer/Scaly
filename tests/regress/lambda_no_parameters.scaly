@@ -1,0 +1,26 @@
+; A lambda without parameters (2026-10-19, ROADMAP-operation.md, Functions):
+; `\: f()` -- before, the lambda's input list was required and the backslash
+; with a colon after it did not parse (rc 2). Bound and called, through a
+; delegate `delegate() returns int`, handed to a routine as a literal, and
+; capturing.
+; Expected: PASS
+define Thunk delegate() returns int
+
+function seven() returns int
+    7
+
+function run(t: Thunk) returns int
+    t() + 1
+
+procedure check() returns bool
+{
+    let n 20
+    let g \: n + 1
+    let t: Thunk \: seven() * 2
+    g() = 21 and t() = 14 and run(t) = 15 and run(\: n * 3) = 61 and run(seven) = 8
+}
+
+if check()
+    print "PASS"
+else
+    print "FAIL"

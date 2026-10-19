@@ -554,7 +554,7 @@
 
 <syntax id = Lambda
     <content link = backslash
-    <content link = Operand               multiple          property = input
+    <content link = Operand               multiple optional property = input
     <content colon
     <content link = Action                                  property = block
 
