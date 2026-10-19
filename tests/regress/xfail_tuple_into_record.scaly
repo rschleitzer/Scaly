@@ -1,0 +1,10 @@
+; A tuple is no record (2026-10-19, Planner.type_head_is_resolvable#): `let a
+; Range p` -- an untyped binding takes its first operand for its type, so it
+; is `let a: Range p` -- took the tuple's bytes for a Range at rc 0; a
+; construction from the tuple is `Range(p)` or `(Range p)`.
+; xfail: the initializer does not conform to the declared type: (int, int) where Range is declared
+define Range (lo: int, hi: int)
+
+let p (5, 6)
+let a Range p
+print "`a.lo`"

@@ -25,7 +25,7 @@ procedure run() returns bool
 {
     let args (3, 4)
     let p Point(args)
-    let q Point args
+    let q (Point args)
     let named (x: 5, y: 6)
     let r Point(named)
     let h Holder((7, 8))

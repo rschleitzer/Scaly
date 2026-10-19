@@ -1,0 +1,9 @@
+; A labelled tuple whose labels name no parameter list of the routine it is
+; applied to is rc 4 (2026-10-19, Planner.report_unmatched_labels#) -- by
+; position it would hand each component to whatever stands there.
+; xfail: the labels of the tuple (w, h) name no parameters of span: a labelled tuple is applied by name
+function span(x: int, y: int) returns int
+    y * 10 - x
+
+let r (w: 1, h: 2)
+print "`span(r)`"

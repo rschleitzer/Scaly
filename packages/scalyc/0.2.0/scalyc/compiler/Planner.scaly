@@ -27426,6 +27426,8 @@ define Planner
                         candidates := this.lookup_methods((*lp).parent_type.name, fn_name)
                 }
             }
+            let labels Planner.lone_tuple_labels(second)
+            var order Vector[size_t](0)
             var takes_count false
             var ci: size_t 0
             while ci < candidates.length
@@ -27433,7 +27435,7 @@ define Planner
                 let fp candidates.get ci
                 if fp <> null
                 {
-                    var arity: size_t 0
+                    var names Array[String]()
                     var ii: size_t 0
                     while ii < fp.input.length
                     {
@@ -27444,20 +27446,34 @@ define Planner
                             if ip.name <> null and (*ip.name) = "this"
                                 is_this := true
                             if is_this = false
-                                arity := arity + 1
+                            {
+                                if ip.name <> null
+                                    names.add(String((*ip.name)))
+                                else
+                                    names.add(String())
+                            }
                         }
                         ii := ii + 1
                     }
-                    if arity = 1
+                    if names.length = 1
                         return second
-                    if arity = count
+                    if names.length = count
+                    {
                         takes_count := true
+                        if labels.length > 0 and order.length = 0
+                        {
+                            var names_vec Vector[String](names)
+                            order := Planner.label_order(labels, names_vec)
+                        }
+                    }
                 }
                 ci := ci + 1
             }
             if takes_count = false
                 return second
-            this.spread_lone_tuple(second, count)
+            if labels.length > 0 and order.length = 0
+                this.report_unmatched_labels(second, labels, fn_name)
+            this.spread_lone_tuple(second, count, order)
         }
 
         ; spread_construction_tuple#: a record applied to ONE bound tuple is
@@ -27476,14 +27492,14 @@ define Planner
             if concept_ref = null
                 return second
             let c (*concept_ref)
+            let labels Planner.lone_tuple_labels(second)
+            var order Vector[size_t](0)
             var takes_count false
             choose c.definition
                 when s: Structure
                 {
                     if s.properties.length = 1
                         return second
-                    if s.properties.length = count
-                        takes_count := true
                     var i: size_t 0
                     while i < s.initializers.length
                     {
@@ -27493,16 +27509,152 @@ define Planner
                             if ip.input.length = 1
                                 return second
                             if ip.input.length = count
+                            {
                                 takes_count := true
+                                if labels.length > 0 and order.length = 0
+                                {
+                                    var inames Array[String]()
+                                    var ii: size_t 0
+                                    while ii < ip.input.length
+                                    {
+                                        let itp ip.input.get ii
+                                        if itp <> null and itp.name <> null
+                                            inames.add(String((*itp.name)))
+                                        else
+                                            inames.add(String())
+                                        ii := ii + 1
+                                    }
+                                    var inames_vec Vector[String](inames)
+                                    order := Planner.label_order(labels, inames_vec)
+                                }
+                            }
                         }
                         i := i + 1
+                    }
+                    if s.properties.length = count
+                    {
+                        takes_count := true
+                        if labels.length > 0 and order.length = 0
+                        {
+                            var fnames Array[String]()
+                            var fi: size_t 0
+                            while fi < s.properties.length
+                            {
+                                let pp s.properties.get fi
+                                if pp <> null
+                                    fnames.add(String(pp.name))
+                                else
+                                    fnames.add(String())
+                                fi := fi + 1
+                            }
+                            var fnames_vec Vector[String](fnames)
+                            order := Planner.label_order(labels, fnames_vec)
+                        }
                     }
                 }
                 else
                     return second
             if takes_count = false
                 return second
-            this.spread_lone_tuple(second, count)
+            if labels.length > 0 and order.length = 0
+                this.report_unmatched_labels(second, labels, fn_name)
+            this.spread_lone_tuple(second, count, order)
+        }
+
+        ; lone_tuple_labels#: the labels of the one tuple of `second` where
+        ; EVERY component carries one -- `(n: 5, s: "five")` --, empty
+        ; otherwise: a labelled tuple is spread by name, any other by
+        ; position (ROADMAP-operation.md, Tuples: names are labels, they
+        ; match parameters by name at an application)
+        function lone_tuple_labels(second: PlannedOperand) returns Vector[String]
+        {
+            let none Vector[String](0)
+            choose second.expr
+                when tp: PlannedTuple
+                {
+                    if tp.components = null
+                        return none
+                    let cp (*tp.components).get 0
+                    if cp = null or cp.value = null
+                        return none
+                    let vp (*cp.value).get 0
+                    if vp = null
+                        return none
+                    let tt vp.result_type
+                    if tt.labels = null
+                        return none
+                    let ls (*tt.labels)
+                    var i: size_t 0
+                    while i < ls.length
+                    {
+                        let lp ls.get i
+                        if lp = null or (*lp).get_length() = 0
+                            return none
+                        i := i + 1
+                    }
+                    return ls
+                }
+                else
+                    return none
+        }
+
+        ; label_order#: for each of `names`, the component whose label it is;
+        ; empty where a name has no label or the counts differ
+        function label_order(labels: Vector[String], names: Vector[String]) returns Vector[size_t]
+        {
+            let none Vector[size_t](0)
+            if labels.length <> names.length
+                return none
+            var order Vector[size_t](names.length)
+            var k: size_t 0
+            while k < names.length
+            {
+                let np names.get k
+                if np = null
+                    return none
+                var found false
+                var j: size_t 0
+                while j < labels.length and found = false
+                {
+                    let lp labels.get j
+                    if lp <> null and (*lp) = (*np)
+                    {
+                        order.put(k, j)
+                        found := true
+                    }
+                    j := j + 1
+                }
+                if found = false
+                    return none
+                k := k + 1
+            }
+            order
+        }
+
+        ; report_unmatched_labels#: a labelled tuple applied to a routine or
+        ; a record none of whose parameter lists (or field list) its labels
+        ; name -- rc 4; spread by position it would hand each component to
+        ; whatever stands there (the spread still goes by position, so that
+        ; the call resolves and this is the one word about it)
+        procedure report_unmatched_labels(mutable this: Planner, second: PlannedOperand, labels: Vector[String], fn_name: String)
+        {
+            var sb StringBuilder()
+            sb.append "the labels of the tuple ("
+            var i: size_t 0
+            while i < labels.length
+            {
+                if i > 0
+                    sb.append ", "
+                let lp labels.get i
+                if lp <> null
+                    sb.append (*lp)
+                i := i + 1
+            }
+            sb.append ") name no parameters of "
+            sb.append fn_name
+            sb.append ": a labelled tuple is applied by name"
+            let msg sb.to_string()
+            this.add_diagnostic(second.loc, String^this(msg))
         }
 
         ; lone_tuple_count#: how many components the one value of `second`
@@ -27544,7 +27696,7 @@ define Planner
         ; reads the one tuple of `second` again, component by component (the
         ; member `$k`). A tuple reached only through a call is refused, rc 4:
         ; each component would call again.
-        procedure spread_lone_tuple(mutable this: Planner, second: PlannedOperand, count: size_t) returns PlannedOperand
+        procedure spread_lone_tuple(mutable this: Planner, second: PlannedOperand, count: size_t, order: Vector[size_t]) returns PlannedOperand
         {
             choose second.expr
                 when tp: PlannedTuple
@@ -27584,7 +27736,12 @@ define Planner
                     var k: size_t 0
                     while k < count
                     {
-                        let component_type Planner.tuple_component_type(tt, k)
+                        ; the component for position k: by name where an order
+                        ; is given (lone_tuple_labels#), by position otherwise
+                        var j k
+                        if order.length = count
+                            j := order[k]
+                        let component_type Planner.tuple_component_type(tt, j)
                         var hops_arr Array[PlannedMemberAccess]()
                         if v.member_access <> null
                         {
@@ -27598,7 +27755,7 @@ define Planner
                                 oh := oh + 1
                             }
                         }
-                        hops_arr.add(PlannedMemberAccess(String("$`k`"), k, false, false, tt, component_type))
+                        hops_arr.add(PlannedMemberAccess(String("$`j`"), j, false, false, tt, component_type))
                         var hops_vec Vector[PlannedMemberAccess](hops_arr)
                         var one_arr Array[PlannedOperand]()
                         one_arr.add(PlannedOperand(v.loc, v.expr, &hops_vec, component_type))
@@ -32226,6 +32383,12 @@ define Planner
             if t.name = "Option"
                 return true
             if Planner.is_unit_type(t)
+                return true
+            ; a tuple type (tuple_type#) -- until 2026-10-19 unresolvable here,
+            ; so `let a: Range (5, 6)` (and `let a Range p`, whose first operand
+            ; an untyped binding takes for its type) took the tuple's bytes for
+            ; a Range at rc 0
+            if t.name = "(,)"
                 return true
             if t.name = "bool" or t.name = "const_char" or t.name = "delegate" or this.lookup_concept(t.name) <> null
                 return true

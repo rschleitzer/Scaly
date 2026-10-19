@@ -1,0 +1,40 @@
+; A labelled tuple is applied BY NAME (2026-10-19, ROADMAP-operation.md,
+; Tuples: names are labels, they match parameters by name at an application;
+; Planner.lone_tuple_labels#, label_order#): `let r (y: 2, x: 1)`, then
+; `Point(r)` is `Point(1, 2)` and `span(r)` is `span(1, 2)` -- before, the
+; components went by position. An unlabelled tuple still goes by position.
+; Expected: PASS
+define Point (x: int, y: int)
+
+define Range
+(
+    lo: int
+    hi: int
+)
+{
+    init(hi: int, lo: int)
+    {
+        this.lo := lo
+        this.hi := hi
+    }
+}
+
+function span(x: int, y: int) returns int
+    y * 10 - x
+
+procedure run() returns bool
+{
+    let r (y: 2, x: 1)
+    let p Point(r)
+    let q (Point r)
+    let b (lo: 3, hi: 9)
+    let g Range(b)
+    let plain (5, 6)
+    let o Point(plain)
+    p.x = 1 and p.y = 2 and q.x = 1 and span(r) = 19 and span r = 19 and g.lo = 3 and g.hi = 9 and o.x = 5 and o.y = 6
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"
