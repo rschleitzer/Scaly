@@ -113,16 +113,16 @@ pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:258:9: arith p
 pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:282:9: store-arith pointer[u8] base=field(Array.buffer) len=Array.length
 pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:52:9: arith pointer[u8] base=call(get_buffer) recv=Array len=Array.length
 pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:335:9: null-test pointer[u8]
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:343:74: cast pointer[void] as pointer[u8]
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:348:87: cast pointer[void] as pointer[u8]
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:353:9: local pointer[u8] old_data
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:360:73: cast pointer[void] as pointer[u8]
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:362:19: arg-extern pointer[u8] -> memcpy(dst)
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:362:26: arg-extern pointer[u8] -> memcpy(src)
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:373:86: cast pointer[void] as pointer[u8]
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:375:15: arg-extern pointer[u8] -> memcpy(dst)
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:375:22: arg-extern pointer[u8] -> memcpy(src)
-pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:390:34: arg pointer[u8] -> add_run(items_data)
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:347:74: cast pointer[void] as pointer[u8]
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:352:87: cast pointer[void] as pointer[u8]
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:357:9: local pointer[u8] old_data
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:364:73: cast pointer[void] as pointer[u8]
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:366:19: arg-extern pointer[u8] -> memcpy(dst)
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:366:26: arg-extern pointer[u8] -> memcpy(src)
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:377:86: cast pointer[void] as pointer[u8]
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:379:15: arg-extern pointer[u8] -> memcpy(dst)
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:379:22: arg-extern pointer[u8] -> memcpy(src)
+pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:394:34: arg pointer[u8] -> add_run(items_data)
 pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:92:73: cast pointer[void] as pointer[u8]
 pointer-report: packages/scaly/0.2.0/scaly/containers/Array.scaly:94:90: cast pointer[void] as pointer[u8]
 pointer-report: tests/pointer-report/fixture.scaly:145:5: local pointer[u8] buf

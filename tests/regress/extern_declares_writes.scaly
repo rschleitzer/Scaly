@@ -8,11 +8,11 @@
 ; (xfail_extern_undeclared_writes).
 ; Expected: PASS
 
-procedure strncpy(mutable dest: pointer[char], src: pointer[const_char], n: size_t) returns pointer[char] extern
+procedure strncpy(mutable dest: pointer[char], src: pointer[const_char], n: c_size) returns pointer[char] extern
 
 ; src is only read: the declaration says so, no `mutable` needed here
 procedure copy_into(mutable dest: Slice[u8], src: Slice[u8])
-    strncpy(dest.data as pointer[char], src.data as pointer[const_char], src.length)
+    strncpy(dest.data as pointer[char], src.data as pointer[const_char], src.length as c_size)
 
 let host Page.allocate_page()
 var dest allocate_slice[u8]^host(host, 5)

@@ -334,8 +334,12 @@ define Array[T]
         let size sizeof T
         if buffer = null
         {
-            ; first buffer: small and bump-hosted (see the policy note above)
-            var first_cap 0x20 / size
+            ; first buffer: small and bump-hosted (see the policy note above).
+            ; A `()` element has no bytes: 0x20 / 0 traps on wasm32, where
+            ; arm64's udiv answered 0 and hid it
+            var first_cap: size_t 1
+            if size > 0
+                first_cap := 0x20 / size
             if first_cap < 1
                 first_cap := 1
             if first_cap * size <= 0x400

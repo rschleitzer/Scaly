@@ -5692,113 +5692,121 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %first_cap, align 1
-  %first_cap1 = load i64, ptr %first_cap, align 8
-  %lt = icmp ult i64 %first_cap1, 1
-  br i1 %lt, label %if.then2, label %if.end3
+  store i64 1, ptr %first_cap, align 1
+  %gt = icmp ugt i64 ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64), 0
+  br i1 %gt, label %if.then1, label %if.end2
 
 if.end:                                           ; preds = %entry
-  %load.struct18 = load %_Z5ArrayI2u8E, ptr %0, align 8
-  %capacity19 = extractvalue %_Z5ArrayI2u8E %load.struct18, 1
-  %mul20 = mul i64 %capacity19, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %le21 = icmp ule i64 %mul20, 1024
-  %load.struct22 = load %_Z5ArrayI2u8E, ptr %0, align 8
-  %buffer23 = extractvalue %_Z5ArrayI2u8E %load.struct22, 2
+  %load.struct20 = load %_Z5ArrayI2u8E, ptr %0, align 8
+  %capacity21 = extractvalue %_Z5ArrayI2u8E %load.struct20, 1
+  %mul22 = mul i64 %capacity21, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %le23 = icmp ule i64 %mul22, 1024
   %load.struct24 = load %_Z5ArrayI2u8E, ptr %0, align 8
-  %capacity25 = extractvalue %_Z5ArrayI2u8E %load.struct24, 1
+  %buffer25 = extractvalue %_Z5ArrayI2u8E %load.struct24, 2
   %load.struct26 = load %_Z5ArrayI2u8E, ptr %0, align 8
   %capacity27 = extractvalue %_Z5ArrayI2u8E %load.struct26, 1
-  %mul28 = mul i64 %capacity27, 2
-  store i64 %mul28, ptr %first_cap, align 1
+  %load.struct28 = load %_Z5ArrayI2u8E, ptr %0, align 8
+  %capacity29 = extractvalue %_Z5ArrayI2u8E %load.struct28, 1
+  %mul30 = mul i64 %capacity29, 2
+  store i64 %mul30, ptr %first_cap, align 1
   %new_capacity = load i64, ptr %first_cap, align 8
-  %mul29 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %le30 = icmp ule i64 %mul29, 1024
-  br i1 %le30, label %if.then31, label %if.end32
+  %mul31 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %le32 = icmp ule i64 %mul31, 1024
+  br i1 %le32, label %if.then33, label %if.end34
 
-if.then2:                                         ; preds = %if.then
+if.then1:                                         ; preds = %if.then
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %first_cap, align 1
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %if.then
+  %first_cap3 = load i64, ptr %first_cap, align 8
+  %lt = icmp ult i64 %first_cap3, 1
+  br i1 %lt, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end2
   store i64 1, ptr %first_cap, align 1
-  br label %if.end3
+  br label %if.end5
 
-if.end3:                                          ; preds = %if.then2, %if.then
-  %first_cap4 = load i64, ptr %first_cap, align 8
-  %mul = mul i64 %first_cap4, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+if.end5:                                          ; preds = %if.then4, %if.end2
+  %first_cap6 = load i64, ptr %first_cap, align 8
+  %mul = mul i64 %first_cap6, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
   %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
+  br i1 %le, label %if.then7, label %if.end8
 
-if.then5:                                         ; preds = %if.end3
-  %first_cap7 = load i64, ptr %first_cap, align 8
-  %mul8 = mul i64 %first_cap7, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call9 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul8, i64 1)
-  %buffer10 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
-  store ptr %call9, ptr %buffer10, align 8
-  %first_cap11 = load i64, ptr %first_cap, align 8
+if.then7:                                         ; preds = %if.end5
+  %first_cap9 = load i64, ptr %first_cap, align 8
+  %mul10 = mul i64 %first_cap9, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call11 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul10, i64 1)
+  %buffer12 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
+  store ptr %call11, ptr %buffer12, align 8
+  %first_cap13 = load i64, ptr %first_cap, align 8
   %capacity = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 1
-  store i64 %first_cap11, ptr %capacity, align 8
+  store i64 %first_cap13, ptr %capacity, align 8
   ret void
 
-if.end6:                                          ; preds = %if.end3
-  %first_cap12 = load i64, ptr %first_cap, align 8
-  %mul13 = mul i64 %first_cap12, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call14 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul13, i64 1)
-  %buffer15 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
-  store ptr %call14, ptr %buffer15, align 8
-  %first_cap16 = load i64, ptr %first_cap, align 8
-  %capacity17 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 1
-  store i64 %first_cap16, ptr %capacity17, align 8
+if.end8:                                          ; preds = %if.end5
+  %first_cap14 = load i64, ptr %first_cap, align 8
+  %mul15 = mul i64 %first_cap14, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call16 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul15, i64 1)
+  %buffer17 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
+  store ptr %call16, ptr %buffer17, align 8
+  %first_cap18 = load i64, ptr %first_cap, align 8
+  %capacity19 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 1
+  store i64 %first_cap18, ptr %capacity19, align 8
   ret void
 
-if.then31:                                        ; preds = %if.end
-  %new_capacity33 = load i64, ptr %first_cap, align 8
-  %mul34 = mul i64 %new_capacity33, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call35 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul34, i64 1)
-  %buffer36 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
-  store ptr %call35, ptr %buffer36, align 8
-  %new_capacity37 = load i64, ptr %first_cap, align 8
-  %capacity38 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity37, ptr %capacity38, align 8
+if.then33:                                        ; preds = %if.end
+  %new_capacity35 = load i64, ptr %first_cap, align 8
+  %mul36 = mul i64 %new_capacity35, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call37 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul36, i64 1)
+  %buffer38 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
+  store ptr %call37, ptr %buffer38, align 8
+  %new_capacity39 = load i64, ptr %first_cap, align 8
+  %capacity40 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity39, ptr %capacity40, align 8
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul39 = mul i64 %capacity25, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call40 = call ptr @memcpy(ptr %deref.recv, ptr %buffer23, i64 %mul39)
+  %mul41 = mul i64 %capacity27, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call42 = call ptr @memcpy(ptr %deref.recv, ptr %buffer25, i64 %mul41)
   ret void
 
-if.end32:                                         ; preds = %if.end
-  %call41 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call42 = call i64 @_ZN4Page12get_capacityEm(ptr %call41, i64 1)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call41)
-  %new_capacity43 = load i64, ptr %first_cap, align 8
-  %udiv44 = udiv i64 %call42, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %lt45 = icmp ult i64 %new_capacity43, %udiv44
-  br i1 %lt45, label %if.then46, label %if.end47
+if.end34:                                         ; preds = %if.end
+  %call43 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call44 = call i64 @_ZN4Page12get_capacityEm(ptr %call43, i64 1)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call43)
+  %new_capacity45 = load i64, ptr %first_cap, align 8
+  %udiv46 = udiv i64 %call44, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %lt47 = icmp ult i64 %new_capacity45, %udiv46
+  br i1 %lt47, label %if.then48, label %if.end49
 
-if.then46:                                        ; preds = %if.end32
-  %udiv48 = udiv i64 %call42, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  store i64 %udiv48, ptr %first_cap, align 1
-  br label %if.end47
+if.then48:                                        ; preds = %if.end34
+  %udiv50 = udiv i64 %call44, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  store i64 %udiv50, ptr %first_cap, align 1
+  br label %if.end49
 
-if.end47:                                         ; preds = %if.then46, %if.end32
-  %new_capacity49 = load i64, ptr %first_cap, align 8
-  %mul50 = mul i64 %new_capacity49, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call51 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul50, i64 1)
-  %buffer52 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
-  store ptr %call51, ptr %buffer52, align 8
-  %new_capacity53 = load i64, ptr %first_cap, align 8
-  %capacity54 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity53, ptr %capacity54, align 8
-  %field.inplace55 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
-  %deref.recv56 = load ptr, ptr %field.inplace55, align 8
-  %mul57 = mul i64 %capacity25, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call58 = call ptr @memcpy(ptr %deref.recv56, ptr %buffer23, i64 %mul57)
-  %eq59 = icmp eq i1 %le21, false
-  br i1 %eq59, label %if.then60, label %if.end61
+if.end49:                                         ; preds = %if.then48, %if.end34
+  %new_capacity51 = load i64, ptr %first_cap, align 8
+  %mul52 = mul i64 %new_capacity51, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call53 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul52, i64 1)
+  %buffer54 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
+  store ptr %call53, ptr %buffer54, align 8
+  %new_capacity55 = load i64, ptr %first_cap, align 8
+  %capacity56 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity55, ptr %capacity56, align 8
+  %field.inplace57 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %0, i32 0, i32 2
+  %deref.recv58 = load ptr, ptr %field.inplace57, align 8
+  %mul59 = mul i64 %capacity27, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call60 = call ptr @memcpy(ptr %deref.recv58, ptr %buffer25, i64 %mul59)
+  %eq61 = icmp eq i1 %le23, false
+  br i1 %eq61, label %if.then62, label %if.end63
 
-if.then60:                                        ; preds = %if.end47
-  %call62 = call ptr @_ZN4Page3getEPv(ptr %buffer23)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call62)
-  br label %if.end61
+if.then62:                                        ; preds = %if.end49
+  %call64 = call ptr @_ZN4Page3getEPv(ptr %buffer25)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call64)
+  br label %if.end63
 
-if.end61:                                         ; preds = %if.then60, %if.end47
+if.end63:                                         ; preds = %if.then62, %if.end49
   ret void
 }
 
@@ -6760,113 +6768,121 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %first_cap, align 1
-  %first_cap1 = load i64, ptr %first_cap, align 8
-  %lt = icmp ult i64 %first_cap1, 1
-  br i1 %lt, label %if.then2, label %if.end3
+  store i64 1, ptr %first_cap, align 1
+  %gt = icmp ugt i64 ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64), 0
+  br i1 %gt, label %if.then1, label %if.end2
 
 if.end:                                           ; preds = %entry
-  %load.struct18 = load %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, align 8
-  %capacity19 = extractvalue %_Z5ArrayI10JsonMemberB4jsonB4v0_2E %load.struct18, 1
-  %mul20 = mul i64 %capacity19, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %le21 = icmp ule i64 %mul20, 1024
-  %load.struct22 = load %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, align 8
-  %buffer23 = extractvalue %_Z5ArrayI10JsonMemberB4jsonB4v0_2E %load.struct22, 2
+  %load.struct20 = load %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, align 8
+  %capacity21 = extractvalue %_Z5ArrayI10JsonMemberB4jsonB4v0_2E %load.struct20, 1
+  %mul22 = mul i64 %capacity21, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %le23 = icmp ule i64 %mul22, 1024
   %load.struct24 = load %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, align 8
-  %capacity25 = extractvalue %_Z5ArrayI10JsonMemberB4jsonB4v0_2E %load.struct24, 1
+  %buffer25 = extractvalue %_Z5ArrayI10JsonMemberB4jsonB4v0_2E %load.struct24, 2
   %load.struct26 = load %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, align 8
   %capacity27 = extractvalue %_Z5ArrayI10JsonMemberB4jsonB4v0_2E %load.struct26, 1
-  %mul28 = mul i64 %capacity27, 2
-  store i64 %mul28, ptr %first_cap, align 1
+  %load.struct28 = load %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, align 8
+  %capacity29 = extractvalue %_Z5ArrayI10JsonMemberB4jsonB4v0_2E %load.struct28, 1
+  %mul30 = mul i64 %capacity29, 2
+  store i64 %mul30, ptr %first_cap, align 1
   %new_capacity = load i64, ptr %first_cap, align 8
-  %mul29 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %le30 = icmp ule i64 %mul29, 1024
-  br i1 %le30, label %if.then31, label %if.end32
+  %mul31 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %le32 = icmp ule i64 %mul31, 1024
+  br i1 %le32, label %if.then33, label %if.end34
 
-if.then2:                                         ; preds = %if.then
+if.then1:                                         ; preds = %if.then
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %first_cap, align 1
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %if.then
+  %first_cap3 = load i64, ptr %first_cap, align 8
+  %lt = icmp ult i64 %first_cap3, 1
+  br i1 %lt, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end2
   store i64 1, ptr %first_cap, align 1
-  br label %if.end3
+  br label %if.end5
 
-if.end3:                                          ; preds = %if.then2, %if.then
-  %first_cap4 = load i64, ptr %first_cap, align 8
-  %mul = mul i64 %first_cap4, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+if.end5:                                          ; preds = %if.then4, %if.end2
+  %first_cap6 = load i64, ptr %first_cap, align 8
+  %mul = mul i64 %first_cap6, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
   %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
+  br i1 %le, label %if.then7, label %if.end8
 
-if.then5:                                         ; preds = %if.end3
-  %first_cap7 = load i64, ptr %first_cap, align 8
-  %mul8 = mul i64 %first_cap7, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call9 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul8, i64 8)
-  %buffer10 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call9, ptr %buffer10, align 8
-  %first_cap11 = load i64, ptr %first_cap, align 8
+if.then7:                                         ; preds = %if.end5
+  %first_cap9 = load i64, ptr %first_cap, align 8
+  %mul10 = mul i64 %first_cap9, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call11 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul10, i64 8)
+  %buffer12 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call11, ptr %buffer12, align 8
+  %first_cap13 = load i64, ptr %first_cap, align 8
   %capacity = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %first_cap11, ptr %capacity, align 8
+  store i64 %first_cap13, ptr %capacity, align 8
   ret void
 
-if.end6:                                          ; preds = %if.end3
-  %first_cap12 = load i64, ptr %first_cap, align 8
-  %mul13 = mul i64 %first_cap12, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call14 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul13, i64 8)
-  %buffer15 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call14, ptr %buffer15, align 8
-  %first_cap16 = load i64, ptr %first_cap, align 8
-  %capacity17 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %first_cap16, ptr %capacity17, align 8
+if.end8:                                          ; preds = %if.end5
+  %first_cap14 = load i64, ptr %first_cap, align 8
+  %mul15 = mul i64 %first_cap14, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call16 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul15, i64 8)
+  %buffer17 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call16, ptr %buffer17, align 8
+  %first_cap18 = load i64, ptr %first_cap, align 8
+  %capacity19 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 %first_cap18, ptr %capacity19, align 8
   ret void
 
-if.then31:                                        ; preds = %if.end
-  %new_capacity33 = load i64, ptr %first_cap, align 8
-  %mul34 = mul i64 %new_capacity33, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call35 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul34, i64 8)
-  %buffer36 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call35, ptr %buffer36, align 8
-  %new_capacity37 = load i64, ptr %first_cap, align 8
-  %capacity38 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity37, ptr %capacity38, align 8
+if.then33:                                        ; preds = %if.end
+  %new_capacity35 = load i64, ptr %first_cap, align 8
+  %mul36 = mul i64 %new_capacity35, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call37 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul36, i64 8)
+  %buffer38 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call37, ptr %buffer38, align 8
+  %new_capacity39 = load i64, ptr %first_cap, align 8
+  %capacity40 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity39, ptr %capacity40, align 8
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul39 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call40 = call ptr @memcpy(ptr %deref.recv, ptr %buffer23, i64 %mul39)
+  %mul41 = mul i64 %capacity27, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call42 = call ptr @memcpy(ptr %deref.recv, ptr %buffer25, i64 %mul41)
   ret void
 
-if.end32:                                         ; preds = %if.end
-  %call41 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call42 = call i64 @_ZN4Page12get_capacityEm(ptr %call41, i64 8)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call41)
-  %new_capacity43 = load i64, ptr %first_cap, align 8
-  %udiv44 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %lt45 = icmp ult i64 %new_capacity43, %udiv44
-  br i1 %lt45, label %if.then46, label %if.end47
+if.end34:                                         ; preds = %if.end
+  %call43 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call44 = call i64 @_ZN4Page12get_capacityEm(ptr %call43, i64 8)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call43)
+  %new_capacity45 = load i64, ptr %first_cap, align 8
+  %udiv46 = udiv i64 %call44, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %lt47 = icmp ult i64 %new_capacity45, %udiv46
+  br i1 %lt47, label %if.then48, label %if.end49
 
-if.then46:                                        ; preds = %if.end32
-  %udiv48 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  store i64 %udiv48, ptr %first_cap, align 1
-  br label %if.end47
+if.then48:                                        ; preds = %if.end34
+  %udiv50 = udiv i64 %call44, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  store i64 %udiv50, ptr %first_cap, align 1
+  br label %if.end49
 
-if.end47:                                         ; preds = %if.then46, %if.end32
-  %new_capacity49 = load i64, ptr %first_cap, align 8
-  %mul50 = mul i64 %new_capacity49, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call51 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul50, i64 8)
-  %buffer52 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call51, ptr %buffer52, align 8
-  %new_capacity53 = load i64, ptr %first_cap, align 8
-  %capacity54 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity53, ptr %capacity54, align 8
-  %field.inplace55 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  %deref.recv56 = load ptr, ptr %field.inplace55, align 8
-  %mul57 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call58 = call ptr @memcpy(ptr %deref.recv56, ptr %buffer23, i64 %mul57)
-  %eq59 = icmp eq i1 %le21, false
-  br i1 %eq59, label %if.then60, label %if.end61
+if.end49:                                         ; preds = %if.then48, %if.end34
+  %new_capacity51 = load i64, ptr %first_cap, align 8
+  %mul52 = mul i64 %new_capacity51, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call53 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul52, i64 8)
+  %buffer54 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call53, ptr %buffer54, align 8
+  %new_capacity55 = load i64, ptr %first_cap, align 8
+  %capacity56 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity55, ptr %capacity56, align 8
+  %field.inplace57 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  %deref.recv58 = load ptr, ptr %field.inplace57, align 8
+  %mul59 = mul i64 %capacity27, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call60 = call ptr @memcpy(ptr %deref.recv58, ptr %buffer25, i64 %mul59)
+  %eq61 = icmp eq i1 %le23, false
+  br i1 %eq61, label %if.then62, label %if.end63
 
-if.then60:                                        ; preds = %if.end47
-  %call62 = call ptr @_ZN4Page3getEPv(ptr %buffer23)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call62)
-  br label %if.end61
+if.then62:                                        ; preds = %if.end49
+  %call64 = call ptr @_ZN4Page3getEPv(ptr %buffer25)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call64)
+  br label %if.end63
 
-if.end61:                                         ; preds = %if.then60, %if.end47
+if.end63:                                         ; preds = %if.then62, %if.end49
   ret void
 }
 
@@ -8247,113 +8263,121 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %first_cap, align 1
-  %first_cap1 = load i64, ptr %first_cap, align 8
-  %lt = icmp ult i64 %first_cap1, 1
-  br i1 %lt, label %if.then2, label %if.end3
+  store i64 1, ptr %first_cap, align 1
+  %gt = icmp ugt i64 ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64), 0
+  br i1 %gt, label %if.then1, label %if.end2
 
 if.end:                                           ; preds = %entry
-  %load.struct18 = load %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, align 8
-  %capacity19 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_2E %load.struct18, 1
-  %mul20 = mul i64 %capacity19, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %le21 = icmp ule i64 %mul20, 1024
-  %load.struct22 = load %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, align 8
-  %buffer23 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_2E %load.struct22, 2
+  %load.struct20 = load %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, align 8
+  %capacity21 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_2E %load.struct20, 1
+  %mul22 = mul i64 %capacity21, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %le23 = icmp ule i64 %mul22, 1024
   %load.struct24 = load %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, align 8
-  %capacity25 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_2E %load.struct24, 1
+  %buffer25 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_2E %load.struct24, 2
   %load.struct26 = load %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, align 8
   %capacity27 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_2E %load.struct26, 1
-  %mul28 = mul i64 %capacity27, 2
-  store i64 %mul28, ptr %first_cap, align 1
+  %load.struct28 = load %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, align 8
+  %capacity29 = extractvalue %_Z5ArrayI9JsonValueB4jsonB4v0_2E %load.struct28, 1
+  %mul30 = mul i64 %capacity29, 2
+  store i64 %mul30, ptr %first_cap, align 1
   %new_capacity = load i64, ptr %first_cap, align 8
-  %mul29 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %le30 = icmp ule i64 %mul29, 1024
-  br i1 %le30, label %if.then31, label %if.end32
+  %mul31 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %le32 = icmp ule i64 %mul31, 1024
+  br i1 %le32, label %if.then33, label %if.end34
 
-if.then2:                                         ; preds = %if.then
+if.then1:                                         ; preds = %if.then
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %first_cap, align 1
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %if.then
+  %first_cap3 = load i64, ptr %first_cap, align 8
+  %lt = icmp ult i64 %first_cap3, 1
+  br i1 %lt, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end2
   store i64 1, ptr %first_cap, align 1
-  br label %if.end3
+  br label %if.end5
 
-if.end3:                                          ; preds = %if.then2, %if.then
-  %first_cap4 = load i64, ptr %first_cap, align 8
-  %mul = mul i64 %first_cap4, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+if.end5:                                          ; preds = %if.then4, %if.end2
+  %first_cap6 = load i64, ptr %first_cap, align 8
+  %mul = mul i64 %first_cap6, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
   %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
+  br i1 %le, label %if.then7, label %if.end8
 
-if.then5:                                         ; preds = %if.end3
-  %first_cap7 = load i64, ptr %first_cap, align 8
-  %mul8 = mul i64 %first_cap7, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call9 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul8, i64 8)
-  %buffer10 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call9, ptr %buffer10, align 8
-  %first_cap11 = load i64, ptr %first_cap, align 8
+if.then7:                                         ; preds = %if.end5
+  %first_cap9 = load i64, ptr %first_cap, align 8
+  %mul10 = mul i64 %first_cap9, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call11 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul10, i64 8)
+  %buffer12 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call11, ptr %buffer12, align 8
+  %first_cap13 = load i64, ptr %first_cap, align 8
   %capacity = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %first_cap11, ptr %capacity, align 8
+  store i64 %first_cap13, ptr %capacity, align 8
   ret void
 
-if.end6:                                          ; preds = %if.end3
-  %first_cap12 = load i64, ptr %first_cap, align 8
-  %mul13 = mul i64 %first_cap12, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call14 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul13, i64 8)
-  %buffer15 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call14, ptr %buffer15, align 8
-  %first_cap16 = load i64, ptr %first_cap, align 8
-  %capacity17 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %first_cap16, ptr %capacity17, align 8
+if.end8:                                          ; preds = %if.end5
+  %first_cap14 = load i64, ptr %first_cap, align 8
+  %mul15 = mul i64 %first_cap14, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call16 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul15, i64 8)
+  %buffer17 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call16, ptr %buffer17, align 8
+  %first_cap18 = load i64, ptr %first_cap, align 8
+  %capacity19 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 %first_cap18, ptr %capacity19, align 8
   ret void
 
-if.then31:                                        ; preds = %if.end
-  %new_capacity33 = load i64, ptr %first_cap, align 8
-  %mul34 = mul i64 %new_capacity33, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call35 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul34, i64 8)
-  %buffer36 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call35, ptr %buffer36, align 8
-  %new_capacity37 = load i64, ptr %first_cap, align 8
-  %capacity38 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity37, ptr %capacity38, align 8
+if.then33:                                        ; preds = %if.end
+  %new_capacity35 = load i64, ptr %first_cap, align 8
+  %mul36 = mul i64 %new_capacity35, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call37 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul36, i64 8)
+  %buffer38 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call37, ptr %buffer38, align 8
+  %new_capacity39 = load i64, ptr %first_cap, align 8
+  %capacity40 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity39, ptr %capacity40, align 8
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul39 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call40 = call ptr @memcpy(ptr %deref.recv, ptr %buffer23, i64 %mul39)
+  %mul41 = mul i64 %capacity27, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call42 = call ptr @memcpy(ptr %deref.recv, ptr %buffer25, i64 %mul41)
   ret void
 
-if.end32:                                         ; preds = %if.end
-  %call41 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call42 = call i64 @_ZN4Page12get_capacityEm(ptr %call41, i64 8)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call41)
-  %new_capacity43 = load i64, ptr %first_cap, align 8
-  %udiv44 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %lt45 = icmp ult i64 %new_capacity43, %udiv44
-  br i1 %lt45, label %if.then46, label %if.end47
+if.end34:                                         ; preds = %if.end
+  %call43 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call44 = call i64 @_ZN4Page12get_capacityEm(ptr %call43, i64 8)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call43)
+  %new_capacity45 = load i64, ptr %first_cap, align 8
+  %udiv46 = udiv i64 %call44, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %lt47 = icmp ult i64 %new_capacity45, %udiv46
+  br i1 %lt47, label %if.then48, label %if.end49
 
-if.then46:                                        ; preds = %if.end32
-  %udiv48 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  store i64 %udiv48, ptr %first_cap, align 1
-  br label %if.end47
+if.then48:                                        ; preds = %if.end34
+  %udiv50 = udiv i64 %call44, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  store i64 %udiv50, ptr %first_cap, align 1
+  br label %if.end49
 
-if.end47:                                         ; preds = %if.then46, %if.end32
-  %new_capacity49 = load i64, ptr %first_cap, align 8
-  %mul50 = mul i64 %new_capacity49, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call51 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul50, i64 8)
-  %buffer52 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call51, ptr %buffer52, align 8
-  %new_capacity53 = load i64, ptr %first_cap, align 8
-  %capacity54 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity53, ptr %capacity54, align 8
-  %field.inplace55 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  %deref.recv56 = load ptr, ptr %field.inplace55, align 8
-  %mul57 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call58 = call ptr @memcpy(ptr %deref.recv56, ptr %buffer23, i64 %mul57)
-  %eq59 = icmp eq i1 %le21, false
-  br i1 %eq59, label %if.then60, label %if.end61
+if.end49:                                         ; preds = %if.then48, %if.end34
+  %new_capacity51 = load i64, ptr %first_cap, align 8
+  %mul52 = mul i64 %new_capacity51, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call53 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul52, i64 8)
+  %buffer54 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call53, ptr %buffer54, align 8
+  %new_capacity55 = load i64, ptr %first_cap, align 8
+  %capacity56 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity55, ptr %capacity56, align 8
+  %field.inplace57 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  %deref.recv58 = load ptr, ptr %field.inplace57, align 8
+  %mul59 = mul i64 %capacity27, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call60 = call ptr @memcpy(ptr %deref.recv58, ptr %buffer25, i64 %mul59)
+  %eq61 = icmp eq i1 %le23, false
+  br i1 %eq61, label %if.then62, label %if.end63
 
-if.then60:                                        ; preds = %if.end47
-  %call62 = call ptr @_ZN4Page3getEPv(ptr %buffer23)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call62)
-  br label %if.end61
+if.then62:                                        ; preds = %if.end49
+  %call64 = call ptr @_ZN4Page3getEPv(ptr %buffer25)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call64)
+  br label %if.end63
 
-if.end61:                                         ; preds = %if.then60, %if.end47
+if.end63:                                         ; preds = %if.then62, %if.end49
   ret void
 }
 
@@ -9272,113 +9296,121 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %first_cap, align 1
-  %first_cap1 = load i64, ptr %first_cap, align 8
-  %lt = icmp ult i64 %first_cap1, 1
-  br i1 %lt, label %if.then2, label %if.end3
+  store i64 1, ptr %first_cap, align 1
+  %gt = icmp ugt i64 ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64), 0
+  br i1 %gt, label %if.then1, label %if.end2
 
 if.end:                                           ; preds = %entry
-  %load.struct18 = load %_Z5ArrayImE, ptr %0, align 8
-  %capacity19 = extractvalue %_Z5ArrayImE %load.struct18, 1
-  %mul20 = mul i64 %capacity19, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %le21 = icmp ule i64 %mul20, 1024
-  %load.struct22 = load %_Z5ArrayImE, ptr %0, align 8
-  %buffer23 = extractvalue %_Z5ArrayImE %load.struct22, 2
+  %load.struct20 = load %_Z5ArrayImE, ptr %0, align 8
+  %capacity21 = extractvalue %_Z5ArrayImE %load.struct20, 1
+  %mul22 = mul i64 %capacity21, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %le23 = icmp ule i64 %mul22, 1024
   %load.struct24 = load %_Z5ArrayImE, ptr %0, align 8
-  %capacity25 = extractvalue %_Z5ArrayImE %load.struct24, 1
+  %buffer25 = extractvalue %_Z5ArrayImE %load.struct24, 2
   %load.struct26 = load %_Z5ArrayImE, ptr %0, align 8
   %capacity27 = extractvalue %_Z5ArrayImE %load.struct26, 1
-  %mul28 = mul i64 %capacity27, 2
-  store i64 %mul28, ptr %first_cap, align 1
+  %load.struct28 = load %_Z5ArrayImE, ptr %0, align 8
+  %capacity29 = extractvalue %_Z5ArrayImE %load.struct28, 1
+  %mul30 = mul i64 %capacity29, 2
+  store i64 %mul30, ptr %first_cap, align 1
   %new_capacity = load i64, ptr %first_cap, align 8
-  %mul29 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %le30 = icmp ule i64 %mul29, 1024
-  br i1 %le30, label %if.then31, label %if.end32
+  %mul31 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %le32 = icmp ule i64 %mul31, 1024
+  br i1 %le32, label %if.then33, label %if.end34
 
-if.then2:                                         ; preds = %if.then
+if.then1:                                         ; preds = %if.then
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %first_cap, align 1
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %if.then
+  %first_cap3 = load i64, ptr %first_cap, align 8
+  %lt = icmp ult i64 %first_cap3, 1
+  br i1 %lt, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end2
   store i64 1, ptr %first_cap, align 1
-  br label %if.end3
+  br label %if.end5
 
-if.end3:                                          ; preds = %if.then2, %if.then
-  %first_cap4 = load i64, ptr %first_cap, align 8
-  %mul = mul i64 %first_cap4, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+if.end5:                                          ; preds = %if.then4, %if.end2
+  %first_cap6 = load i64, ptr %first_cap, align 8
+  %mul = mul i64 %first_cap6, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
   %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
+  br i1 %le, label %if.then7, label %if.end8
 
-if.then5:                                         ; preds = %if.end3
-  %first_cap7 = load i64, ptr %first_cap, align 8
-  %mul8 = mul i64 %first_cap7, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call9 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul8, i64 8)
-  %buffer10 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
-  store ptr %call9, ptr %buffer10, align 8
-  %first_cap11 = load i64, ptr %first_cap, align 8
+if.then7:                                         ; preds = %if.end5
+  %first_cap9 = load i64, ptr %first_cap, align 8
+  %mul10 = mul i64 %first_cap9, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %call11 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul10, i64 8)
+  %buffer12 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
+  store ptr %call11, ptr %buffer12, align 8
+  %first_cap13 = load i64, ptr %first_cap, align 8
   %capacity = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store i64 %first_cap11, ptr %capacity, align 8
+  store i64 %first_cap13, ptr %capacity, align 8
   ret void
 
-if.end6:                                          ; preds = %if.end3
-  %first_cap12 = load i64, ptr %first_cap, align 8
-  %mul13 = mul i64 %first_cap12, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call14 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul13, i64 8)
-  %buffer15 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
-  store ptr %call14, ptr %buffer15, align 8
-  %first_cap16 = load i64, ptr %first_cap, align 8
-  %capacity17 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store i64 %first_cap16, ptr %capacity17, align 8
+if.end8:                                          ; preds = %if.end5
+  %first_cap14 = load i64, ptr %first_cap, align 8
+  %mul15 = mul i64 %first_cap14, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %call16 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul15, i64 8)
+  %buffer17 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
+  store ptr %call16, ptr %buffer17, align 8
+  %first_cap18 = load i64, ptr %first_cap, align 8
+  %capacity19 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  store i64 %first_cap18, ptr %capacity19, align 8
   ret void
 
-if.then31:                                        ; preds = %if.end
-  %new_capacity33 = load i64, ptr %first_cap, align 8
-  %mul34 = mul i64 %new_capacity33, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call35 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul34, i64 8)
-  %buffer36 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
-  store ptr %call35, ptr %buffer36, align 8
-  %new_capacity37 = load i64, ptr %first_cap, align 8
-  %capacity38 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store i64 %new_capacity37, ptr %capacity38, align 8
+if.then33:                                        ; preds = %if.end
+  %new_capacity35 = load i64, ptr %first_cap, align 8
+  %mul36 = mul i64 %new_capacity35, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %call37 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul36, i64 8)
+  %buffer38 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
+  store ptr %call37, ptr %buffer38, align 8
+  %new_capacity39 = load i64, ptr %first_cap, align 8
+  %capacity40 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  store i64 %new_capacity39, ptr %capacity40, align 8
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul39 = mul i64 %capacity25, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call40 = call ptr @memcpy(ptr %deref.recv, ptr %buffer23, i64 %mul39)
+  %mul41 = mul i64 %capacity27, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %call42 = call ptr @memcpy(ptr %deref.recv, ptr %buffer25, i64 %mul41)
   ret void
 
-if.end32:                                         ; preds = %if.end
-  %call41 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call42 = call i64 @_ZN4Page12get_capacityEm(ptr %call41, i64 8)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call41)
-  %new_capacity43 = load i64, ptr %first_cap, align 8
-  %udiv44 = udiv i64 %call42, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %lt45 = icmp ult i64 %new_capacity43, %udiv44
-  br i1 %lt45, label %if.then46, label %if.end47
+if.end34:                                         ; preds = %if.end
+  %call43 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call44 = call i64 @_ZN4Page12get_capacityEm(ptr %call43, i64 8)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call43)
+  %new_capacity45 = load i64, ptr %first_cap, align 8
+  %udiv46 = udiv i64 %call44, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %lt47 = icmp ult i64 %new_capacity45, %udiv46
+  br i1 %lt47, label %if.then48, label %if.end49
 
-if.then46:                                        ; preds = %if.end32
-  %udiv48 = udiv i64 %call42, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  store i64 %udiv48, ptr %first_cap, align 1
-  br label %if.end47
+if.then48:                                        ; preds = %if.end34
+  %udiv50 = udiv i64 %call44, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  store i64 %udiv50, ptr %first_cap, align 1
+  br label %if.end49
 
-if.end47:                                         ; preds = %if.then46, %if.end32
-  %new_capacity49 = load i64, ptr %first_cap, align 8
-  %mul50 = mul i64 %new_capacity49, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call51 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul50, i64 8)
-  %buffer52 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
-  store ptr %call51, ptr %buffer52, align 8
-  %new_capacity53 = load i64, ptr %first_cap, align 8
-  %capacity54 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store i64 %new_capacity53, ptr %capacity54, align 8
-  %field.inplace55 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
-  %deref.recv56 = load ptr, ptr %field.inplace55, align 8
-  %mul57 = mul i64 %capacity25, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
-  %call58 = call ptr @memcpy(ptr %deref.recv56, ptr %buffer23, i64 %mul57)
-  %eq59 = icmp eq i1 %le21, false
-  br i1 %eq59, label %if.then60, label %if.end61
+if.end49:                                         ; preds = %if.then48, %if.end34
+  %new_capacity51 = load i64, ptr %first_cap, align 8
+  %mul52 = mul i64 %new_capacity51, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %call53 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul52, i64 8)
+  %buffer54 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
+  store ptr %call53, ptr %buffer54, align 8
+  %new_capacity55 = load i64, ptr %first_cap, align 8
+  %capacity56 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 1
+  store i64 %new_capacity55, ptr %capacity56, align 8
+  %field.inplace57 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %0, i32 0, i32 2
+  %deref.recv58 = load ptr, ptr %field.inplace57, align 8
+  %mul59 = mul i64 %capacity27, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %call60 = call ptr @memcpy(ptr %deref.recv58, ptr %buffer25, i64 %mul59)
+  %eq61 = icmp eq i1 %le23, false
+  br i1 %eq61, label %if.then62, label %if.end63
 
-if.then60:                                        ; preds = %if.end47
-  %call62 = call ptr @_ZN4Page3getEPv(ptr %buffer23)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call62)
-  br label %if.end61
+if.then62:                                        ; preds = %if.end49
+  %call64 = call ptr @_ZN4Page3getEPv(ptr %buffer25)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call64)
+  br label %if.end63
 
-if.end61:                                         ; preds = %if.then60, %if.end47
+if.end63:                                         ; preds = %if.then62, %if.end49
   ret void
 }
 
@@ -12111,113 +12143,121 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %first_cap, align 1
-  %first_cap1 = load i64, ptr %first_cap, align 8
-  %lt = icmp ult i64 %first_cap1, 1
-  br i1 %lt, label %if.then2, label %if.end3
+  store i64 1, ptr %first_cap, align 1
+  %gt = icmp ugt i64 ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64), 0
+  br i1 %gt, label %if.then1, label %if.end2
 
 if.end:                                           ; preds = %entry
-  %load.struct18 = load %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, align 8
-  %capacity19 = extractvalue %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E %load.struct18, 1
-  %mul20 = mul i64 %capacity19, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %le21 = icmp ule i64 %mul20, 1024
-  %load.struct22 = load %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, align 8
-  %buffer23 = extractvalue %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E %load.struct22, 2
+  %load.struct20 = load %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, align 8
+  %capacity21 = extractvalue %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E %load.struct20, 1
+  %mul22 = mul i64 %capacity21, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %le23 = icmp ule i64 %mul22, 1024
   %load.struct24 = load %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, align 8
-  %capacity25 = extractvalue %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E %load.struct24, 1
+  %buffer25 = extractvalue %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E %load.struct24, 2
   %load.struct26 = load %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, align 8
   %capacity27 = extractvalue %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E %load.struct26, 1
-  %mul28 = mul i64 %capacity27, 2
-  store i64 %mul28, ptr %first_cap, align 1
+  %load.struct28 = load %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, align 8
+  %capacity29 = extractvalue %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E %load.struct28, 1
+  %mul30 = mul i64 %capacity29, 2
+  store i64 %mul30, ptr %first_cap, align 1
   %new_capacity = load i64, ptr %first_cap, align 8
-  %mul29 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %le30 = icmp ule i64 %mul29, 1024
-  br i1 %le30, label %if.then31, label %if.end32
+  %mul31 = mul i64 %new_capacity, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %le32 = icmp ule i64 %mul31, 1024
+  br i1 %le32, label %if.then33, label %if.end34
 
-if.then2:                                         ; preds = %if.then
+if.then1:                                         ; preds = %if.then
+  %udiv = udiv i64 32, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %first_cap, align 1
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %if.then
+  %first_cap3 = load i64, ptr %first_cap, align 8
+  %lt = icmp ult i64 %first_cap3, 1
+  br i1 %lt, label %if.then4, label %if.end5
+
+if.then4:                                         ; preds = %if.end2
   store i64 1, ptr %first_cap, align 1
-  br label %if.end3
+  br label %if.end5
 
-if.end3:                                          ; preds = %if.then2, %if.then
-  %first_cap4 = load i64, ptr %first_cap, align 8
-  %mul = mul i64 %first_cap4, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+if.end5:                                          ; preds = %if.then4, %if.end2
+  %first_cap6 = load i64, ptr %first_cap, align 8
+  %mul = mul i64 %first_cap6, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
   %le = icmp ule i64 %mul, 1024
-  br i1 %le, label %if.then5, label %if.end6
+  br i1 %le, label %if.then7, label %if.end8
 
-if.then5:                                         ; preds = %if.end3
-  %first_cap7 = load i64, ptr %first_cap, align 8
-  %mul8 = mul i64 %first_cap7, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call9 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul8, i64 8)
-  %buffer10 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call9, ptr %buffer10, align 8
-  %first_cap11 = load i64, ptr %first_cap, align 8
+if.then7:                                         ; preds = %if.end5
+  %first_cap9 = load i64, ptr %first_cap, align 8
+  %mul10 = mul i64 %first_cap9, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call11 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul10, i64 8)
+  %buffer12 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call11, ptr %buffer12, align 8
+  %first_cap13 = load i64, ptr %first_cap, align 8
   %capacity = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %first_cap11, ptr %capacity, align 8
+  store i64 %first_cap13, ptr %capacity, align 8
   ret void
 
-if.end6:                                          ; preds = %if.end3
-  %first_cap12 = load i64, ptr %first_cap, align 8
-  %mul13 = mul i64 %first_cap12, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call14 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul13, i64 8)
-  %buffer15 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call14, ptr %buffer15, align 8
-  %first_cap16 = load i64, ptr %first_cap, align 8
-  %capacity17 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %first_cap16, ptr %capacity17, align 8
+if.end8:                                          ; preds = %if.end5
+  %first_cap14 = load i64, ptr %first_cap, align 8
+  %mul15 = mul i64 %first_cap14, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call16 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul15, i64 8)
+  %buffer17 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call16, ptr %buffer17, align 8
+  %first_cap18 = load i64, ptr %first_cap, align 8
+  %capacity19 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 %first_cap18, ptr %capacity19, align 8
   ret void
 
-if.then31:                                        ; preds = %if.end
-  %new_capacity33 = load i64, ptr %first_cap, align 8
-  %mul34 = mul i64 %new_capacity33, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call35 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul34, i64 8)
-  %buffer36 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call35, ptr %buffer36, align 8
-  %new_capacity37 = load i64, ptr %first_cap, align 8
-  %capacity38 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity37, ptr %capacity38, align 8
+if.then33:                                        ; preds = %if.end
+  %new_capacity35 = load i64, ptr %first_cap, align 8
+  %mul36 = mul i64 %new_capacity35, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call37 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul36, i64 8)
+  %buffer38 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call37, ptr %buffer38, align 8
+  %new_capacity39 = load i64, ptr %first_cap, align 8
+  %capacity40 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity39, ptr %capacity40, align 8
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul39 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call40 = call ptr @memcpy(ptr %deref.recv, ptr %buffer23, i64 %mul39)
+  %mul41 = mul i64 %capacity27, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call42 = call ptr @memcpy(ptr %deref.recv, ptr %buffer25, i64 %mul41)
   ret void
 
-if.end32:                                         ; preds = %if.end
-  %call41 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call42 = call i64 @_ZN4Page12get_capacityEm(ptr %call41, i64 8)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call41)
-  %new_capacity43 = load i64, ptr %first_cap, align 8
-  %udiv44 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %lt45 = icmp ult i64 %new_capacity43, %udiv44
-  br i1 %lt45, label %if.then46, label %if.end47
+if.end34:                                         ; preds = %if.end
+  %call43 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call44 = call i64 @_ZN4Page12get_capacityEm(ptr %call43, i64 8)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call43)
+  %new_capacity45 = load i64, ptr %first_cap, align 8
+  %udiv46 = udiv i64 %call44, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %lt47 = icmp ult i64 %new_capacity45, %udiv46
+  br i1 %lt47, label %if.then48, label %if.end49
 
-if.then46:                                        ; preds = %if.end32
-  %udiv48 = udiv i64 %call42, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  store i64 %udiv48, ptr %first_cap, align 1
-  br label %if.end47
+if.then48:                                        ; preds = %if.end34
+  %udiv50 = udiv i64 %call44, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  store i64 %udiv50, ptr %first_cap, align 1
+  br label %if.end49
 
-if.end47:                                         ; preds = %if.then46, %if.end32
-  %new_capacity49 = load i64, ptr %first_cap, align 8
-  %mul50 = mul i64 %new_capacity49, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call51 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul50, i64 8)
-  %buffer52 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  store ptr %call51, ptr %buffer52, align 8
-  %new_capacity53 = load i64, ptr %first_cap, align 8
-  %capacity54 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
-  store i64 %new_capacity53, ptr %capacity54, align 8
-  %field.inplace55 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
-  %deref.recv56 = load ptr, ptr %field.inplace55, align 8
-  %mul57 = mul i64 %capacity25, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
-  %call58 = call ptr @memcpy(ptr %deref.recv56, ptr %buffer23, i64 %mul57)
-  %eq59 = icmp eq i1 %le21, false
-  br i1 %eq59, label %if.then60, label %if.end61
+if.end49:                                         ; preds = %if.then48, %if.end34
+  %new_capacity51 = load i64, ptr %first_cap, align 8
+  %mul52 = mul i64 %new_capacity51, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call53 = call ptr @_ZN4Page25allocate_exclusive_bufferEmm(ptr %call, i64 %mul52, i64 8)
+  %buffer54 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  store ptr %call53, ptr %buffer54, align 8
+  %new_capacity55 = load i64, ptr %first_cap, align 8
+  %capacity56 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 1
+  store i64 %new_capacity55, ptr %capacity56, align 8
+  %field.inplace57 = getelementptr inbounds nuw %_Z5ArrayI14JsonWriteFrameB4jsonB4v0_2E, ptr %0, i32 0, i32 2
+  %deref.recv58 = load ptr, ptr %field.inplace57, align 8
+  %mul59 = mul i64 %capacity27, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %call60 = call ptr @memcpy(ptr %deref.recv58, ptr %buffer25, i64 %mul59)
+  %eq61 = icmp eq i1 %le23, false
+  br i1 %eq61, label %if.then62, label %if.end63
 
-if.then60:                                        ; preds = %if.end47
-  %call62 = call ptr @_ZN4Page3getEPv(ptr %buffer23)
-  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call62)
-  br label %if.end61
+if.then62:                                        ; preds = %if.end49
+  %call64 = call ptr @_ZN4Page3getEPv(ptr %buffer25)
+  call void @_ZN4Page25deallocate_exclusive_pageER4Page(ptr %call, ptr %call64)
+  br label %if.end63
 
-if.end61:                                         ; preds = %if.then60, %if.end47
+if.end63:                                         ; preds = %if.then62, %if.end49
   ret void
 }
 

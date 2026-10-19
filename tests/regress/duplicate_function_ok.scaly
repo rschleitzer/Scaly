@@ -2,8 +2,8 @@
 ; the same routine twice. Overloads by type and by arity, a method beside a
 ; free function of its name, the same C prototype declared twice.
 
-function strlen(s: pointer[const_char]) returns size_t extern
-function strlen(s: pointer[const_char]) returns size_t extern
+function strlen(s: pointer[const_char]) returns c_size extern
+function strlen(s: pointer[const_char]) returns c_size extern
 
 function twice(n: int) returns int
     n * 2

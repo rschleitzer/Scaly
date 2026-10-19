@@ -16,7 +16,7 @@
 ;
 ; Expected: PASS
 
-function strlen(s: pointer[const_char]) returns size_t extern
+function strlen(s: pointer[const_char]) returns c_size extern
 
 define Shape union (circle: int  square: int)
 

@@ -4,6 +4,7 @@
 ; `for` the planner would run in parallel (inline, on the one core), and get
 ; the arguments it was started with.
 ; Expected: PASS
+; run-args: one
 
 define Point (x: int  y: int)
 

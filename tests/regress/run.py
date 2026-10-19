@@ -16,6 +16,17 @@ and the exit code are run.sh's of before. The branches, by MARKER in the fixture
   ; env: K=V     environment of the COMPILE;  ; run-env: K=V  of the PROGRAM
   ; args: ...    compiler flags;  ; link: llvm  the libLLVM link flags
 
+For ANOTHER TARGET (tests/wasm/run.sh, W1 slice 5) the environment says how:
+  REGRESS_TARGET   a triple: every `scaly build` gets `--target` (the tool's C
+                   compiler is the caller's SCALY_CC); `; expect-ir:` and
+                   `; link: llvm` fixtures are SKIPPED (the IR they name is the
+                   host's, and there is no libLLVM for the target)
+  REGRESS_RUN      the command that runs a built program (node and its WASI
+                   starter), and a time limit for every run
+  REGRESS_SKIP     a file of `<fixture> <reason>` lines that are SKIPPED
+  REGRESS_NAME     the suite's name in the summary line
+Without them every branch is as it was.
+
 A driver and not `xargs -P bash -c run_one` since 2026-10-03:
 each fixture started a bash and some ten
 processes around the one compile and the one run, and Git Bash emulates every
@@ -61,17 +72,36 @@ def one_line(text):
     return text.replace("\n", " ")
 
 
+TARGET = os.environ.get("REGRESS_TARGET", "")
+RUNNER = os.environ.get("REGRESS_RUN", "").split()
+RUN_LIMIT = 120 if RUNNER else None
+
+
 def run(cmd, env=None, merge=False, timeout=None):
-    p = subprocess.run(cmd, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.STDOUT if merge else subprocess.PIPE,
-                       timeout=timeout)
+    try:
+        p = subprocess.run(cmd, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT if merge else subprocess.PIPE,
+                           timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return 124, "", "timed out after %d s\n" % timeout
     return p.returncode, p.stdout.decode(errors="replace"), \
         (p.stderr.decode(errors="replace") if not merge else "")
 
 
-def run_one(path, stage, scaly, exe, tmp, llvm):
+def build_cmd(scaly, path, rest):
+    # `scaly build <file> [--target T] ...`
+    return [scaly, "build", path] + (["--target", TARGET] if TARGET else []) + rest
+
+
+def program(binp):
+    return RUNNER + [binp]
+
+
+def run_one(path, stage, scaly, exe, tmp, llvm, skips):
     t = os.path.basename(path)[:-len(".scaly")]
+    if t in skips:
+        return "SKIP %s: %s" % (t, skips[t])
     text = open(path, encoding="utf-8", errors="replace").read()
     # relative, as the loop passed it: a diagnostic names the file as given
     path = os.path.relpath(path, REPO).replace("\\", "/")
@@ -83,13 +113,18 @@ def run_one(path, stage, scaly, exe, tmp, llvm):
 
     if t.startswith("xfail_"):
         want = (markers(text, "xfail") or [""])[0]
-        rc, out, _ = run([scaly, "build", path] + args + ["-o", binp], env=env_compile, merge=True)
+        rc, out, _ = run(build_cmd(scaly, path, args + ["-o", binp]), env=env_compile, merge=True)
         # grep -F "" matches any line, but no line of an empty output
         if rc != 0 and want in out and (want or out):
             return "PASS " + t
         return "FAIL %s: rc=%d '%s'" % (t, rc, one_line(out.rstrip("\n")))
 
-    extra = llvm if markers(text, "link") and markers(text, "link")[0].startswith("llvm") else []
+    links_llvm = bool(markers(text, "link")) and markers(text, "link")[0].startswith("llvm")
+    extra = llvm if links_llvm else []
+    if TARGET and markers(text, "expect-ir"):
+        return "SKIP %s: an IR gate of the host" % t
+    if TARGET and links_llvm:
+        return "SKIP %s: links libLLVM" % t
 
     if markers(text, "expect-ir"):
         ll = binp + ".ll"
@@ -108,10 +143,10 @@ def run_one(path, stage, scaly, exe, tmp, llvm):
 
     if markers(text, "expect-rc"):
         want_rc = markers(text, "expect-rc")[0]
-        crc, _, _ = run([scaly, "build", path, "-o", binp] + extra, merge=True)
+        crc, _, _ = run(build_cmd(scaly, path, ["-o", binp] + extra), merge=True)
         if crc != 0:
             return "FAIL %s: compile failed rc=%d" % (t, crc)
-        rc, out, _ = run([binp], merge=True)
+        rc, out, _ = run(program(binp), merge=True, timeout=RUN_LIMIT)
         out = out.rstrip("\n")
         missing = ""
         for w in markers(text, "expect-out"):
@@ -121,9 +156,9 @@ def run_one(path, stage, scaly, exe, tmp, llvm):
             return "PASS " + t
         return "FAIL %s: rc=%s want=%s missing='%s' out='%s'" % (t, exit_text(rc), want_rc, missing, one_line(out))
 
-    crc, cout, _ = run([scaly, "build", path] + args + ["-o", binp] + extra, merge=True)
+    crc, cout, _ = run(build_cmd(scaly, path, args + ["-o", binp] + extra), merge=True)
     if os.path.exists(binp):
-        rc, out, err = run([binp], env=env_with(markers(text, "run-env")))
+        rc, out, err = run(program(binp), env=env_with(markers(text, "run-env")), timeout=RUN_LIMIT)
     else:
         rc, out, err = 127, "", "%s: No such file or directory\n" % binp
     out = out.rstrip("\n")
@@ -142,11 +177,23 @@ def main():
     stage, scaly, exe, tmp, jobs = sys.argv[1:6]
     llvm = sys.argv[6:]
     fixtures = sorted(glob.glob(os.path.join(REPO, "tests", "regress", "*.scaly")))
+    skips = {}
+    if os.environ.get("REGRESS_SKIP"):
+        for line in open(os.environ["REGRESS_SKIP"], encoding="utf-8"):
+            line = line.strip()
+            if line and not line.startswith("#"):
+                name, _, reason = line.partition(" ")
+                skips[name] = reason.strip()
     with concurrent.futures.ThreadPoolExecutor(max_workers=int(jobs)) as pool:
-        verdicts = list(pool.map(lambda f: run_one(f, stage, scaly, exe, tmp, llvm), fixtures))
+        verdicts = list(pool.map(lambda f: run_one(f, stage, scaly, exe, tmp, llvm, skips), fixtures))
     fails = [v[len("FAIL "):] for v in verdicts if v.startswith("FAIL ")]
-    passed = len(verdicts) - len(fails)
-    print("regress: %d PASS, %d FAIL %s" % (passed, len(fails), "".join(f + " " for f in fails)))
+    skipped = [v for v in verdicts if v.startswith("SKIP ")]
+    passed = len(verdicts) - len(fails) - len(skipped)
+    name = os.environ.get("REGRESS_NAME", "regress")
+    if TARGET:
+        print("%s: %d PASS, %d FAIL, %d SKIP %s" % (name, passed, len(fails), len(skipped), "".join(f + " " for f in fails)))
+    else:
+        print("%s: %d PASS, %d FAIL %s" % (name, passed, len(fails), "".join(f + " " for f in fails)))
     sys.exit(0 if not fails else 1)
 
 

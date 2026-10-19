@@ -22940,10 +22940,18 @@ define Planner
                     ; Container) get specialised here so the spec'd
                     ; bodies (`_ZN3BoxIiE3getEv`, `_ZN9ContainerIiE...`)
                     ; reach the emitter.
+                    ; ★And a generic UNION (2026-10-19): it was left to its
+                    ; template, whose payload measured T as a pointer
+                    ; placeholder -- `Maybe[Tri]` (24 bytes) carried 8, and on
+                    ; wasm32 `Option[int]` carried 4: garbage at rc 0. Not
+                    ; an `Option` of a reference: that is no union at all but
+                    ; a nullable pointer (NPO), and stays one.
                     var is_struct: bool false
                     choose conc.definition
                         when s: Structure
                             is_struct := true
+                        when un: scalyc.compiler.Model.Union
+                            is_struct := Planner.planned_type_is_npo_reference(after_subst) = false
                         else
                             0
                     var is_stdlib_generic: bool false

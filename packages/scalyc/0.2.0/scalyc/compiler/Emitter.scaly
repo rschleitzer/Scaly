@@ -5142,15 +5142,24 @@ define Emitter
         ; Emit LLVM type for a PlannedUnion (tagged union)
         procedure emit_union_type(mutable this, mutable union_type: PlannedUnion) returns LLVMTypeRef
         {
-            ; Check cache first
-            let cached lookup_struct_cache union_type.name
+            ; Check cache first -- by the MANGLED name. A generic union's
+            ; instantiations share its bare name, and the cache answers a name
+            ; with its first entry: until 2026-10-19 every `Maybe[T]` was the
+            ; layout of whichever came first, the template with T as a pointer
+            ; placeholder among them -- 8 payload bytes for a 24-byte record,
+            ; garbage at rc 0 (on wasm32 already for an `Option[int]`).
+            let cached lookup_struct_cache union_type.mangled_name
             if cached <> null
                 return cached
 
             ; Create named struct for the union
             ; Layout: { tag: i8, data: [max_variant_size x i8] }
+            ; and stored under it alone, as emit_struct_type# does: map_type asks
+            ; the bare name first, so a name entry would hand every later
+            ; instantiation this one
             let llvm_union LLVMStructCreateNamed(context, union_type.mangled_name.c_data())
-            cache_struct(union_type.name, llvm_union)
+            if union_type.name = union_type.mangled_name
+                cache_struct(union_type.name, llvm_union)
             cache_struct(union_type.mangled_name, llvm_union)
 
             ; Build union body: { i8 tag, [data_size x i8] data }

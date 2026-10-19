@@ -1,15 +1,20 @@
 #!/bin/bash
-# The wasm profile (W1 slice 4): programs built for wasm32-wasip1 by the tool
-# (`scaly build --target wasm32-wasip1`, the standard library and its `_wasm`
-# native files compiled for the target into a scratch cache) and run under
-# node's WASI. What it holds: the program's own entry (WASI's `__main_void` /
-# `__main_argc_argv`), allocation, files and clocks over WASI, a parallel `for`
-# run inline on the one core, every catch point (`try`, a panic arm -- wasm
-# exception handling through compiler/wasm_eh.cpp and wasi-libc's libsetjmp),
-# and a trap's exit code with its message.
+# The wasm profile (W1 slices 4 and 5): programs built for wasm32-wasip1 by the
+# tool (`scaly build --target wasm32-wasip1`, the standard library and its
+# `_wasm` native files compiled for the target into a scratch cache) and run
+# under node's WASI.
 #
-# A fixture passes as in tests/regress: stdout's last line says PASS, or with
-# `; expect-rc: N` the run ends with N and stdout holds every `; expect-out:`.
+#   1. this directory's fixtures: the profile itself -- the program's own entry
+#      (WASI's `__main_void` / `__main_argc_argv`, its arguments), allocation,
+#      files and clocks over WASI, a parallel `for` run inline on the one core
+#   2. the whole regression corpus, by tests/regress/run.py's rules (stdout says
+#      PASS; `; expect-rc:` with `; expect-out:`; an `xfail_` must not
+#      compile), every catch point and trap among them -- wasm exception
+#      handling through compiler/wasm_eh.cpp and wasi-libc's libsetjmp. Skipped,
+#      each with its reason: the IR gates of the host (`; expect-ir:`), what
+#      links libLLVM (`; link: llvm`), and the fixtures tests/wasm/skip names
+#      (a 64-bit host's layout written down as numbers, an untyped function
+#      pointer to a function that answers a pointer).
 #
 # Needs a wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*) and node; SKIPPED by name
 # without either.
@@ -39,48 +44,33 @@ trap 'rm -rf "$WORK"' EXIT
 # the tool's C compiler: the wasi-sdk's clang over its sysroot
 printf '#!/bin/sh\nexec "%s/bin/clang" --sysroot="%s/share/wasi-sysroot" "$@"\n' "$wasi" "$wasi" > "$WORK/cc"
 chmod 755 "$WORK/cc"
+export SCALY_CC="$WORK/cc" SCALY_CACHE="$WORK/cache"
+RUN="node --no-warnings tests/wasm/run.mjs"
 
-FIXTURES="
-tests/wasm/profile.scaly one
-tests/regress/try_catch.scaly
-tests/regress/try_arm_catches_panic.scaly
-tests/regress/try_arm_catches_null.scaly
-tests/regress/try_arm_catches_size.scaly
-tests/regress/try_arm_catches_oom.scaly
-tests/regress/try_arm_kind_selects.scaly
-tests/regress/try_else_catches_panic.scaly
-tests/regress/try_value_after_catch.scaly
-tests/regress/trap_array_at.scaly
-tests/regress/trap_slice_subscript.scaly
-"
-
+# 1. the profile; built first and alone, which also fills the cache with the
+# standard library for the target before the corpus builds in parallel
 pass=0; fail=0; failures=()
-while read -r src args; do
-  [ -n "$src" ] || continue
+for src in tests/wasm/*.scaly; do
   n=$(basename "$src" .scaly)
-  if ! SCALY_CC="$WORK/cc" SCALY_CACHE="$WORK/cache" "$TOOL" build --target $T "$src" -o "$WORK/$n.wasm" > "$WORK/$n.build" 2>&1; then
+  args=$(sed -n 's/^; run-args: *//p' "$src" | head -1)
+  if ! "$TOOL" build --target $T "$src" -o "$WORK/$n.wasm" > "$WORK/$n.build" 2>&1; then
     fail=$((fail+1)); failures+=("$n(build: $(grep -m1 -i 'error' "$WORK/$n.build" | cut -c1-120))"); continue
   fi
   # shellcheck disable=SC2086
-  node --no-warnings tests/wasm/run.mjs "$WORK/$n.wasm" $args > "$WORK/$n.out" 2> "$WORK/$n.err"
-  rc=$?
-  want_rc=$(sed -n 's/^; expect-rc: *//p' "$src" | head -1)
-  ok=1
-  if [ -n "$want_rc" ]; then
-    [ "$rc" = "$want_rc" ] || ok=0
-    while IFS= read -r want; do
-      [ -n "$want" ] || continue
-      grep -qF -- "$want" "$WORK/$n.out" "$WORK/$n.err" || ok=0
-    done < <(sed -n 's/^; expect-out: *//p' "$src")
-  else
-    [ "$rc" = 0 ] && grep -v '^$' "$WORK/$n.out" | tail -1 | grep -q PASS || ok=0
-  fi
-  if [ $ok = 1 ]; then
+  out=$($RUN "$WORK/$n.wasm" $args 2>&1); rc=$?
+  if [ "$rc" = 0 ] && [ "$(printf '%s\n' "$out" | grep -v '^$' | tail -1)" = PASS ]; then
     pass=$((pass+1))
   else
-    fail=$((fail+1)); failures+=("$n(rc=$rc: $(tail -c 120 "$WORK/$n.out" "$WORK/$n.err" 2>/dev/null | tr '\n' ' ' | cut -c1-160))")
+    fail=$((fail+1)); failures+=("$n(rc=$rc: $(printf '%s' "$out" | tail -c 160 | tr '\n' ' '))")
   fi
-done <<< "$FIXTURES"
+done
+echo "wasm: profile $pass PASS, $fail FAIL ${failures[*]}"
 
-echo "wasm: $pass PASS, $fail FAIL ${failures[*]}"
-[ $fail -eq 0 ]
+# 2. the regression corpus
+JOBS=${REGRESS_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}
+PY=$(command -v python3 || command -v python) || { echo "wasm: no python3" >&2; exit 2; }
+REGRESS_TARGET=$T REGRESS_RUN="$RUN" REGRESS_SKIP=tests/wasm/skip REGRESS_NAME="wasm: regress" \
+  "$PY" tests/regress/run.py "$STAGE" "$TOOL" "" "$WORK" "$JOBS"
+corpus=$?
+
+[ $fail -eq 0 ] && [ $corpus -eq 0 ]

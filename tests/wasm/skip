@@ -1,0 +1,16 @@
+# The regress fixtures tests/wasm/run.sh does not run on wasm32, each with its
+# reason (tests/regress/run.py reads `<fixture> <reason>`). `; expect-ir:` and
+# `; link: llvm` fixtures are skipped by their marker and are not listed.
+#
+# What a 64-bit host's layout is, written down as numbers: a page header of 40
+# bytes, a field at offset 24, pointers of 8 bytes. On wasm32 the header is 20.
+sizeof_cross_package LP64 sizes (a 40-byte page header, 8-byte pointers)
+oversized_size LP64 sizes (the buffer 40 bytes past its page)
+page_field_user LP64 sizes (next_object 40 bytes past the page)
+var_page_placement LP64 sizes (an object 40 bytes past its page)
+nested_value_field_store LP64 offsets (a page field at slot 3 of size_t)
+embedded_opaque_field_layout LP64 sizes (sizeof Page = 40)
+# An untyped function pointer (`pointer[void]`) is called as answering i64; a
+# WebAssembly call holds the callee's exact type, so one that answers a POINTER
+# (i32 there) traps.
+fn_ptr_nary a pointer[void] call of a function that answers a pointer

@@ -1,0 +1,73 @@
+; Regression (2026-10-19): a generic UNION was never instantiated --
+; plan_type# specialised a generic Structure only, so every `Maybe[T]` and
+; every tagged `Option[T]` was laid out as its template, whose payload measured
+; T as a pointer placeholder: 8 bytes for the 24-byte Tri here, the sum read
+; garbage at rc 0 (and on wasm32, with 4-byte pointers, an `Option[int]`
+; already). The emitter's union cache was keyed by the bare name as well, so a
+; second instantiation took the first one's type. An `Option` of a reference
+; stays the nullable pointer it is (NPO).
+; Expected: PASS
+
+define Tri (a: int  b: int  c: int)
+define Maybe[T] union (Got: T, Nada)
+
+function pick(x: int) returns Option[Tri]
+{
+    if x > 0
+        return None
+    Some(Tri(x, x * 2, x * 3))
+}
+
+function mine(x: int) returns Maybe[Tri]
+{
+    if x > 0
+        return Nada
+    Got(Tri(x, x * 2, x * 3))
+}
+
+function small(x: int) returns Maybe[int]
+{
+    if x > 0
+        return Nada
+    Got(x)
+}
+
+function sum_of(o: Option[Tri]) returns int
+{
+    choose o
+        when s: Some
+            s.a + s.b + s.c
+        else
+            0
+}
+
+function sum_mine(o: Maybe[Tri]) returns int
+{
+    choose o
+        when s: Got
+            s.a + s.b + s.c
+        else
+            0
+}
+
+function small_of(o: Maybe[int]) returns int
+{
+    choose o
+        when s: Got
+            s
+        else
+            0
+}
+
+var ok true
+if sum_of(pick(0 - 5)) <> 0 - 30 or sum_of(pick(1)) <> 0
+    ok := false
+if sum_mine(mine(0 - 5)) <> 0 - 30 or sum_mine(mine(1)) <> 0
+    ok := false
+; two instantiations of one generic union, each with its own layout
+if small_of(small(0 - 7)) <> 0 - 7 or small_of(small(3)) <> 0
+    ok := false
+if ok
+    print "PASS"
+else
+    print "FAIL"

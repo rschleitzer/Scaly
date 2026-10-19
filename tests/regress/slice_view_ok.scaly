@@ -4,7 +4,7 @@
 ; Expected: PASS
 define Holder (s: Slice[char])
 
-function strlen(s: pointer[const_char]) returns size_t extern
+function strlen(s: pointer[const_char]) returns c_size extern
 
 function second(h: Holder) returns char
     h.s[1]

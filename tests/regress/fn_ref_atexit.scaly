@@ -4,7 +4,7 @@
 ; Zero-arg form verified at runtime via atexit; unary form verified by the
 ; call landing at all (scaly_check receives the non-null symbol address).
 
-procedure atexit(cb: pointer[void]) returns int extern
+procedure atexit(cb: pointer[void]) returns i32 extern
 
 procedure on_exit_handler()
 {
