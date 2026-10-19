@@ -60466,6 +60466,21 @@ define Planner
                         holder.put(0, Planner.planned_type_to_model_type(et))
                         return holder.get 0
                     }
+                    when tp: PlannedTuple
+                    {
+                        ; `()` as an argument, `Option[()]`: the empty tuple in
+                        ; a row is the type "no value", the model's `void`.
+                        ; Before 2026-10-19 the merge refused it, and
+                        ; `Option[()].Some(x)` as a block's last statement
+                        ; fell apart into a nameless operator (rc 4).
+                        if tp.components <> null and (*tp.components).length > 0
+                            return null
+                        var unit_path Vector[String](1)
+                        unit_path.put(0, "void")
+                        var holder Vector[Type](1)
+                        holder.put(0, Type(cell.loc, unit_path, null, Lifetime.Unspecified(Unspecified())))
+                        return holder.get 0
+                    }
                     else
                         return null
             }

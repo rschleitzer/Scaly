@@ -1,0 +1,58 @@
+; `()`, the type "no value", as a generic argument (2026-10-19,
+; ROADMAP-operation.md, Tuples): `Result[(), Failure]` answers success without
+; a payload, `Option[()]` a bare presence. Written in
+; expression position (`Option[()].Some(())`) the empty tuple in the brackets
+; was refused by the generic merge (Planner.extract_row_to_type#), and as a
+; block's last statement the construction fell apart (rc 4).
+; Expected: PASS
+define Failure (code: int)
+
+function check(n: int) returns Result[(), Failure]
+{
+    if n < 0
+        return Result[(), Failure].Error(Failure(n))
+    Result[(), Failure].Ok(())
+}
+
+function bare(n: int) returns Result[(), Failure]
+{
+    if n < 0
+        return Error(Failure(n))
+    Ok(())
+}
+
+function present(n: int) returns Option[()]
+{
+    let k n + 1
+    if k > 5
+        return Option[()].None
+    Option[()].Some(())
+}
+
+function verdict(r: Result[(), Failure]) returns int
+{
+    choose r
+        when ok: Ok
+            1
+        when e: Error
+            e.code
+}
+
+function seen(o: Option[()]) returns int
+{
+    choose o
+        when s: Some
+            1
+        else
+            0
+}
+
+procedure run() returns bool
+{
+    verdict(check(5)) = 1 and verdict(check(0 - 3)) = 0 - 3 and verdict(bare(0 - 4)) = 0 - 4 and verdict(bare(1)) = 1 and seen(present(1)) = 1 and seen(present(9)) = 0
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"
