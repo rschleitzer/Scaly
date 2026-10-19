@@ -1,0 +1,9 @@
+; A size_t where a c_size is wanted is no implicit conversion: c_size has the
+; target's pointer width, so the value would change width on one target and
+; not on another (2026-10-19). c_size_explicit is the spelling that works.
+; xfail: a size_t where a c_size is wanted
+function c_len(n: c_size) returns c_size
+    n
+
+let a: size_t 41
+let b c_len(a)

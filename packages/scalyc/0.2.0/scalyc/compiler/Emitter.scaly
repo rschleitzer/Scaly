@@ -1031,6 +1031,11 @@ define Emitter
                 bits := 64
                 enc := 7
             }
+            if name = "c_size"
+            {
+                bits := (pointer_bytes * 8) as int
+                enc := 7
+            }
             if name = "float"
             {
                 bits := 32
@@ -1632,6 +1637,9 @@ define Emitter
             register_intrinsic_type("u64", LLVMInt64TypeInContext context, 8, 8, false)
             register_intrinsic_type("uint", LLVMInt64TypeInContext context, 8, 8, false)
             register_intrinsic_type("size_t", LLVMInt64TypeInContext context, 8, 8, false)
+            ; the C side's pointer width (`c_size`, 2026-10-19): i64 on the LP64
+            ; targets, i32 on wasm32 -- from the datalayout, set before this runs
+            register_intrinsic_type("c_size", LLVMIntTypeInContext(context, (pointer_bytes * 8) as u32), pointer_bytes, pointer_bytes, false)
 
             ; Floating point
             register_intrinsic_type("float", LLVMFloatTypeInContext context, 4, 4, true)
@@ -2637,7 +2645,7 @@ define Emitter
             let n LLVMCountParams(f)
             if page_index >= n
                 return false
-            let p LLVMGetParam(f, page_index)
+            let p LLVMGetParam(f, page_index as u32)
             var p_use LLVMGetFirstUse(p)
             while p_use <> null
             {
@@ -2655,7 +2663,7 @@ define Emitter
             let kind LLVMGetTypeKind(p_ty)
             if kind <> LLVMTypeKind.Pointer()
                 return false
-            let attrs LLVMGetAttributeCountAtIndex(f, page_index + 1)
+            let attrs LLVMGetAttributeCountAtIndex(f, page_index + 1 as u32)
             attrs = 0
         }
 
@@ -2733,7 +2741,7 @@ define Emitter
                         let argc nops - 1
                         if j < argc
                         {
-                            let a LLVMGetOperand(user, j)
+                            let a LLVMGetOperand(user, j as u32)
                             let already LLVMIsNull(a)
                             let a_is_f a = f_handle
                             ; Never rewrite f's own address into null: it would
@@ -2743,7 +2751,7 @@ define Emitter
                                 {
                                     let a_ty LLVMTypeOf(a)
                                     let nullv LLVMConstNull(a_ty)
-                                    LLVMSetOperand(user, j, nullv)
+                                    LLVMSetOperand(user, j as u32, nullv)
                                 }
                         }
                     }
@@ -3915,7 +3923,7 @@ define Emitter
                                             }
                                             pi := pi + 1
                                         }
-                                        return LLVMStructTypeInContext(context, element_types.data, props.length as int, 0)
+                                        return LLVMStructTypeInContext(context, element_types.data, props.length as u32, 0)
                                     }
                                 }
                             }
@@ -4601,7 +4609,7 @@ define Emitter
 
             let ptr_ty LLVMPointerTypeInContext(context, 0)
             let null_p LLVMConstPointerNull(ptr_ty)
-            let is_null LLVMBuildICmp(builder, LLVMIntPredicate.EQ() as i32, value, null_p, "unwrap.isnull")
+            let is_null LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), value, null_p, "unwrap.isnull")
             let trap_bb create_block("unwrap.trap")
             let ok_bb create_block("unwrap.ok")
             LLVMBuildCondBr(builder, is_null, trap_bb, ok_bb)
@@ -4818,6 +4826,8 @@ define Emitter
                 return LLVMInt64TypeInContext context
             if name = "size_t"
                 return LLVMInt64TypeInContext context
+            if name = "c_size"
+                return LLVMIntTypeInContext(context, (pointer_bytes * 8) as u32)
             if name = "float"
                 return LLVMFloatTypeInContext context
             if name = "double"
@@ -4938,7 +4948,7 @@ define Emitter
             }
 
             ; Set the struct body (not packed)
-            LLVMStructSetBody(llvm_struct, element_types.data, element_count as int, 0)
+            LLVMStructSetBody(llvm_struct, element_types.data, element_count as u32, 0)
 
             llvm_struct
         }
@@ -4991,7 +5001,7 @@ define Emitter
                 var i: int 0
                 while i < n
                 {
-                    let f_ok llvm_type_sizable(LLVMStructGetTypeAtIndex(t, i))
+                    let f_ok llvm_type_sizable(LLVMStructGetTypeAtIndex(t, i as u32))
                     if f_ok = false
                         return false
                     i := i + 1
@@ -5044,7 +5054,7 @@ define Emitter
                 var i: int 0
                 while i < n
                 {
-                    let fa llvm_type_abi_align(LLVMStructGetTypeAtIndex(t, i))
+                    let fa llvm_type_abi_align(LLVMStructGetTypeAtIndex(t, i as u32))
                     if fa > max_a
                         max_a := fa
                     i := i + 1
@@ -5102,7 +5112,7 @@ define Emitter
                 var i: int 0
                 while i < n
                 {
-                    let ft LLVMStructGetTypeAtIndex(t, i)
+                    let ft LLVMStructGetTypeAtIndex(t, i as u32)
                     let fs llvm_type_abi_size ft
                     var fa llvm_type_abi_align ft
                     ; a packed struct places its fields back to back
@@ -5530,7 +5540,7 @@ define Emitter
                 param_types_ptr := param_types.data
             }
 
-            let func_type LLVMFunctionType(llvm_return_type, param_types_ptr, param_count as int, 0)
+            let func_type LLVMFunctionType(llvm_return_type, param_types_ptr, param_count as u32, 0)
 
             ; Use unmangled "main" for linker compatibility (C entry point) —
             ; but ONLY when this is a free function. Namespaced
@@ -6124,7 +6134,7 @@ define Emitter
             var i: size_t 0
             while i < user_count
             {
-                let p LLVMGetParam(llvm_func, (i + arg_offset) as int)
+                let p LLVMGetParam(llvm_func, (i + arg_offset) as u32)
                 if p = null
                     return false
                 let p_ty LLVMTypeOf(p)
@@ -6211,7 +6221,7 @@ define Emitter
             var i: size_t 0
             while i < user_count
             {
-                let p LLVMGetParam(llvm_func, (i + arg_offset) as int)
+                let p LLVMGetParam(llvm_func, (i + arg_offset) as u32)
                 let p_ty LLVMTypeOf(p)
                 let phi LLVMBuildPhi(builder, p_ty, "tail.arg")
                 var vals Vector[LLVMValueRef](1)
@@ -6335,6 +6345,13 @@ define Emitter
         ; impossible for a strict part of a struct).
         procedure copy_struct_bytes(mutable this, dst: LLVMValueRef, src: LLVMValueRef, mutable ty: LLVMTypeRef)
         {
+            ; on wasm32 the intrinsic: libc's memcpy takes a 32-bit length there,
+            ; and wasm-ld checks the signature of every call (2026-10-19)
+            if pointer_bytes <> 8
+            {
+                LLVMBuildMemCpy(builder, dst, 1, src, 1, LLVMSizeOf(ty))
+                return
+            }
             let ptr_ty LLVMPointerTypeInContext(context, 0)
             var memcpy_fn LLVMGetNamedFunction(llvm_module, "memcpy")
             if memcpy_fn = null
@@ -7215,7 +7232,7 @@ define Emitter
                     {
                         page_offset := 1
                         let page_name: String func.page_parameter.unwrap()
-                        let page_value LLVMGetParam(llvm_func, sret_offset as int)
+                        let page_value LLVMGetParam(llvm_func, sret_offset as u32)
 
                         ; ★A peel parameter the SOURCE named (`page`, `rp`, the
                         ; Modeler's first-parameter peel) is a pointer[Page] to
@@ -7287,7 +7304,7 @@ define Emitter
                                 if item.name <> null
                                 {
                                     let param_name: String item.name.unwrap()
-                                    var param_value LLVMGetParam(llvm_func, (i + page_offset + sret_offset) as int)
+                                    var param_value LLVMGetParam(llvm_func, (i + page_offset + sret_offset) as u32)
                                     ; With a tail loop the name must resolve to the
                                     ; header's PHI, or the second iteration would
                                     ; read the FIRST call's arguments.
@@ -7653,8 +7670,8 @@ define Emitter
             ; trailing NUL (not counted in the varint length)
             bytes.put(wi, LLVMConstInt(i8ty, 0, 0))
 
-            let arr_ty LLVMArrayType(i8ty, total as int)
-            let arr LLVMConstArray(i8ty, bytes.data, total as int)
+            let arr_ty LLVMArrayType(i8ty, total as u32)
+            let arr LLVMConstArray(i8ty, bytes.data, total as u32)
             let g LLVMAddGlobal(llvm_module, arr_ty, ".sconst")
             LLVMSetInitializer(g, arr)
             LLVMSetGlobalConstant(g, 1)
@@ -7746,7 +7763,7 @@ define Emitter
                 }
                 when fr: Fragment
                 {
-                    return LLVMConstStringInContext(context, fr.value.c_data(), fr.value.length() as int, 0)
+                    return LLVMConstStringInContext(context, fr.value.c_data(), fr.value.length() as u32, 0)
                 }
                 when n: Null
                 {
@@ -7815,10 +7832,31 @@ define Emitter
             ; cleanly to libc. Unconditional is safe: the struct-copy helper
             ; checks LLVMGetNamedFunction before adding, so it reuses these.
             let rt_ptr LLVMPointerTypeInContext(context, 0)
-            let mc_fty LLVMFunctionType(rt_ptr, null as pointer[LLVMTypeRef], 0, 1)
-            LLVMAddFunction(llvm_module, "memcpy", mc_fty)
-            let ms_fty LLVMFunctionType(rt_ptr, null as pointer[LLVMTypeRef], 0, 1)
-            LLVMAddFunction(llvm_module, "memset", ms_fty)
+            if pointer_bytes = 8
+            {
+                let mc_fty LLVMFunctionType(rt_ptr, null as pointer[LLVMTypeRef], 0, 1)
+                LLVMAddFunction(llvm_module, "memcpy", mc_fty)
+                let ms_fty LLVMFunctionType(rt_ptr, null as pointer[LLVMTypeRef], 0, 1)
+                LLVMAddFunction(llvm_module, "memset", ms_fty)
+            }
+            else
+            {
+                ; WebAssembly: a varargs declaration is another calling
+                ; convention there (the arguments in a buffer), and wasm-ld
+                ; checks every call against the definition -- declared exactly
+                ; as wasi-libc defines them, the length in pointer width
+                let c_size_ty LLVMIntTypeInContext(context, (pointer_bytes * 8) as u32)
+                var mcp Vector[LLVMTypeRef](3)
+                mcp.put(0, rt_ptr)
+                mcp.put(1, rt_ptr)
+                mcp.put(2, c_size_ty)
+                LLVMAddFunction(llvm_module, "memcpy", LLVMFunctionType(rt_ptr, mcp.data, 3, 0))
+                var msp Vector[LLVMTypeRef](3)
+                msp.put(0, rt_ptr)
+                msp.put(1, LLVMInt32TypeInContext context)
+                msp.put(2, c_size_ty)
+                LLVMAddFunction(llvm_module, "memset", LLVMFunctionType(rt_ptr, msp.data, 3, 0))
+            }
 
             ; Emit all structures
             if plan.structures <> null
@@ -10722,7 +10760,7 @@ define Emitter
                             var fi: int 0
                             while fi < n_fields
                             {
-                                let field_ty LLVMStructGetTypeAtIndex(struct_ty, fi)
+                                let field_ty LLVMStructGetTypeAtIndex(struct_ty, fi as u32)
                                 if field_ty <> null
                                 {
                                     let field_ptr LLVMBuildStructGEP2(builder, struct_ty, struct_ptr, fi as u32, "tuple.field")
@@ -10917,17 +10955,22 @@ define Emitter
             pv.put(1, heap)
             pb.put(1, large_end)
             LLVMAddIncoming(data, pv.data, pb.data, 2)
-            let ms_fn LLVMGetNamedFunction(llvm_module, "memset")
-            var mtys Vector[LLVMTypeRef](3)
-            mtys.put(0, ptr_ty)
-            mtys.put(1, i32_ty)
-            mtys.put(2, i64_ty)
-            let ms_ty LLVMFunctionType(ptr_ty, mtys.data, 3, 0)
-            var margs Vector[LLVMValueRef](3)
-            margs.put(0, data)
-            margs.put(1, LLVMConstInt(i32_ty, 0, 0))
-            margs.put(2, bytes)
-            LLVMBuildCall2(builder, ms_ty, ms_fn, margs.data, 3, "")
+            if pointer_bytes <> 8
+                LLVMBuildMemSet(builder, data, LLVMConstInt(LLVMInt8TypeInContext context, 0, 0), bytes, 1)
+            else
+            {
+                let ms_fn LLVMGetNamedFunction(llvm_module, "memset")
+                var mtys Vector[LLVMTypeRef](3)
+                mtys.put(0, ptr_ty)
+                mtys.put(1, i32_ty)
+                mtys.put(2, i64_ty)
+                let ms_ty LLVMFunctionType(ptr_ty, mtys.data, 3, 0)
+                var margs Vector[LLVMValueRef](3)
+                margs.put(0, data)
+                margs.put(1, LLVMConstInt(i32_ty, 0, 0))
+                margs.put(2, bytes)
+                LLVMBuildCall2(builder, ms_ty, ms_fn, margs.data, 3, "")
+            }
             LLVMBuildStore(builder, len, LLVMBuildStructGEP2(builder, struct_ty, rec, 0, "vec.length"))
             LLVMBuildStore(builder, data, LLVMBuildStructGEP2(builder, struct_ty, rec, 1, "vec.data.slot"))
             rec
@@ -11794,7 +11837,7 @@ define Emitter
             }
 
             let merge_bb LLVMAppendBasicBlockInContext(context, fn, "walk.usw.end")
-            let sw LLVMBuildSwitch(builder, tag, merge_bb, act_count as int)
+            let sw LLVMBuildSwitch(builder, tag, merge_bb, act_count as u32)
             vi := 0
             while vi < vars.length
             {
@@ -11872,7 +11915,7 @@ define Emitter
                             let ft p_ptr.prop_type
                             if region_field_acts(ft)
                             {
-                                let faddr LLVMBuildStructGEP2(builder, sty, obj, pi as int, "walk.f")
+                                let faddr LLVMBuildStructGEP2(builder, sty, obj, pi as u32, "walk.f")
                                 ; ★ A List's `tail` points at a cell the `head` chain
                                 ; already reaches: swizzle the slot, never walk it —
                                 ; fix_value is not idempotent, and a second walk of the
@@ -14065,7 +14108,7 @@ define Emitter
                 return e = "u8" or e = "u32" or e = "bool"
             }
             match tn
-                case "u8" case "u16" case "u32" case "u64" case "size_t" case "char" case "bool": return true
+                case "u8" case "u16" case "u32" case "u64" case "size_t" case "c_size" case "char" case "bool": return true
             false
         }
 
@@ -14131,12 +14174,12 @@ define Emitter
             {
                 var fp: i32 0
                 match op
-                    case "=": fp := LLVMRealPredicate.OEQ() as i32
-                    case "<>": fp := LLVMRealPredicate.UNE() as i32
-                    case "<": fp := LLVMRealPredicate.OLT() as i32
-                    case "<=": fp := LLVMRealPredicate.OLE() as i32
-                    case ">": fp := LLVMRealPredicate.OGT() as i32
-                    case ">=": fp := LLVMRealPredicate.OGE() as i32
+                    case "=": fp := LLVMRealPredicate.OEQ()
+                    case "<>": fp := LLVMRealPredicate.UNE()
+                    case "<": fp := LLVMRealPredicate.OLT()
+                    case "<=": fp := LLVMRealPredicate.OLE()
+                    case ">": fp := LLVMRealPredicate.OGT()
+                    case ">=": fp := LLVMRealPredicate.OGE()
                 if fp <> 0
                     return LLVMBuildFCmp(builder, fp, l, r, "simd.cmp")
             }
@@ -14144,20 +14187,20 @@ define Emitter
             {
                 var ip: i32 0
                 match op
-                    case "=": ip := LLVMIntPredicate.EQ() as i32
-                    case "<>": ip := LLVMIntPredicate.NE() as i32
-                    case "<": ip := LLVMIntPredicate.SLT() as i32
-                    case "<=": ip := LLVMIntPredicate.SLE() as i32
-                    case ">": ip := LLVMIntPredicate.SGT() as i32
-                    case ">=": ip := LLVMIntPredicate.SGE() as i32
+                    case "=": ip := LLVMIntPredicate.EQ()
+                    case "<>": ip := LLVMIntPredicate.NE()
+                    case "<": ip := LLVMIntPredicate.SLT()
+                    case "<=": ip := LLVMIntPredicate.SLE()
+                    case ">": ip := LLVMIntPredicate.SGT()
+                    case ">=": ip := LLVMIntPredicate.SGE()
                 ; the unsigned element types compare unsigned
                 if unsigned
                 {
                     match op
-                        case "<": ip := LLVMIntPredicate.ULT() as i32
-                        case "<=": ip := LLVMIntPredicate.ULE() as i32
-                        case ">": ip := LLVMIntPredicate.UGT() as i32
-                        case ">=": ip := LLVMIntPredicate.UGE() as i32
+                        case "<": ip := LLVMIntPredicate.ULT()
+                        case "<=": ip := LLVMIntPredicate.ULE()
+                        case ">": ip := LLVMIntPredicate.UGT()
+                        case ">=": ip := LLVMIntPredicate.UGE()
                 }
                 if ip <> 0
                     return LLVMBuildICmp(builder, ip, l, r, "simd.cmp")
@@ -14212,7 +14255,7 @@ define Emitter
             if LLVMGetTypeKind(LLVMTypeOf(ix)) = LLVMTypeKind.Integer() and LLVMGetIntTypeWidth(LLVMTypeOf(ix)) <> 64
                 ix := LLVMBuildIntCast2(builder, ix, i64_ty, 1, "simd.idx")
             let n LLVMConstInt(i64_ty, lanes, 0)
-            let ok LLVMBuildICmp(builder, LLVMIntPredicate.ULT() as i32, ix, n, "simd.inrange")
+            let ok LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), ix, n, "simd.inrange")
             let fn_now current_function
             let bad_bb LLVMAppendBasicBlockInContext(context, fn_now, "simd.lane.oob")
             let good_bb LLVMAppendBasicBlockInContext(context, fn_now, "simd.lane.ok")
@@ -14529,9 +14572,9 @@ define Emitter
             if LLVMGetIntTypeWidth(LLVMTypeOf(ix)) <> 64
                 ix := LLVMBuildIntCast2(builder, ix, i64_ty, 1, "simd.idx")
             let n LLVMConstInt(i64_ty, LLVMGetVectorSize(vt) as size_t, 0)
-            let fits LLVMBuildICmp(builder, LLVMIntPredicate.UGE() as i32, len, n, "simd.fits")
+            let fits LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), len, n, "simd.fits")
             let room LLVMBuildSub(builder, len, n, "simd.room")
-            let within LLVMBuildICmp(builder, LLVMIntPredicate.ULE() as i32, ix, room, "simd.within")
+            let within LLVMBuildICmp(builder, LLVMIntPredicate.ULE(), ix, room, "simd.within")
             let ok LLVMBuildAnd(builder, fits, within, "simd.inrange")
             let fn_now current_function
             let bad_bb LLVMAppendBasicBlockInContext(context, fn_now, "simd.mem.oob")
@@ -14954,6 +14997,9 @@ define Emitter
                 return false
 
             if t.name = "size_t"
+                return false
+
+            if t.name = "c_size"
                 return false
 
             if t.name = "size"
@@ -15741,7 +15787,7 @@ define Emitter
                 if cv_ref <> null
                 {
                     var cv (*cv_ref)
-                    let field_ty LLVMStructGetTypeAtIndex(struct_type, i as int)
+                    let field_ty LLVMStructGetTypeAtIndex(struct_type, i as u32)
                     if field_ty <> null
                     {
                         let cv_ty LLVMTypeOf(cv)
@@ -16621,7 +16667,7 @@ define Emitter
                         ui := ui + 1
                     }
                     let phi LLVMBuildPhi(builder, phi_ty, "match.value")
-                    LLVMAddIncoming(phi, phi_values.data, phi_blocks.data, phi_count as int)
+                    LLVMAddIncoming(phi, phi_values.data, phi_blocks.data, phi_count as u32)
                     return phi
                 }
             }
@@ -17011,7 +17057,7 @@ define Emitter
                     var pi: int 0
                     while pi < nparams
                     {
-                        let p LLVMGetParam(current_function, pi)
+                        let p LLVMGetParam(current_function, pi as u32)
                         if p = union_value
                             cond_is_pointer := true
                         pi := pi + 1
@@ -17135,7 +17181,7 @@ define Emitter
 
             ; Create switch instruction
             let case_count choose_expr.cases.length as int
-            let switch_inst LLVMBuildSwitch(builder, tag, default_block, case_count)
+            let switch_inst LLVMBuildSwitch(builder, tag, default_block, case_count as u32)
 
             ; PHI strategy for choose-as-expression: collect every branch
             ; that produced an LLVMValueRef along with the block it ended
@@ -17627,7 +17673,7 @@ define Emitter
                         ui := ui + 1
                     }
                     let phi LLVMBuildPhi(builder, phi_ty, "choose.value")
-                    LLVMAddIncoming(phi, phi_values.data, phi_blocks.data, phi_count as int)
+                    LLVMAddIncoming(phi, phi_values.data, phi_blocks.data, phi_count as u32)
                     return phi
                 }
             }
@@ -18973,7 +19019,7 @@ define Emitter
                 cell_field_tys.put(base_fields + cap_count + n_tail + rk, ptr_ty)
                 rk := rk + 1
             }
-            let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (base_fields + cap_count + n_tail + n_red) as int, 0)
+            let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (base_fields + cap_count + n_tail + n_red) as u32, 0)
 
             ; ---- Outline the body into a private task function ptr(ptr).
             ; Private linkage: llvm-link renames on collision, so the
@@ -19048,9 +19094,9 @@ define Emitter
                 chunk_buf := LLVMBuildLoad2(builder, ptr_ty, buf_gep, "parfor.buf")
                 lo_idx := 1
             }
-            let lo_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, lo_idx as int, "parfor.lo.ptr")
+            let lo_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, lo_idx as u32, "parfor.lo.ptr")
             let chunk_lo LLVMBuildLoad2(builder, i64_ty, lo_gep, "parfor.lo")
-            let hi_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (lo_idx + 1) as int, "parfor.hi.ptr")
+            let hi_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (lo_idx + 1) as u32, "parfor.hi.ptr")
             let chunk_hi LLVMBuildLoad2(builder, i64_ty, hi_gep, "parfor.hi")
             ci := 0
             while ci < cap_count
@@ -19059,7 +19105,7 @@ define Emitter
                 let nm (*nm_ptr)
                 let st_ptr cap_slot_tys.get ci
                 let slot_ty (*st_ptr)
-                let cap_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + ci) as int, "parfor.cap.ptr")
+                let cap_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + ci) as u32, "parfor.cap.ptr")
                 let cap_val LLVMBuildLoad2(builder, slot_ty, cap_gep, nm.c_data())
                 let fs_ptr cap_from_slot.get ci
                 var rebuild_slot: size_t 0
@@ -19078,7 +19124,7 @@ define Emitter
 
             ; The wave's cancel word, loaded ONCE: loop-invariant, so the
             ; null test below costs a register compare that LLVM hoists.
-            let cw_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count) as int, "parfor.cancel.ptr")
+            let cw_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count) as u32, "parfor.cancel.ptr")
             let cancel_ptr LLVMBuildLoad2(builder, ptr_ty, cw_gep, "parfor.cancel")
             ; A keeping chunk: its frame is a HEAP page from the start, never a
             ; stack-bucket root (that one is LIFO on this worker and could not
@@ -19087,7 +19133,7 @@ define Emitter
             var keep_frame: LLVMValueRef null
             if keeps
             {
-                let ah_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count + 1) as int, "parfor.adopt.ptr")
+                let ah_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count + 1) as u32, "parfor.adopt.ptr")
                 adopt_head := LLVMBuildLoad2(builder, ptr_ty, ah_gep, "parfor.adopt")
                 keep_frame := get_local_frame()
                 let ap_ty LLVMFunctionType(ptr_ty, null as pointer[LLVMTypeRef], 0, 0)
@@ -19102,7 +19148,7 @@ define Emitter
             rk := 0
             while rk < n_red
             {
-                let rp_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count + n_tail + rk) as int, "parfor.red.ptr")
+                let rp_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count + n_tail + rk) as u32, "parfor.red.ptr")
                 red_sub_ptrs.add(LLVMBuildLoad2(builder, ptr_ty, rp_gep, "parfor.red.sub"))
                 let ts lookup_variable(red_names[rk])
                 red_task_slots.add ts
@@ -20250,32 +20296,32 @@ define Emitter
                 LLVMBuildStore(builder, ds_buf, sb_buf_gep)
                 sb_fi := 1
             }
-            let sb_lo_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, sb_fi as int, "parfor.cell.lo")
+            let sb_lo_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, sb_fi as u32, "parfor.cell.lo")
             LLVMBuildStore(builder, sb_lo, sb_lo_gep)
-            let sb_hi_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (sb_fi + 1) as int, "parfor.cell.hi")
+            let sb_hi_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (sb_fi + 1) as u32, "parfor.cell.hi")
             LLVMBuildStore(builder, sb_hi, sb_hi_gep)
             ci := 0
             while ci < cap_count
             {
                 let cv_ptr cap_values.get ci
-                let sb_cap_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + ci) as int, "parfor.cell.cap")
+                let sb_cap_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + ci) as u32, "parfor.cell.cap")
                 LLVMBuildStore(builder, (*cv_ptr), sb_cap_gep)
                 ci := ci + 1
             }
             var sb_cw_args Vector[LLVMValueRef](1)
             sb_cw_args.put(0, ds_grp)
             let sb_cw LLVMBuildCall2(builder, cw_ty, cw_fn, sb_cw_args.data, 1, "parfor.cw")
-            let sb_cw_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count) as int, "parfor.cell.cancel")
+            let sb_cw_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count) as u32, "parfor.cell.cancel")
             LLVMBuildStore(builder, sb_cw, sb_cw_gep)
             if keeps
             {
-                let sb_ah_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count + 1) as int, "parfor.cell.adopt")
+                let sb_ah_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count + 1) as u32, "parfor.cell.adopt")
                 LLVMBuildStore(builder, adopt_slot, sb_ah_gep)
             }
             rk := 0
             while rk < n_red
             {
-                let sr_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count + n_tail + rk) as int, "parfor.cell.red")
+                let sr_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count + n_tail + rk) as u32, "parfor.cell.red")
                 if red_ops[rk] >= 20
                     LLVMBuildStore(builder, fp_bases[rk], sr_gep)
                 else
@@ -20597,7 +20643,7 @@ define Emitter
                     unmatched_block := create_block("try.else")
 
                 let arm_count try_expr.catches.length as int
-                let arm_switch LLVMBuildSwitch(builder, kind, unmatched_block, arm_count)
+                let arm_switch LLVMBuildSwitch(builder, kind, unmatched_block, arm_count as u32)
                 let fill_fn get_panic_fill_fn()
                 let fill_ty LLVMGlobalGetValueType(fill_fn)
 
@@ -20851,7 +20897,7 @@ define Emitter
                         have_else := true
                     }
                     let catch_count try_expr.catches.length as int
-                    let catch_switch LLVMBuildSwitch(builder, err_tag, default_block, catch_count)
+                    let catch_switch LLVMBuildSwitch(builder, err_tag, default_block, catch_count as u32)
 
                     for catch_case in try_expr.catches
                     {
@@ -22517,6 +22563,12 @@ define Emitter
             ; Copy the struct value via memcpy(heap_ptr, value, sizeof). LLVMBuildLoad2
             ; crashes on map_type-returned types in some cross-package paths (see s55
             ; comment near line 1403); memcpy avoids needing a usable load type.
+            ; On wasm32 the intrinsic, as in copy_struct_bytes#.
+            if pointer_bytes <> 8
+            {
+                LLVMBuildMemCpy(builder, heap_ptr, 1, value, 1, size_const)
+                return heap_ptr
+            }
             var memcpy_fn LLVMGetNamedFunction(llvm_module, "memcpy")
             if memcpy_fn = null
             {
@@ -22611,7 +22663,7 @@ define Emitter
                         ; vs. an inline struct (e.g.
                         ; `Parser.lexer: Lexer`). Drives the
                         ; post-loop deref-load decision.
-                        let field_ir_ty LLVMStructGetTypeAtIndex(current_struct_ty, acc.field_index as int)
+                        let field_ir_ty LLVMStructGetTypeAtIndex(current_struct_ty, acc.field_index as u32)
                         last_field_is_ptr := LLVMGetTypeKind(field_ir_ty) = LLVMTypeKind.Pointer()
                         last_field_ty := field_ir_ty
                         current_ptr := LLVMBuildStructGEP2(builder, current_struct_ty, current_ptr, acc.field_index as u32, "field.inplace")
@@ -22890,7 +22942,7 @@ define Emitter
                     if member_ptr <> null
                     {
                         let member member_ptr.unwrap()
-                        let field_ptr LLVMBuildStructGEP2(builder, current_type, current_ptr, member.field_index as int, member.name.c_data())
+                        let field_ptr LLVMBuildStructGEP2(builder, current_type, current_ptr, member.field_index as u32, member.name.c_data())
                         current_ptr := field_ptr
                         let next i + 1
                         if next < n

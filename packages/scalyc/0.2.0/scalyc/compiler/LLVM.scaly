@@ -57,35 +57,35 @@ define LLVMComdatRef pointer[LLVMComdat]
 ; LLVMIntPredicate - Integer comparison predicates
 define LLVMIntPredicate
 {
-    function EQ() returns int { 32 }      ; equal
-    function NE() returns int { 33 }      ; not equal
-    function UGT() returns int { 34 }     ; unsigned greater than
-    function UGE() returns int { 35 }     ; unsigned greater or equal
-    function ULT() returns int { 36 }     ; unsigned less than
-    function ULE() returns int { 37 }     ; unsigned less or equal
-    function SGT() returns int { 38 }     ; signed greater than
-    function SGE() returns int { 39 }     ; signed greater or equal
-    function SLT() returns int { 40 }     ; signed less than
-    function SLE() returns int { 41 }     ; signed less or equal
+    function EQ() returns i32 { 32 }      ; equal
+    function NE() returns i32 { 33 }      ; not equal
+    function UGT() returns i32 { 34 }     ; unsigned greater than
+    function UGE() returns i32 { 35 }     ; unsigned greater or equal
+    function ULT() returns i32 { 36 }     ; unsigned less than
+    function ULE() returns i32 { 37 }     ; unsigned less or equal
+    function SGT() returns i32 { 38 }     ; signed greater than
+    function SGE() returns i32 { 39 }     ; signed greater or equal
+    function SLT() returns i32 { 40 }     ; signed less than
+    function SLE() returns i32 { 41 }     ; signed less or equal
 }
 
 ; LLVMRealPredicate - Floating point comparison predicates
 define LLVMRealPredicate
 {
-    function OEQ() returns int { 1 }      ; ordered and equal
-    function OGT() returns int { 2 }      ; ordered and greater than
-    function OGE() returns int { 3 }      ; ordered and greater or equal
-    function OLT() returns int { 4 }      ; ordered and less than
-    function OLE() returns int { 5 }      ; ordered and less or equal
-    function ONE() returns int { 6 }      ; ordered and not equal
-    function ORD() returns int { 7 }      ; ordered (no nans)
-    function UNO() returns int { 8 }      ; unordered (either is nan)
-    function UEQ() returns int { 9 }      ; unordered or equal
-    function UGT() returns int { 10 }     ; unordered or greater than
-    function UGE() returns int { 11 }     ; unordered or greater or equal
-    function ULT() returns int { 12 }     ; unordered or less than
-    function ULE() returns int { 13 }     ; unordered or less or equal
-    function UNE() returns int { 14 }     ; unordered or not equal
+    function OEQ() returns i32 { 1 }      ; ordered and equal
+    function OGT() returns i32 { 2 }      ; ordered and greater than
+    function OGE() returns i32 { 3 }      ; ordered and greater or equal
+    function OLT() returns i32 { 4 }      ; ordered and less than
+    function OLE() returns i32 { 5 }      ; ordered and less or equal
+    function ONE() returns i32 { 6 }      ; ordered and not equal
+    function ORD() returns i32 { 7 }      ; ordered (no nans)
+    function UNO() returns i32 { 8 }      ; unordered (either is nan)
+    function UEQ() returns i32 { 9 }      ; unordered or equal
+    function UGT() returns i32 { 10 }     ; unordered or greater than
+    function UGE() returns i32 { 11 }     ; unordered or greater or equal
+    function ULT() returns i32 { 12 }     ; unordered or less than
+    function ULE() returns i32 { 13 }     ; unordered or less or equal
+    function UNE() returns i32 { 14 }     ; unordered or not equal
 }
 
 ; LLVMTypeKind - Type kind for LLVMGetTypeKind
@@ -116,17 +116,17 @@ define LLVMTypeKind
 ; LLVMLinkage - Linkage types
 define LLVMLinkage
 {
-    function External() returns int { 0 }
-    function AvailableExternally() returns int { 1 }
-    function LinkOnceAny() returns int { 2 }
-    function LinkOnceODR() returns int { 3 }
-    function WeakAny() returns int { 5 }
-    function WeakODR() returns int { 6 }
-    function Appending() returns int { 7 }
-    function Internal() returns int { 8 }
-    function Private() returns int { 9 }
-    function ExternalWeak() returns int { 12 }
-    function Common() returns int { 14 }
+    function External() returns i32 { 0 }
+    function AvailableExternally() returns i32 { 1 }
+    function LinkOnceAny() returns i32 { 2 }
+    function LinkOnceODR() returns i32 { 3 }
+    function WeakAny() returns i32 { 5 }
+    function WeakODR() returns i32 { 6 }
+    function Appending() returns i32 { 7 }
+    function Internal() returns i32 { 8 }
+    function Private() returns i32 { 9 }
+    function ExternalWeak() returns i32 { 12 }
+    function Common() returns i32 { 14 }
 }
 
 ; LLVMCallConv - Calling conventions
@@ -617,7 +617,10 @@ function LLVMInstructionEraseFromParent(inst: LLVMValueRef) extern
 ; pointer-to-pointer with no SSA value. Bypassed loads are left in
 ; place (the backend prunes dead non-volatile loads for free); do NOT
 ; erase them — emitter-held handles may still reference the value.
-function LLVMBuildMemCpy(builder: LLVMBuilderRef, dst: LLVMValueRef, dst_align: u32, src: LLVMValueRef, src_align: u32, size: LLVMValueRef) returns LLVMValueRef extern
+; builds an instruction and writes none of its arguments (the procedure
+; contract: no `mutable` parameter, nothing written)
+procedure LLVMBuildMemCpy(builder: LLVMBuilderRef, dst: LLVMValueRef, dst_align: u32, src: LLVMValueRef, src_align: u32, size: LLVMValueRef) returns LLVMValueRef extern
+procedure LLVMBuildMemSet(builder: LLVMBuilderRef, ptr: LLVMValueRef, val: LLVMValueRef, len: LLVMValueRef, align: u32) returns LLVMValueRef extern
 
 ; Structure type name lookup. Returns a C string (NUL-terminated) when the
 ; struct is named (`LLVMStructCreateNamed` + setBody), or null for anonymous

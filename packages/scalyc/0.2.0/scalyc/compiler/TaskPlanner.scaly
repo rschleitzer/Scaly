@@ -589,7 +589,7 @@ define TaskPlanner
             let nm t.name
             match nm
                 case "int" case "i8" case "i16" case "i32" case "i64": return 1
-                case "u8" case "u16" case "u32" case "u64" case "size_t": return 2
+                case "u8" case "u16" case "u32" case "u64" case "size_t" case "c_size": return 2
             0
         }
 
@@ -1652,6 +1652,8 @@ define TaskPlanner
             if t.name = "double"
                 return false
             if t.name = "size_t"
+                return false
+            if t.name = "c_size"
                 return false
             if t.name = "size"
                 return false

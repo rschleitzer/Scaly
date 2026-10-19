@@ -1,0 +1,17 @@
+; `c_size` is the C side's pointer width (2026-10-19, the wasm32 target):
+; 64 bits on the LP64 targets, 32 on wasm32. A conversion between it and
+; another integer is written with `as`; a constant that fits 32 bits needs
+; none (Planner.c_size_mixes#). xfail_c_size_implicit and
+; xfail_c_size_constant are the refusals.
+; Expected: PASS
+function c_len(n: c_size) returns c_size
+    n + 1
+
+let a: size_t 41
+let b c_len(a as c_size)
+let c c_len(7)
+let d (b as size_t) + (c as size_t)
+if d = 50
+    print "PASS"
+else
+    print "FAIL"

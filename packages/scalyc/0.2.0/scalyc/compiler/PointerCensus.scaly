@@ -1749,7 +1749,7 @@ define PointerCensus
             let n t.name
             match n
                 case "int" case "uint" case "size_t" case "i8" case "i16": return true
-                case "i32" case "i64" case "u8" case "u16" case "u32" case "u64": return true
+                case "i32" case "i64" case "u8" case "u16" case "u32" case "u64" case "c_size": return true
             false
         }
 

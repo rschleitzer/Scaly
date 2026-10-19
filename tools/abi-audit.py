@@ -29,8 +29,20 @@ every target, so a width cannot be conditional — require the WIDER one, becaus
 the caller then writes the whole register and a narrower callee reads the
 correct low half.
 
+WebAssembly (`--target wasm32`, 2026-10-19). The C side is ILP32 there
+(`long`, `size_t`, `ssize_t`, `intptr_t`, `ptrdiff_t`, `clock_t` and `nfds_t`
+are 32 bits; `off_t` and `time_t` stay 64) while Scaly's `int` and `size_t`
+stay 64, and `c_size` is the type of the C side's pointer width. And there the
+PARAMETERS are not benign: wasm-ld checks every signature, so a width that
+differs in a parameter fails the link or traps -- in this mode a parameter
+finding counts like a result finding. The wider-of-two rule for typedefs that
+differ per libc does not apply either: the width is the one wasi-libc has.
+
 Usage:
-    tools/abi-audit.py [--headers <dir>]... [--quiet] <file.scaly>...
+    tools/abi-audit.py [--target wasm32] [--headers <dir>]... [--sources <file.c>]... [--quiet] <file.scaly>...
+
+`--sources` names one of our own C shims: its DEFINITIONS are the prototypes
+of the externs that call into it (they have no header).
 
 Exits 1 when there is at least one finding, so it can gate (tests/abi/run.sh).
 """
@@ -79,8 +91,15 @@ C_WIDTH = {
 # Typedefs whose width differs on glibc; the value is the width to REQUIRE.
 PLATFORM_WIDER = {"mode_t": 32, "nfds_t": 64}
 
+# The C side on wasm32 (wasi-libc's bits/alltypes.h): what differs from above.
+WASM32_C = {
+    "long": 32, "unsigned long": 32, "long int": 32, "unsigned long int": 32,
+    "size_t": 32, "ssize_t": 32, "intptr_t": 32, "uintptr_t": 32, "ptrdiff_t": 32,
+    "clock_t": 32, "nfds_t": 32, "mode_t": 32, "long double": 128,
+}
+
 S_WIDTH = {
-    "void": 0,
+    "void": 0, "c_size": 64,
     "int": 64, "uint": 64, "i64": 64, "u64": 64, "size_t": 64, "size": 64,
     "i32": 32, "u32": 32, "i16": 16, "u16": 16, "i8": 8, "u8": 8,
     "char": 8, "bool": 8, "double": 64, "f64": 64, "float": 32, "f32": 32,
@@ -120,6 +139,11 @@ def scaly_params(sig):
 def clean_c(text):
     text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
     text = re.sub(r"//[^\n]*", " ", text)
+    # Preprocessor lines (with their continuations) are no part of a
+    # prototype: `#endif` before `int access(...)` read as the return type
+    # `endif int` (wasi-libc's headers are full of them).
+    text = re.sub(r"\\\n", " ", text)
+    text = re.sub(r"^[ \t]*#.*$", " ", text, flags=re.M)
     # These sit immediately before a declaration and would otherwise be swept
     # into the captured RETURN type, which then matches no known C type — and
     # an unparsed return used to be skipped silently.
@@ -140,15 +164,25 @@ PROTO = re.compile(
     r"([A-Za-z_][A-Za-z0-9_]*(?:\s+[A-Za-z_][A-Za-z0-9_]*)*\s*\**)\s*"
     r"\b([A-Za-z_][A-Za-z0-9_]*)\s*\(([^;{)]*)\)\s*;"
 )
+# A DEFINITION in one of our own C shims (`--sources`): the same shape,
+# ended by its body instead of a semicolon.
+PROTO_DEF = re.compile(
+    r"([A-Za-z_][A-Za-z0-9_]*(?:\s+[A-Za-z_][A-Za-z0-9_]*)*\s*\**)\s*"
+    r"\b([A-Za-z_][A-Za-z0-9_]*)\s*\(([^;{)]*)\)\s*\{"
+)
 
 
-def load_prototypes(dirs, want):
+def load_prototypes(dirs, want, sources=()):
     """{name: (ret_c, [param_c...], raw, parsed_ok)} — first prototype found."""
     out = {}
+    files = []
     for d in dirs:
-        if not Path(d).is_dir():
-            continue
-        for path in sorted(Path(d).rglob("*.h")):
+        if Path(d).is_dir():
+            files += [(d, f, PROTO) for f in sorted(Path(d).rglob("*.h"))]
+    for f in sources:
+        files.append((str(Path(f).parent), Path(f), PROTO_DEF))
+    for d, path, proto in files:
+        if path:
             # C++ trees under a C include root are not C prototypes. On Linux
             # /usr/include holds libstdc++ (c++/15/bits/fs_ops.h declares
             # `void rename(const path&, const path&)`) and LLVM's C++ API
@@ -162,7 +196,7 @@ def load_prototypes(dirs, want):
                 flat = clean_c(path.read_text(errors="replace"))
             except OSError:
                 continue
-            for m in PROTO.finditer(flat):
+            for m in proto.finditer(flat):
                 name = m.group(2)
                 if name not in want or name in out:
                     continue
@@ -199,13 +233,32 @@ def load_prototypes(dirs, want):
     return out
 
 
+WASM32 = False
+
+
 def width_c(t):
+    if WASM32:
+        return WASM32_C.get(t, C_WIDTH.get(t))
     return PLATFORM_WIDER.get(t, C_WIDTH.get(t))
 
 
 def main():
+    global WASM32
     args = sys.argv[1:]
+    if "--target" in args:
+        k = args.index("--target")
+        if args[k + 1] != "wasm32":
+            print(f"abi-audit: unknown target {args[k + 1]}")
+            return 2
+        WASM32 = True
+        S_WIDTH["c_size"] = 32
+        args = args[:k] + args[k + 2:]
     dirs = []
+    sources = []
+    while "--sources" in args:
+        k = args.index("--sources")
+        sources.append(args[k + 1])
+        args = args[:k] + args[k + 2:]
     while "--headers" in args:
         k = args.index("--headers")
         dirs.append(args[k + 1])
@@ -224,7 +277,7 @@ def main():
             decls.setdefault(m.group(1), []).append(
                 (path, lineno, m.group(2), (m.group(3) or "void").strip()))
 
-    protos = load_prototypes(dirs, set(decls))
+    protos = load_prototypes(dirs, set(decls), sources)
     findings, checked, unmatched, unparsed = [], 0, [], []
     unknown_params = []
 
@@ -319,6 +372,8 @@ def main():
         print(f"\nnot parsed safely ({len(unparsed)}) — not booked either:")
         for n, r in sorted(unparsed):
             print(f"    {n}: {r}")
+    if WASM32:
+        return 1 if n_result or n_param else 0
     return 1 if n_result else 0
 
 

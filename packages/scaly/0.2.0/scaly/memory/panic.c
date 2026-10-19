@@ -148,7 +148,7 @@ long long scaly_catch_run(scaly_body_fn body, void *arg,
  * point is installed, and then the caller ends the process as before — the
  * behaviour of every program that does not ask to catch anything stays
  * exactly what it was. */
-int scaly_panic_jump(const char *what, size_t index, size_t length, int code)
+int scaly_panic_jump(const char *what, unsigned long long index, unsigned long long length, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
@@ -196,7 +196,7 @@ int scaly_panic_null_jump(const char *where, int code)
  * during `fix_graph` leaves a fully built region whose owner holds `rr` and
  * must call `rr.release()` in the catch arm. A jump cannot know which of the
  * two it is. */
-int scaly_panic_region_jump(const char *what, size_t address, int code)
+int scaly_panic_region_jump(const char *what, unsigned long long address, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
@@ -216,7 +216,7 @@ int scaly_panic_region_jump(const char *what, size_t address, int code)
  * under-size the allocation and the following memcpy would write past it. The
  * two words it carries are the addition and the current length — the wrapped
  * sum itself says nothing. */
-int scaly_panic_size_jump(const char *what, size_t added, size_t length, int code)
+int scaly_panic_size_jump(const char *what, unsigned long long added, unsigned long long length, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
@@ -239,7 +239,7 @@ int scaly_panic_size_jump(const char *what, size_t added, size_t length, int cod
  * uncatchable exactly when it fires.
  *
  * `bytes` is what the failed request asked for. */
-int scaly_panic_oom_jump(const char *what, size_t bytes, int code)
+int scaly_panic_oom_jump(const char *what, unsigned long long bytes, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
@@ -264,7 +264,7 @@ int scaly_panic_oom_jump(const char *what, size_t bytes, int code)
  *
  * `requested` is what was asked for where that is a number (stack bytes, the
  * table's limit), 0 where it is not (a pipe, a thread). */
-int scaly_panic_resource_jump(const char *what, size_t requested, int code)
+int scaly_panic_resource_jump(const char *what, unsigned long long requested, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
@@ -487,8 +487,8 @@ int scaly_panic_last_code(void) { return scaly_last_code_v; }
  * submit and the wait, end the process with the code the original raiser
  * would have used, rather than returning into a caller that believes the
  * wave succeeded. */
-void scaly_panic_reraise(int kind, const char *what, size_t index,
-                         size_t length, int code)
+void scaly_panic_reraise(int kind, const char *what, unsigned long long index,
+                         unsigned long long length, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (t) {

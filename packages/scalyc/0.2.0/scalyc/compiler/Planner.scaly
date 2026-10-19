@@ -5427,6 +5427,8 @@ define Planner
                 return true
             if t.name = "size"
                 return true
+            if t.name = "c_size"
+                return true
             if t.name = "char"
                 return true
             if t.name = "i8"
@@ -6047,7 +6049,7 @@ define Planner
         {
             let n Planner.normalize_type_name(t.name)
             match n
-                case "u8" case "u16" case "u32" case "u64" case "uint" case "size_t" case "size": return true
+                case "u8" case "u16" case "u32" case "u64" case "uint" case "size_t" case "size" case "c_size": return true
             false
         }
 
@@ -6082,11 +6084,15 @@ define Planner
                 case "u16": bits := 16
                 case "u32": bits := 32
                 case "u64" case "uint" case "size_t" case "size": bits := 64
+                ; the C side's pointer width differs per target: a constant
+                ; must fit the narrowest, 32 bits (wasm32), to mean the same
+                ; everywhere
+                case "c_size": bits := 32
                 case "i8" case "char": bits := 8
                 case "i16": bits := 16
                 case "i32": bits := 32
             match n
-                case "u8" case "u16" case "u32" case "u64" case "uint" case "size_t" case "size": signed := false
+                case "u8" case "u16" case "u32" case "u64" case "uint" case "size_t" case "size" case "c_size": signed := false
             if signed = false
             {
                 if negative
@@ -12595,6 +12601,24 @@ define Planner
                                     out.add(this.settle_constant(a, pt))
                                     folded := true
                                 }
+                            ; c_size and another integer: never implicit
+                            ; (report_c_size_mixing#)
+                            if folded = false
+                                if this.report_c_size_mixing(pt, a, a.loc)
+                                {
+                                    out.add a
+                                    folded := true
+                                }
+                            ; A wider integer into a narrower parameter is a
+                            ; narrowing write, spelled with its cast like any
+                            ; other (report_integer_narrowing#): it went as the
+                            ; wider value -- `call i32 @close(i64 %fd)` against
+                            ; `declare i32 @close(i32)` --, which the native
+                            ; ABIs read as its low half and wasm-ld refuses
+                            ; (2026-10-19; 186 sites, all in the compiler's
+                            ; calls into LLVM-C)
+                            if folded = false
+                                this.report_integer_narrowing(pt, a, a.loc, String("this argument"))
                             ; A `ref[T]` argument into a `T` parameter is the
                             ; VALUE -- deref_ref_into_pointee#. Without it the
                             ; ADDRESS went into the scalar slot and the callee
@@ -18501,6 +18525,13 @@ define Planner
                 if this.constant_shape(rhs) = false
                     result := this.settle_constant(result, rhs.result_type)
             }
+
+            ; c_size beside another integer: never implicit, a constant aside
+            ; (settled above) -- report_c_size_mixing#. A shift's count is no
+            ; value of the operation.
+            if op_name <> "<<" and op_name <> ">>"
+                if this.report_c_size_mixing(result.result_type, rhs, rhs.loc)
+                    return result
 
             ; Unknown identifier on either side of a binary
             ; operator: a bare, chain-free, single-segment Type
@@ -34416,6 +34447,36 @@ define Planner
                     return false
         }
 
+        ; c_size_mixes#: does a value of type `from` go where `to` is wanted
+        ; with exactly one of them `c_size` and the other another integer?
+        ; `c_size` is the C side's pointer width -- 64 bits on the LP64
+        ; targets, 32 on wasm32 --, so such a conversion would change a
+        ; value's width on one target and not on another, without a word: it
+        ; is never implicit, a constant that fits 32 bits excepted
+        ; (2026-10-19, ROADMAP-wasm.md W1 slice 3).
+        function c_size_mixes(to: PlannedType, from: PlannedType) returns bool
+        {
+            let tn Planner.normalize_type_name(to.name)
+            let sn Planner.normalize_type_name(from.name)
+            if (tn = "c_size") = (sn = "c_size")
+                return false
+            Planner.is_integer_type(tn) and Planner.is_integer_type(sn)
+        }
+
+        ; report_c_size_mixing#: the diagnostic of c_size_mixes#, for a value
+        ; that is no constant; true where it reported
+        procedure report_c_size_mixing(mutable this: Planner, to: PlannedType, source: PlannedOperand, loc: Span) returns bool
+        {
+            if Planner.c_size_mixes(to, source.result_type) = false
+                return false
+            if this.constant_shape(source)
+                return false
+            let tname Planner.get_readable_name(to)
+            let sname Planner.get_readable_name(source.result_type)
+            this.add_diagnostic(loc, String^this("a `sname` where a `tname` is wanted: c_size is the C side's pointer width, 64 bits here and 32 on wasm32, so the conversion is written - 'x as `tname`'"))
+            true
+        }
+
         procedure report_type_mismatch(
             mutable this: Planner,
             target_type: PlannedType,
@@ -34424,6 +34485,8 @@ define Planner
             position: String
         )
         {
+            if this.report_c_size_mixing(target_type, source, loc)
+                return
             if this.report_unit_call_value(target_type, source, loc, position)
                 return
             if this.type_conformance_unjudgeable(target_type, source)
@@ -59521,6 +59584,7 @@ define Planner
     {
         match normalized
             case "u8" case "u16" case "u32" case "u64" case "size_t" case "uint" case "char": return true
+            case "c_size": return true
         false
     }
 
@@ -59550,6 +59614,7 @@ define Planner
         match normalized
             case "i64" case "i32" case "i16" case "i8" case "u64" case "u32": return true
             case "u16" case "u8" case "size_t" case "int" case "uint" case "char": return true
+            case "c_size": return true
         false
     }
 
@@ -60329,6 +60394,7 @@ define Planner
             case "void" case "()" case "bool" case "int" case "uint" case "char" case "i8" case "i16": return true
             case "i32" case "i64" case "u8" case "u16" case "u32" case "u64" case "f32" case "f64": return true
             case "float" case "double" case "size_t" case "size" case "pointer" case "ref": return true
+            case "c_size": return true
         false
     }
 

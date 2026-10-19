@@ -40,7 +40,7 @@
 
 #include <windows.h>
 
-int scaly_stack_guard(void *base, size_t len);
+int scaly_stack_guard(void *base, unsigned long long len);
 int scaly_guard_install(int (*classify)(void *));
 /* ★The stack comes from the SHIM's mmap, not from VirtualAlloc directly, because
  * on Windows that shim IS the fiber stack allocator — it is where the emergency

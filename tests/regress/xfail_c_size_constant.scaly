@@ -1,0 +1,4 @@
+; A constant for a c_size must fit the narrowest pointer width, 32 bits, to
+; mean the same on every target (2026-10-19).
+; xfail: the constant 5000000000 does not fit c_size
+let k: c_size 5000000000

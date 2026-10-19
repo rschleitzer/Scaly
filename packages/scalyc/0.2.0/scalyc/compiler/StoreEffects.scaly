@@ -102,7 +102,7 @@ define StoreEffects
         {
             match n
                 case "int" case "i8" case "i16" case "i32" case "i64": return true
-                case "u8" case "u16" case "u32" case "u64" case "size_t": return true
+                case "u8" case "u16" case "u32" case "u64" case "size_t" case "c_size": return true
                 case "char" case "bool" case "float" case "double": return true
                 case "const_char" case "void" case "()" case "pointer" case "ref": return true
             false

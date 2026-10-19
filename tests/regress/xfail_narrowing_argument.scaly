@@ -1,0 +1,12 @@
+; A wider integer into a narrower parameter is a narrowing write and takes its
+; cast, like an assignment (2026-10-19, Planner.fold_string_args_to_char#): it
+; went as the wider value -- `call i32 @c_close(i64 %0)` against
+; `declare i32 @c_close(i32)` --, which the native ABIs read as its low half
+; and wasm-ld refuses.
+; xfail: this argument narrows int into i32
+function c_close(fd: i32) returns i32 extern
+
+procedure shut(n: int) returns i32
+    c_close(n)
+
+let r shut(3)

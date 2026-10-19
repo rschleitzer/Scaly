@@ -189,33 +189,33 @@ int scaly_eio_reuseport(int fd)
 
 /* UDP with its peers' addresses, for https's h3 (ngtcp2): not served on
  * Windows yet -- h3 stays off there. */
-long long scaly_eio_udp_recv(int fd, void* buf, size_t len, void* addr, size_t addrcap,
-                             size_t* addrlen)
+long long scaly_eio_udp_recv(int fd, void* buf, unsigned long long len, void* addr, unsigned long long addrcap,
+                             unsigned long long* addrlen)
 {
     (void)fd; (void)buf; (void)len; (void)addr; (void)addrcap; (void)addrlen;
     return -1;
 }
 
-long long scaly_eio_udp_send(int fd, const void* buf, size_t len, const void* addr, size_t addrlen)
+long long scaly_eio_udp_send(int fd, const void* buf, unsigned long long len, const void* addr, unsigned long long addrlen)
 {
     (void)fd; (void)buf; (void)len; (void)addr; (void)addrlen;
     return -1;
 }
 
-long long scaly_eio_udp_send_train(int fd, const void* buf, size_t len, size_t segment,
-                                   const void* addr, size_t addrlen)
+long long scaly_eio_udp_send_train(int fd, const void* buf, unsigned long long len, unsigned long long segment,
+                                   const void* addr, unsigned long long addrlen)
 {
     (void)fd; (void)buf; (void)len; (void)segment; (void)addr; (void)addrlen;
     return -1;
 }
 
-int scaly_eio_loopback6(int port, void* addr, size_t addrcap, size_t* len)
+int scaly_eio_loopback6(int port, void* addr, unsigned long long addrcap, unsigned long long* len)
 {
     (void)port; (void)addr; (void)addrcap; (void)len;
     return -1;
 }
 
-int scaly_eio_sockname(int fd, void* addr, size_t addrcap, size_t* len)
+int scaly_eio_sockname(int fd, void* addr, unsigned long long addrcap, unsigned long long* len)
 {
     (void)fd; (void)addr; (void)addrcap; (void)len;
     return -1;
@@ -254,13 +254,13 @@ int scaly_eio_watch(int q, int fd, void* tag)
 
 /* The completion path (io_uring, linux): not in this emulation either —
  * IOCP is completion-based, but the runtime above speaks readiness here. */
-int scaly_eio_submit_recv(int q, int fd, void* buf, size_t count, void* tag)
+int scaly_eio_submit_recv(int q, int fd, void* buf, unsigned long long count, void* tag)
 {
     (void)q; (void)fd; (void)buf; (void)count; (void)tag;
     return -2;
 }
 
-int scaly_eio_submit_send(int q, int fd, void* buf, size_t count, void* tag)
+int scaly_eio_submit_send(int q, int fd, void* buf, unsigned long long count, void* tag)
 {
     (void)q; (void)fd; (void)buf; (void)count; (void)tag;
     return -2;
@@ -513,7 +513,7 @@ static long long sc_map_rw(int r)
     return -1;
 }
 
-long long scaly_eio_read(int fd, void* buf, size_t count)
+long long scaly_eio_read(int fd, void* buf, unsigned long long count)
 {
     SOCKET s = (SOCKET)(intptr_t)fd;
     if (!sc_is_socket(s))
@@ -521,7 +521,7 @@ long long scaly_eio_read(int fd, void* buf, size_t count)
     return sc_map_rw(recv(s, (char*)buf, (int)count, 0));
 }
 
-long long scaly_eio_write(int fd, const void* buf, size_t count)
+long long scaly_eio_write(int fd, const void* buf, unsigned long long count)
 {
     SOCKET s = (SOCKET)(intptr_t)fd;
     if (!sc_is_socket(s))
@@ -532,7 +532,7 @@ long long scaly_eio_write(int fd, const void* buf, size_t count)
 /* There is no SIGPIPE on Windows, so the darwin/linux split that exists in
  * eio.c (SO_NOSIGPIPE vs MSG_NOSIGNAL) has no counterpart: a send to a dead
  * peer simply returns an error. */
-long long scaly_eio_tcp_write(int fd, const void* buf, size_t count)
+long long scaly_eio_tcp_write(int fd, const void* buf, unsigned long long count)
 {
     return scaly_eio_write(fd, buf, count);
 }
@@ -899,7 +899,7 @@ int scaly_eio_accept(int fd)
  * allocator instead leaves every address the Scaly side computes exactly where
  * it was — and costs the other three targets nothing at all, where moving the
  * guard would have cost them an emission change and a page of every stack. */
-int scaly_stack_guard(void* base, size_t len)
+int scaly_stack_guard(void* base, unsigned long long len)
 {
     DWORD old = 0;
     return VirtualProtect(base, len, PAGE_READWRITE | PAGE_GUARD, &old) ? 0 : -1;
@@ -1138,7 +1138,7 @@ long long scaly_stack_limit(void)
  * header's default, which is the opposite of what a deep recursion needs.
  * The entry-signature cast is the one posixcompat_windows.c's pthread_create
  * documents: safe because nobody reads the thread's result. */
-int scaly_thread_spawn_sized(size_t* thread, void* start, void* arg, size_t stack_size)
+int scaly_thread_spawn_sized(unsigned long long* thread, void* start, void* arg, unsigned long long stack_size)
 {
     HANDLE h;
     DWORD flags = 0;
@@ -1418,7 +1418,7 @@ static int sc_big_free(void* p)
     return 1;
 }
 
-void* scaly_aligned_alloc(size_t alignment, size_t size)
+void* scaly_aligned_alloc(unsigned long long alignment, unsigned long long size)
 {
     if (scaly_alloc_fail_left >= 0) {
         if (scaly_alloc_fail_left == 0) {
@@ -1478,7 +1478,7 @@ void* scaly_eio_dir_open(const char* path)
     return d;
 }
 
-long long scaly_eio_dir_next(void* dir, char* buf, size_t cap, int* is_dir)
+long long scaly_eio_dir_next(void* dir, char* buf, unsigned long long cap, int* is_dir)
 {
     ScalyDir* d = (ScalyDir*)dir;
     for (;;) {
@@ -1525,7 +1525,7 @@ int scaly_eio_load_library(const char* path)
  * it: the SHORTEST %g form that reads back to the same double (0.1, not
  * 0.10000000000000001). Answers the length written, at most cap - 1.
  */
-int scaly_eio_format_double(char* buf, size_t cap, double value)
+int scaly_eio_format_double(char* buf, unsigned long long cap, double value)
 {
     int precision;
     int n = 0;
@@ -1864,7 +1864,7 @@ void scaly_proc_stdio_binary(void)
 /* The file of the running program, for a handed-out program that finds its
  * packages beside itself (cli.scaly, adopt_home). Rule (a): every system asks
  * this differently. The length, or -1 when it is not known or does not fit. */
-int scaly_eio_self_path(char* buffer, size_t capacity)
+int scaly_eio_self_path(char* buffer, unsigned long long capacity)
 {
     DWORD n = GetModuleFileNameA(NULL, buffer, (DWORD)capacity);
     return n == 0 || n >= capacity ? -1 : (int)n;

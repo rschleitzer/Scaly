@@ -37,7 +37,7 @@ procedure unhex(host: ref[Page], hex: Slice[u8]) returns ByteBuf
     var i: size_t 0
     while i + 1 < hex.length
     {
-        out.append_byte(hex_value(hex[i]) * 16 + hex_value(hex[i + 1]))
+        out.append_byte(hex_value(hex[i]) * 16 + hex_value(hex[i + 1]) as u8)
         i := i + 2
     }
     out

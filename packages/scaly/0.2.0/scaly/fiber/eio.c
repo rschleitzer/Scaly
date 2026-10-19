@@ -255,13 +255,13 @@ int scaly_eio_wake_close(int q, int w)
 }
 
 /* The completion path (io_uring, linux): not on kqueue. */
-int scaly_eio_submit_recv(int q, int fd, void* buf, size_t count, void* tag)
+int scaly_eio_submit_recv(int q, int fd, void* buf, unsigned long long count, void* tag)
 {
     (void)q; (void)fd; (void)buf; (void)count; (void)tag;
     return -2;
 }
 
-int scaly_eio_submit_send(int q, int fd, void* buf, size_t count, void* tag)
+int scaly_eio_submit_send(int q, int fd, void* buf, unsigned long long count, void* tag)
 {
     (void)q; (void)fd; (void)buf; (void)count; (void)tag;
     return -2;
@@ -571,14 +571,14 @@ static int scaly_ring_submit_io(int q, int opcode, int fd, void* buf, size_t cou
 /* Queue a receive of up to count bytes into buf, reported as tag|9 with the
  * byte count (0 at end of stream, -errno on an error) at tag+0. -2 when
  * the poller is not a ring. */
-int scaly_eio_submit_recv(int q, int fd, void* buf, size_t count, void* tag)
+int scaly_eio_submit_recv(int q, int fd, void* buf, unsigned long long count, void* tag)
 {
     return scaly_ring_submit_io(q, IORING_OP_RECV, fd, buf, count, tag, SCALY_EIO_WATCH_READ);
 }
 
 /* Queue a send of count bytes, reported as tag|10 with the count sent
  * (-errno on an error) at tag+8. -2 when the poller is not a ring. */
-int scaly_eio_submit_send(int q, int fd, void* buf, size_t count, void* tag)
+int scaly_eio_submit_send(int q, int fd, void* buf, unsigned long long count, void* tag)
 {
     return scaly_ring_submit_io(q, IORING_OP_SEND, fd, buf, count, tag, SCALY_EIO_WATCH_WRITE);
 }
@@ -809,7 +809,7 @@ int scaly_eio_set_nonblocking(int fd)
     return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
-long long scaly_eio_read(int fd, void* buf, size_t count)
+long long scaly_eio_read(int fd, void* buf, unsigned long long count)
 {
     long long r;
     do
@@ -828,7 +828,7 @@ int scaly_eio_errno(void)
     return errno;
 }
 
-long long scaly_eio_write(int fd, const void* buf, size_t count)
+long long scaly_eio_write(int fd, const void* buf, unsigned long long count)
 {
     long long r;
     do
@@ -874,8 +874,8 @@ int scaly_eio_reuseport(int fd)
  * count, -2 when none is waiting, -1 on an error. Shim rule (a): struct
  * sockaddr and socklen_t are the OS's; (c): errno. The address stays an
  * opaque blob on the Scaly side (h3 hands it to ngtcp2). */
-long long scaly_eio_udp_recv(int fd, void* buf, size_t len, void* addr, size_t addrcap,
-                             size_t* addrlen)
+long long scaly_eio_udp_recv(int fd, void* buf, unsigned long long len, void* addr, unsigned long long addrcap,
+                             unsigned long long* addrlen)
 {
     socklen_t al = (socklen_t)addrcap;
     ssize_t n;
@@ -890,7 +890,7 @@ long long scaly_eio_udp_recv(int fd, void* buf, size_t len, void* addr, size_t a
 
 /* One datagram to addr (a blob scaly_eio_udp_recv gave): the byte count,
  * -2 when the socket's buffer is full, -1 on an error. Rules (a), (c). */
-long long scaly_eio_udp_send(int fd, const void* buf, size_t len, const void* addr, size_t addrlen)
+long long scaly_eio_udp_send(int fd, const void* buf, unsigned long long len, const void* addr, unsigned long long addrlen)
 {
     ssize_t n;
     do
@@ -907,8 +907,8 @@ long long scaly_eio_udp_send(int fd, const void* buf, size_t len, const void* ad
  * each. The bytes that went (all of len, or fewer when the socket's buffer
  * filled), -1 on an error. SCALY_UDP_GSO=0 sends one at a time. Rules (a)
  * (UDP_SEGMENT and its cmsg are Linux's) and (c). */
-long long scaly_eio_udp_send_train(int fd, const void* buf, size_t len, size_t segment,
-                                   const void* addr, size_t addrlen)
+long long scaly_eio_udp_send_train(int fd, const void* buf, unsigned long long len, unsigned long long segment,
+                                   const void* addr, unsigned long long addrlen)
 {
     size_t off = 0;
 #if defined(__linux__) && defined(UDP_SEGMENT)
@@ -971,7 +971,7 @@ long long scaly_eio_udp_send_train(int fd, const void* buf, size_t len, size_t s
 
 /* The IPv6 loopback address ::1 with port into addr (addrcap bytes), its
  * length through len: 0, or -1. Rule (a): struct sockaddr_in6 is the OS's. */
-int scaly_eio_loopback6(int port, void* addr, size_t addrcap, size_t* len)
+int scaly_eio_loopback6(int port, void* addr, unsigned long long addrcap, unsigned long long* len)
 {
     struct sockaddr_in6 a;
     if (addrcap < sizeof a)
@@ -987,7 +987,7 @@ int scaly_eio_loopback6(int port, void* addr, size_t addrcap, size_t* len)
 
 /* A socket's own address into addr (addrcap bytes), its length through
  * len: 0, or -1. Rule (a). */
-int scaly_eio_sockname(int fd, void* addr, size_t addrcap, size_t* len)
+int scaly_eio_sockname(int fd, void* addr, unsigned long long addrcap, unsigned long long* len)
 {
     socklen_t al = (socklen_t)addrcap;
     if (getsockname(fd, (struct sockaddr*)addr, &al) != 0)
@@ -1180,7 +1180,7 @@ int scaly_eio_tcp_connect_host(const char* host, int port)
  * linux; darwin lacks the flag, so sockets carry SO_NOSIGPIPE from
  * scaly_eio_sock_init and plain send() suffices. Same EINTR retry and
  * EAGAIN/EWOULDBLOCK -> -2 mapping as scaly_eio_write. */
-long long scaly_eio_tcp_write(int fd, const void* buf, size_t count)
+long long scaly_eio_tcp_write(int fd, const void* buf, unsigned long long count)
 {
     long long r;
 #ifdef __APPLE__
@@ -1320,7 +1320,7 @@ static void scaly_guard_handler(int sig, siginfo_t* si, void* ctx)
  * the exception record and the overflow would die before any handler ran. */
 #include <sys/mman.h>
 
-int scaly_stack_guard(void* base, size_t len)
+int scaly_stack_guard(void* base, unsigned long long len)
 {
     return mprotect(base, len, PROT_NONE);
 }
@@ -1549,7 +1549,7 @@ long long scaly_stack_limit(void)
  */
 #include <pthread.h>
 
-int scaly_thread_spawn_sized(size_t* thread, void* start, void* arg, size_t stack_size)
+int scaly_thread_spawn_sized(unsigned long long* thread, void* start, void* arg, unsigned long long stack_size)
 {
     pthread_t t;
     pthread_attr_t attr;
@@ -1592,7 +1592,7 @@ void scaly_alloc_fail_after(long long n)
     scaly_alloc_fail_left = n;
 }
 
-void* scaly_aligned_alloc(size_t alignment, size_t size)
+void* scaly_aligned_alloc(unsigned long long alignment, unsigned long long size)
 {
     if (scaly_alloc_fail_left >= 0) {
         if (scaly_alloc_fail_left == 0) {
@@ -1628,7 +1628,7 @@ void* scaly_eio_dir_open(const char* path)
     return (void*)opendir(path);
 }
 
-long long scaly_eio_dir_next(void* dir, char* buf, size_t cap, int* is_dir)
+long long scaly_eio_dir_next(void* dir, char* buf, unsigned long long cap, int* is_dir)
 {
     DIR* d = (DIR*)dir;
     struct dirent* e;
@@ -1682,7 +1682,7 @@ int scaly_eio_load_library(const char* path)
  * it: the SHORTEST %g form that reads back to the same double (0.1, not
  * 0.10000000000000001). Answers the length written, at most cap - 1.
  */
-int scaly_eio_format_double(char* buf, size_t cap, double value)
+int scaly_eio_format_double(char* buf, unsigned long long cap, double value)
 {
     int precision;
     int n = 0;
@@ -1903,7 +1903,7 @@ void scaly_jit_use_arena(void* builder)
 #include <limits.h>
 #include <mach-o/dyld.h>
 #endif
-int scaly_eio_self_path(char* buffer, size_t capacity)
+int scaly_eio_self_path(char* buffer, unsigned long long capacity)
 {
 #if defined(__APPLE__)
     char raw[PATH_MAX];
