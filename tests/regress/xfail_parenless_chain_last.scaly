@@ -6,7 +6,10 @@
 ; printed nothing). An operator call with no name is never a value: it is
 ; judged in every position.
 ;
-; xfail: this statement did not resolve to a call
+; Since 2026-10-19 the operation driver refuses the sequence in every position
+; (Planner.report_unread_operation#).
+;
+; xfail: a call without parentheses takes exactly one thing, and more follows here
 
 package scaly 0.2.0
 

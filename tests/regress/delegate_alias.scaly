@@ -1,0 +1,31 @@
+; A name bound to a function or to a method stands for what it is bound to
+; where a delegate is declared (2026-10-19, ROADMAP-operation.md, Functions):
+; `let g twice` and then `let f: IntFn g` killed the compiler (SIGSEGV, rc 139),
+; and `let k c.add` and then `let m: IntFn k` said the method stood without its
+; tuple -- the delegate-typed binding read the NAME, not the alias
+; (Planner.function_alias_target#).
+; Expected: PASS
+define IntFn delegate(int) returns int
+
+function twice(n: int) returns int
+    n * 2
+
+define Counter (base: int)
+{
+    function add(this, n: int) returns int
+        base + n
+}
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+let g twice
+let f: IntFn g
+let c Counter(10)
+let k c.add
+let m: IntFn k
+let h: IntFn m
+if f(4) = 8 and m(2) = 12 and h(3) = 13 and apply(g, 5) = 10 and apply(k, 1) = 11
+    print "PASS"
+else
+    print "FAIL"

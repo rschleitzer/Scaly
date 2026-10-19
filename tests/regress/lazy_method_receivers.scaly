@@ -1,0 +1,76 @@
+; A method with a lazy parameter on a COMPUTED receiver and on a GENERIC
+; concept (2026-10-19, ROADMAP-operation.md, Short circuit). A computed
+; receiver -- a construction, a call's result, a field of one -- is bound
+; once under a name no source can write and the method is put in on that
+; name (Planner.plan_lazy_computed_receiver#): before, the call resolved as a
+; call of a routine that is never built, and the link failed naming its
+; symbol. A generic concept's method is put in with the concept's type
+; parameters standing for the receiver's arguments; before, rc 4.
+; Expected: PASS
+mutable count: int 0
+
+procedure bump(by: int) returns int mutable count
+{
+    count := count + by
+    by
+}
+
+mutable made: int 0
+
+procedure make(v: int) returns Box mutable made
+{
+    made := made + 1
+    Box(v)
+}
+
+define Box (v: int)
+{
+    function or_else(this, fallback: lazy int) returns int
+        if v <> 0: v else fallback
+}
+
+define Holder (box: Box)
+
+define Cell[T] (value: T  present: bool)
+{
+    function or_else(this, fallback: lazy T) returns T
+        if present: value else fallback
+}
+
+define Name (text: String)
+{
+    function or_else(this, fallback: lazy int) returns int
+        if text.get_length() > 0: text.get_length() else fallback
+}
+
+procedure run() returns bool mutable count, made
+{
+    ; a construction as the receiver
+    let a Box(0).or_else(bump(5))
+    let after_a count
+    let b Box(3).or_else(bump(100))
+    let after_b count
+    ; a call's result, evaluated once
+    let c make(0).or_else(bump(2))
+    let after_c count
+    let made_c made
+    ; a field of a construction
+    let d Holder(Box(4)).box.or_else(bump(100))
+    ; in an operation
+    let e 1 + Box(0).or_else(10) * 2
+    ; a generic concept
+    let full Cell[int](7, true)
+    let empty Cell[int](0, false)
+    let f full.or_else(bump(100))
+    let g empty.or_else(bump(1))
+    let after_g count
+    let h Cell[int](0, false).or_else(9)
+    ; a record with a String inside
+    let i Name(String("abc")).or_else(bump(100))
+    a = 5 and after_a = 5 and b = 3 and after_b = 5 and c = 2 and after_c = 7 and made_c = 1 and d = 4 and e = 21 and f = 7 and g = 1 and after_g = 8 and h = 9 and i = 3 and count = 8
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

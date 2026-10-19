@@ -31,9 +31,9 @@ let pos msg.get("params").get("position")
 if pos.get("line").as_i64() <> 3 or pos.get("character").as_i64() <> 14
     ok := false
 ; missing members and wrong kinds
-if msg.get("nope").is_null() = false or msg.get("nope").get("deeper").as_string().length <> 0
+if msg.get("nope").is_null() = false or msg.get("nope").get("deeper").as_string().length() <> 0
     ok := false
-if msg.get("id").as_string().length <> 0 or msg.get("method").as_i64() <> 0 or msg.get("id").length() <> 0
+if msg.get("id").as_string().length() <> 0 or msg.get("method").as_i64() <> 0 or msg.get("id").length() <> 0
     ok := false
 let flags msg.get("flags")
 if flags.is_array() = false or flags.length() <> 3 or flags.item(0).as_bool() = false

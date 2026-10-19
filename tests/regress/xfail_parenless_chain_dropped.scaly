@@ -16,7 +16,10 @@
 ; It was live in the tree: dazzle_cli.scaly's JIT-selftest failure branch built
 ; a "FAILED at step N" message and printed only the newline after it.
 ;
-; xfail: this statement did not resolve to a call
+; Since 2026-10-19 the operation driver refuses the sequence itself
+; (Planner.report_unread_operation#), member receiver and free function alike.
+;
+; xfail: a call without parentheses takes exactly one thing, and more follows here
 
 package scaly 0.2.0
 

@@ -1141,60 +1141,13 @@ define symbols
     }
 
     ; True when the message describes a statement whose parenless call head
-    ; swallowed the chain that was meant to be its argument.
-    ;
-    ; TWO WORDINGS reach here, because the collapse ends in two different
-    ; places. When it leaves no name behind, the planner says so outright. When
-    ; it leaves one, the message is about a discarded operator — and the
-    ; operator NAME settles it soundly rather than by guess: an operator in this
-    ; language consists EXCLUSIVELY of the eleven operator characters, the four
-    ; word operators being the only exceptions. So an alphanumeric name that is
-    ; none of those is not an operator at all, it is the callee the head
-    ; swallowed. `print helper(2)` reports operator `helper` and is this; `a + b`
-    ; keeps its symbolic name and is left alone, because parenthesizing a real
-    ; dead expression would produce nonsense.
+    ; swallowed the chain that was meant to be its argument: the operation
+    ; driver refuses such a sequence and says so (Planner.report_parenless_more#,
+    ; since 2026-10-19; before, two gates on what the collapse had left behind
+    ; spoke of a statement that "did not resolve to a call" or of a discarded
+    ; "operator" carrying the callee's name).
     function swallowed_call_head(message: String) returns bool
-    {
-        if symbols.find_substring(message, "did not resolve to a call") < message.get_length()
-            return true
-
-        let marker "the result of operator '"
-        let at symbols.find_substring(message, marker)
-        if at >= message.get_length()
-            return false
-
-        let from at + marker.get_length()
-        let to symbols.index_of_byte(message, from, message.get_length(), 0x27)   ; '
-        if to >= message.get_length()
-            return false
-        if to = from
-            return true                    ; no name at all: the collapse left none
-
-        ; A name of identifier characters, starting with a letter or `_`.
-        let first message.get from
-        if symbols.is_ident_byte(first) = false
-            return false
-        if first >= 0x30 and first <= 0x39
-            return false
-        var i from
-        while i < to
-        {
-            if symbols.is_ident_byte(message.get i) = false
-                return false
-            i := i + 1
-        }
-
-        let name symbols.substring(message, from, to)
-        if name = "and"
-            return false
-        if name = "or"
-            return false
-        if name = "not"
-            return false
-        if name = "xor"
-            return false
-        true
-    }
+        symbols.find_substring(message, "a call without parentheses takes exactly one thing") < message.get_length()
 
     ; ---- fix: `a = b` -> `set a: b` ------------------------------------
     ;

@@ -7,7 +7,11 @@
 ; may be its value -- and a call under a function's name is never one.
 ; Measured before: `define i32 @main() { ret i32 0 }`.
 ;
-; xfail: the result of operator 'go' is discarded
+; Since 2026-10-19 the operation driver refuses the sequence itself in every
+; position (Planner.report_unread_operation#); the effect-free gate's arms for
+; what the collapse left behind are gone with the collapse.
+;
+; xfail: a call without parentheses takes exactly one thing, and more follows here
 
 function go(n: int) returns String
     String#("x")

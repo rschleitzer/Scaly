@@ -2,7 +2,8 @@
 ; negation. In `if !a` it joined nothing and the marker pass dropped it: `if !a`
 ; ran as `if a`, `b and !a` as `b and a`, `!(x = 3)` as `x = 3` -- at rc 0,
 ; while `!` was documented as a synonym of `not`. Nothing in the tree spelled
-; it; found probing `and`-chains. Planner.report_dropped_thrown_marker#.
+; it; found probing `and`-chains. Since 2026-10-19 the operation driver refuses
+; the sequence and names the sigil (Planner.report_unread_operation#).
 ; xfail: error: '!' is the thrown-lifetime sigil, not negation
 function negate(a: bool) returns int
 {

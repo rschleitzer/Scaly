@@ -1,0 +1,22 @@
+; A method named on a CALL'S RESULT without its tuple is the method, not its
+; call, and a bound method takes a receiver that is a name
+; (2026-10-19, Planner.apply_call_result_hops#): `apply(make().add, 3)` was
+; called with no argument and answered "wrong number of arguments ... got 0",
+; at a line of the callee's declaration.
+; xfail: 'add' is a method of a call's result and stands here without its tuple
+define IntFn delegate(int) returns int
+
+define Counter (base: int)
+{
+    function add(this, n: int) returns int
+        base + n
+}
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+function make() returns Counter
+    Counter(10)
+
+let b apply(make().add, 3)
+print "`b`\n"

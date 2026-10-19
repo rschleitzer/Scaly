@@ -1690,7 +1690,7 @@ titles, fixed, gone, _ = fix("paren",
     "function helper(v: int) returns int\n    v + 1\n\n"
     "function demo() returns int\n{\n"
     "    print helper(2)\n"
-    "    return 1\n}\n", "is discarded")
+    "    return 1\n}\n", "takes exactly one thing")
 check(titles == ["Parenthesize the argument of print"],
       "swallowed call head offers the parenthesize fix -- %s" % (titles,))
 check(line_of(fixed, 5) == "    print(helper(2))", "the edit parenthesizes the argument")
@@ -1720,7 +1720,7 @@ for label, src, marker in [
         ("a comment the parens would swallow",
          "function helper(v: int) returns int\n    v + 1\n\n"
          "function demo() returns int\n{\n    print helper(2)  ; a note\n    return 1\n}\n",
-         "is discarded"),
+         "takes exactly one thing"),
         ("the name occurs twice on the line",
          "function demo() returns int\n{\n    var counter 3\n"
          "    let d countr + countr\n    return counter + d\n}\n",

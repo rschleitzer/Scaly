@@ -1633,7 +1633,7 @@ define Planner
             escaping_targets := Array[String]^this()
             address_taken_locals := Array[String]^this()
             field_written_locals := Array[String]^this()
-            operation_counts := Vector[size_t]^this(85)
+            operation_counts := Vector[size_t]^this(89)
             var oc_i: size_t 0
             while oc_i < 85
             {
@@ -12845,14 +12845,11 @@ define Planner
 
             ; The operation driver (operation#): the sequence is read from the
             ; left, step by step; each step is taken by the routines of the
-            ; old collapse (operation_machinery# and its parts).
-            let driven this.operation(ops)
-            if operation_counts[23] = 1
-                return driven
-
-            ; a sequence it refused goes on through the machinery as it
-            ; stands, so that what follows is judged as before
-            this.operation_machinery(ops)
+            ; old collapse (operation_machinery# and its parts). A sequence it
+            ; refuses is reported there and goes no further: until 2026-10-19
+            ; it went on through the machinery, whose gates said the same
+            ; thing a second time.
+            this.operation(ops)
         }
 
         ; operation_machinery#: one step the driver hands over, or a sequence
@@ -15474,6 +15471,12 @@ define Planner
                         if (match_ref <> null or has_ns_mangled) and call_arm = 0
                             call_arm := 5
 
+                        ; a concept's static (s155), its own kind since 2026-10-19
+                        if match_ref = null and Planner.call_arm_applies(named, 8)
+                            match_ref := this.call_arm_static(result, fn_name, arg_types, arg_ops)
+                        if match_ref <> null and call_arm = 0
+                            call_arm := 8
+
                         ; s101: Implicit-this sibling method dispatch.
                         ; When the standard lookup didn't find `fn_name`
                         ; and `this: pointer[T]` is in scope, try resolving
@@ -16322,12 +16325,14 @@ define Planner
             result
         }
 
-        ; Does arm (1 free, 3 dotted local, 4 chain, 5 namespace, 6 sibling) of
+        ; Does arm (1 free, 3 dotted local, 4 chain, 5 namespace, 6 sibling, 8
+        ; a concept's static) of
         ; collapse_application#'s cascade resolve a head operation_name# calls
         ; `named`? Measured over the 36 roots (operation_arm#, 2026-10-18): a
         ; method on a chain met arm 4 only (128 321 calls), a qualified name
         ; arm 5 (44 417), a function arm 1 (32 390) and 6 or 7 (76), a bare
-        ; name 6 or 7 (8 145); the arms a kind never meets are not tried. A
+        ; name 6 or 7 (8 145); the arms a kind never meets are not tried; a
+        ; concept's static (9) meets arm 8 since 2026-10-19. A
         ; value, a type and the old path (0) take every arm. The sibling
         ; static (7) is open to every head.
         function call_arm_applies(named: size_t, arm: size_t) returns bool
@@ -16336,6 +16341,7 @@ define Planner
                 case 1: return arm = 4
                 case 3: return arm = 1 or arm = 6
                 case 5: return arm = 3 or arm = 5
+                case 9: return arm = 3 or arm = 8
                 case 6: return arm = 6
                 case 7: return arm = 6
                 case 8: return false
@@ -17221,284 +17227,304 @@ define Planner
                         }
                     }
 
-                    ; s155: Static method call `Type.method(args)`
-                    ; where Type is a Structure concept and method
-                    ; is a this-less function member. Mirrors stage-0
-                    ; Planner.cpp:8421-8517. resolve_function_call#
-                    ; (suffix) above misses these because struct
-                    ; static methods aren't in the free-function
-                    ; registry. Without this, `Page.get(this as
-                    ; pointer[void])` inside Vector/Array.add resolves
-                    ; to null and the whole `let own_page` binding
-                    ; plus every downstream statement (allocate, the
-                    ; item store, `set data`) silently drops — leaving
-                    ; container .add() bodies that only bump `length`.
-                    if match_ref = null
-                    {
-                        ; A module-dotted prefix
-                        ; (`Message.MessageFormatter.test()`) names the
-                        ; concept in its LAST segment; concepts register
-                        ; under their simple name, and the def mangles
-                        ; with the simple name as parent
-                        ; (`_ZN16MessageFormatter4testEv`). Use the last
-                        ; segment for the lookup AND the mangled parent.
-                        var sconcept prefix
-                        let sc_dot prefix.last_index_of(46)
-                        if sc_dot > 0
-                            sconcept := prefix.substring(sc_dot as size_t + 1, prefix.get_length() - (sc_dot as size_t) - 1)
-                        ; Gated-first, raw fallback: a qualified
-                        ; static call names the concept explicitly, so
-                        ; a use-visibility miss must not hide it (see
-                        ; concept_has_static#). Byte-identical for the
-                        ; compiler (fires only where lookup_concept was
-                        ; null).
-                        var smc_ref this.lookup_concept(sconcept)
-                        if smc_ref = null
-                            smc_ref := this.lookup_concept_any(sconcept)
-                        if smc_ref <> null
-                        {
-                            let smc (*smc_ref)
-                            var static_fn: ref[Function]? null
-                            ; Arity gate for the QUALIFIED STATIC path. Selection
-                            ; below takes the FIRST same-named this-less member and
-                            ; never compared its parameter count with the call's, so
-                            ; `Box.twice(1, 2, 3)` on a one-parameter static and
-                            ; `ns.greet(1, 2)` on a one-parameter namespace function
-                            ; both planned CLEAN (rc 0) and handed the surplus
-                            ; arguments to a signature with no slots for them —
-                            ; emit_call synthesizes the callee type from the
-                            ; ARGUMENTS, so LLVM had nothing to verify against
-                            ; either. The this-method path (lookup_method#), the
-                            ; free-function path (check_function_match#) and the
-                            ; namespace-function path above have all had this gate
-                            ; for a long time; the qualified static was the one
-                            ; direction left silent, and only the TOO MANY direction
-                            ; is silent at all (too few loses the candidate and
-                            ; surfaces as "function not found").
-                            ;
-                            ; Record and CONTINUE, exactly as lookup_method#'s gate
-                            ; does: add_diagnostic is fatal at the cli.scaly gate, so
-                            ; resolution proceeds unchanged and no path that expects
-                            ; a hit for a method it just found by name is disturbed.
-                            var static_arity_seen: bool false
-                            ; s155 + union: a this-less static can live
-                            ; on a Structure OR a Union concept (opensp's
-                            ; CodingSystem is a union with a `test()`
-                            ; static). Both store members in `members`,
-                            ; so iterate whichever this concept has.
-                            var smmembers_ref: ref[Vector[Member]]? null
-                            choose smc.definition
-                                when sst: Structure
-                                    smmembers_ref := &^this sst.members
-                                when suu: Union
-                                    smmembers_ref := &^this suu.members
-                                when snn: Namespace
-                                    smmembers_ref := &^this snn.members
-                                else
-                                    0
-                            if smmembers_ref <> null
-                            {
-                                let smmembers (*smmembers_ref)
-                                var smi: size_t 0
-                                while smi < smmembers.length
-                                {
-                                    let sm_ptr smmembers.get smi
-                                    if sm_ptr <> null
-                                    {
-                                        let sm (*sm_ptr)
-                                        choose sm
-                                            when sf: Function
-                                            {
-                                                if sf.name = suffix
-                                                {
-                                                    var is_static: bool true
-                                                    if sf.input.length > 0
-                                                    {
-                                                        let i0 sf.input.get 0
-                                                        if i0 <> null
-                                                        {
-                                                            if i0.name <> null
-                                                            {
-                                                                if (*i0.name) = "this"
-                                                                    is_static := false
-                                                            }
-                                                        }
-                                                    }
-                                                    if is_static
-                                                    {
-                                                        ; The first same-named static is
-                                                        ; the fallback; the first whose
-                                                        ; ARITY matches wins. Before, the
-                                                        ; fallback was the only rule, so
-                                                        ; two same-named statics of
-                                                        ; different arity always resolved
-                                                        ; to the one declared first —
-                                                        ; `Box.pick(4, 5)` ran the
-                                                        ; one-parameter `pick` and
-                                                        ; answered 4, with rc 0 and no
-                                                        ; word said. Mirrors
-                                                        ; resolve_static_method_on#,
-                                                        ; which has always preferred the
-                                                        ; arity match on the sibling path.
-                                                        if static_fn = null
-                                                            static_fn := &^this sf
-                                                        if sf.input.length = arg_types.length
-                                                        {
-                                                            if static_arity_seen = false
-                                                                static_fn := &^this sf
-                                                            static_arity_seen := true
-                                                        }
-                                                    }
-                                                }
-                                                0
-                                            }
-                                            else
-                                                0
-                                    }
-                                    smi := smi + 1
-                                }
-                            }
-
-                            if static_fn <> null
-                            {
-                                if static_arity_seen
-                                    static_fn := this.refine_static_overload(smc, suffix, arg_types, arg_ops, static_fn)
-                                let sfn (*static_fn)
-                                if static_arity_seen = false
-                                {
-                                    var qa_sb StringBuilder()
-                                    qa_sb.append "wrong number of arguments for "
-                                    qa_sb.append sconcept
-                                    qa_sb.append "."
-                                    qa_sb.append suffix
-                                    qa_sb.append ": got "
-                                    qa_sb.append arg_types.length
-                                    qa_sb.append ", expected "
-                                    qa_sb.append sfn.input.length
-                                    this.add_diagnostic(result.loc, qa_sb.to_string())
-                                }
-                                let sparent_ref &^this PlannedType(
-                                    result.loc,
-                                    String(sconcept),
-                                    this.type_symbol(sconcept, null),
-                                    null,
-                                    Lifetime.Unspecified(Unspecified()),
-                                    null,
-                                    "",
-                                    null
-                                )
-                                var sitems_arr Array[PlannedItem]()
-                                ; Collected alongside sitems_arr so the MethodMatch
-                                ; carries parameter_types — the String→const_char /
-                                ; char-fold coercions below key off it; with null a
-                                ; string LITERAL bound to a pointer[const_char] static
-                                ; param passed the String { ptr } record address
-                                ; instead of the cstr (history Finding 3).
-                                var sparams_arr Array[PlannedType]()
-                                var spi: size_t 0
-                                while spi < sfn.input.length
-                                {
-                                    let p_ptr sfn.input.get spi
-                                    if p_ptr <> null
-                                    {
-                                        if p_ptr.type <> null
-                                        {
-                                            let pt (*p_ptr.type)
-                                            let spt this.plan_type(pt)
-                                            sitems_arr.add(PlannedItem(
-                                                result.loc, false, null, &^this spt, null
-                                            ))
-                                            sparams_arr.add spt
-                                        }
-                                    }
-                                    spi := spi + 1
-                                }
-                                var sitems_holder Vector[PlannedItem](sitems_arr)
-                                var sparams_holder Vector[PlannedType](sparams_arr)
-                                ; Page-param flag mirrors plan_function#'s
-                                ; has_page: explicit page_parameter OR an
-                                ; implicit return-page (struct-returning fns
-                                ; like statement_result_type get an rp arg in
-                                ; the mangled name even with no `#`). Without
-                                ; the implicit check, the call site mangles
-                                ; `...E16PlannedStatement` while the def is
-                                ; `...PageE16PlannedStatement` → link failure.
-                                var s_pp: bool false
-                                if sfn.page_parameter <> null
-                                    s_pp := true
-                                if Planner.function_needs_caller_page(this, sfn)
-                                    s_pp := true
-                                let smangled Planner.mangle_function(
-                                    suffix, &sitems_holder, sparent_ref, s_pp
-                                )
-                                var s_rt: PlannedType Planner.make_void_type()
-                                if sfn.returns_ <> null
-                                {
-                                    s_rt := this.plan_type((*sfn.returns_))
-                                    ; the sret slot of a record returned by
-                                    ; value (see lookup_method#)
-                                    this.ensure_type_layout(s_rt)
-                                }
-                                var s_throws: ref[PlannedType]? null
-                                var s_can_throw: bool false
-                                if sfn.throws_ <> null
-                                {
-                                    s_can_throw := true
-                                    s_throws := &^this this.plan_type((*sfn.throws_))
-                                }
-                                var srt_holder Vector[PlannedType](1)
-                                srt_holder.put(0, s_rt)
-                                match_ref := MethodMatch^this(
-                                    null,
-                                    smangled,
-                                    s_rt,
-                                    &sparams_holder,
-                                    s_pp,
-                                    s_can_throw,
-                                    s_throws,
-                                    false,
-                                    false,
-                                    false,
-                                    this.return_residence_class(sfn), this.return_residence_arg(sfn)
-                                )
-                                if this.has_recorded_function(smangled) = false
-                                {
-                                    var spp_ref: ref[String]? null
-                                    if s_pp
-                                    {
-                                        var spph Vector[String](1)
-                                        spph.put(0, "_rp")
-                                        spp_ref := spph.get(0)
-                                    }
-                                    let sextern PlannedImplementation.Extern(
-                                        PlannedExternImpl result.loc
-                                    )
-                                    this.record_function(PlannedFunction(
-                                        result.loc,
-                                        false,
-                                        false,
-                                        suffix,
-                                        smangled,
-                                        spp_ref,
-                                        &sitems_holder,
-                                        srt_holder.get 0,
-                                        s_throws,
-                                        Lifetime.Unspecified(Unspecified()),
-                                        sextern,
-                                        null,
-                                        false,
-                                        s_can_throw,
-                                        null,
-                                        this.file,
-                                        null
-                                    ))
-                                }
-                            }
-                        }
-                    }
                 }
             }
             NamespaceArm(match_ref, ns_mangled, has_ns_mangled, ns_mangled_page, ns_coerce_valid, ns_return_type, ns_return_valid)
+        }
+
+        ; The arm for a STATIC, `Type.method(args)` (s155): a member without
+        ; `this` that the concept the qualifier names declares -- a
+        ; Structure's or a Union's static, a Namespace's function --, mangled
+        ; with the concept as its parent. operation_name# answers 9 for such
+        ; a head (concept_has_static#, the same lookup; 43 220 calls over the
+        ; 36 roots, 2026-10-19). Before that day it was the fallback inside
+        ; call_arm_namespace#, and every qualified name was one kind. Without
+        ; it `Page.get(this)` inside Vector/Array.add resolved to null and the
+        ; bodies silently dropped everything but the length bump.
+        procedure call_arm_static(
+            mutable this: Planner,
+            mutable result: PlannedOperand,
+            fn_name: String,
+            mutable arg_types: Vector[PlannedType],
+            mutable arg_ops: Vector[PlannedOperand]
+        ) returns ref[MethodMatch]?
+        {
+            var match_ref: ref[MethodMatch]? null
+            let dot_idx fn_name.last_index_of(46)
+            if dot_idx <= 0
+                return null
+            let dot_pos dot_idx as size_t
+            ; the names go into records on the Planner's page (the match,
+            ; the recorded stub, a diagnostic): built there, not on this
+            ; frame -- in call_arm_namespace#'s frame they had lived long
+            ; enough by accident, and cut out into a routine of its own the
+            ; stub's name dangled (`_ZN101'` in scalyls' IR)
+            let prefix String^this(fn_name.substring(0, dot_pos))
+            let suffix String^this(fn_name.substring(
+                dot_pos + 1,
+                fn_name.get_length() - dot_pos - 1
+            ))
+            ; A module-dotted prefix
+            ; (`Message.MessageFormatter.test()`) names the
+            ; concept in its LAST segment; concepts register
+            ; under their simple name, and the def mangles
+            ; with the simple name as parent
+            ; (`_ZN16MessageFormatter4testEv`). Use the last
+            ; segment for the lookup AND the mangled parent.
+            var sconcept prefix
+            let sc_dot prefix.last_index_of(46)
+            if sc_dot > 0
+                sconcept := String^this(prefix.substring(sc_dot as size_t + 1, prefix.get_length() - (sc_dot as size_t) - 1))
+            ; Gated-first, raw fallback: a qualified
+            ; static call names the concept explicitly, so
+            ; a use-visibility miss must not hide it (see
+            ; concept_has_static#). Byte-identical for the
+            ; compiler (fires only where lookup_concept was
+            ; null).
+            var smc_ref this.lookup_concept(sconcept)
+            if smc_ref = null
+                smc_ref := this.lookup_concept_any(sconcept)
+            if smc_ref <> null
+            {
+                let smc (*smc_ref)
+                var static_fn: ref[Function]? null
+                ; Arity gate for the QUALIFIED STATIC path. Selection
+                ; below takes the FIRST same-named this-less member and
+                ; never compared its parameter count with the call's, so
+                ; `Box.twice(1, 2, 3)` on a one-parameter static and
+                ; `ns.greet(1, 2)` on a one-parameter namespace function
+                ; both planned CLEAN (rc 0) and handed the surplus
+                ; arguments to a signature with no slots for them —
+                ; emit_call synthesizes the callee type from the
+                ; ARGUMENTS, so LLVM had nothing to verify against
+                ; either. The this-method path (lookup_method#), the
+                ; free-function path (check_function_match#) and the
+                ; namespace-function path above have all had this gate
+                ; for a long time; the qualified static was the one
+                ; direction left silent, and only the TOO MANY direction
+                ; is silent at all (too few loses the candidate and
+                ; surfaces as "function not found").
+                ;
+                ; Record and CONTINUE, exactly as lookup_method#'s gate
+                ; does: add_diagnostic is fatal at the cli.scaly gate, so
+                ; resolution proceeds unchanged and no path that expects
+                ; a hit for a method it just found by name is disturbed.
+                var static_arity_seen: bool false
+                ; s155 + union: a this-less static can live
+                ; on a Structure OR a Union concept (opensp's
+                ; CodingSystem is a union with a `test()`
+                ; static). Both store members in `members`,
+                ; so iterate whichever this concept has.
+                var smmembers_ref: ref[Vector[Member]]? null
+                choose smc.definition
+                    when sst: Structure
+                        smmembers_ref := &^this sst.members
+                    when suu: Union
+                        smmembers_ref := &^this suu.members
+                    when snn: Namespace
+                        smmembers_ref := &^this snn.members
+                    else
+                        0
+                if smmembers_ref <> null
+                {
+                    let smmembers (*smmembers_ref)
+                    var smi: size_t 0
+                    while smi < smmembers.length
+                    {
+                        let sm_ptr smmembers.get smi
+                        if sm_ptr <> null
+                        {
+                            let sm (*sm_ptr)
+                            choose sm
+                                when sf: Function
+                                {
+                                    if sf.name = suffix
+                                    {
+                                        var is_static: bool true
+                                        if sf.input.length > 0
+                                        {
+                                            let i0 sf.input.get 0
+                                            if i0 <> null
+                                            {
+                                                if i0.name <> null
+                                                {
+                                                    if (*i0.name) = "this"
+                                                        is_static := false
+                                                }
+                                            }
+                                        }
+                                        if is_static
+                                        {
+                                            ; The first same-named static is
+                                            ; the fallback; the first whose
+                                            ; ARITY matches wins. Before, the
+                                            ; fallback was the only rule, so
+                                            ; two same-named statics of
+                                            ; different arity always resolved
+                                            ; to the one declared first —
+                                            ; `Box.pick(4, 5)` ran the
+                                            ; one-parameter `pick` and
+                                            ; answered 4, with rc 0 and no
+                                            ; word said. Mirrors
+                                            ; resolve_static_method_on#,
+                                            ; which has always preferred the
+                                            ; arity match on the sibling path.
+                                            if static_fn = null
+                                                static_fn := &^this sf
+                                            if sf.input.length = arg_types.length
+                                            {
+                                                if static_arity_seen = false
+                                                    static_fn := &^this sf
+                                                static_arity_seen := true
+                                            }
+                                        }
+                                    }
+                                    0
+                                }
+                                else
+                                    0
+                        }
+                        smi := smi + 1
+                    }
+                }
+
+                if static_fn <> null
+                {
+                    if static_arity_seen
+                        static_fn := this.refine_static_overload(smc, suffix, arg_types, arg_ops, static_fn)
+                    let sfn (*static_fn)
+                    if static_arity_seen = false
+                    {
+                        var qa_sb StringBuilder()
+                        qa_sb.append "wrong number of arguments for "
+                        qa_sb.append sconcept
+                        qa_sb.append "."
+                        qa_sb.append suffix
+                        qa_sb.append ": got "
+                        qa_sb.append arg_types.length
+                        qa_sb.append ", expected "
+                        qa_sb.append sfn.input.length
+                        this.add_diagnostic(result.loc, String^this(qa_sb.to_string()))
+                    }
+                    let sparent_ref &^this PlannedType(
+                        result.loc,
+                        String^this(sconcept),
+                        this.type_symbol(sconcept, null),
+                        null,
+                        Lifetime.Unspecified(Unspecified()),
+                        null,
+                        "",
+                        null
+                    )
+                    var sitems_arr Array[PlannedItem]()
+                    ; Collected alongside sitems_arr so the MethodMatch
+                    ; carries parameter_types — the String→const_char /
+                    ; char-fold coercions below key off it; with null a
+                    ; string LITERAL bound to a pointer[const_char] static
+                    ; param passed the String { ptr } record address
+                    ; instead of the cstr (history Finding 3).
+                    var sparams_arr Array[PlannedType]()
+                    var spi: size_t 0
+                    while spi < sfn.input.length
+                    {
+                        let p_ptr sfn.input.get spi
+                        if p_ptr <> null
+                        {
+                            if p_ptr.type <> null
+                            {
+                                let pt (*p_ptr.type)
+                                let spt this.plan_type(pt)
+                                sitems_arr.add(PlannedItem(
+                                    result.loc, false, null, &^this spt, null
+                                ))
+                                sparams_arr.add spt
+                            }
+                        }
+                        spi := spi + 1
+                    }
+                    var sitems_holder Vector[PlannedItem](sitems_arr)
+                    var sparams_holder Vector[PlannedType](sparams_arr)
+                    ; Page-param flag mirrors plan_function#'s
+                    ; has_page: explicit page_parameter OR an
+                    ; implicit return-page (struct-returning fns
+                    ; like statement_result_type get an rp arg in
+                    ; the mangled name even with no `#`). Without
+                    ; the implicit check, the call site mangles
+                    ; `...E16PlannedStatement` while the def is
+                    ; `...PageE16PlannedStatement` → link failure.
+                    var s_pp: bool false
+                    if sfn.page_parameter <> null
+                        s_pp := true
+                    if Planner.function_needs_caller_page(this, sfn)
+                        s_pp := true
+                    let smangled String^this(Planner.mangle_function(
+                        suffix, &sitems_holder, sparent_ref, s_pp
+                    ))
+                    var s_rt: PlannedType Planner.make_void_type()
+                    if sfn.returns_ <> null
+                    {
+                        s_rt := this.plan_type((*sfn.returns_))
+                        ; the sret slot of a record returned by
+                        ; value (see lookup_method#)
+                        this.ensure_type_layout(s_rt)
+                    }
+                    var s_throws: ref[PlannedType]? null
+                    var s_can_throw: bool false
+                    if sfn.throws_ <> null
+                    {
+                        s_can_throw := true
+                        s_throws := &^this this.plan_type((*sfn.throws_))
+                    }
+                    var srt_holder Vector[PlannedType](1)
+                    srt_holder.put(0, s_rt)
+                    match_ref := MethodMatch^this(
+                        null,
+                        smangled,
+                        s_rt,
+                        &sparams_holder,
+                        s_pp,
+                        s_can_throw,
+                        s_throws,
+                        false,
+                        false,
+                        false,
+                        this.return_residence_class(sfn), this.return_residence_arg(sfn)
+                    )
+                    if this.has_recorded_function(smangled) = false
+                    {
+                        var spp_ref: ref[String]? null
+                        if s_pp
+                        {
+                            var spph Vector[String](1)
+                            spph.put(0, "_rp")
+                            spp_ref := spph.get(0)
+                        }
+                        let sextern PlannedImplementation.Extern(
+                            PlannedExternImpl result.loc
+                        )
+                        this.record_function(PlannedFunction(
+                            result.loc,
+                            false,
+                            false,
+                            suffix,
+                            smangled,
+                            spp_ref,
+                            &sitems_holder,
+                            srt_holder.get 0,
+                            s_throws,
+                            Lifetime.Unspecified(Unspecified()),
+                            sextern,
+                            null,
+                            false,
+                            s_can_throw,
+                            null,
+                            this.file,
+                            null
+                        ))
+                    }
+                }
+            }
+            match_ref
         }
 
         ; The arm for a bare name inside a concept (`read_character()`, s101):
@@ -18308,14 +18334,49 @@ define Planner
                             return result
         }
 
-        ; The operator part of collapse_operand_sequence#: `first` is the
-        ; value so far (ops[0], or what collapse_application# made of it), and
-        ; from ops[1] on operators and their right sides follow, by the table.
+        ; The operator part of a step (operation_apply#, the end of
+        ; operation_machinery#): `first` is the value so far (ops[0], or what
+        ; collapse_application# made of it), and ops holds ONE thing more -- a
+        ; postfix (operation_postfix#), a value nothing joins to it
+        ; (report_orphan_operand#) -- or an operator and its right side, the
+        ; raw operation (raw_operation#). Nothing else reaches it since
+        ; 2026-10-19, when a sequence the driver refuses stopped going on
+        ; through the machinery: until then it was the loop of the old collapse
+        ; over a whole sequence, with the look-ahead of the precedence climb.
         procedure collapse_operators(
             mutable this: Planner,
             mutable ops: Vector[PlannedOperand],
             mutable first: PlannedOperand
         ) returns PlannedOperand
+        {
+            let result this.operation_left(first)
+            if ops.length < 2
+                return result
+            let op ops[1]
+            var postfixed false
+            let after this.operation_postfix(result, op, &postfixed)
+            if postfixed
+                return after
+            if this.report_orphan_operand(result, op)
+                return result
+            if ops.length < 3
+                return result
+            ; a raw operation is an operator and its right side; a name that
+            ; is no operator here was what the old collapse left behind when a
+            ; call without parentheses swallowed a call (`print go(1)` as
+            ; `print go` applied to `(1)`) -- the driver refuses that shape, so
+            ; this is a step nobody expected, and it is not dropped silently
+            if this.operation_thing(op) <> 1
+            {
+                this.add_diagnostic(op.loc, String^this("this sequence is not one an operation reads: a prefix, a postfix or a sigil stands where no value is expected, or an operator ends it"))
+                return result
+            }
+            this.raw_operation(result, op, ops[2])
+        }
+
+        ; The left side of an operation or a postfix as a value: a method
+        ; named without its tuple is reported and called.
+        procedure operation_left(mutable this: Planner, first: PlannedOperand) returns PlannedOperand
         {
             var result: PlannedOperand first
 
@@ -18365,1073 +18426,831 @@ define Planner
                     }
                 }
             }
+            result
+        }
 
-            var i: size_t 1
-            while i < ops.length
-            {
-                let op_ptr ops.get i
-                if op_ptr = null
+        ; A postfix after the value so far: `is` and `as` take it whole.
+        ; `postfixed`: op was one.
+        procedure operation_postfix(mutable this: Planner, value: PlannedOperand, op: PlannedOperand, mutable postfixed: ref[bool]) returns PlannedOperand
+        {
+            var result: PlannedOperand value
+
+            ; Postfix `is Type` — stitch the accumulated result in as
+            ; the value operand, recompute the variant tag from the
+            ; value's union type, and advance by 1.
+            postfixed := false
+            choose op.expr
+                when pis: PlannedIs
                 {
-                    i := i + 1
-                    continue
-                }
-                let op (*op_ptr)
+                    var value_holder Vector[PlannedOperand](1)
+                    value_holder.put(0, result)
 
-                ; Postfix `is Type` — stitch the accumulated result in as
-                ; the value operand, recompute the variant tag from the
-                ; value's union type, and advance by 1.
-                var handled_unary: bool false
-                choose op.expr
-                    when pis: PlannedIs
+                    var new_tag: size_t pis.variant_tag
+                    if pis.is_null_check = false
                     {
+                        let tag this.lookup_variant_tag(
+                            result.result_type.name, pis.test_type.name
+                        )
+                        if tag >= 0
+                            new_tag := tag as size_t
+                    }
+
+                    let stitched PlannedIs(
+                        pis.loc,
+                        pis.test_type,
+                        new_tag,
+                        result.result_type.name,
+                        value_holder.get 0,
+                        pis.is_null_check
+                    )
+                    result := PlannedOperand(
+                        op.loc,
+                        PlannedExpression.Is stitched,
+                        null,
+                        Planner.make_bool_type()
+                    )
+                    postfixed := true
+                }
+                when pas: PlannedAs
+                {
+                    ; s152: compile-time fold `<string literal> as char`
+                    ; → CharacterConstant and `as u8` → IntegerConstant
+                    ; (first byte). Without this the string literal stays
+                    ; a ptr (@.str) and emit_as ptrtoint's the ADDRESS to
+                    ; i8 (garbage low byte), so `c = "/" as char` reduces
+                    ; to a constant comparison that folds to false — every
+                    ; such if in cli/lexer/parser is silently dropped.
+                    ; Mirrors stage-0 Planner.cpp:4470-4517.
+                    var folded: bool false
+                    if pas.target_type.name = "char"
+                    {
+                        ; The fold validates: a decoded length other than
+                        ; one byte is a hard diagnostic, not a silent
+                        ; first-byte truncation.
+                        if this.operand_is_string_constant(result)
+                        {
+                            result := this.fold_string_operand_to_char(result, pas.target_type)
+                            folded := true
+                        }
+                    }
+                    if pas.target_type.name = "u8"
+                    {
+                        if folded = false
+                        {
+                            choose result.expr
+                                when pc: scalyc.compiler.Plan.PlannedConstant
+                                {
+                                    choose pc.value
+                                        when s: StringConstant
+                                        {
+                                            if s.value.get_length() > 0
+                                            {
+                                                let bv s.value.get 0
+                                                let ic Constant.Integer(IntegerConstant(s.span, bv as size_t))
+                                                result := PlannedOperand(
+                                                    op.loc,
+                                                    PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant ic),
+                                                    null,
+                                                    pas.target_type
+                                                )
+                                                folded := true
+                                            }
+                                        }
+                                        else
+                                            0
+                                }
+                                else
+                                    0
+                        }
+                    }
+                    if folded = false
+                    {
+                        this.report_view_cast(result.result_type, pas.target_type, pas.loc)
                         var value_holder Vector[PlannedOperand](1)
                         value_holder.put(0, result)
-
-                        var new_tag: size_t pis.variant_tag
-                        if pis.is_null_check = false
-                        {
-                            let tag this.lookup_variant_tag(
-                                result.result_type.name, pis.test_type.name
-                            )
-                            if tag >= 0
-                                new_tag := tag as size_t
-                        }
-
-                        let stitched PlannedIs(
-                            pis.loc,
-                            pis.test_type,
-                            new_tag,
-                            result.result_type.name,
-                            value_holder.get 0,
-                            pis.is_null_check
+                        let stitched PlannedAs(
+                            pas.loc,
+                            pas.target_type,
+                            value_holder.get 0
                         )
                         result := PlannedOperand(
                             op.loc,
-                            PlannedExpression.Is stitched,
+                            PlannedExpression.As stitched,
                             null,
-                            Planner.make_bool_type()
+                            pas.target_type
                         )
-                        handled_unary := true
                     }
-                    when pas: PlannedAs
+                    postfixed := true
+                }
+                else
+                    0
+            result
+        }
+
+        ; Orphan value operand (missing operator / separator): `op` is a
+        ; VALUE where an operator is expected, after a value nothing joins to
+        ; (value_joins_nothing#) -- the missing-separator mis-parse
+        ; `{ let p other  p.n }`, the binding grabbing `other p.n`. Reported,
+        ; true. A valid parenless call -- `recv.method arg`, `g arg` with g a
+        ; delegate -- is not one.
+        procedure report_orphan_operand(mutable this: Planner, result: PlannedOperand, op: PlannedOperand) returns bool
+        {
+            ; an operator is recognised as the protocol step meets one: a
+            ; symbolic name, a user-declared operator (`mod`/`div`), a word
+            ; operator a level names (`and`/`or`)
+            choose op.expr
+                when opvty: PlannedType
+                {
+                    if Planner.is_operator_name(opvty.name) or this.is_operator(opvty.name) or this.operator_by_protocol(opvty.name)
+                        return false
+                }
+                else
+                    0
+            if this.value_joins_nothing(result) = false
+                return false
+            this.add_diagnostic(op.loc, "unexpected operand - missing operator, or a ':'/newline separator before this statement")
+            true
+        }
+
+        ; Is v a value nothing that follows can join -- a bare local or
+        ; constant, or a chain ending in a PROPERTY (a field read is as
+        ; non-callable as a local: `{ let p other  p.n }` dropped `p.n` at
+        ; rc 0 while the same line over a parameter was reported)? A method
+        ; chain is the call without parentheses, a delegate value a call.
+        procedure value_joins_nothing(mutable this: Planner, v: PlannedOperand) returns bool
+        {
+            var bare false
+            if v.member_access = null
+            {
+                choose v.expr
+                    when rv: Variable
+                        bare := true
+                    when rc: scalyc.compiler.Plan.PlannedConstant
+                        bare := true
+                    else
+                        0
+            }
+            if Planner.chain_tail_is_property(v)
+                bare := true
+            bare and this.is_delegate_type(v.result_type.name) = false
+        }
+
+        ; The raw operation `left operator right` -- one step of the protocol
+        ; (operation_by_protocol#), its two operands planned: an operator the
+        ; types declare, `equals` for `=`/`<>`, else the built-in operation on
+        ; numbers, pointers and SIMD vectors.
+        procedure raw_operation(mutable this: Planner, mutable left: PlannedOperand, op: PlannedOperand, mutable right: PlannedOperand) returns PlannedOperand
+        {
+            var result: PlannedOperand left
+            var rhs: PlannedOperand right
+
+            ; Extract operator name from the op operand.
+            let op_name choose op.expr
+                when ty: PlannedType
+                    ty.name
+                else
+                    ""
+
+            ; s176: parenless zero-arg method call as the rhs
+            ; (`0 < x.name.length`): the chain would stay a field access
+            ; and the comparison drop. Fold rhs into the zero-arg call via
+            ; the same empty-Tuple synthesis.
+            if rhs.member_access <> null
+            {
+                let pma (*rhs.member_access)
+                if pma.length > 0
+                {
+                    let plast_ptr pma.get(pma.length - 1)
+                    if plast_ptr <> null
                     {
-                        ; s152: compile-time fold `<string literal> as char`
-                        ; → CharacterConstant and `as u8` → IntegerConstant
-                        ; (first byte). Without this the string literal stays
-                        ; a ptr (@.str) and emit_as ptrtoint's the ADDRESS to
-                        ; i8 (garbage low byte), so `c = "/" as char` reduces
-                        ; to a constant comparison that folds to false — every
-                        ; such if in cli/lexer/parser is silently dropped.
-                        ; Mirrors stage-0 Planner.cpp:4470-4517.
-                        var folded: bool false
-                        if pas.target_type.name = "char"
+                        if (*plast_ptr).is_method
                         {
-                            ; The fold validates: a decoded length other than
-                            ; one byte is a hard diagnostic, not a silent
-                            ; first-byte truncation.
-                            if this.operand_is_string_constant(result)
-                            {
-                                result := this.fold_string_operand_to_char(result, pas.target_type)
-                                folded := true
-                            }
-                        }
-                        if pas.target_type.name = "u8"
-                        {
-                            if folded = false
-                            {
-                                choose result.expr
-                                    when pc: scalyc.compiler.Plan.PlannedConstant
-                                    {
-                                        choose pc.value
-                                            when s: StringConstant
-                                            {
-                                                if s.value.get_length() > 0
-                                                {
-                                                    let bv s.value.get 0
-                                                    let ic Constant.Integer(IntegerConstant(s.span, bv as size_t))
-                                                    result := PlannedOperand(
-                                                        op.loc,
-                                                        PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant ic),
-                                                        null,
-                                                        pas.target_type
-                                                    )
-                                                    folded := true
-                                                }
-                                            }
-                                            else
-                                                0
-                                    }
-                                    else
-                                        0
-                            }
-                        }
-                        if folded = false
-                        {
-                            this.report_view_cast(result.result_type, pas.target_type, pas.loc)
-                            var value_holder Vector[PlannedOperand](1)
-                            value_holder.put(0, result)
-                            let stitched PlannedAs(
-                                pas.loc,
-                                pas.target_type,
-                                value_holder.get 0
-                            )
-                            result := PlannedOperand(
-                                op.loc,
-                                PlannedExpression.As stitched,
+                            let void_ty_r Planner.make_void_type()
+                            let empty_tuple_r PlannedTuple(
+                                rhs.loc,
                                 null,
-                                pas.target_type
+                                void_ty_r,
+                                false,
+                                Lifetime.Unspecified(Unspecified()),
+                                null
                             )
+                            let tuple_op_r PlannedOperand(
+                                rhs.loc,
+                                PlannedExpression.Tuple empty_tuple_r,
+                                null,
+                                void_ty_r
+                            )
+                            var two_arr_r Array[PlannedOperand]()
+                            two_arr_r.add rhs
+                            two_arr_r.add tuple_op_r
+                            var two_vec_r Vector[PlannedOperand](two_arr_r)
+                            rhs := this.collapse_operand_sequence(two_vec_r)
                         }
-                        handled_unary := true
-                    }
-                    else
-                        0
-
-                if handled_unary
-                {
-                    i := i + 1
-                    continue
-                }
-
-                ; Orphan value operand (missing operator / separator). `op` is a
-                ; plain VALUE (not a PlannedType, so not an operator) sitting
-                ; where a binary operator is expected, AND `result` so far is a
-                ; bare NON-CALLABLE value — a plain local/constant with no method
-                ; member-access chain and a non-delegate type. Nothing joins the
-                ; two. This is the missing-separator mis-parse `if x g()`: the
-                ; condition greedily grabs `x g()`, but `x` (a bare bool) is not
-                ; callable, so the trailing call cannot attach and was silently
-                ; dropped (the whole `if` degenerated + the next statement was
-                ; stolen as the consequent). The gate is deliberately narrow so
-                ; a VALID parenless call — `recv.method arg` (result carries a
-                ; method chain) or `g arg` where g is delegate-typed — is not
-                ; flagged; those attach `op` downstream. Reports instead of
-                ; abandoning `op`.
-                var op_is_operator: bool false
-                choose op.expr
-                    when opvty: PlannedType
-                    {
-                        ; An operator here is recognised the same way the binary
-                        ; loop recognises one: a symbolic operator name
-                        ; (is_operator_name, char-based), a user-declared
-                        ; operator (is_operator, registry — name-operators like
-                        ; `mod`/`div`), or a word operator a level of the
-                        ; protocol names (`and`/`or`, operator_by_protocol#).
-                        ; Missing any of these mis-flags valid infix uses as
-                        ; orphans.
-                        if Planner.is_operator_name(opvty.name)
-                            op_is_operator := true
-                        if this.is_operator(opvty.name)
-                            op_is_operator := true
-                        if this.operator_by_protocol(opvty.name)
-                            op_is_operator := true
-                    }
-                    else
-                        0
-                if op_is_operator = false
-                {
-                    var result_is_bare_noncallable: bool false
-                    if result.member_access = null
-                    {
-                        choose result.expr
-                            when rv: Variable
-                                result_is_bare_noncallable := true
-                            when rc: scalyc.compiler.Plan.PlannedConstant
-                                result_is_bare_noncallable := true
-                            else
-                                0
-                    }
-                    ; A member-access chain whose LAST hop is a PROPERTY is
-                    ; exactly as non-callable as a bare local — nothing
-                    ; downstream attaches `op` to it. Only a chain ending in a
-                    ; METHOD hop is the valid parenless call `recv.method arg`
-                    ; (the s174 rule the rhs side above already reads the same
-                    ; way). Without this the missing-separator mis-parse was
-                    ; silent whenever the left side was a FIELD read:
-                    ; `{ let p other  p.n }` planned the binding as `other` and
-                    ; dropped `p.n`, so the whole body returned 0 with rc 0,
-                    ; while the identical line over a PARAMETER was diagnosed.
-                    ; A member-access chain whose LAST hop is a resolved
-                    ; PROPERTY is exactly as non-callable as a bare local —
-                    ; nothing downstream attaches `op` to it. ONE statement,
-                    ; with the work in a static helper: an inline branch here
-                    ; perturbs collapse_operand_sequence's s178 alloca pool
-                    ; (measured — the three locals the check needs cost the
-                    ; -g suite six parameter reads), the same discipline
-                    ; report_unknown_identifier# and report_receiver_arity#
-                    ; follow.
-                    if Planner.chain_tail_is_property(result)
-                        result_is_bare_noncallable := true
-                    if result_is_bare_noncallable and this.is_delegate_type(result.result_type.name)
-                        result_is_bare_noncallable := false
-                    if result_is_bare_noncallable
-                    {
-                        this.add_diagnostic(op.loc, "unexpected operand - missing operator, or a ':'/newline separator before this statement")
-                        return result
                     }
                 }
-
-                ; Binary operator: op followed by rhs.
-                ; if runs the break when the condition is TRUE (Scaly
-                ; semantics, NOT Swift-inverted). Bail out when no rhs is
-                ; available.
-                if i + 1 >= ops.length
-                    break
-
-                let rhs_ptr ops.get(i + 1)
-                var consumed_rest: bool false
-                var rhs_call_consumed: bool false
-                ; further argument tuples folded into a CHAINED right side
-                ; (`a or this.acc().m(x)`: `()` then `(x)`), past the one
-                ; rhs_call_consumed counts
-                var rhs_extra: size_t 0
-                ; When the precedence look-ahead climbs, this records the
-                ; operator position the right side stopped at (the precedence
-                ; boundary). ops.length means it ran to the end. Read after the
-                ; call is built to either break (boundary = end) or continue the
-                ; outer loop from the boundary.
-                var climb_to: size_t 0
-                if rhs_ptr <> null
-                {
-                    var rhs: PlannedOperand (*rhs_ptr)
-
-                    ; Extract operator name from the op operand.
-                    let op_name choose op.expr
-                        when ty: PlannedType
-                            ty.name
-                        else
-                            ""
-
-                    ; s189: rhs is itself a prefix operator (`x & ~y`,
-                    ; `b.bitmap & ~((1 as u64) << slot)`). Grab the prefix
-                    ; operator plus its single following operand and collapse
-                    ; them into one operand so the binary op sees `~y`, not a
-                    ; bare `~`. Without this the prefix RHS dropped and the
-                    ; whole `&`/`|` expression vanished (stack_bucket_of's
-                    ; `& ~BUCKET_MASK`, Page.allocate_page's bitmap clear).
-                    ; Advances i by 3 via rhs_call_consumed (op, ~, operand).
-                    if i + 2 < ops.length
-                    {
-                        var rhs_is_prefix: bool false
-                        choose rhs.expr
-                            when rpty: PlannedType
-                            {
-                                if Planner.is_operator_name(rpty.name)
-                                    rhs_is_prefix := true
-                            }
-                            else
-                                0
-                        if rhs_is_prefix
-                        {
-                            let pfx_operand_ptr ops.get(i + 2)
-                            if pfx_operand_ptr <> null
-                            {
-                                var pfx_arr Array[PlannedOperand]()
-                                pfx_arr.add rhs
-                                pfx_arr.add(this.fold_prefix_call((*pfx_operand_ptr), ops, i + 2, &rhs_extra))
-                                var pfx_vec Vector[PlannedOperand](pfx_arr)
-                                rhs := this.collapse_operand_sequence(pfx_vec)
-                                rhs_call_consumed := true
-                            }
-                        }
-                    }
-
-                    ; If rhs is a non-operator Type immediately followed by
-                    ; a Tuple, treat it as an ungrouped call (`A | f()` →
-                    ; rhs = Call(f), not Type(f)). Stage-0's planOperands
-                    ; pre-processes this in scalyc/Planner.cpp:7359+ before
-                    ; collapseOperandSequence runs; stage-1's plan_operands
-                    ; is a flat per-operand pass, so we fold here. Without
-                    ; this, `f1() | f2()` builds Call(|, [Call(f1),
-                    ; Type(f2)]) and drops the trailing `()`, then the
-                    ; entire `if cond { ... }` collapses because emit_call
-                    ; on Type(f2) returns null and the binary call is
-                    ; rejected upstream — observed in cli.parse_args's
-                    ; chained-if branches.
-                    if i + 2 < ops.length
-                    {
-                        var rhs_callable: bool false
-                        choose rhs.expr
-                            when rty: PlannedType
-                            {
-                                if Planner.is_operator_name(rty.name) = false
-                                    rhs_callable := true
-                            }
-                            else
-                                0
-
-                        ; s174: rhs with a member-access chain ending in a
-                        ; method hop is callable too (`i < path.get_length()`).
-                        ; Without this the Tuple after rhs is never consumed,
-                        ; the chain plans as a field access (extractvalue),
-                        ; and the comparison + branch drop — every
-                        ; `while i < x.method()` loop became dead code in
-                        ; stage-2 (extract_program_name, prelude path build).
-                        if rhs_callable = false
-                        {
-                            if rhs.member_access <> null
-                            {
-                                let rma (*rhs.member_access)
-                                if rma.length > 0
-                                {
-                                    let rlast_ptr rma.get(rma.length - 1)
-                                    if rlast_ptr <> null
-                                    {
-                                        if (*rlast_ptr).is_method
-                                            rhs_callable := true
-                                    }
-                                }
-                            }
-                        }
-
-                        if rhs_callable
-                        {
-                            let after_ptr ops.get(i + 2)
-                            if after_ptr <> null
-                            {
-                                let after_op (*after_ptr)
-                                var is_tuple_after: bool false
-                                choose after_op.expr
-                                    when tp_after: PlannedTuple
-                                        is_tuple_after := true
-                                    else
-                                        0
-                                if is_tuple_after
-                                {
-                                    rhs := this.fold_rhs_call(rhs, ops, i + 2, &rhs_extra)
-                                    rhs_call_consumed := true
-                                }
-                            }
-                        }
-                    }
-
-                    ; rhs followed by an `as` cast: the postfix `as` binds
-                    ; tighter than a binary operator, so fold [rhs, As] into
-                    ; rhs first. Without this, `x = "/" as char` builds
-                    ; (x = "/") and casts the whole comparison — the
-                    ; string→char fold in the PlannedAs arm never sees the
-                    ; string and the comparison degenerates to a constant.
-                    ; Collapsing [rhs, As] lets that fold fire on the rhs.
-                    if rhs_call_consumed = false
-                    {
-                        if i + 2 < ops.length
-                        {
-                            let as_ptr ops.get(i + 2)
-                            if as_ptr <> null
-                            {
-                                let as_op (*as_ptr)
-                                var is_as_after: bool false
-                                choose as_op.expr
-                                    when pa_after: PlannedAs
-                                        is_as_after := true
-                                    else
-                                        0
-                                if is_as_after
-                                {
-                                    var as_arr Array[PlannedOperand]()
-                                    as_arr.add rhs
-                                    as_arr.add as_op
-                                    var as_vec Vector[PlannedOperand](as_arr)
-                                    rhs := this.collapse_operand_sequence(as_vec)
-                                    rhs_call_consumed := true
-                                }
-                            }
-                        }
-                    }
-
-                    ; s176: parenless zero-arg method call as the rhs
-                    ; (`0 < x.name.length`). The Tuple-fold above only
-                    ; fires when ops[i+2] is a Tuple; with no Tuple the
-                    ; chain stayed a field access and the comparison
-                    ; dropped. Fold rhs into the zero-arg call via the
-                    ; same empty-Tuple synthesis. Consumes NO extra
-                    ; operand, so rhs_call_consumed stays false (the
-                    ; precedence look-ahead below keeps using i+2).
-                    if rhs_call_consumed = false
-                    {
-                        if rhs.member_access <> null
-                        {
-                            let pma (*rhs.member_access)
-                            if pma.length > 0
-                            {
-                                let plast_ptr pma.get(pma.length - 1)
-                                if plast_ptr <> null
-                                {
-                                    if (*plast_ptr).is_method
-                                    {
-                                        let void_ty_r Planner.make_void_type()
-                                        let empty_tuple_r PlannedTuple(
-                                            rhs.loc,
-                                            null,
-                                            void_ty_r,
-                                            false,
-                                            Lifetime.Unspecified(Unspecified()),
-                                            null
-                                        )
-                                        let tuple_op_r PlannedOperand(
-                                            rhs.loc,
-                                            PlannedExpression.Tuple empty_tuple_r,
-                                            null,
-                                            void_ty_r
-                                        )
-                                        var two_arr_r Array[PlannedOperand]()
-                                        two_arr_r.add rhs
-                                        two_arr_r.add tuple_op_r
-                                        var two_vec_r Vector[PlannedOperand](two_arr_r)
-                                        rhs := this.collapse_operand_sequence(two_vec_r)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    ; Which operator takes which operands is the protocol's answer
-                    ; (operation_by_protocol#, lazy_fold#): a binary operator meets
-                    ; this routine with its two operands alone, so there is nothing
-                    ; to climb -- the compiler has no precedence table
-                    ; (ROADMAP-operation.md, step 5).
-
-                    ; Double-quoted char literals: when one side of a binary
-                    ; operator is char/u8-typed and the other side is a bare
-                    ; string constant, fold the string side into a validated
-                    ; CharacterConstant so `c = "a"` compares bytes (a string
-                    ; constant is a POINTER — the raw comparison was a silent
-                    ; pointer compare). Multi-byte strings hard-error inside
-                    ; the fold.
-                    ; ★Through type_is_char_like# since 2026-09-06 -- the inline
-                    ; `char`/`u8` name tests that stood here missed `i8` and the
-                    ; DEREFERENCED `pointer[const_char]`, so `*(t + 1) <> "C"` kept
-                    ; a String struct beside an i8 and the emitter dropped the `if`
-                    ; (tests/regress/cstr_literal_return.scaly ran none of its checks).
-                    let lhs_is_charlike Planner.type_is_char_like(result.result_type)
-                    if lhs_is_charlike and this.operand_is_string_constant(rhs)
-                        rhs := this.fold_string_operand_to_char(rhs, result.result_type)
-                    let rhs_is_charlike Planner.type_is_char_like(rhs.result_type)
-                    if rhs_is_charlike and this.operand_is_string_constant(result)
-                        result := this.fold_string_operand_to_char(result, rhs.result_type)
-
-                    ; Float literal beside a float-typed operand: retype the
-                    ; default-f64 literal to the other side's width so the
-                    ; Emitter never sees a mixed float/double pair (invalid
-                    ; fcmp/fadd IR that llc swallows silently). Only fires
-                    ; when the non-literal side is float-like; two literals
-                    ; keep f64.
-                    if Planner.type_is_float_like(result.result_type)
-                        if this.operand_is_float_constant(rhs) and this.operand_is_float_constant(result) = false
-                            rhs := this.retype_float_operand(rhs, result.result_type)
-                    if Planner.type_is_float_like(rhs.result_type)
-                        if this.operand_is_float_constant(result) and this.operand_is_float_constant(rhs) = false
-                            result := this.retype_float_operand(result, rhs.result_type)
-
-                    ; A `ref[T]` beside a value of type `T` in a COMPARISON is
-                    ; the VALUE -- deref_ref_into_pointee#. `count <> 0` on a
-                    ; borrowed cell is the ordinary reading, and before this the
-                    ; comparison was against the ADDRESS.
-                    ; ★ COMPARISONS ONLY, deliberately. report_ref_arithmetic#
-                    ; owes its existence to `&b + 1` GEPing at BYTE stride, and
-                    ; loading a ref operand in ARITHMETIC position would take
-                    ; that diagnostic away from the struct case it was measured
-                    ; on. A cell that really wants arithmetic says so with the
-                    ; cast the gate already names: `(r as int) + 1`.
-                    ; ★ A reference on the OTHER side blocks it (both operands
-                    ; reference-shaped, inside operand_derefs_to_pointee#), so
-                    ; `r <> null` stays the NPO presence test that
-                    ; report_null_test_on_ref# judges.
-                    ; ★ SCALAR pointees only. A `ref[Struct] <> ref[Struct]`
-                    ; comparison is an IDENTITY test on two addresses, and
-                    ; loading either side turned it into a struct copy plus the
-                    ; same pointer compare -- 2608 lines out of opensp's root
-                    ; for no change in meaning.
-                    if Planner.is_integer_comparison_operator(op_name)
-                    {
-                        if Planner.is_scalar_value_type_name(rhs.result_type.name)
-                            if Planner.operand_derefs_to_pointee(rhs.result_type, result)
-                                result := this.deref_ref_into_pointee(rhs.result_type, result)
-                        if Planner.is_scalar_value_type_name(result.result_type.name)
-                            if Planner.operand_derefs_to_pointee(result.result_type, rhs)
-                                rhs := this.deref_ref_into_pointee(result.result_type, rhs)
-                    }
-
-                    ; ... and the same in ARITHMETIC, once `*r` is no longer a
-                    ; spelling. `i - field_start` on a `ref[size_t]` cell has
-                    ; no other reading left: the `as` cast keeps the ADDRESS
-                    ; meaning by design, so without this the value is
-                    ; unreachable.
-                    ; ★ SCALAR pointees only, which is what leaves
-                    ; report_ref_arithmetic# exactly the case it was measured
-                    ; on: `&b + 1` on a two-field STRUCT, where value
-                    ; arithmetic means nothing and the byte-stride GEP is the
-                    ; hazard. Both its regressions use a struct pointee.
-                    ; ★ SHIFTS included, unlike the literal retype above: a
-                    ; load is not a width change, so the asymmetry that bans
-                    ; retyping a shift's operands does not apply.
-                    var arith_reads_value: bool false
-                    if Planner.is_integer_arithmetic_operator(op_name)
-                        arith_reads_value := true
-                    if op_name = "<<"
-                        arith_reads_value := true
-                    if op_name = ">>"
-                        arith_reads_value := true
-                    if arith_reads_value
-                    {
-                        if Planner.is_scalar_value_type_name(rhs.result_type.name)
-                            if Planner.operand_derefs_to_pointee(rhs.result_type, result)
-                                result := this.deref_ref_into_pointee(rhs.result_type, result)
-                        if Planner.is_scalar_value_type_name(result.result_type.name)
-                            if Planner.operand_derefs_to_pointee(result.result_type, rhs)
-                                rhs := this.deref_ref_into_pointee(result.result_type, rhs)
-                        ; Both sides references to a scalar: each is its value.
-                        ; The two rules above read one side against the OTHER's
-                        ; type, a reference here, so neither was read and
-                        ; `a.at(0) + a.at(1)` emitted `add ptr %0, %1` --
-                        ; invalid IR the in-process -o path builds without a
-                        ; word, rc 0 and a wrong sum (2026-09-29, the http
-                        ; package's HPACK header list; ref_pair_arithmetic).
-                        if result.result_type.name = "ref" and rhs.result_type.name = "ref"
-                        {
-                            var lt: PlannedType result.result_type
-                            var rt: PlannedType rhs.result_type
-                            if Planner.type_strip_one_reference(result.result_type, &lt) and Planner.type_strip_one_reference(rhs.result_type, &rt) and Planner.is_scalar_value_type_name(lt.name) and Planner.is_scalar_value_type_name(rt.name)
-                            {
-                                result := this.deref_ref_into_pointee(lt, result)
-                                rhs := this.deref_ref_into_pointee(rt, rhs)
-                            }
-                        }
-                    }
-
-                    ; Integer literal beside an integer-typed operand in a
-                    ; COMPARISON: retype the literal to the other side's type,
-                    ; so `count > 0` on a size_t emits `ugt` and not `sgt`.
-                    ; Before this the literal's own `int` won the pair and
-                    ; every bare comparison against an unsigned value was
-                    ; SIGNED — the tree hid it by writing `> (0 as size_t)`
-                    ; some 5000 times. Guarded on the other side NOT being a
-                    ; literal too: two literals keep int and fold as before.
-                    if Planner.is_integer_comparison_operator(op_name)
-                    {
-                        if this.constant_shape(result) = false
-                            rhs := this.settle_constant(rhs, result.result_type)
-                        if this.constant_shape(rhs) = false
-                            result := this.settle_constant(result, rhs.result_type)
-                    }
-
-                    ; Same for ARITHMETIC, but only across a 64-bit sibling
-                    ; (see is_integer_arithmetic_operator for why the narrow
-                    ; case is excluded). This is what makes `256 / count` a
-                    ; udiv: without it the literal's `int` sits on the left,
-                    ; and emit_intrinsic_binary_op reads signedness off the
-                    ; LEFT operand alone.
-                    ; ★No width gate here, and the reason is that the LANGUAGE
-                    ; already computes narrow arithmetic narrow: `a + b` with
-                    ; both u32 emits `add i32`, and so does `a + (1 as u32)`.
-                    ; The one shape that did NOT was a BARE literal — `a + 1`
-                    ; emitted `zext i32 to i64` + `add i64` — so the literal
-                    ; dragged the operation to 64 bits and the `as u32` casts
-                    ; existed only to restore the consistency that holds
-                    ; everywhere else. Retyping the literal removes the
-                    ; special case rather than introducing one; it does not
-                    ; make Scaly wrap where it did not wrap before, because
-                    ; two typed operands already wrapped.
-                    ; An out-of-range literal is still left alone by
-                    ; operand_retypes_to_integer's fits check, so nothing is
-                    ; truncated behind the author's back.
-                    if Planner.is_integer_arithmetic_operator(op_name)
-                    {
-                        if this.constant_shape(result) = false
-                            rhs := this.settle_constant(rhs, result.result_type)
-                        if this.constant_shape(rhs) = false
-                            result := this.settle_constant(result, rhs.result_type)
-                    }
-
-                    ; Unknown identifier on either side of a binary
-                    ; operator: a bare, chain-free, single-segment Type
-                    ; operand that names NOTHING reachable would flow into
-                    ; the intrinsic fall-through, emit as null, and
-                    ; SILENTLY DROP the whole statement — the class that
-                    ; hid the reading-a-later-planned-module's-constant
-                    ; trap (BITMAP_ALL_FREE from Page.scaly) and every
-                    ; plain typo in a comparison. Report loudly instead;
-                    ; visibility-hidden names get the same use hint as
-                    ; function-not-found.
-                    let lhs_unknown this.unknown_identifier_name(result)
-                    if lhs_unknown.get_length() > 0
-                    {
-                        var lsb StringBuilder()
-                        lsb.append "unknown identifier: "
-                        lsb.append lhs_unknown
-                        let lvis this.use_vis_hint(lhs_unknown)
-                        if lvis.get_length() > 0
-                            lsb.append lvis
-                        this.add_diagnostic(result.loc, lsb.to_string())
-                        return result
-                    }
-                    let rhs_unknown this.unknown_identifier_name(rhs)
-                    if rhs_unknown.get_length() > 0
-                    {
-                        var rsb StringBuilder()
-                        rsb.append "unknown identifier: "
-                        rsb.append rhs_unknown
-                        let rvis this.use_vis_hint(rhs_unknown)
-                        if rvis.get_length() > 0
-                            rsb.append rvis
-                        this.add_diagnostic(rhs.loc, rsb.to_string())
-                        return result
-                    }
-
-                    ; before any operator resolves: Slice declares its own `<>`
-                    this.report_null_test_on_view(result, rhs, op_name, result.loc)
-
-                    ; Pass the actual operands (not just their types) so the
-                    ; resolver's literal-fold pass can see whether a mismatched
-                    ; char/float param faces a bare foldable literal.
-                    var op_arg_ops Vector[PlannedOperand](2)
-                    op_arg_ops.put(0, result)
-                    op_arg_ops.put(1, rhs)
-                    let resolved this.resolve_operator_call(
-                        op_name, result.result_type, rhs.result_type, op_arg_ops
-                    )
-
-                    ; Member binary operator dispatch (A3a): a user-defined
-                    ; operator declared INSIDE a (possibly generic) concept —
-                    ; e.g. `Pair[T]`'s `operator ==` — is not in the top-level
-                    ; operator registry, so resolve_operator_call# above missed
-                    ; it. Left untreated the call falls through to the intrinsic
-                    ; path and the emitter silently drops it (the documented
-                    ; generic-concept operator-dispatch gap). Mirror the
-                    ; subscript pre-pass: find the member operator on the
-                    ; receiver concept, record it as a dispatchable function,
-                    ; and build a NON-intrinsic call. Gated to a non-primitive,
-                    ; non-generic-param receiver so primitive arithmetic and
-                    ; comparison keep their intrinsic fast path (fixpoint-safe:
-                    ; the compiler source declares member operators only on the
-                    ; non-generic String, whose call sites already dispatch).
-                    if resolved = null
-                    {
-                        ; PlannedType.name is already a joined string (unlike
-                        ; Model.Type.name's Vector[String]) — no join needed.
-                        let lop_name result.result_type.name
-                        if Planner.is_primitive_type_name(lop_name) = false
-                        {
-                            if Planner.is_generic_type_param_name(lop_name) = false
-                            {
-                                ; Non-receiver args for overload resolution: the
-                                ; single rhs (the receiver is `this`).
-                                var mop_arg_types Vector[PlannedType](1)
-                                mop_arg_types.put(0, rhs.result_type)
-                                var mop_match_ops Vector[PlannedOperand](1)
-                                mop_match_ops.put(0, rhs)
-                                let mop_ref this.find_member_operator(result.result_type, op_name, mop_arg_types, mop_match_ops, result.loc)
-                                if mop_ref <> null
-                                {
-                                    let m (*mop_ref)
-                                    this.ensure_type_layout(result.result_type)
-                                    this.ensure_type_layout(m.return_type)
-                                    var mop_args Vector[PlannedOperand](2)
-                                    mop_args.put(0, result)
-                                    mop_args.put(1, rhs)
-                                    ; Fold a bare char/float literal rhs to the
-                                    ; matched operator's parameter type (mirrors
-                                    ; the top-level fold at resolved_op_fold_params);
-                                    ; empty/String params leave the operands intact.
-                                    if m.parameter_types <> null
-                                        mop_args := this.fold_string_args_to_char(mop_args, (*m.parameter_types))
-                                    let mop_call PlannedCall(
-                                        result.loc,
-                                        String(op_name),
-                                        m.mangled_name,
-                                        false,
-                                        true,
-                                        m.can_throw,
-                                        m.requires_page_param,
-                                        &mop_args,
-                                        m.return_type,
-                                        Lifetime.Unspecified(Unspecified()),
-                                        m.throws_type,
-                                        false
-                                    )
-                                    result := PlannedOperand(
-                                        result.loc,
-                                        PlannedExpression.Call mop_call,
-                                        null,
-                                        m.return_type
-                                    )
-                                    if consumed_rest
-                                    {
-                                        if climb_to >= ops.length
-                                            break
-                                        i := climb_to
-                                        continue
-                                    }
-                                    if rhs_call_consumed
-                                    {
-                                        i := i + 3 + rhs_extra
-                                        continue
-                                    }
-                                    i := i + 2
-                                    continue
-                                }
-                            }
-                        }
-                    }
-
-                    ; Equality desugar: `a = b` / `a <> b` where no operator
-                    ; (registered or member) resolved and the receiver's
-                    ; concept declares a matching `equals` method dispatches
-                    ; to it — `un = "*"` reads as `un.equals("*")`, `a <> b`
-                    ; as its negation. lookup_method# brings the pointer/ref
-                    ; auto-deref, the s172 Option unwrap, and the s163
-                    ; arg-type-aware overload selection (String's three
-                    ; equals overloads), so a string literal picks
-                    ; equals(String) via its String-typed constant. Null
-                    ; comparisons are EXCLUDED — `x <> null` is an NPO
-                    ; presence test, never a content compare. Primitive and
-                    ; generic-param receivers keep the intrinsic fast path.
-                    ; SELF-HOSTING NOTE: since the 2026-07-06 de-equals
-                    ; migration the compiler source itself spells content
-                    ; compares `=`/`<>`, so this desugar is LOAD-BEARING
-                    ; for the self-compile (the committed seed carries it).
-                    if resolved = null
-                    {
-                        var eq_negate: bool false
-                        var is_eq_op: bool false
-                        if op_name = "="
-                            is_eq_op := true
-                        if op_name = "<>"
-                        {
-                            is_eq_op := true
-                            eq_negate := true
-                        }
-                        if is_eq_op
-                        {
-                            if this.operand_is_null_constant(result)
-                                is_eq_op := false
-                            if this.operand_is_null_constant(rhs)
-                                is_eq_op := false
-                        }
-                        if is_eq_op
-                        {
-                            var eq_gate_ty result.result_type
-                            let eq_elem Planner.get_pointer_element_type(result.result_type)
-                            if eq_elem <> null
-                                eq_gate_ty := (*eq_elem)
-                            var eq_gate_ok: bool true
-                            if Planner.is_primitive_type_name(eq_gate_ty.name)
-                                eq_gate_ok := false
-                            if Planner.is_generic_type_param_name(eq_gate_ty.name)
-                                eq_gate_ok := false
-                            if eq_gate_ok
-                            {
-                                var eq_arg_types Vector[PlannedType](1)
-                                eq_arg_types.put(0, rhs.result_type)
-                                let em_ref this.lookup_method(result.result_type, String("equals"), eq_arg_types, Vector[PlannedOperand]())
-                                if em_ref <> null
-                                {
-                                    let em (*em_ref)
-                                    var eq_ok: bool em.takes_this
-                                    if em.return_type.name <> "bool"
-                                        eq_ok := false
-                                    if eq_ok
-                                    {
-                                        this.ensure_type_layout(result.result_type)
-                                        var eq_args Vector[PlannedOperand](2)
-                                        eq_args.put(0, result)
-                                        eq_args.put(1, rhs)
-                                        let eq_call PlannedCall(
-                                            result.loc,
-                                            String("equals"),
-                                            em.mangled_name,
-                                            false,
-                                            false,
-                                            em.can_throw,
-                                            em.requires_page_param,
-                                            &eq_args,
-                                            em.return_type,
-                                            Lifetime.Unspecified(Unspecified()),
-                                            em.throws_type,
-                                            false
-                                        )
-                                        var eq_op_res PlannedOperand(
-                                            result.loc,
-                                            PlannedExpression.Call eq_call,
-                                            null,
-                                            em.return_type
-                                        )
-                                        if eq_negate
-                                        {
-                                            let not_ty Planner.make_bool_type()
-                                            let not_mangled this.mangle_unary_operator(String("!"), em.return_type)
-                                            var not_args Vector[PlannedOperand](1)
-                                            not_args.put(0, eq_op_res)
-                                            let not_call PlannedCall(
-                                                result.loc,
-                                                String("!"),
-                                                not_mangled,
-                                                true,
-                                                true,
-                                                false,
-                                                false,
-                                                &not_args,
-                                                not_ty,
-                                                Lifetime.Unspecified(Unspecified()),
-                                                null,
-                                                false
-                                            )
-                                            eq_op_res := PlannedOperand(
-                                                result.loc,
-                                                PlannedExpression.Call not_call,
-                                                null,
-                                                not_ty
-                                            )
-                                        }
-                                        result := eq_op_res
-                                        if consumed_rest
-                                        {
-                                            if climb_to >= ops.length
-                                                break
-                                            i := climb_to
-                                            continue
-                                        }
-                                        if rhs_call_consumed
-                                        {
-                                            i := i + 3 + rhs_extra
-                                            continue
-                                        }
-                                        i := i + 2
-                                        continue
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    var combined_type: PlannedType this.fresh_type_var("")
-                    if resolved <> null
-                        combined_type := (*resolved)
-
-                    ; A null test against a non-optional `ref[T]` is constant
-                    ; under the declaration -- report_null_test_on_ref#. It sits
-                    ; OUTSIDE the `resolved = null` branch below on purpose: a
-                    ; comparison may resolve to a registered operator, and the
-                    ; declaration is just as wrong when it does.
-                    this.report_null_test_on_ref(result, rhs, op_name, result.loc)
-
-
-                    ; Pointer arithmetic fallback: pointer[T] +/- integer
-                    ; resolves to pointer[T]. resolve_operator_call# only
-                    ; sees registered operators, so primitive ptr-arith
-                    ; falls through with a fresh type var — emit_intrinsic
-                    ; _binary_op then has no element type to derive and the
-                    ; GEP fallback uses i8 (byte stride). Mirrors
-                    ; Planner.cpp:3135-3155 (findOperator's IsPointerType +
-                    ; IsIntegerType branch) — result type = LHS pointer type.
-                    if resolved = null
-                    {
-                        if result.result_type.name = "pointer"
-                        {
-                            if Planner.is_integer_type(rhs.result_type.name)
-                            {
-                                if op_name = "+"
-                                    combined_type := result.result_type
-                                if op_name = "-"
-                                    combined_type := result.result_type
-                            }
-                        }
-                        ; A ref LHS reaches here with a fresh type var and would
-                        ; GEP at BYTE stride -- report_ref_arithmetic#.
-                        this.report_ref_arithmetic(result.result_type, rhs.result_type, op_name, result.loc)
-                        ; ... and a record compared with a scalar has no `=` at all --
-                        ; report_record_scalar_compare#.
-                        this.report_record_scalar_compare(result.result_type, rhs.result_type, op_name, result.loc)
-
-                        ; s90: built-in comparison operators on primitive
-                        ; types return bool. Without this, the fresh type
-                        ; var from above leaks into upstream arg_types,
-                        ; resolve_function_call# then arity-matches but
-                        ; type-mismatches against the formal `bool` parameter
-                        ; (fresh-name "" vs "bool"), match_ref stays null,
-                        ; mangled="", and `let X f(a, p = q)` silently drops.
-                        ; Mirrors Planner.cpp's findOperator returning bool
-                        ; for primitive comparison.
-                        if op_name = "="
-                            combined_type := Planner.make_bool_type()
-                        if op_name = "<>"
-                            combined_type := Planner.make_bool_type()
-                        if op_name = "<"
-                            combined_type := Planner.make_bool_type()
-                        if op_name = ">"
-                            combined_type := Planner.make_bool_type()
-                        if op_name = "<="
-                            combined_type := Planner.make_bool_type()
-                        if op_name = ">="
-                            combined_type := Planner.make_bool_type()
-                        if op_name = "&&"
-                            combined_type := Planner.make_bool_type()
-                        if op_name = "||"
-                            combined_type := Planner.make_bool_type()
-                        ; Word-operator synonyms for &&/|| — also yield bool.
-                        if op_name = "and"
-                            combined_type := Planner.make_bool_type()
-                        if op_name = "or"
-                            combined_type := Planner.make_bool_type()
-                        ; ...and they take bools: a number on either side was
-                        ; emitted as the branch condition it is not (`br i64`),
-                        ; which llc refused and nothing before it
-                        if op_name = "and" or op_name = "or" or op_name = "&&" or op_name = "||"
-                            this.report_number_in_logic(result, rhs, op_name)
-
-                        ; s101: built-in arithmetic / bitwise operators on
-                        ; primitive integer types return the left operand's
-                        ; type. Without this, `n - 1` (and any int op)
-                        ; resolves to a fresh type var (empty name) — which
-                        ; then leaks into resolve_function_call#'s arg_types,
-                        ; arity matches but type comparison fails against
-                        ; the formal `int` parameter, match_ref stays null,
-                        ; mangled="", and the entire surrounding call
-                        ; silently drops. Mirrors stage-0 Planner.cpp:
-                        ; findOperator's primitive arithmetic passthrough
-                        ; at lines 3073-3112.
-                        if Planner.is_integer_type(result.result_type.name)
-                        {
-                            if Planner.is_integer_type(rhs.result_type.name)
-                            {
-                                if op_name = "+"
-                                    combined_type := result.result_type
-                                if op_name = "-"
-                                    combined_type := result.result_type
-                                if op_name = "*"
-                                    combined_type := result.result_type
-                                if op_name = "/"
-                                    combined_type := result.result_type
-                                if op_name = "%"
-                                    combined_type := result.result_type
-                                if op_name = "div"
-                                    combined_type := result.result_type
-                                if op_name = "mod"
-                                    combined_type := result.result_type
-                                if op_name = "&"
-                                    combined_type := result.result_type
-                                if op_name = "|"
-                                    combined_type := result.result_type
-                                if op_name = "^"
-                                    combined_type := result.result_type
-                                ; Word synonym for `^` (bitwise XOR).
-                                if op_name = "xor"
-                                    combined_type := result.result_type
-                                if op_name = "<<"
-                                    combined_type := result.result_type
-                                if op_name = ">>"
-                                    combined_type := result.result_type
-                                combined_type := Planner.wider_integer_operand_type(op_name, combined_type, rhs.result_type)
-                            }
-                        }
-
-                        ; 5.1: the same passthrough for the float family.
-                        ; Without it float arithmetic resolves to a fresh
-                        ; type var (empty name) which leaks into upstream
-                        ; arg_types and fails every call match — expf(x - mx)
-                        ; reported "function not found: expf" for ANY float-
-                        ; typed binary expression in argument position.
-                        if Planner.type_is_float_like(result.result_type)
-                        {
-                            if Planner.type_is_float_like(rhs.result_type)
-                            {
-                                if op_name = "+"
-                                    combined_type := result.result_type
-                                if op_name = "-"
-                                    combined_type := result.result_type
-                                if op_name = "*"
-                                    combined_type := result.result_type
-                                if op_name = "/"
-                                    combined_type := result.result_type
-                            }
-                        }
-
-                        ; SIMD vectors: lane by lane, a scalar side broadcast,
-                        ; a comparison answers a mask (plan_simd_binary#)
-                        if Planner.is_simd_type_name(result.result_type.name) or Planner.is_simd_type_name(rhs.result_type.name)
-                            combined_type := this.plan_simd_binary(op_name, result.result_type, rhs.result_type, result.loc)
-                    }
-
-                    ; Char/float literal fold for a user operator: when the
-                    ; resolver matched via the fold pass (resolved_op_fold_params
-                    ; carries the two parameter types) turn the bare String/f64
-                    ; literal operands into char/float so BOTH the arg slots and
-                    ; the mangled callee name use the parameter types. Skipping
-                    ; the fold here (matcher accepted, operands untouched) would
-                    ; pass a String pointer into the char slot — a silent
-                    ; miscompile, which is why the fold is mandatory, not
-                    ; opportunistic. For every non-fold operator the field is
-                    ; empty, so op_left/op_right stay result/rhs and the mangle
-                    ; is byte-identical to before.
-                    var op_left result
-                    var op_right rhs
-                    if this.resolved_op_fold_params.length = 2
-                    {
-                        var pre_args Vector[PlannedOperand](2)
-                        pre_args.put(0, result)
-                        pre_args.put(1, rhs)
-                        let folded_args this.fold_string_args_to_char(pre_args, this.resolved_op_fold_params)
-                        let fl folded_args.get 0
-                        let fr folded_args.get 1
-                        if fl <> null
-                            op_left := (*fl)
-                        if fr <> null
-                            op_right := (*fr)
-                    }
-                    var two_args Vector[PlannedOperand](2)
-                    two_args.put(0, op_left)
-                    two_args.put(1, op_right)
-                    var two_args_holder Vector[PlannedOperand](two_args)
-                    ; Built-in binary operators on primitive types are
-                    ; intrinsic (Planner.cpp:4378-4379). A user-defined
-                    ; operator (resolve returned non-null AND its impl is not
-                    ; Intrinsic) is NOT intrinsic — emit_call then emits a real
-                    ; call to its mangled function. resolved=null keeps the
-                    ; primitive-fallback intrinsic=true. Mirrors stage-0
-                    ; Call.IsIntrinsic = OpMatch->IsIntrinsic (Planner.cpp:4470).
-                    var bin_is_intrinsic: bool true
-                    if resolved <> null
-                        bin_is_intrinsic := this.resolved_op_is_intrinsic
-                    let call PlannedCall(
-                        result.loc,
-                        op_name,
-                        this.mangle_binary_operator(op_name, op_left.result_type, op_right.result_type),
-                        bin_is_intrinsic,
-                        true,
-                        false,
-                        false,
-                        &two_args_holder,
-                        combined_type,
-                        Lifetime.Unspecified(Unspecified()),
-                        null,
-                        false
-                    )
-                    result := PlannedOperand(
-                        result.loc,
-                        PlannedExpression.Call call,
-                        null,
-                        combined_type
-                    )
-                }
-                if consumed_rest
-                {
-                    ; Whole tail folded into rhs (boundary = end): done.
-                    ; Otherwise the bounded climb stopped at a lower-precedence
-                    ; operator — continue the outer loop from that boundary with
-                    ; the just-built call as the new left side.
-                    if climb_to >= ops.length
-                        break
-                    i := climb_to
-                    continue
-                }
-                if rhs_call_consumed
-                {
-                    i := i + 3 + rhs_extra
-                    continue
-                }
-                i := i + 2
             }
 
+            ; Which operator takes which operands is the protocol's answer
+            ; (operation_by_protocol#, lazy_fold#): a binary operator meets
+            ; this routine with its two operands alone, so there is nothing
+            ; to climb -- the compiler has no precedence table
+            ; (ROADMAP-operation.md, step 5).
+
+            ; Double-quoted char literals: when one side of a binary
+            ; operator is char/u8-typed and the other side is a bare
+            ; string constant, fold the string side into a validated
+            ; CharacterConstant so `c = "a"` compares bytes (a string
+            ; constant is a POINTER — the raw comparison was a silent
+            ; pointer compare). Multi-byte strings hard-error inside
+            ; the fold.
+            ; ★Through type_is_char_like# since 2026-09-06 -- the inline
+            ; `char`/`u8` name tests that stood here missed `i8` and the
+            ; DEREFERENCED `pointer[const_char]`, so `*(t + 1) <> "C"` kept
+            ; a String struct beside an i8 and the emitter dropped the `if`
+            ; (tests/regress/cstr_literal_return.scaly ran none of its checks).
+            let lhs_is_charlike Planner.type_is_char_like(result.result_type)
+            if lhs_is_charlike and this.operand_is_string_constant(rhs)
+                rhs := this.fold_string_operand_to_char(rhs, result.result_type)
+            let rhs_is_charlike Planner.type_is_char_like(rhs.result_type)
+            if rhs_is_charlike and this.operand_is_string_constant(result)
+                result := this.fold_string_operand_to_char(result, rhs.result_type)
+
+            ; Float literal beside a float-typed operand: retype the
+            ; default-f64 literal to the other side's width so the
+            ; Emitter never sees a mixed float/double pair (invalid
+            ; fcmp/fadd IR that llc swallows silently). Only fires
+            ; when the non-literal side is float-like; two literals
+            ; keep f64.
+            if Planner.type_is_float_like(result.result_type)
+                if this.operand_is_float_constant(rhs) and this.operand_is_float_constant(result) = false
+                    rhs := this.retype_float_operand(rhs, result.result_type)
+            if Planner.type_is_float_like(rhs.result_type)
+                if this.operand_is_float_constant(result) and this.operand_is_float_constant(rhs) = false
+                    result := this.retype_float_operand(result, rhs.result_type)
+
+            ; A `ref[T]` beside a value of type `T` in a COMPARISON is
+            ; the VALUE -- deref_ref_into_pointee#. `count <> 0` on a
+            ; borrowed cell is the ordinary reading, and before this the
+            ; comparison was against the ADDRESS.
+            ; ★ COMPARISONS ONLY, deliberately. report_ref_arithmetic#
+            ; owes its existence to `&b + 1` GEPing at BYTE stride, and
+            ; loading a ref operand in ARITHMETIC position would take
+            ; that diagnostic away from the struct case it was measured
+            ; on. A cell that really wants arithmetic says so with the
+            ; cast the gate already names: `(r as int) + 1`.
+            ; ★ A reference on the OTHER side blocks it (both operands
+            ; reference-shaped, inside operand_derefs_to_pointee#), so
+            ; `r <> null` stays the NPO presence test that
+            ; report_null_test_on_ref# judges.
+            ; ★ SCALAR pointees only. A `ref[Struct] <> ref[Struct]`
+            ; comparison is an IDENTITY test on two addresses, and
+            ; loading either side turned it into a struct copy plus the
+            ; same pointer compare -- 2608 lines out of opensp's root
+            ; for no change in meaning.
+            if Planner.is_integer_comparison_operator(op_name)
+            {
+                if Planner.is_scalar_value_type_name(rhs.result_type.name)
+                    if Planner.operand_derefs_to_pointee(rhs.result_type, result)
+                        result := this.deref_ref_into_pointee(rhs.result_type, result)
+                if Planner.is_scalar_value_type_name(result.result_type.name)
+                    if Planner.operand_derefs_to_pointee(result.result_type, rhs)
+                        rhs := this.deref_ref_into_pointee(result.result_type, rhs)
+            }
+
+            ; ... and the same in ARITHMETIC, once `*r` is no longer a
+            ; spelling. `i - field_start` on a `ref[size_t]` cell has
+            ; no other reading left: the `as` cast keeps the ADDRESS
+            ; meaning by design, so without this the value is
+            ; unreachable.
+            ; ★ SCALAR pointees only, which is what leaves
+            ; report_ref_arithmetic# exactly the case it was measured
+            ; on: `&b + 1` on a two-field STRUCT, where value
+            ; arithmetic means nothing and the byte-stride GEP is the
+            ; hazard. Both its regressions use a struct pointee.
+            ; ★ SHIFTS included, unlike the literal retype above: a
+            ; load is not a width change, so the asymmetry that bans
+            ; retyping a shift's operands does not apply.
+            var arith_reads_value: bool false
+            if Planner.is_integer_arithmetic_operator(op_name)
+                arith_reads_value := true
+            if op_name = "<<"
+                arith_reads_value := true
+            if op_name = ">>"
+                arith_reads_value := true
+            if arith_reads_value
+            {
+                if Planner.is_scalar_value_type_name(rhs.result_type.name)
+                    if Planner.operand_derefs_to_pointee(rhs.result_type, result)
+                        result := this.deref_ref_into_pointee(rhs.result_type, result)
+                if Planner.is_scalar_value_type_name(result.result_type.name)
+                    if Planner.operand_derefs_to_pointee(result.result_type, rhs)
+                        rhs := this.deref_ref_into_pointee(result.result_type, rhs)
+                ; Both sides references to a scalar: each is its value.
+                ; The two rules above read one side against the OTHER's
+                ; type, a reference here, so neither was read and
+                ; `a.at(0) + a.at(1)` emitted `add ptr %0, %1` --
+                ; invalid IR the in-process -o path builds without a
+                ; word, rc 0 and a wrong sum (2026-09-29, the http
+                ; package's HPACK header list; ref_pair_arithmetic).
+                if result.result_type.name = "ref" and rhs.result_type.name = "ref"
+                {
+                    var lt: PlannedType result.result_type
+                    var rt: PlannedType rhs.result_type
+                    if Planner.type_strip_one_reference(result.result_type, &lt) and Planner.type_strip_one_reference(rhs.result_type, &rt) and Planner.is_scalar_value_type_name(lt.name) and Planner.is_scalar_value_type_name(rt.name)
+                    {
+                        result := this.deref_ref_into_pointee(lt, result)
+                        rhs := this.deref_ref_into_pointee(rt, rhs)
+                    }
+                }
+            }
+
+            ; Integer literal beside an integer-typed operand in a
+            ; COMPARISON: retype the literal to the other side's type,
+            ; so `count > 0` on a size_t emits `ugt` and not `sgt`.
+            ; Before this the literal's own `int` won the pair and
+            ; every bare comparison against an unsigned value was
+            ; SIGNED — the tree hid it by writing `> (0 as size_t)`
+            ; some 5000 times. Guarded on the other side NOT being a
+            ; literal too: two literals keep int and fold as before.
+            if Planner.is_integer_comparison_operator(op_name)
+            {
+                if this.constant_shape(result) = false
+                    rhs := this.settle_constant(rhs, result.result_type)
+                if this.constant_shape(rhs) = false
+                    result := this.settle_constant(result, rhs.result_type)
+            }
+
+            ; Same for ARITHMETIC, but only across a 64-bit sibling
+            ; (see is_integer_arithmetic_operator for why the narrow
+            ; case is excluded). This is what makes `256 / count` a
+            ; udiv: without it the literal's `int` sits on the left,
+            ; and emit_intrinsic_binary_op reads signedness off the
+            ; LEFT operand alone.
+            ; ★No width gate here, and the reason is that the LANGUAGE
+            ; already computes narrow arithmetic narrow: `a + b` with
+            ; both u32 emits `add i32`, and so does `a + (1 as u32)`.
+            ; The one shape that did NOT was a BARE literal — `a + 1`
+            ; emitted `zext i32 to i64` + `add i64` — so the literal
+            ; dragged the operation to 64 bits and the `as u32` casts
+            ; existed only to restore the consistency that holds
+            ; everywhere else. Retyping the literal removes the
+            ; special case rather than introducing one; it does not
+            ; make Scaly wrap where it did not wrap before, because
+            ; two typed operands already wrapped.
+            ; An out-of-range literal is still left alone by
+            ; operand_retypes_to_integer's fits check, so nothing is
+            ; truncated behind the author's back.
+            if Planner.is_integer_arithmetic_operator(op_name)
+            {
+                if this.constant_shape(result) = false
+                    rhs := this.settle_constant(rhs, result.result_type)
+                if this.constant_shape(rhs) = false
+                    result := this.settle_constant(result, rhs.result_type)
+            }
+
+            ; Unknown identifier on either side of a binary
+            ; operator: a bare, chain-free, single-segment Type
+            ; operand that names NOTHING reachable would flow into
+            ; the intrinsic fall-through, emit as null, and
+            ; SILENTLY DROP the whole statement — the class that
+            ; hid the reading-a-later-planned-module's-constant
+            ; trap (BITMAP_ALL_FREE from Page.scaly) and every
+            ; plain typo in a comparison. Report loudly instead;
+            ; visibility-hidden names get the same use hint as
+            ; function-not-found.
+            let lhs_unknown this.unknown_identifier_name(result)
+            if lhs_unknown.get_length() > 0
+            {
+                var lsb StringBuilder()
+                lsb.append "unknown identifier: "
+                lsb.append lhs_unknown
+                let lvis this.use_vis_hint(lhs_unknown)
+                if lvis.get_length() > 0
+                    lsb.append lvis
+                this.add_diagnostic(result.loc, lsb.to_string())
+                return result
+            }
+            let rhs_unknown this.unknown_identifier_name(rhs)
+            if rhs_unknown.get_length() > 0
+            {
+                var rsb StringBuilder()
+                rsb.append "unknown identifier: "
+                rsb.append rhs_unknown
+                let rvis this.use_vis_hint(rhs_unknown)
+                if rvis.get_length() > 0
+                    rsb.append rvis
+                this.add_diagnostic(rhs.loc, rsb.to_string())
+                return result
+            }
+
+            ; before any operator resolves: Slice declares its own `<>`
+            this.report_null_test_on_view(result, rhs, op_name, result.loc)
+
+            ; Pass the actual operands (not just their types) so the
+            ; resolver's literal-fold pass can see whether a mismatched
+            ; char/float param faces a bare foldable literal.
+            var op_arg_ops Vector[PlannedOperand](2)
+            op_arg_ops.put(0, result)
+            op_arg_ops.put(1, rhs)
+            let resolved this.resolve_operator_call(
+                op_name, result.result_type, rhs.result_type, op_arg_ops
+            )
+
+            ; Member binary operator dispatch (A3a): a user-defined
+            ; operator declared INSIDE a (possibly generic) concept —
+            ; e.g. `Pair[T]`'s `operator ==` — is not in the top-level
+            ; operator registry, so resolve_operator_call# above missed
+            ; it. Left untreated the call falls through to the intrinsic
+            ; path and the emitter silently drops it (the documented
+            ; generic-concept operator-dispatch gap). Mirror the
+            ; subscript pre-pass: find the member operator on the
+            ; receiver concept, record it as a dispatchable function,
+            ; and build a NON-intrinsic call. Gated to a non-primitive,
+            ; non-generic-param receiver so primitive arithmetic and
+            ; comparison keep their intrinsic fast path (fixpoint-safe:
+            ; the compiler source declares member operators only on the
+            ; non-generic String, whose call sites already dispatch).
+            if resolved = null
+            {
+                ; PlannedType.name is already a joined string (unlike
+                ; Model.Type.name's Vector[String]) — no join needed.
+                let lop_name result.result_type.name
+                if Planner.is_primitive_type_name(lop_name) = false
+                {
+                    if Planner.is_generic_type_param_name(lop_name) = false
+                    {
+                        ; Non-receiver args for overload resolution: the
+                        ; single rhs (the receiver is `this`).
+                        var mop_arg_types Vector[PlannedType](1)
+                        mop_arg_types.put(0, rhs.result_type)
+                        var mop_match_ops Vector[PlannedOperand](1)
+                        mop_match_ops.put(0, rhs)
+                        let mop_ref this.find_member_operator(result.result_type, op_name, mop_arg_types, mop_match_ops, result.loc)
+                        if mop_ref <> null
+                        {
+                            let m (*mop_ref)
+                            this.ensure_type_layout(result.result_type)
+                            this.ensure_type_layout(m.return_type)
+                            var mop_args Vector[PlannedOperand](2)
+                            mop_args.put(0, result)
+                            mop_args.put(1, rhs)
+                            ; Fold a bare char/float literal rhs to the
+                            ; matched operator's parameter type (mirrors
+                            ; the top-level fold at resolved_op_fold_params);
+                            ; empty/String params leave the operands intact.
+                            if m.parameter_types <> null
+                                mop_args := this.fold_string_args_to_char(mop_args, (*m.parameter_types))
+                            let mop_call PlannedCall(
+                                result.loc,
+                                String(op_name),
+                                m.mangled_name,
+                                false,
+                                true,
+                                m.can_throw,
+                                m.requires_page_param,
+                                &mop_args,
+                                m.return_type,
+                                Lifetime.Unspecified(Unspecified()),
+                                m.throws_type,
+                                false
+                            )
+                            result := PlannedOperand(
+                                result.loc,
+                                PlannedExpression.Call mop_call,
+                                null,
+                                m.return_type
+                            )
+                            return result
+                        }
+                    }
+                }
+            }
+
+            ; Equality desugar: `a = b` / `a <> b` where no operator
+            ; (registered or member) resolved and the receiver's
+            ; concept declares a matching `equals` method dispatches
+            ; to it — `un = "*"` reads as `un.equals("*")`, `a <> b`
+            ; as its negation. lookup_method# brings the pointer/ref
+            ; auto-deref, the s172 Option unwrap, and the s163
+            ; arg-type-aware overload selection (String's three
+            ; equals overloads), so a string literal picks
+            ; equals(String) via its String-typed constant. Null
+            ; comparisons are EXCLUDED — `x <> null` is an NPO
+            ; presence test, never a content compare. Primitive and
+            ; generic-param receivers keep the intrinsic fast path.
+            ; SELF-HOSTING NOTE: since the 2026-07-06 de-equals
+            ; migration the compiler source itself spells content
+            ; compares `=`/`<>`, so this desugar is LOAD-BEARING
+            ; for the self-compile (the committed seed carries it).
+            if resolved = null
+            {
+                var eq_negate: bool false
+                var is_eq_op: bool false
+                if op_name = "="
+                    is_eq_op := true
+                if op_name = "<>"
+                {
+                    is_eq_op := true
+                    eq_negate := true
+                }
+                if is_eq_op
+                {
+                    if this.operand_is_null_constant(result)
+                        is_eq_op := false
+                    if this.operand_is_null_constant(rhs)
+                        is_eq_op := false
+                }
+                if is_eq_op
+                {
+                    var eq_gate_ty result.result_type
+                    let eq_elem Planner.get_pointer_element_type(result.result_type)
+                    if eq_elem <> null
+                        eq_gate_ty := (*eq_elem)
+                    var eq_gate_ok: bool true
+                    if Planner.is_primitive_type_name(eq_gate_ty.name)
+                        eq_gate_ok := false
+                    if Planner.is_generic_type_param_name(eq_gate_ty.name)
+                        eq_gate_ok := false
+                    if eq_gate_ok
+                    {
+                        var eq_arg_types Vector[PlannedType](1)
+                        eq_arg_types.put(0, rhs.result_type)
+                        let em_ref this.lookup_method(result.result_type, String("equals"), eq_arg_types, Vector[PlannedOperand]())
+                        if em_ref <> null
+                        {
+                            let em (*em_ref)
+                            var eq_ok: bool em.takes_this
+                            if em.return_type.name <> "bool"
+                                eq_ok := false
+                            if eq_ok
+                            {
+                                this.ensure_type_layout(result.result_type)
+                                var eq_args Vector[PlannedOperand](2)
+                                eq_args.put(0, result)
+                                eq_args.put(1, rhs)
+                                let eq_call PlannedCall(
+                                    result.loc,
+                                    String("equals"),
+                                    em.mangled_name,
+                                    false,
+                                    false,
+                                    em.can_throw,
+                                    em.requires_page_param,
+                                    &eq_args,
+                                    em.return_type,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    em.throws_type,
+                                    false
+                                )
+                                var eq_op_res PlannedOperand(
+                                    result.loc,
+                                    PlannedExpression.Call eq_call,
+                                    null,
+                                    em.return_type
+                                )
+                                if eq_negate
+                                {
+                                    let not_ty Planner.make_bool_type()
+                                    let not_mangled this.mangle_unary_operator(String("!"), em.return_type)
+                                    var not_args Vector[PlannedOperand](1)
+                                    not_args.put(0, eq_op_res)
+                                    let not_call PlannedCall(
+                                        result.loc,
+                                        String("!"),
+                                        not_mangled,
+                                        true,
+                                        true,
+                                        false,
+                                        false,
+                                        &not_args,
+                                        not_ty,
+                                        Lifetime.Unspecified(Unspecified()),
+                                        null,
+                                        false
+                                    )
+                                    eq_op_res := PlannedOperand(
+                                        result.loc,
+                                        PlannedExpression.Call not_call,
+                                        null,
+                                        not_ty
+                                    )
+                                }
+                                result := eq_op_res
+                                return result
+                            }
+                        }
+                    }
+                }
+            }
+
+            var combined_type: PlannedType this.fresh_type_var("")
+            if resolved <> null
+                combined_type := (*resolved)
+
+            ; A null test against a non-optional `ref[T]` is constant
+            ; under the declaration -- report_null_test_on_ref#. It sits
+            ; OUTSIDE the `resolved = null` branch below on purpose: a
+            ; comparison may resolve to a registered operator, and the
+            ; declaration is just as wrong when it does.
+            this.report_null_test_on_ref(result, rhs, op_name, result.loc)
+
+
+            ; Pointer arithmetic fallback: pointer[T] +/- integer
+            ; resolves to pointer[T]. resolve_operator_call# only
+            ; sees registered operators, so primitive ptr-arith
+            ; falls through with a fresh type var — emit_intrinsic
+            ; _binary_op then has no element type to derive and the
+            ; GEP fallback uses i8 (byte stride). Mirrors
+            ; Planner.cpp:3135-3155 (findOperator's IsPointerType +
+            ; IsIntegerType branch) — result type = LHS pointer type.
+            if resolved = null
+            {
+                if result.result_type.name = "pointer"
+                {
+                    if Planner.is_integer_type(rhs.result_type.name)
+                    {
+                        if op_name = "+"
+                            combined_type := result.result_type
+                        if op_name = "-"
+                            combined_type := result.result_type
+                    }
+                }
+                ; A ref LHS reaches here with a fresh type var and would
+                ; GEP at BYTE stride -- report_ref_arithmetic#.
+                this.report_ref_arithmetic(result.result_type, rhs.result_type, op_name, result.loc)
+                ; ... and a record compared with a scalar has no `=` at all --
+                ; report_record_scalar_compare#.
+                this.report_record_scalar_compare(result.result_type, rhs.result_type, op_name, result.loc)
+
+                ; s90: built-in comparison operators on primitive
+                ; types return bool. Without this, the fresh type
+                ; var from above leaks into upstream arg_types,
+                ; resolve_function_call# then arity-matches but
+                ; type-mismatches against the formal `bool` parameter
+                ; (fresh-name "" vs "bool"), match_ref stays null,
+                ; mangled="", and `let X f(a, p = q)` silently drops.
+                ; Mirrors Planner.cpp's findOperator returning bool
+                ; for primitive comparison.
+                if op_name = "="
+                    combined_type := Planner.make_bool_type()
+                if op_name = "<>"
+                    combined_type := Planner.make_bool_type()
+                if op_name = "<"
+                    combined_type := Planner.make_bool_type()
+                if op_name = ">"
+                    combined_type := Planner.make_bool_type()
+                if op_name = "<="
+                    combined_type := Planner.make_bool_type()
+                if op_name = ">="
+                    combined_type := Planner.make_bool_type()
+                if op_name = "&&"
+                    combined_type := Planner.make_bool_type()
+                if op_name = "||"
+                    combined_type := Planner.make_bool_type()
+                ; Word-operator synonyms for &&/|| — also yield bool.
+                if op_name = "and"
+                    combined_type := Planner.make_bool_type()
+                if op_name = "or"
+                    combined_type := Planner.make_bool_type()
+                ; ...and they take bools: a number on either side was
+                ; emitted as the branch condition it is not (`br i64`),
+                ; which llc refused and nothing before it
+                if op_name = "and" or op_name = "or" or op_name = "&&" or op_name = "||"
+                    this.report_number_in_logic(result, rhs, op_name)
+
+                ; s101: built-in arithmetic / bitwise operators on
+                ; primitive integer types return the left operand's
+                ; type. Without this, `n - 1` (and any int op)
+                ; resolves to a fresh type var (empty name) — which
+                ; then leaks into resolve_function_call#'s arg_types,
+                ; arity matches but type comparison fails against
+                ; the formal `int` parameter, match_ref stays null,
+                ; mangled="", and the entire surrounding call
+                ; silently drops. Mirrors stage-0 Planner.cpp:
+                ; findOperator's primitive arithmetic passthrough
+                ; at lines 3073-3112.
+                if Planner.is_integer_type(result.result_type.name)
+                {
+                    if Planner.is_integer_type(rhs.result_type.name)
+                    {
+                        if op_name = "+"
+                            combined_type := result.result_type
+                        if op_name = "-"
+                            combined_type := result.result_type
+                        if op_name = "*"
+                            combined_type := result.result_type
+                        if op_name = "/"
+                            combined_type := result.result_type
+                        if op_name = "%"
+                            combined_type := result.result_type
+                        if op_name = "div"
+                            combined_type := result.result_type
+                        if op_name = "mod"
+                            combined_type := result.result_type
+                        if op_name = "&"
+                            combined_type := result.result_type
+                        if op_name = "|"
+                            combined_type := result.result_type
+                        if op_name = "^"
+                            combined_type := result.result_type
+                        ; Word synonym for `^` (bitwise XOR).
+                        if op_name = "xor"
+                            combined_type := result.result_type
+                        if op_name = "<<"
+                            combined_type := result.result_type
+                        if op_name = ">>"
+                            combined_type := result.result_type
+                        combined_type := Planner.wider_integer_operand_type(op_name, combined_type, rhs.result_type)
+                    }
+                }
+
+                ; 5.1: the same passthrough for the float family.
+                ; Without it float arithmetic resolves to a fresh
+                ; type var (empty name) which leaks into upstream
+                ; arg_types and fails every call match — expf(x - mx)
+                ; reported "function not found: expf" for ANY float-
+                ; typed binary expression in argument position.
+                if Planner.type_is_float_like(result.result_type)
+                {
+                    if Planner.type_is_float_like(rhs.result_type)
+                    {
+                        if op_name = "+"
+                            combined_type := result.result_type
+                        if op_name = "-"
+                            combined_type := result.result_type
+                        if op_name = "*"
+                            combined_type := result.result_type
+                        if op_name = "/"
+                            combined_type := result.result_type
+                    }
+                }
+
+                ; SIMD vectors: lane by lane, a scalar side broadcast,
+                ; a comparison answers a mask (plan_simd_binary#)
+                if Planner.is_simd_type_name(result.result_type.name) or Planner.is_simd_type_name(rhs.result_type.name)
+                    combined_type := this.plan_simd_binary(op_name, result.result_type, rhs.result_type, result.loc)
+            }
+
+            ; Char/float literal fold for a user operator: when the
+            ; resolver matched via the fold pass (resolved_op_fold_params
+            ; carries the two parameter types) turn the bare String/f64
+            ; literal operands into char/float so BOTH the arg slots and
+            ; the mangled callee name use the parameter types. Skipping
+            ; the fold here (matcher accepted, operands untouched) would
+            ; pass a String pointer into the char slot — a silent
+            ; miscompile, which is why the fold is mandatory, not
+            ; opportunistic. For every non-fold operator the field is
+            ; empty, so op_left/op_right stay result/rhs and the mangle
+            ; is byte-identical to before.
+            var op_left result
+            var op_right rhs
+            if this.resolved_op_fold_params.length = 2
+            {
+                var pre_args Vector[PlannedOperand](2)
+                pre_args.put(0, result)
+                pre_args.put(1, rhs)
+                let folded_args this.fold_string_args_to_char(pre_args, this.resolved_op_fold_params)
+                let fl folded_args.get 0
+                let fr folded_args.get 1
+                if fl <> null
+                    op_left := (*fl)
+                if fr <> null
+                    op_right := (*fr)
+            }
+            var two_args Vector[PlannedOperand](2)
+            two_args.put(0, op_left)
+            two_args.put(1, op_right)
+            var two_args_holder Vector[PlannedOperand](two_args)
+            ; Built-in binary operators on primitive types are
+            ; intrinsic (Planner.cpp:4378-4379). A user-defined
+            ; operator (resolve returned non-null AND its impl is not
+            ; Intrinsic) is NOT intrinsic — emit_call then emits a real
+            ; call to its mangled function. resolved=null keeps the
+            ; primitive-fallback intrinsic=true. Mirrors stage-0
+            ; Call.IsIntrinsic = OpMatch->IsIntrinsic (Planner.cpp:4470).
+            var bin_is_intrinsic: bool true
+            if resolved <> null
+                bin_is_intrinsic := this.resolved_op_is_intrinsic
+            let call PlannedCall(
+                result.loc,
+                op_name,
+                this.mangle_binary_operator(op_name, op_left.result_type, op_right.result_type),
+                bin_is_intrinsic,
+                true,
+                false,
+                false,
+                &two_args_holder,
+                combined_type,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                false
+            )
+            result := PlannedOperand(
+                result.loc,
+                PlannedExpression.Call call,
+                null,
+                combined_type
+            )
             result
         }
 
@@ -24946,6 +24765,25 @@ define Planner
                     let c0 chain.get 0
                     if c0 <> null and c0.is_method = false and Planner.is_unit_type(c0.result_type) = false
                         prop := c0
+                    ; a METHOD named on a call's result without its tuple: `x.m`
+                    ; is the method, not its call (report_method_without_tuple#),
+                    ; and a bound method needs a receiver that is a name. The
+                    ; zero-argument call below is still planned, for the type the
+                    ; rest of the operation reads, but what it says itself is
+                    ; not said: `apply(make().add, 3)` answered only `wrong
+                    ; number of arguments ... got 0`, at a line of the callee
+                    if c0 <> null and c0.is_method and this.planning_template = false
+                    {
+                        this.add_diagnostic(cur.loc, String^this("'`hop_name`' is a method of a call's result and stands here without its tuple: a call takes it, '`hop_name`()'; as a bound method its receiver is a name - bind the result first, 'let r f()' and then 'r.`hop_name`'"))
+                        let said diagnostics.length
+                        let void_ty Planner.make_void_type()
+                        let empty_tuple PlannedTuple(cur.loc, null, void_ty, false, Lifetime.Unspecified(Unspecified()), null)
+                        let tuple_op PlannedOperand(cur.loc, PlannedExpression.Tuple empty_tuple, null, void_ty)
+                        var called false
+                        let made this.plan_chained_method_call(cur, hop_name, tuple_op, &called)
+                        diagnostics.length := said
+                        return made
+                    }
                 }
                 if prop <> null
                 {
@@ -29180,24 +29018,26 @@ define Planner
                 this.operation_census_line("driver-lazy-operations", 82)
                 this.operation_census_line("driver-lazy-put-in", 83)
                 this.operation_census_line("driver-lazy-declined", 84)
+                this.operation_census_line("driver-tuple-after-static-gives-call", 85)
+                this.operation_census_line("driver-tuple-after-static-gives-tuple", 86)
+                this.operation_census_line("driver-tuple-after-static-gives-variant", 87)
+                this.operation_census_line("driver-tuple-after-static-gives-else", 88)
             }
         }
 
         ; ================================================================
         ; The operation driver (step 1, part 2; the only reading of an
         ; operation since 2026-10-18): the loop that reads a sequence from the
-        ; left, in front of
-        ; collapse_operand_sequence#. It knows WHICH step comes next -- a name
-        ; and its tuple, a value and its vector literal, a prefix at the
-        ; start, a postfix -- and hands each step to the machinery there is,
-        ; as a short sequence of its own; operators still go by the table, the
-        ; folded terms and the operator names in one hand-over. A sequence it
-        ; does not understand is left to the old collapse as a whole, BEFORE
-        ; any step has run (operation_read#), so nothing is planned twice.
-        ; The yardstick is the emission: with and without the switch every
-        ; root gives the same IR. Slots of operation_counts: 23 answered by
-        ; the last call, 24 the next collapse is a step (do not ask again),
-        ; 25 sequences, 26 answered, 27-32 why one was left, 34-43 the steps.
+        ; left, in front of collapse_operand_sequence#. It knows WHICH step
+        ; comes next -- a name and its tuple, a value and its vector literal,
+        ; a prefix, a postfix, the raw operations the protocol answers -- and
+        ; takes each by a routine of its own or by the machinery's routines,
+        ; as a short sequence. A sequence it cannot read is reported BEFORE
+        ; any step has run (operation_read#, report_unread_operation#), and
+        ; goes no further. Slots of operation_counts: 25 sequences, 26
+        ; answered, 27-33 why one was refused, 34-46 the steps, 47-79 and
+        ; 85-88 a name against what came of it, 80-84 the protocol and the
+        ; lazy operands.
         ; ================================================================
 
         ; What a planned thing of a sequence is: 1 an operator name, 2 another
@@ -29251,11 +29091,12 @@ define Planner
         ; the rule reads the current value's type, the old collapse the
         ; operand's shape: 1 a method on a chain, 2 a value (a local, a
         ; field, a call's result), 3 a function, 4 a type, 5 a qualified name
-        ; (`Owner.member`), 6 a bare name that is none of these here, 7 a
-        ; sibling of `this` (`read_character()` in a method), 8 a sibling of
-        ; the enclosing structure (`bit(...)` in a static) --
-        ; operation_sibling#.
-        function operation_name(this: Planner, op: PlannedOperand) returns size_t
+        ; the namespace arm resolves (`Owner.member`), 6 a bare name that is
+        ; none of these here, 7 a sibling of `this` (`read_character()` in a
+        ; method), 8 a sibling of the enclosing structure (`bit(...)` in a
+        ; static) -- operation_sibling# --, 9 a qualified static
+        ; (`Page.get(x)`, call_arm_static#).
+        procedure operation_name(mutable this: Planner, op: PlannedOperand) returns size_t
         {
             if op.member_access <> null
             {
@@ -29282,14 +29123,20 @@ define Planner
                     ; (`u8x16(48, 32, ...)`)
                     if Planner.is_simd_type_name(ty.name)
                         return 4
-                    ; a qualified name: a static, a namespace's function, a
-                    ; union's variant
-                    var d: size_t 0
-                    while d < ty.name.get_length()
+                    ; a qualified name: 9 where the concept the qualifier names
+                    ; declares the member without `this` (call_arm_static#);
+                    ; else 5 -- a function of a namespace a same-named record
+                    ; hides from that lookup (`Planner.make_bool_type()`), a
+                    ; namespace's method with its receiver written first, a
+                    ; module's function (`compiler.test()`): the namespace arm;
+                    ; a union's variant is told by application_target#
+                    let dot ty.name.last_index_of(46)
+                    if dot > 0
                     {
-                        if ty.name.get(d) = ("." as u8)
-                            return 5
-                        d := d + 1
+                        let dp dot as size_t
+                        if this.concept_has_static(ty.name.substring(0, dp), ty.name.substring(dp + 1, ty.name.get_length() - dp - 1))
+                            return 9
+                        return 5
                     }
                     let sibling this.operation_sibling(ty.name)
                     if sibling > 0
@@ -29348,12 +29195,14 @@ define Planner
                     what := 2
                 else
                     0
-            ; slots 47 to 70 for the kinds 1 to 6, 72 to 79 for 7 and 8 (71
-            ; is the driver's own construction or variant)
+            ; slots 47 to 70 for the kinds 1 to 6, 72 to 79 for 7 and 8, 85 to
+            ; 88 for 9 (71 is the driver's own construction or variant)
             if named <= 6
                 this.operation_count(47 + (named - 1) * 4 + what)
-            else
+            else if named <= 8
                 this.operation_count(72 + (named - 7) * 4 + what)
+            else
+                this.operation_count(85 + what)
             ; the places the name lookup does not explain, for reading
             if (named = 6 or named = 2) and this.operation_census_on()
             {
@@ -29510,10 +29359,68 @@ define Planner
             }
             if reason = 31
             {
-                this.add_diagnostic(at, String^this("a call without parentheses takes exactly one thing; an argument that is more - an indexing, a call, a construction - takes its parentheses: f(v[i])"))
+                this.report_parenless_more(at, ops)
                 return
             }
+            ; `!` before a value or after an operator: the thrown-lifetime
+            ; sigil standing alone (`if !a`, `b and !a`), which the marker pass
+            ; once dropped -- `if !a` ran as `if a` (2026-09-24)
+            if reason = 29
+            {
+                var k: size_t 0
+                while k < ops.length
+                {
+                    if this.operation_thing(ops[k]) = 3 and Planner.lifetime_is_thrown(Planner.operand_life_marker(ops[k])) and (k = 0 or this.operation_thing(ops[k - 1]) = 1)
+                    {
+                        this.add_diagnostic(ops[k].loc, String^this("'!' is the thrown-lifetime sigil, not negation - it applies to nothing here; write 'not'"))
+                        return
+                    }
+                    k := k + 1
+                }
+            }
             this.add_diagnostic(at, String^this("this sequence is not one an operation reads: a prefix, a postfix or a sigil stands where no value is expected, or an operator ends it"))
+        }
+
+        ; the lifetime a sigil carries (operation_thing# 3: a type without a
+        ; name)
+        function operand_life_marker(op: PlannedOperand) returns Lifetime
+        {
+            choose op.expr
+                when ty: PlannedType
+                    return ty.life
+                else
+                    return Lifetime.Unspecified(Unspecified())
+            Lifetime.Unspecified(Unspecified())
+        }
+
+        ; A value after the head of a term where only one thing may follow
+        ; (operation_read#, reason 31): after a value nothing joins to -- a
+        ; local, a constant, a field -- it is the start of a statement whose
+        ; separator is missing (`if x g()`); after a function or a method it
+        ; is the call without parentheses taking more than one thing (`print
+        ; go(1)` is `(print go)(1)`, `f v[i]`). Until 2026-10-19 the first was
+        ; reported by the machinery after the driver (report_orphan_operand#)
+        ; and the second by five gates on what the collapse left behind.
+        procedure report_parenless_more(mutable this: Planner, at: Span, ops: Vector[PlannedOperand])
+        {
+            var t: size_t 1
+            while t < ops.length
+            {
+                let k this.operation_thing(ops[t])
+                let before this.operation_thing(ops[t - 1])
+                if (k = 2 or k = 7) and before <> 1 and before <> 6
+                {
+                    let head ops[t - 1]
+                    if this.value_joins_nothing(head)
+                    {
+                        this.add_diagnostic(ops[t].loc, String^this("unexpected operand - missing operator, or a ':'/newline separator before this statement"))
+                        return
+                    }
+                    break
+                }
+                t := t + 1
+            }
+            this.add_diagnostic(at, String^this("a call without parentheses takes exactly one thing, and more follows here - an operation reads left to right, so 'f x.m()' is '(f x.m)()' and 'f v[i]' is '(f v)[i]': an argument that is a call, an indexing or a construction takes its parentheses, 'f(x.m())', 'f(v[i])'"))
         }
 
         ; One step, handed to the machinery there is (operation_machinery#)
@@ -29936,12 +29843,11 @@ define Planner
             scaly_eputs("\n")
         }
 
-        ; The driver. Slot 23 says whether the answer is one: 0 leaves the
-        ; sequence to the old collapse.
+        ; The driver: a sequence it cannot read is reported
+        ; (report_unread_operation#), and its first thing stands for it.
         procedure operation(mutable this: Planner, mutable ops: Vector[PlannedOperand]) returns PlannedOperand
         {
             var cur: PlannedOperand ops[0]
-            operation_counts.put(23, 0)
             this.operation_count(25)
             let reason this.operation_read(ops)
             if reason <> 0
@@ -30063,7 +29969,6 @@ define Planner
             if operators > 0
                 cur := this.operation_table(out, base)
             this.operation_count(26)
-            operation_counts.put(23, 1)
             cur
         }
 
@@ -30892,16 +30797,21 @@ define Planner
                         return first
                     var left: PlannedOperand stack[sp - 2]
                     let right stack[sp - 1]
-                    var raw Vector[PlannedOperand](3)
-                    raw.put(0, left)
-                    raw.put(1, out[base + code])
-                    raw.put(2, right)
                     ; a vector literal on either side: the pair pre-passes of
                     ; the machinery read it (operation_step#)
                     if this.operation_thing(left) = 5 or this.operation_thing(right) = 5
+                    {
+                        var raw Vector[PlannedOperand](3)
+                        raw.put(0, left)
+                        raw.put(1, out[base + code])
+                        raw.put(2, right)
                         stack.put(sp - 2, this.operation_step(raw, 43))
+                    }
                     else
-                        stack.put(sp - 2, this.operation_apply(raw, left, 43))
+                    {
+                        this.operation_count(43)
+                        stack.put(sp - 2, this.raw_operation(this.operation_left(left), out[base + code], right))
+                    }
                     sp := sp - 1
                 }
             }
@@ -31025,6 +30935,28 @@ define Planner
                 if op_ptr <> null
                 {
                     let op (*op_ptr)
+                    ; a method with a lazy parameter called on a COMPUTED
+                    ; receiver (`Box(0).or_else(x)`, `make().or_else(x)`): the
+                    ; receiver is bound once, under a name no source can write,
+                    ; and the call is made on that name -- which the put-in
+                    ; below takes like any receiver path
+                    ; (plan_lazy_computed_receiver#)
+                    if lazy_method_names.length > 0
+                    {
+                        let rend this.lazy_computed_receiver_end(ops, i)
+                        if rend < ops.length
+                        {
+                            result.put(i, this.plan_lazy_computed_receiver(ops, i, rend))
+                            var taken i + 1
+                            while taken <= rend + 1
+                            {
+                                lazy_taken.add taken
+                                taken := taken + 1
+                            }
+                            i := rend + 2
+                            continue
+                        }
+                    }
                     ; a call of a function with a lazy parameter is its body,
                     ; put in where it stands
                     if has_lazy_functions and i + 1 < ops.length
@@ -31197,6 +31129,115 @@ define Planner
             false
         }
 
+        ; Is the model operand an operator name (an operation's term ends
+        ; before it)?
+        function model_operand_is_operator(this: Planner, op: Operand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expression
+                when t: Type
+                {
+                    if t.generics <> null or t.name.length <> 1
+                        return false
+                    let n t.name[0]
+                    if Planner.is_operator_name(n) or this.is_operator(n)
+                        return true
+                    match n
+                        case "and" case "or" case "not" case "xor" case "div" case "mod": return true
+                    return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; Where the term beginning at `start` hands a COMPUTED value to a
+        ; method named like one with a lazy parameter: the index of the thing
+        ; that carries the method's hop, a tuple after it; ops.length where
+        ; it does not. A name path (`c.or_else`) is lazy_method_call#'s.
+        procedure lazy_computed_receiver_end(mutable this: Planner, ops: Vector[Operand], start: size_t) returns size_t
+        {
+            let none ops.length
+            if start > 0 and this.model_operand_is_operator(ops[start - 1]) = false
+                return none
+            var k start
+            while k + 1 < ops.length
+            {
+                let op ops[k]
+                if this.model_operand_is_operator(op)
+                    return none
+                if op.member_access <> null
+                {
+                    let hops (*op.member_access)
+                    var computed k > start
+                    choose op.expression
+                        when tp: Tuple
+                            computed := true
+                        else
+                            0
+                    if hops.length > 0 and computed and this.is_lazy_method_name(hops[hops.length - 1])
+                    {
+                        choose ops[k + 1].expression
+                            when next: Tuple
+                                return k
+                            else
+                                return none
+                    }
+                }
+                k := k + 1
+            }
+            none
+        }
+
+        ; plan_lazy_computed_receiver#: the things from start to rend and the
+        ; tuple after them as the block `{ let receiver$N <receiver>
+        ; receiver$N.m(args) }` -- the receiver evaluated once, first, and the
+        ; method's put-in made on its name. Where the method turns out to
+        ; have no lazy parameter, the block is an ordinary call on the bound
+        ; receiver. Before 2026-10-19 the call resolved as a call of a
+        ; routine that is never built, a link error naming its symbol.
+        procedure plan_lazy_computed_receiver(mutable this: Planner, ops: Vector[Operand], start: size_t, rend: size_t) returns PlannedOperand
+        {
+            let at ops[rend]
+            let span Span(ops[start].span.start, ops[rend + 1].span.end)
+            let hops (*at.member_access)
+            let method hops[hops.length - 1]
+            var recv Vector[Operand]^this(rend - start + 1)
+            var k start
+            while k < rend
+            {
+                recv.put(k - start, ops[k])
+                k := k + 1
+            }
+            var rest_hops: ref[Vector[String]]? null
+            if hops.length > 1
+            {
+                let kept Vector[String]^this(hops.length - 1)
+                var h: size_t 0
+                while h + 1 < hops.length
+                {
+                    kept.put(h, hops[h])
+                    h := h + 1
+                }
+                rest_hops := &kept
+            }
+            recv.put(rend - start, Operand(at.span, at.expression, rest_hops))
+            let hidden String^this("receiver$`span.start`")
+            var path Vector[String]^this(2)
+            path.put(0, hidden)
+            path.put(1, String^this(method))
+            var call Vector[Operand]^this(2)
+            call.put(0, Operand(at.span, Expression.Type(scalyc.compiler.Model.Type(at.span, path, null, Lifetime.Unspecified(Unspecified()))), null))
+            call.put(1, ops[rend + 1])
+            var name_h Vector[String]^this(1)
+            name_h.put(0, hidden)
+            var stmts Vector[Statement]^this(2)
+            stmts.put(0, Statement.Binding(Binding(span, "const", Item(span, false, name_h.get(0), null, Vector[Attribute](0)), recv)))
+            stmts.put(1, Statement.Action(Action(call, Vector[Operand](0))))
+            this.plan_operand(Operand(span, Expression.Block(Block(span, stmts)), null))
+        }
+
         ; lazy_method_call#: the receiver path and the concept of a METHOD
         ; call whose method has a lazy parameter -- `c.or_else(...)`,
         ; `this.or_else(...)`, `b.inner.or_else(...)`, a sibling `or_else(...)`
@@ -31316,12 +31357,6 @@ define Planner
             {
                 let concept method[method.length - 1]
                 cands := this.lazy_method_candidates(concept, name)
-                let cref this.lookup_concept(concept)
-                if cref <> null and (*cref).parameters.length > 0
-                {
-                    this.add_diagnostic(span, String^this("a method with a lazy parameter of a generic concept is not put in yet: `concept`.`name`"))
-                    return none
-                }
             }
             if cands.length <> 1
             {
@@ -31405,6 +31440,28 @@ define Planner
                 receiver := &^this this.collapse_operand_sequence(this.plan_operands(rops))
             }
             lazy_shadows.length := shadows_before
+            ; a generic concept's method: its type parameters stand for the
+            ; receiver's arguments while the parameters and the body are
+            ; planned, as in an instantiation (enter_concept_generic_scope#)
+            var generic_scope: ref[Array[KeyValuePair[String, PlannedType]]]? null
+            var in_generic false
+            if receiver <> null
+            {
+                let concept method[method.length - 1]
+                let cref this.lookup_concept(concept)
+                if cref <> null and (*cref).parameters.length > 0
+                {
+                    var recv_type: PlannedType (*receiver).result_type
+                    Planner.type_strip_one_reference((*receiver).result_type, &recv_type)
+                    generic_scope := this.enter_concept_generic_scope(concept, recv_type)
+                    if generic_scope = null
+                    {
+                        this.add_diagnostic(span, String^this("the type arguments of `concept` are not known at this call of `name`, a method with a lazy parameter put in where it is called"))
+                        return none
+                    }
+                    in_generic := true
+                }
+            }
             ; the body
             let caller_len scope_bindings.length
             let caller_bnd scope_boundaries.length
@@ -31463,6 +31520,8 @@ define Planner
             lazy_putins.add(String^this(name))
             let body this.plan_statement(Statement.Action(act))
             lazy_putins.length := lazy_putins.length - 1
+            if in_generic
+                this.leave_concept_generic_scope(generic_scope)
             current_return_type := caller_ret
             lazy_args.length := lazy_frame
             lazy_frame := caller_frame
@@ -31740,24 +31799,33 @@ define Planner
                                 return this.delegate_binding(b, del_name, dl)
                             when dft: Type
                             {
+                                ; a name bound to a function or a method
+                                ; (`let g twice`, `let k c.add`) stands for
+                                ; what it is bound to (function_alias_target#):
+                                ; `let f: IntFn g` killed the compiler
+                                ; (SIGSEGV) until 2026-10-19, and with a
+                                ; bound method it said the method had no tuple
+                                var dpath: Vector[String] dft.name
+                                if dft.name.length = 1 and dft.generics = null and this.lookup_local_binding(dft.name[0]) = null
+                                {
+                                    let dalias this.function_alias_target(dft.name[0])
+                                    if dalias.get_length() > 0
+                                        dpath := Planner.split_dotted(dalias)
+                                }
                                 ; a named function (`let g: IntFn twice`): the
                                 ; closure of the lambda that calls it -- it
                                 ; was a closure without a thunk, a broken
                                 ; module with no location
                                 var dft_name ""
-                                if dft.name.length = 1 and dft.generics = null
-                                {
-                                    let dhp dft.name.get 0
-                                    if dhp <> null
-                                        dft_name := String((*dhp))
-                                }
+                                if dpath.length = 1 and dft.generics = null
+                                    dft_name := String(dpath[0])
                                 ; a method on a receiver (`let f: IntFn c.add`):
                                 ; the closure of the lambda that calls it on
                                 ; the receiver it captures (BareMethod)
-                                if dft.name.length >= 2 and dft.generics = null
+                                if dpath.length >= 2 and dft.generics = null
                                 {
                                     let mdparams this.delegate_param_types(del_name)
-                                    var mlm this.function_lambda(dft.name, mdparams.length, b.span)
+                                    var mlm this.function_lambda(dpath, mdparams.length, b.span)
                                     return this.delegate_binding(b, del_name, mlm)
                                 }
                                 if dft_name.get_length() > 0 and this.lookup_local_binding(dft_name) = null and this.lookup_concept_any(dft_name) = null and this.is_function(dft_name)
@@ -32040,7 +32108,6 @@ define Planner
             }
             let ops_to_collapse Vector[PlannedOperand](rest_arr)
             var collapsed this.collapse_operand_sequence(ops_to_collapse)
-            this.report_function_as_operator(collapsed)
 
             ; Page inference, gap 1 (backward binding promotion): if this
             ; binding's name was found returned bare (`let x Foo(); ... return
@@ -35270,11 +35337,6 @@ define Planner
             ; diagnostics are Scaly strings like any other.
             if m.takes_this = false
                 rsb.append " (the receiver fills the first parameter of a member that does not declare this)"
-            if arg_types.length = 0 and expected > 0
-            {
-                rsb.append " - if a call follows as its argument: "
-                rsb.append(Planner.chained_argument_rule())
-            }
             ; Same idiom as report_unknown_identifier# right below: this function
             ; has no caller page in scope, and add_diagnostic stores the message
             ; beyond the frame that builds it — so pin it to the Planner's page.
@@ -50674,7 +50736,6 @@ define Planner
 
             let planned_flat this.plan_operands(r.result)
             var planned_collapsed this.collapse_operand_sequence(planned_flat)
-            this.report_function_as_operator(planned_collapsed)
             if this.current_return_type <> null
                 planned_collapsed := this.retarget_bare_variant((*this.current_return_type), planned_collapsed)
 
@@ -51176,20 +51237,12 @@ define Planner
         ; needed), and a bare variable or literal as a statement, while equally
         ; dead, is not a shape that has cost anyone anything here.
         ;
-        ; The LAST statement is judged too (`last`), for the one shape that is
-        ; never a value: an operator call with NO NAME, the leftover of a
-        ; failed collapse. `print sb.to_string()` as a procedure's last
-        ; statement emitted nothing at rc 0 while the same line one statement
-        ; earlier was refused (2026-09-29, found by the json package's tests).
-        ; Not in an uninstantiated generic template (planning_template): there
-        ; a tail like `v.get() + v.get()` on a `T` is unresolved by nature, and
-        ; the instantiation is planned and judged on its own.
-        ; Is `name`, standing as an operator, a FUNCTION and nothing else? It
-        ; must be declared one and NOT declared an operator: an operator may
-        ; carry a text name (`operator 'minus'(...)`, tests/aot/text_operator),
-        ; and that one is a real infix call.
-        function name_is_only_a_function(this: Planner, name: String) returns bool
-            Planner.name_is_function_name(name) and this.is_function(name) and this.is_operator(name) = false
+        ; Until 2026-10-19 it also caught what a FAILED COLLAPSE left behind --
+        ; an operator call with no name, or one named after a function
+        ; (`print go(1)`, `print sb.to_string()`: the call without parentheses
+        ; swallowing a call), in the last statement too. The driver refuses
+        ; such a sequence itself now (report_unread_operation#), and a raw
+        ; operation is planned only for an operator the protocol answers.
 
         ; A method named without its tuple (`name.length`): the collapse used
         ; to append the empty tuple and call. A thing that is not written is
@@ -51209,31 +51262,6 @@ define Planner
             msb.append "()'"
             let mmsg msb.to_string()
             this.add_diagnostic(loc, String^this(mmsg))
-        }
-
-        ; The same failed collapse where its value is BOUND or RETURNED:
-        ; `let r show twice(3)` read as `(show twice)(3)`, the "operator"
-        ; carrying the function's name, and r held nothing at rc 0.
-        procedure report_function_as_operator(mutable this: Planner, op: PlannedOperand)
-        {
-            if this.planning_template
-                return
-            choose op.expr
-                when oc: PlannedCall
-                {
-                    if oc.is_operator and this.name_is_only_a_function(oc.name)
-                    {
-                        var fsb StringBuilder()
-                        fsb.append "'"
-                        fsb.append oc.name
-                        fsb.append "' is a function, and here it stands where an operator would - "
-                        fsb.append(Planner.chained_argument_rule())
-                        let fmsg fsb.to_string()
-                        this.add_diagnostic(op.loc, String^this(fmsg))
-                    }
-                }
-                else
-                    0
         }
 
         ; A NON-LAST statement that is only a VALUE -- a name, a constant --
@@ -51261,91 +51289,38 @@ define Planner
                 this.add_diagnostic(op.loc, String^this("this statement is only a value and does nothing - an assignment is written 'target := value' (a ':' after a name ends the statement)"))
         }
 
-        procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement, last: bool)
+        procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement)
         {
             choose stmt
                 when a: PlannedAction
                 {
-                    if a.target = null
+                    if a.target = null and a.source <> null
                     {
-                        if a.source <> null
+                        let src (*a.source)
+                        if src.length > 0
                         {
-                            let src (*a.source)
-                            if src.length > 0
-                            {
-                                let s0_ptr src.get 0
-                                if s0_ptr <> null
+                            let s0 src[0]
+                            if src.length = 1
+                                this.report_value_statement(s0)
+                            choose s0.expr
+                                when oc: PlannedCall
                                 {
-                                    let s0 (*s0_ptr)
-                                    if last = false and src.length = 1
-                                        this.report_value_statement(s0)
-                                    choose s0.expr
-                                        when oc: PlannedCall
-                                        {
-                                            ; ...and, last as well, an "operator"
-                                            ; whose NAME is a function's: the
-                                            ; same failed collapse with the name
-                                            ; kept (`print go(1)` as a routine's
-                                            ; or the program's last statement
-                                            ; emitted nothing at rc 0, 2026-10-04).
-                                            if oc.is_operator and (last = false or (this.planning_template = false and (oc.name.get_length() = 0 or this.name_is_only_a_function(oc.name))))
-                                            {
-                                                var esb StringBuilder()
-                                                if oc.name.get_length() = 0
-                                                {
-                                                    ; An operator call with NO
-                                                    ; NAME is not something anyone
-                                                    ; wrote — it is what a failed
-                                                    ; collapse leaves behind, and
-                                                    ; the shape that produces it is
-                                                    ; a parenless call whose
-                                                    ; ARGUMENT is itself a call.
-                                                    ; The statement is dropped
-                                                    ; whole: `scaly_eputs
-                                                    ; s.to_c_string()` emitted
-                                                    ; neither call, which is how it
-                                                    ; sat unnoticed in
-                                                    ; dazzle_cli.scaly for months.
-                                                    ; Say THAT, not "operator ''".
-                                                    ; The language reads an operand
-                                                    ; sequence strictly left to right:
-                                                    ; parentheses, braces, brackets
-                                                    ; and the dot are what structure
-                                                    ; it, so the argument's own call
-                                                    ; needs its parentheses.
-                                                    esb.append "this statement did not resolve to a call and has no effect - "
-                                                    esb.append(Planner.chained_argument_rule())
-                                                }
-                                                else
-                                                {
-                                                    esb.append "the result of operator '"
-                                                    esb.append oc.name
-                                                    esb.append "' is discarded - this statement has no effect"
-                                                    if oc.name = "="
-                                                        esb.append " ('=' compares, it does not assign - write 'target := value')"
-                                                    ; a NAME that is no operator is
-                                                    ; a function the collapse applied
-                                                    ; to what followed it: the same
-                                                    ; shape through a member receiver
-                                                    ; (`a.add helper(2)`)
-                                                    if Planner.name_is_word_or_symbol_operator(oc.name) = false
-                                                    {
-                                                        esb.append " - "
-                                                        esb.append(Planner.chained_argument_rule())
-                                                    }
-                                                }
-                                                let emsg esb.to_string()
-                                                this.add_diagnostic(s0.loc, String^this(emsg))
-                                            }
-                                            0
-                                        }
-                                        else
-                                            0
+                                    if oc.is_operator
+                                    {
+                                        var esb StringBuilder()
+                                        esb.append "the result of operator '"
+                                        esb.append oc.name
+                                        esb.append "' is discarded - this statement has no effect"
+                                        if oc.name = "="
+                                            esb.append " ('=' compares, it does not assign - write 'target := value')"
+                                        let emsg esb.to_string()
+                                        this.add_diagnostic(s0.loc, String^this(emsg))
+                                    }
                                 }
-                            }
+                                else
+                                    0
                         }
                     }
-                    0
                 }
                 else
                     0
@@ -51745,10 +51720,8 @@ define Planner
                         ; Same non-last precision, other question: does this
                         ; statement do anything at all? See
                         ; report_effect_free_statement#.
-                        this.report_effect_free_statement(pl, false)
+                        this.report_effect_free_statement(pl)
                     }
-                    else
-                        this.report_effect_free_statement(pl, true)
                     result.put(i, pl)
 
                     ; An assignment ends whatever a guard proved.
@@ -54011,11 +53984,7 @@ define Planner
             choose impl
                 when a: Action
                 {
-                    ; a body that is ONE expression is no statement of a block,
-                    ; so the statement gate never sees it
                     let pa this.plan_action(a)
-                    if pa.target = null and pa.source <> null and (*pa.source).length > 0
-                        this.report_function_as_operator((*pa.source)[0])
                     PlannedImplementation.Action(pa)
                 }
                 when e: Extern
@@ -64970,28 +64939,6 @@ define Planner
     ; char so the two are disjoint by construction. `^` is deliberately absent
     ; (it is the lifetime sigil, never an operator char); the list must agree
     ; with lexer.scaly's scan_operator and with scalyls' grammar.is_op_char.
-    ; The rule a parenless call with a call as its argument breaks, in the
-    ; words every diagnostic of that shape uses.
-    function chained_argument_rule() returns String
-        String("an operand sequence reads left to right, so 'f x.m()' is '(f x.m)()' - an argument that is itself a call takes parentheses: 'f(x.m())'")
-
-    ; A name only a FUNCTION can have: it begins with a letter and is none of
-    ; the six word operators (`div` and `mod` beside the four -- the levels of
-    ; scaly.sgm name them). `[]` and `!` are operator names of the compiler's own
-    ; that are neither -- 2 515 sites answered to the first version of this,
-    ; which asked "no operator characters".
-    function name_is_function_name(n: String) returns bool
-    {
-        if n.get_length() = 0
-            return false
-        let c n.get 0
-        if ((c >= 65 and c <= 90) or (c >= 97 and c <= 122)) = false
-            return false
-        match n
-            case "and" case "or" case "not" case "xor" case "div" case "mod": return false
-        true
-    }
-
     function name_is_word_or_symbol_operator(n: String) returns bool
     {
         if Planner.name_reads_as_operator(n)
