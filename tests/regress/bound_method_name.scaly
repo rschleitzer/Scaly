@@ -1,0 +1,26 @@
+; A method named on its receiver without a tuple and BOUND to a name is a
+; bound method at plan time (2026-10-19, ROADMAP-operation.md, Functions):
+; `let g c.add`, then `g(5)` and `g 5` are `c.add(5)`, the receiver read at the
+; application, as `let g twice` makes `g(5)` a direct call of `twice`.
+; Expected: PASS
+define Calc (base: int)
+{
+    function add(this, x: int) returns int
+        base + x
+}
+
+define Box (calc: Calc)
+
+procedure run() returns bool
+{
+    let c Calc(10)
+    let g c.add
+    let bx Box(Calc(7))
+    let h bx.calc.add
+    g(5) = 15 and g 6 = 16 and h(1) = 8
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

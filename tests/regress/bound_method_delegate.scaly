@@ -1,0 +1,35 @@
+; A method named without its tuple where a delegate is declared is a BOUND
+; method (2026-10-19, ROADMAP-operation.md, Functions: `x.m` without a tuple
+; is receiver and method; as a delegate it is a closure): `apply(c.add, 3)`
+; and `let f: IntFn c.scaled` are the closure of the lambda that calls the
+; method on the receiver it captures (Planner.BareMethod,
+; closure_for_lambda_arg#). Before, the bare name was rc 4 everywhere.
+; Expected: PASS
+define IntFn delegate(int) returns int
+
+define Calc (base: int)
+{
+    function add(this, x: int) returns int
+        base + x
+
+    function scaled(this, x: int) returns int
+        base * x
+}
+
+define Box (calc: Calc)
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+procedure run() returns bool
+{
+    let c Calc(10)
+    let b Box(Calc(7))
+    let f: IntFn c.scaled
+    apply(c.add, 3) = 13 and f(4) = 40 and apply(f, 2) = 20 and apply(b.calc.add, 1) = 8
+}
+
+if run()
+    print "PASS"
+else
+    print "FAIL"

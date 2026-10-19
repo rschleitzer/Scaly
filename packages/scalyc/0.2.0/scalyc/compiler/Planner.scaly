@@ -423,6 +423,18 @@ define Planner
     )
     define PROTO_NONE size_t 0x4000000000000000
 
+    ; a method named without its tuple (`c.add`) that a delegate may still
+    ; take as a bound method (closure_for_lambda_arg#), reported at the end
+    ; of its statement if none does (plan_statement#)
+    define BareMethod
+    (
+        loc: Span
+        method: String
+        path: Vector[String]
+        depth: size_t
+        var taken: bool
+    )
+
     ; what application_target# answers
     define ApplicationTarget
     (
@@ -873,6 +885,9 @@ define Planner
         ; closure for a delegate parameter (closure_for_lambda_arg#)
         lambda_arg_models: Array[Lambda]
         lambda_arg_starts: Array[size_t]
+        ; methods named without a tuple, waiting for a delegate (BareMethod)
+        var bare_methods: Array[BareMethod]
+        var statement_depth: size_t
         ; Hole-1 field provenance (escape soundness): names of frame-local
         ; VALUE-struct bindings constructed with a Local-ref argument
         ; (`let h Holder(&b)` where &b points into this frame). A later
@@ -1577,6 +1592,8 @@ define Planner
             promoted_binding_names := Array[String]^this()
             lambda_arg_models := Array[Lambda]^this()
             lambda_arg_starts := Array[size_t]^this()
+            bare_methods := Array[BareMethod]^this()
+            statement_depth := 0
             local_tainted_struct_bindings := Array[String]^this()
             local_frame_ref_struct_bindings := Array[String]^this()
             escaping_targets := Array[String]^this()
@@ -4620,6 +4637,15 @@ define Planner
             ; overloads takes the delegate's parameters
             if this.function_arg_name((*ap)).get_length() > 0
                 return true
+            ; and so does a method named without its tuple (BareMethod)
+            var bi: size_t 0
+            while bi < bare_methods.length
+            {
+                let bm bare_methods.at bi
+                if bm.taken = false and bm.loc.start = ap.loc.start
+                    return true
+                bi := bi + 1
+            }
             false
         }
 
@@ -4710,7 +4736,7 @@ define Planner
         ; named function -- its parameters take the delegate's types, so the
         ; call inside chooses f's overload by the delegate's signature
         ; (ROADMAP-operation.md, Functions)
-        procedure function_lambda(mutable this: Planner, name: String, n: size_t, span: Span) returns Lambda
+        procedure function_lambda(mutable this: Planner, path: Vector[String], n: size_t, span: Span) returns Lambda
         {
             ; on the Planner's page: the closure keeps this model
             var inputs Vector[Item]^this(n)
@@ -4728,8 +4754,13 @@ define Planner
                 comps.put(i, Component(span, null, arg_ops, Vector[Attribute]^this(0)))
                 i := i + 1
             }
-            var fn_path Vector[String]^this(1)
-            fn_path.put(0, String^this(name))
+            var fn_path Vector[String]^this(path.length)
+            var pi: size_t 0
+            while pi < path.length
+            {
+                fn_path.put(pi, String^this(path[pi]))
+                pi := pi + 1
+            }
             var call_ops Vector[Operand]^this(2)
             call_ops.put(0, Operand(span, Expression.Type(scalyc.compiler.Model.Type(span, fn_path, null, Lifetime.Unspecified(Unspecified()))), null))
             call_ops.put(1, Operand(span, Expression.Tuple(Tuple(span, comps)), null))
@@ -4758,9 +4789,29 @@ define Planner
                     this.report_delegate_misfit(named, dn, dparams, a.loc)
                     return PlannedOperand^this(a.loc, a.expr, null, pt)
                 }
-                var lm this.function_lambda(named, dparams.length, a.loc)
+                var named_path Vector[String](1)
+                named_path.put(0, named)
+                var lm this.function_lambda(named_path, dparams.length, a.loc)
                 let clo this.make_closure("fn", lm, dparams, dret, pt, Lifetime.Local(scalyc.compiler.Model.Local(a.loc)))
                 return PlannedOperand^this(a.loc, PlannedExpression.Closure clo, null, pt)
+            }
+            ; a method named without its tuple (`c.add`): the closure of the
+            ; lambda that calls it on the receiver it captures
+            var bi bare_methods.length
+            while bi > 0
+            {
+                bi := bi - 1
+                let bm bare_methods.at bi
+                if bm.taken = false and bm.loc.start = a.loc.start
+                {
+                    bm.taken := true
+                    var dn String(pt.name)
+                    let dparams this.delegate_param_types(dn)
+                    let dret this.delegate_return_type(dn)
+                    var lm this.function_lambda(bm.path, dparams.length, a.loc)
+                    let clo this.make_closure("method", lm, dparams, dret, pt, Lifetime.Local(scalyc.compiler.Model.Local(a.loc)))
+                    return PlannedOperand^this(a.loc, PlannedExpression.Closure clo, null, pt)
+                }
             }
             choose a.expr
                 when pl: PlannedLambda
@@ -12219,6 +12270,25 @@ define Planner
                             let last_hop (*last_ptr)
                             if last_hop.is_method
                             {
+                                ; a delegate may take it as a bound method:
+                                ; reported at the end of the statement if
+                                ; none does (closure_for_lambda_arg#)
+                                let bm_path this.bare_method_path(only_op)
+                                if bm_path.length > 0 and statement_depth > 0
+                                {
+                                    ; an operand planned twice is one entry
+                                    var seen false
+                                    var si: size_t 0
+                                    while si < bare_methods.length
+                                    {
+                                        if bare_methods.at(si).loc.start = only_op.loc.start
+                                            seen := true
+                                        si := si + 1
+                                    }
+                                    if seen = false
+                                        bare_methods.add(BareMethod^this(only_op.loc, String^this(last_hop.name), bm_path, statement_depth, false))
+                                    return only_op
+                                }
                                 this.report_method_without_tuple(only_op.loc, last_hop.name)
                                 let void_ty Planner.make_void_type()
                                 let empty_tuple PlannedTuple(
@@ -23469,8 +23539,8 @@ define Planner
                     let fa_target this.function_alias_target((*fa_name))
                     if fa_target.get_length() > 0
                     {
-                        var fa_path Vector[String](1)
-                        fa_path.put(0, fa_target)
+                        ; a bound method is its dotted path, `c.add`
+                        let fa_path Planner.split_dotted(fa_target)
                         var fa_type Type(t.span, fa_path, null, t.lifetime)
                         return this.plan_type_operand(fa_type, loc)
                     }
@@ -30559,6 +30629,15 @@ define Planner
                                     if dhp <> null
                                         dft_name := String((*dhp))
                                 }
+                                ; a method on a receiver (`let f: IntFn c.add`):
+                                ; the closure of the lambda that calls it on
+                                ; the receiver it captures (BareMethod)
+                                if dft.name.length >= 2 and dft.generics = null
+                                {
+                                    let mdparams this.delegate_param_types(del_name)
+                                    var mlm this.function_lambda(dft.name, mdparams.length, b.span)
+                                    return this.delegate_binding(b, del_name, mlm)
+                                }
                                 if dft_name.get_length() > 0 and this.lookup_local_binding(dft_name) = null and this.lookup_concept_any(dft_name) = null and this.is_function(dft_name)
                                 {
                                     let fdparams this.delegate_param_types(del_name)
@@ -30569,7 +30648,9 @@ define Planner
                                             this.define_local((*b.item.name), this.plan_type((*b.item.type)), false, false)
                                         return PlannedBinding(b.span, b.binding_type, PlannedItem(b.span, false, null, null, null), null)
                                     }
-                                    var flm this.function_lambda(dft_name, fdparams.length, b.span)
+                                    var dft_path Vector[String](1)
+                                    dft_path.put(0, dft_name)
+                                    var flm this.function_lambda(dft_path, fdparams.length, b.span)
                                     return this.delegate_binding(b, del_name, flm)
                                 }
                             }
@@ -30629,6 +30710,45 @@ define Planner
                                         PlannedItem(b.span, false, null, null, null),
                                         null
                                     )
+                                }
+                            }
+                            ; a method named on its receiver without a tuple
+                            ; (`let g c.add`): a bound method, the path the
+                            ; name plans as from here on -- `g(5)` is
+                            ; `c.add(5)`, its receiver read at the application
+                            if fa_ty.name.length >= 2 and fa_ty.generics = null
+                            {
+                                var bprobe_op (*fa_ptr)
+                                let bprobe this.plan_operand(bprobe_op)
+                                if this.bare_method_path(bprobe).length > 0
+                                {
+                                    let bhops (*bprobe.member_access)
+                                    let blast bhops.get(bhops.length - 1)
+                                    if blast <> null and blast.is_method
+                                    {
+                                        var joined StringBuilder()
+                                        var ji: size_t 0
+                                        while ji < fa_ty.name.length
+                                        {
+                                            if ji > 0
+                                                joined.append("." as char)
+                                            joined.append(fa_ty.name[ji])
+                                            ji := ji + 1
+                                        }
+                                        let joined_str joined.to_string()
+                                        var bkey StringBuilder()
+                                        bkey.append "fn$"
+                                        bkey.append (*b.item.name)
+                                        let bkey_str bkey.to_string()
+                                        this.define_local(String^this(bkey_str), Planner.make_primitive_type(joined_str.as_slice(), ""), false, false)
+                                        has_function_aliases := true
+                                        return PlannedBinding(
+                                            b.span,
+                                            b.binding_type,
+                                            PlannedItem(b.span, false, null, null, null),
+                                            null
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -49734,7 +49854,70 @@ define Planner
         ; variant-specific plan_* method. `Continue` is trivial — just
         ; carries the location.
         ; ================================================================
+        ; plan_statement#: a statement, and then every method named without its
+        ; tuple in it that no delegate took (BareMethod) is reported --
+        ; deeper statements (a lambda's, a generic body planned on the way)
+        ; flush their own only
         procedure plan_statement(mutable this: Planner, mutable s: Statement) returns PlannedStatement
+        {
+            let depth statement_depth
+            statement_depth := depth + 1
+            let ps this.plan_statement_kind(s)
+            statement_depth := depth
+            this.report_bare_methods(depth)
+            ps
+        }
+
+        procedure report_bare_methods(mutable this: Planner, depth: size_t)
+        {
+            ; the entries of deeper statements stand on top of the array
+            var from bare_methods.length
+            while from > 0 and bare_methods.at(from - 1).depth > depth
+                from := from - 1
+            var i from
+            while i < bare_methods.length
+            {
+                let bm bare_methods.at i
+                if bm.taken = false
+                    this.report_method_without_tuple(bm.loc, bm.method)
+                i := i + 1
+            }
+            bare_methods.length := from
+        }
+
+        ; bare_method_path#: the dotted name a method named without its tuple
+        ; was written as -- a local or a parameter, its property hops, the
+        ; method -- or empty where the receiver is anything else; on the
+        ; Planner's page, where the BareMethod keeps it
+        procedure bare_method_path(mutable this: Planner, op: PlannedOperand) returns Vector[String]
+        {
+            let none Vector[String](0)
+            if op.member_access = null
+                return none
+            let hops (*op.member_access)
+            var base ""
+            choose op.expr
+                when v: PlannedVariable
+                    base := String(v.name)
+                else
+                    return none
+            var path Vector[String]^this(hops.length + 1)
+            path.put(0, String^this(base))
+            var i: size_t 0
+            while i < hops.length
+            {
+                let hp hops.get i
+                if hp = null
+                    return none
+                if i + 1 < hops.length and (hp.is_method or hp.is_union_value)
+                    return none
+                path.put(i + 1, String^this(hp.name))
+                i := i + 1
+            }
+            path
+        }
+
+        procedure plan_statement_kind(mutable this: Planner, mutable s: Statement) returns PlannedStatement
         {
             choose s
                 when a: Action
@@ -59864,6 +60047,26 @@ define Planner
             "",
             null
         )
+    }
+
+    ; split_dotted#: `c.add` into its segments
+    function split_dotted(name: String) returns Vector[String]
+    {
+        var parts Array[String]()
+        var start: size_t 0
+        var i: size_t 0
+        let n name.get_length()
+        while i < n
+        {
+            if name.get(i) = ("." as char)
+            {
+                parts.add(name.substring(start, i - start))
+                start := i + 1
+            }
+            i := i + 1
+        }
+        parts.add(name.substring(start, n - start))
+        Vector[String](parts)
     }
 
     function make_void_type() returns PlannedType

@@ -9981,8 +9981,16 @@ define Emitter
                     let cap_ptr (*clo.captures).get ci
                     if cap_ptr <> null
                     {
-                        let cap_val emit_operand((*cap_ptr))
+                        var cap_val emit_operand((*cap_ptr))
                         let cf LLVMBuildStructGEP2(builder, clo_ty, record, (ci + 1) as u32, "clo.cap")
+                        ; a lambda captures by VALUE: a record the routine holds
+                        ; through its slot arrives as the slot's address, and
+                        ; stored as it is the closure kept the address -- right
+                        ; only as long as the thunk handed it on unloaded
+                        ; (lowered_param_type#)
+                        let cf_ty LLVMStructGetTypeAtIndex(clo_ty, (ci + 1) as u32)
+                        if cap_val <> null and LLVMGetTypeKind(cf_ty) = LLVMTypeKind.Struct() and LLVMGetTypeKind(LLVMTypeOf cap_val) = LLVMTypeKind.Pointer()
+                            cap_val := LLVMBuildLoad2(builder, cf_ty, cap_val, "clo.cap.val")
                         LLVMBuildStore(builder, cap_val, cf)
                     }
                 }
@@ -10040,7 +10048,7 @@ define Emitter
             {
                 let pt_ptr (*clo.param_types).get pi
                 if pt_ptr <> null
-                    tptys.put(pi + 1, map_type((*pt_ptr)))
+                    tptys.put(pi + 1, this.lowered_param_type(map_type((*pt_ptr))))
                 pi := pi + 1
             }
             let thunk_ty LLVMFunctionType(ret_ty, tptys.data, n_tp as u32, 0)
@@ -10065,9 +10073,22 @@ define Emitter
                 if ct_ptr <> null
                     ct := map_type((*ct_ptr))
                 let gep LLVMBuildStructGEP2(builder, clo_ty, self_param, (k + 1) as u32, "cap")
-                let cv LLVMBuildLoad2(builder, ct, gep, "cap")
-                real_args.put(k, cv)
-                real_tys.put(k, ct)
+                ; a record capture goes as the address of its place in the
+                ; closure: the lambda takes a record by pointer, as every
+                ; routine does (emit_function_decl#). Loaded and handed over
+                ; as a value, `Calc(10)` arrived as the address 10 (a bound
+                ; method's receiver, 2026-10-19)
+                if this.lowered_param_type(ct) <> ct
+                {
+                    real_args.put(k, gep)
+                    real_tys.put(k, ptr_ty)
+                }
+                else
+                {
+                    let cv LLVMBuildLoad2(builder, ct, gep, "cap")
+                    real_args.put(k, cv)
+                    real_tys.put(k, ct)
+                }
                 k := k + 1
             }
             var j: size_t 0
@@ -10077,7 +10098,7 @@ define Emitter
                 var pt ptr_ty
                 let pt_ptr (*clo.param_types).get j
                 if pt_ptr <> null
-                    pt := map_type((*pt_ptr))
+                    pt := this.lowered_param_type(map_type((*pt_ptr)))
                 real_args.put(cap_count + j, pv)
                 real_tys.put(cap_count + j, pt)
                 j := j + 1
@@ -10097,6 +10118,17 @@ define Emitter
 
             LLVMPositionBuilderAtEnd(builder, saved_block)
             thunk
+        }
+
+        ; lowered_param_type#: how a routine takes a parameter of LLVM type
+        ; `t` -- a record or an array by pointer (borrowed), anything else by
+        ; value; the rule of emit_function_decl#, for a thunk to keep
+        procedure lowered_param_type(mutable this, mutable t: LLVMTypeRef) returns LLVMTypeRef
+        {
+            let kind LLVMGetTypeKind(t)
+            if kind = LLVMTypeKind.Struct() or kind = LLVMTypeKind.ArrayKind()
+                return LLVMPointerTypeInContext(context, 0)
+            t
         }
 
         ; ========================================================================
