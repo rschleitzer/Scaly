@@ -24,10 +24,22 @@ if (rest[0] === '--argv0') {
   rest = rest.slice(2);
 }
 const [module_path, ...args] = rest;
+// Only a regular file is read: a FIFO would keep the run waiting for a writer
+// (every .NET process keeps two in the temporary directory, for its debugger),
+// and a device has no end.
 const files = new MemoryFiles({}, {
   fallback(path) {
     try {
-      return statSync(path).isDirectory() ? 'dir' : readFileSync(path);
+      const s = statSync(path);
+      return s.isDirectory() ? 'dir' : s.isFile() ? readFileSync(path) : null;
+    } catch {
+      return null;
+    }
+  },
+  fallback_kind(path) {
+    try {
+      const s = statSync(path);
+      return s.isDirectory() ? 'dir' : s.isFile() ? 'file' : null;
     } catch {
       return null;
     }

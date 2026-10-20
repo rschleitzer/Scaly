@@ -27,8 +27,11 @@
 // not there -- a Uint8Array for a file, the string 'dir' for a directory, null
 // for nothing -- and what it answers is kept; `fallback_list(path)` adds the
 // names of a directory's entries to those the MemoryFiles holds (a program
-// that lists a directory: dazzle looking for its font files). The
-// command-line runner (run.mjs) reads the host's disk through both. Nothing here waits: a clock
+// that lists a directory: dazzle looking for its font files), and
+// `fallback_kind(path)` says what an entry is -- 'dir', 'file' or null --
+// without its content, which a listing does not need (without it, an entry's
+// kind is asked of `fallback`). The command-line runner (run.mjs) reads the
+// host's disk through all three. Nothing here waits: a clock
 // subscription of poll_oneoff answers at once (a page cannot sleep on its main
 // thread), a descriptor is always ready.
 
@@ -61,11 +64,12 @@ function normalize(path) {
 // The file system: absolute paths to file contents. A directory is a path some
 // file lies under, or one made explicitly; `/` always is one.
 export class MemoryFiles {
-  constructor(files = {}, { fallback = null, fallback_list = null } = {}) {
+  constructor(files = {}, { fallback = null, fallback_list = null, fallback_kind = null } = {}) {
     this.files = new Map();      // path -> { data: Uint8Array, size }
     this.dirs = new Set(['/']);
     this.fallback = fallback;
     this.fallback_list = fallback_list;
+    this.fallback_kind = fallback_kind;
     this.written = [];           // paths the program created, truncated or wrote
     this.made = [];              // directories the program made, in order
     this.removed = [];           // files it removed or renamed away
@@ -134,6 +138,22 @@ export class MemoryFiles {
     if (this.fallback_list)
       for (const name of this.fallback_list(p) ?? []) names.add(name);
     return [...names].sort();
+  }
+
+  // what a normalized path is -- 'dir', 'file' or null -- without reading a
+  // file the MemoryFiles do not hold yet
+  kind(p) {
+    if (this.files.has(p)) return 'file';
+    if (this.dirs.has(p)) return 'dir';
+    for (const q of this.files.keys())
+      if (q.startsWith(p + '/')) return 'dir';
+    if (this.fallback_kind) {
+      const k = this.fallback_kind(p);
+      if (k === 'dir') this.dirs.add(p);
+      return k === 'dir' || k === 'file' ? k : null;
+    }
+    const e = this.lookup(p);
+    return e === 'dir' ? 'dir' : e ? 'file' : null;
   }
 
   // the entry for a normalized path: a file record, 'dir', or null
@@ -331,13 +351,13 @@ export class Wasi {
         let used = 0;
         for (let i = Number(cookie); i < names.length && used < buf_len; i++) {
           const name = encoder.encode(names[i]);
-          const e = w.files.lookup(normalize(f.path + '/' + names[i]));
+          const k = w.files.kind(normalize(f.path + '/' + names[i]));
           const rec = new Uint8Array(24 + name.length);
           const v = new DataView(rec.buffer);
           v.setBigUint64(0, BigInt(i + 1), true);
           v.setBigUint64(8, BigInt(i + 1), true);
           v.setUint32(16, name.length, true);
-          v.setUint8(20, e === 'dir' ? FILETYPE.DIRECTORY : FILETYPE.REGULAR_FILE);
+          v.setUint8(20, k === 'dir' ? FILETYPE.DIRECTORY : k === 'file' ? FILETYPE.REGULAR_FILE : FILETYPE.UNKNOWN);
           rec.set(name, 24);
           const n = Math.min(rec.length, buf_len - used);
           m.set(rec.subarray(0, n), buf + used);
