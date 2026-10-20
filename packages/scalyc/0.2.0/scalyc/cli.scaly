@@ -1746,9 +1746,13 @@ define cli
                 cmd_builder.append " -lm"
         }
         ; WebAssembly: a catch point's longjmp is wasi-libc's libsetjmp (the
-        ; exception tag it throws), and munmap its emulated mman
+        ; exception tag it throws), and munmap its emulated mman. The stack in
+        ; linear memory is 64 KB unless the link says otherwise, and a 64 KB
+        ; buffer on it (onsgmls reading standard input) ran past it into the
+        ; data below; 8 MB as on the other targets, ahead of the data so an
+        ; overflow traps instead of overwriting it.
         if wasm
-            cmd_builder.append " -lsetjmp -lwasi-emulated-mman"
+            cmd_builder.append " -lsetjmp -lwasi-emulated-mman -Wl,--stack-first,-z,stack-size=8388608"
 
         ; `scaly build --target <triple>`: the link is for that target too.
         ; Until 2026-10-01 only the objects were -- the program and the

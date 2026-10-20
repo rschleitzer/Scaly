@@ -21,12 +21,30 @@
  */
 #include <dirent.h>
 #include <errno.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+
+/* ---- the working directory ------------------------------------------------ */
+
+/* WASI hands a program no working directory: wasi-libc begins at `/`, so a
+ * relative path is read from the root of the first directory the host opened
+ * for it. A host that means one says so in PWD (tests/wasm/run.mjs passes its
+ * own), and the program begins there -- `..` included, which an opened `.`
+ * cannot reach. Without PWD (a page that hands in its files by absolute path)
+ * the root stays. A constructor, so it runs before main and before a static
+ * initializer of the program; this file is in every program, because the
+ * runtime's pages come from scaly_aligned_alloc below. Rule (a). */
+__attribute__((constructor)) static void scaly_wasm_adopt_pwd(void)
+{
+    const char* pwd = getenv("PWD");
+    if (pwd && pwd[0] == '/')
+        (void)chdir(pwd);
+}
 
 /* ---- the evented-I/O queue: there is none ------------------------------- */
 
@@ -48,12 +66,26 @@ int scaly_eio_set_nonblocking(int fd) { (void)fd; return -1; }
 
 /* ---- reading and writing a descriptor, blocking ------------------------- */
 
+/* The host may hand a descriptor over non-blocking: node does with a pipe on
+ * standard output, so a write past the pipe's 64 KB answers EAGAIN, and a
+ * caller that takes a short count for an error (Io.write_all) lost the rest
+ * of the output. The profile promises blocking calls, so a call that would
+ * block waits in poll -- which WASI's poll_oneoff answers for a descriptor --
+ * and is made again. */
+static int scaly_wasm_would_block(int fd, short events)
+{
+    if (errno != EAGAIN && errno != EWOULDBLOCK)
+        return 0;
+    struct pollfd p = { fd, events, 0 };
+    return poll(&p, 1, -1) >= 0 || errno == EINTR;
+}
+
 long long scaly_eio_read(int fd, void* buf, unsigned long long count)
 {
     long long r;
     do
         r = read(fd, buf, (size_t)count);
-    while (r < 0 && errno == EINTR);
+    while (r < 0 && (errno == EINTR || scaly_wasm_would_block(fd, POLLIN)));
     return r;
 }
 
@@ -68,7 +100,7 @@ long long scaly_eio_write(int fd, const void* buf, unsigned long long count)
     long long r;
     do
         r = write(fd, buf, (size_t)count);
-    while (r < 0 && errno == EINTR);
+    while (r < 0 && (errno == EINTR || scaly_wasm_would_block(fd, POLLOUT)));
     return r;
 }
 

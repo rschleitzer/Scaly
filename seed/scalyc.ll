@@ -1469,7 +1469,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 7172857093824501140
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -3480660555469846430
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -8762,7 +8762,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.sconst.7261 = private constant [28 x i8] c"\1A ws2_32.lib -stack:8388608\00"
 @.sconst.7262 = private constant [35 x i8] c"! -lws2_32 -Xlinker -stack:8388608\00"
 @.sconst.7263 = private constant [6 x i8] c"\04 -lm\00"
-@.sconst.7264 = private constant [32 x i8] c"\1E -lsetjmp -lwasi-emulated-mman\00"
+@.sconst.7264 = private constant [72 x i8] c"F -lsetjmp -lwasi-emulated-mman -Wl,--stack-first,-z,stack-size=8388608\00"
 @.sconst.7265 = private constant [12 x i8] c"\0A --target=\00"
 @.sconst.7266 = private constant [9 x i8] c"\07 \22-out:\00"
 @.sconst.7267 = private constant [4 x i8] c"\02\22\22\00"
