@@ -13828,6 +13828,25 @@ define Emitter
                 }
             }
 
+            ; A shift is as wide as its LEFT operand, whatever its count is --
+            ; the planner types it so (Planner.wider_integer_operand_type#
+            ; exempts shifts) -- so the count takes the left's width. Widening
+            ; the left instead made `value >> 4` on a u8 an i64, handed on
+            ; where an i8 is declared: right on arm64 by the low byte, a trap
+            ; on wasm32, where a call holds the callee's exact type.
+            if op_name = "<<" or op_name = ">>"
+            {
+                if l_kind = LLVMTypeKind.Integer() and r_kind = LLVMTypeKind.Integer()
+                {
+                    let lw LLVMGetIntTypeWidth(LLVMTypeOf l)
+                    let rw LLVMGetIntTypeWidth(LLVMTypeOf r)
+                    if rw > lw
+                        r := LLVMBuildTrunc(builder, r, LLVMTypeOf l, "shcount")
+                    else if rw < lw
+                        r := LLVMBuildZExt(builder, r, LLVMTypeOf l, "shcount")
+                }
+            }
+
             ; Integer width promotion. When both operands are integers but
             ; widths differ (e.g. defaulted-i32 literal `0` vs i64 strlen
             ; result), zero-extend the narrower side to match the wider.

@@ -46,6 +46,14 @@ __attribute__((constructor)) static void scaly_wasm_adopt_pwd(void)
         (void)chdir(pwd);
 }
 
+/* ---- the process --------------------------------------------------------- */
+
+/* WASI has no process ids, and wasi-libc declares getpid only behind its
+ * emulation (_WASI_EMULATED_GETPID). A program that names one in a file name
+ * (dazzle's temporary output) gets a fixed one, as the emulation would give;
+ * posixcompat_windows.c is the Windows twin. Rule (a). */
+int getpid(void) { return 1; }
+
 /* ---- the evented-I/O queue: there is none ------------------------------- */
 
 int scaly_eio_create(void) { return -1; }

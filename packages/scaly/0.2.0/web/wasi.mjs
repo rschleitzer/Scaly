@@ -16,6 +16,8 @@
 //   const status = wasi.start(instance);   // the exit code
 //   wasi.stdout_text(), wasi.stderr_text(), files.read('/work/out.txt'),
 //   files.written   // the paths the program created or wrote, in order
+//   files.made      // the directories it made
+//   files.removed   // the files it removed or renamed away (and did not write again)
 //
 // One instance runs once (a module's memory holds what its run left behind);
 // compile the module once and instantiate it per run.
@@ -23,8 +25,10 @@
 // Every call is synchronous, as WASI's are: a file the program opens must be in
 // the MemoryFiles before the run. `fallback(path)` is asked for a path that is
 // not there -- a Uint8Array for a file, the string 'dir' for a directory, null
-// for nothing -- and what it answers is kept; the command-line runner
-// (run.mjs) reads the host's disk through it. Nothing here waits: a clock
+// for nothing -- and what it answers is kept; `fallback_list(path)` adds the
+// names of a directory's entries to those the MemoryFiles holds (a program
+// that lists a directory: dazzle looking for its font files). The
+// command-line runner (run.mjs) reads the host's disk through both. Nothing here waits: a clock
 // subscription of poll_oneoff answers at once (a page cannot sleep on its main
 // thread), a descriptor is always ready.
 
@@ -57,11 +61,14 @@ function normalize(path) {
 // The file system: absolute paths to file contents. A directory is a path some
 // file lies under, or one made explicitly; `/` always is one.
 export class MemoryFiles {
-  constructor(files = {}, { fallback = null } = {}) {
+  constructor(files = {}, { fallback = null, fallback_list = null } = {}) {
     this.files = new Map();      // path -> { data: Uint8Array, size }
     this.dirs = new Set(['/']);
     this.fallback = fallback;
+    this.fallback_list = fallback_list;
     this.written = [];           // paths the program created, truncated or wrote
+    this.made = [];              // directories the program made, in order
+    this.removed = [];           // files it removed or renamed away
     for (const [path, content] of Object.entries(files)) this.write(path, content);
   }
 
@@ -77,6 +84,26 @@ export class MemoryFiles {
 
   note_written(p) {
     if (!this.written.includes(p)) this.written.push(p);
+    this.removed = this.removed.filter(x => x !== p);
+  }
+
+  // a file goes to another path (a file there is replaced)
+  rename(p, q) {
+    const e = this.lookup(p);
+    this.files.delete(p);
+    this.files.set(q, e);
+    this.forget(p);
+    this.note_written(q);
+  }
+
+  remove(p) {
+    this.files.delete(p);
+    this.forget(p);
+  }
+
+  forget(p) {
+    this.written = this.written.filter(x => x !== p);
+    if (!this.removed.includes(p)) this.removed.push(p);
   }
 
   // a file's bytes, or null
@@ -93,6 +120,20 @@ export class MemoryFiles {
   // the paths of the files, sorted
   paths() {
     return [...this.files.keys()].sort();
+  }
+
+  // the names of a directory's entries, sorted: what the files and directories
+  // held lie under, and what fallback_list adds
+  list(path) {
+    const p = normalize(path);
+    const prefix = p === '/' ? '/' : p + '/';
+    const names = new Set();
+    for (const q of [...this.files.keys(), ...this.dirs])
+      if (q.startsWith(prefix) && q.length > prefix.length)
+        names.add(q.slice(prefix.length).split('/')[0]);
+    if (this.fallback_list)
+      for (const name of this.fallback_list(p) ?? []) names.add(name);
+    return [...names].sort();
   }
 
   // the entry for a normalized path: a file record, 'dir', or null
@@ -273,6 +314,64 @@ export class Wasi {
         }
         const f = { kind: 'file', path: p, entry: e, pos: 0, append: (fdflags & FDFLAGS_APPEND) !== 0 };
         w.view().setUint32(fd_ptr, w.fds.push(f) - 1, true);
+        return ERRNO.SUCCESS;
+      },
+      // the entries of a directory: a record each (the cookie of the next, an
+      // inode, the name's length, the type, then the name), as many as fit;
+      // a buffer filled to its end tells the caller to ask again from the
+      // cookie of the last whole one
+      fd_readdir(fd, buf, buf_len, cookie, bufused_ptr) {
+        const f = w.fds[fd];
+        if (!f) return ERRNO.BADF;
+        if (f.kind !== 'dir') return ERRNO.NOTDIR;
+        const names = w.files.list(f.path);
+        const m = w.mem();
+        let used = 0;
+        for (let i = Number(cookie); i < names.length && used < buf_len; i++) {
+          const name = encoder.encode(names[i]);
+          const e = w.files.lookup(normalize(f.path + '/' + names[i]));
+          const rec = new Uint8Array(24 + name.length);
+          const v = new DataView(rec.buffer);
+          v.setBigUint64(0, BigInt(i + 1), true);
+          v.setBigUint64(8, BigInt(i + 1), true);
+          v.setUint32(16, name.length, true);
+          v.setUint8(20, e === 'dir' ? FILETYPE.DIRECTORY : FILETYPE.REGULAR_FILE);
+          rec.set(name, 24);
+          const n = Math.min(rec.length, buf_len - used);
+          m.set(rec.subarray(0, n), buf + used);
+          used += n;
+        }
+        w.view().setUint32(bufused_ptr, used, true);
+        return ERRNO.SUCCESS;
+      },
+      path_create_directory(fd, path_ptr, path_len) {
+        const p = w.resolve(fd, path_ptr, path_len);
+        if (p === null) return ERRNO.BADF;
+        if (w.files.lookup(p)) return ERRNO.EXIST;
+        const parent = p.slice(0, p.lastIndexOf('/')) || '/';
+        if (w.files.lookup(parent) !== 'dir') return ERRNO.NOENT;
+        w.files.dirs.add(p);
+        w.files.made.push(p);
+        return ERRNO.SUCCESS;
+      },
+      path_rename(fd, old_ptr, old_len, new_fd, new_ptr, new_len) {
+        const p = w.resolve(fd, old_ptr, old_len), q = w.resolve(new_fd, new_ptr, new_len);
+        if (p === null || q === null) return ERRNO.BADF;
+        const e = w.files.lookup(p);
+        if (!e) return ERRNO.NOENT;
+        if (e === 'dir' || w.files.lookup(q) === 'dir') return ERRNO.ISDIR;
+        const parent = q.slice(0, q.lastIndexOf('/')) || '/';
+        if (w.files.lookup(parent) !== 'dir') return ERRNO.NOENT;
+        if (p !== q) w.files.rename(p, q);
+        return ERRNO.SUCCESS;
+      },
+      path_unlink_file(fd, path_ptr, path_len) {
+        const p = w.resolve(fd, path_ptr, path_len);
+        if (p === null) return ERRNO.BADF;
+        const e = w.files.lookup(p);
+        if (!e) return ERRNO.NOENT;
+        if (e === 'dir') return ERRNO.ISDIR;
+        w.files.remove(p);
         return ERRNO.SUCCESS;
       },
       fd_close(fd) {

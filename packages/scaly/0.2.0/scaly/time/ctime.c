@@ -43,6 +43,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -132,8 +133,12 @@ long long scaly_time_cpu_usec(void)
  * ★Hence the SCALY_CTIME_TEST guard: on POSIX nothing calls them, and this file
  * is compiled -Wall -Wextra -Werror, so an unconditional definition is a build
  * error rather than dead weight. Defining that macro is how the host checks
- * them — 6001 civil round-trips and 4719 mktime comparisons, 0 mismatches. */
-#if defined(_WIN32) || defined(SCALY_CTIME_TEST)
+ * them — 6001 civil round-trips and 4719 mktime comparisons, 0 mismatches.
+ *
+ * WASI uses them too: wasi-libc has no time zones at all (localtime is gmtime,
+ * TZ is not read), so there local time is computed here from the zone TZ
+ * names when that is a fixed offset (sc_utc_offset_west). */
+#if defined(_WIN32) || defined(__wasi__) || defined(SCALY_CTIME_TEST)
 static long long sc_days_from_civil(long long y, unsigned m, unsigned d)
 {
   y -= m <= 2;
@@ -175,6 +180,43 @@ static long long sc_utc_offset_west(void)
   if (_get_timezone(&tz) != 0)
     tz = 0;
   return (long long)tz;
+#elif defined(__wasi__)
+  /* A POSIX TZ string's standard offset: a name (letters, or <...>), then
+   * [+-]hh[:mm[:ss]], positive WEST of UTC -- `EST5` is 5 hours, `CET-1`
+   * minus one. A daylight part after it is not read (no rules here), and a
+   * zone name (`Europe/Berlin`, which needs a database) is UTC. */
+  const char *z = getenv("TZ");
+  long long sign = 1, h = 0, m = 0, sec = 0;
+  if (z == 0)
+    return 0;
+  if (*z == ':')
+    return 0;
+  if (*z == '<') {
+    while (*z && *z != '>')
+      z++;
+    if (*z == '>')
+      z++;
+  } else {
+    while ((*z >= 'A' && *z <= 'Z') || (*z >= 'a' && *z <= 'z'))
+      z++;
+  }
+  if (*z == '+' || *z == '-')
+    sign = *z++ == '-' ? -1 : 1;
+  if (*z < '0' || *z > '9')
+    return 0;
+  while (*z >= '0' && *z <= '9')
+    h = h * 10 + (*z++ - '0');
+  if (*z == ':') {
+    z++;
+    while (*z >= '0' && *z <= '9')
+      m = m * 10 + (*z++ - '0');
+    if (*z == ':') {
+      z++;
+      while (*z >= '0' && *z <= '9')
+        sec = sec * 10 + (*z++ - '0');
+    }
+  }
+  return sign * (h * 3600 + m * 60 + sec);
 #else
   return 0;
 #endif
@@ -211,10 +253,17 @@ long long scaly_time_format(long long k, long long use_gmt, char *out)
   const struct tm *p;
   if (use_gmt)
     p = gmtime(&t);
-  else
+  else {
+#ifdef __wasi__
+    time_t local = t - (time_t)sc_utc_offset_west();
+    p = gmtime(&local);
+#else
     p = localtime(&t);
-#ifdef _WIN32
-  /* ★THE FALLBACK IS WINDOWS-ONLY, and that guard is not caution but
+#endif
+  }
+#if defined(_WIN32) || defined(__wasi__)
+  /* (and WASI's, whose local time is computed here anyway: see above)
+   * ★THE FALLBACK IS WINDOWS-ONLY, and that guard is not caution but
    * correctness: POSIX gmtime also declines far-out values, and answering them
    * here would change what macOS and Linux print — the two platforms whose
    * output is currently byte-identical to the reference. The gap being closed
@@ -257,7 +306,12 @@ long long scaly_time_conv(const unsigned int *s, long long n)
   struct tm tim, *today;
   int       nparsed;
 
+#ifdef __wasi__
+  today_sec -= (time_t)sc_utc_offset_west();
+  today = gmtime(&today_sec);
+#else
   today = localtime(&today_sec);
+#endif
 
   /* First try to parse as time string without date */
   /* Defaults are same as of today */
@@ -315,6 +369,11 @@ long long scaly_time_conv(const unsigned int *s, long long n)
   }
 
   {
+#ifdef __wasi__
+    /* local standard time of the TZ offset; -1 stays the reference's
+     * ambiguous answer for the one second it names */
+    return sc_mktime_fallback(&tim);
+#endif
     time_t r = mktime(&tim);
     if (r != (time_t)-1)
       return (long long)r;

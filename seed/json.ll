@@ -15036,9 +15036,8 @@ if.else:                                          ; preds = %entry
   %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   call void @_ZN10JsonWriterB4jsonB4v0_26appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
-  %zext = zext i8 %1 to i64
-  %lshr = lshr i64 %zext, 4
-  %call2 = call i8 @_ZN10JsonWriterB4jsonB4v0_29hex_digitE2u8(i64 %lshr)
+  %lshr = lshr i8 %1, 4
+  %call2 = call i8 @_ZN10JsonWriterB4jsonB4v0_29hex_digitE2u8(i8 %lshr)
   call void @_ZN10JsonWriterB4jsonB4v0_24byteE2u8(ptr %0, i8 %call2)
   %and = and i8 %1, 15
   %call3 = call i8 @_ZN10JsonWriterB4jsonB4v0_29hex_digitE2u8(i8 %and)
@@ -15168,9 +15167,8 @@ if.then5:                                         ; preds = %if.else
 if.else6:                                         ; preds = %if.else
   store { ptr } { ptr @.sconst }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %arg.tmp)
-  %zext = zext i8 %call to i64
-  %lshr = lshr i64 %zext, 4
-  %call8 = call i8 @_ZN10JsonWriterB4jsonB4v0_29hex_digitE2u8(i64 %lshr)
+  %lshr = lshr i8 %call, 4
+  %call8 = call i8 @_ZN10JsonWriterB4jsonB4v0_29hex_digitE2u8(i8 %lshr)
   call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %call8)
   %and = and i8 %call, 15
   %call9 = call i8 @_ZN10JsonWriterB4jsonB4v0_29hex_digitE2u8(i8 %and)

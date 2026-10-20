@@ -1,0 +1,40 @@
+; A shift is as wide as its LEFT operand, whatever its count is -- the
+; planner typed it so, and the emitter widened the left operand to the
+; count's width instead: `value >> 4` on a u8 was an i64, handed on where an
+; i8 is declared (right on arm64 by the low byte, a trap on wasm32, where a
+; call holds the callee's exact type: the pdf package's put_hex), and
+; `b << 4` kept the bits a u8 does not have.
+; Expected: PASS
+
+function digit(value: u8) returns u8
+{
+    if value < 10
+        return value + 0x30
+    value + 0x57
+}
+
+function high(value: u8) returns u8
+    digit(value >> 4)
+
+function shifted(b: u8) returns int
+    b << 4
+
+function wide(w: u32) returns u64
+    (w << 24) as u64
+
+if high(0xAB as u8) <> 0x61
+{
+    print "FAIL high"
+    exit 1
+}
+if shifted(0xFF as u8) <> 240
+{
+    print "FAIL u8 shift kept bits above the u8"
+    exit 1
+}
+if wide(0x1FF as u32) <> 0xFF000000
+{
+    print "FAIL u32 shift kept bits above the u32"
+    exit 1
+}
+print "PASS"
