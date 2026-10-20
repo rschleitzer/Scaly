@@ -196,7 +196,9 @@ long long scaly_eio_wall_ns(void)
 /* ---- files ------------------------------------------------------------------ */
 
 /* as eio.c: size, mtime in ns, inode, the read block (st_blksize for a
- * regular file, 8192 otherwise) */
+ * regular file, 8192 otherwise). WASI's filestat carries no block size, so
+ * wasi-libc answers st_blksize 0: that is "none" too, and 8192 -- a reader
+ * stepping through a file by its block would not move with 0. */
 int scaly_eio_stat(const char *path, int fd, long long *out)
 {
     struct stat sb;
@@ -205,7 +207,7 @@ int scaly_eio_stat(const char *path, int fd, long long *out)
     out[0] = (long long)sb.st_size;
     out[1] = (long long)sb.st_mtim.tv_sec * 1000000000LL + sb.st_mtim.tv_nsec;
     out[2] = (long long)sb.st_ino;
-    out[3] = S_ISREG(sb.st_mode) ? (long long)sb.st_blksize : 8192;
+    out[3] = S_ISREG(sb.st_mode) && sb.st_blksize > 0 ? (long long)sb.st_blksize : 8192;
     return 0;
 }
 
