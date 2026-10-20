@@ -159,14 +159,16 @@ class WasiExit extends Error {
 export class Wasi {
   // args: argv, the program's name first. env: an object. cwd: the working
   // directory (handed in as PWD, which the runtime adopts). stdin: bytes or a
-  // string. stdout/stderr: called with each written Uint8Array; without them
+  // string, or a function answering them, asked when the program first reads
+  // its standard input (a program that never does is not kept waiting for it). stdout/stderr: called with each written Uint8Array; without them
   // the output is kept (stdout_text(), stderr_text()).
   constructor({ args = ['program'], env = {}, cwd = '/', files = new MemoryFiles(), stdin = new Uint8Array(),
                 stdout = null, stderr = null } = {}) {
     this.args = args.map(a => encoder.encode(a + '\0'));
     this.env = Object.entries({ ...env, PWD: cwd }).map(([k, v]) => encoder.encode(k + '=' + v + '\0'));
     this.files = files;
-    this.stdin = bytes_of(stdin);
+    this.stdin_source = stdin;
+    this.stdin = null;
     this.stdin_pos = 0;
     this.out = [[], []];
     this.sinks = [stdout, stderr];
@@ -386,6 +388,8 @@ export class Wasi {
         if (f.kind === 'dir') return ERRNO.ISDIR;
         if (f.kind === 'out') return ERRNO.BADF;
         const v = w.view(), m = w.mem();
+        if (f.kind === 'stdin' && w.stdin === null)
+          w.stdin = bytes_of(typeof w.stdin_source === 'function' ? w.stdin_source() : w.stdin_source);
         const src = f.kind === 'stdin' ? w.stdin : f.entry.data;
         const end = f.kind === 'stdin' ? w.stdin.length : f.entry.size;
         let pos = f.kind === 'stdin' ? w.stdin_pos : f.pos;
@@ -439,6 +443,8 @@ export class Wasi {
       // and a clock is taken as elapsed (a page cannot sleep)
       poll_oneoff(in_ptr, out_ptr, nsubscriptions, nevents_ptr) {
         const v = w.view();
+        if (w.stdin === null)
+          w.stdin = bytes_of(typeof w.stdin_source === 'function' ? w.stdin_source() : w.stdin_source);
         for (let i = 0; i < nsubscriptions; i++) {
           const s = in_ptr + 48 * i, e = out_ptr + 32 * i;
           const tag = v.getUint8(s + 8);

@@ -41,13 +41,14 @@ const files = new MemoryFiles({}, {
   },
 });
 // a pipe on standard output is non-blocking under node, and a write past its
-// buffer would fail with EAGAIN; standard input is read before node opens a
-// stream on it (which would make it non-blocking too)
+// buffer would fail with EAGAIN. Standard input is read whole when the
+// program first reads it -- never before: a pipe nobody closes would keep a
+// program waiting that does not read it at all.
 for (const stream of [process.stdout, process.stderr]) stream._handle?.setBlocking?.(true);
-let stdin = new Uint8Array();
-if (!isatty(0)) {
-  try { stdin = readFileSync(0); } catch { }
-}
+const stdin = () => {
+  if (isatty(0)) return new Uint8Array();
+  try { return readFileSync(0); } catch { return new Uint8Array(); }
+};
 const wasi = new Wasi({
   args: [argv0 ?? module_path, ...args], env: process.env, cwd: process.cwd(), files, stdin,
   stdout: chunk => writeFileSync(1, chunk),
