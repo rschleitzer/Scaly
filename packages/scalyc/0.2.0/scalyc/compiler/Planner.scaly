@@ -855,6 +855,10 @@ define Planner
         ; calls on a `T` do not resolve, and every instantiation is planned
         ; separately and checked (report_effect_free_statement#).
         var planning_template: bool
+        ; the fold pass of an overload choice, tried first with a string
+        ; literal folding to a char only where it IS one character
+        ; (arg_folds_to_char#)
+        var char_fold_single: bool
         ; Depth of generic FREE function instantiations under way
         ; (instantiate_generic_function#): their bodies see every concept, as
         ; a generic concept's do (use_vis_check#) -- a type argument is a
@@ -1609,6 +1613,7 @@ define Planner
             alias_depth := 0
             current_return_type := null
             planning_template := false
+            char_fold_single := false
             instantiating_functions := 0
             root_package := String^this("")
             local_closure_names := Array[String]^this()
@@ -6217,6 +6222,36 @@ define Planner
         ; arg_ops list — the default at call sites that do not opt in — yields
         ; false, so the char-fold match is byte-identical to the pre-feature
         ; matchers everywhere it is not explicitly enabled.
+        ; arg_folds_to_char: does the argument at `j` fold into a char/u8
+        ; parameter? A string literal does -- in the first try of a fold pass
+        ; (char_fold_single) only one of exactly one byte. `Array[u8].add("ab")`
+        ; met `add(item: T)` before `add(items: Slice[T])` and the fold of "ab"
+        ; was the hard `not a single character`; tried one character first, the
+        ; Slice overload takes it, and a call with nothing but char overloads
+        ; (`index_of("ab")`) still reaches the diagnostic in the second try.
+        function arg_folds_to_char(this: Planner, arg_ops: Vector[PlannedOperand], j: size_t) returns bool
+        {
+            if this.arg_is_foldable_char_string(arg_ops, j) = false
+                return false
+            if this.char_fold_single = false
+                return true
+            let op_ptr arg_ops.get j
+            if op_ptr = null
+                return false
+            choose (*op_ptr).expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    choose pc.value
+                        when s: StringConstant
+                            return s.value.get_length() = 1
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
         function arg_is_foldable_char_string(this: Planner, arg_ops: Vector[PlannedOperand], j: size_t) returns bool
         {
             if j >= arg_ops.length
@@ -10290,7 +10325,7 @@ define Planner
                     if ok = false
                         if arg.name = "String"
                             if Planner.type_is_char_like(planned_p)
-                                if this.arg_is_foldable_char_string(arg_ops, j)
+                                if this.arg_folds_to_char(arg_ops, j)
                                 {
                                     ok := true
                                     any_fold := true
@@ -10656,7 +10691,7 @@ define Planner
                     if ok = false
                         if char_fold
                             if arg.name = "String"
-                                if Planner.type_is_char_like(planned_p) and this.arg_is_foldable_char_string(arg_ops, j)
+                                if Planner.type_is_char_like(planned_p) and this.arg_folds_to_char(arg_ops, j)
                                     ok := true
                     ; Float-literal fallback (see candidate_matches_char_fold):
                     ; a bare f64 literal matches a float/f32 parameter; the
@@ -11130,9 +11165,11 @@ define Planner
                 return chosen
             let members (*members_ref)
             ; pass 0 counts the arity matches; 1 exact, 2 compatible, 3 folded
+            ; with a literal of one character, 4 folded with any
+            ; (arg_folds_to_char#)
             var arity_matches: size_t 0
             var pass: size_t 0
-            while pass < 4
+            while pass < 5
             {
                 var mi: size_t 0
                 while mi < members.length
@@ -11151,7 +11188,10 @@ define Planner
                                     else
                                     {
                                         var cand f
-                                        if this.method_params_match(cand, arg_types, pass = 1, pass = 3, arg_ops)
+                                        this.char_fold_single := pass = 3
+                                        let fits this.method_params_match(cand, arg_types, pass = 1, pass >= 3, arg_ops)
+                                        this.char_fold_single := false
+                                        if fits
                                             return &^this f
                                     }
                                 }
@@ -11637,18 +11677,31 @@ define Planner
             ; overload (matched in Pass 1) always wins and emission stays
             ; byte-identical for code that already resolves. The fold itself is
             ; applied to the operand at the call-construction site.
-            var cf: size_t 0
-            while cf < candidates.length
+            ; Twice: a literal folds to a char only where it is one
+            ; character first, any literal then (arg_folds_to_char#).
+            var single 0
+            while single < 2
             {
-                let f_ptr candidates.get cf
-                if f_ptr <> null
+                this.char_fold_single := single = 0
+                var cf: size_t 0
+                while cf < candidates.length
                 {
-                    let f (*f_ptr)
-                    if this.candidate_matches_char_fold(f, arg_types, arg_ops)
-                        return this.check_function_match(f, arg_types, false, true, arg_ops)
+                    let f_ptr candidates.get cf
+                    if f_ptr <> null
+                    {
+                        let f (*f_ptr)
+                        if this.candidate_matches_char_fold(f, arg_types, arg_ops)
+                        {
+                            let folded this.check_function_match(f, arg_types, false, true, arg_ops)
+                            this.char_fold_single := false
+                            return folded
+                        }
+                    }
+                    cf := cf + 1
                 }
-                cf := cf + 1
+                single := single + 1
             }
+            this.char_fold_single := false
 
             ; Pass 3: generic overload. For candidates declaring type
             ; parameters, plan the declared parameter types and run
@@ -19039,7 +19092,7 @@ define Planner
                     if ok = false
                         if char_fold
                             if arg.name = "String"
-                                if Planner.type_is_char_like(planned_p) and this.arg_is_foldable_char_string(arg_ops, j)
+                                if Planner.type_is_char_like(planned_p) and this.arg_folds_to_char(arg_ops, j)
                                     ok := true
                     if ok = false
                         if char_fold
@@ -19569,7 +19622,7 @@ define Planner
                     if ok = false
                         if char_fold
                             if arg.name = "String"
-                                if Planner.type_is_char_like(planned_p) and this.arg_is_foldable_char_string(arg_ops, j)
+                                if Planner.type_is_char_like(planned_p) and this.arg_folds_to_char(arg_ops, j)
                                     ok := true
                     ; Float-literal fallback (see candidate_matches_char_fold):
                     ; a bare f64 literal matches a float/f32 parameter; the
@@ -20152,20 +20205,28 @@ define Planner
                 ; the call-construction site.
                 if chosen = null
                 {
-                    var cfk: size_t 0
-                    while cfk < candidates.length
+                    ; twice, as for a free function (arg_folds_to_char#)
+                    var single 0
+                    while single < 2 and chosen = null
                     {
-                        if chosen = null
+                        this.char_fold_single := single = 0
+                        var cfk: size_t 0
+                        while cfk < candidates.length
                         {
-                            let c_ptr candidates.get cfk
-                            if c_ptr <> null
+                            if chosen = null
                             {
-                                if this.method_params_match((*c_ptr), arg_types, false, true, arg_ops)
-                                    chosen := c_ptr
+                                let c_ptr candidates.get cfk
+                                if c_ptr <> null
+                                {
+                                    if this.method_params_match((*c_ptr), arg_types, false, true, arg_ops)
+                                        chosen := c_ptr
+                                }
                             }
+                            cfk := cfk + 1
                         }
-                        cfk := cfk + 1
+                        single := single + 1
                     }
+                    this.char_fold_single := false
                 }
                 type_substitutions.length := saved_subst_sel
                 if chosen <> null

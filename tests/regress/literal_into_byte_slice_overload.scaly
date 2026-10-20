@@ -1,0 +1,49 @@
+; A string literal of more than one character where a char overload and a
+; Slice overload of one name stand side by side: the Slice takes it. The fold
+; pass met the char overload first, and folding "ab" into one byte was the
+; hard `not a single character` -- `Array[u8].add("ab")` did not compile
+; (add(item: T) before add(items: Slice[T])). A literal of ONE character still
+; folds where a char overload comes first, and a name with only char
+; overloads still says `not a single character` (xfail_multibyte_char_arg).
+; Expected: PASS
+
+procedure put(mutable out: ref[Array[u8]])
+{
+    out.add("cd")
+}
+
+function width(c: u8) returns int
+    1
+
+function width(s: Slice[u8]) returns int
+    s.length as int
+
+define Measure (unit: int)
+{
+    function of(c: u8) returns int
+        10
+
+    function of(s: Slice[u8]) returns int
+        (s.length as int) * 10
+}
+
+var bytes Array[u8]()
+bytes.add("ab")
+put(&bytes)
+bytes.add("e")
+if bytes.get_length() <> 5 or bytes[0] <> 0x61 or bytes[3] <> 0x64 or bytes[4] <> 0x65
+{
+    print "FAIL method"
+    exit 1
+}
+if width("abc") <> 3 or width("x") <> 1
+{
+    print "FAIL free function"
+    exit 1
+}
+if Measure.of("abcd") <> 40 or Measure.of("y") <> 10
+{
+    print "FAIL static"
+    exit 1
+}
+print "PASS"
