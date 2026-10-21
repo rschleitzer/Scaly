@@ -90,7 +90,7 @@ procedure baseline(req: ref[Request], mutable res: ref[Response])
 {
     var sum parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b"))
     if req.body.length > 0
-        set sum: sum + parse_int_prefix(trim(req.body))
+        sum := sum + parse_int_prefix(trim(req.body))
     res.send_int(sum)
 }
 
@@ -116,13 +116,13 @@ procedure json_items(req: ref[Request], mutable res: ref[Response]) mutable gzip
     }
     var count parse_int_prefix(req.param("count"))
     if count < 0
-        set count: 0
+        count := 0
     if count > (items.length as i64)
-        set count: items.length as i64
+        count := items.length as i64
     var m: i64 1
     let m_text req.query_param("m")
     if m_text.length > 0
-        set m: parse_int_prefix(m_text)
+        m := parse_int_prefix(m_text)
     var w JsonWriter()
     w.begin_object()
     w.key("items")
@@ -150,7 +150,7 @@ procedure json_items(req: ref[Request], mutable res: ref[Response]) mutable gzip
         while t < it.tags.length
         {
             w.text(it.tags[t].as_slice())
-            set t: t + 1
+            t := t + 1
         }
         w.end_array()
         w.key("rating")
@@ -163,7 +163,7 @@ procedure json_items(req: ref[Request], mutable res: ref[Response]) mutable gzip
         w.key("total")
         w.integer(it.price * it.quantity * m)
         w.end_object()
-        set i: i + 1
+        i := i + 1
     }
     w.end_array()
     w.key("count")
@@ -209,12 +209,12 @@ procedure load_dataset(host: ref[Page], path: String) returns bool mutable datas
         while t < tags_v.length()
         {
             tags.put(t, String^host(tags_v.item(t).as_string()))
-            set t: t + 1
+            t := t + 1
         }
         items.add(Item(v.get("id").as_i64(), String^host(v.get("name").as_string()), String^host(v.get("category").as_string()), v.get("price").as_i64(), v.get("quantity").as_i64(), v.get("active").as_bool(), tags, rating.get("score").as_i64(), rating.get("count").as_i64()))
-        set i: i + 1
+        i := i + 1
     }
-    set dataset: items
+    dataset := items
     true
 }
 
@@ -240,9 +240,9 @@ procedure async_db(req: ref[Request], mutable res: ref[Response]) mutable pg_poo
     let max query_int(req, "max", 50)
     var limit query_int(req, "limit", 50)
     if limit < 1
-        set limit: 1
+        limit := 1
     if limit > 50
-        set limit: 50
+        limit := 50
     var w JsonWriter()
     w.begin_object()
     w.key("items")
@@ -285,7 +285,7 @@ procedure async_db(req: ref[Request], mutable res: ref[Response]) mutable pg_poo
                     w.integer(c.column_int(8))
                     w.end_object()
                     w.end_object()
-                    set count: count + 1
+                    count := count + 1
                 }
             }
         }
@@ -350,9 +350,9 @@ procedure l1_get(mutable t: ref[L1Table], id: i64, mutable out: Slice[u8]) retur
         while k < 8 and w * 8 + k < n
         {
             out.put(w * 8 + k, ((v >> ((k * 8) as u64)) & 255) as u8)
-            set k: k + 1
+            k := k + 1
         }
-        set w: w + 1
+        w := w + 1
     }
     if scaly_atomic_load_u64(slot) <> s1
         return 0 - 1
@@ -377,11 +377,11 @@ procedure l1_put(mutable t: ref[L1Table], id: i64, value: Slice[u8])
         var k: size_t 0
         while k < 8 and w * 8 + k < value.length
         {
-            set v: v | ((value[w * 8 + k] as u64) << ((k * 8) as u64))
-            set k: k + 1
+            v := v | ((value[w * 8 + k] as u64) << ((k * 8) as u64))
+            k := k + 1
         }
         scaly_atomic_store_u64(slot + 3 + w, v)
-        set w: w + 1
+        w := w + 1
     }
     scaly_atomic_store_u64(slot, s + 2)
 }
@@ -502,7 +502,7 @@ procedure item_from_db(id: i64, mutable out: ref[ByteBuf]) returns bool mutable 
             w.end_object()
             out.clear()
             out.append(w.bytes())
-            set found: true
+            found := true
         }
     }
     release(c)
@@ -535,7 +535,7 @@ procedure user_from_db(id: i64, mutable out: ref[ByteBuf]) returns bool mutable 
             w.end_object()
             out.clear()
             out.append(w.bytes())
-            set found: true
+            found := true
         }
     }
     release(c)
@@ -621,7 +621,7 @@ procedure api_item_post(req: ref[Request], mutable res: ref[Response]) mutable p
         c.param_int(doc.get("quantity").as_i64())
         c.param_int(id)
         if c.run()
-            set affected: c.affected()
+            affected := c.affected()
     }
     release(c)
     if affected = 0
@@ -705,7 +705,7 @@ function sorts_before(a: Slice[u8], b: Slice[u8]) returns bool
     {
         if a[i] <> b[i]
             return a[i] < b[i]
-        set i: i + 1
+        i := i + 1
     }
     a.length < b.length
 }
@@ -727,9 +727,9 @@ procedure append_escaped(mutable out: ref[ByteBuf], s: Slice[u8])
                 case 62: out.append("&gt;")
                 case 34: out.append("&quot;")
                 case 39: out.append("&#39;")
-            set from: i + 1
+            from := i + 1
         }
-        set i: i + 1
+        i := i + 1
     }
     out.append(s.slice_from(from))
 }
@@ -750,7 +750,7 @@ procedure fortunes(req: ref[Request], mutable res: ref[Response]) mutable pg_poo
     if ok
     {
         c.start("fortunes")
-        set ok: c.run()
+        ok := c.run()
     }
     if ok = false
     {
@@ -780,14 +780,14 @@ procedure fortunes(req: ref[Request], mutable res: ref[Response]) mutable pg_poo
         while j > 0 and sorts_before(messages.at(i), messages.at(order.at(j - 1)))
         {
             order.put(j, order.at(j - 1))
-            set j: j - 1
+            j := j - 1
         }
         order.put(j, i)
-        set i: i + 1
+        i := i + 1
     }
     var out ByteBuf.create(host, 32768)
     out.append("<!DOCTYPE html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr>")
-    set i: 0
+    i := 0
     while i < n
     {
         let k order.at(i)
@@ -796,7 +796,7 @@ procedure fortunes(req: ref[Request], mutable res: ref[Response]) mutable pg_poo
         out.append("</td><td>")
         append_escaped(&out, messages.at(k))
         out.append("</td></tr>")
-        set i: i + 1
+        i := i + 1
     }
     out.append("</table></body></html>")
     res.send("text/html; charset=utf-8", out.bytes())
@@ -843,21 +843,21 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
 {
     var port 8080
     if argc > 1
-        set port: parse_int_prefix(String(*(argv + 1)).as_slice()) as int
+        port := parse_int_prefix(String(*(argv + 1)).as_slice()) as int
     var tls_port 8081
     if argc > 2
-        set tls_port: parse_int_prefix(String(*(argv + 2)).as_slice()) as int
+        tls_port := parse_int_prefix(String(*(argv + 2)).as_slice()) as int
     var h2_port 8443
     if argc > 3
-        set h2_port: parse_int_prefix(String(*(argv + 3)).as_slice()) as int
+        h2_port := parse_int_prefix(String(*(argv + 3)).as_slice()) as int
     var h2c_port 8082
     if argc > 4
-        set h2c_port: parse_int_prefix(String(*(argv + 4)).as_slice()) as int
+        h2c_port := parse_int_prefix(String(*(argv + 4)).as_slice()) as int
     let data_host Page.allocate_page()
     var path String("/data/dataset.json")
     let env_path getenv("DATASET_PATH")
     if env_path <> null
-        set path: String(env_path)
+        path := String(env_path)
     if load_dataset(data_host, path) = false
         print "arena: no dataset at `path` - /json answers 500"
     var app Router.create(Page.allocate_page())
@@ -883,8 +883,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     app.get("/api/me", &api_me)
     app.waits("/api/items/{id}")
     app.waits("/api/me")
-    set item_l1: l1_table(data_host, 100001, ITEM_TTL_MS)
-    set user_l1: l1_table(data_host, 1024, USER_TTL_MS)
+    item_l1 := l1_table(data_host, 100001, ITEM_TTL_MS)
+    user_l1 := l1_table(data_host, 1024, USER_TTL_MS)
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
     var cert String("/certs/server.crt")
@@ -893,8 +893,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     let env_key getenv("TLS_KEY")
     if env_cert <> null and env_key <> null
     {
-        set cert: String(env_cert)
-        set key: String(env_key)
+        cert := String(env_cert)
+        key := String(env_key)
     }
     let context TlsContext.server(cert, key)
     if context.valid() and tls_port > 0

@@ -35,6 +35,17 @@ for f in tests/http/*.scaly; do
     fail=$((fail+1)); failures+=("$t(rc=$rc): '$out' $(head -1 "$TMP/$t.err")")
   fi
 done
+# The HttpArena entry and its PGO training client are programs no other
+# suite builds: they compile, or the entry has rotted (it did once -- `set`
+# left the language on 2026-10-04 and the entry still spelled it)
+for f in tools/bench/http/arena.scaly tools/bench/http/train.scaly; do
+  t=$(basename "$f" .scaly)
+  if "$BIN" -S --no-tests -o "$TMP/$t.ll" "$f" > "$TMP/$t.log" 2>&1; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$t(compile): $(grep -m1 error "$TMP/$t.log")")
+  fi
+done
 echo "http: $pass PASS, $fail FAIL"
 for x in "${failures[@]+"${failures[@]}"}"; do echo "  $x"; done
 [ "$fail" = 0 ]

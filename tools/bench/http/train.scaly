@@ -39,12 +39,12 @@ procedure drain(s: TcpStream, mutable buf: Slice[u8], want: int) returns bool
         if e > 0
         {
             var head Request.empty()
-            set head.fields: buf.subslice(at, at + e)
+            head.fields := buf.subslice(at, at + e)
             let n parse_decimal(head.header("content-length"))
             if n >= 0 and at + e + (n as size_t) <= have
             {
-                set at: at + e + (n as size_t)
-                set got: got + 1
+                at := at + e + (n as size_t)
+                got := got + 1
                 continue
             }
         }
@@ -53,7 +53,7 @@ procedure drain(s: TcpStream, mutable buf: Slice[u8], want: int) returns bool
         let r s.read(buf.slice_from(have))
         if r <= 0
             return false
-        set have: have + (r as size_t)
+        have := have + (r as size_t)
     }
     true
 }
@@ -74,7 +74,7 @@ procedure client()
             s.write("GET /delay/1 HTTP/1.1\r\nHost: t\r\n\r\n")
             drain(s, buf, 1)
         }
-        set r: r + 1
+        r := r + 1
     }
     s.close()
     host.deallocate_extensions()
@@ -88,9 +88,9 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
         print "usage: train <port> [rounds]"
         return 2
     }
-    set train_port: parse_int_prefix(String(*(argv + 1)).as_slice()) as int
+    train_port := parse_int_prefix(String(*(argv + 1)).as_slice()) as int
     if argc > 2
-        set train_rounds: parse_int_prefix(String(*(argv + 2)).as_slice()) as int
+        train_rounds := parse_int_prefix(String(*(argv + 2)).as_slice()) as int
 
     let bp Page.allocate_page()
     var sb StringBuilder()
@@ -98,7 +98,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     while i < 16
     {
         sb.append "GET /pipeline HTTP/1.1\r\nHost: localhost\r\n\r\n"
-        set i: i + 1
+        i := i + 1
     }
     sb.append "GET /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\n\r\n"
     sb.append "POST /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\n20"
@@ -106,16 +106,16 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     sb.append "GET /json/50?m=3 HTTP/1.1\r\nHost: localhost\r\nAccept-Encoding: gzip, br\r\n\r\n"
     sb.append "GET /json/12?m=7 HTTP/1.1\r\nHost: localhost\r\n\r\n"
     let text sb.to_string()
-    let cells allocate_slice[u8]^bp(bp, text.length)
+    let cells allocate_slice[u8]^bp(bp, text.length())
     var k: size_t 0
     let tb text.as_slice()
     while k < tb.length
     {
         cells.put(k, tb[k])
-        set k: k + 1
+        k := k + 1
     }
-    set batch_data: cells.data
-    set batch_length: cells.length
+    batch_data := cells.data
+    batch_length := cells.length
 
     let page Page.allocate_page()
     let sched Scheduler.create(page)
@@ -123,7 +123,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     while c < CONNECTIONS
     {
         Scheduler.spawn(&client)
-        set c: c + 1
+        c := c + 1
     }
     Scheduler.run()
 
