@@ -40,8 +40,10 @@ mutable oversized_kept_bytes: size_t 0
 ; serves with a mmap of 516 KB and unmaps on free: a server that runs every
 ; connection on a fiber of its own paid a mmap and a munmap per
 ; connection, each taking the memory-map lock all the process's threads
-; share -- and HttpArena's json-comp at 16 384 connections, 10 000 new ones
-; a second, ran at two thirds of 32 cores. Chained through next, at most
+; share -- and HttpArena's json-comp, 10 000 new connections a second, ran
+; at two thirds of 32 cores: 307 K requests a second at 4096 connections.
+; Kept, all 32 cores work: 458 K (285 K -> 388 K at 16 384; c6a.16xlarge,
+; same day). Chained through next, at most
 ; STACK_BUCKETS_KEPT: connections end in bursts, and 16 left a fifth of the
 ; maps, 64 one in seventeen, 256 none at 512 connections a scheduler (64 MB
 ; of address space; only the pages a bucket's fibers touched stay resident
