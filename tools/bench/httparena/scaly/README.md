@@ -29,9 +29,11 @@ its build.
 ## Runtime
 
 One scheduler per core (the CPUs the process may run on), each with its own
-io_uring; one acceptor hands connections round-robin to the schedulers. A
-connection is a fiber with a region of its own; each request is handled in a
-region that dies with the handler. Nothing is tuned beyond the defaults.
+io_uring and its own listener on the port (`SO_REUSEPORT`): the kernel
+spreads the connections, and each scheduler accepts and serves its own,
+handing nothing to another thread. A connection is a fiber with a region of
+its own; each request is handled in a region that dies with the handler.
+Nothing is tuned beyond the defaults.
 
 ## Build
 
