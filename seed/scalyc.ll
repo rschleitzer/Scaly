@@ -1469,7 +1469,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -1394564898970478964
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -3298731331691490674
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -257573,29 +257573,30 @@ frame.forced158:                                  ; preds = %frame.force157, %fr
 
 define linkonce_odr void @_ZN7PlannerB6scalycB4v0_29operationEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result181 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result170 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result199 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result188 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result174 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result173 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result168 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result158 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %sret.result156 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result155 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result154 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %sret.result150 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result140 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result138 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result136 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result132 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %head = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result125 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result121 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result114 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %sret.result107 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result103 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result96 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result89 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %k = alloca i64, align 8
-  %sret.result76 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result71 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result68 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result52 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result91 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %t83 = alloca i64, align 8
+  %sret.result77 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result74 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result59 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result49 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %sret.result42 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result36 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %j = alloca i64, align 8
-  %sret.result22 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result28 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %prefixed = alloca i1, align 1
   %i = alloca i64, align 8
   %operators = alloca i64, align 8
@@ -257686,304 +257687,337 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   store i64 0, ptr %i, align 1
   br label %while.cond17
 
-while.cond17:                                     ; preds = %if.end168, %frame.forced
+while.cond17:                                     ; preds = %if.end186, %frame.forced
   %i20 = load i64, ptr %i, align 8
   %lt21 = icmp ult i64 %i20, %length13
   br i1 %lt21, label %while.body18, label %while.exit19
 
 while.body18:                                     ; preds = %while.cond17
   store i1 false, ptr %prefixed, align 1
-  %i23 = load i64, ptr %i, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result22, ptr %3, i64 %i23)
-  %call24 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result22)
-  %eq = icmp eq i64 %call24, 1
-  br i1 %eq, label %if.then25, label %if.end26
+  %i22 = load i64, ptr %i, align 8
+  br label %while.cond23
 
 while.exit19:                                     ; preds = %while.cond17
-  %operators177 = load i64, ptr %operators, align 8
-  %gt178 = icmp ugt i64 %operators177, 0
-  br i1 %gt178, label %if.then179, label %if.end180
+  %operators195 = load i64, ptr %operators, align 8
+  %gt196 = icmp ugt i64 %operators195, 0
+  br i1 %gt196, label %if.then197, label %if.end198
 
-if.then25:                                        ; preds = %while.body18
+while.cond23:                                     ; preds = %while.body24, %while.body18
+  %i26 = load i64, ptr %i, align 8
+  %lt27 = icmp ult i64 %i26, %length13
+  br i1 %lt27, label %lor.rhs, label %lor.end
+
+while.body24:                                     ; preds = %lor.end
   store i1 true, ptr %prefixed, align 1
-  %i27 = load i64, ptr %i, align 8
-  %add28 = add i64 %i27, 1
-  store i64 %add28, ptr %i, align 1
-  br label %if.end26
+  %i31 = load i64, ptr %i, align 8
+  %add32 = add i64 %i31, 1
+  store i64 %add32, ptr %i, align 1
+  br label %while.cond23
 
-if.end26:                                         ; preds = %if.then25, %while.body18
+while.exit25:                                     ; preds = %lor.end
+  %i33 = load i64, ptr %i, align 8
+  %add34 = add i64 %i33, 1
+  store i64 %add34, ptr %j, align 1
+  br label %while.cond35
+
+lor.rhs:                                          ; preds = %while.cond23
   %i29 = load i64, ptr %i, align 8
-  %add30 = add i64 %i29, 1
-  store i64 %add30, ptr %j, align 1
-  br label %while.cond31
-
-while.cond31:                                     ; preds = %while.body32, %if.end26
-  %j34 = load i64, ptr %j, align 8
-  %lt35 = icmp ult i64 %j34, %length13
-  br i1 %lt35, label %lor.rhs, label %lor.end
-
-while.body32:                                     ; preds = %lor.end41
-  %j47 = load i64, ptr %j, align 8
-  %add48 = add i64 %j47, 1
-  store i64 %add48, ptr %j, align 1
-  br label %while.cond31
-
-while.exit33:                                     ; preds = %lor.end41
-  %prefixed49 = load i1, ptr %prefixed, align 1
-  br i1 %prefixed49, label %if.then50, label %if.else
-
-lor.rhs:                                          ; preds = %while.cond31
-  %j37 = load i64, ptr %j, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result36, ptr %3, i64 %j37)
-  %call38 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result36)
-  %ne39 = icmp ne i64 %call38, 1
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result28, ptr %3, i64 %i29)
+  %call30 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result28)
+  %eq = icmp eq i64 %call30, 1
   br label %lor.end
 
-lor.end:                                          ; preds = %lor.rhs, %while.cond31
-  %lor.result = phi i1 [ false, %while.cond31 ], [ %ne39, %lor.rhs ]
-  br i1 %lor.result, label %lor.rhs40, label %lor.end41
+lor.end:                                          ; preds = %lor.rhs, %while.cond23
+  %lor.result = phi i1 [ false, %while.cond23 ], [ %eq, %lor.rhs ]
+  br i1 %lor.result, label %while.body24, label %while.exit25
 
-lor.rhs40:                                        ; preds = %lor.end
+while.cond35:                                     ; preds = %while.body36, %while.exit25
+  %j38 = load i64, ptr %j, align 8
+  %lt39 = icmp ult i64 %j38, %length13
+  br i1 %lt39, label %lor.rhs40, label %lor.end41
+
+while.body36:                                     ; preds = %lor.end48
+  %j54 = load i64, ptr %j, align 8
+  %add55 = add i64 %j54, 1
+  store i64 %add55, ptr %j, align 1
+  br label %while.cond35
+
+while.exit37:                                     ; preds = %lor.end48
+  %prefixed56 = load i1, ptr %prefixed, align 1
+  br i1 %prefixed56, label %if.then57, label %if.else
+
+lor.rhs40:                                        ; preds = %while.cond35
   %j43 = load i64, ptr %j, align 8
   call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result42, ptr %3, i64 %j43)
   %call44 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result42)
-  %ne45 = icmp ne i64 %call44, 6
+  %ne45 = icmp ne i64 %call44, 1
   br label %lor.end41
 
-lor.end41:                                        ; preds = %lor.rhs40, %lor.end
-  %lor.result46 = phi i1 [ false, %lor.end ], [ %ne45, %lor.rhs40 ]
-  br i1 %lor.result46, label %while.body32, label %while.exit33
+lor.end41:                                        ; preds = %lor.rhs40, %while.cond35
+  %lor.result46 = phi i1 [ false, %while.cond35 ], [ %ne45, %lor.rhs40 ]
+  br i1 %lor.result46, label %lor.rhs47, label %lor.end48
 
-if.then50:                                        ; preds = %while.exit33
-  %i53 = load i64, ptr %i, align 8
-  %j54 = load i64, ptr %j, align 8
-  call void @_ZN7PlannerB6scalycB4v0_221operation_prefix_termEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2Emm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result52, ptr %1, ptr %2, ptr %3, i64 %i53, i64 %j54)
-  %set.load = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result52, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result52, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  br label %if.end51
+lor.rhs47:                                        ; preds = %lor.end41
+  %j50 = load i64, ptr %j, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result49, ptr %3, i64 %j50)
+  %call51 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result49)
+  %ne52 = icmp ne i64 %call51, 6
+  br label %lor.end48
 
-if.else:                                          ; preds = %while.exit33
+lor.end48:                                        ; preds = %lor.rhs47, %lor.end41
+  %lor.result53 = phi i1 [ false, %lor.end41 ], [ %ne52, %lor.rhs47 ]
+  br i1 %lor.result53, label %while.body36, label %while.exit37
+
+if.then57:                                        ; preds = %while.exit37
+  %i60 = load i64, ptr %i, align 8
   %j61 = load i64, ptr %j, align 8
-  %i62 = load i64, ptr %i, align 8
-  %add63 = add i64 %i62, 1
-  %eq64 = icmp eq i64 %j61, %add63
-  br i1 %eq64, label %land.rhs60, label %if.else56
+  call void @_ZN7PlannerB6scalycB4v0_218operation_prefixesEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2Emmm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result59, ptr %1, ptr %2, ptr %3, i64 %i22, i64 %i60, i64 %j61)
+  %set.load = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result59, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result59, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  br label %if.end58
 
-if.end51:                                         ; preds = %if.end57, %if.then50
-  %out115 = load ptr, ptr %out, align 8
-  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %out115, ptr %cur)
-  %j119 = load i64, ptr %j, align 8
-  %lt120 = icmp ult i64 %j119, %length13
-  br i1 %lt120, label %land.rhs118, label %if.end117
+if.else:                                          ; preds = %while.exit37
+  %j67 = load i64, ptr %j, align 8
+  %i68 = load i64, ptr %i, align 8
+  %add69 = add i64 %i68, 1
+  %eq70 = icmp eq i64 %j67, %add69
+  br i1 %eq70, label %land.rhs66, label %if.else63
 
-if.then55:                                        ; preds = %land.rhs
-  %j80 = load i64, ptr %j, align 8
-  %add81 = add i64 %j80, 2
-  store i64 %add81, ptr %k, align 1
-  br label %while.cond82
+if.end58:                                         ; preds = %if.end64, %if.then57
+  %out133 = load ptr, ptr %out, align 8
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %out133, ptr %cur)
+  %j137 = load i64, ptr %j, align 8
+  %lt138 = icmp ult i64 %j137, %length13
+  br i1 %lt138, label %land.rhs136, label %if.end135
 
-if.else56:                                        ; preds = %land.rhs, %land.rhs58, %land.rhs59, %land.rhs60, %if.else
-  %i112 = load i64, ptr %i, align 8
-  %j113 = load i64, ptr %j, align 8
-  call void @_ZN7PlannerB6scalycB4v0_214operation_termEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2Emm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result103, ptr %1, ptr %2, ptr %3, i64 %i112, i64 %j113)
-  %set.load114 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result103, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result103, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  br label %if.end57
+if.then62:                                        ; preds = %land.rhs
+  %j81 = load i64, ptr %j, align 8
+  %add82 = add i64 %j81, 1
+  store i64 %add82, ptr %t83, align 1
+  br label %while.cond84
 
-if.end57:                                         ; preds = %if.else56, %while.exit84
-  br label %if.end51
+if.else63:                                        ; preds = %land.rhs, %land.rhs65, %land.rhs66, %if.else
+  %i130 = load i64, ptr %i, align 8
+  %j131 = load i64, ptr %j, align 8
+  call void @_ZN7PlannerB6scalycB4v0_214operation_termEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2Emm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result121, ptr %1, ptr %2, ptr %3, i64 %i130, i64 %j131)
+  %set.load132 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result121, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result121, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  br label %if.end64
 
-land.rhs:                                         ; preds = %land.rhs58
-  %i77 = load i64, ptr %i, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result76, ptr %3, i64 %i77)
-  %call78 = call i64 @_ZN7PlannerB6scalycB4v0_214operation_nameE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result76)
-  %eq79 = icmp eq i64 %call78, 3
-  br i1 %eq79, label %if.then55, label %if.else56
+if.end64:                                         ; preds = %if.else63, %while.exit102
+  br label %if.end58
 
-land.rhs58:                                       ; preds = %land.rhs59
-  %j72 = load i64, ptr %j, align 8
-  %add73 = add i64 %j72, 1
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result71, ptr %3, i64 %add73)
-  %call74 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result71)
-  %ne75 = icmp ne i64 %call74, 1
-  br i1 %ne75, label %land.rhs, label %if.else56
+land.rhs:                                         ; preds = %land.rhs65
+  %i78 = load i64, ptr %i, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result77, ptr %3, i64 %i78)
+  %call79 = call i64 @_ZN7PlannerB6scalycB4v0_214operation_nameE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result77)
+  %eq80 = icmp eq i64 %call79, 3
+  br i1 %eq80, label %if.then62, label %if.else63
 
-land.rhs59:                                       ; preds = %land.rhs60
-  %j69 = load i64, ptr %j, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result68, ptr %3, i64 %j69)
-  %call70 = call i1 @_ZN7PlannerB6scalycB4v0_226operand_is_symbol_operatorE14PlannedOperandB6scalycB4v0_2(ptr %sret.result68)
-  br i1 %call70, label %land.rhs58, label %if.else56
+land.rhs65:                                       ; preds = %land.rhs66
+  %j75 = load i64, ptr %j, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result74, ptr %3, i64 %j75)
+  %call76 = call i1 @_ZN7PlannerB6scalycB4v0_226operand_is_symbol_operatorE14PlannedOperandB6scalycB4v0_2(ptr %sret.result74)
+  br i1 %call76, label %land.rhs, label %if.else63
 
-land.rhs60:                                       ; preds = %if.else
-  %j65 = load i64, ptr %j, align 8
-  %add66 = add i64 %j65, 1
-  %lt67 = icmp ult i64 %add66, %length13
-  br i1 %lt67, label %land.rhs59, label %if.else56
+land.rhs66:                                       ; preds = %if.else
+  %j71 = load i64, ptr %j, align 8
+  %add72 = add i64 %j71, 1
+  %lt73 = icmp ult i64 %add72, %length13
+  br i1 %lt73, label %land.rhs65, label %if.else63
 
-while.cond82:                                     ; preds = %while.body83, %if.then55
-  %k85 = load i64, ptr %k, align 8
-  %lt86 = icmp ult i64 %k85, %length13
-  br i1 %lt86, label %lor.rhs87, label %lor.end88
+while.cond84:                                     ; preds = %while.body85, %if.then62
+  %t87 = load i64, ptr %t83, align 8
+  %lt88 = icmp ult i64 %t87, %length13
+  br i1 %lt88, label %lor.rhs89, label %lor.end90
 
-while.body83:                                     ; preds = %lor.end95
-  %k101 = load i64, ptr %k, align 8
-  %add102 = add i64 %k101, 1
-  store i64 %add102, ptr %k, align 1
-  br label %while.cond82
+while.body85:                                     ; preds = %lor.end90
+  %t96 = load i64, ptr %t83, align 8
+  %add97 = add i64 %t96, 1
+  store i64 %add97, ptr %t83, align 1
+  br label %while.cond84
 
-while.exit84:                                     ; preds = %lor.end95
-  %j104 = load i64, ptr %j, align 8
-  %add105 = add i64 %j104, 1
-  %k106 = load i64, ptr %k, align 8
-  call void @_ZN7PlannerB6scalycB4v0_221operation_prefix_termEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2Emm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result103, ptr %1, ptr %2, ptr %3, i64 %add105, i64 %k106)
-  %i108 = load i64, ptr %i, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result107, ptr %3, i64 %i108)
-  %binding.load109 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result107, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %head, ptr align 1 %sret.result107, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7PlannerB6scalycB4v0_219operation_parenlessEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result107, ptr %1, ptr %2, ptr %head, ptr %sret.result103)
-  %set.load110 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result107, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result107, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  %k111 = load i64, ptr %k, align 8
-  store i64 %k111, ptr %j, align 1
-  br label %if.end57
+while.exit86:                                     ; preds = %lor.end90
+  %t98 = load i64, ptr %t83, align 8
+  %add99 = add i64 %t98, 1
+  store i64 %add99, ptr %k, align 1
+  br label %while.cond100
 
-lor.rhs87:                                        ; preds = %while.cond82
-  %k90 = load i64, ptr %k, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result89, ptr %3, i64 %k90)
-  %call91 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result89)
-  %ne92 = icmp ne i64 %call91, 1
-  br label %lor.end88
+lor.rhs89:                                        ; preds = %while.cond84
+  %t92 = load i64, ptr %t83, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result91, ptr %3, i64 %t92)
+  %call93 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result91)
+  %eq94 = icmp eq i64 %call93, 1
+  br label %lor.end90
 
-lor.end88:                                        ; preds = %lor.rhs87, %while.cond82
-  %lor.result93 = phi i1 [ false, %while.cond82 ], [ %ne92, %lor.rhs87 ]
-  br i1 %lor.result93, label %lor.rhs94, label %lor.end95
+lor.end90:                                        ; preds = %lor.rhs89, %while.cond84
+  %lor.result95 = phi i1 [ false, %while.cond84 ], [ %eq94, %lor.rhs89 ]
+  br i1 %lor.result95, label %while.body85, label %while.exit86
 
-lor.rhs94:                                        ; preds = %lor.end88
-  %k97 = load i64, ptr %k, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result96, ptr %3, i64 %k97)
-  %call98 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result96)
-  %ne99 = icmp ne i64 %call98, 6
-  br label %lor.end95
+while.cond100:                                    ; preds = %while.body101, %while.exit86
+  %k103 = load i64, ptr %k, align 8
+  %lt104 = icmp ult i64 %k103, %length13
+  br i1 %lt104, label %lor.rhs105, label %lor.end106
 
-lor.end95:                                        ; preds = %lor.rhs94, %lor.end88
-  %lor.result100 = phi i1 [ false, %lor.end88 ], [ %ne99, %lor.rhs94 ]
-  br i1 %lor.result100, label %while.body83, label %while.exit84
+while.body101:                                    ; preds = %lor.end113
+  %k119 = load i64, ptr %k, align 8
+  %add120 = add i64 %k119, 1
+  store i64 %add120, ptr %k, align 1
+  br label %while.cond100
 
-if.then116:                                       ; preds = %land.rhs118
-  %operators124 = load i64, ptr %operators, align 8
-  %gt = icmp ugt i64 %operators124, 0
-  br i1 %gt, label %if.then125, label %if.end126
+while.exit102:                                    ; preds = %lor.end113
+  %j122 = load i64, ptr %j, align 8
+  %t123 = load i64, ptr %t83, align 8
+  %k124 = load i64, ptr %k, align 8
+  call void @_ZN7PlannerB6scalycB4v0_218operation_prefixesEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2Emmm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result121, ptr %1, ptr %2, ptr %3, i64 %j122, i64 %t123, i64 %k124)
+  %i126 = load i64, ptr %i, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result125, ptr %3, i64 %i126)
+  %binding.load127 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result125, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %head, ptr align 1 %sret.result125, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7PlannerB6scalycB4v0_219operation_parenlessEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result125, ptr %1, ptr %2, ptr %head, ptr %sret.result121)
+  %set.load128 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result125, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result125, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  %k129 = load i64, ptr %k, align 8
+  store i64 %k129, ptr %j, align 1
+  br label %if.end64
 
-if.end117:                                        ; preds = %while.exit145, %land.rhs118, %if.end51
-  %j165 = load i64, ptr %j, align 8
-  %lt166 = icmp ult i64 %j165, %length13
-  br i1 %lt166, label %if.then167, label %if.end168
+lor.rhs105:                                       ; preds = %while.cond100
+  %k108 = load i64, ptr %k, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result107, ptr %3, i64 %k108)
+  %call109 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result107)
+  %ne110 = icmp ne i64 %call109, 1
+  br label %lor.end106
 
-land.rhs118:                                      ; preds = %if.end51
-  %j121 = load i64, ptr %j, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %head, ptr %3, i64 %j121)
-  %call122 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %head)
-  %eq123 = icmp eq i64 %call122, 6
-  br i1 %eq123, label %if.then116, label %if.end117
+lor.end106:                                       ; preds = %lor.rhs105, %while.cond100
+  %lor.result111 = phi i1 [ false, %while.cond100 ], [ %ne110, %lor.rhs105 ]
+  br i1 %lor.result111, label %lor.rhs112, label %lor.end113
 
-if.then125:                                       ; preds = %if.then116
-  %prefixed130 = load i1, ptr %prefixed, align 1
-  %eq131 = icmp eq i1 %prefixed130, false
-  br i1 %eq131, label %land.rhs129, label %if.end128
+lor.rhs112:                                       ; preds = %lor.end106
+  %k115 = load i64, ptr %k, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result114, ptr %3, i64 %k115)
+  %call116 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result114)
+  %ne117 = icmp ne i64 %call116, 6
+  br label %lor.end113
 
-if.end126:                                        ; preds = %if.end128, %if.then116
-  br label %while.cond143
+lor.end113:                                       ; preds = %lor.rhs112, %lor.end106
+  %lor.result118 = phi i1 [ false, %lor.end106 ], [ %ne117, %lor.rhs112 ]
+  br i1 %lor.result118, label %while.body101, label %while.exit102
 
-if.then127:                                       ; preds = %land.rhs129
-  %i137 = load i64, ptr %i, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result136, ptr %3, i64 %i137)
+if.then134:                                       ; preds = %land.rhs136
+  %operators142 = load i64, ptr %operators, align 8
+  %gt = icmp ugt i64 %operators142, 0
+  br i1 %gt, label %if.then143, label %if.end144
+
+if.end135:                                        ; preds = %while.exit163, %land.rhs136, %if.end58
+  %j183 = load i64, ptr %j, align 8
+  %lt184 = icmp ult i64 %j183, %length13
+  br i1 %lt184, label %if.then185, label %if.end186
+
+land.rhs136:                                      ; preds = %if.end58
   %j139 = load i64, ptr %j, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result138, ptr %3, i64 %j139)
-  call void @_ZN7PlannerB6scalycB4v0_222operation_postfix_siteE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result136, ptr %sret.result138)
-  br label %if.end128
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %head, ptr %3, i64 %j139)
+  %call140 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %head)
+  %eq141 = icmp eq i64 %call140, 6
+  br i1 %eq141, label %if.then134, label %if.end135
 
-if.end128:                                        ; preds = %if.then127, %land.rhs129, %if.then125
-  %out141 = load ptr, ptr %out, align 8
-  %base = load i64, ptr %t, align 8
-  call void @_ZN7PlannerB6scalycB4v0_215operation_tableEPN4scaly6memory4PageE5ArrayI14PlannedOperandB6scalycB4v0_2Em(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result140, ptr %1, ptr %2, ptr %out141, i64 %base)
-  %set.load142 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result140, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result140, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  store i64 0, ptr %operators, align 1
-  br label %if.end126
+if.then143:                                       ; preds = %if.then134
+  %prefixed148 = load i1, ptr %prefixed, align 1
+  %eq149 = icmp eq i1 %prefixed148, false
+  br i1 %eq149, label %land.rhs147, label %if.end146
 
-land.rhs129:                                      ; preds = %if.then125
-  %j133 = load i64, ptr %j, align 8
-  %sub = sub i64 %j133, 1
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result132, ptr %3, i64 %sub)
-  %call134 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result132)
-  %ne135 = icmp ne i64 %call134, 4
-  br i1 %ne135, label %if.then127, label %if.end128
+if.end144:                                        ; preds = %if.end146, %if.then134
+  br label %while.cond161
 
-while.cond143:                                    ; preds = %while.body144, %if.end126
-  %j146 = load i64, ptr %j, align 8
-  %lt147 = icmp ult i64 %j146, %length13
-  br i1 %lt147, label %lor.rhs148, label %lor.end149
-
-while.body144:                                    ; preds = %lor.end149
+if.then145:                                       ; preds = %land.rhs147
+  %i155 = load i64, ptr %i, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result154, ptr %3, i64 %i155)
   %j157 = load i64, ptr %j, align 8
   call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result156, ptr %3, i64 %j157)
-  call void @_ZN7PlannerB6scalycB4v0_214operation_callEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2m(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result155, ptr %1, ptr %2, ptr %cur, ptr %sret.result156, i64 42)
-  %set.load158 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result155, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result155, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  %j159 = load i64, ptr %j, align 8
-  %add160 = add i64 %j159, 1
-  store i64 %add160, ptr %j, align 1
-  br label %while.cond143
+  call void @_ZN7PlannerB6scalycB4v0_222operation_postfix_siteE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result154, ptr %sret.result156)
+  br label %if.end146
 
-while.exit145:                                    ; preds = %lor.end149
-  %out161 = load ptr, ptr %out, align 8
-  %load.struct162 = load %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E, ptr %out161, align 8
-  %length163 = extractvalue %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E %load.struct162, 0
-  store i64 %length163, ptr %t, align 1
-  %out164 = load ptr, ptr %out, align 8
-  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %out164, ptr %cur)
-  br label %if.end117
+if.end146:                                        ; preds = %if.then145, %land.rhs147, %if.then143
+  %out159 = load ptr, ptr %out, align 8
+  %base = load i64, ptr %t, align 8
+  call void @_ZN7PlannerB6scalycB4v0_215operation_tableEPN4scaly6memory4PageE5ArrayI14PlannedOperandB6scalycB4v0_2Em(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result158, ptr %1, ptr %2, ptr %out159, i64 %base)
+  %set.load160 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result158, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result158, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  store i64 0, ptr %operators, align 1
+  br label %if.end144
 
-lor.rhs148:                                       ; preds = %while.cond143
+land.rhs147:                                      ; preds = %if.then143
   %j151 = load i64, ptr %j, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result150, ptr %3, i64 %j151)
+  %sub = sub i64 %j151, 1
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result150, ptr %3, i64 %sub)
   %call152 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result150)
-  %eq153 = icmp eq i64 %call152, 6
-  br label %lor.end149
+  %ne153 = icmp ne i64 %call152, 4
+  br i1 %ne153, label %if.then145, label %if.end146
 
-lor.end149:                                       ; preds = %lor.rhs148, %while.cond143
-  %lor.result154 = phi i1 [ false, %while.cond143 ], [ %eq153, %lor.rhs148 ]
-  br i1 %lor.result154, label %while.body144, label %while.exit145
+while.cond161:                                    ; preds = %while.body162, %if.end144
+  %j164 = load i64, ptr %j, align 8
+  %lt165 = icmp ult i64 %j164, %length13
+  br i1 %lt165, label %lor.rhs166, label %lor.end167
 
-if.then167:                                       ; preds = %if.end117
-  %out169 = load ptr, ptr %out, align 8
-  %j171 = load i64, ptr %j, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result170, ptr %3, i64 %j171)
-  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %out169, ptr %sret.result170)
-  %operators172 = load i64, ptr %operators, align 8
-  %add173 = add i64 %operators172, 1
-  store i64 %add173, ptr %operators, align 1
-  %j174 = load i64, ptr %j, align 8
-  %add175 = add i64 %j174, 1
-  store i64 %add175, ptr %j, align 1
-  br label %if.end168
+while.body162:                                    ; preds = %lor.end167
+  %j175 = load i64, ptr %j, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result174, ptr %3, i64 %j175)
+  call void @_ZN7PlannerB6scalycB4v0_214operation_callEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2m(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result173, ptr %1, ptr %2, ptr %cur, ptr %sret.result174, i64 42)
+  %set.load176 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result173, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result173, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  %j177 = load i64, ptr %j, align 8
+  %add178 = add i64 %j177, 1
+  store i64 %add178, ptr %j, align 1
+  br label %while.cond161
 
-if.end168:                                        ; preds = %if.then167, %if.end117
-  %j176 = load i64, ptr %j, align 8
-  store i64 %j176, ptr %i, align 1
+while.exit163:                                    ; preds = %lor.end167
+  %out179 = load ptr, ptr %out, align 8
+  %load.struct180 = load %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E, ptr %out179, align 8
+  %length181 = extractvalue %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E %load.struct180, 0
+  store i64 %length181, ptr %t, align 1
+  %out182 = load ptr, ptr %out, align 8
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %out182, ptr %cur)
+  br label %if.end135
+
+lor.rhs166:                                       ; preds = %while.cond161
+  %j169 = load i64, ptr %j, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result168, ptr %3, i64 %j169)
+  %call170 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %2, ptr %sret.result168)
+  %eq171 = icmp eq i64 %call170, 6
+  br label %lor.end167
+
+lor.end167:                                       ; preds = %lor.rhs166, %while.cond161
+  %lor.result172 = phi i1 [ false, %while.cond161 ], [ %eq171, %lor.rhs166 ]
+  br i1 %lor.result172, label %while.body162, label %while.exit163
+
+if.then185:                                       ; preds = %if.end135
+  %out187 = load ptr, ptr %out, align 8
+  %j189 = load i64, ptr %j, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result188, ptr %3, i64 %j189)
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %out187, ptr %sret.result188)
+  %operators190 = load i64, ptr %operators, align 8
+  %add191 = add i64 %operators190, 1
+  store i64 %add191, ptr %operators, align 1
+  %j192 = load i64, ptr %j, align 8
+  %add193 = add i64 %j192, 1
+  store i64 %add193, ptr %j, align 1
+  br label %if.end186
+
+if.end186:                                        ; preds = %if.then185, %if.end135
+  %j194 = load i64, ptr %j, align 8
+  store i64 %j194, ptr %i, align 1
   br label %while.cond17
 
-if.then179:                                       ; preds = %while.exit19
-  %out182 = load ptr, ptr %out, align 8
-  %base183 = load i64, ptr %t, align 8
-  call void @_ZN7PlannerB6scalycB4v0_215operation_tableEPN4scaly6memory4PageE5ArrayI14PlannedOperandB6scalycB4v0_2Em(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result181, ptr %1, ptr %2, ptr %out182, i64 %base183)
-  %set.load184 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result181, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result181, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  br label %if.end180
+if.then197:                                       ; preds = %while.exit19
+  %out200 = load ptr, ptr %out, align 8
+  %base201 = load i64, ptr %t, align 8
+  call void @_ZN7PlannerB6scalycB4v0_215operation_tableEPN4scaly6memory4PageE5ArrayI14PlannedOperandB6scalycB4v0_2Em(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result199, ptr %1, ptr %2, ptr %out200, i64 %base201)
+  %set.load202 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result199, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %cur, ptr align 1 %sret.result199, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  br label %if.end198
 
-if.end180:                                        ; preds = %if.then179, %while.exit19
+if.end198:                                        ; preds = %if.then197, %while.exit19
   call void @_ZN7PlannerB6scalycB4v0_215operation_countEm(ptr %2, i64 26)
-  %cur185 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %cur, align 8
+  %cur203 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %cur, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %cur, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -320541,11 +320575,13 @@ choose.when:                                      ; preds = %entry
 
 define linkonce_odr i64 @_ZN7PlannerB6scalycB4v0_214operation_readE6VectorI14PlannedOperandB6scalycB4v0_2E(ptr %0, ptr %1) {
 entry:
-  %sret.result105 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result57 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result121 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result73 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %more = alloca i1, align 1
   %before = alloca i64, align 8
-  %sret.result30 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result46 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result33 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result21 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %sret.result13 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
   %kind = alloca i64, align 8
   %sret.result = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
@@ -320559,7 +320595,7 @@ entry:
   store i64 0, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end104, %entry
+while.cond:                                       ; preds = %if.end120, %entry
   %i1 = load i64, ptr %i, align 8
   %lt = icmp ult i64 %i1, %length
   br i1 %lt, label %while.body, label %while.exit
@@ -320583,10 +320619,10 @@ if.then:                                          ; preds = %while.body
   %eq6 = icmp eq i1 %call5, false
   br i1 %eq6, label %if.then7, label %if.end8
 
-if.end:                                           ; preds = %if.end23, %while.body
-  %kind39 = load i64, ptr %kind, align 8
-  %eq40 = icmp eq i64 %kind39, 3
-  br i1 %eq40, label %if.then41, label %if.end42
+if.end:                                           ; preds = %if.end39, %while.body
+  %kind55 = load i64, ptr %kind, align 8
+  %eq56 = icmp eq i64 %kind55, 3
+  br i1 %eq56, label %if.then57, label %if.end58
 
 if.then7:                                         ; preds = %if.then
   ret i64 30
@@ -320607,213 +320643,241 @@ if.end12:                                         ; preds = %if.end8
   call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result13, ptr %1, i64 %i14)
   %call15 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result13)
   store i64 %call15, ptr %kind, align 1
-  %kind16 = load i64, ptr %kind, align 8
-  %eq17 = icmp eq i64 %kind16, 1
-  br i1 %eq17, label %if.then18, label %if.end19
+  br label %while.cond16
 
-if.then18:                                        ; preds = %if.end12
-  ret i64 28
+while.cond16:                                     ; preds = %if.end32, %if.end12
+  %kind19 = load i64, ptr %kind, align 8
+  %eq20 = icmp eq i64 %kind19, 1
+  br i1 %eq20, label %while.body17, label %while.exit18
 
-if.end19:                                         ; preds = %if.end12
-  %kind20 = load i64, ptr %kind, align 8
-  %eq21 = icmp eq i64 %kind20, 3
-  br i1 %eq21, label %if.then22, label %if.end23
+while.body17:                                     ; preds = %while.cond16
+  %i22 = load i64, ptr %i, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result21, ptr %1, i64 %i22)
+  %call23 = call i1 @_ZN7PlannerB6scalycB4v0_226operand_is_symbol_operatorE14PlannedOperandB6scalycB4v0_2(ptr %sret.result21)
+  %eq24 = icmp eq i1 %call23, false
+  br i1 %eq24, label %if.then25, label %if.end26
 
-if.then22:                                        ; preds = %if.end19
-  %i24 = load i64, ptr %i, align 8
-  %add25 = add i64 %i24, 1
-  store i64 %add25, ptr %i, align 1
-  %i26 = load i64, ptr %i, align 8
-  %ge27 = icmp uge i64 %i26, %length
-  br i1 %ge27, label %if.then28, label %if.end29
+while.exit18:                                     ; preds = %while.cond16
+  %kind36 = load i64, ptr %kind, align 8
+  %eq37 = icmp eq i64 %kind36, 3
+  br i1 %eq37, label %if.then38, label %if.end39
 
-if.end23:                                         ; preds = %if.end34, %if.end19
-  br label %if.end
-
-if.then28:                                        ; preds = %if.then22
-  ret i64 29
-
-if.end29:                                         ; preds = %if.then22
-  %i31 = load i64, ptr %i, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result30, ptr %1, i64 %i31)
-  %call32 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result30)
-  store i64 %call32, ptr %kind, align 1
-  %kind35 = load i64, ptr %kind, align 8
-  %eq36 = icmp eq i64 %kind35, 1
-  br i1 %eq36, label %if.then33, label %lor.rhs
-
-if.then33:                                        ; preds = %lor.rhs, %if.end29
-  ret i64 29
-
-if.end34:                                         ; preds = %lor.rhs
-  br label %if.end23
-
-lor.rhs:                                          ; preds = %if.end29
-  %kind37 = load i64, ptr %kind, align 8
-  %eq38 = icmp eq i64 %kind37, 3
-  br i1 %eq38, label %if.then33, label %if.end34
-
-if.then41:                                        ; preds = %if.end
-  ret i64 29
-
-if.end42:                                         ; preds = %if.end
-  %kind43 = load i64, ptr %kind, align 8
-  %eq44 = icmp eq i64 %kind43, 6
-  br i1 %eq44, label %if.then45, label %if.end46
-
-if.then45:                                        ; preds = %if.end42
+if.then25:                                        ; preds = %while.body17
   ret i64 30
 
-if.end46:                                         ; preds = %if.end42
-  %kind47 = load i64, ptr %kind, align 8
-  store i64 %kind47, ptr %before, align 1
-  %i48 = load i64, ptr %i, align 8
-  %add49 = add i64 %i48, 1
-  store i64 %add49, ptr %i, align 1
-  store i1 true, ptr %more, align 1
-  br label %while.cond50
+if.end26:                                         ; preds = %while.body17
+  %i27 = load i64, ptr %i, align 8
+  %add28 = add i64 %i27, 1
+  store i64 %add28, ptr %i, align 1
+  %i29 = load i64, ptr %i, align 8
+  %ge30 = icmp uge i64 %i29, %length
+  br i1 %ge30, label %if.then31, label %if.end32
 
-while.cond50:                                     ; preds = %if.end61, %if.end46
-  %more53 = load i1, ptr %more, align 1
-  br i1 %more53, label %lor.rhs54, label %lor.end
-
-while.body51:                                     ; preds = %lor.end
-  %i58 = load i64, ptr %i, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result57, ptr %1, i64 %i58)
-  %call59 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result57)
-  %eq63 = icmp eq i64 %call59, 1
-  br i1 %eq63, label %if.then60, label %lor.rhs62
-
-while.exit52:                                     ; preds = %lor.end
-  br label %while.cond86
-
-lor.rhs54:                                        ; preds = %while.cond50
-  %i55 = load i64, ptr %i, align 8
-  %lt56 = icmp ult i64 %i55, %length
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs54, %while.cond50
-  %lor.result = phi i1 [ false, %while.cond50 ], [ %lt56, %lor.rhs54 ]
-  br i1 %lor.result, label %while.body51, label %while.exit52
-
-if.then60:                                        ; preds = %lor.rhs62, %while.body51
-  store i1 false, ptr %more, align 1
-  br label %if.end61
-
-if.else:                                          ; preds = %lor.rhs62
-  %eq67 = icmp eq i64 %call59, 2
-  br i1 %eq67, label %lor.end69, label %lor.rhs68
-
-if.end61:                                         ; preds = %if.end73, %if.then60
-  br label %while.cond50
-
-lor.rhs62:                                        ; preds = %while.body51
-  %eq64 = icmp eq i64 %call59, 6
-  br i1 %eq64, label %if.then60, label %if.else
-
-if.then65:                                        ; preds = %land.rhs
-  ret i64 31
-
-if.end66:                                         ; preds = %land.rhs, %lor.end69
-  %eq77 = icmp eq i64 %call59, 3
-  br i1 %eq77, label %land.rhs76, label %if.end73
-
-land.rhs:                                         ; preds = %lor.end69
-  %ne = icmp ne i64 %length, 2
-  br i1 %ne, label %if.then65, label %if.end66
-
-lor.rhs68:                                        ; preds = %if.else
-  %eq70 = icmp eq i64 %call59, 7
-  br label %lor.end69
-
-lor.end69:                                        ; preds = %lor.rhs68, %if.else
-  %lor.result71 = phi i1 [ true, %if.else ], [ %eq70, %lor.rhs68 ]
-  br i1 %lor.result71, label %land.rhs, label %if.end66
-
-if.then72:                                        ; preds = %land.rhs74
-  ret i64 29
-
-if.end73:                                         ; preds = %land.rhs74, %land.rhs75, %land.rhs76, %if.end66
-  store i64 %call59, ptr %before, align 1
-  %i84 = load i64, ptr %i, align 8
-  %add85 = add i64 %i84, 1
-  store i64 %add85, ptr %i, align 1
-  br label %if.end61
-
-land.rhs74:                                       ; preds = %land.rhs75
-  %before82 = load i64, ptr %before, align 8
-  %ne83 = icmp ne i64 %before82, 7
-  br i1 %ne83, label %if.then72, label %if.end73
-
-land.rhs75:                                       ; preds = %land.rhs76
-  %before80 = load i64, ptr %before, align 8
-  %ne81 = icmp ne i64 %before80, 5
-  br i1 %ne81, label %land.rhs74, label %if.end73
-
-land.rhs76:                                       ; preds = %if.end66
-  %before78 = load i64, ptr %before, align 8
-  %ne79 = icmp ne i64 %before78, 2
-  br i1 %ne79, label %land.rhs75, label %if.end73
-
-while.cond86:                                     ; preds = %while.body87, %while.exit52
-  %i89 = load i64, ptr %i, align 8
-  %lt90 = icmp ult i64 %i89, %length
-  br i1 %lt90, label %lor.rhs91, label %lor.end92
-
-while.body87:                                     ; preds = %lor.end92
-  %postfixes97 = load i64, ptr %postfixes, align 8
-  %add98 = add i64 %postfixes97, 1
-  store i64 %add98, ptr %postfixes, align 1
-  %i99 = load i64, ptr %i, align 8
-  %add100 = add i64 %i99, 1
-  store i64 %add100, ptr %i, align 1
-  br label %while.cond86
-
-while.exit88:                                     ; preds = %lor.end92
-  %i101 = load i64, ptr %i, align 8
-  %lt102 = icmp ult i64 %i101, %length
-  br i1 %lt102, label %if.then103, label %if.end104
-
-lor.rhs91:                                        ; preds = %while.cond86
-  %i93 = load i64, ptr %i, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result57, ptr %1, i64 %i93)
-  %call94 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result57)
-  %eq95 = icmp eq i64 %call94, 6
-  br label %lor.end92
-
-lor.end92:                                        ; preds = %lor.rhs91, %while.cond86
-  %lor.result96 = phi i1 [ false, %while.cond86 ], [ %eq95, %lor.rhs91 ]
-  br i1 %lor.result96, label %while.body87, label %while.exit88
-
-if.then103:                                       ; preds = %while.exit88
-  %i106 = load i64, ptr %i, align 8
-  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result105, ptr %1, i64 %i106)
-  %call107 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result105)
-  %ne108 = icmp ne i64 %call107, 1
-  br i1 %ne108, label %if.then109, label %if.end110
-
-if.end104:                                        ; preds = %if.end118, %while.exit88
-  br label %while.cond
-
-if.then109:                                       ; preds = %if.then103
-  ret i64 30
-
-if.end110:                                        ; preds = %if.then103
-  %operators111 = load i64, ptr %operators, align 8
-  %add112 = add i64 %operators111, 1
-  store i64 %add112, ptr %operators, align 1
-  %i113 = load i64, ptr %i, align 8
-  %add114 = add i64 %i113, 1
-  store i64 %add114, ptr %i, align 1
-  %i115 = load i64, ptr %i, align 8
-  %ge116 = icmp uge i64 %i115, %length
-  br i1 %ge116, label %if.then117, label %if.end118
-
-if.then117:                                       ; preds = %if.end110
+if.then31:                                        ; preds = %if.end26
   ret i64 33
 
-if.end118:                                        ; preds = %if.end110
-  br label %if.end104
+if.end32:                                         ; preds = %if.end26
+  %i34 = load i64, ptr %i, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result33, ptr %1, i64 %i34)
+  %call35 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result33)
+  store i64 %call35, ptr %kind, align 1
+  br label %while.cond16
+
+if.then38:                                        ; preds = %while.exit18
+  %i40 = load i64, ptr %i, align 8
+  %add41 = add i64 %i40, 1
+  store i64 %add41, ptr %i, align 1
+  %i42 = load i64, ptr %i, align 8
+  %ge43 = icmp uge i64 %i42, %length
+  br i1 %ge43, label %if.then44, label %if.end45
+
+if.end39:                                         ; preds = %if.end50, %while.exit18
+  br label %if.end
+
+if.then44:                                        ; preds = %if.then38
+  ret i64 29
+
+if.end45:                                         ; preds = %if.then38
+  %i47 = load i64, ptr %i, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result46, ptr %1, i64 %i47)
+  %call48 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result46)
+  store i64 %call48, ptr %kind, align 1
+  %kind51 = load i64, ptr %kind, align 8
+  %eq52 = icmp eq i64 %kind51, 1
+  br i1 %eq52, label %if.then49, label %lor.rhs
+
+if.then49:                                        ; preds = %lor.rhs, %if.end45
+  ret i64 29
+
+if.end50:                                         ; preds = %lor.rhs
+  br label %if.end39
+
+lor.rhs:                                          ; preds = %if.end45
+  %kind53 = load i64, ptr %kind, align 8
+  %eq54 = icmp eq i64 %kind53, 3
+  br i1 %eq54, label %if.then49, label %if.end50
+
+if.then57:                                        ; preds = %if.end
+  ret i64 29
+
+if.end58:                                         ; preds = %if.end
+  %kind59 = load i64, ptr %kind, align 8
+  %eq60 = icmp eq i64 %kind59, 6
+  br i1 %eq60, label %if.then61, label %if.end62
+
+if.then61:                                        ; preds = %if.end58
+  ret i64 30
+
+if.end62:                                         ; preds = %if.end58
+  %kind63 = load i64, ptr %kind, align 8
+  store i64 %kind63, ptr %before, align 1
+  %i64 = load i64, ptr %i, align 8
+  %add65 = add i64 %i64, 1
+  store i64 %add65, ptr %i, align 1
+  store i1 true, ptr %more, align 1
+  br label %while.cond66
+
+while.cond66:                                     ; preds = %if.end77, %if.end62
+  %more69 = load i1, ptr %more, align 1
+  br i1 %more69, label %lor.rhs70, label %lor.end
+
+while.body67:                                     ; preds = %lor.end
+  %i74 = load i64, ptr %i, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result73, ptr %1, i64 %i74)
+  %call75 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result73)
+  %eq79 = icmp eq i64 %call75, 1
+  br i1 %eq79, label %if.then76, label %lor.rhs78
+
+while.exit68:                                     ; preds = %lor.end
+  br label %while.cond102
+
+lor.rhs70:                                        ; preds = %while.cond66
+  %i71 = load i64, ptr %i, align 8
+  %lt72 = icmp ult i64 %i71, %length
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs70, %while.cond66
+  %lor.result = phi i1 [ false, %while.cond66 ], [ %lt72, %lor.rhs70 ]
+  br i1 %lor.result, label %while.body67, label %while.exit68
+
+if.then76:                                        ; preds = %lor.rhs78, %while.body67
+  store i1 false, ptr %more, align 1
+  br label %if.end77
+
+if.else:                                          ; preds = %lor.rhs78
+  %eq83 = icmp eq i64 %call75, 2
+  br i1 %eq83, label %lor.end85, label %lor.rhs84
+
+if.end77:                                         ; preds = %if.end89, %if.then76
+  br label %while.cond66
+
+lor.rhs78:                                        ; preds = %while.body67
+  %eq80 = icmp eq i64 %call75, 6
+  br i1 %eq80, label %if.then76, label %if.else
+
+if.then81:                                        ; preds = %land.rhs
+  ret i64 31
+
+if.end82:                                         ; preds = %land.rhs, %lor.end85
+  %eq93 = icmp eq i64 %call75, 3
+  br i1 %eq93, label %land.rhs92, label %if.end89
+
+land.rhs:                                         ; preds = %lor.end85
+  %ne = icmp ne i64 %length, 2
+  br i1 %ne, label %if.then81, label %if.end82
+
+lor.rhs84:                                        ; preds = %if.else
+  %eq86 = icmp eq i64 %call75, 7
+  br label %lor.end85
+
+lor.end85:                                        ; preds = %lor.rhs84, %if.else
+  %lor.result87 = phi i1 [ true, %if.else ], [ %eq86, %lor.rhs84 ]
+  br i1 %lor.result87, label %land.rhs, label %if.end82
+
+if.then88:                                        ; preds = %land.rhs90
+  ret i64 29
+
+if.end89:                                         ; preds = %land.rhs90, %land.rhs91, %land.rhs92, %if.end82
+  store i64 %call75, ptr %before, align 1
+  %i100 = load i64, ptr %i, align 8
+  %add101 = add i64 %i100, 1
+  store i64 %add101, ptr %i, align 1
+  br label %if.end77
+
+land.rhs90:                                       ; preds = %land.rhs91
+  %before98 = load i64, ptr %before, align 8
+  %ne99 = icmp ne i64 %before98, 7
+  br i1 %ne99, label %if.then88, label %if.end89
+
+land.rhs91:                                       ; preds = %land.rhs92
+  %before96 = load i64, ptr %before, align 8
+  %ne97 = icmp ne i64 %before96, 5
+  br i1 %ne97, label %land.rhs90, label %if.end89
+
+land.rhs92:                                       ; preds = %if.end82
+  %before94 = load i64, ptr %before, align 8
+  %ne95 = icmp ne i64 %before94, 2
+  br i1 %ne95, label %land.rhs91, label %if.end89
+
+while.cond102:                                    ; preds = %while.body103, %while.exit68
+  %i105 = load i64, ptr %i, align 8
+  %lt106 = icmp ult i64 %i105, %length
+  br i1 %lt106, label %lor.rhs107, label %lor.end108
+
+while.body103:                                    ; preds = %lor.end108
+  %postfixes113 = load i64, ptr %postfixes, align 8
+  %add114 = add i64 %postfixes113, 1
+  store i64 %add114, ptr %postfixes, align 1
+  %i115 = load i64, ptr %i, align 8
+  %add116 = add i64 %i115, 1
+  store i64 %add116, ptr %i, align 1
+  br label %while.cond102
+
+while.exit104:                                    ; preds = %lor.end108
+  %i117 = load i64, ptr %i, align 8
+  %lt118 = icmp ult i64 %i117, %length
+  br i1 %lt118, label %if.then119, label %if.end120
+
+lor.rhs107:                                       ; preds = %while.cond102
+  %i109 = load i64, ptr %i, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result73, ptr %1, i64 %i109)
+  %call110 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result73)
+  %eq111 = icmp eq i64 %call110, 6
+  br label %lor.end108
+
+lor.end108:                                       ; preds = %lor.rhs107, %while.cond102
+  %lor.result112 = phi i1 [ false, %while.cond102 ], [ %eq111, %lor.rhs107 ]
+  br i1 %lor.result112, label %while.body103, label %while.exit104
+
+if.then119:                                       ; preds = %while.exit104
+  %i122 = load i64, ptr %i, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result121, ptr %1, i64 %i122)
+  %call123 = call i64 @_ZN7PlannerB6scalycB4v0_215operation_thingE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %sret.result121)
+  %ne124 = icmp ne i64 %call123, 1
+  br i1 %ne124, label %if.then125, label %if.end126
+
+if.end120:                                        ; preds = %if.end134, %while.exit104
+  br label %while.cond
+
+if.then125:                                       ; preds = %if.then119
+  ret i64 30
+
+if.end126:                                        ; preds = %if.then119
+  %operators127 = load i64, ptr %operators, align 8
+  %add128 = add i64 %operators127, 1
+  store i64 %add128, ptr %operators, align 1
+  %i129 = load i64, ptr %i, align 8
+  %add130 = add i64 %i129, 1
+  store i64 %add130, ptr %i, align 1
+  %i131 = load i64, ptr %i, align 8
+  %ge132 = icmp uge i64 %i131, %length
+  br i1 %ge132, label %if.then133, label %if.end134
+
+if.then133:                                       ; preds = %if.end126
+  ret i64 33
+
+if.end134:                                        ; preds = %if.end126
+  br label %if.end120
 }
 
 define linkonce_odr void @_ZN7PlannerB6scalycB4v0_217operand_type_nameEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -323259,6 +323323,88 @@ if.end:                                           ; preds = %entry
   call void @_Z11scaly_eputsP10const_char(ptr @.str.2160)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
+}
+
+define linkonce_odr void @_ZN7PlannerB6scalycB4v0_218operation_prefixesEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2Emmm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, i64 %6) {
+entry:
+  %sign = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result20 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %pair_vec = alloca ptr, align 8
+  %sret.result8 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %pair = alloca ptr, align 8
+  %sret.result = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  call void @_ZN7PlannerB6scalycB4v0_221operation_prefix_termEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2Emm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result, ptr %1, ptr %2, ptr %3, i64 %5, i64 %6)
+  %cur = alloca ptr, align 8
+  store ptr %sret.result, ptr %cur, align 1
+  %sub = sub i64 %5, 1
+  %p = alloca i64, align 8
+  store i64 %sub, ptr %p, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %frame.forced15, %entry
+  %p1 = load i64, ptr %p, align 8
+  %gt = icmp ugt i64 %p1, %4
+  br i1 %gt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %p2 = load i64, ptr %p, align 8
+  %sub3 = sub i64 %p2, 1
+  store i64 %sub3, ptr %p, align 1
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+while.exit:                                       ; preds = %while.cond
+  %cur23 = load ptr, ptr %cur, align 8
+  %sret.body = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %cur23, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %cur23, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+frame.force:                                      ; preds = %while.body
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %while.body
+  %forced_page4 = phi ptr [ %frame.page, %while.body ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page4, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI14PlannedOperandB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E, ptr %struct.region, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 8
+  %tuple.field5 = getelementptr inbounds nuw %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E, ptr %struct.region, i32 0, i32 1
+  store i64 0, ptr %tuple.field5, align 8
+  %tuple.field6 = getelementptr inbounds nuw %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E, ptr %struct.region, i32 0, i32 2
+  store ptr null, ptr %tuple.field6, align 8
+  store ptr %struct.region, ptr %pair, align 1
+  %pair7 = load ptr, ptr %pair, align 8
+  %p9 = load i64, ptr %p, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result8, ptr %3, i64 %p9)
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %pair7, ptr %sret.result8)
+  %pair10 = load ptr, ptr %pair, align 8
+  %cur11 = load ptr, ptr %cur, align 8
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %pair10, ptr %cur11)
+  %frame.page12 = load ptr, ptr %1, align 8
+  %frame.has_page13 = icmp ne ptr %frame.page12, null
+  br i1 %frame.has_page13, label %frame.forced15, label %frame.force14
+
+frame.force14:                                    ; preds = %frame.forced
+  %forced_page16 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced15
+
+frame.forced15:                                   ; preds = %frame.force14, %frame.forced
+  %forced_page17 = phi ptr [ %frame.page12, %frame.forced ], [ %forced_page16, %frame.force14 ]
+  %struct.region18 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page17, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
+  %pair19 = load ptr, ptr %pair, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EC1E5ArrayI14PlannedOperandB6scalycB4v0_2E(ptr %struct.region18, ptr %pair19)
+  store ptr %struct.region18, ptr %pair_vec, align 1
+  %p21 = load i64, ptr %p, align 8
+  call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result20, ptr %3, i64 %p21)
+  %binding.load = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result20, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %sign, ptr align 1 %sret.result20, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  %pair_vec22 = load ptr, ptr %pair_vec, align 8
+  call void @_ZN7PlannerB6scalycB4v0_216operation_prefixEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E14PlannedOperandB6scalycB4v0_2(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result20, ptr %1, ptr %2, ptr %pair_vec22, ptr %sign)
+  %set.dest = load ptr, ptr %cur, align 8
+  %set.thru = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %sret.result20, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result20, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperandB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  br label %while.cond
 }
 
 define linkonce_odr void @_ZN7PlannerB6scalycB4v0_221operation_prefix_termEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2Emm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) {
@@ -450281,56 +450427,63 @@ land.rhs:                                         ; preds = %if.end14
   br i1 %call20, label %if.then17, label %if.end18
 }
 
-define linkonce_odr i64 @_ZN11WriteCensusB6scalycB4v0_216mask_of_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE(ptr %0, ptr %1) {
+define linkonce_odr i1 @_ZN11WriteCensusB6scalycB4v0_217core_name_is_pageE6String(ptr %0) {
 entry:
-  %i = alloca i64, align 8
-  %m = alloca i64, align 8
-  %eq = icmp eq ptr %1, null
-  br i1 %eq, label %if.then, label %if.end
+  %arg.tmp9 = alloca { ptr }, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
+  %frame.page = load ptr, ptr %frame, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-if.then:                                          ; preds = %entry
-  ret i64 0
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced
 
-if.end:                                           ; preds = %entry
-  store i64 0, ptr %m, align 1
-  store i64 0, ptr %i, align 1
-  br label %while.cond
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  store { ptr } { ptr @.sconst.4242 }, ptr %arg.tmp, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
+  %call = call i1 @_ZN6String9ends_withE6String(ptr %0, ptr %struct.region)
+  br i1 %call, label %if.then, label %if.end
 
-while.cond:                                       ; preds = %if.end4, %if.end
-  %i1 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorI14PlannedOperandB6scalycB4v0_2E, ptr %1, align 8
-  %length = extractvalue %_Z6VectorI14PlannedOperandB6scalycB4v0_2E %load.struct, 0
-  %lt = icmp ult i64 %i1, %length
-  br i1 %lt, label %while.body, label %while.exit
+if.then:                                          ; preds = %frame.forced
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i1 true
 
-while.body:                                       ; preds = %while.cond
-  %i2 = load i64, ptr %i, align 8
-  %call = call ptr @_ZN6VectorI14PlannedOperandB6scalycB4v0_2E3getEm(ptr %1, i64 %i2)
-  %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then3, label %if.end4
+if.end:                                           ; preds = %frame.forced
+  %frame.page2 = load ptr, ptr %frame, align 8
+  %frame.has_page3 = icmp ne ptr %frame.page2, null
+  br i1 %frame.has_page3, label %frame.forced5, label %frame.force4
 
-while.exit:                                       ; preds = %while.cond
-  %m8 = load i64, ptr %m, align 8
-  ret i64 %m8
+frame.force4:                                     ; preds = %if.end
+  %forced_page6 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced5
 
-if.then3:                                         ; preds = %while.body
-  %m5 = load i64, ptr %m, align 8
-  %call6 = call i64 @_ZN11WriteCensusB6scalycB4v0_27mask_ofE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %call)
-  %or = or i64 %m5, %call6
-  store i64 %or, ptr %m, align 1
-  br label %if.end4
-
-if.end4:                                          ; preds = %if.then3, %while.body
-  %i7 = load i64, ptr %i, align 8
-  %add = add i64 %i7, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
+frame.forced5:                                    ; preds = %frame.force4, %if.end
+  %forced_page7 = phi ptr [ %frame.page2, %if.end ], [ %forced_page6, %frame.force4 ]
+  %struct.region8 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page7, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  store { ptr } { ptr @.sconst.4243 }, ptr %arg.tmp9, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region8, ptr %arg.tmp9)
+  %call10 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %struct.region8)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i1 %call10
 }
 
 define linkonce_odr i64 @_ZN11WriteCensusB6scalycB4v0_215call_alias_maskE11PlannedCallB6scalycB4v0_2b(ptr %0, ptr %1, i1 %2) {
 entry:
+  %arg.tmp86 = alloca %_Z11PlannedTypeB6scalycB4v0_2, align 8
   %bit = alloca i64, align 8
   %i = alloca i64, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
+  %sret.result = alloca { ptr }, align 8
   %arg.tmp35 = alloca { ptr }, align 8
   %n_in = alloca i64, align 8
   %arg.tmp10 = alloca { ptr }, align 8
@@ -450343,6 +450496,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 0
 
 if.end:                                           ; preds = %entry
@@ -450361,9 +450515,12 @@ if.then1:                                         ; preds = %if.end
   br i1 %not6, label %if.then7, label %if.end8
 
 if.end2:                                          ; preds = %if.end8, %if.end
-  %rp56 = load i64, ptr %rp, align 8
-  %eq57 = icmp eq i64 %rp56, 6917529027641081855
-  br i1 %eq57, label %if.then58, label %if.end59
+  %field.inplace56 = getelementptr inbounds nuw %_Z11PlannedCallB6scalycB4v0_2, ptr %1, i32 0, i32 8
+  call void @_ZN7PlannerB6scalycB4v0_217get_readable_nameEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %field.inplace56)
+  %call57 = call i1 @_ZN11WriteCensusB6scalycB4v0_217core_name_is_pageE6String(ptr %sret.result)
+  store i64 0, ptr %n_in, align 1
+  store i64 0, ptr %i, align 1
+  br label %while.cond
 
 if.then7:                                         ; preds = %if.then1
   %field.inplace9 = getelementptr inbounds nuw %_Z11PlannedCallB6scalycB4v0_2, ptr %1, i32 0, i32 1
@@ -450467,86 +450624,106 @@ if.end49:                                         ; preds = %if.else, %if.then48
   %if.value = phi i64 [ %call52, %if.then48 ], [ %call55, %if.else ]
   br label %if.end47
 
-if.then58:                                        ; preds = %if.end2
-  %field.inplace60 = getelementptr inbounds nuw %_Z11PlannedCallB6scalycB4v0_2, ptr %1, i32 0, i32 7
-  %deref.recv61 = load ptr, ptr %field.inplace60, align 8
-  %call62 = call i64 @_ZN11WriteCensusB6scalycB4v0_216mask_of_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE(ptr %0, ptr %deref.recv61)
-  ret i64 %call62
-
-if.end59:                                         ; preds = %if.end2
-  store i64 0, ptr %n_in, align 1
-  store i64 0, ptr %i, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end78, %if.end59
-  %i63 = load i64, ptr %i, align 8
-  %load.struct64 = load %_Z11PlannedCallB6scalycB4v0_2, ptr %1, align 8
-  %args65 = extractvalue %_Z11PlannedCallB6scalycB4v0_2 %load.struct64, 7
-  %deref66 = load %_Z6VectorI14PlannedOperandB6scalycB4v0_2E, ptr %args65, align 8
-  %length67 = extractvalue %_Z6VectorI14PlannedOperandB6scalycB4v0_2E %deref66, 0
-  %lt68 = icmp ult i64 %i63, %length67
-  br i1 %lt68, label %while.body, label %while.exit
+while.cond:                                       ; preds = %if.end77, %if.end2
+  %i58 = load i64, ptr %i, align 8
+  %load.struct59 = load %_Z11PlannedCallB6scalycB4v0_2, ptr %1, align 8
+  %args60 = extractvalue %_Z11PlannedCallB6scalycB4v0_2 %load.struct59, 7
+  %deref61 = load %_Z6VectorI14PlannedOperandB6scalycB4v0_2E, ptr %args60, align 8
+  %length62 = extractvalue %_Z6VectorI14PlannedOperandB6scalycB4v0_2E %deref61, 0
+  %lt63 = icmp ult i64 %i58, %length62
+  br i1 %lt63, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   store i64 4611686018427387904, ptr %bit, align 1
-  %i69 = load i64, ptr %i, align 8
-  %lt70 = icmp ult i64 %i69, 61
-  br i1 %lt70, label %if.then71, label %if.end72
+  %i64 = load i64, ptr %i, align 8
+  %lt65 = icmp ult i64 %i64, 61
+  br i1 %lt65, label %if.then66, label %if.end67
 
 while.exit:                                       ; preds = %while.cond
-  %m95 = load i64, ptr %n_in, align 8
-  ret i64 %m95
+  %m101 = load i64, ptr %n_in, align 8
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i64 %m101
 
-if.then71:                                        ; preds = %while.body
-  %i73 = load i64, ptr %i, align 8
-  %shl = shl i64 1, %i73
+if.then66:                                        ; preds = %while.body
+  %i68 = load i64, ptr %i, align 8
+  %shl = shl i64 1, %i68
   store i64 %shl, ptr %bit, align 1
+  br label %if.end67
+
+if.end67:                                         ; preds = %if.then66, %while.body
+  %rp69 = load i64, ptr %rp, align 8
+  %eq70 = icmp eq i64 %rp69, 6917529027641081855
+  br i1 %eq70, label %if.then71, label %if.end72
+
+if.then71:                                        ; preds = %if.end67
+  store i64 6917529027641081855, ptr %bit, align 1
   br label %if.end72
 
-if.end72:                                         ; preds = %if.then71, %while.body
-  %rp74 = load i64, ptr %rp, align 8
-  %bit75 = load i64, ptr %bit, align 8
-  %and = and i64 %rp74, %bit75
-  %ne76 = icmp ne i64 %and, 0
-  br i1 %ne76, label %if.then77, label %if.end78
+if.end72:                                         ; preds = %if.then71, %if.end67
+  %rp73 = load i64, ptr %rp, align 8
+  %bit74 = load i64, ptr %bit, align 8
+  %and = and i64 %rp73, %bit74
+  %ne75 = icmp ne i64 %and, 0
+  br i1 %ne75, label %if.then76, label %if.end77
 
-if.then77:                                        ; preds = %if.end72
-  %field.inplace79 = getelementptr inbounds nuw %_Z11PlannedCallB6scalycB4v0_2, ptr %1, i32 0, i32 7
-  %deref.recv80 = load ptr, ptr %field.inplace79, align 8
-  %i81 = load i64, ptr %i, align 8
-  %call82 = call ptr @_ZN6VectorI14PlannedOperandB6scalycB4v0_2E3getEm(ptr %deref.recv80, i64 %i81)
-  %ne83 = icmp ne ptr %call82, null
-  br i1 %ne83, label %if.then84, label %if.end85
+if.then76:                                        ; preds = %if.end72
+  %field.inplace78 = getelementptr inbounds nuw %_Z11PlannedCallB6scalycB4v0_2, ptr %1, i32 0, i32 7
+  %deref.recv79 = load ptr, ptr %field.inplace78, align 8
+  %i80 = load i64, ptr %i, align 8
+  %call81 = call ptr @_ZN6VectorI14PlannedOperandB6scalycB4v0_2E3getEm(ptr %deref.recv79, i64 %i80)
+  %ne84 = icmp ne ptr %call81, null
+  br i1 %ne84, label %land.rhs, label %if.end83
 
-if.end78:                                         ; preds = %if.end85, %if.end72
-  %i94 = load i64, ptr %i, align 8
-  %add = add i64 %i94, 1
+if.end77:                                         ; preds = %if.end83, %if.end72
+  %i100 = load i64, ptr %i, align 8
+  %add = add i64 %i100, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then84:                                        ; preds = %if.then77
-  br i1 %2, label %if.then86, label %if.else87
+if.then82:                                        ; preds = %lor.end
+  br i1 %2, label %land.rhs92, label %if.else90
 
-if.end85:                                         ; preds = %if.end88, %if.then77
-  br label %if.end78
+if.end83:                                         ; preds = %if.end91, %lor.end, %if.then76
+  br label %if.end77
 
-if.then86:                                        ; preds = %if.then84
+land.rhs:                                         ; preds = %if.then76
+  br i1 %call57, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %land.rhs
+  %load.struct85 = load %_Z14PlannedOperandB6scalycB4v0_2, ptr %call81, align 8
+  %result_type = extractvalue %_Z14PlannedOperandB6scalycB4v0_2 %load.struct85, 3
+  store %_Z11PlannedTypeB6scalycB4v0_2 %result_type, ptr %arg.tmp86, align 1
+  call void @_ZN7PlannerB6scalycB4v0_217get_readable_nameEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %arg.tmp86)
+  %call87 = call i1 @_ZN11WriteCensusB6scalycB4v0_217core_name_is_pageE6String(ptr %sret.result)
+  %eq88 = icmp eq i1 %call87, false
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %land.rhs
+  %lor.result = phi i1 [ true, %land.rhs ], [ %eq88, %lor.rhs ]
+  br i1 %lor.result, label %if.then82, label %if.end83
+
+if.then89:                                        ; preds = %land.rhs92
   %m = load i64, ptr %n_in, align 8
-  %call89 = call i64 @_ZN11WriteCensusB6scalycB4v0_25is_ofE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %call82)
-  %or = or i64 %m, %call89
+  %call95 = call i64 @_ZN11WriteCensusB6scalycB4v0_25is_ofE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %call81)
+  %or = or i64 %m, %call95
   store i64 %or, ptr %n_in, align 1
-  br label %if.end88
+  br label %if.end91
 
-if.else87:                                        ; preds = %if.then84
-  %m90 = load i64, ptr %n_in, align 8
-  %call91 = call i64 @_ZN11WriteCensusB6scalycB4v0_27mask_ofE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %call82)
-  %or92 = or i64 %m90, %call91
-  store i64 %or92, ptr %n_in, align 1
-  br label %if.end88
+if.else90:                                        ; preds = %land.rhs92, %if.then82
+  %m96 = load i64, ptr %n_in, align 8
+  %call97 = call i64 @_ZN11WriteCensusB6scalycB4v0_27mask_ofE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %call81)
+  %or98 = or i64 %m96, %call97
+  store i64 %or98, ptr %n_in, align 1
+  br label %if.end91
 
-if.end88:                                         ; preds = %if.else87, %if.then86
-  %if.value93 = phi i64 [ %or, %if.then86 ], [ %or92, %if.else87 ]
-  br label %if.end85
+if.end91:                                         ; preds = %if.else90, %if.then89
+  %if.value99 = phi i64 [ %or, %if.then89 ], [ %or98, %if.else90 ]
+  br label %if.end83
+
+land.rhs92:                                       ; preds = %if.then82
+  %rp93 = load i64, ptr %rp, align 8
+  %ne94 = icmp ne i64 %rp93, 6917529027641081855
+  br i1 %ne94, label %if.then89, label %if.else90
 }
 
 define linkonce_odr i64 @_ZN11WriteCensusB6scalycB4v0_214declared_reachE15PlannedFunctionB6scalycB4v0_2(ptr %0, ptr %1) {
@@ -451809,6 +451986,52 @@ if.end53:                                         ; preds = %unwrap.ok
   %and56 = and i64 %call55, -2305843009213693953
   %or57 = or i64 %and56, %and
   ret i64 %or57
+}
+
+define linkonce_odr i64 @_ZN11WriteCensusB6scalycB4v0_216mask_of_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE(ptr %0, ptr %1) {
+entry:
+  %i = alloca i64, align 8
+  %m = alloca i64, align 8
+  %eq = icmp eq ptr %1, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  store i64 0, ptr %m, align 1
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end4, %if.end
+  %i1 = load i64, ptr %i, align 8
+  %load.struct = load %_Z6VectorI14PlannedOperandB6scalycB4v0_2E, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI14PlannedOperandB6scalycB4v0_2E %load.struct, 0
+  %lt = icmp ult i64 %i1, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %call = call ptr @_ZN6VectorI14PlannedOperandB6scalycB4v0_2E3getEm(ptr %1, i64 %i2)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %if.then3, label %if.end4
+
+while.exit:                                       ; preds = %while.cond
+  %m8 = load i64, ptr %m, align 8
+  ret i64 %m8
+
+if.then3:                                         ; preds = %while.body
+  %m5 = load i64, ptr %m, align 8
+  %call6 = call i64 @_ZN11WriteCensusB6scalycB4v0_27mask_ofE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %call)
+  %or = or i64 %m5, %call6
+  store i64 %or, ptr %m, align 1
+  br label %if.end4
+
+if.end4:                                          ; preds = %if.then3, %while.body
+  %i7 = load i64, ptr %i, align 8
+  %add = add i64 %i7, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
 }
 
 define linkonce_odr i64 @_ZN11WriteCensusB6scalycB4v0_214is_of_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE(ptr %0, ptr %1) {
@@ -458172,53 +458395,6 @@ land.rhs22:                                       ; preds = %while.body12
   store { ptr } { ptr @.sconst.4241 }, ptr %arg.tmp25, align 1
   %call26 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp, ptr %arg.tmp25)
   br i1 %call26, label %land.rhs, label %if.end21
-}
-
-define linkonce_odr i1 @_ZN11WriteCensusB6scalycB4v0_217core_name_is_pageE6String(ptr %0) {
-entry:
-  %arg.tmp9 = alloca { ptr }, align 8
-  %arg.tmp = alloca { ptr }, align 8
-  %frame = alloca { ptr, ptr }, align 8
-  store ptr null, ptr %frame, align 8
-  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
-  store ptr null, ptr %frame.parent, align 8
-  %frame.page = load ptr, ptr %frame, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.4242 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
-  %call = call i1 @_ZN6String9ends_withE6String(ptr %0, ptr %struct.region)
-  br i1 %call, label %if.then, label %if.end
-
-if.then:                                          ; preds = %frame.forced
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 true
-
-if.end:                                           ; preds = %frame.forced
-  %frame.page2 = load ptr, ptr %frame, align 8
-  %frame.has_page3 = icmp ne ptr %frame.page2, null
-  br i1 %frame.has_page3, label %frame.forced5, label %frame.force4
-
-frame.force4:                                     ; preds = %if.end
-  %forced_page6 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced5
-
-frame.forced5:                                    ; preds = %frame.force4, %if.end
-  %forced_page7 = phi ptr [ %frame.page2, %if.end ], [ %forced_page6, %frame.force4 ]
-  %struct.region8 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page7, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.4243 }, ptr %arg.tmp9, align 1
-  call void @_ZN6StringC1E6String(ptr %struct.region8, ptr %arg.tmp9)
-  %call10 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %struct.region8)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 %call10
 }
 
 define linkonce_odr i1 @_ZN11WriteCensusB6scalycB4v0_214is_local_valueE14PlannedOperandB6scalycB4v0_2(ptr %0, ptr %1) {

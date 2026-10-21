@@ -29081,8 +29081,17 @@ define Planner
                     if i >= n
                         return 33
                     kind := this.operation_thing(ops[i])
-                    if kind = 1
-                        return 28
+                    ; after a prefix there is still no value: a second
+                    ; operator name is a prefix too (`not not a`, `- -2`)
+                    while kind = 1
+                    {
+                        if Planner.operand_is_symbol_operator(ops[i]) = false
+                            return 30
+                        i := i + 1
+                        if i >= n
+                            return 33
+                        kind := this.operation_thing(ops[i])
+                    }
                     ; the sigil of the prefix itself: the box on a named page
                     ; (`&^this v`, `&# v`)
                     if kind = 3
@@ -29688,7 +29697,8 @@ define Planner
             while i < n
             {
                 var prefixed false
-                if this.operation_thing(ops[i]) = 1
+                let first_prefix i
+                while i < n and this.operation_thing(ops[i]) = 1
                 {
                     prefixed := true
                     i := i + 1
@@ -29699,8 +29709,8 @@ define Planner
                     j := j + 1
                 }
                 if prefixed
-                    cur := this.operation_prefix_term(ops, i, j)
-                else if j = i + 1 and j + 1 < n and Planner.operand_is_symbol_operator(ops[j]) and this.operation_thing(ops[j + 1]) <> 1 and this.operation_name(ops[i]) = 3
+                    cur := this.operation_prefixes(ops, first_prefix, i, j)
+                else if j = i + 1 and j + 1 < n and Planner.operand_is_symbol_operator(ops[j]) and this.operation_name(ops[i]) = 3
                 {
                     ; After a function a value is expected, so an operator
                     ; there is a prefix and its term the argument of the call
@@ -29709,12 +29719,17 @@ define Planner
                     ; 2026-10-21 the function was the left side of a binary
                     ; `-`, the result had no type, and `let r twice -5` and
                     ; every statement using r were dropped at rc 0.
-                    var k j + 2
+                    var t j + 1
+                    while t < n and this.operation_thing(ops[t]) = 1
+                    {
+                        t := t + 1
+                    }
+                    var k t + 1
                     while k < n and this.operation_thing(ops[k]) <> 1 and this.operation_thing(ops[k]) <> 6
                     {
                         k := k + 1
                     }
-                    let arg this.operation_prefix_term(ops, j + 1, k)
+                    let arg this.operation_prefixes(ops, j, t, k)
                     var head: PlannedOperand ops[i]
                     cur := this.operation_parenless(head, arg)
                     j := k
@@ -29758,6 +29773,29 @@ define Planner
             if operators > 0
                 cur := this.operation_table(out, base)
             this.operation_count(26)
+            cur
+        }
+
+        ; A chain of prefixes and its term: the signs from ops[signs] up to
+        ; the term, which runs from first up to limit. After a prefix there is
+        ; still no value, so a second one is a prefix too and the chain reads
+        ; as written, the innermost first: `not not a`, `- -2`, `abs -5`
+        ; (ROADMAP-operation.md, *Prefix operators*; refused, loudly, until
+        ; 2026-10-21).
+        procedure operation_prefixes(mutable this: Planner, mutable ops: Vector[PlannedOperand], signs: size_t, first: size_t, limit: size_t) returns PlannedOperand
+        {
+            var cur this.operation_prefix_term(ops, first, limit)
+            var p first - 1
+            while p > signs
+            {
+                p := p - 1
+                var pair Array[PlannedOperand]()
+                pair.add(ops[p])
+                pair.add cur
+                var pair_vec Vector[PlannedOperand](pair)
+                var sign: PlannedOperand ops[p]
+                cur := this.operation_prefix(pair_vec, sign)
+            }
             cur
         }
 

@@ -1,0 +1,21 @@
+; After a prefix there is still no value, so a second operator name is a
+; prefix too and the chain reads as written, the innermost first
+; (ROADMAP-operation.md, *Prefix operators*). Until 2026-10-21 the driver
+; refused `not not a`, `- -2` and `abs -5` (reason 28).
+function twice(n: int) returns int
+    n * 2
+
+let x 3
+let t true
+let a - -2
+let b not not t
+let c abs -5
+let d 10 - - -x
+let e twice - -x
+let f ~ -1
+let g: int - - - x * 2
+let s "`a` `b` `c` `d` `e` `f` `g`"
+if s.equals("2 true 5 7 6 0 -6")
+    print "PASS"
+else
+    print "FAIL `s`"
