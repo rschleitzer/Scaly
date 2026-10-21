@@ -187,6 +187,27 @@ int scaly_eio_reuseport(int fd)
     return -1;
 }
 
+/* For the same reason a listener has no twins here (TcpListener.serve keeps
+ * one acceptor for every scheduler), and so nothing to end by a shutdown;
+ * the nonblocking accept is used with twins only. */
+int scaly_eio_tcp_listen_twin(int fd)
+{
+    (void)fd;
+    return -1;
+}
+
+int scaly_eio_listen_end(int fd)
+{
+    (void)fd;
+    return -1;
+}
+
+int scaly_eio_accept_nb(int fd)
+{
+    (void)fd;
+    return -1;
+}
+
 /* UDP with its peers' addresses, for https's h3 (ngtcp2): not served on
  * Windows yet -- h3 stays off there. */
 long long scaly_eio_udp_recv(int fd, void* buf, unsigned long long len, void* addr, unsigned long long addrcap,

@@ -27051,6 +27051,12 @@ declare i32 @scaly_eio_tcp_connect(i32)
 
 declare i32 @scaly_eio_accept(i32)
 
+declare i32 @scaly_eio_tcp_listen_twin(i32)
+
+declare i32 @scaly_eio_listen_end(i32)
+
+declare i32 @scaly_eio_accept_nb(i32)
+
 declare i32 @scaly_eio_tcp_listen_any(i32)
 
 declare i32 @scaly_eio_tcp_connect_host(ptr, i32)
@@ -30192,6 +30198,41 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %r3 = load i32, ptr %r, align 4
   ret i32 %r3
+}
+
+define linkonce_odr i32 @_ZN2Io18accept_nonblockingE3i32(i32 %0) {
+entry:
+  %call = call i32 @scaly_eio_accept_nb(i32 %0)
+  %r = alloca i32, align 4
+  store i32 %call, ptr %r, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %r1 = load i32, ptr %r, align 4
+  %eq = icmp eq i32 %r1, -2
+  br i1 %eq, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  call void @_ZN2Io4parkE3i32b(i32 %0, i1 false)
+  %call2 = call i32 @scaly_eio_accept_nb(i32 %0)
+  store i32 %call2, ptr %r, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %r3 = load i32, ptr %r, align 4
+  ret i32 %r3
+}
+
+define linkonce_odr i32 @_ZN2Io11listen_twinE3i32(i32 %0) {
+entry:
+  %call = call i32 @scaly_eio_tcp_listen_twin(i32 %0)
+  ret i32 %call
+}
+
+define linkonce_odr i32 @_ZN2Io10listen_endE3i32(i32 %0) {
+entry:
+  %call = call i32 @scaly_eio_listen_end(i32 %0)
+  ret i32 %call
 }
 
 define linkonce_odr i32 @_ZN2Io10listen_anyE3i32(i32 %0) {
@@ -35145,11 +35186,25 @@ entry:
   ret ptr %as.inttoptr
 }
 
+define linkonce_odr i1 @_Z9tcp_twinsP3i64(ptr %0) {
+entry:
+  %call = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 3)
+  %deref = load i64, ptr %call, align 8
+  %mul = mul i64 3, %deref
+  %add = add i64 5, %mul
+  %call1 = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 %add)
+  %deref2 = load i64, ptr %call1, align 8
+  %eq = icmp eq i64 %deref2, 1
+  ret i1 %eq
+}
+
 define linkonce_odr ptr @_Z13tcp_make_cell3i32Pv3i64(i32 %0, ptr %1, i64 %2) {
 entry:
+  %k = alloca i64, align 8
+  %made = alloca i64, align 8
   %call = call ptr @_ZN4Page13allocate_pageEv()
-  %mul = mul i64 2, %2
-  %add = add i64 5, %mul
+  %mul = mul i64 3, %2
+  %add = add i64 6, %mul
   %mul1 = mul i64 %add, 8
   %call2 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul1, i64 8)
   %as.sext = sext i32 %0 to i64
@@ -35163,29 +35218,210 @@ entry:
   store i64 %2, ptr %call5, align 8
   %call6 = call ptr @_Z8tcp_wordP3i643i64(ptr %call2, i64 4)
   store i64 0, ptr %call6, align 8
-  %k = alloca i64, align 8
-  store i64 0, ptr %k, align 1
+  %mul7 = mul i64 3, %2
+  %add8 = add i64 5, %mul7
+  %call9 = call ptr @_Z8tcp_wordP3i643i64(ptr %call2, i64 %add8)
+  store i64 0, ptr %call9, align 8
+  %gt = icmp sgt i64 %2, 1
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %as.sext10 = sext i32 %0 to i64
+  %mul11 = mul i64 2, %2
+  %add12 = add i64 5, %mul11
+  %call13 = call ptr @_Z8tcp_wordP3i643i64(ptr %call2, i64 %add12)
+  store i64 %as.sext10, ptr %call13, align 8
+  store i64 1, ptr %made, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %while.body, %entry
-  %k7 = load i64, ptr %k, align 8
-  %lt = icmp slt i64 %k7, %2
+if.end:                                           ; preds = %if.end29, %entry
+  %call46 = call i1 @_Z9tcp_twinsP3i64(ptr %call2)
+  %eq47 = icmp eq i1 %call46, false
+  br i1 %eq47, label %if.then48, label %if.end49
+
+while.cond:                                       ; preds = %if.end18, %if.then
+  %made14 = load i64, ptr %made, align 8
+  %lt = icmp slt i64 %made14, %2
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %call8 = call ptr @_ZN7Channel6createEv()
-  %as.ptrtoint9 = ptrtoint ptr %call8 to i64
-  %k10 = load i64, ptr %k, align 8
-  %add11 = add i64 5, %k10
-  %call12 = call ptr @_Z8tcp_wordP3i643i64(ptr %call2, i64 %add11)
-  store i64 %as.ptrtoint9, ptr %call12, align 8
-  %k13 = load i64, ptr %k, align 8
-  %add14 = add i64 %k13, 1
-  store i64 %add14, ptr %k, align 1
+  %call15 = call i32 @_ZN2Io11listen_twinE3i32(i32 %0)
+  %lt16 = icmp slt i32 %call15, 0
+  br i1 %lt16, label %if.then17, label %if.end18
+
+while.exit:                                       ; preds = %if.then17, %while.cond
+  %made27 = load i64, ptr %made, align 8
+  %eq = icmp eq i64 %made27, %2
+  br i1 %eq, label %if.then28, label %if.else
+
+if.then17:                                        ; preds = %while.body
+  br label %while.exit
+
+if.end18:                                         ; preds = %while.body
+  %as.sext19 = sext i32 %call15 to i64
+  %mul20 = mul i64 2, %2
+  %add21 = add i64 5, %mul20
+  %made22 = load i64, ptr %made, align 8
+  %add23 = add i64 %add21, %made22
+  %call24 = call ptr @_Z8tcp_wordP3i643i64(ptr %call2, i64 %add23)
+  store i64 %as.sext19, ptr %call24, align 8
+  %made25 = load i64, ptr %made, align 8
+  %add26 = add i64 %made25, 1
+  store i64 %add26, ptr %made, align 1
+  br label %while.cond
+
+if.then28:                                        ; preds = %while.exit
+  %mul30 = mul i64 3, %2
+  %add31 = add i64 5, %mul30
+  %call32 = call ptr @_Z8tcp_wordP3i643i64(ptr %call2, i64 %add31)
+  store i64 1, ptr %call32, align 8
+  br label %if.end29
+
+if.else:                                          ; preds = %while.exit
+  store i64 1, ptr %k, align 1
+  br label %while.cond33
+
+if.end29:                                         ; preds = %while.exit35, %if.then28
+  br label %if.end
+
+while.cond33:                                     ; preds = %while.body34, %if.else
+  %k36 = load i64, ptr %k, align 8
+  %made37 = load i64, ptr %made, align 8
+  %lt38 = icmp slt i64 %k36, %made37
+  br i1 %lt38, label %while.body34, label %while.exit35
+
+while.body34:                                     ; preds = %while.cond33
+  %mul39 = mul i64 2, %2
+  %add40 = add i64 5, %mul39
+  %k41 = load i64, ptr %k, align 8
+  %add42 = add i64 %add40, %k41
+  %call43 = call ptr @_Z8tcp_wordP3i643i64(ptr %call2, i64 %add42)
+  %deref = load i64, ptr %call43, align 8
+  %as.trunc = trunc i64 %deref to i32
+  call void @_Z12tcp_close_fd3i32(i32 %as.trunc)
+  %k44 = load i64, ptr %k, align 8
+  %add45 = add i64 %k44, 1
+  store i64 %add45, ptr %k, align 1
+  br label %while.cond33
+
+while.exit35:                                     ; preds = %while.cond33
+  br label %if.end29
+
+if.then48:                                        ; preds = %if.end
+  store i64 0, ptr %made, align 1
+  br label %while.cond50
+
+if.end49:                                         ; preds = %while.exit52, %if.end
+  ret ptr %call2
+
+while.cond50:                                     ; preds = %while.body51, %if.then48
+  %k53 = load i64, ptr %made, align 8
+  %lt54 = icmp slt i64 %k53, %2
+  br i1 %lt54, label %while.body51, label %while.exit52
+
+while.body51:                                     ; preds = %while.cond50
+  %call55 = call ptr @_ZN7Channel6createEv()
+  %as.ptrtoint56 = ptrtoint ptr %call55 to i64
+  %k57 = load i64, ptr %made, align 8
+  %add58 = add i64 5, %k57
+  %call59 = call ptr @_Z8tcp_wordP3i643i64(ptr %call2, i64 %add58)
+  store i64 %as.ptrtoint56, ptr %call59, align 8
+  %k60 = load i64, ptr %made, align 8
+  %add61 = add i64 %k60, 1
+  store i64 %add61, ptr %made, align 1
+  br label %while.cond50
+
+while.exit52:                                     ; preds = %while.cond50
+  br label %if.end49
+}
+
+define linkonce_odr void @_Z18tcp_wake_acceptorsP3i64(ptr %0) {
+entry:
+  %k = alloca i64, align 8
+  %call = call i1 @_Z9tcp_twinsP3i64(ptr %0)
+  br i1 %call, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %call1 = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 3)
+  %deref = load i64, ptr %call1, align 8
+  store i64 0, ptr %k, align 1
+  br label %while.cond
+
+if.end:                                           ; preds = %entry
+  %deref10 = load i64, ptr %0, align 8
+  %as.trunc11 = trunc i64 %deref10 to i32
+  %call12 = call i32 @_ZN2Io10local_portE3i32(i32 %as.trunc11)
+  %call13 = call i32 @_ZN2Io7connectE3i32(i32 %call12)
+  %ge = icmp sge i32 %call13, 0
+  br i1 %ge, label %if.then14, label %if.end15
+
+while.cond:                                       ; preds = %while.body, %if.then
+  %k2 = load i64, ptr %k, align 8
+  %lt = icmp slt i64 %k2, %deref
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %mul = mul i64 2, %deref
+  %add = add i64 5, %mul
+  %k3 = load i64, ptr %k, align 8
+  %add4 = add i64 %add, %k3
+  %call5 = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 %add4)
+  %deref6 = load i64, ptr %call5, align 8
+  %as.trunc = trunc i64 %deref6 to i32
+  %call7 = call i32 @_ZN2Io10listen_endE3i32(i32 %as.trunc)
+  %k8 = load i64, ptr %k, align 8
+  %add9 = add i64 %k8, 1
+  store i64 %add9, ptr %k, align 1
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  ret ptr %call2
+  ret void
+
+if.then14:                                        ; preds = %if.end
+  call void @_Z12tcp_close_fd3i32(i32 %call13)
+  br label %if.end15
+
+if.end15:                                         ; preds = %if.then14, %if.end
+  ret void
+}
+
+define linkonce_odr void @_Z15tcp_close_twinsP3i64(ptr %0) {
+entry:
+  %k = alloca i64, align 8
+  %call = call i1 @_Z9tcp_twinsP3i64(ptr %0)
+  %eq = icmp eq i1 %call, false
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %call1 = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 3)
+  %deref = load i64, ptr %call1, align 8
+  store i64 1, ptr %k, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %if.end
+  %k2 = load i64, ptr %k, align 8
+  %lt = icmp slt i64 %k2, %deref
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %mul = mul i64 2, %deref
+  %add = add i64 5, %mul
+  %k3 = load i64, ptr %k, align 8
+  %add4 = add i64 %add, %k3
+  %call5 = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 %add4)
+  %deref6 = load i64, ptr %call5, align 8
+  %as.trunc = trunc i64 %deref6 to i32
+  call void @_Z12tcp_close_fd3i32(i32 %as.trunc)
+  %k7 = load i64, ptr %k, align 8
+  %add8 = add i64 %k7, 1
+  store i64 %add8, ptr %k, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  ret void
 }
 
 define linkonce_odr void @_Z21tcp_accept_into_tasks3i32PvP3u64(i32 %0, ptr %1, ptr %2) {
@@ -35339,6 +35575,66 @@ while.exit:                                       ; preds = %while.cond
   ret void
 }
 
+define linkonce_odr void @_Z18tcp_acceptor_localv() {
+entry:
+  %call = call ptr @_ZN9Scheduler8task_argEv()
+  %deref = load i64, ptr %call, align 8
+  %as.trunc = trunc i64 %deref to i32
+  %global.load = load ptr, ptr @tcp_current_serve, align 8
+  %call1 = call ptr @_Z8tcp_wordP3i643i64(ptr %global.load, i64 1)
+  %deref2 = load i64, ptr %call1, align 8
+  %as.inttoptr = inttoptr i64 %deref2 to ptr
+  %call3 = call ptr @_Z8tcp_wordP3i643i64(ptr %global.load, i64 2)
+  br label %repeat.body
+
+repeat.body:                                      ; preds = %if.end9, %entry
+  %call4 = call i32 @_ZN2Io18accept_nonblockingE3i32(i32 %as.trunc)
+  %atomic.load = load atomic i64, ptr %call3 seq_cst, align 8
+  %ne = icmp ne i64 %atomic.load, 0
+  br i1 %ne, label %if.then, label %if.end
+
+repeat.exit:                                      ; preds = %if.end6
+  %atomic.load11 = load atomic i64, ptr %call3 seq_cst, align 8
+  %eq = icmp eq i64 %atomic.load11, 2
+  br i1 %eq, label %if.then12, label %if.end13
+
+if.then:                                          ; preds = %repeat.body
+  %ge = icmp sge i32 %call4, 0
+  br i1 %ge, label %if.then5, label %if.end6
+
+if.end:                                           ; preds = %repeat.body
+  %ge7 = icmp sge i32 %call4, 0
+  br i1 %ge7, label %if.then8, label %if.else
+
+if.then5:                                         ; preds = %if.then
+  call void @_Z12tcp_close_fd3i32(i32 %call4)
+  br label %if.end6
+
+if.end6:                                          ; preds = %if.then5, %if.then
+  br label %repeat.exit
+
+if.then8:                                         ; preds = %if.end
+  call void @_ZN2Io6servedE3i32(i32 %call4)
+  %as.sext = sext i32 %call4 to i64
+  %as.inttoptr10 = inttoptr i64 %as.sext to ptr
+  call void @_ZN9Scheduler14spawn_detachedEPvPv(ptr %as.inttoptr, ptr %as.inttoptr10)
+  br label %if.end9
+
+if.else:                                          ; preds = %if.end
+  call void @_ZN9Scheduler5yieldEv()
+  br label %if.end9
+
+if.end9:                                          ; preds = %if.else, %if.then8
+  br label %repeat.body
+
+if.then12:                                        ; preds = %repeat.exit
+  %call14 = call i64 @_ZN2Io11wake_servedEv()
+  br label %if.end13
+
+if.end13:                                         ; preds = %if.then12, %repeat.exit
+  ret void
+}
+
 define linkonce_odr void @_Z12tcp_dispatchv() {
 entry:
   %call = call ptr @_ZN9Scheduler8task_argEv()
@@ -35406,22 +35702,39 @@ entry:
   %1 = atomicrmw add ptr %call, i64 1 seq_cst, align 8
   %call1 = call ptr @_ZN4Page13allocate_pageEv()
   %call2 = call ptr @_ZN9Scheduler6createER4Page(ptr %call1)
-  %add = add i64 5, %1
-  %call3 = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 %add)
-  %deref = load i64, ptr %call3, align 8
-  %as.inttoptr = inttoptr i64 %deref to ptr
-  %call4 = call ptr @_ZN9Scheduler9spawn_argEPvPv(ptr @_Z12tcp_dispatchv, ptr %as.inttoptr)
-  %eq = icmp eq i64 %1, 0
-  br i1 %eq, label %if.then, label %if.end
+  %call3 = call i1 @_Z9tcp_twinsP3i64(ptr %0)
+  br i1 %call3, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
-  %call5 = call ptr @_ZN9Scheduler9spawn_argEPvPv(ptr @_Z12tcp_acceptorv, ptr %0)
+  %call4 = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 3)
+  %deref = load i64, ptr %call4, align 8
+  %mul = mul i64 2, %deref
+  %add = add i64 5, %mul
+  %add5 = add i64 %add, %1
+  %call6 = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 %add5)
+  %call7 = call ptr @_ZN9Scheduler9spawn_argEPvPv(ptr @_Z18tcp_acceptor_localv, ptr %call6)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %entry
+if.else:                                          ; preds = %entry
+  %add8 = add i64 5, %1
+  %call9 = call ptr @_Z8tcp_wordP3i643i64(ptr %0, i64 %add8)
+  %deref10 = load i64, ptr %call9, align 8
+  %as.inttoptr = inttoptr i64 %deref10 to ptr
+  %call11 = call ptr @_ZN9Scheduler9spawn_argEPvPv(ptr @_Z12tcp_dispatchv, ptr %as.inttoptr)
+  %eq = icmp eq i64 %1, 0
+  br i1 %eq, label %if.then12, label %if.end13
+
+if.end:                                           ; preds = %if.end13, %if.then
   call void @_ZN9Scheduler3runEv()
   call void @_ZN4Page12release_pageER4Page(ptr %call1)
   ret ptr null
+
+if.then12:                                        ; preds = %if.else
+  %call14 = call ptr @_ZN9Scheduler9spawn_argEPvPv(ptr @_Z12tcp_acceptorv, ptr %0)
+  br label %if.end13
+
+if.end13:                                         ; preds = %if.then12, %if.else
+  br label %if.end
 }
 
 define linkonce_odr void @_ZN9TcpStream7connectEPN4scaly6memory4PageE6Stringi(ptr noalias sret(%_Z9TcpStream) %0, ptr %1, ptr %2, i64 %3) {
@@ -37084,6 +37397,7 @@ for.body:                                         ; preds = %for.cond
   br label %for.cond
 
 for.exit:                                         ; preds = %for.cond
+  call void @_Z15tcp_close_twinsP3i64(ptr %call11)
   %call22 = call ptr @_ZN4Page3getEPv(ptr %call11)
   call void @_ZN4Page12release_pageER4Page(ptr %call22)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
@@ -37253,20 +37567,9 @@ if.then1:                                         ; preds = %if.end
 
 if.end2:                                          ; preds = %if.end
   store atomic i64 1, ptr %call seq_cst, align 8
-  %load.struct3 = load %_Z9TcpServer, ptr %0, align 8
-  %cell4 = extractvalue %_Z9TcpServer %load.struct3, 0
-  %deref = load i64, ptr %cell4, align 8
-  %as.trunc = trunc i64 %deref to i32
-  %call5 = call i32 @_ZN2Io10local_portE3i32(i32 %as.trunc)
-  %call6 = call i32 @_ZN2Io7connectE3i32(i32 %call5)
-  %ge = icmp sge i32 %call6, 0
-  br i1 %ge, label %if.then7, label %if.end8
-
-if.then7:                                         ; preds = %if.end2
-  call void @_Z12tcp_close_fd3i32(i32 %call6)
-  br label %if.end8
-
-if.end8:                                          ; preds = %if.then7, %if.end2
+  %field.inplace3 = getelementptr inbounds nuw %_Z9TcpServer, ptr %0, i32 0, i32 0
+  %deref.recv4 = load ptr, ptr %field.inplace3, align 8
+  call void @_Z18tcp_wake_acceptorsP3i64(ptr %deref.recv4)
   ret void
 }
 
@@ -37293,20 +37596,9 @@ if.then1:                                         ; preds = %if.end
 
 if.end2:                                          ; preds = %if.end
   store atomic i64 2, ptr %call seq_cst, align 8
-  %load.struct3 = load %_Z9TcpServer, ptr %0, align 8
-  %cell4 = extractvalue %_Z9TcpServer %load.struct3, 0
-  %deref = load i64, ptr %cell4, align 8
-  %as.trunc = trunc i64 %deref to i32
-  %call5 = call i32 @_ZN2Io10local_portE3i32(i32 %as.trunc)
-  %call6 = call i32 @_ZN2Io7connectE3i32(i32 %call5)
-  %ge = icmp sge i32 %call6, 0
-  br i1 %ge, label %if.then7, label %if.end8
-
-if.then7:                                         ; preds = %if.end2
-  call void @_Z12tcp_close_fd3i32(i32 %call6)
-  br label %if.end8
-
-if.end8:                                          ; preds = %if.then7, %if.end2
+  %field.inplace3 = getelementptr inbounds nuw %_Z9TcpServer, ptr %0, i32 0, i32 0
+  %deref.recv4 = load ptr, ptr %field.inplace3, align 8
+  call void @_Z18tcp_wake_acceptorsP3i64(ptr %deref.recv4)
   ret void
 }
 
@@ -37351,8 +37643,11 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %field.inplace10 = getelementptr inbounds nuw %_Z9TcpServer, ptr %0, i32 0, i32 0
   %deref.recv11 = load ptr, ptr %field.inplace10, align 8
-  %call12 = call ptr @_ZN4Page3getEPv(ptr %deref.recv11)
-  call void @_ZN4Page12release_pageER4Page(ptr %call12)
+  call void @_Z15tcp_close_twinsP3i64(ptr %deref.recv11)
+  %field.inplace12 = getelementptr inbounds nuw %_Z9TcpServer, ptr %0, i32 0, i32 0
+  %deref.recv13 = load ptr, ptr %field.inplace12, align 8
+  %call14 = call ptr @_ZN4Page3getEPv(ptr %deref.recv13)
+  call void @_ZN4Page12release_pageER4Page(ptr %call14)
   ret void
 }
 

@@ -51,7 +51,15 @@ use scaly.fiber.Channel
 ; handed to. (Every scheduler accepting on the shared listener was the first
 ; version: its herd of empty accepts and the contention on the listen queue
 ; doubled the server CPU per connection from one scheduler to five —
-; measured 2026-09-27, tools/bench/README.md.) The handler
+; measured 2026-09-27, tools/bench/README.md.) Where the system spreads
+; connections over a group of listeners on one port -- Linux, SO_REUSEPORT
+; -- every scheduler has a listener of its own instead, a twin of the first
+; (Io.listen_twin), and takes its connections itself: no hand-over, no
+; Channel, no other thread woken per connection. A connection then costs
+; one accept4 and a task (2026-10-21, 32 schedulers, a client reconnecting
+; every 10 requests: through the one acceptor 679 K requests/s with the
+; schedulers idle nearly half the time, the acceptor's core full; with a listener
+; each 1.36 M). The handler
 ; is a zero-argument task procedure; it takes its connection with
 ; TcpStream.of_task() and closes it (serve cannot: once closed, the number
 ; may already name the next connection). serve runs until a handler shuts
@@ -116,27 +124,104 @@ mutable tcp_current_serve: pointer[i64] null
 ; The serve cell, i64 words on a page of its own: [0] listener fd,
 ; [1] handler, [2] stop flag, [3] n, the number of serving schedulers,
 ; [4] the next scheduler index to hand out, [5 .. 5+n) each scheduler's
-; Channel, [5+n .. 5+2n) the threads' handles (TcpListener.start only).
+; Channel (none with twins), [5+n .. 5+2n) the threads' handles
+; (TcpListener.start only), [5+2n .. 5+3n) each scheduler's listener (the
+; first is [0], the rest its twins), [5+3n] 1 with twins, 0 with one
+; acceptor.
 function tcp_word(cell: pointer[i64], k: i64) returns pointer[i64]
     ((cell as size_t) + ((k * 8) as size_t)) as pointer[i64]
+
+; Does every scheduler of this cell have a listener of its own?
+procedure tcp_twins(cell: pointer[i64]) returns bool
+{
+    let n *tcp_word(cell, 3)
+    *tcp_word(cell, 5 + 3 * n) = 1
+}
 
 procedure tcp_make_cell(fd: i32, mutable handler: pointer[void], n: i64) returns pointer[i64]
 {
     let p Page.allocate_page()
-    let cell p.allocate(((5 + 2 * n) * 8) as size_t, 8) as pointer[i64]
+    let cell p.allocate(((6 + 3 * n) * 8) as size_t, 8) as pointer[i64]
     *cell := fd as i64
     *tcp_word(cell, 1) := handler as i64
     *tcp_word(cell, 2) := 0
     *tcp_word(cell, 3) := n
     *tcp_word(cell, 4) := 0
-    var k: i64 0
-    while k < n
+    *tcp_word(cell, 5 + 3 * n) := 0
+    ; a listener for every scheduler where the system can spread over twins
+    if n > 1
     {
-        let ch Channel.create()
-        *tcp_word(cell, 5 + k) := (ch as pointer[void]) as i64
-        k := k + 1
+        *tcp_word(cell, 5 + 2 * n) := fd as i64
+        var made: i64 1
+        while made < n
+        {
+            let t Io.listen_twin(fd)
+            if t < 0
+                break
+            *tcp_word(cell, 5 + 2 * n + made) := t as i64
+            made := made + 1
+        }
+        if made = n
+            *tcp_word(cell, 5 + 3 * n) := 1
+        else
+        {
+            ; one failed (or there are none on this system): one acceptor
+            var k: i64 1
+            while k < made
+            {
+                tcp_close_fd((*tcp_word(cell, 5 + 2 * n + k)) as i32)
+                k := k + 1
+            }
+        }
+    }
+    if tcp_twins(cell) = false
+    {
+        var k: i64 0
+        while k < n
+        {
+            let ch Channel.create()
+            *tcp_word(cell, 5 + k) := (ch as pointer[void]) as i64
+            k := k + 1
+        }
     }
     cell
+}
+
+; Wake the acceptors of a stopping server: with twins each listener's
+; listening ends (Io.listen_end wakes every task parked on it), else one
+; local connection wakes the one acceptor (the module header has why).
+procedure tcp_wake_acceptors(cell: pointer[i64])
+{
+    if tcp_twins(cell)
+    {
+        let n *tcp_word(cell, 3)
+        var k: i64 0
+        while k < n
+        {
+            Io.listen_end((*tcp_word(cell, 5 + 2 * n + k)) as i32)
+            k := k + 1
+        }
+        return
+    }
+    let s Io.connect(Io.local_port((*cell) as i32))
+    if s >= 0
+        tcp_close_fd(s)
+}
+
+; The twins of a server whose threads have all ended (the first listener
+; is its owner's). Not earlier: shutdown ends their listening, and a
+; descriptor closed by its acceptor could already name another socket.
+procedure tcp_close_twins(cell: pointer[i64])
+{
+    if tcp_twins(cell) = false
+        return
+    let n *tcp_word(cell, 3)
+    var k: i64 1
+    while k < n
+    {
+        tcp_close_fd((*tcp_word(cell, 5 + 2 * n + k)) as i32)
+        k := k + 1
+    }
 }
 
 ; Accept on lfd, each connection a task of the
@@ -218,6 +303,39 @@ procedure tcp_acceptor()
     }
 }
 
+; The acceptor of one scheduler that has a listener of its own (twins):
+; accept, and start the handler on the connection as a task of this
+; scheduler -- nothing handed over. It ends on the stop flag, which
+; TcpServer.shutdown sets before it ends the listening of every twin; with
+; stop it also ends the reading of this scheduler's connections. task_arg
+; is the listener's word in the serve cell.
+procedure tcp_acceptor_local()
+{
+    let lfd (*(Scheduler.task_arg() as pointer[i64])) as i32
+    let cell tcp_current_serve
+    let handler (*tcp_word(cell, 1)) as pointer[void]
+    let stop tcp_word(cell, 2) as pointer[u64]
+    repeat
+    {
+        let c Io.accept_nonblocking(lfd)
+        if scaly_atomic_load_u64(stop) <> 0
+        {
+            if c >= 0
+                tcp_close_fd(c)
+            break
+        }
+        if c >= 0
+        {
+            Io.served(c)
+            Scheduler.spawn_detached(handler, (c as size_t) as pointer[void])
+        }
+        else
+            Scheduler.yield()
+    }
+    if scaly_atomic_load_u64(stop) = 2
+        Io.wake_served()
+}
+
 ; Every scheduler's dispatcher: receive a connection, free its message page,
 ; start the handler on it as a task of this scheduler; end at the close.
 procedure tcp_dispatch()
@@ -251,9 +369,14 @@ procedure tcp_serve_thread(mutable arg: pointer[void]) returns pointer[void] mut
     let idx scaly_atomic_add_u64(tcp_word(cell, 4) as pointer[u64], 1 as u64) as i64
     let page Page.allocate_page()
     let sched Scheduler.create(page)
-    Scheduler.spawn_arg(&tcp_dispatch, (*tcp_word(cell, 5 + idx)) as pointer[void])
-    if idx = 0
-        Scheduler.spawn_arg(&tcp_acceptor, arg)
+    if tcp_twins(cell)
+        Scheduler.spawn_arg(&tcp_acceptor_local, tcp_word(cell, 5 + 2 * (*tcp_word(cell, 3)) + idx) as pointer[void])
+    else
+    {
+        Scheduler.spawn_arg(&tcp_dispatch, (*tcp_word(cell, 5 + idx)) as pointer[void])
+        if idx = 0
+            Scheduler.spawn_arg(&tcp_acceptor, arg)
+    }
     Scheduler.run()
     Page.release_page(page)
     null
@@ -404,6 +527,7 @@ define TcpListener(var fd: i32)
         tcp_serve_thread(cell as pointer[void])
         for t in threads
             Thread.join(t)
+        tcp_close_twins(cell)
         Page.release_page(Page.get(cell))
     }
 
@@ -471,10 +595,12 @@ define TcpServer(cell: pointer[i64])
         scaly_atomic_load_u64(tcp_word(cell, 2) as pointer[u64]) <> 0
     }
 
-    ; Stop accepting: set the stop flag, then one local connection to wake
-    ; the acceptor (the module header has why). Waits for nothing; from any
-    ; thread or task, more than once is harmless. The connections in flight
-    ; go on.
+    ; Stop accepting: set the stop flag, then wake the acceptors -- one local
+    ; connection for the one acceptor, the end of every listener's listening
+    ; where each scheduler has its own (tcp_wake_acceptors). With twins the
+    ; first listener, too, has stopped listening: its owner closes it.
+    ; Waits for nothing; from any thread or task, more than once is
+    ; harmless. The connections in flight go on.
     procedure shutdown(this)
     {
         if cell = null
@@ -483,9 +609,7 @@ define TcpServer(cell: pointer[i64])
         if scaly_atomic_load_u64(stop) <> 0
             return
         scaly_atomic_store_u64(stop, 1 as u64)
-        let s Io.connect(Io.local_port((*cell) as i32))
-        if s >= 0
-            tcp_close_fd(s)
+        tcp_wake_acceptors(cell)
     }
 
     ; shutdown, and the reading of every connection ended: one that only
@@ -503,9 +627,7 @@ define TcpServer(cell: pointer[i64])
         if scaly_atomic_load_u64(flag) <> 0
             return
         scaly_atomic_store_u64(flag, 2 as u64)
-        let s Io.connect(Io.local_port((*cell) as i32))
-        if s >= 0
-            tcp_close_fd(s)
+        tcp_wake_acceptors(cell)
     }
 
     ; Return when every serving thread has ended: shutdown was called and the
@@ -523,6 +645,7 @@ define TcpServer(cell: pointer[i64])
             Thread.join((*tcp_word(cell, 5 + n + i)) as size_t)
             i := i + 1
         }
+        tcp_close_twins(cell)
         Page.release_page(Page.get(cell))
     }
 }

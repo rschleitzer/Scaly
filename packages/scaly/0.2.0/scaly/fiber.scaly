@@ -397,6 +397,12 @@ procedure scaly_eio_tcp_listen(port: i32) returns i32 extern
 function scaly_eio_tcp_port(fd: i32) returns i32 extern
 procedure scaly_eio_tcp_connect(port: i32) returns i32 extern
 procedure scaly_eio_accept(fd: i32) returns i32 extern
+; a listener of every scheduler (Linux, rule a: SO_REUSEPORT spreads only
+; there): a twin of a listener, the end of a listener's listening, and
+; accept4's nonblocking connection -- -1 where there are no twins
+procedure scaly_eio_tcp_listen_twin(fd: i32) returns i32 extern
+procedure scaly_eio_listen_end(fd: i32) returns i32 extern
+procedure scaly_eio_accept_nb(fd: i32) returns i32 extern
 
 ; Stage-7 node runtime (milestone 7.3): INADDR_ANY listener, getaddrinfo
 ; connect (rule a: addrinfo layout is OS-specific), and the SIGPIPE-safe
@@ -2257,6 +2263,31 @@ define Io
         }
         r
     }
+
+    ; accept, the connection nonblocking at once (accept4 on Linux: two
+    ; system calls fewer per connection). Where there are no twins
+    ; (listen_twin) it answers -1: it is used with them only.
+    procedure accept_nonblocking(fd: i32) returns i32
+    {
+        var r scaly_eio_accept_nb(fd)
+        while r = ((0 - 2) as i32)
+        {
+            Io.park(fd, false)
+            r := scaly_eio_accept_nb(fd)
+        }
+        r
+    }
+
+    ; A twin of the listener fd -- the same address and port, the kernel
+    ; spreading the connections over the two -- or -1 where the system
+    ; spreads none (all but Linux) or it fails.
+    procedure listen_twin(fd: i32) returns i32
+        scaly_eio_tcp_listen_twin(fd)
+
+    ; End the listening of fd for good, waking every task parked on it;
+    ; -1 where it cannot be done (where there are no twins).
+    procedure listen_end(fd: i32) returns i32
+        scaly_eio_listen_end(fd)
 
     ; Listen on ALL interfaces of both families (the dual-stack "::",
     ; IPv4's INADDR_ANY where the host has no IPv6) — a cluster node

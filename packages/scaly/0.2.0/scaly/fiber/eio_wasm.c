@@ -154,6 +154,9 @@ void scaly_eio_tcp_served(int fd) { (void)fd; }
 void scaly_eio_tcp_unserved(int fd) { (void)fd; }
 int scaly_eio_tcp_wake_served(void) { return 0; }
 int scaly_eio_accept(int fd) { (void)fd; return -1; }
+int scaly_eio_accept_nb(int fd) { (void)fd; return -1; }
+int scaly_eio_tcp_listen_twin(int fd) { (void)fd; return -1; }
+int scaly_eio_listen_end(int fd) { (void)fd; return -1; }
 
 /* ---- signals: there are none, so nothing terminates a waiter -------------- */
 

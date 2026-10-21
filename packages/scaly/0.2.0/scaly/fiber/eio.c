@@ -854,6 +854,22 @@ static void scaly_eio_sock_init(int fd)
 #endif
 }
 
+/* A listening socket opens a group its twins may join (SO_REUSEPORT before
+ * bind): on Linux the kernel spreads incoming connections over the sockets
+ * of a group, and TcpListener.serve gives every scheduler a twin
+ * (scaly_eio_tcp_listen_twin). Shim rule (a): the option and its spreading
+ * are Linux's -- Darwin and the BSDs let several sockets bind but hand the
+ * connections to one, so there a listener opens no group. */
+static void scaly_eio_listen_group(int fd)
+{
+#ifdef __linux__
+    int one = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &one, sizeof one);
+#else
+    (void)fd;
+#endif
+}
+
 /* SO_REUSEPORT on a socket not bound yet: several sockets on one port and
  * the kernel spreading the peers over them -- a QUIC listener per scheduler
  * thread (https.H3). Shim rule (a): the constant's value is the OS's (15 on
@@ -1004,6 +1020,7 @@ static int scaly_eio_tcp_listen_at(unsigned int ip_host_order, int port)
     if (fd < 0)
         return -1;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
+    scaly_eio_listen_group(fd);
     scaly_eio_sock_init(fd);
     memset(&addr, 0, sizeof addr);
     addr.sin_family = AF_INET;
@@ -1073,6 +1090,7 @@ int scaly_eio_tcp_listen_host(const char* host, int port)
             int v6only = scaly_eio_in6_any(ai->ai_addr) ? 0 : 1;
             setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof v6only);
         }
+        scaly_eio_listen_group(fd);
         scaly_eio_sock_init(fd);
         if (bind(fd, ai->ai_addr, (socklen_t)ai->ai_addrlen) == 0
             && listen(fd, SCALY_EIO_LISTEN_BACKLOG) == 0
@@ -1366,6 +1384,99 @@ int scaly_eio_accept(int fd)
             return -2;
         return -1;
     }
+}
+
+/* Accept as scaly_eio_accept does, the connection NONBLOCKING at once:
+ * accept4 on Linux saves the two fcntl calls of scaly_eio_set_nonblocking
+ * per connection. Shim rule (a): accept4 is Linux's; elsewhere accept and
+ * those calls. */
+int scaly_eio_accept_nb(int fd)
+{
+#ifdef __linux__
+    for (;;)
+    {
+        int c = accept4(fd, 0, 0, SOCK_NONBLOCK);
+        if (c >= 0)
+        {
+            scaly_eio_sock_init(c);
+            return c;
+        }
+        if (errno == EINTR || errno == ECONNABORTED)
+            continue;
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return -2;
+        return -1;
+    }
+#else
+    int c = scaly_eio_accept(fd);
+    if (c >= 0 && scaly_eio_set_nonblocking(c) < 0)
+    {
+        close(c);
+        return -1;
+    }
+    return c;
+#endif
+}
+
+/* A twin of the listening socket fd: the same family, address and port, a
+ * member of fd's group (scaly_eio_listen_group), listening and nonblocking
+ * -- a listener of its own for every scheduler of TcpListener.serve, which
+ * takes its connections without handing them over. Shim rule (a): the
+ * group is Linux's. The twin's fd, -1 elsewhere and on failure (the caller
+ * then keeps one acceptor for all). */
+int scaly_eio_tcp_listen_twin(int fd)
+{
+#ifdef __linux__
+    struct sockaddr_storage ss;
+    socklen_t len = sizeof ss;
+    int one = 1;
+    int t;
+    if (getsockname(fd, (struct sockaddr*)&ss, &len) < 0)
+        return -1;
+    t = socket(ss.ss_family, SOCK_STREAM, 0);
+    if (t < 0)
+        return -1;
+    setsockopt(t, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
+    if (setsockopt(t, SOL_SOCKET, SO_REUSEPORT, &one, sizeof one) < 0)
+    {
+        close(t);
+        return -1;
+    }
+    if (ss.ss_family == AF_INET6)
+    {
+        int v6only = 0;
+        socklen_t vlen = sizeof v6only;
+        getsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, &vlen);
+        setsockopt(t, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof v6only);
+    }
+    scaly_eio_sock_init(t);
+    if (bind(t, (struct sockaddr*)&ss, len) < 0
+        || listen(t, SCALY_EIO_LISTEN_BACKLOG) < 0
+        || scaly_eio_set_nonblocking(t) < 0)
+    {
+        close(t);
+        return -1;
+    }
+    return t;
+#else
+    (void)fd;
+    return -1;
+#endif
+}
+
+/* End the listening of fd for good, and wake every task parked on it: on
+ * Linux shutdown(2) of a listener leaves the listening state, a poll on it
+ * reports readiness and an accept fails -- how TcpServer.shutdown reaches
+ * the acceptor of every twin, where one connection would reach one of them.
+ * Shim rule (a). 0 done, -1 where it cannot be. */
+int scaly_eio_listen_end(int fd)
+{
+#ifdef __linux__
+    return shutdown(fd, SHUT_RD) == 0 ? 0 : -1;
+#else
+    (void)fd;
+    return -1;
+#endif
 }
 
 /* Usable CPU count — the ncpu-based worker default for task pools
