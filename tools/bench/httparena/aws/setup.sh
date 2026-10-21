@@ -25,12 +25,13 @@ sudo apt-get install -y -q git jq python3 curl linux-tools-common "linux-tools-$
 
 [ -d "$HA" ] || git clone -q https://github.com/MDA2AV/HttpArena.git "$HA"
 git -C "$HA" fetch -q origin
+git -C "$HA" checkout -q -- scripts/lib/profiles.sh 2> /dev/null || true
 git -C "$HA" checkout -q "$COMMIT"
 rm -rf "$HA/frameworks/scaly"
 cp -R "$HOME/entry" "$HA/frameworks/scaly"
 
 # the split
-read -r SERVER LOADGEN SMALL < <(python3 - << 'EOF'
+read -r SERVER LOADGEN SMALL LOADGEN_N < <(python3 - << 'EOF'
 import glob, re
 cpus = {}
 for d in glob.glob('/sys/devices/system/cpu/cpu[0-9]*'):
@@ -42,7 +43,15 @@ for d in glob.glob('/sys/devices/system/cpu/cpu[0-9]*'):
         continue
     cpus.setdefault((pkg, core), []).append(n)
 def cpulist(cores):
-    return ','.join(str(c) for k in cores for c in sorted(cpus[k]))
+    # as ranges, `0-15,32-47`: HttpArena takes a limit without a `-` for a
+    # NUMBER of CPUs (docker --cpus), not for a set
+    ns = sorted(c for k in cores for c in cpus[k])
+    runs, start = [], ns[0]
+    for a, b in zip(ns, ns[1:] + [None]):
+        if b != a + 1:
+            runs.append('%d-%d' % (start, a))
+            start = b
+    return ','.join(runs)
 pkgs = sorted({k[0] for k in cpus})
 first = sorted(k for k in cpus if k[0] == pkgs[0])
 if len(pkgs) > 1:
@@ -53,14 +62,13 @@ else:
     # one socket: its cores halved, as the board halves its Threadripper
     half = min(32, len(first) // 2)
     server, loadgen = first[:half], first[half:2 * half]
-print(cpulist(server), cpulist(loadgen), cpulist(first[:4]))
+print(cpulist(server), cpulist(loadgen), cpulist(first[:4]), sum(len(cpus[k]) for k in loadgen))
 EOF
 )
 sed -i "s/|0-31,64-95|/|$SERVER|/; s/|0-3,64-67|/|$SMALL|/" "$HA/scripts/lib/profiles.sh"
 grep -q "|0-31,64-95|" "$HA/scripts/lib/profiles.sh" && { echo "setup.sh: profiles.sh still names the board's cpuset"; exit 1; }
 # the board runs its load generators with 64 threads on its 64 CPUs: as many
 # threads as the load generators have CPUs here
-LOADGEN_N=$(echo "$LOADGEN" | tr ',' '\n' | wc -l)
 cat > "$HOME/bench.env" << EOF
 export GCANNON_CPUS=$LOADGEN
 export LOADGEN_DOCKER=true
