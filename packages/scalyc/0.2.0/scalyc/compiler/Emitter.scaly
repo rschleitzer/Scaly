@@ -13592,6 +13592,13 @@ define Emitter
 
             let ty map_type result_type
             var is_float is_floating_point_type result_type
+            ; ... and from the operand itself, as the binary operators do:
+            ; until 2026-10-21 `-x` on an f64 asked only the result type's
+            ; name, which knew `double` and not `f64`, and negated the double
+            ; as an integer -- `sub (double 0.0, double 2.5)`, -1.75 at rc 0
+            let op_kind LLVMGetTypeKind(LLVMTypeOf op)
+            if op_kind = LLVMTypeKind.Float() or op_kind = LLVMTypeKind.Double()
+                is_float := true
             ; a vector negates by its element
             if Planner.is_simd_type_name(result_type.name)
             {
@@ -15118,12 +15125,9 @@ define Emitter
         ; Check if type is floating point
         function is_floating_point_type(this, t: PlannedType) returns bool
         {
-            if t.name = "float"
-                return true
-
-            if t.name = "double"
-                return true
-
+            let name t.name
+            match name
+                case "float" case "double" case "f32" case "f64": return true
             false
         }
 
