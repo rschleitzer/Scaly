@@ -87,11 +87,13 @@ lines."
 
     <section xml:id="lex-characters">
       <title>Character Literals</title>
-      <para>Character literals represent single characters, enclosed
-        in backticks.</para>
+      <para>A character is written as a string literal of one character
+        wherever a <literal>char</literal> is expected — a
+        <literal>char</literal> parameter, a typed binding, or the cast
+        <literal>as char</literal>. Escapes count as one character.</para>
       <programlisting>
-`a`           ; lowercase a
-`\n`          ; newline character
+let a: char "a"        ; lowercase a
+let nl "\n" as char    ; newline character
       </programlisting>
     </section>
 

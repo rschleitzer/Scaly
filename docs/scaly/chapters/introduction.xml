@@ -7,9 +7,10 @@
       to the needs of the developer, from simple scripts to complex systems. The
       language combines a uniform grammar — with no hardcoded operators, since
       operators are ordinary identifiers — with optional region-based memory
-      management. Standard mathematical precedence applies when operators are
-      chained, while prefix forms and parentheses give explicit control where it
-      is needed.</para>
+      management. An operation is read from left to right, the type of the value
+      in hand saying what comes next; how strongly operators bind is stated by
+      the standard library, not by the compiler, and parentheses give explicit
+      control where it is needed.</para>
   </section>
 
   <section xml:id="intro-philosophy">

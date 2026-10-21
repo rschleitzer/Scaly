@@ -3,40 +3,95 @@
 
   <section xml:id="expr-overview">
     <title>Overview</title>
-    <para>Expressions are the core computational units of Scaly. Every expression
-      evaluates to a value. An operation is a sequence of operands; operators are
-      ordinary identifiers rather than built-in keywords. When operators are
-      chained, they combine according to standard mathematical precedence
-      (multiplicative binds tighter than additive, which binds tighter than
-      comparison). Prefix forms and parentheses provide explicit control where
-      needed.</para>
+    <para>Expressions are the core computational units of Scaly. Every
+      expression evaluates to a value; one that answers nothing answers the
+      empty tuple <literal>()</literal>. An expression is an
+      <emphasis>operation</emphasis>: a sequence of things — values, names,
+      operator names, tuples, vector literals and blocks — that the compiler
+      reads from left to right. It holds one current value, and the
+      <emphasis>type</emphasis> of that value says what the next thing
+      means:</para>
+    <informaltable>
+      <tgroup cols="3">
+        <thead>
+          <row>
+            <entry>current value</entry>
+            <entry>next thing</entry>
+            <entry>meaning</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>none, or one waiting for its operand</entry>
+            <entry>an operator name</entry>
+            <entry>a prefix: it takes the next value (<literal>-x</literal>, <literal>a - -2</literal>)</entry>
+          </row>
+          <row>
+            <entry>a value</entry>
+            <entry>an operator its type declares</entry>
+            <entry>that operator; it waits for its right operand</entry>
+          </row>
+          <row>
+            <entry>a function</entry>
+            <entry>a tuple</entry>
+            <entry>the call; the tuple is the argument list</entry>
+          </row>
+          <row>
+            <entry>a function</entry>
+            <entry>one other value</entry>
+            <entry>the call with that one argument (<literal>print "hi"</literal>, <literal>twice -5</literal>)</entry>
+          </row>
+          <row>
+            <entry>a type</entry>
+            <entry>a tuple</entry>
+            <entry>the construction (<literal>Point(1, 2)</literal>)</entry>
+          </row>
+          <row>
+            <entry>a type</entry>
+            <entry>a vector literal</entry>
+            <entry>the generic instance (<literal>Vector[int]</literal>)</entry>
+          </row>
+          <row>
+            <entry>a value</entry>
+            <entry>a vector literal</entry>
+            <entry>indexing (<literal>v[i]</literal>)</entry>
+          </row>
+          <row>
+            <entry>any</entry>
+            <entry><literal>as T</literal>, <literal>is T</literal></entry>
+            <entry>the cast or the test of the whole operation so far</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </informaltable>
+    <para>Parentheses make a tuple (and a tuple of one value is that value, so
+      they also group), brackets a vector literal, braces a block, and the dot
+      a member. Nothing else structures a sequence: there is no precedence
+      table in the compiler. How strongly operators bind is stated by the
+      standard library, as a protocol of <emphasis>pending</emphasis> types:
+      <literal>a +</literal> answers a value that waits for its right operand,
+      and the protocol decides what an operator after it means. The levels,
+      strongest first, are listed under <xref linkend="category-OPERATIONS"/>.</para>
+    <para>Two consequences are worth knowing before reading the rest of this
+      chapter:</para>
+    <itemizedlist>
+      <listitem>
+        <para><emphasis>Application is stronger than waiting.</emphasis>
+          Before an operator takes what follows, that thing takes what is
+          applied to it: <literal>a + f(1)</literal> adds the call's result,
+          <literal>a + v[i]</literal> the element.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis>A call without parentheses takes exactly one
+          thing.</emphasis> <literal>print f(x)</literal> is
+          <literal>(print f)(x)</literal>, which the compiler reports; an
+          argument that is itself a call, an indexing or a construction takes
+          its parentheses: <literal>print(f(x))</literal>.</para>
+      </listitem>
+    </itemizedlist>
   </section>
 
   &generated-expressions;
-
-  <section xml:id="expr-if">
-    <title>If Expressions</title>
-    <para>If expressions evaluate one of two branches based on a boolean condition.
-      The syntax is <code>if</code> followed by the condition, a colon, the consequent,
-      and optionally <code>else</code> with an alternative.</para>
-    <programlisting>if true: 1 else 0        ; evaluates to 1
-if false: 1 else 0       ; evaluates to 0
-if 5 > 3: 10 else 20     ; evaluates to 10</programlisting>
-    <para>If expressions can be nested:</para>
-    <programlisting>if false: 1 else if true: 2 else 3  ; evaluates to 2</programlisting>
-  </section>
-
-  <!-- The match/case expression is in the grammar but not yet functional in
-       the self-hosted compiler (verified 2026-07-06: both the value form and
-       the statement form compile without error yet emit nothing). Re-add a
-       Match Expressions section here once it works end-to-end. -->
-  <section xml:id="expr-match">
-    <title>Match Expressions</title>
-    <para>A <code>match</code> expression — comparing a value against multiple
-      <code>case</code> alternatives — is part of the grammar but not yet
-      functional in the current compiler. Use <code>if</code>/<code>else</code>
-      chains, or <code>choose</code> on a union, instead.</para>
-  </section>
 
   &generated-choose;
 

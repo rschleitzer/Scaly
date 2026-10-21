@@ -88,9 +88,17 @@ let ok p &lt;&gt; null and p.x = 7   ; p.x is read only where p is there
 
     <para>The right operand is planned where the body puts it, so a null test
       on the left proves its name for it, as an <literal>if</literal> proves it
-      for its branch. So far a lazy parameter is taken only by such a binary
-      operator, whose body is an <literal>if</literal> on its other
-      operand.</para>
+      for its branch. A free function and a method may declare a lazy
+      parameter too: the call is the body put in where it stands, ordinary
+      arguments evaluated once in the order they are written, a lazy one
+      where the body names it:</para>
+
+    <programlisting>
+function or_else(v: int, fallback: lazy int) returns int
+    if v &lt;&gt; 0: v else fallback
+
+let n or_else(cached, expensive())   ; expensive() runs only where cached is 0
+    </programlisting>
   </section>
 
   &generated-definitions;

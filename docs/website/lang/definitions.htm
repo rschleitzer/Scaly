@@ -254,12 +254,17 @@ let ok p &#60;&#62; null and p.x = 7   ; p.x is read only where p is there
 CLASS="literal"
 >if</TT
 > proves it
-      for its branch. So far a lazy parameter is taken only by such a binary
-      operator, whose body is an <TT
-CLASS="literal"
->if</TT
-> on its other
-      operand.</P
+      for its branch. A free function and a method may declare a lazy
+      parameter too: the call is the body put in where it stands, ordinary
+      arguments evaluated once in the order they are written, a lazy one
+      where the body names it:</P
+><PRE
+CLASS="programlisting"
+>&#13;function or_else(v: int, fallback: lazy int) returns int
+    if v &#60;&#62; 0: v else fallback
+
+let n or_else(cached, expensive())   ; expensive() runs only where cached is 0
+    </PRE
 ></DIV
 ><DIV
 CLASS="section"
@@ -286,7 +291,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1555"
+NAME="AEN1587"
 ></A
 ><TABLE
 BORDER="0"
@@ -383,7 +388,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1587"
+NAME="AEN1619"
 ></A
 ><TABLE
 BORDER="0"
@@ -496,7 +501,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1624"
+NAME="AEN1656"
 ></A
 ><TABLE
 BORDER="0"
@@ -562,15 +567,15 @@ NAME="tests-OPERATOR-DEFINITIONS"
 >The operator keyword declares an operator, applied infix between
         its two operands. Like functions, operators may be named with operator
         characters or with a text or single-quoted name. Operators may be
-        declared at the top level, not only inside a type. A text-named operator
-        binds more weakly than the built-in arithmetic operators, so the
-        arithmetic combines first.</P
+        declared at the top level, not only inside a type. An operator that no
+        level of the operation names, a text-named one among them, binds more
+        weakly than every level, so the arithmetic combines first.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1646"
+NAME="AEN1678"
 ></A
 ><TABLE
 BORDER="0"
@@ -644,6 +649,93 @@ CLASS="programlisting"
 ><TT
 CLASS="literal"
 >12
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="tests-LAZY-PARAMETERS"
+>Lazy Parameters</A
+></H2
+><P
+>A parameter declared <TT
+CLASS="literal"
+>lazy</TT
+> before its type receives its argument
+        unevaluated: the routine's body is put in where the call stands, and
+        the argument runs where the body names it, and only there. This is how
+        the standard library declares <TT
+CLASS="literal"
+>and</TT
+> and <TT
+CLASS="literal"
+>or</TT
+>, and it works for an ordinary
+        function as well.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1713"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function or_else(v: int, fallback: lazy int) returns int
+    if v &#60;&#62; 0: v else fallback
+procedure loud() returns int
+{
+    print "evaluated"
+    7
+}
+or_else(5, loud())</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>5
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function or_else(v: int, fallback: lazy int) returns int
+    if v &#60;&#62; 0: v else fallback
+or_else(0, 6 * 7)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
 </TT
 ></TD
 ></TR

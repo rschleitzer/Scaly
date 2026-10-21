@@ -2,4 +2,4 @@
 ; test: char-a
 ; mode: compile
 ; expect: a
-`a`
+"a" as char

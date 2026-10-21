@@ -306,12 +306,23 @@ NAME="lex-characters"
 >Character Literals</A
 ></H2
 ><P
->Character literals represent single characters, enclosed
-        in backticks.</P
+>A character is written as a string literal of one character
+        wherever a <TT
+CLASS="literal"
+>char</TT
+> is expected — a
+        <TT
+CLASS="literal"
+>char</TT
+> parameter, a typed binding, or the cast
+        <TT
+CLASS="literal"
+>as char</TT
+>. Escapes count as one character.</P
 ><PRE
 CLASS="programlisting"
->&#13;`a`           ; lowercase a
-`\n`          ; newline character
+>&#13;let a: char "a"        ; lowercase a
+let nl "\n" as char    ; newline character
       </PRE
 ></DIV
 ><DIV

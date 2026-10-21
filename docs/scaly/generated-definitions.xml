@@ -144,9 +144,9 @@ Option.Some(5).value</programlisting></entry>
       <para>The operator keyword declares an operator, applied infix between
         its two operands. Like functions, operators may be named with operator
         characters or with a text or single-quoted name. Operators may be
-        declared at the top level, not only inside a type. A text-named operator
-        binds more weakly than the built-in arithmetic operators, so the
-        arithmetic combines first.</para>
+        declared at the top level, not only inside a type. An operator that no
+        level of the operation names, a text-named one among them, binds more
+        weakly than every level, so the arithmetic combines first.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -184,6 +184,49 @@ Option.Some(5).value</programlisting></entry>
     left - right
 20 'minus' 3 + 5</programlisting></entry>
               <entry><literal>12
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-LAZY-PARAMETERS'>
+      <title>Lazy Parameters</title>
+      <para>A parameter declared <literal>lazy</literal> before its type receives its argument
+        unevaluated: the routine's body is put in where the call stands, and
+        the argument runs where the body names it, and only there. This is how
+        the standard library declares <literal>and</literal> and <literal>or</literal>, and it works for an ordinary
+        function as well.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>function or_else(v: int, fallback: lazy int) returns int
+    if v &lt;&gt; 0: v else fallback
+procedure loud() returns int
+{
+    print "evaluated"
+    7
+}
+or_else(5, loud())</programlisting></entry>
+              <entry><literal>5
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>function or_else(v: int, fallback: lazy int) returns int
+    if v &lt;&gt; 0: v else fallback
+or_else(0, 6 * 7)</programlisting></entry>
+              <entry><literal>42
 </literal></entry>
             </row>
           </tbody>

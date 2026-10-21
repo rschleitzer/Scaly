@@ -194,7 +194,7 @@ CLASS="code"
 HREF="modules.htm#mod-package-versions"
 >the Section called <I
 >Versions, and what publishing means</I
-> in Chapter 8</A
+> in Chapter 9</A
 >).</P
 ><P
 >Either way it puts three commands on your <CODE
@@ -444,7 +444,7 @@ scaly uninstall dazzle      ; remove one of them</PRE
 HREF="modules.htm#mod-package-programs"
 >the Section called <I
 >The programs of a package</I
-> in Chapter 8</A
+> in Chapter 9</A
 > has the other side: how a
         package offers programs.</P
 ></DIV
@@ -1422,7 +1422,7 @@ CLASS="code"
 >
         for a binding you intend to change, and <TT
 CLASS="code"
->set</TT
+>:=</TT
 > to change it.
         A semicolon starts a comment.</P
 ><PRE
@@ -1447,12 +1447,14 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="tut-operators"
->Operators and Precedence</A
+>Operators and Operations</A
 ></H2
 ><P
 >Operators are ordinary identifiers, not keywords baked into the
-        grammar. When they are chained, they combine using standard mathematical
-        precedence — multiplication binds tighter than addition:</P
+        grammar. An operation is read from left to right; when operators are
+        chained, they combine by the binding strength the standard library
+        gives them — multiplication binds tighter than addition, comparison
+        weaker than both:</P
 ><PRE
 CLASS="programlisting"
 >; 3 + 4 * 5 is 3 + 20, which is 23 — not 35
@@ -1462,18 +1464,35 @@ if result = 23
 else
     print("unexpected")</PRE
 ><P
->Parentheses group explicitly, and an operator written before its
-        operand acts as a prefix function (<TT
+>Parentheses group explicitly, and an operator written where a value
+        is expected acts as a prefix (<TT
 CLASS="code"
 >-x</TT
 >, <TT
 CLASS="code"
->~flag</TT
->).
-        See <A
+>not done</TT
+>,
+        <TT
+CLASS="code"
+>a - -2</TT
+>). A call takes its arguments before the operators
+        around it combine, and a call without parentheses takes exactly one
+        argument: <TT
+CLASS="code"
+>print "hi"</TT
+> is <TT
+CLASS="code"
+>print("hi")</TT
+>, but an
+        argument that is itself a call takes its parentheses,
+        <TT
+CLASS="code"
+>print(describe(x))</TT
+>. See <A
 HREF="expressions.htm"
 >Chapter 7</A
-> for the complete model.</P
+> for
+        the complete model, tuples and functions as values included.</P
 ></DIV
 ><DIV
 CLASS="section"
@@ -1781,7 +1800,7 @@ CLASS="envar"
 >. See
         <A
 HREF="modules.htm"
->Chapter 8</A
+>Chapter 9</A
 > for packages and their sources, visibility
         rules, and glob imports.</P
 ></DIV

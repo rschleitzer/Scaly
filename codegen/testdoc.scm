@@ -55,14 +55,26 @@
     (let ((prose-node (node-list-first (select-elements (children category) "prose"))))
         (if (node-list-empty? prose-node)
             ""
-            (trim (data prose-node)))))
+            (prose-doc (trim (data prose-node))))))
 
 ; Get prose from tests element
 (define (tests-prose tests)
     (let ((prose-node (node-list-first (select-elements (children tests) "prose"))))
         (if (node-list-empty? prose-node)
             ""
-            (trim (data prose-node)))))
+            (prose-doc (trim (data prose-node))))))
+
+; Prose for documentation: XML special characters escaped, and a span in
+; backticks set as a literal (`x := y`)
+(define (prose-doc s)
+    (let loop ((cs (string->list (escape-xml s))) (open #f) (acc '()))
+        (cond
+            ((null? cs)
+                (list->string (reverse (if open (append (reverse (string->list "</literal>")) acc) acc))))
+            ((char=? (car cs) #\`)
+                (loop (cdr cs) (not open)
+                    (append (reverse (string->list (if open "</literal>" "<literal>"))) acc)))
+            (else (loop (cdr cs) open (cons (car cs) acc))))))
 
 ; Get input for documentation (escape XML special chars)
 (define (test-input-doc test)

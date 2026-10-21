@@ -492,7 +492,7 @@ else
       <title>Values and Bindings</title>
       <para>Bind a value to a name with <code>let</code>. There is no equals
         sign — the name is followed directly by its value. Use <code>var</code>
-        for a binding you intend to change, and <code>set</code> to change it.
+        for a binding you intend to change, and <code>:=</code> to change it.
         A semicolon starts a comment.</para>
       <programlisting>let answer 42        ; immutable binding
 var count 0          ; mutable binding
@@ -503,19 +503,26 @@ count := count + 1 ; assignment is :=</programlisting>
     </section>
 
     <section xml:id="tut-operators">
-      <title>Operators and Precedence</title>
+      <title>Operators and Operations</title>
       <para>Operators are ordinary identifiers, not keywords baked into the
-        grammar. When they are chained, they combine using standard mathematical
-        precedence — multiplication binds tighter than addition:</para>
+        grammar. An operation is read from left to right; when operators are
+        chained, they combine by the binding strength the standard library
+        gives them — multiplication binds tighter than addition, comparison
+        weaker than both:</para>
       <programlisting>; 3 + 4 * 5 is 3 + 20, which is 23 — not 35
 let result 3 + 4 * 5
 if result = 23
     print("got 23")
 else
     print("unexpected")</programlisting>
-      <para>Parentheses group explicitly, and an operator written before its
-        operand acts as a prefix function (<code>-x</code>, <code>~flag</code>).
-        See <xref linkend="expressions"/> for the complete model.</para>
+      <para>Parentheses group explicitly, and an operator written where a value
+        is expected acts as a prefix (<code>-x</code>, <code>not done</code>,
+        <code>a - -2</code>). A call takes its arguments before the operators
+        around it combine, and a call without parentheses takes exactly one
+        argument: <code>print "hi"</code> is <code>print("hi")</code>, but an
+        argument that is itself a call takes its parentheses,
+        <code>print(describe(x))</code>. See <xref linkend="expressions"/> for
+        the complete model, tuples and functions as values included.</para>
     </section>
 
     <section xml:id="tut-control-flow">

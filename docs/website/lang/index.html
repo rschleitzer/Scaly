@@ -163,7 +163,7 @@ HREF="tutorial.htm#tut-values"
 ><DT
 ><A
 HREF="tutorial.htm#tut-operators"
->Operators and Precedence</A
+>Operators and Operations</A
 ></DT
 ><DT
 ><A
@@ -312,6 +312,11 @@ HREF="types.htm#types-prelude"
 ><A
 HREF="types.htm#types-literals"
 >Literal Type Inference</A
+></DT
+><DT
+><A
+HREF="types.htm#types-tuples"
+>Tuples and the Empty Tuple</A
 ></DT
 ><DT
 ><A
@@ -596,6 +601,11 @@ HREF="definitions.htm#tests-FUNCTION-NAMES"
 HREF="definitions.htm#tests-OPERATOR-DEFINITIONS"
 >Operator Definitions</A
 ></DT
+><DT
+><A
+HREF="definitions.htm#tests-LAZY-PARAMETERS"
+>Lazy Parameters</A
+></DT
 ></DL
 ></DD
 ></DL
@@ -661,7 +671,7 @@ HREF="expressions.htm#category-OPERATIONS"
 ><DT
 ><A
 HREF="expressions.htm#tests-PREFIX-FUNCTIONS"
->Prefix Functions</A
+>Prefix Operators</A
 ></DT
 ><DT
 ><A
@@ -670,8 +680,18 @@ HREF="expressions.htm#tests-OPERATOR-CHAINS"
 ></DT
 ><DT
 ><A
+HREF="expressions.htm#tests-APPLICATION"
+>Application Before Operators</A
+></DT
+><DT
+><A
 HREF="expressions.htm#tests-PARENTHESES-GROUPING"
 >Parentheses and Grouping</A
+></DT
+><DT
+><A
+HREF="expressions.htm#tests-CASTS-WHOLE-OPERATION"
+>Casts Take the Whole Operation</A
 ></DT
 ><DT
 ><A
@@ -682,6 +702,30 @@ HREF="expressions.htm#tests-IDENTIFIER-SHAPES"
 ><A
 HREF="expressions.htm#tests-LET-BINDINGS"
 >Let Bindings</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="expressions.htm#category-TUPLES"
+>Tuples and Function Values</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="expressions.htm#tests-TUPLE-VALUES"
+>Tuples</A
+></DT
+><DT
+><A
+HREF="expressions.htm#tests-TUPLE-APPLICATION"
+>Applying a Bound Tuple</A
+></DT
+><DT
+><A
+HREF="expressions.htm#tests-FUNCTION-VALUES"
+>Functions as Values</A
 ></DT
 ></DL
 ></DD
@@ -778,16 +822,6 @@ HREF="expressions.htm#tests-LAMBDA-CLOSURES"
 ></DD
 ><DT
 ><A
-HREF="expressions.htm#expr-if"
->If Expressions</A
-></DT
-><DT
-><A
-HREF="expressions.htm#expr-match"
->Match Expressions</A
-></DT
-><DT
-><A
 HREF="expressions.htm#category-CHOOSE-EXPRESSIONS"
 >Choose Expressions</A
 ></DT
@@ -857,6 +891,144 @@ HREF="expressions.htm#tests-VARIANT-IS"
 ></DD
 ><DT
 >8 <A
+HREF="controlflow.htm"
+>Control Flow</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="controlflow.htm#cf-overview"
+>Overview</A
+></DT
+><DT
+><A
+HREF="controlflow.htm#category-IF-EXPRESSIONS"
+>If Expressions</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="controlflow.htm#tests-IF-BASIC"
+>Basic If</A
+></DT
+><DT
+><A
+HREF="controlflow.htm#tests-IF-WITH-BINDINGS"
+>If with Bindings</A
+></DT
+><DT
+><A
+HREF="controlflow.htm#tests-IF-ELSE-IF-STATEMENT"
+>Else-If Chains without a Final Else</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="controlflow.htm#category-WHILE-LOOPS"
+>While Loops</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="controlflow.htm#tests-WHILE-BASIC"
+>Basic While</A
+></DT
+><DT
+><A
+HREF="controlflow.htm#tests-WHILE-ACCUMULATION"
+>While with Accumulation</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="controlflow.htm#category-FOR-LOOPS"
+>For Loops</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="controlflow.htm#tests-FOR-BASIC"
+>Basic For</A
+></DT
+><DT
+><A
+HREF="controlflow.htm#tests-FOR-ACCUMULATION"
+>For with Accumulation</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="controlflow.htm#category-BREAK-CONTINUE"
+>Break and Continue</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="controlflow.htm#tests-BREAK-STATEMENTS"
+>Break Statements</A
+></DT
+><DT
+><A
+HREF="controlflow.htm#tests-CONTINUE-STATEMENTS"
+>Continue Statements</A
+></DT
+><DT
+><A
+HREF="controlflow.htm#tests-NESTED-LOOPS"
+>Nested Loops</A
+></DT
+><DT
+><A
+HREF="controlflow.htm#tests-LABELED-LOOPS"
+>Labeled Break and Continue</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="controlflow.htm#category-REPEAT-LOOPS"
+>Repeat Loops</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="controlflow.htm#tests-REPEAT-BASIC"
+>Repeat and Break Value</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="controlflow.htm#category-VAR-SET"
+>Mutable Variables</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="controlflow.htm#tests-VAR-BASIC"
+>Var and Assignment</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="controlflow.htm#cf-match"
+>Match</A
+></DT
+></DL
+></DD
+><DT
+>9 <A
 HREF="modules.htm"
 >Modules and Packages</A
 ></DT
@@ -940,189 +1112,20 @@ HREF="modules.htm#mod-use-diagnostic"
 ><DT
 >A. <A
 HREF="stdlib.htm"
->Standard Library Reference</A
+>Standard Library and Packages</A
 ></DT
 ><DD
 ><DL
 ><DT
 ><A
-HREF="stdlib.htm#stdlib-types"
->Types</A
-></DT
-><DD
-><DL
-><DT
-><A
-HREF="stdlib.htm#stdlib-define-Sum"
-><TT
-CLASS="code"
->define Sum(left: int, right: int)</TT
-></A
+HREF="stdlib.htm#stdlib-overview"
+>The Standard Library</A
 ></DT
 ><DT
 ><A
-HREF="stdlib.htm#stdlib-define-Difference"
-><TT
-CLASS="code"
->define Difference(left: int, right: int)</TT
-></A
+HREF="stdlib.htm#stdlib-packages"
+>Packages Beside It</A
 ></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-define-Product"
-><TT
-CLASS="code"
->define Product(left: int, right: int)</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-define-Quotient"
-><TT
-CLASS="code"
->define Quotient(left: int, right: int)</TT
-></A
-></DT
-></DL
-></DD
-><DT
-><A
-HREF="stdlib.htm#stdlib-operators"
->Operators</A
-></DT
-><DD
-><DL
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-plus"
-><TT
-CLASS="code"
->operator +(left: int, right: int) returns Sum</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-minus"
-><TT
-CLASS="code"
->operator -(left: int, right: int) returns Difference</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-times"
-><TT
-CLASS="code"
->operator *(left: int, right: int) returns Product</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-divide"
-><TT
-CLASS="code"
->operator /(left: int, right: int) returns Quotient</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-div"
-><TT
-CLASS="code"
->operator div(left: int, right: int) returns int</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-mod"
-><TT
-CLASS="code"
->operator mod(left: int, right: int) returns int</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-equals"
-><TT
-CLASS="code"
->operator =(left: int, right: int) returns bool</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-notequals"
-><TT
-CLASS="code"
->operator &#60;&#62;(left: int, right: int) returns bool</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-lt"
-><TT
-CLASS="code"
->operator &#60;(left: int, right: int) returns bool</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-gt"
-><TT
-CLASS="code"
->operator &#62;(left: int, right: int) returns bool</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-lte"
-><TT
-CLASS="code"
->operator &#60;=(left: int, right: int) returns bool</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-operator-gte"
-><TT
-CLASS="code"
->operator &#62;=(left: int, right: int) returns bool</TT
-></A
-></DT
-></DL
-></DD
-><DT
-><A
-HREF="stdlib.htm#stdlib-functions"
->Functions</A
-></DT
-><DD
-><DL
-><DT
-><A
-HREF="stdlib.htm#stdlib-function-minus"
-><TT
-CLASS="code"
->function -(right: int) returns int</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-function-plus"
-><TT
-CLASS="code"
->function +(right: int) returns int</TT
-></A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-function-abs"
-><TT
-CLASS="code"
->function abs(x: int) returns int</TT
-></A
-></DT
-></DL
-></DD
 ></DL
 ></DD
 ><DT
@@ -1201,12 +1204,12 @@ CLASS="LOT"
 ></DT
 ><DT
 >4-1. <A
-HREF="types.htm#AEN636"
+HREF="types.htm#AEN643"
 >LLVM Prelude (excerpt)</A
 ></DT
 ><DT
 >4-2. <A
-HREF="types.htm#AEN639"
+HREF="types.htm#AEN646"
 >JavaScript Prelude (excerpt)</A
 ></DT
 ></DL

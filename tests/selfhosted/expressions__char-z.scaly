@@ -2,4 +2,4 @@
 ; test: char-z
 ; mode: compile
 ; expect: Z
-`Z`
+"Z" as char

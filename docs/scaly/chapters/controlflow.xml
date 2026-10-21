@@ -1,0 +1,46 @@
+<chapter xml:id="controlflow">
+  <title>Control Flow</title>
+
+  <section xml:id="cf-overview">
+    <title>Overview</title>
+    <para>Conditions and loops are expressions like every other construct: an
+      <literal>if</literal> with both branches has a value, and a
+      <literal>repeat</literal> loop answers the operand of the
+      <literal>break</literal> that ends it. A condition needs no parentheses;
+      a body of one statement needs no braces, a longer one is a block in
+      braces that begins on a line of its own. <literal>if cond stmt</literal>
+      without an <literal>else</literal> runs the statement when the condition
+      is <emphasis>true</emphasis>, and control continues after it.</para>
+    <para>Conditions are written as <literal>and</literal>/<literal>or</literal>
+      chains. A null test proves its name for what follows it in the chain:
+      in <literal>p &lt;&gt; null and p.x = 7</literal> the right side reads
+      <literal>p.x</literal> only where <literal>p</literal> is there.</para>
+  </section>
+
+  &generated-controlflow;
+
+  <section xml:id="cf-match">
+    <title>Match</title>
+    <para><literal>match</literal> compares one value against a list of
+      <literal>case</literal> alternatives and takes the first that is equal;
+      one case may name several values, and <literal>else</literal> takes the
+      rest. It works on numbers, characters and strings, which it compares by
+      content:</para>
+    <programlisting>
+function kind(n: int) returns int
+    match n
+        case 1: 10
+        case 2 case 3: 20
+        else 0
+
+let word "b"
+match word
+    case "a": print "A"
+    case "b": print "B"
+    else print "?"
+</programlisting>
+    <para>A union is matched by its variants with <literal>choose</literal>,
+      described under <xref linkend="types-unions"/>.</para>
+  </section>
+
+</chapter>

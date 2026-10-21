@@ -13,8 +13,8 @@ REL="PREVIOUS"
 TITLE="Definitions"
 HREF="definitions.htm"><LINK
 REL="NEXT"
-TITLE="Modules and Packages"
-HREF="modules.htm"><META
+TITLE="Control Flow"
+HREF="controlflow.htm"><META
 HTTP-EQUIV="Content-Type"
 CONTENT="text/html; charset=UTF-8"></HEAD
 ><BODY
@@ -58,7 +58,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="modules.htm"
+HREF="controlflow.htm"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -98,6 +98,11 @@ HREF="expressions.htm#category-OPERATIONS"
 ></DT
 ><DT
 ><A
+HREF="expressions.htm#category-TUPLES"
+>Tuples and Function Values</A
+></DT
+><DT
+><A
 HREF="expressions.htm#category-COMPARISON-OPERATORS"
 >Comparison Operators</A
 ></DT
@@ -115,16 +120,6 @@ HREF="expressions.htm#category-BITWISE-OPERATORS"
 ><A
 HREF="expressions.htm#category-LAMBDAS"
 >Lambdas</A
-></DT
-><DT
-><A
-HREF="expressions.htm#expr-if"
->If Expressions</A
-></DT
-><DT
-><A
-HREF="expressions.htm#expr-match"
->Match Expressions</A
 ></DT
 ><DT
 ><A
@@ -152,13 +147,218 @@ NAME="expr-overview"
 >Overview</A
 ></H1
 ><P
->Expressions are the core computational units of Scaly. Every expression
-      evaluates to a value. An operation is a sequence of operands; operators are
-      ordinary identifiers rather than built-in keywords. When operators are
-      chained, they combine according to standard mathematical precedence
-      (multiplicative binds tighter than additive, which binds tighter than
-      comparison). Prefix forms and parentheses provide explicit control where
-      needed.</P
+>Expressions are the core computational units of Scaly. Every
+      expression evaluates to a value; one that answers nothing answers the
+      empty tuple <TT
+CLASS="literal"
+>()</TT
+>. An expression is an
+      <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>operation</I
+></SPAN
+>: a sequence of things — values, names,
+      operator names, tuples, vector literals and blocks — that the compiler
+      reads from left to right. It holds one current value, and the
+      <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>type</I
+></SPAN
+> of that value says what the next thing
+      means:</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1740"
+></A
+><TABLE
+BORDER="1"
+CLASS="CALSTABLE"
+><COL><COL><COL><THEAD
+><TR
+><TH
+>current value</TH
+><TH
+>next thing</TH
+><TH
+>meaning</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+>none, or one waiting for its operand</TD
+><TD
+>an operator name</TD
+><TD
+>a prefix: it takes the next value (<TT
+CLASS="literal"
+>-x</TT
+>, <TT
+CLASS="literal"
+>a - -2</TT
+>)</TD
+></TR
+><TR
+><TD
+>a value</TD
+><TD
+>an operator its type declares</TD
+><TD
+>that operator; it waits for its right operand</TD
+></TR
+><TR
+><TD
+>a function</TD
+><TD
+>a tuple</TD
+><TD
+>the call; the tuple is the argument list</TD
+></TR
+><TR
+><TD
+>a function</TD
+><TD
+>one other value</TD
+><TD
+>the call with that one argument (<TT
+CLASS="literal"
+>print "hi"</TT
+>, <TT
+CLASS="literal"
+>twice -5</TT
+>)</TD
+></TR
+><TR
+><TD
+>a type</TD
+><TD
+>a tuple</TD
+><TD
+>the construction (<TT
+CLASS="literal"
+>Point(1, 2)</TT
+>)</TD
+></TR
+><TR
+><TD
+>a type</TD
+><TD
+>a vector literal</TD
+><TD
+>the generic instance (<TT
+CLASS="literal"
+>Vector[int]</TT
+>)</TD
+></TR
+><TR
+><TD
+>a value</TD
+><TD
+>a vector literal</TD
+><TD
+>indexing (<TT
+CLASS="literal"
+>v[i]</TT
+>)</TD
+></TR
+><TR
+><TD
+>any</TD
+><TD
+><TT
+CLASS="literal"
+>as T</TT
+>, <TT
+CLASS="literal"
+>is T</TT
+></TD
+><TD
+>the cast or the test of the whole operation so far</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>Parentheses make a tuple (and a tuple of one value is that value, so
+      they also group), brackets a vector literal, braces a block, and the dot
+      a member. Nothing else structures a sequence: there is no precedence
+      table in the compiler. How strongly operators bind is stated by the
+      standard library, as a protocol of <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>pending</I
+></SPAN
+> types:
+      <TT
+CLASS="literal"
+>a +</TT
+> answers a value that waits for its right operand,
+      and the protocol decides what an operator after it means. The levels,
+      strongest first, are listed under <A
+HREF="expressions.htm#category-OPERATIONS"
+>the Section called <I
+>Operations</I
+></A
+>.</P
+><P
+>Two consequences are worth knowing before reading the rest of this
+      chapter:</P
+><P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Application is stronger than waiting.</I
+></SPAN
+>
+          Before an operator takes what follows, that thing takes what is
+          applied to it: <TT
+CLASS="literal"
+>a + f(1)</TT
+> adds the call's result,
+          <TT
+CLASS="literal"
+>a + v[i]</TT
+> the element.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>A call without parentheses takes exactly one
+          thing.</I
+></SPAN
+> <TT
+CLASS="literal"
+>print f(x)</TT
+> is
+          <TT
+CLASS="literal"
+>(print f)(x)</TT
+>, which the compiler reports; an
+          argument that is itself a call, an indexing or a construction takes
+          its parentheses: <TT
+CLASS="literal"
+>print(f(x))</TT
+>.</P
+></LI
+></UL
 ></DIV
 ><DIV
 CLASS="section"
@@ -185,7 +385,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1686"
+NAME="AEN1812"
 ></A
 ><TABLE
 BORDER="0"
@@ -250,7 +450,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1708"
+NAME="AEN1834"
 ></A
 ><TABLE
 BORDER="0"
@@ -328,7 +528,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1735"
+NAME="AEN1861"
 ></A
 ><TABLE
 BORDER="0"
@@ -406,7 +606,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1762"
+NAME="AEN1888"
 ></A
 ><TABLE
 BORDER="0"
@@ -484,7 +684,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1789"
+NAME="AEN1915"
 ></A
 ><TABLE
 BORDER="0"
@@ -541,13 +741,16 @@ NAME="tests-CHARACTER-LITERALS"
 >Character Literals</A
 ></H2
 ><P
->Character literals represent a single character, enclosed in backticks.</P
+>A character is written as a string literal of one character wherever a char is expected: a char parameter, a typed binding, or the cast <TT
+CLASS="literal"
+>as char</TT
+>.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1811"
+NAME="AEN1938"
 ></A
 ><TABLE
 BORDER="0"
@@ -568,7 +771,7 @@ WIDTH="1*"><THEAD
 ><TD
 ><TT
 CLASS="literal"
->`a`</TT
+>"a" as char</TT
 ></TD
 ><TD
 ><TT
@@ -581,7 +784,7 @@ CLASS="literal"
 ><TD
 ><TT
 CLASS="literal"
->`Z`</TT
+>"Z" as char</TT
 ></TD
 ><TD
 ><TT
@@ -606,26 +809,41 @@ NAME="category-OPERATIONS"
 >Operations</A
 ></H1
 ><P
->Operations allow combining expressions.</P
+>An operation is a sequence of things: values, names, operator names, tuples in parentheses, vector literals in brackets and blocks in braces, each perhaps followed by a member access with a dot. The compiler reads the sequence from left to right and holds one current value; the TYPE of that value says what the next thing means. A tuple after a function is the call, a tuple after a type the construction, a vector literal after a value the indexing, an operator name after a value one of the operators its type declares. Parentheses, brackets, braces and the dot are what structure a sequence, and nothing else does. An operation ends with a colon, a line break, or anything that is not part of it.</P
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
 NAME="tests-PREFIX-FUNCTIONS"
->Prefix Functions</A
+>Prefix Operators</A
 ></H2
 ><P
->An operation is a sequence of operands that evaluates to a single value.
-        Each operand is an expression optionally followed by member access. An operation ends with a colon, a line break,
-        or anything which is not an expression. Evaluation uses a context which is empty at the start of an operation.
-        When the context is empty, operator-shaped identifiers act as prefix functions, taking the next operand as their argument.</P
+>Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, and after a function, so <TT
+CLASS="literal"
+>a - -2</TT
+> subtracts minus two and <TT
+CLASS="literal"
+>twice -5</TT
+> is <TT
+CLASS="literal"
+>twice(-5)</TT
+>. An <TT
+CLASS="literal"
+>=</TT
+> at the start of an operation does nothing, so <TT
+CLASS="literal"
+>let a = 42</TT
+> reads as <TT
+CLASS="literal"
+>let a 42</TT
+>.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1836"
+NAME="AEN1969"
 ></A
 ><TABLE
 BORDER="0"
@@ -678,6 +896,47 @@ CLASS="literal"
 ><TT
 CLASS="literal"
 >3
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>10 - -2</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>12
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function twice(n: int) returns int
+    n * 2
+twice -5</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>-10
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>= 6 * 7</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
 
     </TT
 ></TD
@@ -697,16 +956,82 @@ NAME="tests-OPERATOR-CHAINS"
 >Operator Chains</A
 ></H2
 ><P
->When the context holds a value, operators combine with operands according to standard mathematical precedence.
-        Multiplicative operators (*, /, %, div, mod) bind tighter than additive operators (+, -).
-        Comparison and equality operators have lower precedence than arithmetic.
-        Operators of equal precedence associate left-to-right.</P
+>Several operators in a row combine by their binding strength, which the standard library states as a protocol of pending types: the compiler itself has no precedence table. Strongest first, the levels are <TT
+CLASS="literal"
+>*</TT
+> <TT
+CLASS="literal"
+>/</TT
+> <TT
+CLASS="literal"
+>%</TT
+> <TT
+CLASS="literal"
+>div</TT
+> <TT
+CLASS="literal"
+>mod</TT
+>; <TT
+CLASS="literal"
+>+</TT
+> <TT
+CLASS="literal"
+>-</TT
+>; <TT
+CLASS="literal"
+>&#60;&#60;</TT
+> <TT
+CLASS="literal"
+>&#62;&#62;</TT
+>; <TT
+CLASS="literal"
+>&#60;</TT
+> <TT
+CLASS="literal"
+>&#62;</TT
+> <TT
+CLASS="literal"
+>&#60;=</TT
+> <TT
+CLASS="literal"
+>&#62;=</TT
+>; <TT
+CLASS="literal"
+>=</TT
+> <TT
+CLASS="literal"
+>&#60;&#62;</TT
+>; <TT
+CLASS="literal"
+>&#38;</TT
+>; <TT
+CLASS="literal"
+>xor</TT
+>; <TT
+CLASS="literal"
+>|</TT
+>; <TT
+CLASS="literal"
+>and</TT
+> <TT
+CLASS="literal"
+>&#38;&#38;</TT
+>; <TT
+CLASS="literal"
+>or</TT
+> <TT
+CLASS="literal"
+>||</TT
+>. An operator a type declares that no level names, such as <TT
+CLASS="literal"
+>==</TT
+> or a text name, binds most weakly of all. Operators of one level combine from left to right.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1863"
+NAME="AEN2034"
 ></A
 ><TABLE
 BORDER="0"
@@ -811,6 +1136,123 @@ CLASS="literal"
 ><TT
 CLASS="literal"
 >12
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>1 &#60;&#60; 2 + 1</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>8
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>1 + 2 * 3 = 7</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>1 &#60; 2 and 3 &#60; 4</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="tests-APPLICATION"
+>Application Before Operators</A
+></H2
+><P
+>Before an operator takes the thing that follows it, that thing takes what is applied to it: a function its tuple, a value its vector literal, anything its members. So <TT
+CLASS="literal"
+>a + f(1)</TT
+> adds the call's result, and <TT
+CLASS="literal"
+>a + v[i]</TT
+> the element. A function called without parentheses takes exactly one thing; an argument that is itself a call, an indexing or a construction takes its parentheses, <TT
+CLASS="literal"
+>print(f(x))</TT
+>.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2099"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function twice(n: int) returns int
+    n * 2
+3 + twice(4) * 2</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>19
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function twice(n: int) returns int
+    n * 2
+twice 21</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
 
     </TT
 ></TD
@@ -830,14 +1272,19 @@ NAME="tests-PARENTHESES-GROUPING"
 >Parentheses and Grouping</A
 ></H2
 ><P
->Parentheses create a empty context. This allows prefix forms inside an otherwise operator chain,
-        and explicit grouping when needed.</P
+>Parentheses around a single value group it: <TT
+CLASS="literal"
+>(a)</TT
+> is <TT
+CLASS="literal"
+>a</TT
+>. The group is read as an operation of its own, so a prefix may begin it inside a longer chain, and it combines first.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1910"
+NAME="AEN2123"
 ></A
 ><TABLE
 BORDER="0"
@@ -905,17 +1352,98 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="tests-IDENTIFIER-SHAPES"
->Identifier Shapes</A
+NAME="tests-CASTS-WHOLE-OPERATION"
+>Casts Take the Whole Operation</A
 ></H2
 ><P
->Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior. Whether an identifier acts as a prefix function or chain operator depends on its declaration and the register state.</P
+>A cast <TT
+CLASS="literal"
+>as T</TT
+> and a test <TT
+CLASS="literal"
+>is T</TT
+> apply to the whole operation before them: <TT
+CLASS="literal"
+>a + b as T</TT
+> is <TT
+CLASS="literal"
+>(a + b) as T</TT
+>. A cast of the right side alone takes parentheses.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1937"
+NAME="AEN2154"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let a: u8 200
+let b: u8 100
+a + b as int</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>44
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let a: u8 200
+let b: u8 100
+a + (b as int)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>300
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="tests-IDENTIFIER-SHAPES"
+>Identifier Shapes</A
+></H2
+><P
+>Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior: what a name means depends on its declaration and on what the operation holds when it is reached.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2176"
 ></A
 ><TABLE
 BORDER="0"
@@ -980,7 +1508,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1959"
+NAME="AEN2198"
 ></A
 ><TABLE
 BORDER="0"
@@ -1066,6 +1594,287 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
+NAME="category-TUPLES"
+>Tuples and Function Values</A
+></H1
+><P
+>A tuple is a value: an anonymous record written in parentheses. Its components may carry labels, and its type is written the same way, <TT
+CLASS="literal"
+>(int, String)</TT
+>. The empty tuple <TT
+CLASS="literal"
+>()</TT
+> is the type of no value, which a routine without a result answers. Functions are values too: a name bound to a function, or a method bound to its receiver, is called later like the function itself.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="tests-TUPLE-VALUES"
+>Tuples</A
+></H2
+><P
+>A labelled component is read by its label. Unlabelled components are reached by decomposition, <TT
+CLASS="literal"
+>let (a, b) t</TT
+>; a tuple is not an array and has no indexing. A routine returns several values as a tuple.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2236"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let t (x: 3, y: 4)
+t.x * t.y</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>12
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let (a, b) (6, 7)
+a * b</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function pair() returns (int, int)
+    (3, 4)
+let (p, q) pair()
+p + q</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>7
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="tests-TUPLE-APPLICATION"
+>Applying a Bound Tuple</A
+></H2
+><P
+>A tuple bound to a name stands for its components where it is applied: <TT
+CLASS="literal"
+>f args</TT
+> calls f with them, and <TT
+CLASS="literal"
+>Point(args)</TT
+> builds the record from them. Its components are evaluated once, when it is bound.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2265"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function add(a: int, b: int) returns int
+    a + b
+let args (40, 2)
+add args</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Point(x: int, y: int)
+let args (1, 2)
+let p Point(args)
+p.y</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>2
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="tests-FUNCTION-VALUES"
+>Functions as Values</A
+></H2
+><P
+><TT
+CLASS="literal"
+>let g twice</TT
+> binds the function at compile time and costs nothing; <TT
+CLASS="literal"
+>g(21)</TT
+> is a direct call. <TT
+CLASS="literal"
+>x.m</TT
+> without a tuple is the method bound to its receiver. Where a delegate type is declared, a named function becomes a closure value, chosen by the delegate's signature.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2290"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function twice(n: int) returns int
+    n * 2
+let g twice
+g(21)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define Counter(n: int)
+{
+    function plus(this, k: int) returns int
+        n + k
+}
+let c Counter(40)
+let m c.plus
+m(2)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define IntFn delegate(int) returns int
+function apply(f: IntFn, x: int) returns int
+    f(x)
+function twice(n: int) returns int
+    n * 2
+apply(twice, 21)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
 NAME="category-COMPARISON-OPERATORS"
 >Comparison Operators</A
 ></H1
@@ -1086,7 +1895,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1994"
+NAME="AEN2320"
 ></A
 ><TABLE
 BORDER="0"
@@ -1177,7 +1986,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2026"
+NAME="AEN2352"
 ></A
 ><TABLE
 BORDER="0"
@@ -1324,13 +2133,16 @@ NAME="tests-BOOLEAN-NEGATION"
 >Boolean Negation</A
 ></H2
 ><P
->The tilde operator negates a boolean value.</P
+>The word operator <TT
+CLASS="literal"
+>not</TT
+> negates a boolean value. The tilde is the bitwise complement, which on a bool is the same. The exclamation mark is not negation in Scaly: it is the sigil of the thrown lifetime.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2081"
+NAME="AEN2408"
 ></A
 ><TABLE
 BORDER="0"
@@ -1347,6 +2159,32 @@ WIDTH="1*"><THEAD
 ></TR
 ></THEAD
 ><TBODY
+><TR
+><TD
+><TT
+CLASS="literal"
+>not true</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>not false</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
 ><TR
 ><TD
 ><TT
@@ -1389,13 +2227,34 @@ NAME="tests-BOOLEAN-AND-OR"
 >Boolean And/Or</A
 ></H2
 ><P
->The ampersand operator performs logical AND, the pipe operator performs logical OR.</P
+>The operators <TT
+CLASS="literal"
+>and</TT
+> and <TT
+CLASS="literal"
+>or</TT
+> (also spelled <TT
+CLASS="literal"
+>&#38;&#38;</TT
+> and <TT
+CLASS="literal"
+>||</TT
+>) are declared by the standard library with a lazy right operand: the right side is evaluated only where the left one does not decide. The bitwise operators <TT
+CLASS="literal"
+>&#38;</TT
+>, <TT
+CLASS="literal"
+>|</TT
+> and <TT
+CLASS="literal"
+>xor</TT
+> combine two bools as well, and evaluate both sides.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2103"
+NAME="AEN2447"
 ></A
 ><TABLE
 BORDER="0"
@@ -1412,6 +2271,68 @@ WIDTH="1*"><THEAD
 ></TR
 ></THEAD
 ><TBODY
+><TR
+><TD
+><TT
+CLASS="literal"
+>true and false</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>false or true</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>procedure noisy() returns bool
+{
+    print "evaluated"
+    true
+}
+false and noisy()</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>procedure noisy() returns bool
+{
+    print "evaluated"
+    false
+}
+true or noisy()</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
+        </TT
+></TD
+></TR
 ><TR
 ><TD
 ><TT
@@ -1461,6 +2382,19 @@ CLASS="literal"
 ><TT
 CLASS="literal"
 >true
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>true xor true</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>false
 </TT
 ></TD
 ></TR
@@ -1496,7 +2430,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2138"
+NAME="AEN2507"
 ></A
 ><TABLE
 BORDER="0"
@@ -1582,7 +2516,10 @@ NAME="category-LAMBDAS"
 ></H1
 ><P
 >A lambda is an anonymous function written with a backslash:
-    `\params: body`. Parameters are space-separated. A lambda bound to a name
+    <TT
+CLASS="literal"
+>\params: body</TT
+>. Parameters are space-separated. A lambda bound to a name
     and applied to arguments is monomorphized at the call site for those
     argument types, so the same lambda works at any argument type.</P
 ><DIV
@@ -1600,7 +2537,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2173"
+NAME="AEN2543"
 ></A
 ><TABLE
 BORDER="0"
@@ -1684,7 +2621,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2200"
+NAME="AEN2570"
 ></A
 ><TABLE
 BORDER="0"
@@ -1755,7 +2692,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2222"
+NAME="AEN2592"
 ></A
 ><TABLE
 BORDER="0"
@@ -1820,14 +2757,14 @@ NAME="tests-LAMBDA-EMBEDDED"
 ></H2
 ><P
 >A lambda call may appear anywhere inside a larger expression, not
-        only as the whole right-hand side of a binding. Each call is resolved to
-        a direct call before operator precedence is applied.</P
+        only as the whole right-hand side of a binding. Like every application,
+        each call takes its arguments before the operators around it combine.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2244"
+NAME="AEN2614"
 ></A
 ><TABLE
 BORDER="0"
@@ -1905,15 +2842,19 @@ NAME="tests-LAMBDA-DELEGATES"
 >Delegate Values</A
 ></H2
 ><P
->A `delegate` names a function type. A non-capturing lambda assigned
+>A <TT
+CLASS="literal"
+>delegate</TT
+> names a function type. A non-capturing lambda assigned
         to a delegate-typed binding is a function-pointer value that can be passed
-        to a function and called indirectly.</P
+        to a function and called indirectly. A lambda literal may also be passed
+        straight to a delegate parameter, and so may a named function.</P
 ><DIV
 CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2271"
+NAME="AEN2642"
 ></A
 ><TABLE
 BORDER="0"
@@ -1989,7 +2930,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2293"
+NAME="AEN2664"
 ></A
 ><TABLE
 BORDER="0"
@@ -2036,64 +2977,6 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="expr-if"
->If Expressions</A
-></H1
-><P
->If expressions evaluate one of two branches based on a boolean condition.
-      The syntax is <TT
-CLASS="code"
->if</TT
-> followed by the condition, a colon, the consequent,
-      and optionally <TT
-CLASS="code"
->else</TT
-> with an alternative.</P
-><PRE
-CLASS="programlisting"
->if true: 1 else 0        ; evaluates to 1
-if false: 1 else 0       ; evaluates to 0
-if 5 &#62; 3: 10 else 20     ; evaluates to 10</PRE
-><P
->If expressions can be nested:</P
-><PRE
-CLASS="programlisting"
->if false: 1 else if true: 2 else 3  ; evaluates to 2</PRE
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="expr-match"
->Match Expressions</A
-></H1
-><P
->A <TT
-CLASS="code"
->match</TT
-> expression — comparing a value against multiple
-      <TT
-CLASS="code"
->case</TT
-> alternatives — is part of the grammar but not yet
-      functional in the current compiler. Use <TT
-CLASS="code"
->if</TT
->/<TT
-CLASS="code"
->else</TT
->
-      chains, or <TT
-CLASS="code"
->choose</TT
-> on a union, instead.</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
 NAME="category-CHOOSE-EXPRESSIONS"
 >Choose Expressions</A
 ></H1
@@ -2114,7 +2997,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2329"
+NAME="AEN2684"
 ></A
 ><TABLE
 BORDER="0"
@@ -2181,7 +3064,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2351"
+NAME="AEN2706"
 ></A
 ><TABLE
 BORDER="0"
@@ -2234,7 +3117,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2368"
+NAME="AEN2723"
 ></A
 ><TABLE
 BORDER="0"
@@ -2311,7 +3194,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2393"
+NAME="AEN2748"
 ></A
 ><TABLE
 BORDER="0"
@@ -2380,7 +3263,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2415"
+NAME="AEN2770"
 ></A
 ><TABLE
 BORDER="0"
@@ -2434,7 +3317,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2432"
+NAME="AEN2787"
 ></A
 ><TABLE
 BORDER="0"
@@ -2511,7 +3394,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2457"
+NAME="AEN2812"
 ></A
 ><TABLE
 BORDER="0"
@@ -2578,7 +3461,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2479"
+NAME="AEN2834"
 ></A
 ><TABLE
 BORDER="0"
@@ -2665,7 +3548,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="modules.htm"
+HREF="controlflow.htm"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -2685,7 +3568,7 @@ VALIGN="top"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->Modules and Packages</TD
+>Control Flow</TD
 ></TR
 ></TABLE
 ></DIV

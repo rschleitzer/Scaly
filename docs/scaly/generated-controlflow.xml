@@ -367,9 +367,9 @@ count</programlisting></entry>
 
     <section xml:id='tests-LABELED-LOOPS'>
       <title>Labeled Break and Continue</title>
-      <para>A loop may carry a label written `label NAME` after its colon.
-        From within a nested loop, `break loop NAME` exits the named loop and
-        `continue loop NAME` jumps to its next iteration, rather than acting on
+      <para>A loop may carry a label written <literal>label NAME</literal> after its colon.
+        From within a nested loop, <literal>break loop NAME</literal> exits the named loop and
+        <literal>continue loop NAME</literal> jumps to its next iteration, rather than acting on
         the innermost loop.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
@@ -406,7 +406,7 @@ count</programlisting></entry>
     <title>Repeat Loops</title>
     <para>A repeat loop runs its body forever and exits only through break (or
     return). Because break is the only way out, a break carrying a value
-    (`break v`) makes the repeat an expression that yields that value.</para>
+    (<literal>break v</literal>) makes the repeat an expression that yields that value.</para>
 
     <section xml:id='tests-REPEAT-BASIC'>
       <title>Repeat and Break Value</title>
@@ -445,11 +445,11 @@ i</programlisting></entry>
 
   <section xmlns='http://docbook.org/ns/docbook' xml:id='category-VAR-SET'>
     <title>Mutable Variables</title>
-    <para>Mutable variables can be modified with set statements.</para>
+    <para>A binding introduced with var may be assigned a new value; one introduced with let may not. The assignment is written <literal>target := source</literal>, in the Algol tradition, and is a statement of its own: it introduces no name and is never part of a condition. The equals sign always compares.</para>
 
     <section xml:id='tests-VAR-BASIC'>
-      <title>Basic Var and Set</title>
-      <para>Var creates a mutable variable, set modifies it.</para>
+      <title>Var and Assignment</title>
+      <para>Var creates a mutable variable, and <literal>:=</literal> assigns it.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>

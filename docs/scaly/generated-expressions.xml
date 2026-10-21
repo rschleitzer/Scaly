@@ -171,7 +171,7 @@
 
     <section xml:id='tests-CHARACTER-LITERALS'>
       <title>Character Literals</title>
-      <para>Character literals represent a single character, enclosed in backticks.</para>
+      <para>A character is written as a string literal of one character wherever a char is expected: a char parameter, a typed binding, or the cast <literal>as char</literal>.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -184,12 +184,12 @@
           </thead>
           <tbody>
             <row>
-              <entry><literal>`a`</literal></entry>
+              <entry><literal>"a" as char</literal></entry>
               <entry><literal>a
         </literal></entry>
             </row>
             <row>
-              <entry><literal>`Z`</literal></entry>
+              <entry><literal>"Z" as char</literal></entry>
               <entry><literal>Z
 </literal></entry>
             </row>
@@ -201,14 +201,11 @@
 
   <section xmlns='http://docbook.org/ns/docbook' xml:id='category-OPERATIONS'>
     <title>Operations</title>
-    <para>Operations allow combining expressions.</para>
+    <para>An operation is a sequence of things: values, names, operator names, tuples in parentheses, vector literals in brackets and blocks in braces, each perhaps followed by a member access with a dot. The compiler reads the sequence from left to right and holds one current value; the TYPE of that value says what the next thing means. A tuple after a function is the call, a tuple after a type the construction, a vector literal after a value the indexing, an operator name after a value one of the operators its type declares. Parentheses, brackets, braces and the dot are what structure a sequence, and nothing else does. An operation ends with a colon, a line break, or anything that is not part of it.</para>
 
     <section xml:id='tests-PREFIX-FUNCTIONS'>
-      <title>Prefix Functions</title>
-      <para>An operation is a sequence of operands that evaluates to a single value.
-        Each operand is an expression optionally followed by member access. An operation ends with a colon, a line break,
-        or anything which is not an expression. Evaluation uses a context which is empty at the start of an operation.
-        When the context is empty, operator-shaped identifiers act as prefix functions, taking the next operand as their argument.</para>
+      <title>Prefix Operators</title>
+      <para>Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, and after a function, so <literal>a - -2</literal> subtracts minus two and <literal>twice -5</literal> is <literal>twice(-5)</literal>. An <literal>=</literal> at the start of an operation does nothing, so <literal>let a = 42</literal> reads as <literal>let a 42</literal>.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -233,6 +230,23 @@
             <row>
               <entry><literal>+ 3</literal></entry>
               <entry><literal>3
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>10 - -2</literal></entry>
+              <entry><literal>12
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>function twice(n: int) returns int
+    n * 2
+twice -5</programlisting></entry>
+              <entry><literal>-10
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>= 6 * 7</literal></entry>
+              <entry><literal>42
 
     </literal></entry>
             </row>
@@ -243,10 +257,7 @@
 
     <section xml:id='tests-OPERATOR-CHAINS'>
       <title>Operator Chains</title>
-      <para>When the context holds a value, operators combine with operands according to standard mathematical precedence.
-        Multiplicative operators (*, /, %, div, mod) bind tighter than additive operators (+, -).
-        Comparison and equality operators have lower precedence than arithmetic.
-        Operators of equal precedence associate left-to-right.</para>
+      <para>Several operators in a row combine by their binding strength, which the standard library states as a protocol of pending types: the compiler itself has no precedence table. Strongest first, the levels are <literal>*</literal> <literal>/</literal> <literal>%</literal> <literal>div</literal> <literal>mod</literal>; <literal>+</literal> <literal>-</literal>; <literal>&lt;&lt;</literal> <literal>&gt;&gt;</literal>; <literal>&lt;</literal> <literal>&gt;</literal> <literal>&lt;=</literal> <literal>&gt;=</literal>; <literal>=</literal> <literal>&lt;&gt;</literal>; <literal>&amp;</literal>; <literal>xor</literal>; <literal>|</literal>; <literal>and</literal> <literal>&amp;&amp;</literal>; <literal>or</literal> <literal>||</literal>. An operator a type declares that no level names, such as <literal>==</literal> or a text name, binds most weakly of all. Operators of one level combine from left to right.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -291,6 +302,55 @@
             <row>
               <entry><literal>20 - 5 - 3</literal></entry>
               <entry><literal>12
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>1 &lt;&lt; 2 + 1</literal></entry>
+              <entry><literal>8
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>1 + 2 * 3 = 7</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>1 &lt; 2 and 3 &lt; 4</literal></entry>
+              <entry><literal>true
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-APPLICATION'>
+      <title>Application Before Operators</title>
+      <para>Before an operator takes the thing that follows it, that thing takes what is applied to it: a function its tuple, a value its vector literal, anything its members. So <literal>a + f(1)</literal> adds the call's result, and <literal>a + v[i]</literal> the element. A function called without parentheses takes exactly one thing; an argument that is itself a call, an indexing or a construction takes its parentheses, <literal>print(f(x))</literal>.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>function twice(n: int) returns int
+    n * 2
+3 + twice(4) * 2</programlisting></entry>
+              <entry><literal>19
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>function twice(n: int) returns int
+    n * 2
+twice 21</programlisting></entry>
+              <entry><literal>42
 
     </literal></entry>
             </row>
@@ -301,8 +361,7 @@
 
     <section xml:id='tests-PARENTHESES-GROUPING'>
       <title>Parentheses and Grouping</title>
-      <para>Parentheses create a empty context. This allows prefix forms inside an otherwise operator chain,
-        and explicit grouping when needed.</para>
+      <para>Parentheses around a single value group it: <literal>(a)</literal> is <literal>a</literal>. The group is read as an operation of its own, so a prefix may begin it inside a longer chain, and it combines first.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -335,9 +394,43 @@
       </informaltable>
     </section>
 
+    <section xml:id='tests-CASTS-WHOLE-OPERATION'>
+      <title>Casts Take the Whole Operation</title>
+      <para>A cast <literal>as T</literal> and a test <literal>is T</literal> apply to the whole operation before them: <literal>a + b as T</literal> is <literal>(a + b) as T</literal>. A cast of the right side alone takes parentheses.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>let a: u8 200
+let b: u8 100
+a + b as int</programlisting></entry>
+              <entry><literal>44
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>let a: u8 200
+let b: u8 100
+a + (b as int)</programlisting></entry>
+              <entry><literal>300
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
     <section xml:id='tests-IDENTIFIER-SHAPES'>
       <title>Identifier Shapes</title>
-      <para>Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior. Whether an identifier acts as a prefix function or chain operator depends on its declaration and the register state.</para>
+      <para>Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior: what a name means depends on its declaration and on what the operation holds when it is reached.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -402,6 +495,136 @@ x + y</programlisting></entry>
               <entry><programlisting>let x 2 + 3
 x * 2</programlisting></entry>
               <entry><literal>10
+</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
+
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-TUPLES'>
+    <title>Tuples and Function Values</title>
+    <para>A tuple is a value: an anonymous record written in parentheses. Its components may carry labels, and its type is written the same way, <literal>(int, String)</literal>. The empty tuple <literal>()</literal> is the type of no value, which a routine without a result answers. Functions are values too: a name bound to a function, or a method bound to its receiver, is called later like the function itself.</para>
+
+    <section xml:id='tests-TUPLE-VALUES'>
+      <title>Tuples</title>
+      <para>A labelled component is read by its label. Unlabelled components are reached by decomposition, <literal>let (a, b) t</literal>; a tuple is not an array and has no indexing. A routine returns several values as a tuple.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>let t (x: 3, y: 4)
+t.x * t.y</programlisting></entry>
+              <entry><literal>12
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>let (a, b) (6, 7)
+a * b</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>function pair() returns (int, int)
+    (3, 4)
+let (p, q) pair()
+p + q</programlisting></entry>
+              <entry><literal>7
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-TUPLE-APPLICATION'>
+      <title>Applying a Bound Tuple</title>
+      <para>A tuple bound to a name stands for its components where it is applied: <literal>f args</literal> calls f with them, and <literal>Point(args)</literal> builds the record from them. Its components are evaluated once, when it is bound.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>function add(a: int, b: int) returns int
+    a + b
+let args (40, 2)
+add args</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define Point(x: int, y: int)
+let args (1, 2)
+let p Point(args)
+p.y</programlisting></entry>
+              <entry><literal>2
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-FUNCTION-VALUES'>
+      <title>Functions as Values</title>
+      <para><literal>let g twice</literal> binds the function at compile time and costs nothing; <literal>g(21)</literal> is a direct call. <literal>x.m</literal> without a tuple is the method bound to its receiver. Where a delegate type is declared, a named function becomes a closure value, chosen by the delegate's signature.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>function twice(n: int) returns int
+    n * 2
+let g twice
+g(21)</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define Counter(n: int)
+{
+    function plus(this, k: int) returns int
+        n + k
+}
+let c Counter(40)
+let m c.plus
+m(2)</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define IntFn delegate(int) returns int
+function apply(f: IntFn, x: int) returns int
+    f(x)
+function twice(n: int) returns int
+    n * 2
+apply(twice, 21)</programlisting></entry>
+              <entry><literal>42
 </literal></entry>
             </row>
           </tbody>
@@ -520,7 +743,7 @@ x * 2</programlisting></entry>
 
     <section xml:id='tests-BOOLEAN-NEGATION'>
       <title>Boolean Negation</title>
-      <para>The tilde operator negates a boolean value.</para>
+      <para>The word operator <literal>not</literal> negates a boolean value. The tilde is the bitwise complement, which on a bool is the same. The exclamation mark is not negation in Scaly: it is the sigil of the thrown lifetime.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -532,6 +755,16 @@ x * 2</programlisting></entry>
             </row>
           </thead>
           <tbody>
+            <row>
+              <entry><literal>not true</literal></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>not false</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
             <row>
               <entry><literal>~true</literal></entry>
               <entry><literal>false
@@ -550,7 +783,7 @@ x * 2</programlisting></entry>
 
     <section xml:id='tests-BOOLEAN-AND-OR'>
       <title>Boolean And/Or</title>
-      <para>The ampersand operator performs logical AND, the pipe operator performs logical OR.</para>
+      <para>The operators <literal>and</literal> and <literal>or</literal> (also spelled <literal>&amp;&amp;</literal> and <literal>||</literal>) are declared by the standard library with a lazy right operand: the right side is evaluated only where the left one does not decide. The bitwise operators <literal>&amp;</literal>, <literal>|</literal> and <literal>xor</literal> combine two bools as well, and evaluate both sides.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -562,6 +795,36 @@ x * 2</programlisting></entry>
             </row>
           </thead>
           <tbody>
+            <row>
+              <entry><literal>true and false</literal></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>false or true</literal></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>procedure noisy() returns bool
+{
+    print "evaluated"
+    true
+}
+false and noisy()</programlisting></entry>
+              <entry><literal>false
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>procedure noisy() returns bool
+{
+    print "evaluated"
+    false
+}
+true or noisy()</programlisting></entry>
+              <entry><literal>true
+        </literal></entry>
+            </row>
             <row>
               <entry><literal>true &amp; true</literal></entry>
               <entry><literal>true
@@ -580,6 +843,11 @@ x * 2</programlisting></entry>
             <row>
               <entry><literal>true | false</literal></entry>
               <entry><literal>true
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>true xor true</literal></entry>
+              <entry><literal>false
 </literal></entry>
             </row>
           </tbody>
@@ -635,7 +903,7 @@ x * 2</programlisting></entry>
   <section xmlns='http://docbook.org/ns/docbook' xml:id='category-LAMBDAS'>
     <title>Lambdas</title>
     <para>A lambda is an anonymous function written with a backslash:
-    `\params: body`. Parameters are space-separated. A lambda bound to a name
+    <literal>\params: body</literal>. Parameters are space-separated. A lambda bound to a name
     and applied to arguments is monomorphized at the call site for those
     argument types, so the same lambda works at any argument type.</para>
 
@@ -754,8 +1022,8 @@ shade(5)</programlisting></entry>
     <section xml:id='tests-LAMBDA-EMBEDDED'>
       <title>Embedded Calls</title>
       <para>A lambda call may appear anywhere inside a larger expression, not
-        only as the whole right-hand side of a binding. Each call is resolved to
-        a direct call before operator precedence is applied.</para>
+        only as the whole right-hand side of a binding. Like every application,
+        each call takes its arguments before the operators around it combine.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -796,9 +1064,10 @@ cap(1) + cap(2)</programlisting></entry>
 
     <section xml:id='tests-LAMBDA-DELEGATES'>
       <title>Delegate Values</title>
-      <para>A `delegate` names a function type. A non-capturing lambda assigned
+      <para>A <literal>delegate</literal> names a function type. A non-capturing lambda assigned
         to a delegate-typed binding is a function-pointer value that can be passed
-        to a function and called indirectly.</para>
+        to a function and called indirectly. A lambda literal may also be passed
+        straight to a delegate parameter, and so may a named function.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>

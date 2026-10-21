@@ -1,269 +1,109 @@
 <appendix xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="stdlib">
-  <title>Standard Library Reference</title>
+  <title>Standard Library and Packages</title>
 
-  <section xml:id="stdlib-types">
-    <title>Types</title>
-    <section xml:id="stdlib-define-Sum">
-      <title><code>define Sum(left: int, right: int)</code></title>
-      <para>Deferred sum. Enables operator precedence by delaying evaluation.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-define-Difference">
-      <title><code>define Difference(left: int, right: int)</code></title>
-      <para>Deferred difference. Enables operator precedence by delaying evaluation.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-define-Product">
-      <title><code>define Product(left: int, right: int)</code></title>
-      <para>Deferred product. Enables operator precedence by delaying evaluation.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-define-Quotient">
-      <title><code>define Quotient(left: int, right: int)</code></title>
-      <para>Deferred quotient. Enables operator precedence by delaying evaluation.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
+  <section xml:id="stdlib-overview">
+    <title>The Standard Library</title>
+    <para>The standard library is the package <literal>scaly</literal>. Every
+      program sees all of it without a <literal>use</literal> — it is the
+      prelude — unless it is compiled with <literal>--no-prelude</literal>.
+      Its modules:</para>
+    <variablelist>
+      <varlistentry>
+        <term><literal>scaly.memory</literal></term>
+        <listitem><para>The region runtime: pages, regions, the frame pages
+          the compiler gives every routine that allocates, and the traps a
+          program raises on a bounds violation, a null unwrap or a lack of
+          memory.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>scaly.containers</literal></term>
+        <listitem><para><literal>String</literal> and
+          <literal>StringBuilder</literal>; <literal>Slice[T]</literal>, the
+          borrowed view that never owns; <literal>Vector[T]</literal> of a
+          fixed length, <literal>Array[T]</literal> that grows,
+          <literal>List[T]</literal>; <literal>HashMap[K, V]</literal> and
+          <literal>HashSet[T]</literal> with their builders;
+          <literal>Option[T]</literal> (written <literal>T?</literal>) and
+          <literal>Result[T, E]</literal>. Indexing with
+          <literal>[]</literal> traps outside the bounds,
+          <literal>get(i)</literal> answers an Option, and
+          <literal>put(i, v)</literal> writes.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>scaly.fiber</literal></term>
+        <listitem><para>Fibers, the scheduler and the evented I/O beneath
+          the operating-system module, the task pool a self-scaling
+          <literal>for</literal> runs on, threads and channels.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>scaly.os</literal></term>
+        <listitem><para><literal>Console</literal>, <literal>File</literal>,
+          <literal>Directory</literal>, <literal>Path</literal> and
+          <literal>Tcp</literal>, and the process environment.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>scaly.cluster</literal></term>
+        <listitem><para>Channels between processes over TCP: a region sent
+          to another node moves with its whole object graph.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>scaly.tensor</literal></term>
+        <listitem><para>A tape for reverse-mode differentiation — matrix
+          products, activations, attention, the optimizers — living in one
+          region per tape.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>scaly.operation</literal> and
+          <literal>scaly.logic</literal></term>
+        <listitem><para>The protocol that gives the operators their binding
+          strength (<xref linkend="expressions"/>), generated from the levels
+          of the grammar, and <literal>and</literal> and
+          <literal>or</literal> on <literal>bool</literal>, whose right
+          operand is <literal>lazy</literal>.</para></listitem>
+      </varlistentry>
+    </variablelist>
   </section>
 
-  <section xml:id="stdlib-operators">
-    <title>Operators</title>
-    <section xml:id="stdlib-operator-plus">
-      <title><code>operator +(left: int, right: int) returns Sum</code></title>
-      <para>Addition. Lower precedence than multiplication and division.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left addend</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right addend</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-minus">
-      <title><code>operator -(left: int, right: int) returns Difference</code></title>
-      <para>Subtraction. Lower precedence than multiplication and division.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Minuend</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Subtrahend</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-times">
-      <title><code>operator *(left: int, right: int) returns Product</code></title>
-      <para>Multiplication. Higher precedence than addition and subtraction.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left factor</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right factor</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-divide">
-      <title><code>operator /(left: int, right: int) returns Quotient</code></title>
-      <para>Division. Higher precedence than addition and subtraction.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Dividend</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Divisor</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-div">
-      <title><code>operator div(left: int, right: int) returns int</code></title>
-      <para>Integer division, truncating toward zero.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Dividend</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Divisor</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-mod">
-      <title><code>operator mod(left: int, right: int) returns int</code></title>
-      <para>Modulo (remainder after integer division).</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Dividend</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Divisor</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-equals">
-      <title><code>operator =(left: int, right: int) returns bool</code></title>
-      <para>Equality comparison.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-notequals">
-      <title><code>operator &lt;&gt;(left: int, right: int) returns bool</code></title>
-      <para>Inequality comparison.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-lt">
-      <title><code>operator &lt;(left: int, right: int) returns bool</code></title>
-      <para>Less than comparison.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-gt">
-      <title><code>operator &gt;(left: int, right: int) returns bool</code></title>
-      <para>Greater than comparison.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-lte">
-      <title><code>operator &lt;=(left: int, right: int) returns bool</code></title>
-      <para>Less than or equal comparison.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-operator-gte">
-      <title><code>operator &gt;=(left: int, right: int) returns bool</code></title>
-      <para>Greater than or equal comparison.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>left</parameter>: <type>int</type></term>
-          <listitem><para>Left operand</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Right operand</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-  </section>
-
-  <section xml:id="stdlib-functions">
-    <title>Functions</title>
-    <section xml:id="stdlib-function-minus">
-      <title><code>function -(right: int) returns int</code></title>
-      <para>Unary negation.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Value to negate</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-function-plus">
-      <title><code>function +(right: int) returns int</code></title>
-      <para>Unary plus (identity).</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>right</parameter>: <type>int</type></term>
-          <listitem><para>Value to return unchanged</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
-    <section xml:id="stdlib-function-abs">
-      <title><code>function abs(x: int) returns int</code></title>
-      <para>Absolute value.</para>
-      <variablelist>
-        <varlistentry>
-          <term><parameter>x</parameter>: <type>int</type></term>
-          <listitem><para>Value whose absolute value to compute</para></listitem>
-        </varlistentry>
-      </variablelist>
-    </section>
+  <section xml:id="stdlib-packages">
+    <title>Packages Beside It</title>
+    <para>These packages come with the toolchain. A program declares the
+      ones it uses (<literal>package json 0.2.0</literal>, see
+      <xref linkend="modules"/>), so a program that never speaks TLS does not
+      link OpenSSL:</para>
+    <variablelist>
+      <varlistentry>
+        <term><literal>http</literal>, <literal>https</literal>,
+          <literal>h3</literal></term>
+        <listitem><para>An HTTP/1.1 and HTTP/2 server with a router, static
+          files, WebSocket and gRPC; the same server over TLS 1.3; and HTTP/3
+          over QUIC (ngtcp2).</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>tls</literal></term>
+        <listitem><para>TLS 1.3 for a TCP stream, bound to OpenSSL, and the
+          hashes and key derivations a protocol above it needs.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>json</literal></term>
+        <listitem><para>RFC 8259 JSON: a pull reader, a value tree built on
+          it, and a writer.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>compress</literal></term>
+        <listitem><para>gzip for HTTP bodies, over libdeflate.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>pg</literal>, <literal>redis</literal>,
+          <literal>sqlite</literal>, <literal>tds</literal></term>
+        <listitem><para>Clients of PostgreSQL (protocol version 3, SCRAM
+          authentication, prepared statements, a pool), Redis (RESP2),
+          SQLite (its own library) and Microsoft SQL Server (TDS
+          7.4).</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><literal>scalygpu</literal></term>
+        <listitem><para>A tensor tape resident on the GPU (Metal).</para></listitem>
+      </varlistentry>
+    </variablelist>
   </section>
 </appendix>

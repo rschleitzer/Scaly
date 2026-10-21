@@ -156,10 +156,10 @@ i<expect>3
 
 <category id = var-set title = "Mutable Variables">
 
-    <prose>Mutable variables can be modified with set statements.
+    <prose>A binding introduced with var may be assigned a new value; one introduced with let may not. The assignment is written `target := source`, in the Algol tradition, and is a statement of its own: it introduces no name and is never part of a condition. The equals sign always compares.
 
-    <tests id = var-basic title = "Basic Var and Set">
-        <prose>Var creates a mutable variable, set modifies it.
+    <tests id = var-basic title = "Var and Assignment">
+        <prose>Var creates a mutable variable, and `:=` assigns it.
         <test id = var-simple program = program><input>var x 5
 x<expect>5
         <test id = var-assign program = program><input>var x 5
