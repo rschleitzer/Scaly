@@ -17,9 +17,11 @@ use pg.Conn.PgConn
 ; that take turns on the same cores: HttpArena's async-db with postgres,
 ; server and load generator on four shared cores, 256 connections 55.9 K
 ; req/s, 32 60.0 K, 16 61.1 K; on ten cores 64 to 128 were level (93-95 K)
-; and 16 too few (62 K) -- eight a thread is near the best on both
-; (2026-09-30; genhttp-ioxide's pool stops at eight a reactor too).
-define PG_PER_THREAD_MAX: i64 8
+; and 16 too few (62 K) (2026-09-30). On 32 cores, postgres sharing them:
+; 32 x 8 = 256 backends 163-178 K, p99.9 50-84 ms; 32 x 4 = 128 150-180 K,
+; p99.9 32-38 ms -- the backends' contention for the cores is the tail
+; (2026-10-21). Four a thread.
+define PG_PER_THREAD_MAX: i64 4
 
 define PgConfig
 (
