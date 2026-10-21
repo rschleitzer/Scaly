@@ -83,6 +83,20 @@
 that spans multiple
 lines."
       </programlisting>
+      <para>A backtick inside a string embeds an expression: the string is
+        built from its parts, and each embedded value is written in the text
+        form of its type — a <literal>String</literal>, a
+        <literal>char</literal>, the bytes of a <literal>Slice[u8]</literal>,
+        an integer, a <literal>bool</literal>, or a floating-point number as
+        the shortest text that reads back to it. A value of another type
+        needs a conversion inside the backticks, and <literal>\`</literal>
+        writes a backtick itself.</para>
+      <programlisting>
+let n 42
+let x 0.1
+"The answer is `n`, not `n + 1`, and x is `x`"
+                      ; The answer is 42, not 43, and x is 0.1
+      </programlisting>
     </section>
 
     <section xml:id="lex-characters">

@@ -51,28 +51,28 @@ A taste
 ```scaly
 define Shape union
 (
-    Square: int
-    Rect: (w: int, h: int)
+    Rect: (w: f64, h: f64)
+    Triangle: (base: f64, height: f64)
 )
 
-function area(s: Shape) returns int
+function area(s: Shape) returns f64
     choose s
-        when side: Square: side * side
         when r: Rect: r.w * r.h
+        when t: Triangle: t.base * t.height / 2.0
 
-function total(shapes: Vector[Shape]) returns int
+function total(shapes: Vector[Shape]) returns f64
 {
-    var sum 0
+    var sum 0.0
     for s in shapes                     ; a reduction: runs on every core
         sum := sum + area(s)
     sum
 }
 
 var shapes Vector[Shape](3)
-shapes.put(0, Shape.Square(3))
-shapes.put(1, Shape.Rect((w: 2, h: 5)))
-shapes.put(2, Shape.Square(4))
-print "total area: `total(shapes)`"    ; total area: 35
+shapes.put(0, Shape.Rect((w: 2.5, h: 4.0)))
+shapes.put(1, Shape.Triangle((base: 3.0, height: 1.5)))
+shapes.put(2, Shape.Rect((w: 0.5, h: 0.5)))
+print "total area: `total(shapes)`"    ; total area: 12.5
 ```
 
 No semicolons, no `return` for the last value, and no annotations about where
@@ -96,12 +96,16 @@ use http.Router.Router
 procedure hello(req: ref[Request], mutable res: ref[Response])
     res.send_text("Hello, World!")
 
-procedure echo(req: ref[Request], mutable res: ref[Response])
-    res.send_text(req.param("word"))
+procedure greet(req: ref[Request], mutable res: ref[Response])
+{
+    let name req.param("name")
+    let text "Hello, `name`!"
+    res.send_text(text.as_slice())
+}
 
 var app Router.create(Page.allocate_page())
 app.get("/", &hello)
-app.get("/echo/{word}", &echo)
+app.get("/hello/{name}", &greet)
 serve(app, 8080)
 ```
 

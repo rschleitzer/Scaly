@@ -296,6 +296,37 @@ CLASS="programlisting"
 that spans multiple
 lines."
       </PRE
+><P
+>A backtick inside a string embeds an expression: the string is
+        built from its parts, and each embedded value is written in the text
+        form of its type — a <TT
+CLASS="literal"
+>String</TT
+>, a
+        <TT
+CLASS="literal"
+>char</TT
+>, the bytes of a <TT
+CLASS="literal"
+>Slice[u8]</TT
+>,
+        an integer, a <TT
+CLASS="literal"
+>bool</TT
+>, or a floating-point number as
+        the shortest text that reads back to it. A value of another type
+        needs a conversion inside the backticks, and <TT
+CLASS="literal"
+>\`</TT
+>
+        writes a backtick itself.</P
+><PRE
+CLASS="programlisting"
+>&#13;let n 42
+let x 0.1
+"The answer is `n`, not `n + 1`, and x is `x`"
+                      ; The answer is 42, not 43, and x is 0.1
+      </PRE
 ></DIV
 ><DIV
 CLASS="section"
