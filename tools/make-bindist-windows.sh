@@ -106,11 +106,13 @@ done
 cd "$PWD" && SCALY_STATIC_LLVM_DIR="$LIBS" exec tools/win-link.sh --llvm "\${exports[@]}" "\$out" "\${inputs[@]}"
 EOF
   printf '@"%s" "%s" %%*\r\n' "$(cygpath -w "$(command -v bash)")" "$(cygpath -w "$PGO/cc.sh")" > "$PGO/cc.cmd"
+  # the compiler's one C++ object, named outright as make-bindist.sh does
+  SCALY_STATIC_LLVM_DIR="$LIBS" tools/wasmeh.sh "$PGO/wasm_eh.o"
   for pair in main:scalyc scaly_main:scaly; do
     root="${pair%%:*}"; prog="${pair##*:}"
     SCALY_CC="$(cygpath -w "$PGO/cc.cmd")" SCALY_CACHE="$PGO/cache" SCALY_HOME= \
       "$STAGE/libexec/scaly.exe" build "packages/scalyc/0.2.0/$root.scaly" --pgo "$PROFILE" --export \
-      -o "$PGO/$prog.exe" > "$PGO/$prog.log" 2>&1 \
+      "$(cygpath -w "$PGO/wasm_eh.o")" -o "$PGO/$prog.exe" > "$PGO/$prog.log" 2>&1 \
       || { tail -20 "$PGO/$prog.log"; echo "make-bindist-windows: FAIL — the profile build of $prog"; exit 1; }
     stale=$(grep -c 'profile data may be out of date\|function control flow change detected' "$PGO/$prog.log" || true)
     [ "$stale" = 0 ] || echo "make-bindist-windows: NOTE — $prog: $stale warnings of a profile that does not fit (tools/make-profile.sh)"
