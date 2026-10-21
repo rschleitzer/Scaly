@@ -216,7 +216,7 @@ define Router
             {
                 if sb.get_length() > 0
                     sb.append ", "
-                sb.append(String(r.method.data as pointer[const_char], r.method.length))
+                sb.append(r.method)
                 if r.method.equals("GET")
                     get := true
             }

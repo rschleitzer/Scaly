@@ -356,7 +356,7 @@ define PgConn
         {
             ; (a statement prepared in a batch is one that writes: no
             ; columns, and no answer before send_batch)
-            prepared.add(String^host(name.data as pointer[const_char], name.length))
+            prepared.add(String^host(name))
             prepared_columns.add(0)
             return true
         }
@@ -365,7 +365,7 @@ define PgConn
         described := 0
         if this.flush() = false or this.drain() = false
             return false
-        prepared.add(String^host(name.data as pointer[const_char], name.length))
+        prepared.add(String^host(name))
         prepared_columns.add(described as u32)
         true
     }

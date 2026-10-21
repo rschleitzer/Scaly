@@ -35,11 +35,11 @@ procedure tds_configure(host_name: Slice[u8], port: int, user: Slice[u8], passwo
 {
     let page Page.allocate_page()
     let c &TdsConfig^page(
-        String^page(host_name.data as pointer[const_char], host_name.length),
+        String^page(host_name),
         port,
-        String^page(user.data as pointer[const_char], user.length),
-        String^page(password.data as pointer[const_char], password.length),
-        String^page(database.data as pointer[const_char], database.length),
+        String^page(user),
+        String^page(password),
+        String^page(database),
         encrypt
     )
     scaly_atomic_store_u64(&tds_configured, c as u64)

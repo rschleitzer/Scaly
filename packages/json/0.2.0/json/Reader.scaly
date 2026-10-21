@@ -398,7 +398,7 @@ define JsonReader
     function decode(raw: Slice[u8], escaped: bool) returns String
     {
         if escaped = false
-            return String(raw.data as pointer[const_char], raw.length)
+            return String(raw)
         var sb StringBuilder()
         var i: size_t 0
         while i < raw.length

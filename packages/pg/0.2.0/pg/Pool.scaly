@@ -61,11 +61,11 @@ procedure configure(host_name: Slice[u8], port: int, user: Slice[u8], password: 
 {
     let page Page.allocate_page()
     let c &PgConfig^page(
-        String^page(host_name.data as pointer[const_char], host_name.length),
+        String^page(host_name),
         port,
-        String^page(user.data as pointer[const_char], user.length),
-        String^page(password.data as pointer[const_char], password.length),
-        String^page(database.data as pointer[const_char], database.length)
+        String^page(user),
+        String^page(password),
+        String^page(database)
     )
     scaly_atomic_store_u64(&pg_configured, c as u64)
 }
@@ -122,11 +122,11 @@ procedure parse_database_url(host: ref[Page], url: Slice[u8]) returns PgConfig
     if pc < hostport.length
         port := decimal_of(hostport.slice_from(pc + 1)) as int
     PgConfig(
-        String^host(host_name.data as pointer[const_char], host_name.length),
+        String^host(host_name),
         port,
-        String^host(user.data as pointer[const_char], user.length),
-        String^host(password.data as pointer[const_char], password.length),
-        String^host(database.data as pointer[const_char], database.length)
+        String^host(user),
+        String^host(password),
+        String^host(database)
     )
 }
 

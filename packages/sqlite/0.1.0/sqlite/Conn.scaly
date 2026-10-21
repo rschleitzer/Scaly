@@ -190,7 +190,7 @@ define SqliteConn
         var statement: Sqlite3Stmt null
         if sqlite3_prepare_v2(db, sql.data as pointer[const_char], sql.length as i32, &statement, null) <> SQLITE_OK or statement = null
             return false
-        names.add(String^host(name.data as pointer[const_char], name.length))
+        names.add(String^host(name))
         statements.add(statement)
         true
     }

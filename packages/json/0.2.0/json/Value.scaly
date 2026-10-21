@@ -223,7 +223,7 @@ define JsonValue union
     {
         choose this
             when t: Text
-                return String(t.bytes.data as pointer[const_char], t.bytes.length)
+                return String(t.bytes)
             else
                 return String()
     }

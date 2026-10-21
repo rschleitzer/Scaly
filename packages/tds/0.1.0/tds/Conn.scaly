@@ -606,8 +606,8 @@ define TdsConn
                 return true
             i := i + 1
         }
-        names.add(String^host(name.data as pointer[const_char], name.length))
-        texts.add(String^host(sql.data as pointer[const_char], sql.length))
+        names.add(String^host(name))
+        texts.add(String^host(sql))
         true
     }
 

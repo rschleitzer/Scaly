@@ -28,8 +28,8 @@ procedure configure(path: Slice[u8], setup: Slice[u8])
 {
     let page Page.allocate_page()
     let kept &SqliteConfig^page(
-        String^page(path.data as pointer[const_char], path.length),
-        String^page(setup.data as pointer[const_char], setup.length)
+        String^page(path),
+        String^page(setup)
     )
     scaly_atomic_store_u64(&sqlite_configured, kept as u64)
 }

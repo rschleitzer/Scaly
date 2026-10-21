@@ -77,7 +77,7 @@ procedure redis_pool_of_thread() returns ref[RedisPool] mutable redis_pool
     var per max / (TaskPool.ncpu() as i64)
     if per < 1
         per := 1
-    let made &RedisPool^host(String^host(name.data as pointer[const_char], name.length), port, Array[ref[RedisConn]]^host(), 0, per as int, Array[ref[SchedTask]]^host(), 0, Array[ref[RedisConn]?]^host(), 0)
+    let made &RedisPool^host(String^host(name), port, Array[ref[RedisConn]]^host(), 0, per as int, Array[ref[SchedTask]]^host(), 0, Array[ref[RedisConn]?]^host(), 0)
     redis_pool := made
     made
 }

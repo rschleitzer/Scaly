@@ -222,7 +222,7 @@ procedure static_entry(path: Slice[u8]) returns ref[StaticEntry] mutable static_
     if found = null
     {
         let host cache.host
-        let made &StaticEntry^host(String^host(path.data as pointer[const_char], path.length), host, String^host(), false, 0, 0 - 1, 0, 0, false, false)
+        let made &StaticEntry^host(String^host(path), host, String^host(), false, 0, 0 - 1, 0, 0, false, false)
         cache.entries.add(made)
         found := made
     }
