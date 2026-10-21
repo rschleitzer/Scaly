@@ -1469,7 +1469,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 8521037614670270564
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -1746558469843077145
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -572185,14 +572185,12 @@ if.end55:                                         ; preds = %if.else, %if.then54
 
 define linkonce_odr void @_ZN4replB6scalycB4v0_210value_textEPN4scaly6memory4PageE6StringPv(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result97 = alloca { ptr }, align 8
-  %arg.tmp96 = alloca { ptr }, align 8
-  %arg.tmp93 = alloca { ptr }, align 8
-  %arg.tmp90 = alloca { ptr }, align 8
-  %sret.result87 = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %arg.tmp95 = alloca { ptr }, align 8
+  %arg.tmp92 = alloca { ptr }, align 8
+  %arg.tmp89 = alloca { ptr }, align 8
   %arg.tmp84 = alloca { ptr }, align 8
   %arg.tmp81 = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
   %arg.tmp75 = alloca { ptr }, align 8
   %arg.tmp72 = alloca { ptr }, align 8
   %arg.tmp69 = alloca { ptr }, align 8
@@ -572232,10 +572230,10 @@ frame.forced:                                     ; preds = %frame.force, %entry
   br i1 %call, label %match.case, label %match.alt
 
 match.end:                                        ; preds = %unwrap.ok, %match.next80, %match.case79, %match.case70, %match.case60, %match.case54, %match.case47, %match.case40, %match.case34, %match.case25, %match.case18, %match.case11, %match.case5, %match.case
-  %sb98 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result97, ptr %1, ptr %sb98)
-  %sret.body = load { ptr }, ptr %sret.result97, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result97, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sb96 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb96)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
@@ -572374,8 +572372,7 @@ match.next61:                                     ; preds = %match.next55
 match.case70:                                     ; preds = %match.alt74, %match.next61
   %sb77 = load ptr, ptr %sb, align 8
   %deref78 = load double, ptr %3, align 8
-  call void @_ZN4replB6scalycB4v0_211double_textEPN4scaly6memory4PageEd(ptr noalias sret({ ptr }) %sret.result, ptr %frame, double %deref78)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb77, ptr %sret.result)
+  call void @_ZN13StringBuilder6appendE3f64(ptr %sb77, double %deref78)
   br label %match.end
 
 match.next71:                                     ; preds = %match.alt74
@@ -572390,69 +572387,42 @@ match.alt74:                                      ; preds = %match.next61
 
 match.case79:                                     ; preds = %match.alt83, %match.next71
   %sb86 = load ptr, ptr %sb, align 8
-  %deref88 = load float, ptr %3, align 4
-  %as.fpext = fpext float %deref88 to double
-  call void @_ZN4replB6scalycB4v0_211double_textEPN4scaly6memory4PageEd(ptr noalias sret({ ptr }) %sret.result87, ptr %frame, double %as.fpext)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb86, ptr %sret.result87)
+  %deref87 = load float, ptr %3, align 4
+  %as.fpext = fpext float %deref87 to double
+  call void @_ZN13StringBuilder6appendE3f64(ptr %sb86, double %as.fpext)
   br label %match.end
 
 match.next80:                                     ; preds = %match.alt83
-  store { ptr } { ptr @.sconst.7019 }, ptr %arg.tmp90, align 1
-  %call91 = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %arg.tmp90)
-  br i1 %call91, label %match.case89, label %match.end
+  store { ptr } { ptr @.sconst.7019 }, ptr %arg.tmp89, align 1
+  %call90 = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %arg.tmp89)
+  br i1 %call90, label %match.case88, label %match.end
 
 match.alt83:                                      ; preds = %match.next71
   store { ptr } { ptr @.sconst.7018 }, ptr %arg.tmp84, align 1
   %call85 = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %arg.tmp84)
   br i1 %call85, label %match.case79, label %match.next80
 
-match.case89:                                     ; preds = %match.next80
-  %sb92 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.7020 }, ptr %arg.tmp93, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb92, ptr %arg.tmp93)
-  %sb94 = load ptr, ptr %sb, align 8
+match.case88:                                     ; preds = %match.next80
+  %sb91 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.7020 }, ptr %arg.tmp92, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb91, ptr %arg.tmp92)
+  %sb93 = load ptr, ptr %sb, align 8
   %unwrap.isnull = icmp eq ptr %3, null
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
-unwrap.trap:                                      ; preds = %match.case89
+unwrap.trap:                                      ; preds = %match.case88
   call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.7021)
   unreachable
 
-unwrap.ok:                                        ; preds = %match.case89
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb94, ptr %3)
-  %sb95 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.7022 }, ptr %arg.tmp96, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb95, ptr %arg.tmp96)
+unwrap.ok:                                        ; preds = %match.case88
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb93, ptr %3)
+  %sb94 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.7022 }, ptr %arg.tmp95, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb94, ptr %arg.tmp95)
   br label %match.end
 }
 
-define linkonce_odr void @_ZN4replB6scalycB4v0_211double_textEPN4scaly6memory4PageEd(ptr noalias sret({ ptr }) %0, ptr %1, double %2) {
-entry:
-  %buf = alloca [40 x i8], align 1
-  %arr.ptr = getelementptr inbounds [40 x i8], ptr %buf, i64 0, i64 0
-  %buf1 = alloca ptr, align 8
-  store ptr %arr.ptr, ptr %buf1, align 8
-  %buf2 = load ptr, ptr %buf1, align 8
-  %ptr.add = getelementptr inbounds i8, ptr %buf2, i64 0
-  %call = call i32 @scaly_eio_format_double(ptr %ptr.add, i64 40, double %2)
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page3 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page3, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %buf4 = load ptr, ptr %buf1, align 8
-  %ptr.add5 = getelementptr inbounds i8, ptr %buf4, i64 0
-  call void @_ZN6StringC1EP10const_char(ptr %struct.region, ptr %ptr.add5)
-  %sret.body = load { ptr }, ptr %struct.region, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
+declare void @_ZN13StringBuilder6appendE3f64(ptr, double)
 
 declare i32 @unlink(ptr)
 
@@ -579385,8 +579355,6 @@ declare i32 @scaly_eio_term_raw(...)
 declare i32 @scaly_eio_term_restore(...)
 
 declare ptr @scaly_aligned_alloc(...)
-
-declare i32 @scaly_eio_format_double(...)
 
 attributes #0 = { noreturn }
 attributes #1 = { cold noinline noreturn }

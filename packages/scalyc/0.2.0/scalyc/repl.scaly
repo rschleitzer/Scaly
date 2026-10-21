@@ -1168,11 +1168,11 @@ define repl
             }
             case "double" case "f64"
             {
-                sb.append(repl.double_text(*(cell as pointer[double])))
+                sb.append((*(cell as pointer[double])) as f64)
             }
             case "float" case "f32"
             {
-                sb.append(repl.double_text((*(cell as pointer[float])) as double))
+                sb.append((*(cell as pointer[float])) as f64)
             }
             case "String"
             {
@@ -1181,12 +1181,5 @@ define repl
                 sb.append("\"")
             }
         sb.to_string()
-    }
-
-    procedure double_text(value: double) returns String
-    {
-        var buf char[40]
-        let n scaly_eio_format_double(&buf[0] as pointer[char], 40, value)
-        String(&buf[0] as pointer[const_char])
     }
 }

@@ -66,6 +66,15 @@ define StringBuilder
         buffer.add_run(bytes.length, bytes.data as pointer[char])
     }
 
+    ; A double as the shortest text that reads back to it (`0.1`, `2.5e-08`):
+    ; eio.c's scaly_eio_format_double, as snprintf is variadic
+    procedure append(mutable this: StringBuilder, value: f64)
+    {
+        var text char[40]
+        let n scaly_eio_format_double(&text[0] as pointer[char], 40, value)
+        buffer.add_run(n as size_t, &text[0] as pointer[char])
+    }
+
     ; Decimal formatting overloads — string interpolation desugars an
     ; embedded expression to a plain `append`, so the numeric conversions
     ; live here. Classic divide-by-10 with digit buffer and reversal

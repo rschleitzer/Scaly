@@ -26603,6 +26603,23 @@ if.end:                                           ; preds = %entry
   ret void
 }
 
+define linkonce_odr void @_ZN13StringBuilder6appendE3f64(ptr %0, double %1) {
+entry:
+  %text = alloca [40 x i8], align 1
+  %arr.ptr = getelementptr inbounds [40 x i8], ptr %text, i64 0, i64 0
+  %text1 = alloca ptr, align 8
+  store ptr %arr.ptr, ptr %text1, align 8
+  %text2 = load ptr, ptr %text1, align 8
+  %ptr.add = getelementptr inbounds i8, ptr %text2, i64 0
+  %call = call i32 @scaly_eio_format_double(ptr %ptr.add, i64 40, double %1)
+  %field.inplace = getelementptr inbounds nuw %_Z13StringBuilder, ptr %0, i32 0, i32 0
+  %as.sext = sext i32 %call to i64
+  %text3 = load ptr, ptr %text1, align 8
+  %ptr.add4 = getelementptr inbounds i8, ptr %text3, i64 0
+  call void @_ZN5ArrayIcE7add_runEmPc(ptr %field.inplace, i64 %as.sext, ptr %ptr.add4)
+  ret void
+}
+
 define linkonce_odr void @_ZN13StringBuilder6appendEm(ptr %0, i64 %1) {
 entry:
   %i = alloca i64, align 8
