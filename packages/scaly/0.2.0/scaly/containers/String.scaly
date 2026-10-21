@@ -84,6 +84,40 @@ define String (data: pointer[u8](null))
         *(data + overall_length) := 0
     }
 
+    ; A copy of a view's bytes -- what String.as_slice and the http
+    ; package hand out (`String(req.param("name"))`)
+    init(bytes: Slice[u8])
+    {
+        if bytes.length = 0
+        {
+            data := null
+            return
+        }
+
+        var rest bytes.length
+        var counter: size_t 0
+        while rest >= 0x80
+        {
+            rest := rest >> 7
+            counter := counter + 1
+        }
+
+        let overall_length counter + 1 + bytes.length
+        let own_page Page.get(this)
+        data := own_page.allocate(overall_length + 1, 1) as pointer[u8]
+        var wrest bytes.length
+        var wi: size_t 0
+        while wrest >= 0x80
+        {
+            *(data + wi) := (wrest as u8) | 0x80
+            wrest := wrest >> 7
+            wi := wi + 1
+        }
+        *(data + wi) := wrest as u8
+        memcpy((data + counter + 1) as pointer[void], bytes.data as pointer[void], bytes.length as c_size)
+        *(data + overall_length) := 0
+    }
+
     init(other: Vector[char])
     {
         ; Same encoding as String(pointer, length)

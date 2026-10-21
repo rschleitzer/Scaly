@@ -2039,7 +2039,7 @@ entry:
 
 define linkonce_odr void @_ZN10JsonReaderB4jsonB4v0_26decodeEPN4scaly6memory4PageE5SliceI2u8Eb(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i1 %3) {
 entry:
-  %sret.result101 = alloca { ptr }, align 8
+  %sret.result97 = alloca { ptr }, align 8
   %cp = alloca i64, align 8
   %sret.result = alloca %_Z5SliceI2u8E, align 8
   %j = alloca i64, align 8
@@ -2054,9 +2054,9 @@ if.then:                                          ; preds = %entry
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
 if.end:                                           ; preds = %entry
-  %frame.page3 = load ptr, ptr %1, align 8
-  %frame.has_page4 = icmp ne ptr %frame.page3, null
-  br i1 %frame.has_page4, label %frame.forced6, label %frame.force5
+  %frame.page2 = load ptr, ptr %1, align 8
+  %frame.has_page3 = icmp ne ptr %frame.page2, null
+  br i1 %frame.has_page3, label %frame.forced5, label %frame.force4
 
 frame.force:                                      ; preds = %if.then
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
@@ -2065,214 +2065,210 @@ frame.force:                                      ; preds = %if.then
 frame.forced:                                     ; preds = %frame.force, %if.then
   %forced_page1 = phi ptr [ %frame.page, %if.then ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %load.struct = load %_Z5SliceI2u8E, ptr %2, align 8
-  %data = extractvalue %_Z5SliceI2u8E %load.struct, 1
-  %load.struct2 = load %_Z5SliceI2u8E, ptr %2, align 8
-  %length = extractvalue %_Z5SliceI2u8E %load.struct2, 0
-  call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %data, i64 %length)
+  call void @_ZN6StringC1E5SliceI2u8E(ptr %struct.region, ptr %2)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-frame.force5:                                     ; preds = %if.end
-  %forced_page7 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced6
+frame.force4:                                     ; preds = %if.end
+  %forced_page6 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced5
 
-frame.forced6:                                    ; preds = %frame.force5, %if.end
-  %forced_page8 = phi ptr [ %frame.page3, %if.end ], [ %forced_page7, %frame.force5 ]
-  %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page8, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1Ev(ptr %struct.region9)
-  store ptr %struct.region9, ptr %sb, align 1
+frame.forced5:                                    ; preds = %frame.force4, %if.end
+  %forced_page7 = phi ptr [ %frame.page2, %if.end ], [ %forced_page6, %frame.force4 ]
+  %struct.region8 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page7, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region8)
+  store ptr %struct.region8, ptr %sb, align 1
   store i64 0, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end46, %frame.forced6
-  %i10 = load i64, ptr %i, align 8
-  %load.struct11 = load %_Z5SliceI2u8E, ptr %2, align 8
-  %length12 = extractvalue %_Z5SliceI2u8E %load.struct11, 0
-  %lt = icmp ult i64 %i10, %length12
+while.cond:                                       ; preds = %if.end42, %frame.forced5
+  %i9 = load i64, ptr %i, align 8
+  %load.struct = load %_Z5SliceI2u8E, ptr %2, align 8
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
+  %lt = icmp ult i64 %i9, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %i13 = load i64, ptr %i, align 8
-  store i64 %i13, ptr %j, align 1
-  br label %while.cond14
+  %i10 = load i64, ptr %i, align 8
+  store i64 %i10, ptr %j, align 1
+  br label %while.cond11
 
-while.exit:                                       ; preds = %if.then37, %while.cond
-  %sb102 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result101, ptr %1, ptr %sb102)
-  %sret.body103 = load { ptr }, ptr %sret.result101, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result101, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+while.exit:                                       ; preds = %if.then33, %while.cond
+  %sb98 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result97, ptr %1, ptr %sb98)
+  %sret.body99 = load { ptr }, ptr %sret.result97, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result97, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-while.cond14:                                     ; preds = %while.body15, %while.body
-  %j17 = load i64, ptr %j, align 8
-  %load.struct18 = load %_Z5SliceI2u8E, ptr %2, align 8
-  %length19 = extractvalue %_Z5SliceI2u8E %load.struct18, 0
-  %lt20 = icmp ult i64 %j17, %length19
-  br i1 %lt20, label %lor.rhs, label %lor.end
+while.cond11:                                     ; preds = %while.body12, %while.body
+  %j14 = load i64, ptr %j, align 8
+  %load.struct15 = load %_Z5SliceI2u8E, ptr %2, align 8
+  %length16 = extractvalue %_Z5SliceI2u8E %load.struct15, 0
+  %lt17 = icmp ult i64 %j14, %length16
+  br i1 %lt17, label %lor.rhs, label %lor.end
 
-while.body15:                                     ; preds = %lor.end
-  %j22 = load i64, ptr %j, align 8
-  %add = add i64 %j22, 1
+while.body12:                                     ; preds = %lor.end
+  %j19 = load i64, ptr %j, align 8
+  %add = add i64 %j19, 1
   store i64 %add, ptr %j, align 1
-  br label %while.cond14
+  br label %while.cond11
 
-while.exit16:                                     ; preds = %lor.end
-  %j23 = load i64, ptr %j, align 8
-  %i24 = load i64, ptr %i, align 8
-  %gt = icmp ugt i64 %j23, %i24
-  br i1 %gt, label %if.then25, label %if.end26
+while.exit13:                                     ; preds = %lor.end
+  %j20 = load i64, ptr %j, align 8
+  %i21 = load i64, ptr %i, align 8
+  %gt = icmp ugt i64 %j20, %i21
+  br i1 %gt, label %if.then22, label %if.end23
 
-lor.rhs:                                          ; preds = %while.cond14
-  %j21 = load i64, ptr %j, align 8
-  %call = call i8 @_ZN5SliceI2u8EixEm(ptr %2, i64 %j21)
+lor.rhs:                                          ; preds = %while.cond11
+  %j18 = load i64, ptr %j, align 8
+  %call = call i8 @_ZN5SliceI2u8EixEm(ptr %2, i64 %j18)
   %ne = icmp ne i8 %call, 92
   br label %lor.end
 
-lor.end:                                          ; preds = %lor.rhs, %while.cond14
-  %lor.result = phi i1 [ false, %while.cond14 ], [ %ne, %lor.rhs ]
-  br i1 %lor.result, label %while.body15, label %while.exit16
+lor.end:                                          ; preds = %lor.rhs, %while.cond11
+  %lor.result = phi i1 [ false, %while.cond11 ], [ %ne, %lor.rhs ]
+  br i1 %lor.result, label %while.body12, label %while.exit13
 
-if.then25:                                        ; preds = %while.exit16
-  %sb27 = load ptr, ptr %sb, align 8
-  %i28 = load i64, ptr %i, align 8
-  %j29 = load i64, ptr %j, align 8
-  call void @_ZN5SliceI2u8E8subsliceEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr %2, i64 %i28, i64 %j29)
-  %load.struct30 = load %_Z5SliceI2u8E, ptr %sret.result, align 8
-  %data31 = extractvalue %_Z5SliceI2u8E %load.struct30, 1
-  %j32 = load i64, ptr %j, align 8
-  %i33 = load i64, ptr %i, align 8
-  %sub = sub i64 %j32, %i33
-  call void @_ZN13StringBuilder6appendEPcm(ptr %sb27, ptr %data31, i64 %sub)
-  br label %if.end26
+if.then22:                                        ; preds = %while.exit13
+  %sb24 = load ptr, ptr %sb, align 8
+  %i25 = load i64, ptr %i, align 8
+  %j26 = load i64, ptr %j, align 8
+  call void @_ZN5SliceI2u8E8subsliceEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr %2, i64 %i25, i64 %j26)
+  %load.struct27 = load %_Z5SliceI2u8E, ptr %sret.result, align 8
+  %data = extractvalue %_Z5SliceI2u8E %load.struct27, 1
+  %j28 = load i64, ptr %j, align 8
+  %i29 = load i64, ptr %i, align 8
+  %sub = sub i64 %j28, %i29
+  call void @_ZN13StringBuilder6appendEPcm(ptr %sb24, ptr %data, i64 %sub)
+  br label %if.end23
 
-if.end26:                                         ; preds = %if.then25, %while.exit16
-  %j34 = load i64, ptr %j, align 8
-  %load.struct35 = load %_Z5SliceI2u8E, ptr %2, align 8
-  %length36 = extractvalue %_Z5SliceI2u8E %load.struct35, 0
-  %ge = icmp uge i64 %j34, %length36
-  br i1 %ge, label %if.then37, label %if.end38
+if.end23:                                         ; preds = %if.then22, %while.exit13
+  %j30 = load i64, ptr %j, align 8
+  %load.struct31 = load %_Z5SliceI2u8E, ptr %2, align 8
+  %length32 = extractvalue %_Z5SliceI2u8E %load.struct31, 0
+  %ge = icmp uge i64 %j30, %length32
+  br i1 %ge, label %if.then33, label %if.end34
 
-if.then37:                                        ; preds = %if.end26
+if.then33:                                        ; preds = %if.end23
   br label %while.exit
 
-if.end38:                                         ; preds = %if.end26
-  %j39 = load i64, ptr %j, align 8
-  %add40 = add i64 %j39, 1
-  %call41 = call i8 @_ZN5SliceI2u8EixEm(ptr %2, i64 %add40)
-  %j42 = load i64, ptr %j, align 8
-  %add43 = add i64 %j42, 2
-  store i64 %add43, ptr %i, align 1
-  %eq44 = icmp eq i8 %call41, 117
-  br i1 %eq44, label %if.then45, label %if.else
+if.end34:                                         ; preds = %if.end23
+  %j35 = load i64, ptr %j, align 8
+  %add36 = add i64 %j35, 1
+  %call37 = call i8 @_ZN5SliceI2u8EixEm(ptr %2, i64 %add36)
+  %j38 = load i64, ptr %j, align 8
+  %add39 = add i64 %j38, 2
+  store i64 %add39, ptr %i, align 1
+  %eq40 = icmp eq i8 %call37, 117
+  br i1 %eq40, label %if.then41, label %if.else
 
-if.then45:                                        ; preds = %if.end38
-  %i47 = load i64, ptr %i, align 8
-  %call48 = call i64 @_ZN10JsonReaderB4jsonB4v0_24hex4E5SliceI2u8Em(ptr %2, i64 %i47)
-  store i64 %call48, ptr %cp, align 1
-  %i49 = load i64, ptr %i, align 8
-  %add50 = add i64 %i49, 4
-  store i64 %add50, ptr %i, align 1
-  %cp54 = load i64, ptr %cp, align 8
-  %ge55 = icmp sge i64 %cp54, 55296
-  br i1 %ge55, label %land.rhs, label %if.else52
+if.then41:                                        ; preds = %if.end34
+  %i43 = load i64, ptr %i, align 8
+  %call44 = call i64 @_ZN10JsonReaderB4jsonB4v0_24hex4E5SliceI2u8Em(ptr %2, i64 %i43)
+  store i64 %call44, ptr %cp, align 1
+  %i45 = load i64, ptr %i, align 8
+  %add46 = add i64 %i45, 4
+  store i64 %add46, ptr %i, align 1
+  %cp50 = load i64, ptr %cp, align 8
+  %ge51 = icmp sge i64 %cp50, 55296
+  br i1 %ge51, label %land.rhs, label %if.else48
 
-if.else:                                          ; preds = %if.end38
-  %sb99 = load ptr, ptr %sb, align 8
-  %call100 = call i8 @_ZN10JsonReaderB4jsonB4v0_28unescapeE2u8(i8 %call41)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb99, i8 %call100)
-  br label %if.end46
+if.else:                                          ; preds = %if.end34
+  %sb95 = load ptr, ptr %sb, align 8
+  %call96 = call i8 @_ZN10JsonReaderB4jsonB4v0_28unescapeE2u8(i8 %call37)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb95, i8 %call96)
+  br label %if.end42
 
-if.end46:                                         ; preds = %if.else, %if.end53
+if.end42:                                         ; preds = %if.else, %if.end49
   br label %while.cond
 
-if.then51:                                        ; preds = %land.rhs
-  %i62 = load i64, ptr %i, align 8
-  %add63 = add i64 %i62, 6
-  %load.struct64 = load %_Z5SliceI2u8E, ptr %2, align 8
-  %length65 = extractvalue %_Z5SliceI2u8E %load.struct64, 0
-  %le66 = icmp ule i64 %add63, %length65
-  br i1 %le66, label %land.rhs61, label %if.else58
+if.then47:                                        ; preds = %land.rhs
+  %i58 = load i64, ptr %i, align 8
+  %add59 = add i64 %i58, 6
+  %load.struct60 = load %_Z5SliceI2u8E, ptr %2, align 8
+  %length61 = extractvalue %_Z5SliceI2u8E %load.struct60, 0
+  %le62 = icmp ule i64 %add59, %length61
+  br i1 %le62, label %land.rhs57, label %if.else54
 
-if.else52:                                        ; preds = %land.rhs, %if.then45
-  %cp93 = load i64, ptr %cp, align 8
-  %ge94 = icmp sge i64 %cp93, 56320
-  br i1 %ge94, label %land.rhs92, label %if.end91
+if.else48:                                        ; preds = %land.rhs, %if.then41
+  %cp89 = load i64, ptr %cp, align 8
+  %ge90 = icmp sge i64 %cp89, 56320
+  br i1 %ge90, label %land.rhs88, label %if.end87
 
-if.end53:                                         ; preds = %if.end91, %if.end59
-  %sb97 = load ptr, ptr %sb, align 8
-  %cp98 = load i64, ptr %cp, align 8
-  call void @_ZN10JsonReaderB4jsonB4v0_211append_utf8ER13StringBuilder3i64(ptr %sb97, i64 %cp98)
-  br label %if.end46
+if.end49:                                         ; preds = %if.end87, %if.end55
+  %sb93 = load ptr, ptr %sb, align 8
+  %cp94 = load i64, ptr %cp, align 8
+  call void @_ZN10JsonReaderB4jsonB4v0_211append_utf8ER13StringBuilder3i64(ptr %sb93, i64 %cp94)
+  br label %if.end42
 
-land.rhs:                                         ; preds = %if.then45
-  %cp56 = load i64, ptr %cp, align 8
-  %le = icmp sle i64 %cp56, 56319
-  br i1 %le, label %if.then51, label %if.else52
+land.rhs:                                         ; preds = %if.then41
+  %cp52 = load i64, ptr %cp, align 8
+  %le = icmp sle i64 %cp52, 56319
+  br i1 %le, label %if.then47, label %if.else48
 
-if.then57:                                        ; preds = %land.rhs60
-  %i74 = load i64, ptr %i, align 8
-  %add75 = add i64 %i74, 2
-  %call76 = call i64 @_ZN10JsonReaderB4jsonB4v0_24hex4E5SliceI2u8Em(ptr %2, i64 %add75)
-  %ge81 = icmp sge i64 %call76, 56320
-  br i1 %ge81, label %land.rhs80, label %if.else78
-
-if.else58:                                        ; preds = %land.rhs60, %land.rhs61, %if.then51
-  store i64 65533, ptr %cp, align 1
-  br label %if.end59
-
-if.end59:                                         ; preds = %if.else58, %if.end79
-  br label %if.end53
-
-land.rhs60:                                       ; preds = %land.rhs61
+if.then53:                                        ; preds = %land.rhs56
   %i70 = load i64, ptr %i, align 8
-  %add71 = add i64 %i70, 1
-  %call72 = call i8 @_ZN5SliceI2u8EixEm(ptr %2, i64 %add71)
-  %eq73 = icmp eq i8 %call72, 117
-  br i1 %eq73, label %if.then57, label %if.else58
+  %add71 = add i64 %i70, 2
+  %call72 = call i64 @_ZN10JsonReaderB4jsonB4v0_24hex4E5SliceI2u8Em(ptr %2, i64 %add71)
+  %ge77 = icmp sge i64 %call72, 56320
+  br i1 %ge77, label %land.rhs76, label %if.else74
 
-land.rhs61:                                       ; preds = %if.then51
-  %i67 = load i64, ptr %i, align 8
-  %call68 = call i8 @_ZN5SliceI2u8EixEm(ptr %2, i64 %i67)
-  %eq69 = icmp eq i8 %call68, 92
-  br i1 %eq69, label %land.rhs60, label %if.else58
-
-if.then77:                                        ; preds = %land.rhs80
-  %cp83 = load i64, ptr %cp, align 8
-  %sub84 = sub i64 %cp83, 55296
-  %shl = shl i64 %sub84, 10
-  %add85 = add i64 65536, %shl
-  %sub86 = sub i64 %call76, 56320
-  %add87 = add i64 %add85, %sub86
-  store i64 %add87, ptr %cp, align 1
-  %i88 = load i64, ptr %i, align 8
-  %add89 = add i64 %i88, 6
-  store i64 %add89, ptr %i, align 1
-  br label %if.end79
-
-if.else78:                                        ; preds = %land.rhs80, %if.then57
+if.else54:                                        ; preds = %land.rhs56, %land.rhs57, %if.then47
   store i64 65533, ptr %cp, align 1
-  br label %if.end79
+  br label %if.end55
 
-if.end79:                                         ; preds = %if.else78, %if.then77
-  br label %if.end59
+if.end55:                                         ; preds = %if.else54, %if.end75
+  br label %if.end49
 
-land.rhs80:                                       ; preds = %if.then57
-  %le82 = icmp sle i64 %call76, 57343
-  br i1 %le82, label %if.then77, label %if.else78
+land.rhs56:                                       ; preds = %land.rhs57
+  %i66 = load i64, ptr %i, align 8
+  %add67 = add i64 %i66, 1
+  %call68 = call i8 @_ZN5SliceI2u8EixEm(ptr %2, i64 %add67)
+  %eq69 = icmp eq i8 %call68, 117
+  br i1 %eq69, label %if.then53, label %if.else54
 
-if.then90:                                        ; preds = %land.rhs92
+land.rhs57:                                       ; preds = %if.then47
+  %i63 = load i64, ptr %i, align 8
+  %call64 = call i8 @_ZN5SliceI2u8EixEm(ptr %2, i64 %i63)
+  %eq65 = icmp eq i8 %call64, 92
+  br i1 %eq65, label %land.rhs56, label %if.else54
+
+if.then73:                                        ; preds = %land.rhs76
+  %cp79 = load i64, ptr %cp, align 8
+  %sub80 = sub i64 %cp79, 55296
+  %shl = shl i64 %sub80, 10
+  %add81 = add i64 65536, %shl
+  %sub82 = sub i64 %call72, 56320
+  %add83 = add i64 %add81, %sub82
+  store i64 %add83, ptr %cp, align 1
+  %i84 = load i64, ptr %i, align 8
+  %add85 = add i64 %i84, 6
+  store i64 %add85, ptr %i, align 1
+  br label %if.end75
+
+if.else74:                                        ; preds = %land.rhs76, %if.then53
   store i64 65533, ptr %cp, align 1
-  br label %if.end91
+  br label %if.end75
 
-if.end91:                                         ; preds = %if.then90, %land.rhs92, %if.else52
-  br label %if.end53
+if.end75:                                         ; preds = %if.else74, %if.then73
+  br label %if.end55
 
-land.rhs92:                                       ; preds = %if.else52
-  %cp95 = load i64, ptr %cp, align 8
-  %le96 = icmp sle i64 %cp95, 57343
-  br i1 %le96, label %if.then90, label %if.end91
+land.rhs76:                                       ; preds = %if.then53
+  %le78 = icmp sle i64 %call72, 57343
+  br i1 %le78, label %if.then73, label %if.else74
+
+if.then86:                                        ; preds = %land.rhs88
+  store i64 65533, ptr %cp, align 1
+  br label %if.end87
+
+if.end87:                                         ; preds = %if.then86, %land.rhs88, %if.else48
+  br label %if.end49
+
+land.rhs88:                                       ; preds = %if.else48
+  %cp91 = load i64, ptr %cp, align 8
+  %le92 = icmp sle i64 %cp91, 57343
+  br i1 %le92, label %if.then86, label %if.end87
 }
 
 define linkonce_odr void @_ZN10JsonReaderB4jsonB4v0_26stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -5130,6 +5126,7 @@ choose.when:                                      ; preds = %entry
 
 define linkonce_odr void @_ZN9JsonValueB4jsonB4v0_29as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
+  %arg.tmp = alloca %_Z5SliceI2u8E, align 8
   %tag.ptr = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_2, ptr %2, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
@@ -5140,9 +5137,9 @@ choose.end:                                       ; No predecessors!
   ret void
 
 choose.else:                                      ; preds = %entry
-  %frame.page3 = load ptr, ptr %1, align 8
-  %frame.has_page4 = icmp ne ptr %frame.page3, null
-  br i1 %frame.has_page4, label %frame.forced6, label %frame.force5
+  %frame.page2 = load ptr, ptr %1, align 8
+  %frame.has_page3 = icmp ne ptr %frame.page2, null
+  br i1 %frame.has_page3, label %frame.forced5, label %frame.force4
 
 choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValueB4jsonB4v0_2, ptr %2, i32 0, i32 1
@@ -5159,24 +5156,22 @@ frame.forced:                                     ; preds = %frame.force, %choos
   %forced_page1 = phi ptr [ %frame.page, %choose.when ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %bytes = extractvalue %_Z10JsonStringB4jsonB4v0_2 %variant.val, 0
-  %data = extractvalue %_Z5SliceI2u8E %bytes, 1
-  %bytes2 = extractvalue %_Z10JsonStringB4jsonB4v0_2 %variant.val, 0
-  %length = extractvalue %_Z5SliceI2u8E %bytes2, 0
-  call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %data, i64 %length)
+  store %_Z5SliceI2u8E %bytes, ptr %arg.tmp, align 1
+  call void @_ZN6StringC1E5SliceI2u8E(ptr %struct.region, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-frame.force5:                                     ; preds = %choose.else
-  %forced_page7 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced6
+frame.force4:                                     ; preds = %choose.else
+  %forced_page6 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced5
 
-frame.forced6:                                    ; preds = %frame.force5, %choose.else
-  %forced_page8 = phi ptr [ %frame.page3, %choose.else ], [ %forced_page7, %frame.force5 ]
-  %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1Ev(ptr %struct.region9)
-  %sret.body10 = load { ptr }, ptr %struct.region9, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+frame.forced5:                                    ; preds = %frame.force4, %choose.else
+  %forced_page7 = phi ptr [ %frame.page2, %choose.else ], [ %forced_page6, %frame.force4 ]
+  %struct.region8 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page7, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1Ev(ptr %struct.region8)
+  %sret.body9 = load { ptr }, ptr %struct.region8, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -15437,7 +15432,7 @@ declare i64 @_Z14trailing_zeros3u64(...)
 
 declare ptr @_Z17scaly_force_frameP5Frame(ptr)
 
-declare void @_ZN6StringC1EP10const_charm(ptr, ptr, i64)
+declare void @_ZN6StringC1E5SliceI2u8E(ptr, ptr)
 
 declare void @_ZN13StringBuilderC1Ev(ptr)
 
@@ -15447,6 +15442,8 @@ declare void @_ZN6StringC1Ev(ptr)
 declare void @_Z16scaly_panic_sizeP10const_charmm(...) #0
 
 declare ptr @_Z3getPv(ptr)
+
+declare void @_ZN6StringC1EP10const_charm(ptr, ptr, i64)
 
 attributes #0 = { cold noinline noreturn }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

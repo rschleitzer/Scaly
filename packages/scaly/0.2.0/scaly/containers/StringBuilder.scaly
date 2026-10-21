@@ -57,6 +57,15 @@ define StringBuilder
     procedure append(mutable this: StringBuilder, start: pointer[char], length: size_t)
         buffer.add_run(length, start)
 
+    ; The bytes of a view as they are -- what String.as_slice and the http
+    ; package hand out, so that an interpolation takes one (`"Hello, `name`!"`)
+    procedure append(mutable this: StringBuilder, bytes: Slice[u8])
+    {
+        if bytes.length = 0
+            return
+        buffer.add_run(bytes.length, bytes.data as pointer[char])
+    }
+
     ; Decimal formatting overloads — string interpolation desugars an
     ; embedded expression to a plain `append`, so the numeric conversions
     ; live here. Classic divide-by-10 with digit buffer and reversal
