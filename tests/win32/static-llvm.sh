@@ -65,15 +65,16 @@ if [ ! -f "$DIR/lib/LLVMCore.lib" ]; then
   URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-$VERSION/$NAME.tar.xz"
   echo "1 libs: downloading $URL (about 1 GB)"
   if curl -fL --retry 3 -o "$W/llvm.tar.xz" "$URL"; then
-    # only the static libraries and llvm-config; --strip-components drops the
-    # archive's top directory
+    # only the static libraries, llvm-config and the headers (the compiler's
+    # one C++ file, tools/wasmeh.sh); --strip-components drops the archive's
+    # top directory
     tar -xJf "$W/llvm.tar.xz" -C "$DIR" --strip-components=1 --wildcards \
-        "$NAME/lib/LLVM*.lib" "$NAME/bin/llvm-config.exe" > "$W/untar.log" 2>&1 \
+        "$NAME/lib/LLVM*.lib" "$NAME/bin/llvm-config.exe" "$NAME/include" > "$W/untar.log" 2>&1 \
       || { echo "1 libs: tar said:"; tail -5 "$W/untar.log"; }
     # a tar without --wildcards (Windows' own bsdtar): the whole lib directory
     if [ ! -f "$DIR/lib/LLVMCore.lib" ]; then
       echo "1 libs: retrying without --wildcards (the whole lib directory)"
-      tar -xJf "$W/llvm.tar.xz" -C "$DIR" --strip-components=1 "$NAME/lib" "$NAME/bin/llvm-config.exe" > "$W/untar2.log" 2>&1 \
+      tar -xJf "$W/llvm.tar.xz" -C "$DIR" --strip-components=1 "$NAME/lib" "$NAME/bin/llvm-config.exe" "$NAME/include" > "$W/untar2.log" 2>&1 \
         || { echo "1 libs: tar said:"; tail -5 "$W/untar2.log"; }
     fi
     rm -f "$W/llvm.tar.xz"

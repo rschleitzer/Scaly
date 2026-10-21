@@ -202,10 +202,12 @@ jobs:
           mkdir -p "$dir"
           curl -fL --retry 3 -o llvm.tar.xz \
             "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/$name.tar.xz"
-          tar -xJf llvm.tar.xz -C "$dir" --strip-components=1 --wildcards "$name/lib/LLVM*.lib" "$name/bin/llvm-config.exe" \
-            || tar -xJf llvm.tar.xz -C "$dir" --strip-components=1 "$name/lib" "$name/bin/llvm-config.exe"
+          # include/ for the compiler's one C++ file (tools/wasmeh.sh)
+          tar -xJf llvm.tar.xz -C "$dir" --strip-components=1 --wildcards "$name/lib/LLVM*.lib" "$name/bin/llvm-config.exe" "$name/include" \
+            || tar -xJf llvm.tar.xz -C "$dir" --strip-components=1 "$name/lib" "$name/bin/llvm-config.exe" "$name/include"
           rm -f llvm.tar.xz
           [ -f "$dir/lib/LLVMCore.lib" ] || { echo "no LLVMCore.lib after unpacking"; ls "$dir"; exit 1; }
+          [ -f "$dir/include/llvm/Target/TargetMachine.h" ] || { echo "no C++ headers after unpacking"; ls "$dir"; exit 1; }
           echo "SCALY_STATIC_LLVM_DIR=$dir" >> "$GITHUB_ENV"
 
       - name: Build the archive

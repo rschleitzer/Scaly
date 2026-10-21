@@ -9,7 +9,9 @@
 # It needs LLVM's C++ headers (`$LLVM_PREFIX/include/llvm`), which a
 # development install of LLVM 21 carries (Homebrew's llvm@21, Ubuntu's
 # llvm-21-dev); it names no symbol of the C++ library, so it links wherever the
-# C API does.
+# C API does. On Windows the standalone installer carries no C++ headers: they
+# come with the static libraries ($SCALY_STATIC_LLVM_DIR, the release workflow
+# and tests/win32/static-llvm.sh unpack its include/ too).
 #
 # Usage: tools/wasmeh.sh [output.o]
 set -e
@@ -19,6 +21,9 @@ OUT=${1:-/tmp/wasm_eh.o}
 # shellcheck disable=SC1091
 source tools/llvm-env.sh > /dev/null
 INC="$LLVM_PREFIX/include"
+if [ ! -f "$INC/llvm/Target/TargetMachine.h" ] && [ -n "${SCALY_STATIC_LLVM_DIR:-}" ]; then
+    INC="$SCALY_STATIC_LLVM_DIR/include"
+fi
 if [ ! -f "$INC/llvm/Target/TargetMachine.h" ]; then
     echo "$(basename "$0"): FAIL — LLVM's C++ headers are not under $INC (a development install of LLVM $LLVM_MAJOR)" >&2
     exit 1

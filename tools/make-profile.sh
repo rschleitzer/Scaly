@@ -42,9 +42,11 @@ export SCALY_CACHE="$W/cache"
 unset SCALY_HOME
 
 # --export: the instrumented compiler is built as the distributed one will be,
-# so the counts fit the functions of that build.
+# so the counts fit the functions of that build -- the compiler's one C++
+# object (compiler/wasm_eh.cpp) included, as make-bindist names it
+tools/wasmeh.sh "$W/wasm_eh.o"
 "$SCALY" build packages/scalyc/0.2.0/main.scaly --pgo-train --export \
-  -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$W/scalyc_train" > "$W/build.log" 2>&1 \
+  "$W/wasm_eh.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$W/scalyc_train" > "$W/build.log" 2>&1 \
   || { tail -10 "$W/build.log"; echo "make-profile: FAIL — the instrumented build"; exit 1; }
 
 export LLVM_PROFILE_FILE="$W/train-%p.profraw"
