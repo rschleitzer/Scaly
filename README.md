@@ -1,111 +1,199 @@
 Scaly
 =====
 
-[_Scaly_](https://scaly.io) — the _self-scaling programming language_. A
-self-hosted compiler with LLVM code generation, region-based memory management,
-and a clean, semicolon-free syntax.
+[_Scaly_](https://scaly.io) is a compiled programming language whose memory
+is managed in regions the compiler infers: no garbage collector, no borrow
+checker, and no lifetime annotations in ordinary code. It compiles through
+LLVM to native code, checks that functions are pure, and runs a `for` loop in
+parallel when its body allows it — with no parallel syntax at all.
 
-Self-scaling
-------------
-
-_Self-scaling_ means one program scales across execution substrates without
-being rewritten for each: the same `for`-loop and the same region-based memory
-model run unchanged from a single core to a whole cluster. Parallelism is
-compiler inference — a `for` whose body is provably independent is dispatched
-through an adaptive parallel driver, and there is no separate parallel syntax —
-while a memory region is also the unit of distribution, shipped between nodes as
-a self-describing wire image.
-
-That ladder — **fibers → cores → GPU → cluster** — is now complete. The compiler
-bootstraps from a committed LLVM-IR seed, reproduces itself byte-identically, and
-passes native CI on arm64/x86_64 × darwin/linux. The finale is a real workload,
-not a toy: [`demo/mann_dist.scaly`](demo/mann_dist.scaly) trains a 2-layer
-transformer on Thomas Mann's _Der Tod in Venedig_ by synchronous data-parallel
-SGD across N processes that all-reduce their gradient **regions** over TCP — pure
-Scaly, no MPI or NCCL — then generates German text from the trained model. A
-single-node baseline produces bit-for-bit identical loss, so distribution is
-semantically transparent; a killed worker is detected and the run finishes on the
-survivors.
-
-```sh
-demo/run.sh                 # stage 5: char transformer on one node
-demo/run_mann_dist.sh 4     # stage 7: the same model, data-parallel over 4 nodes
-```
+The compiler is written in Scaly and builds itself; so are its language
+server and the tool around it.
 
 Install
 -------
 
-Scaly ships as its own LLVM IR and is built into a native binary on your
-machine, so you need **LLVM 21** and a C compiler first:
-
-```sh
-# macOS
-brew install llvm@21
-# Ubuntu 26.04 / Debian
-sudo apt update && sudo apt install llvm-21 lld-21 clang
-```
-
-On Ubuntu, `lld` is the linker that matters: stock GNU ld (BFD) fails to link
-against libLLVM-21. The `apt update` is not decoration either — a stale package
-list names a revision the mirror has already superseded, and the install then
-dies with a wall of `404 Not Found` on the `.deb` URLs rather than with anything
-resembling "not found". If your mirror still 404s afterwards, take LLVM's own
-packages instead:
-
-```sh
-wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 21
-```
-
-Note that a `libLLVM-21.so` already on the machine proves nothing — plenty of
-distributions pull the runtime library in as some other package's dependency
-while `llc`, `opt` and `llvm-link` (the `llvm-21` package) are absent. Version 21
-is a hard requirement, not a floor — the compiler links against libLLVM's C API,
-which drops and renames functions between major versions, so a libLLVM 20
-leaves `scalyc` with an undefined symbol at link time.
-
-Then run the installer — it puts `scalyc` on your `PATH` under `~/.scaly`, no
-`sudo`:
+On macOS and Linux:
 
 ```sh
 curl -fsSL https://scaly.io/install.sh | sh
 ```
 
-Open a new terminal, and you are ready:
+On Windows (PowerShell):
+
+```powershell
+irm https://scaly.io/install.ps1 | iex
+```
+
+The installer puts three ready-made programs under `~/.scaly` — no `sudo`, no
+LLVM to install: `scaly` (the tool: REPL, `run`, `build`, `test`, `new`,
+`install`), `scalyc` (the compiler) and `scalyls` (the language server). It
+needs a C compiler for linking (clang; on Windows the Build Tools for Visual
+Studio, which it offers to install). Ready-made programs exist for macOS 26
+on Apple silicon, macOS 15 on Intel, Ubuntu 26.04 on x86_64 and arm64, and
+Windows 10/11 on x86_64 and arm64; elsewhere the installer builds them from
+source. More on [scaly.io/download](https://scaly.io/download/).
+
+First steps
+-----------
 
 ```sh
 printf 'print("Hello, World!")\n' > hello.scaly
-scalyc -o hello hello.scaly && ./hello
+scaly run hello.scaly                  # compiled and run in process
+scaly build hello.scaly -o hello       # a native program
+scaly new myapp                        # a project with a test
+scaly                                  # the REPL
 ```
 
-Uninstall with `rm -rf ~/.scaly` (and remove the `PATH` line the installer added
-to your shell profile).
+A taste
+-------
+
+```scaly
+define Shape union
+(
+    Square: int
+    Rect: (w: int, h: int)
+)
+
+function area(s: Shape) returns int
+    choose s
+        when side: Square: side * side
+        when r: Rect: r.w * r.h
+
+function total(shapes: Vector[Shape]) returns int
+{
+    var sum 0
+    for s in shapes                     ; a reduction: runs on every core
+        sum := sum + area(s)
+    sum
+}
+
+var shapes Vector[Shape](3)
+shapes.put(0, Shape.Square(3))
+shapes.put(1, Shape.Rect((w: 2, h: 5)))
+shapes.put(2, Shape.Square(4))
+print "total area: `total(shapes)`"    ; total area: 35
+```
+
+No semicolons, no `return` for the last value, and no annotations about where
+memory lives: the compiler decides whether a value goes on the stack, on the
+calling function's region or on a page of its own, and an escape checker
+proves that no reference outlives its memory.
+
+An HTTP server
+--------------
+
+The standard packages include an HTTP/1.1 and HTTP/2 server; this one answers
+on port 8080 on every core:
+
+```scaly
+package http 0.2.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+procedure hello(req: ref[Request], mutable res: ref[Response])
+    res.send_text("Hello, World!")
+
+procedure echo(req: ref[Request], mutable res: ref[Response])
+    res.send_text(req.param("word"))
+
+var app Router.create(Page.allocate_page())
+app.get("/", &hello)
+app.get("/echo/{word}", &echo)
+serve(app, 8080)
+```
+
+```sh
+scaly build server.scaly --release -o server && ./server
+```
+
+Each request is handled in a region of its own, freed when the handler
+returns. The packages beside the standard library: `http`, `https` (TLS 1.3),
+`h3` (HTTP/3), `tls`, `json`, `compress`, and clients for PostgreSQL, Redis,
+SQLite and SQL Server.
+
+Built with Scaly
+----------------
+
+- **[tscaly](https://github.com/rschleitzer/tscaly)** — the TypeScript
+  compiler (typescript-go), ported from Go. On all of VS Code it reports the
+  same 359 errors as tsgo, in 4.9 s where tsgo takes 6.9 s; its 326 000 lines
+  build in 38 s.
+- **[fire](https://github.com/rschleitzer/fire)** — a FHIR R5 server generated
+  from HL7's definitions, a drop-in for its C# counterpart on the same
+  database: 1.4 to 1.9 times fewer instructions for a read, 35 to 49 MB of
+  memory where the C# server needs 450 to 470.
+- **[dazzle](https://github.com/rschleitzer/dazzle)** — OpenSP and OpenJade,
+  the SGML parser and DSSSL engine, ported from C++, with a PDF backend of its
+  own; both run in a web page as WebAssembly.
+- **The compiler, `scalyls` and the tool** — every line of the toolchain.
+
+Tools
+-----
+
+- A [VS Code extension](https://scaly.io/downloads/scaly-vscode.vsix) on the
+  language server: diagnostics as you type, hover, go to definition,
+  references, rename, completion.
+- Source-level debugging through DWARF with lldb.
+- Packages are directories with a version in their path, fetched from git by
+  the tool (`package json 0.1.3 "github.com/someone/json"`); no manifest, no
+  lock file, no registry.
+- `--target wasm32-wasip1` for WebAssembly.
+
+Self-scaling
+------------
+
+One program scales across execution substrates without being rewritten: the
+same `for` loop and the same region model run from a single core to a
+cluster. A `for` whose body is provably independent is dispatched through an
+adaptive parallel driver, and a memory region is also the unit of
+distribution, shipped between nodes as a self-describing image. The ladder —
+fibers, cores, GPU, cluster — is complete;
+[`demo/mann_dist.scaly`](demo/mann_dist.scaly) trains a small transformer by
+data-parallel SGD across processes that exchange their gradient regions over
+TCP.
 
 Learn Scaly
 -----------
 
 The [tutorial and language specification](https://scaly.io/lang/) cover the
-language end to end, including the VS Code debugging setup.
+language end to end, including the VS Code debugging setup; its examples are
+executed by the test suite.
 
 Building from source
 --------------------
 
-With a source checkout you can build the compiler directly from the committed
-seed (no C++ toolchain needed — just LLVM 21 + a C compiler):
+A source checkout builds the toolchain from the committed seed, the compiler
+as LLVM IR. It needs **LLVM 21** with its headers (Homebrew's `llvm@21`,
+Ubuntu's `llvm-21-dev lld-21 clang`) and a C compiler:
 
 ```sh
-tools/build-from-seed.sh        # -> scalyc/build/scalyc
-tools/install.sh                # put it on your PATH (override BINDIR; tools/uninstall.sh to remove)
+tools/build-from-seed.sh        # -> scalyc/build/scalyc, scaly, scalyls
+tools/install.sh                # put it on your PATH (tools/uninstall.sh to remove)
 ```
 
-See [RELEASING.md](RELEASING.md) for how the seed is minted, verified, and
+Version 21 is a hard requirement, not a floor: the compiler links against
+LLVM's C API, which renames functions between major versions. See
+[RELEASING.md](RELEASING.md) for how the seed is made, verified and
 published.
+
+Issues
+------
+
+Bug reports and questions are welcome as
+[issues](https://github.com/rschleitzer/Scaly/issues). Scaly is developed by
+one person; for a change larger than a fix, please open an issue first.
 
 Repository layout
 -----------------
 
 - **scaly** — runtime support and standard library (`packages/scaly/`).
-- **scalyc** — the self-hosted compiler (`packages/scalyc/`).
-- **scaly.io** — the static website, the home page of Scaly (`docs/website/`).
+- **scalyc** — the self-hosted compiler and the tool (`packages/scalyc/`).
+- **scalyls** — the language server (`packages/scalyls/`).
+- the standard packages beside them (`packages/http/`, `packages/json/`, …).
+- **scaly.io** — the website and the documentation (`docs/`).
 
 Licensing
 ---------
