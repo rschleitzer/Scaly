@@ -18,6 +18,10 @@
 #   returned   a routine of another package hands back its argument and a
 #              method keeps the result: a local argument is refused, a fresh
 #              copy is not (the interface's `@ret_reach_N`)
+#   pagebuilt  a routine of another package builds an object on the page it
+#              is handed, a procedure hands it its own record's page and
+#              writes the object: no write through `this` (the package read
+#              from its sources, an empty cache)
 #   run        the same program through `scaly run`, arguments handed on;
 #              tests/tool/globals.scaly, whose narrow constants aborted the JIT
 #   native     the cache holds the C and assembly files THIS target takes,
@@ -278,6 +282,19 @@ for call in 'Paths.pick("x", other)' 'Paths.fresh(host, "x", other)'; do
       [ $rc = 0 ] && [ "$out" = "9 116" ] && ok || bad "returned: the fresh copy: rc=$rc '$out'" ;;
   esac
 done
+
+# pagebuilt: a page handed to a call is where its result is built, not
+# something the result aliases (WriteCensus.call_alias_mask#). With the
+# dependency read from its SOURCES -- an empty cache, no interface -- its
+# routine is a stub that may alias every argument, and until 2026-10-21 the
+# check refused `tally` for writing `this` (tsdriver's parse_and_bind_bytes)
+pb="$TMP/pagebuilt"
+mkdir -p "$pb/packages/lower/0.1.0" "$pb/packages/upper/0.1.0"
+printf 'package scaly 0.2.0\nuse scaly.memory.Page\ndefine Index(var n: int)\n{\n    function create(host: ref[Page]) returns ref[Index]\n        &Index^host(0)\n\n    procedure bump(mutable this)\n        n := n + 1\n}\n' > "$pb/packages/lower/0.1.0/lower.scaly"
+printf 'package scaly 0.2.0\npackage lower 0.1.0\nuse scaly.memory.Page\nuse lower.Index\n\ndefine Tally(host: ref[Page])\n{\n    procedure tally(this, times: int) returns int\n    {\n        let c Index.create(host)\n        var i 0\n        while i < times\n        {\n            c.bump()\n            i := i + 1\n        }\n        c.n\n    }\n}\n' > "$pb/packages/upper/0.1.0/upper.scaly"
+( cd "$pb" && SCALY_CACHE="$pb/cache" SCALY_HOME="$ROOT" "$BIN" -S --no-tests -o upper.ll packages/upper/0.1.0/upper.scaly > check.log 2>&1 )
+rc=$?
+[ $rc = 0 ] && ok || bad "pagebuilt: an object built on this record's page was taken for a write through this: rc=$rc $(grep error "$pb/check.log" | head -1)"
 
 # run
 if scaly_jit_available 2>/dev/null; then

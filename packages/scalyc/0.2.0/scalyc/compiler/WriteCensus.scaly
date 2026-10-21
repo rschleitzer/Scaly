@@ -913,8 +913,15 @@ define WriteCensus
                                 }
                             }
                     }
-            if rp = WC_PARAMS
-                return this.mask_of_operands(c.args)
+            ; A PAGE handed to a call is where its result is built, not
+            ; something the result aliases: `AddressIndex.create(host)` with
+            ; `host` this record's page answers a new object on it, and a write
+            ; into that object is no write through `this` -- the page is the
+            ; result region (`@ret_reach_0` says the object lives there).
+            ; Until 2026-10-21 tsdriver's `parse_and_bind_bytes` was refused
+            ; for writing `this` wherever tsbase came from its sources. A call
+            ; that answers a page itself still aliases its page arguments.
+            let pages_alias WriteCensus.core_name_is_page(Planner.get_readable_name(c.result_type))
             var m: u64 0
             var i: size_t 0
             while i < c.args.length
@@ -922,12 +929,14 @@ define WriteCensus
                 var bit: u64 WC_OVERFLOW
                 if i < 61
                     bit := (1 as u64) << (i as u64)
+                if rp = WC_PARAMS
+                    bit := WC_PARAMS
                 if (rp & bit) <> (0 as u64)
                 {
                     let a_ptr c.args.get i
-                    if a_ptr <> null
+                    if a_ptr <> null and (pages_alias or WriteCensus.core_name_is_page(Planner.get_readable_name(a_ptr.unwrap().result_type)) = false)
                     {
-                        if narrow
+                        if narrow and rp <> WC_PARAMS
                             m := m | this.is_of(a_ptr.unwrap())
                         else
                             m := m | this.mask_of(a_ptr.unwrap())
