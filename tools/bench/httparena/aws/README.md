@@ -7,6 +7,12 @@ two sockets of 48 cores, 192 threads), where setup.sh rebuilds the same split
 from the machine's topology -- the server on one socket, the load generators
 on the other.
 
+Within a smaller vCPU quota, `TYPE=c6a.16xlarge ./launch.sh` takes the same
+Zen 3 generation virtualized with 64 vCPUs on one socket: setup.sh halves it,
+32 logical CPUs each for the server and the load generators -- half the
+board's size, so it finds failures and ranks the entries, but says nothing
+about 64 cores.
+
 The host costs while it runs (about 8 USD an hour on demand in Frankfurt) and
 ends itself after the hours launch.sh is given.
 

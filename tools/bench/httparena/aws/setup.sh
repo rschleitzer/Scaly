@@ -8,8 +8,9 @@
 # on a Threadripper whose siblings are n+64 -- and the load generators to the
 # other half. Here the same shape is derived from /sys: the server on 32
 # cores of socket 0 with their siblings, the load generators on 32 cores of
-# socket 1 with theirs, latency-500k-8cpu on 4 cores of socket 0. Unlike the
-# board's single socket, server and load generator talk across sockets.
+# socket 1 with theirs, latency-500k-8cpu on 4 cores of socket 0 (unlike the
+# board's single socket, server and load generator talk across sockets). On a
+# one-socket machine its cores are halved instead, at most 32 for each side.
 set -eu
 COMMIT="$1"
 HA="$HOME/HttpArena"
@@ -40,18 +41,32 @@ for d in glob.glob('/sys/devices/system/cpu/cpu[0-9]*'):
     except OSError:
         continue
     cpus.setdefault((pkg, core), []).append(n)
-def pick(pkg, count):
-    cores = sorted(k for k in cpus if k[0] == pkg)[:count]
+def cpulist(cores):
     return ','.join(str(c) for k in cores for c in sorted(cpus[k]))
 pkgs = sorted({k[0] for k in cpus})
-print(pick(pkgs[0], 32), pick(pkgs[-1], 32), pick(pkgs[0], 4))
+first = sorted(k for k in cpus if k[0] == pkgs[0])
+if len(pkgs) > 1:
+    # two sockets: the server on one, the load generators on the other
+    other = sorted(k for k in cpus if k[0] == pkgs[-1])
+    server, loadgen = first[:32], other[:32]
+else:
+    # one socket: its cores halved, as the board halves its Threadripper
+    half = min(32, len(first) // 2)
+    server, loadgen = first[:half], first[half:2 * half]
+print(cpulist(server), cpulist(loadgen), cpulist(first[:4]))
 EOF
 )
 sed -i "s/|0-31,64-95|/|$SERVER|/; s/|0-3,64-67|/|$SMALL|/" "$HA/scripts/lib/profiles.sh"
 grep -q "|0-31,64-95|" "$HA/scripts/lib/profiles.sh" && { echo "setup.sh: profiles.sh still names the board's cpuset"; exit 1; }
+# the board runs its load generators with 64 threads on its 64 CPUs: as many
+# threads as the load generators have CPUs here
+LOADGEN_N=$(echo "$LOADGEN" | tr ',' '\n' | wc -l)
 cat > "$HOME/bench.env" << EOF
 export GCANNON_CPUS=$LOADGEN
 export LOADGEN_DOCKER=true
+export THREADS=$LOADGEN_N
+export H2THREADS=$LOADGEN_N
+export H3THREADS=$LOADGEN_N
 EOF
 echo "setup.sh: HttpArena at $(git -C "$HA" rev-parse --short HEAD); server $SERVER; load generators $LOADGEN; 8cpu $SMALL"
 lscpu | grep -E 'Model name|^CPU\(s\)|Socket|NUMA node\(s\)'
