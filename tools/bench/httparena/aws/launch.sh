@@ -52,7 +52,7 @@ aws ec2 wait instance-running --instance-ids "$ID"
 HOST=$(aws ec2 describe-instances --instance-ids "$ID" \
   --query 'Reservations[0].Instances[0].PublicDnsName' --output text)
 printf 'ID=%s\nHOST=%s\nPEM=%s\nREGION=%s\n' "$ID" "$HOST" "$PEM" "$AWS_DEFAULT_REGION" > "$STATE"
-echo "launch.sh: running at $HOST -- bare metal takes some minutes more before ssh answers"
+echo "launch.sh: running at $HOST -- waiting for ssh (bare metal takes some minutes more)"
 until ssh -i "$PEM" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 "ubuntu@$HOST" true 2> /dev/null; do
   sleep 20
 done
