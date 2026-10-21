@@ -63,11 +63,26 @@ procedure http_connection()
     serve_connection[TcpStream](&c, router)
 }
 
+; Every connection of a dedicated h2c listener (start_h2c): HTTP/2 by prior
+; knowledge, and an HTTP/1.1 request refused rather than served.
+procedure h2c_connection()
+{
+    var c TcpStream.of_task()
+    c.set_nodelay(true)
+    let router (scaly_atomic_load_u64(&http_router) as size_t) as ref[Router]
+    serve_stream[TcpStream](&c, router, true)
+}
+
 ; The loop of one connection over any stream that reads into a Slice (the
 ; count, 0 at the end, -1 on an error), writes a Slice whole and closes: a
 ; TcpStream here, a TlsStream in the https package -- which is why it takes
 ; the router rather than reading this module's global.
 procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
+    serve_stream[S](c, router, false)
+
+; ... and with h2_only, a connection that does not open with the HTTP/2
+; client preface is answered 505 (HTTP Version Not Supported) and closed.
+procedure serve_stream[S](mutable c: ref[S], router: ref[Router], h2_only: bool)
 {
     let host Page.allocate_page()
     var inb ByteBuf.create(host, IN_SIZE)
@@ -92,6 +107,13 @@ procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
             if inb.length < h2_preface().length
                 continue
             serve_h2[S](c, router, host, &inb, req, res, outb)
+            break
+        }
+        if h2_only
+        {
+            refuse(res, 505)
+            if outb.length > 0
+                c.write(outb.bytes())
             break
         }
         first := false
@@ -168,4 +190,12 @@ procedure start(router: ref[Router], l: TcpListener) returns TcpServer
 {
     scaly_atomic_store_u64(&http_router, router as u64)
     l.start(&http_connection)
+}
+
+; Serve HTTP/2 by prior knowledge alone on a listener the caller made: a
+; dedicated h2c port, which refuses HTTP/1.1 (start serves both).
+procedure start_h2c(router: ref[Router], l: TcpListener) returns TcpServer
+{
+    scaly_atomic_store_u64(&http_router, router as u64)
+    l.start(&h2c_connection)
 }

@@ -6,8 +6,10 @@
 ;   2. the connection stays open: a request with Connection: close for a
 ;      path nothing serves answers 404 and ends the connection;
 ;   3. a request that cannot be parsed answers 400 and ends it too;
-;   4. shutdown, and wait returns.
-; Expected: pipelined 3|72|20 404-close 400-close stopped
+;   4. a dedicated h2c listener (start_h2c) answers an HTTP/1.1 request
+;      505 and ends the connection;
+;   5. shutdown, and wait returns.
+; Expected: pipelined 3|72|20 404-close 400-close h2c-only-505 stopped
 
 package scaly 0.2.0
 package http 0.2.0
@@ -55,10 +57,10 @@ procedure responses(s: TcpStream, want: int) returns String
                 if got > 0
                     out.append("|" as char)
                 let status buf.subslice(at + 9, at + 12)
-                out.append(String(status.data as pointer[const_char], status.length))
+                out.append(status)
                 out.append(":" as char)
                 let body buf.subslice(at + e, at + e + (n as size_t))
-                out.append(String(body.data as pointer[const_char], body.length))
+                out.append(body)
                 at := at + e + (n as size_t)
                 got := got + 1
                 continue
@@ -117,6 +119,22 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     }
     b.close()
     Console.print "400-close "
+
+    var hl TcpListener.listen(0)
+    let h2c start_h2c(app, hl)
+    var h TcpStream.connect("127.0.0.1", hl.port())
+    h.write("GET /sum?a=1&b=2 HTTP/1.1\r\nHost: t\r\n\r\n")
+    let refused responses(h, 1)
+    if refused.equals("505:") = false or ended(h) = false
+    {
+        print "got `refused`"
+        return 4
+    }
+    h.close()
+    h2c.shutdown()
+    h2c.wait()
+    hl.close()
+    Console.print "h2c-only-505 "
 
     server.shutdown()
     server.wait()

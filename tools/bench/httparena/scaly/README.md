@@ -20,7 +20,7 @@ its build.
 | json-tls, 8gbit, static-tls | the same routes over TLS 1.3 on `:8081`, from the `tls` and `https` packages (OpenSSL) |
 | static-* | the package's static handler: `.br`/`.gz` siblings chosen by `Accept-Encoding`, and a file replaced on disk is served anew |
 | baseline-h2, static-h2 | the package's own HTTP/2 over TLS on `:8443` |
-| baseline-h2c, json-h2c | HTTP/2 by prior knowledge on `:8082`; every plain port answers it beside HTTP/1.1 |
+| baseline-h2c, json-h2c | HTTP/2 by prior knowledge on a dedicated `:8082` (`start_h2c`), which refuses HTTP/1.1 with 505; `:8080` answers both |
 | baseline-h3, static-h3 | the `h3` package: HTTP/3 over QUIC (ngtcp2) on udp `:8443`, the same router |
 | async-db, fortunes | the `pg` package's pool: a prepared statement per pooled connection, rows read from the connection's receive buffer; over HTTP/2 these routes run beside the other streams |
 | unary-grpc | gRPC framing and protobuf varints from the package |

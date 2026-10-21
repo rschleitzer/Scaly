@@ -8,7 +8,8 @@
 ;   json-comp                            GET /json/{count}?m=      8080
 ;   json-tls, 8gbit (POST /echo),
 ;     static-tls                         the same routes over TLS  8081
-;   baseline-h2c, json-h2c               HTTP/2, prior knowledge   8082
+;   baseline-h2c, json-h2c               HTTP/2 only, by prior     8082
+;                                          knowledge (start_h2c)
 ;   baseline-h2, static-h2               GET /baseline2, /static   8443 (TLS)
 ;   baseline-h3, static-h3               the same over QUIC        8443 (UDP)
 ;   async-db, fortunes                   GET /async-db, /fortunes  8080 (db.scaly)
@@ -306,12 +307,12 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
         if start_h3(app, h2_port, cert, key) = false
             print "arena: no HTTP/3 on port `h2_port` (no TLS context, or no UDP socket)"
     }
-    ; HTTP/2 by prior knowledge; every plain port answers it beside HTTP/1.1
+    ; HTTP/2 by prior knowledge alone (the main port answers it beside HTTP/1.1)
     if h2c_port > 0
     {
         let cl TcpListener.listen_any(h2c_port)
         if cl.is_open()
-            start(app, cl)
+            start_h2c(app, cl)
         else
             print "arena: cannot listen on port `h2c_port`"
     }
