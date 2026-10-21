@@ -44,11 +44,13 @@
     <prose>An operation is a sequence of things: values, names, operator names, tuples in parentheses, vector literals in brackets and blocks in braces, each perhaps followed by a member access with a dot. The compiler reads the sequence from left to right and holds one current value; the TYPE of that value says what the next thing means. A tuple after a function is the call, a tuple after a type the construction, a vector literal after a value the indexing, an operator name after a value one of the operators its type declares. Parentheses, brackets, braces and the dot are what structure a sequence, and nothing else does. An operation ends with a colon, a line break, or anything that is not part of it.
 
     <tests id = prefix-functions title = "Prefix Operators">
-        <prose>Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, and after a function, so `a - -2` subtracts minus two and `twice -5` is `twice(-5)`. An `=` at the start of an operation does nothing, so `let a = 42` reads as `let a 42`.
+        <prose>Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, after a function, and after another prefix, so `a - -2` subtracts minus two, `twice -5` is `twice(-5)`, and `not not a` reads as written. An `=` at the start of an operation does nothing, so `let a = 42` reads as `let a 42`.
         <test id = negate-positive><input>-7<expect>-7
         <test id = negate-negative><input>-(-3)<expect>3
         <test id = prefix-add><input>+ 3<expect>3
         <test id = prefix-after-operator><input>10 - -2<expect>12
+        <test id = prefix-after-prefix><input>- -2<expect>2
+        <test id = not-not><input>not not true<expect>true
         <test id = prefix-after-function program = program><input>function twice(n: int) returns int
     n * 2
 twice -5<expect>-10

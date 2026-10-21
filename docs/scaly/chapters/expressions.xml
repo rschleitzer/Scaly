@@ -22,9 +22,9 @@
         </thead>
         <tbody>
           <row>
-            <entry>none, or one waiting for its operand</entry>
+            <entry>none, a prefix, or one waiting for its operand</entry>
             <entry>an operator name</entry>
-            <entry>a prefix: it takes the next value (<literal>-x</literal>, <literal>a - -2</literal>)</entry>
+            <entry>a prefix: it takes the next value (<literal>-x</literal>, <literal>a - -2</literal>, <literal>not not a</literal>)</entry>
           </row>
           <row>
             <entry>a value</entry>

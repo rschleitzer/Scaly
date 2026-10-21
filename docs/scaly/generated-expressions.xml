@@ -205,7 +205,7 @@
 
     <section xml:id='tests-PREFIX-FUNCTIONS'>
       <title>Prefix Operators</title>
-      <para>Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, and after a function, so <literal>a - -2</literal> subtracts minus two and <literal>twice -5</literal> is <literal>twice(-5)</literal>. An <literal>=</literal> at the start of an operation does nothing, so <literal>let a = 42</literal> reads as <literal>let a 42</literal>.</para>
+      <para>Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, after a function, and after another prefix, so <literal>a - -2</literal> subtracts minus two, <literal>twice -5</literal> is <literal>twice(-5)</literal>, and <literal>not not a</literal> reads as written. An <literal>=</literal> at the start of an operation does nothing, so <literal>let a = 42</literal> reads as <literal>let a 42</literal>.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -235,6 +235,16 @@
             <row>
               <entry><literal>10 - -2</literal></entry>
               <entry><literal>12
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>- -2</literal></entry>
+              <entry><literal>2
+        </literal></entry>
+            </row>
+            <row>
+              <entry><literal>not not true</literal></entry>
+              <entry><literal>true
         </literal></entry>
             </row>
             <row>

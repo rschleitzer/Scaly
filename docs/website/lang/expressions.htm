@@ -193,7 +193,7 @@ CLASS="CALSTABLE"
 ><TBODY
 ><TR
 ><TD
->none, or one waiting for its operand</TD
+>none, a prefix, or one waiting for its operand</TD
 ><TD
 >an operator name</TD
 ><TD
@@ -203,6 +203,9 @@ CLASS="literal"
 >, <TT
 CLASS="literal"
 >a - -2</TT
+>, <TT
+CLASS="literal"
+>not not a</TT
 >)</TD
 ></TR
 ><TR
@@ -385,7 +388,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1812"
+NAME="AEN1813"
 ></A
 ><TABLE
 BORDER="0"
@@ -450,7 +453,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1834"
+NAME="AEN1835"
 ></A
 ><TABLE
 BORDER="0"
@@ -528,7 +531,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1861"
+NAME="AEN1862"
 ></A
 ><TABLE
 BORDER="0"
@@ -606,7 +609,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1888"
+NAME="AEN1889"
 ></A
 ><TABLE
 BORDER="0"
@@ -684,7 +687,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1915"
+NAME="AEN1916"
 ></A
 ><TABLE
 BORDER="0"
@@ -750,7 +753,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1938"
+NAME="AEN1939"
 ></A
 ><TABLE
 BORDER="0"
@@ -819,16 +822,19 @@ NAME="tests-PREFIX-FUNCTIONS"
 >Prefix Operators</A
 ></H2
 ><P
->Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, and after a function, so <TT
+>Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, after a function, and after another prefix, so <TT
 CLASS="literal"
 >a - -2</TT
-> subtracts minus two and <TT
+> subtracts minus two, <TT
 CLASS="literal"
 >twice -5</TT
 > is <TT
 CLASS="literal"
 >twice(-5)</TT
->. An <TT
+>, and <TT
+CLASS="literal"
+>not not a</TT
+> reads as written. An <TT
 CLASS="literal"
 >=</TT
 > at the start of an operation does nothing, so <TT
@@ -843,7 +849,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1969"
+NAME="AEN1971"
 ></A
 ><TABLE
 BORDER="0"
@@ -909,6 +915,32 @@ CLASS="literal"
 ><TT
 CLASS="literal"
 >12
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>- -2</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>2
+        </TT
+></TD
+></TR
+><TR
+><TD
+><TT
+CLASS="literal"
+>not not true</TT
+></TD
+><TD
+><TT
+CLASS="literal"
+>true
         </TT
 ></TD
 ></TR
@@ -1031,7 +1063,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2034"
+NAME="AEN2046"
 ></A
 ><TABLE
 BORDER="0"
@@ -1209,7 +1241,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2099"
+NAME="AEN2111"
 ></A
 ><TABLE
 BORDER="0"
@@ -1284,7 +1316,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2123"
+NAME="AEN2135"
 ></A
 ><TABLE
 BORDER="0"
@@ -1374,7 +1406,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2154"
+NAME="AEN2166"
 ></A
 ><TABLE
 BORDER="0"
@@ -1443,7 +1475,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2176"
+NAME="AEN2188"
 ></A
 ><TABLE
 BORDER="0"
@@ -1508,7 +1540,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2198"
+NAME="AEN2210"
 ></A
 ><TABLE
 BORDER="0"
@@ -1623,7 +1655,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2236"
+NAME="AEN2248"
 ></A
 ><TABLE
 BORDER="0"
@@ -1712,7 +1744,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2265"
+NAME="AEN2277"
 ></A
 ><TABLE
 BORDER="0"
@@ -1792,7 +1824,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2290"
+NAME="AEN2302"
 ></A
 ><TABLE
 BORDER="0"
@@ -1895,7 +1927,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2320"
+NAME="AEN2332"
 ></A
 ><TABLE
 BORDER="0"
@@ -1986,7 +2018,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2352"
+NAME="AEN2364"
 ></A
 ><TABLE
 BORDER="0"
@@ -2142,7 +2174,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2408"
+NAME="AEN2420"
 ></A
 ><TABLE
 BORDER="0"
@@ -2254,7 +2286,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2447"
+NAME="AEN2459"
 ></A
 ><TABLE
 BORDER="0"
@@ -2430,7 +2462,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2507"
+NAME="AEN2519"
 ></A
 ><TABLE
 BORDER="0"
@@ -2537,7 +2569,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2543"
+NAME="AEN2555"
 ></A
 ><TABLE
 BORDER="0"
@@ -2621,7 +2653,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2570"
+NAME="AEN2582"
 ></A
 ><TABLE
 BORDER="0"
@@ -2692,7 +2724,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2592"
+NAME="AEN2604"
 ></A
 ><TABLE
 BORDER="0"
@@ -2764,7 +2796,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2614"
+NAME="AEN2626"
 ></A
 ><TABLE
 BORDER="0"
@@ -2854,7 +2886,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2642"
+NAME="AEN2654"
 ></A
 ><TABLE
 BORDER="0"
@@ -2930,7 +2962,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2664"
+NAME="AEN2676"
 ></A
 ><TABLE
 BORDER="0"
@@ -2997,7 +3029,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2684"
+NAME="AEN2696"
 ></A
 ><TABLE
 BORDER="0"
@@ -3064,7 +3096,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2706"
+NAME="AEN2718"
 ></A
 ><TABLE
 BORDER="0"
@@ -3117,7 +3149,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2723"
+NAME="AEN2735"
 ></A
 ><TABLE
 BORDER="0"
@@ -3194,7 +3226,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2748"
+NAME="AEN2760"
 ></A
 ><TABLE
 BORDER="0"
@@ -3263,7 +3295,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2770"
+NAME="AEN2782"
 ></A
 ><TABLE
 BORDER="0"
@@ -3317,7 +3349,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2787"
+NAME="AEN2799"
 ></A
 ><TABLE
 BORDER="0"
@@ -3394,7 +3426,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2812"
+NAME="AEN2824"
 ></A
 ><TABLE
 BORDER="0"
@@ -3461,7 +3493,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2834"
+NAME="AEN2846"
 ></A
 ><TABLE
 BORDER="0"
