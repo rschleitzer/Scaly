@@ -108,6 +108,37 @@ sudo apt install clang</programlisting>
         just more interesting things to put between the braces.</para>
     </section>
 
+    <section xml:id="tut-production">
+      <title>Building for Production</title>
+      <para>A program meant to run in production is built in up to three
+        steps, each optional; the toolchain's own programs are built with all
+        three.</para>
+      <para><option>--release</option> optimises the whole program as one
+        piece: your code, the standard library and every package, linked and
+        optimised together, with every definition the program does not export
+        kept internal.</para>
+      <programlisting>scaly build server.scaly --release -o server</programlisting>
+      <para><option>-mcpu=native</option> generates code for the processor of
+        the machine that builds — the right choice where the program runs on
+        the machine it was built on, or on identical ones (a container image
+        built on its host). Without it the code runs on every processor of
+        the architecture.</para>
+      <para>A profile makes the optimiser use what the program actually does.
+        Build it instrumented, run it on a representative load, and build
+        again with the profile it wrote:</para>
+      <programlisting>scaly build server.scaly --pgo-train -o server-train
+./server-train                 ; under a typical load; writes default.profraw
+scaly build server.scaly --pgo default.profraw -mcpu=native -o server</programlisting>
+      <para>The instrumented build needs the profile runtime of clang and
+        <command>llvm-profdata</command> of LLVM 21 (Homebrew's
+        <literal>llvm@21</literal> on macOS; <literal>llvm-21</literal> and
+        <literal>libclang-rt-21-dev</literal> on Ubuntu). A profile belongs to
+        the sources it was made from: make it again after they changed — a
+        stale one costs speed, never correctness. The Scaly compiler built
+        this way compiles about 30 percent faster than without its
+        profile.</para>
+    </section>
+
     <section xml:id="tut-install-program">
       <title>Installing a Program</title>
       <para>A program somebody wrote in Scaly and keeps in a git repository
