@@ -38,7 +38,7 @@ done
 # The HttpArena entry and its PGO training client are programs no other
 # suite builds: they compile, or the entry has rotted (it did once -- `set`
 # left the language on 2026-10-04 and the entry still spelled it)
-for f in tools/bench/http/arena.scaly tools/bench/http/train.scaly; do
+for f in tools/bench/httparena/scaly/arena.scaly tools/bench/httparena/scaly/train.scaly; do
   t=$(basename "$f" .scaly)
   if "$BIN" -S --no-tests -o "$TMP/$t.ll" "$f" > "$TMP/$t.log" 2>&1; then
     pass=$((pass+1))

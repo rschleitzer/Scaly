@@ -1,5 +1,5 @@
 ; train — the profile run of the HttpArena image's PGO build
-; (tools/bench/httparena/build.sh): drives an instrumented arena with the
+; (build.sh beside it): drives an instrumented arena with the
 ; request shapes the benchmark profiles send, then shuts it down so that the
 ; profile runtime writes its counts at a clean exit.
 ;

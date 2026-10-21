@@ -1,0 +1,46 @@
+{
+  "display_name": "scaly",
+  "language": "Scaly",
+  "type": "emerging",
+  "engine": "scaly",
+  "mode": "standard",
+  "description": "The standard http package of Scaly, a compiled language whose memory lives in regions the compiler infers: no garbage collector, no borrow checker. One scheduler per core over io_uring, a fiber per connection, and a region per request that is freed when the handler returns. HTTP/1.1 with a parser resumable at any byte and pipelined responses in one write, HTTP/2 of its own, TLS 1.3 through OpenSSL, HTTP/3 through ngtcp2; JSON serialized per request by the json package, gzip through libdeflate. Built by the released toolchain as one whole-program module, profile-guided: the documented production build.",
+  "repo": "https://github.com/rschleitzer/Scaly",
+  "website": "https://scaly.io/http/",
+  "enabled": true,
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "async-db",
+    "fortunes",
+    "static-tls",
+    "8gbit",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "unary-grpc",
+    "unary-grpc-tls",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": [
+    "rschleitzer"
+  ]
+}
