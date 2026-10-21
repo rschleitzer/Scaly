@@ -267,6 +267,9 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @oversized_kept = thread_local global ptr null
 @oversized_kept_count = thread_local global i64 0
 @oversized_kept_bytes = thread_local global i64 0
+@"18STACK_BUCKETS_KEPT" = internal constant i64 256
+@stack_buckets_kept = thread_local global ptr null
+@stack_buckets_kept_count = thread_local global i64 0
 @page_statistics = global ptr null
 @page_poison = global i1 false
 @"12BUCKET_PAGES" = internal constant i64 64
@@ -2645,6 +2648,7 @@ define linkonce_odr void @_Z28scaly_thread_release_bucketsv() {
 entry:
   %hb = alloca ptr, align 8
   %ob = alloca ptr, align 8
+  %kb = alloca ptr, align 8
   %global.load = load ptr, ptr @stack_head, align 8
   %sb = alloca ptr, align 8
   store ptr %global.load, ptr %sb, align 1
@@ -2667,80 +2671,101 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   store ptr null, ptr @stack_head, align 8
   store ptr null, ptr @stack_top, align 8
-  %global.load4 = load ptr, ptr @oversized_kept, align 8
-  store ptr %global.load4, ptr %ob, align 1
+  %global.load4 = load ptr, ptr @stack_buckets_kept, align 8
+  store ptr %global.load4, ptr %kb, align 1
   br label %while.cond5
 
 while.cond5:                                      ; preds = %while.body6, %while.exit
-  %ob8 = load ptr, ptr %ob, align 8
-  %ne9 = icmp ne ptr %ob8, null
+  %kb8 = load ptr, ptr %kb, align 8
+  %ne9 = icmp ne ptr %kb8, null
   br i1 %ne9, label %while.body6, label %while.exit7
 
 while.body6:                                      ; preds = %while.cond5
-  %ob10 = load ptr, ptr %ob, align 8
-  %load.struct11 = load %_Z4Page, ptr %ob10, align 8
-  %next_page = extractvalue %_Z4Page %load.struct11, 2
-  %ob12 = load ptr, ptr %ob, align 8
-  call void @scaly_aligned_free(ptr %ob12)
-  store ptr %next_page, ptr %ob, align 1
+  %kb10 = load ptr, ptr %kb, align 8
+  %load.struct11 = load %_Z17StackBucketHeader, ptr %kb10, align 8
+  %next12 = extractvalue %_Z17StackBucketHeader %load.struct11, 1
+  %kb13 = load ptr, ptr %kb, align 8
+  call void @scaly_aligned_free(ptr %kb13)
+  store ptr %next12, ptr %kb, align 1
   br label %while.cond5
 
 while.exit7:                                      ; preds = %while.cond5
+  store ptr null, ptr @stack_buckets_kept, align 8
+  store i64 0, ptr @stack_buckets_kept_count, align 8
+  %global.load14 = load ptr, ptr @oversized_kept, align 8
+  store ptr %global.load14, ptr %ob, align 1
+  br label %while.cond15
+
+while.cond15:                                     ; preds = %while.body16, %while.exit7
+  %ob18 = load ptr, ptr %ob, align 8
+  %ne19 = icmp ne ptr %ob18, null
+  br i1 %ne19, label %while.body16, label %while.exit17
+
+while.body16:                                     ; preds = %while.cond15
+  %ob20 = load ptr, ptr %ob, align 8
+  %load.struct21 = load %_Z4Page, ptr %ob20, align 8
+  %next_page = extractvalue %_Z4Page %load.struct21, 2
+  %ob22 = load ptr, ptr %ob, align 8
+  call void @scaly_aligned_free(ptr %ob22)
+  store ptr %next_page, ptr %ob, align 1
+  br label %while.cond15
+
+while.exit17:                                     ; preds = %while.cond15
   store ptr null, ptr @oversized_kept, align 8
   store i64 0, ptr @oversized_kept_count, align 8
   store i64 0, ptr @oversized_kept_bytes, align 8
-  %global.load13 = load ptr, ptr @heap_head, align 8
-  store ptr %global.load13, ptr %hb, align 1
-  br label %while.cond14
+  %global.load23 = load ptr, ptr @heap_head, align 8
+  store ptr %global.load23, ptr %hb, align 1
+  br label %while.cond24
 
-while.cond14:                                     ; preds = %if.end31, %while.exit7
-  %hb17 = load ptr, ptr %hb, align 8
-  %ne18 = icmp ne ptr %hb17, null
-  br i1 %ne18, label %while.body15, label %while.exit16
+while.cond24:                                     ; preds = %if.end41, %while.exit17
+  %hb27 = load ptr, ptr %hb, align 8
+  %ne28 = icmp ne ptr %hb27, null
+  br i1 %ne28, label %while.body25, label %while.exit26
 
-while.body15:                                     ; preds = %while.cond14
-  %hb19 = load ptr, ptr %hb, align 8
-  %load.struct20 = load %_Z16HeapBucketHeader, ptr %hb19, align 8
-  %next21 = extractvalue %_Z16HeapBucketHeader %load.struct20, 1
-  %hb22 = load ptr, ptr %hb, align 8
-  call void @_Z11bucket_lockP16HeapBucketHeader(ptr %hb22)
-  %hb23 = load ptr, ptr %hb, align 8
-  %load.struct24 = load %_Z16HeapBucketHeader, ptr %hb23, align 8
-  %bitmap = extractvalue %_Z16HeapBucketHeader %load.struct24, 2
+while.body25:                                     ; preds = %while.cond24
+  %hb29 = load ptr, ptr %hb, align 8
+  %load.struct30 = load %_Z16HeapBucketHeader, ptr %hb29, align 8
+  %next31 = extractvalue %_Z16HeapBucketHeader %load.struct30, 1
+  %hb32 = load ptr, ptr %hb, align 8
+  call void @_Z11bucket_lockP16HeapBucketHeader(ptr %hb32)
+  %hb33 = load ptr, ptr %hb, align 8
+  %load.struct34 = load %_Z16HeapBucketHeader, ptr %hb33, align 8
+  %bitmap = extractvalue %_Z16HeapBucketHeader %load.struct34, 2
   %eq = icmp eq i64 %bitmap, 9223372036854775807
-  %eq25 = icmp eq i1 %eq, false
-  br i1 %eq25, label %if.then, label %if.end
+  %eq35 = icmp eq i1 %eq, false
+  br i1 %eq35, label %if.then, label %if.end
 
-while.exit16:                                     ; preds = %while.cond14
+while.exit26:                                     ; preds = %while.cond24
   store ptr null, ptr @heap_head, align 8
   ret void
 
-if.then:                                          ; preds = %while.body15
+if.then:                                          ; preds = %while.body25
   %ptr.load = load ptr, ptr %hb, align 8
   %owner = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %ptr.load, i32 0, i32 4
   store i64 1, ptr %owner, align 8
-  %ptr.load26 = load ptr, ptr %hb, align 8
-  %next27 = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %ptr.load26, i32 0, i32 1
-  store ptr null, ptr %next27, align 8
-  %ptr.load28 = load ptr, ptr %hb, align 8
-  %prev = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %ptr.load28, i32 0, i32 0
+  %ptr.load36 = load ptr, ptr %hb, align 8
+  %next37 = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %ptr.load36, i32 0, i32 1
+  store ptr null, ptr %next37, align 8
+  %ptr.load38 = load ptr, ptr %hb, align 8
+  %prev = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %ptr.load38, i32 0, i32 0
   store ptr null, ptr %prev, align 8
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %while.body15
-  %hb29 = load ptr, ptr %hb, align 8
-  call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %hb29)
-  br i1 %eq, label %if.then30, label %if.end31
+if.end:                                           ; preds = %if.then, %while.body25
+  %hb39 = load ptr, ptr %hb, align 8
+  call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %hb39)
+  br i1 %eq, label %if.then40, label %if.end41
 
-if.then30:                                        ; preds = %if.end
+if.then40:                                        ; preds = %if.end
   call void @_Z18count_bucket_freedv()
-  %hb32 = load ptr, ptr %hb, align 8
-  call void @scaly_aligned_free(ptr %hb32)
-  br label %if.end31
+  %hb42 = load ptr, ptr %hb, align 8
+  call void @scaly_aligned_free(ptr %hb42)
+  br label %if.end41
 
-if.end31:                                         ; preds = %if.then30, %if.end
-  store ptr %next21, ptr %hb, align 1
-  br label %while.cond14
+if.end41:                                         ; preds = %if.then40, %if.end
+  store ptr %next31, ptr %hb, align 1
+  br label %while.cond24
 }
 
 define linkonce_odr ptr @_Z17first_usable_pagePv(ptr %0) {
@@ -2803,29 +2828,78 @@ if.end2:                                          ; preds = %if.then1, %if.end
 define linkonce_odr ptr @_Z19create_stack_bucketP17StackBucketHeader(ptr %0) {
 entry:
   call void @_Z15poison_from_envv()
-  %call = call ptr @scaly_aligned_alloc(i64 262144, i64 262144)
-  %eq = icmp eq ptr %call, null
-  br i1 %eq, label %if.then, label %if.end
+  %mem = alloca ptr, align 8
+  store ptr null, ptr %mem, align 1
+  %global.load = load ptr, ptr @stack_buckets_kept, align 8
+  %ne = icmp ne ptr %global.load, null
+  br i1 %ne, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
-  call void @_Z15scaly_panic_oomP10const_charm(ptr @.str.23, i64 262144)
+  %load.struct = load %_Z17StackBucketHeader, ptr %global.load, align 8
+  %next = extractvalue %_Z17StackBucketHeader %load.struct, 1
+  store ptr %next, ptr @stack_buckets_kept, align 8
+  %global.load1 = load i64, ptr @stack_buckets_kept_count, align 8
+  %sub = sub i64 %global.load1, 1
+  store i64 %sub, ptr @stack_buckets_kept_count, align 8
+  store ptr %global.load, ptr %mem, align 1
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %entry
-  %prev = getelementptr inbounds nuw %_Z17StackBucketHeader, ptr %call, i32 0, i32 0
+if.else:                                          ; preds = %entry
+  %call = call ptr @scaly_aligned_alloc(i64 262144, i64 262144)
+  store ptr %call, ptr %mem, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %mem2 = load ptr, ptr %mem, align 8
+  %eq = icmp eq ptr %mem2, null
+  br i1 %eq, label %if.then3, label %if.end4
+
+if.then3:                                         ; preds = %if.end
+  call void @_Z15scaly_panic_oomP10const_charm(ptr @.str.23, i64 262144)
+  br label %if.end4
+
+if.end4:                                          ; preds = %if.then3, %if.end
+  %mem5 = load ptr, ptr %mem, align 8
+  %prev = getelementptr inbounds nuw %_Z17StackBucketHeader, ptr %mem5, i32 0, i32 0
   store ptr %0, ptr %prev, align 8
-  %next = getelementptr inbounds nuw %_Z17StackBucketHeader, ptr %call, i32 0, i32 1
-  store ptr null, ptr %next, align 8
-  %ne = icmp ne ptr %0, null
-  br i1 %ne, label %if.then1, label %if.end2
+  %next6 = getelementptr inbounds nuw %_Z17StackBucketHeader, ptr %mem5, i32 0, i32 1
+  store ptr null, ptr %next6, align 8
+  %ne7 = icmp ne ptr %0, null
+  br i1 %ne7, label %if.then8, label %if.end9
 
-if.then1:                                         ; preds = %if.end
-  %next3 = getelementptr inbounds nuw %_Z17StackBucketHeader, ptr %0, i32 0, i32 1
-  store ptr %call, ptr %next3, align 8
-  br label %if.end2
+if.then8:                                         ; preds = %if.end4
+  %next10 = getelementptr inbounds nuw %_Z17StackBucketHeader, ptr %0, i32 0, i32 1
+  store ptr %mem5, ptr %next10, align 8
+  br label %if.end9
 
-if.end2:                                          ; preds = %if.then1, %if.end
-  ret ptr %call
+if.end9:                                          ; preds = %if.then8, %if.end4
+  ret ptr %mem5
+}
+
+define linkonce_odr void @_Z20release_stack_bucketP17StackBucketHeader(ptr %0) {
+entry:
+  %global.load = load i1, ptr @page_poison, align 1
+  %eq = icmp eq i1 %global.load, false
+  br i1 %eq, label %land.rhs, label %if.end
+
+if.then:                                          ; preds = %land.rhs
+  %global.load2 = load ptr, ptr @stack_buckets_kept, align 8
+  %next = getelementptr inbounds nuw %_Z17StackBucketHeader, ptr %0, i32 0, i32 1
+  store ptr %global.load2, ptr %next, align 8
+  store ptr %0, ptr @stack_buckets_kept, align 8
+  %global.load3 = load i64, ptr @stack_buckets_kept_count, align 8
+  %add = add i64 %global.load3, 1
+  store i64 %add, ptr @stack_buckets_kept_count, align 8
+  ret void
+
+if.end:                                           ; preds = %land.rhs, %entry
+  call void @scaly_aligned_free(ptr %0)
+  ret void
+
+land.rhs:                                         ; preds = %entry
+  %global.load1 = load i64, ptr @stack_buckets_kept_count, align 8
+  %lt = icmp ult i64 %global.load1, 256
+  br i1 %lt, label %if.then, label %if.end
 }
 
 define linkonce_odr ptr @_Z18create_heap_bucketv() {
@@ -27647,7 +27721,7 @@ if.end5:                                          ; preds = %while.exit18, %whil
   %load.struct28 = load %_Z17StackBucketHeader, ptr %bucket27, align 8
   %next = extractvalue %_Z17StackBucketHeader %load.struct28, 1
   %bucket29 = load ptr, ptr %bucket, align 8
-  call void @scaly_aligned_free(ptr %bucket29)
+  call void @_Z20release_stack_bucketP17StackBucketHeader(ptr %bucket29)
   %global.load = load i64, ptr @fiber_buckets_freed, align 8
   %add30 = add i64 %global.load, 1
   store i64 %add30, ptr @fiber_buckets_freed, align 8

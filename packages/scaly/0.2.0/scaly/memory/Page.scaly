@@ -34,6 +34,22 @@ define OVERSIZED_KEPT_BYTES: size_t 0x200000
 mutable oversized_kept: pointer[Page] null
 mutable oversized_kept_count: size_t 0
 mutable oversized_kept_bytes: size_t 0
+; The stack buckets of this thread's disposed fibers, kept for its next
+; ones instead of going back to free (2026-10-21; release_stack_bucket,
+; root_pages.scaly). A bucket is 256 KB aligned to 256 KB, which glibc
+; serves with a mmap of 516 KB and unmaps on free: a server that runs every
+; connection on a fiber of its own paid a mmap and a munmap per
+; connection, each taking the memory-map lock all the process's threads
+; share -- and HttpArena's json-comp at 16 384 connections, 10 000 new ones
+; a second, ran at two thirds of 32 cores. Chained through next, at most
+; STACK_BUCKETS_KEPT: connections end in bursts, and 16 left a fifth of the
+; maps, 64 one in seventeen, 256 none at 512 connections a scheduler (64 MB
+; of address space; only the pages a bucket's fibers touched stay resident
+; -- the server's RSS came out lower than with the maps). Freed at thread
+; exit. Not under SCALY_POISON, as for the oversized blocks.
+define STACK_BUCKETS_KEPT: size_t 256
+mutable stack_buckets_kept: pointer[StackBucketHeader] null
+mutable stack_buckets_kept_count: size_t 0
 ; tsc's `--diagnostics` memory rows (its `Memory used` and `Memory allocs`, read
 ; from Go's runtime.MemStats there): the bytes the regions hold in pages, every
 ; allocation made from a page, and the bytes of LIVE objects — Go's `Alloc`: every

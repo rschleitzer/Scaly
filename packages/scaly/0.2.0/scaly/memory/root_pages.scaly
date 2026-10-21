@@ -813,6 +813,17 @@ procedure scaly_thread_release_buckets()
     stack_head := null
     stack_top := null
 
+    ; the stack buckets kept for fibers to come (release_stack_bucket)
+    var kb stack_buckets_kept
+    while kb <> null
+    {
+        let knext kb.next
+        scaly_aligned_free(kb as pointer[void])
+        kb := knext
+    }
+    stack_buckets_kept := null
+    stack_buckets_kept_count := 0
+
     ; the oversized blocks kept for reuse (Page.release_page)
     var ob oversized_kept
     while ob <> null
@@ -903,7 +914,16 @@ procedure poison_from_env()
 procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader]
 {
     poison_from_env()
-    let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
+    var mem: pointer[void] null
+    let kept stack_buckets_kept
+    if kept <> null
+    {
+        stack_buckets_kept := kept.next
+        stack_buckets_kept_count := stack_buckets_kept_count - 1
+        mem := kept as pointer[void]
+    }
+    else
+        mem := scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
         scaly_panic_oom("Page.create_stack_bucket", BUCKET_SIZE)
 
@@ -914,6 +934,21 @@ procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns 
         prev.next := sb
 
     sb
+}
+
+; A stack bucket no fiber uses any more (Fiber.dispose): kept for this
+; thread's next fiber while fewer than STACK_BUCKETS_KEPT are (Page.scaly
+; has why), else -- and always under SCALY_POISON -- back to the system.
+procedure release_stack_bucket(mutable b: pointer[StackBucketHeader])
+{
+    if page_poison = false and stack_buckets_kept_count < STACK_BUCKETS_KEPT
+    {
+        b.next := stack_buckets_kept
+        stack_buckets_kept := b
+        stack_buckets_kept_count := stack_buckets_kept_count + 1
+        return
+    }
+    scaly_aligned_free(b as pointer[void])
 }
 
 function create_heap_bucket() returns ref[HeapBucketHeader]

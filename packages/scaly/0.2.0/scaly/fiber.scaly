@@ -924,7 +924,7 @@ define Fiber
                 }
             }
             let next_bucket bucket.next
-            scaly_aligned_free(bucket as pointer[void])
+            release_stack_bucket(bucket)
             fiber_buckets_freed := fiber_buckets_freed + 1
             bucket := next_bucket
         }
