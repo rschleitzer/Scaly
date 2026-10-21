@@ -7782,7 +7782,11 @@ define Emitter
                 }
                 when fr: Fragment
                 {
-                    return LLVMConstStringInContext(context, fr.value.c_data(), fr.value.length() as u32, 0)
+                    ; the planner types a fragment `pointer[const_char]`
+                    ; (make_cstring_type#), so it is the address of its text;
+                    ; the array VALUE it was until 2026-10-21 reached `print`
+                    ; as `[4 x i8] c"abc\00"` in a pointer slot, SIGSEGV
+                    return LLVMBuildGlobalStringPtr(builder, fr.value.c_data(), ".str")
                 }
                 when n: Null
                 {

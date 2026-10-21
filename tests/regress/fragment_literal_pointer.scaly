@@ -1,0 +1,11 @@
+; A fragment literal (backticks outside a string) is typed
+; pointer[const_char], and is emitted as the address of its text: until
+; 2026-10-21 the emitter handed the ARRAY value on, `print f` passed
+; `[4 x i8] c"abc\00"` in a pointer slot and died with SIGSEGV at rc 139.
+function strlen(s: pointer[const_char]) returns c_size extern
+
+let f `abc`
+if (strlen(f) as size_t) = 3
+    print "PASS"
+else
+    print "FAIL"

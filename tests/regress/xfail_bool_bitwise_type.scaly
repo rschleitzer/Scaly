@@ -1,0 +1,8 @@
+; The bitwise operators on two bools answer a bool (2026-10-21, the
+; collapse's intrinsic result types): `true | false` held a fresh type
+; variable, which every declared type accepted -- `let k: String u`
+; compiled at rc 0 and `print k` handed the bit to print as a pointer.
+; xfail: the initializer does not conform to the declared type: bool where String is declared
+let u true | false
+let k: String u
+print k

@@ -18943,6 +18943,16 @@ define Planner
                     }
                 }
 
+                ; ... and the bitwise operators on two bools answer a bool.
+                ; Without it `let u true | false` held a fresh type var, which
+                ; every declared type accepted: `let k: String u` compiled at
+                ; rc 0 and `print k` handed the bit to print as a pointer
+                if result.result_type.name = "bool" and rhs.result_type.name = "bool"
+                {
+                    if op_name = "&" or op_name = "|" or op_name = "xor"
+                        combined_type := result.result_type
+                }
+
                 ; 5.1: the same passthrough for the float family.
                 ; Without it float arithmetic resolves to a fresh
                 ; type var (empty name) which leaks into upstream
@@ -29689,41 +29699,25 @@ define Planner
                     j := j + 1
                 }
                 if prefixed
+                    cur := this.operation_prefix_term(ops, i, j)
+                else if j = i + 1 and j + 1 < n and Planner.operand_is_symbol_operator(ops[j]) and this.operation_thing(ops[j + 1]) <> 1 and this.operation_name(ops[i]) = 3
                 {
-                    ; The prefix and its whole term are ONE step for now: the
-                    ; old prefix branch opens a one-component tuple after the
-                    ; operator as a grouping, and a term folded first may BE
-                    ; such a tuple (`&NodeDown^dp(reason)`, a record of one
-                    ; field, came out as `&reason`).
-                    var run Array[PlannedOperand]()
-                    var r i - 1
-                    while r < j
+                    ; After a function a value is expected, so an operator
+                    ; there is a prefix and its term the argument of the call
+                    ; without parentheses: `twice -5` is `twice(-5)`
+                    ; (ROADMAP-operation.md, *Prefix operators*). Until
+                    ; 2026-10-21 the function was the left side of a binary
+                    ; `-`, the result had no type, and `let r twice -5` and
+                    ; every statement using r were dropped at rc 0.
+                    var k j + 2
+                    while k < n and this.operation_thing(ops[k]) <> 1 and this.operation_thing(ops[k]) <> 6
                     {
-                        run.add(ops[r])
-                        r := r + 1
+                        k := k + 1
                     }
-                    var run_vec Vector[PlannedOperand](run)
-                    ; without the pre-passes where none of them owns a pair of
-                    ; the term: no vector literal, no sigil, and no lambda,
-                    ; delegate or pointer local before a tuple
-                    var direct true
-                    r := i
-                    while r < j
-                    {
-                        let rk this.operation_thing(ops[r])
-                        if rk = 3 or rk = 5
-                            direct := false
-                        r := r + 1
-                    }
-                    if j > i + 1 and this.operation_call_is_plain(ops[i]) = false
-                        direct := false
-                    if direct
-                    {
-                        var sign: PlannedOperand ops[i - 1]
-                        cur := this.operation_prefix(run_vec, sign)
-                    }
-                    else
-                        cur := this.operation_step(run_vec, 39)
+                    let arg this.operation_prefix_term(ops, j + 1, k)
+                    var head: PlannedOperand ops[i]
+                    cur := this.operation_parenless(head, arg)
+                    j := k
                 }
                 else
                     cur := this.operation_term(ops, i, j)
@@ -29765,6 +29759,43 @@ define Planner
                 cur := this.operation_table(out, base)
             this.operation_count(26)
             cur
+        }
+
+        ; A prefix and its term, the sign at ops[first - 1] and the term from
+        ; first up to limit: ONE step for now. The old prefix branch opens a
+        ; one-component tuple after the operator as a grouping, and a term
+        ; folded first may BE such a tuple (`&NodeDown^dp(reason)`, a record
+        ; of one field, came out as `&reason`).
+        procedure operation_prefix_term(mutable this: Planner, mutable ops: Vector[PlannedOperand], first: size_t, limit: size_t) returns PlannedOperand
+        {
+            var run Array[PlannedOperand]()
+            var r first - 1
+            while r < limit
+            {
+                run.add(ops[r])
+                r := r + 1
+            }
+            var run_vec Vector[PlannedOperand](run)
+            ; without the pre-passes where none of them owns a pair of the
+            ; term: no vector literal, no sigil, and no lambda, delegate or
+            ; pointer local before a tuple
+            var direct true
+            r := first
+            while r < limit
+            {
+                let rk this.operation_thing(ops[r])
+                if rk = 3 or rk = 5
+                    direct := false
+                r := r + 1
+            }
+            if limit > first + 1 and this.operation_call_is_plain(ops[first]) = false
+                direct := false
+            if direct
+            {
+                var sign: PlannedOperand ops[first - 1]
+                return this.operation_prefix(run_vec, sign)
+            }
+            this.operation_step(run_vec, 39)
         }
 
         ; ================================================================

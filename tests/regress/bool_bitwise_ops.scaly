@@ -1,0 +1,18 @@
+; `&`, `|` and `xor` on two bools answer a bool: an interpolation picks the
+; bool overload of append, and a bool parameter takes the result
+; (gate xfail_bool_bitwise_type for the conformance half).
+function both(a: bool, b: bool) returns bool
+    a & b
+
+let t true
+let f false
+let s "`t | f` `t & f` `t xor t` `f xor t`"
+var ok s.equals("true false false true")
+if both(t | f, t xor f) = false
+    ok := false
+if both(t & f, t) = true
+    ok := false
+if ok
+    print "PASS"
+else
+    print "FAIL `s`"

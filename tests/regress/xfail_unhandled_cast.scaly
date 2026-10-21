@@ -1,8 +1,10 @@
 ; emit_as used to return the source value UNCHANGED when no cast rule
 ; matched (silent wrong-typed value, statement dropped). Now a loud trap.
-; A backtick literal is a FRAGMENT ([N x i8] array) — casting it to int
-; has no rule.
+; A record VALUE cast to int has no rule. (Until 2026-10-21 the source here
+; was a backtick fragment, emitted as an [N x i8] array; a fragment is the
+; address of its text since, which an `as int` takes as a number.)
 ; xfail: cannot cast this value to
-let f `a`
+define Pair(x: int, y: int)
+let f Pair(1, 2)
 let i f as int
 print("must not compile")

@@ -1,0 +1,22 @@
+; After a function a value is expected, so an operator there is a prefix and
+; its term the argument (ROADMAP-operation.md, *Prefix operators*): `twice -5`
+; is `twice(-5)`. Until 2026-10-21 the driver read a binary `twice - 5`, the
+; result had no type, and the binding and every statement using it were
+; dropped at rc 0 -- this program printed an empty line.
+function twice(n: int) returns int
+    n * 2
+
+function neg(b: bool) returns bool
+    not b
+
+let x 4
+let a twice -5
+let b twice -x + 1
+let c: int twice -x * 3
+let d 1 + twice -2
+let e neg ~true
+let s "`a` `b` `c` `d` `e`"
+if s.equals("-10 -7 -24 -3 true")
+    print "PASS"
+else
+    print "FAIL `s`"
