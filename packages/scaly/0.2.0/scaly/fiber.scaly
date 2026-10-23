@@ -1066,6 +1066,10 @@ define Scheduler
     var yields: int                  ; Scheduler.yield calls since step last polled
     var main_woke: bool              ; step's poll took the main context's event
     var quiet_ms: i32                ; the next channel-motivated wait's bound
+    var enqueued: int                ; tasks ever put on the ready queue
+    var dequeued: int                ; tasks ever taken off it
+    var timer_mark: int              ; enqueued when a timer last fired a task
+    var since_poll: int              ; dispatches since the poller last ran
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -1073,7 +1077,7 @@ define Scheduler
     ; so they survive any spawning fiber's region teardown.
     procedure create(host: ref[Page]) returns ref[Scheduler]
     {
-        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0, null, null, 0, null, null, 0, 0, false, CHAN_DEADLOCK_MS)
+        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0, null, null, 0, null, null, 0, 0, false, CHAN_DEADLOCK_MS, 0, 0, 0, 0)
         current_scheduler := s as pointer[void]
         s
     }
@@ -1082,6 +1086,7 @@ define Scheduler
     procedure enqueue(mutable t: ref[SchedTask])
     {
         let s current_scheduler as ref[Scheduler]
+        s.enqueued := s.enqueued + 1
         t.next := null
         if s.tail = null
         {
@@ -1101,6 +1106,7 @@ define Scheduler
         let t s.head
         if t <> null
         {
+            s.dequeued := s.dequeued + 1
             s.head := t.next
             if s.head = null
                 s.tail := null
@@ -1339,6 +1345,7 @@ define Scheduler
             s.timers := t.timer_next
             t.timer_next := null
             Scheduler.enqueue(t)
+            s.timer_mark := s.enqueued
             s.blocked := s.blocked - 1
             s.sleeping := s.sleeping - 1
         }
@@ -1459,6 +1466,24 @@ define Scheduler
         ; for it in main_woke. Counted by yields, not dispatches: a server
         ; whose tasks only park never pays for it (a poll every 61
         ; dispatches cost 1.5 % of baseline and pipelined).
+        ;
+        ; Timers fire in bursts: a server whose requests each sleep alike
+        ; wakes hundreds of tasks at once, and the requests that arrive
+        ; while the burst runs lie in the poller until it is through -- their
+        ; own sleeps begin late (2026-10-23, HttpArena's async at 2000
+        ; connections a scheduler: 375 K requests a second). So while a task
+        ; a timer woke still waits in the ready queue, step polls without
+        ; waiting every 4 dispatches (512 K). It is the reaping that pays:
+        ; submitting the queued sends alone gained nothing. Gated on the
+        ; timers because reaping more under saturation only lengthens the
+        ; queue: polling so whenever 64 tasks waited cost baseline at 4096
+        ; connections 7-12 %.
+        sc.since_poll := sc.since_poll + 1
+        if sc.dequeued < sc.timer_mark and sc.since_poll >= 4 and sc.io_waiting > 0
+        {
+            if Scheduler.poll_io_by(scaly_eio_now_ns())
+                sc.main_woke := true
+        }
         if sc.yields >= 61 and sc.io_waiting > 0
         {
             sc.yields := 0
@@ -1548,6 +1573,7 @@ define Scheduler
     procedure poll_io_by(until: i64) returns bool
     {
         let s current_scheduler as ref[Scheduler]
+        s.since_poll := 0
         var tagbuf u8[512]
         var n: i32 0
         var limit until

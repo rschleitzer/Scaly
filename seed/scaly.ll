@@ -191,7 +191,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13DeadlockState = type { i64, i64, i64 }
 %_Z6IoPool = type { i64, ptr, ptr, i32, i32, i64, i64, ptr }
 %_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, ptr, i1 }
-%_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64, i32, i64, i64, ptr, ptr, i64, ptr, ptr, i64, i64, i1, i32 }
+%_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64, i32, i64, i64, ptr, ptr, i64, ptr, ptr, i64, i64, i1, i32, i64, i64, i64, i64 }
 %_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr, i64, ptr, i1 }
 %_Z7IoWatch = type { i64, i64, i1, i1, i1, ptr, ptr }
 %_Z6IoWork = type { ptr, ptr, ptr, ptr, ptr }
@@ -27894,6 +27894,14 @@ entry:
   store i1 false, ptr %tuple.field16, align 1
   %tuple.field17 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 17
   store i32 100, ptr %tuple.field17, align 1
+  %tuple.field18 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 18
+  store i64 0, ptr %tuple.field18, align 1
+  %tuple.field19 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 19
+  store i64 0, ptr %tuple.field19, align 1
+  %tuple.field20 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 20
+  store i64 0, ptr %tuple.field20, align 1
+  %tuple.field21 = getelementptr inbounds nuw %_Z9Scheduler, ptr %tuple.region, i32 0, i32 21
+  store i64 0, ptr %tuple.field21, align 1
   store ptr %tuple.region, ptr @current_scheduler, align 8
   ret ptr %tuple.region
 }
@@ -27909,27 +27917,32 @@ unwrap.trap:                                      ; preds = %entry
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
+  %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
+  %enqueued = extractvalue %_Z9Scheduler %load.struct, 18
+  %add = add i64 %enqueued, 1
+  %enqueued1 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 18
+  store i64 %add, ptr %enqueued1, align 8
   %next = getelementptr inbounds nuw %_Z9SchedTask, ptr %0, i32 0, i32 2
   store ptr null, ptr %next, align 8
-  %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
-  %tail = extractvalue %_Z9Scheduler %load.struct, 2
+  %load.struct2 = load %_Z9Scheduler, ptr %global.load, align 8
+  %tail = extractvalue %_Z9Scheduler %load.struct2, 2
   %eq = icmp eq ptr %tail, null
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %unwrap.ok
   %head = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 1
   store ptr %0, ptr %head, align 8
-  %tail1 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 2
-  store ptr %0, ptr %tail1, align 8
+  %tail3 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 2
+  store ptr %0, ptr %tail3, align 8
   ret void
 
 if.end:                                           ; preds = %unwrap.ok
-  %load.struct2 = load %_Z9Scheduler, ptr %global.load, align 8
-  %tail3 = extractvalue %_Z9Scheduler %load.struct2, 2
-  %next4 = getelementptr inbounds nuw %_Z9SchedTask, ptr %tail3, i32 0, i32 2
-  store ptr %0, ptr %next4, align 8
-  %tail5 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 2
-  store ptr %0, ptr %tail5, align 8
+  %load.struct4 = load %_Z9Scheduler, ptr %global.load, align 8
+  %tail5 = extractvalue %_Z9Scheduler %load.struct4, 2
+  %next6 = getelementptr inbounds nuw %_Z9SchedTask, ptr %tail5, i32 0, i32 2
+  store ptr %0, ptr %next6, align 8
+  %tail7 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 2
+  store ptr %0, ptr %tail7, align 8
   ret void
 }
 
@@ -27950,26 +27963,31 @@ unwrap.ok:                                        ; preds = %entry
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %unwrap.ok
-  %load.struct1 = load %_Z9SchedTask, ptr %head, align 8
-  %next = extractvalue %_Z9SchedTask %load.struct1, 2
-  %head2 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 1
-  store ptr %next, ptr %head2, align 8
-  %load.struct3 = load %_Z9Scheduler, ptr %global.load, align 8
-  %head4 = extractvalue %_Z9Scheduler %load.struct3, 1
-  %eq = icmp eq ptr %head4, null
-  br i1 %eq, label %if.then5, label %if.end6
+  %load.struct1 = load %_Z9Scheduler, ptr %global.load, align 8
+  %dequeued = extractvalue %_Z9Scheduler %load.struct1, 19
+  %add = add i64 %dequeued, 1
+  %dequeued2 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 19
+  store i64 %add, ptr %dequeued2, align 8
+  %load.struct3 = load %_Z9SchedTask, ptr %head, align 8
+  %next = extractvalue %_Z9SchedTask %load.struct3, 2
+  %head4 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 1
+  store ptr %next, ptr %head4, align 8
+  %load.struct5 = load %_Z9Scheduler, ptr %global.load, align 8
+  %head6 = extractvalue %_Z9Scheduler %load.struct5, 1
+  %eq = icmp eq ptr %head6, null
+  br i1 %eq, label %if.then7, label %if.end8
 
-if.end:                                           ; preds = %if.end6, %unwrap.ok
+if.end:                                           ; preds = %if.end8, %unwrap.ok
   ret ptr %head
 
-if.then5:                                         ; preds = %if.then
+if.then7:                                         ; preds = %if.then
   %tail = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 2
   store ptr null, ptr %tail, align 8
-  br label %if.end6
+  br label %if.end8
 
-if.end6:                                          ; preds = %if.then5, %if.then
-  %next7 = getelementptr inbounds nuw %_Z9SchedTask, ptr %head, i32 0, i32 2
-  store ptr null, ptr %next7, align 8
+if.end8:                                          ; preds = %if.then7, %if.then
+  %next9 = getelementptr inbounds nuw %_Z9SchedTask, ptr %head, i32 0, i32 2
+  store ptr null, ptr %next9, align 8
   br label %if.end
 }
 
@@ -28359,64 +28377,102 @@ if.then2:                                         ; preds = %if.end
   ret i1 false
 
 if.end3:                                          ; preds = %if.end
-  %load.struct6 = load %_Z9Scheduler, ptr %global.load, align 8
-  %yields = extractvalue %_Z9Scheduler %load.struct6, 15
-  %ge = icmp sge i64 %yields, 61
-  br i1 %ge, label %land.rhs, label %if.end5
+  %load.struct4 = load %_Z9Scheduler, ptr %global.load, align 8
+  %since_poll = extractvalue %_Z9Scheduler %load.struct4, 21
+  %add = add i64 %since_poll, 1
+  %since_poll5 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 21
+  store i64 %add, ptr %since_poll5, align 8
+  %load.struct9 = load %_Z9Scheduler, ptr %global.load, align 8
+  %dequeued = extractvalue %_Z9Scheduler %load.struct9, 19
+  %load.struct10 = load %_Z9Scheduler, ptr %global.load, align 8
+  %timer_mark = extractvalue %_Z9Scheduler %load.struct10, 20
+  %lt = icmp slt i64 %dequeued, %timer_mark
+  br i1 %lt, label %land.rhs8, label %if.end7
 
-if.then4:                                         ; preds = %land.rhs
-  %yields9 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 15
-  store i64 0, ptr %yields9, align 8
-  %call10 = call i64 @scaly_eio_now_ns()
-  %call11 = call i1 @_ZN9Scheduler10poll_io_byE3i64(i64 %call10)
-  br i1 %call11, label %if.then12, label %if.end13
+if.then6:                                         ; preds = %land.rhs
+  %call15 = call i64 @scaly_eio_now_ns()
+  %call16 = call i1 @_ZN9Scheduler10poll_io_byE3i64(i64 %call15)
+  br i1 %call16, label %if.then17, label %if.end18
 
-if.end5:                                          ; preds = %if.end13, %land.rhs, %if.end3
+if.end7:                                          ; preds = %if.end18, %land.rhs, %land.rhs8, %if.end3
+  %load.struct22 = load %_Z9Scheduler, ptr %global.load, align 8
+  %yields = extractvalue %_Z9Scheduler %load.struct22, 15
+  %ge23 = icmp sge i64 %yields, 61
+  br i1 %ge23, label %land.rhs21, label %if.end20
+
+land.rhs:                                         ; preds = %land.rhs8
+  %load.struct13 = load %_Z9Scheduler, ptr %global.load, align 8
+  %io_waiting = extractvalue %_Z9Scheduler %load.struct13, 5
+  %gt14 = icmp sgt i64 %io_waiting, 0
+  br i1 %gt14, label %if.then6, label %if.end7
+
+land.rhs8:                                        ; preds = %if.end3
+  %load.struct11 = load %_Z9Scheduler, ptr %global.load, align 8
+  %since_poll12 = extractvalue %_Z9Scheduler %load.struct11, 21
+  %ge = icmp sge i64 %since_poll12, 4
+  br i1 %ge, label %land.rhs, label %if.end7
+
+if.then17:                                        ; preds = %if.then6
+  %main_woke = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 16
+  store i1 true, ptr %main_woke, align 1
+  br label %if.end18
+
+if.end18:                                         ; preds = %if.then17, %if.then6
+  br label %if.end7
+
+if.then19:                                        ; preds = %land.rhs21
+  %yields27 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 15
+  store i64 0, ptr %yields27, align 8
+  %call28 = call i64 @scaly_eio_now_ns()
+  %call29 = call i1 @_ZN9Scheduler10poll_io_byE3i64(i64 %call28)
+  br i1 %call29, label %if.then30, label %if.end31
+
+if.end20:                                         ; preds = %if.end31, %land.rhs21, %if.end7
   store ptr %call1, ptr @current_task, align 8
   %field.inplace = getelementptr inbounds nuw %_Z9SchedTask, ptr %call1, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call14 = call i1 @_ZN5Fiber6resumeER5Fiber(ptr %deref.recv)
+  %call33 = call i1 @_ZN5Fiber6resumeER5Fiber(ptr %deref.recv)
   store ptr null, ptr @current_task, align 8
-  %not = xor i1 %call14, true
-  br i1 %not, label %if.then15, label %if.end16
+  %not = xor i1 %call33, true
+  br i1 %not, label %if.then34, label %if.end35
 
-land.rhs:                                         ; preds = %if.end3
-  %load.struct7 = load %_Z9Scheduler, ptr %global.load, align 8
-  %io_waiting = extractvalue %_Z9Scheduler %load.struct7, 5
-  %gt8 = icmp sgt i64 %io_waiting, 0
-  br i1 %gt8, label %if.then4, label %if.end5
+land.rhs21:                                       ; preds = %if.end7
+  %load.struct24 = load %_Z9Scheduler, ptr %global.load, align 8
+  %io_waiting25 = extractvalue %_Z9Scheduler %load.struct24, 5
+  %gt26 = icmp sgt i64 %io_waiting25, 0
+  br i1 %gt26, label %if.then19, label %if.end20
 
-if.then12:                                        ; preds = %if.then4
-  %main_woke = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 16
-  store i1 true, ptr %main_woke, align 1
-  br label %if.end13
+if.then30:                                        ; preds = %if.then19
+  %main_woke32 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 16
+  store i1 true, ptr %main_woke32, align 1
+  br label %if.end31
 
-if.end13:                                         ; preds = %if.then12, %if.then4
-  br label %if.end5
+if.end31:                                         ; preds = %if.then30, %if.then19
+  br label %if.end20
 
-if.then15:                                        ; preds = %if.end5
+if.then34:                                        ; preds = %if.end20
   %done = getelementptr inbounds nuw %_Z9SchedTask, ptr %call1, i32 0, i32 4
   store i1 true, ptr %done, align 1
   call void @_ZN9Scheduler12wake_waitersER9SchedTask(ptr %call1)
-  %call17 = call i64 @_ZN9Scheduler4reapER9SchedTask(ptr %call1)
-  %load.struct18 = load %_Z9SchedTask, ptr %call1, align 8
-  %detached = extractvalue %_Z9SchedTask %load.struct18, 10
-  br i1 %detached, label %if.then19, label %if.end20
+  %call36 = call i64 @_ZN9Scheduler4reapER9SchedTask(ptr %call1)
+  %load.struct37 = load %_Z9SchedTask, ptr %call1, align 8
+  %detached = extractvalue %_Z9SchedTask %load.struct37, 10
+  br i1 %detached, label %if.then38, label %if.end39
 
-if.end16:                                         ; preds = %if.end20, %if.end5
+if.end35:                                         ; preds = %if.end39, %if.end20
   ret i1 true
 
-if.then19:                                        ; preds = %if.then15
-  %load.struct21 = load %_Z9Scheduler, ptr %global.load, align 8
-  %free_tasks = extractvalue %_Z9Scheduler %load.struct21, 12
+if.then38:                                        ; preds = %if.then34
+  %load.struct40 = load %_Z9Scheduler, ptr %global.load, align 8
+  %free_tasks = extractvalue %_Z9Scheduler %load.struct40, 12
   %next = getelementptr inbounds nuw %_Z9SchedTask, ptr %call1, i32 0, i32 2
   store ptr %free_tasks, ptr %next, align 8
-  %free_tasks22 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 12
-  store ptr %call1, ptr %free_tasks22, align 8
-  br label %if.end20
+  %free_tasks41 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 12
+  store ptr %call1, ptr %free_tasks41, align 8
+  br label %if.end39
 
-if.end20:                                         ; preds = %if.then19, %if.then15
-  br label %if.end16
+if.end39:                                         ; preds = %if.then38, %if.then34
+  br label %if.end35
 }
 
 define linkonce_odr i1 @_ZN9Scheduler10poll_io_byE3i64(i64 %0) {
@@ -28436,6 +28492,8 @@ unwrap.trap:                                      ; preds = %entry
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
+  %since_poll = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 21
+  store i64 0, ptr %since_poll, align 8
   %arr.ptr = getelementptr inbounds [512 x i8], ptr %tagbuf, i64 0, i64 0
   store ptr %arr.ptr, ptr %tagbuf1, align 8
   store i32 0, ptr %n, align 1
@@ -28799,15 +28857,19 @@ if.end3:                                          ; preds = %if.end
   store ptr null, ptr %timer_next6, align 8
   call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %timers)
   %load.struct7 = load %_Z9Scheduler, ptr %global.load, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct7, 3
+  %enqueued = extractvalue %_Z9Scheduler %load.struct7, 18
+  %timer_mark = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 20
+  store i64 %enqueued, ptr %timer_mark, align 8
+  %load.struct8 = load %_Z9Scheduler, ptr %global.load, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct8, 3
   %sub = sub i64 %blocked, 1
-  %blocked8 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 3
-  store i64 %sub, ptr %blocked8, align 8
-  %load.struct9 = load %_Z9Scheduler, ptr %global.load, align 8
-  %sleeping = extractvalue %_Z9Scheduler %load.struct9, 11
-  %sub10 = sub i64 %sleeping, 1
-  %sleeping11 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 11
-  store i64 %sub10, ptr %sleeping11, align 8
+  %blocked9 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 3
+  store i64 %sub, ptr %blocked9, align 8
+  %load.struct10 = load %_Z9Scheduler, ptr %global.load, align 8
+  %sleeping = extractvalue %_Z9Scheduler %load.struct10, 11
+  %sub11 = sub i64 %sleeping, 1
+  %sleeping12 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 11
+  store i64 %sub11, ptr %sleeping12, align 8
   br label %repeat.body
 }
 

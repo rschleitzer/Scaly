@@ -1,9 +1,11 @@
 ; Scheduler.spawn_detached (2026-09-28): a task nobody holds; once it has
 ; finished, its record and fiber record go on the scheduler's free list and
 ; the next detached task runs in them. The proof is the scheduler's PAGE:
-; two probe allocations on it, taken before and after, come out adjacent —
-; nothing was allocated on the page in between — across a second detached
-; task and across a hundred thousand more, a hundred at a time. spawn_arg
+; the bytes allocated on it and its extension pages are the same before and
+; after a second detached task and a hundred thousand more, a hundred at a
+; time. (Until 2026-10-23 the proof was two 8-byte probe allocations coming
+; out adjacent -- which they cannot when the first takes a page's last
+; slot, and it did once the Scheduler record grew by 32 bytes.) spawn_arg
 ; leaves every record on the page for good, and a server with a task per
 ; connection grew without bound (the refuter: the same program with
 ; spawn_arg fails at the first check). A detached task still sleeps, yields
@@ -24,9 +26,19 @@ procedure busy() mutable ran
         ran := ran + 1
 }
 
-; The next free address on page, by allocating a word there.
+; The bytes allocated on page and on the extension pages chained to it,
+; read without allocating: every page's bump offset, summed.
 procedure probe(page: ref[Page]) returns size_t
-    page.allocate(8, 8) as size_t
+{
+    var n: size_t 0
+    var p page as pointer[Page]
+    while p <> null
+    {
+        n := n + ((p.next_object as size_t) - (p as size_t))
+        p := p.next_page
+    }
+    n
+}
 
 let page Page.allocate_page()
 let sched Scheduler.create(page)
@@ -37,7 +49,7 @@ let a0 probe(page)
 Scheduler.spawn_detached(&note, null)
 Scheduler.run()
 let a1 probe(page)
-if a1 - a0 <> 8
+if a1 <> a0
     exit 1
 Console.print "reused "
 
@@ -66,7 +78,7 @@ while round < 1000
 let b1 probe(page)
 if ran <> 100102
     exit 2
-if b1 - b0 <> 8
+if b1 <> b0
     exit 3
 Console.print "bounded "
 
