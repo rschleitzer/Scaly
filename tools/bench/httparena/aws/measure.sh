@@ -5,7 +5,8 @@
 # kept -- for Scaly and the framework entries the default board shows on top
 # (standard mode, flagship or emerging; chosen 2026-10-21 from the board's
 # data). Results land in ~/results, the board's JSON per framework among them.
-# PROFILE="<name> ..." (prepare.sh hands it on) runs those profiles only.
+# PROFILE="<name> ..." (prepare.sh hands it on) runs those profiles only;
+# VALIDATE="<entry> ..." names the entries validated first (default scaly).
 set -u
 FRAMEWORKS="${*:-scaly genhttp-ioxide araara dusty tako bun ntex fulmine}"
 HA="$HOME/HttpArena"
@@ -16,8 +17,10 @@ mkdir -p "$OUT"
 . "$HOME/bench.env"
 cd "$HA"
 echo "measure: start $(date -u +%FT%TZ), HttpArena $(git rev-parse --short HEAD)" | tee "$OUT/progress.txt"
-sudo -E bash scripts/validate.sh scaly > "$OUT/validate-scaly.log" 2>&1
-echo "validate scaly: rc $? $(grep -cE '^\s*PASS' "$OUT/validate-scaly.log") pass, $(grep -cE 'FAIL' "$OUT/validate-scaly.log") fail" | tee -a "$OUT/progress.txt"
+for v in ${VALIDATE:-scaly}; do
+  sudo -E bash scripts/validate.sh "$v" > "$OUT/validate-$v.log" 2>&1
+  echo "validate $v: rc $? $(grep -cE '^\s*PASS' "$OUT/validate-$v.log") pass, $(grep -cE 'FAIL' "$OUT/validate-$v.log") fail" | tee -a "$OUT/progress.txt"
+done
 for fw in $FRAMEWORKS; do
   start=$(date +%s)
   : > "$OUT/bench-$fw.log"

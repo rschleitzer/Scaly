@@ -10,6 +10,7 @@
 # beside the released packages -- an A/B of a runtime change without a
 # release. Name them among the frameworks to measure them.
 # MEASURE=0 prepares the host and starts nothing (profile.sh by hand).
+# VALIDATE="<entry> ..." validates those entries first (default scaly).
 set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1090
@@ -44,5 +45,5 @@ for v in ${VARIANTS:-}; do
   "${SSH[@]}" "bash variant.sh $name"
 done
 [ "${MEASURE:-1}" = 0 ] && { echo "prepare.sh: prepared, nothing started"; exit 0; }
-"${SSH[@]}" "nohup env PROFILE='${PROFILE:-}' bash measure.sh $* > measure.log 2>&1 < /dev/null &"
+"${SSH[@]}" "nohup env PROFILE='${PROFILE:-}' VALIDATE='${VALIDATE:-}' bash measure.sh $* > measure.log 2>&1 < /dev/null &"
 echo "prepare.sh: measuring; ./status.sh shows the progress"
