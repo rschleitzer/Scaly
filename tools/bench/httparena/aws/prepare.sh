@@ -3,7 +3,7 @@
 # copies the entry and the host scripts, runs setup.sh, and starts measure.sh
 # under nohup so that a dropped connection does not end the run.
 # Progress: ssh in and read ~/results/progress.txt (or ./status.sh).
-# PROFILE=<name> measures that one profile only (e.g. PROFILE=async).
+# PROFILE="<name> ..." measures those profiles only (e.g. PROFILE=async).
 # VARIANTS="<name>=<patch>[+<patch>...] ..." adds the entries scaly-<name>
 # (variant.sh): the packages of this tree at HEAD with the patches applied
 # (git diff output; none for HEAD itself), built by the released toolchain
@@ -40,5 +40,5 @@ for v in ${VARIANTS:-}; do
   rm -rf "$stage"
   "${SSH[@]}" "bash variant.sh $name"
 done
-"${SSH[@]}" "nohup env PROFILE=${PROFILE:-} bash measure.sh $* > measure.log 2>&1 < /dev/null &"
+"${SSH[@]}" "nohup env PROFILE='${PROFILE:-}' bash measure.sh $* > measure.log 2>&1 < /dev/null &"
 echo "prepare.sh: measuring; ./status.sh shows the progress"

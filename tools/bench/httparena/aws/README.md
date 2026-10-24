@@ -32,7 +32,7 @@ entry first (`validate-scaly.log`), then runs HttpArena's full
 the best kept. The load generators run as HttpArena's Docker images
 (`LOADGEN_DOCKER=true`), the same for every entry.
 
-`PROFILE=echo-ws ./prepare.sh …` measures that one profile only. To compare
+`PROFILE="async baseline" ./prepare.sh …` measures those profiles only. To compare
 a runtime change before it is released, `VARIANTS="fast=/path/change.patch"`
 adds an entry `scaly-fast`: this tree's packages at HEAD with the patch
 applied (`+` joins several patches; nothing after the `=` is HEAD itself),
