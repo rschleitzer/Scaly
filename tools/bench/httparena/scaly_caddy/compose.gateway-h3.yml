@@ -5,7 +5,7 @@ services:
   proxy:
     build: ./proxy
     network_mode: host
-    cpuset: "0-19,64-83"
+    cpuset: "${PROXY_CPUSET:-0-19,64-83}"
     ulimits:
       memlock: -1
       nofile:
@@ -19,15 +19,15 @@ services:
     depends_on:
       - server
 
-  # The Scaly entry's own image (tools/bench/httparena/build.sh builds
-  # httparena-scaly on the machine that runs it: its code is generated for
-  # that CPU), started with the first port only -- the edge holds 8443.
+  # The Scaly entry's server, built from its directory (without build.sh's
+  # profile: a plain build is --release alone, its code generated for the
+  # CPU of the machine that builds it), started with the first port only --
+  # the edge holds 8443.
   server:
-    image: httparena-scaly
-    pull_policy: never
+    build: ../scaly
     command: ["/arena", "8080", "0", "0", "0"]
     network_mode: host
-    cpuset: "20-31,84-95"
+    cpuset: "${SERVER_CPUSET:-20-31,84-95}"
     ulimits:
       memlock: -1
       nofile:

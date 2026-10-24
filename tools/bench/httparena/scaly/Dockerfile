@@ -7,7 +7,8 @@
 #   --target pgo-train   the instrumented arena and its training client;
 #                        build.sh runs the training between the two builds
 #   default target       the arena with that profile (pgo/arena.profdata in
-#                        the context), or --release alone without one
+#                        the context), or --release alone without one -- what
+#                        the gateway entries' compose files build
 #
 FROM ubuntu:26.04 AS build
 ENV DEBIAN_FRONTEND=noninteractive
@@ -44,16 +45,18 @@ ENV SCALY_LIBRARY_PATH=/opt/ngtcp2/lib:/opt/openssl/lib:/opt/static/lib
 RUN mkdir -p /opt/static/lib \
  && cp "$(find /usr/lib -name libdeflate.a | head -1)" /opt/static/lib/
 WORKDIR /entry
-COPY arena.scaly db.scaly train.scaly ./
+COPY arena.scaly db.scaly stack.scaly train.scaly ./
 
 FROM build AS pgo-train
 RUN scaly build arena.scaly --pgo-train -mcpu=native -o /arena_instr \
  && scaly build train.scaly --release -o /train
 
+# the profile comes through the context when build.sh made one; a plain
+# build of this directory (a gateway entry's compose file) has none
 FROM build AS optimized
-COPY pgo/ /pgo/
-RUN PGO="--release" \
- && if [ -f /pgo/arena.profdata ]; then PGO="--pgo /pgo/arena.profdata"; fi \
+RUN --mount=type=bind,target=/ctx \
+    PGO="--release" \
+ && if [ -f /ctx/pgo/arena.profdata ]; then PGO="--pgo /ctx/pgo/arena.profdata"; fi \
  && scaly build arena.scaly $PGO -mcpu=native -o /arena
 
 FROM ubuntu:26.04

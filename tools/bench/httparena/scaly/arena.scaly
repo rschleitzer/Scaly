@@ -13,6 +13,8 @@
 ;   baseline-h2, static-h2               GET /baseline2, /static   8443 (TLS)
 ;   baseline-h3, static-h3               the same over QUIC        8443 (UDP)
 ;   async-db, fortunes                   GET /async-db, /fortunes  8080 (db.scaly)
+;   production-stack (behind an edge)    /public/*, /api/items/{id},
+;                                          /api/me                 8080 (stack.scaly)
 ;   unary-grpc, unary-grpc-tls           BenchmarkService/GetSum   8080, 8443
 ;   echo-ws, -pipeline, -limited         GET /ws                   8080
 ;
@@ -34,8 +36,10 @@ package tls 0.2.0
 package https 0.2.0
 package h3 0.2.0
 package pg 0.2.0
+package redis 0.2.0
 
 module db
+module stack
 
 use http.Request.Request
 use http.Response.Response
@@ -243,7 +247,7 @@ function port_arg(argc: int, argv: pointer[pointer[const_char]], i: int, otherwi
     parse_int_prefix(String(argv[i]).as_slice()) as int
 }
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable dataset
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable dataset, item_l1, user_l1
 {
     let port port_arg(argc, argv, 1, 8080)
     let tls_port port_arg(argc, argv, 2, 8081)
@@ -272,6 +276,17 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     ; both wait on the database: over HTTP/2 they run beside the other streams
     app.waits("/async-db")
     app.waits("/fortunes")
+    ; production-stack, behind its edge (scaly_nginx)
+    app.get("/public/baseline", &baseline)
+    app.get("/public/json/{count}", &json_items)
+    app.get("/api/items/{id}", &api_item_get)
+    app.post("/api/items/{id}", &api_item_post)
+    app.get("/api/me", &api_me)
+    app.waits("/api/items/{id}")
+    app.waits("/api/me")
+    let stack_host Page.allocate_page()
+    item_l1 := l1_table(stack_host, 100001, ITEM_TTL_MS)
+    user_l1 := l1_table(stack_host, 1024, USER_TTL_MS)
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
 

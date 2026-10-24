@@ -3,14 +3,16 @@
 # the L2 cache, and the Scaly server with its L1 in-process, over Postgres.
 #
 # The cpuset split on the reference's 64 logical CPUs is the reference
-# entry's (edge 30, cache 2, authsvc 8, server 24). All four run on the
+# entry's (edge 30, cache 2, authsvc 8, server 24); EDGE_CPUSET,
+# CACHE_CPUSET, AUTH_CPUSET and SERVER_CPUSET override it on another
+# machine. All four run on the
 # host network: the edge 8443, authsvc 9090, the server 8080, Redis 6379.
 
 services:
   edge:
     build: ./proxy-production
     network_mode: host
-    cpuset: "0-14,64-78"
+    cpuset: "${EDGE_CPUSET:-0-14,64-78}"
     ulimits:
       memlock: -1
       nofile:
@@ -30,7 +32,7 @@ services:
   cache:
     image: redis:7-alpine
     network_mode: host
-    cpuset: "15,79"
+    cpuset: "${CACHE_CPUSET:-15,79}"
     ulimits:
       memlock: -1
       nofile:
@@ -53,7 +55,7 @@ services:
   authsvc:
     build: ../_shared/authsvc
     network_mode: host
-    cpuset: "16-19,80-83"
+    cpuset: "${AUTH_CPUSET:-16-19,80-83}"
     ulimits:
       memlock: -1
       nofile:
@@ -72,14 +74,15 @@ services:
       start_period: 30s
       start_interval: 1s
 
-  # The Scaly entry's own image (tools/bench/httparena/build.sh), started
-  # with the first port only -- the edge holds 8443.
+  # The Scaly entry's server, built from its directory (without build.sh's
+  # profile: a plain build is --release alone, its code generated for the
+  # CPU of the machine that builds it), started with the first port only --
+  # the edge holds 8443.
   server:
-    image: httparena-scaly
-    pull_policy: never
+    build: ../scaly
     command: ["/arena", "8080", "0", "0", "0"]
     network_mode: host
-    cpuset: "20-31,84-95"
+    cpuset: "${SERVER_CPUSET:-20-31,84-95}"
     ulimits:
       memlock: -1
       nofile:
