@@ -9,6 +9,7 @@
 # (git diff output; none for HEAD itself), built by the released toolchain
 # beside the released packages -- an A/B of a runtime change without a
 # release. Name them among the frameworks to measure them.
+# MEASURE=0 prepares the host and starts nothing (profile.sh by hand).
 set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1090
@@ -17,7 +18,7 @@ COMMIT="$1"; shift
 SSH=(ssh -i "$PEM" -o StrictHostKeyChecking=accept-new "ubuntu@$HOST")
 "${SSH[@]}" 'rm -rf ~/entry && mkdir -p ~/entry'
 scp -i "$PEM" -q "$HERE"/../scaly/* "ubuntu@$HOST:entry/"
-scp -i "$PEM" -q "$HERE/setup.sh" "$HERE/measure.sh" "$HERE/variant.sh" "ubuntu@$HOST:"
+scp -i "$PEM" -q "$HERE/setup.sh" "$HERE/measure.sh" "$HERE/variant.sh" "$HERE/profile.sh" "ubuntu@$HOST:"
 "${SSH[@]}" "bash setup.sh $COMMIT"
 TREE="$(cd "$HERE/../../../.." && pwd)"
 for v in ${VARIANTS:-}; do
@@ -40,5 +41,6 @@ for v in ${VARIANTS:-}; do
   rm -rf "$stage"
   "${SSH[@]}" "bash variant.sh $name"
 done
+[ "${MEASURE:-1}" = 0 ] && { echo "prepare.sh: prepared, nothing started"; exit 0; }
 "${SSH[@]}" "nohup env PROFILE='${PROFILE:-}' bash measure.sh $* > measure.log 2>&1 < /dev/null &"
 echo "prepare.sh: measuring; ./status.sh shows the progress"

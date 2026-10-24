@@ -71,6 +71,7 @@ grep -q "|0-31,64-95|" "$HA/scripts/lib/profiles.sh" && { echo "setup.sh: profil
 # threads as the load generators have CPUs here
 cat > "$HOME/bench.env" << EOF
 export GCANNON_CPUS=$LOADGEN
+export SERVER_CPUS=$SERVER
 export LOADGEN_DOCKER=true
 export THREADS=$LOADGEN_N
 export H2THREADS=$LOADGEN_N

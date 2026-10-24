@@ -40,6 +40,11 @@ built by the same released toolchain in place of its own packages
 (variant.sh); name it among the entries, `prepare.sh <commit> scaly
 scaly-fast`.
 
+`MEASURE=0 ./prepare.sh <commit> …` prepares the host and starts nothing;
+`profile.sh <entry> <profile>` there runs that profile's benchmark for one
+entry and records 6 s of perf over the server's CPUs while the load runs
+(`~/results/perf-<entry>-<profile>.txt`).
+
 What differs from the board, and why the numbers compare entries WITHIN one
 run, not with the published ones: Zen 3 instead of Zen 2, two sockets (the
 server and the load generators talk across them), the load generators in
