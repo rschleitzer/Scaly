@@ -32,6 +32,14 @@ entry first (`validate-scaly.log`), then runs HttpArena's full
 the best kept. The load generators run as HttpArena's Docker images
 (`LOADGEN_DOCKER=true`), the same for every entry.
 
+`PROFILE=echo-ws ./prepare.sh …` measures that one profile only. To compare
+a runtime change before it is released, `VARIANTS="fast=/path/change.patch"`
+adds an entry `scaly-fast`: this tree's packages at HEAD with the patch
+applied (`+` joins several patches; nothing after the `=` is HEAD itself),
+built by the same released toolchain in place of its own packages
+(variant.sh); name it among the entries, `prepare.sh <commit> scaly
+scaly-fast`.
+
 What differs from the board, and why the numbers compare entries WITHIN one
 run, not with the published ones: Zen 3 instead of Zen 2, two sockets (the
 server and the load generators talk across them), the load generators in
