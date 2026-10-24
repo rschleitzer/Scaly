@@ -275,6 +275,16 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
 
+    ; the main port first: a readiness probe that finds the TLS or h2c port
+    ; answering must find this one listening too (HttpArena's validate.sh
+    ; takes any of them for "up" and asks this one next)
+    let main_listener TcpListener.listen_any(port)
+    if main_listener.is_open() = false
+    {
+        print "arena: cannot listen on port `port`"
+        return 1
+    }
+
     var cert String("/certs/server.crt")
     var key String("/certs/server.key")
     let env_cert getenv("TLS_CERT")
@@ -317,10 +327,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
             print "arena: cannot listen on port `h2c_port`"
     }
     ; HTTP/1.1, WebSocket and gRPC on the main port, until the process ends
-    if serve(app, port) = false
-    {
-        print "arena: cannot listen on port `port`"
-        return 1
-    }
+    let server start(app, main_listener)
+    server.wait()
     0
 }
