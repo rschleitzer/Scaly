@@ -267,6 +267,13 @@ int scaly_eio_submit_send(int q, int fd, void* buf, unsigned long long count, vo
     return -2;
 }
 
+int scaly_eio_submit_send_recv(int q, int fd, void* sbuf, unsigned long long scount,
+                               void* rbuf, unsigned long long rcount, void* tag)
+{
+    (void)q; (void)fd; (void)sbuf; (void)scount; (void)rbuf; (void)rcount; (void)tag;
+    return -2;
+}
+
 int scaly_eio_completions(int q)
 {
     (void)q;
@@ -581,6 +588,37 @@ int scaly_eio_submit_recv(int q, int fd, void* buf, unsigned long long count, vo
 int scaly_eio_submit_send(int q, int fd, void* buf, unsigned long long count, void* tag)
 {
     return scaly_ring_submit_io(q, IORING_OP_SEND, fd, buf, count, tag, SCALY_EIO_WATCH_WRITE);
+}
+
+/* Queue a send of scount bytes and, linked behind it, a receive of up to
+ * rcount bytes into rbuf -- one wait for both (rule (a): the ring). The
+ * send is whole (MSG_WAITALL) and reported at tag+8 without waking anyone
+ * (no task parks on the write direction); the receive starts only after
+ * it and is reported at tag+0, a failed or short send cancels it
+ * (-ECANCELED). Both entries go into one submission, else the link would
+ * end at its boundary. -2 when the poller is not a ring. */
+int scaly_eio_submit_send_recv(int q, int fd, void* sbuf, unsigned long long scount,
+                               void* rbuf, unsigned long long rcount, void* tag)
+{
+    struct scaly_ring* r = scaly_ring_of(q);
+    struct io_uring_sqe* sqe;
+    if (r == 0)
+        return -2;
+    if (r->entries - (*r->sq_tail - __atomic_load_n(r->sq_head, __ATOMIC_ACQUIRE)) < 2
+        && scaly_ring_enter(r, 0, 0, 0) < 0)
+        return -1;
+    if (r->entries - (*r->sq_tail - __atomic_load_n(r->sq_head, __ATOMIC_ACQUIRE)) < 2)
+        return -1;
+    sqe = scaly_ring_sqe(r);
+    sqe->opcode = IORING_OP_SEND;
+    sqe->flags = IOSQE_IO_LINK;
+    sqe->fd = fd;
+    sqe->addr = (unsigned long long)(size_t)sbuf;
+    sqe->len = (unsigned)(scount > 0x7FFFFFFFu ? 0x7FFFFFFFu : scount);
+    sqe->msg_flags = MSG_NOSIGNAL | MSG_WAITALL;
+    sqe->user_data = (unsigned long long)(size_t)tag | SCALY_EIO_COMPLETION | SCALY_EIO_WATCH_WRITE;
+    scaly_ring_commit(r);
+    return scaly_ring_submit_io(q, IORING_OP_RECV, fd, rbuf, rcount, tag, SCALY_EIO_WATCH_READ);
 }
 
 /* Does the poller take receives and sends (a ring)? 1 or 0. */

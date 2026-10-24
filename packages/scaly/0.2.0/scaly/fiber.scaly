@@ -330,6 +330,8 @@ function scaly_eio_watch(q: i32, fd: i32, tag: pointer[void]) returns i32 extern
 ; poller is not a ring. scaly_eio_completions: 1 when it is.
 function scaly_eio_submit_recv(q: i32, fd: i32, buf: pointer[void], count: size_t, tag: pointer[void]) returns i32 extern
 function scaly_eio_submit_send(q: i32, fd: i32, buf: pointer[void], count: size_t, tag: pointer[void]) returns i32 extern
+; reads sbuf, fills rbuf and the tag record (both results)
+procedure scaly_eio_submit_send_recv(q: i32, fd: i32, sbuf: pointer[void], scount: size_t, mutable rbuf: pointer[void], rcount: size_t, mutable tag: pointer[void]) returns i32 extern
 function scaly_eio_completions(q: i32) returns i32 extern
 ; The poller's backend: 1 epoll, 2 kqueue, 3 io_uring, 4 IOCP (Io.backend).
 function scaly_eio_backend(q: i32) returns i32 extern
@@ -2228,6 +2230,41 @@ define Io
             }
         }
         true
+    }
+
+    ; write_stream_all of sbuf, then read_stream into rbuf: the count read,
+    ; 0 at the end of the stream, -1 on an error (of either). On a ring the
+    ; receive is queued linked behind the send and the task parks ONCE --
+    ; a request and its answer cost one wake instead of two. A send the
+    ; ring left short (it cancelled the receive then) is finished the
+    ; ordinary way.
+    procedure exchange_stream(fd: i32, sbuf: pointer[void], scount: size_t, mutable rbuf: pointer[void], rcount: size_t) returns i64
+    {
+        let c Io.completion_stream(fd)
+        if c <> null and scount > 0
+        {
+            let q Io.ensure_poll()
+            c.send_result := 0
+            if scaly_eio_submit_send_recv(q, fd, sbuf, scount, rbuf, rcount, c as pointer[void]) <> 0
+                exit 107
+            Io.park_watch(c, false)
+            let sent c.send_result
+            if sent <> (scount as i64)
+            {
+                if sent <= 0
+                    return 0 - 1
+                if Io.write_stream_all(fd, ((sbuf as size_t) + (sent as size_t)) as pointer[void], scount - (sent as size_t)) = false
+                    return 0 - 1
+                return Io.read_stream(fd, rbuf, rcount)
+            }
+            let got c.recv_result
+            if got < 0
+                return 0 - 1
+            return got
+        }
+        if scount > 0 and Io.write_stream_all(fd, sbuf, scount) = false
+            return 0 - 1
+        Io.read_stream(fd, rbuf, rcount)
     }
 
     ; Read up to count bytes; suspends while the fd has nothing to

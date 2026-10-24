@@ -287,6 +287,13 @@ int scaly_eio_submit_send(int q, int fd, void* buf, unsigned long long count, vo
     return -2;
 }
 
+int scaly_eio_submit_send_recv(int q, int fd, void* sbuf, unsigned long long scount,
+                               void* rbuf, unsigned long long rcount, void* tag)
+{
+    (void)q; (void)fd; (void)sbuf; (void)scount; (void)rbuf; (void)rcount; (void)tag;
+    return -2;
+}
+
 int scaly_eio_completions(int q)
 {
     (void)q;

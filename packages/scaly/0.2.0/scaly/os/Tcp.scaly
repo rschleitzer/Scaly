@@ -443,6 +443,16 @@ define TcpStream(var fd: i32)
         Io.write_stream_all(fd, data.data as pointer[void], data.length)
     }
 
+    ; Write ALL of data, then read up to buf.length bytes into buf, as write
+    ; and read would -- the count read, 0 at end of stream, -1 on an error
+    ; of either -- but waiting once for both where the poller allows it.
+    procedure exchange(this, data: Slice[u8], mutable buf: Slice[u8]) returns int
+    {
+        if fd < 0 or buf.length = 0
+            return 0 - 1
+        Io.exchange_stream(fd, data.data as pointer[void], data.length, buf.data as pointer[void], buf.length) as int
+    }
+
     ; TCP_NODELAY: true sends every write at once, false (the default) lets
     ; Nagle coalesce small writes. False on an error or a closed stream.
     procedure set_nodelay(this, on: bool) returns bool

@@ -384,6 +384,15 @@ define TlsStream(var ssl: SslRef, var rbio: BioRef, var wbio: BioRef, var tcp: T
         true
     }
 
+    ; write of data, then read into buf (TcpStream.exchange's contract): the
+    ; count read, 0 at the end of the stream, -1 on an error of either.
+    procedure exchange(mutable this, data: Slice[u8], mutable buf: Slice[u8]) returns int
+    {
+        if this.write(data) = false
+            return 0 - 1
+        this.read(buf)
+    }
+
     ; Send the close_notify, free the connection (the SSL frees its BIOs),
     ; the write BIO's method and the send buffer's page, close the
     ; TcpStream.

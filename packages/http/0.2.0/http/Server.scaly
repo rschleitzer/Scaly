@@ -91,9 +91,14 @@ procedure serve_stream[S](mutable c: ref[S], router: ref[Router], h2_only: bool)
     let res Response.create(host, outb)
     var open true
     var first true
+    ; what the exchange after the last answer read, -2 when it did not run
+    var ahead: int 0 - 2
     while open
     {
-        let n c.read(inb.spare())
+        var n ahead
+        ahead := 0 - 2
+        if n = 0 - 2
+            n := c.read(inb.spare())
         if n <= 0
             break
         inb.advance(n as size_t)
@@ -145,25 +150,37 @@ procedure serve_stream[S](mutable c: ref[S], router: ref[Router], h2_only: bool)
                 break
             }
         }
-        if outb.length > 0
-        {
-            if c.write(outb.bytes()) = false
-                open := false
-            outb.clear()
-        }
         inb.consume(done)
-        ; an accepted WebSocket upgrade: the 101 is out, the rest of the
+        ; an accepted WebSocket upgrade: the 101 goes out, the rest of the
         ; connection is frames
         if open and res.websocket <> null
         {
+            if c.write(outb.bytes()) = false
+                break
+            outb.clear()
             serve_websocket[S](c, res.websocket, host, &inb, outb)
             break
         }
         if inb.length = inb.capacity()
         {
             if inb.capacity() >= MAX_HEAD + MAX_BODY
-                break
-            inb.reserve(inb.capacity())
+                open := false
+            else
+                inb.reserve(inb.capacity())
+        }
+        if outb.length > 0
+        {
+            if open
+            {
+                ; the answers and the next read in one exchange: on a ring
+                ; the receive is queued behind the send, one wait for both
+                ahead := c.exchange(outb.bytes(), inb.spare())
+                if ahead <= 0
+                    open := false
+            }
+            else
+                c.write(outb.bytes())
+            outb.clear()
         }
     }
     c.close()

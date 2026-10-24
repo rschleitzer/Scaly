@@ -27083,6 +27083,8 @@ declare i32 @scaly_eio_submit_recv(i32, i32, ptr, i64, ptr)
 
 declare i32 @scaly_eio_submit_send(i32, i32, ptr, i64, ptr)
 
+declare i32 @scaly_eio_submit_send_recv(i32, i32, ptr, i64, ptr, i64, ptr)
+
 declare i32 @scaly_eio_completions(i32)
 
 declare i32 @scaly_eio_backend(i32)
@@ -30270,6 +30272,87 @@ if.end39:                                         ; preds = %if.else34
   %add41 = add i64 %done40, %call31
   store i64 %add41, ptr %sent, align 1
   br label %if.end35
+}
+
+define linkonce_odr i64 @_ZN2Io15exchange_streamE3i32PvmPvm(i32 %0, ptr %1, i64 %2, ptr %3, i64 %4) {
+entry:
+  %call = call ptr @_ZN2Io17completion_streamE3i32(i32 %0)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %land.rhs, label %if.end
+
+if.then:                                          ; preds = %land.rhs
+  %call1 = call i32 @_ZN2Io11ensure_pollEv()
+  %send_result = getelementptr inbounds nuw %_Z7IoWatch, ptr %call, i32 0, i32 1
+  store i64 0, ptr %send_result, align 8
+  %call2 = call i32 @scaly_eio_submit_send_recv(i32 %call1, i32 %0, ptr %1, i64 %2, ptr %3, i64 %4, ptr %call)
+  %ne3 = icmp ne i32 %call2, 0
+  br i1 %ne3, label %if.then4, label %if.end5
+
+if.end:                                           ; preds = %land.rhs, %entry
+  %gt22 = icmp ugt i64 %2, 0
+  br i1 %gt22, label %land.rhs21, label %if.end20
+
+land.rhs:                                         ; preds = %entry
+  %gt = icmp ugt i64 %2, 0
+  br i1 %gt, label %if.then, label %if.end
+
+if.then4:                                         ; preds = %if.then
+  call void @exit(i32 107)
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %if.then
+  call void @_ZN2Io10park_watchER7IoWatchb(ptr %call, i1 false)
+  %load.struct = load %_Z7IoWatch, ptr %call, align 8
+  %send_result6 = extractvalue %_Z7IoWatch %load.struct, 1
+  %ne7 = icmp ne i64 %send_result6, %2
+  br i1 %ne7, label %if.then8, label %if.end9
+
+if.then8:                                         ; preds = %if.end5
+  %le = icmp sle i64 %send_result6, 0
+  br i1 %le, label %if.then10, label %if.end11
+
+if.end9:                                          ; preds = %if.end5
+  %load.struct16 = load %_Z7IoWatch, ptr %call, align 8
+  %recv_result = extractvalue %_Z7IoWatch %load.struct16, 0
+  %lt = icmp slt i64 %recv_result, 0
+  br i1 %lt, label %if.then17, label %if.end18
+
+if.then10:                                        ; preds = %if.then8
+  ret i64 -1
+
+if.end11:                                         ; preds = %if.then8
+  %as.ptrtoint = ptrtoint ptr %1 to i64
+  %add = add i64 %as.ptrtoint, %send_result6
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %sub = sub i64 %2, %send_result6
+  %call12 = call i1 @_ZN2Io16write_stream_allE3i32Pvm(i32 %0, ptr %as.inttoptr, i64 %sub)
+  %eq = icmp eq i1 %call12, false
+  br i1 %eq, label %if.then13, label %if.end14
+
+if.then13:                                        ; preds = %if.end11
+  ret i64 -1
+
+if.end14:                                         ; preds = %if.end11
+  %call15 = call i64 @_ZN2Io11read_streamE3i32Pvm(i32 %0, ptr %3, i64 %4)
+  ret i64 %call15
+
+if.then17:                                        ; preds = %if.end9
+  ret i64 -1
+
+if.end18:                                         ; preds = %if.end9
+  ret i64 %recv_result
+
+if.then19:                                        ; preds = %land.rhs21
+  ret i64 -1
+
+if.end20:                                         ; preds = %land.rhs21, %if.end
+  %call25 = call i64 @_ZN2Io11read_streamE3i32Pvm(i32 %0, ptr %3, i64 %4)
+  ret i64 %call25
+
+land.rhs21:                                       ; preds = %if.end
+  %call23 = call i1 @_ZN2Io16write_stream_allE3i32Pvm(i32 %0, ptr %1, i64 %2)
+  %eq24 = icmp eq i1 %call23, false
+  br i1 %eq24, label %if.then19, label %if.end20
 }
 
 define linkonce_odr i64 @_ZN2Io5writeE3i32Pvm(i32 %0, ptr %1, i64 %2) {
@@ -36009,6 +36092,37 @@ if.end:                                           ; preds = %entry
   %field.val3 = load i64, ptr %field.inplace2, align 8
   %call = call i1 @_ZN2Io16write_stream_allE3i32Pvm(i32 %field.val, ptr %data, i64 %field.val3)
   ret i1 %call
+}
+
+define linkonce_odr i64 @_ZN9TcpStream8exchangeE5SliceI2u8E5SliceI2u8E(ptr %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z9TcpStream, ptr %0, align 4
+  %fd = extractvalue %_Z9TcpStream %load.struct, 0
+  %lt = icmp slt i32 %fd, 0
+  br i1 %lt, label %if.then, label %lor.rhs
+
+if.then:                                          ; preds = %lor.rhs, %entry
+  ret i64 -1
+
+if.end:                                           ; preds = %lor.rhs
+  %field.inplace = getelementptr inbounds nuw %_Z9TcpStream, ptr %0, i32 0, i32 0
+  %field.val = load i32, ptr %field.inplace, align 4
+  %load.struct2 = load %_Z5SliceI2u8E, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI2u8E %load.struct2, 1
+  %field.inplace3 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %1, i32 0, i32 0
+  %field.val4 = load i64, ptr %field.inplace3, align 8
+  %load.struct5 = load %_Z5SliceI2u8E, ptr %2, align 8
+  %data6 = extractvalue %_Z5SliceI2u8E %load.struct5, 1
+  %field.inplace7 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %2, i32 0, i32 0
+  %field.val8 = load i64, ptr %field.inplace7, align 8
+  %call = call i64 @_ZN2Io15exchange_streamE3i32PvmPvm(i32 %field.val, ptr %data, i64 %field.val4, ptr %data6, i64 %field.val8)
+  ret i64 %call
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5SliceI2u8E, ptr %2, align 8
+  %length = extractvalue %_Z5SliceI2u8E %load.struct1, 0
+  %eq = icmp eq i64 %length, 0
+  br i1 %eq, label %if.then, label %if.end
 }
 
 define linkonce_odr i1 @_ZN9TcpStream11set_nodelayEb(ptr %0, i1 %1) {

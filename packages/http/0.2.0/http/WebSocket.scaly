@@ -13,6 +13,8 @@
 ;
 ; Every frame a read brought is handled before anything is written, and the
 ; replies leave in one write: pipelined messages cost one syscall each way.
+; The write and the next read are one exchange (TcpStream.exchange): on an
+; io_uring poller the connection's task waits once for both.
 ; The accept key's SHA-1 is written here (a hash of the key the client sent,
 ; nothing it protects), so the http package links no cryptography.
 
@@ -397,17 +399,17 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
             }
         }
         inb.consume(at)
-        if out.length > 0
-        {
-            if c.write(out.bytes()) = false
-                break
-            out.clear()
-        }
         if open = false
+        {
+            if out.length > 0
+                c.write(out.bytes())
             break
+        }
         if inb.length = inb.capacity()
             inb.reserve(inb.capacity())
-        let got c.read(inb.spare())
+        ; the replies and the next read in one exchange: one wait for both
+        let got c.exchange(out.bytes(), inb.spare())
+        out.clear()
         if got <= 0
             break
         inb.advance(got as size_t)
