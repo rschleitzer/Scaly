@@ -24,9 +24,9 @@ D="$OUT/perf-$FW-$PROF"
 sudo perf record -q -a -g -e cpu-clock -C "$SERVER_CPUS" -o "$D.data" -- sleep 6 > /dev/null 2>&1
 wait $bench
 {
-  sudo perf report -i "$D.data" --no-children --sort dso --stdio 2> /dev/null | grep -E '^ +[0-9]' | head -8
+  sudo perf report -f -g none -i "$D.data" --no-children --sort dso --stdio 2> /dev/null | grep -E '^ +[0-9]' | head -8
   echo ---
-  sudo perf report -i "$D.data" --no-children --sort symbol --stdio 2> /dev/null | grep -E '^ +[0-9]+\.[0-9]+%' | head -60 | cut -c1-120
+  sudo perf report -f -g none -i "$D.data" --no-children --sort symbol --stdio 2> /dev/null | grep -E '^ +[0-9]+\.[0-9]+%' | head -60 | cut -c1-120
 } > "$D.txt"
 sudo chown "$USER" "$D.data"
 grep -E "Best:" "$OUT/profile-$FW-$PROF.log"
