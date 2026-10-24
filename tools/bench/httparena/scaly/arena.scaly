@@ -36,7 +36,6 @@ package tls 0.2.0
 package https 0.2.0
 package h3 0.2.0
 package pg 0.2.0
-package redis 0.2.0
 
 module db
 module stack

@@ -4,7 +4,7 @@
   "type": "emerging",
   "engine": "scaly",
   "mode": "standard",
-  "description": "The Scaly entry's server behind an nginx edge: nginx terminates TLS and HTTP/2 and serves the static files, the Scaly http package answers the dynamic routes over HTTP/1.1. In production-stack it keeps its items and users cache-aside in an in-process L1 shared by every scheduler thread, Redis (its own RESP client) and Postgres.",
+  "description": "The Scaly entry's server behind an nginx edge: nginx terminates TLS and HTTP/2 and serves the static files, the Scaly http package answers the dynamic routes over HTTP/1.1. In production-stack it keeps its items and users cache-aside in an in-process L1 shared by every scheduler thread (a sequence lock per slot, reads without a lock) over Postgres; nginx's own split, reuseport listeners on the loopback addresses.",
   "repo": "https://github.com/rschleitzer/Scaly",
   "enabled": true,
   "completeness": {

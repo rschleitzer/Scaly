@@ -1,6 +1,7 @@
 # production-stack: the nginx edge (TLS, HTTP/2, /static from disk, JWT
-# verification of every /api/* call through the shared authsvc), Redis as
-# the L2 cache, and the Scaly server with its L1 in-process, over Postgres.
+# verification of every /api/* call through the shared authsvc), the
+# profile's Redis (started, healthy, not asked), and the Scaly server with
+# its L1 in-process, over Postgres.
 #
 # The cpuset split on the reference's 64 logical CPUs is the reference
 # entry's (edge 30, cache 2, authsvc 8, server 24); EDGE_CPUSET,
@@ -93,7 +94,6 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_MAX_CONN=256
-      - REDIS_URL=redis://127.0.0.1:6379
     volumes:
       - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
     depends_on:

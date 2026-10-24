@@ -1,6 +1,9 @@
 ; stack -- the arena's production-stack half: cache-aside over an L1 in this
-; process, Redis (L2) and Postgres, behind an edge that terminates TLS and
-; checks the JWT (scaly_nginx). GET /api/items/{id} and /api/me read
+; process and Postgres, behind an edge that terminates TLS and checks the
+; JWT (scaly_nginx). The profile's Redis is not asked: it runs with four I/O
+; threads on the one or two CPUs the stack gives it, and every L2 round trip
+; waited on them -- with it the server stood at a fifth of its CPUs while
+; requests queued, without it the reads tripled (2026-10-24, the Docker VM). GET /api/items/{id} and /api/me read
 ; through the caches, POST /api/items/{id} writes the row and drops both
 ; cached copies; /public/* are the core handlers under another path.
 
@@ -10,7 +13,6 @@ use http.Buffer.ByteBuf
 use json.Value.JsonValue
 use json.Writer.JsonWriter
 use pg.Conn.PgConn
-use redis.Conn.RedisConn
 ;
 ; The L1 is one slot per id, shared by every scheduler thread and read
 ; without a lock: a sequence lock whose every word is an atomic access, so a
@@ -119,52 +121,6 @@ procedure l1_remove(mutable t: ref[L1Table], id: i64)
 shared item_l1: ref[L1Table]? null
 shared user_l1: ref[L1Table]? null
 
-; The cache key prefix:id into out.
-procedure cache_key(mutable out: ref[ByteBuf], prefix: Slice[u8], id: i64)
-{
-    out.clear()
-    out.append(prefix)
-    out.append_int(id)
-}
-
-; The value of key from Redis onto out (true), or false when Redis lacks it
-; or cannot be reached.
-procedure l2_get(key: Slice[u8], mutable out: ref[ByteBuf]) returns bool mutable redis_pool
-{
-    let got redis_acquire()
-    if got = null
-        return false
-    var c got as ref[RedisConn]
-    var found c.get(key)
-    if found
-    {
-        out.clear()
-        out.append(c.value())
-    }
-    redis_release(c)
-    found
-}
-
-procedure l2_set(key: Slice[u8], value: Slice[u8], ttl_ms: i64) mutable redis_pool
-{
-    let got redis_acquire()
-    if got = null
-        return
-    var c got as ref[RedisConn]
-    c.set_px(key, value, ttl_ms)
-    redis_release(c)
-}
-
-procedure l2_del(key: Slice[u8]) mutable redis_pool
-{
-    let got redis_acquire()
-    if got = null
-        return
-    var c got as ref[RedisConn]
-    c.del(key)
-    redis_release(c)
-}
-
 ; A cached answer: its JSON with X-Cache, HIT or MISS.
 procedure send_cached(mutable res: ref[Response], hit: bool, body: Slice[u8])
 {
@@ -256,9 +212,9 @@ procedure user_from_db(id: i64, mutable out: ref[ByteBuf]) returns bool mutable 
 define ITEM_TTL_MS: i64 1000
 define USER_TTL_MS: i64 30000
 
-; GET /api/items/{id}: L1, then L2, then Postgres, filling both on the way
-; back (X-Cache: HIT from either cache, MISS from the database).
-procedure api_item_get(req: ref[Request], mutable res: ref[Response]) mutable pg_pool, redis_pool, item_l1
+; GET /api/items/{id}: the L1, then Postgres, filling the L1 on the way back
+; (X-Cache: HIT from the L1, MISS from the database).
+procedure api_item_get(req: ref[Request], mutable res: ref[Response]) mutable pg_pool, item_l1
 {
     let id parse_int_prefix(req.param("id"))
     var copy u8[232]
@@ -274,18 +230,7 @@ procedure api_item_get(req: ref[Request], mutable res: ref[Response]) mutable pg
         }
     }
     let host Page.allocate_page()
-    var key ByteBuf.create(host, 32)
-    cache_key(&key, "item:", id)
     var value ByteBuf.create(host, 256)
-    if l2_get(key.bytes(), &value)
-    {
-        if table <> null
-            l1_put(table, id, value.bytes())
-        send_cached(res, true, value.bytes())
-        host.deallocate_extensions()
-        Page.release_page(host)
-        return
-    }
     if item_from_db(id, &value) = false
     {
         res.set_status(404)
@@ -294,7 +239,6 @@ procedure api_item_get(req: ref[Request], mutable res: ref[Response]) mutable pg
         Page.release_page(host)
         return
     }
-    l2_set(key.bytes(), value.bytes(), ITEM_TTL_MS)
     if table <> null
         l1_put(table, id, value.bytes())
     send_cached(res, false, value.bytes())
@@ -303,8 +247,8 @@ procedure api_item_get(req: ref[Request], mutable res: ref[Response]) mutable pg
 }
 
 ; POST /api/items/{id}: {name, price, quantity} into the row, then the
-; cached copies dropped in both caches; 204.
-procedure api_item_post(req: ref[Request], mutable res: ref[Response]) mutable pg_pool, redis_pool, item_l1
+; cached copy dropped; 204.
+procedure api_item_post(req: ref[Request], mutable res: ref[Response]) mutable pg_pool, item_l1
 {
     let id parse_int_prefix(req.param("id"))
     let parsed JsonValue.parse(req.body)
@@ -344,19 +288,13 @@ procedure api_item_post(req: ref[Request], mutable res: ref[Response]) mutable p
     let table item_l1
     if table <> null
         l1_remove(table, id)
-    let host Page.allocate_page()
-    var k ByteBuf.create(host, 32)
-    cache_key(&k, "item:", id)
-    l2_del(k.bytes())
-    host.deallocate_extensions()
-    Page.release_page(host)
     res.set_status(204)
     res.send_empty()
 }
 
 ; GET /api/me: the user the edge authenticated (X-User-Id), cache-aside
 ; like the items with a 30 s life.
-procedure api_me(req: ref[Request], mutable res: ref[Response]) mutable pg_pool, redis_pool, user_l1
+procedure api_me(req: ref[Request], mutable res: ref[Response]) mutable pg_pool, user_l1
 {
     let uid_text req.header("x-user-id")
     if uid_text.length = 0
@@ -379,18 +317,7 @@ procedure api_me(req: ref[Request], mutable res: ref[Response]) mutable pg_pool,
         }
     }
     let host Page.allocate_page()
-    var key ByteBuf.create(host, 32)
-    cache_key(&key, "user:", id)
     var value ByteBuf.create(host, 256)
-    if l2_get(key.bytes(), &value)
-    {
-        if table <> null
-            l1_put(table, id, value.bytes())
-        send_cached(res, true, value.bytes())
-        host.deallocate_extensions()
-        Page.release_page(host)
-        return
-    }
     if user_from_db(id, &value) = false
     {
         res.set_status(404)
@@ -399,7 +326,6 @@ procedure api_me(req: ref[Request], mutable res: ref[Response]) mutable pg_pool,
         Page.release_page(host)
         return
     }
-    l2_set(key.bytes(), value.bytes(), USER_TTL_MS)
     if table <> null
         l1_put(table, id, value.bytes())
     send_cached(res, false, value.bytes())
