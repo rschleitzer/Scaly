@@ -18,7 +18,9 @@ COMMIT="$1"; shift
 SSH=(ssh -i "$PEM" -o StrictHostKeyChecking=accept-new "ubuntu@$HOST")
 "${SSH[@]}" 'rm -rf ~/entry && mkdir -p ~/entry'
 scp -i "$PEM" -q "$HERE"/../scaly/* "ubuntu@$HOST:entry/"
-scp -i "$PEM" -q "$HERE/setup.sh" "$HERE/measure.sh" "$HERE/variant.sh" "$HERE/profile.sh" "ubuntu@$HOST:"
+"${SSH[@]}" 'rm -rf ~/scaly_nginx ~/scaly_caddy'
+scp -i "$PEM" -q -r "$HERE/../scaly_nginx" "$HERE/../scaly_caddy" "ubuntu@$HOST:"
+scp -i "$PEM" -q "$HERE/setup.sh" "$HERE/measure.sh" "$HERE/variant.sh" "$HERE/profile.sh" "$HERE/cpusets.py" "ubuntu@$HOST:"
 "${SSH[@]}" "bash setup.sh $COMMIT"
 TREE="$(cd "$HERE/../../../.." && pwd)"
 for v in ${VARIANTS:-}; do

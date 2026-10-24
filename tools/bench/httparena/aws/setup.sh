@@ -27,8 +27,17 @@ sudo apt-get install -y -q git jq python3 curl linux-tools-common "linux-tools-$
 git -C "$HA" fetch -q origin
 git -C "$HA" checkout -q -- scripts/lib/profiles.sh 2> /dev/null || true
 git -C "$HA" checkout -q "$COMMIT"
+# undo an earlier run's cpuset mapping (cpusets.py) before mapping again
+git -C "$HA" checkout -q -- frameworks
 rm -rf "$HA/frameworks/scaly"
 cp -R "$HOME/entry" "$HA/frameworks/scaly"
+# the gateway entries beside it (prepare.sh copies them along)
+for g in scaly_nginx scaly_caddy; do
+  if [ -d "$HOME/$g" ]; then
+    rm -rf "$HA/frameworks/$g"
+    cp -R "$HOME/$g" "$HA/frameworks/$g"
+  fi
+done
 
 # the split
 read -r SERVER LOADGEN SMALL LOADGEN_N < <(python3 - << 'EOF'
@@ -67,6 +76,8 @@ EOF
 )
 sed -i "s/|0-31,64-95|/|$SERVER|/; s/|0-3,64-67|/|$SMALL|/" "$HA/scripts/lib/profiles.sh"
 grep -q "|0-31,64-95|" "$HA/scripts/lib/profiles.sh" && { echo "setup.sh: profiles.sh still names the board's cpuset"; exit 1; }
+# the compose stacks' own splits, onto the same server cores
+python3 "$HOME/cpusets.py" "$HA"
 # the board runs its load generators with 64 threads on its 64 CPUs: as many
 # threads as the load generators have CPUs here
 cat > "$HOME/bench.env" << EOF
