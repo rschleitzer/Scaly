@@ -416,6 +416,8 @@ procedure scaly_eio_tcp_nodelay(fd: i32, on: i32) returns i32 extern
 procedure scaly_eio_tcp_served(fd: i32) extern
 procedure scaly_eio_tcp_unserved(fd: i32) extern
 procedure scaly_eio_tcp_wake_served() returns i32 extern
+procedure scaly_eio_tcp_idle(fd: i32, seconds: i64) returns i32 extern
+procedure scaly_eio_tcp_sweep() returns i32 extern
 procedure scaly_eio_block_termination() extern
 procedure scaly_eio_wait_termination() returns i32 extern
 procedure scaly_eio_tcp_listen_host(host: pointer[const_char], port: i32) returns i32 extern
@@ -504,6 +506,18 @@ define CHAN_QUIET_MAX_MS i32 3200
 ; first Thread.spawn or the first channel wait, both on the main thread
 ; before any concurrency); `threads` starts at 1 for the main thread.
 shared deadlock_state: pointer[DeadlockState] null
+
+; The sweeper Io.idle starts on a thread: once a second, the reading of
+; every connection whose bound ran out ends -- until no bound is left.
+procedure io_idle_sweeper()
+{
+    repeat
+    {
+        Scheduler.sleep(1000)
+        if scaly_eio_tcp_sweep() = 0
+            return
+    }
+}
 
 procedure ensure_deadlock_state()
 {
@@ -1235,7 +1249,13 @@ define Scheduler
     ; HttpArena's async profile parks 32 000 requests for 10 ms each).
     procedure sleep(ms: i64)
     {
-        let deadline scaly_eio_now_ns() + ms * 1000000
+        ; past what a deadline holds (some 292 years from the clock's
+        ; start) the sleep is that long: ms * 10^6 wrapped, and the task
+        ; woke at once
+        let now scaly_eio_now_ns()
+        var deadline: i64 9223372036854775807
+        if ms < (deadline - now) / 1000000
+            deadline := now + ms * 1000000
         if current_scheduler = null
         {
             Scheduler.sleep_blocking(deadline)
@@ -2400,6 +2420,20 @@ define Io
     ; on one answers the end of the stream. How many there were.
     procedure wake_served() returns int
         scaly_eio_tcp_wake_served() as int
+
+    ; End the reading of served connection fd once `seconds` pass with no
+    ; other bound given (0 lifts it): a server's limit on a client that
+    ; sends nothing, or a byte a minute. The first bound on a thread starts
+    ; its sweeper, a task that looks once a second and ends when no bound is
+    ; left; a bound never ends early, and two seconds late at most. Outside
+    ; a scheduler, nothing.
+    procedure idle(fd: i32, seconds: i64)
+    {
+        if current_scheduler = null
+            return
+        if scaly_eio_tcp_idle(fd, seconds) <> 0
+            Scheduler.spawn_detached(&io_idle_sweeper, null)
+    }
 
     ; Keep the signals that ask the process to end (SIGINT, SIGTERM; on
     ; Windows the console's events) from ending it: called first thing in

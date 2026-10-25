@@ -34,6 +34,45 @@ define OUT_SIZE: size_t 16384
 ; serve nor its callers have to name it as a global they write.
 shared atomic http_router: u64 0
 
+; How long a connection may say nothing while it waits for a request
+; (keep-alive between two, HTTP/2 between frames), and how long a request's
+; head may take from its first bytes: past either its reading ends
+; (Io.idle), and it closes as after its client's end. A handler's own time
+; does not count, nor does a WebSocket's silence. Without them a client
+; that sent nothing, or a byte a minute (slowloris), held a fiber, a page
+; and a descriptor as long as it liked, and a few thousand such filled the
+; descriptor table. Seconds, 0 for none; atomics like http_router, read on
+; every serving thread.
+shared atomic http_idle_seconds: u64 60
+shared atomic http_head_seconds: u64 30
+
+; Set the two bounds for every server of the process (a test, or a service
+; that wants others); 0 turns one off.
+procedure set_idle_limits(idle: u64, head: u64)
+{
+    scaly_atomic_store_u64(&http_idle_seconds, idle)
+    scaly_atomic_store_u64(&http_head_seconds, head)
+}
+
+; The bound before connection fd reads again, `held` the bytes it holds:
+; a request's head begun and not complete keeps the bound its first bytes
+; set (a byte a minute does not move it), else the idle bound from now.
+; head_open says whether the head's bound stands.
+procedure bound_idle(fd: i32, held: Slice[u8], mutable head_open: ref[bool])
+{
+    if held.length > 0 and head_end(held) = 0
+    {
+        if head_open = false
+        {
+            head_open := true
+            Io.idle(fd, scaly_atomic_load_u64(&http_head_seconds) as i64)
+        }
+        return
+    }
+    head_open := false
+    Io.idle(fd, scaly_atomic_load_u64(&http_idle_seconds) as i64)
+}
+
 ; Answer one request: route it and run its handler. A routine of its own so
 ; that what the handler allocates dies here. The request and the response
 ; are the connection's, on its page, reused for every request: a handler
@@ -93,8 +132,8 @@ procedure serve_stream[S](mutable c: ref[S], router: ref[Router], h2_only: bool)
 {
     let host Page.allocate_page()
     try let served serve_loop[S](c, router, h2_only, host)
-    else
-        report_fault("http")
+        else
+            report_fault("http")
     c.close()
     host.deallocate_extensions()
     Page.release_page(host)
@@ -124,6 +163,8 @@ procedure serve_loop[S](mutable c: ref[S], router: ref[Router], h2_only: bool, h
     let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, OUT_SIZE), 0, false)
     let req &Request^host(null, null, null, null, null, null, 1, true, null, null)
     let res Response.create(host, outb)
+    let fd: i32 c.descriptor()
+    var head_open false
     var open true
     var first true
     ; what the exchange after the last answer read, -2 when it did not run
@@ -133,7 +174,10 @@ procedure serve_loop[S](mutable c: ref[S], router: ref[Router], h2_only: bool, h
         var n ahead
         ahead := 0 - 2
         if n = 0 - 2
+        {
+            bound_idle(fd, inb.bytes(), &head_open)
             n := c.read(inb.spare())
+        }
         if n <= 0
             break
         inb.advance(n as size_t)
@@ -146,7 +190,7 @@ procedure serve_loop[S](mutable c: ref[S], router: ref[Router], h2_only: bool, h
         {
             if inb.length < h2_preface().length
                 continue
-            serve_h2[S](c, router, host, &inb, req, res, outb)
+            serve_h2[S](c, router, host, &inb, req, res, outb, fd)
             break
         }
         if h2_only
@@ -175,6 +219,9 @@ procedure serve_loop[S](mutable c: ref[S], router: ref[Router], h2_only: bool, h
                 open := false
                 break
             }
+            ; the handler's time is not silence (nor is a WebSocket's)
+            Io.idle(fd, 0)
+            head_open := false
             dispatch(router, req, res)
             done := done + (r as size_t)
             if res.websocket <> null
@@ -209,6 +256,7 @@ procedure serve_loop[S](mutable c: ref[S], router: ref[Router], h2_only: bool, h
             {
                 ; the answers and the next read in one exchange: on a ring
                 ; the receive is queued behind the send, one wait for both
+                bound_idle(fd, inb.bytes(), &head_open)
                 ahead := c.exchange(outb.bytes(), inb.spare())
                 if ahead <= 0
                     open := false

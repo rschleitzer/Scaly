@@ -286,11 +286,11 @@ procedure h3_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64
         ; alone: caught here, below ngtcp2's frames, it answers ngtcp2 a
         ; failure -- a catch point in the loop would jump over them
         try let r h3_uni_data(uc, s, Slice[u8](datalen, data))
-        else
-        {
-            report_fault("h3")
-            return NGTCP2_ERR_CALLBACK_FAILURE
-        }
+            else
+            {
+                report_fault("h3")
+                return NGTCP2_ERR_CALLBACK_FAILURE
+            }
         return r
     }
     if datalen > 0
@@ -855,12 +855,12 @@ procedure h3_answer_ready(mutable l: ref[QListener], mutable c: ref[QConn]) retu
         c.readyq.put(0, c.readyq[c.readyq.length - 1])
         c.readyq.length := c.readyq.length - 1
         try let answered h3_answered(l.work, c, s)
-        else
-        {
-            report_fault("h3")
-            l.work.outb.clear()
-            return false
-        }
+            else
+            {
+                report_fault("h3")
+                l.work.outb.clear()
+                return false
+            }
         l.pending_ := l.pending_ + s.output.length
         if s.in_sendq = false
         {

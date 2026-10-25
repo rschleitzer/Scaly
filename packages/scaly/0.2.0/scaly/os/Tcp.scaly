@@ -425,6 +425,10 @@ define TcpStream(var fd: i32)
     function is_open(this) returns bool
         fd >= 0
 
+    ; The descriptor (Io.idle's key; TlsStream has the same, its TCP one).
+    function descriptor(this) returns i32
+        fd
+
     ; Read up to buf.length bytes into buf: the count, 0 at end of stream,
     ; -1 on an error (or a closed stream). Waits for data colorlessly.
     procedure read(this, mutable buf: Slice[u8]) returns int

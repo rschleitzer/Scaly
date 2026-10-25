@@ -597,10 +597,14 @@ void scaly_eio_tcp_served(int fd)
     scaly_served[fd] = 1;
 }
 
+static __declspec(thread) unsigned int *scaly_served_until;
+
 void scaly_eio_tcp_unserved(int fd)
 {
     if (scaly_served != NULL && fd >= 0 && fd < SCALY_SERVED_MAX)
         scaly_served[fd] = 0;
+    if (scaly_served_until != NULL && fd >= 0 && fd < SCALY_SERVED_MAX)
+        scaly_served_until[fd] = 0;
 }
 
 int scaly_eio_tcp_wake_served(void)
@@ -617,6 +621,75 @@ int scaly_eio_tcp_wake_served(void)
         }
     }
     return n;
+}
+
+/* The idle bounds of served connections -- the eio.c twins (the reasoning
+ * is there): a bound that ran out shuts the receive side and cancels the
+ * socket's pending operations, as wake does. ★Written beside the POSIX arm
+ * and NOT yet run on Windows. */
+static __declspec(thread) unsigned int scaly_idle_now;
+static __declspec(thread) int scaly_idle_top;
+static __declspec(thread) int scaly_idle_sweeping;
+
+long long scaly_eio_now_ns(void);
+
+static unsigned int scaly_idle_clock(void)
+{
+    return (unsigned int)(scaly_eio_now_ns() / 1000000000LL) + 1;
+}
+
+int scaly_eio_tcp_idle(int fd, long long seconds)
+{
+    if (fd < 0 || fd >= SCALY_SERVED_MAX)
+        return 0;
+    if (scaly_served_until == NULL) {
+        if (seconds <= 0)
+            return 0;
+        scaly_served_until = (unsigned int*)calloc(SCALY_SERVED_MAX, sizeof *scaly_served_until);
+        if (scaly_served_until == NULL)
+            return 0;
+    }
+    if (seconds <= 0) {
+        scaly_served_until[fd] = 0;
+        return 0;
+    }
+    if (seconds > 86400)
+        seconds = 86400;
+    if (scaly_idle_now == 0)
+        scaly_idle_now = scaly_idle_clock();
+    /* the clock is up to a second behind: one more keeps a bound from
+     * ending early */
+    scaly_served_until[fd] = scaly_idle_now + (unsigned int)seconds + 1;
+    if (fd >= scaly_idle_top)
+        scaly_idle_top = fd + 1;
+    if (scaly_idle_sweeping)
+        return 0;
+    scaly_idle_sweeping = 1;
+    return 1;
+}
+
+int scaly_eio_tcp_sweep(void)
+{
+    int left = 0;
+    if (scaly_served_until != NULL) {
+        scaly_idle_now = scaly_idle_clock();
+        for (int fd = 0; fd < scaly_idle_top; fd++) {
+            unsigned int until = scaly_served_until[fd];
+            if (until == 0)
+                continue;
+            if (until <= scaly_idle_now) {
+                SOCKET s = (SOCKET)(intptr_t)fd;
+                shutdown(s, SD_RECEIVE);
+                CancelIoEx((HANDLE)s, NULL);
+                scaly_served_until[fd] = 0;
+            }
+            else
+                left++;
+        }
+    }
+    if (left == 0)
+        scaly_idle_sweeping = 0;
+    return left > 0;
 }
 
 /* The end of the process asked for from outside -- the eio.c twins: Ctrl-C,

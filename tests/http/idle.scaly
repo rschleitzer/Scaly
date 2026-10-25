@@ -1,0 +1,217 @@
+; The http package's bounds on a silent connection (set_idle_limits; 60 and
+; 30 seconds by default, 1 and 2 here), each on a connection of its own:
+;   silent     a connection that sends nothing is closed after the idle
+;              bound
+;   keepalive  one answered, then silence: closed after the idle bound
+;   dribble    a head that never ends, a byte every 300 ms (each well
+;              within the idle bound): closed after the head bound
+;   handler    a handler that sleeps 2.5 s, longer than the idle bound, is
+;              answered, and so is the next request on the connection: a
+;              handler's time is not silence (an answer alone would prove
+;              nothing -- an ended reading still lets the answer out)
+;   h2         HTTP/2 by prior knowledge, then silence: closed
+;   websocket  an upgraded connection silent for 2.5 s still echoes
+; "closed" means the client reads the end of the stream (for the dribble:
+; its writes begin to fail), after the bound -- never before it, two
+; seconds late at most (the sweeper looks once a second, its clock up to a
+; second behind).
+; Expected: silent keepalive dribble handler h2 websocket
+
+package scaly 0.2.0
+package http 0.2.0
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+use http.WebSocket.WebSocket
+
+procedure sum(req: ref[Request], mutable res: ref[Response])
+    res.send_int(parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b")))
+
+procedure nap(req: ref[Request], mutable res: ref[Response])
+{
+    Scheduler.sleep(2500)
+    res.send_int(25)
+}
+
+procedure on_message(mutable ws: ref[WebSocket], opcode: u8, payload: Slice[u8])
+    ws.send(opcode, payload)
+
+procedure upgrade(req: ref[Request], mutable res: ref[Response])
+    res.accept_websocket(req, &on_message)
+
+; Read from s until the end of the stream; the milliseconds that took, -1
+; when an answer came instead (or nothing within ten seconds).
+procedure closes_after(s: TcpStream, since: i64) returns i64
+{
+    var b u8[512]
+    repeat
+    {
+        let n s.read(Slice[u8](512, &b[0]))
+        if n = 0
+            return (scaly_eio_now_ns() - since) / 1000000
+        if n < 0 or scaly_eio_now_ns() - since > 10000000000
+            return 0 - 1
+    }
+}
+
+; Read until n bytes came (or the end); what came.
+procedure read_some(s: TcpStream, n: size_t, mutable into: ref[ByteBuf]) returns Slice[u8]
+{
+    while into.length < n
+    {
+        let r s.read(into.spare())
+        if r <= 0
+            break
+        into.advance(r as size_t)
+    }
+    into.bytes()
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    set_idle_limits(1, 2)
+    var app Router.create(Page.allocate_page())
+    app.get("/sum", &sum)
+    app.get("/nap", &nap)
+    app.get("/ws", &upgrade)
+    var l TcpListener.listen(0)
+    let server start(app, l)
+    let host Page.allocate_page()
+    var inb ByteBuf.create(host, 4096)
+
+    ; silent
+    var a TcpStream.connect("127.0.0.1", l.port())
+    let silent closes_after(a, scaly_eio_now_ns())
+    a.close()
+    if silent < 1000 or silent > 3800
+    {
+        print "silent: `silent` ms"
+        return 1
+    }
+    Console.print "silent "
+
+    ; keepalive
+    var b TcpStream.connect("127.0.0.1", l.port())
+    b.write("GET /sum?a=1&b=2 HTTP/1.1\r\nHost: t\r\n\r\n")
+    let answer read_some(b, 1, &inb)
+    let answered scaly_eio_now_ns()
+    let kept closes_after(b, answered)
+    b.close()
+    if answer.length = 0 or kept < 1000 or kept > 3800
+    {
+        print "keepalive: `answer.length` bytes, closed after `kept` ms"
+        return 2
+    }
+    Console.print "keepalive "
+
+    ; dribble
+    var d TcpStream.connect("127.0.0.1", l.port())
+    let began scaly_eio_now_ns()
+    d.write("GET /sum?a=1&b=2 HTTP/1.1\r\n")
+    var ended false
+    var dribbled: i64 0
+    ; the server's end shows as a write that fails: the first one after it
+    ; draws a reset, the next is refused
+    while ended = false and scaly_eio_now_ns() - began < 8000000000
+    {
+        Scheduler.sleep(300)
+        if d.write("X") = false
+            ended := true
+    }
+    dribbled := (scaly_eio_now_ns() - began) / 1000000
+    d.close()
+    if ended = false or dribbled < 2000 or dribbled > 5000
+    {
+        print "dribble: ended `ended` after `dribbled` ms"
+        return 3
+    }
+    Console.print "dribble "
+
+    ; handler
+    inb.clear()
+    var e TcpStream.connect("127.0.0.1", l.port())
+    e.write("GET /nap HTTP/1.1\r\nHost: t\r\n\r\n")
+    let napped read_some(e, 12, &inb)
+    let nap_ok napped.length >= 12 and napped.subslice(9, 12).equals("200")
+    inb.clear()
+    e.write("GET /sum?a=2&b=3 HTTP/1.1\r\nHost: t\r\nConnection: close\r\n\r\n")
+    repeat
+    {
+        let r e.read(inb.spare())
+        if r <= 0
+            break
+        inb.advance(r as size_t)
+    }
+    let next inb.bytes()
+    e.close()
+    if nap_ok = false or next.length < 12 or next.subslice(9, 12).equals("200") = false or next[next.length - 1] <> 53
+    {
+        print "handler: nap `nap_ok`, then `next.length` bytes"
+        return 4
+    }
+    Console.print "handler "
+
+    ; h2
+    var f TcpStream.connect("127.0.0.1", l.port())
+    var hello ByteBuf.create(host, 64)
+    hello.append(h2_preface())
+    frame_head(&hello, 0, 4, 0, 0)
+    f.write(hello.bytes())
+    let h2_start scaly_eio_now_ns()
+    let h2_closed closes_after(f, h2_start)
+    f.close()
+    if h2_closed < 1000 or h2_closed > 3800
+    {
+        print "h2: closed after `h2_closed` ms"
+        return 5
+    }
+    Console.print "h2 "
+
+    ; websocket
+    inb.clear()
+    var w TcpStream.connect("127.0.0.1", l.port())
+    w.write("GET /ws HTTP/1.1\r\nHost: t\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n")
+    let switched read_some(w, 12, &inb)
+    if switched.length < 12 or switched.subslice(9, 12).equals("101") = false
+    {
+        print "websocket: no 101"
+        return 6
+    }
+    var head_at head_end(inb.bytes())
+    while head_at = 0
+    {
+        let r w.read(inb.spare())
+        if r <= 0
+            break
+        inb.advance(r as size_t)
+        head_at := head_end(inb.bytes())
+    }
+    inb.consume(head_at)
+    Scheduler.sleep(2500)
+    ; a masked text frame "hi" (key 1 2 3 4)
+    var frame ByteBuf.create(host, 16)
+    frame.append_byte(129)
+    frame.append_byte(130)
+    frame.append_byte(1)
+    frame.append_byte(2)
+    frame.append_byte(3)
+    frame.append_byte(4)
+    frame.append_byte(104 xor 1)
+    frame.append_byte(105 xor 2)
+    w.write(frame.bytes())
+    let echo read_some(w, 4, &inb)
+    w.close()
+    if echo.length < 4 or echo[0] <> 129 or echo[1] <> 2 or echo[2] <> 104 or echo[3] <> 105
+    {
+        print "websocket: `echo.length` bytes back"
+        return 7
+    }
+    Console.print "websocket"
+
+    server.shutdown()
+    server.wait()
+    l.close()
+    0
+}

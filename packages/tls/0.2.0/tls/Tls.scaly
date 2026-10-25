@@ -393,6 +393,10 @@ define TlsStream(var ssl: SslRef, var rbio: BioRef, var wbio: BioRef, var tcp: T
         this.read(buf)
     }
 
+    ; The TCP stream's descriptor (TcpStream.descriptor).
+    function descriptor(this) returns i32
+        tcp.fd
+
     ; Send the close_notify, free the connection (the SSL frees its BIOs),
     ; the write BIO's method and the send buffer's page, close the
     ; TcpStream.

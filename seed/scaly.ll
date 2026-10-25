@@ -188,11 +188,11 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z14StringIterator = type { ptr, ptr }
 %_Z6ResultI1T1EE = type { i8, <{ [1 x i64], [0 x i8] }> }
 %_Z6OptionI1TE = type { i8, <{ [1 x i64], [0 x i8] }> }
+%_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr, i64, ptr, i1 }
+%_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64, i32, i64, i64, ptr, ptr, i64, ptr, ptr, i64, i64, i1, i32, i64, i64, i64, i64 }
 %_Z13DeadlockState = type { i64, i64, i64 }
 %_Z6IoPool = type { i64, ptr, ptr, i32, i32, i64, i64, ptr }
 %_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, ptr, i1 }
-%_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64, i32, i64, i64, ptr, ptr, i64, ptr, ptr, i64, i64, i1, i32, i64, i64, i64, i64 }
-%_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr, i64, ptr, i1 }
 %_Z7IoWatch = type { i64, i64, i1, i1, i1, ptr, ptr }
 %_Z6IoWork = type { ptr, ptr, ptr, ptr, ptr }
 %_Z7Channel = type { i64, i64, i1, ptr, ptr, ptr, ptr, ptr, i64, i64, ptr, ptr }
@@ -27147,6 +27147,10 @@ declare void @scaly_eio_tcp_unserved(i32)
 
 declare i32 @scaly_eio_tcp_wake_served()
 
+declare i32 @scaly_eio_tcp_idle(i32, i64)
+
+declare i32 @scaly_eio_tcp_sweep()
+
 declare void @scaly_eio_block_termination()
 
 declare i32 @scaly_eio_wait_termination()
@@ -27166,6 +27170,114 @@ declare i32 @scaly_thread_spawn_sized(ptr, ptr, ptr, i64)
 declare i64 @scaly_stack_limit()
 
 declare ptr @scaly_call_ptr(ptr, ptr)
+
+define linkonce_odr void @_ZN9Scheduler5sleepE3i64(i64 %0) {
+entry:
+  %call = call i64 @scaly_eio_now_ns()
+  %deadline = alloca i64, align 8
+  store i64 9223372036854775807, ptr %deadline, align 1
+  %deadline1 = load i64, ptr %deadline, align 8
+  %sub = sub i64 %deadline1, %call
+  %sdiv = sdiv i64 %sub, 1000000
+  %lt = icmp slt i64 %0, %sdiv
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %mul = mul i64 %0, 1000000
+  %add = add i64 %call, %mul
+  store i64 %add, ptr %deadline, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %global.load = load ptr, ptr @current_scheduler, align 8
+  %eq = icmp eq ptr %global.load, null
+  br i1 %eq, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  %deadline4 = load i64, ptr %deadline, align 8
+  call void @_ZN9Scheduler14sleep_blockingE3i64(i64 %deadline4)
+  ret void
+
+if.end3:                                          ; preds = %if.end
+  %global.load5 = load ptr, ptr @current_task, align 8
+  %ne = icmp ne ptr %global.load5, null
+  br i1 %ne, label %if.then6, label %if.end7
+
+if.then6:                                         ; preds = %if.end3
+  %global.load8 = load ptr, ptr @current_scheduler, align 8
+  %unwrap.isnull = icmp eq ptr %global.load8, null
+  br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
+
+if.end7:                                          ; preds = %if.end3
+  br label %repeat.body
+
+unwrap.trap:                                      ; preds = %if.then6
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.163)
+  unreachable
+
+unwrap.ok:                                        ; preds = %if.then6
+  %deadline9 = load i64, ptr %deadline, align 8
+  %wake_at = getelementptr inbounds nuw %_Z9SchedTask, ptr %global.load5, i32 0, i32 8
+  store i64 %deadline9, ptr %wake_at, align 8
+  call void @_ZN9Scheduler9add_timerER9SchedTask(ptr %global.load5)
+  %load.struct = load %_Z9Scheduler, ptr %global.load8, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct, 3
+  %add10 = add i64 %blocked, 1
+  %blocked11 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load8, i32 0, i32 3
+  store i64 %add10, ptr %blocked11, align 8
+  %load.struct12 = load %_Z9Scheduler, ptr %global.load8, align 8
+  %sleeping = extractvalue %_Z9Scheduler %load.struct12, 11
+  %add13 = add i64 %sleeping, 1
+  %sleeping14 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load8, i32 0, i32 11
+  store i64 %add13, ptr %sleeping14, align 8
+  call void @_ZN5Fiber5yieldEv()
+  ret void
+
+repeat.body:                                      ; preds = %if.end21, %if.end7
+  %call15 = call i64 @scaly_eio_now_ns()
+  %deadline16 = load i64, ptr %deadline, align 8
+  %ge = icmp sge i64 %call15, %deadline16
+  br i1 %ge, label %if.then17, label %if.end18
+
+repeat.exit:                                      ; No predecessors!
+  ret void
+
+if.then17:                                        ; preds = %repeat.body
+  ret void
+
+if.end18:                                         ; preds = %repeat.body
+  %call19 = call i1 @_ZN9Scheduler4stepEv()
+  %not = xor i1 %call19, true
+  br i1 %not, label %if.then20, label %if.end21
+
+if.then20:                                        ; preds = %if.end18
+  %deadline22 = load i64, ptr %deadline, align 8
+  %call23 = call i1 @_ZN9Scheduler10poll_io_byE3i64(i64 %deadline22)
+  br label %if.end21
+
+if.end21:                                         ; preds = %if.then20, %if.end18
+  br label %repeat.body
+}
+
+define linkonce_odr void @_Z15io_idle_sweeperv() {
+entry:
+  br label %repeat.body
+
+repeat.body:                                      ; preds = %if.end, %entry
+  call void @_ZN9Scheduler5sleepE3i64(i64 1000)
+  %call = call i32 @scaly_eio_tcp_sweep()
+  %eq = icmp eq i32 %call, 0
+  br i1 %eq, label %if.then, label %if.end
+
+repeat.exit:                                      ; No predecessors!
+  ret void
+
+if.then:                                          ; preds = %repeat.body
+  ret void
+
+if.end:                                           ; preds = %repeat.body
+  br label %repeat.body
+}
 
 define linkonce_odr void @_Z21ensure_deadlock_statev() {
 entry:
@@ -28741,77 +28853,6 @@ if.then96:                                        ; preds = %while.exit
 if.end97:                                         ; preds = %if.then96, %while.exit
   %main_woke = load i1, ptr %moved, align 1
   ret i1 %main_woke
-}
-
-define linkonce_odr void @_ZN9Scheduler5sleepE3i64(i64 %0) {
-entry:
-  %call = call i64 @scaly_eio_now_ns()
-  %mul = mul i64 %0, 1000000
-  %add = add i64 %call, %mul
-  %global.load = load ptr, ptr @current_scheduler, align 8
-  %eq = icmp eq ptr %global.load, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_ZN9Scheduler14sleep_blockingE3i64(i64 %add)
-  ret void
-
-if.end:                                           ; preds = %entry
-  %global.load1 = load ptr, ptr @current_task, align 8
-  %ne = icmp ne ptr %global.load1, null
-  br i1 %ne, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  %global.load4 = load ptr, ptr @current_scheduler, align 8
-  %unwrap.isnull = icmp eq ptr %global.load4, null
-  br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
-
-if.end3:                                          ; preds = %if.end
-  br label %repeat.body
-
-unwrap.trap:                                      ; preds = %if.then2
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.163)
-  unreachable
-
-unwrap.ok:                                        ; preds = %if.then2
-  %wake_at = getelementptr inbounds nuw %_Z9SchedTask, ptr %global.load1, i32 0, i32 8
-  store i64 %add, ptr %wake_at, align 8
-  call void @_ZN9Scheduler9add_timerER9SchedTask(ptr %global.load1)
-  %load.struct = load %_Z9Scheduler, ptr %global.load4, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct, 3
-  %add5 = add i64 %blocked, 1
-  %blocked6 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load4, i32 0, i32 3
-  store i64 %add5, ptr %blocked6, align 8
-  %load.struct7 = load %_Z9Scheduler, ptr %global.load4, align 8
-  %sleeping = extractvalue %_Z9Scheduler %load.struct7, 11
-  %add8 = add i64 %sleeping, 1
-  %sleeping9 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load4, i32 0, i32 11
-  store i64 %add8, ptr %sleeping9, align 8
-  call void @_ZN5Fiber5yieldEv()
-  ret void
-
-repeat.body:                                      ; preds = %if.end15, %if.end3
-  %call10 = call i64 @scaly_eio_now_ns()
-  %ge = icmp sge i64 %call10, %add
-  br i1 %ge, label %if.then11, label %if.end12
-
-repeat.exit:                                      ; No predecessors!
-  ret void
-
-if.then11:                                        ; preds = %repeat.body
-  ret void
-
-if.end12:                                         ; preds = %repeat.body
-  %call13 = call i1 @_ZN9Scheduler4stepEv()
-  %not = xor i1 %call13, true
-  br i1 %not, label %if.then14, label %if.end15
-
-if.then14:                                        ; preds = %if.end12
-  %call16 = call i1 @_ZN9Scheduler10poll_io_byE3i64(i64 %add)
-  br label %if.end15
-
-if.end15:                                         ; preds = %if.then14, %if.end12
-  br label %repeat.body
 }
 
 define linkonce_odr void @_ZN9Scheduler11fire_timersE3i64(i64 %0) {
@@ -30512,6 +30553,28 @@ entry:
   %call = call i32 @scaly_eio_tcp_wake_served()
   %as.sext = sext i32 %call to i64
   ret i64 %as.sext
+}
+
+define linkonce_odr void @_ZN2Io4idleE3i323i64(i32 %0, i64 %1) {
+entry:
+  %global.load = load ptr, ptr @current_scheduler, align 8
+  %eq = icmp eq ptr %global.load, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %call = call i32 @scaly_eio_tcp_idle(i32 %0, i64 %1)
+  %ne = icmp ne i32 %call, 0
+  br i1 %ne, label %if.then1, label %if.end2
+
+if.then1:                                         ; preds = %if.end
+  call void @_ZN9Scheduler14spawn_detachedEPvPv(ptr @_Z15io_idle_sweeperv, ptr null)
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %if.end
+  ret void
 }
 
 define linkonce_odr void @_ZN2Io17block_terminationEv() {
@@ -36044,6 +36107,13 @@ entry:
   %fd = extractvalue %_Z9TcpStream %load.struct, 0
   %ge = icmp sge i32 %fd, 0
   ret i1 %ge
+}
+
+define linkonce_odr i32 @_ZN9TcpStream10descriptorEv(ptr %0) {
+entry:
+  %load.struct = load %_Z9TcpStream, ptr %0, align 4
+  %fd = extractvalue %_Z9TcpStream %load.struct, 0
+  ret i32 %fd
 }
 
 define linkonce_odr i64 @_ZN9TcpStream4readE5SliceI2u8E(ptr %0, ptr %1) {

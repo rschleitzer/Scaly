@@ -1064,8 +1064,11 @@ procedure self_block_start(mutable block: ref[ByteBuf], fragment: Slice[u8])
 ; Serve one HTTP/2 connection whose input so far is in inb (it begins with
 ; the preface, or with as much of it as arrived), with the connection's
 ; request, response and output buffer.
-procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], mutable inb: ref[ByteBuf], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
+procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], mutable inb: ref[ByteBuf], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf], fd: i32)
 {
+    ; the idle bound stands while the connection reads, not while it
+    ; answers (http_idle_seconds)
+    Io.idle(fd, 0)
     var h H2Conn.create(host)
     res.hpack := true
     h.greet()
@@ -1112,7 +1115,9 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
             break
         if inb.length = inb.capacity()
             inb.reserve(inb.capacity())
+        Io.idle(fd, scaly_atomic_load_u64(&http_idle_seconds) as i64)
         let n c.read(inb.spare())
+        Io.idle(fd, 0)
         if n <= 0
             break
         inb.advance(n as size_t)
