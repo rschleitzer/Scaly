@@ -1,0 +1,75 @@
+; A handler that sleeps for longer than a kernel's timeout can hold: the
+; scheduler's wait used to hand the whole span to the poller, and kevent
+; refused a timespec of 9 * 10^9 seconds -- exit 107, the server gone (found
+; by tools/fuzz/fuzz_http.py, "/delay/1000000000000000000000001"). Now a
+; wait is cut to an hour and taken again (eio.c SCALY_EIO_WAIT_MAX_NS).
+;   1. parse_int_prefix stays at the largest i64 past it instead of wrapping
+;      (with the sign: the smallest but one);
+;   2. connection a asks for a sleep of 9 * 10^12 ms and gets no answer;
+;   3. while it sleeps, connection b is answered: the server lives.
+; main returns without shutting the server down: a's sleep would hold the
+; wait for its connection.
+; Expected: saturated alive
+
+package scaly 0.2.0
+package http 0.2.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+procedure sum(req: ref[Request], mutable res: ref[Response])
+    res.send_int(parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b")))
+
+procedure delay(req: ref[Request], mutable res: ref[Response])
+{
+    let ms parse_int_prefix(req.param("ms"))
+    if ms > 0
+        Scheduler.sleep(ms)
+    res.send_int(ms)
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let big parse_int_prefix("1000000000000000000000001")
+    let small parse_int_prefix("-99999999999999999999")
+    let plain parse_int_prefix("123x")
+    if big <> 9223372036854775807 or small <> 0 - 9223372036854775807 or plain <> 123
+    {
+        print "parse_int_prefix: `big` `small` `plain`"
+        return 1
+    }
+    Console.print "saturated "
+
+    var app Router.create(Page.allocate_page())
+    app.get("/sum", &sum)
+    app.get("/delay/{ms}", &delay)
+    var l TcpListener.listen(0)
+    let server start(app, l)
+
+    var a TcpStream.connect("127.0.0.1", l.port())
+    a.write("GET /delay/9000000000000 HTTP/1.1\r\nHost: t\r\n\r\n")
+    ; the scheduler that took a now waits with only a's timer pending
+    Scheduler.sleep(100)
+
+    var b TcpStream.connect("127.0.0.1", l.port())
+    b.write("GET /sum?a=1&b=2 HTTP/1.1\r\nHost: t\r\nConnection: close\r\n\r\n")
+    let host Page.allocate_page()
+    var buf allocate_slice[u8]^host(host, 4096)
+    var have: size_t 0
+    repeat
+    {
+        let r b.read(buf.slice_from(have))
+        if r <= 0
+            break
+        have := have + (r as size_t)
+    }
+    let reply buf.subslice(0, have)
+    if reply.length < 12 or reply.subslice(9, 12).equals("200") = false or reply[reply.length - 1] <> 51
+    {
+        print "b: `have` bytes"
+        return 2
+    }
+    Console.print "alive"
+    0
+}

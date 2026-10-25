@@ -264,7 +264,9 @@ function parse_decimal(s: Slice[u8]) returns i64
 }
 
 ; A decimal number with an optional sign at the start of s, reading up to
-; the first non-digit; 0 when there are no digits.
+; the first non-digit; 0 when there are no digits. Past the largest i64 it
+; stays there (negated with the sign) instead of wrapping: a query's
+; "/delay/1000000000000000000000001" came out as an arbitrary number.
 function parse_int_prefix(s: Slice[u8]) returns i64
 {
     var i: size_t 0
@@ -277,7 +279,11 @@ function parse_int_prefix(s: Slice[u8]) returns i64
     var v: i64 0
     while i < s.length and s[i] >= 48 and s[i] <= 57
     {
-        v := v * 10 + ((s[i] - 48) as i64)
+        let d (s[i] - 48) as i64
+        if v > (9223372036854775807 - d) / 10
+            v := 9223372036854775807
+        else
+            v := v * 10 + d
         i := i + 1
     }
     if neg

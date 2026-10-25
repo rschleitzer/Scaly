@@ -82,6 +82,15 @@
 #define SCALY_EIO_WATCH_READ  1u
 #define SCALY_EIO_WATCH_WRITE 2u
 
+/* The longest bounded wait handed to the kernel: an hour. A sleep can ask
+ * for any i64 of milliseconds (Scheduler.sleep), and the kernels refuse what
+ * they cannot hold -- kevent answered EINVAL to a timespec of 10^13 seconds,
+ * and the process ended with exit 107; epoll_wait's int milliseconds would
+ * have wrapped to "for ever". A wait that ends early is harmless: every
+ * caller checks the clock against its own deadline and waits again
+ * (eio_windows.c caps its milliseconds the same way). */
+#define SCALY_EIO_WAIT_MAX_NS 3600000000000LL
+
 #ifdef __APPLE__
 
 #include <sys/event.h>
@@ -215,6 +224,8 @@ int scaly_eio_wait_timeout(int q, void** tags, int max, int ms)
 /* The poller's wait bounded in nanoseconds (Scheduler.poll_io_by's timers). */
 int scaly_eio_wait_timeout_ns(int q, void** tags, int max, long long ns)
 {
+    if (ns > SCALY_EIO_WAIT_MAX_NS)
+        ns = SCALY_EIO_WAIT_MAX_NS;
     return scaly_eio_wait_ns(q, tags, max, ns < 0 ? 0 : ns);
 }
 
@@ -759,6 +770,8 @@ int scaly_eio_wait_timeout(int q, void** tags, int max, int ms)
 /* The poller's wait bounded in nanoseconds (Scheduler.poll_io_by's timers). */
 int scaly_eio_wait_timeout_ns(int q, void** tags, int max, long long ns)
 {
+    if (ns > SCALY_EIO_WAIT_MAX_NS)
+        ns = SCALY_EIO_WAIT_MAX_NS;
     return scaly_eio_wait_ns(q, tags, max, ns < 0 ? 0 : ns);
 }
 
