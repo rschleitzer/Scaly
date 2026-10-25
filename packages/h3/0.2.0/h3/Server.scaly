@@ -282,7 +282,16 @@ procedure h3_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64
         if datalen = 0
             return 0
         var uc user_data as ref[QConn]
-        return h3_uni_data(uc, s, Slice[u8](datalen, data))
+        ; a fault in the client's encoder instructions ends this connection
+        ; alone: caught here, below ngtcp2's frames, it answers ngtcp2 a
+        ; failure -- a catch point in the loop would jump over them
+        try let r h3_uni_data(uc, s, Slice[u8](datalen, data))
+        else
+        {
+            report_fault("h3")
+            return NGTCP2_ERR_CALLBACK_FAILURE
+        }
+        return r
     }
     if datalen > 0
         s.input.append(Slice[u8](datalen, data))
@@ -826,15 +835,32 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
     sent
 }
 
-; Answer a connection's complete requests, as the budget allows.
-procedure h3_answer_ready(mutable l: ref[QListener], mutable c: ref[QConn])
+; h3_answer, with an answer for try to bind.
+procedure h3_answered(mutable w: ref[H3Work], mutable c: ref[QConn], mutable s: ref[QStream]) returns bool
+{
+    h3_answer(w, c, s)
+    true
+}
+
+; Answer a connection's complete requests, as the budget allows; false when
+; a fault while answering one -- in the request's frames, its field section
+; or the handler -- ended the connection (the caller closes it). The loop
+; runs this with no C frame between, so a catch point per request suffices;
+; its setjmp and allocation are small beside a request's QUIC and TLS.
+procedure h3_answer_ready(mutable l: ref[QListener], mutable c: ref[QConn]) returns bool
 {
     while c.readyq.length > 0 and l.pending_ < H3_OUTPUT_BUDGET
     {
         var s: ref[QStream] c.readyq[0]
         c.readyq.put(0, c.readyq[c.readyq.length - 1])
         c.readyq.length := c.readyq.length - 1
-        h3_answer(l.work, c, s)
+        try let answered h3_answered(l.work, c, s)
+        else
+        {
+            report_fault("h3")
+            l.work.outb.clear()
+            return false
+        }
         l.pending_ := l.pending_ + s.output.length
         if s.in_sendq = false
         {
@@ -842,6 +868,7 @@ procedure h3_answer_ready(mutable l: ref[QListener], mutable c: ref[QConn])
             c.sendq.add(s)
         }
     }
+    true
 }
 
 ; A round with nothing received and nothing sent: the thread's ready tasks
@@ -935,9 +962,10 @@ procedure h3_loop(fd: i32)
             if found <> null
             {
                 var c found as ref[QConn]
-                h3_answer_ready(l, c)
-                var alive true
-                if ngtcp2_conn_get_expiry(c.conn) <= now
+                var alive h3_answer_ready(l, c)
+                if alive = false
+                    h3_close(l, c, false, now)
+                if alive and ngtcp2_conn_get_expiry(c.conn) <= now
                 {
                     let rv ngtcp2_conn_handle_expiry(c.conn, now) as i64
                     if rv <> 0

@@ -1,0 +1,365 @@
+; A fault while the h3 server answers a request ends that QUIC connection
+; alone: the server and the client run in this one process, so a fault the
+; server did not catch would end the test with exit 15.
+;   before   connection a: GET /sum?a=1&b=2 answers 3
+;   fault    connection b: a handler past a bounds check; the server closes
+;            b (the client's ngtcp2 drains), and b's request is unanswered
+;   after    connection a, opened before the fault: GET /sum?a=2&b=3
+;            answers 5
+;   new      a connection opened after it: GET /sum?a=20&b=22 answers 42
+; Arguments: the certificate, its key, a UDP port.
+; Expected: before fault after new
+
+package scaly 0.2.0
+package http 0.2.0
+package tls 0.2.0
+package h3 0.2.0
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+use http.Hpack.HeaderList
+
+procedure sum(req: ref[Request], mutable res: ref[Response])
+    res.send_int(parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b")))
+
+; The byte at index i of the query parameter i: past its end for i=99.
+procedure boom(req: ref[Request], mutable res: ref[Response])
+{
+    let digits req.query_param("i")
+    res.send_int(digits[parse_int_prefix(digits) as size_t] as int)
+}
+
+; A request stream of the client: what it sends, what came back.
+define CStream
+(
+    var id: i64
+    var request: ByteBuf
+    var queued: size_t
+    var fin_sent: bool
+    var response: ByteBuf
+    var done: bool
+)
+
+define Client
+(
+    var streams: Array[ref[CStream]]
+    var handshake: bool
+)
+
+; One client connection: its socket, addresses and ngtcp2 state; closed
+; once its ngtcp2 drains (the server closed it) or fails.
+define Dial
+(
+    fd: i32
+    var conn: pointer[void]
+    local: Slice[u8]
+    local_length: size_t
+    remote: Slice[u8]
+    remote_length: size_t
+    client: ref[Client]
+    var closed: bool
+)
+
+procedure c_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64, offset: u64, data: pointer[u8], datalen: size_t, mutable user_data: pointer[void], mutable stream_user_data: pointer[void]) returns i32
+{
+    ngtcp2_conn_extend_max_stream_offset(conn, stream_id, datalen as u64)
+    ngtcp2_conn_extend_max_offset(conn, datalen as u64)
+    var c user_data as ref[Client]
+    var i: size_t 0
+    while i < c.streams.length
+    {
+        var s: ref[CStream] c.streams[i]
+        if s.id = stream_id
+        {
+            if datalen > 0
+                s.response.append(Slice[u8](datalen, data))
+            if (flags & NGTCP2_STREAM_DATA_FLAG_FIN) <> 0
+                s.done := true
+        }
+        i := i + 1
+    }
+    0
+}
+
+procedure c_stream_close(mutable conn: pointer[void], flags: u32, stream_id: i64, app_error_code: u64, mutable user_data: pointer[void], mutable stream_user_data: pointer[void]) returns i32
+    0
+
+procedure c_handshake(mutable conn: pointer[void], mutable user_data: pointer[void]) returns i32
+{
+    var c user_data as ref[Client]
+    c.handshake := true
+    0
+}
+
+; A connection to the server on port, its handshake started; null when it
+; cannot be set up.
+procedure dial(host: ref[Page], mutable ctx: pointer[void], port: int) returns ref[Dial]?
+{
+    let fd quic_socket(0, false)
+    var local allocate_slice[u8]^host(host, 128)
+    var local_length: size_t 0
+    var remote allocate_slice[u8]^host(host, 128)
+    var remote_length: size_t 0
+    if fd < 0 or scaly_eio_sockname(fd, local.data as pointer[void], 128, &local_length) <> 0 or scaly_eio_loopback6(port as i32, remote.data as pointer[void], 128, &remote_length) <> 0
+        return null
+    var client &Client^host(Array[ref[CStream]]^host(), false)
+    var conn: pointer[void] null
+    if scaly_quic_client_new(&conn, local.data as pointer[void], local_length, remote.data as pointer[void], remote_length, scaly_eio_now_ns() as u64, &c_stream_data, &c_stream_close, &c_handshake, client as pointer[void]) <> 0
+        return null
+    var ssl: pointer[void] null
+    var octx: pointer[void] null
+    if scaly_quic_client_tls_new(ctx, conn, &ssl, &octx) <> 0
+        return null
+    &Dial^host(fd, conn, local, local_length, remote, remote_length, client, false)
+}
+
+; A request for path on d, queued with its FIN.
+procedure ask(mutable d: ref[Dial], path: Slice[u8]) returns ref[CStream]
+{
+    var id: i64 0
+    ngtcp2_conn_open_bidi_stream(d.conn, &id, null)
+    let page Page.allocate_page()
+    var s &CStream^page(id, ByteBuf.create(page, 256), 0, false, ByteBuf.create(page, 1024), false)
+    var block ByteBuf.create(page, 256)
+    block.append_byte(0)
+    block.append_byte(0)
+    ; :method GET (static 17), :scheme https (static 23)
+    block.append_byte(209)
+    block.append_byte(215)
+    ; :authority (static name 0) and :path (static name 1) as literals
+    encode_integer(&block, 80, 4, 0)
+    encode_integer(&block, 0, 7, 9)
+    block.append("localhost")
+    encode_integer(&block, 80, 4, 1)
+    encode_integer(&block, 0, 7, path.length as u64)
+    block.append(path)
+    append_quic_varint(&s.request, 1)
+    append_quic_varint(&s.request, block.length as u64)
+    s.request.append(block.bytes())
+    d.client.streams.add(s)
+    s
+}
+
+; One round on d: every stream's request out with its FIN, what came in,
+; the timers.
+procedure pump(mutable d: ref[Dial], mutable tx: Slice[u8], mutable rx: Slice[u8], mutable from: Slice[u8])
+{
+    if d.closed
+        return
+    let now scaly_eio_now_ns() as u64
+    repeat
+    {
+        var stream_id: i64 0 - 1
+        var data: pointer[u8] null
+        var length: size_t 0
+        var flags: u32 NGTCP2_WRITE_STREAM_FLAG_MORE
+        var chosen: ref[CStream]? null
+        var i: size_t 0
+        while i < d.client.streams.length
+        {
+            let s: ref[CStream] d.client.streams[i]
+            if s.fin_sent = false
+            {
+                chosen := s
+                stream_id := s.id
+                let rest s.request.bytes().slice_from(s.queued)
+                data := rest.data
+                length := rest.length
+                flags := flags | NGTCP2_WRITE_STREAM_FLAG_FIN
+                break
+            }
+            i := i + 1
+        }
+        var consumed: i64 0 - 1
+        let n scaly_quic_write(d.conn, tx.data, tx.length, &consumed, flags, stream_id, data, length, now)
+        if chosen <> null and consumed >= 0
+        {
+            var s chosen as ref[CStream]
+            s.queued := s.queued + (consumed as size_t)
+            if s.queued = s.request.length
+                s.fin_sent := true
+        }
+        if n = NGTCP2_ERR_WRITE_MORE
+            continue
+        if n <= 0
+            break
+        scaly_eio_udp_send(d.fd, tx.data as pointer[void], n as size_t, d.remote.data as pointer[void], d.remote_length)
+    }
+    repeat
+    {
+        var from_length: size_t 0
+        let got scaly_eio_udp_recv(d.fd, rx.data as pointer[void], rx.length, from.data as pointer[void], from.length, &from_length)
+        if got < 0
+            break
+        let rv scaly_quic_read(d.conn, d.local.data as pointer[void], d.local_length, from.data as pointer[void], from_length, rx.data, got as size_t, scaly_eio_now_ns() as u64) as i64
+        if rv <> 0
+        {
+            d.closed := true
+            return
+        }
+    }
+    let later scaly_eio_now_ns() as u64
+    if ngtcp2_conn_get_expiry(d.conn) <= later
+        ngtcp2_conn_handle_expiry(d.conn, later)
+}
+
+; Pump d (and a beside it, which must keep its connection) until its
+; handshake is done, or until s is answered, or d closes -- at most two
+; seconds; true when what was waited for came.
+procedure settle(mutable d: ref[Dial], mutable a: ref[Dial], s: ref[CStream]?, mutable tx: Slice[u8], mutable rx: Slice[u8], mutable from: Slice[u8]) returns bool
+{
+    let deadline scaly_eio_now_ns() + 2000000000
+    while scaly_eio_now_ns() < deadline
+    {
+        pump(d, tx, rx, from)
+        pump(a, tx, rx, from)
+        if d.closed
+            return false
+        if s = null
+        {
+            if d.client.handshake
+                return true
+        }
+        else
+        {
+            let t s as ref[CStream]
+            if t.done
+                return true
+        }
+        Scheduler.sleep(1)
+    }
+    false
+}
+
+; A response's status and body (its HEADERS and DATA frames) as
+; "status:body"; "" when it is malformed.
+procedure answer(s: ref[CStream]) returns String
+{
+    let page Page.allocate_page()
+    var fields HeaderList.create(page)
+    var body ByteBuf.create(page, 64)
+    let bytes s.response.bytes()
+    var status: i64 0
+    var at: size_t 0
+    while at < bytes.length
+    {
+        let kind quic_varint(bytes, &at)
+        let length quic_varint(bytes, &at)
+        if kind < 0 or length < 0 or at + (length as size_t) > bytes.length
+            return String("")
+        let payload bytes.subslice(at, at + (length as size_t))
+        at := at + (length as size_t)
+        if kind = 1
+        {
+            if qpack_decode(payload, &fields) = false
+                return String("")
+            status := parse_int_prefix(fields.get(":status"))
+        }
+        if kind = 0
+            body.append(payload)
+    }
+    "`status`:`body.bytes()`"
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if argc < 4
+    {
+        print "usage: fault <cert> <key> <port>"
+        return 1
+    }
+    let cert String(*(argv + 1))
+    let key String(*(argv + 2))
+    let port parse_int_prefix(String(*(argv + 3)).as_slice()) as int
+    var app Router.create(Page.allocate_page())
+    app.get("/sum", &sum)
+    app.get("/boom", &boom)
+    if start_h3(app, port, cert, key) = false
+    {
+        print "fault: the server did not start"
+        return 2
+    }
+    let host Page.allocate_page()
+    let ctx SSL_CTX_new(TLS_client_method()) as pointer[void]
+    var tx allocate_slice[u8]^host(host, 1500)
+    var rx allocate_slice[u8]^host(host, 65536)
+    var from allocate_slice[u8]^host(host, 128)
+
+    let found_a dial(host, ctx, port)
+    if found_a = null
+    {
+        print "fault: no connection a"
+        return 3
+    }
+    var a found_a as ref[Dial]
+    if settle(a, a, null, tx, rx, from) = false
+    {
+        print "fault: no handshake on a"
+        return 4
+    }
+    let first ask(a, "/sum?a=1&b=2")
+    let first_came settle(a, a, first, tx, rx, from)
+    let first_said answer(first)
+    if first_came = false or first_said.equals("200:3") = false
+    {
+        print "before: `first_said`"
+        return 5
+    }
+    Console.print "before "
+
+    let found_b dial(host, ctx, port)
+    if found_b = null
+    {
+        print "fault: no connection b"
+        return 6
+    }
+    var b found_b as ref[Dial]
+    if settle(b, a, null, tx, rx, from) = false
+    {
+        print "fault: no handshake on b"
+        return 7
+    }
+    let bad ask(b, "/boom?i=99")
+    let bad_came settle(b, a, bad, tx, rx, from)
+    if bad_came or b.closed = false
+    {
+        print "fault: answered `bad_came`, closed `b.closed`"
+        return 8
+    }
+    Console.print "fault "
+
+    let again ask(a, "/sum?a=2&b=3")
+    let again_came settle(a, a, again, tx, rx, from)
+    let again_said answer(again)
+    if again_came = false or again_said.equals("200:5") = false
+    {
+        print "after: `again_said`"
+        return 9
+    }
+    Console.print "after "
+
+    let found_c dial(host, ctx, port)
+    if found_c = null
+    {
+        print "fault: no connection c"
+        return 10
+    }
+    var c found_c as ref[Dial]
+    if settle(c, a, null, tx, rx, from) = false
+    {
+        print "fault: no handshake on c"
+        return 11
+    }
+    let fresh ask(c, "/sum?a=20&b=22")
+    let fresh_came settle(c, a, fresh, tx, rx, from)
+    let fresh_said answer(fresh)
+    if fresh_came = false or fresh_said.equals("200:42") = false
+    {
+        print "new: `fresh_said`"
+        return 12
+    }
+    Console.print "new"
+    0
+}

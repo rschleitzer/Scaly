@@ -94,19 +94,27 @@ procedure serve_stream[S](mutable c: ref[S], router: ref[Router], h2_only: bool)
     let host Page.allocate_page()
     try let served serve_loop[S](c, router, h2_only, host)
     else
-    {
-        scaly_eputs "http: a fault ended a connection: "
-        scaly_eputs(Region.panic_what())
-        scaly_eputs " (index "
-        scaly_eputi(Region.panic_index())
-        scaly_eputs ", length "
-        scaly_eputi(Region.panic_length())
-        scaly_eputs ")"
-        scaly_eputnl()
-    }
+        report_fault("http")
     c.close()
     host.deallocate_extensions()
     Page.release_page(host)
+}
+
+; The line on stderr for a fault caught where a connection is served (h3
+; writes it too): what the panic said, as the runtime keeps it -- scalars and
+; a static string, since the regions between the trap and the catch point
+; are gone.
+procedure report_fault(protocol: pointer[const_char])
+{
+    scaly_eputs(protocol)
+    scaly_eputs ": a fault ended a connection: "
+    scaly_eputs(Region.panic_what())
+    scaly_eputs " (index "
+    scaly_eputi(Region.panic_index())
+    scaly_eputs ", length "
+    scaly_eputi(Region.panic_length())
+    scaly_eputs ")"
+    scaly_eputnl()
 }
 
 ; The loop of serve_stream, its buffers on host; true when it ended.
