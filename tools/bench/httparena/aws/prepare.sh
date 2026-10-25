@@ -9,6 +9,8 @@
 # (git diff output; none for HEAD itself), built by the released toolchain
 # beside the released packages -- an A/B of a runtime change without a
 # release. Name them among the frameworks to measure them.
+# NOPGO=1 adds the entry scaly-nopgo (nopgo.sh): the Scaly entry built
+# without the profile; name it among the frameworks to measure it.
 # MEASURE=0 prepares the host and starts nothing (profile.sh by hand).
 # VALIDATE="<entry> ..." validates those entries first (default scaly).
 set -eu
@@ -21,7 +23,7 @@ SSH=(ssh -i "$PEM" -o StrictHostKeyChecking=accept-new "ubuntu@$HOST")
 scp -i "$PEM" -q "$HERE"/../scaly/* "ubuntu@$HOST:entry/"
 "${SSH[@]}" 'rm -rf ~/scaly_nginx ~/scaly_caddy'
 scp -i "$PEM" -q -r "$HERE/../scaly_nginx" "$HERE/../scaly_caddy" "ubuntu@$HOST:"
-scp -i "$PEM" -q "$HERE/setup.sh" "$HERE/measure.sh" "$HERE/variant.sh" "$HERE/profile.sh" "$HERE/cpusets.py" "ubuntu@$HOST:"
+scp -i "$PEM" -q "$HERE/setup.sh" "$HERE/measure.sh" "$HERE/variant.sh" "$HERE/nopgo.sh" "$HERE/profile.sh" "$HERE/cpusets.py" "ubuntu@$HOST:"
 "${SSH[@]}" "bash setup.sh $COMMIT"
 TREE="$(cd "$HERE/../../../.." && pwd)"
 for v in ${VARIANTS:-}; do
@@ -44,6 +46,7 @@ for v in ${VARIANTS:-}; do
   rm -rf "$stage"
   "${SSH[@]}" "bash variant.sh $name"
 done
+[ "${NOPGO:-0}" = 1 ] && "${SSH[@]}" "bash nopgo.sh"
 [ "${MEASURE:-1}" = 0 ] && { echo "prepare.sh: prepared, nothing started"; exit 0; }
 "${SSH[@]}" "nohup env PROFILE='${PROFILE:-}' VALIDATE='${VALIDATE:-}' bash measure.sh $* > measure.log 2>&1 < /dev/null &"
 echo "prepare.sh: measuring; ./status.sh shows the progress"

@@ -40,6 +40,10 @@ built by the same released toolchain in place of its own packages
 (variant.sh); name it among the entries, `prepare.sh <commit> scaly
 scaly-fast`.
 
+`NOPGO=1` adds an entry `scaly-nopgo`: the Scaly entry built without the
+profile (`SCALY_PGO=0`, so `--release` alone; nopgo.sh) -- how much of a
+result the profile-guided build is. Name it among the entries.
+
 `MEASURE=0 ./prepare.sh <commit> …` prepares the host and starts nothing;
 `profile.sh <entry> <profile>` there runs that profile's benchmark for one
 entry and records 6 s of perf over the server's CPUs while the load runs
