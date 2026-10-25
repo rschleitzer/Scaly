@@ -15891,7 +15891,8 @@ define Planner
                                 ; until 2026-10-04; the word is a name now
                                 if fn_name = "set"
                                     dsb.append " - an assignment is written 'target := value'"
-                                this.add_diagnostic(result.loc, dsb.to_string())
+                                if this.template_dependent_call(arg_types) = false
+                                    this.add_diagnostic(result.loc, dsb.to_string())
                             }
                         }
                         ; s196: propagate a `^name`/`#`/`$` lifetime onto the
@@ -35726,6 +35727,33 @@ define Planner
         ; did not resolve, already reported at its own line); a resolved
         ; property hop carries its own type, so a delegate-typed field called
         ; through `obj.f(args)` is untouched.
+        ; Does a call in an uninstantiated generic TEMPLATE take an argument
+        ; whose type answers only at an instantiation? A member of a `T` is a
+        ; placeholder whose type is void (resolve_member_access#, and
+        ; report_unresolved_method_call# below exempts it the same way), a name
+        ; bound to it is void too, and a value of a fresh type variable is the
+        ; solver's. No overload can match such an argument here; every
+        ; instantiation resolves and checks the call (planning_template).
+        ; Before 2026-10-25 this said "function not found: <callee>" for a
+        ; callee that exists -- `let fd c.descriptor()` and then `f(fd)` in a
+        ; body over `c: ref[S]`, and `f(c.descriptor())` alike (gate
+        ; `generic_receiver_call_arg`). A template call whose arguments are
+        ; all resolved is still judged: a misspelt callee is reported there.
+        function template_dependent_call(this: Planner, arg_types: Vector[PlannedType]) returns bool
+        {
+            if this.planning_template = false
+                return false
+            var i: size_t 0
+            while i < arg_types.length
+            {
+                let t arg_types[i]
+                if Planner.is_unit_type(t) or Planner.free_type_vars_with_dups(t).length > 0
+                    return true
+                i := i + 1
+            }
+            false
+        }
+
         procedure report_unresolved_method_call(
             mutable this: Planner,
             is_call: bool,

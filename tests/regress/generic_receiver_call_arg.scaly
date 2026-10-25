@@ -1,0 +1,50 @@
+; Regression (2026-10-25): in a generic routine over `c: ref[S]`, a call whose
+; argument is a method of `c` -- `twice(c.descriptor())`, or the same through a
+; binding, `let fd c.descriptor()` and `twice(fd)` -- was "function not found:
+; twice", rc 4, though `twice` exists and every instantiation resolves it. The
+; TEMPLATE is planned once with S a fresh type variable: the member of a `T`
+; is a placeholder whose type is void, the binding inherits it, no overload
+; matches, and the message named the callee instead of what it could not
+; know. Such a call is judged at each instantiation now
+; (Planner.template_dependent_call#); a template call whose arguments are all
+; resolved is still judged in the template (xfail_template_misspelt_callee).
+; Found in the http package's serve_loop[S], over TcpStream and TlsStream.
+; Expected: PASS
+define Plain(var fd: i32)
+{
+    function descriptor(this) returns i32
+        fd
+}
+
+define Wrapped(var inner: Plain)
+{
+    function descriptor(this) returns i32
+        inner.fd + 100
+}
+
+function twice(n: i32) returns i32
+    n * 2
+
+; the method's result straight as the argument
+function direct[S](c: ref[S]) returns i32
+    twice(c.descriptor())
+
+; through a binding, and through a second one
+function bound[S](c: ref[S]) returns i32
+{
+    let fd c.descriptor()
+    let again fd
+    twice(again) + twice(fd)
+}
+
+var p Plain(7)
+var w Wrapped(Plain(8))
+var ok true
+if direct[Plain](&p) <> 14 or direct[Wrapped](&w) <> 216
+    ok := false
+if bound[Plain](&p) <> 28 or bound[Wrapped](&w) <> 432
+    ok := false
+if ok
+    print "PASS"
+if ok = false
+    print "FAIL"

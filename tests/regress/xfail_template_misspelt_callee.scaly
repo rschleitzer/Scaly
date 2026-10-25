@@ -1,0 +1,13 @@
+; Regression (2026-10-25): the negative half of generic_receiver_call_arg.
+; A call in a generic TEMPLATE whose arguments are all resolved is judged in
+; the template, so a misspelt callee is reported even where nothing
+; instantiates the routine; only a call that takes a value of a type
+; parameter waits for its instantiations (Planner.template_dependent_call#).
+; xfail: function not found: twise
+function twice(n: i32) returns i32
+    n * 2
+
+function never_used[S](c: ref[S]) returns i32
+    twise(21 as i32)
+
+print "unreachable"
