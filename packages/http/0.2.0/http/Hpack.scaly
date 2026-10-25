@@ -23,21 +23,42 @@ define DYN_BYTES: size_t 8192
 ; which the list owns them: own_table). An indexed field costs no copy;
 ; copying every one was 8 % of the server's samples in baseline-h2
 ; (2026-09-30).
+; The largest header list a decoder takes into a list made by create (HPACK
+; and QPACK alike), in RFC 7541 4.1's measure -- name, value and 32 per
+; field; what the server announces as SETTINGS_MAX_HEADER_LIST_SIZE, and the
+; bound of an HTTP/1.1 head (MAX_HEAD). Without it a block of indexed fields
+; was a bomb: a byte each, naming a 4 KB table entry, made 64 MB of fields
+; from 16 KB of block. A client reading answers sets its own
+; (create_limited).
+define HEADER_LIST_MAX: size_t 16384
+
 define HeaderList
 (
     var bytes: ByteBuf
     ; two per field: its name, then its value
     var views: Array[Slice[u8]]
+    ; the fields' size so far, as HEADER_LIST_MAX measures it, and the
+    ; most a decoder takes
+    var size: size_t
+    limit: size_t
 )
 {
     procedure create(host: ref[Page]) returns HeaderList
-        HeaderList(ByteBuf.create(host, 1024), Array[Slice[u8]]^host())
+        HeaderList(ByteBuf.create(host, 1024), Array[Slice[u8]]^host(), 0, HEADER_LIST_MAX)
+
+    procedure create_limited(host: ref[Page], limit: size_t) returns HeaderList
+        HeaderList(ByteBuf.create(host, 1024), Array[Slice[u8]]^host(), 0, limit)
 
     procedure clear(mutable this)
     {
         bytes.clear()
         views.clear()
+        size := 0
     }
+
+    ; Past its limit: the decoder refuses the block.
+    function too_large(this) returns bool
+        size > limit
 
     function count(this) returns size_t
         views.length / 2
@@ -86,6 +107,7 @@ define HeaderList
     {
         views.add(name)
         views.add(value)
+        size := size + name.length + value.length + 32
     }
 
     ; Room for n more bytes in `bytes`; when they move, the views into
@@ -497,6 +519,8 @@ define HpackDecoder
                 if index <= 0 or this.entry(index as u64, &name, &value) = false
                     return false
                 list.add(name, value)
+                if list.too_large()
+                    return false
             }
             else if (b & 224) = 32
             {
@@ -527,6 +551,8 @@ define HpackDecoder
                 if hpack_string(block, &at, list, &value) = false
                     return false
                 list.add(name, value)
+                if list.too_large()
+                    return false
                 if indexing
                 {
                     ; the insert may move or overwrite the table's bytes

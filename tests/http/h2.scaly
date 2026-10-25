@@ -124,7 +124,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 
     var inb ByteBuf.create(host, 65536)
     var decoder HpackDecoder.create(host)
-    var fields HeaderList.create(host)
+    ; a client sets its own bound: the continued answer carries 20 000 bytes
+    var fields HeaderList.create_limited(host, 1048576)
     var settings_ack false
     var server_settings false
     var pong false

@@ -1,0 +1,216 @@
+; What the http package's HTTP/2 holds a client to, each on a connection of
+; its own by prior knowledge:
+;   streams       257 HEADERS without END_STREAM (each would keep a page for
+;                 its body): the 257th is refused, RST_STREAM REFUSED_STREAM
+;                 (7), past SETTINGS_MAX_CONCURRENT_STREAMS 256; the
+;                 connection goes on, and the first stream's body is answered
+;   continuation  CONTINUATION frames past 16 KB of header block: GOAWAY
+;                 ENHANCE_YOUR_CALM (11), before they are kept
+;   bomb          a 4000-byte field into the dynamic table, then ten indexed
+;                 references to it -- a 40 KB header list from a block of 4
+;                 KB: GOAWAY COMPRESSION_ERROR (9)
+;   frame         a frame of 20 000 bytes, past the default
+;                 SETTINGS_MAX_FRAME_SIZE the server never raised: GOAWAY
+;                 FRAME_SIZE_ERROR (6)
+; Expected: streams continuation bomb frame
+
+package scaly 0.2.0
+package http 0.2.0
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+procedure echo(req: ref[Request], mutable res: ref[Response])
+    res.send("text/plain", req.body)
+
+; A request's header block: the four pseudo-fields.
+procedure request_block(mutable out: ref[ByteBuf], method: Slice[u8], path: Slice[u8])
+{
+    encode_field(out, ":method", method)
+    encode_field(out, ":scheme", "http")
+    encode_field(out, ":path", path)
+    encode_field(out, ":authority", "localhost")
+}
+
+; A connection to port: the preface and an empty SETTINGS sent.
+procedure open(port: int, mutable out: ref[ByteBuf]) returns TcpStream
+{
+    var s TcpStream.connect("127.0.0.1", port)
+    out.clear()
+    out.append(h2_preface())
+    frame_head(out, 0, 4, 0, 0)
+    s.write(out.bytes())
+    out.clear()
+    s
+}
+
+; Read frames from s until one of `kind` on `stream` comes: its error code
+; (RST_STREAM's first four payload bytes, GOAWAY's second four, behind the
+; last stream); -1 at the end of the stream.
+; A DATA frame on stream 1 is kept in body.
+procedure await_frame(mutable s: TcpStream, mutable inb: ref[ByteBuf], kind: u8, stream: u64, mutable body: ref[ByteBuf]) returns i64
+{
+    repeat
+    {
+        while inb.length >= 9
+        {
+            let b inb.bytes()
+            let length be24(b, 0)
+            if inb.length < 9 + length
+                break
+            let k b[3]
+            let id be31(b, 5)
+            let payload b.subslice(9, 9 + length)
+            var code: i64 0 - 2
+            if k = 7 and length >= 8
+                code := be31(payload, 4) as i64
+            else if length >= 4
+                code := be31(payload, 0) as i64
+            if k = 0 and id = 1
+                body.append(payload)
+            inb.consume(9 + length)
+            if k = kind and id = stream
+                return code
+        }
+        if inb.length = inb.capacity()
+            inb.reserve(inb.capacity())
+        let n s.read(inb.spare())
+        if n <= 0
+            return 0 - 1
+        inb.advance(n as size_t)
+    }
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var app Router.create(Page.allocate_page())
+    app.post("/echo", &echo)
+    var l TcpListener.listen(0)
+    let server start(app, l)
+    let host Page.allocate_page()
+    var out ByteBuf.create(host, 65536)
+    var inb ByteBuf.create(host, 65536)
+    var body ByteBuf.create(host, 64)
+    var block ByteBuf.create(host, 8192)
+
+    ; streams
+    var a open(l.port(), &out)
+    var k: u64 0
+    while k < 257
+    {
+        block.clear()
+        request_block(&block, "POST", "/echo")
+        frame_head(&out, block.length, 1, 4, 2 * k + 1)
+        out.append(block.bytes())
+        k := k + 1
+    }
+    a.write(out.bytes())
+    out.clear()
+    let refused await_frame(a, &inb, 3, 513, &body)
+    frame_head(&out, 5, 0, 1, 1)
+    out.append("first")
+    a.write(out.bytes())
+    out.clear()
+    let answered await_frame(a, &inb, 0, 1, &body)
+    if refused <> 7 or answered = 0 - 1 or body.bytes().equals("first") = false
+    {
+        print "streams: refused `refused`, answered `answered`, body `body.length` bytes"
+        return 1
+    }
+    a.close()
+    Console.print "streams "
+
+    ; continuation
+    inb.clear()
+    var b open(l.port(), &out)
+    block.clear()
+    request_block(&block, "GET", "/echo")
+    frame_head(&out, block.length, 1, 1, 1)
+    out.append(block.bytes())
+    var c: size_t 0
+    while c < 17
+    {
+        frame_head(&out, 1000, 9, 0, 1)
+        var f: size_t 0
+        while f < 1000
+        {
+            out.append_byte(0)
+            f := f + 1
+        }
+        c := c + 1
+    }
+    b.write(out.bytes())
+    out.clear()
+    let calm await_frame(b, &inb, 7, 0, &body)
+    if calm <> 11
+    {
+        print "continuation: GOAWAY `calm`"
+        return 2
+    }
+    b.close()
+    Console.print "continuation "
+
+    ; bomb
+    inb.clear()
+    var d open(l.port(), &out)
+    block.clear()
+    request_block(&block, "GET", "/echo")
+    ; a literal with incremental indexing, a new name: x, 4000 bytes
+    encode_integer(&block, 64, 6, 0)
+    encode_string(&block, "x")
+    var value ByteBuf.create(host, 4096)
+    var v: size_t 0
+    while v < 4000
+    {
+        value.append_byte(97)
+        v := v + 1
+    }
+    encode_string(&block, value.bytes())
+    var r: size_t 0
+    while r < 10
+    {
+        ; the dynamic table's newest entry
+        encode_integer(&block, 128, 7, 62)
+        r := r + 1
+    }
+    frame_head(&out, block.length, 1, 5, 1)
+    out.append(block.bytes())
+    d.write(out.bytes())
+    out.clear()
+    let bomb await_frame(d, &inb, 7, 0, &body)
+    if bomb <> 9
+    {
+        print "bomb: GOAWAY `bomb`"
+        return 3
+    }
+    d.close()
+    Console.print "bomb "
+
+    ; frame
+    inb.clear()
+    var e open(l.port(), &out)
+    frame_head(&out, 20000, 0, 0, 1)
+    var z: size_t 0
+    while z < 20000
+    {
+        out.append_byte(0)
+        z := z + 1
+    }
+    e.write(out.bytes())
+    out.clear()
+    let size await_frame(e, &inb, 7, 0, &body)
+    if size <> 6
+    {
+        print "frame: GOAWAY `size`"
+        return 4
+    }
+    e.close()
+    Console.print "frame"
+
+    server.shutdown()
+    server.wait()
+    l.close()
+    0
+}

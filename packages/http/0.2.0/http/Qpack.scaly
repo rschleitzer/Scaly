@@ -343,6 +343,8 @@ procedure qpack_decode_table(block: Slice[u8], table: ref[QpackTable]?, mutable 
                 return false
         }
         list.add(name, value)
+        if list.too_large()
+            return false
     }
     true
 }

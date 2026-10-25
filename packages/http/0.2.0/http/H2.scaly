@@ -27,8 +27,18 @@ use http.Hpack.HeaderList
 use http.Hpack.HpackDecoder
 
 define H2_FRAME_HEAD: size_t 9
-; SETTINGS_MAX_FRAME_SIZE's upper bound; a larger frame is refused
-define H2_MAX_FRAME: size_t 16777215
+; What the server holds a client to, and what greet announces. A received
+; frame's payload: the default SETTINGS_MAX_FRAME_SIZE, which it never
+; raises -- a larger frame is a FRAME_SIZE_ERROR (RFC 9113 4.2); until
+; 2026-10-25 up to 16 MB were taken, and each connection could hold that.
+define H2_RECV_MAX_FRAME: size_t 16384
+; SETTINGS_MAX_CONCURRENT_STREAMS: the streams holding a page of their own
+; at once -- a body arriving, a request waiting for its task, a response
+; waiting for window (open_streams). One past it is refused, RST_STREAM
+; REFUSED_STREAM (5.1.2). Until 2026-10-25 it was announced and not held,
+; and a client could open streams on one connection until the memory ran
+; out (HEADERS without END_STREAM, a page each, no DATA ever).
+define H2_MAX_STREAMS: size_t 256
 define H2_DEFAULT_WINDOW: i64 65535
 define H2_OWN_WINDOW: i64 1048576
 define H2_CONN_WINDOW_BOOST: i64 16711680
@@ -384,10 +394,14 @@ define H2Conn
     ; Our SETTINGS, and room for the client's bodies on the connection.
     procedure greet(mutable this)
     {
-        frame_head(&frames, 18, 4, 0, 0)
+        frame_head(&frames, 24, 4, 0, 0)
         frames.append_byte(0)
         frames.append_byte(3)
-        append_u32(&frames, 256)
+        append_u32(&frames, H2_MAX_STREAMS as u64)
+        ; SETTINGS_MAX_HEADER_LIST_SIZE (HeaderList's bound)
+        frames.append_byte(0)
+        frames.append_byte(6)
+        append_u32(&frames, HEADER_LIST_MAX as u64)
         frames.append_byte(0)
         frames.append_byte(4)
         append_u32(&frames, H2_OWN_WINDOW as u64)
@@ -406,6 +420,10 @@ define H2Conn
         append_u32(&frames, code)
         closing := true
     }
+
+    ; The streams that hold a page of their own (H2_MAX_STREAMS).
+    function open_streams(this) returns size_t
+        streams.length + jobs.length + pending_.length
 
     procedure reset_stream(mutable this, stream: u64, code: u64)
     {
@@ -807,6 +825,12 @@ define H2Conn
             return false
         if stream > last_stream
             last_stream := stream
+        ; decoded first: the HPACK table must stay in step with the client's
+        if this.open_streams() >= H2_MAX_STREAMS
+        {
+            this.reset_stream(stream, 7)
+            return true
+        }
         if end_stream
         {
             this.answer_fields(stream, router, req, res, outb)
@@ -850,7 +874,7 @@ define H2Conn
         while closing = false and frames.length < H2_FLUSH_AT and at + H2_FRAME_HEAD <= input.length
         {
             let length be24(input, at)
-            if length > H2_MAX_FRAME
+            if length > H2_RECV_MAX_FRAME
             {
                 this.goaway(6)
                 return at
@@ -924,6 +948,14 @@ define H2Conn
                 }
                 case 9:
                 {
+                    ; a header block longer than a header list may be can only
+                    ; decode past HEADER_LIST_MAX: refused before it is kept
+                    ; (the CONTINUATION flood, CVE-2024-27316) -- ENHANCE_YOUR_CALM
+                    if this.block.length + payload.length > HEADER_LIST_MAX
+                    {
+                        this.goaway(11)
+                        return at
+                    }
                     this.block.append(payload)
                     if (flags & 4) <> 0
                     {
