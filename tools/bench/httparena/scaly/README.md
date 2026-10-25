@@ -41,7 +41,8 @@ The Dockerfile installs the released Scaly toolchain, as anyone does
 (`curl -fsSL https://scaly.io/install.sh | sh`), and builds with
 `scaly build`: the program, the standard library and every package as one
 module. [`build.sh`](build.sh) makes it profile-guided — an instrumented
-build, a training run under the request shapes of the profiles, the final
+build, a training run under the request shapes of the profiles (against a
+Postgres seeded as the board's sidecar, for fortunes and async-db), the final
 build with that profile and `-mcpu=native` — which is the
 [production build](https://scaly.io/lang/tutorial.htm#tut-production) the
 documentation describes. `SCALY_PGO=0 ./build.sh` builds with `--release`

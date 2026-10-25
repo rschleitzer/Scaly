@@ -7,9 +7,12 @@
 ; GET /pipeline, a baseline GET with a query, a POST with Content-Length,
 ; a POST with a chunked body and two GET /json (the whole dataset gzipped,
 ; as json-comp asks, and a part of it plain), and reads the twenty-one responses; every hundredth round
-; adds a GET /delay/1 on its own.
+; adds a GET /delay/1 on its own. With `db` every round also asks for
+; GET /fortunes and GET /async-db on their own write, as the two database
+; profiles do (build.sh starts a Postgres with the board's seed for it;
+; without one both answer 500 and the training leaves them out).
 ;
-;   train <port> [rounds]      (default 3000 rounds on each of 16 connections)
+;   train <port> [rounds] [db] (default 3000 rounds on each of 16 connections)
 
 package scaly 0.2.0
 package http 0.2.0
@@ -25,6 +28,7 @@ mutable batch_data: pointer[u8] null
 mutable batch_length: size_t 0
 mutable train_rounds: int 3000
 mutable train_port: int 0
+mutable train_db: bool false
 
 ; Read from s until want complete responses are in; false at the end of the
 ; stream.
@@ -74,6 +78,11 @@ procedure client()
             s.write("GET /delay/1 HTTP/1.1\r\nHost: t\r\n\r\n")
             drain(s, buf, 1)
         }
+        if train_db
+        {
+            if s.write("GET /fortunes HTTP/1.1\r\nHost: t\r\n\r\nGET /async-db?min=10&max=50&limit=50 HTTP/1.1\r\nHost: t\r\n\r\n") = false or drain(s, buf, 2) = false
+                break
+        }
         r := r + 1
     }
     s.close()
@@ -81,7 +90,7 @@ procedure client()
     Page.release_page(host)
 }
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable batch_data, batch_length, train_rounds, train_port
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable batch_data, batch_length, train_rounds, train_port, train_db
 {
     if argc < 2
     {
@@ -91,6 +100,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     train_port := parse_int_prefix(String(*(argv + 1)).as_slice()) as int
     if argc > 2
         train_rounds := parse_int_prefix(String(*(argv + 2)).as_slice()) as int
+    if argc > 3
+        train_db := String(*(argv + 3)).equals("db")
 
     let bp Page.allocate_page()
     var sb StringBuilder()
