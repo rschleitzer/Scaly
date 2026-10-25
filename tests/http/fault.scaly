@@ -1,0 +1,115 @@
+; A fault while a connection is served ends that connection alone: the
+; server and the client run in this one process, so a fault the server did
+; not catch would end the test with exit 15.
+;   1. connection a is answered and stays open;
+;   2. on connection b a handler violates a bounds check: b ends without an
+;      answer (one line on stderr);
+;   3. a, opened before the fault, is answered again;
+;   4. a new connection is answered;
+;   5. shutdown, and wait returns.
+; Expected: before fault-ended after new stopped
+
+package scaly 0.2.0
+package http 0.2.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+procedure sum(req: ref[Request], mutable res: ref[Response])
+    res.send_int(parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b")))
+
+; The byte at index i of the query parameter i: past its end for i=99.
+procedure boom(req: ref[Request], mutable res: ref[Response])
+{
+    let digits req.query_param("i")
+    res.send_int(digits[parse_int_prefix(digits) as size_t] as int)
+}
+
+; Read one response from s and answer "status:body", "" at the end of the
+; stream.
+procedure response(s: TcpStream) returns String
+{
+    let host Page.allocate_page()
+    var buf allocate_slice[u8]^host(host, 4096)
+    var have: size_t 0
+    repeat
+    {
+        let e head_end(buf.subslice(0, have))
+        if e > 0
+        {
+            var head Request.empty()
+            head.fields := buf.subslice(0, e)
+            let n parse_decimal(head.header("content-length"))
+            if n >= 0 and e + (n as size_t) <= have
+            {
+                var out StringBuilder()
+                out.append(buf.subslice(9, 12))
+                out.append(":" as char)
+                out.append(buf.subslice(e, e + (n as size_t)))
+                return out.to_string()
+            }
+        }
+        let r s.read(buf.slice_from(have))
+        if r <= 0
+            return String("")
+        have := have + (r as size_t)
+    }
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var app Router.create(Page.allocate_page())
+    app.get("/sum", &sum)
+    app.get("/boom", &boom)
+    var l TcpListener.listen(0)
+    let server start(app, l)
+
+    var a TcpStream.connect("127.0.0.1", l.port())
+    a.write("GET /sum?a=1&b=2 HTTP/1.1\r\nHost: t\r\n\r\n")
+    let first response(a)
+    if first.equals("200:3") = false
+    {
+        print "got `first`"
+        return 1
+    }
+    Console.print "before "
+
+    var b TcpStream.connect("127.0.0.1", l.port())
+    b.write("GET /boom?i=99 HTTP/1.1\r\nHost: t\r\n\r\n")
+    let none response(b)
+    if none.equals("") = false
+    {
+        print "got `none`"
+        return 2
+    }
+    b.close()
+    Console.print "fault-ended "
+
+    a.write("GET /sum?a=2&b=3 HTTP/1.1\r\nHost: t\r\n\r\n")
+    let again response(a)
+    if again.equals("200:5") = false
+    {
+        print "got `again`"
+        return 3
+    }
+    a.close()
+    Console.print "after "
+
+    var c TcpStream.connect("127.0.0.1", l.port())
+    c.write("GET /sum?a=20&b=22 HTTP/1.1\r\nHost: t\r\n\r\n")
+    let fresh response(c)
+    if fresh.equals("200:42") = false
+    {
+        print "got `fresh`"
+        return 4
+    }
+    c.close()
+    Console.print "new "
+
+    server.shutdown()
+    server.wait()
+    l.close()
+    Console.print "stopped"
+    0
+}
