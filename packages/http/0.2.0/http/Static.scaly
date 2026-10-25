@@ -17,7 +17,18 @@
 ; 2026-09-30 an entry was read again once it was a second old: HttpArena's
 ; rule is "replace a file and the next response must carry the new bytes",
 ; and its validation's 2 s window is a tolerance, not a budget. A path that
-; climbs out of the directory ("..") or starts with '/' answers 404 as well.
+; climbs out of the directory ("..") or starts with '/' answers 404 as well,
+; and so does one that is not written canonically (an empty or a "."
+; segment).
+;
+; The cache holds what a client cannot multiply (2026-10-25, found fuzzing):
+; a path no file answers is not kept -- every new one used to keep an entry
+; and a page, three per request with the twins, and the linear lookup grew
+; with them -- and one file has one spelling ("./x", "x//y" are refused, or
+; each would have held a copy of the file); past STATIC_CACHE_MAX entries a
+; thread forgets its oldest (an entry and its path on a page of their own,
+; so forgetting frees them), which also bounds the spellings a file system
+; that ignores case answers.
 
 use http.Request.Request
 use http.Response.Response
@@ -34,6 +45,9 @@ procedure scaly_eio_wall_ns() returns i64 extern
 ; neither does load_entry#. Found 2026-10-02 on Windows, where a file replaced
 ; right after its first read was served stale now and then.
 define STATIC_RACY_NS: i64 100000000
+; The entries a thread's cache holds at most (the oldest one not being read
+; is forgotten for a new one).
+define STATIC_CACHE_MAX: size_t 1024
 
 define StaticEntry
 (
@@ -50,14 +64,18 @@ define StaticEntry
     var mtime: i64
     var inode: i64
     var loading: bool
-    ; whether `page` is the entry's own (false while it is the cache's)
+    ; whether `page` is the entry's own (false while it is `home`)
     var owns_page: bool
+    ; the page the entry and its path live on, freed when it is forgotten
+    home: ref[Page]
 )
 
 define StaticCache
 (
     host: ref[Page]
     var entries: Array[ref[StaticEntry]]
+    ; what a path no file answers is served from, kept by nobody
+    absent: ref[StaticEntry]
 )
 
 ; This thread's cache, made at its first request.
@@ -121,7 +139,7 @@ function safe_relative(rel: Slice[u8]) returns bool
         if i = rel.length or rel[i] = 47
         {
             let seg rel.subslice(start, i)
-            if seg.equals("..")
+            if seg.length = 0 or seg.equals(".") or seg.equals("..")
                 return false
             start := i + 1
         }
@@ -196,7 +214,8 @@ procedure static_cache_here() returns ref[StaticCache] mutable static_cache
     if existing <> null
         return existing as ref[StaticCache]
     let host Page.allocate_page()
-    let made &StaticCache^host(host, Array[ref[StaticEntry]]^host())
+    let none &StaticEntry^host(String^host(), host, String^host(), false, 1, 0 - 1, 0, 0, false, false, host)
+    let made &StaticCache^host(host, Array[ref[StaticEntry]]^host(), none)
     static_cache := made
     made
 }
@@ -219,20 +238,26 @@ procedure static_entry(path: Slice[u8]) returns ref[StaticEntry] mutable static_
         }
         i := i + 1
     }
+    var st i64[4]
+    var size: i64 0 - 1
+    var mtime: i64 0
+    var inode: i64 0
     if found = null
     {
-        let host cache.host
-        let made &StaticEntry^host(String^host(path), host, String^host(), false, 0, 0 - 1, 0, 0, false, false)
+        ; a path no file answers is not kept (it costs nothing to send many)
+        let asked String(path)
+        if scaly_eio_stat(asked.c_data(), 0 - 1, &st[0]) <> 0
+            return cache.absent
+        if cache.entries.length >= STATIC_CACHE_MAX
+            static_forget_oldest(cache)
+        let home Page.allocate_page()
+        let made &StaticEntry^home(String^home(path), home, String^home(), false, 0, 0 - 1, 0, 0, false, false, home)
         cache.entries.add(made)
         found := made
     }
     var e found as ref[StaticEntry]
     ; the path's String was written by a content init, which ends it with a
     ; NUL (what to_c_string relies on too): no copy per request
-    var st i64[4]
-    var size: i64 0 - 1
-    var mtime: i64 0
-    var inode: i64 0
     if scaly_eio_stat(e.path.c_data(), 0 - 1, &st[0]) = 0
     {
         size := st[0]
@@ -244,6 +269,39 @@ procedure static_entry(path: Slice[u8]) returns ref[StaticEntry] mutable static_
     while e.loaded_at = 0
         Scheduler.yield()
     e
+}
+
+; Forget the oldest entry no task is reading or waiting for (STATIC_CACHE_MAX),
+; for a new one: its contents' page and its own go back. A task holds an
+; entry across a yield only while it loads or waits for its first load, and
+; such an entry stays.
+procedure static_forget_oldest(mutable cache: ref[StaticCache])
+{
+    var i: size_t 0
+    while i < cache.entries.length
+    {
+        let e cache.entries[i]
+        if e.loading = false and e.loaded_at <> 0
+        {
+            if e.owns_page
+            {
+                e.page.deallocate_extensions()
+                Page.release_page(e.page)
+            }
+            let home e.home
+            var j i
+            while j + 1 < cache.entries.length
+            {
+                cache.entries.put(j, cache.entries[j + 1])
+                j := j + 1
+            }
+            cache.entries.length := cache.entries.length - 1
+            home.deallocate_extensions()
+            Page.release_page(home)
+            return
+        }
+        i := i + 1
+    }
 }
 
 ; Read the entry's file onto a fresh page and put it in place of the old

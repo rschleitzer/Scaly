@@ -1,0 +1,110 @@
+; The static cache holds what a client cannot multiply (found fuzzing,
+; 2026-10-25: every new path kept an entry and a page, three per request
+; with the twins, for ever):
+;   absent     5 000 paths no file answers keep nothing: no entry, and the
+;              bytes held stay where they were
+;   bound      1 100 files: the cache holds STATIC_CACHE_MAX (1 024) of
+;              them, a file it forgot is read again and right, and two more
+;              rounds over all of them leave the bytes held where the first
+;              left them
+;   canonical  "./x", "x//y", "x/." and "" are refused like ".." -- each
+;              spelling of one file would have held a copy of it
+; Expected: absent bound canonical
+
+package scaly 0.2.0
+package http 0.2.0
+
+use http.Static.StaticEntry
+
+procedure round(n: int) returns bool mutable static_cache
+{
+    var i 0
+    while i < n
+    {
+        let e static_entry(String("scaly_http_bound/f`i`").as_slice())
+        if e.present = false or e.content.equals(String("file `i`")) = false
+            return false
+        i := i + 1
+    }
+    true
+}
+
+; n lookups of paths no file answers; true when none was there. A routine of
+; its own, so that the paths it builds go when it returns (a loop's
+; allocations stay on its routine's page until then).
+procedure absent_round(n: int) returns bool mutable static_cache
+{
+    var a 0
+    while a < n
+    {
+        let e static_entry(String("scaly_http_bound/nothing`a`").as_slice())
+        if e.present
+            return false
+        a := a + 1
+    }
+    true
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable static_cache
+{
+    Page.enable_statistics()
+    Directory.create(String("scaly_http_bound"))
+
+    ; absent
+    static_entry("scaly_http_bound/warm")
+    absent_round(10)
+    let before Page.bytes_held()
+    if absent_round(5000) = false
+    {
+        print "absent: a file where none is"
+        return 1
+    }
+    let held_absent Page.bytes_held() - before
+    if static_cache_here().entries.length <> 0 or held_absent > 65536
+    {
+        print "absent: `static_cache_here().entries.length` entries, `held_absent` bytes more"
+        return 1
+    }
+    Console.print "absent "
+
+    ; bound
+    var w 0
+    while w < 1100
+    {
+        File.write_from_string(String("scaly_http_bound/f`w`"), String("file `w`"))
+        w := w + 1
+    }
+    if round(1100) = false
+    {
+        print "bound: a file read wrong in the first round"
+        return 2
+    }
+    let full static_cache_here().entries.length
+    let held_first Page.bytes_held()
+    if round(1100) = false or round(1100) = false
+    {
+        print "bound: a file read wrong after it was forgotten"
+        return 2
+    }
+    let grown Page.bytes_held() - held_first
+    if full <> STATIC_CACHE_MAX or static_cache_here().entries.length <> STATIC_CACHE_MAX or grown > 262144
+    {
+        print "bound: `full` entries, then `static_cache_here().entries.length`, `grown` bytes more"
+        return 2
+    }
+    Console.print "bound "
+
+    ; canonical
+    if safe_relative("./f1") or safe_relative("x//f1") or safe_relative("f1/.") or safe_relative("") or safe_relative("../f1") or safe_relative("/f1")
+    {
+        print "canonical: a spelling passed"
+        return 3
+    }
+    if safe_relative("f1") = false or safe_relative("sub/f1") = false or safe_relative(".hidden") = false
+    {
+        print "canonical: a canonical path refused"
+        return 3
+    }
+    Console.print "canonical"
+    0
+}
