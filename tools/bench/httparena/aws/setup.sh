@@ -19,6 +19,13 @@ if ! command -v docker > /dev/null; then
   curl -fsSL https://get.docker.com | sudo sh
   sudo usermod -aG docker "$USER"
 fi
+# benchmark.sh restarts the daemon before every profile, and one a framework
+# does not subscribe to takes seconds: systemd's start limit then refuses the
+# daemon and every later run fails at once (2026-10-25, eleven entries lost)
+sudo mkdir -p /etc/systemd/system/docker.service.d
+printf '[Unit]\nStartLimitIntervalSec=0\n' | \
+  sudo tee /etc/systemd/system/docker.service.d/no-start-limit.conf > /dev/null
+sudo systemctl daemon-reload
 sudo apt-get update -q
 sudo apt-get install -y -q git jq python3 curl linux-tools-common "linux-tools-$(uname -r)" || \
   sudo apt-get install -y -q git jq python3 curl
