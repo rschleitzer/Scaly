@@ -188,7 +188,8 @@ Issues
 
 Bug reports and questions are welcome as
 [issues](https://github.com/rschleitzer/Scaly/issues). Scaly is developed by
-one person; for a change larger than a fix, please open an issue first.
+one person; for a change larger than a fix, please open an issue first. A
+security problem goes privately, as [SECURITY.md](SECURITY.md) says.
 
 Repository layout
 -----------------
