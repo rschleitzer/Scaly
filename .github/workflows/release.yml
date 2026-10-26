@@ -135,6 +135,10 @@ jobs:
             # clang names /lib/..., dpkg knows /usr/lib/... (usrmerge)
             files="$files $(readlink -f "$(clang-21 -print-file-name=$a)")"
           done
+          # ... and the loader and libc the gate below runs the compiler on:
+          # the runner's own are amd64v3 too, and died of SIGILL under qemu64
+          # before a byte of ours ran
+          files="$files $(readlink -f /lib64/ld-linux-x86-64.so.2) $(readlink -f /lib/x86_64-linux-gnu/libc.so.6)"
           pkgs=$(dpkg -S $files | cut -d: -f1 | sort -u)
           echo "reinstalled at the baseline: $pkgs"
           sudo apt-get install -y --reinstall $pkgs
