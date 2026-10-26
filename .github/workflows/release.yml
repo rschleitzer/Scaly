@@ -173,8 +173,19 @@ jobs:
         run: |
           set -e
           sudo apt-get install -y qemu-user
-          env -u LD_LIBRARY_PATH SCALY_HOME="$PWD" \
-            qemu-x86_64 -cpu qemu64 "$RUNNER_TEMP/home/libexec/scalyc" -S -o "$RUNNER_TEMP/hello-baseline.ll" tests/aot/hello.scaly
+          bin="$RUNNER_TEMP/home/libexec/scalyc"
+          if ! env -u LD_LIBRARY_PATH SCALY_HOME="$PWD" \
+              qemu-x86_64 -cpu qemu64 "$bin" -S -o "$RUNNER_TEMP/hello-baseline.ll" tests/aot/hello.scaly; then
+            # where it died: qemu's gdb stub, gdb at the faulting instruction;
+            # and which functions hold VEX code at all
+            sudo apt-get install -y gdb binutils
+            ( SCALY_HOME="$PWD" qemu-x86_64 -g 31234 -cpu qemu64 "$bin" -S -o /dev/null tests/aot/hello.scaly & )
+            sleep 2
+            gdb -q -batch -ex 'target remote :31234' -ex continue -ex 'x/3i $pc' -ex 'info symbol $pc' -ex bt "$bin" 2>&1 | tail -20 || true
+            objdump -d --no-show-raw-insn "$bin" | awk '/^[0-9a-f]+ </ { f = $2 } $2 ~ /^v[a-z]/ && $2 !~ /^ver[rw]$/ { n[f]++ } END { for (k in n) print n[k], k }' \
+              | sort -rn | grep -v blake3 | head -25 || true
+            exit 1
+          fi
           grep -q '^define ' "$RUNNER_TEMP/hello-baseline.ll"
 
       - name: the archive, onto the release
