@@ -101,7 +101,9 @@
         <li>A connection is a fiber with a region of its own. Each request is handled in a region that is freed, all at once, when the handler returns.</li>
         <li>HTTP/1.1 with a parser that resumes at any byte; every complete request in a read is answered, and the answers leave in one write.</li>
         <li>HTTP/2 of the package's own, over TLS and by prior knowledge; WebSocket; gRPC framing.</li>
+        <li>A router with path parameters and middleware before and after the handler; responses declared in one call (<code>res.respond(404, "text/plain", "no such item")</code>, <code>res.send_json(value)</code>); response compression switched on at the router, which answers text and JSON in gzip where the client takes it.</li>
         <li>From the sibling packages: <code>json</code> (a two-stage parser and a writer), <code>pg</code> (a Postgres pool with a prepared statement per connection), <code>tls</code> and <code>https</code> (TLS 1.3), <code>h3</code> (HTTP/3), <code>compress</code> (gzip).</li>
+        <li>Every one of them is a published package — <code>http 0.2.0</code> and its siblings, in the Scaly repository — and comes with the toolchain.</li>
     </ul>
 
     <div class="section-label">The code</div>
@@ -127,23 +129,28 @@ procedure delay(req: ref[Request], mutable res: ref[Response])
 var app Router.create(Page.allocate_page())
 app.any("/baseline11", &amp;baseline)
 app.get("/delay/{ms}", &amp;delay)
+app.get("/json/{count}", &amp;json_items)          <span class="comment">; serializes with the json package's writer</span>
+app.compress("", "gzip", &amp;gzip_compress)      <span class="comment">; text and JSON in gzip where the client takes it</span>
 serve(app, 8080)</pre>
-    <p>The whole entry is two files, <a href="https://github.com/rschleitzer/Scaly/blob/master/tools/bench/httparena/scaly/arena.scaly"><code>arena.scaly</code></a> and <a href="https://github.com/rschleitzer/Scaly/blob/master/tools/bench/httparena/scaly/db.scaly"><code>db.scaly</code></a>; the <a href="https://github.com/rschleitzer/Scaly/tree/master/tools/bench/httparena/scaly">directory</a> has its Dockerfile and a table of how each profile is served. A <code>procedure</code> names what it writes (<code>mutable res</code>); the compiler checks it.</p>
+    <p>The whole entry is three files, <a href="https://github.com/rschleitzer/Scaly/blob/master/tools/bench/httparena/scaly/arena.scaly"><code>arena.scaly</code></a> (the routes and the core handlers), <a href="https://github.com/rschleitzer/Scaly/blob/master/tools/bench/httparena/scaly/db.scaly"><code>db.scaly</code></a> (Postgres) and <a href="https://github.com/rschleitzer/Scaly/blob/master/tools/bench/httparena/scaly/stack.scaly"><code>stack.scaly</code></a> (the production stack behind a gateway); the <a href="https://github.com/rschleitzer/Scaly/tree/master/tools/bench/httparena/scaly">directory</a> has its Dockerfile and a table of how each profile is served. A <code>procedure</code> names what it writes (<code>mutable res</code>); the compiler checks it.</p>
 
     <div class="section-label">What it does not do</div>
     <ul class="plain">
         <li>The cryptography, QUIC and compression are C libraries: OpenSSL, ngtcp2 and libdeflate. HTTP, HTTP/2, the HTTP/3 framing, WebSocket, gRPC, JSON and the Postgres protocol above them are Scaly.</li>
         <li>Nothing is tuned beyond the defaults: no flags for the kernel, the rings or the sockets.</li>
+        <li>There is no template engine, so the entry does not run the fortunes profile.</li>
+        <li>gRPC is framed by the package and the protobuf fields are read and written by number: there is no code generator for <code>.proto</code> files.</li>
+        <li>Compression is gzip alone, at level 1 (nginx's default); no Brotli.</li>
         <li>The build is profile-guided: an instrumented build, a training run under the request shapes of the profiles, then the final build with that profile. That is the <a href="../lang/tutorial.htm#tut-production">production build</a> the documentation describes, and <code>SCALY_PGO=0</code> builds without it.</li>
         <li>On macOS and Windows the same code runs over kqueue and I/O completion ports, with one acceptor handing connections to the schedulers; a listener per scheduler is Linux only.</li>
     </ul>
 
     <div class="section-label">Reproduce it</div>
-    <p>With HttpArena itself, which builds the entry's image (the released toolchain, as anyone installs it) and runs every profile the entry subscribes to:</p>
+    <p>With HttpArena itself, which builds the entry's image (the released toolchain at the version its Dockerfile names, as anyone installs it) and runs every profile the entry subscribes to:</p>
     <pre class="code">git clone https://github.com/MDA2AV/HttpArena &amp;&amp; cd HttpArena
 ./scripts/validate.sh scaly
 ./scripts/benchmark.sh scaly</pre>
-    <p>Or the server alone, on Linux with OpenSSL 3, ngtcp2 and libdeflate installed (the Dockerfile shows how):</p>
+    <p>Or the server alone, in the entry's directory, on Linux with OpenSSL 3.5, ngtcp2 and libdeflate installed (the Dockerfile shows how):</p>
     <pre class="code">curl -fsSL https://scaly.io/install.sh | sh
 scaly build arena.scaly --release -o arena
 ./arena                                        <span class="comment"># :8080, TLS :8081, HTTP/2 :8443, h2c :8082</span>
