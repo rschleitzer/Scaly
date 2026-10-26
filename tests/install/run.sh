@@ -13,7 +13,8 @@
 #              $SCALY_PGO_PROFILE names one (=none: without), and everything
 #              below runs on those -- what a release hands out
 #   install    the installer takes the READY-MADE programs and ends with rc 0
-#              (its own check ran and built a program), leaves bin/ and
+#              (its own check ran and built a program), both archives checked
+#              against the SHA256SUMS beside them, leaves bin/ and
 #              toolchain/ and no toolchain.new; the three commands are LINKS
 #              to the programs, not scripts
 #   scalyc     `scalyc -o` links a program against the installed runtime archive
@@ -33,6 +34,8 @@
 #              and run a program
 #   compiler   a toolchain whose CC file names a C compiler builds with that
 #              one (what the installer writes where it found no plain clang)
+#   checksum   a SHA256SUMS whose line for the package archive is wrong: the
+#              installer stops before unpacking, the installation in place runs
 #   seed       a second installation over the first, offered programs that do
 #              not start: the installer says so, builds from the SEED, and the
 #              result runs and links
@@ -99,9 +102,14 @@ else
   bad "programs: make-bindist failed: $(tail -3 "$TMP/bindist.log" | tr '\n' ' ')"
 fi
 
+# checksums, as tools/publish-install.sh writes them beside the archives:
+# the installer checks both against them
+sha() { if command -v sha256sum > /dev/null 2>&1; then sha256sum "$@"; else shasum -a 256 "$@"; fi; }
+( cd "$TMP/base/downloads" && for f in scaly-"$VER"*.tar.gz scaly-"$VER"*.zip; do [ -f "$f" ] && sha "$f"; done | sed 's/ \*/  /' > "SHA256SUMS-$VER" )
+
 # install
 if install "$TMP/base" "$TMP/install.log"; then
-  grep -q 'installed the programs for' "$TMP/install.log" \
+  grep -q 'installed the programs for' "$TMP/install.log" && ! grep -q 'not checked' "$TMP/install.log" \
     && [ -x "$B/scaly" ] && [ -x "$B/scalyc" ] && [ -x "$B/scalyls" ] && [ -d "$PREFIX/toolchain/packages/scaly" ] \
     && [ -L "$B/scaly" ] && [ -L "$B/scalyc" ] && [ -L "$B/scalyls" ] \
     && [ ! -e "$PREFIX/toolchain.new" ] && ok || bad "install: rc 0 but not the ready-made programs, or the prefix is incomplete"
@@ -202,6 +210,21 @@ if ( unset SCALY_CC CC; SCALY_CACHE="$TMP/cache-cc" "$E/scaly" build hello.scaly
   [ -s "$TMP/cc.used" ] && [ "$(./h_cc)" = "Hello, World!" ] && ok || bad "compiler: the CC file's compiler was not the one used"
 else
   bad "compiler: rc=$? $(tail -3 compiler.log | tr '\n' ' ')"
+fi
+
+# checksum: the archives as published, the package archive's line of
+# SHA256SUMS damaged -- the installer stops before it unpacks anything, and
+# the installation in place still runs
+mkdir -p "$TMP/base3/downloads"
+cp "$TMP/base/downloads/"* "$TMP/base3/downloads/"
+awk -v n="scaly-$VER.tar.gz" '$2 == n { $1 = "0000000000000000000000000000000000000000000000000000000000000000" } { print $1 "  " $2 }' \
+  "$TMP/base/downloads/SHA256SUMS-$VER" > "$TMP/base3/downloads/SHA256SUMS-$VER"
+if install "$TMP/base3" "$TMP/sum.log"; then
+  bad "checksum: a damaged SHA256SUMS installed"
+else
+  grep -q 'checksum mismatch' "$TMP/sum.log" && [ ! -e "$PREFIX/toolchain.new" ] \
+    && [ "$("$B/scaly" run hello.scaly 2>/dev/null)" = "Hello, World!" ] \
+    && ok || bad "checksum: $(tail -2 "$TMP/sum.log" | tr '\n' ' ')"
 fi
 
 # seed: the same packages, and "programs" that cannot start

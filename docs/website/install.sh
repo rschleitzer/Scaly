@@ -187,9 +187,34 @@ NEW="$PREFIX/toolchain.new"
 TOOLCHAIN="$PREFIX/toolchain"
 trap 'rm -rf "$WORK" "$NEW"' EXIT
 
+# shasum is a Perl script and a fresh Ubuntu has only coreutils' sha256sum.
+if have sha256sum; then SHA256="sha256sum"
+elif have shasum; then SHA256="shasum -a 256"
+else SHA256=""; fi
+# The checksums of the version's archives, published beside them: each one is
+# checked against its line before it is unpacked. A version published
+# without the file, or a machine with neither tool, installs unchecked and
+# says so.
+SUMS="$WORK/SHA256SUMS"
+if ! fetch "$BASE_URL/downloads/SHA256SUMS-$VERSION" "$SUMS"; then
+  rm -f "$SUMS"
+  say "no checksums published for $VERSION: the archives are not checked"
+elif [ -z "$SHA256" ]; then
+  say "neither sha256sum nor shasum here: the archives are not checked"
+fi
+# verify <file>: its SHA-256 against the line of its name in SUMS
+verify() {
+  [ -f "$SUMS" ] && [ -n "$SHA256" ] || return 0
+  want="$(awk -v n="$(basename "$1")" '$2 == n { print $1 }' "$SUMS")"
+  [ -n "$want" ] || die "$(basename "$1") is not listed in SHA256SUMS-$VERSION"
+  got="$($SHA256 "$1" | awk '{ print $1 }')"
+  [ "$got" = "$want" ] || die "checksum mismatch for $(basename "$1") - the download is damaged or not the one published"
+}
+
 URL="$BASE_URL/downloads/$TARBALL"
 say "downloading $URL"
 fetch "$URL" "$WORK/$TARBALL" || die "download failed: $URL"
+verify "$WORK/$TARBALL"
 
 rm -rf "$NEW"
 mkdir -p "$NEW"
@@ -215,6 +240,7 @@ READY=0
 if [ "${SCALY_FROM_SEED:-0}" != "1" ]; then
   BIN_TARBALL="scaly-$VERSION-$SYSTEM.tar.gz"
   if fetch "$BASE_URL/downloads/$BIN_TARBALL" "$WORK/$BIN_TARBALL"; then
+    verify "$WORK/$BIN_TARBALL"
     if tar -xzf "$WORK/$BIN_TARBALL" -C "$NEW" 2>/dev/null \
        && SCALY_HOME="$NEW" "$NEW/libexec/scalyc" -S -o "$WORK/check/probe.ll" "$WORK/check/hello.scaly" >/dev/null 2>&1; then
       READY=1
@@ -231,10 +257,6 @@ fi
 if [ "$READY" = 0 ]; then
 find_llvm
 
-# shasum is a Perl script and a fresh Ubuntu has only coreutils' sha256sum.
-if have sha256sum; then SHA256="sha256sum"
-elif have shasum; then SHA256="shasum -a 256"
-else SHA256=""; fi
 if [ -n "$SHA256" ] && [ -f "$SEED/SHA256SUMS" ]; then
   ( cd "$SEED" && $SHA256 -c SHA256SUMS >/dev/null 2>&1 ) || die "seed checksum mismatch — the download is damaged"
 fi

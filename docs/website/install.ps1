@@ -108,6 +108,32 @@ function Install-Scaly {
             }
         }
 
+        # ---- the checksums published beside the archives: each archive
+        # against its line before it is unpacked; a version published without
+        # them installs unchecked and says so
+        $sumsName = "SHA256SUMS-$version"
+        $sums = Join-Path $work 'SHA256SUMS'
+        $haveSums = $false
+        if (Test-Path $base -PathType Container) {
+            $src = Join-Path $base $sumsName
+            if (Test-Path $src) { Copy-Item $src $sums; $haveSums = $true }
+        } else {
+            try { Invoke-WebRequest -UseBasicParsing -Uri "$base/downloads/$sumsName" -OutFile $sums; $haveSums = $true } catch { }
+        }
+        if ($haveSums) {
+            $lines = Get-Content $sums
+            foreach ($a in $archives) {
+                $want = $null
+                foreach ($l in $lines) {
+                    $f = $l.Trim() -split '\s+'
+                    if ($f.Length -ge 2 -and $f[1] -eq $a) { $want = $f[0].ToLower() }
+                }
+                if (-not $want) { Say "error: $a is not listed in $sumsName"; return }
+                $got = (Get-FileHash -Algorithm SHA256 (Join-Path $work $a)).Hash.ToLower()
+                if ($got -ne $want) { Say "error: checksum mismatch for $a - the download is damaged or not the one published"; return }
+            }
+        } else { Say "no checksums published for ${version}: the archives are not checked" }
+
         New-Item -ItemType Directory -Force $prefix | Out-Null
         if (Test-Path $new) { Remove-Item -Recurse -Force $new }
         New-Item -ItemType Directory -Force $new | Out-Null
