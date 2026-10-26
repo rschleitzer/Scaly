@@ -18,7 +18,7 @@
 #   scaly-<v>-darwin-x86_64.tar.gz    macOS on Intel — supported as long as
 #                                     Tahoe, the last macOS for Intel, gets
 #                                     security updates (decided 2026-10-04)
-#   scaly-<v>-linux-x86_64.tar.gz     Ubuntu 26.04 and newer
+#   scaly-<v>-linux-x86_64.tar.gz     Ubuntu 26.04 and newer, any x86-64 CPU
 #   scaly-<v>-linux-aarch64.tar.gz    Ubuntu 26.04 and newer
 #   scaly-<v>-windows-x86_64.zip      Windows 10 and newer
 #   scaly-<v>-windows-arm64.zip       Windows 11 on arm64
@@ -116,6 +116,24 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get install -y clang zlib1g-dev libzstd-dev libxml2-dev
 
+      # apt takes the highest architecture variant the CPU runs
+      # (APT::Architecture-Variants "auto"), and this runner's is amd64v3: the
+      # static libraries the programs link -- LLVM, libstdc++, libgcc, zlib,
+      # zstd, libxml2 -- were AVX2 code, and scalyc died of SIGILL before main
+      # on a CPU without it (an i7 of 2010, 0.2.24). The baseline variant is
+      # what Ubuntu 26.04 itself runs on; its packages again, at their versions
+      - name: The static libraries of the amd64 baseline (linux-x86_64)
+        if: matrix.system == 'linux-x86_64'
+        run: |
+          set -e
+          echo 'APT::Architecture-Variants "amd64";' | sudo tee /etc/apt/apt.conf.d/99scaly-baseline
+          sudo apt-get update
+          files="$(llvm-config-21 --libdir)/libLLVMCore.a"
+          for a in libz.a libzstd.a libxml2.a libstdc++.a libgcc.a; do files="$files $(clang-21 -print-file-name=$a)"; done
+          pkgs=$(dpkg -S $files | cut -d: -f1 | sort -u)
+          echo "reinstalled at the baseline: $pkgs"
+          sudo apt-get install -y --reinstall $pkgs
+
       - name: LLVM 21 (macOS)
         if: runner.os == 'macOS'
         run: brew install llvm@21 zstd
@@ -141,6 +159,18 @@ jobs:
           grep -q '^define ' "$RUNNER_TEMP/hello.ll"
           if [ "$RUNNER_OS" = Linux ]; then ldd "$RUNNER_TEMP/home/libexec/scalyc" | grep -i llvm && exit 1 || true
           else otool -L "$RUNNER_TEMP/home/libexec/scalyc" | grep -i llvm && exit 1 || true; fi
+
+      # ... and on the x86-64 baseline: qemu's qemu64 is x86-64 with SSE3 and
+      # nothing newer, so an AVX instruction anywhere on the way is SIGILL
+      # (the 0.2.24 compiler died so before main; -cpu max ran it)
+      - name: The unpacked compiler runs on the x86-64 baseline (linux-x86_64)
+        if: matrix.system == 'linux-x86_64'
+        run: |
+          set -e
+          sudo apt-get install -y qemu-user
+          env -u LD_LIBRARY_PATH SCALY_HOME="$PWD" \
+            qemu-x86_64 -cpu qemu64 "$RUNNER_TEMP/home/libexec/scalyc" -S -o "$RUNNER_TEMP/hello-baseline.ll" tests/aot/hello.scaly
+          grep -q '^define ' "$RUNNER_TEMP/hello-baseline.ll"
 
       - name: the archive, onto the release
         shell: bash
