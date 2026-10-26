@@ -141,7 +141,7 @@ else
   echo "$out" | head -4 | sed 's/^/    /'
   if [ "$rc" -ne 0 ]; then
     python3 tools/abi-audit.py --quiet "${hdrs[@]}" $(find packages -name '*.scaly') | head -40
-    echo "abi: FAIL — RESULT width differs from the C prototype (can flip the sign)"
+    echo "abi: FAIL — a RESULT width (can flip the sign) or a CELL's (\`size_t *\` against pointer[size_t]) differs from the C prototype"
     fail=1
   fi
   got=$(echo "$out" | sed -n 's/^PARAM FINDINGS: //p')

@@ -17,6 +17,11 @@ decided by the callee's codegen. Parameters are the benign half — a 32-bit
 callee reads the low half of a register the caller wrote in full — but they are
 reported too, since "benign today" is not a property worth relying on.
 
+A CELL -- a parameter that is a pointer to a scalar (`size_t *len`, `int *out`)
+-- is judged by its POINTEE against the Scaly pointee (`pointer[size_t]`,
+`ref[int]`), and gates like a result: the callee writes the C width through
+it, half the Scaly cell or past its end. Every other pointer is not judged.
+
 What this tool does NOT silently skip: a prototype it cannot find, cannot parse,
 or whose arity disagrees is COUNTED AND NAMED, never booked as clean. A checker
 that skips quietly is the same failure class it exists to catch (this tool had
@@ -216,6 +221,17 @@ def load_prototypes(dirs, want, sources=()):
                     if a == "...":
                         args.append("...")
                         continue
+                    # A cell of a scalar (`size_t *len`, `int *out`): the
+                    # callee writes the POINTEE's width through it, so that
+                    # width is judged against the Scaly pointee -- `ptr:<T>`.
+                    # On wasm32 a `size_t *` holds 4 bytes where a Scaly
+                    # `pointer[size_t]` has 8 (LLVMGetValueName2 wrote half
+                    # its cell, right only because the cell started at 0;
+                    # found 2026-10-26).
+                    cell = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_ ]*?)\s*\*\s*[A-Za-z_]?[A-Za-z0-9_]*", a)
+                    if cell and cell.group(1).strip() in C_WIDTH and "[" not in a and "(" not in a:
+                        args.append("ptr:" + cell.group(1).strip())
+                        continue
                     if "*" in a or "[" in a or "(" in a:
                         args.append("ptr")
                         continue
@@ -327,6 +343,21 @@ def main():
                 else:
                     checked += 1
             for (pn, st), ct in zip(scaly_params(sig_i), args_c):
+                if ct.startswith("ptr:"):
+                    # the cell's pointee, where both sides name a scalar
+                    pm = re.fullmatch(r"(?:pointer|ref)\[([A-Za-z0-9_]+)\]", st)
+                    cw = width_c(ct[4:])
+                    sw = S_WIDTH.get(pm.group(1)) if pm else None
+                    if not cw or not sw:
+                        continue
+                    if cw != sw:
+                        msg = f"CELL {pn.split()[-1] if pn else '?'}: C {ct[4:]} *={cw}b vs scaly {st}={sw}b"
+                        if msg not in seen_issue:
+                            seen_issue.add(msg)
+                            issues.append(msg)
+                    else:
+                        checked += 1
+                    continue
                 if ct == "ptr" or st.startswith("pointer") or st.startswith("ref"):
                     continue
                 cw, sw = width_c(ct), S_WIDTH.get(st)
@@ -346,7 +377,11 @@ def main():
             findings.append((name, entries, issues, raw))
 
     n_result = sum(1 for _, _, iss, _ in findings for i in iss if i.startswith("RESULT"))
-    n_param = sum(1 for _, _, iss, _ in findings for i in iss if not i.startswith("RESULT"))
+    # A CELL is not the benign direction of a parameter: the callee writes the
+    # pointee's width through it, half the Scaly cell or past its end -- it
+    # gates like a result.
+    n_cell = sum(1 for _, _, iss, _ in findings for i in iss if i.startswith("CELL"))
+    n_param = sum(1 for _, _, iss, _ in findings for i in iss if not i.startswith("RESULT") and not i.startswith("CELL"))
     print(f"positions checked (parameters + result): {checked}")
     print(f"FINDINGS: {len(findings)}")
     # Reported apart because they are not equally dangerous. A wrong RESULT
@@ -358,6 +393,7 @@ def main():
     # gets caught.
     print(f"RESULT FINDINGS: {n_result}")
     print(f"PARAM FINDINGS: {n_param}")
+    print(f"CELL FINDINGS: {n_cell}")
     for name, entries, issues, raw in findings:
         print(f"\n### {name}\n    C: {raw}")
         for path, lineno, sig, sret in entries:
@@ -378,8 +414,8 @@ def main():
         for n, r in sorted(unparsed):
             print(f"    {n}: {r}")
     if WASM32:
-        return 1 if n_result or n_param else 0
-    return 1 if n_result else 0
+        return 1 if n_result or n_param or n_cell else 0
+    return 1 if n_result or n_cell else 0
 
 
 if __name__ == "__main__":
