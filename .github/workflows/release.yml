@@ -126,10 +126,15 @@ jobs:
         if: matrix.system == 'linux-x86_64'
         run: |
           set -e
-          echo 'APT::Architecture-Variants "amd64";' | sudo tee /etc/apt/apt.conf.d/99scaly-baseline
+          # the variant names are dpkg's (/usr/share/dpkg/varianttable): amd64v1
+          # is the baseline; "amd64" is refused
+          echo 'APT::Architecture-Variants "amd64v1";' | sudo tee /etc/apt/apt.conf.d/99scaly-baseline
           sudo apt-get update
           files="$(llvm-config-21 --libdir)/libLLVMCore.a"
-          for a in libz.a libzstd.a libxml2.a libstdc++.a libgcc.a; do files="$files $(clang-21 -print-file-name=$a)"; done
+          for a in libz.a libzstd.a libxml2.a libstdc++.a libgcc.a crt1.o libc_nonshared.a; do
+            # clang names /lib/..., dpkg knows /usr/lib/... (usrmerge)
+            files="$files $(readlink -f "$(clang-21 -print-file-name=$a)")"
+          done
           pkgs=$(dpkg -S $files | cut -d: -f1 | sort -u)
           echo "reinstalled at the baseline: $pkgs"
           sudo apt-get install -y --reinstall $pkgs
