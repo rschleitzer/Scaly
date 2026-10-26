@@ -119,7 +119,7 @@ function fwrite(ptr: pointer[void], size: c_size, count: c_size, stream: pointer
 ; would cap every source file at 2 GB and turn the `< 0` error test into a coin
 ; flip. The 64-bit variants exist everywhere but under OS-specific names
 ; (ftello/fseeko vs _ftelli64/_fseeki64), which is containment rule (a).
-; See packages/scaly/0.2.0/scaly/fiber/eio.c and check 4 of tests/abi/run.sh.
+; See packages/scaly/0.2.1/scaly/fiber/eio.c and check 4 of tests/abi/run.sh.
 function scaly_eio_seek(stream: pointer[OpaqueFile], offset: int, whence: int) returns int extern
 function scaly_eio_tell(stream: pointer[OpaqueFile]) returns int extern
 ; rewind() takes no offset and returns nothing, so it has no `long` to get

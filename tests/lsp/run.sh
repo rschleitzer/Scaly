@@ -107,7 +107,7 @@ if [ "$MODE" = selfhosted ]; then
     lsp_root scalyc       packages/scalyc/0.2.1/scalyc.scaly & pids+=($!)
     # On Windows the runtime comes from the archive (tools/win-archive.sh): the
     # stdlib object and the five shims, as every other suite there links it.
-    [ "$SCALY_COFF" = 1 ] || { lsp_root scaly packages/scaly/0.2.0/scaly.scaly & pids+=($!); }
+    [ "$SCALY_COFF" = 1 ] || { lsp_root scaly packages/scaly/0.2.1/scaly.scaly & pids+=($!); }
     lsp_root scalyls      packages/scalyls/0.2.0/scalyls.scaly & pids+=($!)
     lsp_root json         packages/json/0.2.0/json.scaly & pids+=($!)
     lsp_root scalyls_main packages/scalyls/0.2.0/main.scaly & pids+=($!)
@@ -3128,9 +3128,9 @@ BIN = "/tmp/scalyls_format_test"
 ALLOWED = {
     "packages/scalyc/0.2.1/scalyc/compiler/parser.scaly",
     "packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly",
-    "packages/scaly/0.2.0/scaly/containers/hashing.scaly",
-    "packages/scaly/0.2.0/scaly/containers/StringIterator.scaly",
-    "packages/scaly/0.2.0/scaly/fiber.scaly",
+    "packages/scaly/0.2.1/scaly/containers/hashing.scaly",
+    "packages/scaly/0.2.1/scaly/containers/StringIterator.scaly",
+    "packages/scaly/0.2.1/scaly/fiber.scaly",
     "packages/scalyc/0.2.1/scalyc/compiler/Plan.scaly",
 }
 
@@ -4821,7 +4821,7 @@ if [ $rc -eq 0 ]; then ok "lsp fetched packages"; else bad "lsp fetched packages
 
 # ---- LSP server: `module NAME` must not shadow `define NAME` --------------
 # A `module NAME` statement is a LOAD DIRECTIVE, not a definition of NAME: the
-# concept lives in the file the module names. packages/scaly/0.2.0/scaly/
+# concept lives in the file the module names. packages/scaly/0.2.1/scaly/
 # containers.scaly declares twenty of them and `find` lists it ahead of the
 # whole containers/ subdirectory holding the concepts, so a definition search
 # used to stop at `module Array` (containers.scaly:11) and never reach
@@ -4881,30 +4881,30 @@ def _u(name): return "file://" + _ws + "/" + name
 # 1. cross-package (doc outside packages/, so the hit can only come from there)
 r = define_at(_u("moddef1.scaly"),
               "function f()\n{\n    var a Array[int]()\n}\n", 2, 12)
-check(rel(r) == "packages/scaly/0.2.0/scaly/containers/Array.scaly",
+check(rel(r) == "packages/scaly/0.2.1/scaly/containers/Array.scaly",
       "definition: Array resolves to `define Array[T]`, not `module Array`")
 r = define_at(_u("moddef2.scaly"),
               "function f()\n{\n    var s StringBuilder()\n}\n", 2, 12)
-check(rel(r) == "packages/scaly/0.2.0/scaly/containers/StringBuilder.scaly",
+check(rel(r) == "packages/scaly/0.2.1/scaly/containers/StringBuilder.scaly",
       "definition: StringBuilder resolves to its own file, not `module StringBuilder`")
 
 # 2. intra-file: the declaring file both lists the module and uses the concept
-cpath = os.path.join(home, "packages/scaly/0.2.0/scaly/containers.scaly")
+cpath = os.path.join(home, "packages/scaly/0.2.1/scaly/containers.scaly")
 cdoc  = open(cpath).read()
 clines = cdoc.split("\n")
 use_line = next(i for i, l in enumerate(clines) if "var vector Vector[int](2)" in l)
 mod_line = next(i for i, l in enumerate(clines) if l.strip() == "module Vector")
 r = define_at("file://" + cpath, cdoc, use_line, clines[use_line].index("Vector[") + 2)
-check(rel(r) == "packages/scaly/0.2.0/scaly/containers/Vector.scaly",
+check(rel(r) == "packages/scaly/0.2.1/scaly/containers/Vector.scaly",
       "definition: a Vector[int] USE inside containers.scaly skips its own `module Vector`")
 r = define_at("file://" + cpath, cdoc, mod_line, clines[mod_line].index("Vector") + 2)
-check(rel(r) == "packages/scaly/0.2.0/scaly/containers/Vector.scaly",
+check(rel(r) == "packages/scaly/0.2.1/scaly/containers/Vector.scaly",
       "definition: the cursor ON `module Vector` jumps INTO the module's file")
 
 # 3. module-only name: the `module` line is the only answer there is
 r = define_at(_u("moddef3.scaly"),
               "function f()\n{\n    let r runtime\n}\n", 2, 12)
-check(rel(r) == "packages/scaly/0.2.0/scaly/memory.scaly",
+check(rel(r) == "packages/scaly/0.2.1/scaly/memory.scaly",
       "definition: `runtime` (module with no same-named define) still answers the module line")
 
 sys.exit(1 if failures else 0)
@@ -4918,7 +4918,7 @@ if [ $rc -eq 0 ]; then ok "lsp module-vs-define definition"; else bad "lsp modul
 # behalf — the prelude's, and every method of every generic the document's types
 # pull in. Their spans index THOSE files and collide with the document's own
 # offsets, so a walk comparing numbers alone reports one of them. Measured on
-# packages/scaly/0.2.0/scaly/containers/Vector.scaly: EVERY hover in the file
+# packages/scaly/0.2.1/scaly/containers/Vector.scaly: EVERY hover in the file
 # answered `bool`, the return type of Slice[T].equals, whose span 1328..2073 in
 # containers/Slice.scaly covers most of `define Vector[T]`. The file is nothing
 # but generic templates, so its own bodies plan to empty stubs and no local node
@@ -4937,7 +4937,7 @@ def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 
-path = os.path.join(os.getcwd(), "packages/scaly/0.2.0/scaly/containers/Vector.scaly")
+path = os.path.join(os.getcwd(), "packages/scaly/0.2.1/scaly/containers/Vector.scaly")
 uri  = "file://" + path
 doc  = open(path).read()
 lines = doc.split("\n")
@@ -5024,7 +5024,7 @@ def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 
-path = os.path.join(os.getcwd(), "packages/scaly/0.2.0/scaly/containers/Vector.scaly")
+path = os.path.join(os.getcwd(), "packages/scaly/0.2.1/scaly/containers/Vector.scaly")
 uri  = "file://" + path
 doc  = open(path).read()
 lines = doc.split("\n")
@@ -5294,7 +5294,7 @@ if [ $rc -eq 0 ]; then ok "lsp foldingRange"; else bad "lsp foldingRange"; fi
 # by a different program (`scalyc --plan --task-plan`) and compared line by
 # line. A cross-producer check is what makes "the lens agrees with the
 # compiler" an assertion rather than a hope.
-( ulimit -s 65520; "$SCALYC" --plan --task-plan packages/scaly/0.2.0/scaly.scaly ) \
+( ulimit -s 65520; "$SCALYC" --plan --task-plan packages/scaly/0.2.1/scaly.scaly ) \
     > /tmp/lsp_taskplan.txt 2>/dev/null || true
 python3 - <<'PY'
 import sys, json, subprocess, os, shutil
@@ -5469,7 +5469,7 @@ for ln in open("/tmp/lsp_taskplan.txt"):
     f, line, col, verdict = ln[len("task-plan: "):].split(":", 3)
     if f.endswith("scaly/tensor.scaly"): cli[int(line)] = verdict.strip()
 check(len(cli) > 10, "the --task-plan control run produced tensor.scaly entries")
-caps, ls = lenses("packages/scaly/0.2.0/scaly/tensor.scaly")
+caps, ls = lenses("packages/scaly/0.2.1/scaly/tensor.scaly")
 lens_map = {}
 for (line, title) in rows(ls):
     lens_map[line] = title
@@ -5557,7 +5557,7 @@ gen_cases = [
     ("packages/scalyc/0.2.1/scalyc/compiler/parser.scaly", "codegen/parser.scm"),
     ("packages/scalyc/0.2.1/scalyc/compiler/Syntax.scaly", "codegen/syntax.scm"),
     ("packages/scalyls/0.2.0/scalyls/grammar.scaly",       "codegen/highlight.scm"),
-    ("packages/scaly/0.2.0/scaly/operation.scaly",         "codegen/operation.scm"),
+    ("packages/scaly/0.2.1/scaly/operation.scaly",         "codegen/operation.scm"),
     ("tests/selfhosted/controlflow__break-in-for.scaly",   "tests/controlflow.sgm"),
 ]
 for (f, want) in gen_cases:
@@ -5585,14 +5585,14 @@ run = [r for r in rows(lenses("tests/aot/hello.scaly")) if r[1].startswith("Run 
 check(len(run) == 1 and run[0][1] == "Run (scalyc --jit)" and run[0][2] == "scaly.runFile"
       and run[0][3] == os.path.abspath("tests/aot/hello.scaly"),
       "a program (top-level statements) gets a Run lens carrying its own path")
-check(not [r for r in rows(lenses("packages/scaly/0.2.0/scaly.scaly")) if r[1].startswith("Run ")],
+check(not [r for r in rows(lenses("packages/scaly/0.2.1/scaly.scaly")) if r[1].startswith("Run ")],
       "a library root (no top-level statements) gets no Run lens")
 
 # ---- claims about the file system must be TRUE --------------------------
 # Over real tree files: whatever the lens says about a module file, the file
 # system must agree. This is the assertion that cannot rot.
 sweep = ["packages/scalyls/0.2.0/scalyls.scaly",
-         "packages/scaly/0.2.0/scaly.scaly",
+         "packages/scaly/0.2.1/scaly.scaly",
          "packages/scalyc/0.2.1/scalyc/compiler.scaly",
          "packages/scalyc/0.2.1/scalyc/compiler/parser.scaly"]
 opens = 0
@@ -5785,7 +5785,7 @@ if os.path.exists(ir):
 # Vector.scaly is a member of packages/scaly, so answering means planning that
 # whole root; seed/scaly.ll is that package as the seed compiler emitted it, so
 # the two sides come from different programs.
-vec = "packages/scaly/0.2.0/scaly/containers/Vector.scaly"
+vec = "packages/scaly/0.2.1/scaly/containers/Vector.scaly"
 src = open(vec).read()
 # The `get` method's declaration line (1-based), found rather than hardcoded.
 want_line = 0
@@ -6000,9 +6000,9 @@ check(not storage(lenses(stmt)), "  and gets no lens")
 # line must carry exactly one lens, and only a `shared` may say
 # "process-global". Members of the scaly package, whose root is the cheapest
 # to plan.
-sweep = ["packages/scaly/0.2.0/scaly/memory/root_pages.scaly",
-         "packages/scaly/0.2.0/scaly/memory/Page.scaly",
-         "packages/scaly/0.2.0/scaly/fiber.scaly"]
+sweep = ["packages/scaly/0.2.1/scaly/memory/root_pages.scaly",
+         "packages/scaly/0.2.1/scaly/memory/Page.scaly",
+         "packages/scaly/0.2.1/scaly/fiber.scaly"]
 total = 0
 off = []
 for f in sweep:
@@ -6532,7 +6532,7 @@ check(placement(two[0]) == placement(two[1]) and placement(two[0]) != [],
 # A generic body is planned once per instantiation, so containers/Vector.scaly's
 # two constructions are reached ~20 times each. Without the dedup pass the
 # answer held 89 hints for those two sites.
-vec = placement(hints("packages/scaly/0.2.0/scaly/containers/Vector.scaly")[0])
+vec = placement(hints("packages/scaly/0.2.1/scaly/containers/Vector.scaly")[0])
 check(len(vec) == len(set(vec)), "no duplicate hints for one site (%d hints)" % len(vec))
 check(len(vec) > 0 and len(vec) < 6,
       "  and the count is the file's own construction count, not its instantiation count (%s)" % vec)

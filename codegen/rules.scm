@@ -11,7 +11,7 @@
         (file "packages/scalyc/0.2.1/scalyc/compiler/parser.scaly"
             (generate-parser)
         )
-        (file "packages/scaly/0.2.0/scaly/operation.scaly"
+        (file "packages/scaly/0.2.1/scaly/operation.scaly"
             (generate-operation)
         )
         (file "packages/scalyls/0.2.0/scalyls/grammar.scaly"

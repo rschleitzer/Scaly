@@ -16,7 +16,7 @@ mkdir -p "$OUT"
 one() {
   local f=$1 n fl="" rc=0
   n=$(echo "$f" | tr '/' '_')
-  [ "$f" = packages/scaly/0.2.0/scaly.scaly ] && fl=--no-prelude
+  [ "$f" = packages/scaly/0.2.1/scaly.scaly ] && fl=--no-prelude
   for side in old new; do
     local home=$PWD
     [ $side = old ] && home=$BEFORE

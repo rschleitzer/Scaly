@@ -52,7 +52,7 @@ tools/wasmeh.sh "$W/wasm_eh.o"
 export LLVM_PROFILE_FILE="$W/train-%p.profraw"
 "$W/scalyc_train" -S --no-tests -o "$W/scalyc.ll" packages/scalyc/0.2.1/scalyc.scaly > "$W/train1.log" 2>&1 \
   || { tail -5 "$W/train1.log"; echo "make-profile: FAIL — training run 1 (the compiler's package)"; exit 1; }
-"$W/scalyc_train" -S --no-prelude --no-tests -o "$W/scaly.ll" packages/scaly/0.2.0/scaly.scaly > "$W/train2.log" 2>&1 \
+"$W/scalyc_train" -S --no-prelude --no-tests -o "$W/scaly.ll" packages/scaly/0.2.1/scaly.scaly > "$W/train2.log" 2>&1 \
   || { tail -5 "$W/train2.log"; echo "make-profile: FAIL — training run 2 (the stdlib)"; exit 1; }
 unset LLVM_PROFILE_FILE
 
