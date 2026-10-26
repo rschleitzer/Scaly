@@ -51,8 +51,11 @@
 #      64, so a C `size_t` is declared `c_size`; and wasm-ld checks every
 #      signature, so a PARAMETER finding fails here too. Over the packages
 #      that go to the browser: the standard library, json, and dazzle, opensp
-#      and pdf from ../dazzle (or $DAZZLE_REPO) where that checkout is there.
-#      Needs a wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*); SKIPPED by name
+#      and pdf from ../dazzle (or $DAZZLE_REPO) where that checkout is there;
+#      and the compiler, whose REPL goes to the browser too, against wasi-libc
+#      AND the LLVM-C headers -- 28 `size_t` lengths of its LLVM bindings were
+#      64 bits there until 2026-10-26, and wasm traps a call whose signature
+#      differs (`signature_mismatch:LLVMSetValueName2`). Needs a wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*); SKIPPED by name
 #      without one.
 #
 # Usage: tests/abi/run.sh
@@ -119,7 +122,7 @@ source tools/llvm-env.sh > /dev/null 2>&1
 hdrs=()
 for cand in "${LLVM21:-}/include/llvm-c" "$llvm_env_prefix/include/llvm-c" \
             /opt/homebrew/opt/llvm@21/include/llvm-c /usr/lib/llvm-21/include/llvm-c; do
-  [ -n "$cand" ] && [ -d "$cand" ] && { hdrs+=(--headers "$cand"); break; }
+  [ -n "$cand" ] && [ -d "$cand" ] && { hdrs+=(--headers "$cand"); llvm_c="$cand"; break; }
 done
 for cand in /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include /usr/include; do
   [ -d "$cand" ] && { hdrs+=(--headers "$cand"); break; }
@@ -195,6 +198,21 @@ else
       $(find "${roots[@]}" -name '*.scaly' -not -path '*/interface/*') | head -40
     echo "abi: FAIL — a width differs on wasm32 (a C size_t is declared c_size)"
     fail=1
+  fi
+  if [ -n "${llvm_c:-}" ]; then
+    croots=$(find packages/scalyc/[0-9]* -name '*.scaly' -not -path '*/interface/*')
+    # shellcheck disable=SC2086
+    cout=$(python3 tools/abi-audit.py --target wasm32 --quiet --headers "$wasi_inc" --headers "$llvm_c" $croots)
+    rc=$?
+    echo "$cout" | head -4 | sed 's/^/    compiler: /'
+    if [ "$rc" -ne 0 ]; then
+      # shellcheck disable=SC2086
+      python3 tools/abi-audit.py --target wasm32 --headers "$wasi_inc" --headers "$llvm_c" $croots | head -40
+      echo "abi: FAIL — a width of the compiler's bindings differs on wasm32 (a C size_t is declared c_size)"
+      fail=1
+    fi
+  else
+    echo "    compiler: SKIP (no LLVM-C headers)"
   fi
 fi
 

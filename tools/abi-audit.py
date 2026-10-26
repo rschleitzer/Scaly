@@ -148,6 +148,11 @@ def clean_c(text):
     # into the captured RETURN type, which then matches no known C type — and
     # an unparsed return used to be skipped silently.
     text = re.sub(r"\bLLVM_C_EXTERN_C_(BEGIN|END)\b", " ", text)
+    # LLVM 21 puts its export macro in front of every C API prototype; read as
+    # part of the result type it made 275 results "cannot be judged" -- the
+    # result check, the dangerous half, was blind to the whole LLVM-C binding
+    # (found 2026-10-26: LLVMGetBufferSize answered size_t, 64 bits in Scaly)
+    text = re.sub(r"\bLLVM_C_ABI\b", " ", text)
     text = re.sub(r'extern\s*"C"', " ", text)
     text = re.sub(r"__(DARWIN_ALIAS|DARWIN_ALIAS_C|DARWIN_ALIAS_I|DARWIN_INODE64|"
                   r"DARWIN_1050|DARWIN_EXTSN|DARWIN_EXTSN_C)\s*\([^)]*\)", " ", text)
