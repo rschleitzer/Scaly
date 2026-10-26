@@ -1,3 +1,4 @@
 ; The published versions of redis: version, commit, git tree of its directory.
 ; Written by scaly publish. A line here does not change.
 0.1.0 e151a23a6b5640bbbd51525591c54cf3c4ace578 4944bad38f5d228bc04b8dd399d7807e78635b7a
+0.2.0 356a0dc33fab96c0b6237466670489a49d84fbfe 4ae7a229cc26b4f2340d4e50b44906256d46bb0d

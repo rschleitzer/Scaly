@@ -1,3 +1,4 @@
 ; The published versions of scaly: version, commit, git tree of its directory.
 ; Written by scaly publish. A line here does not change.
 0.1.0 e151a23a6b5640bbbd51525591c54cf3c4ace578 c6c9a6559aaeeb451c075c7b79936d0c80dfaabe
+0.2.0 356a0dc33fab96c0b6237466670489a49d84fbfe e5743e8bf82ef5328b5dddf8c45087d7f483495b

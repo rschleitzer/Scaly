@@ -1,3 +1,4 @@
 ; The published versions of http: version, commit, git tree of its directory.
 ; Written by scaly publish. A line here does not change.
 0.1.0 e151a23a6b5640bbbd51525591c54cf3c4ace578 c8c2116bffb6cda2f1d1e9cb3957792c2d90af40
+0.2.0 356a0dc33fab96c0b6237466670489a49d84fbfe ef3f33a22e80ad64b594325278fb3b192d983154
