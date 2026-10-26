@@ -136,7 +136,9 @@
 #              The version rule (tool.publish_compare#): below 1.0 a changed
 #              declaration takes the second number and anything else the
 #              third, from 1.0 on a changed one the first and an addition the
-#              second -- eight cases; a new version that does not compile is
+#              second -- eight cases; a number of another line is not compared
+#              (the version before may speak a language this compiler reads no
+#              more), only compiled; a new version that does not compile is
 #              refused. SKIPs by name without git
 #   clean      `scaly clean` empties the cache, and the next build fills it
 #   bare       Windows the Rust way: a handed-out tree --
@@ -1131,7 +1133,7 @@ package demo 0.1.0 \"$pub/work.git\"|" packages/client/0.1.0/client.scaly && rm 
   nextv rule-0.1.0 0.1.0 0.1.1 "$added";   out=$(pv rule-0.1.0); [ $? = 0 ] && echo "$out" | grep -q '0 declaration(s) gone or changed, 1 added' && rule=$((rule+1)) || echo "    publish rule (0.x added): $(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)"
   nextv rule-0.1.0 0.1.0 0.1.1 "$changed"; out=$(pv rule-0.1.0); [ $? = 1 ] && echo "$out" | grep -q 'demo 0.1.1 understates what it changed since 0.1.0; that takes 0.2.0 at least' && echo "$out" | grep -q 'demo.scaly demo.| function greeting(name: String) returns String' && rule=$((rule+1)) || echo "    publish rule (0.x changed): $(echo "$out" | tail -4 | tr '\n' '|' | cut -c1-300)"
   rm -rf "$pub/rule-0.1.0/packages/demo/0.1.1"
-  nextv rule-0.1.0 0.1.0 0.2.0 "$changed"; out=$(pv rule-0.1.0); [ $? = 0 ] && echo "$out" | grep -q 'demo 0.2.0 is new after 0.1.0: 1 declaration(s) gone or changed, 1 added' && rule=$((rule+1)) || echo "    publish rule (0.2.0): $(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)"
+  nextv rule-0.1.0 0.1.0 0.2.0 "$changed"; out=$(pv rule-0.1.0); [ $? = 0 ] && echo "$out" | grep -q 'demo 0.2.0 is new after 0.1.0: another line, which takes any change' && rule=$((rule+1)) || echo "    publish rule (0.2.0): $(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)"
   # from 1.0 on: an addition takes the second number, a changed declaration the first
   nextv rule-1.0.0 1.0.0 1.0.1 "$body";    out=$(pv rule-1.0.0); [ $? = 0 ] && rule=$((rule+1)) || echo "    publish rule (1.x body): $(echo "$out" | tail -2 | tr '\n' '|' | cut -c1-200)"
   nextv rule-1.0.0 1.0.0 1.0.1 "$added";   out=$(pv rule-1.0.0); [ $? = 1 ] && echo "$out" | grep -q 'that takes 1.1.0 at least' && rule=$((rule+1)) || echo "    publish rule (1.x added): $(echo "$out" | tail -4 | tr '\n' '|' | cut -c1-300)"

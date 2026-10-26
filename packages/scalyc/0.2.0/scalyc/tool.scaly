@@ -2761,6 +2761,17 @@ define tool
         var new_lines Array[String]()
         var old_dir "`scratch`.before"
         var new_dir "`scratch`.after"
+        ; a number of another line says every change there is, so the version
+        ; before is not read -- it may speak a language this compiler reads no
+        ; more (the 0.1 line of the standard library, before `:=`); the new
+        ; one must compile all the same
+        if Modeler.version_compatible(prev, next) = false
+        {
+            if tool.surface_of(String(), name, next, false, new_dir, &new_lines) = false
+                return false
+            Console.println("publish: `name` `next` is new after `prev`: another line, which takes any change")
+            return true
+        }
         ; the version before, out of the tree -- or, when its directory has
         ; left the tree, out of the commit its line names, checked out beside
         var before ""
