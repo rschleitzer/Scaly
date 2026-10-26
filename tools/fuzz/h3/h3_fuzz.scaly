@@ -1,0 +1,992 @@
+; h3_fuzz -- the h3 package from a client written here on ngtcp2's client
+; side (as tests/h3 has one), over UDP on the loopback, server and client in
+; this one process. What it fuzzes is the Scaly above QUIC: the HTTP/3 frames
+; of a request stream, the QPACK field sections in them (static and dynamic
+; references, post-base ones, literals, Huffman), the encoder stream's
+; instructions that fill the dynamic table, and the type of a client's
+; unidirectional stream. QUIC itself, and TLS, are ngtcp2's and OpenSSL's.
+;
+; A case is one connection, made from (seed, case) alone, so `--case k`
+; replays it: up to eight request streams (pseudo-headers mostly right, the
+; field lines and frames around them drawn and then mutated), with a table
+; an encoder stream before them, and now and then a control stream, a
+; decoder stream, a second encoder stream or a stream of a type nobody
+; knows. It waits for every stream's answer, a reset, the connection's end
+; or a second, and closes the connection.
+;
+; What it watches: every case writes "case <k>" to stderr before it starts,
+; so a fault the server catches ("h3: a fault ended a connection", from the
+; http package) and a crash of this process stand after the case that made
+; them; every 32 cases a request on a connection kept open from the start
+; must be answered (2 s), else "HANG after case <k>" and exit 3.
+;
+;   h3_fuzz <cert> <key> <port> <seconds> <seed> [table] [--case k]
+;     table   the server offers a QPACK dynamic table of 4 096 bytes
+;             (h3_offer_qpack_table); without it the encoder stream is
+;             dropped, as on the HttpArena entry
+;
+; tools/fuzz/h3/run.sh builds and runs it.
+
+package scaly 0.2.0
+package http 0.2.0
+package tls 0.2.0
+package h3 0.2.0
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+procedure sum(req: ref[Request], mutable res: ref[Response])
+    res.send_int(parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b")))
+
+procedure echo(req: ref[Request], mutable res: ref[Response])
+    res.send("application/octet-stream", req.body)
+
+; splitmix64: a case's every choice from (seed, case).
+define Rng
+(
+    var state: u64
+)
+{
+    procedure next(mutable this) returns u64
+    {
+        state := state + 0x9E3779B97F4A7C15
+        var z state
+        z := (z xor (z >> 30)) * 0xBF58476D1CE4E5B9
+        z := (z xor (z >> 27)) * 0x94D049BB133111EB
+        z xor (z >> 31)
+    }
+
+    ; 0 .. n - 1 (n > 0)
+    procedure below(mutable this, n: u64) returns u64
+        this.next() % n
+
+    procedure chance(mutable this, percent: u64) returns bool
+        this.below(100) < percent
+}
+
+; A stream of the client: what it sends, what came back.
+define FStream
+(
+    var id: i64
+    var request: ByteBuf
+    var queued: size_t
+    var fin: bool                ; the request ends with a FIN (a request stream)
+    var sent: bool               ; all of it is out (with its FIN, if it has one)
+    var response: ByteBuf
+    var done: bool               ; the server's FIN or reset came
+    var dynamic: bool            ; a field section names the dynamic table
+)
+
+define Client
+(
+    var streams: Array[ref[FStream]]
+    var handshake: bool
+)
+
+; One client connection.
+define Peer
+(
+    fd: i32
+    var conn: pointer[void]
+    var ssl: pointer[void]
+    var octx: pointer[void]
+    local: Slice[u8]
+    local_length: size_t
+    remote: Slice[u8]
+    remote_length: size_t
+    client: ref[Client]
+    var closed: bool
+)
+
+procedure stream_of(c: ref[Client], stream_id: i64) returns ref[FStream]?
+{
+    var i: size_t 0
+    while i < c.streams.length
+    {
+        let s: ref[FStream] c.streams[i]
+        if s.id = stream_id
+            return s
+        i := i + 1
+    }
+    null
+}
+
+procedure c_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64, offset: u64, data: pointer[u8], datalen: size_t, mutable user_data: pointer[void], mutable stream_user_data: pointer[void]) returns i32
+{
+    ngtcp2_conn_extend_max_stream_offset(conn, stream_id, datalen as u64)
+    ngtcp2_conn_extend_max_offset(conn, datalen as u64)
+    var c user_data as ref[Client]
+    let found stream_of(c, stream_id)
+    if found = null
+        return 0
+    var s found as ref[FStream]
+    if datalen > 0
+        s.response.append(Slice[u8](datalen, data))
+    if (flags & NGTCP2_STREAM_DATA_FLAG_FIN) <> 0
+        s.done := true
+    0
+}
+
+procedure c_stream_close(mutable conn: pointer[void], flags: u32, stream_id: i64, app_error_code: u64, mutable user_data: pointer[void], mutable stream_user_data: pointer[void]) returns i32
+{
+    var c user_data as ref[Client]
+    let found stream_of(c, stream_id)
+    if found <> null
+    {
+        var s found as ref[FStream]
+        s.done := true
+    }
+    0
+}
+
+procedure c_handshake(mutable conn: pointer[void], mutable user_data: pointer[void]) returns i32
+{
+    var c user_data as ref[Client]
+    c.handshake := true
+    0
+}
+
+; A connection to port on host's page, its handshake started; null when it
+; cannot be set up.
+procedure dial(host: ref[Page], mutable ctx: pointer[void], port: int) returns ref[Peer]?
+{
+    let fd quic_socket(0, false)
+    var local allocate_slice[u8]^host(host, 128)
+    var local_length: size_t 0
+    var remote allocate_slice[u8]^host(host, 128)
+    var remote_length: size_t 0
+    if fd < 0
+        return null
+    if scaly_eio_sockname(fd, local.data as pointer[void], 128, &local_length) <> 0 or scaly_eio_loopback6(port as i32, remote.data as pointer[void], 128, &remote_length) <> 0
+    {
+        BIO_closesocket(fd)
+        return null
+    }
+    var client &Client^host(Array[ref[FStream]]^host(), false)
+    var conn: pointer[void] null
+    if scaly_quic_client_new(&conn, local.data as pointer[void], local_length, remote.data as pointer[void], remote_length, scaly_eio_now_ns() as u64, &c_stream_data, &c_stream_close, &c_handshake, client as pointer[void]) <> 0
+    {
+        BIO_closesocket(fd)
+        return null
+    }
+    var ssl: pointer[void] null
+    var octx: pointer[void] null
+    if scaly_quic_client_tls_new(ctx, conn, &ssl, &octx) <> 0
+    {
+        ngtcp2_conn_del(conn)
+        BIO_closesocket(fd)
+        return null
+    }
+    &Peer^host(fd, conn, ssl, octx, local, local_length, remote, remote_length, client, false)
+}
+
+; The connection closed (CONNECTION_CLOSE to the server when it is still
+; open), its ngtcp2 and TLS state freed, its socket closed.
+procedure hang_up(mutable p: ref[Peer], mutable tx: Slice[u8])
+{
+    if p.closed = false
+    {
+        let n scaly_quic_close(p.conn, tx.data, tx.length, scaly_eio_now_ns() as u64)
+        if n > 0
+            scaly_eio_udp_send(p.fd, tx.data as pointer[void], n as size_t, p.remote.data as pointer[void], p.remote_length)
+        p.closed := true
+    }
+    scaly_quic_tls_free(p.ssl, p.octx)
+    ngtcp2_conn_del(p.conn)
+    BIO_closesocket(p.fd)
+}
+
+; A stream on p's client for bytes, opened with ngtcp2 (bidirectional or
+; not); null when ngtcp2 opens no more.
+procedure open_stream(host: ref[Page], mutable p: ref[Peer], bidi: bool, fin: bool) returns ref[FStream]?
+{
+    var id: i64 0
+    var rv: i32 0
+    if bidi
+        rv := ngtcp2_conn_open_bidi_stream(p.conn, &id, null)
+    else
+        rv := ngtcp2_conn_open_uni_stream(p.conn, &id, null)
+    if rv <> 0
+        return null
+    let s &FStream^host(id, ByteBuf.create(host, 256), 0, fin, false, ByteBuf.create(host, 256), false, false)
+    p.client.streams.add(s)
+    s
+}
+
+; One round on p: what every stream has to send, what came in, the timers.
+procedure pump(mutable p: ref[Peer], mutable tx: Slice[u8], mutable rx: Slice[u8], mutable from: Slice[u8])
+{
+    if p.closed
+        return
+    let now scaly_eio_now_ns() as u64
+    repeat
+    {
+        var stream_id: i64 0 - 1
+        var data: pointer[u8] null
+        var length: size_t 0
+        var flags: u32 NGTCP2_WRITE_STREAM_FLAG_MORE
+        var chosen: ref[FStream]? null
+        var i: size_t 0
+        while i < p.client.streams.length
+        {
+            let s: ref[FStream] p.client.streams[i]
+            if s.sent = false
+            {
+                chosen := s
+                stream_id := s.id
+                let rest s.request.bytes().slice_from(s.queued)
+                data := rest.data
+                length := rest.length
+                if s.fin
+                    flags := flags | NGTCP2_WRITE_STREAM_FLAG_FIN
+                break
+            }
+            i := i + 1
+        }
+        var consumed: i64 0 - 1
+        let n scaly_quic_write(p.conn, tx.data, tx.length, &consumed, flags, stream_id, data, length, now)
+        if chosen <> null
+        {
+            var s chosen as ref[FStream]
+            if consumed >= 0
+            {
+                s.queued := s.queued + (consumed as size_t)
+                if s.queued = s.request.length
+                    s.sent := true
+            }
+            ; a stream the server reset or stopped: what is left of it stays
+            if n = NGTCP2_ERR_STREAM_SHUT_WR or n = NGTCP2_ERR_STREAM_NOT_FOUND
+            {
+                s.sent := true
+                s.done := true
+                continue
+            }
+        }
+        if n = NGTCP2_ERR_WRITE_MORE
+            continue
+        if n < 0 and n <> NGTCP2_ERR_STREAM_DATA_BLOCKED
+        {
+            p.closed := true
+            return
+        }
+        if n <= 0
+            break
+        scaly_eio_udp_send(p.fd, tx.data as pointer[void], n as size_t, p.remote.data as pointer[void], p.remote_length)
+    }
+    repeat
+    {
+        var from_length: size_t 0
+        let got scaly_eio_udp_recv(p.fd, rx.data as pointer[void], rx.length, from.data as pointer[void], from.length, &from_length)
+        if got < 0
+            break
+        let rv scaly_quic_read(p.conn, p.local.data as pointer[void], p.local_length, from.data as pointer[void], from_length, rx.data, got as size_t, scaly_eio_now_ns() as u64) as i64
+        if rv <> 0
+        {
+            p.closed := true
+            return
+        }
+    }
+    let later scaly_eio_now_ns() as u64
+    if ngtcp2_conn_get_expiry(p.conn) <= later
+    {
+        if ngtcp2_conn_handle_expiry(p.conn, later) <> 0
+            p.closed := true
+    }
+}
+
+; Pump p until its handshake is done (s null) or s is answered, or p
+; closes, at most ms; true when what was waited for came.
+procedure settle(mutable p: ref[Peer], s: ref[FStream]?, ms: i64, mutable tx: Slice[u8], mutable rx: Slice[u8], mutable from: Slice[u8]) returns bool
+{
+    let deadline scaly_eio_now_ns() + ms * 1000000
+    while scaly_eio_now_ns() < deadline
+    {
+        pump(p, tx, rx, from)
+        if p.closed
+            return false
+        if s = null
+        {
+            if p.client.handshake
+                return true
+        }
+        else
+        {
+            let t s as ref[FStream]
+            if t.done
+                return true
+        }
+        Scheduler.sleep(1)
+    }
+    false
+}
+
+; Pump p until every request stream (one with a FIN) is answered or reset,
+; or p closes, at most ms.
+procedure settle_all(mutable p: ref[Peer], ms: i64, mutable tx: Slice[u8], mutable rx: Slice[u8], mutable from: Slice[u8])
+{
+    let deadline scaly_eio_now_ns() + ms * 1000000
+    while scaly_eio_now_ns() < deadline
+    {
+        pump(p, tx, rx, from)
+        if p.closed
+            return
+        var open false
+        var i: size_t 0
+        while i < p.client.streams.length
+        {
+            let s: ref[FStream] p.client.streams[i]
+            if s.fin and s.done = false
+                open := true
+            i := i + 1
+        }
+        if open = false
+            return
+        Scheduler.sleep(1)
+    }
+}
+
+; ---- what a case sends ------------------------------------------------------
+
+; An integer value for an index or a length: mostly small, now and then one
+; at the edges of the prefix, now and then far too large.
+procedure draw_integer(mutable r: ref[Rng], small: u64) returns u64
+{
+    let k r.below(20)
+    if k < 14
+        return r.below(small)
+    if k < 17
+        return r.below(300)
+    if k < 19
+        return r.below(1 << 20)
+    r.next() >> (r.below(30) as u64)
+}
+
+; Four Huffman codes of RFC 7541 C.4.1/C.4.3: www.example.com, no-cache,
+; custom-key, custom-value -- one after the other, HUFFMAN_AT[k] where the
+; k-th begins.
+define HUFFMAN: u8[] [0xf1, 0xe3, 0xc2, 0xe5, 0xf2, 0x3a, 0x6b, 0xa0, 0xab, 0x90, 0xf4, 0xff, 0xa8, 0xeb, 0x10, 0x64, 0x9c, 0xbf, 0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xa9, 0x7d, 0x7f, 0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xb8, 0xe8, 0xb4, 0xbf]
+define HUFFMAN_AT: size_t[] [0, 12, 18, 26, 35]
+
+procedure huffman_sample(mutable out: ref[ByteBuf], k: u64)
+{
+    var i: size_t HUFFMAN_AT[k as size_t]
+    let end: size_t HUFFMAN_AT[(k as size_t) + 1]
+    while i < end
+    {
+        out.append_byte(HUFFMAN[i])
+        i := i + 1
+    }
+}
+
+; A string with its length behind the instruction bits flags, an n-bit
+; length prefix and its H flag the bit above it: a name or value the server
+; knows, random text, bytes no field may hold, a long one, a real Huffman
+; code or Huffman garbage -- and now and then a length that lies.
+procedure draw_string(mutable r: ref[Rng], host: ref[Page], mutable out: ref[ByteBuf], prefix_bits: u64, flags: u8)
+{
+    var text ByteBuf.create(host, 64)
+    var huffman false
+    let kind r.below(12)
+    match kind
+        case 0: text.append("localhost")
+        case 1: text.append("/sum?a=1&b=2")
+        case 2: text.append("/echo")
+        case 3: text.append("x-test")
+        case 4: text.append("content-length")
+        case 5: text.clear()
+        case 6
+        {
+            let n r.below(40) + 1
+            var i: u64 0
+            while i < n
+            {
+                text.append_byte((r.below(95) + 32) as u8)
+                i := i + 1
+            }
+        }
+        case 7
+        {
+            let n r.below(40) + 1
+            var i: u64 0
+            while i < n
+            {
+                text.append_byte(r.below(256) as u8)
+                i := i + 1
+            }
+        }
+        case 8
+        {
+            let n r.below(5000) + 200
+            var i: u64 0
+            while i < n
+            {
+                text.append_byte(97)
+                i := i + 1
+            }
+        }
+        case 9
+        {
+            huffman_sample(&text, r.below(4))
+            huffman := true
+        }
+        case 10
+        {
+            let n r.below(30) + 1
+            var i: u64 0
+            while i < n
+            {
+                text.append_byte(r.below(256) as u8)
+                i := i + 1
+            }
+            huffman := true
+        }
+        case 11: text.append(":path")
+    if r.chance(3)
+        huffman := huffman = false
+    var length text.length as u64
+    if r.chance(4)
+        length := draw_integer(r, length + 4)
+    var f: u64 flags as u64
+    if huffman
+        f := f | ((1 as u64) << prefix_bits)
+    encode_integer(out, f as u8, prefix_bits, length)
+    out.append(text.bytes())
+}
+
+; One field line of a field section (RFC 9204 4.5), drawn among the five
+; representations; dynamic ones only make sense with a table.
+procedure draw_field_line(mutable r: ref[Rng], host: ref[Page], mutable out: ref[ByteBuf])
+{
+    let kind r.below(6)
+    match kind
+        case 0
+        {
+            ; Indexed Field Line, static (T) or dynamic
+            ; a static index within the 99 entries, a dynamic one near the
+            ; few the encoder stream inserted
+            if r.chance(70)
+                encode_integer(out, 192, 6, draw_integer(r, 99))
+            else
+                encode_integer(out, 128, 6, draw_integer(r, 4))
+        }
+        case 1
+        {
+            ; Literal With Name Reference: N, T, a 4-bit index, the value
+            var f: u64 64
+            if r.chance(20)
+                f := f | 32
+            if r.chance(70)
+                encode_integer(out, (f | 16) as u8, 4, draw_integer(r, 99))
+            else
+                encode_integer(out, f as u8, 4, draw_integer(r, 4))
+            draw_string(r, host, out, 7, 0)
+        }
+        case 2
+        {
+            ; Literal With Literal Name: N, the name (H above a 3-bit
+            ; length), the value
+            var f: u64 32
+            if r.chance(20)
+                f := f | 16
+            draw_string(r, host, out, 3, f as u8)
+            draw_string(r, host, out, 7, 0)
+        }
+        case 3
+        {
+            ; Indexed Field Line With Post-Base Index
+            encode_integer(out, 16, 4, draw_integer(r, 4))
+        }
+        case 4
+        {
+            ; Literal With Post-Base Name Reference: N, a 3-bit index, the value
+            var f: u64 0
+            if r.chance(20)
+                f := f | 8
+            encode_integer(out, f as u8, 3, draw_integer(r, 4))
+            draw_string(r, host, out, 7, 0)
+        }
+        case 5
+        {
+            ; a byte nobody planned
+            out.append_byte(r.below(256) as u8)
+        }
+}
+
+; A field section: its prefix (a Required Insert Count and a Base, zero
+; without dynamic references), mostly the pseudo-headers of a request, then
+; field lines drawn. True when its Required Insert Count is above 0.
+procedure draw_field_section(mutable r: ref[Rng], host: ref[Page], mutable out: ref[ByteBuf], table: bool, inserts: u64) returns bool
+{
+    var dynamic false
+    if table and r.chance(50)
+    {
+        ; Required Insert Count encoded as RFC 9204 4.5.1.1 (MaxEntries 128),
+        ; a Base before or past it
+        let ric r.below(inserts + 3)
+        var encoded: u64 0
+        if ric > 0
+        {
+            encoded := (ric % 256) + 1
+            dynamic := true
+        }
+        if r.chance(5)
+            encoded := draw_integer(r, 300)
+        encode_integer(out, 0, 8, encoded)
+        var sign: u64 0
+        if r.chance(30)
+            sign := 128
+        encode_integer(out, sign as u8, 7, draw_integer(r, 4))
+    }
+    else
+    {
+        out.append_byte(0)
+        out.append_byte(0)
+    }
+    if r.chance(80)
+    {
+        ; :method GET or POST, :scheme https (static 17, 20, 23)
+        if r.chance(70)
+            out.append_byte(209)
+        else
+            out.append_byte(212)
+        out.append_byte(215)
+        ; :authority localhost, :path (static names 0 and 1)
+        encode_integer(out, 80, 4, 0)
+        encode_integer(out, 0, 7, 9)
+        out.append("localhost")
+        encode_integer(out, 80, 4, 1)
+        if r.chance(70)
+        {
+            var path: Slice[u8] "/sum?a=1&b=2"
+            if r.chance(40)
+                path := "/echo"
+            encode_integer(out, 0, 7, path.length as u64)
+            out.append(path)
+        }
+        else
+            draw_string(r, host, out, 7, 0)
+    }
+    let lines r.below(6)
+    var i: u64 0
+    while i < lines
+    {
+        draw_field_line(r, host, out)
+        i := i + 1
+    }
+    dynamic
+}
+
+; A frame of type kind with payload, its length now and then a lie.
+procedure frame(mutable r: ref[Rng], mutable out: ref[ByteBuf], kind: u64, payload: Slice[u8])
+{
+    append_quic_varint(out, kind)
+    var length payload.length as u64
+    if r.chance(3)
+        length := draw_integer(r, length + 8) & 0x3fffffffffffffff
+    append_quic_varint(out, length)
+    out.append(payload)
+}
+
+; A request stream's bytes: a HEADERS frame, DATA, frames that do not
+; belong on a request stream (SETTINGS, GOAWAY, CANCEL_PUSH, MAX_PUSH_ID,
+; a reserved type), random bytes; then, now and then, the whole mutated.
+; True when a field section in it names the dynamic table.
+procedure draw_request(mutable r: ref[Rng], host: ref[Page], mutable out: ref[ByteBuf], table: bool, inserts: u64) returns bool
+{
+    var dynamic false
+    let frames r.below(4) + 1
+    var i: u64 0
+    while i < frames
+    {
+        var payload ByteBuf.create(host, 128)
+        var kind: u64 1
+        let pick r.below(10)
+        if (i = 0 and pick < 8) or pick < 4
+        {
+            if draw_field_section(r, host, &payload, table, inserts)
+                dynamic := true
+        }
+        else if pick < 7
+        {
+            kind := 0
+            let n r.below(300)
+            var j: u64 0
+            while j < n
+            {
+                payload.append_byte(r.below(256) as u8)
+                j := j + 1
+            }
+        }
+        else
+        {
+            match r.below(5)
+                case 0: kind := 4
+                case 1: kind := 7
+                case 2: kind := 3
+                case 3: kind := 13
+                case 4: kind := 33 + 31 * r.below(1000)
+            let n r.below(16)
+            var j: u64 0
+            while j < n
+            {
+                payload.append_byte(r.below(256) as u8)
+                j := j + 1
+            }
+        }
+        frame(r, out, kind, payload.bytes())
+        i := i + 1
+    }
+    if r.chance(30)
+        mutate(r, host, out)
+    dynamic
+}
+
+; out changed in place: bytes flipped or set to the edges of a prefix, a
+; cut, an insert, a duplicated run.
+procedure mutate(mutable r: ref[Rng], host: ref[Page], mutable out: ref[ByteBuf])
+{
+    let rounds r.below(4) + 1
+    var k: u64 0
+    while k < rounds
+    {
+        let n out.length as u64
+        if n = 0
+            return
+        let at r.below(n) as size_t
+        let bytes out.data
+        match r.below(5)
+            case 0: bytes.put(at, bytes[at] xor ((1 as u8) << (r.below(8) as u8)))
+            case 1
+            {
+                var edge: u8 255
+                match r.below(6)
+                    case 0: edge := 0
+                    case 1: edge := 63
+                    case 2: edge := 64
+                    case 3: edge := 127
+                    case 4: edge := 128
+                    case 5: edge := 192
+                bytes.put(at, edge)
+            }
+            case 2: out.length := at
+            case 3
+            {
+                let tail out.bytes().slice_from(at)
+                var copy ByteBuf.create(host, tail.length + 16)
+                copy.append(tail)
+                out.length := at
+                let extra r.below(8) + 1
+                var j: u64 0
+                while j < extra
+                {
+                    out.append_byte(r.below(256) as u8)
+                    j := j + 1
+                }
+                out.append(copy.bytes())
+            }
+            case 4
+            {
+                let run out.bytes().slice_from(at)
+                var copy ByteBuf.create(host, run.length + 16)
+                copy.append(run.slice_to(min(run.length, 32)))
+                out.append(copy.bytes())
+            }
+        k := k + 1
+    }
+}
+
+function min(a: size_t, b: size_t) returns size_t
+{
+    if a < b
+        return a
+    b
+}
+
+; The encoder stream's instructions (RFC 9204 4.3) after its type: a
+; capacity, inserts with a static or dynamic name reference, with a literal
+; name, duplicates; the number of inserts it means to make.
+procedure draw_encoder(mutable r: ref[Rng], host: ref[Page], mutable out: ref[ByteBuf]) returns u64
+{
+    var inserts: u64 0
+    if r.chance(80)
+    {
+        var capacity: u64 4096
+        match r.below(6)
+            case 0: capacity := 0
+            case 1: capacity := 220
+            case 2: capacity := 4097
+            case 3: capacity := draw_integer(r, 8192)
+            case 4: capacity := 1024
+            case 5: capacity := 4096
+        encode_integer(out, 32, 5, capacity)
+    }
+    let n r.below(10) + 1
+    var i: u64 0
+    while i < n
+    {
+        match r.below(5)
+            case 0
+            {
+                var f: u64 128
+                if r.chance(70)
+                    f := f | 64
+                encode_integer(out, f as u8, 6, draw_integer(r, 99))
+                draw_string(r, host, out, 7, 0)
+                inserts := inserts + 1
+            }
+            case 1
+            {
+                draw_string(r, host, out, 5, 64)
+                draw_string(r, host, out, 7, 0)
+                inserts := inserts + 1
+            }
+            case 2
+            {
+                encode_integer(out, 0, 5, draw_integer(r, inserts + 2))
+                inserts := inserts + 1
+            }
+            case 3: encode_integer(out, 32, 5, draw_integer(r, 4200))
+            case 4: out.append_byte(r.below(256) as u8)
+        i := i + 1
+    }
+    if r.chance(15)
+        mutate(r, host, out)
+    inserts
+}
+
+; Counts of what the cases met.
+define Tally
+(
+    var cases: int
+    var no_handshake: int
+    var streams: int
+    var answered: int
+    var reset: int
+    var closed: int
+    var dynamic_answered: int    ; answered, with a field section naming the table
+)
+
+; Case k of seed on a fresh connection to port.
+procedure run_case(mutable ctx: pointer[void], port: int, seed: u64, k: u64, table: bool, mutable tally: ref[Tally], mutable tx: Slice[u8], mutable rx: Slice[u8], mutable from: Slice[u8])
+{
+    scaly_eputs "case "
+    scaly_eputi(k as i64)
+    scaly_eputs "\n"
+    let host Page.allocate_page()
+    var r Rng(seed * 0x100000001B3 + k * 0x9E3779B97F4A7C15)
+    tally.cases := tally.cases + 1
+    let found dial(host, ctx, port)
+    if found = null
+    {
+        tally.no_handshake := tally.no_handshake + 1
+        host.deallocate_extensions()
+        Page.release_page(host)
+        return
+    }
+    var p found as ref[Peer]
+    if settle(p, null, 2000, tx, rx, from) = false
+    {
+        tally.no_handshake := tally.no_handshake + 1
+        hang_up(p, tx)
+        host.deallocate_extensions()
+        Page.release_page(host)
+        return
+    }
+    var inserts: u64 0
+    if table and r.chance(60)
+    {
+        let found_e open_stream(host, p, false, false)
+        if found_e <> null
+        {
+            var e found_e as ref[FStream]
+            append_quic_varint(&e.request, 2)
+            inserts := draw_encoder(&r, host, &e.request)
+        }
+    }
+    if r.chance(15)
+    {
+        ; a unidirectional stream of another kind: a control stream with
+        ; SETTINGS and more, a decoder stream, a second encoder stream, a
+        ; type nobody knows
+        let found_u open_stream(host, p, false, false)
+        if found_u <> null
+        {
+            var u found_u as ref[FStream]
+            match r.below(4)
+                case 0
+                {
+                    append_quic_varint(&u.request, 0)
+                    var settings ByteBuf.create(host, 32)
+                    let pairs r.below(5)
+                    var j: u64 0
+                    while j < pairs
+                    {
+                        append_quic_varint(&settings, draw_integer(&r, 8) & 0x3fffffffffffffff)
+                        append_quic_varint(&settings, draw_integer(&r, 5000) & 0x3fffffffffffffff)
+                        j := j + 1
+                    }
+                    frame(&r, &u.request, 4, settings.bytes())
+                }
+                case 1: append_quic_varint(&u.request, 3)
+                case 2: append_quic_varint(&u.request, 2)
+                case 3: append_quic_varint(&u.request, draw_integer(&r, 64) & 0x3fffffffffffffff)
+            let n r.below(40)
+            var j: u64 0
+            while j < n
+            {
+                u.request.append_byte(r.below(256) as u8)
+                j := j + 1
+            }
+        }
+    }
+    let requests r.below(8) + 1
+    var i: u64 0
+    while i < requests
+    {
+        let found_s open_stream(host, p, true, true)
+        if found_s <> null
+        {
+            var s found_s as ref[FStream]
+            s.dynamic := draw_request(&r, host, &s.request, table, inserts)
+            tally.streams := tally.streams + 1
+        }
+        i := i + 1
+    }
+    settle_all(p, 1000, tx, rx, from)
+    var j: size_t 0
+    while j < p.client.streams.length
+    {
+        let s: ref[FStream] p.client.streams[j]
+        if s.fin and s.done
+        {
+            if s.response.length > 0
+            {
+                tally.answered := tally.answered + 1
+                if s.dynamic
+                    tally.dynamic_answered := tally.dynamic_answered + 1
+            }
+            else
+                tally.reset := tally.reset + 1
+        }
+        j := j + 1
+    }
+    if p.closed
+        tally.closed := tally.closed + 1
+    hang_up(p, tx)
+    host.deallocate_extensions()
+    Page.release_page(host)
+}
+
+; The connection kept open from the start asked for /sum?a=k&b=1: true when
+; it answers within two seconds.
+procedure check_alive(host: ref[Page], mutable keep: ref[Peer], k: u64, mutable tx: Slice[u8], mutable rx: Slice[u8], mutable from: Slice[u8]) returns bool
+{
+    let found open_stream(host, keep, true, true)
+    if found = null
+        return false
+    var s found as ref[FStream]
+    var block ByteBuf.create(host, 64)
+    block.append_byte(0)
+    block.append_byte(0)
+    block.append_byte(209)
+    block.append_byte(215)
+    encode_integer(&block, 80, 4, 0)
+    encode_integer(&block, 0, 7, 9)
+    block.append("localhost")
+    let path "/sum?a=`k`&b=1"
+    encode_integer(&block, 80, 4, 1)
+    encode_integer(&block, 0, 7, path.length() as u64)
+    block.append(path.as_slice())
+    append_quic_varint(&s.request, 1)
+    append_quic_varint(&s.request, block.length as u64)
+    s.request.append(block.bytes())
+    settle(keep, s, 2000, tx, rx, from) and s.response.length > 0
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if argc < 6
+    {
+        print "usage: h3_fuzz <cert> <key> <port> <seconds> <seed> [table] [--case k]"
+        return 1
+    }
+    let cert String(*(argv + 1))
+    let key String(*(argv + 2))
+    let port parse_int_prefix(String(*(argv + 3)).as_slice()) as int
+    let seconds parse_int_prefix(String(*(argv + 4)).as_slice())
+    let seed parse_int_prefix(String(*(argv + 5)).as_slice()) as u64
+    var table false
+    var only: i64 0 - 1
+    var a 6
+    while a < argc
+    {
+        let arg String(*(argv + a))
+        if arg.equals("table")
+            table := true
+        if arg.equals("--case") and a + 1 < argc
+        {
+            only := parse_int_prefix(String(*(argv + a + 1)).as_slice())
+            a := a + 1
+        }
+        a := a + 1
+    }
+    var app Router.create(Page.allocate_page())
+    app.get("/sum", &sum)
+    app.post("/echo", &echo)
+    if table
+        h3_offer_qpack_table(4096)
+    if start_h3(app, port, cert, key) = false
+    {
+        print "h3_fuzz: the server did not start"
+        return 2
+    }
+    let host Page.allocate_page()
+    let ctx SSL_CTX_new(TLS_client_method()) as pointer[void]
+    var tx allocate_slice[u8]^host(host, 1500)
+    var rx allocate_slice[u8]^host(host, 65536)
+    var from allocate_slice[u8]^host(host, 128)
+    var tally Tally(0, 0, 0, 0, 0, 0, 0)
+
+    if only >= 0
+    {
+        run_case(ctx, port, seed, only as u64, table, &tally, tx, rx, from)
+        print "case `only`: streams `tally.streams`, answered `tally.answered`, reset `tally.reset`, closed `tally.closed`, no handshake `tally.no_handshake`"
+        return 0
+    }
+
+    let keep_page Page.allocate_page()
+    let found_keep dial(keep_page, ctx, port)
+    if found_keep = null
+    {
+        print "h3_fuzz: no connection to keep"
+        return 2
+    }
+    var keep found_keep as ref[Peer]
+    if settle(keep, null, 2000, tx, rx, from) = false
+    {
+        print "h3_fuzz: no handshake on the kept connection"
+        return 2
+    }
+    let deadline scaly_eio_now_ns() + seconds * 1000000000
+    var k: u64 0
+    while scaly_eio_now_ns() < deadline
+    {
+        run_case(ctx, port, seed, k, table, &tally, tx, rx, from)
+        k := k + 1
+        if k % 32 = 0
+        {
+            if check_alive(keep_page, keep, k, tx, rx, from) = false
+            {
+                scaly_eputs "HANG after case "
+                scaly_eputi((k - 1) as i64)
+                scaly_eputs "\n"
+                print "HANG after case `(k - 1) as int`"
+                return 3
+            }
+        }
+    }
+    print "cases `tally.cases`: streams `tally.streams`, answered `tally.answered`, reset `tally.reset`, connections closed by the server `tally.closed`, no handshake `tally.no_handshake`, answered from the dynamic table `tally.dynamic_answered`"
+    0
+}
