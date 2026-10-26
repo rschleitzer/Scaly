@@ -8,8 +8,8 @@
 #   1. the instrumented arena and its client (target pgo-train)
 #   2. the training: the arena under the request shapes the profiles send
 #      (train.scaly), its counts merged into pgo/arena.profdata -- with a
-#      Postgres of its own seeded as the board's sidecar is, so that the two
-#      database profiles (fortunes, async-db) are trained too
+#      Postgres of its own seeded as the board's sidecar is, so that the
+#      database profile (async-db) is trained too
 #   3. the arena optimised with that profile (the default target)
 # SCALY_PGO=0 skips 1 and 2: the same build with --release alone.
 set -eu
@@ -52,16 +52,16 @@ if [ "${SCALY_PGO:-1}" != 0 ]; then
       postgres:18 -c max_connections=256 > /dev/null
     for _ in $(seq 1 90); do
       if docker exec "$PG" psql -h 127.0.0.1 -U bench -d benchmark -tAc \
-          'SELECT 1 FROM fortune LIMIT 1' 2> /dev/null | grep -q 1; then
+          'SELECT 1 FROM items LIMIT 1' 2> /dev/null | grep -q 1; then
         DB_ARGS=(--network "$NET" -e "DATABASE_URL=postgres://bench:bench@$PG:5432/benchmark")
         TRAIN_DB=db
         break
       fi
       sleep 1
     done
-    [ -n "$TRAIN_DB" ] || echo "build.sh: the training database did not come up - fortunes and async-db stay untrained"
+    [ -n "$TRAIN_DB" ] || echo "build.sh: the training database did not come up - async-db stays untrained"
   else
-    echo "build.sh: no seed at $SEED - fortunes and async-db stay untrained"
+    echo "build.sh: no seed at $SEED - async-db stays untrained"
   fi
   docker run --rm --security-opt seccomp=unconfined -v "$CTX/pgo:/pgo" ${DATA_MOUNT[@]+"${DATA_MOUNT[@]}"} \
     ${DB_ARGS[@]+"${DB_ARGS[@]}"} -e "TRAIN_DB=$TRAIN_DB" "$IMAGE-pgo-train" sh -c '

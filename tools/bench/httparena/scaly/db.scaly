@@ -1,10 +1,9 @@
-; db — the arena's two Postgres profiles, through the pg package's pool:
-; a prepared statement per pooled connection, rows read straight from the
+; db — the arena's Postgres profile, through the pg package's pool: a
+; prepared statement per pooled connection, rows read straight from the
 ; connection's receive buffer.
 
 use http.Request.Request
 use http.Response.Response
-use http.Buffer.ByteBuf
 use json.Writer.JsonWriter
 use pg.Conn.PgConn
 
@@ -85,114 +84,5 @@ procedure async_db(req: ref[Request], mutable res: ref[Response]) mutable pg_poo
     w.key("count")
     w.integer(count)
     w.end_object()
-    res.send("application/json", w.bytes())
-}
-
-; Does message a sort before message b (bytes, which for UTF-8 is code
-; point order)?
-function sorts_before(a: Slice[u8], b: Slice[u8]) returns bool
-{
-    var i: size_t 0
-    while i < a.length and i < b.length
-    {
-        if a[i] <> b[i]
-            return a[i] < b[i]
-        i := i + 1
-    }
-    a.length < b.length
-}
-
-; s into out with &, <, >, " and ' escaped for HTML.
-procedure append_escaped(mutable out: ref[ByteBuf], s: Slice[u8])
-{
-    var from: size_t 0
-    var i: size_t 0
-    while i < s.length
-    {
-        let c s[i]
-        if c = 38 or c = 60 or c = 62 or c = 34 or c = 39
-        {
-            out.append(s.subslice(from, i))
-            match c
-                case 38: out.append("&amp;")
-                case 60: out.append("&lt;")
-                case 62: out.append("&gt;")
-                case 34: out.append("&quot;")
-                case 39: out.append("&#39;")
-            from := i + 1
-        }
-        i := i + 1
-    }
-    out.append(s.slice_from(from))
-}
-
-; fortunes: the fortune table plus one row added here, sorted by message,
-; rendered with every message escaped -- the TechEmpower Fortunes page.
-procedure fortunes(req: ref[Request], mutable res: ref[Response]) mutable pg_pool
-{
-    let got acquire()
-    if got = null
-    {
-        res.set_status(500)
-        res.send_empty()
-        return
-    }
-    var c got as ref[PgConn]
-    var ok c.prepare("fortunes", "SELECT id, message FROM fortune")
-    if ok
-    {
-        c.start("fortunes")
-        ok := c.run()
-    }
-    if ok = false
-    {
-        release(c)
-        res.set_status(500)
-        res.send_empty()
-        return
-    }
-    let host Page.allocate_page()
-    var ids Array[i64]^host()
-    var messages Array[Slice[u8]]^host()
-    while c.next_row()
-    {
-        ids.add(c.column_int(0))
-        messages.add(c.column(1))
-    }
-    ids.add(0)
-    messages.add("Additional fortune added at request time.")
-    ; insertion sort of an index: two hundred rows, mostly in id order
-    let n ids.length
-    var order Array[size_t]^host()
-    var i: size_t 0
-    while i < n
-    {
-        var j i
-        order.add(i)
-        while j > 0 and sorts_before(messages.at(i), messages.at(order.at(j - 1)))
-        {
-            order.put(j, order.at(j - 1))
-            j := j - 1
-        }
-        order.put(j, i)
-        i := i + 1
-    }
-    var out ByteBuf.create(host, 32768)
-    out.append("<!DOCTYPE html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr>")
-    i := 0
-    while i < n
-    {
-        let k order.at(i)
-        out.append("<tr><td>")
-        out.append_int(ids.at(k))
-        out.append("</td><td>")
-        append_escaped(&out, messages.at(k))
-        out.append("</td></tr>")
-        i := i + 1
-    }
-    out.append("</table></body></html>")
-    res.send("text/html; charset=utf-8", out.bytes())
-    release(c)
-    host.deallocate_extensions()
-    Page.release_page(host)
+    res.send_json(&w)
 }

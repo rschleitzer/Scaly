@@ -6,11 +6,11 @@
 ; Every connection sends, per round, ONE write holding sixteen pipelined
 ; GET /pipeline, a baseline GET with a query, a POST with Content-Length,
 ; a POST with a chunked body and two GET /json (the whole dataset gzipped,
-; as json-comp asks, and a part of it plain), and reads the twenty-one responses; every hundredth round
-; adds a GET /delay/1 on its own. With `db` every round also asks for
-; GET /fortunes and GET /async-db on their own write, as the two database
-; profiles do (build.sh starts a Postgres with the board's seed for it;
-; without one both answer 500 and the training leaves them out).
+; as json-comp asks, and a part of it plain), and reads the twenty-one
+; responses; every hundredth round adds a GET /delay/1 on its own. With `db`
+; every round also asks for GET /async-db on its own write, as the database
+; profile does (build.sh starts a Postgres with the board's seed for it;
+; without one it answers an empty list and the training leaves it out).
 ;
 ;   train <port> [rounds] [db] (default 3000 rounds on each of 16 connections)
 
@@ -80,7 +80,7 @@ procedure client()
         }
         if train_db
         {
-            if s.write("GET /fortunes HTTP/1.1\r\nHost: t\r\n\r\nGET /async-db?min=10&max=50&limit=50 HTTP/1.1\r\nHost: t\r\n\r\n") = false or drain(s, buf, 2) = false
+            if s.write("GET /async-db?min=10&max=50&limit=50 HTTP/1.1\r\nHost: t\r\n\r\n") = false or drain(s, buf, 1) = false
                 break
         }
         r := r + 1
