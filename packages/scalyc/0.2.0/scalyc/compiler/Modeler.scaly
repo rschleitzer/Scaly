@@ -4406,6 +4406,40 @@ define Modeler
     ; stub is returned so modeling can continue; cli.run then fails the compile via
     ; had_errors(). A missing/empty file still returns an empty stub silently (an
     ; absent optional module is not itself an error at this layer).
+    ; Does a namespace among members (`define x { module name ... }`) hold
+    ; the module `name`?
+    function namespace_holds_module(members: Vector[Member], name: String) returns bool
+    {
+        var i: size_t 0
+        while i < members.length
+        {
+            let m_ptr members.get i
+            i := i + 1
+            if m_ptr = null
+                continue
+            choose (*m_ptr)
+                when c: Concept
+                {
+                    choose c.definition
+                        when ns: Namespace
+                        {
+                            var k: size_t 0
+                            while k < ns.modules.length
+                            {
+                                if ns.modules[k].name = name
+                                    return true
+                                k := k + 1
+                            }
+                        }
+                        else
+                            0
+                }
+                else
+                    0
+        }
+        false
+    }
+
     procedure build_referenced_module(path: String, name: String, is_private: bool) returns Module mutable modeler_error_count
     {
         ; Compute file path: <path>/<name>.scaly
@@ -4771,6 +4805,12 @@ define Modeler
                     has_library := true
                 mi := mi + 1
             }
+            ; ... or in a namespace of the root: the library's root keeps its
+            ; modules in `define scaly { ... }`, and taken for no library it
+            ; had operation and logic twice (scaly publish's surface of it
+            ; met every fact of theirs twice)
+            if has_library = false and namespace_holds_module(initial_module.members, "operation")
+                has_library := true
             if has_library = false
             {
                 ; found as a declared package is: in the installation, else
