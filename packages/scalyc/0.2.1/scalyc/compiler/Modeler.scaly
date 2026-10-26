@@ -31,7 +31,7 @@ mutable modeler_error_count: size_t 0
 ; package's IR when it compiles the compiler (emit_package_stamp#); a compiler
 ; that does not know the rule leaves it 0, which keys a cache of its own
 shared scaly_package_stamp: u64 0
-procedure getcwd(mutable buffer: pointer[char], size: size_t) returns pointer[char] extern
+procedure getcwd(mutable buffer: pointer[char], size: c_size) returns pointer[char] extern
 procedure setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
 
 

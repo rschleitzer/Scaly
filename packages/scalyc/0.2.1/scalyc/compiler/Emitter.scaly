@@ -810,10 +810,10 @@ define Emitter
             let i32_ty LLVMInt32TypeInContext(context)
             let dwarf_ver LLVMValueAsMetadata(LLVMConstInt(i32_ty, 4, 0))
             var dwarf_key "Dwarf Version"
-            LLVMAddModuleFlag(llvm_module, 1, dwarf_key.c_data(), dwarf_key.get_length(), dwarf_ver)
+            LLVMAddModuleFlag(llvm_module, 1, dwarf_key.c_data(), dwarf_key.get_length() as c_size, dwarf_ver)
             let di_ver LLVMValueAsMetadata(LLVMConstInt(i32_ty, 3, 0))
             var di_key "Debug Info Version"
-            LLVMAddModuleFlag(llvm_module, 1, di_key.c_data(), di_key.get_length(), di_ver)
+            LLVMAddModuleFlag(llvm_module, 1, di_key.c_data(), di_key.get_length() as c_size, di_ver)
 
             ; DIBuilder + file + compile unit.
             di_builder := LLVMCreateDIBuilder(llvm_module)
@@ -822,12 +822,12 @@ define Emitter
             if fname.get_length() = 0
                 fname := "<unknown>"
             var dir "."
-            di_file := LLVMDIBuilderCreateFile(di_builder, fname.c_data(), fname.get_length(), dir.c_data(), dir.get_length())
+            di_file := LLVMDIBuilderCreateFile(di_builder, fname.c_data(), fname.get_length() as c_size, dir.c_data(), dir.get_length() as c_size)
 
             ; lang 1 = DW_LANG_C89 (closest to Scaly), emission kind 1 = Full.
             var producer "scalyc"
             var empty ""
-            di_cu := LLVMDIBuilderCreateCompileUnit(di_builder, 1, di_file, producer.c_data(), producer.get_length(), 0, empty.c_data(), 0, 0, empty.c_data(), 0, 1, 0, 1, 0, empty.c_data(), 0, empty.c_data(), 0)
+            di_cu := LLVMDIBuilderCreateCompileUnit(di_builder, 1, di_file, producer.c_data(), producer.get_length() as c_size, 0, empty.c_data(), 0, 0, empty.c_data(), 0, 1, 0, 1, 0, empty.c_data(), 0, empty.c_data(), 0)
         }
 
         ; Convert a byte offset into the source into a 1-based (line, column).
@@ -956,7 +956,7 @@ define Emitter
             ; is_local_to_unit=0, is_definition=1, flags=0, is_optimized=0 — cast
             ; to i32 so the call passes 4-byte stack args (Apple-arm64 packing;
             ; see LLVM.scaly). pos.line/scope_line are already i32.
-            let sp LLVMDIBuilderCreateFunction(di_builder, di_file, name.c_data(), name.get_length(), mangled.c_data(), mangled.get_length(), di_file, pos.line, subroutine_ty, 0, 1, pos.line, 0, 0)
+            let sp LLVMDIBuilderCreateFunction(di_builder, di_file, name.c_data(), name.get_length() as c_size, mangled.c_data(), mangled.get_length() as c_size, di_file, pos.line, subroutine_ty, 0, 1, pos.line, 0, 0)
             LLVMSetSubprogram(current_function, sp)
             current_di_scope := sp
 
@@ -1068,7 +1068,7 @@ define Emitter
             }
             if bits = 0
                 return null
-            LLVMDIBuilderCreateBasicType(di_builder, name.c_data(), name.get_length(), bits, enc, 0)
+            LLVMDIBuilderCreateBasicType(di_builder, name.c_data(), name.get_length() as c_size, bits, enc, 0)
         }
 
         ; Synthesize an opaque unsigned basic type of the given width — used
@@ -1080,7 +1080,7 @@ define Emitter
             if b = 0
                 b := 8
             var nm ""
-            LLVMDIBuilderCreateBasicType(di_builder, nm.c_data(), nm.get_length(), b, 7, 0)
+            LLVMDIBuilderCreateBasicType(di_builder, nm.c_data(), nm.get_length() as c_size, b, 7, 0)
         }
 
         ; -g only: DIType for a non-generic stdlib struct that the compilation ROOT
@@ -1159,10 +1159,10 @@ define Emitter
             var data_name "data"
             let pbits pointer_bytes * 8
             let data_ty LLVMDIBuilderCreatePointerType(di_builder, u8_ty, pbits, pbits as i32, 0, empty.c_data(), 0)
-            let member LLVMDIBuilderCreateMemberType(di_builder, di_cu, data_name.c_data(), data_name.get_length(), di_file, 0, pbits, 0, 0, 0, data_ty)
+            let member LLVMDIBuilderCreateMemberType(di_builder, di_cu, data_name.c_data(), data_name.get_length() as c_size, di_file, 0, pbits, 0, 0, 0, data_ty)
             var member_vec Vector[LLVMMetadataRef](1)
             member_vec.put(0, member)
-            let final LLVMDIBuilderCreateStructType(di_builder, di_cu, name.c_data(), name.get_length(), di_file, 0, pbits, 0, 0, null as LLVMMetadataRef, member_vec.data, 1, 0, null as LLVMMetadataRef, empty.c_data(), 0)
+            let final LLVMDIBuilderCreateStructType(di_builder, di_cu, name.c_data(), name.get_length() as c_size, di_file, 0, pbits, 0, 0, null as LLVMMetadataRef, member_vec.data, 1, 0, null as LLVMMetadataRef, empty.c_data(), 0)
 
             let idx di_type_cache_names.length
             di_type_cache_names.add name
@@ -1205,9 +1205,9 @@ define Emitter
                 return
             var dvar: LLVMMetadataRef null
             if arg_no > 0
-                dvar := LLVMDIBuilderCreateParameterVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), (arg_no as i32), di_file, dpos.line, dty, 0, 0)
+                dvar := LLVMDIBuilderCreateParameterVariable(di_builder, current_di_scope, name.c_data(), name.get_length() as c_size, (arg_no as i32), di_file, dpos.line, dty, 0, 0)
             if arg_no = 0
-                dvar := LLVMDIBuilderCreateAutoVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), di_file, dpos.line, dty, 0, 0, 0)
+                dvar := LLVMDIBuilderCreateAutoVariable(di_builder, current_di_scope, name.c_data(), name.get_length() as c_size, di_file, dpos.line, dty, 0, 0, 0)
             if dvar = null
                 return
             ; `indirect` = the slot holds a POINTER to the object rather than the
@@ -1301,7 +1301,7 @@ define Emitter
                             inner := di_type_for((*g0p))
                     }
                 }
-                return LLVMDIBuilderCreatePointerType(di_builder, inner, pointer_bytes * 8, (pointer_bytes * 8) as i32, 0, pt.name.c_data(), pt.name.get_length())
+                return LLVMDIBuilderCreatePointerType(di_builder, inner, pointer_bytes * 8, (pointer_bytes * 8) as i32, 0, pt.name.c_data(), pt.name.get_length() as c_size)
             }
 
             let basic di_basic_type pt.name
@@ -1400,7 +1400,7 @@ define Emitter
             var dname di_display_name(readable, s.mangled_name)
 
             ; Forward decl FIRST, cached, so a back-pointer member resolves here.
-            let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, dname.c_data(), dname.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
+            let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, dname.c_data(), dname.get_length() as c_size, di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
             let idx di_type_cache_names.length
             di_type_cache_names.add s.mangled_name
             di_type_cache_types.add fwd
@@ -1437,7 +1437,7 @@ define Emitter
                             var mty di_type_for prop.prop_type
                             if mty = null
                                 mty := di_placeholder_type(msize_bits)
-                            let member LLVMDIBuilderCreateMemberType(di_builder, fwd, prop.name.c_data(), prop.name.get_length(), di_file, pos.line, (msize_bits as size_t), 0, (this_off * 8), 0, mty)
+                            let member LLVMDIBuilderCreateMemberType(di_builder, fwd, prop.name.c_data(), prop.name.get_length() as c_size, di_file, pos.line, (msize_bits as size_t), 0, (this_off * 8), 0, mty)
                             member_vec.put(added, member)
                             added := added + 1
                         }
@@ -1447,7 +1447,7 @@ define Emitter
                 }
             }
 
-            let final LLVMDIBuilderCreateStructType(di_builder, di_cu, dname.c_data(), dname.get_length(), di_file, pos.line, (size_bits as size_t), 0, 0, null as LLVMMetadataRef, members_ptr, (added as i32), 0, null as LLVMMetadataRef, empty.c_data(), 0)
+            let final LLVMDIBuilderCreateStructType(di_builder, di_cu, dname.c_data(), dname.get_length() as c_size, di_file, pos.line, (size_bits as size_t), 0, 0, null as LLVMMetadataRef, members_ptr, (added as i32), 0, null as LLVMMetadataRef, empty.c_data(), 0)
             LLVMMetadataReplaceAllUsesWith(fwd, final)
             di_type_cache_types.put(idx, final)
             final
@@ -1468,7 +1468,7 @@ define Emitter
             var dname di_display_name(readable, u.mangled_name)
 
             ; Forward decl (emitted as a struct, tag 19), cached for cycle-break.
-            let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, dname.c_data(), dname.get_length(), di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
+            let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, 19, dname.c_data(), dname.get_length() as c_size, di_cu, di_file, pos.line, 0, (size_bits as size_t), 0, 0, empty.c_data(), 0)
             let idx di_type_cache_names.length
             di_type_cache_names.add u.mangled_name
             di_type_cache_types.add fwd
@@ -1504,7 +1504,7 @@ define Emitter
                                 var vty di_type_for vt
                                 if vty = null
                                     vty := di_placeholder_type(payload_bits)
-                                let vmember LLVMDIBuilderCreateMemberType(di_builder, fwd, variant.name.c_data(), variant.name.get_length(), di_file, pos.line, (payload_bits as size_t), 0, 0, 0, vty)
+                                let vmember LLVMDIBuilderCreateMemberType(di_builder, fwd, variant.name.c_data(), variant.name.get_length() as c_size, di_file, pos.line, (payload_bits as size_t), 0, 0, 0, vty)
                                 var_vec.put(vadded, vmember)
                                 vadded := vadded + 1
                             }
@@ -1512,7 +1512,7 @@ define Emitter
                         vi := vi + 1
                     }
                     if vadded > 0
-                        payload_ty := LLVMDIBuilderCreateUnionType(di_builder, di_cu, dname.c_data(), dname.get_length(), di_file, pos.line, (payload_bits as size_t), 0, 0, var_vec.data, (vadded as i32), 0, empty.c_data(), 0)
+                        payload_ty := LLVMDIBuilderCreateUnionType(di_builder, di_cu, dname.c_data(), dname.get_length() as c_size, di_file, pos.line, (payload_bits as size_t), 0, 0, var_vec.data, (vadded as i32), 0, empty.c_data(), 0)
                 }
             }
 
@@ -1540,14 +1540,14 @@ define Emitter
                         if evp <> null
                         {
                             let evariant (*evp)
-                            let enumerator LLVMDIBuilderCreateEnumerator(di_builder, evariant.name.c_data(), evariant.name.get_length(), (ei as i64), 1)
+                            let enumerator LLVMDIBuilderCreateEnumerator(di_builder, evariant.name.c_data(), evariant.name.get_length() as c_size, (ei as i64), 1)
                             enum_vec.put(eadded, enumerator)
                             eadded := eadded + 1
                         }
                         ei := ei + 1
                     }
                     if eadded > 0
-                        tag_dty := LLVMDIBuilderCreateEnumerationType(di_builder, di_cu, dname.c_data(), dname.get_length(), di_file, pos.line, (tag_size * 8), 0, enum_vec.data, (eadded as i32), null as LLVMMetadataRef)
+                        tag_dty := LLVMDIBuilderCreateEnumerationType(di_builder, di_cu, dname.c_data(), dname.get_length() as c_size, di_file, pos.line, (tag_size * 8), 0, enum_vec.data, (eadded as i32), null as LLVMMetadataRef)
                 }
             }
             if tag_dty = null
@@ -1556,18 +1556,18 @@ define Emitter
             ; Outer struct members: tag, then payload (if any).
             var tag_name "tag"
             var pay_name "payload"
-            let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length(), di_file, pos.line, (tag_size * 8), 0, 0, 0, tag_dty)
+            let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length() as c_size, di_file, pos.line, (tag_size * 8), 0, 0, 0, tag_dty)
             var out_vec Vector[LLVMMetadataRef](2)
             out_vec.put(0, tag_member)
             var out_count: size_t 1
             if payload_ty <> null
             {
-                let pay_member LLVMDIBuilderCreateMemberType(di_builder, fwd, pay_name.c_data(), pay_name.get_length(), di_file, pos.line, (payload_bits as size_t), 0, (tag_size * 8), 0, payload_ty)
+                let pay_member LLVMDIBuilderCreateMemberType(di_builder, fwd, pay_name.c_data(), pay_name.get_length() as c_size, di_file, pos.line, (payload_bits as size_t), 0, (tag_size * 8), 0, payload_ty)
                 out_vec.put(1, pay_member)
                 out_count := 2
             }
 
-            let final LLVMDIBuilderCreateStructType(di_builder, di_cu, dname.c_data(), dname.get_length(), di_file, pos.line, (size_bits as size_t), 0, 0, null as LLVMMetadataRef, out_vec.data, (out_count as i32), 0, null as LLVMMetadataRef, empty.c_data(), 0)
+            let final LLVMDIBuilderCreateStructType(di_builder, di_cu, dname.c_data(), dname.get_length() as c_size, di_file, pos.line, (size_bits as size_t), 0, 0, null as LLVMMetadataRef, out_vec.data, (out_count as i32), 0, null as LLVMMetadataRef, empty.c_data(), 0)
             LLVMMetadataReplaceAllUsesWith(fwd, final)
             di_type_cache_types.put(idx, final)
             final
@@ -1581,7 +1581,7 @@ define Emitter
         {
             let subroutine_ty LLVMDIBuilderCreateSubroutineType(di_builder, di_file, null as pointer[LLVMMetadataRef], 0, 0)
             var nm name
-            let sp LLVMDIBuilderCreateFunction(di_builder, di_file, nm.c_data(), nm.get_length(), nm.c_data(), nm.get_length(), di_file, line, subroutine_ty, 0, 1, line, 0, 0)
+            let sp LLVMDIBuilderCreateFunction(di_builder, di_file, nm.c_data(), nm.get_length() as c_size, nm.c_data(), nm.get_length() as c_size, di_file, line, subroutine_ty, 0, 1, line, 0, 0)
             LLVMSetSubprogram(current_function, sp)
             current_di_scope := sp
             let loc LLVMDIBuilderCreateDebugLocation(context, line, 1, sp, null as LLVMMetadataRef)
@@ -4277,7 +4277,7 @@ define Emitter
 
         procedure add_function_attribute(mutable this, mutable fn: LLVMValueRef, mutable name: String)
         {
-            let kind LLVMGetEnumAttributeKindForName(name.to_c_string(), name.get_length())
+            let kind LLVMGetEnumAttributeKindForName(name.to_c_string(), name.get_length() as c_size)
             if kind = 0
                 return
             let attr LLVMCreateEnumAttribute(context, kind, 0)
@@ -8478,7 +8478,7 @@ define Emitter
             if buf = null
                 return 0
             let start LLVMGetBufferStart(buf)
-            let size LLVMGetBufferSize(buf)
+            let size LLVMGetBufferSize(buf) as size_t
             var hash: u64 0xcbf29ce484222325
             var i: size_t 0
             while i < size
@@ -23516,7 +23516,7 @@ define Emitter
                                     dbits := 8
                                     tyname := "bool"
                                 }
-                                dty := LLVMDIBuilderCreateBasicType(di_builder, tyname.c_data(), tyname.get_length(), dbits, enc, 0)
+                                dty := LLVMDIBuilderCreateBasicType(di_builder, tyname.c_data(), tyname.get_length() as c_size, dbits, enc, 0)
                             }
                             ; aggregates / pointers: resolve from the planned type
                             ; (annotated item_type first, else the initializer's

@@ -310,7 +310,7 @@ procedure LLVMSetAlignment(inst: LLVMValueRef, bytes: u32) extern
 procedure LLVMSetFunctionCallConv(func: LLVMValueRef, cc: u32) extern
 
 ; Attribute API (s89). LLVMAttributeIndex: 0 = return, ~0 (LLVMAttributeFunctionIndex) = function, 1+ = nth param.
-function LLVMGetEnumAttributeKindForName(name: pointer[const_char], len: size_t) returns u32 extern
+function LLVMGetEnumAttributeKindForName(name: pointer[const_char], len: c_size) returns u32 extern
 function LLVMCreateTypeAttribute(context: LLVMContextRef, kind_id: u32, type_ref: LLVMTypeRef) returns LLVMAttributeRef extern
 function LLVMCreateEnumAttribute(context: LLVMContextRef, kind_id: u32, val: u64) returns LLVMAttributeRef extern
 procedure LLVMAddAttributeAtIndex(func: LLVMValueRef, idx: u32, attr: LLVMAttributeRef) extern
@@ -548,7 +548,7 @@ function LLVMBuildInsertValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, el
 
 ; Get/set value name
 function LLVMGetValueName2(val: LLVMValueRef, length: pointer[size_t]) returns pointer[char] extern
-procedure LLVMSetValueName2(val: LLVMValueRef, name: pointer[const_char], name_len: size_t) extern
+procedure LLVMSetValueName2(val: LLVMValueRef, name: pointer[const_char], name_len: c_size) extern
 
 ; Get type of value
 function LLVMTypeOf(val: LLVMValueRef) returns LLVMTypeRef extern
@@ -759,19 +759,19 @@ function LLVMFinalizeFunctionPassManager(fpm: LLVMPassManagerRef) returns i32 ex
 
 ; Module-flag plumbing (Dwarf Version / Debug Info Version).
 function LLVMValueAsMetadata(val: LLVMValueRef) returns LLVMMetadataRef extern
-procedure LLVMAddModuleFlag(mod: LLVMModuleRef, behavior: i32, key: pointer[const_char], key_len: size_t, val: LLVMMetadataRef) extern
+procedure LLVMAddModuleFlag(mod: LLVMModuleRef, behavior: i32, key: pointer[const_char], key_len: c_size, val: LLVMMetadataRef) extern
 
 ; Builder lifecycle.
 function LLVMCreateDIBuilder(mod: LLVMModuleRef) returns LLVMDIBuilderRef extern
 procedure LLVMDIBuilderFinalize(builder: LLVMDIBuilderRef) extern
 
 ; Compile unit + file.
-function LLVMDIBuilderCreateFile(builder: LLVMDIBuilderRef, filename: pointer[const_char], filename_len: size_t, directory: pointer[const_char], directory_len: size_t) returns LLVMMetadataRef extern
-function LLVMDIBuilderCreateCompileUnit(builder: LLVMDIBuilderRef, lang: i32, file_ref: LLVMMetadataRef, producer: pointer[const_char], producer_len: size_t, is_optimized: i32, flags: pointer[const_char], flags_len: size_t, runtime_ver: i32, split_name: pointer[const_char], split_name_len: size_t, kind: i32, dwo_id: i32, split_debug_inlining: i32, debug_info_for_profiling: i32, sysroot: pointer[const_char], sysroot_len: size_t, sdk: pointer[const_char], sdk_len: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateFile(builder: LLVMDIBuilderRef, filename: pointer[const_char], filename_len: c_size, directory: pointer[const_char], directory_len: c_size) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateCompileUnit(builder: LLVMDIBuilderRef, lang: i32, file_ref: LLVMMetadataRef, producer: pointer[const_char], producer_len: c_size, is_optimized: i32, flags: pointer[const_char], flags_len: c_size, runtime_ver: i32, split_name: pointer[const_char], split_name_len: c_size, kind: i32, dwo_id: i32, split_debug_inlining: i32, debug_info_for_profiling: i32, sysroot: pointer[const_char], sysroot_len: c_size, sdk: pointer[const_char], sdk_len: c_size) returns LLVMMetadataRef extern
 
 ; Functions (DISubprogram) + their subroutine type.
 function LLVMDIBuilderCreateSubroutineType(builder: LLVMDIBuilderRef, file: LLVMMetadataRef, parameter_types: pointer[LLVMMetadataRef], num_parameter_types: i32, flags: i32) returns LLVMMetadataRef extern
-function LLVMDIBuilderCreateFunction(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, linkage_name: pointer[const_char], linkage_name_len: size_t, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, is_local_to_unit: i32, is_definition: i32, scope_line: i32, flags: i32, is_optimized: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateFunction(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: c_size, linkage_name: pointer[const_char], linkage_name_len: c_size, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, is_local_to_unit: i32, is_definition: i32, scope_line: i32, flags: i32, is_optimized: i32) returns LLVMMetadataRef extern
 procedure LLVMSetSubprogram(func: LLVMValueRef, sp: LLVMMetadataRef) extern
 
 ; Line locations.
@@ -779,14 +779,14 @@ function LLVMDIBuilderCreateDebugLocation(ctx: LLVMContextRef, line: i32, column
 procedure LLVMSetCurrentDebugLocation2(builder: LLVMBuilderRef, loc: LLVMMetadataRef) extern
 
 ; Local variables (Phase B).
-function LLVMDIBuilderCreateBasicType(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: size_t, size_in_bits: size_t, encoding: i32, flags: i32) returns LLVMMetadataRef extern
-function LLVMDIBuilderCreateAutoVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32, align_in_bits: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateBasicType(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: c_size, size_in_bits: size_t, encoding: i32, flags: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateAutoVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: c_size, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32, align_in_bits: i32) returns LLVMMetadataRef extern
 ; Same as CreateAutoVariable but produces a DW_TAG_formal_parameter, so the
 ; debugger lists it as an ARGUMENT rather than a local. `arg_no` is 1-based and
 ; is the position in the SOURCE signature, not the LLVM argument index — the
 ; sret and caller-page slots must not be counted (see the call site).
-function LLVMDIBuilderCreateParameterVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, arg_no: i32, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32) returns LLVMMetadataRef extern
-function LLVMDIBuilderCreateExpression(builder: LLVMDIBuilderRef, addr: pointer[size_t], length: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateParameterVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: c_size, arg_no: i32, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateExpression(builder: LLVMDIBuilderRef, addr: pointer[size_t], length: c_size) returns LLVMMetadataRef extern
 ; ★The one entry point that did NOT survive 18 -> 20, and the reason the move
 ; is a hard cut: LLVM 19's RemoveDIs work replaced the dbg.declare intrinsic
 ; with a debug RECORD, renaming this function and changing its result type.
@@ -800,19 +800,19 @@ function LLVMDIBuilderInsertDeclareRecordAtEnd(builder: LLVMDIBuilderRef, storag
 ; size_in_bits/offset_in_bits are uint64_t (size_t, 64-bit); line/align/flags/
 ; num_elements/run_time_lang/address_space/tag are 32-bit C args → i32 (see the
 ; Apple-arm64 packing note above). `elements` is a C array of DITypes.
-function LLVMDIBuilderCreateStructType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, derived_from: LLVMMetadataRef, elements: pointer[LLVMMetadataRef], num_elements: i32, run_time_lang: i32, vtable_holder: LLVMMetadataRef, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
-function LLVMDIBuilderCreateUnionType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, elements: pointer[LLVMMetadataRef], num_elements: i32, run_time_lang: i32, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
-function LLVMDIBuilderCreateMemberType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_no: i32, size_in_bits: size_t, align_in_bits: i32, offset_in_bits: size_t, flags: i32, ty: LLVMMetadataRef) returns LLVMMetadataRef extern
-function LLVMDIBuilderCreatePointerType(builder: LLVMDIBuilderRef, pointee_ty: LLVMMetadataRef, size_in_bits: size_t, align_in_bits: i32, address_space: i32, name: pointer[const_char], name_len: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateStructType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: c_size, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, derived_from: LLVMMetadataRef, elements: pointer[LLVMMetadataRef], num_elements: i32, run_time_lang: i32, vtable_holder: LLVMMetadataRef, unique_id: pointer[const_char], unique_id_len: c_size) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateUnionType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: c_size, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, elements: pointer[LLVMMetadataRef], num_elements: i32, run_time_lang: i32, unique_id: pointer[const_char], unique_id_len: c_size) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateMemberType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: c_size, file: LLVMMetadataRef, line_no: i32, size_in_bits: size_t, align_in_bits: i32, offset_in_bits: size_t, flags: i32, ty: LLVMMetadataRef) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreatePointerType(builder: LLVMDIBuilderRef, pointee_ty: LLVMMetadataRef, size_in_bits: size_t, align_in_bits: i32, address_space: i32, name: pointer[const_char], name_len: c_size) returns LLVMMetadataRef extern
 ; A union's TAG is typed as an enumeration whose enumerators are the variant
 ; names, so a debugger prints `tag = Some` instead of `tag = 1` with no
 ; formatter involved. `value` is int64_t and `is_unsigned` an LLVMBool.
-function LLVMDIBuilderCreateEnumerator(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: size_t, value: i64, is_unsigned: i32) returns LLVMMetadataRef extern
-function LLVMDIBuilderCreateEnumerationType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, elements: pointer[LLVMMetadataRef], num_elements: i32, class_ty: LLVMMetadataRef) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateEnumerator(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: c_size, value: i64, is_unsigned: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateEnumerationType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: c_size, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, elements: pointer[LLVMMetadataRef], num_elements: i32, class_ty: LLVMMetadataRef) returns LLVMMetadataRef extern
 ; Forward declaration + RAUW: breaks self-referential cycles (Node →
 ; pointer[Node]). Create the replaceable temp, cache it, build members
 ; (a back-pointer resolves to the temp), then replace it with the final type.
-function LLVMDIBuilderCreateReplaceableCompositeType(builder: LLVMDIBuilderRef, tag: i32, name: pointer[const_char], name_len: size_t, scope: LLVMMetadataRef, file: LLVMMetadataRef, line: i32, runtime_lang: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateReplaceableCompositeType(builder: LLVMDIBuilderRef, tag: i32, name: pointer[const_char], name_len: c_size, scope: LLVMMetadataRef, file: LLVMMetadataRef, line: i32, runtime_lang: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, unique_id: pointer[const_char], unique_id_len: c_size) returns LLVMMetadataRef extern
 procedure LLVMMetadataReplaceAllUsesWith(temp_target: LLVMMetadataRef, replacement: LLVMMetadataRef) extern
 
 ; ============================================================================
@@ -895,7 +895,7 @@ procedure LLVMDisposeMemoryBuffer(buf: LLVMMemoryBufferRef) extern
 ; program's optimised object, Emitter.module_bitcode_hash#)
 function LLVMWriteBitcodeToMemoryBuffer(mod: LLVMModuleRef) returns LLVMMemoryBufferRef extern
 function LLVMGetBufferStart(buf: LLVMMemoryBufferRef) returns pointer[const_char] extern
-function LLVMGetBufferSize(buf: LLVMMemoryBufferRef) returns size_t extern
+function LLVMGetBufferSize(buf: LLVMMemoryBufferRef) returns c_size extern
 ;
 ; a module cut into parts that are code-generated side by side (Parts.scaly):
 ; a definition turned into a declaration, a module's other pieces read and
@@ -910,7 +910,7 @@ procedure LLVMDeleteGlobal(global_var: LLVMValueRef) extern
 function LLVMGetFirstGlobalAlias(mod: LLVMModuleRef) returns LLVMValueRef extern
 function LLVMGetFirstGlobalIFunc(mod: LLVMModuleRef) returns LLVMValueRef extern
 function LLVMGetModuleInlineAsm(mod: LLVMModuleRef, len: pointer[size_t]) returns pointer[const_char] extern
-procedure LLVMSetModuleInlineAsm2(mod: LLVMModuleRef, asm_text: pointer[const_char], len: size_t) extern
+procedure LLVMSetModuleInlineAsm2(mod: LLVMModuleRef, asm_text: pointer[const_char], len: c_size) extern
 function LLVMGetTarget(mod: LLVMModuleRef) returns pointer[const_char] extern
 ; `scaly build --release`: a package's cached bitcode read into the program's
 ; context (LLVMBool, 0 = success; the buffer stays the caller's), and linked

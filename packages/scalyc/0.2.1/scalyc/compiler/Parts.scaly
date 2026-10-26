@@ -164,7 +164,7 @@ define Parts
             anonymous := anonymous + 1
         }
         let renamed "`name`.`tag`"
-        LLVMSetValueName2(v, renamed.to_c_string(), renamed.get_length())
+        LLVMSetValueName2(v, renamed.to_c_string(), renamed.get_length() as c_size)
         LLVMSetLinkage(v, LLVMLinkage.External())
         LLVMSetVisibility(v, 1)
     }
