@@ -5,10 +5,10 @@
 
 (element grammar
     (sosofo-append
-        (file "packages/scalyc/0.2.0/scalyc/compiler/Syntax.scaly"
+        (file "packages/scalyc/0.2.1/scalyc/compiler/Syntax.scaly"
             (generate-syntax)
         )
-        (file "packages/scalyc/0.2.0/scalyc/compiler/parser.scaly"
+        (file "packages/scalyc/0.2.1/scalyc/compiler/parser.scaly"
             (generate-parser)
         )
         (file "packages/scaly/0.2.0/scaly/operation.scaly"

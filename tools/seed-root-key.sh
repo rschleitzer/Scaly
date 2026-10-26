@@ -10,4 +10,4 @@
 cd "$(dirname "$0")/.."
 # shasum is Perl's; a fresh Ubuntu has only coreutils' sha256sum (same digest).
 if command -v shasum >/dev/null 2>&1; then SHA256="shasum -a 256"; else SHA256="sha256sum"; fi
-cat seed/main.ll seed/scalyc.ll seed/scaly.ll tools/build-from-seed.sh packages/scalyc/0.2.0/scalyc/compiler/wasm_eh.cpp 2>/dev/null | $SHA256 | cut -c1-64
+cat seed/main.ll seed/scalyc.ll seed/scaly.ll tools/build-from-seed.sh packages/scalyc/0.2.1/scalyc/compiler/wasm_eh.cpp 2>/dev/null | $SHA256 | cut -c1-64

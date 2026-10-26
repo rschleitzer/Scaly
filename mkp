@@ -19,8 +19,8 @@ GENERATED=(
     docs/scaly/generated-definitions.xml
     docs/scaly/generated-choose.xml
     docs/scaly/generated-controlflow.xml
-    packages/scalyc/0.2.0/scalyc/compiler/Syntax.scaly
-    packages/scalyc/0.2.0/scalyc/compiler/parser.scaly
+    packages/scalyc/0.2.1/scalyc/compiler/Syntax.scaly
+    packages/scalyc/0.2.1/scalyc/compiler/parser.scaly
     packages/scaly/0.2.0/scaly/operation.scaly
     packages/scalyls/0.2.0/scalyls/grammar.scaly
     editors/vscode/syntaxes/scaly.tmLanguage.json

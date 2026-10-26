@@ -39,4 +39,4 @@ if [ -n "${SCALY_ARCH:-}" ]; then
 fi
 
 ${CLANGXX:-clang++} $ARCHFLAG -std=c++17 -O2 -fno-rtti -fno-exceptions -I"$INC" \
-    -c packages/scalyc/0.2.0/scalyc/compiler/wasm_eh.cpp -o "$OUT"
+    -c packages/scalyc/0.2.1/scalyc/compiler/wasm_eh.cpp -o "$OUT"
