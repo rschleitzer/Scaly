@@ -44,6 +44,11 @@ procedure scaly_proc_worker_fds(argc: int, argv: pointer[pointer[char]], mode: p
 procedure scaly_proc_reap(pid: i64) returns i32 extern
 ; the exception model of a target machine, Wasm (compiler/wasm_eh.cpp)
 procedure scalyc_target_machine_wasm_eh(mutable tm: LLVMTargetMachineRef) extern
+; wasm_eh.cpp's too: is there a JIT (not where the compiler is built for
+; WebAssembly), lld's wasm linker, the host starting a module
+procedure scalyc_has_jit() returns i32 extern
+procedure scalyc_wasm_link(argc: i32, argv: pointer[pointer[const_char]]) returns i32 extern
+procedure scalyc_wasm_run(path: pointer[const_char], argc: i32, argv: pointer[pointer[const_char]]) returns i32 extern
 function close(fd: i32) returns i32 extern
 
 ; instructions a part is given; a module with fewer is not cut.

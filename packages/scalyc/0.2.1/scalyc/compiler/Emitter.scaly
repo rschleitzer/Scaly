@@ -9139,6 +9139,87 @@ define Emitter
             result
         }
 
+        ; jit_run where there is no JIT -- the compiler built for WebAssembly,
+        ; in a page (ROADMAP-wasm.md W2): the program written as an object of
+        ; this target, linked by lld's wasm linker (wasm_eh.cpp: a library of
+        ; the program there) with the dependencies' objects and the WASI
+        ; system's own files -- crt1, libc, libsetjmp, the mman emulation and
+        ; the compiler's builtins, the link `scaly build --target wasm32-wasip1`
+        ; makes -- and started by the host as an instance of its own. The
+        ; system's files lie under SCALY_WASI_SYSROOT (the sysroot's library
+        ; directory) and SCALY_WASI_BUILTINS (libclang_rt.builtins.a), the
+        ; standard library for this target in SCALY_WASM_RUNTIME (an archive:
+        ; the JIT's dependencies leave it out, the process holds it there). The
+        ; instance has a memory of its own: what the entry binds does not reach
+        ; this program's session (slice 2). The program's exit code, 127 when
+        ; it could not be built.
+        procedure wasm_run(mutable this, mutable plan: Plan, mutable module_name: String, dep_object_files: ref[Array[String]]) returns i64
+        {
+            let ok emit(plan, module_name)
+            if ok = false
+            {
+                Console.println "wasm: emission failed"
+                return 127
+            }
+            if config.keep_main_frame
+                this.keep_main_ir()
+            let sys_env getenv("SCALY_WASI_SYSROOT")
+            let builtins_env getenv("SCALY_WASI_BUILTINS")
+            let runtime_env getenv("SCALY_WASM_RUNTIME")
+            if sys_env = null or builtins_env = null or runtime_env = null
+            {
+                Console.println "wasm: SCALY_WASI_SYSROOT, SCALY_WASI_BUILTINS and SCALY_WASM_RUNTIME name the files of the link"
+                return 127
+            }
+            let sys String(sys_env)
+            var obj String("/tmp/scaly-entry.o")
+            var out String("/tmp/scaly-entry.wasm")
+            if this.write_object_to_file(obj) = false
+            {
+                Console.println "wasm: the object could not be written"
+                return 127
+            }
+            var args Array[String]()
+            args.add(String("wasm-ld"))
+            args.add(String("-m"))
+            args.add(String("wasm32"))
+            args.add("`sys`/crt1-command.o")
+            args.add(String(obj))
+            var d: size_t 0
+            while d < dep_object_files.length
+            {
+                args.add(String(dep_object_files.at(d)))
+                d := d + 1
+            }
+            args.add(String(runtime_env))
+            args.add("-L`sys`")
+            args.add(String("-lsetjmp"))
+            args.add(String("-lwasi-emulated-mman"))
+            args.add(String("--stack-first"))
+            args.add(String("-z"))
+            args.add(String("stack-size=8388608"))
+            args.add(String("-lc"))
+            args.add(String(builtins_env))
+            args.add(String("-o"))
+            args.add(String(out))
+            var argv Vector[pointer[const_char]](args.length)
+            var a: size_t 0
+            while a < args.length
+            {
+                argv.put(a, args.at(a).to_c_string())
+                a := a + 1
+            }
+            if scalyc_wasm_link(args.length as i32, argv.data) <> 0
+            {
+                Console.println "wasm: the link failed"
+                return 127
+            }
+            let run_start scaly_eio_now_ns()
+            let result scalyc_wasm_run(out.to_c_string(), 0, null as pointer[pointer[const_char]])
+            run_ns := scaly_eio_now_ns() - run_start
+            result as i64
+        }
+
         ; The base of `&X.field` as an ADDRESS. emit_expression answers a record
         ; variable whose slot holds the record itself (a `var` in main, a `var v:
         ; T p` copy, a let-bound record) as the loaded VALUE, and the GEP walk of

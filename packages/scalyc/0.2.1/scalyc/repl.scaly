@@ -565,7 +565,12 @@ define repl
             sb.append("\nprocedure main(argc: int, argv: pointer[pointer[const_char]])\n{\n")
         else
             sb.append("\nprocedure main(argc: int, argv: pointer[pointer[const_char]]) returns int\n{\n")
-        sb.append("    let repl_table argv as pointer[pointer[void]]\n")
+        ; the table is the session's, handed in as argv -- or, where the entry
+        ; runs as a module of its own (no JIT), one of its own memory
+        if scalyc_has_jit() <> 0
+            sb.append("    let repl_table argv as pointer[pointer[void]]\n")
+        else
+            sb.append("    var repl_scratch Vector[pointer[void]](`REPL_SLOTS`)\n    let repl_table repl_scratch.data\n")
         var i: size_t 0
         while i < values.length
         {
@@ -703,8 +708,17 @@ define repl
         var dep_syms Array[String]()
         if cli.compile_jit_dependencies(&model, String("repl.scaly"), &dep_objs, &dep_syms) = false
             return false
-        emitter.jit_run(plan, "repl", "main", &dep_objs, &dep_syms, 0, table as pointer[pointer[char]], null, null)
+        ; where the compiler is built for WebAssembly there is no JIT: the entry
+        ; is linked and started as a module of its own (Emitter.wasm_run)
+        var rc: i64 0
+        if scalyc_has_jit() <> 0
+            rc := emitter.jit_run(plan, "repl", "main", &dep_objs, &dep_syms, 0, table as pointer[pointer[char]], null, null)
+        else
+            rc := emitter.wasm_run(plan, "repl", &dep_objs)
         fflush(null)
+        ; it did not run: nothing it would have bound is in the table
+        if rc = 127
+            return false
         last_ir.clear()
         last_ir.add(String(emitter.main_ir))
         last_ns.add(emitter.run_ns)
@@ -1039,6 +1053,13 @@ define repl
             hi := hi + 1
             history.append(text.substring(s.start, s.end - s.start))
             history.append("\n")
+        }
+        ; an entry run as a module of its own (no JIT here) had a memory of its
+        ; own: what it bound is not in this table, and nothing is shown
+        if scalyc_has_jit() = 0 and shown.length > 0
+        {
+            Console.println "(the value stays in the entry's own instance here: the page has no session yet)"
+            return
         }
         var vi: size_t 0
         while vi < shown.length
