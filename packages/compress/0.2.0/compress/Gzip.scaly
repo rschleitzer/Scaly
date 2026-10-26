@@ -23,8 +23,9 @@ procedure libdeflate_alloc_decompressor() returns LibdeflateDecompressor extern
 ; output, 3 insufficient space
 procedure libdeflate_gzip_decompress(mutable decompressor: LibdeflateDecompressor, input: pointer[void], in_nbytes: size_t, mutable output: pointer[void], out_nbytes_avail: size_t, mutable actual_out_nbytes_ret: pointer[size_t]) returns i32 extern
 
-; Level 1: what HttpArena's json-comp profile asks for, and what the fast
-; frameworks' own gzip paths use.
+; Level 1, nginx's default (gzip_comp_level). Level 6, zlib's, writes 11 %
+; fewer bytes of a 4-8 KB JSON answer and costs a server answering them 30 %
+; of its requests a second (2026-10-26).
 define GZIP_LEVEL: i32 1
 
 mutable gzip_compressor: LibdeflateCompressor null

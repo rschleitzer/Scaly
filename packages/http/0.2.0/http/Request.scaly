@@ -13,6 +13,8 @@
 ; the connection reads or consumes again — while its handler runs.
 
 use http.Hpack.HeaderList
+use json.Value.JsonValue
+use json.Value.JsonParsed
 
 ; parse_request's answers besides a byte count.
 define PARSE_INCOMPLETE: i64 0
@@ -176,34 +178,62 @@ define Request
     ; memcmp calls on a few bytes -- was 4 % of the server's samples in
     ; baseline-h2 (2026-09-30).
     function query_param(this, name: Slice[u8]) returns Slice[u8]
+        pair_value(query, name)
+
+    ; The raw value of field `name` of a form body
+    ; (application/x-www-form-urlencoded, no percent-decoding -- see
+    ; percent_decode with plus_is_space); empty when absent, or when the body
+    ; is no form.
+    function form_param(this, name: Slice[u8]) returns Slice[u8]
     {
-        var i: size_t 0
-        while i <= query.length
-        {
-            var k: size_t 0
-            while k < name.length and i + k < query.length and query[i + k] = name[k]
-                k := k + 1
-            if k = name.length
-            {
-                ; the pair is the name, or the name and '='
-                let after i + k
-                if after = query.length or query[after] = 38
-                    return query.subslice(after, after)
-                if query[after] = 61
-                {
-                    var e after + 1
-                    while e < query.length and query[e] <> 38
-                        e := e + 1
-                    return query.subslice(after + 1, e)
-                }
-            }
-            var e i
-            while e < query.length and query[e] <> 38
-                e := e + 1
-            i := e + 1
-        }
-        query.slice_to(0)
+        let type this.header("content-type")
+        if equals_lower(type.slice_to(min_size(type.length, 33)), "application/x-www-form-urlencoded") = false
+            return body.slice_to(0)
+        pair_value(body, name)
     }
+
+    ; The body parsed as JSON (the json package): its value, or why and where
+    ; it was refused.
+    procedure json(this) returns JsonParsed
+        JsonValue.parse(body)
+}
+
+function min_size(a: size_t, b: size_t) returns size_t
+{
+    if a < b
+        return a
+    b
+}
+
+; The raw value of `name` among `a=1&b=2` pairs; empty when absent or empty.
+function pair_value(query: Slice[u8], name: Slice[u8]) returns Slice[u8]
+{
+    var i: size_t 0
+    while i <= query.length
+    {
+        var k: size_t 0
+        while k < name.length and i + k < query.length and query[i + k] = name[k]
+            k := k + 1
+        if k = name.length
+        {
+            ; the pair is the name, or the name and '='
+            let after i + k
+            if after = query.length or query[after] = 38
+                return query.subslice(after, after)
+            if query[after] = 61
+            {
+                var e after + 1
+                while e < query.length and query[e] <> 38
+                    e := e + 1
+                return query.subslice(after + 1, e)
+            }
+        }
+        var e i
+        while e < query.length and query[e] <> 38
+            e := e + 1
+        i := e + 1
+    }
+    query.slice_to(0)
 }
 
 ; The offset of the first byte past the head (the blank line included),

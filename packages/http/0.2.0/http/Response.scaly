@@ -8,6 +8,13 @@
 ;   res.header("x-cache", "HIT")                   ; any number of fields
 ;   res.send("application/json", body)             ; ends the response
 ;
+;   res.respond(404, "text/plain", "no such item") ; status, type and body
+;   res.send_json(value)                           ; a JsonValue, serialized
+;
+; Where the router switched a content coding on (Router.compress), send
+; answers a body of a text, JSON, XML or JavaScript type in it when the
+; client accepts it; send_encoded names the coding itself and is left alone.
+;
 ; Over HTTP/2 (hpack set by the connection) the same calls write the header
 ; block HPACK-coded instead -- :status, date, the fields, content-type and
 ; -length -- and the body behind it (block_at .. body_at, then the body):
@@ -18,6 +25,12 @@
 
 use http.Buffer.ByteBuf
 use http.Request.Request
+use json.Value.JsonValue
+use json.Writer.JsonWriter
+
+; A body shorter than this goes out as it is: a content coding's own header
+; and trailer outweigh what it saves.
+define ENCODE_MIN: size_t 256
 
 ; "HTTP/1.1 200 OK\r\nDate: " (23), the date (DATE_LENGTH), "\r\n".
 define HEAD_OK_LENGTH: size_t 54
@@ -87,6 +100,11 @@ define Response
     var ticked: bool             ; the connection reads the clock (tick), start need not
     var qpack: bool              ; HTTP/3: the head is a QPACK field section
     qpack_ok: Slice[u8]          ; the QPACK :status 200 and date (init_qpack_ok)
+    ; the router's content coding for this request (negotiate)
+    var negotiated: bool         ; one is configured for the path: Vary: Accept-Encoding
+    var encoder: pointer[void]   ; the client accepts it: its encoder, else null
+    var coding: Slice[u8]        ; its name, for Content-Encoding
+    var encoded: ref[ByteBuf]?   ; what the encoder wrote, on out's page, made on first use
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
@@ -100,7 +118,7 @@ define Response
         init_hpack_ok(hpack_head)
         var qpack_head allocate_slice[u8]^host(host, QPACK_OK_LENGTH)
         init_qpack_ok(qpack_head)
-        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null, false, 0, 0, hpack_head, false, false, qpack_head)
+        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null, false, 0, 0, hpack_head, false, false, qpack_head, false, null, null, null)
     }
 
     ; Ready for the next response on the same connection.
@@ -115,6 +133,20 @@ define Response
         block_at := out.length
         body_at := out.length
         trailers.clear()
+        negotiated := false
+        encoder := null
+    }
+
+    ; The router's content coding for this request: configured for its path,
+    ; and accepted by the client (then encoder answers in it).
+    procedure negotiate(mutable this, name: Slice[u8], with: pointer[void], accepted: bool)
+    {
+        negotiated := true
+        if accepted
+        {
+            coding := name
+            encoder := with
+        }
     }
 
     ; Accept a WebSocket upgrade (RFC 6455 4.2): 101 with the accept key, and
@@ -280,9 +312,69 @@ define Response
     }
 
     ; The body with its content type; ends the response. A second send is
-    ; ignored.
+    ; ignored. Under the router's content coding (negotiate) a body of a
+    ; compressible type says Vary: Accept-Encoding, and goes out in the coding
+    ; when the client accepts it and the coded bytes are fewer.
     procedure send(mutable this, content_type: Slice[u8], body: Slice[u8])
+    {
+        if negotiated and sent = false and compressible(content_type)
+        {
+            this.header("Vary", "Accept-Encoding")
+            let coded this.encode(body)
+            if coded.length > 0
+            {
+                this.send_encoded(content_type, coding, coded)
+                return
+            }
+        }
         this.send_encoded(content_type, "", body)
+    }
+
+    ; body through the accepted coding's encoder; empty when there is none,
+    ; the response carries no body, or the coding saves nothing.
+    procedure encode(mutable this, body: Slice[u8]) returns Slice[u8]
+    {
+        let f encoder
+        if f = null or head_only or body.length < ENCODE_MIN or status = 204 or status = 304
+            return body.slice_to(0)
+        if encoded = null
+        {
+            let host out.host
+            encoded := &ByteBuf^host(host, allocate_slice[u8]^host(host, 64), 0, false)
+        }
+        let buf encoded as ref[ByteBuf]
+        let room body.length + (body.length >> 3) + 64
+        buf.clear()
+        buf.reserve(room)
+        ; a copy of the view: a call through a function pointer may write
+        ; whatever it is handed, and the body is the caller's
+        let input body
+        let n f(input, buf.data.slice_to(room))
+        if n <= 0 or (n as size_t) >= body.length
+            return body.slice_to(0)
+        buf.advance(n as size_t)
+        buf.bytes()
+    }
+
+    ; Status, type and body in one: set_status, then send.
+    procedure respond(mutable this, code: int, content_type: Slice[u8], body: Slice[u8])
+    {
+        this.set_status(code)
+        this.send(content_type, body)
+    }
+
+    ; value serialized as an application/json body (the json package's
+    ; JsonWriter); ends the response.
+    procedure send_json(mutable this, value: JsonValue)
+    {
+        var w JsonWriter()
+        w.value(value)
+        this.send("application/json", w.bytes())
+    }
+
+    ; What a JsonWriter wrote, as an application/json body.
+    procedure send_json(mutable this, w: ref[JsonWriter])
+        this.send("application/json", w.bytes())
 
     ; A body already in a content coding (`gzip`: the client's
     ; accepts_encoding said so, the caller compressed it); an empty encoding
@@ -406,6 +498,18 @@ define Response
         }
         this.send_text(Slice[u8](k, &text[0]))
     }
+}
+
+; Is a content coding worth it for a body of this type: text, JSON, XML,
+; JavaScript (SVG among them) -- not images, fonts or archives, which come
+; compressed already.
+function compressible(content_type: Slice[u8]) returns bool
+{
+    if content_type.starts_with("text/") or content_type.starts_with("image/svg+xml")
+        return true
+    if content_type.starts_with("application/") = false
+        return false
+    contains_bytes(content_type, "json") or contains_bytes(content_type, "xml") or contains_bytes(content_type, "javascript")
 }
 
 function reason_phrase(code: int) returns Slice[u8]

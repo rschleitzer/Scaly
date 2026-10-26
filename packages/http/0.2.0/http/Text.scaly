@@ -120,6 +120,21 @@ function ends_with_lower(s: Slice[u8], lit: Slice[u8]) returns bool
     before = 44 or is_space(before)
 }
 
+; Does part occur in s, byte for byte.
+function contains_bytes(s: Slice[u8], part: Slice[u8]) returns bool
+{
+    if part.length > s.length
+        return false
+    var i: size_t 0
+    while i + part.length <= s.length
+    {
+        if s.subslice(i, i + part.length).equals(part)
+            return true
+        i := i + 1
+    }
+    false
+}
+
 ; One of the comma-separated tokens of s is the lower-case lit.
 function contains_token_lower(s: Slice[u8], lit: Slice[u8]) returns bool
 {

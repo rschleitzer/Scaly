@@ -1,0 +1,82 @@
+; The compress package's gzip as the http router's response coding
+; (app.compress("", "gzip", &gzip_compress)), without a network: a JSON
+; body asked for with Accept-Encoding: gzip comes out as a gzip member that
+; decompresses to the body, byte for byte, its Content-Length the member's.
+; Expected: gzip done
+
+package scaly 0.2.0
+package http 0.2.0
+package compress 0.2.0
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+; The body every request is answered with: 200 records of JSON.
+procedure body_text() returns String
+{
+    var sb StringBuilder()
+    var i 0
+    while i < 200
+    {
+        sb.append "{\"id\":"
+        sb.append i
+        sb.append ",\"name\":\"widget\",\"tags\":[\"a\",\"b\"]},"
+        i := i + 1
+    }
+    sb.to_string()
+}
+
+procedure items(req: ref[Request], mutable res: ref[Response])
+{
+    let text body_text()
+    res.send("application/json", text.as_slice())
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable gzip_decompressor
+{
+    let host Page.allocate_page()
+    var app Router.create(host)
+    app.get("/items", &items)
+    app.compress("", "gzip", &gzip_compress)
+
+    let text: Slice[u8] "GET /items HTTP/1.1\r\nAccept-Encoding: br;q=0.5, gzip\r\n\r\n"
+    var buf allocate_slice[u8]^host(host, 4096)
+    var i: size_t 0
+    while i < text.length
+    {
+        buf.put(i, text[i])
+        i := i + 1
+    }
+    let out &ByteBuf^host(host, allocate_slice[u8]^host(host, 4096), 0, false)
+    let req &Request^host(null, null, null, null, null, null, 1, true, null, null)
+    let res Response.create(host, out)
+    if parse_request(buf.slice_to(text.length), req) <= 0
+        return 1
+    res.reset(false)
+    app.handle(req, res)
+
+    let all out.bytes()
+    if contains_bytes(all, "Content-Encoding: gzip\r\n") = false
+        return 2
+    let head_end_at head_end(all)
+    if head_end_at = 0
+        return 3
+    let member all.slice_from(head_end_at)
+    let expected_length "Content-Length: `member.length`\r\n"
+    if contains_bytes(all, expected_length.as_slice()) = false
+        return 4
+    let original body_text()
+    var unpacked allocate_slice[u8]^host(host, original.length() + 64)
+    let n gzip_decompress(member, unpacked)
+    if n <> (original.length() as i64)
+        return 5
+    if unpacked.slice_to(n as size_t).equals(original.as_slice()) = false
+        return 6
+    if member.length * 4 > original.length()
+        return 7
+    Console.print "gzip "
+    print "done"
+    0
+}

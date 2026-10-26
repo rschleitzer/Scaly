@@ -391,7 +391,9 @@ procedure serve_file(req: ref[Request], mutable res: ref[Response], root: Slice[
     ; the status line goes out with the first header, so the 404 above
     ; must come before this one
     res.header("Vary", "Accept-Encoding")
-    res.send(media, e.content.as_slice())
+    ; the file as it is: what is not on disk is not made (a coding the
+    ; router switched on, Router.compress, does not reach here)
+    res.send_encoded(media, "", e.content.as_slice())
 }
 
 ; Send the twin of the file at path[0, base) in `coding` if it exists.

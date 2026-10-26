@@ -1,0 +1,198 @@
+; The response and request calls of the http package, without a network
+; (requests parsed from literals, the router answering into a buffer):
+;   coding   Router.compress: a JSON body of 600 bytes goes out in the
+;            coding the client accepts, with Content-Encoding, the coded
+;            length and Vary; without Accept-Encoding the body as it is,
+;            with Vary
+;   left     an image, a body under 256 bytes, an encoder that cannot,
+;            and send_encoded are not coded
+;   respond  status, type and body in one call
+;   json     send_json of a JsonValue; Request.json of a JSON body
+;   form     Request.form_param of a urlencoded body, empty for another type
+; Expected: coding left respond json form done
+
+package scaly 0.2.0
+package http 0.2.0
+package json 0.2.0
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+use json.Value.JsonValue
+
+mutable form_name_ok: bool false
+mutable form_other_ok: bool false
+mutable json_ok: bool false
+
+; An encoder in the shape Router.compress takes: "PACKED" for anything
+; but a body of 'n's, which it cannot code (0).
+procedure fake_encode(input: Slice[u8], mutable output: Slice[u8]) returns size_t
+{
+    if input.length > 0 and input[0] = 110
+        return 0
+    let word: Slice[u8] "PACKED"
+    if output.length < word.length
+        return 0
+    var i: size_t 0
+    while i < word.length
+    {
+        output.put(i, word[i])
+        i := i + 1
+    }
+    word.length
+}
+
+; A body of n bytes c, on this request's region.
+procedure send_filled(mutable res: ref[Response], content_type: Slice[u8], n: size_t, c: u8)
+{
+    var v Vector[u8](n)
+    var i: size_t 0
+    while i < n
+    {
+        v.put(i, c)
+        i := i + 1
+    }
+    res.send(content_type, v.as_slice())
+}
+
+procedure data(req: ref[Request], mutable res: ref[Response])
+    send_filled(res, "application/json", 600, 120)
+
+procedure picture(req: ref[Request], mutable res: ref[Response])
+    send_filled(res, "image/png", 600, 120)
+
+procedure small(req: ref[Request], mutable res: ref[Response])
+    send_filled(res, "text/plain", 100, 120)
+
+procedure stubborn(req: ref[Request], mutable res: ref[Response])
+    send_filled(res, "text/plain", 600, 110)
+
+procedure chosen(req: ref[Request], mutable res: ref[Response])
+    res.send_encoded("text/plain", "", "already chosen, as the static handler does")
+
+procedure missing(req: ref[Request], mutable res: ref[Response])
+    res.respond(404, "text/plain", "no such item")
+
+procedure value(req: ref[Request], mutable res: ref[Response])
+{
+    let parsed JsonValue.parse("{\"a\": [1, true]}")
+    if parsed.ok() = false
+        exit 91
+    res.send_json(parsed.value)
+}
+
+procedure posted_json(req: ref[Request], mutable res: ref[Response]) mutable json_ok
+{
+    let parsed req.json()
+    json_ok := parsed.ok() and parsed.value.get("n").as_i64() = 42
+    res.send_empty()
+}
+
+procedure posted_form(req: ref[Request], mutable res: ref[Response]) mutable form_name_ok, form_other_ok
+{
+    form_name_ok := req.form_param("name").equals("x+y") and req.form_param("age").equals("7") and req.form_param("none").length = 0
+    form_other_ok := req.form_param("q").length = 0
+    res.send_empty()
+}
+
+; Parse text into req and let the router answer it into out (cleared first).
+procedure answer(app: ref[Router], mutable buf: Slice[u8], mutable req: ref[Request], mutable res: ref[Response], mutable out: ref[ByteBuf], text: Slice[u8])
+{
+    var i: size_t 0
+    while i < text.length
+    {
+        buf.put(i, text[i])
+        i := i + 1
+    }
+    out.clear()
+    if parse_request(buf.slice_to(text.length), req) <= 0
+        exit 90
+    res.reset(false)
+    app.handle(req, res)
+}
+
+function status_of(out: ref[ByteBuf]) returns i64
+    parse_decimal(out.bytes().subslice(9, 12))
+
+function has(out: ref[ByteBuf], needle: Slice[u8]) returns bool
+    contains_bytes(out.bytes(), needle)
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable form_name_ok, form_other_ok, json_ok
+{
+    let host Page.allocate_page()
+    var app Router.create(host)
+    app.get("/data", &data)
+    app.get("/picture", &picture)
+    app.get("/small", &small)
+    app.get("/stubborn", &stubborn)
+    app.get("/chosen", &chosen)
+    app.get("/missing", &missing)
+    app.get("/value", &value)
+    app.post("/json", &posted_json)
+    app.post("/form", &posted_form)
+    app.compress("", "x-test", &fake_encode)
+
+    var buf allocate_slice[u8]^host(host, 4096)
+    let out &ByteBuf^host(host, allocate_slice[u8]^host(host, 4096), 0, false)
+    let req &Request^host(null, null, null, null, null, null, 1, true, null, null)
+    let res Response.create(host, out)
+
+    answer(app, buf, req, res, out, "GET /data HTTP/1.1\r\nAccept-Encoding: gzip, x-test\r\n\r\n")
+    if has(out, "Content-Encoding: x-test\r\n") = false or has(out, "Content-Length: 6\r\n") = false or has(out, "Vary: Accept-Encoding\r\n") = false or has(out, "\r\n\r\nPACKED") = false
+    {
+        print "got `String(out.bytes().data as pointer[const_char], out.length)`"
+        return 1
+    }
+    answer(app, buf, req, res, out, "GET /data HTTP/1.1\r\n\r\n")
+    if has(out, "Content-Encoding") or has(out, "Content-Length: 600\r\n") = false or has(out, "Vary: Accept-Encoding\r\n") = false
+        return 2
+    answer(app, buf, req, res, out, "GET /data HTTP/1.1\r\nAccept-Encoding: x-test;q=0\r\n\r\n")
+    if has(out, "Content-Encoding") or has(out, "Content-Length: 600\r\n") = false
+        return 3
+    Console.print "coding "
+
+    answer(app, buf, req, res, out, "GET /picture HTTP/1.1\r\nAccept-Encoding: x-test\r\n\r\n")
+    if has(out, "Content-Encoding") or has(out, "Vary") or has(out, "Content-Length: 600\r\n") = false
+        return 4
+    answer(app, buf, req, res, out, "GET /small HTTP/1.1\r\nAccept-Encoding: x-test\r\n\r\n")
+    if has(out, "Content-Encoding") or has(out, "Content-Length: 100\r\n") = false or has(out, "Vary: Accept-Encoding\r\n") = false
+        return 5
+    answer(app, buf, req, res, out, "GET /stubborn HTTP/1.1\r\nAccept-Encoding: x-test\r\n\r\n")
+    if has(out, "Content-Encoding") or has(out, "Content-Length: 600\r\n") = false
+        return 6
+    answer(app, buf, req, res, out, "GET /chosen HTTP/1.1\r\nAccept-Encoding: x-test\r\n\r\n")
+    if has(out, "Content-Encoding") or has(out, "Vary") or has(out, "already chosen") = false
+        return 7
+    answer(app, buf, req, res, out, "HEAD /data HTTP/1.1\r\nAccept-Encoding: x-test\r\n\r\n")
+    if has(out, "Content-Encoding") or has(out, "Content-Length: 600\r\n") = false or has(out, "xxx")
+        return 8
+    Console.print "left "
+
+    answer(app, buf, req, res, out, "GET /missing HTTP/1.1\r\n\r\n")
+    if status_of(out) <> 404 or has(out, "Content-Type: text/plain\r\n") = false or has(out, "\r\n\r\nno such item") = false
+        return 9
+    Console.print "respond "
+
+    answer(app, buf, req, res, out, "GET /value HTTP/1.1\r\n\r\n")
+    if status_of(out) <> 200 or has(out, "Content-Type: application/json\r\n") = false or has(out, "\r\n\r\n{\"a\":[1,true]}") = false
+    {
+        print "got `String(out.bytes().data as pointer[const_char], out.length)`"
+        return 10
+    }
+    answer(app, buf, req, res, out, "POST /json HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: 9\r\n\r\n{\"n\": 42}")
+    if json_ok = false
+        return 11
+    Console.print "json "
+
+    answer(app, buf, req, res, out, "POST /form HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 14\r\n\r\nname=x+y&age=7")
+    if form_name_ok = false
+        return 12
+    answer(app, buf, req, res, out, "POST /form HTTP/1.1\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\nq=1")
+    if form_other_ok = false
+        return 13
+    Console.print "form "
+
+    print "done"
+    0
+}

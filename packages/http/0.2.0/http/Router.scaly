@@ -65,10 +65,15 @@ define Router
     ; loop's own samples in pipelined, on Linux (2026-09-30).
     var lead_start: Array[size_t]
     var lead_routes: Array[size_t]
+    ; the content coding responses go out in (compress): under coding_prefix,
+    ; where the client accepts coding, through encoder
+    var coding: Slice[u8]
+    var coding_prefix: Slice[u8]
+    var encoder: pointer[void]
 )
 {
     procedure create(host: ref[Page]) returns ref[Router]
-        &Router^host(host, Array[Route]^host(), Array[Hook]^host(), Array[size_t]^host(), Array[size_t]^host())
+        &Router^host(host, Array[Route]^host(), Array[Hook]^host(), Array[size_t]^host(), Array[size_t]^host(), null, null, null)
 
     ; lead_start and lead_routes anew, after a route was added.
     procedure index_leads(mutable this)
@@ -171,6 +176,22 @@ define Router
     procedure after(mutable this, prefix: Slice[u8], mutable handler: pointer[void])
         hooks.add(Hook(prefix, handler, true))
 
+    ; Response compression for every path under prefix ("" = every path): a
+    ; body sent with Response.send whose type is text, JSON, XML or
+    ; JavaScript goes out in `coding` where the client's Accept-Encoding
+    ; takes it, with Vary: Accept-Encoding. encoder writes the coded bytes:
+    ;   procedure (input: Slice[u8], mutable output: Slice[u8]) returns size_t
+    ; -- the number written, 0 when output is too small --, as the compress
+    ; package's gzip_compress does:
+    ;   app.compress("", "gzip", &gzip_compress)
+    ; The static handler chooses among the files on disk and is left alone.
+    procedure compress(mutable this, prefix: Slice[u8], name: Slice[u8], mutable with: pointer[void])
+    {
+        coding := name
+        coding_prefix := prefix
+        encoder := with
+    }
+
     ; The route for req: the most specific whose pattern matches the path and
     ; whose method fits (HEAD takes a GET route) — null when none does, with
     ; path_matched telling a 405 from a 404.
@@ -233,6 +254,9 @@ define Router
     {
         if req.method.equals("HEAD")
             res.set_head_only()
+        let with encoder
+        if with <> null and req.path.starts_with(coding_prefix)
+            res.negotiate(coding, with, req.accepts_encoding(coding))
         var i: size_t 0
         while i < hooks.length
         {
