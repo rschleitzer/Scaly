@@ -109,7 +109,7 @@ fi
 prerequisites() {
   cat >&2 <<EOF
 scaly-install: error: $1
-  There are no ready-made programs for this system ($SYSTEM), so Scaly is
+  $SEED_REASON, so Scaly is
   built here from its seed, with LLVM $LLVM_MAJOR:
     macOS:   brew install llvm@$LLVM_MAJOR
     Ubuntu:  sudo apt install llvm-$LLVM_MAJOR llvm-$LLVM_MAJOR-dev lld-$LLVM_MAJOR clang
@@ -237,6 +237,8 @@ printf 'print("Hello, World!")\n' > "$WORK/check/hello.scaly"
 #    macOS or C library than they were built for sends us to the seed instead.
 # ---------------------------------------------------------------------------
 READY=0
+# why the seed, for the error that says what it needs
+SEED_REASON="SCALY_FROM_SEED=1 asks for it"
 if [ "${SCALY_FROM_SEED:-0}" != "1" ]; then
   BIN_TARBALL="scaly-$VERSION-$SYSTEM.tar.gz"
   if fetch "$BASE_URL/downloads/$BIN_TARBALL" "$WORK/$BIN_TARBALL"; then
@@ -247,9 +249,11 @@ if [ "${SCALY_FROM_SEED:-0}" != "1" ]; then
       say "installed the programs for $SYSTEM"
     else
       rm -rf "$NEW/libexec" "$NEW/lib"
+      SEED_REASON="The ready-made programs for $SYSTEM do not start on this machine"
       say "the ready-made programs do not start on this system; building from the seed instead"
     fi
   else
+    SEED_REASON="There are no ready-made programs for this system ($SYSTEM)"
     say "no ready-made programs for $SYSTEM; building from the seed instead"
   fi
 fi
