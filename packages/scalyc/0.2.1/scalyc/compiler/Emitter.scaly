@@ -87,6 +87,7 @@ define Emitter
         export_symbols: bool        ; `--export`: a release module whose definitions all stay, visible to the process
         code_parts: bool            ; a debug build's package object: a large module code-generated in parts (Parts.scaly)
         parts_tag: String           ; what names its promoted locals apart from another module's (the package root)
+        var wasm_shared: bool       ; WebAssembly: the object of a side module (PIC), the REPL's entry in a page
     )
     {
         init()
@@ -108,6 +109,7 @@ define Emitter
             export_symbols := false
             code_parts := false
             parts_tag := String()
+            wasm_shared := false
         }
     }
 
@@ -9141,20 +9143,23 @@ define Emitter
 
         ; jit_run where there is no JIT -- the compiler built for WebAssembly,
         ; in a page (ROADMAP-wasm.md W2): the program written as an object of
-        ; this target, linked by lld's wasm linker (wasm_eh.cpp: a library of
-        ; the program there) with the dependencies' objects and the WASI
-        ; system's own files -- crt1, libc, libsetjmp, the mman emulation and
-        ; the compiler's builtins, the link `scaly build --target wasm32-wasip1`
-        ; makes -- and started by the host as an instance of its own. The
-        ; system's files lie under SCALY_WASI_SYSROOT (the sysroot's library
-        ; directory) and SCALY_WASI_BUILTINS (libclang_rt.builtins.a), the
-        ; standard library for this target in SCALY_WASM_RUNTIME (an archive:
-        ; the JIT's dependencies leave it out, the process holds it there). The
-        ; instance has a memory of its own: what the entry binds does not reach
-        ; this program's session (slice 2). The program's exit code, 127 when
-        ; it could not be built.
-        procedure wasm_run(mutable this, mutable plan: Plan, mutable module_name: String, dep_object_files: ref[Array[String]]) returns i64
+        ; a SIDE MODULE (position-independent, `wasm_shared`), linked by lld's
+        ; wasm linker (wasm_eh.cpp: a library of the program there) with
+        ; nothing -- what it does not define it imports, the standard library
+        ; and the C library from the program running here -- and handed to the
+        ; host, which loads it into this program's memory and table, resolves
+        ; its imports against this program's exports and calls its entry with
+        ; `program_argv`. One memory and one allocator, as in the JIT: what the
+        ; entry binds reaches this program's session. The objects of other
+        ; packages are not position-independent: such a program is refused.
+        ; The program's exit code, 127 when it could not be built.
+        procedure wasm_run(mutable this, mutable plan: Plan, mutable module_name: String, dep_object_files: ref[Array[String]], mutable program_argv: pointer[pointer[char]]) returns i64
         {
+            if dep_object_files.length > 0
+            {
+                Console.println "wasm: in a page only the standard library is at hand, no other package yet"
+                return 127
+            }
             let ok emit(plan, module_name)
             if ok = false
             {
@@ -9163,43 +9168,27 @@ define Emitter
             }
             if config.keep_main_frame
                 this.keep_main_ir()
-            let sys_env getenv("SCALY_WASI_SYSROOT")
-            let builtins_env getenv("SCALY_WASI_BUILTINS")
-            let runtime_env getenv("SCALY_WASM_RUNTIME")
-            if sys_env = null or builtins_env = null or runtime_env = null
-            {
-                Console.println "wasm: SCALY_WASI_SYSROOT, SCALY_WASI_BUILTINS and SCALY_WASM_RUNTIME name the files of the link"
-                return 127
-            }
-            let sys String(sys_env)
+            this.hide_side_definitions()
             var obj String("/tmp/scaly-entry.o")
             var out String("/tmp/scaly-entry.wasm")
-            if this.write_object_to_file(obj) = false
+            config.wasm_shared := true
+            let written this.write_object_to_file(obj)
+            config.wasm_shared := false
+            if written = false
             {
                 Console.println "wasm: the object could not be written"
                 return 127
             }
+            ; what the module does not define is an import
             var args Array[String]()
             args.add(String("wasm-ld"))
             args.add(String("-m"))
             args.add(String("wasm32"))
-            args.add("`sys`/crt1-command.o")
+            args.add(String("-shared"))
+            args.add(String("--experimental-pic"))
+            args.add(String("--unresolved-symbols=import-dynamic"))
+            args.add(String("--export=__main_argc_argv"))
             args.add(String(obj))
-            var d: size_t 0
-            while d < dep_object_files.length
-            {
-                args.add(String(dep_object_files.at(d)))
-                d := d + 1
-            }
-            args.add(String(runtime_env))
-            args.add("-L`sys`")
-            args.add(String("-lsetjmp"))
-            args.add(String("-lwasi-emulated-mman"))
-            args.add(String("--stack-first"))
-            args.add(String("-z"))
-            args.add(String("stack-size=8388608"))
-            args.add(String("-lc"))
-            args.add(String(builtins_env))
             args.add(String("-o"))
             args.add(String(out))
             var argv Vector[pointer[const_char]](args.length)
@@ -9215,9 +9204,47 @@ define Emitter
                 return 127
             }
             let run_start scaly_eio_now_ns()
-            let result scalyc_wasm_run(out.to_c_string(), 0, null as pointer[pointer[const_char]])
+            let result scalyc_wasm_run(out.to_c_string(), 0, program_argv as pointer[pointer[const_char]])
             run_ns := scaly_eio_now_ns() - run_start
             result as i64
+        }
+
+        ; Every definition of a side module but its entry made HIDDEN: what the
+        ; module defines -- the session's functions, the generic instances it
+        ; made (linkonce_odr) -- it calls and addresses itself. A shared
+        ; module's default-visibility definition stays preemptible, and
+        ; wasm-ld imports a weak one even where the module has it, from a
+        ; program that does not.
+        procedure hide_side_definitions(mutable this)
+        {
+            var f LLVMGetFirstFunction(llvm_module)
+            while f <> null
+            {
+                this.hide_side_definition(f)
+                f := LLVMGetNextFunction(f)
+            }
+            var g LLVMGetFirstGlobal(llvm_module)
+            while g <> null
+            {
+                this.hide_side_definition(g)
+                g := LLVMGetNextGlobal(g)
+            }
+        }
+
+        ; a definition of non-local linkage (internal 8, private 9 must stay
+        ; default) other than the entry the host calls
+        procedure hide_side_definition(mutable this, mutable v: LLVMValueRef)
+        {
+            if LLVMIsDeclaration(v) <> 0
+                return
+            let linkage LLVMGetLinkage(v)
+            if linkage = 8 or linkage = 9
+                return
+            var name_len: size_t 0
+            let name_ptr LLVMGetValueName2(v, &name_len)
+            if name_ptr <> null and String(name_ptr) = "__main_argc_argv"
+                return
+            LLVMSetVisibility(v, 1)
         }
 
         ; The base of `&X.field` as an ADDRESS. emit_expression answers a record
@@ -18552,7 +18579,12 @@ define Emitter
         procedure create_target_machine(mutable this, mutable target: LLVMTargetRef, mutable triple: pointer[const_char], level: int) returns LLVMTargetMachineRef
         {
             if this.triple_is_wasm(triple)
-                return Parts.wasm_target_machine(target, triple, level)
+            {
+                var reloc: i32 1
+                if config.wasm_shared
+                    reloc := 2
+                return Parts.wasm_target_machine(target, triple, level, reloc)
+            }
             let cpu config.target_cpu
             if cpu.get_length() = 0
                 return LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "" as pointer[const_char], level as i32, this.relocation_model(triple), 0)

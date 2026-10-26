@@ -67,6 +67,12 @@ int scaly_eio_wake(int q, int w) { (void)q; (void)w; return -1; }
 int scaly_eio_wake_close(int q, int w) { (void)q; (void)w; return 0; }
 int scaly_eio_submit_recv(int q, int fd, void* buf, unsigned long long count, void* tag) { (void)q; (void)fd; (void)buf; (void)count; (void)tag; return -1; }
 int scaly_eio_submit_send(int q, int fd, void* buf, unsigned long long count, void* tag) { (void)q; (void)fd; (void)buf; (void)count; (void)tag; return -1; }
+int scaly_eio_submit_send_recv(int q, int fd, void* sbuf, unsigned long long scount,
+                               void* rbuf, unsigned long long rcount, void* tag)
+{
+    (void)q; (void)fd; (void)sbuf; (void)scount; (void)rbuf; (void)rcount; (void)tag;
+    return -1;
+}
 int scaly_eio_completions(int q) { (void)q; return 0; }
 int scaly_eio_backend(int q) { (void)q; return 0; }
 int scaly_eio_close(int q) { return close(q); }
@@ -153,6 +159,9 @@ int scaly_eio_tcp_nodelay(int fd, int on) { (void)fd; (void)on; return -1; }
 void scaly_eio_tcp_served(int fd) { (void)fd; }
 void scaly_eio_tcp_unserved(int fd) { (void)fd; }
 int scaly_eio_tcp_wake_served(void) { return 0; }
+/* no connection to bound, so no sweeper to start and none left to sweep */
+int scaly_eio_tcp_idle(int fd, long long seconds) { (void)fd; (void)seconds; return 0; }
+int scaly_eio_tcp_sweep(void) { return 0; }
 int scaly_eio_accept(int fd) { (void)fd; return -1; }
 int scaly_eio_accept_nb(int fd) { (void)fd; return -1; }
 int scaly_eio_tcp_listen_twin(int fd) { (void)fd; return -1; }

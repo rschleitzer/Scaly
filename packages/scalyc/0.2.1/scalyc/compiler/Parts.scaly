@@ -321,11 +321,12 @@ define Parts
 
     ; the target machine of WebAssembly: its exception handling, for the
     ; catch points (above), and the generic CPU. The exception model is set
-    ; by wasm_eh.cpp, as the C API cannot say it.
-    procedure wasm_target_machine(mutable target: LLVMTargetRef, mutable triple: pointer[const_char], level: int) returns LLVMTargetMachineRef
+    ; by wasm_eh.cpp, as the C API cannot say it. `reloc` is STATIC (1) but
+    ; for an object of a side module (2, PIC: the REPL's entry in a page).
+    procedure wasm_target_machine(mutable target: LLVMTargetRef, mutable triple: pointer[const_char], level: int, reloc: i32) returns LLVMTargetMachineRef
     {
         Parts.enable_wasm_sjlj()
-        let tm LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "+exception-handling" as pointer[const_char], level as i32, 1, 0)
+        let tm LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "+exception-handling" as pointer[const_char], level as i32, reloc, 0)
         if tm <> null
             scalyc_target_machine_wasm_eh(tm)
         tm
@@ -335,7 +336,7 @@ define Parts
     procedure target_machine(mutable target: LLVMTargetRef, mutable triple: pointer[const_char], mutable cpu: String, level: int) returns LLVMTargetMachineRef
     {
         if Parts.part_relocation(triple) = 1
-            return Parts.wasm_target_machine(target, triple, level)
+            return Parts.wasm_target_machine(target, triple, level, 1)
         if cpu.get_length() = 0
             return LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "" as pointer[const_char], level as i32, part_relocation(triple), 0)
         if cpu = "native"

@@ -404,8 +404,9 @@ define repl
         }
         else if t.starts_with("Array[") or t.equals("StringBuilder")
         {
-            ; Array is {length, capacity, buffer}; a StringBuilder is its Array
-            let buffer (*(words + 2)) as pointer[void]
+            ; Array is {length, capacity, buffer}; a StringBuilder is its Array;
+            ; the buffer a pointer (4 bytes on wasm32) after two size_t
+            let buffer *((words + 2) as pointer[pointer[void]])
             if buffer = null
                 Console.println "    its buffer  none yet"
             else
@@ -418,7 +419,7 @@ define repl
         else if t.starts_with("Vector[")
         {
             ; Vector is {length, data}
-            let buffer (*(words + 1)) as pointer[void]
+            let buffer *((words + 1) as pointer[pointer[void]])
             if buffer = null
                 Console.println "    its buffer  none"
             else
@@ -565,12 +566,8 @@ define repl
             sb.append("\nprocedure main(argc: int, argv: pointer[pointer[const_char]])\n{\n")
         else
             sb.append("\nprocedure main(argc: int, argv: pointer[pointer[const_char]]) returns int\n{\n")
-        ; the table is the session's, handed in as argv -- or, where the entry
-        ; runs as a module of its own (no JIT), one of its own memory
-        if scalyc_has_jit() <> 0
-            sb.append("    let repl_table argv as pointer[pointer[void]]\n")
-        else
-            sb.append("    var repl_scratch Vector[pointer[void]](`REPL_SLOTS`)\n    let repl_table repl_scratch.data\n")
+        ; the table is the session's, handed in as argv
+        sb.append("    let repl_table argv as pointer[pointer[void]]\n")
         var i: size_t 0
         while i < values.length
         {
@@ -709,12 +706,13 @@ define repl
         if cli.compile_jit_dependencies(&model, String("repl.scaly"), &dep_objs, &dep_syms) = false
             return false
         ; where the compiler is built for WebAssembly there is no JIT: the entry
-        ; is linked and started as a module of its own (Emitter.wasm_run)
+        ; is linked as a side module, which the host loads into this program's
+        ; memory (Emitter.wasm_run) -- the table is the session's either way
         var rc: i64 0
         if scalyc_has_jit() <> 0
             rc := emitter.jit_run(plan, "repl", "main", &dep_objs, &dep_syms, 0, table as pointer[pointer[char]], null, null)
         else
-            rc := emitter.wasm_run(plan, "repl", &dep_objs)
+            rc := emitter.wasm_run(plan, "repl", &dep_objs, table as pointer[pointer[char]])
         fflush(null)
         ; it did not run: nothing it would have bound is in the table
         if rc = 127
@@ -973,7 +971,9 @@ define repl
         }
         var tail StringBuilder()
         tail.append("    let repl_page Page.allocate_page()\n")
-        tail.append("    let repl_sizes argv as pointer[size_t]\n")
+        ; a size or an offset in a slot of the table, which is as wide as a
+        ; pointer: c_size, 32 bits on wasm32 where size_t stays 64
+        tail.append("    let repl_sizes argv as pointer[c_size]\n")
         var slots Array[int]()
         var types Array[String]()
         var pending_ Array[ReplField]()
@@ -1002,7 +1002,7 @@ define repl
             tail.append("    let repl_cell_`slot` repl_page.allocate(sizeof `t`, 8)\n")
             tail.append("    memcpy(repl_cell_`slot`, &repl_value_`slot` as pointer[void], sizeof `t` as c_size)\n")
             tail.append("    *(repl_table + `slot`) := repl_cell_`slot`\n")
-            tail.append("    *(repl_sizes + `slot + 1`) := sizeof `t`\n")
+            tail.append("    *(repl_sizes + `slot + 1`) := (sizeof `t`) as c_size\n")
             ; a record: the entry measures where each field stands in it
             var first pending_.length
             if repl.is_record(&probe, t)
@@ -1025,7 +1025,7 @@ define repl
                 next_slot := fslot + 1
                 offset_slots.add(fslot)
                 ; through a ref: `&v.f` on the var itself is no address
-                tail.append("    *(repl_sizes + `fslot`) := ((&repl_ref_`slot`.`pf.path` as pointer[void]) as size_t) - ((repl_ref_`slot` as pointer[void]) as size_t)\n")
+                tail.append("    *(repl_sizes + `fslot`) := (((&repl_ref_`slot`.`pf.path` as pointer[void]) as size_t) - ((repl_ref_`slot` as pointer[void]) as size_t)) as c_size\n")
             }
         }
         ; the entry's frame page, by something that lives on it
@@ -1053,13 +1053,6 @@ define repl
             hi := hi + 1
             history.append(text.substring(s.start, s.end - s.start))
             history.append("\n")
-        }
-        ; an entry run as a module of its own (no JIT here) had a memory of its
-        ; own: what it bound is not in this table, and nothing is shown
-        if scalyc_has_jit() = 0 and shown.length > 0
-        {
-            Console.println "(the value stays in the entry's own instance here: the page has no session yet)"
-            return
         }
         var vi: size_t 0
         while vi < shown.length
