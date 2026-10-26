@@ -158,11 +158,11 @@ define Parts
         let linkage LLVMGetLinkage(v)
         if linkage <> LLVMLinkage.Internal() and linkage <> LLVMLinkage.Private()
             return
-        var name_len: size_t 0
+        var name_len: c_size 0
         let name_ptr LLVMGetValueName2(v, &name_len)
         var name String()
         if name_len > 0
-            name := String(name_ptr as pointer[const_char], name_len)
+            name := String(name_ptr as pointer[const_char], name_len as size_t)
         else
         {
             name := "scaly.anon.`anonymous`"
@@ -216,9 +216,9 @@ define Parts
     ; calling convention, visibility and attributes takes its place
     procedure declare_function(mutable m: LLVMModuleRef, mutable f: LLVMValueRef)
     {
-        var name_len: size_t 0
+        var name_len: c_size 0
         let name_ptr LLVMGetValueName2(f, &name_len)
-        let name String(name_ptr as pointer[const_char], name_len)
+        let name String(name_ptr as pointer[const_char], name_len as size_t)
         let fn_type LLVMGlobalGetValueType(f)
         LLVMSetValueName2(f, "" as pointer[const_char], 0)
         let decl LLVMAddFunction(m, name.to_c_string(), fn_type)
@@ -268,7 +268,7 @@ define Parts
         var g LLVMGetFirstGlobal(m)
         while g <> null
         {
-            var name_len: size_t 0
+            var name_len: c_size 0
             let name_ptr LLVMGetValueName2(g, &name_len)
             if name_len > 5 and String(name_ptr as pointer[const_char], 5).equals("llvm.")
                 gone.add(g)
@@ -286,7 +286,7 @@ define Parts
             LLVMDeleteGlobal(gone[i])
             i := i + 1
         }
-        var asm_len: size_t 0
+        var asm_len: c_size 0
         LLVMGetModuleInlineAsm(m, &asm_len)
         if asm_len > 0
             LLVMSetModuleInlineAsm2(m, "" as pointer[const_char], 0)

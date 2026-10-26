@@ -1469,7 +1469,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -9114572221470870733
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 6790177727913092582
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -498653,7 +498653,7 @@ entry:
   store ptr null, ptr %frame.parent, align 8
   %has_marker = alloca i1, align 1
   %is_scaly_mangled = alloca i1, align 1
-  %name_len = alloca i64, align 8
+  %name_len_c = alloca i64, align 8
   %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %llvm_module = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 11
   %call = call ptr @LLVMGetFirstFunction(ptr %llvm_module)
@@ -498677,35 +498677,35 @@ while.exit:                                       ; preds = %while.cond
   ret void
 
 if.then:                                          ; preds = %while.body
-  store i64 0, ptr %name_len, align 1
+  store i64 0, ptr %name_len_c, align 1
   %func5 = load ptr, ptr %func, align 8
-  %call6 = call ptr @LLVMGetValueName2(ptr %func5, ptr %name_len)
-  %ne7 = icmp ne ptr %call6, null
-  br i1 %ne7, label %if.then8, label %if.end9
+  %call6 = call ptr @LLVMGetValueName2(ptr %func5, ptr %name_len_c)
+  %name_len_c7 = load i64, ptr %name_len_c, align 8
+  %ne8 = icmp ne ptr %call6, null
+  br i1 %ne8, label %if.then9, label %if.end10
 
-if.end:                                           ; preds = %if.end9, %while.body
-  %func148 = load ptr, ptr %func, align 8
-  %call149 = call ptr @LLVMGetNextFunction(ptr %func148)
-  store ptr %call149, ptr %func, align 1
+if.end:                                           ; preds = %if.end10, %while.body
+  %func145 = load ptr, ptr %func, align 8
+  %call146 = call ptr @LLVMGetNextFunction(ptr %func145)
+  store ptr %call146, ptr %func, align 1
   br label %while.cond
 
-if.then8:                                         ; preds = %if.then
-  %name_len10 = load i64, ptr %name_len, align 8
-  %gt = icmp ugt i64 %name_len10, 4
+if.then9:                                         ; preds = %if.then
+  %gt = icmp ugt i64 %name_len_c7, 4
   br i1 %gt, label %if.then11, label %if.end12
 
-if.end9:                                          ; preds = %if.end12, %if.then
+if.end10:                                         ; preds = %if.end12, %if.then
   br label %if.end
 
-if.then11:                                        ; preds = %if.then8
+if.then11:                                        ; preds = %if.then9
   store i1 false, ptr %is_scaly_mangled, align 1
   %ptr.add = getelementptr inbounds i8, ptr %call6, i64 0
   %deref = load i8, ptr %ptr.add, align 1
   %eq = icmp eq i8 %deref, 95
   br i1 %eq, label %if.then13, label %if.end14
 
-if.end12:                                         ; preds = %if.end138, %if.then8
-  br label %if.end9
+if.end12:                                         ; preds = %if.end135, %if.then9
+  br label %if.end10
 
 if.then13:                                        ; preds = %if.then11
   %ptr.add15 = getelementptr inbounds i8, ptr %call6, i64 1
@@ -498731,9 +498731,9 @@ if.then21:                                        ; preds = %if.end14
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
 if.end22:                                         ; preds = %frame.forced, %if.end14
-  %has_marker26 = load i1, ptr %has_marker, align 1
-  %eq27 = icmp eq i1 %has_marker26, false
-  br i1 %eq27, label %if.then28, label %if.end29
+  %has_marker25 = load i1, ptr %has_marker, align 1
+  %eq26 = icmp eq i1 %has_marker25, false
+  br i1 %eq26, label %if.then27, label %if.end28
 
 frame.force:                                      ; preds = %if.then21
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
@@ -498742,218 +498742,215 @@ frame.force:                                      ; preds = %if.then21
 frame.forced:                                     ; preds = %frame.force, %if.then21
   %forced_page23 = phi ptr [ %frame.page, %if.then21 ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page23, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %name_len24 = load i64, ptr %name_len, align 8
-  call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %call6, i64 %name_len24)
-  %call25 = call i1 @_ZN7EmitterB6scalycB4v0_226is_uninstantiated_templateE6String(ptr %0, ptr %struct.region)
-  store i1 %call25, ptr %has_marker, align 1
+  call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %call6, i64 %name_len_c7)
+  %call24 = call i1 @_ZN7EmitterB6scalycB4v0_226is_uninstantiated_templateE6String(ptr %0, ptr %struct.region)
+  store i1 %call24, ptr %has_marker, align 1
   br label %if.end22
 
-if.then28:                                        ; preds = %if.end22
-  %name_len30 = load i64, ptr %name_len, align 8
-  %gt31 = icmp ugt i64 %name_len30, 8
-  br i1 %gt31, label %if.then32, label %if.end33
+if.then27:                                        ; preds = %if.end22
+  %gt29 = icmp ugt i64 %name_len_c7, 8
+  br i1 %gt29, label %if.then30, label %if.end31
 
-if.end29:                                         ; preds = %if.end33, %if.end22
-  %has_marker99 = load i1, ptr %has_marker, align 1
-  br i1 %has_marker99, label %if.then100, label %if.end101
+if.end28:                                         ; preds = %if.end31, %if.end22
+  %has_marker96 = load i1, ptr %has_marker, align 1
+  br i1 %has_marker96, label %if.then97, label %if.end98
 
-if.then32:                                        ; preds = %if.then28
+if.then30:                                        ; preds = %if.then27
   store i64 0, ptr %j, align 1
-  %name_len34 = load i64, ptr %name_len, align 8
-  %sub = sub i64 %name_len34, 8
-  br label %while.cond35
+  %sub = sub i64 %name_len_c7, 8
+  br label %while.cond32
 
-if.end33:                                         ; preds = %while.exit37, %if.then28
-  br label %if.end29
+if.end31:                                         ; preds = %while.exit34, %if.then27
+  br label %if.end28
 
-while.cond35:                                     ; preds = %if.end42, %if.then32
-  %j38 = load i64, ptr %j, align 8
-  %le = icmp ule i64 %j38, %sub
-  br i1 %le, label %while.body36, label %while.exit37
+while.cond32:                                     ; preds = %if.end39, %if.then30
+  %j35 = load i64, ptr %j, align 8
+  %le = icmp ule i64 %j35, %sub
+  br i1 %le, label %while.body33, label %while.exit34
 
-while.body36:                                     ; preds = %while.cond35
-  %has_marker39 = load i1, ptr %has_marker, align 1
-  %eq40 = icmp eq i1 %has_marker39, false
-  br i1 %eq40, label %if.then41, label %if.end42
+while.body33:                                     ; preds = %while.cond32
+  %has_marker36 = load i1, ptr %has_marker, align 1
+  %eq37 = icmp eq i1 %has_marker36, false
+  br i1 %eq37, label %if.then38, label %if.end39
 
-while.exit37:                                     ; preds = %while.cond35
-  br label %if.end33
+while.exit34:                                     ; preds = %while.cond32
+  br label %if.end31
 
-if.then41:                                        ; preds = %while.body36
-  %j43 = load i64, ptr %j, align 8
-  %ptr.add44 = getelementptr inbounds i8, ptr %call6, i64 %j43
-  %deref45 = load i8, ptr %ptr.add44, align 1
-  %eq46 = icmp eq i8 %deref45, 78
-  br i1 %eq46, label %if.then47, label %if.end48
+if.then38:                                        ; preds = %while.body33
+  %j40 = load i64, ptr %j, align 8
+  %ptr.add41 = getelementptr inbounds i8, ptr %call6, i64 %j40
+  %deref42 = load i8, ptr %ptr.add41, align 1
+  %eq43 = icmp eq i8 %deref42, 78
+  br i1 %eq43, label %if.then44, label %if.end45
 
-if.end42:                                         ; preds = %if.end48, %while.body36
-  %j97 = load i64, ptr %j, align 8
-  %add98 = add i64 %j97, 1
-  store i64 %add98, ptr %j, align 1
-  br label %while.cond35
+if.end39:                                         ; preds = %if.end45, %while.body33
+  %j94 = load i64, ptr %j, align 8
+  %add95 = add i64 %j94, 1
+  store i64 %add95, ptr %j, align 1
+  br label %while.cond32
 
-if.then47:                                        ; preds = %if.then41
-  %j49 = load i64, ptr %j, align 8
-  %add = add i64 %j49, 1
-  %ptr.add50 = getelementptr inbounds i8, ptr %call6, i64 %add
-  %deref51 = load i8, ptr %ptr.add50, align 1
-  %eq52 = icmp eq i8 %deref51, 97
-  br i1 %eq52, label %if.then53, label %if.end54
+if.then44:                                        ; preds = %if.then38
+  %j46 = load i64, ptr %j, align 8
+  %add = add i64 %j46, 1
+  %ptr.add47 = getelementptr inbounds i8, ptr %call6, i64 %add
+  %deref48 = load i8, ptr %ptr.add47, align 1
+  %eq49 = icmp eq i8 %deref48, 97
+  br i1 %eq49, label %if.then50, label %if.end51
 
-if.end48:                                         ; preds = %if.end54, %if.then41
-  br label %if.end42
+if.end45:                                         ; preds = %if.end51, %if.then38
+  br label %if.end39
 
-if.then53:                                        ; preds = %if.then47
-  %j55 = load i64, ptr %j, align 8
-  %add56 = add i64 %j55, 2
-  %ptr.add57 = getelementptr inbounds i8, ptr %call6, i64 %add56
-  %deref58 = load i8, ptr %ptr.add57, align 1
-  %eq59 = icmp eq i8 %deref58, 109
-  br i1 %eq59, label %if.then60, label %if.end61
+if.then50:                                        ; preds = %if.then44
+  %j52 = load i64, ptr %j, align 8
+  %add53 = add i64 %j52, 2
+  %ptr.add54 = getelementptr inbounds i8, ptr %call6, i64 %add53
+  %deref55 = load i8, ptr %ptr.add54, align 1
+  %eq56 = icmp eq i8 %deref55, 109
+  br i1 %eq56, label %if.then57, label %if.end58
 
-if.end54:                                         ; preds = %if.end61, %if.then47
-  br label %if.end48
+if.end51:                                         ; preds = %if.end58, %if.then44
+  br label %if.end45
 
-if.then60:                                        ; preds = %if.then53
-  %j62 = load i64, ptr %j, align 8
-  %add63 = add i64 %j62, 3
-  %ptr.add64 = getelementptr inbounds i8, ptr %call6, i64 %add63
-  %deref65 = load i8, ptr %ptr.add64, align 1
-  %eq66 = icmp eq i8 %deref65, 101
-  br i1 %eq66, label %if.then67, label %if.end68
+if.then57:                                        ; preds = %if.then50
+  %j59 = load i64, ptr %j, align 8
+  %add60 = add i64 %j59, 3
+  %ptr.add61 = getelementptr inbounds i8, ptr %call6, i64 %add60
+  %deref62 = load i8, ptr %ptr.add61, align 1
+  %eq63 = icmp eq i8 %deref62, 101
+  br i1 %eq63, label %if.then64, label %if.end65
 
-if.end61:                                         ; preds = %if.end68, %if.then53
-  br label %if.end54
+if.end58:                                         ; preds = %if.end65, %if.then50
+  br label %if.end51
 
-if.then67:                                        ; preds = %if.then60
-  %j69 = load i64, ptr %j, align 8
-  %add70 = add i64 %j69, 4
-  %ptr.add71 = getelementptr inbounds i8, ptr %call6, i64 %add70
-  %deref72 = load i8, ptr %ptr.add71, align 1
-  %eq73 = icmp eq i8 %deref72, 97
-  br i1 %eq73, label %if.then74, label %if.end75
+if.then64:                                        ; preds = %if.then57
+  %j66 = load i64, ptr %j, align 8
+  %add67 = add i64 %j66, 4
+  %ptr.add68 = getelementptr inbounds i8, ptr %call6, i64 %add67
+  %deref69 = load i8, ptr %ptr.add68, align 1
+  %eq70 = icmp eq i8 %deref69, 97
+  br i1 %eq70, label %if.then71, label %if.end72
 
-if.end68:                                         ; preds = %if.end75, %if.then60
-  br label %if.end61
+if.end65:                                         ; preds = %if.end72, %if.then57
+  br label %if.end58
 
-if.then74:                                        ; preds = %if.then67
-  %j76 = load i64, ptr %j, align 8
-  %add77 = add i64 %j76, 5
-  %ptr.add78 = getelementptr inbounds i8, ptr %call6, i64 %add77
-  %deref79 = load i8, ptr %ptr.add78, align 1
-  %eq80 = icmp eq i8 %deref79, 98
-  br i1 %eq80, label %if.then81, label %if.end82
+if.then71:                                        ; preds = %if.then64
+  %j73 = load i64, ptr %j, align 8
+  %add74 = add i64 %j73, 5
+  %ptr.add75 = getelementptr inbounds i8, ptr %call6, i64 %add74
+  %deref76 = load i8, ptr %ptr.add75, align 1
+  %eq77 = icmp eq i8 %deref76, 98
+  br i1 %eq77, label %if.then78, label %if.end79
 
-if.end75:                                         ; preds = %if.end82, %if.then67
-  br label %if.end68
+if.end72:                                         ; preds = %if.end79, %if.then64
+  br label %if.end65
 
-if.then81:                                        ; preds = %if.then74
-  %j83 = load i64, ptr %j, align 8
-  %add84 = add i64 %j83, 6
-  %ptr.add85 = getelementptr inbounds i8, ptr %call6, i64 %add84
-  %deref86 = load i8, ptr %ptr.add85, align 1
-  %eq87 = icmp eq i8 %deref86, 108
-  br i1 %eq87, label %if.then88, label %if.end89
+if.then78:                                        ; preds = %if.then71
+  %j80 = load i64, ptr %j, align 8
+  %add81 = add i64 %j80, 6
+  %ptr.add82 = getelementptr inbounds i8, ptr %call6, i64 %add81
+  %deref83 = load i8, ptr %ptr.add82, align 1
+  %eq84 = icmp eq i8 %deref83, 108
+  br i1 %eq84, label %if.then85, label %if.end86
 
-if.end82:                                         ; preds = %if.end89, %if.then74
-  br label %if.end75
+if.end79:                                         ; preds = %if.end86, %if.then71
+  br label %if.end72
 
-if.then88:                                        ; preds = %if.then81
-  %j90 = load i64, ptr %j, align 8
-  %add91 = add i64 %j90, 7
-  %ptr.add92 = getelementptr inbounds i8, ptr %call6, i64 %add91
-  %deref93 = load i8, ptr %ptr.add92, align 1
-  %eq94 = icmp eq i8 %deref93, 101
-  br i1 %eq94, label %if.then95, label %if.end96
+if.then85:                                        ; preds = %if.then78
+  %j87 = load i64, ptr %j, align 8
+  %add88 = add i64 %j87, 7
+  %ptr.add89 = getelementptr inbounds i8, ptr %call6, i64 %add88
+  %deref90 = load i8, ptr %ptr.add89, align 1
+  %eq91 = icmp eq i8 %deref90, 101
+  br i1 %eq91, label %if.then92, label %if.end93
 
-if.end89:                                         ; preds = %if.end96, %if.then81
-  br label %if.end82
+if.end86:                                         ; preds = %if.end93, %if.then78
+  br label %if.end79
 
-if.then95:                                        ; preds = %if.then88
+if.then92:                                        ; preds = %if.then85
   store i1 true, ptr %has_marker, align 1
-  br label %if.end96
+  br label %if.end93
 
-if.end96:                                         ; preds = %if.then95, %if.then88
-  br label %if.end89
+if.end93:                                         ; preds = %if.then92, %if.then85
+  br label %if.end86
 
-if.then100:                                       ; preds = %if.end29
-  %load.struct102 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct102, 12
-  %call103 = call ptr @LLVMGetInsertBlock(ptr %builder)
+if.then97:                                        ; preds = %if.end28
+  %load.struct99 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct99, 12
+  %call100 = call ptr @LLVMGetInsertBlock(ptr %builder)
+  %load.struct101 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %context = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct101, 1
+  %func102 = load ptr, ptr %func, align 8
+  %call103 = call ptr @LLVMAppendBasicBlockInContext(ptr %context, ptr %func102, ptr @.str.4939)
   %load.struct104 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %context = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct104, 1
-  %func105 = load ptr, ptr %func, align 8
-  %call106 = call ptr @LLVMAppendBasicBlockInContext(ptr %context, ptr %func105, ptr @.str.4939)
-  %load.struct107 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder108 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct107, 12
-  call void @LLVMPositionBuilderAtEnd(ptr %builder108, ptr %call106)
-  %func109 = load ptr, ptr %func, align 8
-  %call110 = call ptr @LLVMGlobalGetValueType(ptr %func109)
-  %call111 = call ptr @LLVMGetReturnType(ptr %call110)
-  %call112 = call i32 @LLVMGetTypeKind(ptr %call111)
-  %call113 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_24VoidEv()
-  %sext = sext i32 %call112 to i64
-  %eq114 = icmp eq i64 %sext, %call113
-  br i1 %eq114, label %if.then115, label %if.end116
+  %builder105 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct104, 12
+  call void @LLVMPositionBuilderAtEnd(ptr %builder105, ptr %call103)
+  %func106 = load ptr, ptr %func, align 8
+  %call107 = call ptr @LLVMGlobalGetValueType(ptr %func106)
+  %call108 = call ptr @LLVMGetReturnType(ptr %call107)
+  %call109 = call i32 @LLVMGetTypeKind(ptr %call108)
+  %call110 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_24VoidEv()
+  %sext = sext i32 %call109 to i64
+  %eq111 = icmp eq i64 %sext, %call110
+  br i1 %eq111, label %if.then112, label %if.end113
 
-if.end101:                                        ; preds = %if.end132, %if.end29
-  %has_marker135 = load i1, ptr %has_marker, align 1
-  %eq136 = icmp eq i1 %has_marker135, false
-  br i1 %eq136, label %if.then137, label %if.end138
+if.end98:                                         ; preds = %if.end129, %if.end28
+  %has_marker132 = load i1, ptr %has_marker, align 1
+  %eq133 = icmp eq i1 %has_marker132, false
+  br i1 %eq133, label %if.then134, label %if.end135
 
-if.then115:                                       ; preds = %if.then100
-  %load.struct117 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder118 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct117, 12
-  %call119 = call ptr @LLVMBuildRetVoid(ptr %builder118)
-  br label %if.end116
+if.then112:                                       ; preds = %if.then97
+  %load.struct114 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder115 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct114, 12
+  %call116 = call ptr @LLVMBuildRetVoid(ptr %builder115)
+  br label %if.end113
 
-if.end116:                                        ; preds = %if.then115, %if.then100
-  %call120 = call i32 @LLVMGetTypeKind(ptr %call111)
-  %call121 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_24VoidEv()
-  %sext122 = sext i32 %call120 to i64
-  %ne123 = icmp ne i64 %sext122, %call121
-  br i1 %ne123, label %if.then124, label %if.end125
+if.end113:                                        ; preds = %if.then112, %if.then97
+  %call117 = call i32 @LLVMGetTypeKind(ptr %call108)
+  %call118 = call i64 @_ZN12LLVMTypeKindB6scalycB4v0_24VoidEv()
+  %sext119 = sext i32 %call117 to i64
+  %ne120 = icmp ne i64 %sext119, %call118
+  br i1 %ne120, label %if.then121, label %if.end122
 
-if.then124:                                       ; preds = %if.end116
-  %call126 = call ptr @LLVMConstNull(ptr %call111)
-  %load.struct127 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder128 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct127, 12
-  %call129 = call ptr @LLVMBuildRet(ptr %builder128, ptr %call126)
-  br label %if.end125
+if.then121:                                       ; preds = %if.end113
+  %call123 = call ptr @LLVMConstNull(ptr %call108)
+  %load.struct124 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder125 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct124, 12
+  %call126 = call ptr @LLVMBuildRet(ptr %builder125, ptr %call123)
+  br label %if.end122
 
-if.end125:                                        ; preds = %if.then124, %if.end116
-  %ne130 = icmp ne ptr %call103, null
-  br i1 %ne130, label %if.then131, label %if.end132
+if.end122:                                        ; preds = %if.then121, %if.end113
+  %ne127 = icmp ne ptr %call100, null
+  br i1 %ne127, label %if.then128, label %if.end129
 
-if.then131:                                       ; preds = %if.end125
-  %load.struct133 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder134 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct133, 12
-  call void @LLVMPositionBuilderAtEnd(ptr %builder134, ptr %call103)
-  br label %if.end132
+if.then128:                                       ; preds = %if.end122
+  %load.struct130 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder131 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct130, 12
+  call void @LLVMPositionBuilderAtEnd(ptr %builder131, ptr %call100)
+  br label %if.end129
 
-if.end132:                                        ; preds = %if.then131, %if.end125
-  br label %if.end101
+if.end129:                                        ; preds = %if.then128, %if.end122
+  br label %if.end98
 
-if.then137:                                       ; preds = %if.end101
-  %func139 = load ptr, ptr %func, align 8
-  %call140 = call i32 @LLVMGetLinkage(ptr %func139)
-  %call141 = call i32 @_ZN11LLVMLinkageB6scalycB4v0_211LinkOnceODREv()
-  %eq142 = icmp eq i32 %call140, %call141
-  br i1 %eq142, label %if.then143, label %if.end144
+if.then134:                                       ; preds = %if.end98
+  %func136 = load ptr, ptr %func, align 8
+  %call137 = call i32 @LLVMGetLinkage(ptr %func136)
+  %call138 = call i32 @_ZN11LLVMLinkageB6scalycB4v0_211LinkOnceODREv()
+  %eq139 = icmp eq i32 %call137, %call138
+  br i1 %eq139, label %if.then140, label %if.end141
 
-if.end138:                                        ; preds = %if.end144, %if.end101
+if.end135:                                        ; preds = %if.end141, %if.end98
   br label %if.end12
 
-if.then143:                                       ; preds = %if.then137
-  %func145 = load ptr, ptr %func, align 8
-  %call146 = call i32 @_ZN11LLVMLinkageB6scalycB4v0_28ExternalEv()
-  call void @LLVMSetLinkage(ptr %func145, i32 %call146)
-  %func147 = load ptr, ptr %func, align 8
-  call void @LLVMSetComdat(ptr %func147, ptr null)
-  br label %if.end144
+if.then140:                                       ; preds = %if.then134
+  %func142 = load ptr, ptr %func, align 8
+  %call143 = call i32 @_ZN11LLVMLinkageB6scalycB4v0_28ExternalEv()
+  call void @LLVMSetLinkage(ptr %func142, i32 %call143)
+  %func144 = load ptr, ptr %func, align 8
+  call void @LLVMSetComdat(ptr %func144, ptr null)
+  br label %if.end141
 
-if.end144:                                        ; preds = %if.then143, %if.then137
-  br label %if.end138
+if.end141:                                        ; preds = %if.then140, %if.then134
+  br label %if.end135
 }
 
 define linkonce_odr i1 @_ZN7EmitterB6scalycB4v0_217jit_symbol_in_setE6OptionIR5ArrayI6StringEE5SliceIcE(ptr %0, ptr %1, ptr %2) {

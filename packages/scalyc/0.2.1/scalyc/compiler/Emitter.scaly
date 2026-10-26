@@ -781,7 +781,7 @@ define Emitter
             LLVMSetLinkage(fn, LLVMLinkage.LinkOnceODR())
             if target_is_coff = false
                 return
-            var name_len: size_t 0
+            var name_len: c_size 0
             let name LLVMGetValueName2(fn, &name_len)
             if name = null
                 return
@@ -2256,8 +2256,8 @@ define Emitter
         {
             if config.keep_main_frame = false or current_function = null
                 return false
-            var len: size_t 0
-            let name LLVMGetValueName2(current_function, &len as pointer[size_t])
+            var len: c_size 0
+            let name LLVMGetValueName2(current_function, &len)
             len = 4 and name <> null and String(name as pointer[const_char]).equals("main")
         }
 
@@ -4608,7 +4608,7 @@ define Emitter
         {
             if current_function = null
                 return "<unknown>" as pointer[char]
-            var len: size_t 0
+            var len: c_size 0
             LLVMGetValueName2(current_function, &len)
         }
 
@@ -8164,9 +8164,9 @@ define Emitter
                     let call_ty this.first_call_type(f)
                     if call_ty <> null
                     {
-                        var len: size_t 0
-                        let raw LLVMGetValueName2(f, &len as pointer[size_t])
-                        let name String(raw as pointer[const_char], len)
+                        var len: c_size 0
+                        let raw LLVMGetValueName2(f, &len)
+                        let name String(raw as pointer[const_char], len as size_t)
                         LLVMSetValueName2(f, "" as pointer[const_char], 0)
                         let typed LLVMAddFunction(llvm_module, name.to_c_string(), call_ty)
                         LLVMSetLinkage(typed, LLVMGetLinkage(f))
@@ -8437,7 +8437,7 @@ define Emitter
             var gv LLVMGetFirstGlobal(llvm_module)
             while gv <> null
             {
-                var name_len: size_t 0
+                var name_len: c_size 0
                 let name_ptr LLVMGetValueName2(gv, &name_len)
                 if name_ptr <> null and name_len > 31
                 {
@@ -8537,8 +8537,9 @@ define Emitter
             {
                 if LLVMIsDeclaration(func) <> 0
                 {
-                    var name_len: size_t 0
-                    let name_ptr LLVMGetValueName2(func, &name_len)
+                    var name_len_c: c_size 0
+                    let name_ptr LLVMGetValueName2(func, &name_len_c)
+                    let name_len name_len_c as size_t
                     if name_ptr <> null
                     {
                         if name_len > 4
@@ -8761,7 +8762,7 @@ define Emitter
             {
                 if LLVMIsDeclaration(func) <> 0
                 {
-                    var name_len: size_t 0
+                    var name_len: c_size 0
                     let name_ptr LLVMGetValueName2(func, &name_len)
                     if name_ptr <> null
                     {
@@ -8854,7 +8855,7 @@ define Emitter
                 ; bare-named, are the host's and keep the bit.
                 else if LLVMIsDeclaration(gv) <> 0 and LLVMIsThreadLocal(gv) <> 0
                 {
-                    var name_len: size_t 0
+                    var name_len: c_size 0
                     let name_ptr LLVMGetValueName2(gv, &name_len)
                     if name_ptr <> null and name_len > 2 and *name_ptr = 95 and *(name_ptr + 1) = 90
                         LLVMSetThreadLocal(gv, 0)
@@ -9240,7 +9241,7 @@ define Emitter
             let linkage LLVMGetLinkage(v)
             if linkage = 8 or linkage = 9
                 return
-            var name_len: size_t 0
+            var name_len: c_size 0
             let name_ptr LLVMGetValueName2(v, &name_len)
             if name_ptr <> null and String(name_ptr) = "__main_argc_argv"
                 return
@@ -9305,7 +9306,7 @@ define Emitter
             {
                 if LLVMIsDeclaration(func) = 0
                 {
-                    var name_len: size_t 0
+                    var name_len: c_size 0
                     let name_ptr LLVMGetValueName2(func, &name_len)
                     if name_ptr <> null and name_len > 2 and *name_ptr = 95 and *(name_ptr + 1) = 90
                     {
@@ -14285,8 +14286,8 @@ define Emitter
             ; (2026-09-24, an empty operator name out of a braceless if)
             if current_function <> null
             {
-                var fn_len: size_t 0
-                let fn_name LLVMGetValueName2(current_function, &fn_len as pointer[size_t])
+                var fn_len: c_size 0
+                let fn_name LLVMGetValueName2(current_function, &fn_len)
                 scaly_eputs " in "
                 scaly_eputs(fn_name as pointer[const_char])
             }
@@ -15373,8 +15374,8 @@ define Emitter
             scaly_eputs "', which this routine does not have; it would land on the stack"
             if current_function <> null
             {
-                var fn_len: size_t 0
-                let fn_name LLVMGetValueName2(current_function, &fn_len as pointer[size_t])
+                var fn_len: c_size 0
+                let fn_name LLVMGetValueName2(current_function, &fn_len)
                 scaly_eputs " in "
                 scaly_eputs(fn_name as pointer[const_char])
             }

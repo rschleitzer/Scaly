@@ -547,7 +547,7 @@ function LLVMBuildInsertValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, el
 ; ============================================================================
 
 ; Get/set value name
-function LLVMGetValueName2(val: LLVMValueRef, length: pointer[size_t]) returns pointer[char] extern
+function LLVMGetValueName2(val: LLVMValueRef, length: pointer[c_size]) returns pointer[char] extern
 procedure LLVMSetValueName2(val: LLVMValueRef, name: pointer[const_char], name_len: c_size) extern
 
 ; Get type of value
@@ -909,7 +909,7 @@ procedure LLVMDeleteFunction(func: LLVMValueRef) extern
 procedure LLVMDeleteGlobal(global_var: LLVMValueRef) extern
 function LLVMGetFirstGlobalAlias(mod: LLVMModuleRef) returns LLVMValueRef extern
 function LLVMGetFirstGlobalIFunc(mod: LLVMModuleRef) returns LLVMValueRef extern
-function LLVMGetModuleInlineAsm(mod: LLVMModuleRef, len: pointer[size_t]) returns pointer[const_char] extern
+function LLVMGetModuleInlineAsm(mod: LLVMModuleRef, len: pointer[c_size]) returns pointer[const_char] extern
 procedure LLVMSetModuleInlineAsm2(mod: LLVMModuleRef, asm_text: pointer[const_char], len: c_size) extern
 function LLVMGetTarget(mod: LLVMModuleRef) returns pointer[const_char] extern
 ; `scaly build --release`: a package's cached bitcode read into the program's
