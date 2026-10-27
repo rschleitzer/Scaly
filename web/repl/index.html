@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scaly REPL</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #fbfbfa; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #dcdcde;
+    --accent: #2a5db0; --ok: #1f7a3a; --bad: #b3261e; --code: #f4f4f2;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --panel: #1f1f22; --ink: #ececee; --muted: #9a9aa2; --line: #34343a;
+      --accent: #7aa7f0; --ok: #6cc788; --bad: #f08a80; --code: #26262a;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.lead { margin: 0 0 20px; color: var(--muted); }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+            padding: 14px; margin-bottom: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px;
+          padding: 3px 8px; cursor: pointer; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .chip:disabled { opacity: .5; cursor: default; }
+  button { font: inherit; font-size: 14px; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  button:disabled { opacity: .5; cursor: default; }
+  .spacer { flex: 1; }
+  #status { font-size: 14px; color: var(--muted); }
+  #status.ok { color: var(--ok); }
+  #status.bad { color: var(--bad); }
+  #term { background: var(--code); border-radius: 6px; padding: 10px; height: 60vh; min-height: 260px;
+          overflow: auto; cursor: text; }
+  #out { margin: 0; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+         white-space: pre-wrap; overflow-wrap: anywhere; }
+  #out .in { color: var(--accent); }
+  #out .err { color: var(--bad); }
+  #out .note { color: var(--muted); font-style: italic; }
+  #line { width: 100%; margin-top: 2px; padding: 0; border: 0; outline: 0; background: transparent;
+          color: var(--accent); font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  #line:disabled { opacity: .4; }
+  .hint { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+</head>
+<body>
+<main>
+  <h1>The Scaly REPL in the page</h1>
+  <p class="lead">The Scaly compiler and LLVM, compiled to WebAssembly, running in this browser tab.
+  Each entry is compiled to a WebAssembly module and loaded into the REPL's own memory, so what an
+  entry binds is there for the next one. Nothing leaves the page.</p>
+
+  <section>
+    <div class="row">
+      <div class="chips" id="chips"></div>
+      <span class="spacer"></span>
+      <button id="restart" disabled>Restart</button>
+      <button id="clear">Clear</button>
+    </div>
+    <div id="term">
+      <pre id="out"></pre>
+      <input id="line" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
+             aria-label="Input to the REPL" disabled>
+    </div>
+    <p class="hint"><span id="status">Loading…</span></p>
+    <p class="hint">Enter sends a line; an open brace continues the entry on the next one. Up and down
+    walk the lines sent before. <code>:help</code> lists the REPL's commands.</p>
+  </section>
+</main>
+
+<script type="module">
+const out = document.getElementById('out');
+const term = document.getElementById('term');
+const line = document.getElementById('line');
+const statusEl = document.getElementById('status');
+const restartButton = document.getElementById('restart');
+
+const EXAMPLES = [
+  'let x 41',
+  'function sq(n: int) returns int n * n',
+  'sq(x)',
+  'var xs Array[int]()',
+  'xs.add(sq(3))',
+  'xs',
+  ':where xs',
+  '"x is `x`"',
+];
+
+function status(text, kind = '') {
+  statusEl.textContent = text;
+  statusEl.className = kind;
+}
+
+function append(text, cls = '') {
+  if (text === '') return;
+  const last = out.lastChild;
+  if (last && last.nodeType === 1 && last.className === cls) last.textContent += text;
+  else {
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    span.textContent = text;
+    out.appendChild(span);
+  }
+  term.scrollTop = term.scrollHeight;
+}
+
+// what is typed goes to the worker through a SharedArrayBuffer, a line at a
+// time while the REPL waits for one (worker.mjs)
+const CAPACITY = 65536;
+let stdin = null, state = null, bytes = null;
+let queue = [], wants = false, worker = null;
+let module = null, files = null;
+const encoder = new TextEncoder();
+
+function feed() {
+  if (!wants || queue.length === 0) return;
+  const next = queue.shift();
+  if (next === null) {
+    wants = false;
+    Atomics.store(state, 0, 2);
+    Atomics.notify(state, 0);
+    return;
+  }
+  append(next + '\n', 'in');
+  const b = encoder.encode(next + '\n');
+  const n = Math.min(b.length, CAPACITY);
+  bytes.set(b.subarray(0, n));
+  state[1] = n;
+  wants = false;
+  status('Working…');
+  Atomics.store(state, 0, 1);
+  Atomics.notify(state, 0);
+}
+
+function send(text) {
+  for (const l of text.split('\n')) queue.push(l);
+  feed();
+}
+
+function start() {
+  stdin = new SharedArrayBuffer(8 + CAPACITY);
+  state = new Int32Array(stdin, 0, 2);
+  bytes = new Uint8Array(stdin, 8);
+  queue = [];
+  wants = false;
+  const decoders = { out: new TextDecoder(), err: new TextDecoder() };
+  worker = new Worker('worker.mjs', { type: 'module' });
+  worker.onmessage = ({ data }) => {
+    switch (data.type) {
+      case 'out':
+      case 'err':
+        append(decoders[data.type].decode(data.bytes, { stream: true }), data.type === 'err' ? 'err' : '');
+        break;
+      case 'wants':
+        wants = true;
+        line.disabled = false;
+        status('Ready.', 'ok');
+        feed();
+        break;
+      case 'exit':
+        append(`\n[the session ended with status ${data.status} -- Restart begins a new one]\n`, 'note');
+        end();
+        break;
+      case 'crash':
+        append(`\n[the session stopped: ${data.text} -- Restart begins a new one]\n`, 'err');
+        end();
+        break;
+    }
+  };
+  worker.onerror = e => {
+    append(`\n[the worker failed: ${e.message}]\n`, 'err');
+    end();
+  };
+  worker.postMessage({ module, files, stdin });
+  restartButton.disabled = false;
+  line.disabled = false;
+  line.focus();
+  status('Starting the session…');
+}
+
+function end() {
+  worker?.terminate();
+  worker = null;
+  wants = false;
+  line.disabled = true;
+  status('The session ended.', 'bad');
+}
+
+restartButton.onclick = () => {
+  end();
+  append('\n', '');
+  start();
+};
+document.getElementById('clear').onclick = () => { out.textContent = ''; line.focus(); };
+term.onclick = () => { if (!line.disabled && !getSelection().toString()) line.focus(); };
+
+// the lines sent before, kept in this browser where it allows
+let history = [];
+try { history = JSON.parse(localStorage.getItem('scaly-repl-history') ?? '[]'); } catch {}
+let at = history.length, draft = '';
+function remember(text) {
+  if (text.trim() === '' || history[history.length - 1] === text) return;
+  history.push(text);
+  if (history.length > 500) history = history.slice(-500);
+  try { localStorage.setItem('scaly-repl-history', JSON.stringify(history)); } catch {}
+}
+line.onkeydown = e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const text = line.value;
+    line.value = '';
+    remember(text);
+    at = history.length;
+    if (worker) send(text);
+  } else if (e.key === 'ArrowUp' && at > 0) {
+    e.preventDefault();
+    if (at === history.length) draft = line.value;
+    line.value = history[--at];
+  } else if (e.key === 'ArrowDown' && at < history.length) {
+    e.preventDefault();
+    at++;
+    line.value = at === history.length ? draft : history[at];
+  } else if (e.key === 'd' && e.ctrlKey && line.value === '') {
+    e.preventDefault();
+    if (worker) { queue.push(null); feed(); }
+  }
+};
+
+const chips = document.getElementById('chips');
+for (const example of EXAMPLES) {
+  const chip = document.createElement('button');
+  chip.className = 'chip';
+  chip.textContent = example;
+  chip.onclick = () => { if (worker) { remember(example); at = history.length; send(example); } line.focus(); };
+  chips.appendChild(chip);
+}
+
+async function fetchWithProgress(url, what) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${url}: ${response.status}`);
+  const total = Number(response.headers.get('content-length')) || 0;
+  const reader = response.body.getReader();
+  const parts = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    parts.push(value);
+    got += value.length;
+    const mb = n => (n / 1048576).toFixed(0);
+    status(total ? `Loading ${what}… ${mb(got)} of ${mb(total)} MB` : `Loading ${what}… ${mb(got)} MB`);
+  }
+  const all = new Uint8Array(got);
+  let p = 0;
+  for (const part of parts) { all.set(part, p); p += part.length; }
+  return all;
+}
+
+async function load() {
+  if (!crossOriginIsolated) {
+    status('This page must be served cross-origin isolated (COOP and COEP headers) -- web/repl/serve.mjs does.', 'bad');
+    return;
+  }
+  try {
+    const listing = await (await fetch('stdlib.json')).json();
+    files = {};
+    for (const [path, b64] of Object.entries(listing))
+      files[path] = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const wasm = await fetchWithProgress('scaly.wasm', 'the compiler');
+    status('Compiling the compiler…');
+    module = await WebAssembly.compile(wasm);
+    start();
+  } catch (e) {
+    status(`Could not load the REPL: ${e.message}`, 'bad');
+  }
+}
+load();
+</script>
+</body>
+</html>

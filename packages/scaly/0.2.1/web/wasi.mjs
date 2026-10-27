@@ -35,7 +35,7 @@
 // subscription of poll_oneoff answers at once (a page cannot sleep on its main
 // thread), a descriptor is always ready.
 
-const ERRNO = { SUCCESS: 0, BADF: 8, EXIST: 20, INVAL: 28, ISDIR: 31, NOENT: 44, NOSYS: 52, NOTDIR: 54, SPIPE: 70 };
+const ERRNO = { SUCCESS: 0, BADF: 8, EXIST: 20, INVAL: 28, ISDIR: 31, NOENT: 44, NOSYS: 52, NOTDIR: 54, NOTEMPTY: 55, SPIPE: 70 };
 const FILETYPE = { UNKNOWN: 0, CHARACTER_DEVICE: 2, DIRECTORY: 3, REGULAR_FILE: 4 };
 const OFLAGS = { CREAT: 1, DIRECTORY: 2, EXCL: 4, TRUNC: 8 };
 const FDFLAGS_APPEND = 1;
@@ -180,16 +180,21 @@ export class Wasi {
   // args: argv, the program's name first. env: an object. cwd: the working
   // directory (handed in as PWD, which the runtime adopts). stdin: bytes or a
   // string, or a function answering them, asked when the program first reads
-  // its standard input (a program that never does is not kept waiting for it). stdout/stderr: called with each written Uint8Array; without them
-  // the output is kept (stdout_text(), stderr_text()).
+  // its standard input (a program that never does is not kept waiting for it).
+  // stdin_more: a function asked each time the program has read all it was
+  // given, answering the next bytes -- empty at the end of the input: for a
+  // program that reads its input as it comes (the REPL in a worker, which
+  // waits there for the next line). stdout/stderr: called with each written
+  // Uint8Array; without them the output is kept (stdout_text(), stderr_text()).
   constructor({ args = ['program'], env = {}, cwd = '/', files = new MemoryFiles(), stdin = new Uint8Array(),
-                stdout = null, stderr = null } = {}) {
+                stdin_more = null, stdout = null, stderr = null } = {}) {
     this.args = args.map(a => encoder.encode(a + '\0'));
     this.env = Object.entries({ ...env, PWD: cwd }).map(([k, v]) => encoder.encode(k + '=' + v + '\0'));
     this.files = files;
     this.stdin_source = stdin;
     this.stdin = null;
     this.stdin_pos = 0;
+    this.stdin_more = stdin_more;
     this.out = [[], []];
     this.sinks = [stdout, stderr];
     // fd 0-2 the streams, fd 3 the one preopened directory: the root
@@ -213,6 +218,18 @@ export class Wasi {
   stderr_bytes() { return concat(this.out[1]); }
   stdout_text() { return decoder.decode(this.stdout_bytes()); }
   stderr_text() { return decoder.decode(this.stderr_bytes()); }
+
+  // standard input as far as it is there, asked for when first read
+  stdin_ready(more) {
+    if (this.stdin === null)
+      this.stdin = bytes_of(typeof this.stdin_source === 'function' ? this.stdin_source() : this.stdin_source);
+    if (more && this.stdin_more && this.stdin_pos >= this.stdin.length) {
+      const next = bytes_of(this.stdin_more());
+      if (next.length === 0) this.stdin_more = null;
+      this.stdin = next;
+      this.stdin_pos = 0;
+    }
+  }
 
   view() { return new DataView(this.memory.buffer); }
   mem() { return new Uint8Array(this.memory.buffer); }
@@ -302,6 +319,21 @@ export class Wasi {
         else w.put_filestat(ptr, FILETYPE.UNKNOWN, 0);
         return ERRNO.SUCCESS;
       },
+      // a file made longer (zeros) or shorter
+      fd_filestat_set_size(fd, size) {
+        const f = w.fds[fd];
+        if (!f) return ERRNO.BADF;
+        if (f.kind !== 'file') return ERRNO.INVAL;
+        const e = f.entry, n = Number(size);
+        if (n > e.data.length) {
+          const grown = new Uint8Array(n);
+          grown.set(e.data.subarray(0, e.size));
+          e.data = grown;
+        } else if (n > e.size) e.data.fill(0, e.size, n);
+        e.size = n;
+        w.files.note_written(f.path);
+        return ERRNO.SUCCESS;
+      },
       path_filestat_get(fd, flags, path_ptr, path_len, ptr) {
         const p = w.resolve(fd, path_ptr, path_len);
         if (p === null) return ERRNO.BADF;
@@ -387,6 +419,24 @@ export class Wasi {
         if (p !== q) w.files.rename(p, q);
         return ERRNO.SUCCESS;
       },
+      // there are no symbolic links here: what is there is no link
+      path_readlink(fd, path_ptr, path_len, buf, buf_len, bufused_ptr) {
+        const p = w.resolve(fd, path_ptr, path_len);
+        if (p === null) return ERRNO.BADF;
+        return w.files.lookup(p) ? ERRNO.INVAL : ERRNO.NOENT;
+      },
+      // an empty directory the program made or found
+      path_remove_directory(fd, path_ptr, path_len) {
+        const p = w.resolve(fd, path_ptr, path_len);
+        if (p === null) return ERRNO.BADF;
+        const e = w.files.lookup(p);
+        if (!e) return ERRNO.NOENT;
+        if (e !== 'dir') return ERRNO.NOTDIR;
+        if (w.files.list(p).length > 0) return ERRNO.NOTEMPTY;
+        w.files.dirs.delete(p);
+        w.files.made = w.files.made.filter(q => q !== p);
+        return ERRNO.SUCCESS;
+      },
       path_unlink_file(fd, path_ptr, path_len) {
         const p = w.resolve(fd, path_ptr, path_len);
         if (p === null) return ERRNO.BADF;
@@ -408,8 +458,7 @@ export class Wasi {
         if (f.kind === 'dir') return ERRNO.ISDIR;
         if (f.kind === 'out') return ERRNO.BADF;
         const v = w.view(), m = w.mem();
-        if (f.kind === 'stdin' && w.stdin === null)
-          w.stdin = bytes_of(typeof w.stdin_source === 'function' ? w.stdin_source() : w.stdin_source);
+        if (f.kind === 'stdin') w.stdin_ready(true);
         const src = f.kind === 'stdin' ? w.stdin : f.entry.data;
         const end = f.kind === 'stdin' ? w.stdin.length : f.entry.size;
         let pos = f.kind === 'stdin' ? w.stdin_pos : f.pos;
@@ -423,6 +472,26 @@ export class Wasi {
           if (n < len) break;
         }
         if (f.kind === 'stdin') w.stdin_pos = pos; else f.pos = pos;
+        v.setUint32(nread_ptr, total, true);
+        return ERRNO.SUCCESS;
+      },
+      // a read at an offset that leaves the position where it is (wasi-libc's
+      // emulated mmap reads a mapped file so)
+      fd_pread(fd, iovs, iovs_len, offset, nread_ptr) {
+        const f = w.fds[fd];
+        if (!f) return ERRNO.BADF;
+        if (f.kind === 'dir') return ERRNO.ISDIR;
+        if (f.kind !== 'file') return ERRNO.SPIPE;
+        const v = w.view(), m = w.mem();
+        let pos = Number(offset), total = 0;
+        for (let i = 0; i < iovs_len; i++) {
+          const buf = v.getUint32(iovs + 8 * i, true), len = v.getUint32(iovs + 8 * i + 4, true);
+          const n = Math.max(0, Math.min(len, f.entry.size - pos));
+          m.set(f.entry.data.subarray(pos, pos + n), buf);
+          pos += n;
+          total += n;
+          if (n < len) break;
+        }
         v.setUint32(nread_ptr, total, true);
         return ERRNO.SUCCESS;
       },
@@ -463,8 +532,7 @@ export class Wasi {
       // and a clock is taken as elapsed (a page cannot sleep)
       poll_oneoff(in_ptr, out_ptr, nsubscriptions, nevents_ptr) {
         const v = w.view();
-        if (w.stdin === null)
-          w.stdin = bytes_of(typeof w.stdin_source === 'function' ? w.stdin_source() : w.stdin_source);
+        w.stdin_ready(false);
         for (let i = 0; i < nsubscriptions; i++) {
           const s = in_ptr + 48 * i, e = out_ptr + 32 * i;
           const tag = v.getUint8(s + 8);

@@ -30,3 +30,8 @@ dist/
 demo/build/
 
 docs/scaly-spec.rtf
+
+# the REPL page's built files (web/repl/build.sh)
+/web/repl/scaly.wasm
+/web/repl/wasi.mjs
+/web/repl/stdlib.json
