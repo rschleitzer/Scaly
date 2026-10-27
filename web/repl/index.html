@@ -43,9 +43,12 @@
   #out { margin: 0; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
          white-space: pre-wrap; overflow-wrap: anywhere; }
   #out .in { color: var(--accent); }
-  #out .err { color: var(--bad); }
-  #out .note { color: var(--muted); font-style: italic; }
-  #line { width: 100%; margin-top: 2px; padding: 0; border: 0; outline: 0; background: transparent;
+  .err { color: var(--bad); }
+  .note { color: var(--muted); font-style: italic; }
+  .prompt { display: flex; align-items: baseline; }
+  #tail { margin: 0; flex: none; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+          white-space: pre; }
+  #line { flex: 1; min-width: 0; padding: 0; border: 0; outline: 0; background: transparent;
           color: var(--accent); font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
   #line:disabled { opacity: .4; }
   .hint { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
@@ -68,8 +71,8 @@
     </div>
     <div id="term">
       <pre id="out"></pre>
-      <input id="line" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
-             aria-label="Input to the REPL" disabled>
+      <div class="prompt"><pre id="tail"></pre><input id="line" type="text" spellcheck="false"
+        autocomplete="off" autocapitalize="off" aria-label="Input to the REPL" disabled></div>
     </div>
     <p class="hint"><span id="status">Loading…</span></p>
     <p class="hint">Enter sends a line; an open brace continues the entry on the next one. Up and down
@@ -100,7 +103,25 @@ function status(text, kind = '') {
   statusEl.className = kind;
 }
 
+// the output's last line, not ended yet -- the prompt -- stands in `tail`,
+// beside the input
+const tail = document.getElementById('tail');
+let tailClass = '';
 function append(text, cls = '') {
+  if (text === '') return;
+  if (tail.textContent !== '') {
+    if (cls === tailClass) text = tail.textContent + text;
+    else put(tail.textContent, tailClass);
+    tail.textContent = '';
+  }
+  const cut = text.lastIndexOf('\n') + 1;
+  put(text.slice(0, cut), cls);
+  tail.textContent = text.slice(cut);
+  tail.className = tailClass = cls;
+  term.scrollTop = term.scrollHeight;
+}
+
+function put(text, cls) {
   if (text === '') return;
   const last = out.lastChild;
   if (last && last.nodeType === 1 && last.className === cls) last.textContent += text;
