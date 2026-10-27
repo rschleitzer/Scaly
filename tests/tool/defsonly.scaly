@@ -1,0 +1,5 @@
+; tests/tool/run.sh, "run nothing": a file of definitions alone has nothing
+; to run. The JIT looked `main` up all the same and found the HOST's -- the
+; tool's own --, so `scaly run` of this file started the REPL (until 2026-10-27).
+function twice(n: int) returns int
+    n * 2

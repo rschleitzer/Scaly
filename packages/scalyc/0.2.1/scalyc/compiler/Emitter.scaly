@@ -8942,6 +8942,8 @@ define Emitter
             }
             if config.keep_main_frame
                 this.keep_main_ir()
+            if fn_mangled = "main" and this.defines_function("main") = false
+                return this.nothing_to_run(module_name)
 
             ; The JIT needs the host target backend registered (detectHost + codegen).
             ; The -c/-o path inits these in write_object_to_file, which --run bypasses;
@@ -9150,11 +9152,13 @@ define Emitter
         ; and the C library from the program running here -- and handed to the
         ; host, which loads it into this program's memory and table, resolves
         ; its imports against this program's exports and calls its entry with
-        ; `program_argv`. One memory and one allocator, as in the JIT: what the
-        ; entry binds reaches this program's session. The objects of other
-        ; packages are not position-independent: such a program is refused.
-        ; The program's exit code, 127 when it could not be built.
-        procedure wasm_run(mutable this, mutable plan: Plan, mutable module_name: String, dep_object_files: ref[Array[String]], mutable program_argv: pointer[pointer[char]]) returns i64
+        ; `program_argc` and `program_argv` (the REPL: 0 and its session table;
+        ; `scaly run`: the program's arguments). One memory and one allocator,
+        ; as in the JIT: what the entry binds reaches this program's session.
+        ; The objects of other packages are not position-independent: such a
+        ; program is refused. The program's exit code, 127 when it could not be
+        ; built.
+        procedure wasm_run(mutable this, mutable plan: Plan, mutable module_name: String, dep_object_files: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]]) returns i64
         {
             if dep_object_files.length > 0
             {
@@ -9169,6 +9173,8 @@ define Emitter
             }
             if config.keep_main_frame
                 this.keep_main_ir()
+            if this.defines_function("__main_argc_argv") = false and this.defines_function("__main_void") = false
+                return this.nothing_to_run(module_name)
             this.hide_side_definitions()
             var obj String("/tmp/scaly-entry.o")
             var out String("/tmp/scaly-entry.wasm")
@@ -9188,7 +9194,10 @@ define Emitter
             args.add(String("-shared"))
             args.add(String("--experimental-pic"))
             args.add(String("--unresolved-symbols=import-dynamic"))
-            args.add(String("--export=__main_argc_argv"))
+            ; the entry name_wasm_entry gave the program's main: with its
+            ; arguments, or without for a program of top-level statements
+            args.add(String("--export-if-defined=__main_argc_argv"))
+            args.add(String("--export-if-defined=__main_void"))
             args.add(String(obj))
             args.add(String("-o"))
             args.add(String(out))
@@ -9205,7 +9214,7 @@ define Emitter
                 return 127
             }
             let run_start scaly_eio_now_ns()
-            let result scalyc_wasm_run(out.to_c_string(), 0, program_argv as pointer[pointer[const_char]])
+            let result scalyc_wasm_run(out.to_c_string(), program_argc as i32, program_argv as pointer[pointer[const_char]])
             run_ns := scaly_eio_now_ns() - run_start
             result as i64
         }
@@ -9232,8 +9241,24 @@ define Emitter
             }
         }
 
+        ; does the module define the function `name`
+        procedure defines_function(mutable this, mutable name: String) returns bool
+        {
+            let f LLVMGetNamedFunction(llvm_module, name.to_c_string())
+            f <> null and LLVMIsDeclaration(f) = 0
+        }
+
+        ; a program of definitions alone has no main to run, and the JIT must
+        ; not look one up: it would find the HOST's -- the tool's own, so
+        ; `scaly run` of such a file started the REPL (until 2026-10-27)
+        procedure nothing_to_run(this, module_name: String) returns i64
+        {
+            Console.println "`module_name`: nothing to run -- no statements and no main"
+            1
+        }
+
         ; a definition of non-local linkage (internal 8, private 9 must stay
-        ; default) other than the entry the host calls
+        ; default) other than the entry the host calls (name_wasm_entry)
         procedure hide_side_definition(mutable this, mutable v: LLVMValueRef)
         {
             if LLVMIsDeclaration(v) <> 0
@@ -9243,8 +9268,12 @@ define Emitter
                 return
             var name_len: c_size 0
             let name_ptr LLVMGetValueName2(v, &name_len)
-            if name_ptr <> null and String(name_ptr) = "__main_argc_argv"
-                return
+            if name_ptr <> null
+            {
+                let name String(name_ptr)
+                if name = "__main_argc_argv" or name = "__main_void"
+                    return
+            }
             LLVMSetVisibility(v, 1)
         }
 

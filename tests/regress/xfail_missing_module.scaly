@@ -1,0 +1,10 @@
+; xfail: xfail_missing_module.scaly:9:1: error: no module file
+; Regression (2026-10-27): `module name` whose file <dir>/<name>.scaly is not
+; there compiled in silence -- the Modeler answered an empty module, and the
+; program ran without whatever the file was meant to define. Found by the
+; tutorial's tour, whose two-file example ran from ONE file: the definitions
+; it took from shapes.scaly were in the same listing. It is an error at the
+; declaration now (Modeler.handle_module_decl).
+
+module no_such_module_file
+print "the module was not there"

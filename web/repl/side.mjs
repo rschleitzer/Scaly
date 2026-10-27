@@ -78,7 +78,8 @@ export class SideModules {
   // `scaly.run(path, argc, argv)`: the entry's data on a block of the REPL's
   // heap (never freed -- a value of the session may point into it), its
   // functions behind the REPL's in the table, the stack the REPL's; its
-  // `__main_argc_argv(argc, argv)` answers, 127 where it cannot be loaded
+  // `__main_argc_argv(argc, argv)` answers -- `__main_void()` for a program of
+  // top-level statements --, 127 where it cannot be loaded
   run(path_at, argc, argv_at) {
     const module = new WebAssembly.Module(this.read(this.c_string(path_at)));
     const ex = this.repl.exports, table = ex.__indirect_function_table;
@@ -135,6 +136,10 @@ export class SideModules {
     }
     instance.exports.__wasm_apply_data_relocs?.();
     instance.exports.__wasm_call_ctors?.();
-    return instance.exports.__main_argc_argv(argc, argv_at);
+    const { __main_argc_argv, __main_void } = instance.exports;
+    if (__main_argc_argv) return __main_argc_argv(argc, argv_at);
+    if (__main_void) return __main_void();
+    this.warn('entry: no __main_argc_argv and no __main_void');
+    return 127;
   }
 }

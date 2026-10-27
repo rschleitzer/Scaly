@@ -48,13 +48,6 @@ use scalyc.compiler.Plan.*
 use scalyc.compiler.Planner.*
 
 ; ============================================================================
-; Module declarations
-; ============================================================================
-
-; Parser module (which includes lexer)
-module parser
-
-; ============================================================================
 ; Command-line options
 ; ============================================================================
 
@@ -1298,6 +1291,11 @@ define cli
             var prog_dep_syms Array[String]()
             if cli.compile_jit_dependencies(&model, opts.input_file, &prog_dep_objs, &prog_dep_syms) = false
                 return 4
+            ; the compiler built for WebAssembly has no JIT: the program is
+            ; linked as a side module and run in this program's memory, as an
+            ; entry of the REPL is (Emitter.wasm_run)
+            if scalyc_has_jit() = 0
+                return prog_emitter.wasm_run(plan, program_name, &prog_dep_objs, opts.program_argc, opts.program_argv) as int
             let prog_rc prog_emitter.jit_run(plan, program_name, "main", &prog_dep_objs, &prog_dep_syms, opts.program_argc, opts.program_argv, null, null)
             return prog_rc as int
         }

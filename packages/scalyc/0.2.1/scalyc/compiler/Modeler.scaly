@@ -2688,7 +2688,7 @@ define Modeler
                     let decl_syntax (*decl_ptr)
                     choose decl_syntax
                         when mod_syntax: ModuleSyntax
-                            handle_module_decl(ns_path, mod_syntax, is_private, &modules)
+                            handle_module_decl(ns_path, mod_syntax, is_private, &modules, String())
                         else
                         {
                             let member handle_declaration(ns_path, decl_syntax, &symbols_builder)
@@ -3039,8 +3039,28 @@ define Modeler
     ; helper exists in procedure form so the choose-arm in build_module# is a
     ; single call (works around a stage-0 codegen issue where an in-place
     ; collection .add inside a choose-arm corrupts the caller's frame).
-    procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, mutable modules: ref[Array[Module]]) mutable modeler_error_count
+    ; `module name` loads <path>/<name>.scaly. A file that is not there is an
+    ; error at the declaration (`declaring_file`, empty where it is not known:
+    ; a module declared in a namespace); until 2026-10-27 it was an empty
+    ; module, and `module nosuch` compiled in silence.
+    procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, mutable modules: ref[Array[Module]], declaring_file: String) mutable modeler_error_count
     {
+        var file mod_syntax.name
+        if path.get_length() > 0
+            file := "`path`/`mod_syntax.name`"
+        file := "`file`.scaly"
+        if File.exists(file) = false
+        {
+            var declared String(declaring_file)
+            if declared.get_length() > 0 and File.exists(declared)
+                report_module_error(declared, File.read_to_string(declared), mod_syntax.start, "error: no module file `file` for module `mod_syntax.name`")
+            else
+            {
+                modeler_error_count := modeler_error_count + 1
+                Console.println "error: no module file `file` for module `mod_syntax.name`"
+            }
+            return
+        }
         let loaded build_referenced_module(path, mod_syntax.name, is_private)
         modules.add loaded
     }
@@ -4640,7 +4660,7 @@ define Modeler
                             use_idx := use_idx + 1
                         }
                         when mod_syntax: ModuleSyntax
-                            handle_module_decl(path, mod_syntax, is_private, &modules)
+                            handle_module_decl(path, mod_syntax, is_private, &modules, file_name)
                         else
                         {
                             let member handle_declaration(path, decl_syntax, &symbols_builder)

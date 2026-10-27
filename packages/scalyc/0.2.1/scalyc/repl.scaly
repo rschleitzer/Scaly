@@ -712,7 +712,7 @@ define repl
         if scalyc_has_jit() <> 0
             rc := emitter.jit_run(plan, "repl", "main", &dep_objs, &dep_syms, 0, table as pointer[pointer[char]], null, null)
         else
-            rc := emitter.wasm_run(plan, "repl", &dep_objs, table as pointer[pointer[char]])
+            rc := emitter.wasm_run(plan, "repl", &dep_objs, 0, table as pointer[pointer[char]])
         fflush(null)
         ; it did not run: nothing it would have bound is in the table
         if rc = 127

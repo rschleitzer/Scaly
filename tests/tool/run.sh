@@ -352,6 +352,14 @@ if scaly_jit_available 2>/dev/null; then
   [ "$rc" = 0 ] && [ "$out" = "$(printf 'test test_sum ... ok\n1 passed')" ] && ok || bad "test filter: rc=$rc '$out'"
 fi
 
+# run nothing: a file of definitions alone has nothing to run -- the JIT found
+# the tool's own main and started the REPL (Emitter.nothing_to_run)
+if scaly_jit_available 2>/dev/null; then
+  out=$("$SCALY" run tests/tool/defsonly.scaly < /dev/null 2>&1); rc=$?
+  [ "$rc" = 1 ] && echo "$out" | grep -q 'nothing to run' && ! echo "$out" | grep -q 'scaly>' && ok \
+    || bad "run nothing: rc=$rc '$(echo "$out" | head -3 | tr '\n' '|')'"
+fi
+
 # no-tests method: a method named `test` is not a test
 if "$SCALY" build tests/tool/testmethod.scaly --no-tests -o "$TMP/testmethod$SCALY_EXE" > "$TMP/testmethod.log" 2>&1; then
   out=$("$TMP/testmethod$SCALY_EXE")
