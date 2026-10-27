@@ -35,3 +35,5 @@ docs/scaly-spec.rtf
 /web/repl/scaly.wasm
 /web/repl/wasi.mjs
 /web/repl/stdlib.json
+/web/repl/*.br
+/web/repl/*.gz

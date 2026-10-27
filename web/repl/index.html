@@ -256,8 +256,10 @@ async function fetchWithProgress(url, what) {
     if (done) break;
     parts.push(value);
     got += value.length;
+    // sent compressed, the length is the compressed one: no total then
     const mb = n => (n / 1048576).toFixed(0);
-    status(total ? `Loading ${what}… ${mb(got)} of ${mb(total)} MB` : `Loading ${what}… ${mb(got)} MB`);
+    const encoded = response.headers.get('content-encoding');
+    status(total && !encoded ? `Loading ${what}… ${mb(got)} of ${mb(total)} MB` : `Loading ${what}… ${mb(got)} MB`);
   }
   const all = new Uint8Array(got);
   let p = 0;

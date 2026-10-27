@@ -1,7 +1,8 @@
 // node web/repl/serve.mjs [dir] [port] -- serve the REPL's page (default:
 // this directory, port 8765) on localhost, cross-origin isolated: the page
 // hands its worker typed lines through a SharedArrayBuffer, which a browser
-// grants only a page sent with these two headers.
+// grants only a page sent with these two headers. A file with a compressed
+// twin beside it (web/repl/compress.mjs) is sent compressed.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
@@ -21,11 +22,24 @@ createServer(async (request, response) => {
     response.writeHead(403).end();
     return;
   }
+  // a file compressed beside itself (compress.mjs) goes as it is, where the
+  // browser takes that encoding
+  const accepts = request.headers['accept-encoding'] ?? '';
+  let body = null, encoding = null;
+  for (const [suffix, name] of [['.br', 'br'], ['.gz', 'gzip']]) {
+    if (body === null && accepts.includes(name)) {
+      try {
+        body = await readFile(file + suffix);
+        encoding = name;
+      } catch { }
+    }
+  }
   try {
-    const body = await readFile(file);
+    body ??= await readFile(file);
     response.writeHead(200, {
       'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream',
       'Content-Length': body.length,
+      ...(encoding ? { 'Content-Encoding': encoding, 'Vary': 'Accept-Encoding' } : {}),
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cache-Control': 'no-cache',
