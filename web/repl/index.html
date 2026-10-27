@@ -60,7 +60,8 @@
   <h1>The Scaly REPL in the page</h1>
   <p class="lead">The Scaly compiler and LLVM, compiled to WebAssembly, running in this browser tab.
   Each entry is compiled to a WebAssembly module and loaded into the REPL's own memory, so what an
-  entry binds is there for the next one. Nothing leaves the page.</p>
+  entry binds is there for the next one. Nothing leaves the page. New to Scaly? Take
+  <a href="tour.html">the tour</a> first.</p>
 
   <section>
     <div class="row">
@@ -81,6 +82,8 @@
 </main>
 
 <script type="module">
+import { loadCompiler } from './load.mjs';
+
 const out = document.getElementById('out');
 const term = document.getElementById('term');
 const line = document.getElementById('line');
@@ -265,42 +268,9 @@ for (const example of EXAMPLES) {
   chips.appendChild(chip);
 }
 
-async function fetchWithProgress(url, what) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`${url}: ${response.status}`);
-  const total = Number(response.headers.get('content-length')) || 0;
-  const reader = response.body.getReader();
-  const parts = [];
-  let got = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    parts.push(value);
-    got += value.length;
-    // sent compressed, the length is the compressed one: no total then
-    const mb = n => (n / 1048576).toFixed(0);
-    const encoded = response.headers.get('content-encoding');
-    status(total && !encoded ? `Loading ${what}… ${mb(got)} of ${mb(total)} MB` : `Loading ${what}… ${mb(got)} MB`);
-  }
-  const all = new Uint8Array(got);
-  let p = 0;
-  for (const part of parts) { all.set(part, p); p += part.length; }
-  return all;
-}
-
 async function load() {
-  if (!crossOriginIsolated) {
-    status('This page must be served cross-origin isolated (COOP and COEP headers) -- web/repl/serve.mjs does.', 'bad');
-    return;
-  }
   try {
-    const listing = await (await fetch('stdlib.json')).json();
-    files = {};
-    for (const [path, b64] of Object.entries(listing))
-      files[path] = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const wasm = await fetchWithProgress('scaly.wasm', 'the compiler');
-    status('Compiling the compiler…');
-    module = await WebAssembly.compile(wasm);
+    ({ module, files } = await loadCompiler(text => status(text)));
     start();
   } catch (e) {
     status(`Could not load the REPL: ${e.message}`, 'bad');

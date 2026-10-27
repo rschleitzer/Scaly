@@ -517,17 +517,21 @@ else
     <para>This section sweeps quickly across the language using small, complete
       programs. If something is not fully explained here, do not worry —
       every feature is covered in detail in the rest of this specification, and
-      each part of the tour points you to the relevant chapter.</para>
+      each part of the tour points you to the relevant chapter. Each program
+      prints what it computes; <code>print</code> writes a line:</para>
+      <programlisting>print "Hello from Scaly"</programlisting>
 
     <section xml:id="tut-values">
       <title>Values and Bindings</title>
       <para>Bind a value to a name with <code>let</code>. There is no equals
         sign — the name is followed directly by its value. Use <code>var</code>
         for a binding you intend to change, and <code>:=</code> to change it.
-        A semicolon starts a comment.</para>
+        A semicolon starts a comment, and backticks inside a string put a
+        value into the text.</para>
       <programlisting>let answer 42        ; immutable binding
 var count 0          ; mutable binding
-count := count + 1 ; assignment is :=</programlisting>
+count := count + 1   ; assignment is :=
+print "answer is `answer`, count is `count`"</programlisting>
       <para>The equals sign <code>=</code> is reserved for comparison, so it
         never gets confused with assignment. See <xref linkend="lexical"/> for
         the full lexical rules.</para>
@@ -576,13 +580,13 @@ while i &lt;= 10
     sum := sum + i
     i := i + 1
 }
-; sum is now 55</programlisting>
+print "the sum is `sum`"</programlisting>
       <para><code>for</code> iterates. <code>for i in 4</code> runs
         <code>i</code> from 0 up to — but not including — 4:</para>
       <programlisting>var total 0
 for i in 4
     total := total + i
-; total is 0 + 1 + 2 + 3 = 6</programlisting>
+print "0 + 1 + 2 + 3 is `total`"</programlisting>
     </section>
 
     <section xml:id="tut-functions">
@@ -594,7 +598,7 @@ for i in 4
       <programlisting>function add(a: int, b: int) returns int
     a + b
 
-let s add(3, 4)      ; s is 7</programlisting>
+print "3 + 4 is `add(3, 4)`"</programlisting>
       <para>Functions can call themselves. Here is the classic factorial:</para>
       <programlisting>function factorial(n: int) returns int
     if n &lt;= 1
@@ -602,7 +606,7 @@ let s add(3, 4)      ; s is 7</programlisting>
     else
         n * factorial(n - 1)
 
-let f factorial(5)   ; f is 120</programlisting>
+print "5! is `factorial(5)`"</programlisting>
       <para>Functions are pure: they read their arguments and return a value,
         with no side effects. To mutate, use a procedure.</para>
     </section>
@@ -610,12 +614,15 @@ let f factorial(5)   ; f is 120</programlisting>
     <section xml:id="tut-procedures">
       <title>Procedures and Mutation</title>
       <para>A <code>procedure</code> is like a function but may change its inputs
-        and perform side effects. The distinction is visible at every call site,
-        so a reader always knows which calls can mutate state. See
+        and perform side effects. It says which inputs it changes: a parameter
+        it writes is marked <code>mutable</code>, the receiver
+        <code>this</code> included, and a field that may change after the
+        object is built is declared <code>var</code>. A reader always knows
+        which calls can mutate state, and the compiler checks it. See
         <xref linkend="types-params-mutation"/> for the details.</para>
-      <programlisting>define Counter(value: int)
+      <programlisting>define Counter(var value: int)
 {
-    procedure increment(this)
+    procedure increment(mutable this)
         value := value + 1
 
     function get(this) returns int
@@ -625,7 +632,7 @@ let f factorial(5)   ; f is 120</programlisting>
 var c Counter(0)
 c.increment()
 c.increment()
-let v c.get()        ; v is 2</programlisting>
+print "the counter is at `c.get()`"</programlisting>
     </section>
 
     <section xml:id="tut-structs">
@@ -640,7 +647,7 @@ let v c.get()        ; v is 2</programlisting>
 }
 
 let p Point(3, 4)
-let d p.distance_squared()   ; d is 25</programlisting>
+print "the distance squared is `p.distance_squared()`"</programlisting>
       <para><xref linkend="types-constructors"/> covers constructors, including
         explicit <code>init</code> forms with their own signatures.</para>
     </section>
@@ -650,7 +657,7 @@ let d p.distance_squared()   ; d is 25</programlisting>
       <para>A <code>union</code> holds one of several variants. Each variant may
         carry a payload. The most common union is <code>Option</code>, which
         represents a value that may be absent:</para>
-      <programlisting>define Option union(Some: int, None)
+      <programlisting role="fragment">define Option union(Some: int, None)
 
 let present Option.Some(42)
 let absent  Option.None</programlisting>
@@ -658,15 +665,16 @@ let absent  Option.None</programlisting>
         clause names a binding, then the variant, then the result; the binding
         is bound to the variant's payload. An <code>else</code> clause handles
         the remaining variants:</para>
-      <programlisting>function or_zero(o: Option) returns int
+      <programlisting>define Option union(Some: int, None)
+
+function or_zero(o: Option) returns int
     choose o
         when v: Some
             v
         else
             0
 
-let a or_zero(Option.Some(7))   ; a is 7
-let b or_zero(Option.None)      ; b is 0</programlisting>
+print "`or_zero(Option.Some(7))` and `or_zero(Option.None)`"</programlisting>
       <para>See <xref linkend="types-unions"/> for union layout, the
         <code>T?</code> shorthand, and pattern matching in full.</para>
     </section>
@@ -677,7 +685,7 @@ let b or_zero(Option.None)      ; b is 0</programlisting>
         statement <code>module shapes</code> loads the sibling file
         <filename>shapes.scaly</filename>. A type defined there stays hidden
         until the using file imports it with <code>use</code>:</para>
-      <programlisting>; shapes.scaly
+      <programlisting role="fragment">; shapes.scaly
 define Box(width: int, height: int)
 {
     function area(this) returns int
@@ -696,7 +704,7 @@ if b.area() = 12
         needs no imports — it is always visible.</para>
       <para>Code that several programs share is a <emphasis>package</emphasis>,
         and a package somebody else wrote is one line away:</para>
-      <programlisting>package json 0.1.3 "github.com/someone/json"</programlisting>
+      <programlisting role="fragment">package json 0.1.3 "github.com/someone/json"</programlisting>
       <para><command>scaly</command> fetches it from that git repository the
         first time the program is run, tested or built; and
         <userinput>scaly install</userinput> builds the programs such a

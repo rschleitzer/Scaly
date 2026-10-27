@@ -1465,7 +1465,14 @@ NAME="tut-tour"
 >This section sweeps quickly across the language using small, complete
       programs. If something is not fully explained here, do not worry —
       every feature is covered in detail in the rest of this specification, and
-      each part of the tour points you to the relevant chapter.</P
+      each part of the tour points you to the relevant chapter. Each program
+      prints what it computes; <TT
+CLASS="code"
+>print</TT
+> writes a line:</P
+><PRE
+CLASS="programlisting"
+>print "Hello from Scaly"</PRE
 ><DIV
 CLASS="section"
 ><H2
@@ -1487,12 +1494,14 @@ CLASS="code"
 CLASS="code"
 >:=</TT
 > to change it.
-        A semicolon starts a comment.</P
+        A semicolon starts a comment, and backticks inside a string put a
+        value into the text.</P
 ><PRE
 CLASS="programlisting"
 >let answer 42        ; immutable binding
 var count 0          ; mutable binding
-count := count + 1 ; assignment is :=</PRE
+count := count + 1   ; assignment is :=
+print "answer is `answer`, count is `count`"</PRE
 ><P
 >The equals sign <TT
 CLASS="code"
@@ -1595,7 +1604,7 @@ while i &#60;= 10
     sum := sum + i
     i := i + 1
 }
-; sum is now 55</PRE
+print "the sum is `sum`"</PRE
 ><P
 ><TT
 CLASS="code"
@@ -1613,7 +1622,7 @@ CLASS="programlisting"
 >var total 0
 for i in 4
     total := total + i
-; total is 0 + 1 + 2 + 3 = 6</PRE
+print "0 + 1 + 2 + 3 is `total`"</PRE
 ></DIV
 ><DIV
 CLASS="section"
@@ -1636,7 +1645,7 @@ CLASS="programlisting"
 >function add(a: int, b: int) returns int
     a + b
 
-let s add(3, 4)      ; s is 7</PRE
+print "3 + 4 is `add(3, 4)`"</PRE
 ><P
 >Functions can call themselves. Here is the classic factorial:</P
 ><PRE
@@ -1647,7 +1656,7 @@ CLASS="programlisting"
     else
         n * factorial(n - 1)
 
-let f factorial(5)   ; f is 120</PRE
+print "5! is `factorial(5)`"</PRE
 ><P
 >Functions are pure: they read their arguments and return a value,
         with no side effects. To mutate, use a procedure.</P
@@ -1665,8 +1674,20 @@ NAME="tut-procedures"
 CLASS="code"
 >procedure</TT
 > is like a function but may change its inputs
-        and perform side effects. The distinction is visible at every call site,
-        so a reader always knows which calls can mutate state. See
+        and perform side effects. It says which inputs it changes: a parameter
+        it writes is marked <TT
+CLASS="code"
+>mutable</TT
+>, the receiver
+        <TT
+CLASS="code"
+>this</TT
+> included, and a field that may change after the
+        object is built is declared <TT
+CLASS="code"
+>var</TT
+>. A reader always knows
+        which calls can mutate state, and the compiler checks it. See
         <A
 HREF="types.htm#types-params-mutation"
 >the Section called <I
@@ -1675,9 +1696,9 @@ HREF="types.htm#types-params-mutation"
 > for the details.</P
 ><PRE
 CLASS="programlisting"
->define Counter(value: int)
+>define Counter(var value: int)
 {
-    procedure increment(this)
+    procedure increment(mutable this)
         value := value + 1
 
     function get(this) returns int
@@ -1687,7 +1708,7 @@ CLASS="programlisting"
 var c Counter(0)
 c.increment()
 c.increment()
-let v c.get()        ; v is 2</PRE
+print "the counter is at `c.get()`"</PRE
 ></DIV
 ><DIV
 CLASS="section"
@@ -1713,7 +1734,7 @@ CLASS="programlisting"
 }
 
 let p Point(3, 4)
-let d p.distance_squared()   ; d is 25</PRE
+print "the distance squared is `p.distance_squared()`"</PRE
 ><P
 ><A
 HREF="types.htm#types-constructors"
@@ -1766,15 +1787,16 @@ CLASS="code"
         the remaining variants:</P
 ><PRE
 CLASS="programlisting"
->function or_zero(o: Option) returns int
+>define Option union(Some: int, None)
+
+function or_zero(o: Option) returns int
     choose o
         when v: Some
             v
         else
             0
 
-let a or_zero(Option.Some(7))   ; a is 7
-let b or_zero(Option.None)      ; b is 0</PRE
+print "`or_zero(Option.Some(7))` and `or_zero(Option.None)`"</PRE
 ><P
 >See <A
 HREF="types.htm#types-unions"

@@ -19,7 +19,7 @@
 #   ports     likewise; dazzle and opensp from THEIR repository (../dazzle or
 #             $DAZZLE_REPO, SKIPPED by name without it): its tests/run.sh with
 #             this tree's compiler, then the codegen gate here; then http,
-#             json, compress, tls, h3, pg, redis, tool
+#             json, compress, tls, h3, pg, redis, tool, tour
 #   tscaly    the TypeScript port, a repository of its own since 2026-10-05
 #             (github.com/rschleitzer/tscaly), expected beside this one or at
 #             $TSCALY_REPO and SKIPPED by name when it is not there: its
@@ -203,6 +203,7 @@ lane_ports() {
   step pg tests/pg/run.sh "$BIN" || rc=1
   step redis tests/redis/run.sh "$BIN" || rc=1
   step tool tests/tool/run.sh "$BIN" || rc=1
+  step tour tests/tour/run.sh "$BIN" || rc=1
   return $rc
 }
 

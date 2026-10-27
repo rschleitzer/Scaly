@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Tour of Scaly</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #fbfbfa; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #dcdcde;
+    --accent: #2a5db0; --ok: #1f7a3a; --bad: #b3261e; --code: #f4f4f2;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --panel: #1f1f22; --ink: #ececee; --muted: #9a9aa2; --line: #34343a;
+      --accent: #7aa7f0; --ok: #6cc788; --bad: #f08a80; --code: #26262a;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 12px 16px;
+           border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-size: 18px; margin: 0; }
+  header .spacer { flex: 1; }
+  header a { color: var(--accent); text-decoration: none; font-size: 14px; }
+  select { font: inherit; font-size: 14px; padding: 4px 6px; border-radius: 6px; max-width: 100%;
+           border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  main { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+  @media (min-width: 900px) {
+    main { grid-template-columns: minmax(300px, 2fr) 3fr; height: calc(100vh - 58px); }
+    .lesson, .work { min-height: 0; }
+    .work { display: grid; grid-template-rows: auto 1fr auto minmax(120px, 35%); }
+    #editor { height: 100%; }
+  }
+  main.prose-only { grid-template-columns: minmax(0, 760px); justify-content: center; }
+  main.prose-only .work { display: none; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+  .lesson { display: flex; flex-direction: column; overflow: auto; }
+  .lesson h2 { font-size: 20px; margin: 0 0 8px; }
+  .lesson .prose { flex: 1; }
+  .lesson .prose p { margin: 0 0 12px; }
+  .lesson a { color: var(--accent); }
+  code, pre, textarea { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .lesson code { background: var(--code); padding: 1px 4px; border-radius: 4px; }
+  .lesson pre { background: var(--code); padding: 10px; border-radius: 6px; overflow: auto; margin: 0 0 12px; }
+  .nav { display: flex; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .nav .count { flex: 1; text-align: center; color: var(--muted); font-size: 14px; }
+  button { font: inherit; font-size: 14px; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+           border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .work { display: flex; flex-direction: column; gap: 10px; }
+  header nav { display: flex; gap: 16px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #status { font-size: 14px; color: var(--muted); }
+  #status.ok { color: var(--ok); }
+  #status.bad { color: var(--bad); }
+  #editor { width: 100%; min-height: 240px; height: 22em; resize: vertical; padding: 10px;
+            border: 1px solid var(--line); border-radius: 6px; background: var(--code); color: var(--ink);
+            tab-size: 4; white-space: pre; overflow: auto; }
+  .hint { font-size: 12px; color: var(--muted); }
+  #output { margin: 0; padding: 10px; background: var(--code); border-radius: 6px; overflow: auto;
+            white-space: pre-wrap; overflow-wrap: anywhere; min-height: 80px; }
+  #output .err { color: var(--bad); }
+  #output .note { color: var(--muted); font-style: italic; }
+</style>
+</head>
+<body>
+<header>
+  <h1>A Tour of Scaly</h1>
+  <select id="toc" aria-label="Steps of the tour"></select>
+  <span class="spacer"></span>
+  <nav>
+    <a href="index.html">The REPL</a>
+    <a href="https://scaly.io/lang/">The specification</a>
+  </nav>
+</header>
+<main id="main">
+  <section class="lesson">
+    <h2 id="title">A Tour of Scaly</h2>
+    <div class="prose" id="prose"><p>Loading the tour…</p></div>
+    <div class="nav">
+      <button id="back">‹ Back</button>
+      <span class="count" id="count"></span>
+      <button id="next">Next ›</button>
+    </div>
+  </section>
+  <section class="work">
+    <div class="toolbar">
+      <button class="primary" id="run" disabled>Run</button>
+      <button id="reset">Reset</button>
+      <span id="status">Loading…</span>
+    </div>
+    <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
+              aria-label="The program"></textarea>
+    <div class="hint">Change the program and run it again — Ctrl+Enter or ⌘+Enter runs it.
+      The compiler and the program run in this browser tab.</div>
+    <pre id="output" aria-live="polite"></pre>
+  </section>
+</main>
+
+<script type="module">
+import { loadCompiler } from './load.mjs';
+
+const $ = id => document.getElementById(id);
+const editor = $('editor'), output = $('output'), runButton = $('run');
+let steps = [], at = 0, compiler = null, worker = null;
+
+function status(text, kind = '') {
+  $('status').textContent = text;
+  $('status').className = kind;
+}
+
+function append(text, cls = '') {
+  if (text === '') return;
+  const span = document.createElement('span');
+  if (cls) span.className = cls;
+  span.textContent = text;
+  output.appendChild(span);
+  output.scrollTop = output.scrollHeight;
+}
+
+// a step's program as the reader left it, kept in this browser where it allows
+const key = i => `scaly-tour:${steps[i].section}:${steps[i].ordinal}`;
+function edited(i) {
+  try { return localStorage.getItem(key(i)); } catch { return null; }
+}
+function keep(i, text) {
+  try {
+    if (text === steps[i].program) localStorage.removeItem(key(i));
+    else localStorage.setItem(key(i), text);
+  } catch {}
+}
+
+function show(i) {
+  stop();
+  at = Math.max(0, Math.min(i, steps.length - 1));
+  const step = steps[at];
+  $('title').textContent = step.title;
+  $('prose').innerHTML = step.prose;
+  $('count').textContent = `${at + 1} / ${steps.length}`;
+  $('back').disabled = at === 0;
+  $('next').textContent = at === steps.length - 1 ? 'The REPL ›' : 'Next ›';
+  $('toc').value = String(at);
+  $('main').classList.toggle('prose-only', step.program === null);
+  editor.value = step.program === null ? '' : (edited(at) ?? step.program);
+  output.textContent = '';
+  if (location.hash !== `#${at + 1}`) history.replaceState(null, '', `#${at + 1}`);
+  document.querySelector('.lesson').scrollTop = 0;
+}
+
+function stop() {
+  worker?.terminate();
+  worker = null;
+  runButton.textContent = 'Run';
+  if (compiler) status('Ready.', 'ok');
+}
+
+// the program in a worker of its own: `scaly run main.scaly`, the compiler
+// and the program in one memory (worker.mjs, side.mjs); no standard input
+function run() {
+  if (!compiler) return;
+  if (worker) { stop(); append('\n[stopped]\n', 'note'); return; }
+  output.textContent = '';
+  const stdin = new SharedArrayBuffer(16);
+  const state = new Int32Array(stdin, 0, 2);
+  const decoders = { out: new TextDecoder(), err: new TextDecoder() };
+  const t0 = performance.now();
+  const files = { ...compiler.files, '/work/main.scaly': editor.value };
+  worker = new Worker('worker.mjs', { type: 'module' });
+  runButton.textContent = 'Stop';
+  status('Compiling and running…');
+  worker.onmessage = ({ data }) => {
+    switch (data.type) {
+      case 'out':
+      case 'err':
+        append(decoders[data.type].decode(data.bytes, { stream: true }), data.type === 'err' ? 'err' : '');
+        break;
+      case 'wants':
+        Atomics.store(state, 0, 2);
+        Atomics.notify(state, 0);
+        break;
+      case 'exit': {
+        const ms = Math.round(performance.now() - t0);
+        stop();
+        if (data.status !== 0) append(`\n[the program ended with status ${data.status}]\n`, 'note');
+        status(`Done in ${ms} ms.`, data.status === 0 ? 'ok' : 'bad');
+        break;
+      }
+      case 'crash':
+        stop();
+        append(`\n[stopped: ${data.text}]\n`, 'err');
+        status('The run failed.', 'bad');
+        break;
+    }
+  };
+  worker.onerror = e => {
+    stop();
+    append(`\n[the worker failed: ${e.message}]\n`, 'err');
+  };
+  worker.postMessage({ module: compiler.module, files, stdin, args: ['scaly', 'run', 'main.scaly'] });
+}
+
+runButton.onclick = run;
+$('reset').onclick = () => {
+  const step = steps[at];
+  if (step.program === null) return;
+  editor.value = step.program;
+  keep(at, step.program);
+  output.textContent = '';
+};
+$('back').onclick = () => show(at - 1);
+$('next').onclick = () => { if (at === steps.length - 1) location.href = 'index.html'; else show(at + 1); };
+$('toc').onchange = () => show(Number($('toc').value));
+editor.oninput = () => keep(at, editor.value);
+editor.onkeydown = e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    run();
+  } else if (e.key === 'Tab' && !e.shiftKey) {
+    e.preventDefault();
+    editor.setRangeText('    ', editor.selectionStart, editor.selectionEnd, 'end');
+    keep(at, editor.value);
+  }
+};
+addEventListener('hashchange', () => {
+  const n = Number(location.hash.slice(1));
+  if (n >= 1 && n - 1 !== at) show(n - 1);
+});
+
+// the steps, set from the tutorial by the DSSSL engine (tour-steps.htm,
+// docs/dsssl/scaly-tour.dsl)
+async function loadSteps() {
+  const html = await (await fetch('tour-steps.htm')).text();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const seen = {};
+  steps = [...doc.querySelectorAll('section.step')].map(s => {
+    const section = s.dataset.section;
+    seen[section] = (seen[section] ?? 0) + 1;
+    const program = s.querySelector('pre.program');
+    return {
+      section, ordinal: seen[section],
+      title: s.querySelector('h2').textContent,
+      prose: s.querySelector('.prose').innerHTML,
+      program: program ? program.textContent : null,
+    };
+  });
+  steps.forEach((s, i) => {
+    const option = document.createElement('option');
+    option.value = String(i);
+    option.textContent = `${i + 1}. ${s.title}`;
+    $('toc').appendChild(option);
+  });
+  const n = Number(location.hash.slice(1));
+  show(n >= 1 ? n - 1 : 0);
+}
+
+await loadSteps();
+try {
+  compiler = await loadCompiler(text => status(text));
+  runButton.disabled = false;
+  status('Ready.', 'ok');
+} catch (e) {
+  status(`Could not load the compiler: ${e.message}`, 'bad');
+}
+</script>
+</body>
+</html>

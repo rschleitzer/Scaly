@@ -7,21 +7,24 @@
 // The page hands over, once: the compiled module, the standard library's
 // files (paths under /scaly, SCALY_HOME) and a SharedArrayBuffer through
 // which it hands on what is typed -- an Int32 state (0 nothing there, 1 bytes
-// there, 2 the end of the input), an Int32 count, then the bytes. Back come
-// messages: `out`/`err` with bytes as they are written, `wants` when the
-// REPL waits for input, `exit` with its status, `crash` with a trap's text.
+// there, 2 the end of the input), an Int32 count, then the bytes. Without
+// more it is the REPL; the tour (tour.html) hands `args` too, ['scaly',
+// 'run', 'main.scaly'], and the program as one of the `files`, under /work.
+// Back come messages: `out`/`err` with bytes as they are written, `wants`
+// when the program waits for input, `exit` with its status, `crash` with a
+// trap's text.
 import { MemoryFiles, Wasi } from './wasi.mjs';
 import { SideModules } from './side.mjs';
 
 const encoder = new TextEncoder();
 
 onmessage = ({ data }) => {
-  const { module, files: tree, stdin } = data;
+  const { module, files: tree, stdin, args = ['scaly'] } = data;
   const state = new Int32Array(stdin, 0, 2), bytes = new Uint8Array(stdin, 8);
   const files = new MemoryFiles(tree);
   for (const dir of ['/tmp', '/work', '/home']) files.dirs.add(dir);
   const wasi = new Wasi({
-    args: ['scaly'], env: { SCALY_HOME: '/scaly', HOME: '/home' }, cwd: '/work', files,
+    args, env: { SCALY_HOME: '/scaly', HOME: '/home' }, cwd: '/work', files,
     stdin_more() {
       postMessage({ type: 'wants' });
       Atomics.wait(state, 0, 0);
