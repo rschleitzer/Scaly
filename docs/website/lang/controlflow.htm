@@ -1,384 +1,1111 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->Control Flow</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
-REL="HOME"
-TITLE="The Scaly Programming Language"
-HREF="index.html"><LINK
-REL="PREVIOUS"
-TITLE="Expressions"
-HREF="expressions.htm"><LINK
-REL="NEXT"
-TITLE="Modules and Packages"
-HREF="modules.htm"><META
-HTTP-EQUIV="Content-Type"
-CONTENT="text/html; charset=UTF-8"></HEAD
-><BODY
-CLASS="chapter"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="NAVHEADER"
-><TABLE
-SUMMARY="Header navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TH
-COLSPAN="3"
-ALIGN="center"
->The Scaly Programming Language</TH
-></TR
-><TR
-><TD
-WIDTH="10%"
-ALIGN="left"
-VALIGN="bottom"
-><A
-HREF="expressions.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="80%"
-ALIGN="center"
-VALIGN="bottom"
-></TD
-><TD
-WIDTH="10%"
-ALIGN="right"
-VALIGN="bottom"
-><A
-HREF="modules.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-></TABLE
-><HR
-ALIGN="LEFT"
-WIDTH="100%"></DIV
-><DIV
-CLASS="chapter"
-><H1
-><A
-NAME="controlflow"
-></A
->Chapter 8 Control Flow</H1
-><DIV
-CLASS="TOC"
-><DL
-><DT
-><B
->Table of Contents</B
-></DT
-><DT
-><A
-HREF="controlflow.htm#cf-overview"
->Overview</A
-></DT
-><DT
-><A
-HREF="controlflow.htm#category-IF-EXPRESSIONS"
->If Expressions</A
-></DT
-><DT
-><A
-HREF="controlflow.htm#category-WHILE-LOOPS"
->While Loops</A
-></DT
-><DT
-><A
-HREF="controlflow.htm#category-FOR-LOOPS"
->For Loops</A
-></DT
-><DT
-><A
-HREF="controlflow.htm#category-BREAK-CONTINUE"
->Break and Continue</A
-></DT
-><DT
-><A
-HREF="controlflow.htm#category-REPEAT-LOOPS"
->Repeat Loops</A
-></DT
-><DT
-><A
-HREF="controlflow.htm#category-VAR-SET"
->Mutable Variables</A
-></DT
-><DT
-><A
-HREF="controlflow.htm#cf-match"
->Match</A
-></DT
-></DL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="cf-overview"
->Overview</A
-></H1
-><P
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Control Flow - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-status"
+><span
+class="num"
+>1.3</span
+>Implementation Status</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+aria-current="page"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>A.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>A.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>A.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>B.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>C.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>C.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>C.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>C.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>C.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>C.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>C.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>C.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>C.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>C.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>C.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 8</p
+><h1
+id="controlflow"
+>Control Flow</h1
+><section
+id="cf-overview"
+><h2
+><a
+class="header"
+href="#cf-overview"
+>Overview</a
+></h2
+><p
 >Conditions and loops are expressions like every other construct: an
-      <TT
-CLASS="literal"
->if</TT
+      <code
+>if</code
 > with both branches has a value, and a
-      <TT
-CLASS="literal"
->repeat</TT
+      <code
+>repeat</code
 > loop answers the operand of the
-      <TT
-CLASS="literal"
->break</TT
+      <code
+>break</code
 > that ends it. A condition needs no parentheses;
       a body of one statement needs no braces, a longer one is a block in
-      braces that begins on a line of its own. <TT
-CLASS="literal"
->if cond stmt</TT
+      braces that begins on a line of its own. <code
+>if cond stmt</code
 >
-      without an <TT
-CLASS="literal"
->else</TT
+      without an <code
+>else</code
 > runs the statement when the condition
-      is <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->true</I
-></SPAN
->, and control continues after it.</P
-><P
->Conditions are written as <TT
-CLASS="literal"
->and</TT
->/<TT
-CLASS="literal"
->or</TT
+      is <em
+>true</em
+>, and control continues after it.</p
+><p
+>Conditions are written as <code
+>and</code
+>/<code
+>or</code
 >
       chains. A null test proves its name for what follows it in the chain:
-      in <TT
-CLASS="literal"
->p &#60;&#62; null and p.x = 7</TT
+      in <code
+>p &#60;&#62; null and p.x = 7</code
 > the right side reads
-      <TT
-CLASS="literal"
->p.x</TT
-> only where <TT
-CLASS="literal"
->p</TT
-> is there.</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-IF-EXPRESSIONS"
->If Expressions</A
-></H1
-><P
->If expressions evaluate a condition and return one of two values.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-IF-BASIC"
->Basic If</A
-></H2
-><P
->The if expression takes a boolean condition and two branches.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2915"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->if true : 1 else 2</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+      <code
+>p.x</code
+> only where <code
+>p</code
+> is there.</p
+></section
+><section
+id="category-IF-EXPRESSIONS"
+><h2
+><a
+class="header"
+href="#category-IF-EXPRESSIONS"
+>If Expressions</a
+></h2
+><p
+>If expressions evaluate a condition and return one of two values.</p
+><section
+id="tests-IF-BASIC"
+><h3
+><a
+class="header"
+href="#tests-IF-BASIC"
+>Basic If</a
+></h3
+><p
+>The if expression takes a boolean condition and two branches.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>if true : 1 else 2</code
+></td
+><td
+><code
 >1
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->if false : 1 else 2</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>if false : 1 else 2</code
+></td
+><td
+><code
 >2
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->if 5 &#62; 3 : 10 else 20</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>if 5 &#62; 3 : 10 else 20</code
+></td
+><td
+><code
 >10
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-IF-WITH-BINDINGS"
->If with Bindings</A
-></H2
-><P
->If expressions can use values from let bindings.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2942"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-IF-WITH-BINDINGS"
+><h3
+><a
+class="header"
+href="#tests-IF-WITH-BINDINGS"
+>If with Bindings</a
+></h3
+><p
+>If expressions can use values from let bindings.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >let x 5
-if x &#62; 3 : x * 2 else x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+if x &#62; 3 : x * 2 else x</code
+></pre
+></td
+><td
+><code
 >10
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let a 7
 let b 3
-if a &#62; b : a else b</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+if a &#62; b : a else b</code
+></pre
+></td
+><td
+><code
 >7
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-IF-ELSE-IF-STATEMENT"
->Else-If Chains without a Final Else</A
-></H2
-><P
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-IF-ELSE-IF-STATEMENT"
+><h3
+><a
+class="header"
+href="#tests-IF-ELSE-IF-STATEMENT"
+>Else-If Chains without a Final Else</a
+></h3
+><p
 >An if statement may chain an else if without a final else. Such a
         chain yields no value; when no condition holds, the statement falls
         through and any bindings keep their prior values. (Regression: the
         emitter used to merge the arms' values into a dead phi node that
         failed LLVM verification when the inner arm's value was computed
-        inside its own branch.)</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2964"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        inside its own branch.)</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >function clamp(dmin: int) returns int
 {
     var adj 7
@@ -388,844 +1115,736 @@ CLASS="programlisting"
         adj := dmin + 1
     adj
 }
-clamp(200) * 10000 + clamp(60) * 100 + clamp(10)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+clamp(200) * 10000 + clamp(60) * 100 + clamp(10)</code
+></pre
+></td
+><td
+><code
 >6107
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-WHILE-LOOPS"
->While Loops</A
-></H1
-><P
->While loops repeat as long as a condition is true.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-WHILE-BASIC"
->Basic While</A
-></H2
-><P
->A while loop evaluates its body repeatedly while the condition is true.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2984"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-WHILE-LOOPS"
+><h2
+><a
+class="header"
+href="#category-WHILE-LOOPS"
+>While Loops</a
+></h2
+><p
+>While loops repeat as long as a condition is true.</p
+><section
+id="tests-WHILE-BASIC"
+><h3
+><a
+class="header"
+href="#tests-WHILE-BASIC"
+>Basic While</a
+></h3
+><p
+>A while loop evaluates its body repeatedly while the condition is true.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var x 0
 while x &#60; 3 : x := x + 1
-x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x</code
+></pre
+></td
+><td
+><code
 >3
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var x 10
 while x &#60; 5 : x := x + 1
-x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x</code
+></pre
+></td
+><td
+><code
 >10
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-WHILE-ACCUMULATION"
->While with Accumulation</A
-></H2
-><P
->While loops can accumulate values across iterations.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3006"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-WHILE-ACCUMULATION"
+><h3
+><a
+class="header"
+href="#tests-WHILE-ACCUMULATION"
+>While with Accumulation</a
+></h3
+><p
+>While loops can accumulate values across iterations.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var sum 0
 var i 1
 while i &#60;= 3 : { sum := sum + i: i := i + 1 }
-sum</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+sum</code
+></pre
+></td
+><td
+><code
 >6
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var result 1
 var n 5
 while n &#62; 0 : { result := result * n: n := n - 1 }
-result</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+result</code
+></pre
+></td
+><td
+><code
 >120
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-FOR-LOOPS"
->For Loops</A
-></H1
-><P
->For loops iterate over a range of integers.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-FOR-BASIC"
->Basic For</A
-></H2
-><P
->A for loop iterates from 0 to n-1 where n is the range expression.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3031"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-FOR-LOOPS"
+><h2
+><a
+class="header"
+href="#category-FOR-LOOPS"
+>For Loops</a
+></h2
+><p
+>For loops iterate over a range of integers.</p
+><section
+id="tests-FOR-BASIC"
+><h3
+><a
+class="header"
+href="#tests-FOR-BASIC"
+>Basic For</a
+></h3
+><p
+>A for loop iterates from 0 to n-1 where n is the range expression.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var count 0
 for i in 3 : count := count + 1
-count</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+count</code
+></pre
+></td
+><td
+><code
 >3
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var x 42
 for i in 0 : x := 0
-x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x</code
+></pre
+></td
+><td
+><code
 >42
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-FOR-ACCUMULATION"
->For with Accumulation</A
-></H2
-><P
->For loops can accumulate values using the loop variable.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3053"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-FOR-ACCUMULATION"
+><h3
+><a
+class="header"
+href="#tests-FOR-ACCUMULATION"
+>For with Accumulation</a
+></h3
+><p
+>For loops can accumulate values using the loop variable.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var sum 0
 for i in 5 : sum := sum + i
-sum</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+sum</code
+></pre
+></td
+><td
+><code
 >10
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var prod 1
 for i in 4 : prod := prod * (i + 1)
-prod</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+prod</code
+></pre
+></td
+><td
+><code
 >24
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-BREAK-CONTINUE"
->Break and Continue</A
-></H1
-><P
->Break exits a loop early, continue skips to the next iteration.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-BREAK-STATEMENTS"
->Break Statements</A
-></H2
-><P
->Break exits the innermost enclosing loop.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3078"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-BREAK-CONTINUE"
+><h2
+><a
+class="header"
+href="#category-BREAK-CONTINUE"
+>Break and Continue</a
+></h2
+><p
+>Break exits a loop early, continue skips to the next iteration.</p
+><section
+id="tests-BREAK-STATEMENTS"
+><h3
+><a
+class="header"
+href="#tests-BREAK-STATEMENTS"
+>Break Statements</a
+></h3
+><p
+>Break exits the innermost enclosing loop.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var sum 0
 for i in 10 : { if i = 3 : break else sum := sum + i }
-sum</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+sum</code
+></pre
+></td
+><td
+><code
 >3
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var x 0
 while x &#60; 100 : { x := x + 1: if x = 5 : break }
-x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x</code
+></pre
+></td
+><td
+><code
 >5
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-CONTINUE-STATEMENTS"
->Continue Statements</A
-></H2
-><P
->Continue skips the rest of the current iteration and continues with the next.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3100"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-CONTINUE-STATEMENTS"
+><h3
+><a
+class="header"
+href="#tests-CONTINUE-STATEMENTS"
+>Continue Statements</a
+></h3
+><p
+>Continue skips the rest of the current iteration and continues with the next.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var sum 0
 for i in 6 : { if i % 2 = 1 : continue else sum := sum + i }
-sum</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+sum</code
+></pre
+></td
+><td
+><code
 >6
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var sum 0
 var i 0
 while i &#60; 10 : { let current i: i := i + 1: if current % 2 = 1 : continue else sum := sum + current }
-sum</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+sum</code
+></pre
+></td
+><td
+><code
 >20
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-NESTED-LOOPS"
->Nested Loops</A
-></H2
-><P
->By default break and continue affect only the innermost loop.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3122"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-NESTED-LOOPS"
+><h3
+><a
+class="header"
+href="#tests-NESTED-LOOPS"
+>Nested Loops</a
+></h3
+><p
+>By default break and continue affect only the innermost loop.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var count 0
 for i in 3 : { for j in 10 : { if j = 2 : break else count := count + 1 } }
-count</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+count</code
+></pre
+></td
+><td
+><code
 >6
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var count 0
 for i in 3 : { for j in 5 : { if j % 2 = 1 : continue else count := count + 1 } }
-count</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+count</code
+></pre
+></td
+><td
+><code
 >9
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-LABELED-LOOPS"
->Labeled Break and Continue</A
-></H2
-><P
->A loop may carry a label written <TT
-CLASS="literal"
->label NAME</TT
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-LABELED-LOOPS"
+><h3
+><a
+class="header"
+href="#tests-LABELED-LOOPS"
+>Labeled Break and Continue</a
+></h3
+><p
+>A loop may carry a label written <code
+>label NAME</code
 > after its colon.
-        From within a nested loop, <TT
-CLASS="literal"
->break loop NAME</TT
+        From within a nested loop, <code
+>break loop NAME</code
 > exits the named loop and
-        <TT
-CLASS="literal"
->continue loop NAME</TT
+        <code
+>continue loop NAME</code
 > jumps to its next iteration, rather than acting on
-        the innermost loop.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3147"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        the innermost loop.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var count 0
 for i in 3 : label outer { for j in 5 : { if j = 2 : break loop outer else count := count + 1 } }
-count</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+count</code
+></pre
+></td
+><td
+><code
 >2
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var count 0
 for i in 3 : label outer { for j in 5 : { if j = 0 : continue loop outer else count := count + 100 } }
-count</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+count</code
+></pre
+></td
+><td
+><code
 >0
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-REPEAT-LOOPS"
->Repeat Loops</A
-></H1
-><P
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-REPEAT-LOOPS"
+><h2
+><a
+class="header"
+href="#category-REPEAT-LOOPS"
+>Repeat Loops</a
+></h2
+><p
 >A repeat loop runs its body forever and exits only through break (or
     return). Because break is the only way out, a break carrying a value
-    (<TT
-CLASS="literal"
->break v</TT
->) makes the repeat an expression that yields that value.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-REPEAT-BASIC"
->Repeat and Break Value</A
-></H2
-><P
+    (<code
+>break v</code
+>) makes the repeat an expression that yields that value.</p
+><section
+id="tests-REPEAT-BASIC"
+><h3
+><a
+class="header"
+href="#tests-REPEAT-BASIC"
+>Repeat and Break Value</a
+></h3
+><p
 >The value of a repeat expression is the operand of the break
-        that exits it.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3173"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        that exits it.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var i 0
 let answer repeat { if i = 5 : break i + 100 else i := i + 1 }
-answer</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+answer</code
+></pre
+></td
+><td
+><code
 >105
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var i 0
 repeat { if i = 3 : break else i := i + 1 }
-i</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+i</code
+></pre
+></td
+><td
+><code
 >3
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-VAR-SET"
->Mutable Variables</A
-></H1
-><P
->A binding introduced with var may be assigned a new value; one introduced with let may not. The assignment is written <TT
-CLASS="literal"
->target := source</TT
->, in the Algol tradition, and is a statement of its own: it introduces no name and is never part of a condition. The equals sign always compares.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-VAR-BASIC"
->Var and Assignment</A
-></H2
-><P
->Var creates a mutable variable, and <TT
-CLASS="literal"
->:=</TT
-> assigns it.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3200"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-VAR-SET"
+><h2
+><a
+class="header"
+href="#category-VAR-SET"
+>Mutable Variables</a
+></h2
+><p
+>A binding introduced with var may be assigned a new value; one introduced with let may not. The assignment is written <code
+>target := source</code
+>, in the Algol tradition, and is a statement of its own: it introduces no name and is never part of a condition. The equals sign always compares.</p
+><section
+id="tests-VAR-BASIC"
+><h3
+><a
+class="header"
+href="#tests-VAR-BASIC"
+>Var and Assignment</a
+></h3
+><p
+>Var creates a mutable variable, and <code
+>:=</code
+> assigns it.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >var x 5
-x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x</code
+></pre
+></td
+><td
+><code
 >5
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var x 5
 x := 10
-x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x</code
+></pre
+></td
+><td
+><code
 >10
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var x 3
 x := x + 1
-x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x</code
+></pre
+></td
+><td
+><code
 >4
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >var a 2
 var b 3
 a := a * b
-a</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+a</code
+></pre
+></td
+><td
+><code
 >6
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="cf-match"
->Match</A
-></H1
-><P
-><TT
-CLASS="literal"
->match</TT
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="cf-match"
+><h2
+><a
+class="header"
+href="#cf-match"
+>Match</a
+></h2
+><p
+><code
+>match</code
 > compares one value against a list of
-      <TT
-CLASS="literal"
->case</TT
+      <code
+>case</code
 > alternatives and takes the first that is equal;
-      one case may name several values, and <TT
-CLASS="literal"
->else</TT
+      one case may name several values, and <code
+>else</code
 > takes the
       rest. It works on numbers, characters and strings, which it compares by
-      content:</P
-><PRE
-CLASS="programlisting"
+      content:</p
+><pre
+class="listing"
+><code
 >&#13;function kind(n: int) returns int
     match n
         case 1: 10
@@ -1237,78 +1856,46 @@ match word
     case "a": print "A"
     case "b": print "B"
     else print "?"
-</PRE
-><P
->A union is matched by its variants with <TT
-CLASS="literal"
->choose</TT
+</code
+></pre
+><p
+>A union is matched by its variants with <code
+>choose</code
 >,
-      described under <A
-HREF="types.htm#types-unions"
->the Section called <I
->Union Types</I
-> in Chapter 4</A
->.</P
-></DIV
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-SUMMARY="Footer navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
-><A
-HREF="expressions.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
-><A
-HREF="index.html"
-ACCESSKEY="H"
->Home</A
-></TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="modules.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->Expressions</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Modules and Packages</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
+      described under <a
+href="types.htm#types-unions"
+>Union Types</a
+>.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="expressions.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Expressions</span
+></a
+><a
+class="next"
+rel="next"
+href="modules.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Modules and Packages</span
+></a
+></nav
+></main
+></div
+></body
+></html
 >

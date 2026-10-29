@@ -1,3178 +1,3406 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->Grammar</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
-REL="HOME"
-TITLE="The Scaly Programming Language"
-HREF="index.html"><LINK
-REL="PREVIOUS"
-TITLE="Type System"
-HREF="types.htm"><LINK
-REL="NEXT"
-TITLE="Definitions"
-HREF="definitions.htm"><META
-HTTP-EQUIV="Content-Type"
-CONTENT="text/html; charset=UTF-8"></HEAD
-><BODY
-CLASS="chapter"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="NAVHEADER"
-><TABLE
-SUMMARY="Header navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TH
-COLSPAN="3"
-ALIGN="center"
->The Scaly Programming Language</TH
-></TR
-><TR
-><TD
-WIDTH="10%"
-ALIGN="left"
-VALIGN="bottom"
-><A
-HREF="types.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="80%"
-ALIGN="center"
-VALIGN="bottom"
-></TD
-><TD
-WIDTH="10%"
-ALIGN="right"
-VALIGN="bottom"
-><A
-HREF="definitions.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-></TABLE
-><HR
-ALIGN="LEFT"
-WIDTH="100%"></DIV
-><DIV
-CLASS="chapter"
-><H1
-><A
-NAME="grammar"
-></A
->Chapter 5 Grammar</H1
-><P
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Grammar - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-status"
+><span
+class="num"
+>1.3</span
+>Implementation Status</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+aria-current="page"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>A.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>A.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>A.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>B.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>C.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>C.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>C.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>C.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>C.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>C.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>C.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>C.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>C.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>C.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>C.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 5</p
+><h1
+id="grammar"
+>Grammar</h1
+><p
 >This chapter presents the complete grammar of the Scaly programming language
     in a formal notation. Each production defines a syntactic construct, with
-    nonterminals linking to their definitions.</P
-><P
->Notation:</P
-><P
-></P
-><UL
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->identifier</I
-></SPAN
->, <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->literal</I
-></SPAN
-> — terminal symbols from the lexer</P
-></LI
-><LI
-><P
-><TT
-CLASS="literal"
->'keyword'</TT
-> — keyword terminals</P
-></LI
-><LI
-><P
-><TT
-CLASS="literal"
->X | Y</TT
-> — alternatives</P
-></LI
-><LI
-><P
-><TT
-CLASS="literal"
->X?</TT
-> — optional</P
-></LI
-><LI
-><P
-><TT
-CLASS="literal"
->X+</TT
-> — one or more</P
-></LI
-><LI
-><P
-><TT
-CLASS="literal"
->X*</TT
-> — zero or more</P
-></LI
-></UL
-><TABLE
-CLASS="productionset"
-BORDER="0"
-CELLSPACING="0"
-CELLPADDING="4"
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Program"
-></A
-><B
->Program</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.File"
-><I
->File</I
-></A
-> <A
-HREF="#prod.Statement"
-><I
->Statement</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.File"
-></A
-><B
->File</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Package"
-><I
->Package</I
-></A
->* <A
-HREF="#prod.Use"
-><I
->Use</I
-></A
->* <A
-HREF="#prod.Declaration"
-><I
->Declaration</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Declaration"
-></A
-><B
->Declaration</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Symbol"
-><I
->Symbol</I
-></A
-> ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Symbol"
-></A
-><B
->Symbol</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Private"
-><I
->Private</I
-></A
-> | <A
-HREF="#prod.Definition"
-><I
->Definition</I
-></A
-> | <A
-HREF="#prod.Function"
-><I
->Function</I
-></A
-> | <A
-HREF="#prod.Operator"
-><I
->Operator</I
-></A
-> | <A
-HREF="#prod.Trait"
-><I
->Trait</I
-></A
-> | <A
-HREF="#prod.Macro"
-><I
->Macro</I
-></A
-> | <A
-HREF="#prod.Module"
-><I
->Module</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Private"
-></A
-><B
->Private</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'private' <A
-HREF="#prod.Export"
-><I
->Export</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Export"
-></A
-><B
->Export</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Definition"
-><I
->Definition</I
-></A
-> | <A
-HREF="#prod.Function"
-><I
->Function</I
-></A
-> | <A
-HREF="#prod.Operator"
-><I
->Operator</I
-></A
-> | <A
-HREF="#prod.Trait"
-><I
->Trait</I
-></A
-> | <A
-HREF="#prod.Module"
-><I
->Module</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Member"
-></A
-><B
->Member</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Constituent"
-><I
->Constituent</I
-></A
-> ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Constituent"
-></A
-><B
->Constituent</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Definition"
-><I
->Definition</I
-></A
-> | <A
-HREF="#prod.Function"
-><I
->Function</I
-></A
-> | <A
-HREF="#prod.Procedure"
-><I
->Procedure</I
-></A
-> | <A
-HREF="#prod.Operator"
-><I
->Operator</I
-></A
-> | <A
-HREF="#prod.Implement"
-><I
->Implement</I
-></A
-> | <A
-HREF="#prod.Trait"
-><I
->Trait</I
-></A
-> | <A
-HREF="#prod.Macro"
-><I
->Macro</I
-></A
-> | <A
-HREF="#prod.Module"
-><I
->Module</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Definition"
-></A
-><B
->Definition</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'define' IDENTIFIER <A
-HREF="#prod.GenericParameters"
-><I
->GenericParameters</I
-></A
->? ':'? <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* <A
-HREF="#prod.Concept"
-><I
->Concept</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.GenericParameters"
-></A
-><B
->GenericParameters</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'[' <A
-HREF="#prod.GenericParameter"
-><I
->GenericParameter</I
-></A
->+ ']' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.GenericParameter"
-></A
-><B
->GenericParameter</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->IDENTIFIER <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* ',' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Concept"
-></A
-><B
->Concept</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Class"
-><I
->Class</I
-></A
-> | <A
-HREF="#prod.Namespace"
-><I
->Namespace</I
-></A
-> | <A
-HREF="#prod.Union"
-><I
->Union</I
-></A
-> | <A
-HREF="#prod.Constant"
-><I
->Constant</I
-></A
-> | <A
-HREF="#prod.Delegate"
-><I
->Delegate</I
-></A
-> | <A
-HREF="#prod.Intrinsic"
-><I
->Intrinsic</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Class"
-></A
-><B
->Class</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Structure"
-><I
->Structure</I
-></A
-> ':'? <A
-HREF="#prod.Body"
-><I
->Body</I
-></A
->? ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Body"
-></A
-><B
->Body</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'{' <A
-HREF="#prod.Use"
-><I
->Use</I
-></A
->* <A
-HREF="#prod.Init"
-><I
->Init</I
-></A
->* <A
-HREF="#prod.DeInit"
-><I
->DeInit</I
-></A
->? <A
-HREF="#prod.Member"
-><I
->Member</I
-></A
->* '}' ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Namespace"
-></A
-><B
->Namespace</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'{' <A
-HREF="#prod.Use"
-><I
->Use</I
-></A
->* <A
-HREF="#prod.Declaration"
-><I
->Declaration</I
-></A
->* '}' ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Union"
-></A
-><B
->Union</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'union' ':'? '(' <A
-HREF="#prod.Variant"
-><I
->Variant</I
-></A
->+ ')' ':'? <A
-HREF="#prod.Body"
-><I
->Body</I
-></A
->? ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Variant"
-></A
-><B
->Variant</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->IDENTIFIER <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* <A
-HREF="#prod.TypeAnnotation"
-><I
->TypeAnnotation</I
-></A
->? ',' ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Constant"
-></A
-><B
->Constant</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->* ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Delegate"
-></A
-><B
->Delegate</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'delegate' <A
-HREF="#prod.ParameterSet"
-><I
->ParameterSet</I
-></A
->? <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* <A
-HREF="#prod.Returns"
-><I
->Returns</I
-></A
->? <A
-HREF="#prod.Throws"
-><I
->Throws</I
-></A
->? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.GenericArguments"
-></A
-><B
->GenericArguments</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'[' <A
-HREF="#prod.GenericArgument"
-><I
->GenericArgument</I
-></A
->* ']' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.GenericArgument"
-></A
-><B
->GenericArgument</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> ',' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Optional"
-></A
-><B
->Optional</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'?' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.ParameterSet"
-></A
-><B
->ParameterSet</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Parameters"
-><I
->Parameters</I
-></A
-> | <A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Parameters"
-></A
-><B
->Parameters</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'(' <A
-HREF="#prod.Item"
-><I
->Item</I
-></A
->* ')' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Item"
-></A
-><B
->Item</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->IDENTIFIER <A
-HREF="#prod.TypeAnnotation"
-><I
->TypeAnnotation</I
-></A
->? ',' ':'? <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Returns"
-></A
-><B
->Returns</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'returns' <A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Throws"
-></A
-><B
->Throws</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'throws' <A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Use"
-></A
-><B
->Use</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'use' <A
-HREF="#prod.Name"
-><I
->Name</I
-></A
-> ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Implement"
-></A
-><B
->Implement</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'implement' <A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* ':'? '{' <A
-HREF="#prod.Use"
-><I
->Use</I
-></A
->* <A
-HREF="#prod.Method"
-><I
->Method</I
-></A
->* '}' ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Trait"
-></A
-><B
->Trait</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'trait' <A
-HREF="#prod.Name"
-><I
->Name</I
-></A
-> <A
-HREF="#prod.Extends"
-><I
->Extends</I
-></A
->? <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* '{' <A
-HREF="#prod.Use"
-><I
->Use</I
-></A
->* <A
-HREF="#prod.Method"
-><I
->Method</I
-></A
->* '}' ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Method"
-></A
-><B
->Method</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Function"
-><I
->Function</I
-></A
-> | <A
-HREF="#prod.Procedure"
-><I
->Procedure</I
-></A
-> | <A
-HREF="#prod.Operator"
-><I
->Operator</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Init"
-></A
-><B
->Init</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'init' <A
-HREF="#prod.ParameterSet"
-><I
->ParameterSet</I
-></A
->? ':'? <A
-HREF="#prod.Action"
-><I
->Action</I
-></A
-> ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.DeInit"
-></A
-><B
->DeInit</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'deinit' ':'? <A
-HREF="#prod.Action"
-><I
->Action</I
-></A
-> ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Function"
-></A
-><B
->Function</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'function' <A
-HREF="#prod.Target"
-><I
->Target</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Procedure"
-></A
-><B
->Procedure</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'procedure' <A
-HREF="#prod.Target"
-><I
->Target</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Operator"
-></A
-><B
->Operator</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'operator' <A
-HREF="#prod.Target"
-><I
->Target</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Target"
-></A
-><B
->Target</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Named"
-><I
->Named</I
-></A
-> | <A
-HREF="#prod.Routine"
-><I
->Routine</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Named"
-></A
-><B
->Named</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->IDENTIFIER <A
-HREF="#prod.Routine"
-><I
->Routine</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Routine"
-></A
-><B
->Routine</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.GenericArguments"
-><I
->GenericArguments</I
-></A
->? <A
-HREF="#prod.Lifetime"
-><I
->Lifetime</I
-></A
->? <A
-HREF="#prod.ParameterSet"
-><I
->ParameterSet</I
-></A
->? <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* <A
-HREF="#prod.Returns"
-><I
->Returns</I
-></A
->? ':'? <A
-HREF="#prod.Throws"
-><I
->Throws</I
-></A
->? ':'? <A
-HREF="#prod.Implementation"
-><I
->Implementation</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Implementation"
-></A
-><B
->Implementation</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Action"
-><I
->Action</I
-></A
-> | <A
-HREF="#prod.Extern"
-><I
->Extern</I
-></A
-> | <A
-HREF="#prod.Instruction"
-><I
->Instruction</I
-></A
-> | <A
-HREF="#prod.Intrinsic"
-><I
->Intrinsic</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Extern"
-></A
-><B
->Extern</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'extern' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Instruction"
-></A
-><B
->Instruction</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'instruction' ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Intrinsic"
-></A
-><B
->Intrinsic</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'intrinsic' ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Extends"
-></A
-><B
->Extends</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'extends' <A
-HREF="#prod.Extend"
-><I
->Extend</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Extend"
-></A
-><B
->Extend</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> ',' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Macro"
-></A
-><B
->Macro</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'macro' IDENTIFIER <A
-HREF="#prod.Model"
-><I
->Model</I
-></A
-> <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Attribute"
-></A
-><B
->Attribute</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->ATTRIBUTE <A
-HREF="#prod.Model"
-><I
->Model</I
-></A
-> ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Model"
-></A
-><B
->Model</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Literal"
-><I
->Literal</I
-></A
-> | <A
-HREF="#prod.Name"
-><I
->Name</I
-></A
-> | <A
-HREF="#prod.Object"
-><I
->Object</I
-></A
-> | <A
-HREF="#prod.Vector"
-><I
->Vector</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Module"
-></A
-><B
->Module</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'module' IDENTIFIER ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Package"
-></A
-><B
->Package</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'package' <A
-HREF="#prod.Name"
-><I
->Name</I
-></A
-> <A
-HREF="#prod.Version"
-><I
->Version</I
-></A
->? <A
-HREF="#prod.Source"
-><I
->Source</I
-></A
->? ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Version"
-></A
-><B
->Version</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->LITERAL '.' LITERAL </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Source"
-></A
-><B
->Source</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->LITERAL </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Initializer"
-></A
-><B
->Initializer</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'(' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ ')' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Operand"
-></A
-><B
->Operand</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Expression"
-><I
->Expression</I
-></A
-> <A
-HREF="#prod.MemberAccess"
-><I
->MemberAccess</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.MemberAccess"
-></A
-><B
->MemberAccess</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'.' <A
-HREF="#prod.Name"
-><I
->Name</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Expression"
-></A
-><B
->Expression</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Literal"
-><I
->Literal</I
-></A
-> | <A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> | <A
-HREF="#prod.Object"
-><I
->Object</I
-></A
-> | <A
-HREF="#prod.Vector"
-><I
->Vector</I
-></A
-> | <A
-HREF="#prod.Block"
-><I
->Block</I
-></A
-> | <A
-HREF="#prod.If"
-><I
->If</I
-></A
-> | <A
-HREF="#prod.Match"
-><I
->Match</I
-></A
-> | <A
-HREF="#prod.Lambda"
-><I
->Lambda</I
-></A
-> | <A
-HREF="#prod.For"
-><I
->For</I
-></A
-> | <A
-HREF="#prod.While"
-><I
->While</I
-></A
-> | <A
-HREF="#prod.Choose"
-><I
->Choose</I
-></A
-> | <A
-HREF="#prod.Try"
-><I
->Try</I
-></A
-> | <A
-HREF="#prod.Repeat"
-><I
->Repeat</I
-></A
-> | <A
-HREF="#prod.SizeOf"
-><I
->SizeOf</I
-></A
-> | <A
-HREF="#prod.Is"
-><I
->Is</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Literal"
-></A
-><B
->Literal</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->LITERAL </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Object"
-></A
-><B
->Object</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'(' <A
-HREF="#prod.Component"
-><I
->Component</I
-></A
->* ')' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Component"
-></A
-><B
->Component</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* <A
-HREF="#prod.Value"
-><I
->Value</I
-></A
->? ',' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Value"
-></A
-><B
->Value</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->':' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Vector"
-></A
-><B
->Vector</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'[' <A
-HREF="#prod.Element"
-><I
->Element</I
-></A
->+ ']' <A
-HREF="#prod.Lifetime"
-><I
->Lifetime</I
-></A
->? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Element"
-></A
-><B
->Element</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* ',' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Block"
-></A
-><B
->Block</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'{' <A
-HREF="#prod.Use"
-><I
->Use</I
-></A
->* <A
-HREF="#prod.Statement"
-><I
->Statement</I
-></A
->* '}' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.If"
-></A
-><B
->If</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'if' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ ':' <A
-HREF="#prod.Command"
-><I
->Command</I
-></A
-> <A
-HREF="#prod.Else"
-><I
->Else</I
-></A
->? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Else"
-></A
-><B
->Else</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'else' ':'? <A
-HREF="#prod.Command"
-><I
->Command</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Match"
-></A
-><B
->Match</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'match' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ ':' <A
-HREF="#prod.Branch"
-><I
->Branch</I
-></A
->+ <A
-HREF="#prod.Else"
-><I
->Else</I
-></A
->? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Branch"
-></A
-><B
->Branch</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Case"
-><I
->Case</I
-></A
->+ ':' <A
-HREF="#prod.Statement"
-><I
->Statement</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Case"
-></A
-><B
->Case</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'case' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Statement"
-></A
-><B
->Statement</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Command"
-><I
->Command</I
-></A
-> ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.While"
-></A
-><B
->While</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'while' <A
-HREF="#prod.Condition"
-><I
->Condition</I
-></A
-> ':' <A
-HREF="#prod.Label"
-><I
->Label</I
-></A
->? <A
-HREF="#prod.Action"
-><I
->Action</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Choose"
-></A
-><B
->Choose</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'choose' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ ':' <A
-HREF="#prod.When"
-><I
->When</I
-></A
->* <A
-HREF="#prod.Else"
-><I
->Else</I
-></A
->? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Try"
-></A
-><B
->Try</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'try' <A
-HREF="#prod.Condition"
-><I
->Condition</I
-></A
-> ':' <A
-HREF="#prod.When"
-><I
->When</I
-></A
->* <A
-HREF="#prod.Else"
-><I
->Else</I
-></A
->? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Condition"
-></A
-><B
->Condition</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Operation"
-><I
->Operation</I
-></A
-> | <A
-HREF="#prod.Let"
-><I
->Let</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.When"
-></A
-><B
->When</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'when' IDENTIFIER ':' <A
-HREF="#prod.Name"
-><I
->Name</I
-></A
-> ':'? <A
-HREF="#prod.Command"
-><I
->Command</I
-></A
-> ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Command"
-></A
-><B
->Command</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Operation"
-><I
->Operation</I
-></A
-> | <A
-HREF="#prod.Let"
-><I
->Let</I
-></A
-> | <A
-HREF="#prod.Var"
-><I
->Var</I
-></A
-> | <A
-HREF="#prod.Mutable"
-><I
->Mutable</I
-></A
-> | <A
-HREF="#prod.Set"
-><I
->Set</I
-></A
-> | <A
-HREF="#prod.Continue"
-><I
->Continue</I
-></A
-> | <A
-HREF="#prod.Break"
-><I
->Break</I
-></A
-> | <A
-HREF="#prod.Return"
-><I
->Return</I
-></A
-> | <A
-HREF="#prod.Throw"
-><I
->Throw</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Let"
-></A
-><B
->Let</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'let' <A
-HREF="#prod.Binding"
-><I
->Binding</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Var"
-></A
-><B
->Var</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'var' <A
-HREF="#prod.Binding"
-><I
->Binding</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Mutable"
-></A
-><B
->Mutable</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'mutable' <A
-HREF="#prod.Binding"
-><I
->Binding</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Binding"
-></A
-><B
->Binding</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->IDENTIFIER <A
-HREF="#prod.BindingAnnotation"
-><I
->BindingAnnotation</I
-></A
->? <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.BindingAnnotation"
-></A
-><B
->BindingAnnotation</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->':' <A
-HREF="#prod.BindingSpec"
-><I
->BindingSpec</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.BindingSpec"
-></A
-><B
->BindingSpec</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Structure"
-><I
->Structure</I
-></A
-> | <A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> | <A
-HREF="#prod.Array"
-><I
->Array</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Array"
-></A
-><B
->Array</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'[' <A
-HREF="#prod.Type"
-><I
->Type</I
-></A
->* ']' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Structure"
-></A
-><B
->Structure</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'(' <A
-HREF="#prod.Part"
-><I
->Part</I
-></A
->* ')' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Part"
-></A
-><B
->Part</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Field"
-><I
->Field</I
-></A
-> | <A
-HREF="#prod.Property"
-><I
->Property</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Field"
-></A
-><B
->Field</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'private' <A
-HREF="#prod.Property"
-><I
->Property</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Property"
-></A
-><B
->Property</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->IDENTIFIER <A
-HREF="#prod.TypeAnnotation"
-><I
->TypeAnnotation</I
-></A
-> <A
-HREF="#prod.Initializer"
-><I
->Initializer</I
-></A
->? ',' ':'? <A
-HREF="#prod.Attribute"
-><I
->Attribute</I
-></A
->* ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.TypeAnnotation"
-></A
-><B
->TypeAnnotation</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->':' <A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Continue"
-></A
-><B
->Continue</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'continue' <A
-HREF="#prod.Loop"
-><I
->Loop</I
-></A
->? ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Break"
-></A
-><B
->Break</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'break' <A
-HREF="#prod.Loop"
-><I
->Loop</I
-></A
->? <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->* ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Loop"
-></A
-><B
->Loop</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'loop' IDENTIFIER </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Return"
-></A
-><B
->Return</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'return' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Throw"
-></A
-><B
->Throw</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'throw' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Lambda"
-></A
-><B
->Lambda</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'lambda' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ ':' <A
-HREF="#prod.Action"
-><I
->Action</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.For"
-></A
-><B
->For</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'for' IDENTIFIER <A
-HREF="#prod.TypeAnnotation"
-><I
->TypeAnnotation</I
-></A
->? 'in' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ ':' <A
-HREF="#prod.Label"
-><I
->Label</I
-></A
->? <A
-HREF="#prod.Action"
-><I
->Action</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Label"
-></A
-><B
->Label</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'label' IDENTIFIER ':'? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Repeat"
-></A
-><B
->Repeat</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'repeat' <A
-HREF="#prod.Label"
-><I
->Label</I
-></A
->? <A
-HREF="#prod.Action"
-><I
->Action</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Action"
-></A
-><B
->Action</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Operation"
-><I
->Operation</I
-></A
-> | <A
-HREF="#prod.Set"
-><I
->Set</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Operation"
-></A
-><B
->Operation</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Set"
-></A
-><B
->Set</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'set' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ ':' <A
-HREF="#prod.Operand"
-><I
->Operand</I
-></A
->+ </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.SizeOf"
-></A
-><B
->SizeOf</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'sizeof' <A
-HREF="#prod.Type"
-><I
->Type</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Is"
-></A
-><B
->Is</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'is' <A
-HREF="#prod.Name"
-><I
->Name</I
-></A
-> </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Type"
-></A
-><B
->Type</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Name"
-><I
->Name</I
-></A
-> <A
-HREF="#prod.GenericArguments"
-><I
->GenericArguments</I
-></A
->? <A
-HREF="#prod.Optional"
-><I
->Optional</I
-></A
->? <A
-HREF="#prod.Lifetime"
-><I
->Lifetime</I
-></A
->? </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Name"
-></A
-><B
->Name</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->IDENTIFIER <A
-HREF="#prod.Extension"
-><I
->Extension</I
-></A
->* </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Extension"
-></A
-><B
->Extension</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'.' IDENTIFIER </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Lifetime"
-></A
-><B
->Lifetime</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
-><A
-HREF="#prod.Call"
-><I
->Call</I
-></A
-> | <A
-HREF="#prod.Local"
-><I
->Local</I
-></A
-> | <A
-HREF="#prod.Reference"
-><I
->Reference</I
-></A
-> | <A
-HREF="#prod.Thrown"
-><I
->Thrown</I
-></A
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Call"
-></A
-><B
->Call</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'#' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Local"
-></A
-><B
->Local</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'$' </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Reference"
-></A
-><B
->Reference</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'^' IDENTIFIER </TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-ALIGN="RIGHT"
-><A
-NAME="prod.Thrown"
-></A
-><B
->Thrown</B
-></TD
-><TD
-VALIGN="TOP"
-> ::= </TD
-><TD
-VALIGN="TOP"
->'!' </TD
-></TR
-></TABLE
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-SUMMARY="Footer navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
-><A
-HREF="types.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
-><A
-HREF="index.html"
-ACCESSKEY="H"
->Home</A
-></TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="definitions.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->Type System</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Definitions</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
+    nonterminals linking to their definitions.</p
+><p
+>Notation:</p
+><ul
+><li
+><p
+><em
+>identifier</em
+>, <em
+>literal</em
+> — terminal symbols from the lexer</p
+></li
+><li
+><p
+><code
+>'keyword'</code
+> — keyword terminals</p
+></li
+><li
+><p
+><code
+>X | Y</code
+> — alternatives</p
+></li
+><li
+><p
+><code
+>X?</code
+> — optional</p
+></li
+><li
+><p
+><code
+>X+</code
+> — one or more</p
+></li
+><li
+><p
+><code
+>X*</code
+> — zero or more</p
+></li
+></ul
+><div
+class="grammar"
+><div
+class="production"
+id="prod.Program"
+><a
+class="lhs"
+href="#prod.Program"
+>Program</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.File"
+>File</a
+> <a
+class="nonterminal"
+href="#prod.Statement"
+>Statement</a
+>* </span
+></div
+><div
+class="production"
+id="prod.File"
+><a
+class="lhs"
+href="#prod.File"
+>File</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Package"
+>Package</a
+>* <a
+class="nonterminal"
+href="#prod.Use"
+>Use</a
+>* <a
+class="nonterminal"
+href="#prod.Declaration"
+>Declaration</a
+>* </span
+></div
+><div
+class="production"
+id="prod.Declaration"
+><a
+class="lhs"
+href="#prod.Declaration"
+>Declaration</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Symbol"
+>Symbol</a
+> ':'? </span
+></div
+><div
+class="production"
+id="prod.Symbol"
+><a
+class="lhs"
+href="#prod.Symbol"
+>Symbol</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Private"
+>Private</a
+> | <a
+class="nonterminal"
+href="#prod.Definition"
+>Definition</a
+> | <a
+class="nonterminal"
+href="#prod.Function"
+>Function</a
+> | <a
+class="nonterminal"
+href="#prod.Operator"
+>Operator</a
+> | <a
+class="nonterminal"
+href="#prod.Trait"
+>Trait</a
+> | <a
+class="nonterminal"
+href="#prod.Macro"
+>Macro</a
+> | <a
+class="nonterminal"
+href="#prod.Module"
+>Module</a
+></span
+></div
+><div
+class="production"
+id="prod.Private"
+><a
+class="lhs"
+href="#prod.Private"
+>Private</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'private' <a
+class="nonterminal"
+href="#prod.Export"
+>Export</a
+> </span
+></div
+><div
+class="production"
+id="prod.Export"
+><a
+class="lhs"
+href="#prod.Export"
+>Export</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Definition"
+>Definition</a
+> | <a
+class="nonterminal"
+href="#prod.Function"
+>Function</a
+> | <a
+class="nonterminal"
+href="#prod.Operator"
+>Operator</a
+> | <a
+class="nonterminal"
+href="#prod.Trait"
+>Trait</a
+> | <a
+class="nonterminal"
+href="#prod.Module"
+>Module</a
+></span
+></div
+><div
+class="production"
+id="prod.Member"
+><a
+class="lhs"
+href="#prod.Member"
+>Member</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Constituent"
+>Constituent</a
+> ':'? </span
+></div
+><div
+class="production"
+id="prod.Constituent"
+><a
+class="lhs"
+href="#prod.Constituent"
+>Constituent</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Definition"
+>Definition</a
+> | <a
+class="nonterminal"
+href="#prod.Function"
+>Function</a
+> | <a
+class="nonterminal"
+href="#prod.Procedure"
+>Procedure</a
+> | <a
+class="nonterminal"
+href="#prod.Operator"
+>Operator</a
+> | <a
+class="nonterminal"
+href="#prod.Implement"
+>Implement</a
+> | <a
+class="nonterminal"
+href="#prod.Trait"
+>Trait</a
+> | <a
+class="nonterminal"
+href="#prod.Macro"
+>Macro</a
+> | <a
+class="nonterminal"
+href="#prod.Module"
+>Module</a
+></span
+></div
+><div
+class="production"
+id="prod.Definition"
+><a
+class="lhs"
+href="#prod.Definition"
+>Definition</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'define' IDENTIFIER <a
+class="nonterminal"
+href="#prod.GenericParameters"
+>GenericParameters</a
+>? ':'? <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* <a
+class="nonterminal"
+href="#prod.Concept"
+>Concept</a
+> </span
+></div
+><div
+class="production"
+id="prod.GenericParameters"
+><a
+class="lhs"
+href="#prod.GenericParameters"
+>GenericParameters</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'[' <a
+class="nonterminal"
+href="#prod.GenericParameter"
+>GenericParameter</a
+>+ ']' </span
+></div
+><div
+class="production"
+id="prod.GenericParameter"
+><a
+class="lhs"
+href="#prod.GenericParameter"
+>GenericParameter</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>IDENTIFIER <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* ',' </span
+></div
+><div
+class="production"
+id="prod.Concept"
+><a
+class="lhs"
+href="#prod.Concept"
+>Concept</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Class"
+>Class</a
+> | <a
+class="nonterminal"
+href="#prod.Namespace"
+>Namespace</a
+> | <a
+class="nonterminal"
+href="#prod.Union"
+>Union</a
+> | <a
+class="nonterminal"
+href="#prod.Constant"
+>Constant</a
+> | <a
+class="nonterminal"
+href="#prod.Delegate"
+>Delegate</a
+> | <a
+class="nonterminal"
+href="#prod.Intrinsic"
+>Intrinsic</a
+></span
+></div
+><div
+class="production"
+id="prod.Class"
+><a
+class="lhs"
+href="#prod.Class"
+>Class</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Structure"
+>Structure</a
+> ':'? <a
+class="nonterminal"
+href="#prod.Body"
+>Body</a
+>? ':'? </span
+></div
+><div
+class="production"
+id="prod.Body"
+><a
+class="lhs"
+href="#prod.Body"
+>Body</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'{' <a
+class="nonterminal"
+href="#prod.Use"
+>Use</a
+>* <a
+class="nonterminal"
+href="#prod.Init"
+>Init</a
+>* <a
+class="nonterminal"
+href="#prod.DeInit"
+>DeInit</a
+>? <a
+class="nonterminal"
+href="#prod.Member"
+>Member</a
+>* '}' ':'? </span
+></div
+><div
+class="production"
+id="prod.Namespace"
+><a
+class="lhs"
+href="#prod.Namespace"
+>Namespace</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'{' <a
+class="nonterminal"
+href="#prod.Use"
+>Use</a
+>* <a
+class="nonterminal"
+href="#prod.Declaration"
+>Declaration</a
+>* '}' ':'? </span
+></div
+><div
+class="production"
+id="prod.Union"
+><a
+class="lhs"
+href="#prod.Union"
+>Union</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'union' ':'? '(' <a
+class="nonterminal"
+href="#prod.Variant"
+>Variant</a
+>+ ')' ':'? <a
+class="nonterminal"
+href="#prod.Body"
+>Body</a
+>? ':'? </span
+></div
+><div
+class="production"
+id="prod.Variant"
+><a
+class="lhs"
+href="#prod.Variant"
+>Variant</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>IDENTIFIER <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* <a
+class="nonterminal"
+href="#prod.TypeAnnotation"
+>TypeAnnotation</a
+>? ',' ':'? </span
+></div
+><div
+class="production"
+id="prod.Constant"
+><a
+class="lhs"
+href="#prod.Constant"
+>Constant</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>* ':'? </span
+></div
+><div
+class="production"
+id="prod.Delegate"
+><a
+class="lhs"
+href="#prod.Delegate"
+>Delegate</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'delegate' <a
+class="nonterminal"
+href="#prod.ParameterSet"
+>ParameterSet</a
+>? <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* <a
+class="nonterminal"
+href="#prod.Returns"
+>Returns</a
+>? <a
+class="nonterminal"
+href="#prod.Throws"
+>Throws</a
+>? </span
+></div
+><div
+class="production"
+id="prod.GenericArguments"
+><a
+class="lhs"
+href="#prod.GenericArguments"
+>GenericArguments</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'[' <a
+class="nonterminal"
+href="#prod.GenericArgument"
+>GenericArgument</a
+>* ']' </span
+></div
+><div
+class="production"
+id="prod.GenericArgument"
+><a
+class="lhs"
+href="#prod.GenericArgument"
+>GenericArgument</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> ',' </span
+></div
+><div
+class="production"
+id="prod.Optional"
+><a
+class="lhs"
+href="#prod.Optional"
+>Optional</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'?' </span
+></div
+><div
+class="production"
+id="prod.ParameterSet"
+><a
+class="lhs"
+href="#prod.ParameterSet"
+>ParameterSet</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Parameters"
+>Parameters</a
+> | <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+></span
+></div
+><div
+class="production"
+id="prod.Parameters"
+><a
+class="lhs"
+href="#prod.Parameters"
+>Parameters</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'(' <a
+class="nonterminal"
+href="#prod.Item"
+>Item</a
+>* ')' </span
+></div
+><div
+class="production"
+id="prod.Item"
+><a
+class="lhs"
+href="#prod.Item"
+>Item</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>IDENTIFIER <a
+class="nonterminal"
+href="#prod.TypeAnnotation"
+>TypeAnnotation</a
+>? ',' ':'? <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* ':'? </span
+></div
+><div
+class="production"
+id="prod.Returns"
+><a
+class="lhs"
+href="#prod.Returns"
+>Returns</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'returns' <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* </span
+></div
+><div
+class="production"
+id="prod.Throws"
+><a
+class="lhs"
+href="#prod.Throws"
+>Throws</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'throws' <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* </span
+></div
+><div
+class="production"
+id="prod.Use"
+><a
+class="lhs"
+href="#prod.Use"
+>Use</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'use' <a
+class="nonterminal"
+href="#prod.Name"
+>Name</a
+> ':'? </span
+></div
+><div
+class="production"
+id="prod.Implement"
+><a
+class="lhs"
+href="#prod.Implement"
+>Implement</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'implement' <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* ':'? '{' <a
+class="nonterminal"
+href="#prod.Use"
+>Use</a
+>* <a
+class="nonterminal"
+href="#prod.Method"
+>Method</a
+>* '}' ':'? </span
+></div
+><div
+class="production"
+id="prod.Trait"
+><a
+class="lhs"
+href="#prod.Trait"
+>Trait</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'trait' <a
+class="nonterminal"
+href="#prod.Name"
+>Name</a
+> <a
+class="nonterminal"
+href="#prod.Extends"
+>Extends</a
+>? <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* '{' <a
+class="nonterminal"
+href="#prod.Use"
+>Use</a
+>* <a
+class="nonterminal"
+href="#prod.Method"
+>Method</a
+>* '}' ':'? </span
+></div
+><div
+class="production"
+id="prod.Method"
+><a
+class="lhs"
+href="#prod.Method"
+>Method</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Function"
+>Function</a
+> | <a
+class="nonterminal"
+href="#prod.Procedure"
+>Procedure</a
+> | <a
+class="nonterminal"
+href="#prod.Operator"
+>Operator</a
+></span
+></div
+><div
+class="production"
+id="prod.Init"
+><a
+class="lhs"
+href="#prod.Init"
+>Init</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'init' <a
+class="nonterminal"
+href="#prod.ParameterSet"
+>ParameterSet</a
+>? ':'? <a
+class="nonterminal"
+href="#prod.Action"
+>Action</a
+> ':'? </span
+></div
+><div
+class="production"
+id="prod.DeInit"
+><a
+class="lhs"
+href="#prod.DeInit"
+>DeInit</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'deinit' ':'? <a
+class="nonterminal"
+href="#prod.Action"
+>Action</a
+> ':'? </span
+></div
+><div
+class="production"
+id="prod.Function"
+><a
+class="lhs"
+href="#prod.Function"
+>Function</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'function' <a
+class="nonterminal"
+href="#prod.Target"
+>Target</a
+> </span
+></div
+><div
+class="production"
+id="prod.Procedure"
+><a
+class="lhs"
+href="#prod.Procedure"
+>Procedure</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'procedure' <a
+class="nonterminal"
+href="#prod.Target"
+>Target</a
+> </span
+></div
+><div
+class="production"
+id="prod.Operator"
+><a
+class="lhs"
+href="#prod.Operator"
+>Operator</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'operator' <a
+class="nonterminal"
+href="#prod.Target"
+>Target</a
+> </span
+></div
+><div
+class="production"
+id="prod.Target"
+><a
+class="lhs"
+href="#prod.Target"
+>Target</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Named"
+>Named</a
+> | <a
+class="nonterminal"
+href="#prod.Routine"
+>Routine</a
+></span
+></div
+><div
+class="production"
+id="prod.Named"
+><a
+class="lhs"
+href="#prod.Named"
+>Named</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>IDENTIFIER <a
+class="nonterminal"
+href="#prod.Routine"
+>Routine</a
+> </span
+></div
+><div
+class="production"
+id="prod.Routine"
+><a
+class="lhs"
+href="#prod.Routine"
+>Routine</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.GenericArguments"
+>GenericArguments</a
+>? <a
+class="nonterminal"
+href="#prod.Lifetime"
+>Lifetime</a
+>? <a
+class="nonterminal"
+href="#prod.ParameterSet"
+>ParameterSet</a
+>? <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* <a
+class="nonterminal"
+href="#prod.Returns"
+>Returns</a
+>? ':'? <a
+class="nonterminal"
+href="#prod.Throws"
+>Throws</a
+>? ':'? <a
+class="nonterminal"
+href="#prod.Implementation"
+>Implementation</a
+> </span
+></div
+><div
+class="production"
+id="prod.Implementation"
+><a
+class="lhs"
+href="#prod.Implementation"
+>Implementation</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Action"
+>Action</a
+> | <a
+class="nonterminal"
+href="#prod.Extern"
+>Extern</a
+> | <a
+class="nonterminal"
+href="#prod.Instruction"
+>Instruction</a
+> | <a
+class="nonterminal"
+href="#prod.Intrinsic"
+>Intrinsic</a
+></span
+></div
+><div
+class="production"
+id="prod.Extern"
+><a
+class="lhs"
+href="#prod.Extern"
+>Extern</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'extern' </span
+></div
+><div
+class="production"
+id="prod.Instruction"
+><a
+class="lhs"
+href="#prod.Instruction"
+>Instruction</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'instruction' ':'? </span
+></div
+><div
+class="production"
+id="prod.Intrinsic"
+><a
+class="lhs"
+href="#prod.Intrinsic"
+>Intrinsic</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'intrinsic' ':'? </span
+></div
+><div
+class="production"
+id="prod.Extends"
+><a
+class="lhs"
+href="#prod.Extends"
+>Extends</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'extends' <a
+class="nonterminal"
+href="#prod.Extend"
+>Extend</a
+>* </span
+></div
+><div
+class="production"
+id="prod.Extend"
+><a
+class="lhs"
+href="#prod.Extend"
+>Extend</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> ',' </span
+></div
+><div
+class="production"
+id="prod.Macro"
+><a
+class="lhs"
+href="#prod.Macro"
+>Macro</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'macro' IDENTIFIER <a
+class="nonterminal"
+href="#prod.Model"
+>Model</a
+> <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ </span
+></div
+><div
+class="production"
+id="prod.Attribute"
+><a
+class="lhs"
+href="#prod.Attribute"
+>Attribute</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>ATTRIBUTE <a
+class="nonterminal"
+href="#prod.Model"
+>Model</a
+> ':'? </span
+></div
+><div
+class="production"
+id="prod.Model"
+><a
+class="lhs"
+href="#prod.Model"
+>Model</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Literal"
+>Literal</a
+> | <a
+class="nonterminal"
+href="#prod.Name"
+>Name</a
+> | <a
+class="nonterminal"
+href="#prod.Object"
+>Object</a
+> | <a
+class="nonterminal"
+href="#prod.Vector"
+>Vector</a
+></span
+></div
+><div
+class="production"
+id="prod.Module"
+><a
+class="lhs"
+href="#prod.Module"
+>Module</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'module' IDENTIFIER ':'? </span
+></div
+><div
+class="production"
+id="prod.Package"
+><a
+class="lhs"
+href="#prod.Package"
+>Package</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'package' <a
+class="nonterminal"
+href="#prod.Name"
+>Name</a
+> <a
+class="nonterminal"
+href="#prod.Version"
+>Version</a
+>? <a
+class="nonterminal"
+href="#prod.Source"
+>Source</a
+>? ':'? </span
+></div
+><div
+class="production"
+id="prod.Version"
+><a
+class="lhs"
+href="#prod.Version"
+>Version</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>LITERAL '.' LITERAL </span
+></div
+><div
+class="production"
+id="prod.Source"
+><a
+class="lhs"
+href="#prod.Source"
+>Source</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>LITERAL </span
+></div
+><div
+class="production"
+id="prod.Initializer"
+><a
+class="lhs"
+href="#prod.Initializer"
+>Initializer</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'(' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ ')' </span
+></div
+><div
+class="production"
+id="prod.Operand"
+><a
+class="lhs"
+href="#prod.Operand"
+>Operand</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Expression"
+>Expression</a
+> <a
+class="nonterminal"
+href="#prod.MemberAccess"
+>MemberAccess</a
+>* </span
+></div
+><div
+class="production"
+id="prod.MemberAccess"
+><a
+class="lhs"
+href="#prod.MemberAccess"
+>MemberAccess</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'.' <a
+class="nonterminal"
+href="#prod.Name"
+>Name</a
+> </span
+></div
+><div
+class="production"
+id="prod.Expression"
+><a
+class="lhs"
+href="#prod.Expression"
+>Expression</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Literal"
+>Literal</a
+> | <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> | <a
+class="nonterminal"
+href="#prod.Object"
+>Object</a
+> | <a
+class="nonterminal"
+href="#prod.Vector"
+>Vector</a
+> | <a
+class="nonterminal"
+href="#prod.Block"
+>Block</a
+> | <a
+class="nonterminal"
+href="#prod.If"
+>If</a
+> | <a
+class="nonterminal"
+href="#prod.Match"
+>Match</a
+> | <a
+class="nonterminal"
+href="#prod.Lambda"
+>Lambda</a
+> | <a
+class="nonterminal"
+href="#prod.For"
+>For</a
+> | <a
+class="nonterminal"
+href="#prod.While"
+>While</a
+> | <a
+class="nonterminal"
+href="#prod.Choose"
+>Choose</a
+> | <a
+class="nonterminal"
+href="#prod.Try"
+>Try</a
+> | <a
+class="nonterminal"
+href="#prod.Repeat"
+>Repeat</a
+> | <a
+class="nonterminal"
+href="#prod.SizeOf"
+>SizeOf</a
+> | <a
+class="nonterminal"
+href="#prod.Is"
+>Is</a
+></span
+></div
+><div
+class="production"
+id="prod.Literal"
+><a
+class="lhs"
+href="#prod.Literal"
+>Literal</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>LITERAL </span
+></div
+><div
+class="production"
+id="prod.Object"
+><a
+class="lhs"
+href="#prod.Object"
+>Object</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'(' <a
+class="nonterminal"
+href="#prod.Component"
+>Component</a
+>* ')' </span
+></div
+><div
+class="production"
+id="prod.Component"
+><a
+class="lhs"
+href="#prod.Component"
+>Component</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* <a
+class="nonterminal"
+href="#prod.Value"
+>Value</a
+>? ',' </span
+></div
+><div
+class="production"
+id="prod.Value"
+><a
+class="lhs"
+href="#prod.Value"
+>Value</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>':' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* </span
+></div
+><div
+class="production"
+id="prod.Vector"
+><a
+class="lhs"
+href="#prod.Vector"
+>Vector</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'[' <a
+class="nonterminal"
+href="#prod.Element"
+>Element</a
+>+ ']' <a
+class="nonterminal"
+href="#prod.Lifetime"
+>Lifetime</a
+>? </span
+></div
+><div
+class="production"
+id="prod.Element"
+><a
+class="lhs"
+href="#prod.Element"
+>Element</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* ',' </span
+></div
+><div
+class="production"
+id="prod.Block"
+><a
+class="lhs"
+href="#prod.Block"
+>Block</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'{' <a
+class="nonterminal"
+href="#prod.Use"
+>Use</a
+>* <a
+class="nonterminal"
+href="#prod.Statement"
+>Statement</a
+>* '}' </span
+></div
+><div
+class="production"
+id="prod.If"
+><a
+class="lhs"
+href="#prod.If"
+>If</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'if' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ ':' <a
+class="nonterminal"
+href="#prod.Command"
+>Command</a
+> <a
+class="nonterminal"
+href="#prod.Else"
+>Else</a
+>? </span
+></div
+><div
+class="production"
+id="prod.Else"
+><a
+class="lhs"
+href="#prod.Else"
+>Else</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'else' ':'? <a
+class="nonterminal"
+href="#prod.Command"
+>Command</a
+> </span
+></div
+><div
+class="production"
+id="prod.Match"
+><a
+class="lhs"
+href="#prod.Match"
+>Match</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'match' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ ':' <a
+class="nonterminal"
+href="#prod.Branch"
+>Branch</a
+>+ <a
+class="nonterminal"
+href="#prod.Else"
+>Else</a
+>? </span
+></div
+><div
+class="production"
+id="prod.Branch"
+><a
+class="lhs"
+href="#prod.Branch"
+>Branch</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Case"
+>Case</a
+>+ ':' <a
+class="nonterminal"
+href="#prod.Statement"
+>Statement</a
+> </span
+></div
+><div
+class="production"
+id="prod.Case"
+><a
+class="lhs"
+href="#prod.Case"
+>Case</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'case' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ </span
+></div
+><div
+class="production"
+id="prod.Statement"
+><a
+class="lhs"
+href="#prod.Statement"
+>Statement</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Command"
+>Command</a
+> ':'? </span
+></div
+><div
+class="production"
+id="prod.While"
+><a
+class="lhs"
+href="#prod.While"
+>While</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'while' <a
+class="nonterminal"
+href="#prod.Condition"
+>Condition</a
+> ':' <a
+class="nonterminal"
+href="#prod.Label"
+>Label</a
+>? <a
+class="nonterminal"
+href="#prod.Action"
+>Action</a
+> </span
+></div
+><div
+class="production"
+id="prod.Choose"
+><a
+class="lhs"
+href="#prod.Choose"
+>Choose</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'choose' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ ':' <a
+class="nonterminal"
+href="#prod.When"
+>When</a
+>* <a
+class="nonterminal"
+href="#prod.Else"
+>Else</a
+>? </span
+></div
+><div
+class="production"
+id="prod.Try"
+><a
+class="lhs"
+href="#prod.Try"
+>Try</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'try' <a
+class="nonterminal"
+href="#prod.Condition"
+>Condition</a
+> ':' <a
+class="nonterminal"
+href="#prod.When"
+>When</a
+>* <a
+class="nonterminal"
+href="#prod.Else"
+>Else</a
+>? </span
+></div
+><div
+class="production"
+id="prod.Condition"
+><a
+class="lhs"
+href="#prod.Condition"
+>Condition</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Operation"
+>Operation</a
+> | <a
+class="nonterminal"
+href="#prod.Let"
+>Let</a
+></span
+></div
+><div
+class="production"
+id="prod.When"
+><a
+class="lhs"
+href="#prod.When"
+>When</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'when' IDENTIFIER ':' <a
+class="nonterminal"
+href="#prod.Name"
+>Name</a
+> ':'? <a
+class="nonterminal"
+href="#prod.Command"
+>Command</a
+> ':'? </span
+></div
+><div
+class="production"
+id="prod.Command"
+><a
+class="lhs"
+href="#prod.Command"
+>Command</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Operation"
+>Operation</a
+> | <a
+class="nonterminal"
+href="#prod.Let"
+>Let</a
+> | <a
+class="nonterminal"
+href="#prod.Var"
+>Var</a
+> | <a
+class="nonterminal"
+href="#prod.Mutable"
+>Mutable</a
+> | <a
+class="nonterminal"
+href="#prod.Set"
+>Set</a
+> | <a
+class="nonterminal"
+href="#prod.Continue"
+>Continue</a
+> | <a
+class="nonterminal"
+href="#prod.Break"
+>Break</a
+> | <a
+class="nonterminal"
+href="#prod.Return"
+>Return</a
+> | <a
+class="nonterminal"
+href="#prod.Throw"
+>Throw</a
+></span
+></div
+><div
+class="production"
+id="prod.Let"
+><a
+class="lhs"
+href="#prod.Let"
+>Let</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'let' <a
+class="nonterminal"
+href="#prod.Binding"
+>Binding</a
+> </span
+></div
+><div
+class="production"
+id="prod.Var"
+><a
+class="lhs"
+href="#prod.Var"
+>Var</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'var' <a
+class="nonterminal"
+href="#prod.Binding"
+>Binding</a
+> </span
+></div
+><div
+class="production"
+id="prod.Mutable"
+><a
+class="lhs"
+href="#prod.Mutable"
+>Mutable</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'mutable' <a
+class="nonterminal"
+href="#prod.Binding"
+>Binding</a
+> </span
+></div
+><div
+class="production"
+id="prod.Binding"
+><a
+class="lhs"
+href="#prod.Binding"
+>Binding</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>IDENTIFIER <a
+class="nonterminal"
+href="#prod.BindingAnnotation"
+>BindingAnnotation</a
+>? <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ </span
+></div
+><div
+class="production"
+id="prod.BindingAnnotation"
+><a
+class="lhs"
+href="#prod.BindingAnnotation"
+>BindingAnnotation</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>':' <a
+class="nonterminal"
+href="#prod.BindingSpec"
+>BindingSpec</a
+> </span
+></div
+><div
+class="production"
+id="prod.BindingSpec"
+><a
+class="lhs"
+href="#prod.BindingSpec"
+>BindingSpec</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Structure"
+>Structure</a
+> | <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> | <a
+class="nonterminal"
+href="#prod.Array"
+>Array</a
+></span
+></div
+><div
+class="production"
+id="prod.Array"
+><a
+class="lhs"
+href="#prod.Array"
+>Array</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'[' <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+>* ']' </span
+></div
+><div
+class="production"
+id="prod.Structure"
+><a
+class="lhs"
+href="#prod.Structure"
+>Structure</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'(' <a
+class="nonterminal"
+href="#prod.Part"
+>Part</a
+>* ')' </span
+></div
+><div
+class="production"
+id="prod.Part"
+><a
+class="lhs"
+href="#prod.Part"
+>Part</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Field"
+>Field</a
+> | <a
+class="nonterminal"
+href="#prod.Property"
+>Property</a
+></span
+></div
+><div
+class="production"
+id="prod.Field"
+><a
+class="lhs"
+href="#prod.Field"
+>Field</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'private' <a
+class="nonterminal"
+href="#prod.Property"
+>Property</a
+> </span
+></div
+><div
+class="production"
+id="prod.Property"
+><a
+class="lhs"
+href="#prod.Property"
+>Property</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>IDENTIFIER <a
+class="nonterminal"
+href="#prod.TypeAnnotation"
+>TypeAnnotation</a
+> <a
+class="nonterminal"
+href="#prod.Initializer"
+>Initializer</a
+>? ',' ':'? <a
+class="nonterminal"
+href="#prod.Attribute"
+>Attribute</a
+>* ':'? </span
+></div
+><div
+class="production"
+id="prod.TypeAnnotation"
+><a
+class="lhs"
+href="#prod.TypeAnnotation"
+>TypeAnnotation</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>':' <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> </span
+></div
+><div
+class="production"
+id="prod.Continue"
+><a
+class="lhs"
+href="#prod.Continue"
+>Continue</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'continue' <a
+class="nonterminal"
+href="#prod.Loop"
+>Loop</a
+>? ':'? </span
+></div
+><div
+class="production"
+id="prod.Break"
+><a
+class="lhs"
+href="#prod.Break"
+>Break</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'break' <a
+class="nonterminal"
+href="#prod.Loop"
+>Loop</a
+>? <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>* ':'? </span
+></div
+><div
+class="production"
+id="prod.Loop"
+><a
+class="lhs"
+href="#prod.Loop"
+>Loop</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'loop' IDENTIFIER </span
+></div
+><div
+class="production"
+id="prod.Return"
+><a
+class="lhs"
+href="#prod.Return"
+>Return</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'return' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>* </span
+></div
+><div
+class="production"
+id="prod.Throw"
+><a
+class="lhs"
+href="#prod.Throw"
+>Throw</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'throw' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>* </span
+></div
+><div
+class="production"
+id="prod.Lambda"
+><a
+class="lhs"
+href="#prod.Lambda"
+>Lambda</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'lambda' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ ':' <a
+class="nonterminal"
+href="#prod.Action"
+>Action</a
+> </span
+></div
+><div
+class="production"
+id="prod.For"
+><a
+class="lhs"
+href="#prod.For"
+>For</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'for' IDENTIFIER <a
+class="nonterminal"
+href="#prod.TypeAnnotation"
+>TypeAnnotation</a
+>? 'in' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ ':' <a
+class="nonterminal"
+href="#prod.Label"
+>Label</a
+>? <a
+class="nonterminal"
+href="#prod.Action"
+>Action</a
+> </span
+></div
+><div
+class="production"
+id="prod.Label"
+><a
+class="lhs"
+href="#prod.Label"
+>Label</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'label' IDENTIFIER ':'? </span
+></div
+><div
+class="production"
+id="prod.Repeat"
+><a
+class="lhs"
+href="#prod.Repeat"
+>Repeat</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'repeat' <a
+class="nonterminal"
+href="#prod.Label"
+>Label</a
+>? <a
+class="nonterminal"
+href="#prod.Action"
+>Action</a
+> </span
+></div
+><div
+class="production"
+id="prod.Action"
+><a
+class="lhs"
+href="#prod.Action"
+>Action</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Operation"
+>Operation</a
+> | <a
+class="nonterminal"
+href="#prod.Set"
+>Set</a
+></span
+></div
+><div
+class="production"
+id="prod.Operation"
+><a
+class="lhs"
+href="#prod.Operation"
+>Operation</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ </span
+></div
+><div
+class="production"
+id="prod.Set"
+><a
+class="lhs"
+href="#prod.Set"
+>Set</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'set' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ ':' <a
+class="nonterminal"
+href="#prod.Operand"
+>Operand</a
+>+ </span
+></div
+><div
+class="production"
+id="prod.SizeOf"
+><a
+class="lhs"
+href="#prod.SizeOf"
+>SizeOf</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'sizeof' <a
+class="nonterminal"
+href="#prod.Type"
+>Type</a
+> </span
+></div
+><div
+class="production"
+id="prod.Is"
+><a
+class="lhs"
+href="#prod.Is"
+>Is</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'is' <a
+class="nonterminal"
+href="#prod.Name"
+>Name</a
+> </span
+></div
+><div
+class="production"
+id="prod.Type"
+><a
+class="lhs"
+href="#prod.Type"
+>Type</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Name"
+>Name</a
+> <a
+class="nonterminal"
+href="#prod.GenericArguments"
+>GenericArguments</a
+>? <a
+class="nonterminal"
+href="#prod.Optional"
+>Optional</a
+>? <a
+class="nonterminal"
+href="#prod.Lifetime"
+>Lifetime</a
+>? </span
+></div
+><div
+class="production"
+id="prod.Name"
+><a
+class="lhs"
+href="#prod.Name"
+>Name</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>IDENTIFIER <a
+class="nonterminal"
+href="#prod.Extension"
+>Extension</a
+>* </span
+></div
+><div
+class="production"
+id="prod.Extension"
+><a
+class="lhs"
+href="#prod.Extension"
+>Extension</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'.' IDENTIFIER </span
+></div
+><div
+class="production"
+id="prod.Lifetime"
+><a
+class="lhs"
+href="#prod.Lifetime"
+>Lifetime</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+><a
+class="nonterminal"
+href="#prod.Call"
+>Call</a
+> | <a
+class="nonterminal"
+href="#prod.Local"
+>Local</a
+> | <a
+class="nonterminal"
+href="#prod.Reference"
+>Reference</a
+> | <a
+class="nonterminal"
+href="#prod.Thrown"
+>Thrown</a
+></span
+></div
+><div
+class="production"
+id="prod.Call"
+><a
+class="lhs"
+href="#prod.Call"
+>Call</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'#' </span
+></div
+><div
+class="production"
+id="prod.Local"
+><a
+class="lhs"
+href="#prod.Local"
+>Local</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'$' </span
+></div
+><div
+class="production"
+id="prod.Reference"
+><a
+class="lhs"
+href="#prod.Reference"
+>Reference</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'^' IDENTIFIER </span
+></div
+><div
+class="production"
+id="prod.Thrown"
+><a
+class="lhs"
+href="#prod.Thrown"
+>Thrown</a
+><span
+class="defines"
+>::=</span
+><span
+class="rhs"
+>'!' </span
+></div
+></div
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="types.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Type System</span
+></a
+><a
+class="next"
+rel="next"
+href="definitions.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Definitions</span
+></a
+></nav
+></main
+></div
+></body
+></html
 >

@@ -1,175 +1,965 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->Definitions</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
-REL="HOME"
-TITLE="The Scaly Programming Language"
-HREF="index.html"><LINK
-REL="PREVIOUS"
-TITLE="Grammar"
-HREF="grammar.htm"><LINK
-REL="NEXT"
-TITLE="Expressions"
-HREF="expressions.htm"><META
-HTTP-EQUIV="Content-Type"
-CONTENT="text/html; charset=UTF-8"></HEAD
-><BODY
-CLASS="chapter"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="NAVHEADER"
-><TABLE
-SUMMARY="Header navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TH
-COLSPAN="3"
-ALIGN="center"
->The Scaly Programming Language</TH
-></TR
-><TR
-><TD
-WIDTH="10%"
-ALIGN="left"
-VALIGN="bottom"
-><A
-HREF="grammar.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="80%"
-ALIGN="center"
-VALIGN="bottom"
-></TD
-><TD
-WIDTH="10%"
-ALIGN="right"
-VALIGN="bottom"
-><A
-HREF="expressions.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-></TABLE
-><HR
-ALIGN="LEFT"
-WIDTH="100%"></DIV
-><DIV
-CLASS="chapter"
-><H1
-><A
-NAME="definitions"
-></A
->Chapter 6 Definitions</H1
-><DIV
-CLASS="TOC"
-><DL
-><DT
-><B
->Table of Contents</B
-></DT
-><DT
-><A
-HREF="definitions.htm#def-overview"
->Overview</A
-></DT
-><DT
-><A
-HREF="definitions.htm#def-functions-operators"
->Functions, Procedures, and Operators</A
-></DT
-><DT
-><A
-HREF="definitions.htm#category-DEFINITIONS"
->Definitions</A
-></DT
-></DL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="def-overview"
->Overview</A
-></H1
-><P
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Definitions - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-status"
+><span
+class="num"
+>1.3</span
+>Implementation Status</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+aria-current="page"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>A.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>A.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>A.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>B.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>C.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>C.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>C.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>C.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>C.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>C.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>C.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>C.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>C.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>C.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>C.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 6</p
+><h1
+id="definitions"
+>Definitions</h1
+><section
+id="def-overview"
+><h2
+><a
+class="header"
+href="#def-overview"
+>Overview</a
+></h2
+><p
 >Definitions declare new types that can be used throughout a program.
-      Types can have properties, methods, and nested definitions.</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="def-functions-operators"
->Functions, Procedures, and Operators</A
-></H1
-><P
+      Types can have properties, methods, and nested definitions.</p
+></section
+><section
+id="def-functions-operators"
+><h2
+><a
+class="header"
+href="#def-functions-operators"
+>Functions, Procedures, and Operators</a
+></h2
+><p
 >A routine is introduced by one of three keywords, and that keyword —
-      not the spelling of the name — decides how the routine behaves:</P
-><P
-></P
-><UL
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->function</I
-></SPAN
+      not the spelling of the name — decides how the routine behaves:</p
+><ul
+><li
+><p
+><em
+>function</em
 > declares a pure function: its inputs
           are borrowed and immutable, and it returns a result without side
           effects. A function is applied prefix, by writing its name before a
-          parenthesized argument list.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->procedure</I
-></SPAN
+          parenthesized argument list.</p
+></li
+><li
+><p
+><em
+>procedure</em
 > declares a routine that may mutate
-          its inputs and have side effects (builders, I/O).</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->operator</I
-></SPAN
+          its inputs and have side effects (builders, I/O).</p
+></li
+><li
+><p
+><em
+>operator</em
 > declares an operator: a pure routine
           applied infix between its two operands (or prefix, for a unary
-          operator).</P
-></LI
-></UL
-><P
+          operator).</p
+></li
+></ul
+><p
 >The three identifier forms from the lexical chapter — alphanumeric,
       operator-character, and single-quoted string identifiers — are
       interchangeable as names here. A function may be named with operator
       characters, and an operator may be named with letters or a quoted string;
       what makes one a function and the other an operator is the declaration
-      keyword, never the first character of the name.</P
-><PRE
-CLASS="programlisting"
+      keyword, never the first character of the name.</p
+><pre
+class="listing"
+><code
 >&#13;function 'add seven'(n: int) returns int      ; string-named function
     n + 7
 
@@ -178,12 +968,14 @@ function ++(n: int) returns int               ; operator-char-named function
 
 let a 'add seven'(35)                          ; applied prefix -&#62; 42
 let b ++(41)                                   ; applied prefix -&#62; 42
-    </PRE
-><P
+    </code
+></pre
+><p
 >Operators may be declared at the top level, not only as members of a
-      type. Like functions, they accept any of the three name forms:</P
-><PRE
-CLASS="programlisting"
+      type. Like functions, they accept any of the three name forms:</p
+><pre
+class="listing"
+><code
 >&#13;operator &#60;+&#62;(left: int, right: int) returns int    ; operator-char name
     left + right
 
@@ -192,522 +984,471 @@ operator 'divided by'(left: int, right: int) returns int   ; quoted name
 
 let c 40 &#60;+&#62; 2              ; infix -&#62; 42
 let d 84 'divided by' 2     ; infix -&#62; 42
-    </PRE
-><P
+    </code
+></pre
+><p
 >Built-in arithmetic, comparison, and logical operators carry their
       usual precedences. A custom operator that no level of the operation
       names — a text or single-quoted name, or a symbol such as
-      <TT
-CLASS="literal"
->==</TT
+      <code
+>==</code
 > — binds most weakly of all, on a level of its own
-      below <TT
-CLASS="literal"
->||</TT
+      below <code
+>||</code
 >, so the built-in arithmetic in an expression
       combines before it. For
-      example, given an operator <TT
-CLASS="literal"
->'minus'</TT
+      example, given an operator <code
+>'minus'</code
 > that subtracts its
       right operand from its left,
-      <TT
-CLASS="literal"
->20 'minus' 3 + 5</TT
+      <code
+>20 'minus' 3 + 5</code
 > parses as
-      <TT
-CLASS="literal"
->20 'minus' (3 + 5)</TT
-> and yields <TT
-CLASS="literal"
->12</TT
->.</P
-><P
->An operator's right parameter may be declared <TT
-CLASS="literal"
->lazy</TT
+      <code
+>20 'minus' (3 + 5)</code
+> and yields <code
+>12</code
+>.</p
+><p
+>An operator's right parameter may be declared <code
+>lazy</code
 >:
       the caller's operand is handed over unevaluated, and the operator's body
       is put in where the operator stands. The standard library declares
-      <TT
-CLASS="literal"
->and</TT
-> and <TT
-CLASS="literal"
->or</TT
+      <code
+>and</code
+> and <code
+>or</code
 > on
-      <TT
-CLASS="literal"
->bool</TT
+      <code
+>bool</code
 > this way, so the right operand runs only where
-      the left one does not decide:</P
-><PRE
-CLASS="programlisting"
+      the left one does not decide:</p
+><pre
+class="listing"
+><code
 >&#13;operator and(left: bool, right: lazy bool) returns bool
     if left: right else false
 
 let ok p &#60;&#62; null and p.x = 7   ; p.x is read only where p is there
-    </PRE
-><P
+    </code
+></pre
+><p
 >The right operand is planned where the body puts it, so a null test
-      on the left proves its name for it, as an <TT
-CLASS="literal"
->if</TT
+      on the left proves its name for it, as an <code
+>if</code
 > proves it
       for its branch. A free function and a method may declare a lazy
       parameter too: the call is the body put in where it stands, ordinary
       arguments evaluated once in the order they are written, a lazy one
-      where the body names it:</P
-><PRE
-CLASS="programlisting"
+      where the body names it:</p
+><pre
+class="listing"
+><code
 >&#13;function or_else(v: int, fallback: lazy int) returns int
     if v &#60;&#62; 0: v else fallback
 
 let n or_else(cached, expensive())   ; expensive() runs only where cached is 0
-    </PRE
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-DEFINITIONS"
->Definitions</A
-></H1
-><P
->Definitions declare new types that can be used throughout a program.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-STRUCTURE-DEFINITIONS"
->Structure Definitions</A
-></H2
-><P
->The define keyword creates a new structure type with named properties.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1614"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></pre
+></section
+><section
+id="category-DEFINITIONS"
+><h2
+><a
+class="header"
+href="#category-DEFINITIONS"
+>Definitions</a
+></h2
+><p
+>Definitions declare new types that can be used throughout a program.</p
+><section
+id="tests-STRUCTURE-DEFINITIONS"
+><h3
+><a
+class="header"
+href="#tests-STRUCTURE-DEFINITIONS"
+>Structure Definitions</a
+></h3
+><p
+>The define keyword creates a new structure type with named properties.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Point(x: int, y: int)
-Point(3, 4)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+Point(3, 4)</code
+></pre
+></td
+><td
+><code
 >{"_type":"Point","x":3,"y":4}
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Point(x: int, y: int)
-Point(3, 4).x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+Point(3, 4).x</code
+></pre
+></td
+><td
+><code
 >3
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Point(x: int, y: int)
 let p Point(3, 4)
-p.x + p.y</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+p.x + p.y</code
+></pre
+></td
+><td
+><code
 >7
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Point(x: int, y: int)
 define Rectangle(origin: Point, width: int, height: int)
-Rectangle(Point(0, 0), 10, 5).width</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+Rectangle(Point(0, 0), 10, 5).width</code
+></pre
+></td
+><td
+><code
 >10
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-UNION-DEFINITIONS"
->Union Definitions</A
-></H2
-><P
->Unions define types with multiple variants. Each variant can optionally carry a value.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1646"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-UNION-DEFINITIONS"
+><h3
+><a
+class="header"
+href="#tests-UNION-DEFINITIONS"
+>Union Definitions</a
+></h3
+><p
+>Unions define types with multiple variants. Each variant can optionally carry a value.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option union(Some: int, None)
-Some(5)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+Some(5)</code
+></pre
+></td
+><td
+><code
 >{"_type":"Option","_variant":"Some","value":5}
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option union(Some: int, None)
-None</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+None</code
+></pre
+></td
+><td
+><code
 >{"_type":"Option","_variant":"None"}
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Result union(Ok: int, Err: String)
-Ok(42)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+Ok(42)</code
+></pre
+></td
+><td
+><code
 >{"_type":"Result","_variant":"Ok","value":42}
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Result union(Ok: int, Err: String)
-Err("error")</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+Err("error")</code
+></pre
+></td
+><td
+><code
 >{"_type":"Result","_variant":"Err","value":"error"}
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option union(Some: int, None)
-Option.Some(5).value</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+Option.Some(5).value</code
+></pre
+></td
+><td
+><code
 >5
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-FUNCTION-NAMES"
->Function Names</A
-></H2
-><P
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-FUNCTION-NAMES"
+><h3
+><a
+class="header"
+href="#tests-FUNCTION-NAMES"
+>Function Names</a
+></h3
+><p
 >A routine's role is set by its declaration keyword, not by how its
         name is spelled. A function may be named with ordinary letters, with a
         single-quoted string identifier (which may contain spaces), or with
         operator characters; in every case it is an ordinary function, applied
-        by writing its name before a parenthesized argument.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1683"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        by writing its name before a parenthesized argument.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >function 'add seven'(n: int) returns int
     n + 7
-'add seven'(35)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+'add seven'(35)</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >function ++(n: int) returns int
     n + 1
-++(41)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+++(41)</code
+></pre
+></td
+><td
+><code
 >42
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-OPERATOR-DEFINITIONS"
->Operator Definitions</A
-></H2
-><P
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-OPERATOR-DEFINITIONS"
+><h3
+><a
+class="header"
+href="#tests-OPERATOR-DEFINITIONS"
+>Operator Definitions</a
+></h3
+><p
 >The operator keyword declares an operator, applied infix between
         its two operands. Like functions, operators may be named with operator
         characters or with a text or single-quoted name. Operators may be
         declared at the top level, not only inside a type. An operator that no
         level of the operation names, a text-named one among them, binds more
-        weakly than every level, so the arithmetic combines first.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1705"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        weakly than every level, so the arithmetic combines first.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >operator &#60;+&#62;(left: int, right: int) returns int
     left + right
-40 &#60;+&#62; 2</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+40 &#60;+&#62; 2</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >operator 'plus'(left: int, right: int) returns int
     left + right
-40 'plus' 2</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+40 'plus' 2</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >operator 'divided by'(left: int, right: int) returns int
     left / right
-84 'divided by' 2</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+84 'divided by' 2</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >operator 'minus'(left: int, right: int) returns int
     left - right
-20 'minus' 3 + 5</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+20 'minus' 3 + 5</code
+></pre
+></td
+><td
+><code
 >12
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-LAZY-PARAMETERS"
->Lazy Parameters</A
-></H2
-><P
->A parameter declared <TT
-CLASS="literal"
->lazy</TT
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-LAZY-PARAMETERS"
+><h3
+><a
+class="header"
+href="#tests-LAZY-PARAMETERS"
+>Lazy Parameters</a
+></h3
+><p
+>A parameter declared <code
+>lazy</code
 > before its type receives its argument
         unevaluated: the routine's body is put in where the call stands, and
         the argument runs where the body names it, and only there. This is how
-        the standard library declares <TT
-CLASS="literal"
->and</TT
-> and <TT
-CLASS="literal"
->or</TT
+        the standard library declares <code
+>and</code
+> and <code
+>or</code
 >, and it works for an ordinary
-        function as well.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1740"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        function as well.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >function or_else(v: int, fallback: lazy int) returns int
     if v &#60;&#62; 0: v else fallback
 procedure loud() returns int
@@ -715,96 +1456,65 @@ procedure loud() returns int
     print "evaluated"
     7
 }
-or_else(5, loud())</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+or_else(5, loud())</code
+></pre
+></td
+><td
+><code
 >5
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >function or_else(v: int, fallback: lazy int) returns int
     if v &#60;&#62; 0: v else fallback
-or_else(0, 6 * 7)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+or_else(0, 6 * 7)</code
+></pre
+></td
+><td
+><code
 >42
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-SUMMARY="Footer navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
-><A
-HREF="grammar.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
-><A
-HREF="index.html"
-ACCESSKEY="H"
->Home</A
-></TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="expressions.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->Grammar</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Expressions</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="grammar.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Grammar</span
+></a
+><a
+class="next"
+rel="next"
+href="expressions.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Expressions</span
+></a
+></nav
+></main
+></div
+></body
+></html
 >

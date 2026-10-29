@@ -1,378 +1,1072 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->Type System</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
-REL="HOME"
-TITLE="The Scaly Programming Language"
-HREF="index.html"><LINK
-REL="PREVIOUS"
-TITLE="Lexical Structure"
-HREF="lexical.htm"><LINK
-REL="NEXT"
-TITLE="Grammar"
-HREF="grammar.htm"><META
-HTTP-EQUIV="Content-Type"
-CONTENT="text/html; charset=UTF-8"></HEAD
-><BODY
-CLASS="chapter"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="NAVHEADER"
-><TABLE
-SUMMARY="Header navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TH
-COLSPAN="3"
-ALIGN="center"
->The Scaly Programming Language</TH
-></TR
-><TR
-><TD
-WIDTH="10%"
-ALIGN="left"
-VALIGN="bottom"
-><A
-HREF="lexical.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="80%"
-ALIGN="center"
-VALIGN="bottom"
-></TD
-><TD
-WIDTH="10%"
-ALIGN="right"
-VALIGN="bottom"
-><A
-HREF="grammar.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-></TABLE
-><HR
-ALIGN="LEFT"
-WIDTH="100%"></DIV
-><DIV
-CLASS="chapter"
-><H1
-><A
-NAME="types"
-></A
->Chapter 4 Type System</H1
-><DIV
-CLASS="TOC"
-><DL
-><DT
-><B
->Table of Contents</B
-></DT
-><DT
-><A
-HREF="types.htm#types-overview"
->Overview</A
-></DT
-><DT
-><A
-HREF="types.htm#types-intrinsic"
->Intrinsic Types (Future Direction)</A
-></DT
-><DT
-><A
-HREF="types.htm#types-aliases"
->Type Aliases (Future Direction)</A
-></DT
-><DT
-><A
-HREF="types.htm#types-prelude"
->Backend Preludes (Future Direction)</A
-></DT
-><DT
-><A
-HREF="types.htm#types-literals"
->Literal Type Inference</A
-></DT
-><DT
-><A
-HREF="types.htm#types-tuples"
->Tuples and the Empty Tuple</A
-></DT
-><DT
-><A
-HREF="types.htm#types-references"
->References</A
-></DT
-><DT
-><A
-HREF="types.htm#types-parameters"
->Parameter Passing</A
-></DT
-><DT
-><A
-HREF="types.htm#types-constructors"
->Constructors</A
-></DT
-><DT
-><A
-HREF="types.htm#types-closures"
->Lambdas and Closures</A
-></DT
-><DT
-><A
-HREF="types.htm#types-errors"
->Error Handling</A
-></DT
-><DT
-><A
-HREF="types.htm#types-unions"
->Union Types</A
-></DT
-><DT
-><A
-HREF="types.htm#types-generics"
->Generics</A
-></DT
-><DT
-><A
-HREF="types.htm#types-lifetimes"
->Lifetimes and Memory Regions</A
-></DT
-></DL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-overview"
->Overview</A
-></H1
-><P
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Type System - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-status"
+><span
+class="num"
+>1.3</span
+>Implementation Status</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="types.htm"
+aria-current="page"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>A.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>A.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>A.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>B.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>C.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>C.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>C.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>C.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>C.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>C.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>C.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>C.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>C.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>C.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>C.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 4</p
+><h1
+id="types"
+>Type System</h1
+><section
+id="types-overview"
+><h2
+><a
+class="header"
+href="#types-overview"
+>Overview</a
+></h2
+><p
 >Scaly currently recognizes a fixed set of primitive types — integers,
       floats, booleans, and pointer types — which the LLVM-based emitter maps to
       the corresponding LLVM types. A possible future direction, described in the
       following sections, is to make the type system fully backend-agnostic, with
       even the primitive types supplied by a backend-specific prelude rather than
-      built into the compiler.</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-intrinsic"
->Intrinsic Types (Future Direction)</A
-></H1
-><DIV
-CLASS="note"
-><BLOCKQUOTE
-CLASS="note"
-><P
-><B
->Note: </B
+      built into the compiler.</p
+></section
+><section
+id="types-intrinsic"
+><h2
+><a
+class="header"
+href="#types-intrinsic"
+>Intrinsic Types (Future Direction)</a
+></h2
+><aside
+class="note"
+><p
+class="note-title"
+>Note</p
+><p
 >The mechanism described in this section and the two that follow
-        (<SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Type Aliases</I
-></SPAN
-> and <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Backend Preludes</I
-></SPAN
+        (<em
+>Type Aliases</em
+> and <em
+>Backend Preludes</em
 >)
         is a planned design, not current behavior. Today the compiler knows its
-        primitive types directly and targets LLVM only.</P
-></BLOCKQUOTE
-></DIV
-><P
->An <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->intrinsic type</I
-></SPAN
+        primitive types directly and targets LLVM only.</p
+></aside
+><p
+>An <em
+>intrinsic type</em
 > is a type whose implementation is
       provided by the backend, not by Scaly code. Under this design, intrinsic
-      types would be declared using the <TT
-CLASS="literal"
->intrinsic</TT
-> keyword:</P
-><PRE
-CLASS="programlisting"
+      types would be declared using the <code
+>intrinsic</code
+> keyword:</p
+><pre
+class="listing"
+><code
 >&#13;define i32 intrinsic
 define i64 intrinsic
 define f64 intrinsic
-    </PRE
-><P
+    </code
+></pre
+><p
 >The compiler would not interpret these definitions — it would simply record
       that these types exist and are intrinsic. The backend (Emitter) would be
-      responsible for mapping intrinsic types to the target platform's representation.</P
-><P
->This design would enable Scaly to target any backend:</P
-><P
-></P
-><UL
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->LLVM</I
-></SPAN
->: <TT
-CLASS="literal"
->i32</TT
->, <TT
-CLASS="literal"
->i64</TT
->, <TT
-CLASS="literal"
->f32</TT
->, <TT
-CLASS="literal"
->f64</TT
-></P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->JavaScript</I
-></SPAN
->: <TT
-CLASS="literal"
->number</TT
->, <TT
-CLASS="literal"
->string</TT
->, <TT
-CLASS="literal"
->boolean</TT
-></P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->WebAssembly</I
-></SPAN
->: <TT
-CLASS="literal"
->i32</TT
->, <TT
-CLASS="literal"
->i64</TT
->, <TT
-CLASS="literal"
->f32</TT
->, <TT
-CLASS="literal"
->f64</TT
-></P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->JVM</I
-></SPAN
->: <TT
-CLASS="literal"
->int</TT
->, <TT
-CLASS="literal"
->long</TT
->, <TT
-CLASS="literal"
->float</TT
->, <TT
-CLASS="literal"
->double</TT
-></P
-></LI
-></UL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-aliases"
->Type Aliases (Future Direction)</A
-></H1
-><P
->Type aliases provide human-friendly names for intrinsic or compound types:</P
-><PRE
-CLASS="programlisting"
+      responsible for mapping intrinsic types to the target platform's representation.</p
+><p
+>This design would enable Scaly to target any backend:</p
+><ul
+><li
+><p
+><em
+>LLVM</em
+>: <code
+>i32</code
+>, <code
+>i64</code
+>, <code
+>f32</code
+>, <code
+>f64</code
+></p
+></li
+><li
+><p
+><em
+>JavaScript</em
+>: <code
+>number</code
+>, <code
+>string</code
+>, <code
+>boolean</code
+></p
+></li
+><li
+><p
+><em
+>WebAssembly</em
+>: <code
+>i32</code
+>, <code
+>i64</code
+>, <code
+>f32</code
+>, <code
+>f64</code
+></p
+></li
+><li
+><p
+><em
+>JVM</em
+>: <code
+>int</code
+>, <code
+>long</code
+>, <code
+>float</code
+>, <code
+>double</code
+></p
+></li
+></ul
+></section
+><section
+id="types-aliases"
+><h2
+><a
+class="header"
+href="#types-aliases"
+>Type Aliases (Future Direction)</a
+></h2
+><p
+>Type aliases provide human-friendly names for intrinsic or compound types:</p
+><pre
+class="listing"
+><code
 >&#13;define bool i1
 define char i32       ; Unicode scalar value
 define int i64        ; Platform word size
 define size_t u64
-    </PRE
-><P
->The alias and its target are interchangeable — <TT
-CLASS="literal"
->bool</TT
+    </code
+></pre
+><p
+>The alias and its target are interchangeable — <code
+>bool</code
 > and
-      <TT
-CLASS="literal"
->i1</TT
-> refer to the same type.</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-prelude"
->Backend Preludes (Future Direction)</A
-></H1
-><P
->Each backend provides a <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->prelude</I
-></SPAN
+      <code
+>i1</code
+> refer to the same type.</p
+></section
+><section
+id="types-prelude"
+><h2
+><a
+class="header"
+href="#types-prelude"
+>Backend Preludes (Future Direction)</a
+></h2
+><p
+>Each backend provides a <em
+>prelude</em
 > file that defines the
       intrinsic types and their aliases for that target. The prelude is implicitly
-      loaded before any user code.</P
-><DIV
-CLASS="example"
-><A
-NAME="AEN670"
-></A
-><P
-><B
->Example 4-1. LLVM Prelude (excerpt)</B
-></P
-><PRE
-CLASS="programlisting"
+      loaded before any user code.</p
+><figure
+class="example"
+><figcaption
+>LLVM Prelude (excerpt)</figcaption
+><pre
+class="listing"
+><code
 >&#13;; Intrinsic types (LLVM native)
 define i1 intrinsic
 define i8 intrinsic
@@ -388,19 +1082,16 @@ define bool i1
 define char i32
 define int i64
 define size_t u64
-      </PRE
-></DIV
-><DIV
-CLASS="example"
-><A
-NAME="AEN673"
-></A
-><P
-><B
->Example 4-2. JavaScript Prelude (excerpt)</B
-></P
-><PRE
-CLASS="programlisting"
+      </code
+></pre
+></figure
+><figure
+class="example"
+><figcaption
+>JavaScript Prelude (excerpt)</figcaption
+><pre
+class="listing"
+><code
 >&#13;; Intrinsic types (JavaScript native)
 define number intrinsic
 define string intrinsic
@@ -410,295 +1101,263 @@ define boolean intrinsic
 define int number
 define float number
 define bool boolean
-      </PRE
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-literals"
->Literal Type Inference</A
-></H1
-><P
+      </code
+></pre
+></figure
+></section
+><section
+id="types-literals"
+><h2
+><a
+class="header"
+href="#types-literals"
+>Literal Type Inference</a
+></h2
+><p
 >Numeric and other literals do not have an inherent type. Their type is
       inferred from context — the parameter a literal is passed to, the
-      annotation on its binding, or the other operand of an operation:</P
-><PRE
-CLASS="programlisting"
+      annotation on its binding, or the other operand of an operation:</p
+><pre
+class="listing"
+><code
 >&#13;function double(x: i32) returns i32 { x * 2 }
 
 double(42)           ; 42 inferred as i32 from parameter type
 
 let y: i64 100       ; 100 inferred as i64 from annotation
 let z y + 50         ; 50 inferred as i64 to match y
-    </PRE
-><P
+    </code
+></pre
+><p
 >When nothing constrains an integer literal, it defaults to
-      <TT
-CLASS="literal"
->int</TT
+      <code
+>int</code
 > (the platform word size), so the common case needs
-      no annotation:</P
-><PRE
-CLASS="programlisting"
+      no annotation:</p
+><pre
+class="listing"
+><code
 >&#13;let x 42             ; x is int
-    </PRE
-><P
->An integer constant — a literal, a <TT
-CLASS="literal"
->define</TT
+    </code
+></pre
+><p
+>An integer constant — a literal, a <code
+>define</code
 >
-      declared <TT
-CLASS="literal"
->int</TT
+      declared <code
+>int</code
 >, and an operation over such — keeps its
       exact value until it meets the type it is used as, and then it must fit
       that type. A constant that does not fit is a compile-time error, never a
-      value cut to the width:</P
-><PRE
-CLASS="programlisting"
+      value cut to the width:</p
+><pre
+class="listing"
+><code
 >&#13;let a: u8 200 + 55   ; 255
 let b: u8 300        ; error: the constant 300 does not fit u8
 let c: u32 0 - 1     ; error: the constant -1 does not fit u32
 let d: u8 ~0         ; 255: the complement in the target's width
-    </PRE
-><P
->Scaly does <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->not</I
-></SPAN
+    </code
+></pre
+><p
+>Scaly does <em
+>not</em
 > support type suffixes on literals
-      (such as <TT
-CLASS="literal"
->42i32</TT
+      (such as <code
+>42i32</code
 >). Where a different width matters,
-      annotate the binding (<TT
-CLASS="literal"
->let x: i32 42</TT
+      annotate the binding (<code
+>let x: i32 42</code
 >) or cast
-      (<TT
-CLASS="literal"
->42 as i32</TT
->).</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-tuples"
->Tuples and the Empty Tuple</A
-></H1
-><P
+      (<code
+>42 as i32</code
+>).</p
+></section
+><section
+id="types-tuples"
+><h2
+><a
+class="header"
+href="#types-tuples"
+>Tuples and the Empty Tuple</a
+></h2
+><p
 >A tuple is an anonymous record, written in parentheses:
-      <TT
-CLASS="literal"
->(1, "one")</TT
+      <code
+>(1, "one")</code
 >, or with labels,
-      <TT
-CLASS="literal"
->(x: 1, y: 2)</TT
+      <code
+>(x: 1, y: 2)</code
 >. Its type is written the same way,
-      <TT
-CLASS="literal"
->(int, String)</TT
+      <code
+>(int, String)</code
 >, and it may stand wherever a type
       may: as a parameter, a result, a field or a generic argument. A
-      labelled component is read by its label, <TT
-CLASS="literal"
->t.x</TT
+      labelled component is read by its label, <code
+>t.x</code
 >; an
       unlabelled one is reached by decomposition,
-      <TT
-CLASS="literal"
->let (a, b) t</TT
+      <code
+>let (a, b) t</code
 >. A routine returns several values as a
-      tuple:</P
-><PRE
-CLASS="programlisting"
+      tuple:</p
+><pre
+class="listing"
+><code
 >&#13;function divide(n: int, d: int) returns (int, int)
     (n / d, n % d)
 
 let (q, r) divide(17, 5)     ; q is 3, r is 2
-    </PRE
-><P
+    </code
+></pre
+><p
 >A parenthesized single value is that value, so
-      <TT
-CLASS="literal"
->(a)</TT
-> is <TT
-CLASS="literal"
->a</TT
+      <code
+>(a)</code
+> is <code
+>a</code
 >. The empty tuple
-      <TT
-CLASS="literal"
->()</TT
+      <code
+>()</code
 > is the type of no value: a routine that answers
-      nothing returns <TT
-CLASS="literal"
->()</TT
+      nothing returns <code
+>()</code
 >, which the word
-      <TT
-CLASS="literal"
->void</TT
+      <code
+>void</code
 > also names. It holds no bytes, so
-      <TT
-CLASS="literal"
->Result[(), Error]</TT
-> or <TT
-CLASS="literal"
->Vector[()]</TT
+      <code
+>Result[(), Error]</code
+> or <code
+>Vector[()]</code
 >
       cost nothing beyond their other parts. A call that answers
-      <TT
-CLASS="literal"
->()</TT
+      <code
+>()</code
 > where a type is declared is a compile-time
-      error.</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-references"
->References</A
-></H1
-><P
+      error.</p
+></section
+><section
+id="types-references"
+><h2
+><a
+class="header"
+href="#types-references"
+>References</a
+></h2
+><p
 >By default, values flow through functions by value: a function parameter
-      gets read-only access to its argument, and a function returns a value.</P
-><P
+      gets read-only access to its argument, and a function returns a value.</p
+><p
 >To refer to an existing value without copying it, Scaly provides the
-      reference type <TT
-CLASS="literal"
->ref[T]</TT
+      reference type <code
+>ref[T]</code
 > — a non-owning, borrowed reference
-      to a <TT
-CLASS="literal"
->T</TT
+      to a <code
+>T</code
 >. References are used for parameters and for nullable
-      fields, written <TT
-CLASS="literal"
->ref[T]?</TT
->. Like <TT
-CLASS="literal"
->pointer[T]</TT
+      fields, written <code
+>ref[T]?</code
+>. Like <code
+>pointer[T]</code
 >,
       a reference is represented as a machine pointer, but it carries borrow
-      semantics rather than the unchecked, low-level meaning of a raw pointer.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-pointers"
->Low-Level Pointers</A
-></H2
-><P
->For low-level implementation of data structures like <TT
-CLASS="literal"
->Page</TT
+      semantics rather than the unchecked, low-level meaning of a raw pointer.</p
+><section
+id="types-pointers"
+><h3
+><a
+class="header"
+href="#types-pointers"
+>Low-Level Pointers</a
+></h3
+><p
+>For low-level implementation of data structures like <code
+>Page</code
 >,
-        <TT
-CLASS="literal"
->HashMap</TT
->, or <TT
-CLASS="literal"
->List</TT
+        <code
+>HashMap</code
+>, or <code
+>List</code
 >, the type
-        <TT
-CLASS="literal"
->pointer[T]</TT
+        <code
+>pointer[T]</code
 > is available. This is an escape hatch for
-        implementors, not for everyday code.</P
-><PRE
-CLASS="programlisting"
+        implementors, not for everyday code.</p
+><pre
+class="listing"
+><code
 >&#13;; Low-level list node (internal implementation)
 define Node[T]
 (
     data: T
     next: pointer[Node[T]]    ; raw pointer for linked structure
 )
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-option"
->Nullable Values</A
-></H2
-><P
->For nullable values, use <TT
-CLASS="literal"
->Option[T]</TT
+      </code
+></pre
+></section
+><section
+id="types-option"
+><h3
+><a
+class="header"
+href="#types-option"
+>Nullable Values</a
+></h3
+><p
+>For nullable values, use <code
+>Option[T]</code
 > from the
-        standard library — a proper sum type with <TT
-CLASS="literal"
->Some(value)</TT
+        standard library — a proper sum type with <code
+>Some(value)</code
 >
-        and <TT
-CLASS="literal"
->None</TT
+        and <code
+>None</code
 > variants, matched with
-        <TT
-CLASS="literal"
->choose</TT
->:</P
-><PRE
-CLASS="programlisting"
+        <code
+>choose</code
+>:</p
+><pre
+class="listing"
+><code
 >&#13;let o Option[int].Some(7)
 choose o
     when v: Some
         print("got a value")
     else
         print("empty")
-      </PRE
-><P
+      </code
+></pre
+><p
 >For many element types the compiler optimizes
-        <TT
-CLASS="literal"
->Option[T]</TT
+        <code
+>Option[T]</code
 > to a simple nullable pointer — no space
-        overhead for the tag (see <A
-HREF="types.htm#types-unions-optimization"
->the Section called <I
->Option Optimization</I
-></A
->).</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-parameters"
->Parameter Passing</A
-></H1
-><P
->All <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->function</I
-></SPAN
+        overhead for the tag (see <a
+href="#types-unions-optimization"
+>Option Optimization</a
+>).</p
+></section
+></section
+><section
+id="types-parameters"
+><h2
+><a
+class="header"
+href="#types-parameters"
+>Parameter Passing</a
+></h2
+><p
+>All <em
+>function</em
 > parameters are
-      <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->borrowed</I
-></SPAN
+      <em
+>borrowed</em
 > — functions receive read-only access to
-      their arguments. The caller retains ownership.</P
-><PRE
-CLASS="programlisting"
+      their arguments. The caller retains ownership.</p
+><pre
+class="listing"
+><code
 >&#13;define Point ( x: int, y: int )
 
 function distance_squared(a: Point, b: Point) returns int
@@ -711,70 +1370,60 @@ function distance_squared(a: Point, b: Point) returns int
 let origin Point(0, 0)
 let target Point(3, 4)
 distance_squared(origin, target)    ; origin and target unchanged
-    </PRE
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-params-implementation"
->Implementation</A
-></H2
-><P
+    </code
+></pre
+><section
+id="types-params-implementation"
+><h3
+><a
+class="header"
+href="#types-params-implementation"
+>Implementation</a
+></h3
+><p
 >The implementation of parameter passing depends on the execution context,
-        but the semantics remain identical:</P
-><P
-></P
-><UL
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Same thread/stack</I
-></SPAN
+        but the semantics remain identical:</p
+><ul
+><li
+><p
+><em
+>Same thread/stack</em
 >: A pointer is passed.
-          No copying occurs. The function reads through the pointer.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Different thread/GPU/remote</I
-></SPAN
+          No copying occurs. The function reads through the pointer.</p
+></li
+><li
+><p
+><em
+>Different thread/GPU/remote</em
 >: The entire
           data tree is copied to the target execution context. The function still
-          has read-only access — same semantics, different mechanism.</P
-></LI
-></UL
-><P
+          has read-only access — same semantics, different mechanism.</p
+></li
+></ul
+><p
 >This design means code doesn't change based on where it executes. A function
-        that works locally works identically when distributed.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-params-mutation"
->Mutation via Procedures</A
-></H2
-><P
->To modify data, use a <TT
-CLASS="literal"
->procedure</TT
+        that works locally works identically when distributed.</p
+></section
+><section
+id="types-params-mutation"
+><h3
+><a
+class="header"
+href="#types-params-mutation"
+>Mutation via Procedures</a
+></h3
+><p
+>To modify data, use a <code
+>procedure</code
 > instead of a
         function. A procedure's parameters may be mutated, and the caller sees
         the change — no extra keyword is needed; the
-        <TT
-CLASS="literal"
->procedure</TT
-> declaration itself is the signal:</P
-><PRE
-CLASS="programlisting"
+        <code
+>procedure</code
+> declaration itself is the signal:</p
+><pre
+class="listing"
+><code
 >&#13;define Point ( x: int, y: int )
 
 procedure move(p: Point, dx: int)
@@ -782,63 +1431,65 @@ procedure move(p: Point, dx: int)
 
 var pos Point(0, 0)
 move(pos, 5)          ; pos.x is now 5
-      </PRE
-><P
+      </code
+></pre
+><p
 >The distinction between functions (pure, read-only) and procedures
         (may mutate) is explicit in the code. Readers immediately know which
-        calls might have side effects.</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-constructors"
->Constructors</A
-></H1
-><P
+        calls might have side effects.</p
+></section
+></section
+><section
+id="types-constructors"
+><h2
+><a
+class="header"
+href="#types-constructors"
+>Constructors</a
+></h2
+><p
 >Constructors create instances of types. Scaly provides both implicit and
-      explicit constructors.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-constructors-implicit"
->Implicit Constructors</A
-></H2
-><P
+      explicit constructors.</p
+><section
+id="types-constructors-implicit"
+><h3
+><a
+class="header"
+href="#types-constructors-implicit"
+>Implicit Constructors</a
+></h3
+><p
 >If all members of a type are public, an implicit constructor is generated
-        that takes all fields as parameters in declaration order:</P
-><PRE
-CLASS="programlisting"
+        that takes all fields as parameters in declaration order:</p
+><pre
+class="listing"
+><code
 >&#13;define Point ( x: int, y: int )
 
 let p Point(10, 20)    ; implicit constructor
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-constructors-explicit"
->Explicit Constructors</A
-></H2
-><P
->Use <TT
-CLASS="literal"
->init</TT
+      </code
+></pre
+></section
+><section
+id="types-constructors-explicit"
+><h3
+><a
+class="header"
+href="#types-constructors-explicit"
+>Explicit Constructors</a
+></h3
+><p
+>Use <code
+>init</code
 > for explicit constructors when you need
         default values for some fields or different construction signatures. An
-        explicit <TT
-CLASS="literal"
->init</TT
+        explicit <code
+>init</code
 > coexists with the implicit all-fields
-        constructor:</P
-><PRE
-CLASS="programlisting"
+        constructor:</p
+><pre
+class="listing"
+><code
 >&#13;define Point
 (
     x: int
@@ -854,192 +1505,185 @@ CLASS="programlisting"
 
 let p1 Point(10, 20)    ; implicit constructor
 let p2 Point(5)         ; convenience init - Point(5, 5)
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-constructors-this"
->The <TT
-CLASS="literal"
->this</TT
-> Prefix</A
-></H2
-><P
->The <TT
-CLASS="literal"
->this.</TT
+      </code
+></pre
+></section
+><section
+id="types-constructors-this"
+><h3
+><a
+class="header"
+href="#types-constructors-this"
+>The <code
+>this</code
+> Prefix</a
+></h3
+><p
+>The <code
+>this.</code
 > prefix is optional when unambiguous, but
-        recommended for clarity:</P
-><PRE
-CLASS="programlisting"
+        recommended for clarity:</p
+><pre
+class="listing"
+><code
 >&#13;init(x: int, y: int) {
     this.x := x    ; clear: field x gets parameter x
     this.y := y
 }
-      </PRE
-><P
->When parameter names shadow field names, <TT
-CLASS="literal"
->this.</TT
+      </code
+></pre
+><p
+>When parameter names shadow field names, <code
+>this.</code
 > is
-        required to disambiguate. Avoid <TT
-CLASS="literal"
->x := x</TT
+        required to disambiguate. Avoid <code
+>x := x</code
 > — it's confusing
-        even if technically resolvable.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-constructors-complete"
->Complete Initialization</A
-></H2
-><P
+        even if technically resolvable.</p
+></section
+><section
+id="types-constructors-complete"
+><h3
+><a
+class="header"
+href="#types-constructors-complete"
+>Complete Initialization</a
+></h3
+><p
 >Every constructor should initialize all fields. The compiler does
-        not yet enforce this: a field an <TT
-CLASS="literal"
->init</TT
+        not yet enforce this: a field an <code
+>init</code
 > forgets to set
         contains an undefined value, not an implicit default (no automatic 0,
         false, or null). Enforcement as a compile-time error is planned; until
         then, treat a missing assignment in an
-        <TT
-CLASS="literal"
->init</TT
-> as a bug.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-constructors-return"
->Constructor Return</A
-></H2
-><P
-><TT
-CLASS="literal"
->init</TT
-> implicitly returns <TT
-CLASS="literal"
->this</TT
+        <code
+>init</code
+> as a bug.</p
+></section
+><section
+id="types-constructors-return"
+><h3
+><a
+class="header"
+href="#types-constructors-return"
+>Constructor Return</a
+></h3
+><p
+><code
+>init</code
+> implicitly returns <code
+>this</code
 >,
-        enabling direct binding:</P
-><PRE
-CLASS="programlisting"
+        enabling direct binding:</p
+><pre
+class="listing"
+><code
 >&#13;let p Point(10, 20)    ; init returns the new Point
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-constructors-allocating"
->Types That Allocate</A
-></H2
-><P
+      </code
+></pre
+></section
+><section
+id="types-constructors-allocating"
+><h3
+><a
+class="header"
+href="#types-constructors-allocating"
+>Types That Allocate</a
+></h3
+><p
 >Some types are value types (the struct itself can live on the
-        stack) but allocate internal data — <TT
-CLASS="literal"
->String</TT
+        stack) but allocate internal data — <code
+>String</code
 >,
-        <TT
-CLASS="literal"
->Array</TT
+        <code
+>Array</code
 >, and the other containers. Their constructors
-        are ordinary <TT
-CLASS="literal"
->init</TT
+        are ordinary <code
+>init</code
 > definitions; the region their
         internal data is allocated in is chosen by the compiler from how the
-        constructed value is used (see <A
-HREF="types.htm#types-lifetimes"
->the Section called <I
->Lifetimes and Memory Regions</I
-></A
+        constructed value is used (see <a
+href="#types-lifetimes"
+>Lifetimes and Memory Regions</a
 >). No
-        special constructor syntax is involved.</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-closures"
->Lambdas and Closures</A
-></H1
-><P
+        special constructor syntax is involved.</p
+></section
+></section
+><section
+id="types-closures"
+><h2
+><a
+class="header"
+href="#types-closures"
+>Lambdas and Closures</a
+></h2
+><p
 >A lambda is an anonymous function defined with backslash syntax —
-      parameters, a colon, and a body:</P
-><PRE
-CLASS="programlisting"
+      parameters, a colon, and a body:</p
+><pre
+class="listing"
+><code
 >&#13;\x: x * 2                    ; single parameter
 \x y: x + y                  ; multiple parameters
-    </PRE
-><P
->A lambda bound with <TT
-CLASS="literal"
->let</TT
+    </code
+></pre
+><p
+>A lambda bound with <code
+>let</code
 > is called like a named
       function. Its parameter types are inferred at each call site (the lambda
-      is specialized per call, like a local generic function):</P
-><PRE
-CLASS="programlisting"
+      is specialized per call, like a local generic function):</p
+><pre
+class="listing"
+><code
 >&#13;let inc \x: x + 1
 inc(41)                      ; 42
-    </PRE
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-closures-capture"
->Capturing Variables</A
-></H2
-><P
+    </code
+></pre
+><section
+id="types-closures-capture"
+><h3
+><a
+class="header"
+href="#types-closures-capture"
+>Capturing Variables</a
+></h3
+><p
 >Lambdas can capture variables from their enclosing scope. Captures
-        are <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->by value</I
-></SPAN
+        are <em
+>by value</em
 >: the lambda receives a copy at the
         call, so later changes to the original are not seen by the closure, and
         an assignment to a captured name inside the lambda changes
-        only the closure's copy — the original stays untouched:</P
-><PRE
-CLASS="programlisting"
+        only the closure's copy — the original stays untouched:</p
+><pre
+class="listing"
+><code
 >&#13;let multiplier 10
 let scale \x: x * multiplier    ; captures multiplier by value
 
 scale(5)    ; returns 50
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-closures-delegates"
->Function Types: Delegates</A
-></H2
-><P
+      </code
+></pre
+></section
+><section
+id="types-closures-delegates"
+><h3
+><a
+class="header"
+href="#types-closures-delegates"
+>Function Types: Delegates</a
+></h3
+><p
 >To pass a lambda as a value — to a parameter, into a field, or as a
         return value — the function type must be named. A
-        <TT
-CLASS="literal"
->delegate</TT
-> definition supplies that name:</P
-><PRE
-CLASS="programlisting"
+        <code
+>delegate</code
+> definition supplies that name:</p
+><pre
+class="listing"
+><code
 >&#13;define IntFn delegate(int) returns int
 
 function apply(f: IntFn, x: int) returns int
@@ -1047,55 +1691,53 @@ function apply(f: IntFn, x: int) returns int
 
 let g: IntFn \x: x + 1
 apply(g, 5)                  ; 6
-      </PRE
-><P
+      </code
+></pre
+><p
 >A delegate-typed value is a closure: a record holding the captures
-        plus the code to run. Calling through it is an indirect call.</P
-><P
+        plus the code to run. Calling through it is an indirect call.</p
+><p
 >A named function becomes such a value where a delegate type is
         declared, chosen among its overloads by the delegate's signature; so
-        does a method bound to its receiver, written without its tuple:</P
-><PRE
-CLASS="programlisting"
+        does a method bound to its receiver, written without its tuple:</p
+><pre
+class="listing"
+><code
 >&#13;function twice(n: int) returns int
     n * 2
 
 apply(twice, 21)             ; 42
 let c Counter(40)
 apply(c.plus, 2)             ; c.plus is the method bound to c
-      </PRE
-><P
+      </code
+></pre
+><p
 >Bound to a name without a delegate type, a function stays a
-        compile-time value: <TT
-CLASS="literal"
->let g twice</TT
+        compile-time value: <code
+>let g twice</code
 > costs nothing, and
-        <TT
-CLASS="literal"
->g(21)</TT
-> is a direct call.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-closures-lifetime"
->Closure Lifetime</A
-></H2
-><P
+        <code
+>g(21)</code
+> is a direct call.</p
+></section
+><section
+id="types-closures-lifetime"
+><h3
+><a
+class="header"
+href="#types-closures-lifetime"
+>Closure Lifetime</a
+></h3
+><p
 >A closure bound to a local variable lives on the stack frame and
-        dies with it. A closure <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->returned</I
-></SPAN
+        dies with it. A closure <em
+>returned</em
 > from a function
         must outlive the frame, so the compiler allocates it on the caller's
-        region automatically — factory functions work:</P
-><PRE
-CLASS="programlisting"
+        region automatically — factory functions work:</p
+><pre
+class="listing"
+><code
 >&#13;define IntFn delegate(int) returns int
 
 function make_adder(n: int) returns IntFn
@@ -1105,21 +1747,19 @@ function make_adder(n: int) returns IntFn
 
 let add5 make_adder(5)
 let r add5(2)                ; 7
-      </PRE
-><P
->What is <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->not</I
-></SPAN
+      </code
+></pre
+><p
+>What is <em
+>not</em
 > allowed is smuggling a
         stack-allocated closure out of its frame — returning a local binding,
         storing it into an object that outlives the frame, or passing it to a
         callee that stores it. The compiler rejects these with a hard
-        error:</P
-><PRE
-CLASS="programlisting"
+        error:</p
+><pre
+class="listing"
+><code
 >&#13;function bad(n: int) returns IntFn
 {
     let g: IntFn \x: x + n
@@ -1128,80 +1768,81 @@ CLASS="programlisting"
     ; cannot be returned - return the lambda directly (return \x: ...)
     ; so it is allocated on the caller's region
 }
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-closures-impl"
->Implementation</A
-></H2
-><P
+      </code
+></pre
+></section
+><section
+id="types-closures-impl"
+><h3
+><a
+class="header"
+href="#types-closures-impl"
+>Implementation</a
+></h3
+><p
 >A named-called lambda costs nothing at runtime: each call site is
         monomorphized into a direct call, with captures passed as leading
         arguments. A delegate-typed closure is a small record — a code pointer
         plus the captured values — and calling it is one indirect call. No
-        garbage collector is involved either way.</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-errors"
->Error Handling</A
-></H1
-><P
+        garbage collector is involved either way.</p
+></section
+></section
+><section
+id="types-errors"
+><h2
+><a
+class="header"
+href="#types-errors"
+>Error Handling</a
+></h2
+><p
 >Scaly uses explicit error handling. There are no exceptions or stack unwinding —
-    errors are values returned from functions or procedures.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-errors-throws"
->The <TT
-CLASS="literal"
->throws</TT
-> Clause</A
-></H2
-><P
->Functions or procedures that can fail declare their error type with <TT
-CLASS="literal"
->throws</TT
->:</P
-><PRE
-CLASS="programlisting"
+    errors are values returned from functions or procedures.</p
+><section
+id="types-errors-throws"
+><h3
+><a
+class="header"
+href="#types-errors-throws"
+>The <code
+>throws</code
+> Clause</a
+></h3
+><p
+>Functions or procedures that can fail declare their error type with <code
+>throws</code
+>:</p
+><pre
+class="listing"
+><code
 >&#13;function parse(input: String) returns AST throws ParseError
 {
     if invalid(input)
         throw ParseError.InvalidSyntax(String("expected expression"))
     ...
 }
-      </PRE
-><P
->Under the hood, this is equivalent to returning <TT
-CLASS="literal"
->Result[AST, ParseError]</TT
+      </code
+></pre
+><p
+>Under the hood, this is equivalent to returning <code
+>Result[AST, ParseError]</code
 >,
-        but with dedicated syntax for clarity.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-errors-single"
->Single Error Type</A
-></H2
-><P
+        but with dedicated syntax for clarity.</p
+></section
+><section
+id="types-errors-single"
+><h3
+><a
+class="header"
+href="#types-errors-single"
+>Single Error Type</a
+></h3
+><p
 >A function can only throw one error type. To represent multiple error
-        kinds, use a union:</P
-><PRE
-CLASS="programlisting"
+        kinds, use a union:</p
+><pre
+class="listing"
+><code
 >&#13;define FileError union
 (
     NotFound: String
@@ -1213,78 +1854,72 @@ function read_file(path: String) returns String throws FileError
 {
     ...
 }
-      </PRE
-><P
->This ensures a clear error signature and enables the <TT
-CLASS="literal"
->try</TT
->/<TT
-CLASS="literal"
->when</TT
+      </code
+></pre
+><p
+>This ensures a clear error signature and enables the <code
+>try</code
+>/<code
+>when</code
 >
-        pattern for handling specific variants.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-errors-try"
->The <TT
-CLASS="literal"
->try</TT
->/<TT
-CLASS="literal"
->when</TT
-> Pattern</A
-></H2
-><P
->Handle errors with <TT
-CLASS="literal"
->try</TT
-> and <TT
-CLASS="literal"
->when</TT
+        pattern for handling specific variants.</p
+></section
+><section
+id="types-errors-try"
+><h3
+><a
+class="header"
+href="#types-errors-try"
+>The <code
+>try</code
+>/<code
+>when</code
+> Pattern</a
+></h3
+><p
+>Handle errors with <code
+>try</code
+> and <code
+>when</code
 >
         clauses. On success, the binding holds the result and the
-        <TT
-CLASS="literal"
->when</TT
+        <code
+>when</code
 > arms are skipped; on failure, the matching arm
-        runs with the error value bound:</P
-><PRE
-CLASS="programlisting"
+        runs with the error value bound:</p
+><pre
+class="listing"
+><code
 >&#13;try let v read_thing(false)
     when e: NotFound
         print("not found")
     else
         print("other error")
-      </PRE
-><P
->If not all error variants are covered by <TT
-CLASS="literal"
->when</TT
+      </code
+></pre
+><p
+>If not all error variants are covered by <code
+>when</code
 >
-        arms, an <TT
-CLASS="literal"
->else</TT
-> clause is required.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-errors-propagate"
->Error Propagation</A
-></H2
-><P
->Use <TT
-CLASS="literal"
->else throw</TT
-> to re-throw errors to the caller:</P
-><PRE
-CLASS="programlisting"
+        arms, an <code
+>else</code
+> clause is required.</p
+></section
+><section
+id="types-errors-propagate"
+><h3
+><a
+class="header"
+href="#types-errors-propagate"
+>Error Propagation</a
+></h3
+><p
+>Use <code
+>else throw</code
+> to re-throw errors to the caller:</p
+><pre
+class="listing"
+><code
 >&#13;function process(x: int) returns int throws E
 {
     try let v inner(x)
@@ -1292,46 +1927,49 @@ CLASS="programlisting"
 
     v * 2
 }
-      </PRE
-><P
+      </code
+></pre
+><p
 >When the error type matches exactly, the error propagates automatically.
-        This simplifies deeply nested code like parsers and visitors.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-errors-lifetime"
->Error Lifetime</A
-></H2
-><P
+        This simplifies deeply nested code like parsers and visitors.</p
+></section
+><section
+id="types-errors-lifetime"
+><h3
+><a
+class="header"
+href="#types-errors-lifetime"
+>Error Lifetime</a
+></h3
+><p
 >Thrown values live in an exception region the caller provides. The
         compiler infers this from throw position; the explicit thrown-lifetime
-        suffix <TT
-CLASS="literal"
->!</TT
+        suffix <code
+>!</code
 > may also be written on the thrown
-        construction:</P
-><PRE
-CLASS="programlisting"
->&#13;throw ParseError.InvalidSyntax(msg)!   ; explicit thrown lifetime</PRE
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-unions"
->Union Types</A
-></H1
-><P
+        construction:</p
+><pre
+class="listing"
+><code
+>&#13;throw ParseError.InvalidSyntax(msg)!   ; explicit thrown lifetime</code
+></pre
+></section
+></section
+><section
+id="types-unions"
+><h2
+><a
+class="header"
+href="#types-unions"
+>Union Types</a
+></h2
+><p
 >A union type (also called sum type or tagged union) can hold one of
       several variants. Each variant optionally carries a payload of a single
-      type (use a struct for several fields):</P
-><PRE
-CLASS="programlisting"
+      type (use a struct for several fields):</p
+><pre
+class="listing"
+><code
 >&#13;define Rectangle ( width: f64, height: f64 )
 
 define Shape union
@@ -1342,78 +1980,78 @@ define Shape union
 )
 
 let s Shape.Circle(5.0)
-    </PRE
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-unions-layout"
->Memory Layout</A
-></H2
-><P
->A union is stored as a tag plus the largest variant:</P
-><PRE
-CLASS="programlisting"
+    </code
+></pre
+><section
+id="types-unions-layout"
+><h3
+><a
+class="header"
+href="#types-unions-layout"
+>Memory Layout</a
+></h3
+><p
+>A union is stored as a tag plus the largest variant:</p
+><pre
+class="listing"
+><code
 >&#13;Shape = { tag: u8, data: [size of largest variant] }
-      </PRE
-><P
+      </code
+></pre
+><p
 >Unions can contain other unions. Nested unions contribute their full
-        size (tag + data) when computing the parent union's size.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-unions-choose"
->Pattern Matching with <TT
-CLASS="literal"
->choose</TT
-></A
-></H2
-><P
->Use <TT
-CLASS="literal"
->choose</TT
->-<TT
-CLASS="literal"
->when</TT
+        size (tag + data) when computing the parent union's size.</p
+></section
+><section
+id="types-unions-choose"
+><h3
+><a
+class="header"
+href="#types-unions-choose"
+>Pattern Matching with <code
+>choose</code
+></a
+></h3
+><p
+>Use <code
+>choose</code
+>-<code
+>when</code
 > to match on variants.
-        Each <TT
-CLASS="literal"
->when</TT
+        Each <code
+>when</code
 > clause names a binding, then the variant, then
-        the result; the binding is bound to the variant's payload:</P
-><PRE
-CLASS="programlisting"
+        the result; the binding is bound to the variant's payload:</p
+><pre
+class="listing"
+><code
 >&#13;choose s
     when r: Circle: r * r * 3.14
     when b: Box: b.width * b.height
-    else 0.0</PRE
-><P
->If not all variants are covered, an <TT
-CLASS="literal"
->else</TT
+    else 0.0</code
+></pre
+><p
+>If not all variants are covered, an <code
+>else</code
 > clause is
-        required.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-unions-option"
->Option Type</A
-></H2
-><P
-><TT
-CLASS="literal"
->Option[T]</TT
+        required.</p
+></section
+><section
+id="types-unions-option"
+><h3
+><a
+class="header"
+href="#types-unions-option"
+>Option Type</a
+></h3
+><p
+><code
+>Option[T]</code
 > is the standard library's union for
-        nullable values:</P
-><PRE
-CLASS="programlisting"
+        nullable values:</p
+><pre
+class="listing"
+><code
 >&#13;define Option[T] union
 (
     Some: T
@@ -1424,55 +2062,52 @@ let o Option[int].Some(7)
 choose o
     when v: Some: process(v)
     else handle_not_found()
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-unions-optimization"
->Option Optimization</A
-></H2
-><P
->For non-pointer types, <TT
-CLASS="literal"
->Option[T]</TT
-> optimizes to a pointer:</P
-><P
-></P
-><UL
-><LI
-><P
-><TT
-CLASS="literal"
->None</TT
-> = null pointer</P
-></LI
-><LI
-><P
-><TT
-CLASS="literal"
->Some(value)</TT
-> = pointer to value</P
-></LI
-></UL
-><P
->Note that if T is itself a pointer, the Option Optimization leads to a pointer to another pointer which could be null itself.</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-generics"
->Generics</A
-></H1
-><P
->Scaly supports generic types with type parameters in square brackets:</P
-><PRE
-CLASS="programlisting"
+      </code
+></pre
+></section
+><section
+id="types-unions-optimization"
+><h3
+><a
+class="header"
+href="#types-unions-optimization"
+>Option Optimization</a
+></h3
+><p
+>For non-pointer types, <code
+>Option[T]</code
+> optimizes to a pointer:</p
+><ul
+><li
+><p
+><code
+>None</code
+> = null pointer</p
+></li
+><li
+><p
+><code
+>Some(value)</code
+> = pointer to value</p
+></li
+></ul
+><p
+>Note that if T is itself a pointer, the Option Optimization leads to a pointer to another pointer which could be null itself.</p
+></section
+></section
+><section
+id="types-generics"
+><h2
+><a
+class="header"
+href="#types-generics"
+>Generics</a
+></h2
+><p
+>Scaly supports generic types with type parameters in square brackets:</p
+><pre
+class="listing"
+><code
 >&#13;define Pair[T] ( first: T, second: T )
 {
     function sum(this) returns T
@@ -1481,189 +2116,167 @@ CLASS="programlisting"
 
 let p Pair[int](20, 22)
 p.sum()                      ; 42
-    </PRE
-><P
+    </code
+></pre
+><p
 >The standard library's containers are generic the same way:
-      <TT
-CLASS="literal"
->Vector[T]</TT
->, <TT
-CLASS="literal"
->List[T]</TT
+      <code
+>Vector[T]</code
+>, <code
+>List[T]</code
 >,
-      <TT
-CLASS="literal"
->HashMap[K, V]</TT
->, <TT
-CLASS="literal"
->Option[T]</TT
+      <code
+>HashMap[K, V]</code
+>, <code
+>Option[T]</code
 >,
-      <TT
-CLASS="literal"
->Result[T, E]</TT
->.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-generics-mono"
->Monomorphization</A
-></H2
-><P
->Generics are implemented via <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->monomorphization</I
-></SPAN
+      <code
+>Result[T, E]</code
+>.</p
+><section
+id="types-generics-mono"
+><h3
+><a
+class="header"
+href="#types-generics-mono"
+>Monomorphization</a
+></h3
+><p
+>Generics are implemented via <em
+>monomorphization</em
 >: each
         concrete instantiation becomes a completely separate type at compile time.
-        <TT
-CLASS="literal"
->Pair[int]</TT
-> and <TT
-CLASS="literal"
->Pair[String]</TT
+        <code
+>Pair[int]</code
+> and <code
+>Pair[String]</code
 > share no
-        code at runtime — each has its own specialized implementation.</P
-><P
->Benefits:</P
-><P
-></P
-><UL
-><LI
-><P
->No runtime overhead — no type descriptors or vtables</P
-></LI
-><LI
-><P
->Full optimization — the compiler sees concrete types</P
-></LI
-><LI
-><P
->No boxing — primitives stay primitives</P
-></LI
-></UL
-><P
->Trade-offs:</P
-><P
-></P
-><UL
-><LI
-><P
->Larger binaries — each instantiation duplicates code</P
-></LI
-><LI
-><P
->Longer compile times — more code to generate</P
-></LI
-></UL
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-generics-mangling"
->Name Mangling</A
-></H2
-><P
+        code at runtime — each has its own specialized implementation.</p
+><p
+>Benefits:</p
+><ul
+><li
+><p
+>No runtime overhead — no type descriptors or vtables</p
+></li
+><li
+><p
+>Full optimization — the compiler sees concrete types</p
+></li
+><li
+><p
+>No boxing — primitives stay primitives</p
+></li
+></ul
+><p
+>Trade-offs:</p
+><ul
+><li
+><p
+>Larger binaries — each instantiation duplicates code</p
+></li
+><li
+><p
+>Longer compile times — more code to generate</p
+></li
+></ul
+></section
+><section
+id="types-generics-mangling"
+><h3
+><a
+class="header"
+href="#types-generics-mangling"
+>Name Mangling</a
+></h3
+><p
 >The Planner generates unique mangled names for each instantiation,
-        following Itanium ABI conventions:</P
-><PRE
-CLASS="programlisting"
+        following Itanium ABI conventions:</p
+><pre
+class="listing"
+><code
 >&#13;List[int]            → _ZN4ListIiE...
 List[String]         → _ZN4ListI6StringE...
 HashMap[String, int] → _ZN7HashMapI6StringiE...
-      </PRE
-><P
->These names are compatible with <TT
-CLASS="literal"
->c++filt</TT
-> for debugging.</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="types-lifetimes"
->Lifetimes and Memory Regions</A
-></H1
-><P
+      </code
+></pre
+><p
+>These names are compatible with <code
+>c++filt</code
+> for debugging.</p
+></section
+></section
+><section
+id="types-lifetimes"
+><h2
+><a
+class="header"
+href="#types-lifetimes"
+>Lifetimes and Memory Regions</a
+></h2
+><p
 >Scaly uses Region-Based Memory Management (RBMM). Instead of garbage
       collection or manual malloc/free, values that need the heap are allocated
       in memory regions (pages) that are deallocated in bulk when their owning
-      scope exits.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-lifetime-inference"
->Allocation Is Inferred</A
-></H2
-><P
+      scope exits.</p
+><section
+id="types-lifetime-inference"
+><h3
+><a
+class="header"
+href="#types-lifetime-inference"
+>Allocation Is Inferred</a
+></h3
+><p
 >Ordinary code carries no memory-management annotations at all. A
         constructed value lives on the stack when that suffices; when its
         internals allocate, or the value must outlive the statement that
         created it, the compiler places the allocation in an appropriate
-        region:</P
-><P
-></P
-><UL
-><LI
-><P
+        region:</p
+><ul
+><li
+><p
 >A value used only within the current function gets a
-          <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->local</I
-></SPAN
+          <em
+>local</em
 > region, freed when the scope
-          exits.</P
-></LI
-><LI
-><P
+          exits.</p
+></li
+><li
+><p
 >A value returned from a function is placed in the
-          <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->caller's</I
-></SPAN
+          <em
+>caller's</em
 > region, so it survives the
-          return.</P
-></LI
-><LI
-><P
+          return.</p
+></li
+><li
+><p
 >A thrown error value is placed in the exception region
-          the caller provides.</P
-></LI
-></UL
-><P
+          the caller provides.</p
+></li
+></ul
+><p
 >The standard library and the Scaly compiler itself are written in
-        exactly this annotation-free style.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-escape"
->Escape Checking</A
-></H2
-><P
+        exactly this annotation-free style.</p
+></section
+><section
+id="types-escape"
+><h3
+><a
+class="header"
+href="#types-escape"
+>Escape Checking</a
+></h3
+><p
 >The compiler proves that no reference outlives the memory it points
         into. A reference to a local that would escape the frame — through a
         return, through a store into an object that outlives the frame, or by
         being passed to a callee that stores it — is a hard compile-time
-        error:</P
-><PRE
-CLASS="programlisting"
+        error:</p
+><pre
+class="listing"
+><code
 >&#13;function dangling() returns pointer[int]
 {
     var local 5
@@ -1671,68 +2284,62 @@ CLASS="programlisting"
 }
 ; error: reference into a local page escapes via return - allocate the
 ; target with '#' (caller page) or '^name' (region) so it outlives the use
-      </PRE
-><P
+      </code
+></pre
+><p
 >The check is interprocedural (it follows the value through calls
         into callees that store their parameters, and through closures) and
-        conservative: code it accepts is safe.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-lifetime-explicit"
->Explicit Lifetime Suffixes</A
-></H2
-><P
+        conservative: code it accepts is safe.</p
+></section
+><section
+id="types-lifetime-explicit"
+><h3
+><a
+class="header"
+href="#types-lifetime-explicit"
+>Explicit Lifetime Suffixes</a
+></h3
+><p
 >When a value must be placed in a region the inference would not
         choose — most commonly a heap object returned by pointer — an explicit
         lifetime suffix on the constructor call says where it lives. The suffix
-        goes between the type and the argument list:</P
-><P
-></P
-><DIV
-CLASS="variablelist"
-><DL
-><DT
->Caller (<TT
-CLASS="literal"
->#</TT
->)</DT
-><DD
-><P
+        goes between the type and the argument list:</p
+><dl
+><dt
+>Caller (<code
+>#</code
+>)</dt
+><dd
+><p
 >The value is allocated in the caller's region. It
             survives the function return and is freed with the caller's scope.
-            Used for returning heap-allocated values by pointer.</P
-></DD
-><DT
->Reference (<TT
-CLASS="literal"
->^name</TT
->)</DT
-><DD
-><P
+            Used for returning heap-allocated values by pointer.</p
+></dd
+><dt
+>Reference (<code
+>^name</code
+>)</dt
+><dd
+><p
 >The value is allocated in the same region as the
             named value — for tying an allocation's lifetime to a specific
             longer-lived object, such as a collection it is stored
-            into.</P
-></DD
-><DT
->Thrown (<TT
-CLASS="literal"
->!</TT
->)</DT
-><DD
-><P
+            into.</p
+></dd
+><dt
+>Thrown (<code
+>!</code
+>)</dt
+><dd
+><p
 >The value is allocated in the exception region. The
             compiler infers this for values in throw position, so writing it is
-            rarely necessary.</P
-></DD
-></DL
-></DIV
-><PRE
-CLASS="programlisting"
+            rarely necessary.</p
+></dd
+></dl
+><pre
+class="listing"
+><code
 >&#13;define Node ( data: int )
 
 function create_node(data: int) returns pointer[Node]
@@ -1740,90 +2347,63 @@ function create_node(data: int) returns pointer[Node]
 
 let n create_node(7)
 (*n).data                    ; 7 — valid in the caller's scope
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="types-lifetime-byvalue"
->By-Value Returns</A
-></H2
-><P
+      </code
+></pre
+></section
+><section
+id="types-lifetime-byvalue"
+><h3
+><a
+class="header"
+href="#types-lifetime-byvalue"
+>By-Value Returns</a
+></h3
+><p
 >Functions can return values by value — the simplest and most common
-        case, and the reason most code needs no lifetime suffix at all:</P
-><PRE
-CLASS="programlisting"
+        case, and the reason most code needs no lifetime suffix at all:</p
+><pre
+class="listing"
+><code
 >&#13;function create_point(x: int, y: int) returns Point
 {
     Point(x, y)    ; constructed and returned by value
 }
-      </PRE
-><P
+      </code
+></pre
+><p
 >By-value return avoids region allocation entirely. The value is
-        constructed directly in the caller's stack frame or register.</P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-SUMMARY="Footer navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
-><A
-HREF="lexical.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
-><A
-HREF="index.html"
-ACCESSKEY="H"
->Home</A
-></TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="grammar.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->Lexical Structure</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Grammar</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
+        constructed directly in the caller's stack frame or register.</p
+></section
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="lexical.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Lexical Structure</span
+></a
+><a
+class="next"
+rel="next"
+href="grammar.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Grammar</span
+></a
+></nav
+></main
+></div
+></body
+></html
 >

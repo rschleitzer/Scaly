@@ -82,7 +82,8 @@ run_case codegen/scaly.dsl scaly.sgm \
   packages/scalyc/0.2.1/scalyc/compiler/parser.scaly \
   packages/scalyls/0.2.0/scalyls/grammar.scaly \
   editors/vscode/syntaxes/scaly.tmLanguage.json \
-  editors/vscode/language-configuration.json || fail=1
+  editors/vscode/language-configuration.json \
+  docs/book/words.js || fail=1
 run_case codegen/test-expressions.dsl tests/expressions.sgm \
   docs/scaly/generated-expressions.xml tests/selfhosted/expressions__*.scaly || fail=1
 run_case codegen/test-definitions.dsl tests/definitions.sgm \

@@ -1,458 +1,1179 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->Standard Library and Packages</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
-REL="HOME"
-TITLE="The Scaly Programming Language"
-HREF="index.html"><LINK
-REL="PREVIOUS"
-TITLE="Modules and Packages"
-HREF="modules.htm"><LINK
-REL="NEXT"
-TITLE="Bootstrap History and the Seed"
-HREF="appendix-bootstrap.htm"><META
-HTTP-EQUIV="Content-Type"
-CONTENT="text/html; charset=UTF-8"></HEAD
-><BODY
-CLASS="appendix"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="NAVHEADER"
-><TABLE
-SUMMARY="Header navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TH
-COLSPAN="3"
-ALIGN="center"
->The Scaly Programming Language</TH
-></TR
-><TR
-><TD
-WIDTH="10%"
-ALIGN="left"
-VALIGN="bottom"
-><A
-HREF="modules.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="80%"
-ALIGN="center"
-VALIGN="bottom"
-></TD
-><TD
-WIDTH="10%"
-ALIGN="right"
-VALIGN="bottom"
-><A
-HREF="appendix-bootstrap.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-></TABLE
-><HR
-ALIGN="LEFT"
-WIDTH="100%"></DIV
-><DIV
-CLASS="appendix"
-><H1
-><A
-NAME="stdlib"
-></A
->Appendix A. Standard Library and Packages</H1
-><DIV
-CLASS="TOC"
-><DL
-><DT
-><B
->Table of Contents</B
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-overview"
->The Standard Library</A
-></DT
-><DT
-><A
-HREF="stdlib.htm#stdlib-packages"
->Packages Beside It</A
-></DT
-></DL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="stdlib-overview"
->The Standard Library</A
-></H1
-><P
->The standard library is the package <TT
-CLASS="literal"
->scaly</TT
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Standard Library and Packages - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-status"
+><span
+class="num"
+>1.3</span
+>Implementation Status</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+aria-current="page"
+><span
+class="num"
+>A.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>A.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>A.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>B.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>C.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>C.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>C.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>C.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>C.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>C.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>C.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>C.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>C.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>C.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>C.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Appendix A</p
+><h1
+id="stdlib"
+>Standard Library and Packages</h1
+><section
+id="stdlib-overview"
+><h2
+><a
+class="header"
+href="#stdlib-overview"
+>The Standard Library</a
+></h2
+><p
+>The standard library is the package <code
+>scaly</code
 >. Every
-      program sees all of it without a <TT
-CLASS="literal"
->use</TT
+      program sees all of it without a <code
+>use</code
 > — it is the
-      prelude — unless it is compiled with <TT
-CLASS="literal"
->--no-prelude</TT
+      prelude — unless it is compiled with <code
+>--no-prelude</code
 >.
-      Its modules:</P
-><P
-></P
-><DIV
-CLASS="variablelist"
-><DL
-><DT
-><TT
-CLASS="literal"
->scaly.memory</TT
-></DT
-><DD
-><P
+      Its modules:</p
+><dl
+><dt
+><code
+>scaly.memory</code
+></dt
+><dd
+><p
 >The region runtime: pages, regions, the frame pages
           the compiler gives every routine that allocates, and the traps a
           program raises on a bounds violation, a null unwrap or a lack of
-          memory.</P
-></DD
-><DT
-><TT
-CLASS="literal"
->scaly.containers</TT
-></DT
-><DD
-><P
-><TT
-CLASS="literal"
->String</TT
+          memory.</p
+></dd
+><dt
+><code
+>scaly.containers</code
+></dt
+><dd
+><p
+><code
+>String</code
 > and
-          <TT
-CLASS="literal"
->StringBuilder</TT
->; <TT
-CLASS="literal"
->Slice[T]</TT
+          <code
+>StringBuilder</code
+>; <code
+>Slice[T]</code
 >, the
-          borrowed view that never owns; <TT
-CLASS="literal"
->Vector[T]</TT
+          borrowed view that never owns; <code
+>Vector[T]</code
 > of a
-          fixed length, <TT
-CLASS="literal"
->Array[T]</TT
+          fixed length, <code
+>Array[T]</code
 > that grows,
-          <TT
-CLASS="literal"
->List[T]</TT
->; <TT
-CLASS="literal"
->HashMap[K, V]</TT
+          <code
+>List[T]</code
+>; <code
+>HashMap[K, V]</code
 > and
-          <TT
-CLASS="literal"
->HashSet[T]</TT
+          <code
+>HashSet[T]</code
 > with their builders;
-          <TT
-CLASS="literal"
->Option[T]</TT
-> (written <TT
-CLASS="literal"
->T?</TT
+          <code
+>Option[T]</code
+> (written <code
+>T?</code
 >) and
-          <TT
-CLASS="literal"
->Result[T, E]</TT
+          <code
+>Result[T, E]</code
 >. Indexing with
-          <TT
-CLASS="literal"
->[]</TT
+          <code
+>[]</code
 > traps outside the bounds,
-          <TT
-CLASS="literal"
->get(i)</TT
+          <code
+>get(i)</code
 > answers an Option, and
-          <TT
-CLASS="literal"
->put(i, v)</TT
-> writes.</P
-></DD
-><DT
-><TT
-CLASS="literal"
->scaly.fiber</TT
-></DT
-><DD
-><P
+          <code
+>put(i, v)</code
+> writes.</p
+></dd
+><dt
+><code
+>scaly.fiber</code
+></dt
+><dd
+><p
 >Fibers, the scheduler and the evented I/O beneath
           the operating-system module, the task pool a self-scaling
-          <TT
-CLASS="literal"
->for</TT
-> runs on, threads and channels.</P
-></DD
-><DT
-><TT
-CLASS="literal"
->scaly.os</TT
-></DT
-><DD
-><P
-><TT
-CLASS="literal"
->Console</TT
->, <TT
-CLASS="literal"
->File</TT
+          <code
+>for</code
+> runs on, threads and channels.</p
+></dd
+><dt
+><code
+>scaly.os</code
+></dt
+><dd
+><p
+><code
+>Console</code
+>, <code
+>File</code
 >,
-          <TT
-CLASS="literal"
->Directory</TT
->, <TT
-CLASS="literal"
->Path</TT
+          <code
+>Directory</code
+>, <code
+>Path</code
 > and
-          <TT
-CLASS="literal"
->Tcp</TT
->, and the process environment.</P
-></DD
-><DT
-><TT
-CLASS="literal"
->scaly.cluster</TT
-></DT
-><DD
-><P
+          <code
+>Tcp</code
+>, and the process environment.</p
+></dd
+><dt
+><code
+>scaly.cluster</code
+></dt
+><dd
+><p
 >Channels between processes over TCP: a region sent
-          to another node moves with its whole object graph.</P
-></DD
-><DT
-><TT
-CLASS="literal"
->scaly.tensor</TT
-></DT
-><DD
-><P
+          to another node moves with its whole object graph.</p
+></dd
+><dt
+><code
+>scaly.tensor</code
+></dt
+><dd
+><p
 >A tape for reverse-mode differentiation — matrix
           products, activations, attention, the optimizers — living in one
-          region per tape.</P
-></DD
-><DT
-><TT
-CLASS="literal"
->scaly.operation</TT
+          region per tape.</p
+></dd
+><dt
+><code
+>scaly.operation</code
 > and
-          <TT
-CLASS="literal"
->scaly.logic</TT
-></DT
-><DD
-><P
+          <code
+>scaly.logic</code
+></dt
+><dd
+><p
 >The protocol that gives the operators their binding
-          strength (<A
-HREF="expressions.htm"
->Chapter 7</A
+          strength (<a
+href="expressions.htm"
+>Expressions</a
 >), generated from the levels
-          of the grammar, and <TT
-CLASS="literal"
->and</TT
+          of the grammar, and <code
+>and</code
 > and
-          <TT
-CLASS="literal"
->or</TT
-> on <TT
-CLASS="literal"
->bool</TT
+          <code
+>or</code
+> on <code
+>bool</code
 >, whose right
-          operand is <TT
-CLASS="literal"
->lazy</TT
->.</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="stdlib-packages"
->Packages Beside It</A
-></H1
-><P
+          operand is <code
+>lazy</code
+>.</p
+></dd
+></dl
+></section
+><section
+id="stdlib-packages"
+><h2
+><a
+class="header"
+href="#stdlib-packages"
+>Packages Beside It</a
+></h2
+><p
 >These packages come with the toolchain. A program declares the
-      ones it uses (<TT
-CLASS="literal"
->package json 0.2.0</TT
+      ones it uses (<code
+>package json 0.2.0</code
 >, see
-      <A
-HREF="modules.htm"
->Chapter 9</A
+      <a
+href="modules.htm"
+>Modules and Packages</a
 >), so a program that never speaks TLS does not
-      link OpenSSL:</P
-><P
-></P
-><DIV
-CLASS="variablelist"
-><DL
-><DT
-><TT
-CLASS="literal"
->http</TT
->, <TT
-CLASS="literal"
->https</TT
+      link OpenSSL:</p
+><dl
+><dt
+><code
+>http</code
+>, <code
+>https</code
 >,
-          <TT
-CLASS="literal"
->h3</TT
-></DT
-><DD
-><P
+          <code
+>h3</code
+></dt
+><dd
+><p
 >An HTTP/1.1 and HTTP/2 server with a router, static
           files, WebSocket and gRPC; the same server over TLS 1.3; and HTTP/3
-          over QUIC (ngtcp2).</P
-></DD
-><DT
-><TT
-CLASS="literal"
->tls</TT
-></DT
-><DD
-><P
+          over QUIC (ngtcp2).</p
+></dd
+><dt
+><code
+>tls</code
+></dt
+><dd
+><p
 >TLS 1.3 for a TCP stream, bound to OpenSSL, and the
-          hashes and key derivations a protocol above it needs.</P
-></DD
-><DT
-><TT
-CLASS="literal"
->json</TT
-></DT
-><DD
-><P
+          hashes and key derivations a protocol above it needs.</p
+></dd
+><dt
+><code
+>json</code
+></dt
+><dd
+><p
 >RFC 8259 JSON: a pull reader, a value tree built on
-          it, and a writer.</P
-></DD
-><DT
-><TT
-CLASS="literal"
->compress</TT
-></DT
-><DD
-><P
->gzip for HTTP bodies, over libdeflate.</P
-></DD
-><DT
-><TT
-CLASS="literal"
->pg</TT
->, <TT
-CLASS="literal"
->redis</TT
+          it, and a writer.</p
+></dd
+><dt
+><code
+>compress</code
+></dt
+><dd
+><p
+>gzip for HTTP bodies, over libdeflate.</p
+></dd
+><dt
+><code
+>pg</code
+>, <code
+>redis</code
 >,
-          <TT
-CLASS="literal"
->sqlite</TT
->, <TT
-CLASS="literal"
->tds</TT
-></DT
-><DD
-><P
+          <code
+>sqlite</code
+>, <code
+>tds</code
+></dt
+><dd
+><p
 >Clients of PostgreSQL (protocol version 3, SCRAM
           authentication, prepared statements, a pool), Redis (RESP2),
           SQLite (its own library) and Microsoft SQL Server (TDS
-          7.4).</P
-></DD
-><DT
-><TT
-CLASS="literal"
->scalygpu</TT
-></DT
-><DD
-><P
->A tensor tape resident on the GPU (Metal).</P
-></DD
-></DL
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-SUMMARY="Footer navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
-><A
-HREF="modules.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
-><A
-HREF="index.html"
-ACCESSKEY="H"
->Home</A
-></TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="appendix-bootstrap.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->Modules and Packages</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Bootstrap History and the Seed</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
+          7.4).</p
+></dd
+><dt
+><code
+>scalygpu</code
+></dt
+><dd
+><p
+>A tensor tape resident on the GPU (Metal).</p
+></dd
+></dl
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="modules.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Modules and Packages</span
+></a
+><a
+class="next"
+rel="next"
+href="appendix-bootstrap.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Bootstrap History and the Seed</span
+></a
+></nav
+></main
+></div
+></body
+></html
 >

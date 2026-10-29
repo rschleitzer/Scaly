@@ -1,171 +1,964 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->Modules and Packages</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
-REL="HOME"
-TITLE="The Scaly Programming Language"
-HREF="index.html"><LINK
-REL="PREVIOUS"
-TITLE="Control Flow"
-HREF="controlflow.htm"><LINK
-REL="NEXT"
-TITLE="Standard Library and Packages"
-HREF="stdlib.htm"><META
-HTTP-EQUIV="Content-Type"
-CONTENT="text/html; charset=UTF-8"></HEAD
-><BODY
-CLASS="chapter"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="NAVHEADER"
-><TABLE
-SUMMARY="Header navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TH
-COLSPAN="3"
-ALIGN="center"
->The Scaly Programming Language</TH
-></TR
-><TR
-><TD
-WIDTH="10%"
-ALIGN="left"
-VALIGN="bottom"
-><A
-HREF="controlflow.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="80%"
-ALIGN="center"
-VALIGN="bottom"
-></TD
-><TD
-WIDTH="10%"
-ALIGN="right"
-VALIGN="bottom"
-><A
-HREF="stdlib.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-></TABLE
-><HR
-ALIGN="LEFT"
-WIDTH="100%"></DIV
-><DIV
-CLASS="chapter"
-><H1
-><A
-NAME="modules"
-></A
->Chapter 9 Modules and Packages</H1
-><DIV
-CLASS="TOC"
-><DL
-><DT
-><B
->Table of Contents</B
-></DT
-><DT
-><A
-HREF="modules.htm#mod-overview"
->Overview</A
-></DT
-><DT
-><A
-HREF="modules.htm#mod-module"
->Modules</A
-></DT
-><DT
-><A
-HREF="modules.htm#mod-package"
->Packages</A
-></DT
-><DT
-><A
-HREF="modules.htm#mod-use"
->Imports and Visibility</A
-></DT
-></DL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="mod-overview"
->Overview</A
-></H1
-><P
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Modules and Packages - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-status"
+><span
+class="num"
+>1.3</span
+>Implementation Status</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="modules.htm"
+aria-current="page"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>A.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>A.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>A.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>B.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>C.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>C.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>C.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>C.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>C.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>C.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>C.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>C.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>C.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>C.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>C.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 9</p
+><h1
+id="modules"
+>Modules and Packages</h1
+><section
+id="mod-overview"
+><h2
+><a
+class="header"
+href="#mod-overview"
+>Overview</a
+></h2
+><p
 >A Scaly program can be split across several source files, and it can
       depend on other packages. There are no build files, manifests, or
       configuration files — three statements inside the source itself organize
-      everything:</P
-><P
-></P
-><UL
-><LI
-><P
-><TT
-CLASS="code"
->module</TT
+      everything:</p
+><ul
+><li
+><p
+><code
+>module</code
 > loads another source file into the current
-          program or package.</P
-></LI
-><LI
-><P
-><TT
-CLASS="code"
->package</TT
+          program or package.</p
+></li
+><li
+><p
+><code
+>package</code
 > declares a dependency on another
-          package.</P
-></LI
-><LI
-><P
-><TT
-CLASS="code"
->use</TT
+          package.</p
+></li
+><li
+><p
+><code
+>use</code
 > makes types defined in another module visible
-          in the current file.</P
-></LI
-></UL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="mod-module"
->Modules</A
-></H1
-><P
+          in the current file.</p
+></li
+></ul
+></section
+><section
+id="mod-module"
+><h2
+><a
+class="header"
+href="#mod-module"
+>Modules</a
+></h2
+><p
 >Every source file is a module. The statement
-      <TT
-CLASS="code"
->module shapes</TT
+      <code
+>module shapes</code
 > loads the file
-      <TT
-CLASS="filename"
->shapes.scaly</TT
+      <code
+class="filename"
+>shapes.scaly</code
 > from the directory of the file that
-      declares it and makes it part of the program:</P
-><PRE
-CLASS="programlisting"
+      declares it and makes it part of the program:</p
+><pre
+class="listing"
+><code
 >; shapes.scaly
 define Box(width: int, height: int)
 {
@@ -179,557 +972,483 @@ use myprog.shapes.Box
 
 let b Box(3, 4)
 if b.area() = 12
-    print("area is 12")</PRE
-><P
+    print("area is 12")</code
+></pre
+><p
 >A module may declare child modules of its own. Those live in a
       directory named after the parent module: if
-      <TT
-CLASS="filename"
->compiler.scaly</TT
+      <code
+class="filename"
+>compiler.scaly</code
 > declares
-      <TT
-CLASS="code"
->module lexer</TT
+      <code
+>module lexer</code
 >, the child is loaded from
-      <TT
-CLASS="filename"
->compiler/lexer.scaly</TT
+      <code
+class="filename"
+>compiler/lexer.scaly</code
 >. This mirrors how the standard
-      library and the compiler themselves are laid out.</P
-><P
+      library and the compiler themselves are laid out.</p
+><p
 >Top-level statements of a loaded module are ignored — only its
       definitions become part of the program. Programs have top-level
-      statements; libraries consist of definitions only.</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="mod-package"
->Packages</A
-></H1
-><P
+      statements; libraries consist of definitions only.</p
+></section
+><section
+id="mod-package"
+><h2
+><a
+class="header"
+href="#mod-package"
+>Packages</a
+></h2
+><p
 >A package is a source distribution. Its version is encoded in its
-      filesystem path — <TT
-CLASS="filename"
->packages/scaly/0.2.1/</TT
+      filesystem path — <code
+class="filename"
+>packages/scaly/0.2.1/</code
 > — and that
       path is the single source of truth; there is no separate version
-      manifest. The statement</P
-><PRE
-CLASS="programlisting"
->package scaly 0.2.0</PRE
-><P
+      manifest. The statement</p
+><pre
+class="listing"
+><code
+>package scaly 0.2.0</code
+></pre
+><p
 >declares a dependency on that package. A package is looked for
       among the packages of the installation,
-      <TT
-CLASS="filename"
->$SCALY_HOME/packages/</TT
+      <code
+class="filename"
+>$SCALY_HOME/packages/</code
 > (the installed programs set
-      <CODE
-CLASS="envar"
->SCALY_HOME</CODE
+      <code
+class="envar"
+>SCALY_HOME</code
 > themselves), and then among the project's own,
-      <TT
-CLASS="filename"
->./packages/</TT
+      <code
+class="filename"
+>./packages/</code
 > under the directory the compiler runs
       in. So a project brings the packages the installation does not have by
       putting them beside its sources, and it cannot put a package of its own
       in front of an installed one of the same name. Without
-      <CODE
-CLASS="envar"
->SCALY_HOME</CODE
+      <code
+class="envar"
+>SCALY_HOME</code
 > only the current directory is searched. A
       declared package that is nowhere fails the compile with an error naming
-      the places.</P
-><P
->The version in a declaration is a <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->minimum</I
-></SPAN
+      the places.</p
+><p
+>The version in a declaration is a <em
+>minimum</em
 >. One
       compilation takes one version of a package, and where a program reaches
       the same package through several declarations — its own and those of
       the packages it uses — it takes the highest version any of them names:
-      a program that asks for <TT
-CLASS="literal"
->json 0.1.5</TT
+      a program that asks for <code
+>json 0.1.5</code
 > and uses a package
-      that asks for <TT
-CLASS="literal"
->json 0.1.2</TT
+      that asks for <code
+>json 0.1.2</code
 > is built, with
-      <TT
-CLASS="literal"
->0.1.5</TT
+      <code
+>0.1.5</code
 > for both. That holds among versions that go
       together — within one major version, and below 1.0 within one second
-      number (<A
-HREF="modules.htm#mod-package-versions"
->the Section called <I
->Versions, and what publishing means</I
-></A
+      number (<a
+href="#mod-package-versions"
+>Versions, and what publishing means</a
 > says why). Such versions
-      form a <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->line</I
-></SPAN
+      form a <em
+>line</em
 >. Two lines of one package — a package
-      that asks for <TT
-CLASS="literal"
->json 0.1</TT
+      that asks for <code
+>json 0.1</code
 > beside one that asks for
-      <TT
-CLASS="literal"
->json 0.2</TT
+      <code
+>json 0.2</code
 > — are two packages to the build: both are
       compiled and linked, each asker gets its own, and a name of
-      <TT
-CLASS="literal"
->json</TT
+      <code
+>json</code
 > written in a file means the line that file's
       package declares. What does not go: a value of one line handed to a
       routine of the other (they are different types), one file that
       declares both lines, and two lines of a package that brings C or
       assembly files. Each line has its own state — a cache or a counter
       kept in a package's global exists once per line — and what builds
-      this way is not raised, so <B
-CLASS="command"
->scaly publish</B
+      this way is not raised, so <code
+class="command"
+>scaly publish</code
 > says when
       a newer line of a dependency exists. Nothing else decides: there is no lock file and no
       solver, the versions follow from the declarations alone, and adding a
       dependency can raise a version but never lower one. A package's root
       file declares the packages it uses itself, so a program names only the
       packages it calls directly; circular package dependencies are
-      forbidden.</P
-><P
->The standard library package <TT
-CLASS="code"
->scaly</TT
+      forbidden.</p
+><p
+>The standard library package <code
+>scaly</code
 > is the implicit
-      <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->prelude</I
-></SPAN
+      <em
+>prelude</em
 >: every program depends on it automatically,
-      and its types are visible everywhere without any <TT
-CLASS="code"
->use</TT
+      and its types are visible everywhere without any <code
+>use</code
 >
-      statement. Pass <CODE
-CLASS="option"
->--no-prelude</CODE
+      statement. Pass <code
+class="option"
+>--no-prelude</code
 > to compile without it, for
-      bare-metal or embedded targets. See <A
-HREF="stdlib.htm"
->Appendix A</A
+      bare-metal or embedded targets. See <a
+href="stdlib.htm"
+>Standard Library and Packages</a
 > for
-      what the standard library provides.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="mod-package-source"
->Packages from a git repository</A
-></H2
-><P
+      what the standard library provides.</p
+><section
+id="mod-package-source"
+><h3
+><a
+class="header"
+href="#mod-package-source"
+>Packages from a git repository</a
+></h3
+><p
 >A declaration may name where its package comes from, as a string
-        after the version:</P
-><PRE
-CLASS="programlisting"
->package json 0.1.3 "github.com/someone/json"</PRE
-><P
+        after the version:</p
+><pre
+class="listing"
+><code
+>package json 0.1.3 "github.com/someone/json"</code
+></pre
+><p
 >The source is a git repository that holds the package at
-        <TT
-CLASS="filename"
->packages/json/0.1.3/</TT
+        <code
+class="filename"
+>packages/json/0.1.3/</code
 > — the layout a project's
         own packages have. One repository serves every version it has
-        published (<A
-HREF="modules.htm#mod-package-versions"
->the Section called <I
->Versions, and what publishing means</I
-></A
+        published (<a
+href="#mod-package-versions"
+>Versions, and what publishing means</a
 >).
-        <TT
-CLASS="literal"
->"github.com/someone/json"</TT
+        <code
+>"github.com/someone/json"</code
 > stands for
-        <TT
-CLASS="literal"
->https://github.com/someone/json.git</TT
+        <code
+>https://github.com/someone/json.git</code
 >; an address
-        with a scheme, a <TT
-CLASS="literal"
->user@host:path</TT
+        with a scheme, a <code
+>user@host:path</code
 > address and a local
         path are taken as they are, and whatever git needs to reach a private
         repository is git's business. A version is required where a source is
-        given.</P
-><P
-><B
-CLASS="command"
->scaly run</B
->, <B
-CLASS="command"
->scaly test</B
+        given.</p
+><p
+><code
+class="command"
+>scaly run</code
+>, <code
+class="command"
+>scaly test</code
 > and
-        <B
-CLASS="command"
->scaly build</B
+        <code
+class="command"
+>scaly build</code
 > fetch what a program declares before
         they compile it, and what the fetched packages declare in their turn;
-        <B
-CLASS="command"
->scalyc</B
+        <code
+class="command"
+>scalyc</code
 > never reaches the network and says which
-        commands do. This needs <B
-CLASS="command"
->git</B
+        commands do. This needs <code
+class="command"
+>git</code
 > on the
-        <CODE
-CLASS="envar"
->PATH</CODE
+        <code
+class="envar"
+>PATH</code
 >. A fetched package is kept under
-        <TT
-CLASS="filename"
->~/.scaly/packages/</TT
+        <code
+class="filename"
+>~/.scaly/packages/</code
 >
-        (<CODE
-CLASS="envar"
->SCALY_PACKAGES</CODE
+        (<code
+class="envar"
+>SCALY_PACKAGES</code
 > names another place), by source, name
         and version, with its files read-only; nothing is written into the
         project. It is the third place a package is looked for, after the
-        installation and the project's <TT
-CLASS="filename"
->./packages/</TT
+        installation and the project's <code
+class="filename"
+>./packages/</code
 > — so
         copying a package there is how a project keeps its own copy, and
-        editing that copy is how it patches a dependency.</P
-><P
+        editing that copy is how it patches a dependency.</p
+><p
 >A version the package's record names is taken from the commit
         named there, any other from the head of the default branch. A
         published version does not change
-        (<A
-HREF="modules.htm#mod-package-versions"
->the Section called <I
->Versions, and what publishing means</I
-></A
+        (<a
+href="#mod-package-versions"
+>Versions, and what publishing means</a
 >). The first fetch remembers
         the commit and the content of the version's directory beside it; a
         version that is fetched again and is no longer what it was is refused,
         with both commits named. One package comes from one source: a program
         that reaches it through two different sources is refused, while two
-        spellings of one address are one source.</P
-><P
+        spellings of one address are one source.</p
+><p
 >A package may bring C or assembly files, which are compiled on the
-        machine that builds it; the tool says so when it fetches one.</P
-><P
+        machine that builds it; the tool says so when it fetches one.</p
+><p
 >What a package defines is the package's own: two packages may
         each define a function, a record with its methods or a mutable global
         of one name, and each keeps its own. A record of one package is
         another type than a same-named record of another, and a name written
         in a package means that package's own before anything a
-        <TT
-CLASS="code"
->use</TT
+        <code
+>use</code
 > brings in. A program may hold values of both, call
         their methods and hand each back to its package; handing one
         package's record to the other is refused like any wrong type. The
-        standard library's names and a program's own are not marked.</P
-><P
+        standard library's names and a program's own are not marked.</p
+><p
 >A package's constants and mutable globals are its own as well.
         A mutable global is one cell wherever it is read: a program that
         names a package's counter reads the counter the package's routines
         write. A bare name means the global of the package it is written in
         before another package's of the same name; written where two
         packages in reach both declare it and neither is the writer's own,
-        it is refused, since nothing says which is meant.</P
-><P
->A <TT
-CLASS="code"
->use</TT
+        it is refused, since nothing says which is meant.</p
+><p
+>A <code
+>use</code
 > makes a name writable — as a type, in a
         construction, before a static call. A value brings its type along:
         its methods and fields are reached without naming the type, so
-        <TT
-CLASS="code"
->let a make_alpha(1)</TT
-> and <TT
-CLASS="code"
->a.grown()</TT
+        <code
+>let a make_alpha(1)</code
+> and <code
+>a.grown()</code
 > need no
-        <TT
-CLASS="code"
->use</TT
-> of what <TT
-CLASS="code"
->make_alpha</TT
-> returns.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="mod-package-cache"
->The cache</A
-></H2
-><P
+        <code
+>use</code
+> of what <code
+>make_alpha</code
+> returns.</p
+></section
+><section
+id="mod-package-cache"
+><h3
+><a
+class="header"
+href="#mod-package-cache"
+>The cache</a
+></h3
+><p
 >A package is compiled once. The first program that uses it has
-        it compiled into the cache, <TT
-CLASS="filename"
->~/.scaly/cache</TT
+        it compiled into the cache, <code
+class="filename"
+>~/.scaly/cache</code
 >
-        (<CODE
-CLASS="envar"
->SCALY_CACHE</CODE
+        (<code
+class="envar"
+>SCALY_CACHE</code
 > names another place); every later build
         links what lies there. Beside the compiled package lies its
-        <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->interface</I
-></SPAN
+        <em
+>interface</em
 > — the package as a caller sees it,
         every declaration and no body — and that is what the compiler reads
         from then on instead of the sources. Nothing of this is written into
-        a project or a package, and nothing of it is ever committed.</P
-><P
+        a project or a package, and nothing of it is ever committed.</p
+><p
 >Each entry is kept under a key over everything that went into
         it: the compiler, every file of the package, and the versions of the
         packages it declares. So an entry is never wrong, only no longer
         asked for — a changed package or a new compiler leaves the files of
-        the state before. <KBD
-CLASS="userinput"
->scaly clean</KBD
+        the state before. <code
+class="userinput"
+>scaly clean</code
 > empties the
         cache; what is needed is made again by the next build. The packages
-        that were fetched (<TT
-CLASS="filename"
->~/.scaly/packages</TT
+        that were fetched (<code
+class="filename"
+>~/.scaly/packages</code
 >) and the
-        programs that were installed (<TT
-CLASS="filename"
->~/.scaly/bin</TT
+        programs that were installed (<code
+class="filename"
+>~/.scaly/bin</code
 >) are
-        not the cache and stay.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="mod-package-versions"
->Versions, and what publishing means</A
-></H2
-><P
+        not the cache and stay.</p
+></section
+><section
+id="mod-package-versions"
+><h3
+><a
+class="header"
+href="#mod-package-versions"
+>Versions, and what publishing means</a
+></h3
+><p
 >The rules of a package's versions are few, and the tool checks
-        them.</P
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->A version is a directory.</I
-></SPAN
+        them.</p
+><p
+><em
+>A version is a directory.</em
 >
-        <TT
-CLASS="filename"
->packages/json/0.1.3/</TT
+        <code
+class="filename"
+>packages/json/0.1.3/</code
 > is version 0.1.3 of
-        <TT
-CLASS="code"
->json</TT
+        <code
+>json</code
 >, and the next version is another directory beside
-        it. There are no tags, no registry and no manifest.</P
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Published is what the package's record names.</I
-></SPAN
+        it. There are no tags, no registry and no manifest.</p
+><p
+><em
+>Published is what the package's record names.</em
 >
         Beside its version directories a package keeps the file
-        <TT
-CLASS="filename"
->packages/json/published</TT
+        <code
+class="filename"
+>packages/json/published</code
 >, a line for each
-        published version:</P
-><PRE
-CLASS="programlisting"
+        published version:</p
+><pre
+class="listing"
+><code
 >0.1.2 8c1f0e…  5d2a97…
-0.1.3 b41c77…  0e93ab…</PRE
-><P
+0.1.3 b41c77…  0e93ab…</code
+></pre
+><p
 >The version, the commit its directory lay at when it was
         published, and the git tree of that directory.
-        <B
-CLASS="command"
->scaly publish</B
+        <code
+class="command"
+>scaly publish</code
 > writes the lines; nobody else needs
-        to. A version directory <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->without</I
-></SPAN
+        to. A version directory <em
+>without</em
 > a line is a
         version being written: it may change from commit to commit, on the
         default branch too, and a program that declares it gets it as it
-        stands — and is told when it has changed since.</P
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->A published version does not change.</I
-></SPAN
+        stands — and is told when it has changed since.</p
+><p
+><em
+>A published version does not change.</em
 > Its
         line stays as it is, and its directory, while it is in the tree,
         stays the tree the line names. A correction, however small, is a new
-        version: copy the directory, change the copy.</P
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->A published version may leave the tree.</I
-></SPAN
+        version: copy the directory, change the copy.</p
+><p
+><em
+>A published version may leave the tree.</em
 > The
         line names the commit that holds it, and a build that declares the
         version fetches that commit. So a repository need not carry every
         version it ever published side by side: the directories being worked
         on are in the tree, the others in its history. Removing one is an
         ordinary commit that deletes the directory and leaves the record
-        alone.</P
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->The number says what changed.</I
-></SPAN
+        alone.</p
+><p
+><em
+>The number says what changed.</em
 > A new version
         is compared with the one before it — the highest lower version, in
         the tree or in the record — by what the two
-        <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->declare</I
-></SPAN
+        <em
+>declare</em
 >: every function, procedure, operator and
         initializer with its parameters and its result, every record with its
         fields, every union with its variants, every constant, global and
         alias. Bodies are not part of it, a generic routine's body
         neither. A package it declares counts too, by its line: a version
-        that moves from <TT
-CLASS="literal"
->json 0.1</TT
+        that moves from <code
+>json 0.1</code
 > to
-        <TT
-CLASS="literal"
->json 0.2</TT
+        <code
+>json 0.2</code
 > has changed what it declares, because a
         program that uses both packages must follow. Adding or dropping a
-        dependency changes nothing a user had.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN3357"
-></A
-><TABLE
-BORDER="1"
-CLASS="CALSTABLE"
-><COL><COL><COL><THEAD
-><TR
-><TH
->against the version before</TH
-><TH
->from 1.0 on</TH
-><TH
->below 1.0</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
->a declaration is gone or reads differently</TD
-><TD
->the first number rises</TD
-><TD
->the second number rises</TD
-></TR
-><TR
-><TD
->declarations were added, none is gone</TD
-><TD
->the second number rises</TD
-><TD
->the third number rises</TD
-></TR
-><TR
-><TD
->bodies only</TD
-><TD
->the third number rises</TD
-><TD
->the third number rises</TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-><P
+        dependency changes nothing a user had.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>against the version before</th
+><th
+>from 1.0 on</th
+><th
+>below 1.0</th
+></tr
+></thead
+><tbody
+><tr
+><td
+>a declaration is gone or reads differently</td
+><td
+>the first number rises</td
+><td
+>the second number rises</td
+></tr
+><tr
+><td
+>declarations were added, none is gone</td
+><td
+>the second number rises</td
+><td
+>the third number rises</td
+></tr
+><tr
+><td
+>bodies only</td
+><td
+>the third number rises</td
+><td
+>the third number rises</td
+></tr
+></tbody
+></table
+></div
+><p
 >A version below 1.0 has promised nothing yet, so there a breaking
         change costs the second number; 1.0.0 is the statement that what the
         package declares is meant to stay. A build follows the same reading:
         the highest version asked for stands in for the lower ones where the
         table says nothing was taken away — within one first number from 1.0
-        on, within one second number below it. <TT
-CLASS="literal"
->0.2.0</TT
+        on, within one second number below it. <code
+>0.2.0</code
 > does
-        not stand in for <TT
-CLASS="literal"
->0.1.5</TT
+        not stand in for <code
+>0.1.5</code
 >, and a program that reaches
-        both is told so.</P
-><P
+        both is told so.</p
+><p
 >The comparison is deliberately strict. Declarations are compared
         as they are written, comments and line breaks apart: a renamed
         parameter, a constant's new value, a field added to a record all
         count as a declaration that reads differently. And nothing in a
-        package is private, so every declaration counts.</P
-><PRE
-CLASS="programlisting"
+        package is private, so every declaration counts.</p
+><pre
+class="listing"
+><code
 >scaly publish --check
-scaly publish</PRE
-><P
+scaly publish</code
+></pre
+><p
 >Both run at the root of the package's repository and speak with
-        the remote <TT
-CLASS="literal"
->origin</TT
+        the remote <code
+>origin</code
 > (another remote, an address or a
-        path may follow). <KBD
-CLASS="userinput"
->scaly publish --check</KBD
+        path may follow). <code
+class="userinput"
+>scaly publish --check</code
 >
         changes nothing: it says whether every published version is still
         what its line names, whether the remote's record is still all here,
@@ -746,39 +1465,35 @@ CLASS="userinput"
         when a rule is broken and 2 when it could not ask — no repository, or
         the remote out of reach. It belongs in the package's own test run, so
         a change to a published version is noticed before it is pushed and
-        not by the first program that fetches it.</P
-><P
-><KBD
-CLASS="userinput"
->scaly publish</KBD
+        not by the first program that fetches it.</p
+><p
+><code
+class="userinput"
+>scaly publish</code
 > checks the same and then
         publishes what is new: each new version gets its line — the commit is
         the current one, so the version must be committed —, the record is
         committed, and both commits are pushed. From then on the version is
-        fixed.</P
-><P
+        fixed.</p
+><p
 >Making the next version of a package is therefore: give
-        <TT
-CLASS="filename"
->packages/json/0.1.3/</TT
+        <code
+class="filename"
+>packages/json/0.1.3/</code
 > the number the change
         takes, work and commit there as long as it takes, and
-        <KBD
-CLASS="userinput"
->scaly publish</KBD
+        <code
+class="userinput"
+>scaly publish</code
 > when it is done. The directory
         may be copied, and then both versions lie side by side; it may as
-        well be <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->renamed</I
-></SPAN
+        well be <em
+>renamed</em
 >, because the published one
         lives on at its commit, and then the tree holds one directory per
-        package. <KBD
-CLASS="userinput"
->scaly next json 0.1.4</KBD
+        package. <code
+class="userinput"
+>scaly next json 0.1.4</code
 >, at the root
         of the repository, does that: it renames the directory with git and
         rewrites every tracked file that names it (a script, a test). It
@@ -787,56 +1502,53 @@ CLASS="userinput"
         another package as it was published. A package that is
         released together with a program — a compiler with its parser, say —
         publishes a version with each release and works on the next one in
-        between.</P
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->A declared version is a minimum.</I
-></SPAN
+        between.</p
+><p
+><em
+>A declared version is a minimum.</em
 >
-        <TT
-CLASS="code"
->package json 0.1.3</TT
+        <code
+>package json 0.1.3</code
 > asks for 0.1.3 or what stands in for
         it. Among the declarations of one build that is the highest version
         asked for; and where a place a package is looked for holds no
         directory of the version itself, it is the highest version of that
         line there that is not lower. So the declarations need not follow
         when a package they name begins its next version: a program that
-        says <TT
-CLASS="code"
->package json 0.1.3</TT
+        says <code
+>package json 0.1.3</code
 > builds against a tree or an
-        installation that has <TT
-CLASS="filename"
->packages/json/0.1.4/</TT
+        installation that has <code
+class="filename"
+>packages/json/0.1.4/</code
 >
         alone. A version of another line never stands in, and neither does a
-        lower one.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="mod-package-new"
->Starting a package</A
-></H2
-><PRE
-CLASS="programlisting"
->scaly new shapes --lib</PRE
-><P
->creates <TT
-CLASS="filename"
->shapes/packages/shapes/0.1.0/shapes.scaly</TT
+        lower one.</p
+></section
+><section
+id="mod-package-new"
+><h3
+><a
+class="header"
+href="#mod-package-new"
+>Starting a package</a
+></h3
+><pre
+class="listing"
+><code
+>scaly new shapes --lib</code
+></pre
+><p
+>creates <code
+class="filename"
+>shapes/packages/shapes/0.1.0/shapes.scaly</code
 >:
         a package with one function and its test. Its root file declares the
         packages it uses — the standard library too, which only a program gets
-        without saying so:</P
-><PRE
-CLASS="programlisting"
+        without saying so:</p
+><pre
+class="listing"
+><code
 >package scaly 0.2.0
 
 define shapes
@@ -850,200 +1562,185 @@ define shapes
             return 1
         0
     }
-}</PRE
-><P
-><KBD
-CLASS="userinput"
->scaly test packages/shapes/0.1.0/shapes.scaly</KBD
+}</code
+></pre
+><p
+><code
+class="userinput"
+>scaly test packages/shapes/0.1.0/shapes.scaly</code
 >
         runs its tests. A program in the directory that holds
-        <TT
-CLASS="filename"
->packages/</TT
+        <code
+class="filename"
+>packages/</code
 > uses it with
-        <TT
-CLASS="code"
->package shapes 0.1.0</TT
+        <code
+>package shapes 0.1.0</code
 >; once the directory is a git
         repository somewhere, any program does, by naming that repository as
-        the source.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="mod-package-programs"
->The programs of a package</A
-></H2
-><P
+        the source.</p
+></section
+><section
+id="mod-package-programs"
+><h3
+><a
+class="header"
+href="#mod-package-programs"
+>The programs of a package</a
+></h3
+><p
 >A package that is a library first may still bring programs — a
         parser its validator and its normalizer, say. The programs a package
-        offers are the files of the directory <TT
-CLASS="filename"
->programs/</TT
+        offers are the files of the directory <code
+class="filename"
+>programs/</code
 >
-        beside its root file, each a program named after its file:</P
-><PRE
-CLASS="programlisting"
+        beside its root file, each a program named after its file:</p
+><pre
+class="listing"
+><code
 >packages/shapes/0.1.0/
     shapes.scaly              the library
     shapes/                   its modules
     programs/
         shapes.scaly          the program "shapes"
-        shapes_check.scaly    the program "shapes_check"</PRE
-><P
+        shapes_check.scaly    the program "shapes_check"</code
+></pre
+><p
 >A program there is an ordinary program that declares the package
         it belongs to, without a source — its package and the others of the
-        same repository lie beside it:</P
-><PRE
-CLASS="programlisting"
+        same repository lie beside it:</p
+><pre
+class="listing"
+><code
 >package shapes 0.1.0
 
-print(shapes.greeting("world"))</PRE
-><P
+print(shapes.greeting("world"))</code
+></pre
+><p
 >One of the programs may be called like the package. Other
         program files a package keeps — drivers for its tests, experiments —
-        stay outside <TT
-CLASS="filename"
->programs/</TT
-> and are not offered.</P
-><PRE
-CLASS="programlisting"
+        stay outside <code
+class="filename"
+>programs/</code
+> and are not offered.</p
+><pre
+class="listing"
+><code
 >scaly install github.com/someone/shapes shapes 0.1.0
-scaly install github.com/someone/shapes shapes 0.1.0 shapes_check</PRE
-><P
+scaly install github.com/someone/shapes shapes 0.1.0 shapes_check</code
+></pre
+><p
 >fetches the package from that repository, builds its programs —
         all of them, or the one named — optimised as
-        <KBD
-CLASS="userinput"
->scaly build --release</KBD
+        <code
+class="userinput"
+>scaly build --release</code
 > does, and puts them
-        beside <B
-CLASS="command"
->scaly</B
+        beside <code
+class="command"
+>scaly</code
 > itself, in
-        <TT
-CLASS="filename"
->~/.scaly/bin</TT
-> (<CODE
-CLASS="envar"
->SCALY_BIN</CODE
+        <code
+class="filename"
+>~/.scaly/bin</code
+> (<code
+class="envar"
+>SCALY_BIN</code
 > names
-        another place). A package without <TT
-CLASS="filename"
->programs/</TT
+        another place). A package without <code
+class="filename"
+>programs/</code
 > is a
-        library, and <B
-CLASS="command"
->scaly install</B
-> says so.</P
-><P
-><KBD
-CLASS="userinput"
->scaly install</KBD
+        library, and <code
+class="command"
+>scaly install</code
+> says so.</p
+><p
+><code
+class="userinput"
+>scaly install</code
 > without arguments lists what
         it has installed — program, package, version and source —, and
-        <KBD
-CLASS="userinput"
->scaly uninstall shapes_check</KBD
+        <code
+class="userinput"
+>scaly uninstall shapes_check</code
 > removes one of
         those. It goes by its own record and removes nothing else of that
-        directory.</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="mod-use"
->Imports and Visibility</A
-></H1
-><P
+        directory.</p
+></section
+></section
+><section
+id="mod-use"
+><h2
+><a
+class="header"
+href="#mod-use"
+>Imports and Visibility</a
+></h2
+><p
 >Type definitions are private to their module by default. A type
       defined in another module — even one loaded into the same program with
-      <TT
-CLASS="code"
->module</TT
+      <code
+>module</code
 > — is hidden until the current file imports it with a
-      <TT
-CLASS="code"
->use</TT
+      <code
+>use</code
 > statement. This keeps every file's dependencies
-      explicit: the list of <TT
-CLASS="code"
->use</TT
+      explicit: the list of <code
+>use</code
 > statements at the top of a file
-      is a complete inventory of the outside types the file relies on.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="mod-use-default"
->What Is Visible Without an Import</A
-></H2
-><P
->Three kinds of types need no <TT
-CLASS="code"
->use</TT
-> statement:</P
-><P
-></P
-><UL
-><LI
-><P
->Types defined <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->in the same file</I
-></SPAN
->.</P
-></LI
-><LI
-><P
->Types of the <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->prelude</I
-></SPAN
+      is a complete inventory of the outside types the file relies on.</p
+><section
+id="mod-use-default"
+><h3
+><a
+class="header"
+href="#mod-use-default"
+>What Is Visible Without an Import</a
+></h3
+><p
+>Three kinds of types need no <code
+>use</code
+> statement:</p
+><ul
+><li
+><p
+>Types defined <em
+>in the same file</em
+>.</p
+></li
+><li
+><p
+>Types of the <em
+>prelude</em
 > — the standard
-            library (<TT
-CLASS="code"
->String</TT
->, <TT
-CLASS="code"
->Vector</TT
+            library (<code
+>String</code
+>, <code
+>Vector</code
 >,
-            <TT
-CLASS="code"
->Option</TT
->, …) is always visible.</P
-></LI
-><LI
-><P
->The namespace of a <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->declared child module</I
-></SPAN
+            <code
+>Option</code
+>, …) is always visible.</p
+></li
+><li
+><p
+>The namespace of a <em
+>declared child module</em
 >.
-            When a file declares <TT
-CLASS="code"
->module geometry</TT
+            When a file declares <code
+>module geometry</code
 > and
-            <TT
-CLASS="filename"
->geometry.scaly</TT
+            <code
+class="filename"
+>geometry.scaly</code
 > defines a namespace of the
             same name, that namespace is visible in the declaring file, so its
-            members can be reached qualified:</P
-><PRE
-CLASS="programlisting"
+            members can be reached qualified:</p
+><pre
+class="listing"
+><code
 >; geometry.scaly
 define geometry
 {
@@ -1054,170 +1751,142 @@ define geometry
 ; myprog.scaly
 module geometry
 
-let a geometry.unit_area()   ; qualified access, no use needed</PRE
-></LI
-></UL
-><P
+let a geometry.unit_area()   ; qualified access, no use needed</code
+></pre
+></li
+></ul
+><p
 >Visibility applies to named type definitions. Free functions are
-        resolved through their namespaces and are not gated separately.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="mod-use-explicit"
->Importing a Single Type</A
-></H2
-><P
->A <TT
-CLASS="code"
->use</TT
+        resolved through their namespaces and are not gated separately.</p
+></section
+><section
+id="mod-use-explicit"
+><h3
+><a
+class="header"
+href="#mod-use-explicit"
+>Importing a Single Type</a
+></h3
+><p
+>A <code
+>use</code
 > statement names a type by its full dotted path.
         The path starts with the program or package name, followed by the
-        module path, ending in the type name:</P
-><PRE
-CLASS="programlisting"
+        module path, ending in the type name:</p
+><pre
+class="listing"
+><code
 >use myprog.shapes.Box            ; Box from module shapes of program myprog
-use scalyc.compiler.Modeler      ; Modeler from package scalyc</PRE
-><P
+use scalyc.compiler.Modeler      ; Modeler from package scalyc</code
+></pre
+><p
 >A module that is named after the single type it defines — the
-        file <TT
-CLASS="filename"
->Modeler.scaly</TT
+        file <code
+class="filename"
+>Modeler.scaly</code
 > defining
-        <TT
-CLASS="code"
->Modeler</TT
+        <code
+>Modeler</code
 > — is addressed once, as the path spells it; the
-        module and the type do not appear as two separate path segments.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="mod-use-glob"
->Importing Everything from a Module</A
-></H2
-><P
->A trailing <TT
-CLASS="code"
->*</TT
+        module and the type do not appear as two separate path segments.</p
+></section
+><section
+id="mod-use-glob"
+><h3
+><a
+class="header"
+href="#mod-use-glob"
+>Importing Everything from a Module</a
+></h3
+><p
+>A trailing <code
+>*</code
 > imports every type a module
-        defines:</P
-><PRE
-CLASS="programlisting"
+        defines:</p
+><pre
+class="listing"
+><code
 >module shapes
 use myprog.shapes.*
 
 let b Box(3, 4)              ; Box is visible through the glob
 if b.area() = 12
-    print("glob works")</PRE
-><P
+    print("glob works")</code
+></pre
+><p
 >Globs are convenient for a module whose types are used
         pervasively. Prefer single-type imports when a file uses only one or
         two names from a module — they document the dependency more
-        precisely.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="mod-use-diagnostic"
->When a Type Is Not Visible</A
-></H2
-><P
+        precisely.</p
+></section
+><section
+id="mod-use-diagnostic"
+><h3
+><a
+class="header"
+href="#mod-use-diagnostic"
+>When a Type Is Not Visible</a
+></h3
+><p
 >Referencing a type that exists in the program but has not been
         imported fails the compile. The error names the module that defines
-        the type and states the exact <TT
-CLASS="code"
->use</TT
+        the type and states the exact <code
+>use</code
 > line that would import
-        it:</P
-><PRE
-CLASS="programlisting"
+        it:</p
+><pre
+class="listing"
+><code
 >myprog.scaly:3:7: error: function not found: Box - defined in
-    myprog.shapes but not visible here; add: use myprog.shapes.Box</PRE
-><P
+    myprog.shapes but not visible here; add: use myprog.shapes.Box</code
+></pre
+><p
 >Two compiler flags support working with visibility:
-        <CODE
-CLASS="option"
->--no-use-vis</CODE
+        <code
+class="option"
+>--no-use-vis</code
 > disables enforcement entirely (every
         type in the program is visible everywhere, the pre-visibility
-        behavior), and <CODE
-CLASS="option"
->--use-vis</CODE
+        behavior), and <code
+class="option"
+>--use-vis</code
 > prints an advisory report of
         every reference that strict visibility would reject — useful when
         migrating an existing codebase, to collect the needed
-        <TT
-CLASS="code"
->use</TT
-> lines before turning enforcement on.</P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-SUMMARY="Footer navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
-><A
-HREF="controlflow.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
-><A
-HREF="index.html"
-ACCESSKEY="H"
->Home</A
-></TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="stdlib.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->Control Flow</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Standard Library and Packages</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
+        <code
+>use</code
+> lines before turning enforcement on.</p
+></section
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="controlflow.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Control Flow</span
+></a
+><a
+class="next"
+rel="next"
+href="stdlib.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Standard Library and Packages</span
+></a
+></nav
+></main
+></div
+></body
+></html
 >

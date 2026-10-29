@@ -1,415 +1,1183 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->Lexical Structure</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
-REL="HOME"
-TITLE="The Scaly Programming Language"
-HREF="index.html"><LINK
-REL="PREVIOUS"
-TITLE="Tutorial"
-HREF="tutorial.htm"><LINK
-REL="NEXT"
-TITLE="Type System"
-HREF="types.htm"><META
-HTTP-EQUIV="Content-Type"
-CONTENT="text/html; charset=UTF-8"></HEAD
-><BODY
-CLASS="chapter"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="NAVHEADER"
-><TABLE
-SUMMARY="Header navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TH
-COLSPAN="3"
-ALIGN="center"
->The Scaly Programming Language</TH
-></TR
-><TR
-><TD
-WIDTH="10%"
-ALIGN="left"
-VALIGN="bottom"
-><A
-HREF="tutorial.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="80%"
-ALIGN="center"
-VALIGN="bottom"
-></TD
-><TD
-WIDTH="10%"
-ALIGN="right"
-VALIGN="bottom"
-><A
-HREF="types.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-></TABLE
-><HR
-ALIGN="LEFT"
-WIDTH="100%"></DIV
-><DIV
-CLASS="chapter"
-><H1
-><A
-NAME="lexical"
-></A
->Chapter 3 Lexical Structure</H1
-><DIV
-CLASS="TOC"
-><DL
-><DT
-><B
->Table of Contents</B
-></DT
-><DT
-><A
-HREF="lexical.htm#lex-overview"
->Overview</A
-></DT
-><DT
-><A
-HREF="lexical.htm#lex-whitespace"
->Whitespace and Line Breaks</A
-></DT
-><DT
-><A
-HREF="lexical.htm#lex-comments"
->Comments</A
-></DT
-><DT
-><A
-HREF="lexical.htm#lex-literals"
->Literals</A
-></DT
-><DT
-><A
-HREF="lexical.htm#lex-operators"
->Operators and Special Symbols</A
-></DT
-><DT
-><A
-HREF="lexical.htm#lex-identifiers"
->Identifiers</A
-></DT
-></DL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="lex-overview"
->Overview</A
-></H1
-><P
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Lexical Structure - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-status"
+><span
+class="num"
+>1.3</span
+>Implementation Status</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+aria-current="page"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>A.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>A.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>A.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>B.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>C.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>C.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>C.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>C.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>C.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>C.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>C.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>C.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>C.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>C.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>C.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 3</p
+><h1
+id="lexical"
+>Lexical Structure</h1
+><section
+id="lex-overview"
+><h2
+><a
+class="header"
+href="#lex-overview"
+>Overview</a
+></h2
+><p
 >This chapter describes the lexical structure of Scaly: how source text
       is divided into tokens. The lexer transforms a sequence of characters
-      into a sequence of tokens that the parser then processes.</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="lex-whitespace"
->Whitespace and Line Breaks</A
-></H1
-><P
+      into a sequence of tokens that the parser then processes.</p
+></section
+><section
+id="lex-whitespace"
+><h2
+><a
+class="header"
+href="#lex-whitespace"
+>Whitespace and Line Breaks</a
+></h2
+><p
 >Whitespace characters (space, tab) separate tokens but are otherwise
       insignificant. Line breaks, however, are syntactically meaningful in
-      Scaly — they can terminate statements and declarations.</P
-><P
->A colon (<TT
-CLASS="literal"
->:</TT
+      Scaly — they can terminate statements and declarations.</p
+><p
+>A colon (<code
+>:</code
 >) can be used in place of a line break
-      when multiple statements should appear on a single line.</P
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="lex-comments"
->Comments</A
-></H1
-><P
->Scaly supports two forms of comments:</P
-><P
-></P
-><UL
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Single-line comments</I
-></SPAN
+      when multiple statements should appear on a single line.</p
+></section
+><section
+id="lex-comments"
+><h2
+><a
+class="header"
+href="#lex-comments"
+>Comments</a
+></h2
+><p
+>Scaly supports two forms of comments:</p
+><ul
+><li
+><p
+><em
+>Single-line comments</em
 > start with a semicolon
-        (<TT
-CLASS="literal"
->;</TT
->) and extend to the end of the line.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Multi-line comments</I
-></SPAN
+        (<code
+>;</code
+>) and extend to the end of the line.</p
+></li
+><li
+><p
+><em
+>Multi-line comments</em
 > start with
-        <TT
-CLASS="literal"
->;*</TT
-> and end with <TT
-CLASS="literal"
->*;</TT
->.</P
-></LI
-></UL
-><PRE
-CLASS="programlisting"
+        <code
+>;*</code
+> and end with <code
+>*;</code
+>.</p
+></li
+></ul
+><pre
+class="listing"
+><code
 >&#13;; This is a single-line comment
 
 ;* This is a
    multi-line comment *;
-    </PRE
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="lex-literals"
->Literals</A
-></H1
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="lex-integers"
->Integer Literals</A
-></H2
-><P
+    </code
+></pre
+></section
+><section
+id="lex-literals"
+><h2
+><a
+class="header"
+href="#lex-literals"
+>Literals</a
+></h2
+><section
+id="lex-integers"
+><h3
+><a
+class="header"
+href="#lex-integers"
+>Integer Literals</a
+></h3
+><p
 >Integer literals represent whole numbers. They can be written in
-        decimal or hexadecimal notation.</P
-><PRE
-CLASS="programlisting"
+        decimal or hexadecimal notation.</p
+><pre
+class="listing"
+><code
 >&#13;42        ; decimal
 0x2A      ; hexadecimal (same value)
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="lex-floats"
->Floating-Point Literals</A
-></H2
-><P
+      </code
+></pre
+></section
+><section
+id="lex-floats"
+><h3
+><a
+class="header"
+href="#lex-floats"
+>Floating-Point Literals</a
+></h3
+><p
 >Floating-point literals represent decimal numbers with a fractional
-        part or an exponent.</P
-><PRE
-CLASS="programlisting"
+        part or an exponent.</p
+><pre
+class="listing"
+><code
 >&#13;3.14159       ; pi
 2.5e10        ; scientific notation
 1.0e-5        ; small number
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="lex-strings"
->String Literals</A
-></H2
-><P
+      </code
+></pre
+></section
+><section
+id="lex-strings"
+><h3
+><a
+class="header"
+href="#lex-strings"
+>String Literals</a
+></h3
+><p
 >String literals are enclosed in double quotes. The supported escape
-        sequences are <TT
-CLASS="literal"
->\"</TT
->, <TT
-CLASS="literal"
->\\</TT
+        sequences are <code
+>\"</code
+>, <code
+>\\</code
 >,
-        <TT
-CLASS="literal"
->\'</TT
->, <TT
-CLASS="literal"
->\n</TT
->, <TT
-CLASS="literal"
->\r</TT
+        <code
+>\'</code
+>, <code
+>\n</code
+>, <code
+>\r</code
 >,
-        <TT
-CLASS="literal"
->\t</TT
->, <TT
-CLASS="literal"
->\0</TT
+        <code
+>\t</code
+>, <code
+>\0</code
 >, and
-        <TT
-CLASS="literal"
->\uXXXX</TT
-> (four hex digits, encoded as UTF-8).</P
-><PRE
-CLASS="programlisting"
+        <code
+>\uXXXX</code
+> (four hex digits, encoded as UTF-8).</p
+><pre
+class="listing"
+><code
 >&#13;"Hello, World!"
 "Line 1\nLine 2"      ; with newline escape
 "Tab:\tValue"         ; with tab
 "Quote: \"nested\""   ; escaped quotes
 "\u0041"            ; Unicode escape - the letter A
-      </PRE
-><P
+      </code
+></pre
+><p
 >Strings can span multiple lines without any special syntax — newlines
-        are simply included as part of the string content:</P
-><PRE
-CLASS="programlisting"
+        are simply included as part of the string content:</p
+><pre
+class="listing"
+><code
 >&#13;"This is a string
 that spans multiple
 lines."
-      </PRE
-><P
+      </code
+></pre
+><p
 >A backtick inside a string embeds an expression: the string is
         built from its parts, and each embedded value is written in the text
-        form of its type — a <TT
-CLASS="literal"
->String</TT
+        form of its type — a <code
+>String</code
 >, a
-        <TT
-CLASS="literal"
->char</TT
->, the bytes of a <TT
-CLASS="literal"
->Slice[u8]</TT
+        <code
+>char</code
+>, the bytes of a <code
+>Slice[u8]</code
 >,
-        an integer, a <TT
-CLASS="literal"
->bool</TT
+        an integer, a <code
+>bool</code
 >, or a floating-point number as
         the shortest text that reads back to it. A value of another type
-        needs a conversion inside the backticks, and <TT
-CLASS="literal"
->\`</TT
+        needs a conversion inside the backticks, and <code
+>\`</code
 >
-        writes a backtick itself.</P
-><PRE
-CLASS="programlisting"
+        writes a backtick itself.</p
+><pre
+class="listing"
+><code
 >&#13;let n 42
 let x 0.1
 "The answer is `n`, not `n + 1`, and x is `x`"
                       ; The answer is 42, not 43, and x is 0.1
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="lex-characters"
->Character Literals</A
-></H2
-><P
+      </code
+></pre
+></section
+><section
+id="lex-characters"
+><h3
+><a
+class="header"
+href="#lex-characters"
+>Character Literals</a
+></h3
+><p
 >A character is written as a string literal of one character
-        wherever a <TT
-CLASS="literal"
->char</TT
+        wherever a <code
+>char</code
 > is expected — a
-        <TT
-CLASS="literal"
->char</TT
+        <code
+>char</code
 > parameter, a typed binding, or the cast
-        <TT
-CLASS="literal"
->as char</TT
->. Escapes count as one character.</P
-><PRE
-CLASS="programlisting"
+        <code
+>as char</code
+>. Escapes count as one character.</p
+><pre
+class="listing"
+><code
 >&#13;let a: char "a"        ; lowercase a
 let nl "\n" as char    ; newline character
-      </PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="lex-booleans"
->Boolean Literals</A
-></H2
-><P
->Boolean literals are <TT
-CLASS="literal"
->true</TT
-> and <TT
-CLASS="literal"
->false</TT
->.</P
-><PRE
-CLASS="programlisting"
+      </code
+></pre
+></section
+><section
+id="lex-booleans"
+><h3
+><a
+class="header"
+href="#lex-booleans"
+>Boolean Literals</a
+></h3
+><p
+>Boolean literals are <code
+>true</code
+> and <code
+>false</code
+>.</p
+><pre
+class="listing"
+><code
 >&#13;true
 false
-      </PRE
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="lex-operators"
->Operators and Special Symbols</A
-></H1
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="lex-equals"
->The Equals Sign</A
-></H2
-><P
+      </code
+></pre
+></section
+></section
+><section
+id="lex-operators"
+><h2
+><a
+class="header"
+href="#lex-operators"
+>Operators and Special Symbols</a
+></h2
+><section
+id="lex-equals"
+><h3
+><a
+class="header"
+href="#lex-equals"
+>The Equals Sign</a
+></h3
+><p
 >Unlike many programming languages, Scaly reserves the equals sign
-        (<TT
-CLASS="literal"
->=</TT
+        (<code
+>=</code
 >) exclusively for equality comparison. It is
-        <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->not</I
-></SPAN
-> used for variable declarations or assignments.</P
-><PRE
-CLASS="programlisting"
+        <em
+>not</em
+> used for variable declarations or assignments.</p
+><pre
+class="listing"
+><code
 >&#13;; Equality comparison
 if x = 42 { ... }         ; tests if x equals 42
 
@@ -419,186 +1187,131 @@ let y: i32 100            ; with type annotation
 
 ; Assignment (its own sign)
 x := 43                 ; assigns 43 to x
-      </PRE
-><P
+      </code
+></pre
+><p
 >This design eliminates the classic confusion between assignment and
-        comparison that leads to bugs in C-style languages (<TT
-CLASS="literal"
->if (x = 42)</TT
+        comparison that leads to bugs in C-style languages (<code
+>if (x = 42)</code
 >
-        vs <TT
-CLASS="literal"
->if (x == 42)</TT
->).</P
-><DIV
-CLASS="note"
-><BLOCKQUOTE
-CLASS="note"
-><P
-><B
->Note: </B
->Because <TT
-CLASS="literal"
->=</TT
+        vs <code
+>if (x == 42)</code
+>).</p
+><aside
+class="note"
+><p
+class="note-title"
+>Note</p
+><p
+>Because <code
+>=</code
 > is just an operator like any other, the
-          standard library could define a unary <TT
-CLASS="literal"
->=</TT
+          standard library could define a unary <code
+>=</code
 > operator
           that returns its argument unchanged. This would allow the syntax
-          <TT
-CLASS="literal"
->let x = 42</TT
-> to parse as <TT
-CLASS="literal"
->let x (= 42)</TT
+          <code
+>let x = 42</code
+> to parse as <code
+>let x (= 42)</code
 >,
-          for those who prefer traditional declaration style.</P
-></BLOCKQUOTE
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="lex-identifiers"
->Identifiers</A
-></H1
-><P
+          for those who prefer traditional declaration style.</p
+></aside
+></section
+></section
+><section
+id="lex-identifiers"
+><h2
+><a
+class="header"
+href="#lex-identifiers"
+>Identifiers</a
+></h2
+><p
 >Identifiers name variables, functions, types, and other entities.
-      Scaly supports three forms of identifiers:</P
-><P
-></P
-><UL
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Alphanumeric identifiers</I
-></SPAN
+      Scaly supports three forms of identifiers:</p
+><ul
+><li
+><p
+><em
+>Alphanumeric identifiers</em
 > start with a letter
-        and continue with letters, digits, or underscores.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Operator identifiers</I
-></SPAN
+        and continue with letters, digits, or underscores.</p
+></li
+><li
+><p
+><em
+>Operator identifiers</em
 > consist of operator
-        characters such as <TT
-CLASS="literal"
->+</TT
->, <TT
-CLASS="literal"
->-</TT
+        characters such as <code
+>+</code
+>, <code
+>-</code
 >,
-        <TT
-CLASS="literal"
->*</TT
->, <TT
-CLASS="literal"
->/</TT
->.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->String identifiers</I
-></SPAN
+        <code
+>*</code
+>, <code
+>/</code
+>.</p
+></li
+><li
+><p
+><em
+>String identifiers</em
 > are enclosed in single
-        quotes and can contain any characters.</P
-></LI
-></UL
-><PRE
-CLASS="programlisting"
+        quotes and can contain any characters.</p
+></li
+></ul
+><pre
+class="listing"
+><code
 >&#13;myVariable        ; alphanumeric
 calculate_total   ; with underscore
 ++                ; operator identifier
 'my identifier'   ; string identifier (with spaces)
-    </PRE
-><P
+    </code
+></pre
+><p
 >The form of an identifier does not by itself decide what it names. A
       variable, a function, or an operator may carry any of the three forms; an
-      operator-character name such as <TT
-CLASS="literal"
->++</TT
+      operator-character name such as <code
+>++</code
 > can name an ordinary
-      function, and a string identifier such as <TT
-CLASS="literal"
->'divided by'</TT
+      function, and a string identifier such as <code
+>'divided by'</code
 >
       can name an operator. What a name denotes is fixed by its declaration, not
-      by how it is spelled (see the chapter on definitions).</P
-></DIV
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-SUMMARY="Footer navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
-><A
-HREF="tutorial.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
-><A
-HREF="index.html"
-ACCESSKEY="H"
->Home</A
-></TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="types.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->Tutorial</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Type System</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
+      by how it is spelled (see the chapter on definitions).</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="tutorial.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Tutorial</span
+></a
+><a
+class="next"
+rel="next"
+href="types.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Type System</span
+></a
+></nav
+></main
+></div
+></body
+></html
 >

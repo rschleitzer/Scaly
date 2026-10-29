@@ -1,1866 +1,2283 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->Expressions</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
-REL="HOME"
-TITLE="The Scaly Programming Language"
-HREF="index.html"><LINK
-REL="PREVIOUS"
-TITLE="Definitions"
-HREF="definitions.htm"><LINK
-REL="NEXT"
-TITLE="Control Flow"
-HREF="controlflow.htm"><META
-HTTP-EQUIV="Content-Type"
-CONTENT="text/html; charset=UTF-8"></HEAD
-><BODY
-CLASS="chapter"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="NAVHEADER"
-><TABLE
-SUMMARY="Header navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TH
-COLSPAN="3"
-ALIGN="center"
->The Scaly Programming Language</TH
-></TR
-><TR
-><TD
-WIDTH="10%"
-ALIGN="left"
-VALIGN="bottom"
-><A
-HREF="definitions.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="80%"
-ALIGN="center"
-VALIGN="bottom"
-></TD
-><TD
-WIDTH="10%"
-ALIGN="right"
-VALIGN="bottom"
-><A
-HREF="controlflow.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-></TABLE
-><HR
-ALIGN="LEFT"
-WIDTH="100%"></DIV
-><DIV
-CLASS="chapter"
-><H1
-><A
-NAME="expressions"
-></A
->Chapter 7 Expressions</H1
-><DIV
-CLASS="TOC"
-><DL
-><DT
-><B
->Table of Contents</B
-></DT
-><DT
-><A
-HREF="expressions.htm#expr-overview"
->Overview</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-LITERALS"
->Literals</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-OPERATIONS"
->Operations</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-TUPLES"
->Tuples and Function Values</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-COMPARISON-OPERATORS"
->Comparison Operators</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-BOOLEAN-OPERATORS"
->Boolean Operators</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-BITWISE-OPERATORS"
->Bitwise Operators</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-LAMBDAS"
->Lambdas</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-CHOOSE-EXPRESSIONS"
->Choose Expressions</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-OPTIONAL-TYPES"
->Optional Types</A
-></DT
-><DT
-><A
-HREF="expressions.htm#category-VARIANT-CONSTRUCTION"
->Variant Construction</A
-></DT
-></DL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="expr-overview"
->Overview</A
-></H1
-><P
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Expressions - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-status"
+><span
+class="num"
+>1.3</span
+>Implementation Status</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+aria-current="page"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>A.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>A.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>A.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>B.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>C.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>C.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>C.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>C.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>C.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>C.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>C.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>C.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>C.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>C.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>C.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 7</p
+><h1
+id="expressions"
+>Expressions</h1
+><section
+id="expr-overview"
+><h2
+><a
+class="header"
+href="#expr-overview"
+>Overview</a
+></h2
+><p
 >Expressions are the core computational units of Scaly. Every
       expression evaluates to a value; one that answers nothing answers the
-      empty tuple <TT
-CLASS="literal"
->()</TT
+      empty tuple <code
+>()</code
 >. An expression is an
-      <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->operation</I
-></SPAN
+      <em
+>operation</em
 >: a sequence of things — values, names,
       operator names, tuples, vector literals and blocks — that the compiler
       reads from left to right. It holds one current value, and the
-      <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->type</I
-></SPAN
+      <em
+>type</em
 > of that value says what the next thing
-      means:</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1767"
-></A
-><TABLE
-BORDER="1"
-CLASS="CALSTABLE"
-><COL><COL><COL><THEAD
-><TR
-><TH
->current value</TH
-><TH
->next thing</TH
-><TH
->meaning</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
->none, a prefix, or one waiting for its operand</TD
-><TD
->an operator name</TD
-><TD
->a prefix: it takes the next value (<TT
-CLASS="literal"
->-x</TT
->, <TT
-CLASS="literal"
->a - -2</TT
->, <TT
-CLASS="literal"
->not not a</TT
->)</TD
-></TR
-><TR
-><TD
->a value</TD
-><TD
->an operator its type declares</TD
-><TD
->that operator; it waits for its right operand</TD
-></TR
-><TR
-><TD
->a function</TD
-><TD
->a tuple</TD
-><TD
->the call; the tuple is the argument list</TD
-></TR
-><TR
-><TD
->a function</TD
-><TD
->one other value</TD
-><TD
->the call with that one argument (<TT
-CLASS="literal"
->print "hi"</TT
->, <TT
-CLASS="literal"
->twice -5</TT
->)</TD
-></TR
-><TR
-><TD
->a type</TD
-><TD
->a tuple</TD
-><TD
->the construction (<TT
-CLASS="literal"
->Point(1, 2)</TT
->)</TD
-></TR
-><TR
-><TD
->a type</TD
-><TD
->a vector literal</TD
-><TD
->the generic instance (<TT
-CLASS="literal"
->Vector[int]</TT
->)</TD
-></TR
-><TR
-><TD
->a value</TD
-><TD
->a vector literal</TD
-><TD
->indexing (<TT
-CLASS="literal"
->v[i]</TT
->)</TD
-></TR
-><TR
-><TD
->any</TD
-><TD
-><TT
-CLASS="literal"
->as T</TT
->, <TT
-CLASS="literal"
->is T</TT
-></TD
-><TD
->the cast or the test of the whole operation so far</TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-><P
+      means:</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>current value</th
+><th
+>next thing</th
+><th
+>meaning</th
+></tr
+></thead
+><tbody
+><tr
+><td
+>none, a prefix, or one waiting for its operand</td
+><td
+>an operator name</td
+><td
+>a prefix: it takes the next value (<code
+>-x</code
+>, <code
+>a - -2</code
+>, <code
+>not not a</code
+>)</td
+></tr
+><tr
+><td
+>a value</td
+><td
+>an operator its type declares</td
+><td
+>that operator; it waits for its right operand</td
+></tr
+><tr
+><td
+>a function</td
+><td
+>a tuple</td
+><td
+>the call; the tuple is the argument list</td
+></tr
+><tr
+><td
+>a function</td
+><td
+>one other value</td
+><td
+>the call with that one argument (<code
+>print "hi"</code
+>, <code
+>twice -5</code
+>)</td
+></tr
+><tr
+><td
+>a type</td
+><td
+>a tuple</td
+><td
+>the construction (<code
+>Point(1, 2)</code
+>)</td
+></tr
+><tr
+><td
+>a type</td
+><td
+>a vector literal</td
+><td
+>the generic instance (<code
+>Vector[int]</code
+>)</td
+></tr
+><tr
+><td
+>a value</td
+><td
+>a vector literal</td
+><td
+>indexing (<code
+>v[i]</code
+>)</td
+></tr
+><tr
+><td
+>any</td
+><td
+><code
+>as T</code
+>, <code
+>is T</code
+></td
+><td
+>the cast or the test of the whole operation so far</td
+></tr
+></tbody
+></table
+></div
+><p
 >Parentheses make a tuple (and a tuple of one value is that value, so
       they also group), brackets a vector literal, braces a block, and the dot
       a member. Nothing else structures a sequence: there is no precedence
       table in the compiler. How strongly operators bind is stated by the
-      standard library, as a protocol of <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->pending</I
-></SPAN
+      standard library, as a protocol of <em
+>pending</em
 > types:
-      <TT
-CLASS="literal"
->a +</TT
+      <code
+>a +</code
 > answers a value that waits for its right operand,
       and the protocol decides what an operator after it means. The levels,
-      strongest first, are listed under <A
-HREF="expressions.htm#category-OPERATIONS"
->the Section called <I
->Operations</I
-></A
->.</P
-><P
+      strongest first, are listed under <a
+href="#category-OPERATIONS"
+>Operations</a
+>.</p
+><p
 >Two consequences are worth knowing before reading the rest of this
-      chapter:</P
-><P
-></P
-><UL
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Application is stronger than waiting.</I
-></SPAN
+      chapter:</p
+><ul
+><li
+><p
+><em
+>Application is stronger than waiting.</em
 >
           Before an operator takes what follows, that thing takes what is
-          applied to it: <TT
-CLASS="literal"
->a + f(1)</TT
+          applied to it: <code
+>a + f(1)</code
 > adds the call's result,
-          <TT
-CLASS="literal"
->a + v[i]</TT
-> the element.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
+          <code
+>a + v[i]</code
+> the element.</p
+></li
+><li
+><p
+><em
 >A call without parentheses takes exactly one
-          thing.</I
-></SPAN
-> <TT
-CLASS="literal"
->print f(x)</TT
+          thing.</em
+> <code
+>print f(x)</code
 > is
-          <TT
-CLASS="literal"
->(print f)(x)</TT
+          <code
+>(print f)(x)</code
 >, which the compiler reports; an
           argument that is itself a call, an indexing or a construction takes
-          its parentheses: <TT
-CLASS="literal"
->print(f(x))</TT
->.</P
-></LI
-></UL
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-LITERALS"
->Literals</A
-></H1
-><P
->Expressions are the core computational units of Scaly. Every expression evaluates to a value.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-BOOLEAN-LITERALS"
->Boolean Literals</A
-></H2
-><P
->The boolean literals are true and false.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1840"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->true</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+          its parentheses: <code
+>print(f(x))</code
+>.</p
+></li
+></ul
+></section
+><section
+id="category-LITERALS"
+><h2
+><a
+class="header"
+href="#category-LITERALS"
+>Literals</a
+></h2
+><p
+>Expressions are the core computational units of Scaly. Every expression evaluates to a value.</p
+><section
+id="tests-BOOLEAN-LITERALS"
+><h3
+><a
+class="header"
+href="#tests-BOOLEAN-LITERALS"
+>Boolean Literals</a
+></h3
+><p
+>The boolean literals are true and false.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>true</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->false</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>false</code
+></td
+><td
+><code
 >false
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-INTEGER-LITERALS"
->Integer Literals</A
-></H2
-><P
->Integer literals are sequences of decimal digits, optionally preceded by a minus sign for negative numbers.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1862"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->42</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-INTEGER-LITERALS"
+><h3
+><a
+class="header"
+href="#tests-INTEGER-LITERALS"
+>Integer Literals</a
+></h3
+><p
+>Integer literals are sequences of decimal digits, optionally preceded by a minus sign for negative numbers.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>42</code
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->0</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>0</code
+></td
+><td
+><code
 >0
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->-7</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>-7</code
+></td
+><td
+><code
 >-7
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-HEX-LITERALS"
->Hexadecimal Literals</A
-></H2
-><P
->Hexadecimal literals start with 0x or 0X followed by hexadecimal digits (0-9, a-f, A-F).</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1889"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->0xFF</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-HEX-LITERALS"
+><h3
+><a
+class="header"
+href="#tests-HEX-LITERALS"
+>Hexadecimal Literals</a
+></h3
+><p
+>Hexadecimal literals start with 0x or 0X followed by hexadecimal digits (0-9, a-f, A-F).</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>0xFF</code
+></td
+><td
+><code
 >255
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->0x1A</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>0x1A</code
+></td
+><td
+><code
 >26
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->0x0</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>0x0</code
+></td
+><td
+><code
 >0
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-FLOAT-LITERALS"
->Floating-Point Literals</A
-></H2
-><P
->Floating-point literals contain a decimal point separating the integer and fractional parts.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1916"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->3.14</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-FLOAT-LITERALS"
+><h3
+><a
+class="header"
+href="#tests-FLOAT-LITERALS"
+>Floating-Point Literals</a
+></h3
+><p
+>Floating-point literals contain a decimal point separating the integer and fractional parts.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>3.14</code
+></td
+><td
+><code
 >3.14
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->2.0</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>2.0</code
+></td
+><td
+><code
 >2.0
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->0.5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>0.5</code
+></td
+><td
+><code
 >0.5
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-STRING-LITERALS"
->String Literals</A
-></H2
-><P
->String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1943"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->"hello"</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-STRING-LITERALS"
+><h3
+><a
+class="header"
+href="#tests-STRING-LITERALS"
+>String Literals</a
+></h3
+><p
+>String literals are enclosed in double quotes. They may span multiple lines, with line breaks preserved in the resulting string.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>"hello"</code
+></td
+><td
+><code
 >hello
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->""</TT
-></TD
-><TD
-><TT
-CLASS="literal"
->&#13;    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-CHARACTER-LITERALS"
->Character Literals</A
-></H2
-><P
->A character is written as a string literal of one character wherever a char is expected: a char parameter, a typed binding, or the cast <TT
-CLASS="literal"
->as char</TT
->.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1966"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->"a" as char</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>""</code
+></td
+><td
+><code
+>&#13;    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-CHARACTER-LITERALS"
+><h3
+><a
+class="header"
+href="#tests-CHARACTER-LITERALS"
+>Character Literals</a
+></h3
+><p
+>A character is written as a string literal of one character wherever a char is expected: a char parameter, a typed binding, or the cast <code
+>as char</code
+>.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>"a" as char</code
+></td
+><td
+><code
 >a
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->"Z" as char</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>"Z" as char</code
+></td
+><td
+><code
 >Z
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-OPERATIONS"
->Operations</A
-></H1
-><P
->An operation is a sequence of things: values, names, operator names, tuples in parentheses, vector literals in brackets and blocks in braces, each perhaps followed by a member access with a dot. The compiler reads the sequence from left to right and holds one current value; the TYPE of that value says what the next thing means. A tuple after a function is the call, a tuple after a type the construction, a vector literal after a value the indexing, an operator name after a value one of the operators its type declares. Parentheses, brackets, braces and the dot are what structure a sequence, and nothing else does. An operation ends with a colon, a line break, or anything that is not part of it.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-PREFIX-FUNCTIONS"
->Prefix Operators</A
-></H2
-><P
->Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, after a function, and after another prefix, so <TT
-CLASS="literal"
->a - -2</TT
-> subtracts minus two, <TT
-CLASS="literal"
->twice -5</TT
-> is <TT
-CLASS="literal"
->twice(-5)</TT
->, and <TT
-CLASS="literal"
->not not a</TT
-> reads as written. An <TT
-CLASS="literal"
->=</TT
-> at the start of an operation does nothing, so <TT
-CLASS="literal"
->let a = 42</TT
-> reads as <TT
-CLASS="literal"
->let a 42</TT
->.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN1998"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->-7</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-OPERATIONS"
+><h2
+><a
+class="header"
+href="#category-OPERATIONS"
+>Operations</a
+></h2
+><p
+>An operation is a sequence of things: values, names, operator names, tuples in parentheses, vector literals in brackets and blocks in braces, each perhaps followed by a member access with a dot. The compiler reads the sequence from left to right and holds one current value; the TYPE of that value says what the next thing means. A tuple after a function is the call, a tuple after a type the construction, a vector literal after a value the indexing, an operator name after a value one of the operators its type declares. Parentheses, brackets, braces and the dot are what structure a sequence, and nothing else does. An operation ends with a colon, a line break, or anything that is not part of it.</p
+><section
+id="tests-PREFIX-FUNCTIONS"
+><h3
+><a
+class="header"
+href="#tests-PREFIX-FUNCTIONS"
+>Prefix Operators</a
+></h3
+><p
+>Where a value is expected an operator name is a prefix: it takes the next value as its operand. A value is expected at the start of an operation, after an operator, after a function, and after another prefix, so <code
+>a - -2</code
+> subtracts minus two, <code
+>twice -5</code
+> is <code
+>twice(-5)</code
+>, and <code
+>not not a</code
+> reads as written. An <code
+>=</code
+> at the start of an operation does nothing, so <code
+>let a = 42</code
+> reads as <code
+>let a 42</code
+>.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>-7</code
+></td
+><td
+><code
 >-7
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->-(-3)</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>-(-3)</code
+></td
+><td
+><code
 >3
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->+ 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>+ 3</code
+></td
+><td
+><code
 >3
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->10 - -2</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>10 - -2</code
+></td
+><td
+><code
 >12
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->- -2</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>- -2</code
+></td
+><td
+><code
 >2
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->not not true</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>not not true</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >function twice(n: int) returns int
     n * 2
-twice -5</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+twice -5</code
+></pre
+></td
+><td
+><code
 >-10
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->= 6 * 7</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>= 6 * 7</code
+></td
+><td
+><code
 >42
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-OPERATOR-CHAINS"
->Operator Chains</A
-></H2
-><P
->Several operators in a row combine by their binding strength, which the standard library states as a protocol of pending types: the compiler itself has no precedence table. Strongest first, the levels are <TT
-CLASS="literal"
->*</TT
-> <TT
-CLASS="literal"
->/</TT
-> <TT
-CLASS="literal"
->%</TT
-> <TT
-CLASS="literal"
->div</TT
-> <TT
-CLASS="literal"
->mod</TT
->; <TT
-CLASS="literal"
->+</TT
-> <TT
-CLASS="literal"
->-</TT
->; <TT
-CLASS="literal"
->&#60;&#60;</TT
-> <TT
-CLASS="literal"
->&#62;&#62;</TT
->; <TT
-CLASS="literal"
->&#60;</TT
-> <TT
-CLASS="literal"
->&#62;</TT
-> <TT
-CLASS="literal"
->&#60;=</TT
-> <TT
-CLASS="literal"
->&#62;=</TT
->; <TT
-CLASS="literal"
->=</TT
-> <TT
-CLASS="literal"
->&#60;&#62;</TT
->; <TT
-CLASS="literal"
->&#38;</TT
->; <TT
-CLASS="literal"
->xor</TT
->; <TT
-CLASS="literal"
->|</TT
->; <TT
-CLASS="literal"
->and</TT
-> <TT
-CLASS="literal"
->&#38;&#38;</TT
->; <TT
-CLASS="literal"
->or</TT
-> <TT
-CLASS="literal"
->||</TT
->. An operator a type declares that no level names, such as <TT
-CLASS="literal"
->==</TT
-> or a text name, binds most weakly of all. Operators of one level combine from left to right.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2073"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->3 + 4</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-OPERATOR-CHAINS"
+><h3
+><a
+class="header"
+href="#tests-OPERATOR-CHAINS"
+>Operator Chains</a
+></h3
+><p
+>Several operators in a row combine by their binding strength, which the standard library states as a protocol of pending types: the compiler itself has no precedence table. Strongest first, the levels are <code
+>*</code
+> <code
+>/</code
+> <code
+>%</code
+> <code
+>div</code
+> <code
+>mod</code
+>; <code
+>+</code
+> <code
+>-</code
+>; <code
+>&#60;&#60;</code
+> <code
+>&#62;&#62;</code
+>; <code
+>&#60;</code
+> <code
+>&#62;</code
+> <code
+>&#60;=</code
+> <code
+>&#62;=</code
+>; <code
+>=</code
+> <code
+>&#60;&#62;</code
+>; <code
+>&#38;</code
+>; <code
+>xor</code
+>; <code
+>|</code
+>; <code
+>and</code
+> <code
+>&#38;&#38;</code
+>; <code
+>or</code
+> <code
+>||</code
+>. An operator a type declares that no level names, such as <code
+>==</code
+> or a text name, binds most weakly of all. Operators of one level combine from left to right.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>3 + 4</code
+></td
+><td
+><code
 >7
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->10 - 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>10 - 3</code
+></td
+><td
+><code
 >7
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->6 * 7</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>6 * 7</code
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->84 / 2</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>84 / 2</code
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->17 % 5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>17 % 5</code
+></td
+><td
+><code
 >2
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->3 + 4 * 2</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>3 + 4 * 2</code
+></td
+><td
+><code
 >11
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->20 - 5 - 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>20 - 5 - 3</code
+></td
+><td
+><code
 >12
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->1 &#60;&#60; 2 + 1</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>1 &#60;&#60; 2 + 1</code
+></td
+><td
+><code
 >8
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->1 + 2 * 3 = 7</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>1 + 2 * 3 = 7</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->1 &#60; 2 and 3 &#60; 4</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>1 &#60; 2 and 3 &#60; 4</code
+></td
+><td
+><code
 >true
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-APPLICATION"
->Application Before Operators</A
-></H2
-><P
->Before an operator takes the thing that follows it, that thing takes what is applied to it: a function its tuple, a value its vector literal, anything its members. So <TT
-CLASS="literal"
->a + f(1)</TT
-> adds the call's result, and <TT
-CLASS="literal"
->a + v[i]</TT
-> the element. A function called without parentheses takes exactly one thing; an argument that is itself a call, an indexing or a construction takes its parentheses, <TT
-CLASS="literal"
->print(f(x))</TT
->.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2138"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-APPLICATION"
+><h3
+><a
+class="header"
+href="#tests-APPLICATION"
+>Application Before Operators</a
+></h3
+><p
+>Before an operator takes the thing that follows it, that thing takes what is applied to it: a function its tuple, a value its vector literal, anything its members. So <code
+>a + f(1)</code
+> adds the call's result, and <code
+>a + v[i]</code
+> the element. A function called without parentheses takes exactly one thing; an argument that is itself a call, an indexing or a construction takes its parentheses, <code
+>print(f(x))</code
+>.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >function twice(n: int) returns int
     n * 2
-3 + twice(4) * 2</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+3 + twice(4) * 2</code
+></pre
+></td
+><td
+><code
 >19
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >function twice(n: int) returns int
     n * 2
-twice 21</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+twice 21</code
+></pre
+></td
+><td
+><code
 >42
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-PARENTHESES-GROUPING"
->Parentheses and Grouping</A
-></H2
-><P
->Parentheses around a single value group it: <TT
-CLASS="literal"
->(a)</TT
-> is <TT
-CLASS="literal"
->a</TT
->. The group is read as an operation of its own, so a prefix may begin it inside a longer chain, and it combines first.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2162"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->5 * (- 2)</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-PARENTHESES-GROUPING"
+><h3
+><a
+class="header"
+href="#tests-PARENTHESES-GROUPING"
+>Parentheses and Grouping</a
+></h3
+><p
+>Parentheses around a single value group it: <code
+>(a)</code
+> is <code
+>a</code
+>. The group is read as an operation of its own, so a prefix may begin it inside a longer chain, and it combines first.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>5 * (- 2)</code
+></td
+><td
+><code
 >-10
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->2 * (3 + 4)</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>2 * (3 + 4)</code
+></td
+><td
+><code
 >14
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->(2 + 3) * (4 + 1)</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>(2 + 3) * (4 + 1)</code
+></td
+><td
+><code
 >25
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-CASTS-WHOLE-OPERATION"
->Casts Take the Whole Operation</A
-></H2
-><P
->A cast <TT
-CLASS="literal"
->as T</TT
-> and a test <TT
-CLASS="literal"
->is T</TT
-> apply to the whole operation before them: <TT
-CLASS="literal"
->a + b as T</TT
-> is <TT
-CLASS="literal"
->(a + b) as T</TT
->. A cast of the right side alone takes parentheses.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2193"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-CASTS-WHOLE-OPERATION"
+><h3
+><a
+class="header"
+href="#tests-CASTS-WHOLE-OPERATION"
+>Casts Take the Whole Operation</a
+></h3
+><p
+>A cast <code
+>as T</code
+> and a test <code
+>is T</code
+> apply to the whole operation before them: <code
+>a + b as T</code
+> is <code
+>(a + b) as T</code
+>. A cast of the right side alone takes parentheses.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >let a: u8 200
 let b: u8 100
-a + b as int</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+a + b as int</code
+></pre
+></td
+><td
+><code
 >44
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let a: u8 200
 let b: u8 100
-a + (b as int)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+a + (b as int)</code
+></pre
+></td
+><td
+><code
 >300
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-IDENTIFIER-SHAPES"
->Identifier Shapes</A
-></H2
-><P
->Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior: what a name means depends on its declaration and on what the operation holds when it is reached.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2215"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->10 div 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-IDENTIFIER-SHAPES"
+><h3
+><a
+class="header"
+href="#tests-IDENTIFIER-SHAPES"
+>Identifier Shapes</a
+></h3
+><p
+>Identifiers can have name shape (alphanumeric) or operator shape (symbols). The shape is purely lexical and does not determine behavior: what a name means depends on its declaration and on what the operation holds when it is reached.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>10 div 3</code
+></td
+><td
+><code
 >3
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->abs (- 5)</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>abs (- 5)</code
+></td
+><td
+><code
 >5
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-LET-BINDINGS"
->Let Bindings</A
-></H2
-><P
->Let bindings introduce local variables. The syntax is let followed by a name and a value expression (no equals sign). Multiple statements are separated by colons or newlines.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2237"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-LET-BINDINGS"
+><h3
+><a
+class="header"
+href="#tests-LET-BINDINGS"
+>Let Bindings</a
+></h3
+><p
+>Let bindings introduce local variables. The syntax is let followed by a name and a value expression (no equals sign). Multiple statements are separated by colons or newlines.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >let x 5
-x</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x</code
+></pre
+></td
+><td
+><code
 >5
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let x 5
-x + 3</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x + 3</code
+></pre
+></td
+><td
+><code
 >8
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let x 5
 let y 3
-x + y</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x + y</code
+></pre
+></td
+><td
+><code
 >8
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let x 2 + 3
-x * 2</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+x * 2</code
+></pre
+></td
+><td
+><code
 >10
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-TUPLES"
->Tuples and Function Values</A
-></H1
-><P
->A tuple is a value: an anonymous record written in parentheses. Its components may carry labels, and its type is written the same way, <TT
-CLASS="literal"
->(int, String)</TT
->. The empty tuple <TT
-CLASS="literal"
->()</TT
-> is the type of no value, which a routine without a result answers. Functions are values too: a name bound to a function, or a method bound to its receiver, is called later like the function itself.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-TUPLE-VALUES"
->Tuples</A
-></H2
-><P
->A labelled component is read by its label. Unlabelled components are reached by decomposition, <TT
-CLASS="literal"
->let (a, b) t</TT
->; a tuple is not an array and has no indexing. A routine returns several values as a tuple.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2275"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-TUPLES"
+><h2
+><a
+class="header"
+href="#category-TUPLES"
+>Tuples and Function Values</a
+></h2
+><p
+>A tuple is a value: an anonymous record written in parentheses. Its components may carry labels, and its type is written the same way, <code
+>(int, String)</code
+>. The empty tuple <code
+>()</code
+> is the type of no value, which a routine without a result answers. Functions are values too: a name bound to a function, or a method bound to its receiver, is called later like the function itself.</p
+><section
+id="tests-TUPLE-VALUES"
+><h3
+><a
+class="header"
+href="#tests-TUPLE-VALUES"
+>Tuples</a
+></h3
+><p
+>A labelled component is read by its label. Unlabelled components are reached by decomposition, <code
+>let (a, b) t</code
+>; a tuple is not an array and has no indexing. A routine returns several values as a tuple.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >let t (x: 3, y: 4)
-t.x * t.y</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+t.x * t.y</code
+></pre
+></td
+><td
+><code
 >12
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let (a, b) (6, 7)
-a * b</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+a * b</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >function pair() returns (int, int)
     (3, 4)
 let (p, q) pair()
-p + q</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+p + q</code
+></pre
+></td
+><td
+><code
 >7
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-TUPLE-APPLICATION"
->Applying a Bound Tuple</A
-></H2
-><P
->A tuple bound to a name stands for its components where it is applied: <TT
-CLASS="literal"
->f args</TT
-> calls f with them, and <TT
-CLASS="literal"
->Point(args)</TT
-> builds the record from them. Its components are evaluated once, when it is bound.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2304"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-TUPLE-APPLICATION"
+><h3
+><a
+class="header"
+href="#tests-TUPLE-APPLICATION"
+>Applying a Bound Tuple</a
+></h3
+><p
+>A tuple bound to a name stands for its components where it is applied: <code
+>f args</code
+> calls f with them, and <code
+>Point(args)</code
+> builds the record from them. Its components are evaluated once, when it is bound.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >function add(a: int, b: int) returns int
     a + b
 let args (40, 2)
-add args</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+add args</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Point(x: int, y: int)
 let args (1, 2)
 let p Point(args)
-p.y</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+p.y</code
+></pre
+></td
+><td
+><code
 >2
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-FUNCTION-VALUES"
->Functions as Values</A
-></H2
-><P
-><TT
-CLASS="literal"
->let g twice</TT
-> binds the function at compile time and costs nothing; <TT
-CLASS="literal"
->g(21)</TT
-> is a direct call. <TT
-CLASS="literal"
->x.m</TT
-> without a tuple is the method bound to its receiver. Where a delegate type is declared, a named function becomes a closure value, chosen by the delegate's signature.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2329"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-FUNCTION-VALUES"
+><h3
+><a
+class="header"
+href="#tests-FUNCTION-VALUES"
+>Functions as Values</a
+></h3
+><p
+><code
+>let g twice</code
+> binds the function at compile time and costs nothing; <code
+>g(21)</code
+> is a direct call. <code
+>x.m</code
+> without a tuple is the method bound to its receiver. Where a delegate type is declared, a named function becomes a closure value, chosen by the delegate's signature.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >function twice(n: int) returns int
     n * 2
 let g twice
-g(21)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+g(21)</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Counter(n: int)
 {
     function plus(this, k: int) returns int
@@ -1868,1742 +2285,1448 @@ CLASS="programlisting"
 }
 let c Counter(40)
 let m c.plus
-m(2)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+m(2)</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define IntFn delegate(int) returns int
 function apply(f: IntFn, x: int) returns int
     f(x)
 function twice(n: int) returns int
     n * 2
-apply(twice, 21)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+apply(twice, 21)</code
+></pre
+></td
+><td
+><code
 >42
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-COMPARISON-OPERATORS"
->Comparison Operators</A
-></H1
-><P
->Comparison operators compare two values and return a boolean result.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-EQUALITY"
->Equality</A
-></H2
-><P
->The equality operator (=) tests if two values are equal. The inequality operator (not equal to) tests if two values are different.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2359"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->5 = 5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-COMPARISON-OPERATORS"
+><h2
+><a
+class="header"
+href="#category-COMPARISON-OPERATORS"
+>Comparison Operators</a
+></h2
+><p
+>Comparison operators compare two values and return a boolean result.</p
+><section
+id="tests-EQUALITY"
+><h3
+><a
+class="header"
+href="#tests-EQUALITY"
+>Equality</a
+></h3
+><p
+>The equality operator (=) tests if two values are equal. The inequality operator (not equal to) tests if two values are different.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>5 = 5</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->5 = 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>5 = 3</code
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->5 &#60;&#62; 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>5 &#60;&#62; 3</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->5 &#60;&#62; 5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>5 &#60;&#62; 5</code
+></td
+><td
+><code
 >false
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-RELATIONAL"
->Relational Operators</A
-></H2
-><P
->Relational operators compare the ordering of values.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2391"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->3 &#60; 5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-RELATIONAL"
+><h3
+><a
+class="header"
+href="#tests-RELATIONAL"
+>Relational Operators</a
+></h3
+><p
+>Relational operators compare the ordering of values.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>3 &#60; 5</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->5 &#60; 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>5 &#60; 3</code
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->5 &#62; 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>5 &#62; 3</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->3 &#62; 5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>3 &#62; 5</code
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->5 &#60;= 5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>5 &#60;= 5</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->5 &#60;= 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>5 &#60;= 3</code
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->5 &#62;= 5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>5 &#62;= 5</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->3 &#62;= 5</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>3 &#62;= 5</code
+></td
+><td
+><code
 >false
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-BOOLEAN-OPERATORS"
->Boolean Operators</A
-></H1
-><P
->Boolean operators combine boolean values.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-BOOLEAN-NEGATION"
->Boolean Negation</A
-></H2
-><P
->The word operator <TT
-CLASS="literal"
->not</TT
-> negates a boolean value. The tilde is the bitwise complement, which on a bool is the same. The exclamation mark is not negation in Scaly: it is the sigil of the thrown lifetime.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2447"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->not true</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-BOOLEAN-OPERATORS"
+><h2
+><a
+class="header"
+href="#category-BOOLEAN-OPERATORS"
+>Boolean Operators</a
+></h2
+><p
+>Boolean operators combine boolean values.</p
+><section
+id="tests-BOOLEAN-NEGATION"
+><h3
+><a
+class="header"
+href="#tests-BOOLEAN-NEGATION"
+>Boolean Negation</a
+></h3
+><p
+>The word operator <code
+>not</code
+> negates a boolean value. The tilde is the bitwise complement, which on a bool is the same. The exclamation mark is not negation in Scaly: it is the sigil of the thrown lifetime.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>not true</code
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->not false</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>not false</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->~true</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>~true</code
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->~false</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>~false</code
+></td
+><td
+><code
 >true
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-BOOLEAN-AND-OR"
->Boolean And/Or</A
-></H2
-><P
->The operators <TT
-CLASS="literal"
->and</TT
-> and <TT
-CLASS="literal"
->or</TT
-> (also spelled <TT
-CLASS="literal"
->&#38;&#38;</TT
-> and <TT
-CLASS="literal"
->||</TT
->) are declared by the standard library with a lazy right operand: the right side is evaluated only where the left one does not decide. The bitwise operators <TT
-CLASS="literal"
->&#38;</TT
->, <TT
-CLASS="literal"
->|</TT
-> and <TT
-CLASS="literal"
->xor</TT
-> combine two bools as well, and evaluate both sides.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2486"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->true and false</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-BOOLEAN-AND-OR"
+><h3
+><a
+class="header"
+href="#tests-BOOLEAN-AND-OR"
+>Boolean And/Or</a
+></h3
+><p
+>The operators <code
+>and</code
+> and <code
+>or</code
+> (also spelled <code
+>&#38;&#38;</code
+> and <code
+>||</code
+>) are declared by the standard library with a lazy right operand: the right side is evaluated only where the left one does not decide. The bitwise operators <code
+>&#38;</code
+>, <code
+>|</code
+> and <code
+>xor</code
+> combine two bools as well, and evaluate both sides.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>true and false</code
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->false or true</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>false or true</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >procedure noisy() returns bool
 {
     print "evaluated"
     true
 }
-false and noisy()</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+false and noisy()</code
+></pre
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >procedure noisy() returns bool
 {
     print "evaluated"
     false
 }
-true or noisy()</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+true or noisy()</code
+></pre
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->true &#38; true</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>true &#38; true</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->true &#38; false</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>true &#38; false</code
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->false | false</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>false | false</code
+></td
+><td
+><code
 >false
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->true | false</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>true | false</code
+></td
+><td
+><code
 >true
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->true xor true</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>true xor true</code
+></td
+><td
+><code
 >false
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-BITWISE-OPERATORS"
->Bitwise Operators</A
-></H1
-><P
->Bitwise operators manipulate integer values at the bit level.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-BIT-SHIFTS"
->Bit Shifts</A
-></H2
-><P
->The left shift operator shifts bits to the left, effectively multiplying by powers of two. The right shift operator shifts bits to the right, effectively dividing by powers of two.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2546"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><TT
-CLASS="literal"
->1 &#60;&#60; 4</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-BITWISE-OPERATORS"
+><h2
+><a
+class="header"
+href="#category-BITWISE-OPERATORS"
+>Bitwise Operators</a
+></h2
+><p
+>Bitwise operators manipulate integer values at the bit level.</p
+><section
+id="tests-BIT-SHIFTS"
+><h3
+><a
+class="header"
+href="#tests-BIT-SHIFTS"
+>Bit Shifts</a
+></h3
+><p
+>The left shift operator shifts bits to the left, effectively multiplying by powers of two. The right shift operator shifts bits to the right, effectively dividing by powers of two.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><code
+>1 &#60;&#60; 4</code
+></td
+><td
+><code
 >16
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->5 &#60;&#60; 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>5 &#60;&#60; 3</code
+></td
+><td
+><code
 >40
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->16 &#62;&#62; 2</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>16 &#62;&#62; 2</code
+></td
+><td
+><code
 >4
-        </TT
-></TD
-></TR
-><TR
-><TD
-><TT
-CLASS="literal"
->100 &#62;&#62; 3</TT
-></TD
-><TD
-><TT
-CLASS="literal"
+        </code
+></td
+></tr
+><tr
+><td
+><code
+>100 &#62;&#62; 3</code
+></td
+><td
+><code
 >12
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-LAMBDAS"
->Lambdas</A
-></H1
-><P
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-LAMBDAS"
+><h2
+><a
+class="header"
+href="#category-LAMBDAS"
+>Lambdas</a
+></h2
+><p
 >A lambda is an anonymous function written with a backslash:
-    <TT
-CLASS="literal"
->\params: body</TT
+    <code
+>\params: body</code
 >. Parameters are space-separated. A lambda bound to a name
     and applied to arguments is monomorphized at the call site for those
-    argument types, so the same lambda works at any argument type.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-LAMBDA-APPLICATION"
->Lambda Application</A
-></H2
-><P
->A lambda bound to a name can be called like a function.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2582"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    argument types, so the same lambda works at any argument type.</p
+><section
+id="tests-LAMBDA-APPLICATION"
+><h3
+><a
+class="header"
+href="#tests-LAMBDA-APPLICATION"
+>Lambda Application</a
+></h3
+><p
+>A lambda bound to a name can be called like a function.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >let inc \x: x + 1
-inc(5)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+inc(5)</code
+></pre
+></td
+><td
+><code
 >6
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let add \x y: x + y
-add(3, 4)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+add(3, 4)</code
+></pre
+></td
+><td
+><code
 >7
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let dbl \x: x + x
 let a dbl(10)
 let b dbl(21)
-a + b</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+a + b</code
+></pre
+></td
+><td
+><code
 >62
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-LAMBDA-CAPTURES"
->Captures</A
-></H2
-><P
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-LAMBDA-CAPTURES"
+><h3
+><a
+class="header"
+href="#tests-LAMBDA-CAPTURES"
+>Captures</a
+></h3
+><p
 >A lambda captures enclosing variables by value. The captured
-        value is fixed when the lambda is applied.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2609"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        value is fixed when the lambda is applied.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >let n 10
 let f \x: x + n
-f(5)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+f(5)</code
+></pre
+></td
+><td
+><code
 >15
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let a 3
 let b 4
 let g \x: x + a + b
-g(10)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+g(10)</code
+></pre
+></td
+><td
+><code
 >17
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-LAMBDA-BLOCK-CAPTURES"
->Captures in Braced Bodies</A
-></H2
-><P
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-LAMBDA-BLOCK-CAPTURES"
+><h3
+><a
+class="header"
+href="#tests-LAMBDA-BLOCK-CAPTURES"
+>Captures in Braced Bodies</a
+></h3
+><p
 >Capture discovery reaches inside a braced body, and a body-local
-        binding that shadows an enclosing name is the local, not a capture.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2631"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        binding that shadows an enclosing name is the local, not a capture.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >let n 10
 let cap \x: { x + n }
-cap(5)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+cap(5)</code
+></pre
+></td
+><td
+><code
 >15
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let n 10
 let shade \x: { let n 99
 x + n }
-shade(5)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+shade(5)</code
+></pre
+></td
+><td
+><code
 >104
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-LAMBDA-EMBEDDED"
->Embedded Calls</A
-></H2
-><P
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-LAMBDA-EMBEDDED"
+><h3
+><a
+class="header"
+href="#tests-LAMBDA-EMBEDDED"
+>Embedded Calls</a
+></h3
+><p
 >A lambda call may appear anywhere inside a larger expression, not
         only as the whole right-hand side of a binding. Like every application,
-        each call takes its arguments before the operators around it combine.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2653"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        each call takes its arguments before the operators around it combine.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >let inc \x: x + 1
 let add \x y: x + y
-inc(5) + add(3, 4)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+inc(5) + add(3, 4)</code
+></pre
+></td
+><td
+><code
 >13
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let inc \x: x + 1
 let n 100
-n + inc(9)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+n + inc(9)</code
+></pre
+></td
+><td
+><code
 >110
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >let n 100
 let cap \x: x + n
-cap(1) + cap(2)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+cap(1) + cap(2)</code
+></pre
+></td
+><td
+><code
 >203
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-LAMBDA-DELEGATES"
->Delegate Values</A
-></H2
-><P
->A <TT
-CLASS="literal"
->delegate</TT
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-LAMBDA-DELEGATES"
+><h3
+><a
+class="header"
+href="#tests-LAMBDA-DELEGATES"
+>Delegate Values</a
+></h3
+><p
+>A <code
+>delegate</code
 > names a function type. A non-capturing lambda assigned
         to a delegate-typed binding is a function-pointer value that can be passed
         to a function and called indirectly. A lambda literal may also be passed
-        straight to a delegate parameter, and so may a named function.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2681"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        straight to a delegate parameter, and so may a named function.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define IntFn delegate(int) returns int
 function apply(f: IntFn, x: int) returns int
     f(x)
 let g: IntFn \x: x + 1
-apply(g, 5)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+apply(g, 5)</code
+></pre
+></td
+><td
+><code
 >6
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define IntFn delegate(int) returns int
 function twice(f: IntFn, x: int) returns int
     f(f(x))
 let dbl: IntFn \x: x + x
-twice(dbl, 20)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+twice(dbl, 20)</code
+></pre
+></td
+><td
+><code
 >80
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-LAMBDA-CLOSURES"
->Closures</A
-></H2
-><P
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-LAMBDA-CLOSURES"
+><h3
+><a
+class="header"
+href="#tests-LAMBDA-CLOSURES"
+>Closures</a
+></h3
+><p
 >A capturing lambda assigned to a delegate type is a true closure
         value carrying the captured variables. (Closures returned from a
         function escape onto the caller's region -- see the escaping-closure AOT
-        regression test.)</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2703"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        regression test.)</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define IntFn delegate(int) returns int
 function apply(f: IntFn, x: int) returns int
     f(x)
 let n 10
 let add: IntFn \x: x + n
-apply(add, 5)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+apply(add, 5)</code
+></pre
+></td
+><td
+><code
 >15
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-CHOOSE-EXPRESSIONS"
->Choose Expressions</A
-></H1
-><P
->Choose expressions pattern match on union types, allowing different code paths based on which variant is present.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-CHOOSE-ON-VARIANTS"
->Choose on Variant Construction</A
-></H2
-><P
->Choose can match directly on constructed variants.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2723"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-CHOOSE-EXPRESSIONS"
+><h2
+><a
+class="header"
+href="#category-CHOOSE-EXPRESSIONS"
+>Choose Expressions</a
+></h2
+><p
+>Choose expressions pattern match on union types, allowing different code paths based on which variant is present.</p
+><section
+id="tests-CHOOSE-ON-VARIANTS"
+><h3
+><a
+class="header"
+href="#tests-CHOOSE-ON-VARIANTS"
+>Choose on Variant Construction</a
+></h3
+><p
+>Choose can match directly on constructed variants.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option union(Some: int, None)
-choose Option.Some(7): when v: Some: v else 0</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+choose Option.Some(7): when v: Some: v else 0</code
+></pre
+></td
+><td
+><code
 >7
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option union(Some: int, None)
-choose Option.None: when v: Some: v else 0</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+choose Option.None: when v: Some: v else 0</code
+></pre
+></td
+><td
+><code
 >0
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-CHOOSE-BINDING"
->Choose with Binding</A
-></H2
-><P
->When a variant carries a value, the value can be bound to a name.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2745"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-CHOOSE-BINDING"
+><h3
+><a
+class="header"
+href="#tests-CHOOSE-BINDING"
+>Choose with Binding</a
+></h3
+><p
+>When a variant carries a value, the value can be bound to a name.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Result union(Ok: int, Err: int)
-choose Result.Ok(42): when x: Ok: x + 1 else 0</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+choose Result.Ok(42): when x: Ok: x + 1 else 0</code
+></pre
+></td
+><td
+><code
 >43
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-CHOOSE-MULTIPLE-WHEN"
->Multiple When Clauses</A
-></H2
-><P
->Choose can have multiple when clauses to match different variants.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2762"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-CHOOSE-MULTIPLE-WHEN"
+><h3
+><a
+class="header"
+href="#tests-CHOOSE-MULTIPLE-WHEN"
+>Multiple When Clauses</a
+></h3
+><p
+>Choose can have multiple when clauses to match different variants.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Result union(Ok: int, Err: int)
-choose Result.Ok(10): when x: Ok: x when e: Err: e + 100</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+choose Result.Ok(10): when x: Ok: x when e: Err: e + 100</code
+></pre
+></td
+><td
+><code
 >10
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Result union(Ok: int, Err: int)
-choose Result.Err(5): when x: Ok: x when e: Err: e + 100</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+choose Result.Err(5): when x: Ok: x when e: Err: e + 100</code
+></pre
+></td
+><td
+><code
 >105
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-OPTIONAL-TYPES"
->Optional Types</A
-></H1
-><P
->Optional types use null pointer optimization (NPO) for efficient representation.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-IS-NULL-CHECK"
->Is Null Check</A
-></H2
-><P
->The is null expression checks if an optional value is None.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2787"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-OPTIONAL-TYPES"
+><h2
+><a
+class="header"
+href="#category-OPTIONAL-TYPES"
+>Optional Types</a
+></h2
+><p
+>Optional types use null pointer optimization (NPO) for efficient representation.</p
+><section
+id="tests-IS-NULL-CHECK"
+><h3
+><a
+class="header"
+href="#tests-IS-NULL-CHECK"
+>Is Null Check</a
+></h3
+><p
+>The is null expression checks if an optional value is None.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option[T] union: (Some: T, None)
 function check(x: int?) returns int: if x is null: 0 else 1
-check(Option[int].None)</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+check(Option[int].None)</code
+></pre
+></td
+><td
+><code
 >0
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option[T] union: (Some: T, None)
 function check(x: int?) returns int: if x is null: 0 else 1
-check(Option[int].Some(42))</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+check(Option[int].Some(42))</code
+></pre
+></td
+><td
+><code
 >1
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-OPTIONAL-SUGAR"
->Optional Type Sugar</A
-></H2
-><P
->T? is syntactic sugar for Option[T].</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2809"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-OPTIONAL-SUGAR"
+><h3
+><a
+class="header"
+href="#tests-OPTIONAL-SUGAR"
+>Optional Type Sugar</a
+></h3
+><p
+>T? is syntactic sugar for Option[T].</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option[T] union: (Some: T, None)
 function unwrap(x: int?) returns int: choose x: when v: Some: v else 0
-unwrap(Option[int].Some(42))</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+unwrap(Option[int].Some(42))</code
+></pre
+></td
+><td
+><code
 >42
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-GENERIC-OPTION"
->Generic Option Types</A
-></H2
-><P
->Generic unions like Option[T] work with choose for pattern matching.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2826"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-GENERIC-OPTION"
+><h3
+><a
+class="header"
+href="#tests-GENERIC-OPTION"
+>Generic Option Types</a
+></h3
+><p
+>Generic unions like Option[T] work with choose for pattern matching.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option[T] union: (Some: T, None)
-choose Option[int].Some(42): when v: Some: v else 0</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+choose Option[int].Some(42): when v: Some: v else 0</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Option[T] union: (Some: T, None)
-choose Option[int].None: when v: Some: v else -1</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+choose Option[int].None: when v: Some: v else -1</code
+></pre
+></td
+><td
+><code
 >-1
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="category-VARIANT-CONSTRUCTION"
->Variant Construction</A
-></H1
-><P
->Union variants can be constructed explicitly using Type.Variant syntax.</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-VARIANT-CONSTRUCT"
->Construct Variants</A
-></H2
-><P
->Variants are constructed with Type.Variant(value) syntax.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2851"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+><section
+id="category-VARIANT-CONSTRUCTION"
+><h2
+><a
+class="header"
+href="#category-VARIANT-CONSTRUCTION"
+>Variant Construction</a
+></h2
+><p
+>Union variants can be constructed explicitly using Type.Variant syntax.</p
+><section
+id="tests-VARIANT-CONSTRUCT"
+><h3
+><a
+class="header"
+href="#tests-VARIANT-CONSTRUCT"
+>Construct Variants</a
+></h3
+><p
+>Variants are constructed with Type.Variant(value) syntax.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Result union: (Ok: int, Error: int)
-choose Result.Ok(42): when x: Ok: x else 0</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+choose Result.Ok(42): when x: Ok: x else 0</code
+></pre
+></td
+><td
+><code
 >42
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Result union: (Ok: int, Error: int)
-choose Result.Error(100): when e: Error: e else 0</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+choose Result.Error(100): when e: Error: e else 0</code
+></pre
+></td
+><td
+><code
 >100
 
-    </TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tests-VARIANT-IS"
->Variant Is Expression</A
-></H2
-><P
->The is expression tests if a union value matches a variant.</P
-><DIV
-CLASS="informaltable"
-><P
-></P
-><A
-NAME="AEN2873"
-></A
-><TABLE
-BORDER="0"
-FRAME="void"
-CLASS="CALSTABLE"
-><COL
-WIDTH="1*"><COL
-WIDTH="1*"><THEAD
-><TR
-><TH
->Input</TH
-><TH
->Result</TH
-></TR
-></THEAD
-><TBODY
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+    </code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+><section
+id="tests-VARIANT-IS"
+><h3
+><a
+class="header"
+href="#tests-VARIANT-IS"
+>Variant Is Expression</a
+></h3
+><p
+>The is expression tests if a union value matches a variant.</p
+><div
+class="table-wrap"
+><table
+><thead
+><tr
+><th
+>Input</th
+><th
+>Result</th
+></tr
+></thead
+><tbody
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Result union: (Ok: int, Error: int)
-if Result.Ok(50) is Ok : 1 else 0</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+if Result.Ok(50) is Ok : 1 else 0</code
+></pre
+></td
+><td
+><code
 >1
-        </TT
-></TD
-></TR
-><TR
-><TD
-><PRE
-CLASS="programlisting"
+        </code
+></td
+></tr
+><tr
+><td
+><pre
+class="listing"
+><code
 >define Result union: (Ok: int, Error: int)
-if Result.Error(33) is Ok : 1 else 0</PRE
-></TD
-><TD
-><TT
-CLASS="literal"
+if Result.Error(33) is Ok : 1 else 0</code
+></pre
+></td
+><td
+><code
 >0
-</TT
-></TD
-></TR
-></TBODY
-></TABLE
-><P
-></P
-></DIV
-></DIV
-></DIV
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-SUMMARY="Footer navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
-><A
-HREF="definitions.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
-><A
-HREF="index.html"
-ACCESSKEY="H"
->Home</A
-></TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="controlflow.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->Definitions</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Control Flow</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
+</code
+></td
+></tr
+></tbody
+></table
+></div
+></section
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="definitions.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Definitions</span
+></a
+><a
+class="next"
+rel="next"
+href="controlflow.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Control Flow</span
+></a
+></nav
+></main
+></div
+></body
+></html
 >

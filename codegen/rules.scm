@@ -23,6 +23,9 @@
         (file "editors/vscode/language-configuration.json"
             (generate-language-configuration)
         )
+        (file "docs/book/words.js"
+            (generate-words)
+        )
     )
 )
 ]]>

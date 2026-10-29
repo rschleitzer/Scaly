@@ -1,540 +1,1333 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML
-><HEAD
-><TITLE
->Tutorial</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
-REL="HOME"
-TITLE="The Scaly Programming Language"
-HREF="index.html"><LINK
-REL="PREVIOUS"
-TITLE="Introduction"
-HREF="introduction.htm"><LINK
-REL="NEXT"
-TITLE="Lexical Structure"
-HREF="lexical.htm"><META
-HTTP-EQUIV="Content-Type"
-CONTENT="text/html; charset=UTF-8"></HEAD
-><BODY
-CLASS="chapter"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="NAVHEADER"
-><TABLE
-SUMMARY="Header navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TH
-COLSPAN="3"
-ALIGN="center"
->The Scaly Programming Language</TH
-></TR
-><TR
-><TD
-WIDTH="10%"
-ALIGN="left"
-VALIGN="bottom"
-><A
-HREF="introduction.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="80%"
-ALIGN="center"
-VALIGN="bottom"
-></TD
-><TD
-WIDTH="10%"
-ALIGN="right"
-VALIGN="bottom"
-><A
-HREF="lexical.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-></TABLE
-><HR
-ALIGN="LEFT"
-WIDTH="100%"></DIV
-><DIV
-CLASS="chapter"
-><H1
-><A
-NAME="tutorial"
-></A
->Chapter 2 Tutorial</H1
-><DIV
-CLASS="TOC"
-><DL
-><DT
-><B
->Table of Contents</B
-></DT
-><DT
-><A
-HREF="tutorial.htm#tut-getting-started"
->Getting Started</A
-></DT
-><DT
-><A
-HREF="tutorial.htm#tut-vscode"
->Using Scaly with VS Code</A
-></DT
-><DT
-><A
-HREF="tutorial.htm#tut-tour"
->A Tour of Scaly</A
-></DT
-><DT
-><A
-HREF="tutorial.htm#tut-together"
->Putting It Together</A
-></DT
-></DL
-></DIV
-><P
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Tutorial - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-status"
+><span
+class="num"
+>1.3</span
+>Implementation Status</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+aria-current="page"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>A.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>A.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>A.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>B.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>C.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>C.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>C.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>C.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>C.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>C.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>C.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>C.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>C.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>C.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>C.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 2</p
+><h1
+id="tutorial"
+>Tutorial</h1
+><p
 >This chapter is a hands-on introduction to Scaly. It gets you from an
     empty file to a running program, then takes you on a quick tour of the
     language. Later chapters cover everything here in depth; the goal now is to
-    write and run real code as fast as possible.</P
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="tut-getting-started"
->Getting Started</A
-></H1
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-install"
->Installing Scaly</A
-></H2
-><P
+    write and run real code as fast as possible.</p
+><section
+id="tut-getting-started"
+><h2
+><a
+class="header"
+href="#tut-getting-started"
+>Getting Started</a
+></h2
+><section
+id="tut-install"
+><h3
+><a
+class="header"
+href="#tut-install"
+>Installing Scaly</a
+></h3
+><p
 >This section starts from a blank machine — a fresh Linux
         installation or a new Mac — and ends with the whole Scaly toolchain
         installed: the tool, the compiler, the language server, and (in the
         next section) editor support in Visual Studio Code with syntax
-        highlighting and a source-level debugger.</P
-><P
+        highlighting and a source-level debugger.</p
+><p
 >Scaly is installed by one command. It needs no
-        <B
-CLASS="command"
->sudo</B
+        <code
+class="command"
+>sudo</code
 > and puts everything under
-        <TT
-CLASS="filename"
->~/.scaly</TT
->:</P
-><PRE
-CLASS="programlisting"
->curl -fsSL https://scaly.io/install.sh | sh</PRE
-><P
+        <code
+class="filename"
+>~/.scaly</code
+>:</p
+><pre
+class="listing"
+><code
+>curl -fsSL https://scaly.io/install.sh | sh</code
+></pre
+><p
 >For macOS 26 on Apple silicon and for Ubuntu 26.04 and newer the
         installer downloads the programs ready to run, which takes a few
         seconds. The one thing Scaly asks of your machine is a C compiler: it
-        links the programs you build.</P
-><PRE
-CLASS="programlisting"
+        links the programs you build.</p
+><pre
+class="listing"
+><code
 >; macOS
 xcode-select --install
 
 ; Ubuntu
-sudo apt install clang</PRE
-><P
+sudo apt install clang</code
+></pre
+><p
 >On any other macOS or Linux the installer builds Scaly on your
         machine instead. Scaly ships as its own LLVM IR (a
-        <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->seed</I
-></SPAN
+        <em
+>seed</em
 >), so that route needs LLVM 21 —
-        <KBD
-CLASS="userinput"
->brew install llvm@21</KBD
+        <code
+class="userinput"
+>brew install llvm@21</code
 >, or
-        <KBD
-CLASS="userinput"
->sudo apt install llvm-21 llvm-21-dev lld-21 clang</KBD
+        <code
+class="userinput"
+>sudo apt install llvm-21 llvm-21-dev lld-21 clang</code
 >
         — and takes about half a minute; the installer says which of the two
-        it is doing.</P
-><P
+        it is doing.</p
+><p
 >The installer takes the newest version of the toolchain. A
         version that is out does not change afterwards, so a particular one
-        can be asked for by its number and is the same every time:</P
-><PRE
-CLASS="programlisting"
->curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</PRE
-><P
+        can be asked for by its number and is the same every time:</p
+><pre
+class="listing"
+><code
+>curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</code
+></pre
+><p
 >The toolchain's number is its own. The packages it brings — the
         standard library among them — have theirs, and a program's
-        <TT
-CLASS="code"
->package scaly 0.2.0</TT
+        <code
+>package scaly 0.2.0</code
 > goes on meaning the standard
         library of whatever toolchain is installed, as long as that is of the
-        same line (<A
-HREF="modules.htm#mod-package-versions"
->the Section called <I
->Versions, and what publishing means</I
-> in Chapter 9</A
->).</P
-><P
->Either way it puts three commands on your <CODE
-CLASS="envar"
->PATH</CODE
->:</P
-><P
-></P
-><UL
-><LI
-><P
-><B
-CLASS="command"
->scaly</B
+        same line (<a
+href="modules.htm#mod-package-versions"
+>Versions, and what publishing means</a
+>).</p
+><p
+>Either way it puts three commands on your <code
+class="envar"
+>PATH</code
+>:</p
+><ul
+><li
+><p
+><code
+class="command"
+>scaly</code
 >, the tool you will use most:
-            <KBD
-CLASS="userinput"
->scaly run</KBD
->, <KBD
-CLASS="userinput"
->scaly build</KBD
+            <code
+class="userinput"
+>scaly run</code
+>, <code
+class="userinput"
+>scaly build</code
 >,
-            <KBD
-CLASS="userinput"
->scaly test</KBD
->, <KBD
-CLASS="userinput"
->scaly new</KBD
+            <code
+class="userinput"
+>scaly test</code
+>, <code
+class="userinput"
+>scaly new</code
 >
-            and <KBD
-CLASS="userinput"
->scaly install</KBD
+            and <code
+class="userinput"
+>scaly install</code
 >, and, started without
-            arguments, an interactive session.</P
-></LI
-><LI
-><P
-><B
-CLASS="command"
->scalyc</B
+            arguments, an interactive session.</p
+></li
+><li
+><p
+><code
+class="command"
+>scalyc</code
 >, the compiler by itself, with the
-            command line of a C compiler (<CODE
-CLASS="option"
->-o</CODE
+            command line of a C compiler (<code
+class="option"
+>-o</code
 >,
-            <CODE
-CLASS="option"
->-c</CODE
->, <CODE
-CLASS="option"
->-S</CODE
+            <code
+class="option"
+>-c</code
+>, <code
+class="option"
+>-S</code
 >,
-            <CODE
-CLASS="option"
->-O2</CODE
->).</P
-></LI
-><LI
-><P
-><B
-CLASS="command"
->scalyls</B
+            <code
+class="option"
+>-O2</code
+>).</p
+></li
+><li
+><p
+><code
+class="command"
+>scalyls</code
 >, the language server that powers
-            the editor features in <A
-HREF="tutorial.htm#tut-vscode"
->the Section called <I
->Using Scaly with VS Code</I
-></A
->.</P
-></LI
-></UL
-><P
+            the editor features in <a
+href="#tut-vscode"
+>Using Scaly with VS Code</a
+>.</p
+></li
+></ul
+><p
 >The standard library and the standard packages —
-        <TT
-CLASS="literal"
->http</TT
->, <TT
-CLASS="literal"
->https</TT
+        <code
+>http</code
+>, <code
+>https</code
 >,
-        <TT
-CLASS="literal"
->tls</TT
->, <TT
-CLASS="literal"
->json</TT
+        <code
+>tls</code
+>, <code
+>json</code
 >,
-        <TT
-CLASS="literal"
->compress</TT
->, <TT
-CLASS="literal"
->pg</TT
+        <code
+>compress</code
+>, <code
+>pg</code
 >,
-        <TT
-CLASS="literal"
->redis</TT
-> and <TT
-CLASS="literal"
->h3</TT
+        <code
+>redis</code
+> and <code
+>h3</code
 > — are installed with
         them, as sources; a package is compiled the first time a program uses
-        it and kept in <TT
-CLASS="filename"
->~/.scaly/cache</TT
->.</P
-><P
->Open a new terminal afterwards so the updated <CODE
-CLASS="envar"
->PATH</CODE
+        it and kept in <code
+class="filename"
+>~/.scaly/cache</code
+>.</p
+><p
+>Open a new terminal afterwards so the updated <code
+class="envar"
+>PATH</code
 >
         takes effect; then all three work from any directory, as the rest of
         this tutorial assumes. Running the installer again replaces the
         toolchain with the current one. To uninstall, remove
-        <TT
-CLASS="filename"
->~/.scaly</TT
-> and the <CODE
-CLASS="envar"
->PATH</CODE
+        <code
+class="filename"
+>~/.scaly</code
+> and the <code
+class="envar"
+>PATH</code
 > line the
-        installer added to your shell profile.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-hello"
->Hello, World!</A
-></H2
-><P
+        installer added to your shell profile.</p
+></section
+><section
+id="tut-hello"
+><h3
+><a
+class="header"
+href="#tut-hello"
+>Hello, World!</a
+></h3
+><p
 >A Scaly program is just a file of statements — there is no
-        <TT
-CLASS="code"
->main</TT
+        <code
+>main</code
 > function to declare and nothing to import. Put this
-        single line in a file called <TT
-CLASS="filename"
->hello.scaly</TT
->:</P
-><PRE
-CLASS="programlisting"
->print("Hello, World!")</PRE
-><P
->Run it:</P
-><PRE
-CLASS="programlisting"
->scaly run hello.scaly</PRE
-><P
->The program prints:</P
-><PRE
-CLASS="screen"
->Hello, World!</PRE
-><P
-><KBD
-CLASS="userinput"
->scaly run</KBD
+        single line in a file called <code
+class="filename"
+>hello.scaly</code
+>:</p
+><pre
+class="listing"
+><code
+>print("Hello, World!")</code
+></pre
+><p
+>Run it:</p
+><pre
+class="listing"
+><code
+>scaly run hello.scaly</code
+></pre
+><p
+>The program prints:</p
+><pre
+class="screen"
+><code
+>Hello, World!</code
+></pre
+><p
+><code
+class="userinput"
+>scaly run</code
 > compiles the file in memory and
         runs it at once; nothing is left on disk. To get a program you can keep
-        and hand to someone else, build it:</P
-><PRE
-CLASS="programlisting"
+        and hand to someone else, build it:</p
+><pre
+class="listing"
+><code
 >scaly build hello.scaly -o hello
-./hello</PRE
-><P
->Add <CODE
-CLASS="option"
->--release</CODE
+./hello</code
+></pre
+><p
+>Add <code
+class="option"
+>--release</code
 > for the optimised build: the whole
         program — your code, the standard library and every package it uses —
-        is optimised as one piece.</P
-><P
-><KBD
-CLASS="userinput"
->scaly new hello</KBD
+        is optimised as one piece.</p
+><p
+><code
+class="userinput"
+>scaly new hello</code
 > writes such a start for
-        you: a directory <TT
-CLASS="filename"
->hello</TT
+        you: a directory <code
+class="filename"
+>hello</code
 > with
-        <TT
-CLASS="filename"
->hello.scaly</TT
+        <code
+class="filename"
+>hello.scaly</code
 > in it — a function, a test for it
-        (<KBD
-CLASS="userinput"
->scaly test hello.scaly</KBD
+        (<code
+class="userinput"
+>scaly test hello.scaly</code
 > runs every function
-        whose name begins with <TT
-CLASS="literal"
->test</TT
+        whose name begins with <code
+>test</code
 >) and the line that
-        prints.</P
-><P
+        prints.</p
+><p
 >That is the whole edit-compile-run loop. Everything that follows is
-        just more interesting things to put between the braces.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-production"
->Building for Production</A
-></H2
-><P
+        just more interesting things to put between the braces.</p
+></section
+><section
+id="tut-production"
+><h3
+><a
+class="header"
+href="#tut-production"
+>Building for Production</a
+></h3
+><p
 >A program meant to run in production is built in up to three
         steps, each optional; the toolchain's own programs are built with all
-        three.</P
-><P
-><CODE
-CLASS="option"
->--release</CODE
+        three.</p
+><p
+><code
+class="option"
+>--release</code
 > optimises the whole program as one
         piece: your code, the standard library and every package, linked and
         optimised together, with every definition the program does not export
-        kept internal.</P
-><PRE
-CLASS="programlisting"
->scaly build server.scaly --release -o server</PRE
-><P
-><CODE
-CLASS="option"
->-mcpu=native</CODE
+        kept internal.</p
+><pre
+class="listing"
+><code
+>scaly build server.scaly --release -o server</code
+></pre
+><p
+><code
+class="option"
+>-mcpu=native</code
 > generates code for the processor of
         the machine that builds — the right choice where the program runs on
         the machine it was built on, or on identical ones (a container image
         built on its host). Without it the code runs on every processor of
-        the architecture.</P
-><P
+        the architecture.</p
+><p
 >A profile makes the optimiser use what the program actually does.
         Build it instrumented, run it on a representative load, and build
-        again with the profile it wrote:</P
-><PRE
-CLASS="programlisting"
+        again with the profile it wrote:</p
+><pre
+class="listing"
+><code
 >scaly build server.scaly --pgo-train -o server-train
 ./server-train                 ; under a typical load; writes default.profraw
-scaly build server.scaly --pgo default.profraw -mcpu=native -o server</PRE
-><P
+scaly build server.scaly --pgo default.profraw -mcpu=native -o server</code
+></pre
+><p
 >The instrumented build needs the profile runtime of clang and
-        <B
-CLASS="command"
->llvm-profdata</B
+        <code
+class="command"
+>llvm-profdata</code
 > of LLVM 21 (Homebrew's
-        <TT
-CLASS="literal"
->llvm@21</TT
-> on macOS; <TT
-CLASS="literal"
->llvm-21</TT
+        <code
+>llvm@21</code
+> on macOS; <code
+>llvm-21</code
 > and
-        <TT
-CLASS="literal"
->libclang-rt-21-dev</TT
+        <code
+>libclang-rt-21-dev</code
 > on Ubuntu). A profile belongs to
         the sources it was made from: make it again after they changed — a
         stale one costs speed, never correctness. The Scaly compiler built
         this way compiles about 30 percent faster than without its
-        profile.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-install-program"
->Installing a Program</A
-></H2
-><P
+        profile.</p
+></section
+><section
+id="tut-install-program"
+><h3
+><a
+class="header"
+href="#tut-install-program"
+>Installing a Program</a
+></h3
+><p
 >A program somebody wrote in Scaly and keeps in a git repository
-        is one command away. <B
-CLASS="command"
->dazzle</B
+        is one command away. <code
+class="command"
+>dazzle</code
 >, for one — a DSSSL
         processor that turns a DocBook book into HTML or a typeset PDF, and
-        the program this documentation is built with:</P
-><PRE
-CLASS="programlisting"
->scaly install github.com/rschleitzer/dazzle dazzle 0.1.0</PRE
-><P
+        the program this documentation is built with:</p
+><pre
+class="listing"
+><code
+>scaly install github.com/rschleitzer/dazzle dazzle 0.1.0</code
+></pre
+><p
 >The three arguments are the repository, the package in it and
-        the package's version. <B
-CLASS="command"
->scaly</B
+        the package's version. <code
+class="command"
+>scaly</code
 > fetches the package
         and the packages it uses, builds its programs optimised, and puts
-        them into the <TT
-CLASS="filename"
->bin</TT
+        them into the <code
+class="filename"
+>bin</code
 > directory of your Scaly
-        installation, which the installer put on your <CODE
-CLASS="envar"
->PATH</CODE
+        installation, which the installer put on your <code
+class="envar"
+>PATH</code
 >
-        (if it is not there, <B
-CLASS="command"
->scaly install</B
+        (if it is not there, <code
+class="command"
+>scaly install</code
 > says so). A fourth argument names one program where a package offers
-        several. This needs <B
-CLASS="command"
->git</B
->.</P
-><PRE
-CLASS="programlisting"
+        several. This needs <code
+class="command"
+>git</code
+>.</p
+><pre
+class="listing"
+><code
 >scaly install               ; what has been installed so
-scaly uninstall dazzle      ; remove one of them</PRE
-><P
-><A
-HREF="modules.htm#mod-package-programs"
->the Section called <I
->The programs of a package</I
-> in Chapter 9</A
+scaly uninstall dazzle      ; remove one of them</code
+></pre
+><p
+><a
+href="modules.htm#mod-package-programs"
+>The programs of a package</a
 > has the other side: how a
-        package offers programs.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-repl"
->Trying Things Out</A
-></H2
-><P
-><B
-CLASS="command"
->scaly</B
+        package offers programs.</p
+></section
+><section
+id="tut-repl"
+><h3
+><a
+class="header"
+href="#tut-repl"
+>Trying Things Out</a
+></h3
+><p
+><code
+class="command"
+>scaly</code
 > without arguments starts an interactive
         session. An expression shows its value and its type; a
-        <TT
-CLASS="code"
->let</TT
-> or <TT
-CLASS="code"
->var</TT
+        <code
+>let</code
+> or <code
+>var</code
 > keeps a value for the entries that
-        follow:</P
-><PRE
-CLASS="screen"
+        follow:</p
+><pre
+class="screen"
+><code
 >$ scaly
 scaly&#62; 6 * 7
 it: int = 42
@@ -544,393 +1337,318 @@ scaly&#62; :where name
   name: String
     the value   8 bytes, on the session page of its entry
     its text    5 bytes, on a page of its own
-scaly&#62; :quit</PRE
-><P
-><KBD
-CLASS="userinput"
->:where</KBD
+scaly&#62; :quit</code
+></pre
+><p
+><code
+class="userinput"
+>:where</code
 > shows where a value lives — Scaly
         manages memory in regions, and here you can watch it do so.
-        <KBD
-CLASS="userinput"
->:help</KBD
-> lists the other commands.</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="tut-vscode"
->Using Scaly with VS Code</A
-></H1
-><P
+        <code
+class="userinput"
+>:help</code
+> lists the other commands.</p
+></section
+></section
+><section
+id="tut-vscode"
+><h2
+><a
+class="header"
+href="#tut-vscode"
+>Using Scaly with VS Code</a
+></h2
+><p
 >You can drive the whole edit-compile-run-debug loop from
-      <SPAN
-CLASS="application"
->Visual Studio Code</SPAN
+      <span
+class="application"
+>Visual Studio Code</span
 >. Two extensions turn it
-      into a full Scaly IDE:</P
-><P
-></P
-><UL
-><LI
-><P
->The <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Scaly</I
-></SPAN
+      into a full Scaly IDE:</p
+><ul
+><li
+><p
+>The <em
+>Scaly</em
 > extension provides syntax
           highlighting and connects the editor to the
-          <B
-CLASS="command"
->scalyls</B
+          <code
+class="command"
+>scalyls</code
 > language server you installed in
-          <A
-HREF="tutorial.htm#tut-install"
->the Section called <I
->Installing Scaly</I
-></A
+          <a
+href="#tut-install"
+>Installing Scaly</a
 > — giving live error squiggles,
-          hover, go-to-definition, completion, rename, and more.</P
-></LI
-><LI
-><P
->The <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->CodeLLDB</I
-></SPAN
+          hover, go-to-definition, completion, rename, and more.</p
+></li
+><li
+><p
+>The <em
+>CodeLLDB</em
 > extension provides the
           debugger. Debugging uses the DWARF information the compiler emits
-          with the <CODE
-CLASS="option"
->-g</CODE
+          with the <code
+class="option"
+>-g</code
 > flag, so breakpoints land on real
-          source lines and scalar local variables show their values.</P
-></LI
-></UL
-><P
+          source lines and scalar local variables show their values.</p
+></li
+></ul
+><p
 >If you do not have VS Code yet, download it from
-      <TT
-CLASS="literal"
->code.visualstudio.com</TT
+      <code
+>code.visualstudio.com</code
 >
       (macOS and Linux installers are provided; on Ubuntu,
-      <KBD
-CLASS="userinput"
->sudo snap install code --classic</KBD
-> also works).</P
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-vscode-extension"
->Installing the Scaly Extension</A
-></H2
-><P
->The Scaly extension is distributed as a <TT
-CLASS="filename"
->.vsix</TT
+      <code
+class="userinput"
+>sudo snap install code --classic</code
+> also works).</p
+><section
+id="tut-vscode-extension"
+><h3
+><a
+class="header"
+href="#tut-vscode-extension"
+>Installing the Scaly Extension</a
+></h3
+><p
+>The Scaly extension is distributed as a <code
+class="filename"
+>.vsix</code
 >
         package on scaly.io. Download it and install it from the command
-        line:</P
-><PRE
-CLASS="programlisting"
+        line:</p
+><pre
+class="listing"
+><code
 >curl -fsSLO https://scaly.io/downloads/scaly-vscode.vsix
-code --install-extension scaly-vscode.vsix</PRE
-><P
+code --install-extension scaly-vscode.vsix</code
+></pre
+><p
 >Alternatively, install it from within VS Code: open the
-        <SPAN
-CLASS="guilabel"
->Extensions</SPAN
+        <span
+class="gui"
+>Extensions</span
 > view, click the
-        <SPAN
-CLASS="guibutton"
->···</SPAN
+        <span
+class="gui"
+>···</span
 > menu in its title bar, choose
-        <SPAN
-CLASS="guimenuitem"
->Install from VSIX…</SPAN
+        <span
+class="gui"
+>Install from VSIX…</span
 >, and pick the downloaded
-        file.</P
-><P
->The extension launches <B
-CLASS="command"
->scalyls</B
+        file.</p
+><p
+>The extension launches <code
+class="command"
+>scalyls</code
 > from your
-        <CODE
-CLASS="envar"
->PATH</CODE
+        <code
+class="envar"
+>PATH</code
 >, so install the toolchain first
-        (<A
-HREF="tutorial.htm#tut-install"
->the Section called <I
->Installing Scaly</I
-></A
+        (<a
+href="#tut-install"
+>Installing Scaly</a
 >). If VS Code was already running when
         you installed the toolchain, restart it (not just the window) so its
-        process picks up the updated <CODE
-CLASS="envar"
->PATH</CODE
+        process picks up the updated <code
+class="envar"
+>PATH</code
 >. Should the server
         binary live somewhere unusual, point the
-        <TT
-CLASS="code"
->scaly.server.path</TT
-> setting at it.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-vscode-lsp"
->What the Language Server Gives You</A
-></H2
-><P
->Open any folder, create a file <TT
-CLASS="filename"
->double.scaly</TT
+        <code
+>scaly.server.path</code
+> setting at it.</p
+></section
+><section
+id="tut-vscode-lsp"
+><h3
+><a
+class="header"
+href="#tut-vscode-lsp"
+>What the Language Server Gives You</a
+></h3
+><p
+>Open any folder, create a file <code
+class="filename"
+>double.scaly</code
 >,
-        and type a small program:</P
-><PRE
-CLASS="programlisting"
+        and type a small program:</p
+><pre
+class="listing"
+><code
 >function double(n: int) returns int
     n * 2
 
 let d double(21)
 if d = 42
-    print("doubled!")</PRE
-><P
->As you type, the language server is at work. Things to try:</P
-><P
-></P
-><UL
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Diagnostics</I
-></SPAN
+    print("doubled!")</code
+></pre
+><p
+>As you type, the language server is at work. Things to try:</p
+><ul
+><li
+><p
+><em
+>Diagnostics</em
 > — misspell a call (say,
-            change <TT
-CLASS="code"
->double(21)</TT
+            change <code
+>double(21)</code
 > to
-            <TT
-CLASS="code"
->doubel(21)</TT
+            <code
+>doubel(21)</code
 >): a red squiggle appears and the
-            Problems panel shows <SAMP
-CLASS="computeroutput"
+            Problems panel shows <code
+class="computeroutput"
 >function not found:
-            doubel</SAMP
->. Fix it and the squiggle clears.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Hover</I
-></SPAN
+            doubel</code
+>. Fix it and the squiggle clears.</p
+></li
+><li
+><p
+><em
+>Hover</em
 > — rest the mouse on
-            <TT
-CLASS="code"
->double</TT
+            <code
+>double</code
 > or a binding to see its signature or
-            type.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Go to Definition</I
-></SPAN
+            type.</p
+></li
+><li
+><p
+><em
+>Go to Definition</em
 >
-            (<B
-CLASS="keycap"
->F12</B
->) and <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Find All References</I
-></SPAN
+            (<kbd
+>F12</kbd
+>) and <em
+>Find All References</em
 >
-            (<B
-CLASS="keycap"
->Shift</B
->+<B
-CLASS="keycap"
->F12</B
+            (<kbd
+>Shift</kbd
+>+<kbd
+>F12</kbd
 >) — work across files
-            and into the standard library.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Completion</I
-></SPAN
+            and into the standard library.</p
+></li
+><li
+><p
+><em
+>Completion</em
 > — names in scope and members
-            appear as you type.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Rename</I
-></SPAN
-> (<B
-CLASS="keycap"
->F2</B
+            appear as you type.</p
+></li
+><li
+><p
+><em
+>Rename</em
+> (<kbd
+>F2</kbd
 >) — renames a
-            symbol everywhere it is used, shadow-aware.</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Outline and symbols</I
-></SPAN
+            symbol everywhere it is used, shadow-aware.</p
+></li
+><li
+><p
+><em
+>Outline and symbols</em
 > — the Outline view
-            and <B
-CLASS="keycap"
->Cmd</B
->+<B
-CLASS="keycap"
->Shift</B
->+<B
-CLASS="keycap"
->O</B
+            and <kbd
+>Cmd</kbd
+>+<kbd
+>Shift</kbd
+>+<kbd
+>O</kbd
 >
             list the file's functions and types;
-            <B
-CLASS="keycap"
->Cmd</B
->+<B
-CLASS="keycap"
->T</B
+            <kbd
+>Cmd</kbd
+>+<kbd
+>T</kbd
 > searches symbols across
-            the workspace. (Use <B
-CLASS="keycap"
->Ctrl</B
+            the workspace. (Use <kbd
+>Ctrl</kbd
 > instead of
-            <B
-CLASS="keycap"
->Cmd</B
-> on Linux.)</P
-></LI
-><LI
-><P
-><SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->Inlay hints</I
-></SPAN
+            <kbd
+>Cmd</kbd
+> on Linux.)</p
+></li
+><li
+><p
+><em
+>Inlay hints</em
 > — inferred types appear
-            inline after bindings; <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->signature help</I
-></SPAN
+            inline after bindings; <em
+>signature help</em
 > shows
-            parameter hints while you type a call; <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
+            parameter hints while you type a call; <em
 >semantic
-            highlighting</I
-></SPAN
-> and <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->folding</I
-></SPAN
+            highlighting</em
+> and <em
+>folding</em
 > come for
-            free.</P
-></LI
-></UL
-><P
+            free.</p
+></li
+></ul
+><p
 >If the server ever needs a kick — say, after you rebuilt it —
-        run <SPAN
-CLASS="guimenuitem"
->Scaly: Restart Language Server</SPAN
+        run <span
+class="gui"
+>Scaly: Restart Language Server</span
 > from the
-        Command Palette.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-vscode-tasks"
->Build and Run Tasks</A
-></H2
-><DIV
-CLASS="note"
-><BLOCKQUOTE
-CLASS="note"
-><P
-><B
->Note: </B
->Because the installed <B
-CLASS="command"
->scalyc</B
+        Command Palette.</p
+></section
+><section
+id="tut-vscode-tasks"
+><h3
+><a
+class="header"
+href="#tut-vscode-tasks"
+>Build and Run Tasks</a
+></h3
+><aside
+class="note"
+><p
+class="note-title"
+>Note</p
+><p
+>Because the installed <code
+class="command"
+>scalyc</code
 > wrapper sets
-          <CODE
-CLASS="envar"
->SCALY_HOME</CODE
+          <code
+class="envar"
+>SCALY_HOME</code
 > for you, the compiler finds the prelude
-          (which defines <TT
-CLASS="code"
->print</TT
+          (which defines <code
+>print</code
 > and friends) and the standard
-          library no matter where your <TT
-CLASS="filename"
->.scaly</TT
+          library no matter where your <code
+class="filename"
+>.scaly</code
 > files live —
           you do not have to work inside the compiler's own source tree. The
-          tasks below set <TT
-CLASS="code"
->cwd</TT
-> to <TT
-CLASS="code"
->${workspaceFolder}</TT
+          tasks below set <code
+>cwd</code
+> to <code
+>${workspaceFolder}</code
 >
-          only so the compiled executable lands beside your source.</P
-></BLOCKQUOTE
-></DIV
-><P
->Create <TT
-CLASS="filename"
->.vscode/tasks.json</TT
+          only so the compiled executable lands beside your source.</p
+></aside
+><p
+>Create <code
+class="filename"
+>.vscode/tasks.json</code
 > with a build task that
         compiles the open file with debug info, and a run task that executes the
-        result:</P
-><PRE
-CLASS="programlisting"
+        result:</p
+><pre
+class="listing"
+><code
 >{
     "version": "2.0.0",
     "tasks": [
@@ -959,98 +1677,85 @@ CLASS="programlisting"
             "dependsOn": "scaly: build (debug)"
         }
     ]
-}</PRE
-><P
->Press <B
-CLASS="keycap"
->Cmd</B
->+<B
-CLASS="keycap"
->Shift</B
->+<B
-CLASS="keycap"
->B</B
+}</code
+></pre
+><p
+>Press <kbd
+>Cmd</kbd
+>+<kbd
+>Shift</kbd
+>+<kbd
+>B</kbd
 >
-        (or <B
-CLASS="keycap"
->Ctrl</B
->+<B
-CLASS="keycap"
->Shift</B
->+<B
-CLASS="keycap"
->B</B
+        (or <kbd
+>Ctrl</kbd
+>+<kbd
+>Shift</kbd
+>+<kbd
+>B</kbd
 >) to
         build the file in the active editor. The
-        <TT
-CLASS="code"
->problemMatcher</TT
+        <code
+>problemMatcher</code
 > turns any compiler diagnostic into a
-        clickable entry in the Problems panel. Use <SPAN
-CLASS="guimenu"
+        clickable entry in the Problems panel. Use <span
+class="gui"
 >Terminal &#62; Run
-        Task</SPAN
-> and pick <SPAN
-CLASS="guimenuitem"
->scaly: run</SPAN
+        Task</span
+> and pick <span
+class="gui"
+>scaly: run</span
 > to build
-        and execute.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-vscode-launch"
->Launch Configuration</A
-></H2
-><P
+        and execute.</p
+></section
+><section
+id="tut-vscode-launch"
+><h3
+><a
+class="header"
+href="#tut-vscode-launch"
+>Launch Configuration</a
+></h3
+><p
 >Debugging needs one more extension:
-        <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->CodeLLDB</I
-></SPAN
+        <em
+>CodeLLDB</em
 > (extension id
-        <TT
-CLASS="code"
->vadimcn.vscode-lldb</TT
+        <code
+>vadimcn.vscode-lldb</code
 >, installable normally from the
-        Extensions view), which provides the <TT
-CLASS="code"
->lldb</TT
+        Extensions view), which provides the <code
+>lldb</code
 > debugger type
         used below. Reload the window afterwards
-        (<SPAN
-CLASS="guimenu"
->Command Palette</SPAN
-> &#62; <SPAN
-CLASS="guimenuitem"
+        (<span
+class="gui"
+>Command Palette</span
+> &#62; <span
+class="gui"
 >Developer: Reload
-        Window</SPAN
+        Window</span
 >) so the extension activates; if
-        <B
-CLASS="keycap"
->F5</B
-> reports <FONT
-COLOR="RED"
+        <kbd
+>F5</kbd
+> reports <code
+class="errortext"
 >configured debug type 'lldb' is
-        not supported</FONT
+        not supported</code
 >, CodeLLDB is not installed or not
-        enabled.</P
-><P
->Create <TT
-CLASS="filename"
->.vscode/launch.json</TT
+        enabled.</p
+><p
+>Create <code
+class="filename"
+>.vscode/launch.json</code
 > so
-        <B
-CLASS="keycap"
->F5</B
+        <kbd
+>F5</kbd
 > builds the open file and starts it under the
-        debugger:</P
-><PRE
-CLASS="programlisting"
+        debugger:</p
+><pre
+class="listing"
+><code
 >{
     "version": "0.2.0",
     "configurations": [
@@ -1064,194 +1769,181 @@ CLASS="programlisting"
             "cwd": "${workspaceFolder}"
         }
     ]
-}</PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-vscode-breakpoints-setting"
->Breakpoints in Scaly Files</A
-></H2
-><P
+}</code
+></pre
+></section
+><section
+id="tut-vscode-breakpoints-setting"
+><h3
+><a
+class="header"
+href="#tut-vscode-breakpoints-setting"
+>Breakpoints in Scaly Files</a
+></h3
+><p
 >VS Code only lets you set breakpoints in files whose language an
         installed extension has declared debuggable. The Scaly extension from
-        <A
-HREF="tutorial.htm#tut-vscode-extension"
->the Section called <I
->Installing the Scaly Extension</I
-></A
+        <a
+href="#tut-vscode-extension"
+>Installing the Scaly Extension</a
 > does exactly that for
-        <TT
-CLASS="filename"
->.scaly</TT
+        <code
+class="filename"
+>.scaly</code
 > files, so with it installed, clicking in
         the editor gutter places a breakpoint (a red dot appears) — nothing to
-        configure.</P
-><DIV
-CLASS="note"
-><BLOCKQUOTE
-CLASS="note"
-><P
-><B
->Note: </B
->If you skip the Scaly extension, <TT
-CLASS="filename"
->.scaly</TT
+        configure.</p
+><aside
+class="note"
+><p
+class="note-title"
+>Note</p
+><p
+>If you skip the Scaly extension, <code
+class="filename"
+>.scaly</code
 >
           files are treated as plain text and the gutter does nothing. In that
           case you can lift the restriction by hand in
-          <TT
-CLASS="filename"
->.vscode/settings.json</TT
->:</P
-><PRE
-CLASS="programlisting"
+          <code
+class="filename"
+>.vscode/settings.json</code
+>:</p
+><pre
+class="listing"
+><code
 >{
     "debug.allowBreakpointsEverywhere": true
-}</PRE
-></BLOCKQUOTE
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-vscode-debug"
->Setting a Breakpoint and Stepping</A
-></H2
-><P
->Put this program in <TT
-CLASS="filename"
->area.scaly</TT
+}</code
+></pre
+></aside
+></section
+><section
+id="tut-vscode-debug"
+><h3
+><a
+class="header"
+href="#tut-vscode-debug"
+>Setting a Breakpoint and Stepping</a
+></h3
+><p
+>Put this program in <code
+class="filename"
+>area.scaly</code
 > in your
         workspace folder. It computes a rectangle's area from two mutable
-        bindings — small, but enough to stop and inspect some values:</P
-><PRE
-CLASS="programlisting"
+        bindings — small, but enough to stop and inspect some values:</p
+><pre
+class="listing"
+><code
 >var width 8
 var height 5
 var area width * height
 if area = 40
     print("the area is 40")
 else
-    print("unexpected area")</PRE
-><P
+    print("unexpected area")</code
+></pre
+><p
 >Click in the gutter to the left of the
-        <TT
-CLASS="code"
->var area width * height</TT
+        <code
+>var area width * height</code
 > line to set a breakpoint (a red dot
-        appears), then press <B
-CLASS="keycap"
->F5</B
+        appears), then press <kbd
+>F5</kbd
 >. The program builds and runs,
         and execution stops at that line before it executes — at which point
-        <TT
-CLASS="code"
->width</TT
-> and <TT
-CLASS="code"
->height</TT
+        <code
+>width</code
+> and <code
+>height</code
 > already have values but
-        <TT
-CLASS="code"
->area</TT
-> does not yet.</P
-><P
->With execution paused you can:</P
-><P
-></P
-><UL
-><LI
-><P
->Read <TT
-CLASS="code"
->width</TT
-> and <TT
-CLASS="code"
->height</TT
+        <code
+>area</code
+> does not yet.</p
+><p
+>With execution paused you can:</p
+><ul
+><li
+><p
+>Read <code
+>width</code
+> and <code
+>height</code
 > in the
-            <SPAN
-CLASS="guilabel"
->Variables</SPAN
+            <span
+class="gui"
+>Variables</span
 > pane, or hover them in the editor to
-            see their values.</P
-></LI
-><LI
-><P
->Step one line at a time with <B
-CLASS="keycap"
->F10</B
+            see their values.</p
+></li
+><li
+><p
+>Step one line at a time with <kbd
+>F10</kbd
 >
-            (<SPAN
-CLASS="guimenuitem"
->Step Over</SPAN
+            (<span
+class="gui"
+>Step Over</span
 >) — after stepping past the
-            breakpoint line, <TT
-CLASS="code"
->area</TT
+            breakpoint line, <code
+>area</code
 > appears with the value
-            <SAMP
-CLASS="computeroutput"
->40</SAMP
+            <code
+class="computeroutput"
+>40</code
 >. Step into a called function with
-            <B
-CLASS="keycap"
->F11</B
->.</P
-></LI
-><LI
-><P
->Press <B
-CLASS="keycap"
->F5</B
+            <kbd
+>F11</kbd
+>.</p
+></li
+><li
+><p
+>Press <kbd
+>F5</kbd
 > again to continue to the program's
-            end.</P
-></LI
-></UL
-><P
+            end.</p
+></li
+></ul
+><p
 >Breakpoints, stepping, and variable inspection all rely on the
-        <CODE
-CLASS="option"
->-g</CODE
+        <code
+class="option"
+>-g</code
 > debug information; without it the program still runs,
-        but the debugger has no source lines to stop on.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-vscode-callstack"
->Stepping into Functions and the Call Stack</A
-></H2
-><P
+        but the debugger has no source lines to stop on.</p
+></section
+><section
+id="tut-vscode-callstack"
+><h3
+><a
+class="header"
+href="#tut-vscode-callstack"
+>Stepping into Functions and the Call Stack</a
+></h3
+><p
 >Stepping becomes more interesting once a function is involved.
-        <B
-CLASS="keycap"
->F10</B
-> (<SPAN
-CLASS="guimenuitem"
->Step Over</SPAN
+        <kbd
+>F10</kbd
+> (<span
+class="gui"
+>Step Over</span
 >) runs a call as
-        a single step; <B
-CLASS="keycap"
->F11</B
-> (<SPAN
-CLASS="guimenuitem"
->Step Into</SPAN
+        a single step; <kbd
+>F11</kbd
+> (<span
+class="gui"
+>Step Into</span
 >)
         descends into the called function so you can watch it run. Put this
-        program in <TT
-CLASS="filename"
->rectangle.scaly</TT
+        program in <code
+class="filename"
+>rectangle.scaly</code
 > in your workspace
-        folder — it factors the area calculation out into a function:</P
-><PRE
-CLASS="programlisting"
+        folder — it factors the area calculation out into a function:</p
+><pre
+class="listing"
+><code
 >function area(w: int, h: int) returns int
 {
     var result w * h
@@ -1264,339 +1956,304 @@ var a area(width, height)
 if a = 40
     print("the area is 40")
 else
-    print("unexpected area")</PRE
-><P
->Set a breakpoint on the <TT
-CLASS="code"
->var a area(width, height)</TT
+    print("unexpected area")</code
+></pre
+><p
+>Set a breakpoint on the <code
+>var a area(width, height)</code
 > line
-        and press <B
-CLASS="keycap"
->F5</B
+        and press <kbd
+>F5</kbd
 >. When execution stops there,
-        <TT
-CLASS="code"
->width</TT
-> and <TT
-CLASS="code"
->height</TT
+        <code
+>width</code
+> and <code
+>height</code
 > show in the
-        <SPAN
-CLASS="guilabel"
->Variables</SPAN
-> pane. Now press <B
-CLASS="keycap"
->F11</B
+        <span
+class="gui"
+>Variables</span
+> pane. Now press <kbd
+>F11</kbd
 >
-        instead of <B
-CLASS="keycap"
->F10</B
+        instead of <kbd
+>F10</kbd
 >: the editor jumps into the body of
-        <TT
-CLASS="code"
->area</TT
-> and stops on <TT
-CLASS="code"
->var result w * h</TT
->.</P
-><P
->The <SPAN
-CLASS="guilabel"
->Call Stack</SPAN
+        <code
+>area</code
+> and stops on <code
+>var result w * h</code
+>.</p
+><p
+>The <span
+class="gui"
+>Call Stack</span
 > pane (bottom-left of the Run and
-        Debug view) now lists two frames — <TT
-CLASS="code"
->area</TT
+        Debug view) now lists two frames — <code
+>area</code
 > on top and
-        <TT
-CLASS="code"
->main</TT
+        <code
+>main</code
 > below it — showing exactly how you got here. Click a
-        frame to switch the <SPAN
-CLASS="guilabel"
->Variables</SPAN
+        frame to switch the <span
+class="gui"
+>Variables</span
 > pane and the editor to
-        that frame's context: selecting <TT
-CLASS="code"
->main</TT
+        that frame's context: selecting <code
+>main</code
 > shows
-        <TT
-CLASS="code"
->width</TT
-> and <TT
-CLASS="code"
->height</TT
+        <code
+>width</code
+> and <code
+>height</code
 > again, while
-        <TT
-CLASS="code"
->area</TT
-> shows its own local <TT
-CLASS="code"
->result</TT
+        <code
+>area</code
+> shows its own local <code
+>result</code
 > (still
-        unassigned at this point, just as <TT
-CLASS="code"
->area</TT
+        unassigned at this point, just as <code
+>area</code
 > was before its line
-        ran in the previous example).</P
-><P
+        ran in the previous example).</p
+><p
 >From inside the function you can keep stepping, press
-        <B
-CLASS="keycap"
->Shift</B
->+<B
-CLASS="keycap"
->F11</B
+        <kbd
+>Shift</kbd
+>+<kbd
+>F11</kbd
 >
-        (<SPAN
-CLASS="guimenuitem"
->Step Out</SPAN
+        (<span
+class="gui"
+>Step Out</span
 >) to return to the caller, or
-        <B
-CLASS="keycap"
->F5</B
+        <kbd
+>F5</kbd
 > to continue to the end. The function-and-procedure
-        model is covered in <A
-HREF="tutorial.htm#tut-functions"
->the Section called <I
->Functions</I
-></A
+        model is covered in <a
+href="#tut-functions"
+>Functions</a
 > and
-        <A
-HREF="tutorial.htm#tut-procedures"
->the Section called <I
->Procedures and Mutation</I
-></A
->.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-vscode-limits"
->What the Debugger Shows</A
-></H2
-><P
+        <a
+href="#tut-procedures"
+>Procedures and Mutation</a
+>.</p
+></section
+><section
+id="tut-vscode-limits"
+><h3
+><a
+class="header"
+href="#tut-vscode-limits"
+>What the Debugger Shows</a
+></h3
+><p
 >Debug support tracks the parts of the language that are most useful
-        to inspect today, and is being widened over time. At present:</P
-><P
-></P
-><UL
-><LI
-><P
+        to inspect today, and is being widened over time. At present:</p
+><ul
+><li
+><p
 >Breakpoints land on top-level statements, bindings, and function
-            bodies.</P
-></LI
-><LI
-><P
->The <SPAN
-CLASS="guilabel"
->Variables</SPAN
+            bodies.</p
+></li
+><li
+><p
+>The <span
+class="gui"
+>Variables</span
 > pane shows
-            <TT
-CLASS="code"
->var</TT
+            <code
+>var</code
 > locals — integers and booleans, and also
             structures, unions, and pointers with their fields expandable —
-            for whichever stack frame is selected.</P
-></LI
-><LI
-><P
+            for whichever stack frame is selected.</p
+></li
+><li
+><p
 >Breakpoints and stepping work line-by-line inside loop and
             conditional bodies, so you can stop on individual statements within
-            a <TT
-CLASS="code"
->while</TT
->, <TT
-CLASS="code"
->for</TT
->, <TT
-CLASS="code"
->if</TT
+            a <code
+>while</code
+>, <code
+>for</code
+>, <code
+>if</code
 >, or
-            <TT
-CLASS="code"
->choose</TT
+            <code
+>choose</code
 > body, not just on the enclosing
-            statement.</P
-></LI
-><LI
-><P
->Function parameters, <TT
-CLASS="code"
->let</TT
+            statement.</p
+></li
+><li
+><p
+>Function parameters, <code
+>let</code
 > (immutable) bindings, and
-            some standard-library types such as <TT
-CLASS="code"
->String</TT
+            some standard-library types such as <code
+>String</code
 > are not
-            shown yet.</P
-></LI
-><LI
-><P
->The <SPAN
-CLASS="guilabel"
->Watch</SPAN
+            shown yet.</p
+></li
+><li
+><p
+>The <span
+class="gui"
+>Watch</span
 > view and
-            <SPAN
-CLASS="guilabel"
->Debug Console</SPAN
+            <span
+class="gui"
+>Debug Console</span
 > evaluate expressions as C/C++ and
             do not understand Scaly names. To read a value, use the
-            <SPAN
-CLASS="guilabel"
->Variables</SPAN
+            <span
+class="gui"
+>Variables</span
 > pane or hover over the name in the
-            editor.</P
-></LI
-></UL
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="tut-tour"
->A Tour of Scaly</A
-></H1
-><P
+            editor.</p
+></li
+></ul
+></section
+></section
+><section
+id="tut-tour"
+><h2
+><a
+class="header"
+href="#tut-tour"
+>A Tour of Scaly</a
+></h2
+><p
 >This section sweeps quickly across the language using small, complete
       programs. If something is not fully explained here, do not worry —
       every feature is covered in detail in the rest of this specification, and
       each part of the tour points you to the relevant chapter. Each program
-      prints what it computes; <TT
-CLASS="code"
->print</TT
-> writes a line:</P
-><PRE
-CLASS="programlisting"
->print "Hello from Scaly"</PRE
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-values"
->Values and Bindings</A
-></H2
-><P
->Bind a value to a name with <TT
-CLASS="code"
->let</TT
+      prints what it computes; <code
+>print</code
+> writes a line:</p
+><pre
+class="listing"
+><code
+>print "Hello from Scaly"</code
+></pre
+><section
+id="tut-values"
+><h3
+><a
+class="header"
+href="#tut-values"
+>Values and Bindings</a
+></h3
+><p
+>Bind a value to a name with <code
+>let</code
 >. There is no equals
-        sign — the name is followed directly by its value. Use <TT
-CLASS="code"
->var</TT
+        sign — the name is followed directly by its value. Use <code
+>var</code
 >
-        for a binding you intend to change, and <TT
-CLASS="code"
->:=</TT
+        for a binding you intend to change, and <code
+>:=</code
 > to change it.
         A semicolon starts a comment, and backticks inside a string put a
-        value into the text.</P
-><PRE
-CLASS="programlisting"
+        value into the text.</p
+><pre
+class="listing"
+><code
 >let answer 42        ; immutable binding
 var count 0          ; mutable binding
 count := count + 1   ; assignment is :=
-print "answer is `answer`, count is `count`"</PRE
-><P
->The equals sign <TT
-CLASS="code"
->=</TT
+print "answer is `answer`, count is `count`"</code
+></pre
+><p
+>The equals sign <code
+>=</code
 > is reserved for comparison, so it
-        never gets confused with assignment. See <A
-HREF="lexical.htm"
->Chapter 3</A
+        never gets confused with assignment. See <a
+href="lexical.htm"
+>Lexical Structure</a
 > for
-        the full lexical rules.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-operators"
->Operators and Operations</A
-></H2
-><P
+        the full lexical rules.</p
+></section
+><section
+id="tut-operators"
+><h3
+><a
+class="header"
+href="#tut-operators"
+>Operators and Operations</a
+></h3
+><p
 >Operators are ordinary identifiers, not keywords baked into the
         grammar. An operation is read from left to right; when operators are
         chained, they combine by the binding strength the standard library
         gives them — multiplication binds tighter than addition, comparison
-        weaker than both:</P
-><PRE
-CLASS="programlisting"
+        weaker than both:</p
+><pre
+class="listing"
+><code
 >; 3 + 4 * 5 is 3 + 20, which is 23 — not 35
 let result 3 + 4 * 5
 if result = 23
     print("got 23")
 else
-    print("unexpected")</PRE
-><P
+    print("unexpected")</code
+></pre
+><p
 >Parentheses group explicitly, and an operator written where a value
-        is expected acts as a prefix (<TT
-CLASS="code"
->-x</TT
->, <TT
-CLASS="code"
->not done</TT
+        is expected acts as a prefix (<code
+>-x</code
+>, <code
+>not done</code
 >,
-        <TT
-CLASS="code"
->a - -2</TT
+        <code
+>a - -2</code
 >). A call takes its arguments before the operators
         around it combine, and a call without parentheses takes exactly one
-        argument: <TT
-CLASS="code"
->print "hi"</TT
-> is <TT
-CLASS="code"
->print("hi")</TT
+        argument: <code
+>print "hi"</code
+> is <code
+>print("hi")</code
 >, but an
         argument that is itself a call takes its parentheses,
-        <TT
-CLASS="code"
->print(describe(x))</TT
->. See <A
-HREF="expressions.htm"
->Chapter 7</A
+        <code
+>print(describe(x))</code
+>. See <a
+href="expressions.htm"
+>Expressions</a
 > for
-        the complete model, tuples and functions as values included.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-control-flow"
->Control Flow</A
-></H2
-><P
-><TT
-CLASS="code"
->if</TT
+        the complete model, tuples and functions as values included.</p
+></section
+><section
+id="tut-control-flow"
+><h3
+><a
+class="header"
+href="#tut-control-flow"
+>Control Flow</a
+></h3
+><p
+><code
+>if</code
 > chooses between branches. Single-statement branches
-        need no braces; the condition needs no parentheses:</P
-><PRE
-CLASS="programlisting"
+        need no braces; the condition needs no parentheses:</p
+><pre
+class="listing"
+><code
 >let n 7
 if n &#60; 0
-    print("negative")
+    print "negative"
 else if n = 0
-    print("zero")
+    print "zero"
 else
-    print("positive")</PRE
-><P
-><TT
-CLASS="code"
->while</TT
+    print "positive"</code
+></pre
+><p
+><code
+>while</code
 > repeats as long as its condition holds. Use braces
-        for a multi-statement body:</P
-><PRE
-CLASS="programlisting"
+        for a multi-statement body:</p
+><pre
+class="listing"
+><code
 >var sum 0
 var i 1
 while i &#60;= 10
@@ -1604,98 +2261,96 @@ while i &#60;= 10
     sum := sum + i
     i := i + 1
 }
-print "the sum is `sum`"</PRE
-><P
-><TT
-CLASS="code"
->for</TT
-> iterates. <TT
-CLASS="code"
->for i in 4</TT
+print "the sum is `sum`"</code
+></pre
+><p
+><code
+>for</code
+> iterates. <code
+>for i in 4</code
 > runs
-        <TT
-CLASS="code"
->i</TT
-> from 0 up to — but not including — 4:</P
-><PRE
-CLASS="programlisting"
+        <code
+>i</code
+> from 0 up to — but not including — 4:</p
+><pre
+class="listing"
+><code
 >var total 0
 for i in 4
     total := total + i
-print "0 + 1 + 2 + 3 is `total`"</PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-functions"
->Functions</A
-></H2
-><P
+print "0 + 1 + 2 + 3 is `total`"</code
+></pre
+></section
+><section
+id="tut-functions"
+><h3
+><a
+class="header"
+href="#tut-functions"
+>Functions</a
+></h3
+><p
 >A function declares its parameter types and return type. The value
-        of the last expression is returned automatically — no <TT
-CLASS="code"
->return</TT
+        of the last expression is returned automatically — no <code
+>return</code
 >
         keyword is needed for the final result. A single-expression body needs no
-        braces:</P
-><PRE
-CLASS="programlisting"
+        braces:</p
+><pre
+class="listing"
+><code
 >function add(a: int, b: int) returns int
     a + b
 
-print "3 + 4 is `add(3, 4)`"</PRE
-><P
->Functions can call themselves. Here is the classic factorial:</P
-><PRE
-CLASS="programlisting"
+print "3 + 4 is `add(3, 4)`"</code
+></pre
+><p
+>Functions can call themselves. Here is the classic factorial:</p
+><pre
+class="listing"
+><code
 >function factorial(n: int) returns int
     if n &#60;= 1
         1
     else
         n * factorial(n - 1)
 
-print "5! is `factorial(5)`"</PRE
-><P
+print "5! is `factorial(5)`"</code
+></pre
+><p
 >Functions are pure: they read their arguments and return a value,
-        with no side effects. To mutate, use a procedure.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-procedures"
->Procedures and Mutation</A
-></H2
-><P
->A <TT
-CLASS="code"
->procedure</TT
+        with no side effects. To mutate, use a procedure.</p
+></section
+><section
+id="tut-procedures"
+><h3
+><a
+class="header"
+href="#tut-procedures"
+>Procedures and Mutation</a
+></h3
+><p
+>A <code
+>procedure</code
 > is like a function but may change its inputs
         and perform side effects. It says which inputs it changes: a parameter
-        it writes is marked <TT
-CLASS="code"
->mutable</TT
+        it writes is marked <code
+>mutable</code
 >, the receiver
-        <TT
-CLASS="code"
->this</TT
+        <code
+>this</code
 > included, and a field that may change after the
-        object is built is declared <TT
-CLASS="code"
->var</TT
+        object is built is declared <code
+>var</code
 >. A reader always knows
         which calls can mutate state, and the compiler checks it. See
-        <A
-HREF="types.htm#types-params-mutation"
->the Section called <I
->Mutation via Procedures</I
-> in Chapter 4</A
-> for the details.</P
-><PRE
-CLASS="programlisting"
+        <a
+href="types.htm#types-params-mutation"
+>Mutation via Procedures</a
+> for the details.</p
+><pre
+class="listing"
+><code
 >define Counter(var value: int)
 {
     procedure increment(mutable this)
@@ -1708,25 +2363,26 @@ CLASS="programlisting"
 var c Counter(0)
 c.increment()
 c.increment()
-print "the counter is at `c.get()`"</PRE
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-structs"
->Structures and Methods</A
-></H2
-><P
+print "the counter is at `c.get()`"</code
+></pre
+></section
+><section
+id="tut-structs"
+><h3
+><a
+class="header"
+href="#tut-structs"
+>Structures and Methods</a
+></h3
+><p
 >Define a structure by listing its fields. A structure with public
         fields gets a constructor that takes them in order. Methods are
-        functions or procedures whose first parameter is <TT
-CLASS="code"
->this</TT
->:</P
-><PRE
-CLASS="programlisting"
+        functions or procedures whose first parameter is <code
+>this</code
+>:</p
+><pre
+class="listing"
+><code
 >define Point(x: int, y: int)
 {
     function distance_squared(this) returns int
@@ -1734,59 +2390,55 @@ CLASS="programlisting"
 }
 
 let p Point(3, 4)
-print "the distance squared is `p.distance_squared()`"</PRE
-><P
-><A
-HREF="types.htm#types-constructors"
->the Section called <I
->Constructors</I
-> in Chapter 4</A
+print "the distance squared is `p.distance_squared()`"</code
+></pre
+><p
+><a
+href="types.htm#types-constructors"
+>Constructors</a
 > covers constructors, including
-        explicit <TT
-CLASS="code"
->init</TT
-> forms with their own signatures.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-unions"
->Unions, Options, and choose</A
-></H2
-><P
->A <TT
-CLASS="code"
->union</TT
+        explicit <code
+>init</code
+> forms with their own signatures.</p
+></section
+><section
+id="tut-unions"
+><h3
+><a
+class="header"
+href="#tut-unions"
+>Unions, Options, and choose</a
+></h3
+><p
+>A <code
+>union</code
 > holds one of several variants. Each variant may
-        carry a payload. The most common union is <TT
-CLASS="code"
->Option</TT
+        carry a payload. The most common union is <code
+>Option</code
 >, which
-        represents a value that may be absent:</P
-><PRE
-CLASS="programlisting"
+        represents a value that may be absent:</p
+><pre
+class="listing fragment"
+><code
 >define Option union(Some: int, None)
 
 let present Option.Some(42)
-let absent  Option.None</PRE
-><P
->Match on a union with <TT
-CLASS="code"
->choose</TT
->. Each <TT
-CLASS="code"
->when</TT
+let absent  Option.None</code
+></pre
+><p
+>Match on a union with <code
+>choose</code
+>. Each <code
+>when</code
 >
         clause names a binding, then the variant, then the result; the binding
-        is bound to the variant's payload. An <TT
-CLASS="code"
->else</TT
+        is bound to the variant's payload. An <code
+>else</code
 > clause handles
-        the remaining variants:</P
-><PRE
-CLASS="programlisting"
+        the remaining variants:</p
+><pre
+class="listing"
+><code
 >define Option union(Some: int, None)
 
 function or_zero(o: Option) returns int
@@ -1796,46 +2448,42 @@ function or_zero(o: Option) returns int
         else
             0
 
-print "`or_zero(Option.Some(7))` and `or_zero(Option.None)`"</PRE
-><P
->See <A
-HREF="types.htm#types-unions"
->the Section called <I
->Union Types</I
-> in Chapter 4</A
+print "`or_zero(Option.Some(7))` and `or_zero(Option.None)`"</code
+></pre
+><p
+>See <a
+href="types.htm#types-unions"
+>Union Types</a
 > for union layout, the
-        <TT
-CLASS="code"
->T?</TT
-> shorthand, and pattern matching in full.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="tut-modules"
->Modules and Imports</A
-></H2
-><P
->Split a program across files with <TT
-CLASS="code"
->module</TT
+        <code
+>T?</code
+> shorthand, and pattern matching in full.</p
+></section
+><section
+id="tut-modules"
+><h3
+><a
+class="header"
+href="#tut-modules"
+>Modules and Imports</a
+></h3
+><p
+>Split a program across files with <code
+>module</code
 >: the
-        statement <TT
-CLASS="code"
->module shapes</TT
+        statement <code
+>module shapes</code
 > loads the sibling file
-        <TT
-CLASS="filename"
->shapes.scaly</TT
+        <code
+class="filename"
+>shapes.scaly</code
 >. A type defined there stays hidden
-        until the using file imports it with <TT
-CLASS="code"
->use</TT
->:</P
-><PRE
-CLASS="programlisting"
+        until the using file imports it with <code
+>use</code
+>:</p
+><pre
+class="listing fragment"
+><code
 >; shapes.scaly
 define Box(width: int, height: int)
 {
@@ -1849,95 +2497,90 @@ use myprog.shapes.Box        ; or: use myprog.shapes.*
 
 let b Box(3, 4)
 if b.area() = 12
-    print("area is 12")</PRE
-><P
+    print("area is 12")</code
+></pre
+><p
 >Forgetting the import is caught at compile time, and the error
-        states the exact <TT
-CLASS="code"
->use</TT
+        states the exact <code
+>use</code
 > line to add. The standard library
-        needs no imports — it is always visible.</P
-><P
->Code that several programs share is a <SPAN
-CLASS="emphasis"
-><I
-CLASS="emphasis"
->package</I
-></SPAN
+        needs no imports — it is always visible.</p
+><p
+>Code that several programs share is a <em
+>package</em
 >,
-        and a package somebody else wrote is one line away:</P
-><PRE
-CLASS="programlisting"
->package json 0.1.3 "github.com/someone/json"</PRE
-><P
-><B
-CLASS="command"
->scaly</B
+        and a package somebody else wrote is one line away:</p
+><pre
+class="listing fragment"
+><code
+>package json 0.1.3 "github.com/someone/json"</code
+></pre
+><p
+><code
+class="command"
+>scaly</code
 > fetches it from that git repository the
         first time the program is run, tested or built; and
-        <KBD
-CLASS="userinput"
->scaly install</KBD
+        <code
+class="userinput"
+>scaly install</code
 > builds the programs such a
-        package offers and puts them on your <CODE
-CLASS="envar"
->PATH</CODE
+        package offers and puts them on your <code
+class="envar"
+>PATH</code
 >. See
-        <A
-HREF="modules.htm"
->Chapter 9</A
+        <a
+href="modules.htm"
+>Modules and Packages</a
 > for packages and their sources, visibility
-        rules, and glob imports.</P
-></DIV
-></DIV
-><DIV
-CLASS="section"
-><H1
-CLASS="section"
-><A
-NAME="tut-together"
->Putting It Together</A
-></H1
-><P
+        rules, and glob imports.</p
+></section
+></section
+><section
+id="tut-together"
+><h2
+><a
+class="header"
+href="#tut-together"
+>Putting It Together</a
+></h2
+><p
 >Let us combine the pieces into one small, complete program: a safe
-      division that returns an <TT
-CLASS="code"
->Option</TT
+      division that returns an <code
+>Option</code
 > instead of crashing on a zero
-      divisor, with the caller deciding what to print.</P
-><P
->Start with the function. It returns <TT
-CLASS="code"
->None</TT
+      divisor, with the caller deciding what to print.</p
+><p
+>Start with the function. It returns <code
+>None</code
 > when the divisor
-      is zero, and <TT
-CLASS="code"
->Some</TT
-> with the quotient otherwise:</P
-><PRE
-CLASS="programlisting"
+      is zero, and <code
+>Some</code
+> with the quotient otherwise:</p
+><pre
+class="listing"
+><code
 >define Option union(Some: int, None)
 
 function safe_divide(a: int, b: int) returns Option
     if b = 0
         Option.None
     else
-        Option.Some(a / b)</PRE
-><P
->Now call it and react to the result with <TT
-CLASS="code"
->choose</TT
+        Option.Some(a / b)</code
+></pre
+><p
+>Now call it and react to the result with <code
+>choose</code
 >. The
-      <TT
-CLASS="code"
->Some</TT
-> arm receives the quotient; the <TT
-CLASS="code"
->else</TT
+      <code
+>Some</code
+> arm receives the quotient; the <code
+>else</code
 > arm
-      handles division by zero:</P
-><PRE
-CLASS="programlisting"
+      handles division by zero:</p
+><pre
+class="listing"
+><code
 >let result safe_divide(20, 4)
 choose result
     when q: Some
@@ -1946,106 +2589,80 @@ choose result
         else
             print("unexpected quotient")
     else
-        print("cannot divide by zero")</PRE
-><P
->Put both pieces in <TT
-CLASS="filename"
->divide.scaly</TT
+        print("cannot divide by zero")</code
+></pre
+><p
+>Put both pieces in <code
+class="filename"
+>divide.scaly</code
 >, then build and
-      run it:</P
-><PRE
-CLASS="programlisting"
+      run it:</p
+><pre
+class="listing"
+><code
 >scaly build divide.scaly -o divide
-./divide</PRE
-><P
->It prints:</P
-><PRE
-CLASS="screen"
->20 / 4 = 5</PRE
-><P
->Change the call to <TT
-CLASS="code"
->safe_divide(7, 0)</TT
+./divide</code
+></pre
+><p
+>It prints:</p
+><pre
+class="screen"
+><code
+>20 / 4 = 5</code
+></pre
+><p
+>Change the call to <code
+>safe_divide(7, 0)</code
 > and the same program
-      prints <SAMP
-CLASS="computeroutput"
->cannot divide by zero</SAMP
+      prints <code
+class="computeroutput"
+>cannot divide by zero</code
 > — the union
-      makes the failure a value you must handle, not a crash you can forget.</P
-><P
+      makes the failure a value you must handle, not a crash you can forget.</p
+><p
 >From here, the rest of this specification fills in the details: the
-      <A
-HREF="lexical.htm"
->Chapter 3</A
-> rules, the full <A
-HREF="expressions.htm"
->Chapter 7</A
+      <a
+href="lexical.htm"
+>Lexical Structure</a
+> rules, the full <a
+href="expressions.htm"
+>Expressions</a
 >
-      model, and the <A
-HREF="types.htm"
->Chapter 4</A
+      model, and the <a
+href="types.htm"
+>Type System</a
 > system including generics and the
-      inferred region-based memory management.</P
-></DIV
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-SUMMARY="Footer navigation table"
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
-><A
-HREF="introduction.htm"
-ACCESSKEY="P"
->Prev</A
-></TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
-><A
-HREF="index.html"
-ACCESSKEY="H"
->Home</A
-></TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="lexical.htm"
-ACCESSKEY="N"
->Next</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->Introduction</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Lexical Structure</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
+      inferred region-based memory management.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="introduction.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Introduction</span
+></a
+><a
+class="next"
+rel="next"
+href="lexical.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Lexical Structure</span
+></a
+></nav
+></main
+></div
+></body
+></html
 >
