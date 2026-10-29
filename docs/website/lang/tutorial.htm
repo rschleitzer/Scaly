@@ -1255,16 +1255,12 @@ href="#tut-vscode-extension"
 class="filename"
 >.vsix</code
 >
-        package on scaly.io. Download it and install it from the command
-        line:</p
-><pre
-class="listing"
-><code
->curl -fsSLO https://scaly.io/downloads/scaly-vscode.vsix
-code --install-extension scaly-vscode.vsix</code
-></pre
-><p
->Alternatively, install it from within VS Code: open the
+        package on scaly.io. Download
+        <a
+href="https://scaly.io/downloads/scaly-vscode.vsix"
+>scaly.io/downloads/scaly-vscode.vsix</a
+>,
+        then install it from within VS Code: open the
         <span
 class="gui"
 >Extensions</span
@@ -1278,6 +1274,32 @@ class="gui"
 >Install from VSIX…</span
 >, and pick the downloaded
         file.</p
+><p
+>From the command line it is
+        <code
+class="userinput"
+>code --install-extension scaly-vscode.vsix</code
+>.
+        On macOS, <code
+class="command"
+>code</code
+> is not on the <code
+class="envar"
+>PATH</code
+>
+        until VS Code puts it there: open the Command Palette
+        (<kbd
+>⇧</kbd
+><kbd
+>⌘</kbd
+><kbd
+>P</kbd
+>) and run
+        <span
+class="gui"
+>Shell Command: Install 'code' command in
+        PATH</span
+>.</p
 ><p
 >The extension launches <code
 class="command"

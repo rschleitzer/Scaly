@@ -117,15 +117,20 @@ scaly> :quit</screen>
     <section xml:id="tut-vscode-extension">
       <title>Installing the Scaly Extension</title>
       <para>The Scaly extension is distributed as a <filename>.vsix</filename>
-        package on scaly.io. Download it and install it from the command
-        line:</para>
-      <programlisting>curl -fsSLO https://scaly.io/downloads/scaly-vscode.vsix
-code --install-extension scaly-vscode.vsix</programlisting>
-      <para>Alternatively, install it from within VS Code: open the
+        package on scaly.io. Download
+        <uri xlink:href="https://scaly.io/downloads/scaly-vscode.vsix">scaly.io/downloads/scaly-vscode.vsix</uri>,
+        then install it from within VS Code: open the
         <guilabel>Extensions</guilabel> view, click the
         <guibutton>···</guibutton> menu in its title bar, choose
         <guimenuitem>Install from VSIX…</guimenuitem>, and pick the downloaded
         file.</para>
+      <para>From the command line it is
+        <userinput>code --install-extension scaly-vscode.vsix</userinput>.
+        On macOS, <command>code</command> is not on the <envar>PATH</envar>
+        until VS Code puts it there: open the Command Palette
+        (<keycap>⇧</keycap><keycap>⌘</keycap><keycap>P</keycap>) and run
+        <guimenuitem>Shell Command: Install 'code' command in
+        PATH</guimenuitem>.</para>
       <para>The extension launches <command>scalyls</command> from your
         <envar>PATH</envar>, so install the toolchain first
         (<xref linkend="tut-install"/>). If VS Code was already running when

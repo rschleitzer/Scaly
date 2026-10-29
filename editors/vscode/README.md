@@ -96,14 +96,13 @@ What you get:
    curl -fsSL https://scaly.io/install.sh | sh
    ```
 
-2. Install the extension from the packaged `.vsix`:
+2. Install the extension from the packaged `.vsix`: download
+   [scaly-vscode.vsix](https://scaly.io/downloads/scaly-vscode.vsix), then in
+   VS Code: Extensions view > `···` menu > "Install from VSIX…".
 
-   ```bash
-   curl -fsSLO https://scaly.io/downloads/scaly-vscode.vsix
-   code --install-extension scaly-vscode.vsix
-   ```
-
-   (Or in VS Code: Extensions view > `···` menu > "Install from VSIX…".)
+   From the command line it is `code --install-extension scaly-vscode.vsix`.
+   On macOS `code` is on the `PATH` only after the Command Palette's
+   "Shell Command: Install 'code' command in PATH".
 
 3. Open any folder and create a `.scaly` file. The extension finds `scalyls`
    on `PATH`; the installed server finds its packages beside itself, so it
