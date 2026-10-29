@@ -92,23 +92,12 @@ scaly> :quit</screen>
   <section xml:id="tut-vscode">
     <title>Using Scaly with VS Code</title>
     <para>You can drive the whole edit-compile-run-debug loop from
-      <application>Visual Studio Code</application>. Two extensions turn it
-      into a full Scaly IDE:</para>
-    <itemizedlist>
-      <listitem>
-        <para>The <emphasis>Scaly</emphasis> extension provides syntax
-          highlighting and connects the editor to the
-          <command>scalyls</command> language server you installed in
-          <xref linkend="tut-install"/> — giving live error squiggles,
-          hover, go-to-definition, completion, rename, and more.</para>
-      </listitem>
-      <listitem>
-        <para>The <emphasis>CodeLLDB</emphasis> extension provides the
-          debugger. Debugging uses the DWARF information the compiler emits
-          with the <option>-g</option> flag, so breakpoints land on real
-          source lines and scalar local variables show their values.</para>
-      </listitem>
-    </itemizedlist>
+      <application>Visual Studio Code</application>. The
+      <emphasis>Scaly</emphasis> extension provides syntax highlighting and
+      connects the editor to the <command>scalyls</command> language server
+      you installed in <xref linkend="tut-install"/> — giving live error
+      squiggles, hover, go-to-definition, completion, rename, and
+      more.</para>
     <para>If you do not have VS Code yet, download it from
       <literal>code.visualstudio.com</literal>
       (macOS and Linux installers are provided; on Ubuntu,
@@ -124,13 +113,6 @@ scaly> :quit</screen>
         <guibutton>···</guibutton> menu in its title bar, choose
         <guimenuitem>Install from VSIX…</guimenuitem>, and pick the downloaded
         file.</para>
-      <para>From the command line it is
-        <userinput>code --install-extension scaly-vscode.vsix</userinput>.
-        On macOS, <command>code</command> is not on the <envar>PATH</envar>
-        until VS Code puts it there: open the Command Palette
-        (<keycap>⇧</keycap><keycap>⌘</keycap><keycap>P</keycap>) and run
-        <guimenuitem>Shell Command: Install 'code' command in
-        PATH</guimenuitem>.</para>
       <para>The extension launches <command>scalyls</command> from your
         <envar>PATH</envar>, so install the toolchain first
         (<xref linkend="tut-install"/>). If VS Code was already running when
