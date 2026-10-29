@@ -566,11 +566,11 @@ else
         need no braces; the condition needs no parentheses:</para>
       <programlisting>let n 7
 if n &lt; 0
-    print("negative")
+    print "negative"
 else if n = 0
-    print("zero")
+    print "zero"
 else
-    print("positive")</programlisting>
+    print "positive"</programlisting>
       <para><code>while</code> repeats as long as its condition holds. Use braces
         for a multi-statement body:</para>
       <programlisting>var sum 0
