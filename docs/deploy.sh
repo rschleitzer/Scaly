@@ -6,5 +6,6 @@
 # --exclude 'play/*': the REPL and the tour, published by web/repl/deploy.sh.
 # --exclude 'install.*': the installers go up with tools/publish-install.sh,
 # with their content types (a sync would give install.sh application/x-sh).
+cd "$(dirname "$0")" || exit 1
 aws s3 sync website s3://scaly.io/ --delete --exclude 'downloads/*' --exclude 'play/*' --exclude 'install.sh' --exclude 'install.ps1'
 aws cloudfront create-invalidation --distribution-id E3INKQI1B221G9 --paths "/*"
