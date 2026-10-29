@@ -381,6 +381,7 @@ window.SEARCH_INDEX = [
       (make element gi: "em" (process-children))))
 (element quote (make element gi: "q" (process-children)))
 (element keycap (make element gi: "kbd" (process-children)))
+(element replaceable (make element gi: "var" (process-children)))
 (element guilabel (make element gi: "span" attributes: '(("class" "gui")) (process-children)))
 (element guimenu (make element gi: "span" attributes: '(("class" "gui")) (process-children)))
 (element guimenuitem (make element gi: "span" attributes: '(("class" "gui")) (process-children)))

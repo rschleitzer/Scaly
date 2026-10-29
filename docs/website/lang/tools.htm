@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>The Tools - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-philosophy"
+><span
+class="num"
+>1.2</span
+>Design Philosophy</a
+></li
+><li
+><a
+href="introduction.htm#intro-change"
+><span
+class="num"
+>1.3</span
+>A Language Still Changing</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with VS Code</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.3</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.4</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>3.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>3.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>3.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>3.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>3.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>3.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>3.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>4.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>4.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>4.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>4.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>4.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>4.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>4.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>4.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>4.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>4.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>4.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>4.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>4.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>4.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>5.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>6.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>6.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>6.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>7.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>7.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>7.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>7.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>7.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>7.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>7.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>7.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>7.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>7.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>7.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>8.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>8.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>8.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>8.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>8.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>8.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>8.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>8.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>9.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>9.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>9.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>9.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="tools.htm"
+aria-current="page"
+><span
+class="num"
+>A.</span
+>The Tools</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tools.htm#tools-install"
+><span
+class="num"
+>A.1</span
+>Installation</a
+></li
+><li
+><a
+href="tools.htm#tools-scaly"
+><span
+class="num"
+>A.2</span
+>scaly</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyc"
+><span
+class="num"
+>A.3</span
+>scalyc</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyls"
+><span
+class="num"
+>A.4</span
+>scalyls</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>B.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>B.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>B.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>C.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>D.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>D.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>D.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>D.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>D.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>D.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>D.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>D.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>D.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>D.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>D.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Appendix A</p
+><h1
+id="tools"
+>The Tools</h1
+><p
+>Scaly comes as three programs: <code
+class="command"
+>scaly</code
+>, the tool
+    that runs, builds and tests programs; <code
+class="command"
+>scalyc</code
+>, the
+    compiler by itself; and <code
+class="command"
+>scalyls</code
+>, the language server
+    an editor talks to. This appendix says how they are installed and what
+    each of them takes.</p
+><section
+id="tools-install"
+><h2
+><a
+class="header"
+href="#tools-install"
+>Installation</a
+></h2
+><p
+>The installer — <code
+class="filename"
+>install.sh</code
+> on macOS and
+      Linux, <code
+class="filename"
+>install.ps1</code
+> on Windows
+      (<a
+href="tutorial.htm#tut-install"
+>Installing Scaly</a
+>) — puts everything under
+      <code
+class="filename"
+>~/.scaly</code
+> (<code
+class="filename"
+>%USERPROFILE%\.scaly</code
+>
+      on Windows) and the three commands on your <code
+class="envar"
+>PATH</code
+>. It
+      needs no administrator rights for that. The standard library and the
+      standard packages — <code
+>http</code
+>, <code
+>https</code
+>,
+      <code
+>tls</code
+>, <code
+>json</code
+>,
+      <code
+>compress</code
+>, <code
+>pg</code
+>,
+      <code
+>redis</code
+> and <code
+>h3</code
+> — come with it as
+      sources; a package is compiled the first time a program uses it and
+      kept in <code
+class="filename"
+>~/.scaly/cache</code
+>.</p
+><section
+id="tools-install-ready"
+><h3
+><a
+class="header"
+href="#tools-install-ready"
+>Ready to run, or built on your machine</a
+></h3
+><p
+>For these systems the installer downloads the programs ready to
+        run, which takes a few seconds:</p
+><ul
+><li
+><p
+>macOS 26 on Apple silicon, macOS 15 and newer on
+          Intel</p
+></li
+><li
+><p
+>Ubuntu 26.04 and newer, on arm64 and
+          x86-64</p
+></li
+><li
+><p
+>Windows 10 and 11, on x64 and arm64</p
+></li
+></ul
+><p
+>Building a program needs a C compiler, which links it: Apple's
+        Command Line Tools on macOS, clang on Linux, the Visual Studio Build
+        Tools on Windows. Where it is missing, the installer fetches it, and
+        the system asks for your password (on Windows, for administrator
+        rights) once. On macOS and Linux,
+        <code
+class="userinput"
+>SCALY_BUILD_TOOLS=skip</code
+> leaves that out.</p
+><p
+>On a macOS or a Linux that is not in the list — an older
+        version, another distribution, or one where the ready-made programs
+        do not start — the installer builds Scaly on your machine instead.
+        Scaly ships its compiler as LLVM IR, the <em
+>seed</em
+>
+        (<a
+href="appendix-bootstrap.htm"
+>Bootstrap History and the Seed</a
+>), so that route needs LLVM 21
+        and takes about half a minute:</p
+><pre
+class="listing"
+><code
+>brew install llvm@21                                   ; macOS
+sudo apt install llvm-21 llvm-21-dev lld-21 clang     ; Ubuntu and Debian</code
+></pre
+><p
+>The installer says which of the two routes it takes;
+        <code
+class="userinput"
+>SCALY_FROM_SEED=1</code
+> asks for the second one
+        anywhere.</p
+></section
+><section
+id="tools-install-versions"
+><h3
+><a
+class="header"
+href="#tools-install-versions"
+>Versions, updates, removal</a
+></h3
+><p
+>The installer takes the newest version of the toolchain. A
+        version that is out does not change afterwards, so a particular one
+        can be asked for by its number and is the same every time:</p
+><pre
+class="listing"
+><code
+>curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</code
+></pre
+><p
+>The toolchain's number is its own. The packages it brings — the
+        standard library among them — have theirs, and a program's
+        <code
+>package scaly 0.2.0</code
+> goes on meaning the standard
+        library of whatever toolchain is installed, as long as that is of the
+        same line (<a
+href="modules.htm#mod-package-versions"
+>Versions, and what publishing means</a
+>).</p
+><p
+>Running the installer again replaces the toolchain with the
+        current one. To remove Scaly, delete <code
+class="filename"
+>~/.scaly</code
+>
+        and the <code
+class="envar"
+>PATH</code
+> line the installer added to your shell
+        profile.</p
+></section
+></section
+><section
+id="tools-scaly"
+><h2
+><a
+class="header"
+href="#tools-scaly"
+>scaly</a
+></h2
+><p
+>The tool you will use most. Started without arguments it is the
+      interactive session (<a
+href="tutorial.htm#tut-repl"
+>Trying Things Out</a
+>); with a verb, it
+      does one of these:</p
+><dl
+><dt
+><code
+class="userinput"
+>scaly run <var
+>file</var
+> [<var
+>arguments</var
+>]</code
+></dt
+><dd
+><p
+>Compiles the program in memory and runs it at once,
+          handing it the arguments. Nothing is left on disk.</p
+></dd
+><dt
+><code
+class="userinput"
+>scaly build <var
+>file</var
+> [-o <var
+>out</var
+>]</code
+></dt
+><dd
+><p
+>Builds an executable. <code
+class="option"
+>--release</code
+>
+          optimises it, <code
+class="option"
+>-mcpu=native</code
+> generates code for the
+          processor at hand, <code
+class="option"
+>--pgo-train</code
+> and
+          <code
+class="option"
+>--pgo</code
+> build with a profile
+          (<a
+href="#tut-production"
+>Building for Production</a
+>); <code
+class="option"
+>-g</code
+> adds debug
+          information, <code
+class="option"
+>--target</code
+> builds for another system
+          (<code
+>wasm32-wasip1</code
+>, for WebAssembly),
+          <code
+class="option"
+>-L</code
+> and <code
+class="option"
+>-l</code
+> link C
+          libraries, and <code
+class="option"
+>--export</code
+> keeps every definition
+          visible, for a program that runs others in its own
+          process.</p
+></dd
+><dt
+><code
+class="userinput"
+>scaly test <var
+>file</var
+> [<var
+>filter</var
+>]</code
+></dt
+><dd
+><p
+>Runs the tests of the file: every function named
+          <code
+>test</code
+> or <code
+>test_</code
+>… that takes
+          nothing and answers an <code
+>int</code
+>, zero meaning passed; with
+          a filter, only those whose name contains it.</p
+></dd
+><dt
+><code
+class="userinput"
+>scaly new <var
+>name</var
+> [--lib]</code
+></dt
+><dd
+><p
+>Writes a start: a directory with a root file that
+          holds a function, a test for it and a line that prints; with
+          <code
+class="option"
+>--lib</code
+>, a package
+          (<a
+href="modules.htm#mod-package-new"
+>Starting a package</a
+>).</p
+></dd
+><dt
+><code
+class="userinput"
+>scaly install</code
+>, <code
+class="userinput"
+>scaly uninstall</code
+></dt
+><dd
+><p
+>Install the programs a package in a git repository
+          offers, list them, remove one
+          (<a
+href="#tut-install-program"
+>Installing a Program</a
+>).</p
+></dd
+><dt
+><code
+class="userinput"
+>scaly clean</code
+></dt
+><dd
+><p
+>Empties the cache of compiled packages; they are
+          compiled again when a program needs them
+          (<a
+href="modules.htm#mod-package-cache"
+>The cache</a
+>).</p
+></dd
+><dt
+><code
+class="userinput"
+>scaly publish</code
+>, <code
+class="userinput"
+>scaly next</code
+></dt
+><dd
+><p
+>For a package's author: record new versions as
+          published, and begin a package's next version
+          (<a
+href="modules.htm#mod-package-versions"
+>Versions, and what publishing means</a
+>).</p
+></dd
+></dl
+><section
+id="tut-production"
+><h3
+><a
+class="header"
+href="#tut-production"
+>Building for Production</a
+></h3
+><p
+>A program meant to run in production is built in up to three
+          steps, each optional; the toolchain's own programs are built with all
+          three.</p
+><p
+><code
+class="option"
+>--release</code
+> optimises the whole program as one
+          piece: your code, the standard library and every package, linked and
+          optimised together, with every definition the program does not export
+          kept internal.</p
+><pre
+class="listing"
+><code
+>scaly build server.scaly --release -o server</code
+></pre
+><p
+><code
+class="option"
+>-mcpu=native</code
+> generates code for the processor of
+          the machine that builds — the right choice where the program runs on
+          the machine it was built on, or on identical ones (a container image
+          built on its host). Without it the code runs on every processor of
+          the architecture.</p
+><p
+>A profile makes the optimiser use what the program actually does.
+          Build it instrumented, run it on a representative load, and build
+          again with the profile it wrote:</p
+><pre
+class="listing"
+><code
+>scaly build server.scaly --pgo-train -o server-train
+  ./server-train                 ; under a typical load; writes default.profraw
+  scaly build server.scaly --pgo default.profraw -mcpu=native -o server</code
+></pre
+><p
+>The instrumented build needs the profile runtime of clang and
+          <code
+class="command"
+>llvm-profdata</code
+> of LLVM 21 (Homebrew's
+          <code
+>llvm@21</code
+> on macOS; <code
+>llvm-21</code
+> and
+          <code
+>libclang-rt-21-dev</code
+> on Ubuntu). A profile belongs to
+          the sources it was made from: make it again after they changed — a
+          stale one costs speed, never correctness. The Scaly compiler built
+          this way compiles about 30 percent faster than without its
+          profile.</p
+></section
+><section
+id="tut-install-program"
+><h3
+><a
+class="header"
+href="#tut-install-program"
+>Installing a Program</a
+></h3
+><p
+>A program somebody wrote in Scaly and keeps in a git repository
+          is one command away. <code
+class="command"
+>dazzle</code
+>, for one — a DSSSL
+          processor that turns a DocBook book into HTML or a typeset PDF, and
+          the program this documentation is built with:</p
+><pre
+class="listing"
+><code
+>scaly install github.com/rschleitzer/dazzle dazzle 0.1.0</code
+></pre
+><p
+>The three arguments are the repository, the package in it and
+          the package's version. <code
+class="command"
+>scaly</code
+> fetches the package
+          and the packages it uses, builds its programs optimised, and puts
+          them into the <code
+class="filename"
+>bin</code
+> directory of your Scaly
+          installation, which the installer put on your <code
+class="envar"
+>PATH</code
+>
+          (if it is not there, <code
+class="command"
+>scaly install</code
+> says so). A fourth argument names one program where a package offers
+          several. This needs <code
+class="command"
+>git</code
+>.</p
+><pre
+class="listing"
+><code
+>scaly install               ; what has been installed so
+  scaly uninstall dazzle      ; remove one of them</code
+></pre
+><p
+><a
+href="modules.htm#mod-package-programs"
+>The programs of a package</a
+> has the other side: how a
+          package offers programs.</p
+></section
+></section
+><section
+id="tools-scalyc"
+><h2
+><a
+class="header"
+href="#tools-scalyc"
+>scalyc</a
+></h2
+><p
+>The compiler by itself, with the command line of a C compiler:
+      what <code
+class="userinput"
+>scaly build</code
+> does in one step,
+      <code
+class="command"
+>scalyc</code
+> does in the steps a build system asks
+      for.</p
+><dl
+><dt
+><code
+class="option"
+>-o <var
+>file</var
+></code
+></dt
+><dd
+><p
+>The output: an executable, or with
+          <code
+class="option"
+>-c</code
+> an object file, with <code
+class="option"
+>-S</code
+>
+          LLVM IR.</p
+></dd
+><dt
+><code
+class="option"
+>-c</code
+>, <code
+class="option"
+>-S</code
+></dt
+><dd
+><p
+>Compile only, to an object file; emit LLVM IR as
+          text.</p
+></dd
+><dt
+><code
+class="option"
+>-O0</code
+> … <code
+class="option"
+>-O3</code
+></dt
+><dd
+><p
+>The optimisation level; without one the code is
+          not optimised.</p
+></dd
+><dt
+><code
+class="option"
+>-g</code
+></dt
+><dd
+><p
+>Debug information, for a source-level debugger
+          (<a
+href="tutorial.htm#tut-vscode"
+>Using Scaly with VS Code</a
+>).</p
+></dd
+><dt
+><code
+class="option"
+>-L<var
+>path</var
+></code
+>, <code
+class="option"
+>-l<var
+>name</var
+></code
+>, <var
+>file</var
+><code
+>.a</code
+>, <var
+>file</var
+><code
+>.o</code
+></dt
+><dd
+><p
+>Libraries and objects to link, as a C compiler
+          takes them.</p
+></dd
+><dt
+><code
+class="option"
+>--target <var
+>triple</var
+></code
+>, <code
+class="option"
+>-mcpu=<var
+>cpu</var
+></code
+></dt
+><dd
+><p
+>The system the code is for, and the processor
+          (<code
+>native</code
+> for the one at hand; the default runs
+          on every processor of the architecture).</p
+></dd
+><dt
+><code
+class="option"
+>--jit</code
+>, <code
+class="option"
+>--run <var
+>function</var
+></code
+></dt
+><dd
+><p
+>Compile in memory and run the whole program, or
+          one function of it, in the compiler's own process.</p
+></dd
+><dt
+><code
+class="option"
+>--no-prelude</code
+></dt
+><dd
+><p
+>Compile without the standard library: nothing is
+          visible that the file does not declare.</p
+></dd
+><dt
+><code
+class="option"
+>--task-plan</code
+>, <code
+class="option"
+>--loop-census</code
+></dt
+><dd
+><p
+>Reports for the curious: which <code
+>for</code
+>
+          loops run on every core and why the others do not, and which
+          <code
+>while</code
+> loops could.</p
+></dd
+></dl
+><p
+><code
+class="userinput"
+>scalyc --help</code
+> lists the rest: the stages
+      of the compiler one by one, and the reports it writes about a
+      program.</p
+></section
+><section
+id="tools-scalyls"
+><h2
+><a
+class="header"
+href="#tools-scalyls"
+>scalyls</a
+></h2
+><p
+>The language server: an editor starts it and talks to it in the
+      Language Server Protocol, over its standard input and output. It
+      answers with the compiler's own reading of the program — the types
+      inferred, the overload chosen, the region a value lives in — and
+      offers:</p
+><ul
+><li
+><p
+>errors as you type, with the compiler's
+        messages</p
+></li
+><li
+><p
+>hover: the type of a name, its declaration, and where
+        a value is allocated</p
+></li
+><li
+><p
+>go to definition, find references, highlight the
+        uses of a name, rename it</p
+></li
+><li
+><p
+>completion, and the parameters of the call being
+        written</p
+></li
+><li
+><p
+>an outline of the file, folding, semantic
+        highlighting, formatting</p
+></li
+></ul
+><p
+>The Scaly extension for Visual Studio Code starts it
+      (<a
+href="tutorial.htm#tut-vscode"
+>Using Scaly with VS Code</a
+>). Any other editor that speaks the
+      protocol can use it: start <code
+class="command"
+>scalyls</code
+> for files
+      ending in <code
+class="filename"
+>.scaly</code
+>.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="modules.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Modules and Packages</span
+></a
+><a
+class="next"
+rel="next"
+href="stdlib.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Standard Library and Packages</span
+></a
+></nav
+></main
+></div
+></body
+></html
+>

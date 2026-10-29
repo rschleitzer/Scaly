@@ -14,6 +14,7 @@
   <!ENTITY generated-definitions SYSTEM "scaly/generated-definitions.xml">
   <!ENTITY generated-choose SYSTEM "scaly/generated-choose.xml">
   <!ENTITY generated-controlflow SYSTEM "scaly/generated-controlflow.xml">
+  <!ENTITY appendix-tools SYSTEM "scaly/chapters/appendix-tools.xml">
   <!ENTITY stdlib SYSTEM "scaly/stdlib.xml">
   <!ENTITY appendix-bootstrap SYSTEM "scaly/chapters/appendix-bootstrap.xml">
   <!ENTITY appendix-heritage SYSTEM "scaly/chapters/appendix-heritage.xml">
@@ -30,6 +31,7 @@
   &expressions;
   &controlflow;
   &modules;
+  &appendix-tools;
   &stdlib;
   &appendix-bootstrap;
   &appendix-heritage;

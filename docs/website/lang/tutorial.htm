@@ -89,11 +89,11 @@ class="num"
 ></li
 ><li
 ><a
-href="introduction.htm#intro-status"
+href="introduction.htm#intro-change"
 ><span
 class="num"
 >1.3</span
->Implementation Status</a
+>A Language Still Changing</a
 ></li
 ></ol
 ></li
@@ -655,10 +655,62 @@ class="part"
 ><div
 class="part-row"
 ><a
-href="stdlib.htm"
+href="tools.htm"
 ><span
 class="num"
 >A.</span
+>The Tools</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tools.htm#tools-install"
+><span
+class="num"
+>A.1</span
+>Installation</a
+></li
+><li
+><a
+href="tools.htm#tools-scaly"
+><span
+class="num"
+>A.2</span
+>scaly</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyc"
+><span
+class="num"
+>A.3</span
+>scalyc</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyls"
+><span
+class="num"
+>A.4</span
+>scalyls</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>B.</span
 >Standard Library and Packages</a
 ><button
 class="fold"
@@ -673,7 +725,7 @@ class="sections"
 href="stdlib.htm#stdlib-overview"
 ><span
 class="num"
->A.1</span
+>B.1</span
 >The Standard Library</a
 ></li
 ><li
@@ -681,7 +733,7 @@ class="num"
 href="stdlib.htm#stdlib-packages"
 ><span
 class="num"
->A.2</span
+>B.2</span
 >Packages Beside It</a
 ></li
 ></ol
@@ -694,7 +746,7 @@ class="part-row"
 href="appendix-bootstrap.htm"
 ><span
 class="num"
->B.</span
+>C.</span
 >Bootstrap History and the Seed</a
 ></div
 ></li
@@ -706,7 +758,7 @@ class="part-row"
 href="appendix-heritage.htm"
 ><span
 class="num"
->C.</span
+>D.</span
 >On the Shoulders of Giants</a
 ><button
 class="fold"
@@ -721,7 +773,7 @@ class="sections"
 href="appendix-heritage.htm#heritage-lexical"
 ><span
 class="num"
->C.1</span
+>D.1</span
 >The Text of a Program</a
 ></li
 ><li
@@ -729,7 +781,7 @@ class="num"
 href="appendix-heritage.htm#heritage-bindings"
 ><span
 class="num"
->C.2</span
+>D.2</span
 >Names and Values</a
 ></li
 ><li
@@ -737,7 +789,7 @@ class="num"
 href="appendix-heritage.htm#heritage-control"
 ><span
 class="num"
->C.3</span
+>D.3</span
 >Control Flow</a
 ></li
 ><li
@@ -745,7 +797,7 @@ class="num"
 href="appendix-heritage.htm#heritage-types"
 ><span
 class="num"
->C.4</span
+>D.4</span
 >Types and Definitions</a
 ></li
 ><li
@@ -753,7 +805,7 @@ class="num"
 href="appendix-heritage.htm#heritage-memory"
 ><span
 class="num"
->C.5</span
+>D.5</span
 >Memory</a
 ></li
 ><li
@@ -761,7 +813,7 @@ class="num"
 href="appendix-heritage.htm#heritage-scaling"
 ><span
 class="num"
->C.6</span
+>D.6</span
 >Self-Scaling</a
 ></li
 ><li
@@ -769,7 +821,7 @@ class="num"
 href="appendix-heritage.htm#heritage-modules"
 ><span
 class="num"
->C.7</span
+>D.7</span
 >Modules and Packages</a
 ></li
 ><li
@@ -777,7 +829,7 @@ class="num"
 href="appendix-heritage.htm#heritage-cql"
 ><span
 class="num"
->C.8</span
+>D.8</span
 >An Unexpected Ancestor</a
 ></li
 ><li
@@ -785,7 +837,7 @@ class="num"
 href="appendix-heritage.htm#heritage-own"
 ><span
 class="num"
->C.9</span
+>D.9</span
 >And What Is Scaly's Own?</a
 ></li
 ><li
@@ -793,7 +845,7 @@ class="num"
 href="appendix-heritage.htm#heritage-implementation"
 ><span
 class="num"
->C.10</span
+>D.10</span
 >The Implementation</a
 ></li
 ></ol
@@ -931,185 +983,48 @@ href="#tut-install"
 >Installing Scaly</a
 ></h3
 ><p
->This section starts from a blank machine — a fresh Linux
-        installation or a new Mac — and ends with the whole Scaly toolchain
-        installed: the tool, the compiler, the language server, and (in the
-        next section) editor support in Visual Studio Code with syntax
-        highlighting and a source-level debugger.</p
-><p
->Scaly is installed by one command. It needs no
-        <code
-class="command"
->sudo</code
-> and puts everything under
-        <code
-class="filename"
->~/.scaly</code
->:</p
+>Scaly is installed by one command. On macOS and Linux, in a
+        terminal:</p
 ><pre
 class="listing"
 ><code
 >curl -fsSL https://scaly.io/install.sh | sh</code
 ></pre
 ><p
->For macOS 26 on Apple silicon and for Ubuntu 26.04 and newer the
-        installer downloads the programs ready to run, which takes a few
-        seconds. The one thing Scaly asks of your machine is a C compiler: it
-        links the programs you build.</p
+>On Windows, in PowerShell:</p
 ><pre
 class="listing"
 ><code
->; macOS
-xcode-select --install
-
-; Ubuntu
-sudo apt install clang</code
+>irm https://scaly.io/install.ps1 | iex</code
 ></pre
 ><p
->On any other macOS or Linux the installer builds Scaly on your
-        machine instead. Scaly ships as its own LLVM IR (a
-        <em
->seed</em
->), so that route needs LLVM 21 —
-        <code
-class="userinput"
->brew install llvm@21</code
->, or
-        <code
-class="userinput"
->sudo apt install llvm-21 llvm-21-dev lld-21 clang</code
->
-        — and takes about half a minute; the installer says which of the two
-        it is doing.</p
-><p
->The installer takes the newest version of the toolchain. A
-        version that is out does not change afterwards, so a particular one
-        can be asked for by its number and is the same every time:</p
-><pre
-class="listing"
-><code
->curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</code
-></pre
-><p
->The toolchain's number is its own. The packages it brings — the
-        standard library among them — have theirs, and a program's
-        <code
->package scaly 0.2.0</code
-> goes on meaning the standard
-        library of whatever toolchain is installed, as long as that is of the
-        same line (<a
-href="modules.htm#mod-package-versions"
->Versions, and what publishing means</a
->).</p
-><p
->Either way it puts three commands on your <code
+>Open a new terminal afterwards. The installer has put three
+        commands on your <code
 class="envar"
 >PATH</code
->:</p
-><ul
-><li
-><p
-><code
+>: <code
 class="command"
 >scaly</code
->, the tool you will use most:
-            <code
-class="userinput"
->scaly run</code
->, <code
-class="userinput"
->scaly build</code
->,
-            <code
-class="userinput"
->scaly test</code
->, <code
-class="userinput"
->scaly new</code
->
-            and <code
-class="userinput"
->scaly install</code
->, and, started without
-            arguments, an interactive session.</p
-></li
-><li
-><p
-><code
+>, the
+        tool you will use most, <code
 class="command"
 >scalyc</code
->, the compiler by itself, with the
-            command line of a C compiler (<code
-class="option"
->-o</code
->,
-            <code
-class="option"
->-c</code
->, <code
-class="option"
->-S</code
->,
-            <code
-class="option"
->-O2</code
->).</p
-></li
-><li
-><p
-><code
+>, the compiler by
+        itself, and <code
 class="command"
 >scalyls</code
->, the language server that powers
-            the editor features in <a
-href="#tut-vscode"
->Using Scaly with VS Code</a
->.</p
-></li
-></ul
-><p
->The standard library and the standard packages —
-        <code
->http</code
->, <code
->https</code
->,
-        <code
->tls</code
->, <code
->json</code
->,
-        <code
->compress</code
->, <code
->pg</code
->,
-        <code
->redis</code
-> and <code
->h3</code
-> — are installed with
-        them, as sources; a package is compiled the first time a program uses
-        it and kept in <code
-class="filename"
->~/.scaly/cache</code
->.</p
-><p
->Open a new terminal afterwards so the updated <code
-class="envar"
->PATH</code
->
-        takes effect; then all three work from any directory, as the rest of
-        this tutorial assumes. Running the installer again replaces the
-        toolchain with the current one. To uninstall, remove
+>, the language server your
+        editor talks to. Everything else it installed lives in
         <code
 class="filename"
 >~/.scaly</code
-> and the <code
-class="envar"
->PATH</code
-> line the
-        installer added to your shell profile.</p
+>. <a
+href="tools.htm#tools-install"
+>Installation</a
+> has
+        the details: which systems get Scaly ready to run, what the others
+        need, how to ask for a particular version, and how to remove it
+        again.</p
 ></section
 ><section
 id="tut-hello"
@@ -1191,127 +1106,6 @@ class="userinput"
 ><p
 >That is the whole edit-compile-run loop. Everything that follows is
         just more interesting things to put between the braces.</p
-></section
-><section
-id="tut-production"
-><h3
-><a
-class="header"
-href="#tut-production"
->Building for Production</a
-></h3
-><p
->A program meant to run in production is built in up to three
-        steps, each optional; the toolchain's own programs are built with all
-        three.</p
-><p
-><code
-class="option"
->--release</code
-> optimises the whole program as one
-        piece: your code, the standard library and every package, linked and
-        optimised together, with every definition the program does not export
-        kept internal.</p
-><pre
-class="listing"
-><code
->scaly build server.scaly --release -o server</code
-></pre
-><p
-><code
-class="option"
->-mcpu=native</code
-> generates code for the processor of
-        the machine that builds — the right choice where the program runs on
-        the machine it was built on, or on identical ones (a container image
-        built on its host). Without it the code runs on every processor of
-        the architecture.</p
-><p
->A profile makes the optimiser use what the program actually does.
-        Build it instrumented, run it on a representative load, and build
-        again with the profile it wrote:</p
-><pre
-class="listing"
-><code
->scaly build server.scaly --pgo-train -o server-train
-./server-train                 ; under a typical load; writes default.profraw
-scaly build server.scaly --pgo default.profraw -mcpu=native -o server</code
-></pre
-><p
->The instrumented build needs the profile runtime of clang and
-        <code
-class="command"
->llvm-profdata</code
-> of LLVM 21 (Homebrew's
-        <code
->llvm@21</code
-> on macOS; <code
->llvm-21</code
-> and
-        <code
->libclang-rt-21-dev</code
-> on Ubuntu). A profile belongs to
-        the sources it was made from: make it again after they changed — a
-        stale one costs speed, never correctness. The Scaly compiler built
-        this way compiles about 30 percent faster than without its
-        profile.</p
-></section
-><section
-id="tut-install-program"
-><h3
-><a
-class="header"
-href="#tut-install-program"
->Installing a Program</a
-></h3
-><p
->A program somebody wrote in Scaly and keeps in a git repository
-        is one command away. <code
-class="command"
->dazzle</code
->, for one — a DSSSL
-        processor that turns a DocBook book into HTML or a typeset PDF, and
-        the program this documentation is built with:</p
-><pre
-class="listing"
-><code
->scaly install github.com/rschleitzer/dazzle dazzle 0.1.0</code
-></pre
-><p
->The three arguments are the repository, the package in it and
-        the package's version. <code
-class="command"
->scaly</code
-> fetches the package
-        and the packages it uses, builds its programs optimised, and puts
-        them into the <code
-class="filename"
->bin</code
-> directory of your Scaly
-        installation, which the installer put on your <code
-class="envar"
->PATH</code
->
-        (if it is not there, <code
-class="command"
->scaly install</code
-> says so). A fourth argument names one program where a package offers
-        several. This needs <code
-class="command"
->git</code
->.</p
-><pre
-class="listing"
-><code
->scaly install               ; what has been installed so
-scaly uninstall dazzle      ; remove one of them</code
-></pre
-><p
-><a
-href="modules.htm#mod-package-programs"
->The programs of a package</a
-> has the other side: how a
-        package offers programs.</p
 ></section
 ><section
 id="tut-repl"

@@ -1,0 +1,269 @@
+<appendix xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="tools">
+  <title>The Tools</title>
+  <para>Scaly comes as three programs: <command>scaly</command>, the tool
+    that runs, builds and tests programs; <command>scalyc</command>, the
+    compiler by itself; and <command>scalyls</command>, the language server
+    an editor talks to. This appendix says how they are installed and what
+    each of them takes.</para>
+
+  <section xml:id="tools-install">
+    <title>Installation</title>
+    <para>The installer — <filename>install.sh</filename> on macOS and
+      Linux, <filename>install.ps1</filename> on Windows
+      (<xref linkend="tut-install"/>) — puts everything under
+      <filename>~/.scaly</filename> (<filename>%USERPROFILE%\.scaly</filename>
+      on Windows) and the three commands on your <envar>PATH</envar>. It
+      needs no administrator rights for that. The standard library and the
+      standard packages — <literal>http</literal>, <literal>https</literal>,
+      <literal>tls</literal>, <literal>json</literal>,
+      <literal>compress</literal>, <literal>pg</literal>,
+      <literal>redis</literal> and <literal>h3</literal> — come with it as
+      sources; a package is compiled the first time a program uses it and
+      kept in <filename>~/.scaly/cache</filename>.</para>
+
+    <section xml:id="tools-install-ready">
+      <title>Ready to run, or built on your machine</title>
+      <para>For these systems the installer downloads the programs ready to
+        run, which takes a few seconds:</para>
+      <itemizedlist>
+        <listitem><para>macOS 26 on Apple silicon, macOS 15 and newer on
+          Intel</para></listitem>
+        <listitem><para>Ubuntu 26.04 and newer, on arm64 and
+          x86-64</para></listitem>
+        <listitem><para>Windows 10 and 11, on x64 and arm64</para></listitem>
+      </itemizedlist>
+      <para>Building a program needs a C compiler, which links it: Apple's
+        Command Line Tools on macOS, clang on Linux, the Visual Studio Build
+        Tools on Windows. Where it is missing, the installer fetches it, and
+        the system asks for your password (on Windows, for administrator
+        rights) once. On macOS and Linux,
+        <userinput>SCALY_BUILD_TOOLS=skip</userinput> leaves that out.</para>
+      <para>On a macOS or a Linux that is not in the list — an older
+        version, another distribution, or one where the ready-made programs
+        do not start — the installer builds Scaly on your machine instead.
+        Scaly ships its compiler as LLVM IR, the <emphasis>seed</emphasis>
+        (<xref linkend="appendix-bootstrap"/>), so that route needs LLVM 21
+        and takes about half a minute:</para>
+      <programlisting>brew install llvm@21                                   ; macOS
+sudo apt install llvm-21 llvm-21-dev lld-21 clang     ; Ubuntu and Debian</programlisting>
+      <para>The installer says which of the two routes it takes;
+        <userinput>SCALY_FROM_SEED=1</userinput> asks for the second one
+        anywhere.</para>
+    </section>
+
+    <section xml:id="tools-install-versions">
+      <title>Versions, updates, removal</title>
+      <para>The installer takes the newest version of the toolchain. A
+        version that is out does not change afterwards, so a particular one
+        can be asked for by its number and is the same every time:</para>
+      <programlisting>curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</programlisting>
+      <para>The toolchain's number is its own. The packages it brings — the
+        standard library among them — have theirs, and a program's
+        <code>package scaly 0.2.0</code> goes on meaning the standard
+        library of whatever toolchain is installed, as long as that is of the
+        same line (<xref linkend="mod-package-versions"/>).</para>
+      <para>Running the installer again replaces the toolchain with the
+        current one. To remove Scaly, delete <filename>~/.scaly</filename>
+        and the <envar>PATH</envar> line the installer added to your shell
+        profile.</para>
+    </section>
+  </section>
+
+  <section xml:id="tools-scaly">
+    <title>scaly</title>
+    <para>The tool you will use most. Started without arguments it is the
+      interactive session (<xref linkend="tut-repl"/>); with a verb, it
+      does one of these:</para>
+    <variablelist>
+      <varlistentry>
+        <term><userinput>scaly run <replaceable>file</replaceable> [<replaceable>arguments</replaceable>]</userinput></term>
+        <listitem><para>Compiles the program in memory and runs it at once,
+          handing it the arguments. Nothing is left on disk.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><userinput>scaly build <replaceable>file</replaceable> [-o <replaceable>out</replaceable>]</userinput></term>
+        <listitem><para>Builds an executable. <option>--release</option>
+          optimises it, <option>-mcpu=native</option> generates code for the
+          processor at hand, <option>--pgo-train</option> and
+          <option>--pgo</option> build with a profile
+          (<xref linkend="tut-production"/>); <option>-g</option> adds debug
+          information, <option>--target</option> builds for another system
+          (<literal>wasm32-wasip1</literal>, for WebAssembly),
+          <option>-L</option> and <option>-l</option> link C
+          libraries, and <option>--export</option> keeps every definition
+          visible, for a program that runs others in its own
+          process.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><userinput>scaly test <replaceable>file</replaceable> [<replaceable>filter</replaceable>]</userinput></term>
+        <listitem><para>Runs the tests of the file: every function named
+          <literal>test</literal> or <literal>test_</literal>… that takes
+          nothing and answers an <code>int</code>, zero meaning passed; with
+          a filter, only those whose name contains it.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><userinput>scaly new <replaceable>name</replaceable> [--lib]</userinput></term>
+        <listitem><para>Writes a start: a directory with a root file that
+          holds a function, a test for it and a line that prints; with
+          <option>--lib</option>, a package
+          (<xref linkend="mod-package-new"/>).</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><userinput>scaly install</userinput>, <userinput>scaly uninstall</userinput></term>
+        <listitem><para>Install the programs a package in a git repository
+          offers, list them, remove one
+          (<xref linkend="tut-install-program"/>).</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><userinput>scaly clean</userinput></term>
+        <listitem><para>Empties the cache of compiled packages; they are
+          compiled again when a program needs them
+          (<xref linkend="mod-package-cache"/>).</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><userinput>scaly publish</userinput>, <userinput>scaly next</userinput></term>
+        <listitem><para>For a package's author: record new versions as
+          published, and begin a package's next version
+          (<xref linkend="mod-package-versions"/>).</para></listitem>
+      </varlistentry>
+    </variablelist>
+
+      <section xml:id="tut-production">
+        <title>Building for Production</title>
+        <para>A program meant to run in production is built in up to three
+          steps, each optional; the toolchain's own programs are built with all
+          three.</para>
+        <para><option>--release</option> optimises the whole program as one
+          piece: your code, the standard library and every package, linked and
+          optimised together, with every definition the program does not export
+          kept internal.</para>
+        <programlisting>scaly build server.scaly --release -o server</programlisting>
+        <para><option>-mcpu=native</option> generates code for the processor of
+          the machine that builds — the right choice where the program runs on
+          the machine it was built on, or on identical ones (a container image
+          built on its host). Without it the code runs on every processor of
+          the architecture.</para>
+        <para>A profile makes the optimiser use what the program actually does.
+          Build it instrumented, run it on a representative load, and build
+          again with the profile it wrote:</para>
+        <programlisting>scaly build server.scaly --pgo-train -o server-train
+  ./server-train                 ; under a typical load; writes default.profraw
+  scaly build server.scaly --pgo default.profraw -mcpu=native -o server</programlisting>
+        <para>The instrumented build needs the profile runtime of clang and
+          <command>llvm-profdata</command> of LLVM 21 (Homebrew's
+          <literal>llvm@21</literal> on macOS; <literal>llvm-21</literal> and
+          <literal>libclang-rt-21-dev</literal> on Ubuntu). A profile belongs to
+          the sources it was made from: make it again after they changed — a
+          stale one costs speed, never correctness. The Scaly compiler built
+          this way compiles about 30 percent faster than without its
+          profile.</para>
+      </section>
+
+      <section xml:id="tut-install-program">
+        <title>Installing a Program</title>
+        <para>A program somebody wrote in Scaly and keeps in a git repository
+          is one command away. <command>dazzle</command>, for one — a DSSSL
+          processor that turns a DocBook book into HTML or a typeset PDF, and
+          the program this documentation is built with:</para>
+        <programlisting>scaly install github.com/rschleitzer/dazzle dazzle 0.1.0</programlisting>
+        <para>The three arguments are the repository, the package in it and
+          the package's version. <command>scaly</command> fetches the package
+          and the packages it uses, builds its programs optimised, and puts
+          them into the <filename>bin</filename> directory of your Scaly
+          installation, which the installer put on your <envar>PATH</envar>
+          (if it is not there, <command>scaly install</command> says so). A fourth argument names one program where a package offers
+          several. This needs <command>git</command>.</para>
+        <programlisting>scaly install               ; what has been installed so
+  scaly uninstall dazzle      ; remove one of them</programlisting>
+        <para><xref linkend="mod-package-programs"/> has the other side: how a
+          package offers programs.</para>
+      </section>
+  </section>
+
+  <section xml:id="tools-scalyc">
+    <title>scalyc</title>
+    <para>The compiler by itself, with the command line of a C compiler:
+      what <userinput>scaly build</userinput> does in one step,
+      <command>scalyc</command> does in the steps a build system asks
+      for.</para>
+    <variablelist>
+      <varlistentry>
+        <term><option>-o <replaceable>file</replaceable></option></term>
+        <listitem><para>The output: an executable, or with
+          <option>-c</option> an object file, with <option>-S</option>
+          LLVM IR.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c</option>, <option>-S</option></term>
+        <listitem><para>Compile only, to an object file; emit LLVM IR as
+          text.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-O0</option> … <option>-O3</option></term>
+        <listitem><para>The optimisation level; without one the code is
+          not optimised.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-g</option></term>
+        <listitem><para>Debug information, for a source-level debugger
+          (<xref linkend="tut-vscode"/>).</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-L<replaceable>path</replaceable></option>, <option>-l<replaceable>name</replaceable></option>, <replaceable>file</replaceable><literal>.a</literal>, <replaceable>file</replaceable><literal>.o</literal></term>
+        <listitem><para>Libraries and objects to link, as a C compiler
+          takes them.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--target <replaceable>triple</replaceable></option>, <option>-mcpu=<replaceable>cpu</replaceable></option></term>
+        <listitem><para>The system the code is for, and the processor
+          (<literal>native</literal> for the one at hand; the default runs
+          on every processor of the architecture).</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--jit</option>, <option>--run <replaceable>function</replaceable></option></term>
+        <listitem><para>Compile in memory and run the whole program, or
+          one function of it, in the compiler's own process.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--no-prelude</option></term>
+        <listitem><para>Compile without the standard library: nothing is
+          visible that the file does not declare.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--task-plan</option>, <option>--loop-census</option></term>
+        <listitem><para>Reports for the curious: which <code>for</code>
+          loops run on every core and why the others do not, and which
+          <code>while</code> loops could.</para></listitem>
+      </varlistentry>
+    </variablelist>
+    <para><userinput>scalyc --help</userinput> lists the rest: the stages
+      of the compiler one by one, and the reports it writes about a
+      program.</para>
+  </section>
+
+  <section xml:id="tools-scalyls">
+    <title>scalyls</title>
+    <para>The language server: an editor starts it and talks to it in the
+      Language Server Protocol, over its standard input and output. It
+      answers with the compiler's own reading of the program — the types
+      inferred, the overload chosen, the region a value lives in — and
+      offers:</para>
+    <itemizedlist>
+      <listitem><para>errors as you type, with the compiler's
+        messages</para></listitem>
+      <listitem><para>hover: the type of a name, its declaration, and where
+        a value is allocated</para></listitem>
+      <listitem><para>go to definition, find references, highlight the
+        uses of a name, rename it</para></listitem>
+      <listitem><para>completion, and the parameters of the call being
+        written</para></listitem>
+      <listitem><para>an outline of the file, folding, semantic
+        highlighting, formatting</para></listitem>
+    </itemizedlist>
+    <para>The Scaly extension for Visual Studio Code starts it
+      (<xref linkend="tut-vscode"/>). Any other editor that speaks the
+      protocol can use it: start <command>scalyls</command> for files
+      ending in <filename>.scaly</filename>.</para>
+  </section>
+
+</appendix>

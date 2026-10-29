@@ -350,7 +350,7 @@ code {
   padding: 0.12em 0.36em;
   border-radius: 5px;
   background: var(--code-inline);
-  overflow-wrap: break-word;
+  white-space: nowrap;
 }
 a code { color: inherit; }
 h1 code, h2 code, h3 code, h4 code { font-size: 0.85em; }
@@ -367,7 +367,7 @@ pre {
   line-height: 1.6;
   tab-size: 4;
 }
-pre code { padding: 0; background: none; font-size: inherit; border-radius: 0; overflow-wrap: normal; }
+pre code { padding: 0; background: none; font-size: inherit; border-radius: 0; overflow-wrap: normal; white-space: inherit; }
 
 pre.screen { background: var(--screen-bg); color: var(--screen-fg); border-color: transparent; }
 
@@ -431,6 +431,7 @@ kbd {
 }
 
 .gui { font-weight: 600; }
+var { font-style: italic; color: var(--muted); }
 
 q { quotes: '\201C' '\201D' '\2018' '\2019'; }
 
@@ -544,6 +545,8 @@ ol.contents ol .num { color: var(--muted); font-size: 12px; min-width: 3em; }
 
 @media (max-width: 720px) {
   body { font-size: 16px; }
+  code { white-space: normal; overflow-wrap: anywhere; }
+  pre code { white-space: inherit; overflow-wrap: normal; }
   .topbar { padding: 0 8px; gap: 4px; }
   .topbar-links { display: none; }
   .content { padding: 4px 18px 48px; }

@@ -11,73 +11,20 @@
 
     <section xml:id="tut-install">
       <title>Installing Scaly</title>
-      <para>This section starts from a blank machine — a fresh Linux
-        installation or a new Mac — and ends with the whole Scaly toolchain
-        installed: the tool, the compiler, the language server, and (in the
-        next section) editor support in Visual Studio Code with syntax
-        highlighting and a source-level debugger.</para>
-      <para>Scaly is installed by one command. It needs no
-        <command>sudo</command> and puts everything under
-        <filename>~/.scaly</filename>:</para>
+      <para>Scaly is installed by one command. On macOS and Linux, in a
+        terminal:</para>
       <programlisting>curl -fsSL https://scaly.io/install.sh | sh</programlisting>
-      <para>For macOS 26 on Apple silicon and for Ubuntu 26.04 and newer the
-        installer downloads the programs ready to run, which takes a few
-        seconds. The one thing Scaly asks of your machine is a C compiler: it
-        links the programs you build.</para>
-      <programlisting>; macOS
-xcode-select --install
-
-; Ubuntu
-sudo apt install clang</programlisting>
-      <para>On any other macOS or Linux the installer builds Scaly on your
-        machine instead. Scaly ships as its own LLVM IR (a
-        <emphasis>seed</emphasis>), so that route needs LLVM 21 —
-        <userinput>brew install llvm@21</userinput>, or
-        <userinput>sudo apt install llvm-21 llvm-21-dev lld-21 clang</userinput>
-        — and takes about half a minute; the installer says which of the two
-        it is doing.</para>
-      <para>The installer takes the newest version of the toolchain. A
-        version that is out does not change afterwards, so a particular one
-        can be asked for by its number and is the same every time:</para>
-      <programlisting>curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</programlisting>
-      <para>The toolchain's number is its own. The packages it brings — the
-        standard library among them — have theirs, and a program's
-        <code>package scaly 0.2.0</code> goes on meaning the standard
-        library of whatever toolchain is installed, as long as that is of the
-        same line (<xref linkend="mod-package-versions"/>).</para>
-      <para>Either way it puts three commands on your <envar>PATH</envar>:</para>
-      <itemizedlist>
-        <listitem>
-          <para><command>scaly</command>, the tool you will use most:
-            <userinput>scaly run</userinput>, <userinput>scaly build</userinput>,
-            <userinput>scaly test</userinput>, <userinput>scaly new</userinput>
-            and <userinput>scaly install</userinput>, and, started without
-            arguments, an interactive session.</para>
-        </listitem>
-        <listitem>
-          <para><command>scalyc</command>, the compiler by itself, with the
-            command line of a C compiler (<option>-o</option>,
-            <option>-c</option>, <option>-S</option>,
-            <option>-O2</option>).</para>
-        </listitem>
-        <listitem>
-          <para><command>scalyls</command>, the language server that powers
-            the editor features in <xref linkend="tut-vscode"/>.</para>
-        </listitem>
-      </itemizedlist>
-      <para>The standard library and the standard packages —
-        <literal>http</literal>, <literal>https</literal>,
-        <literal>tls</literal>, <literal>json</literal>,
-        <literal>compress</literal>, <literal>pg</literal>,
-        <literal>redis</literal> and <literal>h3</literal> — are installed with
-        them, as sources; a package is compiled the first time a program uses
-        it and kept in <filename>~/.scaly/cache</filename>.</para>
-      <para>Open a new terminal afterwards so the updated <envar>PATH</envar>
-        takes effect; then all three work from any directory, as the rest of
-        this tutorial assumes. Running the installer again replaces the
-        toolchain with the current one. To uninstall, remove
-        <filename>~/.scaly</filename> and the <envar>PATH</envar> line the
-        installer added to your shell profile.</para>
+      <para>On Windows, in PowerShell:</para>
+      <programlisting>irm https://scaly.io/install.ps1 | iex</programlisting>
+      <para>Open a new terminal afterwards. The installer has put three
+        commands on your <envar>PATH</envar>: <command>scaly</command>, the
+        tool you will use most, <command>scalyc</command>, the compiler by
+        itself, and <command>scalyls</command>, the language server your
+        editor talks to. Everything else it installed lives in
+        <filename>~/.scaly</filename>. <xref linkend="tools-install"/> has
+        the details: which systems get Scaly ready to run, what the others
+        need, how to ask for a particular version, and how to remove it
+        again.</para>
     </section>
 
     <section xml:id="tut-hello">
@@ -106,57 +53,6 @@ sudo apt install clang</programlisting>
         prints.</para>
       <para>That is the whole edit-compile-run loop. Everything that follows is
         just more interesting things to put between the braces.</para>
-    </section>
-
-    <section xml:id="tut-production">
-      <title>Building for Production</title>
-      <para>A program meant to run in production is built in up to three
-        steps, each optional; the toolchain's own programs are built with all
-        three.</para>
-      <para><option>--release</option> optimises the whole program as one
-        piece: your code, the standard library and every package, linked and
-        optimised together, with every definition the program does not export
-        kept internal.</para>
-      <programlisting>scaly build server.scaly --release -o server</programlisting>
-      <para><option>-mcpu=native</option> generates code for the processor of
-        the machine that builds — the right choice where the program runs on
-        the machine it was built on, or on identical ones (a container image
-        built on its host). Without it the code runs on every processor of
-        the architecture.</para>
-      <para>A profile makes the optimiser use what the program actually does.
-        Build it instrumented, run it on a representative load, and build
-        again with the profile it wrote:</para>
-      <programlisting>scaly build server.scaly --pgo-train -o server-train
-./server-train                 ; under a typical load; writes default.profraw
-scaly build server.scaly --pgo default.profraw -mcpu=native -o server</programlisting>
-      <para>The instrumented build needs the profile runtime of clang and
-        <command>llvm-profdata</command> of LLVM 21 (Homebrew's
-        <literal>llvm@21</literal> on macOS; <literal>llvm-21</literal> and
-        <literal>libclang-rt-21-dev</literal> on Ubuntu). A profile belongs to
-        the sources it was made from: make it again after they changed — a
-        stale one costs speed, never correctness. The Scaly compiler built
-        this way compiles about 30 percent faster than without its
-        profile.</para>
-    </section>
-
-    <section xml:id="tut-install-program">
-      <title>Installing a Program</title>
-      <para>A program somebody wrote in Scaly and keeps in a git repository
-        is one command away. <command>dazzle</command>, for one — a DSSSL
-        processor that turns a DocBook book into HTML or a typeset PDF, and
-        the program this documentation is built with:</para>
-      <programlisting>scaly install github.com/rschleitzer/dazzle dazzle 0.1.0</programlisting>
-      <para>The three arguments are the repository, the package in it and
-        the package's version. <command>scaly</command> fetches the package
-        and the packages it uses, builds its programs optimised, and puts
-        them into the <filename>bin</filename> directory of your Scaly
-        installation, which the installer put on your <envar>PATH</envar>
-        (if it is not there, <command>scaly install</command> says so). A fourth argument names one program where a package offers
-        several. This needs <command>git</command>.</para>
-      <programlisting>scaly install               ; what has been installed so
-scaly uninstall dazzle      ; remove one of them</programlisting>
-      <para><xref linkend="mod-package-programs"/> has the other side: how a
-        package offers programs.</para>
     </section>
 
     <section xml:id="tut-repl">

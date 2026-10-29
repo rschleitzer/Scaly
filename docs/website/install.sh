@@ -11,7 +11,8 @@
 # tls, json, compress, pg, redis, h3, sqlite, tds) as sources.
 #
 # The programs are downloaded ready to run for
-#   macOS 26 (Apple silicon, Intel), Ubuntu 26.04 and newer (arm64, x86-64)
+#   macOS 26 (Apple silicon), macOS 15 and newer (Intel),
+#   Ubuntu 26.04 and newer (arm64, x86-64)
 # and need nothing but a C compiler, which links the programs you build.
 # Where there is none this script FETCHES it (2026-10-04) -- Apple's Command
 # Line Tools on macOS, clang through apt on Ubuntu -- and all that asks of you
