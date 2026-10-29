@@ -18,6 +18,7 @@
   --screen-bg: #1c1917;
   --screen-fg: #e7e5e4;
   --mark: #fde68a;
+  --bad: #b91c1c;
   --shadow: 0 1px 2px rgba(28, 25, 23, 0.06), 0 4px 16px rgba(28, 25, 23, 0.06);
   --hl-keyword: #047857;
   --hl-string: #b45309;
@@ -46,6 +47,7 @@
     --screen-bg: #0a0c0b;
     --screen-fg: #e7e5e4;
     --mark: #854d0e;
+  --bad: #f87171;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
     --hl-keyword: #34d399;
     --hl-string: #fbbf24;
@@ -74,6 +76,7 @@
   --screen-bg: #0a0c0b;
   --screen-fg: #e7e5e4;
   --mark: #854d0e;
+  --bad: #f87171;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
   --hl-keyword: #34d399;
   --hl-string: #fbbf24;
@@ -368,23 +371,44 @@ pre code { padding: 0; background: none; font-size: inherit; border-radius: 0; o
 
 pre.screen { background: var(--screen-bg); color: var(--screen-fg); border-color: transparent; }
 
-.copy {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+/* the tools of a listing: Copy on hover, Run (where the program runs) always */
+.tools { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; }
+.tools button {
   padding: 3px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--bg);
   color: var(--muted);
-  font: 12px 'DM Sans', system-ui, sans-serif;
+  font: 500 12px 'DM Sans', system-ui, sans-serif;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s ease;
 }
-pre:hover .copy, .copy:focus { opacity: 1; }
-.copy:hover { color: var(--accent-strong); border-color: var(--accent); }
-pre.screen .copy { background: #292524; border-color: #44403c; color: #d6d3d1; }
+.tools button:hover { color: var(--accent-strong); border-color: var(--accent); }
+.tools .copy { opacity: 0; transition: opacity 0.15s ease; }
+pre:hover .copy, .tools .copy:focus { opacity: 1; }
+@media (hover: none) { .tools .copy { opacity: 1; } }
+.tools .run { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tools .run:hover { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; }
+:root[data-theme="dark"] .tools .run, :root[data-theme="dark"] .tools .run:hover { color: #052e1f; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tools .run, :root:not([data-theme="light"]) .tools .run:hover { color: #052e1f; }
+}
+pre.screen .tools button { background: #292524; border-color: #44403c; color: #d6d3d1; }
+
+/* what a run printed, under its listing */
+pre.runnable:has(+ .run-output) { margin-bottom: 0; border-radius: 10px 10px 0 0; }
+.run-output {
+  margin: 0 0 1.3em;
+  padding: 10px 18px 12px;
+  border: 1px solid var(--border);
+  border-top: 1px dashed var(--border);
+  border-radius: 0 0 10px 10px;
+  background: var(--bg);
+}
+.run-status { color: var(--muted); font-size: 13px; }
+.run-status.ok { color: var(--accent-strong); }
+.run-status.bad, .run-output .stderr { color: var(--bad); }
+.run-output pre { display: none; margin: 8px 0 0; padding: 0; border: 0; background: none; }
+.run-output.has-output pre { display: block; }
 
 .hl-keyword { color: var(--hl-keyword); font-weight: 500; }
 .hl-string { color: var(--hl-string); }

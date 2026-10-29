@@ -1,8 +1,10 @@
 // book.js -- what the pages of the book do (docs/dsssl/scaly-book.dsl writes
 // them): the contents in the sidebar, the theme, the search over
 // searchindex.js, a copy button on every listing and Scaly coloured in it
-// with the words of words.js (generated from scaly.sgm), and the keys:
-// S or / searches, the arrows turn the page.
+// with the words of words.js (generated from scaly.sgm), a Run button on
+// every listing runnable.js names (docs/runnable.py ran it) that runs it in
+// the page with the compiler of /play/, and the keys: S or / searches, the
+// arrows turn the page.
 (function () {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -170,25 +172,130 @@
     return true;
   }
 
+  // the hash docs/runnable.py gives a listing it ran: FNV-1a over the UTF-8
+  // bytes of its text
+  function fnv1a(text) {
+    let h = 0x811c9dc5;
+    for (const b of new TextEncoder().encode(text)) h = Math.imul(h ^ b, 0x01000193) >>> 0;
+    return h.toString(16).padStart(8, '0');
+  }
+  const runnable = new Set(window.SCALY_RUNNABLE || []);
+
+  function tool(label, action) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.addEventListener('click', action);
+    return b;
+  }
+
   for (const pre of document.querySelectorAll('.content pre')) {
     const code = pre.querySelector('code') || pre;
     // a listing begun on the line after its tag keeps no empty first line
-    code.textContent = code.textContent.replace(/^[\r\n]+/, '').replace(/\s+$/, '');
-    if (pre.classList.contains('listing') && looks_like_scaly(code.textContent)) highlight(code);
-    const copy = document.createElement('button');
-    copy.type = 'button';
-    copy.className = 'copy';
-    copy.textContent = 'Copy';
-    copy.addEventListener('click', async () => {
+    const text = code.textContent.replace(/^[\r\n]+/, '').replace(/\s+$/, '');
+    code.textContent = text;
+    if (pre.classList.contains('listing') && looks_like_scaly(text)) highlight(code);
+    const tools = document.createElement('div');
+    tools.className = 'tools';
+    const copy = tool('Copy', async () => {
       try {
-        await navigator.clipboard.writeText(code.textContent);
+        await navigator.clipboard.writeText(text);
         copy.textContent = 'Copied';
       } catch (e) {
         copy.textContent = 'Select and copy';
       }
       setTimeout(() => { copy.textContent = 'Copy'; }, 1500);
     });
-    pre.appendChild(copy);
+    copy.className = 'copy';
+    tools.appendChild(copy);
+    if (pre.classList.contains('listing') && runnable.has(fnv1a(text))) {
+      const run = tool('Run', () => run_listing(pre, text, run));
+      run.className = 'run';
+      run.title = 'Run this program in the page';
+      tools.appendChild(run);
+      pre.classList.add('runnable');
+    }
+    pre.appendChild(tools);
+  }
+
+  // --------------------------------------------- running a listing in the page
+  // The compiler built for WebAssembly, from the REPL's directory (/play/):
+  // loaded on the first Run of a page, compiled once, a worker of its own for
+  // every run -- `scaly run main.scaly`, the program as /work/main.scaly. No
+  // standard input: the page is not cross-origin isolated, and needs not be.
+
+  let compiler = null;
+  function load_compiler(status) {
+    if (!compiler) {
+      compiler = import(new URL('../play/load.mjs', location.href).href)
+        .then(m => m.loadCompiler(status, { base: new URL('../play/', location.href).href, isolated: false }))
+        .catch(e => { compiler = null; throw e; });
+    }
+    return compiler;
+  }
+
+  function output_for(pre) {
+    let box = pre.nextElementSibling;
+    if (box && box.classList.contains('run-output')) return box;
+    box = document.createElement('div');
+    box.className = 'run-output';
+    box.innerHTML = '<div class="run-status"></div><pre><code></code></pre>';
+    pre.after(box);
+    return box;
+  }
+
+  function run_listing(pre, text, button) {
+    if (button._worker) {
+      button._worker.terminate();
+      button._worker = null;
+      button.textContent = 'Run';
+      output_for(pre).querySelector('.run-status').textContent = 'Stopped.';
+      return;
+    }
+    const box = output_for(pre);
+    const status = box.querySelector('.run-status');
+    const out = box.querySelector('code');
+    const say = (t, cls = '') => { status.textContent = t; status.className = 'run-status ' + cls; };
+    out.textContent = '';
+    box.classList.remove('has-output');
+    button.textContent = 'Stop';
+    button._stopping = false;
+    say('Loading the compiler…');
+    load_compiler(t => say(t + ' (once for this page)')).then(({ module, files }) => {
+      if (button.textContent !== 'Stop') return;
+      const worker = new Worker(new URL('../play/worker.mjs', location.href), { type: 'module' });
+      button._worker = worker;
+      const decoders = { out: new TextDecoder(), err: new TextDecoder() };
+      const t0 = performance.now();
+      say('Compiling and running…');
+      const show = (bytes, kind) => {
+        const s = document.createElement('span');
+        if (kind === 'err') s.className = 'stderr';
+        s.textContent = decoders[kind].decode(bytes, { stream: true });
+        out.appendChild(s);
+        box.classList.add('has-output');
+      };
+      const finish = (t, cls) => {
+        worker.terminate();
+        button._worker = null;
+        button.textContent = 'Run';
+        say(t, cls);
+      };
+      worker.onmessage = ({ data }) => {
+        if (data.type === 'out' || data.type === 'err') show(data.bytes, data.type);
+        else if (data.type === 'exit') {
+          const ms = Math.round(performance.now() - t0);
+          if (data.status === 0)
+            finish(box.classList.contains('has-output') ? `Ran in ${ms} ms.` : `Ran in ${ms} ms and printed nothing.`, 'ok');
+          else finish(`Ended with status ${data.status} after ${ms} ms.`, 'bad');
+        } else if (data.type === 'crash') finish('The run failed: ' + data.text, 'bad');
+      };
+      worker.onerror = e => finish('The run failed: ' + e.message, 'bad');
+      worker.postMessage({ module, files: { ...files, '/work/main.scaly': text }, args: ['scaly', 'run', 'main.scaly'] });
+    }, e => {
+      button.textContent = 'Run';
+      say('Could not load the compiler: ' + (e.message || e), 'bad');
+    });
   }
 
   // ------------------------------------------------------------- the search

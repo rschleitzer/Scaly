@@ -14,7 +14,8 @@
 ;; a bar on top (contents, theme, search, the tour, the PDF) and the chapters
 ;; before and after it. The look is book.css, the behaviour book.js -- the
 ;; theme, the sidebar, the search, copying a listing and colouring Scaly in it
-;; with the words of words.js, which ./mkp generates from scaly.sgm --,
+;; with the words of words.js, which ./mkp generates from scaly.sgm, and
+;; running it in the page where runnable.js (docs/runnable.py) says it runs --,
 ;; theme.js sets the theme before the page is drawn. docs/html.sh puts them
 ;; beside the pages.
 
@@ -113,6 +114,8 @@
     (make element gi: "script" attributes: '(("src" "theme.js")) (empty-sosofo))
     (make element gi: "script" attributes: '(("src" "words.js") ("defer" "defer")) (empty-sosofo))
     (make element gi: "script" attributes: '(("src" "searchindex.js") ("defer" "defer")) (empty-sosofo))
+    (make element gi: "script" attributes: '(("src" "runnable.js") ("defer" "defer")) (empty-sosofo))
+    (make element gi: "script" attributes: '(("src" "runnable.js") ("defer" "defer")) (empty-sosofo))
     (make element gi: "script" attributes: '(("src" "book.js") ("defer" "defer")) (empty-sosofo))))
 
 (define (icon path)

@@ -3,7 +3,9 @@
 # (dazzle -t sgml) with dsssl/scaly-book.dsl: a page per chapter and appendix,
 # index.html with the contents and searchindex.js, written into website/lang/
 # beside what book/ holds -- book.css, book.js, theme.js and words.js (./mkp
-# generates that one from scaly.sgm). The PDF there (pdf.sh) stays.
+# generates that one from scaly.sgm). Then runnable.py runs every listing with
+# this tree's tool (SCALY, default scalyc/build/scaly) and writes runnable.js:
+# the ones that run get a Run button. The PDF there (pdf.sh) stays.
 #
 # The engine is the one ./mkp builds out of the dazzle checkout beside this
 # repository (scalyc/build/dazzle).
@@ -18,3 +20,6 @@ mkdir -p website/lang
 rm -f website/lang/*.htm website/lang/index.html website/lang/searchindex.js
 mv ./*.htm index.html searchindex.js website/lang/
 cp book/book.css book/book.js book/theme.js book/words.js website/lang/
+SCALY="${SCALY:-../scalyc/build/scaly}"
+[ -x "$SCALY" ] || { echo "html.sh: no tool at $SCALY for the Run buttons -- ./build.sh builds it"; exit 1; }
+python3 runnable.py website/lang "$SCALY" || exit 1

@@ -1,17 +1,20 @@
 // The compiler for a page of this directory (the REPL, index.html, and the
-// tour, tour.html): the standard library's files (stdlib.json, paths under
-// /scaly) and the compiled module of scaly.wasm, both as web/repl/build.sh
-// wrote them. `status(text)` hears how far the loading is. A page hands both
-// to a worker (worker.mjs); the module is compiled once and every worker
-// instantiates it.
-export async function loadCompiler(status) {
-  if (!crossOriginIsolated)
+// tour, tour.html) or of the reference (/lang/, its Run buttons): the
+// standard library's files (stdlib.json, paths under /scaly) and the compiled
+// module of scaly.wasm, both as web/repl/build.sh wrote them. `status(text)`
+// hears how far the loading is. A page hands both to a worker (worker.mjs);
+// the module is compiled once and every worker instantiates it. `base` is
+// where these files are, seen from the page; a page whose programs read no
+// input passes `isolated: false` -- only the standard input needs the
+// SharedArrayBuffer that cross-origin isolation allows.
+export async function loadCompiler(status, { base = '', isolated = true } = {}) {
+  if (isolated && !crossOriginIsolated)
     throw new Error('this page must be served cross-origin isolated (COOP and COEP headers) -- web/repl/serve.mjs does');
-  const listing = await (await fetch('stdlib.json')).json();
+  const listing = await (await fetch(base + 'stdlib.json')).json();
   const files = {};
   for (const [path, b64] of Object.entries(listing))
     files[path] = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  const wasm = await fetchWithProgress('scaly.wasm', 'the compiler', status);
+  const wasm = await fetchWithProgress(base + 'scaly.wasm', 'the compiler', status);
   status('Compiling the compiler…');
   const module = await WebAssembly.compile(wasm);
   return { module, files };
