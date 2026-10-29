@@ -4,5 +4,7 @@
 # and is published out-of-band by tools/publish-install.sh; excluding it here
 # stops this whole-bucket --delete sync from removing it on a routine docs deploy.
 # --exclude 'play/*': the REPL and the tour, published by web/repl/deploy.sh.
-aws s3 sync website s3://scaly.io/ --delete --exclude 'downloads/*' --exclude 'play/*'
+# --exclude 'install.*': the installers go up with tools/publish-install.sh,
+# with their content types (a sync would give install.sh application/x-sh).
+aws s3 sync website s3://scaly.io/ --delete --exclude 'downloads/*' --exclude 'play/*' --exclude 'install.sh' --exclude 'install.ps1'
 aws cloudfront create-invalidation --distribution-id E3INKQI1B221G9 --paths "/*"
