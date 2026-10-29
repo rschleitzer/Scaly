@@ -1,8 +1,8 @@
 {
   "name": "scaly",
   "displayName": "Scaly",
-  "description": "Scaly language support (LSP client for scalyls, debugger via lldb-dap)",
-  "version": "0.2.0",
+  "description": "Scaly language support: the scalyls language server, run/build/test tasks, and debugging through lldb-dap",
+  "version": "0.3.0",
   "publisher": "scaly",
   "license": "MIT",
   "repository": {
@@ -17,6 +17,13 @@
     "Programming Languages"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:scaly",
+    "workspaceContains:**/*.scaly",
+    "onTaskType:scaly",
+    "onDebugResolve:scaly",
+    "onDebugInitialConfigurations"
+  ],
   "contributes": {
     "languages": [
       {
@@ -71,31 +78,38 @@
         "scaly.debugAdapter.path": {
           "type": "string",
           "default": "",
-          "description": "Path to the lldb-dap debug adapter. Empty auto-detects: PATH, then the LLVM 21 prefix, then Xcode's copy. lldb-dap ships with LLVM and with Xcode \u2014 nothing extra to install."
+          "description": "Path to the lldb-dap debug adapter. Empty auto-detects: PATH, then the LLVM 21 prefix, then Xcode's copy. lldb-dap ships with LLVM and with Xcode — nothing extra to install."
         },
         "scaly.formatters.path": {
           "type": "string",
           "default": "",
           "description": "Path to tools/lldb/scaly.py (the String/Vector/Array/List data formatters). Empty derives it from scaly.home, then SCALY_HOME, then the first workspace folder."
+        },
+        "scaly.tool.path": {
+          "type": "string",
+          "default": "scaly",
+          "description": "Path to the scaly tool, used by the run/build/test tasks and to build a program for debugging. Default 'scaly' resolves it on PATH; falls back to ~/.scaly/bin/scaly."
         }
       }
     },
     "debuggers": [
       {
         "type": "scaly",
-        "label": "Scaly (lldb-dap)",
+        "label": "Scaly",
         "languages": [
           "scaly"
         ],
         "configurationAttributes": {
           "launch": {
-            "required": [
-              "program"
-            ],
             "properties": {
+              "source": {
+                "type": "string",
+                "description": "A Scaly file to build with debug information before the launch (`scaly build -g`); the program is written beside it unless `program` says where.",
+                "default": "${file}"
+              },
               "program": {
                 "type": "string",
-                "description": "Absolute path to the executable. Compile it with `scalyc -g` \u2014 without -g there are no line tables, so breakpoints cannot bind.",
+                "description": "The executable to debug. With `source` it is what the build writes (default: beside the source). Without, a program compiled with `-g` -- without it there are no line tables, so breakpoints cannot bind.",
                 "default": "${workspaceFolder}/build/program"
               },
               "args": {
@@ -158,15 +172,23 @@
           {
             "type": "scaly",
             "request": "launch",
-            "name": "Debug Scaly program",
-            "program": "${workspaceFolder}/build/program",
-            "cwd": "${workspaceFolder}",
-            "stopOnEntry": false
+            "name": "Debug the open Scaly file",
+            "source": "${file}"
           }
         ],
         "configurationSnippets": [
           {
-            "label": "Scaly: Launch",
+            "label": "Scaly: Debug the open file",
+            "description": "Build the open .scaly file with -g and debug it",
+            "body": {
+              "type": "scaly",
+              "request": "launch",
+              "name": "Debug the open Scaly file",
+              "source": "^\"\\${file}\""
+            }
+          },
+          {
+            "label": "Scaly: Launch a program",
             "description": "Debug a Scaly executable compiled with -g",
             "body": {
               "type": "scaly",
@@ -178,14 +200,57 @@
           }
         ]
       }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "scaly",
+        "required": [
+          "command"
+        ],
+        "properties": {
+          "command": {
+            "type": "string",
+            "enum": [
+              "run",
+              "build",
+              "test"
+            ],
+            "description": "run: `scaly run`; build: `scaly build -g` beside the file; test: `scaly test`."
+          },
+          "file": {
+            "type": "string",
+            "description": "The Scaly file; the active editor's when left out (or `${file}`)."
+          }
+        }
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "scaly",
+        "owner": "scaly",
+        "source": "scaly",
+        "fileLocation": [
+          "autoDetect",
+          "${workspaceFolder}"
+        ],
+        "pattern": {
+          "regexp": "^(.*?):(\\d+):(\\d+):\\s+(error|warning):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run bundle",
+    "vscode:prepublish": "npm run bundle && npm run formatters",
     "compile": "tsc -p ./",
     "bundle": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
     "watch": "tsc -watch -p ./",
-    "package": "npx --yes @vscode/vsce package"
+    "package": "npx --yes @vscode/vsce package",
+    "formatters": "node -e \"const fs=require('fs');fs.mkdirSync('lldb',{recursive:true});fs.copyFileSync('../../tools/lldb/scaly.py','lldb/scaly.py')\""
   },
   "dependencies": {
     "vscode-languageclient": "^10.1.0"

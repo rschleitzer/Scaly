@@ -3,8 +3,8 @@
 VS Code language support for [Scaly](https://scaly.io), backed by
 [scalyls](../../packages/scalyls/0.2.0) — the Scaly language server, itself
 written in Scaly. The extension registers the `.scaly` language, provides
-TextMate syntax highlighting, launches the server over stdio, and ships a
-debugger backed by `lldb-dap`.
+TextMate syntax highlighting, launches the server over stdio, offers run, build
+and test tasks, and ships a debugger backed by `lldb-dap`.
 
 What you get:
 
@@ -114,8 +114,25 @@ What you get:
 | Setting | Default | Meaning |
 |---------|---------|---------|
 | `scaly.server.path` | `scalyls` | Path to the `scalyls` binary. The default resolves it on `PATH` (the scaly.io installer's link to it); falls back to `~/.scaly/bin/scalyls`. |
+| `scaly.tool.path` | `scaly` | Path to the `scaly` tool, used by the tasks and to build a program for debugging. Resolved like the server: setting, then `PATH`, then `~/.scaly/bin/scaly`. |
 | `scaly.compiler.path` | `scalyc` | Path to `scalyc`, used by the **Run** code lens. Resolved like the server: setting, then `PATH`, then `~/.scaly/bin/scalyc`. |
 | `scaly.home` | `""` | `SCALY_HOME` for the server (prelude/packages search root). If empty and a workspace folder is itself a Scaly checkout (contains `packages/scaly`), that folder is used; otherwise the installed server finds its own packages. |
+
+## Tasks
+
+For the `.scaly` file in the active editor the extension offers three tasks,
+with no `tasks.json` to write — **Terminal > Run Task… > scaly**:
+
+| Task | Runs |
+|---|---|
+| `scaly: run` | `scaly run <file>` — compiled in memory, run in the terminal panel |
+| `scaly: build` | `scaly build -g <file> -o <file without .scaly>` — a build task (⇧⌘B) |
+| `scaly: test` | `scaly test <file>` — a test task |
+
+Compiler errors go to the Problems panel through the `$scaly` problem matcher.
+**Terminal > Configure Tasks…** writes a task into `tasks.json` to change it; its
+definition is `{ "type": "scaly", "command": "run" | "build" | "test" }`, with an
+optional `"file"` (default: the active editor's).
 
 ## Restart the server
 
@@ -154,15 +171,27 @@ npm run package                 # runs vsce package
 ## Debugging
 
 The extension contributes a `scaly` debug type backed by **`lldb-dap`**, the DAP
-server that ships with LLVM and with Xcode — so there is no separate debugger
-extension to install and nothing to build. Compile with `-g` and press F5:
-
-```bash
-scalyc -g -o build/program src/main.scaly
-```
+server that ships with Apple's Command Line Tools, with Xcode and with LLVM — so
+there is no separate debugger extension to install and nothing to build. Open a
+`.scaly` file and press **F5**: without a `launch.json` the extension builds the
+open file with `-g` (the `scaly: build` task) and debugs it.
 
 `.vscode/launch.json` (the extension offers this as the initial configuration,
-and as a "Scaly: Launch" snippet):
+and as the "Scaly: Debug the open file" snippet):
+
+```json
+{
+  "type": "scaly",
+  "request": "launch",
+  "name": "Debug the open Scaly file",
+  "source": "${file}"
+}
+```
+
+`source` is built before the launch, the program written beside it unless
+`program` says where; a failed build stops the launch. For an executable built
+some other way, leave `source` out and name the program ("Scaly: Launch a
+program"):
 
 ```json
 {
@@ -192,8 +221,8 @@ The last two rows come from two different places, which is worth knowing when
 something looks wrong. The union tag is in the **DWARF itself** (its tag is an
 enumeration over the variants), so it works in any debugger. `String`, `Vector`,
 `Array` and `List` need the **data formatters** in
-[`tools/lldb/scaly.py`](../../tools/lldb/scaly.py), which the extension loads for
-you: `resolveDebugConfiguration` injects a
+[`tools/lldb/scaly.py`](../../tools/lldb/scaly.py), which the extension carries a
+copy of (`lldb/scaly.py`, copied in at packaging) and loads for you: `resolveDebugConfiguration` injects a
 `command script import …/tools/lldb/scaly.py` into `initCommands` when your
 launch config does not set that key itself. Set `"initCommands": []` to opt out.
 
@@ -201,8 +230,8 @@ Settings:
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `scaly.debugAdapter.path` | *(auto)* | Path to `lldb-dap`. Auto-detection tries `PATH`, then the LLVM 21 prefix, then Xcode's copy. |
-| `scaly.formatters.path` | *(auto)* | Path to `tools/lldb/scaly.py`. Derived from `scaly.home`, then `SCALY_HOME`, then the first workspace folder. |
+| `scaly.debugAdapter.path` | *(auto)* | Path to `lldb-dap`. Auto-detection tries `PATH`, then the LLVM 21 prefix, then the Command Line Tools' and Xcode's copies, then `xcrun --find lldb-dap`. |
+| `scaly.formatters.path` | *(auto)* | Path to `tools/lldb/scaly.py`. Derived from `scaly.home`, then `SCALY_HOME`, then the first workspace folder, then the copy the extension carries. |
 
 Outside the editor the same thing works from a terminal, which is often the
 faster loop:

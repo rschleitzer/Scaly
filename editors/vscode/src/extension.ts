@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as cp from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -10,6 +11,9 @@ import {
 } from "vscode-languageclient/node";
 
 let client: LanguageClient | undefined;
+
+// The extension's own directory: the formatters it carries (lldb/scaly.py).
+let extensionPath = "";
 
 // Where the scaly.io installer drops the server wrapper.
 const INSTALLED_SERVER = path.join(os.homedir(), ".scaly", "bin", "scalyls");
@@ -135,8 +139,26 @@ function lldbDapCandidates(): string[] {
     "lldb-dap-21",
     "/opt/homebrew/opt/llvm@21/bin/lldb-dap",
     "/usr/lib/llvm-21/bin/lldb-dap",
+    // the Command Line Tools, which the scaly.io installer fetches on a Mac
+    // without them: no shim in /usr/bin, so not on PATH
+    "/Library/Developer/CommandLineTools/usr/bin/lldb-dap",
     "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-dap",
   ];
+}
+
+// macOS: whichever developer directory is selected (xcode-select) knows it
+function lldbDapFromXcrun(): string | undefined {
+  if (process.platform !== "darwin") {
+    return undefined;
+  }
+  try {
+    const found = cp
+      .execFileSync("xcrun", ["--find", "lldb-dap"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })
+      .trim();
+    return found.length > 0 && fileIsExecutable(found) ? found : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function resolveDebugAdapter(): string | undefined {
@@ -146,7 +168,7 @@ function resolveDebugAdapter(): string | undefined {
   if (configured && configured.length > 0) {
     return configured;
   }
-  return lldbDapCandidates().find((c) => onPath(c));
+  return lldbDapCandidates().find((c) => onPath(c)) ?? lldbDapFromXcrun();
 }
 
 // The formatters turn a String from a raw pointer into text and give
@@ -172,7 +194,9 @@ function resolveFormatterScript(): string | undefined {
       return p;
     }
   }
-  return undefined;
+  // the copy the extension carries: an installation has no tools/
+  const bundled = path.join(extensionPath, "lldb", "scaly.py");
+  return fs.existsSync(bundled) ? bundled : undefined;
 }
 
 class ScalyDebugAdapterFactory
@@ -197,6 +221,18 @@ class ScalyDebugConfigurationProvider
     _folder: vscode.WorkspaceFolder | undefined,
     config: vscode.DebugConfiguration
   ): vscode.ProviderResult<vscode.DebugConfiguration> {
+    // F5 without a launch.json: debug the Scaly file in the active editor
+    if (!config.type && !config.request && !config.name) {
+      const file = activeScalyFile();
+      if (!file) {
+        void vscode.window.showInformationMessage("Scaly: open a .scaly file to debug it.");
+        return undefined;
+      }
+      config.type = "scaly";
+      config.request = "launch";
+      config.name = "Debug the open Scaly file";
+      config.source = file;
+    }
     // An EXPLICIT initCommands is honoured as given, including an empty array —
     // that is how a user opts out of the formatters.
     if (config.initCommands === undefined) {
@@ -206,10 +242,177 @@ class ScalyDebugConfigurationProvider
       }
     }
     if (config.cwd === undefined) {
-      config.cwd = "${workspaceFolder}";
+      config.cwd = config.source !== undefined ? "${fileDirname}" : "${workspaceFolder}";
     }
     return config;
   }
+
+  // A configuration that names a `source` builds it first, with debug
+  // information, into `program` (beside the source unless given); a failed
+  // build stops the launch, its errors in the Problems panel.
+  async resolveDebugConfigurationWithSubstitutedVariables(
+    folder: vscode.WorkspaceFolder | undefined,
+    config: vscode.DebugConfiguration
+  ): Promise<vscode.DebugConfiguration | undefined> {
+    if (config.request !== "launch" || typeof config.source !== "string") {
+      return config;
+    }
+    const source: string = config.source;
+    delete config.source;
+    if (typeof config.program !== "string" || config.program.length === 0) {
+      config.program = outputOf(source);
+    }
+    const task = scalyTask({ type: "scaly", command: "build", file: source }, source, folder, config.program);
+    const exit = await runToEnd(task);
+    if (exit !== 0) {
+      void vscode.window.showErrorMessage(
+        `Scaly: building ${path.basename(source)} failed — the Problems panel has the errors.`
+      );
+      return undefined;
+    }
+    return config;
+  }
+}
+
+// ---------------------------------------------------------------- tasks
+//
+// The tasks a Scaly file offers without a tasks.json -- run, build (with debug
+// information) and test --, for the file in the active editor or the one a
+// tasks.json entry names. Terminal > Configure Task writes one into
+// tasks.json to change it.
+
+interface ScalyTaskDefinition extends vscode.TaskDefinition {
+  command: "run" | "build" | "test";
+  file?: string;
+}
+
+function activeScalyFile(): string | undefined {
+  const doc = vscode.window.activeTextEditor?.document;
+  if (!doc || doc.uri.scheme !== "file" || !doc.fileName.endsWith(".scaly")) {
+    return undefined;
+  }
+  return doc.fileName;
+}
+
+// the program a build of `file` writes: beside it, without the extension
+function outputOf(file: string): string {
+  const base = path.join(path.dirname(file), path.basename(file, ".scaly"));
+  return process.platform === "win32" ? base + ".exe" : base;
+}
+
+// Resolve the tool the way the compiler is resolved: setting, PATH, the
+// default install location.
+function resolveToolPath(): string {
+  const configured = vscode.workspace.getConfiguration("scaly").get<string>("tool.path", "scaly").trim();
+  if (configured.length > 0 && configured !== "scaly") {
+    return configured;
+  }
+  if (onPath("scaly")) {
+    return "scaly";
+  }
+  const installed = path.join(os.homedir(), ".scaly", "bin", "scaly");
+  return fileIsExecutable(installed) ? installed : "scaly";
+}
+
+function scalyTask(
+  def: ScalyTaskDefinition,
+  file: string,
+  scope: vscode.WorkspaceFolder | vscode.TaskScope | undefined,
+  output?: string
+): vscode.Task {
+  let args: string[];
+  switch (def.command) {
+    case "build":
+      args = ["build", "-g", file, "-o", output ?? outputOf(file)];
+      break;
+    case "test":
+      args = ["test", file];
+      break;
+    default:
+      args = ["run", file];
+  }
+  const task = new vscode.Task(
+    def,
+    scope ?? vscode.TaskScope.Workspace,
+    def.command,
+    "scaly",
+    new vscode.ShellExecution(resolveToolPath(), args, { cwd: path.dirname(file) }),
+    ["$scaly"]
+  );
+  task.detail = `scaly ${args.map((a) => (a === file ? path.basename(file) : a === output ? path.basename(a) : a)).join(" ")}`;
+  if (def.command === "build") {
+    task.group = vscode.TaskGroup.Build;
+  } else if (def.command === "test") {
+    task.group = vscode.TaskGroup.Test;
+  }
+  return task;
+}
+
+// a task's file: the one its definition names, else the active editor's
+function fileOf(def: ScalyTaskDefinition, scope: vscode.WorkspaceFolder | vscode.TaskScope | undefined): string | undefined {
+  if (!def.file || def.file === "${file}") {
+    return activeScalyFile();
+  }
+  if (path.isAbsolute(def.file)) {
+    return def.file;
+  }
+  const base = typeof scope === "object" ? scope.uri.fsPath : vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  return base ? path.join(base, def.file) : undefined;
+}
+
+class ScalyTaskProvider implements vscode.TaskProvider {
+  provideTasks(): vscode.Task[] {
+    const file = activeScalyFile();
+    if (!file) {
+      return [];
+    }
+    const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(file));
+    return (["run", "build", "test"] as const).map((command) =>
+      scalyTask({ type: "scaly", command }, file, folder)
+    );
+  }
+
+  resolveTask(task: vscode.Task): vscode.Task | undefined {
+    const def = task.definition as ScalyTaskDefinition;
+    const file = fileOf(def, task.scope);
+    if (!file) {
+      void vscode.window.showInformationMessage("Scaly: open a .scaly file to run this task on.");
+      return undefined;
+    }
+    const resolved = scalyTask(def, file, task.scope);
+    // keep the name and the group a tasks.json entry gave it
+    return new vscode.Task(def, task.scope ?? vscode.TaskScope.Workspace, task.name, "scaly", resolved.execution, task.problemMatchers.length > 0 ? task.problemMatchers : ["$scaly"]);
+  }
+}
+
+// run a task and answer its exit code
+function runToEnd(task: vscode.Task): Promise<number | undefined> {
+  return new Promise((resolve) => {
+    let execution: vscode.TaskExecution | undefined;
+    const ended: vscode.TaskProcessEndEvent[] = [];
+    const listener = vscode.tasks.onDidEndTaskProcess((e) => {
+      if (execution === undefined) {
+        ended.push(e);
+      } else if (e.execution === execution) {
+        listener.dispose();
+        resolve(e.exitCode);
+      }
+    });
+    vscode.tasks.executeTask(task).then(
+      (started) => {
+        execution = started;
+        const early = ended.find((e) => e.execution === started);
+        if (early) {
+          listener.dispose();
+          resolve(early.exitCode);
+        }
+      },
+      () => {
+        listener.dispose();
+        resolve(undefined);
+      }
+    );
+  });
 }
 
 // ---------------------------------------------------------------- code lenses
@@ -275,6 +478,7 @@ function runFile(target: unknown): void {
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+  extensionPath = context.extensionPath;
   void startClient();
 
   context.subscriptions.push(
@@ -292,7 +496,8 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.debug.registerDebugConfigurationProvider(
       "scaly",
       new ScalyDebugConfigurationProvider()
-    )
+    ),
+    vscode.tasks.registerTaskProvider("scaly", new ScalyTaskProvider())
   );
 }
 

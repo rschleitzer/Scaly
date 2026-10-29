@@ -1422,105 +1422,100 @@ id="tut-vscode-tasks"
 ><a
 class="header"
 href="#tut-vscode-tasks"
->Build and Run Tasks</a
+>Run, Build and Test</a
 ></h3
-><aside
-class="note"
 ><p
-class="note-title"
->Note</p
-><p
->Because the installed <code
-class="command"
->scalyc</code
-> wrapper sets
-          <code
-class="envar"
->SCALY_HOME</code
-> for you, the compiler finds the prelude
-          (which defines <code
->print</code
-> and friends) and the standard
-          library no matter where your <code
+>The extension offers three tasks for the file in the active
+        editor, with no <code
 class="filename"
->.scaly</code
-> files live —
-          you do not have to work inside the compiler's own source tree. The
-          tasks below set <code
->cwd</code
-> to <code
->${workspaceFolder}</code
+>tasks.json</code
+> to write.
+        <span
+class="gui"
+>Terminal</span
+> &#62; <span
+class="gui"
+>Run Task…</span
 >
-          only so the compiled executable lands beside your source.</p
-></aside
+        lists them under <span
+class="gui"
+>scaly</span
+>:</p
+><dl
+><dt
+><span
+class="gui"
+>scaly: run</span
+></dt
+><dd
 ><p
->Create <code
-class="filename"
->.vscode/tasks.json</code
-> with a build task that
-        compiles the open file with debug info, and a run task that executes the
-        result:</p
-><pre
-class="listing"
 ><code
->{
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "scaly: build (debug)",
-            "type": "shell",
-            "command": "scalyc",
-            "args": ["-g", "-o", "${fileBasenameNoExtension}", "${file}"],
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": { "kind": "build", "isDefault": true },
-            "problemMatcher": {
-                "owner": "scaly",
-                "fileLocation": ["autoDetect", "${workspaceFolder}"],
-                "pattern": {
-                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning):\\s+(.*)$",
-                    "file": 1, "line": 2, "column": 3,
-                    "severity": 4, "message": 5
-                }
-            }
-        },
-        {
-            "label": "scaly: run",
-            "type": "shell",
-            "command": "${workspaceFolder}/${fileBasenameNoExtension}",
-            "options": { "cwd": "${workspaceFolder}" },
-            "dependsOn": "scaly: build (debug)"
-        }
-    ]
-}</code
-></pre
+class="userinput"
+>scaly run</code
+>: the program is
+            compiled in memory and runs in the terminal panel.</p
+></dd
+><dt
+><span
+class="gui"
+>scaly: build</span
+></dt
+><dd
 ><p
->Press <kbd
->Cmd</kbd
->+<kbd
->Shift</kbd
->+<kbd
+><code
+class="userinput"
+>scaly build -g</code
+>: the program,
+            with debug information, beside the file.
+            <kbd
+>⇧</kbd
+><kbd
+>⌘</kbd
+><kbd
 >B</kbd
 >
-        (or <kbd
+            (<kbd
 >Ctrl</kbd
 >+<kbd
 >Shift</kbd
 >+<kbd
 >B</kbd
->) to
-        build the file in the active editor. The
-        <code
->problemMatcher</code
-> turns any compiler diagnostic into a
-        clickable entry in the Problems panel. Use <span
+>)
+            offers it.</p
+></dd
+><dt
+><span
 class="gui"
->Terminal &#62; Run
-        Task</span
-> and pick <span
+>scaly: test</span
+></dt
+><dd
+><p
+><code
+class="userinput"
+>scaly test</code
+>: the file's
+            tests.</p
+></dd
+></dl
+><p
+>A compiler error lands in the <span
 class="gui"
->scaly: run</span
-> to build
-        and execute.</p
+>Problems</span
+> panel,
+        a click away from its line. To change a task — another output, an
+        argument —, choose <span
+class="gui"
+>Terminal</span
+> &#62;
+        <span
+class="gui"
+>Configure Tasks…</span
+> and pick it: VS Code
+        writes it into <code
+class="filename"
+>.vscode/tasks.json</code
+>, where it can
+        be edited.</p
 ></section
 ><section
 id="tut-vscode-launch"
@@ -1528,45 +1523,49 @@ id="tut-vscode-launch"
 ><a
 class="header"
 href="#tut-vscode-launch"
->Launch Configuration</a
+>Starting the Debugger</a
 ></h3
 ><p
->Debugging needs one more extension:
-        <em
->CodeLLDB</em
-> (extension id
+>Debugging needs nothing more. The extension drives
         <code
->vadimcn.vscode-lldb</code
->, installable normally from the
-        Extensions view), which provides the <code
->lldb</code
-> debugger type
-        used below. Reload the window afterwards
-        (<span
-class="gui"
->Command Palette</span
-> &#62; <span
-class="gui"
->Developer: Reload
-        Window</span
->) so the extension activates; if
-        <kbd
->F5</kbd
-> reports <code
-class="errortext"
->configured debug type 'lldb' is
-        not supported</code
->, CodeLLDB is not installed or not
-        enabled.</p
-><p
->Create <code
+class="command"
+>lldb-dap</code
+>, the debugger that comes with Apple's
+        Command Line Tools (the installer fetches them where they are
+        missing), with Xcode, and with LLVM — on Ubuntu,
+        <code
+class="userinput"
+>sudo apt install lldb-21</code
+>. Open a
+        <code
 class="filename"
->.vscode/launch.json</code
-> so
-        <kbd
+>.scaly</code
+> file and press <kbd
 >F5</kbd
-> builds the open file and starts it under the
-        debugger:</p
+>: the
+        extension builds it with debug information and starts it under the
+        debugger. Should <code
+class="command"
+>lldb-dap</code
+> live somewhere unusual,
+        point the <code
+>scaly.debugAdapter.path</code
+> setting at it.</p
+><p
+>For a configuration of your own — arguments, an environment,
+        another program — open <span
+class="gui"
+>Run and Debug</span
+>, choose
+        <span
+class="gui"
+>create a launch.json file</span
+> and then
+        <span
+class="gui"
+>Scaly</span
+>. What it writes debugs the open
+        file:</p
 ><pre
 class="listing"
 ><code
@@ -1574,17 +1573,29 @@ class="listing"
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Scaly file",
-            "type": "lldb",
+            "type": "scaly",
             "request": "launch",
-            "preLaunchTask": "scaly: build (debug)",
-            "program": "${workspaceFolder}/${fileBasenameNoExtension}",
-            "args": [],
-            "cwd": "${workspaceFolder}"
+            "name": "Debug the open Scaly file",
+            "source": "${file}"
         }
     ]
 }</code
 ></pre
+><p
+><code
+>source</code
+> is built before the launch;
+        <code
+>program</code
+> names an executable to debug as it is, and
+        <code
+>args</code
+>, <code
+>env</code
+> and <code
+>cwd</code
+> go to the
+        program.</p
 ></section
 ><section
 id="tut-vscode-breakpoints-setting"
@@ -1862,51 +1873,47 @@ href="#tut-vscode-limits"
 >What the Debugger Shows</a
 ></h3
 ><p
->Debug support tracks the parts of the language that are most useful
-        to inspect today, and is being widened over time. At present:</p
+>For whichever stack frame is selected:</p
 ><ul
 ><li
 ><p
->Breakpoints land on top-level statements, bindings, and function
-            bodies.</p
+>Breakpoints land on top-level statements, bindings and
+            function bodies, and line by line inside loop and conditional
+            bodies — on a single statement within a <code
+>while</code
+>,
+            <code
+>for</code
+>, <code
+>if</code
+> or <code
+>choose</code
+>, not just
+            on the statement around it.</p
 ></li
 ><li
 ><p
 >The <span
 class="gui"
 >Variables</span
-> pane shows
-            <code
->var</code
-> locals — integers and booleans, and also
-            structures, unions, and pointers with their fields expandable —
-            for whichever stack frame is selected.</p
-></li
-><li
-><p
->Breakpoints and stepping work line-by-line inside loop and
-            conditional bodies, so you can stop on individual statements within
-            a <code
->while</code
->, <code
->for</code
->, <code
->if</code
->, or
-            <code
->choose</code
-> body, not just on the enclosing
-            statement.</p
-></li
-><li
-><p
->Function parameters, <code
+> pane shows a function's
+            arguments and its <code
 >let</code
-> (immutable) bindings, and
-            some standard-library types such as <code
+> and <code
+>var</code
+> bindings:
+            numbers and booleans; structures, unions and pointers with their
+            fields to expand, a union's variant by its name; a
+            <code
 >String</code
-> are not
-            shown yet.</p
+> as its text; a <code
+>Vector</code
+>,
+            <code
+>Array</code
+> or <code
+>List</code
+> with its elements.</p
 ></li
 ><li
 ><p
