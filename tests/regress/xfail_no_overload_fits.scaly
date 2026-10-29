@@ -1,0 +1,13 @@
+; A call naming a routine that exists, with arguments none of its overloads
+; takes, said "function not found: print" (`print 3`, met in the tour) -- and
+; the reader went looking for a print that is there. It names the argument
+; types and the declared signatures now, and where every overload takes text,
+; the interpolation that makes a value text (Planner.call_not_found_head#).
+; xfail: no 'show' takes (int) - declared: show(text: String) - a value becomes text in an interpolated string: show "`x`"
+
+package scaly 0.2.0
+
+function show(text: String) returns int
+    text.length() as int
+
+let n show(3)

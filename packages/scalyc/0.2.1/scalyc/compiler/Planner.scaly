@@ -3559,6 +3559,175 @@ define Planner
             ""
         }
 
+        ; call_not_found_head#: the head of the diagnostic for a call that
+        ; resolved to nothing. Where routines of the name are in reach and
+        ; none takes these arguments, it says so and names them: `print 3`
+        ; was "function not found: print", and the reader went looking for a
+        ; print that is there (it takes a C string). Otherwise, and for a
+        ; dotted name or a namespace member out of sight (the hint after the
+        ; head says that), "function not found: <name>".
+        procedure call_not_found_head(mutable this: Planner, name: String, arg_types: Vector[PlannedType]) returns String
+        {
+            var candidates Vector[Function]()
+            if name.last_index_of(46) < 0 and this.foreign_namespace_of(name).get_length() = 0
+                candidates := this.functions_in_reach(this.lookup_functions_preferring(name))
+            if candidates.length = 0
+                return String^this("function not found: `name`")
+            ; a routine registered along two load paths (the prelude) is
+            ; listed once
+            var signatures Array[String]()
+            var takes_text: bool true
+            var c: size_t 0
+            while c < candidates.length
+            {
+                let f candidates[c]
+                let text Planner.signature_text(f)
+                var seen: bool false
+                var s: size_t 0
+                while s < signatures.length and seen = false
+                {
+                    if signatures[s].equals(text)
+                        seen := true
+                    s := s + 1
+                }
+                if seen = false
+                    signatures.add(text)
+                if f.input.length <> 1 or f.input[0].type = null
+                    takes_text := false
+                else if Planner.model_type_is_text((*f.input[0].type)) = false
+                    takes_text := false
+                c := c + 1
+            }
+            var sb StringBuilder()
+            sb.append "no '"
+            sb.append name
+            sb.append "' takes "
+            sb.append(Planner.argument_list_text(arg_types))
+            sb.append " - declared: "
+            var k: size_t 0
+            while k < signatures.length and k < 4
+            {
+                if k > 0
+                    sb.append ", "
+                sb.append(signatures[k])
+                k := k + 1
+            }
+            if signatures.length > 4
+                sb.append " and `signatures.length - 4` more"
+            ; `print 3`: every routine of the name takes text, and a
+            ; number becomes text in an interpolated string
+            if takes_text and arg_types.length = 1 and Planner.planned_type_is_text(arg_types[0]) = false
+            {
+                sb.append " - a value becomes text in an interpolated string: "
+                sb.append name
+                sb.append " \"\`x\`\""
+            }
+            String^this(sb.to_string())
+        }
+
+        ; model_type_is_text#: a declared parameter type that takes text --
+        ; a C string, a String, a view of characters.
+        function model_type_is_text(t: scalyc.compiler.Model.Type) returns bool
+        {
+            let written Planner.model_type_text(t)
+            match written
+                case "String" case "pointer[i8]" case "pointer[char]" case "pointer[const_char]" case "Slice[char]" case "Slice[u8]"
+                    true
+                else
+                    false
+        }
+
+        ; planned_type_is_text#: the same question of an argument's type.
+        function planned_type_is_text(t: PlannedType) returns bool
+        {
+            let written Planner.get_readable_name(t)
+            match written
+                case "String" case "pointer[i8]" case "pointer[char]" case "pointer[const_char]" case "Slice[char]" case "Slice[u8]"
+                    true
+                else
+                    false
+        }
+
+        ; argument_list_text#: the types of a call's arguments as a reader
+        ; writes them, `(int, String)`.
+        function argument_list_text(arg_types: Vector[PlannedType]) returns String
+        {
+            var sb StringBuilder()
+            sb.append("(" as char)
+            var i: size_t 0
+            while i < arg_types.length
+            {
+                if i > 0
+                    sb.append ", "
+                sb.append(Planner.get_readable_name(arg_types[i]))
+                i := i + 1
+            }
+            sb.append(")" as char)
+            sb.to_string()
+        }
+
+        ; signature_text#: a routine's parameter list as declared,
+        ; `print(msg: pointer[i8])`.
+        function signature_text(f: Function) returns String
+        {
+            var sb StringBuilder()
+            sb.append f.name
+            sb.append("(" as char)
+            var i: size_t 0
+            while i < f.input.length
+            {
+                if i > 0
+                    sb.append ", "
+                let item f.input[i]
+                if item.name <> null
+                {
+                    sb.append((*item.name))
+                    if item.type <> null
+                        sb.append ": "
+                }
+                if item.type <> null
+                    sb.append(Planner.model_type_text((*item.type)))
+                i := i + 1
+            }
+            sb.append(")" as char)
+            sb.to_string()
+        }
+
+        ; model_type_text#: a declared type as written, `ref[Node]?` for the
+        ; Option the `?` stands for.
+        function model_type_text(t: scalyc.compiler.Model.Type) returns String
+        {
+            var sb StringBuilder()
+            if t.name.length = 1 and t.name[0] = "Option" and t.generics <> null and t.generics.length = 1
+            {
+                sb.append(Planner.model_type_text(t.generics[0]))
+                sb.append("?" as char)
+                return sb.to_string()
+            }
+            var i: size_t 0
+            while i < t.name.length
+            {
+                if i > 0
+                    sb.append("." as char)
+                sb.append(t.name[i])
+                i := i + 1
+            }
+            if t.generics <> null
+            {
+                sb.append("[" as char)
+                var g: size_t 0
+                while g < t.generics.length
+                {
+                    if g > 0
+                        sb.append ", "
+                    sb.append(Planner.model_type_text(t.generics[g]))
+                    g := g + 1
+                }
+                sb.append("]" as char)
+            }
+            sb.to_string()
+        }
+
         ; report_ambiguous_global#: a bare name that two packages declare as
         ; a global or constant, written where neither is the writer's own and
         ; the writer declares both (or neither): it was whichever came
@@ -15860,8 +16029,7 @@ define Planner
                                     }
                                 }
                                 var dsb StringBuilder()
-                                dsb.append "function not found: "
-                                dsb.append fn_name
+                                dsb.append(this.call_not_found_head(fn_name, arg_types))
                                 ; Strict use visibility: if the name
                                 ; exists but is hidden here, say how to
                                 ; import it.
