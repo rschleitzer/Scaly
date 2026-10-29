@@ -731,7 +731,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI14PlannedVariantB6scalycB4v0_2E = type { ptr, ptr }
 %_Z4NodeI14PlannedVariantB6scalycB4v0_2E = type { %_Z14PlannedVariantB6scalycB4v0_2, ptr }
 %_Z12ListIteratorI14PlannedVariantB6scalycB4v0_2E = type { ptr }
-%_Z12PlannedUnionB6scalycB4v0_2 = type { %_Z4SpanB6scalycB4v0_2, i1, { ptr }, { ptr }, ptr, ptr, ptr, i64, i64, ptr }
+%_Z12PlannedUnionB6scalycB4v0_2 = type { %_Z4SpanB6scalycB4v0_2, i1, { ptr }, { ptr }, ptr, ptr, ptr, i64, i64, ptr, i1 }
 %_Z6VectorI12PlannedUnionB6scalycB4v0_2E = type { i64, ptr }
 %_Z14VectorIteratorI12PlannedUnionB6scalycB4v0_2E = type { ptr, i64 }
 %_Z5SliceI12PlannedUnionB6scalycB4v0_2E = type { i64, ptr }
@@ -71641,7 +71641,7 @@ lor.rhs:                                          ; preds = %entry
   br i1 %eq3, label %if.then, label %if.end
 }
 
-define linkonce_odr ptr @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE3getEm(ptr %0, i64 %1) {
+define linkonce_odr ptr @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE3getEm(ptr noalias %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE %load.struct, 0
@@ -71658,7 +71658,7 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
-define linkonce_odr ptr @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE2atEm(ptr %0, i64 %1) {
+define linkonce_odr ptr @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE2atEm(ptr noalias %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE %load.struct, 0
@@ -71678,7 +71678,7 @@ if.end:                                           ; preds = %if.then, %entry
   ret ptr %ptr.add
 }
 
-define linkonce_odr ptr @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE7get_ptrEm(ptr %0, i64 %1) {
+define linkonce_odr ptr @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE7get_ptrEm(ptr noalias %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE %load.struct, 0
@@ -71764,7 +71764,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE) %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE) %0, ptr %1, ptr noalias %2) {
 entry:
   %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, align 8
   call void @_ZN14VectorIteratorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EEC1E6OptionIR6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EEE(ptr %struct.init, ptr %2)
@@ -72057,7 +72057,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE8as_sliceEv(ptr noalias sret(%_Z5SliceI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE) %0, ptr %1) {
+define linkonce_odr void @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE8as_sliceEv(ptr noalias sret(%_Z5SliceI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE) %0, ptr noalias %1) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %1, align 8
   %length = extractvalue %_Z6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE %load.struct, 0
@@ -72073,7 +72073,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EEC1Ev(ptr %0) {
+define linkonce_odr void @_ZN6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EEC1Ev(ptr noalias %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, ptr %0, i32 0, i32 0
   store i64 0, ptr %length, align 8

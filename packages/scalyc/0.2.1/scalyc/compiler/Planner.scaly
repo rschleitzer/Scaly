@@ -55654,6 +55654,14 @@ define Planner
             ; generics) before planning methods so method mangling
             ; can encode the parent.
             var gens_arr Array[PlannedType]()
+            ; a generic concept planned with no argument for a parameter is
+            ; its TEMPLATE: its methods are planned for their diagnostics,
+            ; mangled without the parameter, and must not get a body -- in
+            ; `Pair[T].sum(this) returns T` nothing in `_ZN4Pair3sumEv` says
+            ; T, and `first + second` came out as `add ptr`, a module LLVM
+            ; refuses (2026-10-29, found by the reference's Run buttons). The
+            ; flag tells the Emitter (template_names).
+            var is_template false
             let c_for_gens_ref this.lookup_concept(name)
             if c_for_gens_ref <> null
             {
@@ -55667,6 +55675,8 @@ define Planner
                         let ts_ref this.lookup_type_substitution(p_ptr.name)
                         if ts_ref <> null
                             gens_arr.add((*ts_ref))
+                        else
+                            is_template := true
                     }
                     pi := pi + 1
                 }
@@ -55751,7 +55761,7 @@ define Planner
             let result PlannedStructure(
                 s.span,
                 s.private_,
-                false,
+                is_template,
                 String(name),
                 mangled,
                 &props_holder,
@@ -57429,6 +57439,9 @@ define Planner
             ; Build the union's own PlannedType + mangled_name upfront
             ; so method planning can mangle methods with this as parent.
             var u_gens_arr Array[PlannedType]()
+            ; a parameter without an argument: the TEMPLATE, as in
+            ; plan_structure# -- its routines get no body
+            var is_template false
             let u_concept_ref this.lookup_concept(name)
             if u_concept_ref <> null
             {
@@ -57442,6 +57455,8 @@ define Planner
                         let ts_ref this.lookup_type_substitution(p_ptr.name)
                         if ts_ref <> null
                             u_gens_arr.add((*ts_ref))
+                        else
+                            is_template := true
                     }
                     pi := pi + 1
                 }
@@ -57507,7 +57522,8 @@ define Planner
                 &ops_holder,
                 u_size,
                 u_align,
-                null
+                null,
+                is_template
             )
             this.record_union(result)
             result

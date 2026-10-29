@@ -236,6 +236,10 @@ define Emitter
         ; Struct cache: name -> LLVM struct type
         struct_cache_names: ref[Array[String]]?
         struct_cache_types: ref[Array[LLVMTypeRef]]?
+        ; the mangled names of the generic concepts planned as TEMPLATES
+        ; (is_generic_placeholder of a PlannedStructure or PlannedUnion):
+        ; their routines get no body (is_concept_template#)
+        template_names: ref[Array[String]]?
         ; -g: DIType cache: mangled name -> DWARF composite type. Keyed like
         ; struct_cache; the entry is a forward decl while members are built,
         ; then replaced with the final type (RAUW) so back-pointers resolve.
@@ -487,6 +491,7 @@ define Emitter
             type_cache_types := Array[LLVMTypeRef]^this()
             struct_cache_names := Array[String]^this()
             struct_cache_types := Array[LLVMTypeRef]^this()
+            template_names := Array[String]^this()
             di_type_cache_names := Array[String]^this()
             di_type_cache_types := Array[LLVMMetadataRef]^this()
             function_cache_names := Array[String]^this()
@@ -5742,6 +5747,36 @@ define Emitter
             false
         }
 
+        ; is_concept_template#: a routine of a generic concept planned as its
+        ; TEMPLATE (template_names) -- `_ZN` and the concept's name as its
+        ; type's symbol spells it after the `_Z` (`_Z4Pair`), then the
+        ; routine's (a length, a digit), where an instance of the concept has
+        ; its arguments there (`_ZN4PairIiE3sumEv`). The name alone may carry
+        ; no parameter at all (`_ZN4Pair3sumEv`: the receiver and the result
+        ; are not in it), so is_uninstantiated_template# cannot see it.
+        function is_concept_template(this, mangled: String) returns bool
+        {
+            if template_names.length = 0 or mangled.starts_with("_ZN") = false
+                return false
+            var i: size_t 0
+            while i < template_names.length
+            {
+                let symbol template_names[i]
+                i := i + 1
+                if symbol.starts_with("_Z") = false or symbol.get_length() < 3
+                    continue
+                let t symbol.substring(2, symbol.get_length() - 2)
+                let end t.get_length() + 3
+                if mangled.get_length() > end and mangled.substring(3, t.get_length()).equals(t)
+                {
+                    let c mangled.get end
+                    if c >= ("0" as char) and c <= ("9" as char)
+                        return true
+                }
+            }
+            false
+        }
+
         function is_uninstantiated_template(this, mangled: String) returns bool
         {
             let n mangled.get_length()
@@ -7204,6 +7239,8 @@ define Emitter
                         if Emitter.signature_has_resolved_letter(func) = false
                             return true
                     }
+                    if is_concept_template(func.mangled_name)
+                        return true
                     ; Emit the function body
                     current_function := llvm_func
                     current_receiver_concept := String()
@@ -7887,14 +7924,22 @@ define Emitter
             if plan.structures <> null
             {
                 for struct in plan.structures
+                {
                     emit_struct_type struct
+                    if struct.is_generic_placeholder
+                        template_names.add(struct.mangled_name)
+                }
             }
 
             ; Emit all unions
             if plan.unions <> null
             {
                 for union_type in plan.unions
+                {
                     emit_union_type union_type
+                    if union_type.is_generic_placeholder
+                        template_names.add(union_type.mangled_name)
+                }
             }
 
             ; Emit function declarations first (for forward references)
@@ -8578,7 +8623,7 @@ define Emitter
                             if is_scaly_mangled
                             {
                                 let mname String(name_ptr as pointer[const_char], name_len)
-                                has_marker := is_uninstantiated_template(mname)
+                                has_marker := is_uninstantiated_template(mname) or is_concept_template(mname)
                             }
                             ; Second marker: scalyc-specific stdlib-generic
                             ; method instantiations whose body stage-1 can't

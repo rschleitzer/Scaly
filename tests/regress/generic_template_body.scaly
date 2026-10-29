@@ -1,0 +1,45 @@
+; Regression (2026-10-29): a generic concept's TEMPLATE got a body of its own.
+; A method of a generic structure or union is planned once without an argument
+; for its parameter, for the diagnostics, and mangled without it: in
+; `Pair[T].sum(this) returns T` nothing in `_ZN4Pair3sumEv` says T -- the
+; receiver and the result are not in an Itanium name --, so the emitter's
+; name test (is_uninstantiated_template) passed it, and `first + second` over
+; T as a pointer placeholder came out as `add ptr`: LLVM refused the module,
+; "Integer arithmetic operators only work with integral types!", for every
+; program holding such a method. The planner marks the template
+; (is_generic_placeholder) and the emitter gives its routines the empty stub
+; (is_concept_template). Found by the reference's Run buttons: its example of
+; a generic method crashed the compiler.
+; Expected: PASS
+
+define Pair[T] ( first: T, second: T )
+{
+    function sum(this) returns T
+        first + second
+
+    function scaled(this, by: int) returns T
+        (first + second) * by
+}
+
+define Both[T] union (Two: Pair[T], None)
+{
+    function total(this) returns T
+        choose this
+            when p: Two
+                p.first + p.second
+            else
+                0
+}
+
+procedure main() returns int
+{
+    let p Pair[int](20, 22)
+    let q Pair[u8](3, 4)
+    let b Both[int].Two(Pair[int](1, 2))
+    let n Both[int].None
+    if p.sum() = 42 and p.scaled(2) = 84 and q.sum() = 7 and b.total() = 3 and n.total() = 0
+        print "PASS"
+    else
+        print "FAIL"
+    0
+}
