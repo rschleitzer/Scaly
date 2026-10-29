@@ -8,6 +8,13 @@
 
   <section xml:id="tut-getting-started">
     <title>Getting Started</title>
+    <para>To try Scaly before installing anything, a browser is enough. The
+      tour at <uri xlink:href="https://scaly.io/play/tour.html">scaly.io/play/tour.html</uri>
+      runs the programs of <xref linkend="tut-tour"/> step by step, and you
+      can change them; the REPL at
+      <uri xlink:href="https://scaly.io/play/">scaly.io/play</uri> is the
+      interactive session of <xref linkend="tut-repl"/>. The compiler runs in
+      the browser tab itself: nothing is sent anywhere.</para>
 
     <section xml:id="tut-install">
       <title>Installing Scaly</title>

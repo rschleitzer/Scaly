@@ -439,6 +439,22 @@ window.SEARCH_INDEX = [
         (make element gi: "a" attributes: (list (list "class" "nonterminal") (list "href" (href-to target (current-node))))
           (process-children)))))
 
+;; an address, linked where it says where to (xlink:href)
+(element uri
+  (let ((href (attribute-string "xlink:href")))
+    (if href
+        (make element gi: "a" attributes: (list (list "href" href)) (process-children))
+        (make element gi: "code" (process-children)))))
+
+;; a link out of the book (xlink:href), or into it (linkend)
+(element link
+  (let ((href (attribute-string "xlink:href"))
+        (end (attribute-string "linkend")))
+    (cond (href (make element gi: "a" attributes: (list (list "href" href)) (process-children)))
+          (end (make element gi: "a" attributes: (list (list "href" (href-to (element-with-id end) (current-node))))
+                 (process-children)))
+          (else (process-children)))))
+
 (element xref
   (let ((target (element-with-id (attribute-string "linkend"))))
     (make element gi: "a" attributes: (list (list "href" (href-to target (current-node))))
