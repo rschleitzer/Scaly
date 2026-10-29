@@ -203,6 +203,7 @@
         <li data-all>It installs Scaly into <code>~/.scaly</code> (Windows: <code>%USERPROFILE%\.scaly</code>) and sets the <code>PATH</code> so the tools are found.</li>
         <li data-os="macos linux" data-single>It installs Scaly into <code>~/.scaly</code> and sets the <code>PATH</code> so the tools are found.</li>
         <li data-os="windows" data-single>It installs Scaly into <code>%USERPROFILE%\.scaly</code> and sets the <code>PATH</code> so the tools are found.</li>
+        <li data-os="macos">On macOS 26.4 and newer, Terminal stops a pasted command that downloads something with a warning, “Possible Malware, Paste Blocked” — this one too. Choose <em>Paste Anyway</em>; the script it runs can be read first at <a href="../install.sh">scaly.io/install.sh</a>.</li>
         <li data-os="macos">Building a program needs Apple's Command Line Tools. If they are missing, the installer fetches them and macOS asks for your password once.</li>
         <li data-os="linux">Building a program needs a C compiler. If there is none, the installer fetches <code>clang</code> with <code>apt</code> and <code>sudo</code> asks for your password once.</li>
         <li data-os="windows">Building a program needs the Visual Studio Build Tools. If they are missing, the installer fetches them (several GB, under Microsoft's license terms) and Windows asks for administrator rights once.</li>

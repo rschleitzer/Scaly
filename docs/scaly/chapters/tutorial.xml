@@ -21,6 +21,11 @@
       <para>Scaly is installed by one command. On macOS and Linux, in a
         terminal:</para>
       <programlisting>curl -fsSL https://scaly.io/install.sh | sh</programlisting>
+      <para>On macOS 26.4 and newer, Terminal stops a pasted command
+        that downloads something with a warning, <quote>Possible Malware,
+        Paste Blocked</quote> — this one too. Choose <guibutton>Paste
+        Anyway</guibutton>; the script it runs can be read first at
+        <uri xlink:href="https://scaly.io/install.sh">scaly.io/install.sh</uri>.</para>
       <para>On Windows, in PowerShell:</para>
       <programlisting>irm https://scaly.io/install.ps1 | iex</programlisting>
       <para>Open a new terminal afterwards. The installer has put three

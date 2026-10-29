@@ -180,6 +180,7 @@
     <div class="section-label" id="install">Install</div>
     <p class="install-label">macOS and Linux</p>
     <div class="install-cmd"><span class="prompt">$ </span>curl -fsSL https://scaly.io/install.sh | sh</div>
+    <p style="margin-top:10px">On macOS 26.4 and newer, Terminal stops a pasted command that downloads something with a warning, “Possible Malware, Paste Blocked” — this one too. Choose <em>Paste Anyway</em>; the script it runs can be read first at <a href="../install.sh">scaly.io/install.sh</a>.</p>
     <p class="install-label">Windows (PowerShell)</p>
     <div class="install-cmd"><span class="prompt">&gt; </span>irm https://scaly.io/install.ps1 | iex</div>
     <p style="margin-top:16px">The installer puts three ready-made programs under <code>~/.scaly</code> — no <code>sudo</code>, no LLVM to install: <code>scaly</code> (the tool), <code>scalyc</code> (the compiler) and <code>scalyls</code> (the language server). It needs a C compiler for linking (clang; on Windows the Build Tools for Visual Studio, which it offers to install). Ready-made programs exist for macOS 26 on Apple silicon, macOS 15 on Intel, Ubuntu 26.04 on x86_64 and arm64, and Windows 10/11 on x86_64 and arm64; elsewhere the installer builds them from source. <a href="../download/">Details and other systems</a>.</p>
