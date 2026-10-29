@@ -105,16 +105,38 @@
             margin: 18px 0 6px;
         }
         .install-cmd {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.8125rem;
             background: #f5f5f4;
             border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 8px 12px;
-            overflow-x: auto;
-            white-space: nowrap;
+            padding: 4px 6px 4px 12px;
         }
+        .install-cmd .install-text { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; padding: 4px 0; }
         .install-cmd .prompt { color: var(--text-muted); user-select: none; }
+        .copy-btn {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .copy-btn:hover { color: var(--accent); background: var(--accent-soft); }
+        .copy-btn svg { width: 16px; height: 16px; }
+        .copy-btn .icon-check { display: none; }
+        .copy-btn.copied { color: var(--accent); }
+        .copy-btn.copied .icon-clip { display: none; }
+        .copy-btn.copied .icon-check { display: inline; }
 
         table.facts { border-collapse: collapse; width: 100%; font-size: 0.9375rem; }
         table.facts td { padding: 8px 12px 8px 0; border-top: 1px solid var(--border); vertical-align: top; }
@@ -179,10 +201,10 @@
 
     <div class="section-label" id="install">Install</div>
     <p class="install-label">macOS and Linux</p>
-    <div class="install-cmd"><span class="prompt">$ </span>curl -fsSL https://scaly.io/install.sh | sh</div>
+    <div class="install-cmd"><span class="install-text"><span class="prompt">$ </span>curl -fsSL https://scaly.io/install.sh | sh</span><button class="copy-btn" type="button" aria-label="Copy install command" data-copy="curl -fsSL https://scaly.io/install.sh | sh" onclick="copyInstall(this)"><svg class="icon-clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></button></div>
     <p style="margin-top:10px">On macOS 26.4 and newer, Terminal stops a pasted command that downloads something with a warning, “Possible Malware, Paste Blocked” — this one too. Choose <em>Paste Anyway</em>; the script it runs can be read first at <a href="../install.sh">scaly.io/install.sh</a>.</p>
     <p class="install-label">Windows (PowerShell)</p>
-    <div class="install-cmd"><span class="prompt">&gt; </span>irm https://scaly.io/install.ps1 | iex</div>
+    <div class="install-cmd"><span class="install-text"><span class="prompt">&gt; </span>irm https://scaly.io/install.ps1 | iex</span><button class="copy-btn" type="button" aria-label="Copy install command" data-copy="irm https://scaly.io/install.ps1 | iex" onclick="copyInstall(this)"><svg class="icon-clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></button></div>
     <p style="margin-top:16px">The installer puts three ready-made programs under <code>~/.scaly</code> — no <code>sudo</code>, no LLVM to install: <code>scaly</code> (the tool), <code>scalyc</code> (the compiler) and <code>scalyls</code> (the language server). It needs a C compiler for linking (clang; on Windows the Build Tools for Visual Studio, which it offers to install). Ready-made programs exist for macOS 26 on Apple silicon, macOS 15 on Intel, Ubuntu 26.04 on x86_64 and arm64, and Windows 10/11 on x86_64 and arm64; elsewhere the installer builds them from source. <a href="../download/">Details and other systems</a>.</p>
 
     <div class="section-label">First steps</div>
@@ -280,5 +302,36 @@ tools/install.sh                <span class="comment"># put it on your PATH</spa
         <a href="../license/">License</a>
     </div>
 </div>
+    <script>
+        // the copy buttons of the install commands, as on the front page
+        function copyInstall(btn) {
+            var text = btn.getAttribute('data-copy');
+            var mark = function () {
+                btn.classList.add('copied');
+                btn.setAttribute('aria-label', 'Copied');
+                setTimeout(function () {
+                    btn.classList.remove('copied');
+                    btn.setAttribute('aria-label', 'Copy install command');
+                }, 1500);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(mark, function () { fallbackCopy(text); mark(); });
+            } else {
+                fallbackCopy(text);
+                mark();
+            }
+        }
+        function fallbackCopy(text) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta);
+        }
+    </script>
 </body>
 </html>
