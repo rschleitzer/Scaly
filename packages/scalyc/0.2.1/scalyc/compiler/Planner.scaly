@@ -13854,6 +13854,12 @@ define Planner
                                                                     }
                                                                     let re_chain this.resolve_member_access(merged_type, ma_names, cp_op.loc)
                                                                     var handled_union: bool false
+                                                                    let uv_hops this.generic_unit_variant_hops(merged_type, re_chain, ma_names, cp_op.loc)
+                                                                    if uv_hops <> null
+                                                                    {
+                                                                        merged_op := (*uv_hops)
+                                                                        handled_union := true
+                                                                    }
                                                                     if re_chain.length = 1
                                                                     {
                                                                         let rc0_ptr re_chain.get 0
@@ -28686,6 +28692,116 @@ define Planner
             )
         }
 
+        ; union_variant_is_unit#: whether the union `union_name` declares a
+        ; variant `variant_name` without a payload
+        procedure union_variant_is_unit(mutable this: Planner, union_name: String, variant_name: String) returns bool
+        {
+            let uconc_ref this.lookup_concept(union_name)
+            if uconc_ref = null
+                return false
+            choose uconc_ref.definition
+                when u: scalyc.compiler.Model.Union
+                {
+                    var i: size_t 0
+                    while i < u.variants.length
+                    {
+                        let v_ptr u.variants.get i
+                        if v_ptr <> null and v_ptr.name = variant_name
+                            return v_ptr.type = null
+                        i := i + 1
+                    }
+                }
+                else
+                    0
+            false
+        }
+
+        ; try_plan_unit_variant_hops#: a unit variant with member hops after
+        ; it -- `Shade.Dark.code()`, a method called on the variant's value.
+        ; The name has more than two segments, so try_plan_unit_variant#
+        ; passed it and the whole was taken for a FUNCTION's name: `function
+        ; not found: Shade.Dark.code` (2026-10-29, met writing the gate
+        ; generic_template_body). The first two segments are the variant,
+        ; the rest hops on its value, resolved as on any value's.
+        procedure try_plan_unit_variant_hops(mutable this: Planner, t: Type, loc: Span) returns ref[PlannedOperand]?
+        {
+            if t.name.length < 3 or t.generics <> null
+                return null
+            var head Vector[String](2)
+            head.put(0, t.name[0])
+            head.put(1, t.name[1])
+            let base_ref this.try_plan_unit_variant(Type(t.span, head, null, t.lifetime), loc)
+            if base_ref = null
+                return null
+            var rest Vector[String](t.name.length - 2)
+            var i: size_t 2
+            while i < t.name.length
+            {
+                rest.put(i - 2, t.name[i])
+                i := i + 1
+            }
+            ; a copy of the union's type: the hops are resolved against it
+            var union_type: PlannedType base_ref.result_type
+            this.unit_variant_with_chain(base_ref.expr, union_type, rest, loc)
+        }
+
+        ; unit_variant_with_chain#: the value of a unit variant, `expr` of
+        ; the union type `union_type`, followed by the hops `names` -- the
+        ; operand a method call or a field read on it is planned from
+        procedure unit_variant_with_chain(
+            mutable this: Planner,
+            expr: PlannedExpression,
+            mutable union_type: PlannedType,
+            mutable names: Vector[String],
+            loc: Span
+        ) returns ref[PlannedOperand]?
+        {
+            let chain this.resolve_member_access(union_type, names, loc)
+            if chain.length = 0
+                return null
+            let holder Vector[PlannedMemberAccess]^this(chain)
+            var final_type: PlannedType union_type
+            let last_ptr chain.get(chain.length - 1)
+            if last_ptr <> null
+                final_type := last_ptr.result_type
+            PlannedOperand^this(loc, expr, &holder, final_type)
+        }
+
+        ; generic_unit_variant_hops#: `Opt[int].Nothing.size()` -- the generic
+        ; twin of try_plan_unit_variant_hops#. The pre-pass that merges a type
+        ; and its argument list resolves the hops after it against the merged
+        ; union: a lone variant became the unit construction, a variant
+        ; followed by more hops was left a TYPE operand, and the method on it
+        ; was dropped -- the statement answered the union (`'=' between
+        ; operands of different LLVM kinds`, exit 14, or a binding of the
+        ; wrong type). A unit variant first: its construction carries the
+        ; rest of the chain.
+        procedure generic_unit_variant_hops(
+            mutable this: Planner,
+            mutable union_type: PlannedType,
+            chain: Vector[PlannedMemberAccess],
+            names: Vector[String],
+            loc: Span
+        ) returns ref[PlannedOperand]?
+        {
+            if chain.length < 2 or names.length <> chain.length
+                return null
+            let first chain[0]
+            if first.is_union_value = false
+                return null
+            if this.union_variant_is_unit(union_type.name, first.name) = false
+                return null
+            let vc PlannedVariantConstruction(loc, union_type, first.name, first.field_index, null)
+            var rest Vector[String](names.length - 1)
+            var i: size_t 1
+            while i < names.length
+            {
+                rest.put(i - 1, names[i])
+                i := i + 1
+            }
+            this.unit_variant_with_chain(PlannedExpression.VariantConstruction vc, union_type, rest, loc)
+        }
+
         ; report_absorbed_after_control#: a `choose`, `match`, `if` or `try`
         ; followed by more operands in ONE operand run. The parser ends such a
         ; construct at its last arm's newline and then keeps collecting for the
@@ -31031,6 +31147,14 @@ define Planner
                     ; construction gate as [Type, Tuple].
                     var unit_ref: ref[PlannedOperand]? null
                     if op.member_access = null
+                    {
+                        choose op.expression
+                            when hty: Type
+                                unit_ref := this.try_plan_unit_variant_hops(hty, op.span)
+                            else
+                                0
+                    }
+                    if op.member_access = null and unit_ref = null
                     {
                         var followed_by_tuple: bool false
                         if i + 1 < ops.length

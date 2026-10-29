@@ -1,0 +1,44 @@
+; Regression (2026-10-29): a method called on a UNIT variant's value. A
+; variant with a payload had always worked (`Opt[int].Some(5).size()`, the
+; call's result carries the hop); without one the name and the hops after it
+; went wrong: `Shade.Dark.code()` was read as ONE function name, `function
+; not found: Shade.Dark.code` (try_plan_unit_variant knew two segments
+; only), and `Opt[int].Nothing.size()` dropped the method -- the pre-pass
+; that merges a generic type left a variant followed by more hops a TYPE
+; operand, so the statement answered the union: a binding of the wrong type,
+; or exit 14, `'=' between operands of different LLVM kinds`, without a
+; location. Planner.try_plan_unit_variant_hops# and
+; generic_unit_variant_hops# build the unit construction with the rest of
+; the chain on it. Found writing the gate generic_template_body.
+; Expected: PASS
+
+define Shade union (Light, Dark)
+{
+    function code(this) returns int
+        choose this
+            when l: Light
+                1
+            else
+                2
+}
+
+define Opt[T] union (Some: T, Nothing)
+{
+    function size(this) returns int
+        choose this
+            when v: Some
+                1
+            else
+                0
+}
+
+procedure main() returns int
+{
+    let a Shade.Dark.code()
+    let c Opt[int].Nothing.size()
+    if a = 2 and Shade.Light.code() = 1 and c = 0 and Opt[u8].Nothing.size() = 0 and Opt[int].Some(5).size() = 1
+        print "PASS"
+    else
+        print "FAIL"
+    0
+}
