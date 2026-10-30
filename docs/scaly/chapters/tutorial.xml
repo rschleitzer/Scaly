@@ -422,6 +422,13 @@ else
       each part of the tour points you to the relevant chapter. Each program
       prints what it computes; <code>print</code> writes a line:</para>
       <programlisting>print "Hello from Scaly"</programlisting>
+    <para role="spec-only">The same tour runs in the browser, step by step:
+      <uri xlink:href="https://scaly.io/play/tour.html">scaly.io/play/tour.html</uri>.
+      There every program of this section stands in an editor with a
+      <guibutton>Run</guibutton> button — change it, run it again, try what
+      happens when you break it; <guibutton>Reset</guibutton> brings the
+      original back. Nothing to install: the compiler runs in the browser
+      tab.</para>
 
     <section xml:id="tut-values">
       <title>Values and Bindings</title>

@@ -7,14 +7,17 @@
 ;; the tutorial's "A Tour of Scaly" section (tutorial.xml, tut-tour) -- the
 ;; same text as the specification's, not a second one to keep in step:
 ;;
-;;   dazzle -t sgml -d dsssl/scaly-tour.dsl scaly-spec.xml   (docs/tour.sh)
+;;   dazzle -t sgml -d dsssl/scaly-tour.dsl scaly-spec.xml
 ;;
+;; (web/repl/build.sh, and docs/deploy.sh, which publishes the steps anew
+;; when they changed).
 ;; writes tour-steps.htm: one section element of class "step" per program of
 ;; the section, with its title, its prose -- every paragraph and fragment
 ;; since the program before, and after the last program of a subsection what
 ;; follows it --, and the program in a pre element of class "program". A listing marked
 ;; role="fragment" (part of a program, two files, a package line) is prose.
-;; A subsection without a program is one step of prose alone.
+;; A paragraph marked role="spec-only" -- the pointer to this very page -- is
+;; left out. A subsection without a program is one step of prose alone.
 ;; tests/tour/run.sh runs every program.
 
 (declare-flow-object-class element
@@ -32,7 +35,9 @@
        (not (equal? (attribute-string "role" nd) "fragment"))))
 
 (define (content? nd)
-  (or (equal? (gi nd) "para") (equal? (gi nd) "programlisting")))
+  (or (and (equal? (gi nd) "para")
+           (not (equal? (attribute-string "role" nd) "spec-only")))
+      (equal? (gi nd) "programlisting")))
 
 ;; the section's paragraphs and listings, grouped: a list of steps, each
 ;; (prose . program) with program #f for a step of prose alone
