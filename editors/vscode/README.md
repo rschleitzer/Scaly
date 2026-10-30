@@ -4,7 +4,8 @@ VS Code language support for [Scaly](https://scaly.io), backed by
 [scalyls](../../packages/scalyls/0.2.0) — the Scaly language server, itself
 written in Scaly. The extension registers the `.scaly` language, provides
 TextMate syntax highlighting, launches the server over stdio, offers run, build
-and test tasks, and ships a debugger backed by `lldb-dap`.
+and test tasks, and ships a debugger backed by `lldb-dap` (on Windows, by the
+Visual Studio debugger).
 
 What you get:
 
@@ -232,6 +233,27 @@ Settings:
 |---|---|---|
 | `scaly.debugAdapter.path` | *(auto)* | Path to `lldb-dap`. Auto-detection tries `PATH`, then the LLVM 21 prefix, then the Command Line Tools' and Xcode's copies, then `xcrun --find lldb-dap`. |
 | `scaly.formatters.path` | *(auto)* | Path to `tools/lldb/scaly.py`. Derived from `scaly.home`, then `SCALY_HOME`, then the first workspace folder, then the copy the extension carries. |
+
+### On Windows
+
+`-g` for a Windows target writes **CodeView**, which the Build Tools' `link.exe`
+puts into a `.pdb` beside the program (`scaly build -g` passes `-debug`); a PE
+keeps no DWARF that `link.exe` wrote. The debugger that reads it is Visual
+Studio's, which VS Code has through Microsoft's **C/C++** extension
+(`ms-vscode.cpptools`) as the debug type `cppvsdbg`. A `scaly` configuration is
+turned into one of those in `resolveDebugConfiguration` — `env` becomes
+`environment`, `stopOnEntry` `stopAtEntry`, `pid` `processId` — and VS Code
+resolves it again as that type; a second provider of this extension, registered
+for `cppvsdbg`, builds the `source` in the second phase. Without the C/C++
+extension the first F5 says so and offers to install it. `lldb-dap` and
+`initCommands` play no part there.
+
+The data views are the standard library's `scaly/win32/scaly.natvis`, which the
+link puts into the `.pdb` (`-natvis:`), so they need no setting — in VS Code,
+in Visual Studio, in WinDbg: `String` and `StringBuilder` as text, `Vector`,
+`Slice`, `Array` and `List` with their elements. They match because `-g` for
+Windows names a generic instantiation in template syntax, `Vector<int>`;
+elsewhere it is `Vector[int]`.
 
 Outside the editor the same thing works from a terminal, which is often the
 faster loop:

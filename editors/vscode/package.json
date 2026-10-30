@@ -1,8 +1,8 @@
 {
   "name": "scaly",
   "displayName": "Scaly",
-  "description": "Scaly language support: the scalyls language server, run/build/test tasks, and debugging through lldb-dap",
-  "version": "0.3.0",
+  "description": "Scaly language support: the scalyls language server, run/build/test tasks, and debugging through lldb-dap (on Windows the Visual Studio debugger)",
+  "version": "0.4.0",
   "publisher": "scaly",
   "license": "MIT",
   "repository": {
@@ -78,7 +78,7 @@
         "scaly.debugAdapter.path": {
           "type": "string",
           "default": "",
-          "description": "Path to the lldb-dap debug adapter. Empty auto-detects: PATH, then the LLVM 21 prefix, then Xcode's copy. lldb-dap ships with LLVM and with Xcode — nothing extra to install."
+          "description": "Path to the lldb-dap debug adapter (macOS and Linux). Empty auto-detects: PATH, then the LLVM 21 prefix, then Xcode's copy. lldb-dap ships with LLVM and with Xcode — nothing extra to install. On Windows the extension debugs with the Visual Studio debugger of Microsoft's C/C++ extension instead."
         },
         "scaly.formatters.path": {
           "type": "string",

@@ -19,18 +19,24 @@ let extensionPath = "";
 const INSTALLED_SERVER = path.join(os.homedir(), ".scaly", "bin", "scalyls");
 
 // True if `name` resolves on PATH (cheap: scan PATH for an executable file).
+// On Windows a program is found by its name with an extension of PATHEXT
+// (scalyls is scalyls.exe), as the system finds it.
 function onPath(name: string): boolean {
-  if (name.includes("/")) {
+  if (name.includes("/") || name.includes("\\")) {
     return fileIsExecutable(name);
   }
+  const exts =
+    process.platform === "win32"
+      ? ["", ...(process.env.PATHEXT || ".COM;.EXE;.BAT;.CMD").split(";").filter((e) => e.length > 0)]
+      : [""];
   const dirs = (process.env.PATH || "").split(path.delimiter);
-  return dirs.some((d) => d && fileIsExecutable(path.join(d, name)));
+  return dirs.some((d) => d && exts.some((e) => fileIsExecutable(path.join(d, name + e))));
 }
 
 function fileIsExecutable(p: string): boolean {
   try {
     fs.accessSync(p, fs.constants.X_OK);
-    return true;
+    return fs.statSync(p).isFile();
   } catch {
     return false;
   }
@@ -233,6 +239,13 @@ class ScalyDebugConfigurationProvider
       config.name = "Debug the open Scaly file";
       config.source = file;
     }
+    if (config.cwd === undefined) {
+      config.cwd = config.source !== undefined ? "${fileDirname}" : "${workspaceFolder}";
+    }
+    // Windows: the Visual Studio debugger, not lldb-dap (visualStudioLaunch#)
+    if (process.platform === "win32") {
+      return visualStudioLaunch(config);
+    }
     // An EXPLICIT initCommands is honoured as given, including an empty array —
     // that is how a user opts out of the formatters.
     if (config.initCommands === undefined) {
@@ -241,36 +254,103 @@ class ScalyDebugConfigurationProvider
         config.initCommands = [`command script import ${script}`];
       }
     }
-    if (config.cwd === undefined) {
-      config.cwd = config.source !== undefined ? "${fileDirname}" : "${workspaceFolder}";
-    }
     return config;
   }
 
   // A configuration that names a `source` builds it first, with debug
   // information, into `program` (beside the source unless given); a failed
   // build stops the launch, its errors in the Problems panel.
-  async resolveDebugConfigurationWithSubstitutedVariables(
+  resolveDebugConfigurationWithSubstitutedVariables(
     folder: vscode.WorkspaceFolder | undefined,
     config: vscode.DebugConfiguration
   ): Promise<vscode.DebugConfiguration | undefined> {
-    if (config.request !== "launch" || typeof config.source !== "string") {
-      return config;
-    }
-    const source: string = config.source;
-    delete config.source;
-    if (typeof config.program !== "string" || config.program.length === 0) {
-      config.program = outputOf(source);
-    }
-    const task = scalyTask({ type: "scaly", command: "build", file: source }, source, folder, config.program);
-    const exit = await runToEnd(task);
-    if (exit !== 0) {
-      void vscode.window.showErrorMessage(
-        `Scaly: building ${path.basename(source)} failed — the Problems panel has the errors.`
-      );
-      return undefined;
-    }
+    return buildBeforeLaunch(folder, config, "source");
+  }
+}
+
+async function buildBeforeLaunch(
+  folder: vscode.WorkspaceFolder | undefined,
+  config: vscode.DebugConfiguration,
+  key: string
+): Promise<vscode.DebugConfiguration | undefined> {
+  if (config.request !== "launch" || typeof config[key] !== "string") {
     return config;
+  }
+  const source: string = config[key];
+  delete config[key];
+  if (typeof config.program !== "string" || config.program.length === 0) {
+    config.program = outputOf(source);
+  }
+  const task = scalyTask({ type: "scaly", command: "build", file: source }, source, folder, config.program);
+  const exit = await runToEnd(task);
+  if (exit !== 0) {
+    void vscode.window.showErrorMessage(
+      `Scaly: building ${path.basename(source)} failed — the Problems panel has the errors.`
+    );
+    return undefined;
+  }
+  return config;
+}
+
+// ---------------------------------------------------------------- Windows
+//
+// On Windows `-g` writes CodeView into a .pdb beside the program (the Build
+// Tools' link.exe), and the debugger that reads it is Visual Studio's, which
+// VS Code has through Microsoft's C/C++ extension as the debug type
+// `cppvsdbg`. A Scaly configuration is turned into one of those before it is
+// resolved further: VS Code then asks the providers of the NEW type, and a
+// provider of this extension for `cppvsdbg` builds the source in the second
+// phase (VS Code does not change the type between the phases, so the build
+// must be registered under the type the launch has by then). The data views
+// for String and the containers need no setting: the link puts the standard
+// library's scaly/win32/scaly.natvis into the .pdb.
+
+const CPPTOOLS = "ms-vscode.cpptools";
+
+function visualStudioLaunch(config: vscode.DebugConfiguration): vscode.DebugConfiguration | undefined {
+  if (!vscode.extensions.getExtension(CPPTOOLS)) {
+    void vscode.window
+      .showErrorMessage(
+        "Scaly: on Windows, Scaly programs are debugged with the Visual Studio debugger, which comes with Microsoft's C/C++ extension.",
+        "Install C/C++"
+      )
+      .then((choice) => {
+        if (choice) {
+          void vscode.commands.executeCommand("workbench.extensions.installExtension", CPPTOOLS);
+        }
+      });
+    return undefined;
+  }
+  const out: vscode.DebugConfiguration = {
+    type: "cppvsdbg",
+    request: config.request,
+    name: config.name,
+  };
+  if (config.request === "attach") {
+    out.processId = config.pid !== undefined ? String(config.pid) : "${command:pickProcess}";
+  } else {
+    if (typeof config.source === "string") {
+      out.scalySource = config.source;
+    }
+    if (config.program !== undefined) {
+      out.program = config.program;
+    }
+    out.args = config.args ?? [];
+    out.cwd = config.cwd;
+    out.stopAtEntry = config.stopOnEntry === true;
+    if (config.env && typeof config.env === "object") {
+      out.environment = Object.entries(config.env).map(([name, value]) => ({ name, value: String(value) }));
+    }
+  }
+  return out;
+}
+
+class ScalyVisualStudioBuild implements vscode.DebugConfigurationProvider {
+  resolveDebugConfigurationWithSubstitutedVariables(
+    folder: vscode.WorkspaceFolder | undefined,
+    config: vscode.DebugConfiguration
+  ): Promise<vscode.DebugConfiguration | undefined> {
+    return buildBeforeLaunch(folder, config, "scalySource");
   }
 }
 
@@ -496,6 +576,10 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.debug.registerDebugConfigurationProvider(
       "scaly",
       new ScalyDebugConfigurationProvider()
+    ),
+    vscode.debug.registerDebugConfigurationProvider(
+      "cppvsdbg",
+      new ScalyVisualStudioBuild()
     ),
     vscode.tasks.registerTaskProvider("scaly", new ScalyTaskProvider())
   );
