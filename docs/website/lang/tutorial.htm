@@ -134,10 +134,18 @@ class="num"
 ></li
 ><li
 ><a
-href="tutorial.htm#tut-tour"
+href="tutorial.htm#tut-windows"
 ><span
 class="num"
 >2.3</span
+>Scaly on Windows</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.4</span
 >A Tour of Scaly</a
 ></li
 ><li
@@ -145,7 +153,7 @@ class="num"
 href="tutorial.htm#tut-together"
 ><span
 class="num"
->2.4</span
+>2.5</span
 >Putting It Together</a
 ></li
 ></ol
@@ -1025,7 +1033,11 @@ href="https://scaly.io/install.sh"
 >scaly.io/install.sh</a
 >.</p
 ><p
->On Windows, in PowerShell:</p
+>On Windows, in PowerShell (<a
+href="#tut-windows"
+>Scaly on Windows</a
+> says
+        what happens there, and how to work with Visual Studio):</p
 ><pre
 class="listing"
 ><code
@@ -1576,7 +1588,10 @@ class="command"
 class="filename"
 >launch.json</code
 >, strings and containers shown by
-        their contents.</p
+        their contents (<a
+href="#tut-windows-vscode"
+>VS Code on Windows</a
+>).</p
 ><p
 >For a configuration of your own — arguments, an environment,
         another program — you write a <code
@@ -2026,6 +2041,420 @@ class="gui"
             editor.</p
 ></li
 ></ul
+></section
+></section
+><section
+id="tut-windows"
+><h2
+><a
+class="header"
+href="#tut-windows"
+>Scaly on Windows</a
+></h2
+><p
+>Everything in this chapter works on Windows 10 and 11, on x64 and on
+      arm64. This section collects what is different there: how the
+      installation goes, what a program looks like on disk, and how to debug
+      one — in VS Code, and in Visual Studio itself.</p
+><section
+id="tut-windows-install"
+><h3
+><a
+class="header"
+href="#tut-windows-install"
+>Installing on Windows</a
+></h3
+><p
+>Open PowerShell (or Windows Terminal) and run:</p
+><pre
+class="listing"
+><code
+>irm https://scaly.io/install.ps1 | iex</code
+></pre
+><p
+>No administrator rights are needed for Scaly itself: it goes to
+        <code
+class="filename"
+>%USERPROFILE%\.scaly</code
+>, and its three programs are
+        put on your own <code
+class="envar"
+>PATH</code
+>.</p
+><p
+>Building a program needs one thing Windows does not bring along: a
+        linker, and the C runtime's libraries to link with. Scaly uses the
+        ones of the <em
+>Visual Studio Build Tools</em
+> (the C++
+        tools and a Windows SDK), as Rust does on Windows. The installer
+        looks for them, and where they are missing it fetches them through
+        <code
+class="command"
+>winget</code
+>. Windows then asks once for administrator
+        rights, and the download is several gigabytes, so this step takes a
+        few minutes. If Visual Studio with the workload <q
+>Desktop
+        development with C++</q
+> is installed already, the installer
+        finds it and fetches nothing.</p
+><p
+>To decide for yourself, set <code
+class="envar"
+>SCALY_BUILD_TOOLS</code
+>
+        before running the installer — <code
+>ask</code
+> asks first,
+        <code
+>skip</code
+> leaves them out:</p
+><pre
+class="listing"
+><code
+>$env:SCALY_BUILD_TOOLS = "ask"
+irm https://scaly.io/install.ps1 | iex</code
+></pre
+><p
+>Without the Build Tools, <code
+class="userinput"
+>scaly run</code
+>,
+        <code
+class="userinput"
+>scaly test</code
+> and the REPL work all the same;
+        only <code
+class="userinput"
+>scaly build</code
+> says that it has nothing to
+        link with, and how to install it. Open a new terminal when the
+        installer is done, so that it sees the new <code
+class="envar"
+>PATH</code
+>.</p
+></section
+><section
+id="tut-windows-build"
+><h3
+><a
+class="header"
+href="#tut-windows-build"
+>Programs and Debug Information</a
+></h3
+><p
+>The commands are the ones of <a
+href="#tut-hello"
+>Hello, World!</a
+>; a
+        program you build is an <code
+class="filename"
+>.exe</code
+>:</p
+><pre
+class="listing"
+><code
+>scaly run hello.scaly
+scaly build hello.scaly -o hello.exe
+.\hello.exe</code
+></pre
+><p
+>With <code
+class="option"
+>-g</code
+> the build writes a second file beside
+        the program, <code
+class="filename"
+>hello.pdb</code
+>: the debug information,
+        in the form every Windows debugger reads. It also carries the views
+        that show a <code
+>String</code
+> as its text and a
+        <code
+>Vector</code
+>, <code
+>Array</code
+> or <code
+>List</code
+> with its
+        elements, so a debugger shows them without any setting — Visual
+        Studio, VS Code and WinDbg alike:</p
+><pre
+class="listing"
+><code
+>scaly build -g area.scaly -o area.exe</code
+></pre
+></section
+><section
+id="tut-windows-vscode"
+><h3
+><a
+class="header"
+href="#tut-windows-vscode"
+>VS Code on Windows</a
+></h3
+><p
+>Install VS Code from <code
+>code.visualstudio.com</code
+> or
+        with <code
+class="userinput"
+>winget install Microsoft.VisualStudioCode</code
+>,
+        then the Scaly extension as in <a
+href="#tut-vscode-extension"
+>Installing the Scaly Extension</a
+>.
+        Start VS Code after Scaly is installed, so that it finds
+        <code
+class="command"
+>scalyls</code
+> on the <code
+class="envar"
+>PATH</code
+>.</p
+><p
+>Debugging uses the Visual Studio debugger, which VS Code gets from
+        Microsoft's <em
+>C/C++</em
+> extension. Open
+        <code
+class="filename"
+>area.scaly</code
+> from <a
+href="#tut-vscode-debug"
+>Setting a Breakpoint and Stepping</a
+>,
+        set a breakpoint and press <kbd
+>F5</kbd
+>. The first time, the
+        Scaly extension says that the C/C++ extension is missing and offers
+        <span
+class="gui"
+>Install C/C++</span
+>; install it and press
+        <kbd
+>F5</kbd
+> again. From then on everything in
+        <a
+href="#tut-vscode-debug"
+>Setting a Breakpoint and Stepping</a
+> and
+        <a
+href="#tut-vscode-callstack"
+>Stepping into Functions and the Call Stack</a
+> applies as written; a
+        <code
+class="filename"
+>launch.json</code
+> takes the same attributes as on the
+        other systems.</p
+></section
+><section
+id="tut-windows-vs"
+><h3
+><a
+class="header"
+href="#tut-windows-vs"
+>Visual Studio</a
+></h3
+><p
+>Visual Studio 2022 or 2026 — the Community edition will do —
+        debugs a Scaly program with the debugger it uses for C++. It needs
+        the workload <q
+>Desktop development with C++</q
+>, which also
+        brings everything <code
+class="userinput"
+>scaly build</code
+> links with. Start
+        Visual Studio after Scaly is installed, so that its tasks find
+        <code
+class="command"
+>scaly</code
+> on the <code
+class="envar"
+>PATH</code
+>.</p
+><p
+>Visual Studio has no Scaly project type; it works on a folder.
+        Choose <span
+class="gui"
+>File</span
+> &#62; <span
+class="gui"
+>Open</span
+>
+        &#62; <span
+class="gui"
+>Folder…</span
+> and pick the folder that holds
+        <code
+class="filename"
+>area.scaly</code
+>. The <span
+class="gui"
+>Solution
+        Explorer</span
+> shows its files.</p
+><p
+><em
+>Building.</em
+> Right-click
+        <code
+class="filename"
+>area.scaly</code
+> in the Solution Explorer and choose
+        <span
+class="gui"
+>Configure Tasks</span
+>. Visual Studio opens
+        <code
+class="filename"
+>.vs\tasks.vs.json</code
+>; replace its content with a
+        task that builds the file with debug information:</p
+><pre
+class="listing"
+><code
+>{
+    "version": "0.2.1",
+    "tasks": [
+        {
+            "taskLabel": "scaly build",
+            "appliesTo": "*.scaly",
+            "type": "launch",
+            "contextType": "build",
+            "command": "scaly",
+            "args": [ "build", "-g", "${file}",
+                      "-o", "${fileDirname}\\${fileBasenameNoExtension}.exe" ]
+        }
+    ]
+}</code
+></pre
+><p
+>Now the context menu of every <code
+class="filename"
+>.scaly</code
+> file in
+        the folder has <span
+class="gui"
+>Build</span
+>; it writes
+        <code
+class="filename"
+>area.exe</code
+> and <code
+class="filename"
+>area.pdb</code
+> beside
+        the source, and the compiler's messages appear in the
+        <span
+class="gui"
+>Output</span
+> window.</p
+><p
+><em
+>Debugging.</em
+> Right-click
+        <code
+class="filename"
+>area.exe</code
+> in the Solution Explorer and choose
+        <span
+class="gui"
+>Set as Startup Item</span
+>. Open
+        <code
+class="filename"
+>area.scaly</code
+>, click in the margin left of
+        <code
+>var area width * height</code
+> (or put the cursor there and
+        press <kbd
+>F9</kbd
+>) and press <kbd
+>F5</kbd
+>: the program
+        stops at that line. <kbd
+>F10</kbd
+> steps over a line,
+        <kbd
+>F11</kbd
+> into a function, and the
+        <span
+class="gui"
+>Locals</span
+> window shows the bindings —
+        <code
+>area</code
+> becomes <code
+class="computeroutput"
+>40</code
+> after the
+        step. To stop at the first statement instead, start with
+        <kbd
+>F11</kbd
+> rather than <kbd
+>F5</kbd
+>.</p
+><p
+>Arguments, a working directory or an environment for the program
+        go into a debug configuration: right-click
+        <code
+class="filename"
+>area.exe</code
+>, choose <span
+class="gui"
+>Add Debug
+        Configuration</span
+> and then <span
+class="gui"
+>Default</span
+>.
+        Visual Studio writes <code
+class="filename"
+>.vs\launch.vs.json</code
+>, where
+        the entry can be extended:</p
+><pre
+class="listing"
+><code
+>{
+    "version": "0.2.1",
+    "defaults": {},
+    "configurations": [
+        {
+            "type": "default",
+            "project": "area.exe",
+            "name": "area.exe",
+            "args": [ "Ada", "Grace" ],
+            "currentDir": "${workspaceRoot}",
+            "env": { "GREETING": "Hello" }
+        }
+    ]
+}</code
+></pre
+><p
+>Remember to build again after changing the source: the debugger
+        runs the <code
+class="filename"
+>.exe</code
+> as it is. Visual Studio does not
+        know Scaly as a language yet, so the editor shows a
+        <code
+class="filename"
+>.scaly</code
+> file as plain text, and the
+        <span
+class="gui"
+>Watch</span
+> window evaluates C++, not Scaly; for
+        highlighting, completion and the rest of the language server, edit in
+        VS Code.</p
 ></section
 ></section
 ><section
