@@ -554,6 +554,17 @@ define cli
         String()
     }
 
+    ; The debugger views of the standard library's types for a Windows
+    ; program built with -g (scaly/win32/scaly.natvis), which the link puts
+    ; into the .pdb. Empty where the packages at hand do not carry the file.
+    procedure natvis_file() returns String
+    {
+        let path "`Modeler.stdlib_directory()`/scaly/win32/scaly.natvis"
+        if File.exists(path)
+            return windows_path(path)
+        String()
+    }
+
     procedure runtime_archive_path(coff: bool) returns String
     {
         var leaf "/libscaly.a"
@@ -1747,12 +1758,22 @@ define cli
         ; and the link writes it into a .pdb beside the program, which the
         ; Visual Studio debugger finds through the path the program names.
         ; No incremental link: it would leave an .ilk beside it as well.
+        ; The views of String and the containers go into the .pdb as well
+        ; (natvis_file#), so a debugger shows them without a setting.
         if opts.debug and coff
         {
             if msvc
                 cmd_builder.append " -debug -incremental:no"
             else
                 cmd_builder.append " -g"
+            let natvis natvis_file()
+            if natvis.get_length() > 0
+            {
+                if msvc
+                    cmd_builder.append " \"-natvis:`natvis`\""
+                else
+                    cmd_builder.append " -Xlinker \"-natvis:`natvis`\""
+            }
         }
         ; WebAssembly: a catch point's longjmp is wasi-libc's libsetjmp (the
         ; exception tag it throws), and munmap its emulated mman. The stack in

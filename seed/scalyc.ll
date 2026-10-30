@@ -1469,7 +1469,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -3947050982405968484
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 7148519509752043162
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -8684,307 +8684,310 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.sconst.7183 = private constant [3 x i8] c"\01.\00"
 @.sconst.7184 = private constant [3 x i8] c"\01.\00"
 @.sconst.7185 = private constant [23 x i8] c"\15/scaly/win32/utf8.res\00"
-@.sconst.7186 = private constant [13 x i8] c"\0B/libscaly.a\00"
-@.sconst.7187 = private constant [15 x i8] c"\0D/libscaly.lib\00"
-@.str.7188 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
-@.sconst.7189 = private constant [6 x i8] c"\04/tmp\00"
-@.sconst.7190 = private constant [6 x i8] c"\04/lib\00"
-@.str.7191 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
-@.str.7192 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
-@.sconst.7193 = private constant [23 x i8] c"\15/usr/bin/xcode-select\00"
-@.str.7194 = private unnamed_addr constant [42 x i8] c"/usr/bin/xcode-select -p > /dev/null 2>&1\00", align 1
-@.sconst.7195 = private constant [9 x i8] c"\07/bin/sh\00"
-@.str.7196 = private unnamed_addr constant [34 x i8] c"command -v clang > /dev/null 2>&1\00", align 1
-@.str.7197 = private unnamed_addr constant [94 x i8] c"Error: no C compiler - a built program is linked by one, and this Mac has no developer tools.\00", align 1
-@.str.7198 = private unnamed_addr constant [50 x i8] c"       Install them with:  xcode-select --install\00", align 1
-@.str.7199 = private unnamed_addr constant [94 x i8] c"Error: no C compiler - a built program is linked by one, and there is no 'clang' on the PATH.\00", align 1
-@.str.7200 = private unnamed_addr constant [80 x i8] c"       Install one (Ubuntu: sudo apt install clang), or name yours in SCALY_CC.\00", align 1
-@.str.7201 = private unnamed_addr constant [55 x i8] c"       (scaly run, scaly test and the REPL need none.)\00", align 1
-@.str.7202 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
-@.str.7203 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
-@.sconst.7204 = private constant [7 x i8] c"\05clang\00"
+@.sconst.7186 = private constant [27 x i8] c"\19/scaly/win32/scaly.natvis\00"
+@.sconst.7187 = private constant [13 x i8] c"\0B/libscaly.a\00"
+@.sconst.7188 = private constant [15 x i8] c"\0D/libscaly.lib\00"
+@.str.7189 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
+@.sconst.7190 = private constant [6 x i8] c"\04/tmp\00"
+@.sconst.7191 = private constant [6 x i8] c"\04/lib\00"
+@.str.7192 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
+@.str.7193 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
+@.sconst.7194 = private constant [23 x i8] c"\15/usr/bin/xcode-select\00"
+@.str.7195 = private unnamed_addr constant [42 x i8] c"/usr/bin/xcode-select -p > /dev/null 2>&1\00", align 1
+@.sconst.7196 = private constant [9 x i8] c"\07/bin/sh\00"
+@.str.7197 = private unnamed_addr constant [34 x i8] c"command -v clang > /dev/null 2>&1\00", align 1
+@.str.7198 = private unnamed_addr constant [94 x i8] c"Error: no C compiler - a built program is linked by one, and this Mac has no developer tools.\00", align 1
+@.str.7199 = private unnamed_addr constant [50 x i8] c"       Install them with:  xcode-select --install\00", align 1
+@.str.7200 = private unnamed_addr constant [94 x i8] c"Error: no C compiler - a built program is linked by one, and there is no 'clang' on the PATH.\00", align 1
+@.str.7201 = private unnamed_addr constant [80 x i8] c"       Install one (Ubuntu: sudo apt install clang), or name yours in SCALY_CC.\00", align 1
+@.str.7202 = private unnamed_addr constant [55 x i8] c"       (scaly run, scaly test and the REPL need none.)\00", align 1
+@.str.7203 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
+@.str.7204 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
 @.sconst.7205 = private constant [7 x i8] c"\05clang\00"
-@.str.7206 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
-@.str.7207 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
-@.str.7208 = private unnamed_addr constant [18 x i8] c"ProgramFiles(x86)\00", align 1
-@.sconst.7209 = private constant [5 x i8] c"\03x64\00"
-@.sconst.7210 = private constant [9 x i8] c"\07aarch64\00"
-@.sconst.7211 = private constant [7 x i8] c"\05arm64\00"
+@.sconst.7206 = private constant [7 x i8] c"\05clang\00"
+@.str.7207 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
+@.str.7208 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
+@.str.7209 = private unnamed_addr constant [18 x i8] c"ProgramFiles(x86)\00", align 1
+@.sconst.7210 = private constant [5 x i8] c"\03x64\00"
+@.sconst.7211 = private constant [9 x i8] c"\07aarch64\00"
 @.sconst.7212 = private constant [7 x i8] c"\05arm64\00"
-@.sconst.7213 = private constant [6 x i8] c"\04i686\00"
-@.sconst.7214 = private constant [6 x i8] c"\04i386\00"
-@.sconst.7215 = private constant [5 x i8] c"\03x86\00"
-@.str.7216 = private unnamed_addr constant [18 x i8] c"VCToolsInstallDir\00", align 1
-@.sconst.7217 = private constant [48 x i8] c".\\Microsoft Visual Studio\\Installer\\vswhere.exe\00"
-@.sconst.7218 = private constant [13 x i8] c"\0B/scalyc_vs_\00"
-@.sconst.7219 = private constant [6 x i8] c"\04.txt\00"
-@.sconst.7220 = private constant [4 x i8] c"\02\22\22\00"
-@.sconst.7221 = private constant [52 x i8] c"2\22 -utf8 -products * -property installationPath > \22\00"
-@.sconst.7222 = private constant [4 x i8] c"\02\22\22\00"
-@.sconst.7223 = private constant [6 x i8] c"\04lib/\00"
-@.sconst.7224 = private constant [13 x i8] c"\0B/libcmt.lib\00"
-@.sconst.7225 = private constant [16 x i8] c"\0E\\VC\\Tools\\MSVC\00"
-@.sconst.7226 = private constant [15 x i8] c"\0D\\bin\\Hostx64\\\00"
-@.sconst.7227 = private constant [11 x i8] c"\09\\link.exe\00"
-@.sconst.7228 = private constant [9 x i8] c"\07aarch64\00"
-@.sconst.7229 = private constant [17 x i8] c"\0F\\bin\\Hostarm64\\\00"
-@.sconst.7230 = private constant [11 x i8] c"\09\\link.exe\00"
-@.sconst.7231 = private constant [18 x i8] c"\10\\Windows Kits\\10\00"
-@.str.7232 = private unnamed_addr constant [14 x i8] c"WindowsSdkDir\00", align 1
-@.sconst.7233 = private constant [6 x i8] c"\04\\Lib\00"
-@.sconst.7234 = private constant [5 x i8] c"\03um/\00"
-@.sconst.7235 = private constant [15 x i8] c"\0D/kernel32.lib\00"
-@.sconst.7236 = private constant [22 x i8] c"\14\22 -nologo \22-libpath:\00"
-@.sconst.7237 = private constant [7 x i8] c"\05\\lib\\\00"
-@.sconst.7238 = private constant [14 x i8] c"\0C\22 \22-libpath:\00"
-@.sconst.7239 = private constant [6 x i8] c"\04\\um\\\00"
-@.sconst.7240 = private constant [14 x i8] c"\0C\22 \22-libpath:\00"
-@.sconst.7241 = private constant [8 x i8] c"\06\\ucrt\\\00"
-@.sconst.7242 = private constant [43 x i8] c")\22 -defaultlib:libcmt -defaultlib:oldnames\00"
-@.sconst.7243 = private constant [12 x i8] c"\0A\22-libpath:\00"
-@.sconst.7244 = private constant [3 x i8] c"\01 \00"
-@.sconst.7245 = private constant [6 x i8] c"\04.lib\00"
-@.str.7246 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
-@.str.7247 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
-@.sconst.7248 = private constant [13 x i8] c"\0Bcommand -v \00"
-@.sconst.7249 = private constant [19 x i8] c"\11 > /dev/null 2>&1\00"
-@.sconst.7250 = private constant [25 x i8] c"\17/opt/homebrew/opt/llvm@\00"
-@.sconst.7251 = private constant [7 x i8] c"\05/bin/\00"
-@.sconst.7252 = private constant [22 x i8] c"\14/usr/local/opt/llvm@\00"
-@.sconst.7253 = private constant [7 x i8] c"\05/bin/\00"
-@.sconst.7254 = private constant [20 x i8] c"\12Error: no profile \00"
-@.sconst.7255 = private constant [10 x i8] c"\08.profraw\00"
-@.sconst.7256 = private constant [11 x i8] c"\09.profdata\00"
-@.sconst.7257 = private constant [15 x i8] c"\0Dllvm-profdata\00"
-@.sconst.7258 = private constant [9 x i8] c"\07windows\00"
-@.sconst.7259 = private constant [3 x i8] c"\01\22\00"
-@.sconst.7260 = private constant [14 x i8] c"\0C\22 merge -o \22\00"
-@.sconst.7261 = private constant [5 x i8] c"\03\22 \22\00"
-@.sconst.7262 = private constant [9 x i8] c"\07Error: \00"
-@.sconst.7263 = private constant [66 x i8] c"@ merge failed; index the profile yourself and pass the .profdata\00"
-@.sconst.7264 = private constant [9 x i8] c"\07Error: \00"
-@.str.7265 = private unnamed_addr constant [31 x i8] c"Error: No input file specified\00", align 1
-@.str.7266 = private unnamed_addr constant [12 x i8] c"Compiling: \00", align 1
-@.str.7267 = private unnamed_addr constant [33 x i8] c"Error: Could not read input file\00", align 1
-@.str.7268 = private unnamed_addr constant [30 x i8] c"Read source file successfully\00", align 1
-@.str.7269 = private unnamed_addr constant [8 x i8] c"Tokens:\00", align 1
-@.str.7270 = private unnamed_addr constant [10 x i8] c"  <token>\00", align 1
-@.str.7271 = private unnamed_addr constant [12 x i8] c"Parse error\00", align 1
-@.str.7272 = private unnamed_addr constant [31 x i8] c"Parsing completed successfully\00", align 1
-@.str.7273 = private unnamed_addr constant [17 x i8] c"Parse successful\00", align 1
-@.str.7274 = private unnamed_addr constant [25 x i8] c"Model built successfully\00", align 1
+@.sconst.7213 = private constant [7 x i8] c"\05arm64\00"
+@.sconst.7214 = private constant [6 x i8] c"\04i686\00"
+@.sconst.7215 = private constant [6 x i8] c"\04i386\00"
+@.sconst.7216 = private constant [5 x i8] c"\03x86\00"
+@.str.7217 = private unnamed_addr constant [18 x i8] c"VCToolsInstallDir\00", align 1
+@.sconst.7218 = private constant [48 x i8] c".\\Microsoft Visual Studio\\Installer\\vswhere.exe\00"
+@.sconst.7219 = private constant [13 x i8] c"\0B/scalyc_vs_\00"
+@.sconst.7220 = private constant [6 x i8] c"\04.txt\00"
+@.sconst.7221 = private constant [4 x i8] c"\02\22\22\00"
+@.sconst.7222 = private constant [52 x i8] c"2\22 -utf8 -products * -property installationPath > \22\00"
+@.sconst.7223 = private constant [4 x i8] c"\02\22\22\00"
+@.sconst.7224 = private constant [6 x i8] c"\04lib/\00"
+@.sconst.7225 = private constant [13 x i8] c"\0B/libcmt.lib\00"
+@.sconst.7226 = private constant [16 x i8] c"\0E\\VC\\Tools\\MSVC\00"
+@.sconst.7227 = private constant [15 x i8] c"\0D\\bin\\Hostx64\\\00"
+@.sconst.7228 = private constant [11 x i8] c"\09\\link.exe\00"
+@.sconst.7229 = private constant [9 x i8] c"\07aarch64\00"
+@.sconst.7230 = private constant [17 x i8] c"\0F\\bin\\Hostarm64\\\00"
+@.sconst.7231 = private constant [11 x i8] c"\09\\link.exe\00"
+@.sconst.7232 = private constant [18 x i8] c"\10\\Windows Kits\\10\00"
+@.str.7233 = private unnamed_addr constant [14 x i8] c"WindowsSdkDir\00", align 1
+@.sconst.7234 = private constant [6 x i8] c"\04\\Lib\00"
+@.sconst.7235 = private constant [5 x i8] c"\03um/\00"
+@.sconst.7236 = private constant [15 x i8] c"\0D/kernel32.lib\00"
+@.sconst.7237 = private constant [22 x i8] c"\14\22 -nologo \22-libpath:\00"
+@.sconst.7238 = private constant [7 x i8] c"\05\\lib\\\00"
+@.sconst.7239 = private constant [14 x i8] c"\0C\22 \22-libpath:\00"
+@.sconst.7240 = private constant [6 x i8] c"\04\\um\\\00"
+@.sconst.7241 = private constant [14 x i8] c"\0C\22 \22-libpath:\00"
+@.sconst.7242 = private constant [8 x i8] c"\06\\ucrt\\\00"
+@.sconst.7243 = private constant [43 x i8] c")\22 -defaultlib:libcmt -defaultlib:oldnames\00"
+@.sconst.7244 = private constant [12 x i8] c"\0A\22-libpath:\00"
+@.sconst.7245 = private constant [3 x i8] c"\01 \00"
+@.sconst.7246 = private constant [6 x i8] c"\04.lib\00"
+@.str.7247 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
+@.str.7248 = private unnamed_addr constant [3 x i8] c"CC\00", align 1
+@.sconst.7249 = private constant [13 x i8] c"\0Bcommand -v \00"
+@.sconst.7250 = private constant [19 x i8] c"\11 > /dev/null 2>&1\00"
+@.sconst.7251 = private constant [25 x i8] c"\17/opt/homebrew/opt/llvm@\00"
+@.sconst.7252 = private constant [7 x i8] c"\05/bin/\00"
+@.sconst.7253 = private constant [22 x i8] c"\14/usr/local/opt/llvm@\00"
+@.sconst.7254 = private constant [7 x i8] c"\05/bin/\00"
+@.sconst.7255 = private constant [20 x i8] c"\12Error: no profile \00"
+@.sconst.7256 = private constant [10 x i8] c"\08.profraw\00"
+@.sconst.7257 = private constant [11 x i8] c"\09.profdata\00"
+@.sconst.7258 = private constant [15 x i8] c"\0Dllvm-profdata\00"
+@.sconst.7259 = private constant [9 x i8] c"\07windows\00"
+@.sconst.7260 = private constant [3 x i8] c"\01\22\00"
+@.sconst.7261 = private constant [14 x i8] c"\0C\22 merge -o \22\00"
+@.sconst.7262 = private constant [5 x i8] c"\03\22 \22\00"
+@.sconst.7263 = private constant [9 x i8] c"\07Error: \00"
+@.sconst.7264 = private constant [66 x i8] c"@ merge failed; index the profile yourself and pass the .profdata\00"
+@.sconst.7265 = private constant [9 x i8] c"\07Error: \00"
+@.str.7266 = private unnamed_addr constant [31 x i8] c"Error: No input file specified\00", align 1
+@.str.7267 = private unnamed_addr constant [12 x i8] c"Compiling: \00", align 1
+@.str.7268 = private unnamed_addr constant [33 x i8] c"Error: Could not read input file\00", align 1
+@.str.7269 = private unnamed_addr constant [30 x i8] c"Read source file successfully\00", align 1
+@.str.7270 = private unnamed_addr constant [8 x i8] c"Tokens:\00", align 1
+@.str.7271 = private unnamed_addr constant [10 x i8] c"  <token>\00", align 1
+@.str.7272 = private unnamed_addr constant [12 x i8] c"Parse error\00", align 1
+@.str.7273 = private unnamed_addr constant [31 x i8] c"Parsing completed successfully\00", align 1
+@.str.7274 = private unnamed_addr constant [17 x i8] c"Parse successful\00", align 1
 @.str.7275 = private unnamed_addr constant [25 x i8] c"Model built successfully\00", align 1
-@.str.7276 = private unnamed_addr constant [14 x i8] c"Planner error\00", align 1
-@.str.7277 = private unnamed_addr constant [22 x i8] c"E0-before-purity-gate\00", align 1
-@.str.7278 = private unnamed_addr constant [24 x i8] c"E0z-purity-analyze-done\00", align 1
-@.str.7279 = private unnamed_addr constant [15 x i8] c"E1-purity-gate\00", align 1
-@.str.7280 = private unnamed_addr constant [32 x i8] c"Planning completed successfully\00", align 1
+@.str.7276 = private unnamed_addr constant [25 x i8] c"Model built successfully\00", align 1
+@.str.7277 = private unnamed_addr constant [14 x i8] c"Planner error\00", align 1
+@.str.7278 = private unnamed_addr constant [22 x i8] c"E0-before-purity-gate\00", align 1
+@.str.7279 = private unnamed_addr constant [24 x i8] c"E0z-purity-analyze-done\00", align 1
+@.str.7280 = private unnamed_addr constant [15 x i8] c"E1-purity-gate\00", align 1
 @.str.7281 = private unnamed_addr constant [32 x i8] c"Planning completed successfully\00", align 1
-@.str.7282 = private unnamed_addr constant [122 x i8] c"no tests: a test is a function or procedure named test or test_<name>, taking nothing and answering an int (0 for passed)\00", align 1
-@.sconst.7283 = private constant [9 x i8] c"\07 passed\00"
-@.sconst.7284 = private constant [6 x i8] c"\04 of \00"
-@.sconst.7285 = private constant [9 x i8] c"\07 failed\00"
-@.str.7286 = private unnamed_addr constant [32 x i8] c"Error: --run function not found\00", align 1
-@.sconst.7287 = private constant [6 x i8] c"\04main\00"
-@.str.7288 = private unnamed_addr constant [11 x i8] c"E2-emitted\00", align 1
-@.str.7289 = private unnamed_addr constant [14 x i8] c"Emitter error\00", align 1
-@.str.7290 = private unnamed_addr constant [39 x i8] c"Code generation completed successfully\00", align 1
-@.str.7291 = private unnamed_addr constant [29 x i8] c"Error: -S requires -o <file>\00", align 1
-@.str.7292 = private unnamed_addr constant [31 x i8] c"Error: Could not write IR file\00", align 1
-@.str.7293 = private unnamed_addr constant [29 x i8] c"Error: -c requires -o <file>\00", align 1
-@.sconst.7294 = private constant [25 x i8] c"\17Error: Could not write \00"
-@.str.7295 = private unnamed_addr constant [35 x i8] c"Error: Could not write object file\00", align 1
-@.str.7296 = private unnamed_addr constant [38 x i8] c"Error: -o <file> required for linking\00", align 1
-@.sconst.7297 = private constant [7 x i8] c"\05scaly\00"
+@.str.7282 = private unnamed_addr constant [32 x i8] c"Planning completed successfully\00", align 1
+@.str.7283 = private unnamed_addr constant [122 x i8] c"no tests: a test is a function or procedure named test or test_<name>, taking nothing and answering an int (0 for passed)\00", align 1
+@.sconst.7284 = private constant [9 x i8] c"\07 passed\00"
+@.sconst.7285 = private constant [6 x i8] c"\04 of \00"
+@.sconst.7286 = private constant [9 x i8] c"\07 failed\00"
+@.str.7287 = private unnamed_addr constant [32 x i8] c"Error: --run function not found\00", align 1
+@.sconst.7288 = private constant [6 x i8] c"\04main\00"
+@.str.7289 = private unnamed_addr constant [11 x i8] c"E2-emitted\00", align 1
+@.str.7290 = private unnamed_addr constant [14 x i8] c"Emitter error\00", align 1
+@.str.7291 = private unnamed_addr constant [39 x i8] c"Code generation completed successfully\00", align 1
+@.str.7292 = private unnamed_addr constant [29 x i8] c"Error: -S requires -o <file>\00", align 1
+@.str.7293 = private unnamed_addr constant [31 x i8] c"Error: Could not write IR file\00", align 1
+@.str.7294 = private unnamed_addr constant [29 x i8] c"Error: -c requires -o <file>\00", align 1
+@.sconst.7295 = private constant [25 x i8] c"\17Error: Could not write \00"
+@.str.7296 = private unnamed_addr constant [35 x i8] c"Error: Could not write object file\00", align 1
+@.str.7297 = private unnamed_addr constant [38 x i8] c"Error: -o <file> required for linking\00", align 1
 @.sconst.7298 = private constant [7 x i8] c"\05scaly\00"
-@.sconst.7299 = private constant [14 x i8] c"\0C/scaly.scaly\00"
-@.sconst.7300 = private constant [9 x i8] c"\07Error: \00"
-@.sconst.7301 = private constant [32 x i8] c"\1E did not link into the program\00"
-@.sconst.7302 = private constant [6 x i8] c"\04/tmp\00"
-@.sconst.7303 = private constant [14 x i8] c"\0C/scalyc_out_\00"
-@.sconst.7304 = private constant [4 x i8] c"\02.o\00"
-@.sconst.7305 = private constant [6 x i8] c"\04.tmp\00"
-@.str.7306 = private unnamed_addr constant [35 x i8] c"Error: Could not write object file\00", align 1
-@.sconst.7307 = private constant [3 x i8] c"\01\22\00"
-@.sconst.7308 = private constant [7 x i8] c"\05clang\00"
-@.sconst.7309 = private constant [27 x i8] c"\19 -fprofile-instr-generate\00"
-@.str.7310 = private unnamed_addr constant [18 x i8] c"ProgramFiles(x86)\00", align 1
-@.str.7311 = private unnamed_addr constant [23 x i8] c"where clang >nul 2>nul\00", align 1
-@.str.7312 = private unnamed_addr constant [141 x i8] c"Error: no linker - a built program is linked by the Visual Studio Build Tools (the C++ tools and a Windows SDK), and they are not installed.\00", align 1
-@.sconst.7313 = private constant [9 x i8] c"\07aarch64\00"
-@.str.7314 = private unnamed_addr constant [251 x i8] c"       Install them with:  winget install --id Microsoft.VisualStudio.BuildTools -e --source winget --override \22--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.ARM64\22\00", align 1
-@.str.7315 = private unnamed_addr constant [253 x i8] c"       Install them with:  winget install --id Microsoft.VisualStudio.BuildTools -e --source winget --override \22--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64\22\00", align 1
-@.str.7316 = private unnamed_addr constant [115 x i8] c"       (or the Visual Studio Installer: workload \22Desktop development with C++\22; SCALY_CC names another compiler.)\00", align 1
-@.str.7317 = private unnamed_addr constant [55 x i8] c"       (scaly run, scaly test and the REPL need none.)\00", align 1
-@.sconst.7318 = private constant [4 x i8] c"\02 \22\00"
-@.sconst.7319 = private constant [3 x i8] c"\01\22\00"
-@.sconst.7320 = private constant [4 x i8] c"\02 \22\00"
-@.sconst.7321 = private constant [3 x i8] c"\01\22\00"
-@.sconst.7322 = private constant [4 x i8] c"\02 \22\00"
-@.sconst.7323 = private constant [3 x i8] c"\01\22\00"
-@.sconst.7324 = private constant [4 x i8] c"\02 \22\00"
-@.sconst.7325 = private constant [3 x i8] c"\01\22\00"
-@.sconst.7326 = private constant [4 x i8] c"\02 \22\00"
-@.sconst.7327 = private constant [3 x i8] c"\01\22\00"
-@.sconst.7328 = private constant [12 x i8] c"\0A -rdynamic\00"
-@.sconst.7329 = private constant [13 x i8] c"\0B \22-libpath:\00"
-@.sconst.7330 = private constant [6 x i8] c"\04 \22-L\00"
-@.sconst.7331 = private constant [3 x i8] c"\01\22\00"
-@.sconst.7332 = private constant [3 x i8] c"\01 \00"
-@.sconst.7333 = private constant [6 x i8] c"\04.lib\00"
-@.sconst.7334 = private constant [5 x i8] c"\03 -l\00"
-@.sconst.7335 = private constant [28 x i8] c"\1A ws2_32.lib -stack:8388608\00"
-@.sconst.7336 = private constant [35 x i8] c"! -lws2_32 -Xlinker -stack:8388608\00"
-@.sconst.7337 = private constant [6 x i8] c"\04 -lm\00"
-@.sconst.7338 = private constant [25 x i8] c"\17 -debug -incremental:no\00"
-@.sconst.7339 = private constant [5 x i8] c"\03 -g\00"
-@.sconst.7340 = private constant [72 x i8] c"F -lsetjmp -lwasi-emulated-mman -Wl,--stack-first,-z,stack-size=8388608\00"
-@.sconst.7341 = private constant [12 x i8] c"\0A --target=\00"
-@.sconst.7342 = private constant [9 x i8] c"\07 \22-out:\00"
-@.sconst.7343 = private constant [4 x i8] c"\02\22\22\00"
-@.sconst.7344 = private constant [7 x i8] c"\05 -o \22\00"
-@.sconst.7345 = private constant [3 x i8] c"\01\22\00"
-@.sconst.7346 = private constant [12 x i8] c"\0Adsymutil \22\00"
-@.sconst.7347 = private constant [15 x i8] c"\0D\22 2>/dev/null\00"
-@.str.7348 = private unnamed_addr constant [21 x i8] c"Error: Linker failed\00", align 1
-@.str.7349 = private unnamed_addr constant [18 x i8] c"ProgramFiles(x86)\00", align 1
-@.str.7350 = private unnamed_addr constant [128 x i8] c"       (no Visual Studio Build Tools with a Windows SDK found: scaly build needs them to link; SCALY_CC names another compiler)\00", align 1
-@.sconst.7351 = private constant [7 x i8] c"\05scaly\00"
-@.sconst.7352 = private constant [6 x i8] c"\04test\00"
-@.sconst.7353 = private constant [7 x i8] c"\05test_\00"
-@.sconst.7354 = private constant [5 x i8] c"\03int\00"
-@.sconst.7355 = private constant [23 x i8] c"\15PN4scaly6memory4PageE\00"
-@.sconst.7356 = private constant [12 x i8] c"\0A/interface\00"
-@.str.7357 = private unnamed_addr constant [48 x i8] c"Error: could not read dependency package source\00", align 1
-@.sconst.7358 = private constant [4 x i8] c"\02: \00"
-@.sconst.7359 = private constant [4 x i8] c"\02: \00"
-@.sconst.7360 = private constant [3 x i8] c"\01:\00"
-@.sconst.7361 = private constant [3 x i8] c"\01:\00"
-@.sconst.7362 = private constant [11 x i8] c"\09: error: \00"
-@.sconst.7363 = private constant [11 x i8] c"\09use-vis: \00"
-@.sconst.7364 = private constant [12 x i8] c"\0A visible, \00"
-@.sconst.7365 = private constant [22 x i8] c"\14 invisible lookups, \00"
-@.sconst.7366 = private constant [11 x i8] c"\09 distinct\00"
-@.sconst.7367 = private constant [16 x i8] c"\0Euse-vis MISS: \00"
-@.sconst.7368 = private constant [4 x i8] c"\02: \00"
-@.sconst.7369 = private constant [11 x i8] c"\09 (origin \00"
-@.sconst.7370 = private constant [3 x i8] c"\01)\00"
-@.sconst.7371 = private constant [9 x i8] c"\07 [lazy]\00"
-@.sconst.7372 = private constant [13 x i8] c"\0Btask-plan: \00"
-@.sconst.7373 = private constant [14 x i8] c"\0C for-loops, \00"
-@.sconst.7374 = private constant [17 x i8] c"\0F parallelizable\00"
+@.sconst.7299 = private constant [7 x i8] c"\05scaly\00"
+@.sconst.7300 = private constant [14 x i8] c"\0C/scaly.scaly\00"
+@.sconst.7301 = private constant [9 x i8] c"\07Error: \00"
+@.sconst.7302 = private constant [32 x i8] c"\1E did not link into the program\00"
+@.sconst.7303 = private constant [6 x i8] c"\04/tmp\00"
+@.sconst.7304 = private constant [14 x i8] c"\0C/scalyc_out_\00"
+@.sconst.7305 = private constant [4 x i8] c"\02.o\00"
+@.sconst.7306 = private constant [6 x i8] c"\04.tmp\00"
+@.str.7307 = private unnamed_addr constant [35 x i8] c"Error: Could not write object file\00", align 1
+@.sconst.7308 = private constant [3 x i8] c"\01\22\00"
+@.sconst.7309 = private constant [7 x i8] c"\05clang\00"
+@.sconst.7310 = private constant [27 x i8] c"\19 -fprofile-instr-generate\00"
+@.str.7311 = private unnamed_addr constant [18 x i8] c"ProgramFiles(x86)\00", align 1
+@.str.7312 = private unnamed_addr constant [23 x i8] c"where clang >nul 2>nul\00", align 1
+@.str.7313 = private unnamed_addr constant [141 x i8] c"Error: no linker - a built program is linked by the Visual Studio Build Tools (the C++ tools and a Windows SDK), and they are not installed.\00", align 1
+@.sconst.7314 = private constant [9 x i8] c"\07aarch64\00"
+@.str.7315 = private unnamed_addr constant [251 x i8] c"       Install them with:  winget install --id Microsoft.VisualStudio.BuildTools -e --source winget --override \22--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.ARM64\22\00", align 1
+@.str.7316 = private unnamed_addr constant [253 x i8] c"       Install them with:  winget install --id Microsoft.VisualStudio.BuildTools -e --source winget --override \22--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64\22\00", align 1
+@.str.7317 = private unnamed_addr constant [115 x i8] c"       (or the Visual Studio Installer: workload \22Desktop development with C++\22; SCALY_CC names another compiler.)\00", align 1
+@.str.7318 = private unnamed_addr constant [55 x i8] c"       (scaly run, scaly test and the REPL need none.)\00", align 1
+@.sconst.7319 = private constant [4 x i8] c"\02 \22\00"
+@.sconst.7320 = private constant [3 x i8] c"\01\22\00"
+@.sconst.7321 = private constant [4 x i8] c"\02 \22\00"
+@.sconst.7322 = private constant [3 x i8] c"\01\22\00"
+@.sconst.7323 = private constant [4 x i8] c"\02 \22\00"
+@.sconst.7324 = private constant [3 x i8] c"\01\22\00"
+@.sconst.7325 = private constant [4 x i8] c"\02 \22\00"
+@.sconst.7326 = private constant [3 x i8] c"\01\22\00"
+@.sconst.7327 = private constant [4 x i8] c"\02 \22\00"
+@.sconst.7328 = private constant [3 x i8] c"\01\22\00"
+@.sconst.7329 = private constant [12 x i8] c"\0A -rdynamic\00"
+@.sconst.7330 = private constant [13 x i8] c"\0B \22-libpath:\00"
+@.sconst.7331 = private constant [6 x i8] c"\04 \22-L\00"
+@.sconst.7332 = private constant [3 x i8] c"\01\22\00"
+@.sconst.7333 = private constant [3 x i8] c"\01 \00"
+@.sconst.7334 = private constant [6 x i8] c"\04.lib\00"
+@.sconst.7335 = private constant [5 x i8] c"\03 -l\00"
+@.sconst.7336 = private constant [28 x i8] c"\1A ws2_32.lib -stack:8388608\00"
+@.sconst.7337 = private constant [35 x i8] c"! -lws2_32 -Xlinker -stack:8388608\00"
+@.sconst.7338 = private constant [6 x i8] c"\04 -lm\00"
+@.sconst.7339 = private constant [25 x i8] c"\17 -debug -incremental:no\00"
+@.sconst.7340 = private constant [5 x i8] c"\03 -g\00"
+@.sconst.7341 = private constant [12 x i8] c"\0A \22-natvis:\00"
+@.sconst.7342 = private constant [21 x i8] c"\13 -Xlinker \22-natvis:\00"
+@.sconst.7343 = private constant [72 x i8] c"F -lsetjmp -lwasi-emulated-mman -Wl,--stack-first,-z,stack-size=8388608\00"
+@.sconst.7344 = private constant [12 x i8] c"\0A --target=\00"
+@.sconst.7345 = private constant [9 x i8] c"\07 \22-out:\00"
+@.sconst.7346 = private constant [4 x i8] c"\02\22\22\00"
+@.sconst.7347 = private constant [7 x i8] c"\05 -o \22\00"
+@.sconst.7348 = private constant [3 x i8] c"\01\22\00"
+@.sconst.7349 = private constant [12 x i8] c"\0Adsymutil \22\00"
+@.sconst.7350 = private constant [15 x i8] c"\0D\22 2>/dev/null\00"
+@.str.7351 = private unnamed_addr constant [21 x i8] c"Error: Linker failed\00", align 1
+@.str.7352 = private unnamed_addr constant [18 x i8] c"ProgramFiles(x86)\00", align 1
+@.str.7353 = private unnamed_addr constant [128 x i8] c"       (no Visual Studio Build Tools with a Windows SDK found: scaly build needs them to link; SCALY_CC names another compiler)\00", align 1
+@.sconst.7354 = private constant [7 x i8] c"\05scaly\00"
+@.sconst.7355 = private constant [6 x i8] c"\04test\00"
+@.sconst.7356 = private constant [7 x i8] c"\05test_\00"
+@.sconst.7357 = private constant [5 x i8] c"\03int\00"
+@.sconst.7358 = private constant [23 x i8] c"\15PN4scaly6memory4PageE\00"
+@.sconst.7359 = private constant [12 x i8] c"\0A/interface\00"
+@.str.7360 = private unnamed_addr constant [48 x i8] c"Error: could not read dependency package source\00", align 1
+@.sconst.7361 = private constant [4 x i8] c"\02: \00"
+@.sconst.7362 = private constant [4 x i8] c"\02: \00"
+@.sconst.7363 = private constant [3 x i8] c"\01:\00"
+@.sconst.7364 = private constant [3 x i8] c"\01:\00"
+@.sconst.7365 = private constant [11 x i8] c"\09: error: \00"
+@.sconst.7366 = private constant [11 x i8] c"\09use-vis: \00"
+@.sconst.7367 = private constant [12 x i8] c"\0A visible, \00"
+@.sconst.7368 = private constant [22 x i8] c"\14 invisible lookups, \00"
+@.sconst.7369 = private constant [11 x i8] c"\09 distinct\00"
+@.sconst.7370 = private constant [16 x i8] c"\0Euse-vis MISS: \00"
+@.sconst.7371 = private constant [4 x i8] c"\02: \00"
+@.sconst.7372 = private constant [11 x i8] c"\09 (origin \00"
+@.sconst.7373 = private constant [3 x i8] c"\01)\00"
+@.sconst.7374 = private constant [9 x i8] c"\07 [lazy]\00"
 @.sconst.7375 = private constant [13 x i8] c"\0Btask-plan: \00"
-@.sconst.7376 = private constant [15 x i8] c"\0Dloop-census: \00"
-@.sconst.7377 = private constant [16 x i8] c"\0E while-loops, \00"
-@.sconst.7378 = private constant [12 x i8] c"\0A counted, \00"
-@.sconst.7379 = private constant [17 x i8] c"\0F parallelizable\00"
-@.sconst.7380 = private constant [15 x i8] c"\0Dloop-census: \00"
-@.sconst.7381 = private constant [15 x i8] c"\0Dhost-report: \00"
-@.sconst.7382 = private constant [15 x i8] c"\0D candidates, \00"
-@.sconst.7383 = private constant [8 x i8] c"\06 local\00"
-@.sconst.7384 = private constant [4 x i8] c"\02 (\00"
-@.sconst.7385 = private constant [10 x i8] c"\08 pinned)\00"
-@.sconst.7386 = private constant [15 x i8] c"\0Dhost-report: \00"
-@.sconst.7387 = private constant [18 x i8] c"\10pointer-report: \00"
-@.sconst.7388 = private constant [17 x i8] c"\0F sites; extern \00"
-@.sconst.7389 = private constant [10 x i8] c"\08, param \00"
-@.sconst.7390 = private constant [11 x i8] c"\09, return \00"
-@.sconst.7391 = private constant [10 x i8] c"\08, field \00"
-@.sconst.7392 = private constant [12 x i8] c"\0A, variant \00"
-@.sconst.7393 = private constant [10 x i8] c"\08, local \00"
-@.sconst.7394 = private constant [10 x i8] c"\08, deref \00"
-@.sconst.7395 = private constant [16 x i8] c"\0E, deref-arith \00"
-@.sconst.7396 = private constant [10 x i8] c"\08, arith \00"
-@.sconst.7397 = private constant [9 x i8] c"\07, cast \00"
-@.sconst.7398 = private constant [14 x i8] c"\0C, null-cast \00"
-@.sconst.7399 = private constant [14 x i8] c"\0C, null-test \00"
-@.sconst.7400 = private constant [10 x i8] c"\08, store \00"
-@.sconst.7401 = private constant [8 x i8] c"\06, arg \00"
-@.sconst.7402 = private constant [15 x i8] c"\0D, arg-extern \00"
-@.sconst.7403 = private constant [19 x i8] c"\11, arg-unresolved \00"
-@.sconst.7404 = private constant [23 x i8] c"\15, h-pointer-into-ref \00"
-@.sconst.7405 = private constant [25 x i8] c"\17, h-slice-into-pointer \00"
-@.sconst.7406 = private constant [19 x i8] c"\11, h-mixed-params \00"
-@.sconst.7407 = private constant [29 x i8] c"\1B, h-store-through-ref-slot \00"
-@.sconst.7408 = private constant [37 x i8] c"#; optional-ref derefs (not listed) \00"
-@.sconst.7409 = private constant [19 x i8] c"\11, bodies unfiled \00"
-@.sconst.7410 = private constant [31 x i8] c"\1D, alias handles (not listed) \00"
-@.sconst.7411 = private constant [30 x i8] c"\1C, stack arrays (not listed) \00"
-@.sconst.7412 = private constant [18 x i8] c"\10pointer-report: \00"
-@.sconst.7413 = private constant [16 x i8] c"\0Ewrite-report: \00"
-@.sconst.7414 = private constant [17 x i8] c"\0F lines; bodies \00"
-@.sconst.7415 = private constant [14 x i8] c"\0C, functions \00"
-@.sconst.7416 = private constant [12 x i8] c"\0A (writing \00"
-@.sconst.7417 = private constant [11 x i8] c"\09, direct \00"
-@.sconst.7418 = private constant [16 x i8] c"\0E), procedures \00"
+@.sconst.7376 = private constant [14 x i8] c"\0C for-loops, \00"
+@.sconst.7377 = private constant [17 x i8] c"\0F parallelizable\00"
+@.sconst.7378 = private constant [13 x i8] c"\0Btask-plan: \00"
+@.sconst.7379 = private constant [15 x i8] c"\0Dloop-census: \00"
+@.sconst.7380 = private constant [16 x i8] c"\0E while-loops, \00"
+@.sconst.7381 = private constant [12 x i8] c"\0A counted, \00"
+@.sconst.7382 = private constant [17 x i8] c"\0F parallelizable\00"
+@.sconst.7383 = private constant [15 x i8] c"\0Dloop-census: \00"
+@.sconst.7384 = private constant [15 x i8] c"\0Dhost-report: \00"
+@.sconst.7385 = private constant [15 x i8] c"\0D candidates, \00"
+@.sconst.7386 = private constant [8 x i8] c"\06 local\00"
+@.sconst.7387 = private constant [4 x i8] c"\02 (\00"
+@.sconst.7388 = private constant [10 x i8] c"\08 pinned)\00"
+@.sconst.7389 = private constant [15 x i8] c"\0Dhost-report: \00"
+@.sconst.7390 = private constant [18 x i8] c"\10pointer-report: \00"
+@.sconst.7391 = private constant [17 x i8] c"\0F sites; extern \00"
+@.sconst.7392 = private constant [10 x i8] c"\08, param \00"
+@.sconst.7393 = private constant [11 x i8] c"\09, return \00"
+@.sconst.7394 = private constant [10 x i8] c"\08, field \00"
+@.sconst.7395 = private constant [12 x i8] c"\0A, variant \00"
+@.sconst.7396 = private constant [10 x i8] c"\08, local \00"
+@.sconst.7397 = private constant [10 x i8] c"\08, deref \00"
+@.sconst.7398 = private constant [16 x i8] c"\0E, deref-arith \00"
+@.sconst.7399 = private constant [10 x i8] c"\08, arith \00"
+@.sconst.7400 = private constant [9 x i8] c"\07, cast \00"
+@.sconst.7401 = private constant [14 x i8] c"\0C, null-cast \00"
+@.sconst.7402 = private constant [14 x i8] c"\0C, null-test \00"
+@.sconst.7403 = private constant [10 x i8] c"\08, store \00"
+@.sconst.7404 = private constant [8 x i8] c"\06, arg \00"
+@.sconst.7405 = private constant [15 x i8] c"\0D, arg-extern \00"
+@.sconst.7406 = private constant [19 x i8] c"\11, arg-unresolved \00"
+@.sconst.7407 = private constant [23 x i8] c"\15, h-pointer-into-ref \00"
+@.sconst.7408 = private constant [25 x i8] c"\17, h-slice-into-pointer \00"
+@.sconst.7409 = private constant [19 x i8] c"\11, h-mixed-params \00"
+@.sconst.7410 = private constant [29 x i8] c"\1B, h-store-through-ref-slot \00"
+@.sconst.7411 = private constant [37 x i8] c"#; optional-ref derefs (not listed) \00"
+@.sconst.7412 = private constant [19 x i8] c"\11, bodies unfiled \00"
+@.sconst.7413 = private constant [31 x i8] c"\1D, alias handles (not listed) \00"
+@.sconst.7414 = private constant [30 x i8] c"\1C, stack arrays (not listed) \00"
+@.sconst.7415 = private constant [18 x i8] c"\10pointer-report: \00"
+@.sconst.7416 = private constant [16 x i8] c"\0Ewrite-report: \00"
+@.sconst.7417 = private constant [17 x i8] c"\0F lines; bodies \00"
+@.sconst.7418 = private constant [14 x i8] c"\0C, functions \00"
 @.sconst.7419 = private constant [12 x i8] c"\0A (writing \00"
-@.sconst.7420 = private constant [11 x i8] c"\09); sites \00"
-@.sconst.7421 = private constant [12 x i8] c"\0A, unfiled \00"
-@.sconst.7422 = private constant [21 x i8] c"\13, misaligned calls \00"
-@.sconst.7423 = private constant [21 x i8] c"\13, other-root calls \00"
-@.sconst.7424 = private constant [12 x i8] c"\0A (unknown \00"
-@.sconst.7425 = private constant [3 x i8] c"\01)\00"
-@.sconst.7426 = private constant [11 x i8] c"\09, rounds \00"
-@.sconst.7427 = private constant [17 x i8] c"\0F, alias rounds \00"
-@.sconst.7428 = private constant [22 x i8] c"\14; FROZEN: reachable \00"
-@.sconst.7429 = private constant [10 x i8] c"\08, sites \00"
-@.sconst.7430 = private constant [11 x i8] c"\09 (locked \00"
-@.sconst.7431 = private constant [23 x i8] c"\15), provenance rounds \00"
-@.sconst.7432 = private constant [15 x i8] c"\0D; LET: sites \00"
-@.sconst.7433 = private constant [16 x i8] c"\0Ewrite-report: \00"
-@.sconst.7434 = private constant [16 x i8] c"\0Epurity-check: \00"
-@.sconst.7435 = private constant [6 x i8] c"\04 of \00"
-@.sconst.7436 = private constant [54 x i8] c"4 functions write what their parameters reach; sites \00"
-@.sconst.7437 = private constant [31 x i8] c"\1D, callees of unknown keyword \00"
-@.sconst.7438 = private constant [12 x i8] c"\0A, unfiled \00"
-@.sconst.7439 = private constant [16 x i8] c"\0Epurity-check: \00"
-@.sconst.7440 = private constant [3 x i8] c"\01:\00"
-@.sconst.7441 = private constant [3 x i8] c"\01:\00"
-@.sconst.7442 = private constant [4 x i8] c"\02: \00"
-@.sconst.7443 = private constant [13 x i8] c"\0B/interface/\00"
-@.sconst.7444 = private constant [8 x i8] c"\06.scaly\00"
-@.sconst.7445 = private constant [24 x i8] c"\16interface: current -> \00"
-@.sconst.7446 = private constant [6 x i8] c"\04.tmp\00"
-@.sconst.7447 = private constant [12 x i8] c"\0A/interface\00"
-@.sconst.7448 = private constant [9 x i8] c"\07/origin\00"
-@.sconst.7449 = private constant [12 x i8] c"\0A/interface\00"
-@.sconst.7450 = private constant [13 x i8] c"\0Binterface: \00"
-@.sconst.7451 = private constant [12 x i8] c"\0A files -> \00"
-@.sconst.7452 = private constant [3 x i8] c"\010\00"
-@.str.7453 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
-@.sconst.7454 = private constant [17 x i8] c"\0F/packages/scaly\00"
-@.str.7455 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
-@.str.7456 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
-@.sconst.7457 = private constant [5 x i8] c"\03/CC\00"
-@.str.7458 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
-@.sconst.7459 = private constant [5 x i8] c"\03run\00"
-@.str.7460 = private unnamed_addr constant [36 x i8] c"Usage: scaly run <file> [arguments]\00", align 1
-@.sconst.7461 = private constant [6 x i8] c"\04test\00"
-@.str.7462 = private unnamed_addr constant [34 x i8] c"Usage: scaly test <file> [filter]\00", align 1
-@.sconst.7463 = private constant [7 x i8] c"\05build\00"
-@.sconst.7464 = private constant [5 x i8] c"\03new\00"
-@.sconst.7465 = private constant [7 x i8] c"\05--lib\00"
-@.sconst.7466 = private constant [3 x i8] c"\01-\00"
-@.sconst.7467 = private constant [3 x i8] c"\01-\00"
-@.str.7468 = private unnamed_addr constant [32 x i8] c"Usage: scaly new <name> [--lib]\00", align 1
-@.sconst.7469 = private constant [7 x i8] c"\05clean\00"
-@.str.7470 = private unnamed_addr constant [19 x i8] c"Usage: scaly clean\00", align 1
-@.sconst.7471 = private constant [6 x i8] c"\04next\00"
-@.str.7472 = private unnamed_addr constant [38 x i8] c"Usage: scaly next <package> <version>\00", align 1
-@.sconst.7473 = private constant [9 x i8] c"\07publish\00"
-@.sconst.7474 = private constant [8 x i8] c"\06origin\00"
-@.sconst.7475 = private constant [9 x i8] c"\07--check\00"
-@.sconst.7476 = private constant [3 x i8] c"\01-\00"
-@.str.7477 = private unnamed_addr constant [40 x i8] c"Usage: scaly publish [--check] [remote]\00", align 1
-@.sconst.7478 = private constant [9 x i8] c"\07install\00"
-@.sconst.7479 = private constant [11 x i8] c"\09uninstall\00"
-@.str.7480 = private unnamed_addr constant [33 x i8] c"Usage: scaly uninstall <program>\00", align 1
+@.sconst.7420 = private constant [11 x i8] c"\09, direct \00"
+@.sconst.7421 = private constant [16 x i8] c"\0E), procedures \00"
+@.sconst.7422 = private constant [12 x i8] c"\0A (writing \00"
+@.sconst.7423 = private constant [11 x i8] c"\09); sites \00"
+@.sconst.7424 = private constant [12 x i8] c"\0A, unfiled \00"
+@.sconst.7425 = private constant [21 x i8] c"\13, misaligned calls \00"
+@.sconst.7426 = private constant [21 x i8] c"\13, other-root calls \00"
+@.sconst.7427 = private constant [12 x i8] c"\0A (unknown \00"
+@.sconst.7428 = private constant [3 x i8] c"\01)\00"
+@.sconst.7429 = private constant [11 x i8] c"\09, rounds \00"
+@.sconst.7430 = private constant [17 x i8] c"\0F, alias rounds \00"
+@.sconst.7431 = private constant [22 x i8] c"\14; FROZEN: reachable \00"
+@.sconst.7432 = private constant [10 x i8] c"\08, sites \00"
+@.sconst.7433 = private constant [11 x i8] c"\09 (locked \00"
+@.sconst.7434 = private constant [23 x i8] c"\15), provenance rounds \00"
+@.sconst.7435 = private constant [15 x i8] c"\0D; LET: sites \00"
+@.sconst.7436 = private constant [16 x i8] c"\0Ewrite-report: \00"
+@.sconst.7437 = private constant [16 x i8] c"\0Epurity-check: \00"
+@.sconst.7438 = private constant [6 x i8] c"\04 of \00"
+@.sconst.7439 = private constant [54 x i8] c"4 functions write what their parameters reach; sites \00"
+@.sconst.7440 = private constant [31 x i8] c"\1D, callees of unknown keyword \00"
+@.sconst.7441 = private constant [12 x i8] c"\0A, unfiled \00"
+@.sconst.7442 = private constant [16 x i8] c"\0Epurity-check: \00"
+@.sconst.7443 = private constant [3 x i8] c"\01:\00"
+@.sconst.7444 = private constant [3 x i8] c"\01:\00"
+@.sconst.7445 = private constant [4 x i8] c"\02: \00"
+@.sconst.7446 = private constant [13 x i8] c"\0B/interface/\00"
+@.sconst.7447 = private constant [8 x i8] c"\06.scaly\00"
+@.sconst.7448 = private constant [24 x i8] c"\16interface: current -> \00"
+@.sconst.7449 = private constant [6 x i8] c"\04.tmp\00"
+@.sconst.7450 = private constant [12 x i8] c"\0A/interface\00"
+@.sconst.7451 = private constant [9 x i8] c"\07/origin\00"
+@.sconst.7452 = private constant [12 x i8] c"\0A/interface\00"
+@.sconst.7453 = private constant [13 x i8] c"\0Binterface: \00"
+@.sconst.7454 = private constant [12 x i8] c"\0A files -> \00"
+@.sconst.7455 = private constant [3 x i8] c"\010\00"
+@.str.7456 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
+@.sconst.7457 = private constant [17 x i8] c"\0F/packages/scaly\00"
+@.str.7458 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
+@.str.7459 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
+@.sconst.7460 = private constant [5 x i8] c"\03/CC\00"
+@.str.7461 = private unnamed_addr constant [9 x i8] c"SCALY_CC\00", align 1
+@.sconst.7462 = private constant [5 x i8] c"\03run\00"
+@.str.7463 = private unnamed_addr constant [36 x i8] c"Usage: scaly run <file> [arguments]\00", align 1
+@.sconst.7464 = private constant [6 x i8] c"\04test\00"
+@.str.7465 = private unnamed_addr constant [34 x i8] c"Usage: scaly test <file> [filter]\00", align 1
+@.sconst.7466 = private constant [7 x i8] c"\05build\00"
+@.sconst.7467 = private constant [5 x i8] c"\03new\00"
+@.sconst.7468 = private constant [7 x i8] c"\05--lib\00"
+@.sconst.7469 = private constant [3 x i8] c"\01-\00"
+@.sconst.7470 = private constant [3 x i8] c"\01-\00"
+@.str.7471 = private unnamed_addr constant [32 x i8] c"Usage: scaly new <name> [--lib]\00", align 1
+@.sconst.7472 = private constant [7 x i8] c"\05clean\00"
+@.str.7473 = private unnamed_addr constant [19 x i8] c"Usage: scaly clean\00", align 1
+@.sconst.7474 = private constant [6 x i8] c"\04next\00"
+@.str.7475 = private unnamed_addr constant [38 x i8] c"Usage: scaly next <package> <version>\00", align 1
+@.sconst.7476 = private constant [9 x i8] c"\07publish\00"
+@.sconst.7477 = private constant [8 x i8] c"\06origin\00"
+@.sconst.7478 = private constant [9 x i8] c"\07--check\00"
+@.sconst.7479 = private constant [3 x i8] c"\01-\00"
+@.str.7480 = private unnamed_addr constant [40 x i8] c"Usage: scaly publish [--check] [remote]\00", align 1
 @.sconst.7481 = private constant [9 x i8] c"\07install\00"
-@.str.7482 = private unnamed_addr constant [60 x i8] c"Usage: scaly install <source> <package> <version> [program]\00", align 1
-@.sconst.7483 = private constant [4 x i8] c"\02-h\00"
-@.sconst.7484 = private constant [8 x i8] c"\06--help\00"
-@.sconst.7485 = private constant [6 x i8] c"\04help\00"
-@.sconst.7486 = private constant [25 x i8] c"\17scaly: unknown command \00"
+@.sconst.7482 = private constant [11 x i8] c"\09uninstall\00"
+@.str.7483 = private unnamed_addr constant [33 x i8] c"Usage: scaly uninstall <program>\00", align 1
+@.sconst.7484 = private constant [9 x i8] c"\07install\00"
+@.str.7485 = private unnamed_addr constant [60 x i8] c"Usage: scaly install <source> <package> <version> [program]\00", align 1
+@.sconst.7486 = private constant [4 x i8] c"\02-h\00"
+@.sconst.7487 = private constant [8 x i8] c"\06--help\00"
+@.sconst.7488 = private constant [6 x i8] c"\04help\00"
+@.sconst.7489 = private constant [25 x i8] c"\17scaly: unknown command \00"
 
 declare ptr @memcpy(...)
 
@@ -545695,17 +545698,21 @@ frame.forced8:                                    ; preds = %frame.force7, %if.t
 
 define linkonce_odr i64 @_ZN3cliB6scalycB4v0_23runE7OptionsB6scalycB4v0_2(ptr %0) {
 entry:
-  %sret.result1350 = alloca { ptr }, align 8
-  %arg.tmp1349 = alloca { ptr }, align 8
+  %sret.result1377 = alloca { ptr }, align 8
+  %arg.tmp1376 = alloca { ptr }, align 8
+  %arg.tmp1375 = alloca { ptr }, align 8
+  %arg.tmp1373 = alloca { ptr }, align 8
+  %sret.result1353 = alloca { ptr }, align 8
+  %arg.tmp1352 = alloca { ptr }, align 8
   %arg.tmp1348 = alloca { ptr }, align 8
   %arg.tmp1346 = alloca { ptr }, align 8
-  %sret.result1326 = alloca { ptr }, align 8
-  %arg.tmp1325 = alloca { ptr }, align 8
-  %arg.tmp1321 = alloca { ptr }, align 8
+  %arg.tmp1342 = alloca { ptr }, align 8
+  %arg.tmp1335 = alloca { ptr }, align 8
+  %sret.result1320 = alloca { ptr }, align 8
   %arg.tmp1319 = alloca { ptr }, align 8
-  %arg.tmp1315 = alloca { ptr }, align 8
-  %arg.tmp1308 = alloca { ptr }, align 8
-  %arg.tmp1296 = alloca { ptr }, align 8
+  %sret.result1310 = alloca { ptr }, align 8
+  %arg.tmp1309 = alloca { ptr }, align 8
+  %sret.result1293 = alloca { ptr }, align 8
   %arg.tmp1292 = alloca { ptr }, align 8
   %arg.tmp1290 = alloca { ptr }, align 8
   %arg.tmp1280 = alloca { ptr }, align 8
@@ -545853,7 +545860,7 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   %forced_page6 = phi ptr [ %frame.page, %if.then4 ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page6, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
-  store { ptr } { ptr @.sconst.7264 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7265 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp)
   %load.struct7 = load %_Z7OptionsB6scalycB4v0_2, ptr %0, align 8
   %error_message = extractvalue %_Z7OptionsB6scalycB4v0_2 %load.struct7, 29
@@ -545868,7 +545875,7 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   ret i64 1
 
 if.then10:                                        ; preds = %if.end5
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7265)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7266)
   %load.struct12 = load %_Z7OptionsB6scalycB4v0_2, ptr %0, align 8
   %tool_build13 = extractvalue %_Z7OptionsB6scalycB4v0_2 %load.struct12, 38
   br i1 %tool_build13, label %if.then14, label %if.else15
@@ -545891,7 +545898,7 @@ if.end16:                                         ; preds = %if.else15, %if.then
   ret i64 1
 
 if.then18:                                        ; preds = %if.end11
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7266)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7267)
   br label %if.end19
 
 if.end19:                                         ; preds = %if.then18, %if.end11
@@ -545904,7 +545911,7 @@ if.end19:                                         ; preds = %if.then18, %if.end1
   br i1 %eq23, label %if.then24, label %if.end25
 
 if.then24:                                        ; preds = %if.end19
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7267)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7268)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 
@@ -545914,7 +545921,7 @@ if.end25:                                         ; preds = %if.end19
   br i1 %verbose27, label %if.then28, label %if.end29
 
 if.then28:                                        ; preds = %if.end25
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7268)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7269)
   br label %if.end29
 
 if.end29:                                         ; preds = %if.then28, %if.end25
@@ -545937,7 +545944,7 @@ frame.forced33:                                   ; preds = %frame.force32, %if.
   br i1 %lex_only, label %if.then39, label %if.end40
 
 if.then39:                                        ; preds = %frame.forced33
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7269)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7270)
   %base.deref = load ptr, ptr %p, align 8
   %field.inplace41 = getelementptr inbounds nuw %_Z6ParserB6scalycB4v0_2, ptr %base.deref, i32 0, i32 0
   call void @_ZN5LexerB6scalycB4v0_27advanceEv(ptr %field.inplace41)
@@ -545961,7 +545968,7 @@ while.cond:                                       ; preds = %while.body, %if.the
   br i1 %eq45, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7270)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7271)
   %base.deref46 = load ptr, ptr %p, align 8
   %field.inplace47 = getelementptr inbounds nuw %_Z6ParserB6scalycB4v0_2, ptr %base.deref46, i32 0, i32 0
   call void @_ZN5LexerB6scalycB4v0_27advanceEv(ptr %field.inplace47)
@@ -546010,7 +546017,7 @@ choose.when53:                                    ; preds = %choose.when
 choose.when57:                                    ; preds = %choose.when
   %"variant.c_data().ptr58" = getelementptr inbounds nuw %_Z11ParserErrorB6scalycB4v0_2, ptr %choose.union, i32 0, i32 1
   %variant.val59 = load %_Z15DifferentSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr58", align 1
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7271)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7272)
   br label %choose.end51
 
 choose.when60:                                    ; preds = %if.end40
@@ -546019,7 +546026,7 @@ choose.when60:                                    ; preds = %if.end40
   br label %choose.end
 
 if.then63:                                        ; preds = %choose.end
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7272)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7273)
   br label %if.end64
 
 if.end64:                                         ; preds = %if.then63, %choose.end
@@ -546028,7 +546035,7 @@ if.end64:                                         ; preds = %if.then63, %choose.
   br i1 %parse_only, label %if.then66, label %if.end67
 
 if.then66:                                        ; preds = %if.end64
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7273)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7274)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 0
 
@@ -546056,7 +546063,7 @@ if.end78:                                         ; preds = %if.end67
   br i1 %verbose80, label %if.then81, label %if.end82
 
 if.then81:                                        ; preds = %if.end78
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7274)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7275)
   br label %if.end82
 
 if.end82:                                         ; preds = %if.then81, %if.end78
@@ -546065,7 +546072,7 @@ if.end82:                                         ; preds = %if.then81, %if.end7
   br i1 %model_only, label %if.then84, label %if.end85
 
 if.then84:                                        ; preds = %if.end82
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7275)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7276)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 0
 
@@ -546146,7 +546153,7 @@ if.end111:                                        ; preds = %if.then110, %if.end
   br i1 %eq115, label %if.then116, label %if.end117
 
 if.then116:                                       ; preds = %if.end111
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7276)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7277)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 4
 
@@ -546355,12 +546362,12 @@ frame.forced213:                                  ; preds = %frame.force212, %fr
   %diagnostics = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %ptr.load219, i32 0, i32 67
   store i1 true, ptr %diagnostics, align 1
   %planner220 = load ptr, ptr %planner, align 8
-  call void @_ZN7PlannerB6scalycB4v0_210phase_markEP10const_char(ptr %planner220, ptr @.str.7277)
+  call void @_ZN7PlannerB6scalycB4v0_210phase_markEP10const_char(ptr %planner220, ptr @.str.7278)
   %purity_gate = load ptr, ptr %writes, align 8
   %addr.heap221 = load ptr, ptr %census, align 8
   call void @_ZN11WriteCensusB6scalycB4v0_27analyzeEPN4scaly6memory4PageE4PlanB6scalycB4v0_2R7ProgramB6scalycB4v0_2R13PointerCensusB6scalycB4v0_2(ptr %frame, ptr %purity_gate, ptr %call114, ptr %sret.result70, ptr %addr.heap221)
   %planner222 = load ptr, ptr %planner, align 8
-  call void @_ZN7PlannerB6scalycB4v0_210phase_markEP10const_char(ptr %planner222, ptr @.str.7278)
+  call void @_ZN7PlannerB6scalycB4v0_210phase_markEP10const_char(ptr %planner222, ptr @.str.7279)
   %purity_gate223 = load ptr, ptr %writes, align 8
   %load.struct224 = load %_Z11WriteCensusB6scalycB4v0_2, ptr %purity_gate223, align 8
   %n_violations = extractvalue %_Z11WriteCensusB6scalycB4v0_2 %load.struct224, 68
@@ -546385,7 +546392,7 @@ if.end227:                                        ; preds = %if.end237, %frame.f
   %purity_gate238 = load ptr, ptr %writes, align 8
   call void @_ZN11WriteCensusB6scalycB4v0_216mark_stub_purityE4PlanB6scalycB4v0_2(ptr %purity_gate238, ptr %call114)
   %planner239 = load ptr, ptr %planner, align 8
-  call void @_ZN7PlannerB6scalycB4v0_210phase_markEP10const_char(ptr %planner239, ptr @.str.7279)
+  call void @_ZN7PlannerB6scalycB4v0_210phase_markEP10const_char(ptr %planner239, ptr @.str.7280)
   %field.inplace240 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 21
   %call241 = call i64 @_ZN6String10get_lengthEv(ptr %field.inplace240)
   %gt242 = icmp ugt i64 %call241, 0
@@ -546501,7 +546508,7 @@ if.end291:                                        ; preds = %if.then290, %if.end
   br label %if.end268
 
 if.then295:                                       ; preds = %if.end268
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7280)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7281)
   br label %if.end296
 
 if.end296:                                        ; preds = %if.then295, %if.end268
@@ -546510,7 +546517,7 @@ if.end296:                                        ; preds = %if.then295, %if.end
   br i1 %plan_only, label %if.then298, label %if.end299
 
 if.then298:                                       ; preds = %if.end296
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7281)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7282)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 0
 
@@ -546688,7 +546695,7 @@ frame.forced371:                                  ; preds = %frame.force370, %if
   br label %if.end360
 
 if.then383:                                       ; preds = %if.end356
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7282)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7283)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 0
 
@@ -546793,7 +546800,7 @@ frame.forced438:                                  ; preds = %frame.force437, %if
   %struct.region441 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page440, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region441)
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region441, i64 %length431)
-  store { ptr } { ptr @.sconst.7283 }, ptr %arg.tmp423, align 1
+  store { ptr } { ptr @.sconst.7284 }, ptr %arg.tmp423, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region441, ptr %arg.tmp423)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result442, ptr %frame, ptr %struct.region441)
   %call443 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result442)
@@ -546810,10 +546817,10 @@ frame.forced447:                                  ; preds = %frame.force446, %if
   %struct.region450 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page449, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region450)
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region450, i64 %call428)
-  store { ptr } { ptr @.sconst.7284 }, ptr %arg.tmp423, align 1
+  store { ptr } { ptr @.sconst.7285 }, ptr %arg.tmp423, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region450, ptr %arg.tmp423)
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region450, i64 %length431)
-  store { ptr } { ptr @.sconst.7285 }, ptr %sret.result442, align 1
+  store { ptr } { ptr @.sconst.7286 }, ptr %sret.result442, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region450, ptr %sret.result442)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result451, ptr %frame, ptr %struct.region450)
   %call452 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result451)
@@ -546876,7 +546883,7 @@ if.end477:                                        ; preds = %if.then476, %if.the
   br label %if.end473
 
 if.then482:                                       ; preds = %if.end460
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7286)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7287)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 10
 
@@ -547100,7 +547107,7 @@ if.then567:                                       ; preds = %if.end564
 if.end568:                                        ; preds = %if.end564
   %prog_emitter575 = load ptr, ptr %writes, align 8
   %program_name576 = load ptr, ptr %program_name, align 8
-  store { ptr } { ptr @.sconst.7287 }, ptr %arg.tmp423, align 1
+  store { ptr } { ptr @.sconst.7288 }, ptr %arg.tmp423, align 1
   %addr.heap577 = load ptr, ptr %package_dirs, align 8
   %addr.heap578 = load ptr, ptr %test_config, align 8
   %field.inplace579 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 47
@@ -547192,12 +547199,12 @@ if.end652:                                        ; preds = %if.then651, %frame.
   %program_name656 = load ptr, ptr %program_name, align 8
   %call657 = call i1 @_ZN7EmitterB6scalycB4v0_24emitE4PlanB6scalycB4v0_26String(ptr %emitter655, ptr %call114, ptr %program_name656)
   %planner658 = load ptr, ptr %planner, align 8
-  call void @_ZN7PlannerB6scalycB4v0_210phase_markEP10const_char(ptr %planner658, ptr @.str.7288)
+  call void @_ZN7PlannerB6scalycB4v0_210phase_markEP10const_char(ptr %planner658, ptr @.str.7289)
   %eq659 = icmp eq i1 %call657, false
   br i1 %eq659, label %if.then660, label %if.end661
 
 if.then660:                                       ; preds = %if.end652
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7289)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7290)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 5
 
@@ -547207,7 +547214,7 @@ if.end661:                                        ; preds = %if.end652
   br i1 %verbose663, label %if.then664, label %if.end665
 
 if.then664:                                       ; preds = %if.end661
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7290)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7291)
   br label %if.end665
 
 if.end665:                                        ; preds = %if.then664, %if.end661
@@ -547227,7 +547234,7 @@ if.end668:                                        ; preds = %if.end665
   br i1 %compile_only, label %if.then681, label %if.end682
 
 if.then672:                                       ; preds = %if.then667
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7291)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7292)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 6
 
@@ -547239,7 +547246,7 @@ if.end673:                                        ; preds = %if.then667
   br i1 %eq677, label %if.then678, label %if.end679
 
 if.then678:                                       ; preds = %if.end673
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7292)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7293)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 6
 
@@ -547260,7 +547267,7 @@ if.end682:                                        ; preds = %if.end668
   br i1 %eq736, label %if.then737, label %if.end738
 
 if.then686:                                       ; preds = %if.then681
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7293)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7294)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 6
 
@@ -547317,7 +547324,7 @@ frame.forced711:                                  ; preds = %frame.force710, %if
   %forced_page713 = phi ptr [ %frame.page708, %if.then706 ], [ %forced_page712, %frame.force710 ]
   %struct.region714 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page713, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region714)
-  store { ptr } { ptr @.sconst.7294 }, ptr %sret.result442, align 1
+  store { ptr } { ptr @.sconst.7295 }, ptr %sret.result442, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region714, ptr %sret.result442)
   %load.struct715 = load %_Z7OptionsB6scalycB4v0_2, ptr %0, align 8
   %defs_file = extractvalue %_Z7OptionsB6scalycB4v0_2 %load.struct715, 41
@@ -547352,7 +547359,7 @@ if.end723:                                        ; preds = %if.else722, %if.the
   br i1 %eq731, label %if.then732, label %if.end733
 
 if.then732:                                       ; preds = %if.end723
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7295)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7296)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 8
 
@@ -547361,7 +547368,7 @@ if.end733:                                        ; preds = %if.end723
   ret i64 0
 
 if.then737:                                       ; preds = %if.end682
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7296)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7297)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 7
 
@@ -547553,7 +547560,7 @@ frame.force833:                                   ; preds = %while.exit799
 frame.forced834:                                  ; preds = %frame.force833, %while.exit799
   %forced_page836 = phi ptr [ %frame.page831, %while.exit799 ], [ %forced_page835, %frame.force833 ]
   %struct.region837 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page836, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7297 }, ptr %arg.tmp838, align 1
+  store { ptr } { ptr @.sconst.7298 }, ptr %arg.tmp838, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region837, ptr %arg.tmp838)
   %call839 = call i1 @_ZN3cliB6scalycB4v0_215contains_stringER5ArrayI6StringE6String(ptr %addr.heap830, ptr %struct.region837)
   %eq840 = icmp eq i1 %call839, false
@@ -547587,7 +547594,7 @@ frame.force846:                                   ; preds = %if.then841
 frame.forced847:                                  ; preds = %frame.force846, %if.then841
   %forced_page849 = phi ptr [ %frame.page844, %if.then841 ], [ %forced_page848, %frame.force846 ]
   %struct.region850 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page849, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7298 }, ptr %arg.tmp851, align 1
+  store { ptr } { ptr @.sconst.7299 }, ptr %arg.tmp851, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region850, ptr %arg.tmp851)
   call void @_ZN5ArrayI6StringE3addE6String(ptr %pkg_names843, ptr %struct.region850)
   %pkg_roots852 = load ptr, ptr %pkg_roots, align 8
@@ -547605,7 +547612,7 @@ frame.forced856:                                  ; preds = %frame.force855, %fr
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region859)
   call void @_ZN7ModelerB6scalycB4v0_216stdlib_directoryEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result860, ptr %frame)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region859, ptr %sret.result860)
-  store { ptr } { ptr @.sconst.7299 }, ptr %arg.tmp861, align 1
+  store { ptr } { ptr @.sconst.7300 }, ptr %arg.tmp861, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region859, ptr %arg.tmp861)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result862, ptr %frame, ptr %struct.region859)
   call void @_ZN5ArrayI6StringE3addE6String(ptr %pkg_roots852, ptr %sret.result862)
@@ -547713,10 +547720,10 @@ frame.forced928:                                  ; preds = %frame.force927, %if
   %forced_page930 = phi ptr [ %frame.page925, %if.then923 ], [ %forced_page929, %frame.force927 ]
   %struct.region931 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page930, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region931)
-  store { ptr } { ptr @.sconst.7300 }, ptr %arg.tmp932, align 1
+  store { ptr } { ptr @.sconst.7301 }, ptr %arg.tmp932, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region931, ptr %arg.tmp932)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region931, ptr %call919)
-  store { ptr } { ptr @.sconst.7301 }, ptr %arg.tmp933, align 1
+  store { ptr } { ptr @.sconst.7302 }, ptr %arg.tmp933, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region931, ptr %arg.tmp933)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result934, ptr %frame, ptr %struct.region931)
   %cstr935 = call ptr @_ZN6String10get_bufferEv(ptr %sret.result934)
@@ -547745,20 +547752,20 @@ if.then949:                                       ; preds = %frame.forced945
 
 if.else950:                                       ; preds = %frame.forced945
   %tb953 = load ptr, ptr %test_dep_syms, align 8
-  store { ptr } { ptr @.sconst.7302 }, ptr %arg.tmp954, align 1
+  store { ptr } { ptr @.sconst.7303 }, ptr %arg.tmp954, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %tb953, ptr %arg.tmp954)
   br label %if.end951
 
 if.end951:                                        ; preds = %if.else950, %if.then949
   %tb955 = load ptr, ptr %test_dep_syms, align 8
-  store { ptr } { ptr @.sconst.7303 }, ptr %arg.tmp956, align 1
+  store { ptr } { ptr @.sconst.7304 }, ptr %arg.tmp956, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %tb955, ptr %arg.tmp956)
   %tb957 = load ptr, ptr %test_dep_syms, align 8
   %call958 = call i32 @getpid()
   %as.sext = sext i32 %call958 to i64
   call void @_ZN13StringBuilder6appendEi(ptr %tb957, i64 %as.sext)
   %tb959 = load ptr, ptr %test_dep_syms, align 8
-  store { ptr } { ptr @.sconst.7304 }, ptr %arg.tmp960, align 1
+  store { ptr } { ptr @.sconst.7305 }, ptr %arg.tmp960, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %tb959, ptr %arg.tmp960)
   %tb962 = load ptr, ptr %test_dep_syms, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result961, ptr %frame, ptr %tb962)
@@ -547838,7 +547845,7 @@ frame.forced992:                                  ; preds = %frame.force991, %if
   %call997 = call i32 @getpid()
   %as.sext998 = sext i32 %call997 to i64
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region995, i64 %as.sext998)
-  store { ptr } { ptr @.sconst.7305 }, ptr %arg.tmp999, align 1
+  store { ptr } { ptr @.sconst.7306 }, ptr %arg.tmp999, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region995, ptr %arg.tmp999)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1000, ptr %frame, ptr %struct.region995)
   %set.dest1001 = load ptr, ptr %write_to, align 8
@@ -547847,7 +547854,7 @@ frame.forced992:                                  ; preds = %frame.force991, %if
   br label %if.end988
 
 if.then1007:                                      ; preds = %if.end988
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7306)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7307)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 8
 
@@ -547969,7 +547976,7 @@ frame.forced1071:                                 ; preds = %frame.force1070, %i
 
 if.then1075:                                      ; preds = %frame.forced1071
   %cmd_builder1078 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7307 }, ptr %arg.tmp1079, align 1
+  store { ptr } { ptr @.sconst.7308 }, ptr %arg.tmp1079, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1078, ptr %arg.tmp1079)
   %cmd_builder1080 = load ptr, ptr %cmd_builder, align 8
   %msvc_head1081 = load ptr, ptr %write_to, align 8
@@ -547981,23 +547988,23 @@ if.else1076:                                      ; preds = %frame.forced1071
 
 if.end1077:                                       ; preds = %if.end1084, %if.then1075
   %cmd_builder1122 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7318 }, ptr %arg.tmp1123, align 1
+  store { ptr } { ptr @.sconst.7319 }, ptr %arg.tmp1123, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1122, ptr %arg.tmp1123)
   %cmd_builder1124 = load ptr, ptr %cmd_builder, align 8
   %tmp_obj1125 = load ptr, ptr %pkg_roots, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1124, ptr %tmp_obj1125)
   %cmd_builder1126 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7319 }, ptr %arg.tmp1127, align 1
+  store { ptr } { ptr @.sconst.7320 }, ptr %arg.tmp1127, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1126, ptr %arg.tmp1127)
   br i1 %call939, label %if.then1128, label %if.end1129
 
 if.then1082:                                      ; preds = %if.else1076
   %cmd_builder1085 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7308 }, ptr %arg.tmp1087, align 1
+  store { ptr } { ptr @.sconst.7309 }, ptr %arg.tmp1087, align 1
   call void @_ZN3cliB6scalycB4v0_212llvm_programEPN4scaly6memory4PageE6Stringb(ptr noalias sret({ ptr }) %sret.result1086, ptr %frame, ptr %arg.tmp1087, i1 true)
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1085, ptr %sret.result1086)
   %cmd_builder1088 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7309 }, ptr %arg.tmp1089, align 1
+  store { ptr } { ptr @.sconst.7310 }, ptr %arg.tmp1089, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1088, ptr %arg.tmp1089)
   br label %if.end1084
 
@@ -548018,7 +548025,7 @@ if.end1093:                                       ; preds = %if.else1083
   br i1 %call939, label %land.rhs1097, label %if.end1095
 
 if.then1094:                                      ; preds = %land.rhs1096
-  %call1102 = call i32 @system(ptr @.str.7311)
+  %call1102 = call i32 @system(ptr @.str.7312)
   %ne1103 = icmp ne i32 %call1102, 0
   br i1 %ne1103, label %if.then1104, label %if.end1105
 
@@ -548034,12 +548041,12 @@ land.rhs1096:                                     ; preds = %land.rhs1097
   br i1 %eq1101, label %if.then1094, label %if.end1095
 
 land.rhs1097:                                     ; preds = %if.end1093
-  %call1098 = call ptr @getenv(ptr @.str.7310)
+  %call1098 = call ptr @getenv(ptr @.str.7311)
   %ne1099 = icmp ne ptr %call1098, null
   br i1 %ne1099, label %land.rhs1096, label %if.end1095
 
 if.then1104:                                      ; preds = %if.then1094
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7312)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7313)
   %field.inplace1107 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 33
   call void @_ZN4toolB6scalycB4v0_213target_tripleEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result1106, ptr %frame, ptr %field.inplace1107)
   %frame.page1108 = load ptr, ptr %frame, align 8
@@ -548056,22 +548063,22 @@ frame.force1110:                                  ; preds = %if.then1104
 frame.forced1111:                                 ; preds = %frame.force1110, %if.then1104
   %forced_page1113 = phi ptr [ %frame.page1108, %if.then1104 ], [ %forced_page1112, %frame.force1110 ]
   %struct.region1114 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1113, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7313 }, ptr %arg.tmp1115, align 1
+  store { ptr } { ptr @.sconst.7314 }, ptr %arg.tmp1115, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region1114, ptr %arg.tmp1115)
   %call1116 = call i1 @_ZN6String8containsE6String(ptr %sret.result1106, ptr %struct.region1114)
   br i1 %call1116, label %if.then1117, label %if.else1118
 
 if.then1117:                                      ; preds = %frame.forced1111
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7314)
-  br label %if.end1119
-
-if.else1118:                                      ; preds = %frame.forced1111
   call void @_ZN7Console7printlnEP10const_char(ptr @.str.7315)
   br label %if.end1119
 
-if.end1119:                                       ; preds = %if.else1118, %if.then1117
+if.else1118:                                      ; preds = %frame.forced1111
   call void @_ZN7Console7printlnEP10const_char(ptr @.str.7316)
+  br label %if.end1119
+
+if.end1119:                                       ; preds = %if.else1118, %if.then1117
   call void @_ZN7Console7printlnEP10const_char(ptr @.str.7317)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7318)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 9
 
@@ -548089,13 +548096,13 @@ if.end1129:                                       ; preds = %if.end1135, %if.end
 
 if.then1134:                                      ; preds = %if.then1128
   %cmd_builder1136 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7320 }, ptr %arg.tmp1137, align 1
+  store { ptr } { ptr @.sconst.7321 }, ptr %arg.tmp1137, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1136, ptr %arg.tmp1137)
   %cmd_builder1138 = load ptr, ptr %cmd_builder, align 8
   %res1139 = load ptr, ptr %res, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1138, ptr %res1139)
   %cmd_builder1140 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7321 }, ptr %arg.tmp1141, align 1
+  store { ptr } { ptr @.sconst.7322 }, ptr %arg.tmp1141, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1140, ptr %arg.tmp1141)
   br label %if.end1135
 
@@ -548124,12 +548131,12 @@ while.exit1144:                                   ; preds = %while.cond1142
 
 if.then1152:                                      ; preds = %while.body1143
   %cmd_builder1154 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7322 }, ptr %arg.tmp1155, align 1
+  store { ptr } { ptr @.sconst.7323 }, ptr %arg.tmp1155, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1154, ptr %arg.tmp1155)
   %cmd_builder1156 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1156, ptr %call1150)
   %cmd_builder1157 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7323 }, ptr %arg.tmp1158, align 1
+  store { ptr } { ptr @.sconst.7324 }, ptr %arg.tmp1158, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1157, ptr %arg.tmp1158)
   br label %if.end1153
 
@@ -548148,13 +548155,13 @@ if.then1163:                                      ; preds = %while.exit1144
 
 if.else1164:                                      ; preds = %while.exit1144
   %cmd_builder1185 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7326 }, ptr %arg.tmp1186, align 1
+  store { ptr } { ptr @.sconst.7327 }, ptr %arg.tmp1186, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1185, ptr %arg.tmp1186)
   %cmd_builder1187 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN3cliB6scalycB4v0_220runtime_archive_pathEPN4scaly6memory4PageEb(ptr noalias sret({ ptr }) %sret.result1188, ptr %frame, i1 %call939)
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1187, ptr %sret.result1188)
   %cmd_builder1189 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7327 }, ptr %arg.tmp1190, align 1
+  store { ptr } { ptr @.sconst.7328 }, ptr %arg.tmp1190, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1189, ptr %arg.tmp1190)
   br label %if.end1165
 
@@ -548183,12 +548190,12 @@ while.exit1170:                                   ; preds = %while.cond1168
 
 if.then1178:                                      ; preds = %while.body1169
   %cmd_builder1180 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7324 }, ptr %arg.tmp1181, align 1
+  store { ptr } { ptr @.sconst.7325 }, ptr %arg.tmp1181, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1180, ptr %arg.tmp1181)
   %cmd_builder1182 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1182, ptr %call1176)
   %cmd_builder1183 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7325 }, ptr %arg.tmp1184, align 1
+  store { ptr } { ptr @.sconst.7326 }, ptr %arg.tmp1184, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1183, ptr %arg.tmp1184)
   br label %if.end1179
 
@@ -548197,7 +548204,7 @@ if.end1179:                                       ; preds = %if.then1178, %while
 
 if.then1191:                                      ; preds = %land.rhs1193
   %cmd_builder1203 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7328 }, ptr %arg.tmp1204, align 1
+  store { ptr } { ptr @.sconst.7329 }, ptr %arg.tmp1204, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1203, ptr %arg.tmp1204)
   br label %if.end1192
 
@@ -548249,13 +548256,13 @@ if.end1216:                                       ; preds = %if.end1219, %while.
 
 if.then1217:                                      ; preds = %if.then1215
   %cmd_builder1220 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7329 }, ptr %arg.tmp1221, align 1
+  store { ptr } { ptr @.sconst.7330 }, ptr %arg.tmp1221, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1220, ptr %arg.tmp1221)
   br label %if.end1219
 
 if.else1218:                                      ; preds = %if.then1215
   %cmd_builder1222 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7330 }, ptr %arg.tmp1223, align 1
+  store { ptr } { ptr @.sconst.7331 }, ptr %arg.tmp1223, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1222, ptr %arg.tmp1223)
   br label %if.end1219
 
@@ -548263,7 +548270,7 @@ if.end1219:                                       ; preds = %if.else1218, %if.th
   %cmd_builder1224 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1224, ptr %call1213)
   %cmd_builder1225 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7331 }, ptr %arg.tmp1226, align 1
+  store { ptr } { ptr @.sconst.7332 }, ptr %arg.tmp1226, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1225, ptr %arg.tmp1226)
   br label %if.end1216
 
@@ -548298,18 +548305,18 @@ if.end1242:                                       ; preds = %if.end1245, %while.
 
 if.then1243:                                      ; preds = %if.then1241
   %cmd_builder1246 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7332 }, ptr %arg.tmp1247, align 1
+  store { ptr } { ptr @.sconst.7333 }, ptr %arg.tmp1247, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1246, ptr %arg.tmp1247)
   %cmd_builder1248 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1248, ptr %call1239)
   %cmd_builder1249 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7333 }, ptr %arg.tmp1250, align 1
+  store { ptr } { ptr @.sconst.7334 }, ptr %arg.tmp1250, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1249, ptr %arg.tmp1250)
   br label %if.end1245
 
 if.else1244:                                      ; preds = %if.then1241
   %cmd_builder1251 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7334 }, ptr %arg.tmp1252, align 1
+  store { ptr } { ptr @.sconst.7335 }, ptr %arg.tmp1252, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1251, ptr %arg.tmp1252)
   %cmd_builder1253 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1253, ptr %call1239)
@@ -548344,7 +548351,7 @@ if.end1262:                                       ; preds = %if.else1261, %if.th
 
 if.then1269:                                      ; preds = %if.end1259
   %cmd_builder1272 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7335 }, ptr %arg.tmp1273, align 1
+  store { ptr } { ptr @.sconst.7336 }, ptr %arg.tmp1273, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1272, ptr %arg.tmp1273)
   br label %if.end1271
 
@@ -548358,13 +548365,13 @@ if.end1271:                                       ; preds = %if.end1276, %if.the
 
 if.then1274:                                      ; preds = %if.else1270
   %cmd_builder1277 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7336 }, ptr %arg.tmp1278, align 1
+  store { ptr } { ptr @.sconst.7337 }, ptr %arg.tmp1278, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1277, ptr %arg.tmp1278)
   br label %if.end1276
 
 if.else1275:                                      ; preds = %if.else1270
   %cmd_builder1279 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7337 }, ptr %arg.tmp1280, align 1
+  store { ptr } { ptr @.sconst.7338 }, ptr %arg.tmp1280, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1279, ptr %arg.tmp1280)
   br label %if.end1276
 
@@ -548374,174 +548381,230 @@ if.end1276:                                       ; preds = %if.else1275, %if.th
 if.then1281:                                      ; preds = %land.rhs1283
   br i1 %gt1067, label %if.then1286, label %if.else1287
 
-if.end1282:                                       ; preds = %if.end1288, %land.rhs1283, %if.end1271
-  br i1 %call941, label %if.then1293, label %if.end1294
+if.end1282:                                       ; preds = %if.end1297, %land.rhs1283, %if.end1271
+  br i1 %call941, label %if.then1321, label %if.end1322
 
 land.rhs1283:                                     ; preds = %if.end1271
   br i1 %call939, label %if.then1281, label %if.end1282
 
 if.then1286:                                      ; preds = %if.then1281
   %cmd_builder1289 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7338 }, ptr %arg.tmp1290, align 1
+  store { ptr } { ptr @.sconst.7339 }, ptr %arg.tmp1290, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1289, ptr %arg.tmp1290)
   br label %if.end1288
 
 if.else1287:                                      ; preds = %if.then1281
   %cmd_builder1291 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7339 }, ptr %arg.tmp1292, align 1
+  store { ptr } { ptr @.sconst.7340 }, ptr %arg.tmp1292, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1291, ptr %arg.tmp1292)
   br label %if.end1288
 
 if.end1288:                                       ; preds = %if.else1287, %if.then1286
+  call void @_ZN3cliB6scalycB4v0_211natvis_fileEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1293, ptr %frame)
+  %call1294 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result1293)
+  %gt1295 = icmp ugt i64 %call1294, 0
+  br i1 %gt1295, label %if.then1296, label %if.end1297
+
+if.then1296:                                      ; preds = %if.end1288
+  br i1 %gt1067, label %if.then1298, label %if.else1299
+
+if.end1297:                                       ; preds = %if.end1300, %if.end1288
   br label %if.end1282
 
-if.then1293:                                      ; preds = %if.end1282
-  %cmd_builder1295 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7340 }, ptr %arg.tmp1296, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1295, ptr %arg.tmp1296)
-  br label %if.end1294
+if.then1298:                                      ; preds = %if.then1296
+  %cmd_builder1301 = load ptr, ptr %cmd_builder, align 8
+  %frame.page1302 = load ptr, ptr %frame, align 8
+  %frame.has_page1303 = icmp ne ptr %frame.page1302, null
+  br i1 %frame.has_page1303, label %frame.forced1305, label %frame.force1304
 
-if.end1294:                                       ; preds = %if.then1293, %if.end1282
-  %load.struct1301 = load %_Z7OptionsB6scalycB4v0_2, ptr %0, align 8
-  %tool_build1302 = extractvalue %_Z7OptionsB6scalycB4v0_2 %load.struct1301, 38
-  br i1 %tool_build1302, label %land.rhs1300, label %if.end1298
+if.else1299:                                      ; preds = %if.then1296
+  %cmd_builder1311 = load ptr, ptr %cmd_builder, align 8
+  %frame.page1312 = load ptr, ptr %frame, align 8
+  %frame.has_page1313 = icmp ne ptr %frame.page1312, null
+  br i1 %frame.has_page1313, label %frame.forced1315, label %frame.force1314
 
-if.then1297:                                      ; preds = %land.rhs1299
-  %cmd_builder1307 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7341 }, ptr %arg.tmp1308, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1307, ptr %arg.tmp1308)
-  %cmd_builder1309 = load ptr, ptr %cmd_builder, align 8
-  %field.inplace1310 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 33
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1309, ptr %field.inplace1310)
-  br label %if.end1298
+if.end1300:                                       ; preds = %frame.forced1315, %frame.forced1305
+  br label %if.end1297
 
-if.end1298:                                       ; preds = %if.then1297, %land.rhs1299, %land.rhs1300, %if.end1294
-  br i1 %gt1067, label %if.then1311, label %if.else1312
+frame.force1304:                                  ; preds = %if.then1298
+  %forced_page1306 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced1305
 
-land.rhs1299:                                     ; preds = %land.rhs1300
-  %eq1306 = icmp eq i1 %gt1067, false
-  br i1 %eq1306, label %if.then1297, label %if.end1298
+frame.forced1305:                                 ; preds = %frame.force1304, %if.then1298
+  %forced_page1307 = phi ptr [ %frame.page1302, %if.then1298 ], [ %forced_page1306, %frame.force1304 ]
+  %struct.region1308 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1307, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region1308)
+  store { ptr } { ptr @.sconst.7341 }, ptr %arg.tmp1309, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1308, ptr %arg.tmp1309)
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1308, ptr %sret.result1293)
+  call void @_ZN13StringBuilder6appendEc(ptr %struct.region1308, i8 34)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1310, ptr %frame, ptr %struct.region1308)
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1301, ptr %sret.result1310)
+  br label %if.end1300
 
-land.rhs1300:                                     ; preds = %if.end1294
-  %field.inplace1303 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 33
-  %call1304 = call i64 @_ZN6String10get_lengthEv(ptr %field.inplace1303)
-  %gt1305 = icmp ugt i64 %call1304, 0
-  br i1 %gt1305, label %land.rhs1299, label %if.end1298
+frame.force1314:                                  ; preds = %if.else1299
+  %forced_page1316 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced1315
 
-if.then1311:                                      ; preds = %if.end1298
-  %cmd_builder1314 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7342 }, ptr %arg.tmp1315, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1314, ptr %arg.tmp1315)
-  %cmd_builder1316 = load ptr, ptr %cmd_builder, align 8
-  %field.inplace1317 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1316, ptr %field.inplace1317)
-  %cmd_builder1318 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7343 }, ptr %arg.tmp1319, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1318, ptr %arg.tmp1319)
-  br label %if.end1313
+frame.forced1315:                                 ; preds = %frame.force1314, %if.else1299
+  %forced_page1317 = phi ptr [ %frame.page1312, %if.else1299 ], [ %forced_page1316, %frame.force1314 ]
+  %struct.region1318 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1317, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region1318)
+  store { ptr } { ptr @.sconst.7342 }, ptr %arg.tmp1319, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1318, ptr %arg.tmp1319)
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1318, ptr %sret.result1293)
+  call void @_ZN13StringBuilder6appendEc(ptr %struct.region1318, i8 34)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1320, ptr %frame, ptr %struct.region1318)
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1311, ptr %sret.result1320)
+  br label %if.end1300
 
-if.else1312:                                      ; preds = %if.end1298
-  %cmd_builder1320 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7344 }, ptr %arg.tmp1321, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1320, ptr %arg.tmp1321)
-  %cmd_builder1322 = load ptr, ptr %cmd_builder, align 8
-  %field.inplace1323 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1322, ptr %field.inplace1323)
-  %cmd_builder1324 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.7345 }, ptr %arg.tmp1325, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1324, ptr %arg.tmp1325)
-  br label %if.end1313
+if.then1321:                                      ; preds = %if.end1282
+  %cmd_builder1323 = load ptr, ptr %cmd_builder, align 8
+  store { ptr } { ptr @.sconst.7343 }, ptr %sret.result1293, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1323, ptr %sret.result1293)
+  br label %if.end1322
 
-if.end1313:                                       ; preds = %if.else1312, %if.then1311
-  %cmd_builder1327 = load ptr, ptr %cmd_builder, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1326, ptr %frame, ptr %cmd_builder1327)
-  %call1328 = call ptr @_ZN6String6c_dataEv(ptr %sret.result1326)
-  %call1329 = call i32 @system(ptr %call1328)
-  %load.struct1333 = load %_Z7OptionsB6scalycB4v0_2, ptr %0, align 8
-  %debug1334 = extractvalue %_Z7OptionsB6scalycB4v0_2 %load.struct1333, 25
-  br i1 %debug1334, label %land.rhs1332, label %if.end1331
+if.end1322:                                       ; preds = %if.then1321, %if.end1282
+  %load.struct1328 = load %_Z7OptionsB6scalycB4v0_2, ptr %0, align 8
+  %tool_build1329 = extractvalue %_Z7OptionsB6scalycB4v0_2 %load.struct1328, 38
+  br i1 %tool_build1329, label %land.rhs1327, label %if.end1325
 
-if.then1330:                                      ; preds = %land.rhs1332
-  %eq1336 = icmp eq i32 %call1329, 0
-  br i1 %eq1336, label %if.then1337, label %if.end1338
+if.then1324:                                      ; preds = %land.rhs1326
+  %cmd_builder1334 = load ptr, ptr %cmd_builder, align 8
+  store { ptr } { ptr @.sconst.7344 }, ptr %arg.tmp1335, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1334, ptr %arg.tmp1335)
+  %cmd_builder1336 = load ptr, ptr %cmd_builder, align 8
+  %field.inplace1337 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 33
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1336, ptr %field.inplace1337)
+  br label %if.end1325
 
-if.end1331:                                       ; preds = %if.end1338, %land.rhs1332, %if.end1313
-  %kept1353 = load i1, ptr %kept, align 1
-  %eq1354 = icmp eq i1 %kept1353, false
-  br i1 %eq1354, label %if.then1355, label %if.end1356
+if.end1325:                                       ; preds = %if.then1324, %land.rhs1326, %land.rhs1327, %if.end1322
+  br i1 %gt1067, label %if.then1338, label %if.else1339
 
-land.rhs1332:                                     ; preds = %if.end1313
-  %eq1335 = icmp eq i1 %call939, false
-  br i1 %eq1335, label %if.then1330, label %if.end1331
+land.rhs1326:                                     ; preds = %land.rhs1327
+  %eq1333 = icmp eq i1 %gt1067, false
+  br i1 %eq1333, label %if.then1324, label %if.end1325
 
-if.then1337:                                      ; preds = %if.then1330
-  %frame.page1339 = load ptr, ptr %frame, align 8
-  %frame.has_page1340 = icmp ne ptr %frame.page1339, null
-  br i1 %frame.has_page1340, label %frame.forced1342, label %frame.force1341
+land.rhs1327:                                     ; preds = %if.end1322
+  %field.inplace1330 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 33
+  %call1331 = call i64 @_ZN6String10get_lengthEv(ptr %field.inplace1330)
+  %gt1332 = icmp ugt i64 %call1331, 0
+  br i1 %gt1332, label %land.rhs1326, label %if.end1325
 
-if.end1338:                                       ; preds = %frame.forced1342, %if.then1330
-  br label %if.end1331
-
-frame.force1341:                                  ; preds = %if.then1337
-  %forced_page1343 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced1342
-
-frame.forced1342:                                 ; preds = %frame.force1341, %if.then1337
-  %forced_page1344 = phi ptr [ %frame.page1339, %if.then1337 ], [ %forced_page1343, %frame.force1341 ]
-  %struct.region1345 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1344, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1Ev(ptr %struct.region1345)
+if.then1338:                                      ; preds = %if.end1325
+  %cmd_builder1341 = load ptr, ptr %cmd_builder, align 8
+  store { ptr } { ptr @.sconst.7345 }, ptr %arg.tmp1342, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1341, ptr %arg.tmp1342)
+  %cmd_builder1343 = load ptr, ptr %cmd_builder, align 8
+  %field.inplace1344 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1343, ptr %field.inplace1344)
+  %cmd_builder1345 = load ptr, ptr %cmd_builder, align 8
   store { ptr } { ptr @.sconst.7346 }, ptr %arg.tmp1346, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1345, ptr %arg.tmp1346)
-  %load.struct1347 = load %_Z7OptionsB6scalycB4v0_2, ptr %0, align 8
-  %output_file = extractvalue %_Z7OptionsB6scalycB4v0_2 %load.struct1347, 1
-  store { ptr } %output_file, ptr %arg.tmp1348, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1345, ptr %arg.tmp1348)
-  store { ptr } { ptr @.sconst.7347 }, ptr %arg.tmp1349, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1345, ptr %arg.tmp1349)
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1350, ptr %frame, ptr %struct.region1345)
-  %call1351 = call ptr @_ZN6String6c_dataEv(ptr %sret.result1350)
-  %call1352 = call i32 @system(ptr %call1351)
-  br label %if.end1338
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1345, ptr %arg.tmp1346)
+  br label %if.end1340
 
-if.then1355:                                      ; preds = %if.end1331
-  %tmp_obj1357 = load ptr, ptr %pkg_roots, align 8
-  %call1358 = call ptr @_ZN6String6c_dataEv(ptr %tmp_obj1357)
-  %call1359 = call i32 @unlink(ptr %call1358)
-  br label %if.end1356
+if.else1339:                                      ; preds = %if.end1325
+  %cmd_builder1347 = load ptr, ptr %cmd_builder, align 8
+  store { ptr } { ptr @.sconst.7347 }, ptr %arg.tmp1348, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1347, ptr %arg.tmp1348)
+  %cmd_builder1349 = load ptr, ptr %cmd_builder, align 8
+  %field.inplace1350 = getelementptr inbounds nuw %_Z7OptionsB6scalycB4v0_2, ptr %0, i32 0, i32 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1349, ptr %field.inplace1350)
+  %cmd_builder1351 = load ptr, ptr %cmd_builder, align 8
+  store { ptr } { ptr @.sconst.7348 }, ptr %arg.tmp1352, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder1351, ptr %arg.tmp1352)
+  br label %if.end1340
 
-if.end1356:                                       ; preds = %if.then1355, %if.end1331
-  %ne1360 = icmp ne i32 %call1329, 0
-  br i1 %ne1360, label %if.then1361, label %if.end1362
+if.end1340:                                       ; preds = %if.else1339, %if.then1338
+  %cmd_builder1354 = load ptr, ptr %cmd_builder, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1353, ptr %frame, ptr %cmd_builder1354)
+  %call1355 = call ptr @_ZN6String6c_dataEv(ptr %sret.result1353)
+  %call1356 = call i32 @system(ptr %call1355)
+  %load.struct1360 = load %_Z7OptionsB6scalycB4v0_2, ptr %0, align 8
+  %debug1361 = extractvalue %_Z7OptionsB6scalycB4v0_2 %load.struct1360, 25
+  br i1 %debug1361, label %land.rhs1359, label %if.end1358
 
-if.then1361:                                      ; preds = %if.end1356
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7348)
-  br i1 %call939, label %land.rhs1367, label %if.end1364
+if.then1357:                                      ; preds = %land.rhs1359
+  %eq1363 = icmp eq i32 %call1356, 0
+  br i1 %eq1363, label %if.then1364, label %if.end1365
 
-if.end1362:                                       ; preds = %if.end1356
+if.end1358:                                       ; preds = %if.end1365, %land.rhs1359, %if.end1340
+  %kept1380 = load i1, ptr %kept, align 1
+  %eq1381 = icmp eq i1 %kept1380, false
+  br i1 %eq1381, label %if.then1382, label %if.end1383
+
+land.rhs1359:                                     ; preds = %if.end1340
+  %eq1362 = icmp eq i1 %call939, false
+  br i1 %eq1362, label %if.then1357, label %if.end1358
+
+if.then1364:                                      ; preds = %if.then1357
+  %frame.page1366 = load ptr, ptr %frame, align 8
+  %frame.has_page1367 = icmp ne ptr %frame.page1366, null
+  br i1 %frame.has_page1367, label %frame.forced1369, label %frame.force1368
+
+if.end1365:                                       ; preds = %frame.forced1369, %if.then1357
+  br label %if.end1358
+
+frame.force1368:                                  ; preds = %if.then1364
+  %forced_page1370 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced1369
+
+frame.forced1369:                                 ; preds = %frame.force1368, %if.then1364
+  %forced_page1371 = phi ptr [ %frame.page1366, %if.then1364 ], [ %forced_page1370, %frame.force1368 ]
+  %struct.region1372 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1371, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region1372)
+  store { ptr } { ptr @.sconst.7349 }, ptr %arg.tmp1373, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1372, ptr %arg.tmp1373)
+  %load.struct1374 = load %_Z7OptionsB6scalycB4v0_2, ptr %0, align 8
+  %output_file = extractvalue %_Z7OptionsB6scalycB4v0_2 %load.struct1374, 1
+  store { ptr } %output_file, ptr %arg.tmp1375, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1372, ptr %arg.tmp1375)
+  store { ptr } { ptr @.sconst.7350 }, ptr %arg.tmp1376, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region1372, ptr %arg.tmp1376)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result1377, ptr %frame, ptr %struct.region1372)
+  %call1378 = call ptr @_ZN6String6c_dataEv(ptr %sret.result1377)
+  %call1379 = call i32 @system(ptr %call1378)
+  br label %if.end1365
+
+if.then1382:                                      ; preds = %if.end1358
+  %tmp_obj1384 = load ptr, ptr %pkg_roots, align 8
+  %call1385 = call ptr @_ZN6String6c_dataEv(ptr %tmp_obj1384)
+  %call1386 = call i32 @unlink(ptr %call1385)
+  br label %if.end1383
+
+if.end1383:                                       ; preds = %if.then1382, %if.end1358
+  %ne1387 = icmp ne i32 %call1356, 0
+  br i1 %ne1387, label %if.then1388, label %if.end1389
+
+if.then1388:                                      ; preds = %if.end1383
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7351)
+  br i1 %call939, label %land.rhs1394, label %if.end1391
+
+if.end1389:                                       ; preds = %if.end1383
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 0
 
-if.then1363:                                      ; preds = %land.rhs1365
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7350)
-  br label %if.end1364
+if.then1390:                                      ; preds = %land.rhs1392
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7353)
+  br label %if.end1391
 
-if.end1364:                                       ; preds = %if.then1363, %land.rhs1365, %land.rhs1366, %land.rhs1367, %if.then1361
+if.end1391:                                       ; preds = %if.then1390, %land.rhs1392, %land.rhs1393, %land.rhs1394, %if.then1388
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 9
 
-land.rhs1365:                                     ; preds = %land.rhs1366
-  %call1371 = call ptr @getenv(ptr @.str.7349)
-  %ne1372 = icmp ne ptr %call1371, null
-  br i1 %ne1372, label %if.then1363, label %if.end1364
+land.rhs1392:                                     ; preds = %land.rhs1393
+  %call1398 = call ptr @getenv(ptr @.str.7352)
+  %ne1399 = icmp ne ptr %call1398, null
+  br i1 %ne1399, label %if.then1390, label %if.end1391
 
-land.rhs1366:                                     ; preds = %land.rhs1367
-  %call1369 = call i1 @_ZN3cliB6scalycB4v0_214compiler_namedEv()
-  %eq1370 = icmp eq i1 %call1369, false
-  br i1 %eq1370, label %land.rhs1365, label %if.end1364
+land.rhs1393:                                     ; preds = %land.rhs1394
+  %call1396 = call i1 @_ZN3cliB6scalycB4v0_214compiler_namedEv()
+  %eq1397 = icmp eq i1 %call1396, false
+  br i1 %eq1397, label %land.rhs1392, label %if.end1391
 
-land.rhs1367:                                     ; preds = %if.then1361
-  %eq1368 = icmp eq i1 %gt1067, false
-  br i1 %eq1368, label %land.rhs1366, label %if.end1364
+land.rhs1394:                                     ; preds = %if.then1388
+  %eq1395 = icmp eq i1 %gt1067, false
+  br i1 %eq1395, label %land.rhs1393, label %if.end1391
 }
 
 define linkonce_odr i64 @_ZN3cliB6scalycB4v0_223developer_tools_missingEv() {
@@ -548552,7 +548615,7 @@ entry:
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
-  %call = call ptr @getenv(ptr @.str.7191)
+  %call = call ptr @getenv(ptr @.str.7192)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %lor.rhs
 
@@ -548566,7 +548629,7 @@ if.end:                                           ; preds = %lor.rhs
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
 lor.rhs:                                          ; preds = %entry
-  %call1 = call ptr @getenv(ptr @.str.7192)
+  %call1 = call ptr @getenv(ptr @.str.7193)
   %ne2 = icmp ne ptr %call1, null
   br i1 %ne2, label %if.then, label %if.end
 
@@ -548577,13 +548640,13 @@ frame.force:                                      ; preds = %if.end
 frame.forced:                                     ; preds = %frame.force, %if.end
   %forced_page3 = phi ptr [ %frame.page, %if.end ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page3, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7193 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7194 }, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
   %call4 = call i1 @_ZN4File6existsE6String(ptr %struct.region)
   br i1 %call4, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %frame.forced
-  %call7 = call i32 @system(ptr @.str.7194)
+  %call7 = call i32 @system(ptr @.str.7195)
   %ne8 = icmp ne i32 %call7, 0
   br i1 %ne8, label %if.then9, label %if.end10
 
@@ -548607,7 +548670,7 @@ frame.force13:                                    ; preds = %if.end6
 frame.forced14:                                   ; preds = %frame.force13, %if.end6
   %forced_page16 = phi ptr [ %frame.page11, %if.end6 ], [ %forced_page15, %frame.force13 ]
   %struct.region17 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7195 }, ptr %arg.tmp18, align 1
+  store { ptr } { ptr @.sconst.7196 }, ptr %arg.tmp18, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region17, ptr %arg.tmp18)
   %call19 = call i1 @_ZN4File6existsE6String(ptr %struct.region17)
   %eq = icmp eq i1 %call19, false
@@ -548618,7 +548681,7 @@ if.then20:                                        ; preds = %frame.forced14
   ret i64 0
 
 if.end21:                                         ; preds = %frame.forced14
-  %call22 = call i32 @system(ptr @.str.7196)
+  %call22 = call i32 @system(ptr @.str.7197)
   %ne23 = icmp ne i32 %call22, 0
   br i1 %ne23, label %if.then24, label %if.end25
 
@@ -548637,17 +548700,17 @@ entry:
   br i1 %eq, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7197)
   call void @_ZN7Console7printlnEP10const_char(ptr @.str.7198)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7199)
   br label %if.end
 
 if.else:                                          ; preds = %entry
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7199)
   call void @_ZN7Console7printlnEP10const_char(ptr @.str.7200)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7201)
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7201)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7202)
   ret void
 }
 
@@ -548658,7 +548721,7 @@ entry:
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr %1, ptr %frame.parent, align 8
-  %call = call ptr @getenv(ptr @.str.7202)
+  %call = call ptr @getenv(ptr @.str.7203)
   %name = alloca ptr, align 8
   store ptr %call, ptr %name, align 1
   %name1 = load ptr, ptr %name, align 8
@@ -548666,7 +548729,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call2 = call ptr @getenv(ptr @.str.7203)
+  %call2 = call ptr @getenv(ptr @.str.7204)
   store ptr %call2, ptr %name, align 1
   br label %if.end
 
@@ -548676,7 +548739,7 @@ if.end:                                           ; preds = %if.then, %entry
   br i1 %eq4, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %if.end
-  store { ptr } { ptr @.sconst.7204 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.7205 }, ptr %0, align 1
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
@@ -548701,7 +548764,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   br i1 %eq11, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %frame.forced
-  store { ptr } { ptr @.sconst.7205 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.7206 }, ptr %0, align 1
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
@@ -549032,7 +549095,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7357)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7360)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
@@ -573469,7 +573532,7 @@ if.end:                                           ; preds = %frame.forced32, %la
 
 land.rhs:                                         ; preds = %while.body
   %field.inplace16 = getelementptr inbounds nuw %_Z6ModuleB6scalycB4v0_2, ptr %call, i32 0, i32 2
-  store { ptr } { ptr @.sconst.7351 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7354 }, ptr %arg.tmp, align 1
   %call17 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace16, ptr %arg.tmp)
   %eq = icmp eq i1 %call17, false
   br i1 %eq, label %if.then, label %if.end
@@ -576596,6 +576659,61 @@ frame.forced6:                                    ; preds = %frame.force5, %if.e
   ret void
 }
 
+define linkonce_odr void @_ZN3cliB6scalycB4v0_211natvis_fileEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1) {
+entry:
+  %sret.result2 = alloca { ptr }, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr %1, ptr %frame.parent, align 8
+  %frame.page = load ptr, ptr %frame, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
+  call void @_ZN7ModelerB6scalycB4v0_216stdlib_directoryEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame)
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result)
+  store { ptr } { ptr @.sconst.7186 }, ptr %arg.tmp, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %1, ptr %struct.region)
+  %call = call i1 @_ZN4File6existsE6String(ptr %sret.result2)
+  br i1 %call, label %if.then, label %if.end
+
+if.then:                                          ; preds = %frame.forced
+  call void @_ZN3cliB6scalycB4v0_212windows_pathEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sret.result2)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.end:                                           ; preds = %frame.forced
+  %frame.page3 = load ptr, ptr %1, align 8
+  %frame.has_page4 = icmp ne ptr %frame.page3, null
+  br i1 %frame.has_page4, label %frame.forced6, label %frame.force5
+
+frame.force5:                                     ; preds = %if.end
+  %forced_page7 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced6
+
+frame.forced6:                                    ; preds = %frame.force5, %if.end
+  %forced_page8 = phi ptr [ %frame.page3, %if.end ], [ %forced_page7, %frame.force5 ]
+  %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1Ev(ptr %struct.region9)
+  %sret.body10 = load { ptr }, ptr %struct.region9, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+}
+
 define linkonce_odr void @_ZN3cliB6scalycB4v0_220runtime_archive_pathEPN4scaly6memory4PageEb(ptr noalias sret({ ptr }) %0, ptr %1, i1 %2) {
 entry:
   %sret.result32 = alloca { ptr }, align 8
@@ -576612,16 +576730,16 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %base = alloca { ptr }, align 8
   %leaf = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.7186 }, ptr %leaf, align 1
+  store { ptr } { ptr @.sconst.7187 }, ptr %leaf, align 1
   br i1 %2, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.7187 }, ptr %leaf, align 1
+  store { ptr } { ptr @.sconst.7188 }, ptr %leaf, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %call = call ptr @getenv(ptr @.str.7188)
-  store { ptr } { ptr @.sconst.7189 }, ptr %base, align 1
+  %call = call ptr @getenv(ptr @.str.7189)
+  store { ptr } { ptr @.sconst.7190 }, ptr %base, align 1
   br i1 %2, label %if.then1, label %if.end2
 
 if.then1:                                         ; preds = %if.end
@@ -576676,7 +576794,7 @@ frame.forced13:                                   ; preds = %frame.force12, %if.
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region16)
   %home_str17 = load ptr, ptr %home_str, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region16, ptr %home_str17)
-  store { ptr } { ptr @.sconst.7190 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7191 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region16, ptr %arg.tmp)
   %leaf18 = load { ptr }, ptr %leaf, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp19, ptr align 1 %leaf, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -576714,7 +576832,7 @@ entry:
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
-  %call = call ptr @getenv(ptr @.str.7206)
+  %call = call ptr @getenv(ptr @.str.7207)
   %name = alloca ptr, align 8
   store ptr %call, ptr %name, align 1
   %name1 = load ptr, ptr %name, align 8
@@ -576722,7 +576840,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call2 = call ptr @getenv(ptr @.str.7207)
+  %call2 = call ptr @getenv(ptr @.str.7208)
   store ptr %call2, ptr %name, align 1
   br label %if.end
 
@@ -577179,7 +577297,7 @@ entry:
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr %1, ptr %frame.parent, align 8
-  %call = call ptr @getenv(ptr @.str.7208)
+  %call = call ptr @getenv(ptr @.str.7209)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -577214,13 +577332,13 @@ frame.forced5:                                    ; preds = %frame.force4, %if.e
   %forced_page7 = phi ptr [ %frame.page2, %if.end ], [ %forced_page6, %frame.force4 ]
   %struct.region8 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page7, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EP10const_char(ptr %struct.region8, ptr %call)
-  store { ptr } { ptr @.sconst.7209 }, ptr %arch, align 1
+  store { ptr } { ptr @.sconst.7210 }, ptr %arch, align 1
   %frame.page11 = load ptr, ptr %frame, align 8
   %frame.has_page12 = icmp ne ptr %frame.page11, null
   br i1 %frame.has_page12, label %frame.forced14, label %frame.force13
 
 if.then9:                                         ; preds = %frame.forced22, %frame.forced14
-  store { ptr } { ptr @.sconst.7212 }, ptr %arch, align 1
+  store { ptr } { ptr @.sconst.7213 }, ptr %arch, align 1
   br label %if.end10
 
 if.end10:                                         ; preds = %if.then9, %frame.forced22
@@ -577240,7 +577358,7 @@ frame.force13:                                    ; preds = %frame.forced5
 frame.forced14:                                   ; preds = %frame.force13, %frame.forced5
   %forced_page16 = phi ptr [ %frame.page11, %frame.forced5 ], [ %forced_page15, %frame.force13 ]
   %struct.region17 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7210 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7211 }, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region17, ptr %arg.tmp)
   %call18 = call i1 @_ZN6String8containsE6String(ptr %2, ptr %struct.region17)
   br i1 %call18, label %if.then9, label %lor.rhs
@@ -577252,13 +577370,13 @@ frame.force21:                                    ; preds = %lor.rhs
 frame.forced22:                                   ; preds = %frame.force21, %lor.rhs
   %forced_page24 = phi ptr [ %frame.page19, %lor.rhs ], [ %forced_page23, %frame.force21 ]
   %struct.region25 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page24, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7211 }, ptr %arg.tmp26, align 1
+  store { ptr } { ptr @.sconst.7212 }, ptr %arg.tmp26, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region25, ptr %arg.tmp26)
   %call27 = call i1 @_ZN6String8containsE6String(ptr %2, ptr %struct.region25)
   br i1 %call27, label %if.then9, label %if.end10
 
 if.then28:                                        ; preds = %frame.forced43, %frame.forced34
-  store { ptr } { ptr @.sconst.7215 }, ptr %arch, align 1
+  store { ptr } { ptr @.sconst.7216 }, ptr %arch, align 1
   br label %if.end29
 
 if.end29:                                         ; preds = %if.then28, %frame.forced43
@@ -577278,7 +577396,7 @@ frame.force33:                                    ; preds = %if.end10
 frame.forced34:                                   ; preds = %frame.force33, %if.end10
   %forced_page36 = phi ptr [ %frame.page31, %if.end10 ], [ %forced_page35, %frame.force33 ]
   %struct.region37 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7213 }, ptr %arg.tmp38, align 1
+  store { ptr } { ptr @.sconst.7214 }, ptr %arg.tmp38, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region37, ptr %arg.tmp38)
   %call39 = call i1 @_ZN6String8containsE6String(ptr %2, ptr %struct.region37)
   br i1 %call39, label %if.then28, label %lor.rhs30
@@ -577290,7 +577408,7 @@ frame.force42:                                    ; preds = %lor.rhs30
 frame.forced43:                                   ; preds = %frame.force42, %lor.rhs30
   %forced_page45 = phi ptr [ %frame.page40, %lor.rhs30 ], [ %forced_page44, %frame.force42 ]
   %struct.region46 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page45, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7214 }, ptr %arg.tmp47, align 1
+  store { ptr } { ptr @.sconst.7215 }, ptr %arg.tmp47, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region46, ptr %arg.tmp47)
   %call48 = call i1 @_ZN6String8containsE6String(ptr %2, ptr %struct.region46)
   br i1 %call48, label %if.then28, label %if.end29
@@ -577304,7 +577422,7 @@ frame.forced52:                                   ; preds = %frame.force51, %if.
   %struct.region55 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page54, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1Ev(ptr %struct.region55)
   store ptr %struct.region55, ptr %tools, align 1
-  %call56 = call ptr @getenv(ptr @.str.7216)
+  %call56 = call ptr @getenv(ptr @.str.7217)
   %ne = icmp ne ptr %call56, null
   br i1 %ne, label %if.then57, label %if.end58
 
@@ -577353,7 +577471,7 @@ frame.forced74:                                   ; preds = %frame.force73, %if.
   %struct.region77 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page76, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region77)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region77, ptr %struct.region8)
-  store { ptr } { ptr @.sconst.7217 }, ptr %arg.tmp78, align 1
+  store { ptr } { ptr @.sconst.7218 }, ptr %arg.tmp78, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region77, ptr %arg.tmp78)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result79, ptr %frame, ptr %struct.region77)
   %call80 = call i1 @_ZN4File6existsE6String(ptr %sret.result79)
@@ -577393,12 +577511,12 @@ frame.forced95:                                   ; preds = %frame.force94, %if.
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region98)
   call void @_ZN3cliB6scalycB4v0_219windows_scratch_dirEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp78, ptr %frame)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region98, ptr %arg.tmp78)
-  store { ptr } { ptr @.sconst.7218 }, ptr %arg.tmp99, align 1
+  store { ptr } { ptr @.sconst.7219 }, ptr %arg.tmp99, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region98, ptr %arg.tmp99)
   %call100 = call i32 @getpid()
   %as.sext = sext i32 %call100 to i64
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region98, i64 %as.sext)
-  store { ptr } { ptr @.sconst.7219 }, ptr %arg.tmp101, align 1
+  store { ptr } { ptr @.sconst.7220 }, ptr %arg.tmp101, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region98, ptr %arg.tmp101)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result102, ptr %frame, ptr %struct.region98)
   %frame.page103 = load ptr, ptr %frame, align 8
@@ -577413,13 +577531,13 @@ frame.forced106:                                  ; preds = %frame.force105, %fr
   %forced_page108 = phi ptr [ %frame.page103, %frame.forced95 ], [ %forced_page107, %frame.force105 ]
   %struct.region109 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page108, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region109)
-  store { ptr } { ptr @.sconst.7220 }, ptr %arg.tmp78, align 1
+  store { ptr } { ptr @.sconst.7221 }, ptr %arg.tmp78, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region109, ptr %arg.tmp78)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region109, ptr %sret.result79)
-  store { ptr } { ptr @.sconst.7221 }, ptr %arg.tmp99, align 1
+  store { ptr } { ptr @.sconst.7222 }, ptr %arg.tmp99, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region109, ptr %arg.tmp99)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region109, ptr %sret.result102)
-  store { ptr } { ptr @.sconst.7222 }, ptr %arg.tmp101, align 1
+  store { ptr } { ptr @.sconst.7223 }, ptr %arg.tmp101, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region109, ptr %arg.tmp101)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result110, ptr %frame, ptr %struct.region109)
   %call111 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %sret.result110)
@@ -577440,12 +577558,12 @@ frame.forced119:                                  ; preds = %frame.force118, %fr
   %forced_page121 = phi ptr [ %frame.page116, %frame.forced106 ], [ %forced_page120, %frame.force118 ]
   %struct.region122 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page121, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region122)
-  store { ptr } { ptr @.sconst.7223 }, ptr %arg.tmp99, align 1
+  store { ptr } { ptr @.sconst.7224 }, ptr %arg.tmp99, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region122, ptr %arg.tmp99)
   %arch123 = load { ptr }, ptr %arch, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp101, ptr align 1 %arch, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region122, ptr %arg.tmp101)
-  store { ptr } { ptr @.sconst.7224 }, ptr %arg.tmp124, align 1
+  store { ptr } { ptr @.sconst.7225 }, ptr %arg.tmp124, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region122, ptr %arg.tmp124)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result125, ptr %frame, ptr %struct.region122)
   store i64 0, ptr %start, align 1
@@ -577536,7 +577654,7 @@ frame.forced160:                                  ; preds = %frame.force159, %if
   %struct.region163 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page162, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region163)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region163, ptr %arg.tmp99)
-  store { ptr } { ptr @.sconst.7225 }, ptr %arg.tmp101, align 1
+  store { ptr } { ptr @.sconst.7226 }, ptr %arg.tmp101, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region163, ptr %arg.tmp101)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp124, ptr %frame, ptr %struct.region163)
   call void @_ZN3cliB6scalycB4v0_214newest_versionEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %arg.tmp101, ptr %frame, ptr %arg.tmp124, ptr %sret.result125)
@@ -577602,12 +577720,12 @@ frame.forced196:                                  ; preds = %frame.force195, %if
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region199)
   %tools200 = load ptr, ptr %tools, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region199, ptr %tools200)
-  store { ptr } { ptr @.sconst.7226 }, ptr %arg.tmp78, align 1
+  store { ptr } { ptr @.sconst.7227 }, ptr %arg.tmp78, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region199, ptr %arg.tmp78)
   %arch201 = load { ptr }, ptr %arch, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %sret.result79, ptr align 1 %arch, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region199, ptr %sret.result79)
-  store { ptr } { ptr @.sconst.7227 }, ptr %arg.tmp99, align 1
+  store { ptr } { ptr @.sconst.7228 }, ptr %arg.tmp99, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region199, ptr %arg.tmp99)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp101, ptr %frame, ptr %struct.region199)
   store ptr %arg.tmp101, ptr %link, align 1
@@ -577635,7 +577753,7 @@ frame.force211:                                   ; preds = %frame.forced205
 frame.forced212:                                  ; preds = %frame.force211, %frame.forced205
   %forced_page214 = phi ptr [ %frame.page209, %frame.forced205 ], [ %forced_page213, %frame.force211 ]
   %struct.region215 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page214, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7228 }, ptr %sret.result79, align 1
+  store { ptr } { ptr @.sconst.7229 }, ptr %sret.result79, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region215, ptr %sret.result79)
   %call216 = call i1 @_ZN6String8containsE6String(ptr %arg.tmp78, ptr %struct.region215)
   br i1 %call216, label %if.then217, label %if.end218
@@ -577661,12 +577779,12 @@ frame.forced222:                                  ; preds = %frame.force221, %if
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region225)
   %tools226 = load ptr, ptr %tools, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region225, ptr %tools226)
-  store { ptr } { ptr @.sconst.7229 }, ptr %arg.tmp99, align 1
+  store { ptr } { ptr @.sconst.7230 }, ptr %arg.tmp99, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region225, ptr %arg.tmp99)
   %arch227 = load { ptr }, ptr %arch, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %sret.result102, ptr align 1 %arch, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region225, ptr %sret.result102)
-  store { ptr } { ptr @.sconst.7230 }, ptr %sret.result110, align 1
+  store { ptr } { ptr @.sconst.7231 }, ptr %sret.result110, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region225, ptr %sret.result110)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp124, ptr %1, ptr %struct.region225)
   %call228 = call i1 @_ZN4File6existsE6String(ptr %arg.tmp124)
@@ -577725,11 +577843,11 @@ frame.forced256:                                  ; preds = %frame.force255, %if
   %struct.region259 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page258, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region259)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region259, ptr %struct.region8)
-  store { ptr } { ptr @.sconst.7231 }, ptr %arg.tmp99, align 1
+  store { ptr } { ptr @.sconst.7232 }, ptr %arg.tmp99, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region259, ptr %arg.tmp99)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result102, ptr %frame, ptr %struct.region259)
   store ptr %sret.result102, ptr %kits, align 1
-  %call260 = call ptr @getenv(ptr @.str.7232)
+  %call260 = call ptr @getenv(ptr @.str.7233)
   %ne261 = icmp ne ptr %call260, null
   br i1 %ne261, label %if.then262, label %if.end263
 
@@ -577767,7 +577885,7 @@ frame.forced276:                                  ; preds = %frame.force275, %if
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region279)
   %kits280 = load ptr, ptr %kits, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region279, ptr %kits280)
-  store { ptr } { ptr @.sconst.7233 }, ptr %sret.result110, align 1
+  store { ptr } { ptr @.sconst.7234 }, ptr %sret.result110, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region279, ptr %sret.result110)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp124, ptr %frame, ptr %struct.region279)
   %frame.page281 = load ptr, ptr %frame, align 8
@@ -577782,12 +577900,12 @@ frame.forced284:                                  ; preds = %frame.force283, %fr
   %forced_page286 = phi ptr [ %frame.page281, %frame.forced276 ], [ %forced_page285, %frame.force283 ]
   %struct.region287 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page286, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region287)
-  store { ptr } { ptr @.sconst.7234 }, ptr %sret.result110, align 1
+  store { ptr } { ptr @.sconst.7235 }, ptr %sret.result110, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region287, ptr %sret.result110)
   %arch288 = load { ptr }, ptr %arch, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %sret.result125, ptr align 1 %arch, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region287, ptr %sret.result125)
-  store { ptr } { ptr @.sconst.7235 }, ptr %arg.tmp289, align 1
+  store { ptr } { ptr @.sconst.7236 }, ptr %arg.tmp289, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region287, ptr %arg.tmp289)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result290, ptr %frame, ptr %struct.region287)
   call void @_ZN3cliB6scalycB4v0_214newest_versionEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result110, ptr %frame, ptr %arg.tmp124, ptr %sret.result290)
@@ -577829,36 +577947,36 @@ frame.forced306:                                  ; preds = %frame.force305, %if
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region309, i8 34)
   %link310 = load ptr, ptr %link, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %link310)
-  store { ptr } { ptr @.sconst.7236 }, ptr %sret.result125, align 1
+  store { ptr } { ptr @.sconst.7237 }, ptr %sret.result125, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %sret.result125)
   %tools311 = load ptr, ptr %tools, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %tools311)
-  store { ptr } { ptr @.sconst.7237 }, ptr %arg.tmp289, align 1
+  store { ptr } { ptr @.sconst.7238 }, ptr %arg.tmp289, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp289)
   %arch312 = load { ptr }, ptr %arch, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp313, ptr align 1 %arch, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp313)
-  store { ptr } { ptr @.sconst.7238 }, ptr %arg.tmp314, align 1
+  store { ptr } { ptr @.sconst.7239 }, ptr %arg.tmp314, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp314)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp124)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region309, i8 92)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %sret.result110)
-  store { ptr } { ptr @.sconst.7239 }, ptr %arg.tmp315, align 1
+  store { ptr } { ptr @.sconst.7240 }, ptr %arg.tmp315, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp315)
   %arch316 = load { ptr }, ptr %arch, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp317, ptr align 1 %arch, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp317)
-  store { ptr } { ptr @.sconst.7240 }, ptr %arg.tmp318, align 1
+  store { ptr } { ptr @.sconst.7241 }, ptr %arg.tmp318, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp318)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp124)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region309, i8 92)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %sret.result110)
-  store { ptr } { ptr @.sconst.7241 }, ptr %arg.tmp319, align 1
+  store { ptr } { ptr @.sconst.7242 }, ptr %arg.tmp319, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp319)
   %arch320 = load { ptr }, ptr %arch, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp321, ptr align 1 %arch, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp321)
-  store { ptr } { ptr @.sconst.7242 }, ptr %arg.tmp322, align 1
+  store { ptr } { ptr @.sconst.7243 }, ptr %arg.tmp322, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region309, ptr %arg.tmp322)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result323, ptr %1, ptr %struct.region309)
   %sret.body324 = load { ptr }, ptr %sret.result323, align 8
@@ -577917,7 +578035,7 @@ while.exit:                                       ; preds = %while.cond
 
 if.then:                                          ; preds = %land.rhs
   %sb17 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.7243 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7244 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb17, ptr %arg.tmp)
   %i18 = load i64, ptr %i, align 8
   %add19 = add i64 %i18, 3
@@ -577952,7 +578070,7 @@ land.rhs4:                                        ; preds = %while.body
 
 if.then20:                                        ; preds = %land.rhs22
   %sb39 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.7244 }, ptr %arg.tmp40, align 1
+  store { ptr } { ptr @.sconst.7245 }, ptr %arg.tmp40, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb39, ptr %arg.tmp40)
   %i41 = load i64, ptr %i, align 8
   %add42 = add i64 %i41, 3
@@ -578006,7 +578124,7 @@ while.body44:                                     ; preds = %lor.end
 
 while.exit45:                                     ; preds = %lor.end
   %sb55 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.7245 }, ptr %arg.tmp56, align 1
+  store { ptr } { ptr @.sconst.7246 }, ptr %arg.tmp56, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb55, ptr %arg.tmp56)
   br label %while.cond
 
@@ -578040,7 +578158,7 @@ entry:
   br i1 %3, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call = call ptr @getenv(ptr @.str.7246)
+  %call = call ptr @getenv(ptr @.str.7247)
   store ptr %call, ptr %cc, align 1
   %cc1 = load ptr, ptr %cc, align 8
   %eq = icmp eq ptr %cc1, null
@@ -578058,7 +578176,7 @@ if.end:                                           ; preds = %if.end7, %entry
   br i1 %frame.has_page22, label %frame.forced24, label %frame.force23
 
 if.then2:                                         ; preds = %if.then
-  %call4 = call ptr @getenv(ptr @.str.7247)
+  %call4 = call ptr @getenv(ptr @.str.7248)
   store ptr %call4, ptr %cc, align 1
   br label %if.end3
 
@@ -578133,10 +578251,10 @@ frame.forced31:                                   ; preds = %frame.force30, %fra
   %forced_page33 = phi ptr [ %frame.page28, %frame.forced24 ], [ %forced_page32, %frame.force30 ]
   %struct.region34 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page33, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region34)
-  store { ptr } { ptr @.sconst.7248 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7249 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region34, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region34, ptr %sret.result)
-  store { ptr } { ptr @.sconst.7249 }, ptr %arg.tmp35, align 1
+  store { ptr } { ptr @.sconst.7250 }, ptr %arg.tmp35, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region34, ptr %arg.tmp35)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result36, ptr %frame, ptr %struct.region34)
   %call37 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %sret.result36)
@@ -578175,10 +578293,10 @@ frame.forced53:                                   ; preds = %frame.force52, %if.
   %forced_page55 = phi ptr [ %frame.page50, %if.end41 ], [ %forced_page54, %frame.force52 ]
   %struct.region56 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page55, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region56)
-  store { ptr } { ptr @.sconst.7250 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7251 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendEm(ptr %struct.region56, i64 %as.zext)
-  store { ptr } { ptr @.sconst.7251 }, ptr %arg.tmp35, align 1
+  store { ptr } { ptr @.sconst.7252 }, ptr %arg.tmp35, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %arg.tmp35)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %2)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result57, ptr %1, ptr %struct.region56)
@@ -578216,10 +578334,10 @@ frame.forced72:                                   ; preds = %frame.force71, %if.
   %forced_page74 = phi ptr [ %frame.page69, %if.end60 ], [ %forced_page73, %frame.force71 ]
   %struct.region75 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page74, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region75)
-  store { ptr } { ptr @.sconst.7252 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7253 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region75, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendEm(ptr %struct.region75, i64 %as.zext)
-  store { ptr } { ptr @.sconst.7253 }, ptr %arg.tmp35, align 1
+  store { ptr } { ptr @.sconst.7254 }, ptr %arg.tmp35, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region75, ptr %arg.tmp35)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region75, ptr %2)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result76, ptr %1, ptr %struct.region75)
@@ -578292,7 +578410,7 @@ if.then:                                          ; preds = %entry
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
 if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.7255 }, ptr %arg.tmp9, align 1
+  store { ptr } { ptr @.sconst.7256 }, ptr %arg.tmp9, align 1
   %call10 = call i1 @_ZN6String9ends_withE6String(ptr %2, ptr %arg.tmp9)
   %eq11 = icmp eq i1 %call10, false
   br i1 %eq11, label %if.then12, label %if.end13
@@ -578305,7 +578423,7 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   %forced_page1 = phi ptr [ %frame.page, %if.then ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
-  store { ptr } { ptr @.sconst.7254 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7255 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %2)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %struct.region)
@@ -578362,10 +578480,10 @@ frame.forced25:                                   ; preds = %frame.force24, %if.
   %struct.region28 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page27, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region28)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region28, ptr %2)
-  store { ptr } { ptr @.sconst.7256 }, ptr %arg.tmp29, align 1
+  store { ptr } { ptr @.sconst.7257 }, ptr %arg.tmp29, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region28, ptr %arg.tmp29)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result30, ptr %1, ptr %struct.region28)
-  store { ptr } { ptr @.sconst.7257 }, ptr %arg.tmp31, align 1
+  store { ptr } { ptr @.sconst.7258 }, ptr %arg.tmp31, align 1
   call void @_ZN3cliB6scalycB4v0_212llvm_programEPN4scaly6memory4PageE6Stringb(ptr noalias sret({ ptr }) %arg.tmp29, ptr %frame, ptr %arg.tmp31, i1 false)
   %frame.page32 = load ptr, ptr %frame, align 8
   %frame.has_page33 = icmp ne ptr %frame.page32, null
@@ -578392,13 +578510,13 @@ frame.force41:                                    ; preds = %frame.forced35
 frame.forced42:                                   ; preds = %frame.force41, %frame.forced35
   %forced_page44 = phi ptr [ %frame.page39, %frame.forced35 ], [ %forced_page43, %frame.force41 ]
   %struct.region45 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page44, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7258 }, ptr %arg.tmp46, align 1
+  store { ptr } { ptr @.sconst.7259 }, ptr %arg.tmp46, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region45, ptr %arg.tmp46)
   %call47 = call i1 @_ZN6String8containsE6String(ptr %arg.tmp31, ptr %struct.region45)
   br i1 %call47, label %if.then48, label %if.end49
 
 if.then48:                                        ; preds = %frame.forced42
-  store { ptr } { ptr @.sconst.7259 }, ptr %wrap, align 1
+  store { ptr } { ptr @.sconst.7260 }, ptr %wrap, align 1
   br label %if.end49
 
 if.end49:                                         ; preds = %if.then48, %frame.forced42
@@ -578419,10 +578537,10 @@ frame.forced53:                                   ; preds = %frame.force52, %if.
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %arg.tmp58)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region56, i8 34)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %arg.tmp29)
-  store { ptr } { ptr @.sconst.7260 }, ptr %arg.tmp59, align 1
+  store { ptr } { ptr @.sconst.7261 }, ptr %arg.tmp59, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %arg.tmp59)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %sret.result30)
-  store { ptr } { ptr @.sconst.7261 }, ptr %arg.tmp60, align 1
+  store { ptr } { ptr @.sconst.7262 }, ptr %arg.tmp60, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %arg.tmp60)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region56, ptr %2)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region56, i8 34)
@@ -578453,10 +578571,10 @@ frame.forced71:                                   ; preds = %frame.force70, %if.
   %forced_page73 = phi ptr [ %frame.page68, %if.then66 ], [ %forced_page72, %frame.force70 ]
   %struct.region74 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page73, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region74)
-  store { ptr } { ptr @.sconst.7262 }, ptr %arg.tmp58, align 1
+  store { ptr } { ptr @.sconst.7263 }, ptr %arg.tmp58, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region74, ptr %arg.tmp58)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region74, ptr %arg.tmp29)
-  store { ptr } { ptr @.sconst.7263 }, ptr %arg.tmp59, align 1
+  store { ptr } { ptr @.sconst.7264 }, ptr %arg.tmp59, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region74, ptr %arg.tmp59)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp60, ptr %frame, ptr %struct.region74)
   %cstr75 = call ptr @_ZN6String10get_bufferEv(ptr %arg.tmp60)
@@ -578587,7 +578705,7 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   %col19 = load i64, ptr %col, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result18, ptr %frame, i64 %col19)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result18)
-  store { ptr } { ptr @.sconst.7358 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7361 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendEP10const_char(ptr %struct.region, ptr %call13)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result20, ptr %frame, ptr %struct.region)
@@ -578613,7 +578731,7 @@ frame.forced25:                                   ; preds = %frame.force24, %if.
   %col30 = load i64, ptr %col, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result18, ptr %frame, i64 %col30)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region28, ptr %sret.result18)
-  store { ptr } { ptr @.sconst.7359 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7362 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region28, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region28, ptr %3)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result20, ptr %frame, ptr %struct.region28)
@@ -578760,7 +578878,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %head, align 1
   %head2 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7363 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7366 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head2, ptr %arg.tmp)
   %head3 = load ptr, ptr %head, align 8
   %field.inplace = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 158
@@ -578768,7 +578886,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %field.val)
   call void @_ZN13StringBuilder6appendE6String(ptr %head3, ptr %sret.result)
   %head4 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7364 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.7367 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head4, ptr %arg.tmp5)
   %head6 = load ptr, ptr %head, align 8
   %field.inplace8 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 159
@@ -578776,7 +578894,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result7, ptr %frame, i64 %field.val9)
   call void @_ZN13StringBuilder6appendE6String(ptr %head6, ptr %sret.result7)
   %head10 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7365 }, ptr %arg.tmp11, align 1
+  store { ptr } { ptr @.sconst.7368 }, ptr %arg.tmp11, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head10, ptr %arg.tmp11)
   %head12 = load ptr, ptr %head, align 8
   %field.inplace14 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 160
@@ -578785,7 +578903,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result13, ptr %frame, i64 %field.val16)
   call void @_ZN13StringBuilder6appendE6String(ptr %head12, ptr %sret.result13)
   %head17 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7366 }, ptr %arg.tmp18, align 1
+  store { ptr } { ptr @.sconst.7369 }, ptr %arg.tmp18, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head17, ptr %arg.tmp18)
   %head20 = load ptr, ptr %head, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %frame, ptr %head20)
@@ -578835,7 +578953,7 @@ frame.forced28:                                   ; preds = %frame.force27, %if.
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region31)
   store ptr %struct.region31, ptr %msg, align 1
   %msg32 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7367 }, ptr %arg.tmp33, align 1
+  store { ptr } { ptr @.sconst.7370 }, ptr %arg.tmp33, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg32, ptr %arg.tmp33)
   %field.inplace34 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 161
   %i35 = load i64, ptr %i, align 8
@@ -578850,7 +578968,7 @@ if.then38:                                        ; preds = %frame.forced28
 
 if.end39:                                         ; preds = %if.then38, %frame.forced28
   %msg41 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7368 }, ptr %arg.tmp42, align 1
+  store { ptr } { ptr @.sconst.7371 }, ptr %arg.tmp42, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg41, ptr %arg.tmp42)
   %field.inplace43 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 7
   %call44 = call ptr @_ZN5ArrayI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE3getEm(ptr %field.inplace43, i64 %deref)
@@ -578865,7 +578983,7 @@ if.then46:                                        ; preds = %if.end39
 
 if.end47:                                         ; preds = %if.then46, %if.end39
   %msg50 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7369 }, ptr %arg.tmp51, align 1
+  store { ptr } { ptr @.sconst.7372 }, ptr %arg.tmp51, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg50, ptr %arg.tmp51)
   %field.inplace52 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 150
   %call53 = call ptr @_ZN5ArrayI6StringE3getEm(ptr %field.inplace52, i64 %deref)
@@ -578879,7 +578997,7 @@ if.then55:                                        ; preds = %if.end47
 
 if.end56:                                         ; preds = %if.then55, %if.end47
   %msg58 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7370 }, ptr %arg.tmp59, align 1
+  store { ptr } { ptr @.sconst.7373 }, ptr %arg.tmp59, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg58, ptr %arg.tmp59)
   %field.inplace60 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 162
   %i61 = load i64, ptr %i, align 8
@@ -578901,7 +579019,7 @@ if.end65:                                         ; preds = %if.end68, %if.end56
 
 if.then67:                                        ; preds = %if.then64
   %msg69 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7371 }, ptr %arg.tmp70, align 1
+  store { ptr } { ptr @.sconst.7374 }, ptr %arg.tmp70, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg69, ptr %arg.tmp70)
   br label %if.end68
 
@@ -578982,14 +579100,14 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %head, align 1
   %head2 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7387 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7390 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head2, ptr %arg.tmp)
   %head3 = load ptr, ptr %head, align 8
   %call = call i64 @_ZN13PointerCensusB6scalycB4v0_25totalEv(ptr %0)
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %call)
   call void @_ZN13StringBuilder6appendE6String(ptr %head3, ptr %sret.result)
   %head4 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7388 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.7391 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head4, ptr %arg.tmp5)
   %head6 = load ptr, ptr %head, align 8
   %field.inplace = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 3
@@ -578997,7 +579115,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result7, ptr %frame, i64 %field.val)
   call void @_ZN13StringBuilder6appendE6String(ptr %head6, ptr %sret.result7)
   %head8 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7389 }, ptr %arg.tmp9, align 1
+  store { ptr } { ptr @.sconst.7392 }, ptr %arg.tmp9, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head8, ptr %arg.tmp9)
   %head10 = load ptr, ptr %head, align 8
   %field.inplace12 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 4
@@ -579005,7 +579123,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result11, ptr %frame, i64 %field.val13)
   call void @_ZN13StringBuilder6appendE6String(ptr %head10, ptr %sret.result11)
   %head14 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7390 }, ptr %arg.tmp15, align 1
+  store { ptr } { ptr @.sconst.7393 }, ptr %arg.tmp15, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head14, ptr %arg.tmp15)
   %head16 = load ptr, ptr %head, align 8
   %field.inplace18 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 5
@@ -579013,7 +579131,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result17, ptr %frame, i64 %field.val19)
   call void @_ZN13StringBuilder6appendE6String(ptr %head16, ptr %sret.result17)
   %head20 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7391 }, ptr %arg.tmp21, align 1
+  store { ptr } { ptr @.sconst.7394 }, ptr %arg.tmp21, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head20, ptr %arg.tmp21)
   %head22 = load ptr, ptr %head, align 8
   %field.inplace24 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 6
@@ -579021,7 +579139,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result23, ptr %frame, i64 %field.val25)
   call void @_ZN13StringBuilder6appendE6String(ptr %head22, ptr %sret.result23)
   %head26 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7392 }, ptr %arg.tmp27, align 1
+  store { ptr } { ptr @.sconst.7395 }, ptr %arg.tmp27, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head26, ptr %arg.tmp27)
   %head28 = load ptr, ptr %head, align 8
   %field.inplace30 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 7
@@ -579029,7 +579147,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result29, ptr %frame, i64 %field.val31)
   call void @_ZN13StringBuilder6appendE6String(ptr %head28, ptr %sret.result29)
   %head32 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7393 }, ptr %arg.tmp33, align 1
+  store { ptr } { ptr @.sconst.7396 }, ptr %arg.tmp33, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head32, ptr %arg.tmp33)
   %head34 = load ptr, ptr %head, align 8
   %field.inplace36 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 8
@@ -579037,7 +579155,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result35, ptr %frame, i64 %field.val37)
   call void @_ZN13StringBuilder6appendE6String(ptr %head34, ptr %sret.result35)
   %head38 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7394 }, ptr %arg.tmp39, align 1
+  store { ptr } { ptr @.sconst.7397 }, ptr %arg.tmp39, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head38, ptr %arg.tmp39)
   %head40 = load ptr, ptr %head, align 8
   %field.inplace42 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 9
@@ -579045,7 +579163,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result41, ptr %frame, i64 %field.val43)
   call void @_ZN13StringBuilder6appendE6String(ptr %head40, ptr %sret.result41)
   %head44 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7395 }, ptr %arg.tmp45, align 1
+  store { ptr } { ptr @.sconst.7398 }, ptr %arg.tmp45, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head44, ptr %arg.tmp45)
   %head46 = load ptr, ptr %head, align 8
   %field.inplace48 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 10
@@ -579053,7 +579171,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result47, ptr %frame, i64 %field.val49)
   call void @_ZN13StringBuilder6appendE6String(ptr %head46, ptr %sret.result47)
   %head50 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7396 }, ptr %arg.tmp51, align 1
+  store { ptr } { ptr @.sconst.7399 }, ptr %arg.tmp51, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head50, ptr %arg.tmp51)
   %head52 = load ptr, ptr %head, align 8
   %field.inplace54 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 11
@@ -579061,7 +579179,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result53, ptr %frame, i64 %field.val55)
   call void @_ZN13StringBuilder6appendE6String(ptr %head52, ptr %sret.result53)
   %head56 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7397 }, ptr %arg.tmp57, align 1
+  store { ptr } { ptr @.sconst.7400 }, ptr %arg.tmp57, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head56, ptr %arg.tmp57)
   %head58 = load ptr, ptr %head, align 8
   %field.inplace60 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 12
@@ -579069,7 +579187,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result59, ptr %frame, i64 %field.val61)
   call void @_ZN13StringBuilder6appendE6String(ptr %head58, ptr %sret.result59)
   %head62 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7398 }, ptr %arg.tmp63, align 1
+  store { ptr } { ptr @.sconst.7401 }, ptr %arg.tmp63, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head62, ptr %arg.tmp63)
   %head64 = load ptr, ptr %head, align 8
   %field.inplace66 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 13
@@ -579077,7 +579195,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result65, ptr %frame, i64 %field.val67)
   call void @_ZN13StringBuilder6appendE6String(ptr %head64, ptr %sret.result65)
   %head68 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7399 }, ptr %arg.tmp69, align 1
+  store { ptr } { ptr @.sconst.7402 }, ptr %arg.tmp69, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head68, ptr %arg.tmp69)
   %head70 = load ptr, ptr %head, align 8
   %field.inplace72 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 14
@@ -579085,7 +579203,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result71, ptr %frame, i64 %field.val73)
   call void @_ZN13StringBuilder6appendE6String(ptr %head70, ptr %sret.result71)
   %head74 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7400 }, ptr %arg.tmp75, align 1
+  store { ptr } { ptr @.sconst.7403 }, ptr %arg.tmp75, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head74, ptr %arg.tmp75)
   %head76 = load ptr, ptr %head, align 8
   %field.inplace78 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 15
@@ -579093,7 +579211,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result77, ptr %frame, i64 %field.val79)
   call void @_ZN13StringBuilder6appendE6String(ptr %head76, ptr %sret.result77)
   %head80 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7401 }, ptr %arg.tmp81, align 1
+  store { ptr } { ptr @.sconst.7404 }, ptr %arg.tmp81, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head80, ptr %arg.tmp81)
   %head82 = load ptr, ptr %head, align 8
   %field.inplace84 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 16
@@ -579101,7 +579219,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result83, ptr %frame, i64 %field.val85)
   call void @_ZN13StringBuilder6appendE6String(ptr %head82, ptr %sret.result83)
   %head86 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7402 }, ptr %arg.tmp87, align 1
+  store { ptr } { ptr @.sconst.7405 }, ptr %arg.tmp87, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head86, ptr %arg.tmp87)
   %head88 = load ptr, ptr %head, align 8
   %field.inplace90 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 32
@@ -579109,7 +579227,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result89, ptr %frame, i64 %field.val91)
   call void @_ZN13StringBuilder6appendE6String(ptr %head88, ptr %sret.result89)
   %head92 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7403 }, ptr %arg.tmp93, align 1
+  store { ptr } { ptr @.sconst.7406 }, ptr %arg.tmp93, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head92, ptr %arg.tmp93)
   %head94 = load ptr, ptr %head, align 8
   %field.inplace96 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 33
@@ -579117,7 +579235,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result95, ptr %frame, i64 %field.val97)
   call void @_ZN13StringBuilder6appendE6String(ptr %head94, ptr %sret.result95)
   %head98 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7404 }, ptr %arg.tmp99, align 1
+  store { ptr } { ptr @.sconst.7407 }, ptr %arg.tmp99, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head98, ptr %arg.tmp99)
   %head100 = load ptr, ptr %head, align 8
   %field.inplace102 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 34
@@ -579125,7 +579243,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result101, ptr %frame, i64 %field.val103)
   call void @_ZN13StringBuilder6appendE6String(ptr %head100, ptr %sret.result101)
   %head104 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7405 }, ptr %arg.tmp105, align 1
+  store { ptr } { ptr @.sconst.7408 }, ptr %arg.tmp105, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head104, ptr %arg.tmp105)
   %head106 = load ptr, ptr %head, align 8
   %field.inplace108 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 35
@@ -579133,7 +579251,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result107, ptr %frame, i64 %field.val109)
   call void @_ZN13StringBuilder6appendE6String(ptr %head106, ptr %sret.result107)
   %head110 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7406 }, ptr %arg.tmp111, align 1
+  store { ptr } { ptr @.sconst.7409 }, ptr %arg.tmp111, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head110, ptr %arg.tmp111)
   %head112 = load ptr, ptr %head, align 8
   %field.inplace114 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 36
@@ -579141,7 +579259,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result113, ptr %frame, i64 %field.val115)
   call void @_ZN13StringBuilder6appendE6String(ptr %head112, ptr %sret.result113)
   %head116 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7407 }, ptr %arg.tmp117, align 1
+  store { ptr } { ptr @.sconst.7410 }, ptr %arg.tmp117, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head116, ptr %arg.tmp117)
   %head118 = load ptr, ptr %head, align 8
   %field.inplace120 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 37
@@ -579149,7 +579267,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result119, ptr %frame, i64 %field.val121)
   call void @_ZN13StringBuilder6appendE6String(ptr %head118, ptr %sret.result119)
   %head122 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7408 }, ptr %arg.tmp123, align 1
+  store { ptr } { ptr @.sconst.7411 }, ptr %arg.tmp123, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head122, ptr %arg.tmp123)
   %head124 = load ptr, ptr %head, align 8
   %field.inplace126 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 17
@@ -579157,7 +579275,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result125, ptr %frame, i64 %field.val127)
   call void @_ZN13StringBuilder6appendE6String(ptr %head124, ptr %sret.result125)
   %head128 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7409 }, ptr %arg.tmp129, align 1
+  store { ptr } { ptr @.sconst.7412 }, ptr %arg.tmp129, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head128, ptr %arg.tmp129)
   %head130 = load ptr, ptr %head, align 8
   %field.inplace132 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 18
@@ -579165,7 +579283,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result131, ptr %frame, i64 %field.val133)
   call void @_ZN13StringBuilder6appendE6String(ptr %head130, ptr %sret.result131)
   %head134 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7410 }, ptr %arg.tmp135, align 1
+  store { ptr } { ptr @.sconst.7413 }, ptr %arg.tmp135, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head134, ptr %arg.tmp135)
   %head136 = load ptr, ptr %head, align 8
   %field.inplace138 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 23
@@ -579173,7 +579291,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result137, ptr %frame, i64 %field.val139)
   call void @_ZN13StringBuilder6appendE6String(ptr %head136, ptr %sret.result137)
   %head140 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7411 }, ptr %arg.tmp141, align 1
+  store { ptr } { ptr @.sconst.7414 }, ptr %arg.tmp141, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head140, ptr %arg.tmp141)
   %head142 = load ptr, ptr %head, align 8
   %field.inplace144 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 24
@@ -579184,7 +579302,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result146, ptr %frame, ptr %head147)
   %call148 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result146)
   call void @_ZN7Console7printlnEP10const_char(ptr %call148)
-  store { ptr } { ptr @.sconst.7412 }, ptr %arg.tmp149, align 1
+  store { ptr } { ptr @.sconst.7415 }, ptr %arg.tmp149, align 1
   %addr.gep = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 0
   %addr.gep150 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 1
   %addr.gep151 = getelementptr inbounds nuw %_Z13PointerCensusB6scalycB4v0_2, ptr %0, i32 0, i32 2
@@ -579255,14 +579373,14 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %head, align 1
   %head2 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7413 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7416 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head2, ptr %arg.tmp)
   %head3 = load ptr, ptr %head, align 8
   %call = call i64 @_ZN11WriteCensusB6scalycB4v0_25totalEv(ptr %0)
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %call)
   call void @_ZN13StringBuilder6appendE6String(ptr %head3, ptr %sret.result)
   %head4 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7414 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.7417 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head4, ptr %arg.tmp5)
   %head6 = load ptr, ptr %head, align 8
   %field.inplace = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 30
@@ -579270,7 +579388,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result7, ptr %frame, i64 %field.val)
   call void @_ZN13StringBuilder6appendE6String(ptr %head6, ptr %sret.result7)
   %head8 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7415 }, ptr %arg.tmp9, align 1
+  store { ptr } { ptr @.sconst.7418 }, ptr %arg.tmp9, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head8, ptr %arg.tmp9)
   %head10 = load ptr, ptr %head, align 8
   %field.inplace12 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 31
@@ -579278,7 +579396,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result11, ptr %frame, i64 %field.val13)
   call void @_ZN13StringBuilder6appendE6String(ptr %head10, ptr %sret.result11)
   %head14 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7416 }, ptr %arg.tmp15, align 1
+  store { ptr } { ptr @.sconst.7419 }, ptr %arg.tmp15, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head14, ptr %arg.tmp15)
   %head16 = load ptr, ptr %head, align 8
   %field.inplace18 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 32
@@ -579286,7 +579404,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result17, ptr %frame, i64 %field.val19)
   call void @_ZN13StringBuilder6appendE6String(ptr %head16, ptr %sret.result17)
   %head20 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7417 }, ptr %arg.tmp21, align 1
+  store { ptr } { ptr @.sconst.7420 }, ptr %arg.tmp21, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head20, ptr %arg.tmp21)
   %head22 = load ptr, ptr %head, align 8
   %field.inplace24 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 33
@@ -579294,7 +579412,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result23, ptr %frame, i64 %field.val25)
   call void @_ZN13StringBuilder6appendE6String(ptr %head22, ptr %sret.result23)
   %head26 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7418 }, ptr %arg.tmp27, align 1
+  store { ptr } { ptr @.sconst.7421 }, ptr %arg.tmp27, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head26, ptr %arg.tmp27)
   %head28 = load ptr, ptr %head, align 8
   %field.inplace30 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 34
@@ -579302,7 +579420,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result29, ptr %frame, i64 %field.val31)
   call void @_ZN13StringBuilder6appendE6String(ptr %head28, ptr %sret.result29)
   %head32 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7419 }, ptr %arg.tmp33, align 1
+  store { ptr } { ptr @.sconst.7422 }, ptr %arg.tmp33, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head32, ptr %arg.tmp33)
   %head34 = load ptr, ptr %head, align 8
   %field.inplace36 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 35
@@ -579310,7 +579428,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result35, ptr %frame, i64 %field.val37)
   call void @_ZN13StringBuilder6appendE6String(ptr %head34, ptr %sret.result35)
   %head38 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7420 }, ptr %arg.tmp39, align 1
+  store { ptr } { ptr @.sconst.7423 }, ptr %arg.tmp39, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head38, ptr %arg.tmp39)
   %head40 = load ptr, ptr %head, align 8
   %field.inplace42 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 39
@@ -579318,7 +579436,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result41, ptr %frame, i64 %field.val43)
   call void @_ZN13StringBuilder6appendE6String(ptr %head40, ptr %sret.result41)
   %head44 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7421 }, ptr %arg.tmp45, align 1
+  store { ptr } { ptr @.sconst.7424 }, ptr %arg.tmp45, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head44, ptr %arg.tmp45)
   %head46 = load ptr, ptr %head, align 8
   %field.inplace48 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 36
@@ -579326,7 +579444,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result47, ptr %frame, i64 %field.val49)
   call void @_ZN13StringBuilder6appendE6String(ptr %head46, ptr %sret.result47)
   %head50 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7422 }, ptr %arg.tmp51, align 1
+  store { ptr } { ptr @.sconst.7425 }, ptr %arg.tmp51, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head50, ptr %arg.tmp51)
   %head52 = load ptr, ptr %head, align 8
   %field.inplace54 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 37
@@ -579334,7 +579452,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result53, ptr %frame, i64 %field.val55)
   call void @_ZN13StringBuilder6appendE6String(ptr %head52, ptr %sret.result53)
   %head56 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7423 }, ptr %arg.tmp57, align 1
+  store { ptr } { ptr @.sconst.7426 }, ptr %arg.tmp57, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head56, ptr %arg.tmp57)
   %head58 = load ptr, ptr %head, align 8
   %field.inplace60 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 46
@@ -579342,7 +579460,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result59, ptr %frame, i64 %field.val61)
   call void @_ZN13StringBuilder6appendE6String(ptr %head58, ptr %sret.result59)
   %head62 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7424 }, ptr %arg.tmp63, align 1
+  store { ptr } { ptr @.sconst.7427 }, ptr %arg.tmp63, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head62, ptr %arg.tmp63)
   %head64 = load ptr, ptr %head, align 8
   %field.inplace66 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 47
@@ -579350,10 +579468,10 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result65, ptr %frame, i64 %field.val67)
   call void @_ZN13StringBuilder6appendE6String(ptr %head64, ptr %sret.result65)
   %head68 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7425 }, ptr %arg.tmp69, align 1
+  store { ptr } { ptr @.sconst.7428 }, ptr %arg.tmp69, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head68, ptr %arg.tmp69)
   %head70 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7426 }, ptr %arg.tmp71, align 1
+  store { ptr } { ptr @.sconst.7429 }, ptr %arg.tmp71, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head70, ptr %arg.tmp71)
   %head72 = load ptr, ptr %head, align 8
   %field.inplace74 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 38
@@ -579361,7 +579479,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result73, ptr %frame, i64 %field.val75)
   call void @_ZN13StringBuilder6appendE6String(ptr %head72, ptr %sret.result73)
   %head76 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7427 }, ptr %arg.tmp77, align 1
+  store { ptr } { ptr @.sconst.7430 }, ptr %arg.tmp77, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head76, ptr %arg.tmp77)
   %head78 = load ptr, ptr %head, align 8
   %field.inplace80 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 98
@@ -579374,7 +579492,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
 
 if.then:                                          ; preds = %frame.forced
   %head82 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7428 }, ptr %arg.tmp83, align 1
+  store { ptr } { ptr @.sconst.7431 }, ptr %arg.tmp83, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head82, ptr %arg.tmp83)
   %head84 = load ptr, ptr %head, align 8
   %field.inplace86 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 55
@@ -579382,7 +579500,7 @@ if.then:                                          ; preds = %frame.forced
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result85, ptr %frame, i64 %field.val87)
   call void @_ZN13StringBuilder6appendE6String(ptr %head84, ptr %sret.result85)
   %head88 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7429 }, ptr %arg.tmp89, align 1
+  store { ptr } { ptr @.sconst.7432 }, ptr %arg.tmp89, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head88, ptr %arg.tmp89)
   %head90 = load ptr, ptr %head, align 8
   %field.inplace92 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 56
@@ -579390,7 +579508,7 @@ if.then:                                          ; preds = %frame.forced
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result91, ptr %frame, i64 %field.val93)
   call void @_ZN13StringBuilder6appendE6String(ptr %head90, ptr %sret.result91)
   %head94 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7430 }, ptr %arg.tmp95, align 1
+  store { ptr } { ptr @.sconst.7433 }, ptr %arg.tmp95, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head94, ptr %arg.tmp95)
   %head96 = load ptr, ptr %head, align 8
   %field.inplace98 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 57
@@ -579398,7 +579516,7 @@ if.then:                                          ; preds = %frame.forced
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result97, ptr %frame, i64 %field.val99)
   call void @_ZN13StringBuilder6appendE6String(ptr %head96, ptr %sret.result97)
   %head100 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7431 }, ptr %arg.tmp101, align 1
+  store { ptr } { ptr @.sconst.7434 }, ptr %arg.tmp101, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head100, ptr %arg.tmp101)
   %head102 = load ptr, ptr %head, align 8
   %field.inplace104 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 63
@@ -579409,7 +579527,7 @@ if.then:                                          ; preds = %frame.forced
 
 if.end:                                           ; preds = %if.then, %frame.forced
   %head106 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7432 }, ptr %arg.tmp107, align 1
+  store { ptr } { ptr @.sconst.7435 }, ptr %arg.tmp107, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head106, ptr %arg.tmp107)
   %head108 = load ptr, ptr %head, align 8
   %field.inplace110 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 9
@@ -579420,7 +579538,7 @@ if.end:                                           ; preds = %if.then, %frame.for
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result112, ptr %frame, ptr %head113)
   %call114 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result112)
   call void @_ZN7Console7printlnEP10const_char(ptr %call114)
-  store { ptr } { ptr @.sconst.7433 }, ptr %arg.tmp115, align 1
+  store { ptr } { ptr @.sconst.7436 }, ptr %arg.tmp115, align 1
   %addr.gep = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 0
   %addr.gep116 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 1
   %addr.gep117 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 2
@@ -579460,7 +579578,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %head, align 1
   %head2 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7381 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7384 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head2, ptr %arg.tmp)
   %head3 = load ptr, ptr %head, align 8
   %field.inplace = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 120
@@ -579468,7 +579586,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %field.val)
   call void @_ZN13StringBuilder6appendE6String(ptr %head3, ptr %sret.result)
   %head4 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7382 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.7385 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head4, ptr %arg.tmp5)
   %head6 = load ptr, ptr %head, align 8
   %field.inplace8 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 121
@@ -579476,7 +579594,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result7, ptr %frame, i64 %field.val9)
   call void @_ZN13StringBuilder6appendE6String(ptr %head6, ptr %sret.result7)
   %head10 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7383 }, ptr %arg.tmp11, align 1
+  store { ptr } { ptr @.sconst.7386 }, ptr %arg.tmp11, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head10, ptr %arg.tmp11)
   %load.struct = load %_Z7PlannerB6scalycB4v0_2, ptr %0, align 8
   %census_pinned_count = extractvalue %_Z7PlannerB6scalycB4v0_2 %load.struct, 116
@@ -579485,7 +579603,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
 
 if.then:                                          ; preds = %frame.forced
   %head12 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7384 }, ptr %arg.tmp13, align 1
+  store { ptr } { ptr @.sconst.7387 }, ptr %arg.tmp13, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head12, ptr %arg.tmp13)
   %head14 = load ptr, ptr %head, align 8
   %field.inplace16 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 116
@@ -579493,7 +579611,7 @@ if.then:                                          ; preds = %frame.forced
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result15, ptr %frame, i64 %field.val17)
   call void @_ZN13StringBuilder6appendE6String(ptr %head14, ptr %sret.result15)
   %head18 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7385 }, ptr %arg.tmp19, align 1
+  store { ptr } { ptr @.sconst.7388 }, ptr %arg.tmp19, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head18, ptr %arg.tmp19)
   br label %if.end
 
@@ -579502,7 +579620,7 @@ if.end:                                           ; preds = %if.then, %frame.for
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result20, ptr %frame, ptr %head21)
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result20)
   call void @_ZN7Console7printlnEP10const_char(ptr %call)
-  store { ptr } { ptr @.sconst.7386 }, ptr %arg.tmp22, align 1
+  store { ptr } { ptr @.sconst.7389 }, ptr %arg.tmp22, align 1
   %addr.gep = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 117
   %addr.gep23 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 118
   %addr.gep24 = getelementptr inbounds nuw %_Z7PlannerB6scalycB4v0_2, ptr %0, i32 0, i32 119
@@ -579544,7 +579662,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %head, align 1
   %head2 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7434 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7437 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head2, ptr %arg.tmp)
   %head3 = load ptr, ptr %head, align 8
   %field.inplace = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 68
@@ -579552,7 +579670,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %field.val)
   call void @_ZN13StringBuilder6appendE6String(ptr %head3, ptr %sret.result)
   %head4 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7435 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.7438 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head4, ptr %arg.tmp5)
   %head6 = load ptr, ptr %head, align 8
   %field.inplace8 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 31
@@ -579560,7 +579678,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result7, ptr %frame, i64 %field.val9)
   call void @_ZN13StringBuilder6appendE6String(ptr %head6, ptr %sret.result7)
   %head10 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7436 }, ptr %arg.tmp11, align 1
+  store { ptr } { ptr @.sconst.7439 }, ptr %arg.tmp11, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head10, ptr %arg.tmp11)
   %head12 = load ptr, ptr %head, align 8
   %field.inplace14 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 39
@@ -579568,7 +579686,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result13, ptr %frame, i64 %field.val15)
   call void @_ZN13StringBuilder6appendE6String(ptr %head12, ptr %sret.result13)
   %head16 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7437 }, ptr %arg.tmp17, align 1
+  store { ptr } { ptr @.sconst.7440 }, ptr %arg.tmp17, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head16, ptr %arg.tmp17)
   %head18 = load ptr, ptr %head, align 8
   %field.inplace20 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 47
@@ -579576,7 +579694,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result19, ptr %frame, i64 %field.val21)
   call void @_ZN13StringBuilder6appendE6String(ptr %head18, ptr %sret.result19)
   %head22 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7438 }, ptr %arg.tmp23, align 1
+  store { ptr } { ptr @.sconst.7441 }, ptr %arg.tmp23, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head22, ptr %arg.tmp23)
   %head24 = load ptr, ptr %head, align 8
   %field.inplace26 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 36
@@ -579587,7 +579705,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result28, ptr %frame, ptr %head29)
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result28)
   call void @_ZN7Console7printlnEP10const_char(ptr %call)
-  store { ptr } { ptr @.sconst.7439 }, ptr %arg.tmp30, align 1
+  store { ptr } { ptr @.sconst.7442 }, ptr %arg.tmp30, align 1
   %addr.gep = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 0
   %addr.gep31 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 1
   %addr.gep32 = getelementptr inbounds nuw %_Z11WriteCensusB6scalycB4v0_2, ptr %0, i32 0, i32 2
@@ -579732,21 +579850,21 @@ frame.forced:                                     ; preds = %frame.force, %while
   %msg32 = load ptr, ptr %msg, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %msg32, ptr %dpath)
   %msg33 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7360 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7363 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg33, ptr %arg.tmp)
   %msg34 = load ptr, ptr %msg, align 8
   %line36 = load i64, ptr %line, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result35, ptr %frame, i64 %line36)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg34, ptr %sret.result35)
   %msg37 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7361 }, ptr %arg.tmp38, align 1
+  store { ptr } { ptr @.sconst.7364 }, ptr %arg.tmp38, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg37, ptr %arg.tmp38)
   %msg39 = load ptr, ptr %msg, align 8
   %col41 = load i64, ptr %col, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result40, ptr %frame, i64 %col41)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg39, ptr %sret.result40)
   %msg42 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7362 }, ptr %arg.tmp43, align 1
+  store { ptr } { ptr @.sconst.7365 }, ptr %arg.tmp43, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg42, ptr %arg.tmp43)
   %msg44 = load ptr, ptr %msg, align 8
   %field.inplace45 = getelementptr inbounds nuw %_Z17PlannerDiagnosticB6scalycB4v0_2, ptr %call, i32 0, i32 1
@@ -579967,21 +580085,21 @@ frame.forced62:                                   ; preds = %frame.force61, %whi
   %msg67 = load ptr, ptr %msg, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %msg67, ptr %call)
   %msg68 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7440 }, ptr %arg.tmp69, align 1
+  store { ptr } { ptr @.sconst.7443 }, ptr %arg.tmp69, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg68, ptr %arg.tmp69)
   %msg70 = load ptr, ptr %msg, align 8
   %line72 = load i64, ptr %line, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result71, ptr %frame, i64 %line72)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg70, ptr %sret.result71)
   %msg73 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7441 }, ptr %arg.tmp74, align 1
+  store { ptr } { ptr @.sconst.7444 }, ptr %arg.tmp74, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg73, ptr %arg.tmp74)
   %msg75 = load ptr, ptr %msg, align 8
   %col77 = load i64, ptr %col, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result76, ptr %frame, i64 %col77)
   call void @_ZN13StringBuilder6appendE6String(ptr %msg75, ptr %sret.result76)
   %msg78 = load ptr, ptr %msg, align 8
-  store { ptr } { ptr @.sconst.7442 }, ptr %arg.tmp79, align 1
+  store { ptr } { ptr @.sconst.7445 }, ptr %arg.tmp79, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %msg78, ptr %arg.tmp79)
   %ne80 = icmp ne ptr %call14, null
   br i1 %ne80, label %if.then81, label %if.end82
@@ -580133,10 +580251,10 @@ frame.forced26:                                   ; preds = %frame.force25, %if.
   %home30 = load { ptr }, ptr %home, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %home, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region29, ptr %arg.tmp)
-  store { ptr } { ptr @.sconst.7443 }, ptr %arg.tmp31, align 1
+  store { ptr } { ptr @.sconst.7446 }, ptr %arg.tmp31, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region29, ptr %arg.tmp31)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region29, ptr %sret.result6)
-  store { ptr } { ptr @.sconst.7444 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.7447 }, ptr %arg.tmp32, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region29, ptr %arg.tmp32)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result33, ptr %frame, ptr %struct.region29)
   store ptr %sret.result33, ptr %there, align 1
@@ -580170,7 +580288,7 @@ frame.forced44:                                   ; preds = %frame.force43, %if.
   %forced_page46 = phi ptr [ %frame.page41, %if.then39 ], [ %forced_page45, %frame.force43 ]
   %struct.region47 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page46, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region47)
-  store { ptr } { ptr @.sconst.7445 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7448 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region47, ptr %arg.tmp)
   %home48 = load { ptr }, ptr %home, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp31, ptr align 1 %home, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -580197,7 +580315,7 @@ frame.forced52:                                   ; preds = %frame.force51, %if.
   %call58 = call i32 @getpid()
   %as.sext = sext i32 %call58 to i64
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region55, i64 %as.sext)
-  store { ptr } { ptr @.sconst.7446 }, ptr %arg.tmp59, align 1
+  store { ptr } { ptr @.sconst.7449 }, ptr %arg.tmp59, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region55, ptr %arg.tmp59)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result60, ptr %frame, ptr %struct.region55)
   %set.load61 = load { ptr }, ptr %sret.result60, align 8
@@ -580217,7 +580335,7 @@ frame.forced65:                                   ; preds = %frame.force64, %fra
   %staged69 = load { ptr }, ptr %staged, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp70, ptr align 1 %staged, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region68, ptr %arg.tmp70)
-  store { ptr } { ptr @.sconst.7447 }, ptr %arg.tmp71, align 1
+  store { ptr } { ptr @.sconst.7450 }, ptr %arg.tmp71, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region68, ptr %arg.tmp71)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result72, ptr %frame, ptr %struct.region68)
   %set.load73 = load { ptr }, ptr %sret.result72, align 8
@@ -580257,7 +580375,7 @@ frame.forced88:                                   ; preds = %frame.force87, %if.
   %out_dir92 = load { ptr }, ptr %out_dir, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %sret.result6, ptr align 1 %out_dir, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region91, ptr %sret.result6)
-  store { ptr } { ptr @.sconst.7448 }, ptr %arg.tmp93, align 1
+  store { ptr } { ptr @.sconst.7451 }, ptr %arg.tmp93, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region91, ptr %arg.tmp93)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result94, ptr %frame, ptr %struct.region91)
   store ptr %sret.result94, ptr %selected, align 1
@@ -580287,7 +580405,7 @@ frame.forced104:                                  ; preds = %frame.force103, %if
   %home108 = load { ptr }, ptr %home, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp93, ptr align 1 %home, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region107, ptr %arg.tmp93)
-  store { ptr } { ptr @.sconst.7449 }, ptr %arg.tmp109, align 1
+  store { ptr } { ptr @.sconst.7452 }, ptr %arg.tmp109, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region107, ptr %arg.tmp109)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result110, ptr %frame, ptr %struct.region107)
   %set.load111 = load { ptr }, ptr %sret.result110, align 8
@@ -580311,10 +580429,10 @@ frame.forced118:                                  ; preds = %frame.force117, %if
   %forced_page120 = phi ptr [ %frame.page115, %if.then113 ], [ %forced_page119, %frame.force117 ]
   %struct.region121 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page120, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region121)
-  store { ptr } { ptr @.sconst.7450 }, ptr %arg.tmp122, align 1
+  store { ptr } { ptr @.sconst.7453 }, ptr %arg.tmp122, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region121, ptr %arg.tmp122)
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region121, i64 %call79)
-  store { ptr } { ptr @.sconst.7451 }, ptr %arg.tmp123, align 1
+  store { ptr } { ptr @.sconst.7454 }, ptr %arg.tmp123, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region121, ptr %arg.tmp123)
   %out_dir124 = load { ptr }, ptr %out_dir, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp125, ptr align 1 %out_dir, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -580355,7 +580473,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %head, align 1
   %head2 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7372 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7375 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head2, ptr %arg.tmp)
   %head3 = load ptr, ptr %head, align 8
   %field.inplace = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 3
@@ -580363,7 +580481,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %field.val)
   call void @_ZN13StringBuilder6appendE6String(ptr %head3, ptr %sret.result)
   %head4 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7373 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.7376 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head4, ptr %arg.tmp5)
   %head6 = load ptr, ptr %head, align 8
   %field.inplace8 = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 4
@@ -580371,13 +580489,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result7, ptr %frame, i64 %field.val9)
   call void @_ZN13StringBuilder6appendE6String(ptr %head6, ptr %sret.result7)
   %head10 = load ptr, ptr %head, align 8
-  store { ptr } { ptr @.sconst.7374 }, ptr %arg.tmp11, align 1
+  store { ptr } { ptr @.sconst.7377 }, ptr %arg.tmp11, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %head10, ptr %arg.tmp11)
   %head13 = load ptr, ptr %head, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result12, ptr %frame, ptr %head13)
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result12)
   call void @_ZN7Console7printlnEP10const_char(ptr %call)
-  store { ptr } { ptr @.sconst.7375 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.7378 }, ptr %arg.tmp14, align 1
   %addr.gep = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 0
   %addr.gep15 = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 1
   %addr.gep16 = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 2
@@ -580412,30 +580530,30 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
-  store { ptr } { ptr @.sconst.7376 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7379 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp)
   %field.inplace = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 29
   %field.val = load i64, ptr %field.inplace, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %field.val)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result)
-  store { ptr } { ptr @.sconst.7377 }, ptr %arg.tmp2, align 1
+  store { ptr } { ptr @.sconst.7380 }, ptr %arg.tmp2, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp2)
   %field.inplace4 = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 30
   %field.val5 = load i64, ptr %field.inplace4, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result3, ptr %frame, i64 %field.val5)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result3)
-  store { ptr } { ptr @.sconst.7378 }, ptr %arg.tmp6, align 1
+  store { ptr } { ptr @.sconst.7381 }, ptr %arg.tmp6, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp6)
   %field.inplace8 = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 31
   %field.val9 = load i64, ptr %field.inplace8, align 8
   call void @_ZN3cliB6scalycB4v0_211format_sizeEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result7, ptr %frame, i64 %field.val9)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result7)
-  store { ptr } { ptr @.sconst.7379 }, ptr %arg.tmp10, align 1
+  store { ptr } { ptr @.sconst.7382 }, ptr %arg.tmp10, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp10)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result11, ptr %frame, ptr %struct.region)
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result11)
   call void @_ZN7Console7printlnEP10const_char(ptr %call)
-  store { ptr } { ptr @.sconst.7380 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7383 }, ptr %arg.tmp, align 1
   %addr.gep = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 26
   %addr.gep12 = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 27
   %addr.gep13 = getelementptr inbounds nuw %_Z11TaskPlannerB6scalycB4v0_2, ptr %0, i32 0, i32 28
@@ -580458,7 +580576,7 @@ entry:
   %arg.tmp2 = alloca { ptr }, align 8
   %field.inplace = getelementptr inbounds nuw %_Z15PlannedFunctionB6scalycB4v0_2, ptr %0, i32 0, i32 3
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.7352 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7355 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %land.rhs, label %if.end
@@ -580475,7 +580593,7 @@ if.end:                                           ; preds = %land.rhs, %entry
 
 land.rhs:                                         ; preds = %entry
   %field.inplace1 = getelementptr inbounds nuw %_Z15PlannedFunctionB6scalycB4v0_2, ptr %0, i32 0, i32 3
-  store { ptr } { ptr @.sconst.7353 }, ptr %arg.tmp2, align 1
+  store { ptr } { ptr @.sconst.7356 }, ptr %arg.tmp2, align 1
   %call3 = call i1 @_ZN6String11starts_withE6String(ptr %field.inplace1, ptr %arg.tmp2)
   %eq4 = icmp eq i1 %call3, false
   br i1 %eq4, label %if.then, label %if.end
@@ -580515,7 +580633,7 @@ lor.rhs:                                          ; preds = %if.end6
   %deref17 = load %_Z11PlannedTypeB6scalycB4v0_2, ptr %return_type16, align 8
   %name = extractvalue %_Z11PlannedTypeB6scalycB4v0_2 %deref17, 1
   store { ptr } %name, ptr %arg.tmp18, align 1
-  store { ptr } { ptr @.sconst.7354 }, ptr %arg.tmp19, align 1
+  store { ptr } { ptr @.sconst.7357 }, ptr %arg.tmp19, align 1
   %call20 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp18, ptr %arg.tmp19)
   %eq21 = icmp eq i1 %call20, false
   br i1 %eq21, label %if.then10, label %if.end11
@@ -580541,7 +580659,7 @@ frame.force:                                      ; preds = %lor.rhs24
 frame.forced:                                     ; preds = %frame.force, %lor.rhs24
   %forced_page28 = phi ptr [ %frame.page, %lor.rhs24 ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page28, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.7355 }, ptr %arg.tmp29, align 1
+  store { ptr } { ptr @.sconst.7358 }, ptr %arg.tmp29, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp29)
   %call30 = call i1 @_ZN6String8containsE6String(ptr %field.inplace27, ptr %struct.region)
   br i1 %call30, label %if.then22, label %if.end23
@@ -580759,7 +580877,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, i64 0, i64 %call)
-  store { ptr } { ptr @.sconst.7356 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7359 }, ptr %arg.tmp, align 1
   %call1 = call i1 @_ZN6String9ends_withE6String(ptr %sret.result, ptr %arg.tmp)
   %eq = icmp eq i1 %call1, false
   br i1 %eq, label %if.then2, label %if.end3
@@ -580817,7 +580935,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.7452 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.7455 }, ptr %0, align 1
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
@@ -580927,7 +581045,7 @@ entry:
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
-  %call = call ptr @getenv(ptr @.str.7453)
+  %call = call ptr @getenv(ptr @.str.7456)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -581049,7 +581167,7 @@ frame.forced39:                                   ; preds = %frame.force38, %if.
   %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page41, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region42)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region42, ptr %sret.result)
-  store { ptr } { ptr @.sconst.7454 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7457 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region42, ptr %arg.tmp)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result43, ptr %frame, ptr %struct.region42)
   store ptr %sret.result43, ptr %probe, align 1
@@ -581064,7 +581182,7 @@ if.then47:                                        ; preds = %frame.forced39
 
 if.end48:                                         ; preds = %frame.forced39
   %call49 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result)
-  %call50 = call i32 @setenv(ptr @.str.7455, ptr %call49, i32 1)
+  %call50 = call i32 @setenv(ptr @.str.7458, ptr %call49, i32 1)
   %ne51 = icmp ne i32 %call50, 0
   br i1 %ne51, label %if.then52, label %if.end53
 
@@ -581088,7 +581206,7 @@ entry:
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
-  %call = call ptr @getenv(ptr @.str.7456)
+  %call = call ptr @getenv(ptr @.str.7459)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -581110,7 +581228,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %0)
-  store { ptr } { ptr @.sconst.7457 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7460 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %struct.region)
   %call2 = call i1 @_ZN4File6existsE6String(ptr %sret.result)
@@ -581162,7 +581280,7 @@ if.end14:                                         ; preds = %while.exit
   %n16 = load i64, ptr %n, align 8
   call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result15, ptr %frame, ptr %arg.tmp, i64 0, i64 %n16)
   %call17 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result15)
-  %call18 = call i32 @setenv(ptr @.str.7458, ptr %call17, i32 0)
+  %call18 = call i32 @setenv(ptr @.str.7461, ptr %call17, i32 0)
   %eq19 = icmp eq i32 %call18, 0
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 %eq19
@@ -581279,7 +581397,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   %ptr.add = getelementptr inbounds ptr, ptr %1, i64 1
   %deref = load ptr, ptr %ptr.add, align 8
   call void @_ZN6StringC1EP10const_char(ptr %struct.region, ptr %deref)
-  store { ptr } { ptr @.sconst.7459 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.7462 }, ptr %arg.tmp, align 1
   %call6 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp)
   br i1 %call6, label %if.then7, label %if.end8
 
@@ -581288,12 +581406,12 @@ if.then7:                                         ; preds = %frame.forced
   br i1 %lt, label %if.then9, label %if.end10
 
 if.end8:                                          ; preds = %frame.forced
-  store { ptr } { ptr @.sconst.7461 }, ptr %arg.tmp64, align 1
+  store { ptr } { ptr @.sconst.7464 }, ptr %arg.tmp64, align 1
   %call65 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp64)
   br i1 %call65, label %if.then66, label %if.end67
 
 if.then9:                                         ; preds = %if.then7
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7460)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7463)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 
@@ -581407,12 +581525,12 @@ if.then66:                                        ; preds = %if.end8
   br i1 %lt68, label %if.then69, label %if.end70
 
 if.end67:                                         ; preds = %if.end8
-  store { ptr } { ptr @.sconst.7463 }, ptr %arg.tmp138, align 1
+  store { ptr } { ptr @.sconst.7466 }, ptr %arg.tmp138, align 1
   %call139 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp138)
   br i1 %call139, label %if.then140, label %if.end141
 
 if.then69:                                        ; preds = %if.then66
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7462)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7465)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 
@@ -581544,7 +581662,7 @@ if.then140:                                       ; preds = %if.end67
   br i1 %frame.has_page143, label %frame.forced145, label %frame.force144
 
 if.end141:                                        ; preds = %if.end67
-  store { ptr } { ptr @.sconst.7464 }, ptr %arg.tmp211, align 1
+  store { ptr } { ptr @.sconst.7467 }, ptr %arg.tmp211, align 1
   %call212 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp211)
   br i1 %call212, label %if.then213, label %if.end214
 
@@ -581677,7 +581795,7 @@ if.then213:                                       ; preds = %if.end141
   br label %while.cond
 
 if.end214:                                        ; preds = %if.end141
-  store { ptr } { ptr @.sconst.7469 }, ptr %new_name, align 1
+  store { ptr } { ptr @.sconst.7472 }, ptr %new_name, align 1
   %call245 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %new_name)
   br i1 %call245, label %if.then246, label %if.end247
 
@@ -581707,7 +581825,7 @@ frame.forced220:                                  ; preds = %frame.force219, %wh
   %ptr.add225 = getelementptr inbounds ptr, ptr %1, i64 %na224
   %deref226 = load ptr, ptr %ptr.add225, align 8
   call void @_ZN6StringC1EP10const_char(ptr %struct.region223, ptr %deref226)
-  store { ptr } { ptr @.sconst.7465 }, ptr %arg.tmp227, align 1
+  store { ptr } { ptr @.sconst.7468 }, ptr %arg.tmp227, align 1
   %call228 = call i1 @_ZN6String6equalsE6String(ptr %struct.region223, ptr %arg.tmp227)
   br i1 %call228, label %if.then229, label %if.else
 
@@ -581732,14 +581850,14 @@ if.then233:                                       ; preds = %if.else
   br label %if.end235
 
 if.else234:                                       ; preds = %if.else
-  store { ptr } { ptr @.sconst.7466 }, ptr %new_name, align 1
+  store { ptr } { ptr @.sconst.7469 }, ptr %new_name, align 1
   br label %if.end235
 
 if.end235:                                        ; preds = %if.else234, %if.then233
   br label %if.end230
 
 if.then237:                                       ; preds = %lor.rhs, %while.exit
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7468)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7471)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 
@@ -581750,7 +581868,7 @@ if.end238:                                        ; preds = %lor.rhs
   ret i64 %call244
 
 lor.rhs:                                          ; preds = %while.exit
-  store { ptr } { ptr @.sconst.7467 }, ptr %arg.tmp241, align 1
+  store { ptr } { ptr @.sconst.7470 }, ptr %arg.tmp241, align 1
   %call242 = call i1 @_ZN6String6equalsE6String(ptr %new_name, ptr %arg.tmp241)
   br i1 %call242, label %if.then237, label %if.end238
 
@@ -581759,12 +581877,12 @@ if.then246:                                       ; preds = %if.end214
   br i1 %ne, label %if.then248, label %if.end249
 
 if.end247:                                        ; preds = %if.end214
-  store { ptr } { ptr @.sconst.7471 }, ptr %arg.tmp251, align 1
+  store { ptr } { ptr @.sconst.7474 }, ptr %arg.tmp251, align 1
   %call252 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp251)
   br i1 %call252, label %if.then253, label %if.end254
 
 if.then248:                                       ; preds = %if.then246
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7470)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7473)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 
@@ -581778,12 +581896,12 @@ if.then253:                                       ; preds = %if.end247
   br i1 %ne255, label %if.then256, label %if.end257
 
 if.end254:                                        ; preds = %if.end247
-  store { ptr } { ptr @.sconst.7473 }, ptr %arg.tmp277, align 1
+  store { ptr } { ptr @.sconst.7476 }, ptr %arg.tmp277, align 1
   %call278 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp277)
   br i1 %call278, label %if.then279, label %if.end280
 
 if.then256:                                       ; preds = %if.then253
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7472)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7475)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 
@@ -581821,14 +581939,14 @@ frame.forced270:                                  ; preds = %frame.force269, %fr
   ret i64 %call276
 
 if.then279:                                       ; preds = %if.end254
-  store { ptr } { ptr @.sconst.7474 }, ptr %publish_remote, align 1
+  store { ptr } { ptr @.sconst.7477 }, ptr %publish_remote, align 1
   store i1 true, ptr %new_lib, align 1
   store i64 0, ptr %na, align 1
   store i64 2, ptr %pa, align 1
   br label %while.cond281
 
 if.end280:                                        ; preds = %if.end254
-  store { ptr } { ptr @.sconst.7478 }, ptr %publish_remote, align 1
+  store { ptr } { ptr @.sconst.7481 }, ptr %publish_remote, align 1
   %call316 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %publish_remote)
   br i1 %call316, label %land.rhs315, label %if.end314
 
@@ -581861,7 +581979,7 @@ frame.forced289:                                  ; preds = %frame.force288, %wh
   %pa296 = load i64, ptr %pa, align 8
   %add297 = add i64 %pa296, 1
   store i64 %add297, ptr %pa, align 1
-  store { ptr } { ptr @.sconst.7475 }, ptr %arg.tmp298, align 1
+  store { ptr } { ptr @.sconst.7478 }, ptr %arg.tmp298, align 1
   %call299 = call i1 @_ZN6String6equalsE6String(ptr %struct.region292, ptr %arg.tmp298)
   br i1 %call299, label %if.then300, label %if.else301
 
@@ -581881,7 +581999,7 @@ if.end302:                                        ; preds = %if.else301, %if.the
   br label %while.cond281
 
 if.then305:                                       ; preds = %lor.rhs307, %while.exit283
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7477)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7480)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 
@@ -581892,7 +582010,7 @@ if.end306:                                        ; preds = %lor.rhs307
   ret i64 %call312
 
 lor.rhs307:                                       ; preds = %while.exit283
-  store { ptr } { ptr @.sconst.7476 }, ptr %arg.tmp310, align 1
+  store { ptr } { ptr @.sconst.7479 }, ptr %arg.tmp310, align 1
   %call311 = call i1 @_ZN6String11starts_withE6String(ptr %publish_remote, ptr %arg.tmp310)
   br i1 %call311, label %if.then305, label %if.end306
 
@@ -581902,7 +582020,7 @@ if.then313:                                       ; preds = %land.rhs315
   ret i64 %call318
 
 if.end314:                                        ; preds = %land.rhs315, %if.end280
-  store { ptr } { ptr @.sconst.7479 }, ptr %arg.tmp319, align 1
+  store { ptr } { ptr @.sconst.7482 }, ptr %arg.tmp319, align 1
   %call320 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp319)
   br i1 %call320, label %if.then321, label %if.end322
 
@@ -581915,12 +582033,12 @@ if.then321:                                       ; preds = %if.end314
   br i1 %ne323, label %if.then324, label %if.end325
 
 if.end322:                                        ; preds = %if.end314
-  store { ptr } { ptr @.sconst.7481 }, ptr %arg.tmp336, align 1
+  store { ptr } { ptr @.sconst.7484 }, ptr %arg.tmp336, align 1
   %call337 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp336)
   br i1 %call337, label %if.then338, label %if.end339
 
 if.then324:                                       ; preds = %if.then321
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7480)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7483)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 
@@ -581948,12 +582066,12 @@ if.then338:                                       ; preds = %if.end322
   br i1 %lt343, label %if.then340, label %lor.rhs342
 
 if.end339:                                        ; preds = %if.end322
-  store { ptr } { ptr @.sconst.7483 }, ptr %install_only, align 1
+  store { ptr } { ptr @.sconst.7486 }, ptr %install_only, align 1
   %call390 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %install_only)
   br i1 %call390, label %if.then386, label %lor.rhs389
 
 if.then340:                                       ; preds = %lor.rhs342, %if.then338
-  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7482)
+  call void @_ZN7Console7printlnEP10const_char(ptr @.str.7485)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 1
 
@@ -582043,12 +582161,12 @@ if.end387:                                        ; preds = %lor.rhs388
   br i1 %frame.has_page396, label %frame.forced398, label %frame.force397
 
 lor.rhs388:                                       ; preds = %lor.rhs389
-  store { ptr } { ptr @.sconst.7485 }, ptr %arg.tmp393, align 1
+  store { ptr } { ptr @.sconst.7488 }, ptr %arg.tmp393, align 1
   %call394 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp393)
   br i1 %call394, label %if.then386, label %if.end387
 
 lor.rhs389:                                       ; preds = %if.end339
-  store { ptr } { ptr @.sconst.7484 }, ptr %arg.tmp391, align 1
+  store { ptr } { ptr @.sconst.7487 }, ptr %arg.tmp391, align 1
   %call392 = call i1 @_ZN6String6equalsE6String(ptr %struct.region, ptr %arg.tmp391)
   br i1 %call392, label %if.then386, label %lor.rhs388
 
@@ -582060,7 +582178,7 @@ frame.forced398:                                  ; preds = %frame.force397, %if
   %forced_page400 = phi ptr [ %frame.page395, %if.end387 ], [ %forced_page399, %frame.force397 ]
   %struct.region401 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page400, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region401)
-  store { ptr } { ptr @.sconst.7486 }, ptr %arg.tmp402, align 1
+  store { ptr } { ptr @.sconst.7489 }, ptr %arg.tmp402, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region401, ptr %arg.tmp402)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region401, ptr %struct.region)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result403, ptr %frame, ptr %struct.region401)

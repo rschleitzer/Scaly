@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Visual Studio debugger views of Scaly's standard library types: the Windows
+  counterpart of tools/lldb/scaly.py. The link of a program built with -g
+  puts this file into its .pdb (link.exe -natvis:, cli.natvis_file#), so every
+  debugger that reads the .pdb (Visual Studio, VS Code's cppvsdbg, WinDbg)
+  shows the views without a setting.
+
+  The debug information names the types as `-g` writes them for a Windows
+  target (Emitter.di_display_name#): a generic instantiation in template
+  syntax, Vector<int>, which is what lets one rule match every instantiation.
+
+  Layouts (packages/scaly/<version>/scaly/containers/):
+    String         (data: pointer[u8])      varint length (LEB128), then bytes
+    Vector[T]      (length, data: pointer[T])
+    Slice[T]       (length, data: pointer[T])
+    Array[T]       (length, capacity, buffer: pointer[T])
+    List[T]        (head, tail: pointer[Node[T]])  Node (element: T, next)
+    StringBuilder  (buffer: Array[char])
+-->
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!-- the length prefix takes one byte below 128, two below 16384, three
+       below 2 MB: a String longer than that shows its first 2 MB -->
+  <Type Name="String">
+    <DisplayString Condition="data == 0">""</DisplayString>
+    <DisplayString Condition="(data[0] &amp; 0x80) == 0">{(char*)(data + 1),[data[0]]s8}</DisplayString>
+    <DisplayString Condition="(data[1] &amp; 0x80) == 0">{(char*)(data + 2),[(data[0] &amp; 0x7f) | (data[1] &lt;&lt; 7)]s8}</DisplayString>
+    <DisplayString>{(char*)(data + 3),[(data[0] &amp; 0x7f) | ((data[1] &amp; 0x7f) &lt;&lt; 7) | ((data[2] &amp; 0x7f) &lt;&lt; 14)]s8}</DisplayString>
+    <StringView Condition="data == 0">""</StringView>
+    <StringView Condition="(data[0] &amp; 0x80) == 0">(char*)(data + 1),[data[0]]s8</StringView>
+    <StringView Condition="(data[1] &amp; 0x80) == 0">(char*)(data + 2),[(data[0] &amp; 0x7f) | (data[1] &lt;&lt; 7)]s8</StringView>
+    <StringView>(char*)(data + 3),[(data[0] &amp; 0x7f) | ((data[1] &amp; 0x7f) &lt;&lt; 7) | ((data[2] &amp; 0x7f) &lt;&lt; 14)]s8</StringView>
+  </Type>
+
+  <Type Name="StringBuilder">
+    <DisplayString>{buffer.buffer,[buffer.length]s8}</DisplayString>
+    <StringView>buffer.buffer,[buffer.length]s8</StringView>
+  </Type>
+
+  <Type Name="Vector&lt;*&gt;">
+    <DisplayString>{{ length={length} }}</DisplayString>
+    <Expand>
+      <ArrayItems>
+        <Size>length</Size>
+        <ValuePointer>data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="Slice&lt;*&gt;">
+    <DisplayString>{{ length={length} }}</DisplayString>
+    <Expand>
+      <ArrayItems>
+        <Size>length</Size>
+        <ValuePointer>data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="Array&lt;*&gt;">
+    <DisplayString>{{ length={length} }}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]" ExcludeView="simple">capacity</Item>
+      <ArrayItems>
+        <Size>length</Size>
+        <ValuePointer>buffer</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="List&lt;*&gt;">
+    <DisplayString Condition="head == 0">{{ empty }}</DisplayString>
+    <DisplayString>{{ list }}</DisplayString>
+    <Expand>
+      <LinkedListItems>
+        <HeadPointer>head</HeadPointer>
+        <NextPointer>next</NextPointer>
+        <ValueNode>element</ValueNode>
+      </LinkedListItems>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>
