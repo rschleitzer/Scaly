@@ -23,7 +23,7 @@ never by offset, so a layout change surfaces as a missing field rather than as
 silently wrong values:
     String    (data: pointer[u8])                    varint length, then bytes
     Vector[T] (length: size_t, data: pointer[T])
-    Array[T]  (length: size_t, vector: pointer[Vector[T]])
+    Array[T]  (length: size_t, capacity: size_t, buffer: pointer[T])
     List[T]   (head: pointer[Node[T]])               Node (element: T, next: ptr)
 """
 
@@ -135,9 +135,9 @@ class _Elements:
         return self.valobj.CreateValueFromAddress(
             "[%d]" % index, self.base + index * self.elem_size, self.elem_type)
 
-    def _from_length_and_data(self, length_owner, data_owner):
+    def _from_length_and_data(self, length_owner, data_owner, data_name="data"):
         length = _child(length_owner, "length") if length_owner else None
-        data = _child(data_owner, "data") if data_owner else None
+        data = _child(data_owner, data_name) if data_owner else None
         if length is None or data is None:
             return
         self.count = length.GetValueAsUnsigned(0)
@@ -160,9 +160,13 @@ class VectorChildren(_Elements):
 
 class ArrayChildren(_Elements):
     def update(self):
-        # Array holds its own length and a POINTER to the Vector that owns the
-        # buffer, so the length comes from Array and the data from the Vector.
+        # Array holds its length and its buffer itself (length, capacity,
+        # buffer). An Array of before the buffer moved in held a POINTER to
+        # the Vector that owned it, the data one hop further.
         self.count = 0
+        if _child(self.valobj, "buffer") is not None:
+            self._from_length_and_data(self.valobj, self.valobj, "buffer")
+            return False
         vec = _child(self.valobj, "vector")
         if vec is None or vec.GetValueAsUnsigned(0) == 0:
             return False
