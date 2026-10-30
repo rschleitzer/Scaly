@@ -1743,6 +1743,17 @@ define cli
             else
                 cmd_builder.append " -lm"
         }
+        ; -g on Windows: the object carries CodeView (Emitter.init_debug_info#)
+        ; and the link writes it into a .pdb beside the program, which the
+        ; Visual Studio debugger finds through the path the program names.
+        ; No incremental link: it would leave an .ilk beside it as well.
+        if opts.debug and coff
+        {
+            if msvc
+                cmd_builder.append " -debug -incremental:no"
+            else
+                cmd_builder.append " -g"
+        }
         ; WebAssembly: a catch point's longjmp is wasi-libc's libsetjmp (the
         ; exception tag it throws), and munmap its emulated mman. The stack in
         ; linear memory is 64 KB unless the link says otherwise, and a 64 KB
@@ -1784,7 +1795,8 @@ define cli
         ; needs a standalone .dSYM next to the binary. Run dsymutil while the
         ; .o still exists. Harmless elsewhere — on ELF the executable already
         ; carries DWARF, and an absent dsymutil just fails into 2>/dev/null.
-        if opts.debug
+        ; Not on Windows, where the .pdb holds it and cmd.exe has no /dev/null.
+        if opts.debug and coff = false
             if link_rc = 0
             {
                 let dsym_str "dsymutil \"`opts.output_file`\" 2>/dev/null"

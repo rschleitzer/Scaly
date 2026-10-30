@@ -1,0 +1,5 @@
+; -g for a Windows target: CodeView, generic types in template spelling
+; (tests/target/run.sh, check_codeview)
+var sides Vector[int](4)
+sides.put(0, 8)
+print "`sides[0]`"

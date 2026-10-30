@@ -126,5 +126,29 @@ else
   echo "target: SKIP -mcpu check (no llvm-objdump)"
 fi
 
+# -g for a Windows target writes CodeView, which link.exe puts into a .pdb for
+# the Visual Studio debugger, not DWARF (a PE keeps no DWARF link.exe wrote);
+# a generic type is named in template syntax there, Vector<int>, which is
+# what the natvis views of tools/natvis/scaly.natvis match.
+check_codeview() {
+  local triple=$1 obj=/tmp/target_cv_$2.o
+  rm -f "$obj"
+  "$STAGE" -g -c --target "$triple" -o "$obj" tests/target/codeview.scaly >/dev/null 2>&1
+  local sections; sections=$("$OBJDUMP" -h "$obj" 2>/dev/null)
+  local names; names=$(LC_ALL=C grep -a -c 'Vector<int>' "$obj" 2>/dev/null)
+  rm -f "$obj"
+  if printf '%s' "$sections" | grep -qF '.debug$S' && ! printf '%s' "$sections" | grep -qF '.debug_info' && [ "${names:-0}" -gt 0 ]; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$triple -g: CodeView sections or the name Vector<int> missing")
+  fi
+}
+if [ -n "$OBJDUMP" ]; then
+  check_codeview x86_64-pc-windows-msvc  x86win
+  check_codeview aarch64-pc-windows-msvc arm64win
+else
+  echo "target: SKIP CodeView check (no llvm-objdump)"
+fi
+
 echo "target: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]

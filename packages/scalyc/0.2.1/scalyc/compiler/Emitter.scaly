@@ -814,10 +814,24 @@ define Emitter
 
             ; Module flags: Dwarf Version = 4 (lldb-friendly),
             ; Debug Info Version = 3 (DEBUG_METADATA_VERSION). Behavior 1 = Warning.
+            ; A Windows target takes CodeView instead, as clang does there: the
+            ; Build Tools' link.exe writes it into a .pdb, which the Visual
+            ; Studio debugger reads -- a PE keeps no DWARF that link.exe wrote
+            ; (it cuts the .debug_* section names to eight characters).
+            ; apply_target_layout#, which runs first, has set target_is_coff.
             let i32_ty LLVMInt32TypeInContext(context)
-            let dwarf_ver LLVMValueAsMetadata(LLVMConstInt(i32_ty, 4, 0))
-            var dwarf_key "Dwarf Version"
-            LLVMAddModuleFlag(llvm_module, 1, dwarf_key.c_data(), dwarf_key.get_length() as c_size, dwarf_ver)
+            if target_is_coff
+            {
+                let cv_on LLVMValueAsMetadata(LLVMConstInt(i32_ty, 1, 0))
+                var cv_key "CodeView"
+                LLVMAddModuleFlag(llvm_module, 1, cv_key.c_data(), cv_key.get_length() as c_size, cv_on)
+            }
+            else
+            {
+                let dwarf_ver LLVMValueAsMetadata(LLVMConstInt(i32_ty, 4, 0))
+                var dwarf_key "Dwarf Version"
+                LLVMAddModuleFlag(llvm_module, 1, dwarf_key.c_data(), dwarf_key.get_length() as c_size, dwarf_ver)
+            }
             let di_ver LLVMValueAsMetadata(LLVMConstInt(i32_ty, 3, 0))
             var di_key "Debug Info Version"
             LLVMAddModuleFlag(llvm_module, 1, di_key.c_data(), di_key.get_length() as c_size, di_ver)
@@ -826,9 +840,17 @@ define Emitter
             di_builder := LLVMCreateDIBuilder(llvm_module)
 
             var fname source_file
+            var dir "."
             if fname.get_length() = 0
                 fname := "<unknown>"
-            var dir "."
+            ; the Visual Studio debugger binds a breakpoint by the source's
+            ; FULL path as the .pdb names it, so a relative one never binds;
+            ; no directory, which CodeView would put in front of it
+            else if target_is_coff
+            {
+                fname := backslashed(Modeler.canonical_dir(fname))
+                dir := ""
+            }
             di_file := LLVMDIBuilderCreateFile(di_builder, fname.c_data(), fname.get_length() as c_size, dir.c_data(), dir.get_length() as c_size)
 
             ; lang 1 = DW_LANG_C89 (closest to Scaly), emission kind 1 = Full.
@@ -1133,10 +1155,19 @@ define Emitter
         ; it would mean a new page-hosted allocation inside plan_structure, where the
         ; surrounding idiom takes `&` of stack locals — a dangling-pointer risk paid
         ; for a cosmetic gain. The PlannedType already has the answer.)
+        ;
+        ; On a Windows target the readable form is spelled with angle brackets,
+        ; `Vector<int>`: the Visual Studio debugger's natvis rules match a
+        ; generic by C++ template syntax (Vector<*>) and have no wildcard for
+        ; any other spelling.
         function di_display_name(this, readable: String, mangled: String) returns String
         {
             if readable.contains("[" as u8)
+            {
+                if target_is_coff
+                    return template_spelling(readable)
                 return readable
+            }
             if mangled.get_length() = 0
                 return readable
             if mangled.ends_with("E") = false
@@ -1144,6 +1175,44 @@ define Emitter
             if mangled.contains("I" as u8) = false
                 return readable
             mangled
+        }
+
+        ; a path with Windows separators (init_debug_info#)
+        function backslashed(this, path: String) returns String
+        {
+            var sb StringBuilder()
+            var i: size_t 0
+            let n path.get_length()
+            while i < n
+            {
+                let c path.get(i)
+                if c = 47
+                    sb.append("\\" as char)
+                else
+                    sb.append(c as char)
+                i := i + 1
+            }
+            sb.to_string()
+        }
+
+        ; `Vector[Array[int]]` as `Vector<Array<int>>` (di_display_name#)
+        function template_spelling(this, readable: String) returns String
+        {
+            var sb StringBuilder()
+            var i: size_t 0
+            let n readable.get_length()
+            while i < n
+            {
+                let c readable.get(i)
+                if c = 91
+                    sb.append("<" as char)
+                else if c = 93
+                    sb.append(">" as char)
+                else
+                    sb.append(c as char)
+                i := i + 1
+            }
+            sb.to_string()
         }
 
         procedure di_stdlib_struct_type(mutable this, mutable name: String) returns LLVMMetadataRef
