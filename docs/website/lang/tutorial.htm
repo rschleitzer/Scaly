@@ -1553,19 +1553,61 @@ class="command"
 > setting at it.</p
 ><p
 >For a configuration of your own — arguments, an environment,
-        another program — open <span
+        another program — you write a <code
+class="filename"
+>.vscode/launch.json</code
+>,
+        and that needs a folder open (<span
+class="gui"
+>File</span
+> &#62;
+        <span
+class="gui"
+>Open Folder…</span
+>), not just a file. Open the
+        <span
 class="gui"
 >Run and Debug</span
->, choose
+> view: the icon with the play
+        triangle and the bug in the Activity Bar on the left, or
+        <kbd
+>⇧</kbd
+><kbd
+>⌘</kbd
+><kbd
+>D</kbd
+>
+        (<kbd
+>Ctrl</kbd
+>+<kbd
+>Shift</kbd
+>+<kbd
+>D</kbd
+>).
+        As long as the folder has no <code
+class="filename"
+>launch.json</code
+>, the
+        view shows a <span
+class="gui"
+>Run and Debug</span
+> button — the same as
+        <kbd
+>F5</kbd
+> — and beneath it the link
         <span
 class="gui"
 >create a launch.json file</span
-> and then
-        <span
+>. Click the link
+        with a <code
+class="filename"
+>.scaly</code
+> file in the editor; should VS Code
+        ask which debugger, choose <span
 class="gui"
 >Scaly</span
->. What it writes debugs the open
-        file:</p
+>. It writes
+        the file, opens it, and what it writes debugs the open file:</p
 ><pre
 class="listing"
 ><code

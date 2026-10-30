@@ -227,10 +227,20 @@ if d = 42
         debugger. Should <command>lldb-dap</command> live somewhere unusual,
         point the <code>scaly.debugAdapter.path</code> setting at it.</para>
       <para>For a configuration of your own — arguments, an environment,
-        another program — open <guilabel>Run and Debug</guilabel>, choose
-        <guimenuitem>create a launch.json file</guimenuitem> and then
-        <guimenuitem>Scaly</guimenuitem>. What it writes debugs the open
-        file:</para>
+        another program — you write a <filename>.vscode/launch.json</filename>,
+        and that needs a folder open (<guimenu>File</guimenu> &gt;
+        <guimenuitem>Open Folder…</guimenuitem>), not just a file. Open the
+        <guilabel>Run and Debug</guilabel> view: the icon with the play
+        triangle and the bug in the Activity Bar on the left, or
+        <keycap>⇧</keycap><keycap>⌘</keycap><keycap>D</keycap>
+        (<keycap>Ctrl</keycap>+<keycap>Shift</keycap>+<keycap>D</keycap>).
+        As long as the folder has no <filename>launch.json</filename>, the
+        view shows a <guibutton>Run and Debug</guibutton> button — the same as
+        <keycap>F5</keycap> — and beneath it the link
+        <guimenuitem>create a launch.json file</guimenuitem>. Click the link
+        with a <filename>.scaly</filename> file in the editor; should VS Code
+        ask which debugger, choose <guimenuitem>Scaly</guimenuitem>. It writes
+        the file, opens it, and what it writes debugs the open file:</para>
       <programlisting>{
     "version": "0.2.0",
     "configurations": [
