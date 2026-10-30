@@ -1219,7 +1219,7 @@ href="#tut-install"
       <code
 >code.visualstudio.com</code
 >
-      (macOS and Linux installers are provided; on Ubuntu,
+      (installers for macOS, Windows and Linux; on Ubuntu,
       <code
 class="userinput"
 >sudo snap install code --classic</code
@@ -1551,6 +1551,32 @@ class="command"
         point the <code
 >scaly.debugAdapter.path</code
 > setting at it.</p
+><p
+>On Windows the extension debugs with the Visual Studio debugger
+        instead, the one Windows programs are debugged with: a build with
+        debug information writes a <code
+class="filename"
+>.pdb</code
+> beside the
+        program, as the Visual Studio Build Tools do for C++ (the installer
+        fetched them for <code
+class="command"
+>scaly build</code
+>). VS Code has that
+        debugger through Microsoft's <em
+>C/C++</em
+> extension; the
+        first <kbd
+>F5</kbd
+> offers to install it, and everything after
+        that works as described here — the same <kbd
+>F5</kbd
+>, the same
+        <code
+class="filename"
+>launch.json</code
+>, strings and containers shown by
+        their contents.</p
 ><p
 >For a configuration of your own — arguments, an environment,
         another program — you write a <code

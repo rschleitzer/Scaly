@@ -100,7 +100,7 @@ scaly> :quit</screen>
       more.</para>
     <para>If you do not have VS Code yet, download it from
       <literal>code.visualstudio.com</literal>
-      (macOS and Linux installers are provided; on Ubuntu,
+      (installers for macOS, Windows and Linux; on Ubuntu,
       <userinput>sudo snap install code --classic</userinput> also works).</para>
 
     <section xml:id="tut-vscode-extension">
@@ -226,6 +226,16 @@ if d = 42
         extension builds it with debug information and starts it under the
         debugger. Should <command>lldb-dap</command> live somewhere unusual,
         point the <code>scaly.debugAdapter.path</code> setting at it.</para>
+      <para>On Windows the extension debugs with the Visual Studio debugger
+        instead, the one Windows programs are debugged with: a build with
+        debug information writes a <filename>.pdb</filename> beside the
+        program, as the Visual Studio Build Tools do for C++ (the installer
+        fetched them for <command>scaly build</command>). VS Code has that
+        debugger through Microsoft's <emphasis>C/C++</emphasis> extension; the
+        first <keycap>F5</keycap> offers to install it, and everything after
+        that works as described here — the same <keycap>F5</keycap>, the same
+        <filename>launch.json</filename>, strings and containers shown by
+        their contents.</para>
       <para>For a configuration of your own — arguments, an environment,
         another program — you write a <filename>.vscode/launch.json</filename>,
         and that needs a folder open (<guimenu>File</guimenu> &gt;
