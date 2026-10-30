@@ -1638,6 +1638,55 @@ class="listing"
 >cwd</code
 > go to the
         program.</p
+><p
+>A <code
+class="filename"
+>launch.json</code
+> may hold several
+        configurations; the drop-down at the top of the
+        <span
+class="gui"
+>Run and Debug</span
+> view chooses the one
+        <kbd
+>F5</kbd
+> starts. Here the first builds
+        <code
+class="filename"
+>greet.scaly</code
+> and runs it with two arguments, a
+        variable in its environment and the workspace folder as its working
+        directory; the second debugs a program that is already built — with
+        <code
+class="userinput"
+>scaly build -g</code
+>, or there are no line tables for
+        a breakpoint to bind to:</p
+><pre
+class="listing"
+><code
+>{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "scaly",
+            "request": "launch",
+            "name": "Debug greet with arguments",
+            "source": "${workspaceFolder}/greet.scaly",
+            "args": ["Ada", "Grace"],
+            "env": { "GREETING": "Hello" },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "scaly",
+            "request": "launch",
+            "name": "Debug the built server",
+            "program": "${workspaceFolder}/build/server",
+            "args": ["--port", "8080"]
+        }
+    ]
+}</code
+></pre
 ></section
 ><section
 id="tut-vscode-breakpoints-setting"
@@ -1660,30 +1709,6 @@ class="filename"
 > files, so with it installed, clicking in
         the editor gutter places a breakpoint (a red dot appears) — nothing to
         configure.</p
-><aside
-class="note"
-><p
-class="note-title"
->Note</p
-><p
->If you skip the Scaly extension, <code
-class="filename"
->.scaly</code
->
-          files are treated as plain text and the gutter does nothing. In that
-          case you can lift the restriction by hand in
-          <code
-class="filename"
->.vscode/settings.json</code
->:</p
-><pre
-class="listing"
-><code
->{
-    "debug.allowBreakpointsEverywhere": true
-}</code
-></pre
-></aside
 ></section
 ><section
 id="tut-vscode-debug"

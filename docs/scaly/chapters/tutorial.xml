@@ -256,6 +256,36 @@ if d = 42
         <code>program</code> names an executable to debug as it is, and
         <code>args</code>, <code>env</code> and <code>cwd</code> go to the
         program.</para>
+      <para>A <filename>launch.json</filename> may hold several
+        configurations; the drop-down at the top of the
+        <guilabel>Run and Debug</guilabel> view chooses the one
+        <keycap>F5</keycap> starts. Here the first builds
+        <filename>greet.scaly</filename> and runs it with two arguments, a
+        variable in its environment and the workspace folder as its working
+        directory; the second debugs a program that is already built — with
+        <userinput>scaly build -g</userinput>, or there are no line tables for
+        a breakpoint to bind to:</para>
+      <programlisting>{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "scaly",
+            "request": "launch",
+            "name": "Debug greet with arguments",
+            "source": "${workspaceFolder}/greet.scaly",
+            "args": ["Ada", "Grace"],
+            "env": { "GREETING": "Hello" },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "scaly",
+            "request": "launch",
+            "name": "Debug the built server",
+            "program": "${workspaceFolder}/build/server",
+            "args": ["--port", "8080"]
+        }
+    ]
+}</programlisting>
     </section>
 
     <section xml:id="tut-vscode-breakpoints-setting">
@@ -266,15 +296,6 @@ if d = 42
         <filename>.scaly</filename> files, so with it installed, clicking in
         the editor gutter places a breakpoint (a red dot appears) — nothing to
         configure.</para>
-      <note>
-        <para>If you skip the Scaly extension, <filename>.scaly</filename>
-          files are treated as plain text and the gutter does nothing. In that
-          case you can lift the restriction by hand in
-          <filename>.vscode/settings.json</filename>:</para>
-        <programlisting>{
-    "debug.allowBreakpointsEverywhere": true
-}</programlisting>
-      </note>
     </section>
 
     <section xml:id="tut-vscode-debug">
