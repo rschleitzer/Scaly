@@ -14,7 +14,9 @@
 # hidden: exported by name -- the undefined symbols of its objects
 # (scaly-<version>-*.o in the arguments), and every extern its sources declare,
 # pulled in (-u) where this program does not call it: a generic routine or an
-# inline one (print and puts) is made in the entry, not here.
+# inline one (print and puts) is made in the entry, not here. Named here too:
+# scaly_set_arguments, which no source declares -- every main the compiler
+# emits calls it (Emitter.hand_over_arguments#), an entry's main included.
 W="${WASI_SDK:-}"
 if [ -z "$W" ]; then
   for cand in "$HOME"/opt/wasi-sdk-*; do [ -d "$cand" ] && W="$cand"; done
@@ -40,7 +42,7 @@ done | awk '{print $NF}' | sort -u | sed 's/^/-Wl,--export-if-defined=/' > "$RSP
 STD="$TREE/packages/scaly/$("$TREE/tools/version.sh" scaly)"
 { grep -rhE '^[[:space:]]*(function|procedure)[[:space:]]+[A-Za-z][A-Za-z0-9_]*\(.*[[:space:]]extern[[:space:]]*$' "$STD" --include='*.scaly' \
     | sed -E 's/^[[:space:]]*(function|procedure)[[:space:]]+([A-Za-z][A-Za-z0-9_]*).*/\2/'
-  echo malloc free aligned_alloc memcpy memmove memset __c_longjmp __wasm_setjmp __wasm_setjmp_test __wasm_longjmp | tr ' ' '\n'
+  echo malloc free aligned_alloc memcpy memmove memset __c_longjmp __wasm_setjmp __wasm_setjmp_test __wasm_longjmp scaly_set_arguments | tr ' ' '\n'
 } | sort -u | sed 's/.*/-Wl,-u,& -Wl,--export-if-defined=&/' >> "$RSP"
 "$W/bin/clang" --sysroot="$SYSROOT" "$@" @"$RSP" \
   -Wl,--export-dynamic -Wl,--export-table -Wl,--growable-table -Wl,--export=__stack_pointer \
