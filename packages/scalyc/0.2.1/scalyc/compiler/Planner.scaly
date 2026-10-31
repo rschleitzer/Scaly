@@ -18939,9 +18939,19 @@ define Planner
                             if eq_ok
                             {
                                 this.ensure_type_layout(result.result_type)
+                                ; ★A string literal compared with a byte or char
+                                ; VIEW is that view: `s = "abc"` on a Slice[u8]
+                                ; handed the literal's String record to
+                                ; equals(other: Slice[T]), which read it as
+                                ; {length, data} -- false at rc 0, where
+                                ; s.equals("abc") materialised the view
+                                ; (2026-10-31; gate slice_equals_literal).
+                                var eq_rhs rhs
+                                if Planner.type_is_char_slice(eq_gate_ty) and this.operand_is_string_constant(rhs)
+                                    eq_rhs := this.materialize_string_operand_to_slice(rhs, eq_gate_ty)
                                 var eq_args Vector[PlannedOperand](2)
                                 eq_args.put(0, result)
-                                eq_args.put(1, rhs)
+                                eq_args.put(1, eq_rhs)
                                 let eq_call PlannedCall(
                                     result.loc,
                                     String("equals"),

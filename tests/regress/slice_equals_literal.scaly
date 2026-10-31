@@ -1,0 +1,36 @@
+; A string literal compared with a byte or char view by `=` / `<>` is that
+; view. The equality desugar (`a = b` into a.equals(b)) handed the
+; literal's String RECORD to Slice.equals(other: Slice[T]), which read it
+; as {length, data}: `s = "abc"` was false at rc 0, while s.equals("abc")
+; materialised the view and was right. Found trying `if a = "--help"` on
+; os.arguments. Planner, the equality desugar, 2026-10-31.
+; Expected: PASS
+var ok true
+let s: Slice[u8] "abc"
+if s = "abc"
+    0
+else
+    ok := false
+if s <> "abc"
+    ok := false
+if s = "abd"
+    ok := false
+if s <> "ab"
+    0
+else
+    ok := false
+let c: Slice[char] "--help"
+if c = "--help"
+    0
+else
+    ok := false
+let e: Slice[u8] ""
+if e = ""
+    0
+else
+    ok := false
+
+if ok
+    print "PASS"
+else
+    print "FAIL"
