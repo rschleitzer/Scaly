@@ -206,7 +206,7 @@ sudo apt install llvm-21 llvm-21-dev lld-21 clang     ; Ubuntu and Debian</progr
       <varlistentry>
         <term><option>-g</option></term>
         <listitem><para>Debug information, for a source-level debugger
-          (<xref linkend="tut-vscode"/>).</para></listitem>
+          (<xref linkend="tut-vscode"/>, on Windows <xref linkend="tut-windows"/>).</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-L<replaceable>path</replaceable></option>, <option>-l<replaceable>name</replaceable></option>, <replaceable>file</replaceable><literal>.a</literal>, <replaceable>file</replaceable><literal>.o</literal></term>
