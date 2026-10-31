@@ -421,29 +421,12 @@ else
   <section xml:id="tut-windows">
     <title>Scaly on Windows</title>
     <para>Everything in this chapter works on Windows 10 and 11, on x64 and on
-      arm64. This section goes through what is different there, step by step:
-      first the installation, then working with Scaly in Visual Studio Code
-      (<xref linkend="tut-windows-vscode"/>) or in Visual Studio itself
-      (<xref linkend="tut-windows-vs"/>). Pick the one you like; each of the
-      two stands on its own.</para>
-
-    <section xml:id="tut-windows-install">
-      <title>Installing Scaly on Windows</title>
-      <para>Scaly is installed by one command. Click
-        <guilabel>Start</guilabel>, type <userinput>PowerShell</userinput> and
-        press <keycap>Enter</keycap>. In the window that opens, paste this
-        line (a right-click pastes) and press <keycap>Enter</keycap>:</para>
-      <programlisting>irm https://scaly.io/install.ps1 | iex</programlisting>
-      <para>Along with Scaly, the installer sets up Microsoft's C++ build
-        tools, which Scaly needs to build programs; if Visual Studio with
-        C++ is installed already, it uses that. This download is several
-        gigabytes and takes a few minutes. When Windows asks whether to allow
-        the installation, answer <guibutton>Yes</guibutton>. Should
-        Microsoft's installer then ask you to restart your PC, Scaly does not
-        need it: when the installer ends with
-        <computeroutput>scaly build: ok</computeroutput>, everything is in
-        place.</para>
-    </section>
+      Arm. Choose how you want to work: in Visual Studio Code
+      (<xref linkend="tut-windows-vscode"/>) or in Visual Studio
+      (<xref linkend="tut-windows-vs"/>). Each of the two sections installs
+      everything it needs, Scaly included, and stands on its own. To use
+      both, begin with Visual Studio: Scaly then finds its C++ tools and
+      installs none of its own.</para>
 
     <section xml:id="tut-windows-vscode">
       <title>Using Scaly with Visual Studio Code on Windows</title>
@@ -451,15 +434,30 @@ else
         develop Scaly programs.</para>
 
       <section xml:id="tut-windows-vscode-extension">
-        <title>Installing VS Code and the Extensions</title>
+        <title>Installing Scaly, VS Code and the Extensions</title>
         <orderedlist>
+          <listitem>
+            <para>Install Scaly. Click <guilabel>Start</guilabel>, type
+              <userinput>PowerShell</userinput> and press
+              <keycap>Enter</keycap>. In the window that opens, paste this
+              line (a right-click pastes) and press
+              <keycap>Enter</keycap>:</para>
+            <programlisting>irm https://scaly.io/install.ps1 | iex</programlisting>
+            <para>Along with Scaly, the installer sets up Microsoft's C++
+              build tools, which Scaly needs to build programs. This download
+              is several gigabytes and takes a few minutes. When Windows asks
+              whether to allow the installation, answer
+              <guibutton>Yes</guibutton>. Should Microsoft's installer ask you to
+              restart your PC, Scaly does not need it: when the Scaly installer
+              ends with <computeroutput>scaly build: ok</computeroutput>,
+              everything is in place. Close PowerShell.</para>
+          </listitem>
           <listitem>
             <para>Install VS Code: download the installer from
               <uri xlink:href="https://code.visualstudio.com">code.visualstudio.com</uri>
-              and run it.</para>
-            <para>If VS Code was already running when you installed Scaly,
-              close every one of its windows now, so that it starts again with
-              the new <envar>PATH</envar>.</para>
+              and run it. If VS Code was installed and running already, close
+              every one of its windows now, so that it starts again and finds
+              Scaly.</para>
           </listitem>
           <listitem>
             <para>Download the Scaly extension,
@@ -580,7 +578,7 @@ if d = 42
           panel, a click away from its line. Should
           <guimenuitem>scaly: build</guimenuitem> say that it has nothing to
           link with, the C++ build tools are missing: run the Scaly installer
-          again (<xref linkend="tut-windows-install"/>) and answer
+          again (<xref linkend="tut-windows-vscode-extension"/>) and answer
           <guibutton>Yes</guibutton> when Windows asks. To
           change a task, choose
           <guimenu>Terminal</guimenu> &gt; <guimenuitem>Configure
@@ -810,28 +808,55 @@ else
         open at once.</para>
 
       <section xml:id="tut-windows-vs-install">
-        <title>Installing Visual Studio</title>
+        <title>Installing Visual Studio and Scaly</title>
+        <para>Visual Studio comes first: Scaly builds programs with its C++
+          tools, and when it finds them it installs nothing of its own.</para>
         <orderedlist>
           <listitem>
-            <para>Download Visual Studio 2022 or 2026 from
-              <literal>visualstudio.microsoft.com</literal>; the free
-              Community edition will do. Run the installer.</para>
+            <para>Download Visual Studio 2026 from
+              <uri xlink:href="https://visualstudio.microsoft.com">visualstudio.microsoft.com</uri>;
+              the free Community edition will do. Run the installer. If Visual
+              Studio 2026 is installed already, start the <application>Visual
+              Studio Installer</application> from the Start menu instead and
+              click <guibutton>Modify</guibutton>.</para>
           </listitem>
           <listitem>
             <para>On the <guilabel>Workloads</guilabel> tab, tick
-              <guilabel>Desktop development with C++</guilabel> and click
-              <guibutton>Install</guibutton>. It brings the C++ debugger, and
-              also everything <userinput>scaly build</userinput> links with.
-              If Visual Studio is installed already without it, start the
-              <application>Visual Studio Installer</application> from the
-              Start menu, click <guibutton>Modify</guibutton> and tick the
-              workload there.</para>
+              <guilabel>Desktop development with C++</guilabel>. It brings the
+              C++ debugger and the C++ tools Scaly builds with.</para>
           </listitem>
           <listitem>
-            <para>Start Visual Studio only after Scaly is installed
-              (<xref linkend="tut-windows-install"/>), so that its tasks find
-              <command>scaly</command> on the <envar>PATH</envar>. If it was
-              running already, close it and start it again.</para>
+            <para>On a PC with an Arm processor (a Snapdragon, for instance;
+              <guimenu>Settings</guimenu> &gt;
+              <guimenuitem>System</guimenuitem> &gt;
+              <guimenuitem>About</guimenuitem> says
+              <quote>ARM-based processor</quote>), the tools for Arm must be
+              ticked as well: in the <guilabel>Installation details</guilabel>
+              on the right, under <guilabel>Desktop development with
+              C++</guilabel>, tick the entry for <guilabel>C++ ARM64/ARM64EC
+              build tools</guilabel>. On any other PC, skip this step.</para>
+          </listitem>
+          <listitem>
+            <para>Click <guibutton>Install</guibutton> (or
+              <guibutton>Modify</guibutton>) and wait until the installer is
+              done. Should it ask you to restart your PC, do so.</para>
+          </listitem>
+          <listitem>
+            <para>Install Scaly. Click <guilabel>Start</guilabel>, type
+              <userinput>PowerShell</userinput> and press
+              <keycap>Enter</keycap>. In the window that opens, paste this
+              line (a right-click pastes) and press
+              <keycap>Enter</keycap>:</para>
+            <programlisting>irm https://scaly.io/install.ps1 | iex</programlisting>
+            <para>The installer finds the C++ tools of Visual Studio and
+              fetches nothing more. When it ends with
+              <computeroutput>scaly build: ok</computeroutput>, everything is
+              in place. Close PowerShell.</para>
+          </listitem>
+          <listitem>
+            <para>Start Visual Studio. If it was running while Scaly was
+              installed, close it and start it again, so that it finds
+              Scaly.</para>
           </listitem>
         </orderedlist>
       </section>
