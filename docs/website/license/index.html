@@ -37,7 +37,7 @@
 
         .logo { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 48px; color: inherit; }
         .logo:hover { text-decoration: none; }
-        .logo-icon { font-size: 28px; line-height: 1; }
+        .logo-icon { display: block; width: 40px; height: 40px; }
         .logo-text { font-size: 1.5rem; font-weight: 500; letter-spacing: -0.02em; }
         .logo-tld { color: var(--text-muted); font-weight: 300; }
 
@@ -168,7 +168,7 @@
 <div class="container">
 
     <a class="logo" href="../">
-        <span class="logo-icon">🦎</span>
+        <img class="logo-icon" src="../scaly-lizard.svg" width="40" height="40" alt="">
         <span class="logo-text">scaly<span class="logo-tld">.io</span></span>
     </a>
 
@@ -210,6 +210,9 @@ SOFTWARE.</pre>
         <li>libxml2 — MIT License (Linux)</li>
     </ul>
     <p class="muted" style="margin-top:16px">The full texts: <a href="../downloads/THIRD-PARTY-LICENSES.txt">THIRD-PARTY-LICENSES.txt</a>. Both files are also part of every installation, in <code>.scaly/toolchain</code>.</p>
+
+    <div class="section-label">The lizard</div>
+    <p class="muted">The lizard of the logo and of the VS Code extension's icon is derived from the emoji U+1F98E of <a href="https://github.com/googlefonts/noto-emoji/blob/41e31b110b4eb929dffb410264694a06205b7ad7/svg/emoji_u1f98e.svg">Noto Emoji</a>, Copyright Google LLC, under the <a href="https://github.com/googlefonts/noto-emoji/blob/41e31b110b4eb929dffb410264694a06205b7ad7/LICENSE">Apache License 2.0</a>. Modified for Scaly: the feet redrawn with five fingers each, a forked tongue added, the shading and the spots removed, recoloured in two flat tones, mirrored.</p>
 
     <div class="footer">
         <a href="../">scaly.io</a>
