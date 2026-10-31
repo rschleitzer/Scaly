@@ -14,7 +14,7 @@ emoji U+1F98E of Noto Emoji:
 
   Modified for Scaly: the feet redrawn with five fingers each, a forked
   tongue added, the shading and the spots removed, recoloured in two flat
-  tones, mirrored, set on a square ground.
+  tones, mirrored.
 
 
 ==============================================================================
