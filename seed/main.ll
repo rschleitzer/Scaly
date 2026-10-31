@@ -26,11 +26,14 @@ declare i64 @_ZN3cliB6scalycB4v0_24mainEiPPc(i64, ptr)
 
 define i64 @main(i64 %0, ptr %1) {
 entry:
+  call void @scaly_set_arguments(i64 %0, ptr %1)
   %call = call i64 @_ZN3cliB6scalycB4v0_24mainEiPPc(i64 %0, ptr %1)
   ret i64 %call
 }
 
+declare void @scaly_set_arguments(i64, ptr)
+
 define i64 @scaly_build_stamp() {
 entry:
-  ret i64 -3982783339340689440
+  ret i64 -2564003990828807071
 }
