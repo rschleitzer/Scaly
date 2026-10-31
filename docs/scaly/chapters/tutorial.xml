@@ -423,10 +423,7 @@ else
     <para>Everything in this chapter works on Windows 10 and 11, on x64 and on
       Arm. Choose how you want to work: in Visual Studio Code
       (<xref linkend="tut-windows-vscode"/>) or in Visual Studio
-      (<xref linkend="tut-windows-vs"/>). Each of the two sections installs
-      everything it needs, Scaly included, and stands on its own. To use
-      both, begin with Visual Studio: Scaly then finds its C++ tools and
-      installs none of its own.</para>
+      (<xref linkend="tut-windows-vs"/>).</para>
 
     <section xml:id="tut-windows-vscode">
       <title>Using Scaly with Visual Studio Code on Windows</title>
@@ -447,10 +444,9 @@ else
               build tools, which Scaly needs to build programs. This download
               is several gigabytes and takes a few minutes. When Windows asks
               whether to allow the installation, answer
-              <guibutton>Yes</guibutton>. Should Microsoft's installer ask you to
-              restart your PC, Scaly does not need it: when the Scaly installer
-              ends with <computeroutput>scaly build: ok</computeroutput>,
-              everything is in place. Close PowerShell.</para>
+              <guibutton>Yes</guibutton>. When the Scaly installer ends with
+              <computeroutput>scaly build: ok</computeroutput>, everything is
+              in place. Close PowerShell.</para>
           </listitem>
           <listitem>
             <para>Install VS Code: download the installer from
@@ -499,12 +495,18 @@ else
               <guimenu>File</guimenu> &gt; <guimenuitem>Open
               Folder…</guimenuitem>, go to <filename>Documents</filename>,
               click <guibutton>New folder</guibutton>, name it
-              <userinput>scaly-tutorial</userinput>, and click
-              <guibutton>Select Folder</guibutton>. Should VS Code
-              ask whether you trust the authors of the files in this folder,
-              answer <guibutton>Yes, I trust the authors</guibutton>; in
-              restricted mode it starts no language server and no
-              debugger.</para>
+              <userinput>scaly-tutorial</userinput>, double-click it so that
+              the dialog shows its (still empty) inside, and click
+              <guibutton>Select Folder</guibutton>.</para>
+          </listitem>
+          <listitem>
+            <para>Trust the folder. VS Code opens a new folder in
+              <guilabel>Restricted Mode</guilabel>, where it starts no
+              language server and no debugger; a bar at the top of the window
+              says so. Click <guibutton>Manage</guibutton> in that bar, then
+              <guibutton>Trust</guibutton>. (Should VS Code ask in a dialog
+              instead, answer <guibutton>Yes, I trust the
+              authors</guibutton>.)</para>
           </listitem>
           <listitem>
             <para>Choose <guimenu>File</guimenu> &gt;
@@ -869,13 +871,14 @@ else
               <guibutton>Open a local folder</guibutton>; with Visual Studio
               already open, choose <guimenu>File</guimenu> &gt;
               <guimenuitem>Open</guimenuitem> &gt;
-              <guimenuitem>Folder…</guimenuitem>. Go to
-              <filename>Documents</filename> and pick
-              <filename>scaly-tutorial</filename>. If it is not there yet
-              from <xref linkend="tut-windows-vscode"/>, click
-              <guibutton>New folder</guibutton>, name it
-              <userinput>scaly-tutorial</userinput>, and pick it. Click
-              <guibutton>Select Folder</guibutton>.</para>
+              <guimenuitem>Folder…</guimenuitem> and go to
+              <filename>Documents</filename>. If there is no
+              <filename>scaly-tutorial</filename> yet from
+              <xref linkend="tut-windows-vscode"/>, click
+              <guibutton>New folder</guibutton> and name it
+              <userinput>scaly-tutorial</userinput>. Double-click
+              <filename>scaly-tutorial</filename>, so that the dialog shows
+              its inside, and click <guibutton>Select Folder</guibutton>.</para>
           </listitem>
           <listitem>
             <para>The <guilabel>Solution Explorer</guilabel> lists the

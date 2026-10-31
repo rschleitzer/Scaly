@@ -2039,10 +2039,7 @@ href="#tut-windows-vscode"
       (<a
 href="#tut-windows-vs"
 >Using Scaly with Visual Studio</a
->). Each of the two sections installs
-      everything it needs, Scaly included, and stands on its own. To use
-      both, begin with Visual Studio: Scaly then finds its C++ tools and
-      installs none of its own.</p
+>).</p
 ><section
 id="tut-windows-vscode"
 ><h3
@@ -2093,13 +2090,12 @@ class="listing"
               <span
 class="gui"
 >Yes</span
->. Should Microsoft's installer ask you to
-              restart your PC, Scaly does not need it: when the Scaly installer
-              ends with <code
+>. When the Scaly installer ends with
+              <code
 class="computeroutput"
 >scaly build: ok</code
->,
-              everything is in place. Close PowerShell.</p
+>, everything is
+              in place. Close PowerShell.</p
 ></li
 ><li
 ><p
@@ -2233,18 +2229,34 @@ class="gui"
               <code
 class="userinput"
 >scaly-tutorial</code
->, and click
+>, double-click it so that
+              the dialog shows its (still empty) inside, and click
               <span
 class="gui"
 >Select Folder</span
->. Should VS Code
-              ask whether you trust the authors of the files in this folder,
-              answer <span
+>.</p
+></li
+><li
+><p
+>Trust the folder. VS Code opens a new folder in
+              <span
 class="gui"
->Yes, I trust the authors</span
->; in
-              restricted mode it starts no language server and no
-              debugger.</p
+>Restricted Mode</span
+>, where it starts no
+              language server and no debugger; a bar at the top of the window
+              says so. Click <span
+class="gui"
+>Manage</span
+> in that bar, then
+              <span
+class="gui"
+>Trust</span
+>. (Should VS Code ask in a dialog
+              instead, answer <span
+class="gui"
+>Yes, I trust the
+              authors</span
+>.)</p
 ></li
 ><li
 ><p
@@ -3118,28 +3130,32 @@ class="gui"
               <span
 class="gui"
 >Folder…</span
->. Go to
+> and go to
               <code
 class="filename"
 >Documents</code
-> and pick
+>. If there is no
               <code
 class="filename"
 >scaly-tutorial</code
->. If it is not there yet
-              from <a
+> yet from
+              <a
 href="#tut-windows-vscode"
 >Using Scaly with Visual Studio Code on Windows</a
 >, click
               <span
 class="gui"
 >New folder</span
->, name it
+> and name it
               <code
 class="userinput"
 >scaly-tutorial</code
->, and pick it. Click
-              <span
+>. Double-click
+              <code
+class="filename"
+>scaly-tutorial</code
+>, so that the dialog shows
+              its inside, and click <span
 class="gui"
 >Select Folder</span
 >.</p
