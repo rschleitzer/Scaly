@@ -3611,6 +3611,34 @@ define Emitter
             Planner.is_unit_type((*last).result_type)
         }
 
+        ; Is the tuple a GROUPING of a value of its own type -- one component
+        ; without a label whose last operand the planner typed as the tuple?
+        ; `(g)` is one, and every embedded expression of an interpolated
+        ; string is written so (`append((g))`).
+        function groups_own_type(tuple: PlannedTuple) returns bool
+        {
+            if tuple.components = null
+                return false
+            if tuple.components.length <> 1
+                return false
+            let c0 tuple.components.get 0
+            if c0 = null
+                return false
+            if (*c0).name <> null
+                return false
+            let ops (*c0).value
+            if ops = null
+                return false
+            let v (*ops)
+            if v.length = 0
+                return false
+            let last v.get(v.length - 1)
+            if last = null
+                return false
+            let t (*last).result_type
+            t.mangled_name.get_length() > 0 and t.mangled_name = tuple.tuple_type.mangled_name
+        }
+
         procedure map_type(mutable this, planned_type: PlannedType) returns LLVMTypeRef
         {
             ; `()` held as a value has no bytes: the empty struct. Until
@@ -16007,6 +16035,24 @@ define Emitter
                                         return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
                                     return tuple_ptr
                                 }
+                            }
+
+                            ; ★The same record held through a POINTER that is no
+                            ; alloca: a `var` bound to a call result answered
+                            ; through an sret slot is `%g = alloca ptr` holding
+                            ; the slot's address, and `(g)` -- every embedded
+                            ; expression of an interpolated string -- stored that
+                            ; ADDRESS into field 0 (a Slice's length) at rc 0, a
+                            ; SIGSEGV in the append (2026-10-31; gate
+                            ; grouped_var_call_result). The planner says the
+                            ; component IS a value of the tuple's type; load it.
+                            if LLVMGetTypeKind(cv0_ty) = LLVMTypeKind.Pointer() and Emitter.groups_own_type(tuple)
+                            {
+                                let gval LLVMBuildLoad2(builder, struct_type, cv0, "grouped.load")
+                                LLVMBuildStore(builder, gval, tuple_ptr)
+                                if tuple.is_region_alloc = false
+                                    return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
+                                return tuple_ptr
                             }
 
                             ; Array→Vector convert (manual): cv is an Array

@@ -1,0 +1,31 @@
+; A `var` bound to a call result that comes back through an sret slot
+; holds the slot's ADDRESS (`%g = alloca ptr`). Grouped -- `(g)`, which is
+; how an interpolated string writes every embedded expression -- the tuple
+; stored that address into field 0, a Slice's length: `show((g))` read a
+; length of several billion and `print "`g`!"` died in the append (SIGSEGV,
+; rc 139). Found writing the tutorial's greet.scaly, whose
+; `var greeting os.environment_variable("GREETING")` is the shape.
+; Emitter.groups_own_type#, 2026-10-31.
+; Expected: PASS
+function length_of(s: Slice[u8]) returns size_t
+    s.length
+
+var unset os.environment_variable("SCALY_REGRESS_NEVER_SET")
+var set_later os.environment_variable("SCALY_REGRESS_NEVER_SET")
+if set_later.length = 0
+    set_later := "Hello"
+
+var ok true
+if length_of((unset)) <> 0
+    ok := false
+if length_of((set_later)) <> 5
+    ok := false
+if "`set_later`, Ada!" <> "Hello, Ada!"
+    ok := false
+if "[`unset`]" <> "[]"
+    ok := false
+
+if ok
+    print "PASS"
+else
+    print "FAIL"
