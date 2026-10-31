@@ -1658,54 +1658,11 @@ class="listing"
 > go to the
         program.</p
 ><p
->A <code
-class="filename"
->launch.json</code
-> may hold several
-        configurations; the drop-down at the top of the
-        <span
-class="gui"
->Run and Debug</span
-> view chooses the one
-        <kbd
->F5</kbd
-> starts. Here the first builds
-        <code
-class="filename"
->greet.scaly</code
-> and runs it with two arguments, a
-        variable in its environment and the workspace folder as its working
-        directory; the second debugs a program that is already built — with
-        <code
-class="userinput"
->scaly build -g</code
->, or there are no line tables for
-        a breakpoint to bind to:</p
-><pre
-class="listing"
-><code
->{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "scaly",
-            "request": "launch",
-            "name": "Debug greet with arguments",
-            "source": "${workspaceFolder}/greet.scaly",
-            "args": ["Ada", "Grace"],
-            "env": { "GREETING": "Hello" },
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "scaly",
-            "request": "launch",
-            "name": "Debug the built server",
-            "program": "${workspaceFolder}/build/server",
-            "args": ["--port", "8080"]
-        }
-    ]
-}</code
-></pre
+><a
+href="#tut-vscode-args"
+>Arguments and the Environment</a
+> shows a configuration with
+        arguments and an environment.</p
 ></section
 ><section
 id="tut-vscode-breakpoints-setting"
@@ -1948,6 +1905,157 @@ href="#tut-functions"
         <a
 href="#tut-procedures"
 >Procedures and Mutation</a
+>.</p
+></section
+><section
+id="tut-vscode-args"
+><h3
+><a
+class="header"
+href="#tut-vscode-args"
+>Arguments and the Environment</a
+></h3
+><p
+>Put this program in <code
+class="filename"
+>greet.scaly</code
+> in your
+        workspace folder. It greets everyone named on its command line, with
+        the greeting the environment variable <code
+class="envar"
+>GREETING</code
+> holds,
+        and <q
+>Hello</q
+> where there is none:</p
+><pre
+class="listing"
+><code
+>procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var greeting os.environment_variable("GREETING")
+    if greeting.length = 0
+        greeting := "Hello"
+    var i 1
+    while i &#60; argc
+    {
+        let name String(argv[i])
+        print "`greeting`, `name`!"
+        i := i + 1
+    }
+    0
+}</code
+></pre
+><p
+>A program that wants its command line declares a procedure
+        <code
+>main</code
+>: <code
+>argc</code
+> counts the arguments, the
+        program's own name included, and <code
+>argv[i]</code
+> is the
+        <code
+>i</code
+>-th of them. <code
+>os.environment_variable</code
+>
+        reads a variable of the environment, and is empty where it is not
+        set. In a terminal:</p
+><pre
+class="screen"
+><code
+>$ GREETING=Hi scaly run greet.scaly Ada Grace
+Hi, Ada!
+Hi, Grace!</code
+></pre
+><p
+>Under the debugger, the arguments and the environment come from
+        <code
+class="filename"
+>.vscode/launch.json</code
+> (<a
+href="#tut-vscode-launch"
+>Starting the Debugger</a
+> says how to create one). A
+        <code
+class="filename"
+>launch.json</code
+> may hold several configurations; the
+        drop-down at the top of the <span
+class="gui"
+>Run and Debug</span
+> view
+        chooses the one <kbd
+>F5</kbd
+> starts. Here the first builds
+        <code
+class="filename"
+>greet.scaly</code
+> and runs it with two arguments, a
+        variable in its environment and the workspace folder as its working
+        directory; the second debugs a program that is already built — with
+        <code
+class="userinput"
+>scaly build -g</code
+>, or there are no line tables for
+        a breakpoint to bind to:</p
+><pre
+class="listing"
+><code
+>{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "scaly",
+            "request": "launch",
+            "name": "Debug greet with arguments",
+            "source": "${workspaceFolder}/greet.scaly",
+            "args": ["Ada", "Grace"],
+            "env": { "GREETING": "Hello" },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "scaly",
+            "request": "launch",
+            "name": "Debug the built server",
+            "program": "${workspaceFolder}/build/server",
+            "args": ["--port", "8080"]
+        }
+    ]
+}</code
+></pre
+><p
+>Choose <span
+class="gui"
+>Debug greet with arguments</span
+> in the
+        drop-down, set a breakpoint on the <code
+>print</code
+> line and press
+        <kbd
+>F5</kbd
+>. The program stops there with <code
+>name</code
+>
+        <code
+class="computeroutput"
+>"Ada"</code
+> in the
+        <span
+class="gui"
+>Variables</span
+> pane; <kbd
+>F5</kbd
+> runs the next
+        round, with <code
+class="computeroutput"
+>"Grace"</code
+>. What the program
+        prints appears in the <span
+class="gui"
+>Debug Console</span
 >.</p
 ></section
 ><section
@@ -2751,30 +2859,74 @@ class="gui"
 ></ol
 ></section
 ><section
-id="tut-windows-vscode-launch"
+id="tut-windows-vscode-args"
 ><h4
 ><a
 class="header"
-href="#tut-windows-vscode-launch"
->A Debug Configuration of Your Own</a
+href="#tut-windows-vscode-args"
+>Arguments and the Environment</a
 ></h4
 ><p
->Arguments, an environment or a program built beforehand go into
-          a <code
+>A program that is started with arguments and an environment
+          gets them under the debugger from a
+          <code
 class="filename"
 >.vscode\launch.json</code
->. It is written as on the
-          other systems — with <code
->"type": "scaly"</code
->; the Scaly
-          extension hands it to the Visual Studio debugger itself.</p
+>.</p
 ><ol
 ><li
 ><p
->Open <code
+>Create <code
 class="filename"
->area.scaly</code
-> in the editor.</p
+>greet.scaly</code
+> in the folder, as
+              <code
+class="filename"
+>double.scaly</code
+> above, with this program. It
+              greets everyone named on its command line, with the greeting the
+              environment variable <code
+class="envar"
+>GREETING</code
+> holds, and
+              <q
+>Hello</q
+> where there is none:</p
+><pre
+class="listing"
+><code
+>procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var greeting os.environment_variable("GREETING")
+    if greeting.length = 0
+        greeting := "Hello"
+    var i 1
+    while i &#60; argc
+    {
+        let name String(argv[i])
+        print "`greeting`, `name`!"
+        i := i + 1
+    }
+    0
+}</code
+></pre
+><p
+>A program that wants its command line declares a procedure
+              <code
+>main</code
+>: <code
+>argc</code
+> counts the arguments, the
+              program's own name included, and <code
+>argv[i]</code
+> is the
+              <code
+>i</code
+>-th of them. <code
+>os.environment_variable</code
+>
+              reads a variable of the environment, and is empty where it is not
+              set.</p
 ></li
 ><li
 ><p
@@ -2805,55 +2957,20 @@ class="gui"
               choose <span
 class="gui"
 >Scaly</span
->. It writes the file and
-              opens it:</p
-><pre
-class="listing"
-><code
->{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "scaly",
-            "request": "launch",
-            "name": "Debug the open Scaly file",
-            "source": "${file}"
-        }
-    ]
-}</code
-></pre
+>. It writes
+              <code
+class="filename"
+>.vscode\launch.json</code
+> and opens it.</p
 ></li
 ><li
 ><p
->Extend it as you need, and save it. <code
->source</code
-> is
-              built before the launch; <code
->program</code
-> names an
-              <code
-class="filename"
->.exe</code
-> to debug as it is (built with
-              <code
-class="option"
->-g</code
->, or there is nothing for a breakpoint to bind
-              to); <code
->args</code
->, <code
->env</code
-> and <code
->cwd</code
-> go
-              to the program. Here the first configuration builds
-              <code
-class="filename"
->greet.scaly</code
-> and runs it with two arguments,
-              a variable in its environment and the folder as its working
-              directory; the second debugs a program that is already
-              built:</p
+>Replace its content with this and save it
+              (<kbd
+>Ctrl</kbd
+>+<kbd
+>S</kbd
+>):</p
 ><pre
 class="listing"
 ><code
@@ -2872,26 +2989,98 @@ class="listing"
         {
             "type": "scaly",
             "request": "launch",
-            "name": "Debug the built server",
-            "program": "${workspaceFolder}/build/server.exe",
-            "args": ["--port", "8080"]
+            "name": "Debug the open Scaly file",
+            "source": "${file}"
         }
     ]
 }</code
 ></pre
+><p
+>The first configuration builds
+              <code
+class="filename"
+>greet.scaly</code
+> and runs it with two arguments,
+              a variable in its environment and the folder as its working
+              directory. The second is what <kbd
+>F5</kbd
+> did so far:
+              it builds and debugs the file in the editor.</p
 ></li
 ><li
 ><p
->Choose the configuration in the drop-down at the top of the
-              <span
+>Choose <span
 class="gui"
->Run and Debug</span
-> view and press
+>Debug greet with arguments</span
+>
+              in the drop-down at the top of the <span
+class="gui"
+>Run and
+              Debug</span
+> view.</p
+></li
+><li
+><p
+>Open <code
+class="filename"
+>greet.scaly</code
+>, set a breakpoint on
+              the <code
+>print</code
+> line and press <kbd
+>F5</kbd
+>. The
+              program stops there; the <span
+class="gui"
+>Variables</span
+> pane
+              shows <code
+>name</code
+> as
+              <code
+class="computeroutput"
+>"Ada"</code
+>.</p
+></li
+><li
+><p
+>Press <kbd
+>F5</kbd
+>: the next round stops with
+              <code
+class="computeroutput"
+>"Grace"</code
+>. Press
               <kbd
 >F5</kbd
+> once more to run to the end. The
+              <span
+class="gui"
+>Debug Console</span
+> shows
+              <code
+class="computeroutput"
+>Hello, Ada!</code
+> and
+              <code
+class="computeroutput"
+>Hello, Grace!</code
 >.</p
 ></li
 ></ol
+><p
+>A configuration may also debug a program built beforehand:
+          <code
+>"program": "${workspaceFolder}/greet.exe"</code
+> in place of
+          <code
+>source</code
+> runs it as it is (built with
+          <code
+class="option"
+>-g</code
+>, or there is nothing for a breakpoint to bind
+          to).</p
 ></section
 ><section
 id="tut-windows-vscode-limits"
@@ -3668,42 +3857,116 @@ class="gui"
 ></ol
 ></section
 ><section
-id="tut-windows-vs-launch"
+id="tut-windows-vs-args"
 ><h4
 ><a
 class="header"
-href="#tut-windows-vs-launch"
->Arguments and an Environment</a
+href="#tut-windows-vs-args"
+>Arguments and the Environment</a
 ></h4
 ><ol
 ><li
 ><p
->Right-click <code
-class="filename"
->area.exe</code
-> in the
-              <span
+>In the <span
 class="gui"
 >Solution Explorer</span
->, choose <span
+>, right-click
+              the folder at the top, choose <span
 class="gui"
->Add
-              Debug Configuration</span
->, and in the list that opens,
-              <span
+>Add</span
+>
+              &#62; <span
 class="gui"
->Default</span
->. Visual Studio writes
+>New File…</span
+>, name it
               <code
-class="filename"
->.vs\launch.vs.json</code
-> and opens it.</p
+class="userinput"
+>greet.scaly</code
+>, type this program and save
+              it with <kbd
+>Ctrl</kbd
+>+<kbd
+>S</kbd
+>. It greets
+              everyone named on its command line, with the greeting the
+              environment variable <code
+class="envar"
+>GREETING</code
+> holds, and
+              <q
+>Hello</q
+> where there is none:</p
+><pre
+class="listing"
+><code
+>procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var greeting os.environment_variable("GREETING")
+    if greeting.length = 0
+        greeting := "Hello"
+    var i 1
+    while i &#60; argc
+    {
+        let name String(argv[i])
+        print "`greeting`, `name`!"
+        i := i + 1
+    }
+    0
+}</code
+></pre
+><p
+>A program that wants its command line declares a procedure
+              <code
+>main</code
+>: <code
+>argc</code
+> counts the arguments, the
+              program's own name included, and <code
+>argv[i]</code
+> is the
+              <code
+>i</code
+>-th of them. <code
+>os.environment_variable</code
+>
+              reads a variable of the environment, and is empty where it is not
+              set.</p
 ></li
 ><li
 ><p
->Add what the program needs to its entry — here two
-              arguments, the folder as working directory and a variable in the
-              environment — and save it:</p
+>Right-click <code
+class="filename"
+>greet.scaly</code
+> and choose
+              <span
+class="gui"
+>Build</span
+>.</p
+></li
+><li
+><p
+>Right-click <code
+class="filename"
+>greet.exe</code
+>, choose
+              <span
+class="gui"
+>Add Debug Configuration</span
+>, and in the
+              list that opens, <span
+class="gui"
+>Default</span
+>. Visual
+              Studio writes <code
+class="filename"
+>.vs\launch.vs.json</code
+> and opens
+              it.</p
+></li
+><li
+><p
+>Add the arguments, the folder as working directory and a
+              variable in the environment to its entry, and save it:</p
 ><pre
 class="listing"
 ><code
@@ -3713,8 +3976,8 @@ class="listing"
     "configurations": [
         {
             "type": "default",
-            "project": "area.exe",
-            "name": "area.exe",
+            "project": "greet.exe",
+            "name": "greet.exe",
             "args": [ "Ada", "Grace" ],
             "currentDir": "${workspaceRoot}",
             "env": { "GREETING": "Hello" }
@@ -3725,12 +3988,54 @@ class="listing"
 ></li
 ><li
 ><p
->Choose <span
+>Right-click <code
+class="filename"
+>greet.exe</code
+> and choose
+              <span
 class="gui"
->area.exe</span
-> in the drop-down of the
-              start button and press <kbd
+>Set as Startup Item</span
+>. Set a
+              breakpoint on the <code
+>print</code
+> line of
+              <code
+class="filename"
+>greet.scaly</code
+> and press
+              <kbd
 >F5</kbd
+>. The program stops there;
+              <span
+class="gui"
+>Locals</span
+> shows <code
+>name</code
+> as
+              <code
+class="computeroutput"
+>"Ada"</code
+>.</p
+></li
+><li
+><p
+>Press <kbd
+>F5</kbd
+>: the next round stops with
+              <code
+class="computeroutput"
+>"Grace"</code
+>. Press
+              <kbd
+>F5</kbd
+> once more to run to the end; the console
+              window shows <code
+class="computeroutput"
+>Hello, Ada!</code
+> and
+              <code
+class="computeroutput"
+>Hello, Grace!</code
 >.</p
 ></li
 ></ol
