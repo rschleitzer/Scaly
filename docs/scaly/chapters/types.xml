@@ -194,9 +194,9 @@ define Node[T]
 let o Option[int].Some(7)
 choose o
     when v: Some
-        print("got a value")
+        print "got a value"
     else
-        print("empty")
+        print "empty"
       </programlisting>
       <para>For many element types the compiler optimizes
         <literal>Option[T]</literal> to a simple nullable pointer — no space
@@ -504,9 +504,9 @@ function read_file(path: String) returns String throws FileError
       <programlisting>
 try let v read_thing(false)
     when e: NotFound
-        print("not found")
+        print "not found"
     else
-        print("other error")
+        print "other error"
       </programlisting>
       <para>If not all error variants are covered by <literal>when</literal>
         arms, an <literal>else</literal> clause is required.</para>

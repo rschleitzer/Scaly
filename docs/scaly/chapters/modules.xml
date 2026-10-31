@@ -42,7 +42,7 @@ use myprog.shapes.Box
 
 let b Box(3, 4)
 if b.area() = 12
-    print("area is 12")</programlisting>
+    print "area is 12"</programlisting>
     <para>A module may declare child modules of its own. Those live in a
       directory named after the parent module: if
       <filename>compiler.scaly</filename> declares
@@ -440,7 +440,7 @@ use myprog.shapes.*
 
 let b Box(3, 4)              ; Box is visible through the glob
 if b.area() = 12
-    print("glob works")</programlisting>
+    print "glob works"</programlisting>
       <para>Globs are convenient for a module whose types are used
         pervasively. Prefer single-type imports when a file uses only one or
         two names from a module — they document the dependency more

@@ -46,7 +46,7 @@
       <para>A Scaly program is just a file of statements — there is no
         <code>main</code> function to declare and nothing to import. Put this
         single line in a file called <filename>hello.scaly</filename>:</para>
-      <programlisting>print("Hello, World!")</programlisting>
+      <programlisting>print "Hello, World!"</programlisting>
       <para>Run it:</para>
       <programlisting>scaly run hello.scaly</programlisting>
       <para>The program prints:</para>
@@ -135,7 +135,7 @@ scaly> :quit</screen>
 
 let d double(21)
 if d = 42
-    print("doubled!")</programlisting>
+    print "doubled!"</programlisting>
       <para>As you type, the language server is at work. Things to try:</para>
       <itemizedlist>
         <listitem>
@@ -311,9 +311,9 @@ if d = 42
 var height 5
 var area width * height
 if area = 40
-    print("the area is 40")
+    print "the area is 40"
 else
-    print("unexpected area")</programlisting>
+    print "unexpected area"</programlisting>
       <para>Click in the gutter to the left of the
         <code>var area width * height</code> line to set a breakpoint (a red dot
         appears), then press <keycap>F5</keycap>. The program builds and runs,
@@ -362,9 +362,9 @@ var width 8
 var height 5
 var a area(width, height)
 if a = 40
-    print("the area is 40")
+    print "the area is 40"
 else
-    print("unexpected area")</programlisting>
+    print "unexpected area"</programlisting>
       <para>Set a breakpoint on the <code>var a area(width, height)</code> line
         and press <keycap>F5</keycap>. When execution stops there,
         <code>width</code> and <code>height</code> show in the
@@ -518,7 +518,7 @@ else
 
 let d double(21)
 if d = 42
-    print("doubled!")</programlisting>
+    print "doubled!"</programlisting>
             <para>The words <code>function</code>, <code>returns</code> and
               <code>let</code> are coloured: the extension knows the
               file.</para>
@@ -600,9 +600,9 @@ if d = 42
 var height 5
 var area width * height
 if area = 40
-    print("the area is 40")
+    print "the area is 40"
 else
-    print("unexpected area")</programlisting>
+    print "unexpected area"</programlisting>
           </listitem>
           <listitem>
             <para>Click in the gutter to the left of the line number of
@@ -663,9 +663,9 @@ var width 8
 var height 5
 var a area(width, height)
 if a = 40
-    print("the area is 40")
+    print "the area is 40"
 else
-    print("unexpected area")</programlisting>
+    print "unexpected area"</programlisting>
           </listitem>
           <listitem>
             <para>Set a breakpoint on <code>var a area(width, height)</code>
@@ -900,9 +900,9 @@ else
 var height 5
 var area width * height
 if area = 40
-    print("the area is 40")
+    print "the area is 40"
 else
-    print("unexpected area")</programlisting>
+    print "unexpected area"</programlisting>
           </listitem>
         </orderedlist>
       </section>
@@ -1031,9 +1031,9 @@ var width 8
 var height 5
 var a area(width, height)
 if a = 40
-    print("the area is 40")
+    print "the area is 40"
 else
-    print("unexpected area")</programlisting>
+    print "unexpected area"</programlisting>
           </listitem>
           <listitem>
             <para>Right-click it and choose <guimenuitem>Build</guimenuitem>,
@@ -1175,9 +1175,9 @@ print "answer is `answer`, count is `count`"</programlisting>
       <programlisting>; 3 + 4 * 5 is 3 + 20, which is 23 — not 35
 let result 3 + 4 * 5
 if result = 23
-    print("got 23")
+    print "got 23"
 else
-    print("unexpected")</programlisting>
+    print "unexpected"</programlisting>
       <para>Parentheses group explicitly, and an operator written where a value
         is expected acts as a prefix (<code>-x</code>, <code>not done</code>,
         <code>a - -2</code>). A call takes its arguments before the operators
@@ -1326,7 +1326,7 @@ use myprog.shapes.Box        ; or: use myprog.shapes.*
 
 let b Box(3, 4)
 if b.area() = 12
-    print("area is 12")</programlisting>
+    print "area is 12"</programlisting>
       <para>Forgetting the import is caught at compile time, and the error
         states the exact <code>use</code> line to add. The standard library
         needs no imports — it is always visible.</para>
@@ -1363,11 +1363,11 @@ function safe_divide(a: int, b: int) returns Option
 choose result
     when q: Some
         if q = 5
-            print("20 / 4 = 5")
+            print "20 / 4 = 5"
         else
-            print("unexpected quotient")
+            print "unexpected quotient"
     else
-        print("cannot divide by zero")</programlisting>
+        print "cannot divide by zero"</programlisting>
     <para>Put both pieces in <filename>divide.scaly</filename>, then build and
       run it:</para>
     <programlisting>scaly build divide.scaly -o divide
