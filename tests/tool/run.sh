@@ -175,6 +175,16 @@ else
   bad "build: rc=$? $(tail -3 "$TMP/build.log" | tr '\n' ' ')"
 fi
 
+# arguments: os.arguments in a program of top-level statements
+if "$SCALY" build tests/tool/arguments.scaly -o "$TMP/arguments$SCALY_EXE" > "$TMP/arguments.log" 2>&1; then
+  out=$("$TMP/arguments$SCALY_EXE" one "two words" three)
+  [ "$out" = "3: one|two words|three" ] && ok || bad "arguments: got '$out'"
+  out=$("$TMP/arguments$SCALY_EXE")
+  [ "$out" = "0: " ] && ok || bad "arguments, none: got '$out'"
+else
+  bad "arguments: rc=$? $(tail -3 "$TMP/arguments.log" | tr '\n' ' ')"
+fi
+
 # spaced: an output path with a space reaches the linker as ONE argument
 mkdir -p "$TMP/out dir"
 if "$SCALY" build tests/tool/hello.scaly -o "$TMP/out dir/hello$SCALY_EXE" > "$TMP/spaced.log" 2>&1; then
@@ -302,6 +312,8 @@ rc=$?
 if scaly_jit_available 2>/dev/null; then
   out=$("$SCALY" run tests/tool/hello.scaly three 2>&1)
   [ "$out" = "hello three" ] && ok || bad "run: got '$out'"
+  out=$("$SCALY" run tests/tool/arguments.scaly one "two words" three 2>&1)
+  [ "$out" = "3: one|two words|three" ] && ok || bad "run arguments: got '$out'"
   out=$("$SCALY" run tests/tool/globals.scaly 2>&1)
   [ "$out" = "18 7 5" ] && ok || bad "run globals: got '$(echo "$out" | tail -1)'"
   out=$("$SCALY" run tests/tool/delegates.scaly 2>&1)

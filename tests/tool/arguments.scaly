@@ -1,0 +1,15 @@
+; os.arguments: the program's arguments, its own name left out, as views of
+; their text, in a program of top-level statements (whose main has no
+; parameters a source can name) -- the entry hands argc/argv to the runtime
+; (Emitter.hand_over_arguments#). tests/tool/run.sh runs it built and
+; under `scaly run` with `one "two words" three` and wants the line below.
+var line StringBuilder()
+var count 0
+for a in os.arguments()
+{
+    if count > 0
+        line.append "|"
+    line.append a
+    count := count + 1
+}
+print "`count`: `line.to_string()`"

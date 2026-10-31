@@ -1,6 +1,11 @@
 use scaly.memory.runtime
 use scaly.containers.String
 
+; The program's arguments, argv[0] included, as the entry the compiler emits
+; handed them over (scaly_set_arguments, fiber/eio.c and its two siblings).
+function scaly_argument_count() returns size_t extern
+function scaly_argument(index: size_t) returns pointer[const_char] extern
+
 define os
 {
     module Console
@@ -17,6 +22,26 @@ define os
         if v = null
             return Slice[u8](0, null)
         Slice[u8](strlen(v) as size_t, v as pointer[u8])
+    }
+
+    ; The arguments the program was started with, its own name left out, as
+    ; views of their text, which lives as long as the program -- UTF-8 on
+    ; every system (on Windows read from the command line again). Empty in a
+    ; program started with none.
+    procedure arguments() returns Vector[Slice[u8]]
+    {
+        let n scaly_argument_count()
+        if n < 2
+            return Vector[Slice[u8]](0)
+        var all Vector[Slice[u8]](n - 1)
+        var i: size_t 1
+        while i < n
+        {
+            let a scaly_argument(i)
+            all.put(i - 1, Slice[u8](strlen(a) as size_t, a as pointer[u8]))
+            i := i + 1
+        }
+        all
     }
 
     procedure test_direct() returns int

@@ -361,3 +361,24 @@ int scaly_eio_self_path(char* buffer, unsigned long long capacity)
     (void)buffer; (void)capacity;
     return -1;
 }
+
+/* The program's arguments, as in eio.c: WASI hands them to the entry as
+ * UTF-8, which passes them on here. */
+static int scaly_argc_;
+static char** scaly_argv_;
+
+void scaly_set_arguments(long long argc, char** argv)
+{
+    scaly_argc_ = (int)argc;
+    scaly_argv_ = argv;
+}
+
+unsigned long long scaly_argument_count(void)
+{
+    return scaly_argc_ > 0 && scaly_argv_ ? (unsigned long long)scaly_argc_ : 0;
+}
+
+const char* scaly_argument(unsigned long long index)
+{
+    return index < scaly_argument_count() ? scaly_argv_[index] : 0;
+}

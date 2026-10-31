@@ -8165,8 +8165,14 @@ define Emitter
                     let main_func LLVMGetNamedFunction(llvm_module, main_name.c_data())
                     if main_func = null
                     {
+                        ; main(argc, argv) of C: the program's statements do
+                        ; not name them, hand_over_arguments# passes them to
+                        ; the runtime for os.arguments
                         let i32_type LLVMInt32TypeInContext(context)
-                        let main_type LLVMFunctionType(i32_type, null as pointer[LLVMTypeRef], 0, 0)
+                        var main_params Vector[LLVMTypeRef](2)
+                        main_params.put(0, i32_type)
+                        main_params.put(1, LLVMPointerTypeInContext(context, 0))
+                        let main_type LLVMFunctionType(i32_type, main_params.data, 2, 0)
                         let new_main LLVMAddFunction(llvm_module, main_name.c_data(), main_type)
                         current_function := new_main
                         reset_temp_pool()
@@ -8258,6 +8264,7 @@ define Emitter
             let stamp_main LLVMGetNamedFunction(llvm_module, "main" as pointer[const_char])
             if stamp_main <> null and LLVMIsDeclaration(stamp_main) = 0
             {
+                this.hand_over_arguments(stamp_main)
                 emit_build_stamp()
                 if target_is_coff
                     this.emit_stdio_binary_ctor()
@@ -8333,6 +8340,47 @@ define Emitter
                 u := LLVMGetNextUse(u)
             }
             null
+        }
+
+        ; A program's main hands its arguments to the runtime before anything
+        ; else runs -- `scaly_set_arguments(argc, argv)`, the C shims beside
+        ; eio (eio_windows.c reads them again as UTF-8) --, so os.arguments
+        ; answers them in every program, its statements written at top level
+        ; or in a main of its own. A main without parameters has none to hand.
+        ; Run on the module's main before name_wasm_entry renames it, and for
+        ; the JIT, which calls main with the program's arguments too.
+        procedure hand_over_arguments(mutable this, mutable main_fn: LLVMValueRef)
+        {
+            if LLVMCountParams(main_fn) < 2
+                return
+            if LLVMGetTypeKind(LLVMTypeOf(LLVMGetParam(main_fn, 0))) <> LLVMTypeKind.Integer()
+                return
+            if LLVMGetTypeKind(LLVMTypeOf(LLVMGetParam(main_fn, 1))) <> LLVMTypeKind.Pointer()
+                return
+            let entry_block LLVMGetFirstBasicBlock(main_fn)
+            if entry_block = null
+                return
+            let first LLVMGetFirstInstruction(entry_block)
+            if first = null
+                return
+            let i64_ty LLVMInt64TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var ptys Vector[LLVMTypeRef](2)
+            ptys.put(0, i64_ty)
+            ptys.put(1, ptr_ty)
+            let fty LLVMFunctionType(LLVMVoidTypeInContext(context), ptys.data, 2, 0)
+            var callee LLVMGetNamedFunction(llvm_module, "scaly_set_arguments" as pointer[const_char])
+            if callee = null
+                callee := LLVMAddFunction(llvm_module, "scaly_set_arguments" as pointer[const_char], fty)
+            LLVMPositionBuilderBefore(builder, first)
+            clear_debug_location()
+            var argc LLVMGetParam(main_fn, 0)
+            if LLVMGetIntTypeWidth(LLVMTypeOf(argc)) < 64
+                argc := LLVMBuildSExt(builder, argc, i64_ty, "argc" as pointer[const_char])
+            var args Vector[LLVMValueRef](2)
+            args.put(0, argc)
+            args.put(1, LLVMGetParam(main_fn, 1))
+            LLVMBuildCall2(builder, fty, callee, args.data, 2, "" as pointer[const_char])
         }
 
         ; WASI's start code calls `__main_void`, which libc defines weakly to

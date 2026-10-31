@@ -2174,3 +2174,28 @@ int scaly_eio_is_symlink(const char* path)
     struct stat st;
     return lstat(path, &st) == 0 && S_ISLNK(st.st_mode) ? 1 : 0;
 }
+
+/* The program's arguments, argv[0] included: the entry the compiler emits
+ * for a program hands them over first (scaly_set_arguments), os.arguments
+ * reads them. Shim rule (a): on Windows the text comes from GetCommandLineW
+ * as UTF-8 (eio_windows.c), and one seed serves every target, so all three
+ * targets answer the same three functions. Set once, before anything runs;
+ * argc arrives as a C int in a 64-bit register, hence the cast. */
+static int scaly_argc_;
+static char** scaly_argv_;
+
+void scaly_set_arguments(long long argc, char** argv)
+{
+    scaly_argc_ = (int)argc;
+    scaly_argv_ = argv;
+}
+
+unsigned long long scaly_argument_count(void)
+{
+    return scaly_argc_ > 0 && scaly_argv_ ? (unsigned long long)scaly_argc_ : 0;
+}
+
+const char* scaly_argument(unsigned long long index)
+{
+    return index < scaly_argument_count() ? scaly_argv_[index] : 0;
+}

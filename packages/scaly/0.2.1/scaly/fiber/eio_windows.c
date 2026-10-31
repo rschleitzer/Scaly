@@ -2134,6 +2134,147 @@ void scaly_jit_use_arena(void* builder)
         set(builder, scaly_jit_layer, NULL);
 }
 
+/* The program's arguments, argv[0] included (eio.c has the contract). The
+ * C runtime's argv is in the ANSI code page, so where the entry hands over
+ * the process's own arguments (__argv) they are read again from
+ * GetCommandLineW, split by the C runtime's own rules, as UTF-8 -- and
+ * written back into that argv, so that a main's own parameters read UTF-8
+ * too (the tool hands them on to a program it runs). An argv that is not
+ * the process's -- `scaly run` handing a program its arguments -- is taken
+ * as it is: it came from one converted here. Rule (a): GetCommandLineW. */
+static int scaly_argc_;
+static char** scaly_argv_;
+
+static char* scaly_utf8_of(const wchar_t* w, int n)
+{
+    int len = WideCharToMultiByte(CP_UTF8, 0, w, n, NULL, 0, NULL, NULL);
+    char* s = (char*)malloc((size_t)len + 1);
+    if (!s)
+        return NULL;
+    WideCharToMultiByte(CP_UTF8, 0, w, n, s, len, NULL, NULL);
+    s[len] = 0;
+    return s;
+}
+
+/* Split a command line as the C runtime does ("Parsing C command-line
+ * arguments" on Microsoft Learn): argv[0] runs to the first blank outside
+ * quotes, the quotes removed, nothing escaped; after it, 2n backslashes
+ * before a quote are n backslashes and the quote opens or closes, 2n+1 are
+ * n and a literal quote, "" inside quotes is a literal quote, and other
+ * backslashes stand. Writes at most max pieces; answers how many there
+ * were, -1 without memory. */
+static int scaly_split_command_line(const wchar_t* p, char** out, int max)
+{
+    wchar_t* buf = (wchar_t*)malloc((wcslen(p) + 1) * sizeof(wchar_t));
+    int count = 0;
+    int n = 0, quoted = 0;
+    if (!buf)
+        return -1;
+    while (*p && (quoted || (*p != L' ' && *p != L'\t')))
+    {
+        if (*p == L'"')
+            quoted = !quoted;
+        else
+            buf[n++] = *p;
+        p++;
+    }
+    if (count < max)
+        out[count] = scaly_utf8_of(buf, n);
+    count++;
+    for (;;)
+    {
+        while (*p == L' ' || *p == L'\t')
+            p++;
+        if (!*p)
+            break;
+        n = 0;
+        quoted = 0;
+        while (*p && (quoted || (*p != L' ' && *p != L'\t')))
+        {
+            if (*p == L'\\')
+            {
+                size_t k = 0, j;
+                while (*p == L'\\')
+                {
+                    k++;
+                    p++;
+                }
+                if (*p == L'"')
+                {
+                    for (j = 0; j < k / 2; j++)
+                        buf[n++] = L'\\';
+                    if (k % 2)
+                    {
+                        buf[n++] = L'"';
+                        p++;
+                    }
+                }
+                else
+                {
+                    for (j = 0; j < k; j++)
+                        buf[n++] = L'\\';
+                }
+                continue;
+            }
+            if (*p == L'"')
+            {
+                if (quoted && p[1] == L'"')
+                {
+                    buf[n++] = L'"';
+                    p += 2;
+                }
+                else
+                {
+                    quoted = !quoted;
+                    p++;
+                }
+                continue;
+            }
+            buf[n++] = *p++;
+        }
+        if (count < max)
+            out[count] = scaly_utf8_of(buf, n);
+        count++;
+    }
+    free(buf);
+    return count;
+}
+
+void scaly_set_arguments(long long argc, char** argv)
+{
+    scaly_argc_ = (int)argc;
+    scaly_argv_ = argv;
+    if (argv && argv == __argv && scaly_argc_ == __argc)
+    {
+        const wchar_t* cmd = GetCommandLineW();
+        int most = (int)(wcslen(cmd) / 2 + 2);
+        char** parts = (char**)calloc((size_t)most, sizeof(char*));
+        if (parts)
+        {
+            int n = scaly_split_command_line(cmd, parts, most);
+            int i, complete = n == scaly_argc_;
+            for (i = 0; complete && i < n; i++)
+                if (!parts[i])
+                    complete = 0;
+            /* the pieces stay for the process's life where they are used */
+            if (complete)
+                for (i = 0; i < n; i++)
+                    argv[i] = parts[i];
+            free(parts);
+        }
+    }
+}
+
+unsigned long long scaly_argument_count(void)
+{
+    return scaly_argc_ > 0 && scaly_argv_ ? (unsigned long long)scaly_argc_ : 0;
+}
+
+const char* scaly_argument(unsigned long long index)
+{
+    return index < scaly_argument_count() ? scaly_argv_[index] : 0;
+}
+
 #else
 typedef int scaly_eio_win_not_needed_on_this_target;
 #endif /* _WIN32 */
