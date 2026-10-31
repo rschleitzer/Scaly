@@ -2,9 +2,10 @@
   "name": "scaly",
   "displayName": "Scaly",
   "description": "Scaly language support: the scalyls language server, run/build/test tasks, and debugging through lldb-dap (on Windows the Visual Studio debugger)",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "publisher": "scaly",
   "license": "MIT",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/rschleitzer/Scaly.git",
