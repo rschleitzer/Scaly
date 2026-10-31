@@ -311,9 +311,9 @@
 	%db.common.attributes;
 	%db.common.linking.attributes;
 	spacing	(compact|normal)	#IMPLIED
-	continuation	(continues|restarts)	#IMPLIED
+	continuation	(continues|restarts)	"restarts"
 	startingnumber	NMTOKEN	#IMPLIED
-	inheritnum	(ignore|inherit)	#IMPLIED
+	inheritnum	(ignore|inherit)	"ignore"
 	numeration	(arabic|upperalpha|loweralpha|upperroman|lowerroman)	#IMPLIED
 
 >
