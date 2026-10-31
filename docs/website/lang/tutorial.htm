@@ -1931,38 +1931,21 @@ class="envar"
 ><pre
 class="listing"
 ><code
->procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
-{
-    var greeting os.environment_variable("GREETING")
-    if greeting.length = 0
-        greeting := "Hello"
-    var i 1
-    while i &#60; argc
-    {
-        let name String(argv[i])
-        print "`greeting`, `name`!"
-        i := i + 1
-    }
-    0
-}</code
+>var greeting os.environment_variable("GREETING")
+if greeting.length = 0
+    greeting := "Hello"
+for name in os.arguments()
+    print "`greeting`, `name`!"</code
 ></pre
 ><p
->A program that wants its command line declares a procedure
+><code
+>os.arguments()</code
+> answers the arguments the program
+        was started with, its own name left out;
         <code
->main</code
->: <code
->argc</code
-> counts the arguments, the
-        program's own name included, and <code
->argv[i]</code
-> is the
-        <code
->i</code
->-th of them. <code
 >os.environment_variable</code
->
-        reads a variable of the environment, and is empty where it is not
-        set. In a terminal:</p
+> reads a variable of the
+        environment, and is empty where it is not set. In a terminal:</p
 ><pre
 class="screen"
 ><code
@@ -2895,38 +2878,21 @@ class="envar"
 ><pre
 class="listing"
 ><code
->procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
-{
-    var greeting os.environment_variable("GREETING")
-    if greeting.length = 0
-        greeting := "Hello"
-    var i 1
-    while i &#60; argc
-    {
-        let name String(argv[i])
-        print "`greeting`, `name`!"
-        i := i + 1
-    }
-    0
-}</code
+>var greeting os.environment_variable("GREETING")
+if greeting.length = 0
+    greeting := "Hello"
+for name in os.arguments()
+    print "`greeting`, `name`!"</code
 ></pre
 ><p
->A program that wants its command line declares a procedure
+><code
+>os.arguments()</code
+> answers the arguments the program
+              was started with, its own name left out;
               <code
->main</code
->: <code
->argc</code
-> counts the arguments, the
-              program's own name included, and <code
->argv[i]</code
-> is the
-              <code
->i</code
->-th of them. <code
 >os.environment_variable</code
->
-              reads a variable of the environment, and is empty where it is not
-              set.</p
+> reads a variable of the
+              environment, and is empty where it is not set.</p
 ></li
 ><li
 ><p
@@ -3899,38 +3865,21 @@ class="envar"
 ><pre
 class="listing"
 ><code
->procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
-{
-    var greeting os.environment_variable("GREETING")
-    if greeting.length = 0
-        greeting := "Hello"
-    var i 1
-    while i &#60; argc
-    {
-        let name String(argv[i])
-        print "`greeting`, `name`!"
-        i := i + 1
-    }
-    0
-}</code
+>var greeting os.environment_variable("GREETING")
+if greeting.length = 0
+    greeting := "Hello"
+for name in os.arguments()
+    print "`greeting`, `name`!"</code
 ></pre
 ><p
->A program that wants its command line declares a procedure
+><code
+>os.arguments()</code
+> answers the arguments the program
+              was started with, its own name left out;
               <code
->main</code
->: <code
->argc</code
-> counts the arguments, the
-              program's own name included, and <code
->argv[i]</code
-> is the
-              <code
->i</code
->-th of them. <code
 >os.environment_variable</code
->
-              reads a variable of the environment, and is empty where it is not
-              set.</p
+> reads a variable of the
+              environment, and is empty where it is not set.</p
 ></li
 ><li
 ><p
