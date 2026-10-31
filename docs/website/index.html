@@ -151,6 +151,13 @@
             font-size: 0.9375rem;
         }
 
+        .project-slogan {
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
         .project-tag {
             display: inline-block;
             margin-top: 12px;
@@ -371,6 +378,19 @@
         <section class="projects">
             <span class="section-label">Built with Scaly</span>
 
+            <div class="project-card">
+                <a href="https://github.com/rschleitzer/dazzle" style="text-decoration: none; color: inherit;">
+                    <div class="project-header">
+                        <span class="project-name">dazzle</span>
+                        <span class="project-arrow">→</span>
+                    </div>
+                    <p class="project-slogan">Document typesetting and transformation at dazzling speed — on macOS, Windows and Linux, and even in the browser, with WebAssembly, as you type. Try it right here!</p>
+                    <p class="project-desc">OpenSP and OpenJade, the SGML parser and the DSSSL engine, ported from C++ — with a PDF backend of its own. This site's documentation is set with it.</p>
+                </a>
+                <a href="play/dazzle/" class="project-tag" style="text-decoration: none;">Try it right here</a>
+                <span class="project-tag">Document Processing</span>
+            </div>
+
             <a href="https://github.com/rschleitzer/tscaly" class="project-card">
                 <div class="project-header">
                     <span class="project-name">tscaly</span>
@@ -388,18 +408,6 @@
                 <p class="project-desc">A FHIR R5 server generated from HL7's definitions, a drop-in for its C# counterpart on the same database: 1.4 to 1.9 times fewer instructions for a read, a tenth of the memory.</p>
                 <span class="project-tag">Healthcare</span>
             </a>
-
-            <div class="project-card">
-                <a href="https://github.com/rschleitzer/dazzle" style="text-decoration: none; color: inherit;">
-                    <div class="project-header">
-                        <span class="project-name">dazzle</span>
-                        <span class="project-arrow">→</span>
-                    </div>
-                    <p class="project-desc">OpenSP and OpenJade, the SGML parser and the DSSSL engine, ported from C++ — with a PDF backend of its own, and running in a web page as WebAssembly. This site's documentation is set with it.</p>
-                </a>
-                <a href="play/dazzle/" class="project-tag" style="text-decoration: none;">Try it in the browser</a>
-                <span class="project-tag">Document Processing</span>
-            </div>
 
             <a href="https://github.com/rschleitzer/pdf" class="project-card">
                 <div class="project-header">
