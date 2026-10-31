@@ -15,8 +15,25 @@ let client: LanguageClient | undefined;
 // The extension's own directory: the formatters it carries (lldb/scaly.py).
 let extensionPath = "";
 
-// Where the scaly.io installer drops the server wrapper.
-const INSTALLED_SERVER = path.join(os.homedir(), ".scaly", "bin", "scalyls");
+// Where the scaly.io installer puts a program, for a VS Code that does not see
+// the PATH the installer extended: on macOS and Linux the commands in
+// ~/.scaly/bin; on Windows the programs themselves in
+// %USERPROFILE%\.scaly\toolchain\libexec (install.ps1). A VS Code started by
+// its own setup inherits the environment of the browser the setup came from,
+// which was running before Scaly was installed.
+function installedProgram(name: string): string | undefined {
+  const home = path.join(os.homedir(), ".scaly");
+  const candidates =
+    process.platform === "win32"
+      ? [path.join(home, "toolchain", "libexec", name + ".exe"), path.join(home, "bin", name + ".exe")]
+      : [path.join(home, "bin", name)];
+  return candidates.find(fileIsExecutable);
+}
+
+const INSTALL_COMMAND =
+  process.platform === "win32"
+    ? "'irm https://scaly.io/install.ps1 | iex' in PowerShell"
+    : "'curl -fsSL https://scaly.io/install.sh | sh'";
 
 // True if `name` resolves on PATH (cheap: scan PATH for an executable file).
 // On Windows a program is found by its name with an extension of PATHEXT
@@ -44,7 +61,7 @@ function fileIsExecutable(p: string): boolean {
 
 // Resolve the scalyls binary: explicit setting wins; otherwise prefer `scalyls`
 // on PATH (the installer's wrapper, which sets SCALY_HOME itself), then fall
-// back to the default install location ~/.scaly/bin/scalyls.
+// back to the installer's location (installedProgram#).
 function resolveServerPath(): string {
   const configured = vscode.workspace
     .getConfiguration("scaly")
@@ -56,10 +73,7 @@ function resolveServerPath(): string {
   if (onPath("scalyls")) {
     return "scalyls";
   }
-  if (fileIsExecutable(INSTALLED_SERVER)) {
-    return INSTALLED_SERVER;
-  }
-  return configured.length > 0 ? configured : "scalyls";
+  return installedProgram("scalyls") ?? (configured.length > 0 ? configured : "scalyls");
 }
 
 // SCALY_HOME for the server (prelude/stdlib root). Explicit setting wins. Then,
@@ -89,7 +103,7 @@ function buildClient(): LanguageClient {
   if (!onPath(serverPath)) {
     void vscode.window.showErrorMessage(
       `Scaly: language server '${serverPath}' not found. Install it with ` +
-        `'curl -fsSL https://scaly.io/install.sh | sh', or set 'scaly.server.path'.`
+        `${INSTALL_COMMAND}, or set 'scaly.server.path'.`
     );
   }
 
@@ -390,8 +404,7 @@ function resolveToolPath(): string {
   if (onPath("scaly")) {
     return "scaly";
   }
-  const installed = path.join(os.homedir(), ".scaly", "bin", "scaly");
-  return fileIsExecutable(installed) ? installed : "scaly";
+  return installedProgram("scaly") ?? "scaly";
 }
 
 function scalyTask(
@@ -528,11 +541,7 @@ function resolveCompilerPath(): string {
   if (onPath("scalyc")) {
     return "scalyc";
   }
-  const installed = path.join(os.homedir(), ".scaly", "bin", "scalyc");
-  if (fileIsExecutable(installed)) {
-    return installed;
-  }
-  return "scalyc";
+  return installedProgram("scalyc") ?? "scalyc";
 }
 
 // One reused terminal, so running a file repeatedly does not pile up panels.
