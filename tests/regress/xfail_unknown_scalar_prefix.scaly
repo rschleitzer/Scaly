@@ -1,0 +1,11 @@
+; Regression (2026-11-01): a prefix operator no scalar has reached the
+; emitter, which stopped with exit 14 and no file or line.
+;
+; xfail: no prefix operator ~~ on int
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let z ~~ 5
+    print "FAIL\n"
+    0
+}

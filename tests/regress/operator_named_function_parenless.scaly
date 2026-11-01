@@ -1,0 +1,26 @@
+; Regression (2026-11-01): a function named with operator characters and
+; called without parentheses -- `++ 41` with `function ++(n: int)`. The old
+; collapse's parenless step took only a head that is NO operator name as
+; callable, by its shape, so the call fell through: `let b: int ++ 41` bound
+; nothing and the routine returned 0, at rc 0, and an untyped `let a ++ 41`
+; became a binding of the "type" ++. collapse_prefix# already knew that such
+; a name declared a function and no operator is that function.
+
+function ++(n: int) returns int
+    n + 1
+
+function 'add seven'(n: int) returns int
+    n + 7
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let a ++ 41
+    let b: int ++41
+    let c ++(41)
+    let d 1 + ++(41)
+    let e 'add seven' 35
+    if a <> 42 or b <> 42 or c <> 42 or d <> 43 or e <> 42
+        return 1
+    print "PASS\n"
+    0
+}

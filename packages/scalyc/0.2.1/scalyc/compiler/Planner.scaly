@@ -14863,6 +14863,9 @@ define Planner
                             rt := (*rt_ref)
                         if rt_ref = null
                         {
+                            ; a prefix no scalar has (`~~ 5`) reached the
+                            ; emitter, exit 14 without a line
+                            this.report_unknown_scalar_prefix(prefix_name, rest_result.result_type, result.loc)
                             if prefix_name = "!"
                                 rt := Planner.make_bool_type()
                             ; `not` on a SIMD mask is lane-wise and stays a mask
@@ -15266,6 +15269,13 @@ define Planner
                             if ht.name.get_length() > 0
                             {
                                 if Planner.is_operator_name(ht.name) = false
+                                    head_is_callable := true
+                                ; ... and so is a name of operator characters
+                                ; declared a function and no operator (`++ 41`
+                                ; with `function ++`): the shape alone made it
+                                ; uncallable, and the binding was dropped at
+                                ; rc 0 (2026-11-01)
+                                if Planner.is_operator_name(ht.name) and this.is_function(ht.name) and this.is_operator(ht.name) = false
                                     head_is_callable := true
                             }
                         }
@@ -37425,6 +37435,26 @@ define Planner
                 else
                     return
             this.add_diagnostic(next.loc, String^this("a function a call answers is called through a name: bind it first (let f make_adder(5)), then call f(2)"))
+        }
+
+        ; A prefix operator on a scalar that has none of that name: the
+        ; emitter lowers the ones below and stopped with exit 14 and no line
+        ; for any other (`~~ 5`, 2026-11-01). The names are
+        ; emit_intrinsic_unary_op#'s.
+        procedure report_unknown_scalar_prefix(mutable this: Planner, op_name: String, operand: PlannedType, at: Span)
+        {
+            if Planner.is_value_scalar_name(operand.name) = false
+                return
+            match op_name
+                case "-" case "+" case "abs" case "!" case "not" case "~" case "*" case "&": return
+                else 0
+            var sb StringBuilder()
+            sb.append "no prefix operator "
+            sb.append op_name
+            sb.append " on "
+            sb.append operand.name
+            let msg sb.to_string()
+            this.add_diagnostic(at, String^this(msg))
         }
 
         ; An operator between two scalars that none of them has: the
