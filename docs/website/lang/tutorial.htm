@@ -1442,6 +1442,76 @@ class="gui"
         Command Palette.</p
 ></section
 ><section
+id="tut-vscode-ai"
+><h3
+><a
+class="header"
+href="#tut-vscode-ai"
+>Writing Scaly with GitHub Copilot</a
+></h3
+><p
+>An AI assistant has seen little Scaly. Left to itself it writes
+        what looks like Rust or Swift, and Scaly differs exactly there:
+        <code
+>=</code
+> compares and <code
+>:=</code
+> assigns,
+        <code
+>not</code
+> negates, a function cannot print. Two things make it
+        write Scaly: a file that teaches it the language, and the compiler,
+        whose messages it reads.</p
+><p
+>Put the language reference for assistants into your folder, in a
+        terminal at the folder's root:</p
+><pre
+class="listing"
+><code
+>mkdir -p .github
+curl -fsSL https://scaly.io/AGENTS.md -o .github/copilot-instructions.md</code
+></pre
+><p
+>GitHub Copilot reads
+        <code
+class="filename"
+>.github/copilot-instructions.md</code
+> with every chat
+        request in this folder. Other assistants read the same text under the
+        name <code
+class="filename"
+>AGENTS.md</code
+> at the folder's root.</p
+><p
+>Open the <span
+class="gui"
+>Chat</span
+> view, set its mode to
+        <span
+class="gui"
+>Agent</span
+>, and say what you want — say, <q
+>Write
+        a Scaly program that counts the words of the files named on its
+        command line, with a test for the counting function.</q
+> In agent
+        mode Copilot writes the files, runs <code
+class="command"
+>scaly run</code
+> and
+        <code
+class="command"
+>scaly test</code
+> in the terminal, and reads the errors
+        the language server reports in the <span
+class="gui"
+>Problems</span
+>
+        panel. Scaly's messages name the line and usually the fix, and
+        Copilot corrects itself from them. Let it run the program and the
+        tests before you accept what it wrote.</p
+></section
+><section
 id="tut-vscode-tasks"
 ><h3
 ><a
@@ -2461,6 +2531,19 @@ href="#tut-vscode-lsp"
           server does. If the squiggle never appears, VS Code did not find
           the language server: close all of its windows and start it
           again.</p
+><p
+>To write Scaly with GitHub Copilot, follow
+          <a
+href="#tut-vscode-ai"
+>Writing Scaly with GitHub Copilot</a
+>; in PowerShell the reference for
+          assistants is fetched with:</p
+><pre
+class="listing"
+><code
+>mkdir -Force .github
+irm https://scaly.io/AGENTS.md -OutFile .github\copilot-instructions.md</code
+></pre
 ></section
 ><section
 id="tut-windows-vscode-tasks"
