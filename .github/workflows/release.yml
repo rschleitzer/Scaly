@@ -12,8 +12,8 @@
 # default ninety days, used it up in five days of October 2026), release
 # assets do not. A run for a version scaly.io has published is refused -- a
 # published version does not change, raise VERSION. The mark is the
-# version's SHA256SUMS-<version>, which stays when its archives are taken
-# down (scaly.io keeps the newest version's archives only).
+# version's SHA256SUMS-<version>, which stays where the archives were taken
+# down (those of 0.1.0 to 0.2.28, which carried no license files).
 #
 # What it makes (the names docs/website/install.sh and install.ps1 ask for):
 #   scaly-<v>-darwin-arm64.tar.gz     macOS 26 (Tahoe) on Apple silicon

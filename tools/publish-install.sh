@@ -117,8 +117,8 @@ fi
 # A published version does not change: its archives are out, installed and
 # cached under their names. What is there already is not replaced -- the next
 # upload is the next version (the VERSION file). The mark is the version's
-# SHA256SUMS-<version>, which stays when its archives are taken down (only
-# the newest version's archives are kept).
+# SHA256SUMS-<version>, which stays where the archives were taken down
+# (those of 0.1.0 to 0.2.28, which carried no license files).
 if [ "$OVERWRITE" = 0 ] && [ "$DRY" = 0 ] && curl -fsSI "https://scaly.io/downloads/SHA256SUMS-$VERSION?t=$(date +%s)" > /dev/null 2>&1; then
   echo "publish-install: FAIL — version $VERSION is published: a published version does not change. Raise the VERSION file (or --overwrite for a botched upload)."
   exit 1
