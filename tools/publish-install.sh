@@ -84,6 +84,14 @@ page = open('docs/website/license/index.html', encoding='utf-8').read()
 m = re.search(r'<pre class="license" id="license-text">(.*?)</pre>', page, re.S)
 sys.exit(0 if m and html.unescape(m.group(1)).strip() == open('LICENSE', encoding='utf-8').read().strip() else 1)
 PY
+# ... and so do both installers, which ask for it to be accepted
+python3 - <<'PY' || { echo "publish-install: FAIL — an installer does not show the text of LICENSE"; exit 1; }
+import re, sys
+lic = open('LICENSE', encoding='utf-8').read().strip()
+sh = re.search(r"<<'LICENSE_TEXT'\n(.*?)\nLICENSE_TEXT\n", open('docs/website/install.sh', encoding='utf-8').read(), re.S)
+ps = re.search(r"\$licenseText = @'\r?\n(.*?)\r?\n'@", open('docs/website/install.ps1', encoding='utf-8').read(), re.S)
+sys.exit(0 if sh and ps and sh.group(1).strip() == lic and ps.group(1).replace('\r\n', '\n').strip() == lic else 1)
+PY
 
 # Build the tarball fresh from the committed seed + stdlib.
 tools/make-dist.sh "$VERSION"

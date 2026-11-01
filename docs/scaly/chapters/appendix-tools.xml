@@ -20,6 +20,12 @@
       <literal>redis</literal> and <literal>h3</literal> — come with it as
       sources; a package is compiled the first time a program uses it and
       kept in <filename>~/.scaly/cache</filename>.</para>
+    <para>Before it fetches anything, the installer shows Scaly's license
+      (MIT, with its disclaimer of warranty) and asks whether you accept it;
+      without that, nothing is installed. Where nobody can answer — a
+      Dockerfile, CI — <userinput>SCALY_ACCEPT_LICENSE=1</userinput> accepts
+      it:</para>
+    <programlisting>curl -fsSL https://scaly.io/install.sh | SCALY_ACCEPT_LICENSE=1 sh</programlisting>
 
     <section xml:id="tools-install-ready">
       <title>Ready to run, or built on your machine</title>

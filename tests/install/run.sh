@@ -7,7 +7,11 @@
 # the tree with SCALY_HOME unset.
 #   payload    the tarball carries the seed and the standard packages and none
 #              of the compiler's, the language server's or the ports' sources
-#   programs   the archive of programs is built, and they load nothing but
+#   license    the installer shows LICENSE and installs nothing without its
+#              acceptance: refused with no terminal to ask on, refused on
+#              "n", goes on on "y" (SCALY_ACCEPT_LICENSE=1 for the rest)
+#   programs   the archive of programs is built, carries LICENSE and
+#              THIRD-PARTY-LICENSES.txt, and the programs load nothing but
 #              the system's own libraries (make-bindist checks it). With
 #              They are built with a profile, made on the way unless
 #              $SCALY_PGO_PROFILE names one (=none: without), and everything
@@ -62,9 +66,62 @@ bad() { fail=$((fail+1)); failures+=("$1"); }
 
 # install <base directory> <log>
 install() {
-  SCALY_PREFIX="$PREFIX" SCALY_INSTALL_BASE="file://$1" SCALY_NO_MODIFY_PATH=1 \
+  SCALY_ACCEPT_LICENSE=1 SCALY_PREFIX="$PREFIX" SCALY_INSTALL_BASE="file://$1" SCALY_NO_MODIFY_PATH=1 \
     sh "$ROOT/docs/website/install.sh" > "$2" 2>&1
 }
+
+# license_run <answer> <log>: the installer without SCALY_ACCEPT_LICENSE,
+# <answer> typed at a terminal of its own when it asks -- or, for `-`, in a
+# session of its own, with no terminal to ask on
+license_run() {
+  env -u SCALY_ACCEPT_LICENSE python3 - "$1" "$2" "$ROOT/docs/website/install.sh" <<'PY'
+import os, pty, sys
+answer, log, script = sys.argv[1:4]
+if answer == '-':
+    pid = os.fork()
+    if pid == 0:
+        os.setsid()
+        fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+        os.dup2(fd, 1); os.dup2(fd, 2)
+        os.execvp('sh', ['sh', script])
+    sys.exit(os.waitstatus_to_exitcode(os.waitpid(pid, 0)[1]))
+pid, master = pty.fork()
+if pid == 0:
+    os.execvp('sh', ['sh', script])
+out, sent = b'', False
+while True:
+    try:
+        data = os.read(master, 4096)
+    except OSError:
+        break
+    if not data:
+        break
+    out += data
+    if not sent and b'[y/N]' in out:
+        os.write(master, answer.encode() + b'\n'); sent = True
+open(log, 'wb').write(out)
+sys.exit(os.waitstatus_to_exitcode(os.waitpid(pid, 0)[1]))
+PY
+}
+
+# license: shown, and nothing installed without acceptance -- refused where
+# there is no terminal, refused on "n"; on "y" the installer goes on (to a
+# base that has nothing, so it stops right after)
+LP="$TMP/prefix-license"
+mkdir -p "$TMP/nothing"
+lic=""
+export SCALY_PREFIX="$LP" SCALY_INSTALL_BASE="file://$TMP/nothing" SCALY_NO_MODIFY_PATH=1
+if license_run - "$TMP/license-none.log"; then lic="$lic no-terminal:rc0"; fi
+grep -q 'there is no terminal to ask on' "$TMP/license-none.log" || lic="$lic no-terminal:message"
+grep -q 'WITHOUT WARRANTY OF ANY KIND' "$TMP/license-none.log" || lic="$lic no-terminal:text"
+if license_run n "$TMP/license-no.log"; then lic="$lic n:rc0"; fi
+grep -q 'the license was not accepted; nothing was installed' "$TMP/license-no.log" || lic="$lic n:message"
+grep -q 'WITHOUT WARRANTY OF ANY KIND' "$TMP/license-no.log" || lic="$lic n:text"
+license_run y "$TMP/license-yes.log"
+grep -q 'scaly-install: the license is accepted' "$TMP/license-yes.log" || lic="$lic y:not-accepted"
+[ -e "$LP" ] && lic="$lic prefix-made"
+unset SCALY_PREFIX SCALY_INSTALL_BASE SCALY_NO_MODIFY_PATH
+[ -z "$lic" ] && ok || bad "license:$lic"
 
 # The toolchain's version is the tree's (the VERSION file); the installer is
 # asked for none and takes what downloads/latest names, as a user's does.
@@ -97,7 +154,11 @@ fi
 
 # programs
 if "$ROOT/tools/make-bindist.sh" "$VER" "$TMP/base/downloads" > "$TMP/bindist.log" 2>&1; then
-  ok
+  # the licenses travel with the programs, also where they are taken alone
+  arch=$(ls "$TMP"/base/downloads/scaly-"$VER"-*.tar.gz | head -1)
+  tar -tzf "$arch" | grep -qx 'LICENSE' && tar -tzf "$arch" | grep -qx 'THIRD-PARTY-LICENSES.txt' \
+    && tar -xzOf "$arch" LICENSE | cmp -s - "$ROOT/LICENSE" \
+    && ok || bad "programs: the archive does not carry LICENSE and THIRD-PARTY-LICENSES.txt"
 else
   bad "programs: make-bindist failed: $(tail -3 "$TMP/bindist.log" | tr '\n' ' ')"
 fi

@@ -1050,6 +1050,20 @@ class="envar"
 class="filename"
 >~/.scaly/cache</code
 >.</p
+><p
+>Before it fetches anything, the installer shows Scaly's license
+      (MIT, with its disclaimer of warranty) and asks whether you accept it;
+      without that, nothing is installed. Where nobody can answer — a
+      Dockerfile, CI — <code
+class="userinput"
+>SCALY_ACCEPT_LICENSE=1</code
+> accepts
+      it:</p
+><pre
+class="listing"
+><code
+>curl -fsSL https://scaly.io/install.sh | SCALY_ACCEPT_LICENSE=1 sh</code
+></pre
 ><section
 id="tools-install-ready"
 ><h3

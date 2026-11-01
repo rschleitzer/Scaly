@@ -203,6 +203,7 @@
 
     <div class="section-label">What the installer does</div>
     <ul class="plain">
+        <li>First it shows Scaly's <a href="../license/">license</a> (MIT, with its disclaimer of warranty) and asks whether you accept it; without that, nothing is installed. Where nobody can answer — a Dockerfile, CI — set <code>SCALY_ACCEPT_LICENSE=1</code> to accept it.</li>
         <li data-all>It installs Scaly into <code>~/.scaly</code> (Windows: <code>%USERPROFILE%\.scaly</code>) and sets the <code>PATH</code> so the tools are found.</li>
         <li data-os="macos linux" data-single>It installs Scaly into <code>~/.scaly</code> and sets the <code>PATH</code> so the tools are found.</li>
         <li data-os="windows" data-single>It installs Scaly into <code>%USERPROFILE%\.scaly</code> and sets the <code>PATH</code> so the tools are found.</li>

@@ -37,7 +37,7 @@ RUN curl -fsSL https://github.com/ngtcp2/ngtcp2/releases/download/v1.25.0/ngtcp2
  && cd / && rm -rf /tmp/ngtcp2-1.25.0
 # Scaly itself, as anyone installs it
 ENV SCALY_VERSION=0.2.25
-RUN curl -fsSL https://scaly.io/install.sh | SCALY_PREFIX=/opt/scaly SCALY_NO_MODIFY_PATH=1 sh
+RUN curl -fsSL https://scaly.io/install.sh | SCALY_ACCEPT_LICENSE=1 SCALY_PREFIX=/opt/scaly SCALY_NO_MODIFY_PATH=1 sh
 ENV PATH=/opt/scaly/bin:$PATH
 # The packages name their C libraries (`extern ssl, crypto`); the tool finds
 # them here, static only, so the runtime image needs nothing beyond the base

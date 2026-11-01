@@ -19,7 +19,12 @@
 # script says so and FETCHES them (winget, or Microsoft's bootstrapper where
 # there is no winget); Windows asks once for administrator rights.
 #
+# Before anything is fetched, the script shows Scaly's license (MIT) and asks
+# whether you accept it; nothing is installed without. Where nobody can
+# answer, SCALY_ACCEPT_LICENSE=1 is the acceptance.
+#
 # Environment overrides:
+#   SCALY_ACCEPT_LICENSE  set to 1 to accept the license without being asked
 #   SCALY_PREFIX          install location            (default %USERPROFILE%\.scaly)
 #   SCALY_VERSION         version to fetch            (default: the newest,
 #                         which <base>/downloads/latest names)
@@ -48,7 +53,61 @@ function Install-Scaly {
     $ErrorActionPreference = 'Stop'
     function Say([string]$m) { Write-Host "scaly-install: $m" }
 
-    $prefix = if ($env:SCALY_PREFIX) { $env:SCALY_PREFIX } else { Join-Path $env:USERPROFILE '.scaly' }
+    # ---- the license, before anything is fetched or changed: it is shown,
+    # and nothing is installed unless it is accepted -- at the prompt, or,
+    # where there is no one to ask (CI, -NonInteractive), by
+    # SCALY_ACCEPT_LICENSE=1. The text is LICENSE's, word for word
+    # (tools/publish-install.sh checks it).
+    $licenseText = @'
+The MIT License (MIT)
+
+Copyright (c) 2016-2026 Ralf Schleitzer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'@
+    $licenseBase = if ($env:SCALY_INSTALL_BASE -and -not (Test-Path $env:SCALY_INSTALL_BASE -PathType Container)) { $env:SCALY_INSTALL_BASE } else { 'https://scaly.io' }
+    Write-Host ""
+    Write-Host "Scaly is distributed under this license:"
+    Write-Host ""
+    foreach ($line in ($licenseText -split "`r?`n")) { Write-Host "    $line" }
+    Write-Host ""
+    Write-Host "The programs also contain third-party software under its own licenses:"
+    Write-Host "$licenseBase/downloads/THIRD-PARTY-LICENSES.txt"
+    Write-Host "Both files are installed with Scaly (LICENSE, THIRD-PARTY-LICENSES.txt)."
+    Write-Host ""
+    if ($env:SCALY_ACCEPT_LICENSE -eq '1') {
+        Say "the license is accepted (SCALY_ACCEPT_LICENSE=1)"
+    } else {
+        $answer = $null
+        try { $answer = Read-Host 'Do you accept the license? [y/N]' } catch { $answer = $null }
+        if ($null -eq $answer) {
+            Say "error: the license must be accepted before Scaly is installed, and there is no one to ask. To accept it, set SCALY_ACCEPT_LICENSE=1:  `$env:SCALY_ACCEPT_LICENSE = '1'; irm $licenseBase/install.ps1 | iex"
+            return
+        }
+        if ($answer.Trim() -notmatch '^(y|yes)$') {
+            Say "the license was not accepted; nothing was installed. (Where nobody can answer, SCALY_ACCEPT_LICENSE=1 accepts it.)"
+            return
+        }
+        Say "the license is accepted"
+    }
+
+    $prefix =if ($env:SCALY_PREFIX) { $env:SCALY_PREFIX } else { Join-Path $env:USERPROFILE '.scaly' }
     $base = if ($env:SCALY_INSTALL_BASE) { $env:SCALY_INSTALL_BASE } else { 'https://scaly.io' }
     # The version: the one asked for, else the newest published -- a version's
     # archives do not change once they are out, so the default must move.

@@ -13,6 +13,7 @@
 #                                       the stdlib's C and assembly files
 #                                       READY-MADE (tools/native-objects.sh):
 #                                       the tool links them and asks no clang
+#   LICENSE, THIRD-PARTY-LICENSES.txt   ours and those of what is linked in
 # The packages and the seed travel in tools/make-dist.sh's tarball, as on
 # macOS and Linux; the zip is unpacked OVER it (the _native directory lands
 # inside the stdlib's).
@@ -150,10 +151,14 @@ deps=$(for p in scalyc scaly scalyls; do llvm-objdump -p "$STAGE/libexec/$p.exe"
        | sort -u | grep -viE '^(KERNEL32|ADVAPI32|SHELL32|ole32|OLEAUT32|ntdll|WS2_32|api-ms-win-crt-[a-z0-9-]*)\.dll$' || true)
 [ -z "$deps" ] || { echo "make-bindist-windows: FAIL — the programs still load:"; echo "$deps"; exit 1; }
 
+# Our license and those of what is linked in (LLVM and others) travel with
+# the programs: an archive taken without the installer carries them too.
+cp LICENSE THIRD-PARTY-LICENSES.txt "$STAGE/"
+
 mkdir -p "$OUT"
 rm -f "$ZIP"
 # Windows' own tar (bsdtar) writes a zip by the name's suffix; Git Bash's does not
 ZIP_W="$(cygpath -w "$(cd "$OUT" && pwd)/$(basename "$ZIP")")"
-( cd "$STAGE" && "$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32/tar.exe" -a -c -f "$ZIP_W" libexec lib packages ) \
+( cd "$STAGE" && "$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32/tar.exe" -a -c -f "$ZIP_W" LICENSE THIRD-PARTY-LICENSES.txt libexec lib packages ) \
   || { echo "make-bindist-windows: FAIL — the zip"; exit 1; }
 echo "make-bindist-windows: OK -> $ZIP ($(du -h "$ZIP" | cut -f1)), $BUILT"

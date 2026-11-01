@@ -71,7 +71,7 @@ finish() {
 
 install() {
   SCALY_PREFIX="$(cygpath -w "$PREFIX")" SCALY_INSTALL_BASE="$(cygpath -w "$TMP/downloads")" \
-  SCALY_NO_MODIFY_PATH=1 SCALY_BUILD_TOOLS=skip \
+  SCALY_NO_MODIFY_PATH=1 SCALY_BUILD_TOOLS=skip SCALY_ACCEPT_LICENSE=1 \
     "$PS" -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$ROOT/docs/website/install.ps1")" > "$1" 2>&1
 }
 user_env() {
@@ -207,7 +207,7 @@ esac
 # again: over the first, with the Build Tools check on (the box has them)
 cd "$ROOT"
 if ( SCALY_PREFIX="$(cygpath -w "$PREFIX")" SCALY_INSTALL_BASE="$(cygpath -w "$TMP/downloads")" \
-     SCALY_NO_MODIFY_PATH=1 "$PS" -NoProfile -ExecutionPolicy Bypass \
+     SCALY_NO_MODIFY_PATH=1 SCALY_ACCEPT_LICENSE=1 "$PS" -NoProfile -ExecutionPolicy Bypass \
        -File "$(cygpath -w "$ROOT/docs/website/install.ps1")" < /dev/null > "$TMP/again.log" 2>&1 ); then
   grep -q 'scaly build: ok' "$TMP/again.log" && [ ! -e "$PREFIX/toolchain.new" ] && [ ! -e "$PREFIX/toolchain.old" ] \
     && [ "$("$B/scaly.exe" run "$TMP/work/hello.scaly" 2>/dev/null)" = "Hello, World!" ] \

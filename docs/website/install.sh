@@ -24,7 +24,12 @@
 #   macOS    brew install llvm@21
 #   Ubuntu   sudo apt install llvm-21 llvm-21-dev lld-21 clang
 #
+# Before anything is fetched, the script shows Scaly's license (MIT) and asks
+# whether you accept it; nothing is installed without. Where there is no
+# terminal to ask on, SCALY_ACCEPT_LICENSE=1 is the acceptance.
+#
 # Environment overrides:
+#   SCALY_ACCEPT_LICENSE  set to 1 to accept the license without being asked
 #   SCALY_PREFIX          install location           (default ~/.scaly)
 #   SCALY_VERSION         version to fetch           (default: the newest,
 #                         which <base>/downloads/latest names)
@@ -71,6 +76,64 @@ SYSTEM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
 
 have curl || have wget || die "need curl or wget to download the distribution"
 have tar || die "need tar to unpack the distribution"
+
+# ---------------------------------------------------------------------------
+# 0. The license, before anything is fetched or changed: it is shown, and
+#    nothing is installed unless it is accepted -- at the terminal, or, where
+#    there is none to ask on (a Dockerfile, CI), by SCALY_ACCEPT_LICENSE=1.
+#    The text below is LICENSE's, word for word (tools/publish-install.sh
+#    checks it).
+# ---------------------------------------------------------------------------
+license_text() {
+  cat <<'LICENSE_TEXT'
+The MIT License (MIT)
+
+Copyright (c) 2016-2026 Ralf Schleitzer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+LICENSE_TEXT
+}
+license_notice() {
+  printf '\nScaly is distributed under this license:\n\n'
+  license_text | sed 's/^/    /'
+  printf '\nThe programs also contain third-party software under its own licenses:\n'
+  printf '%s\n' "$BASE_URL/downloads/THIRD-PARTY-LICENSES.txt"
+  printf 'Both files are installed with Scaly (LICENSE, THIRD-PARTY-LICENSES.txt).\n\n'
+}
+if [ "${SCALY_ACCEPT_LICENSE:-}" = 1 ]; then
+  license_notice
+  say "the license is accepted (SCALY_ACCEPT_LICENSE=1)"
+elif ( exec < /dev/tty ) 2> /dev/null; then
+  # piped into sh, standard input is this script: the answer comes from the
+  # terminal, and so that it is seen, the question goes there too
+  license_notice > /dev/tty
+  printf 'Do you accept the license? [y/N] ' > /dev/tty
+  ANSWER=""
+  read -r ANSWER < /dev/tty || ANSWER=""
+  case "$ANSWER" in
+    y|Y|yes|Yes|YES) say "the license is accepted" ;;
+    *) printf 'scaly-install: the license was not accepted; nothing was installed.\n' >&2; exit 1 ;;
+  esac
+else
+  license_notice
+  die "the license must be accepted before Scaly is installed, and there is no terminal to ask on. To accept it, set SCALY_ACCEPT_LICENSE=1:  curl -fsSL $BASE_URL/install.sh | SCALY_ACCEPT_LICENSE=1 sh"
+fi
 
 # fetch <url> <file>: quiet, and a failure is the caller's to explain
 fetch() {

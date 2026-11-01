@@ -6,7 +6,8 @@
 # Output: <outdir>/scaly-<version>-<system>-<machine>.tar.gz, the two names as
 # `uname -s` (lower case) and `uname -m` give them — darwin-arm64,
 # linux-aarch64, linux-x86_64 — which is how docs/website/install.sh asks for
-# it. Payload: libexec/scalyc, libexec/scaly, libexec/scalyls, lib/libscaly.a.
+# it. Payload: libexec/scalyc, libexec/scaly, libexec/scalyls, lib/libscaly.a,
+# LICENSE and THIRD-PARTY-LICENSES.txt.
 # The packages and the seed are NOT in it: they are the same for every system
 # and travel in tools/make-dist.sh's tarball, which the installer unpacks
 # first. A system without such an archive is built from the seed there.
@@ -151,8 +152,12 @@ else
 fi
 [ -z "$deps" ] || { echo "make-bindist: FAIL — the programs still load:"; echo "$deps"; exit 1; }
 
+# Our license and those of what is linked in (LLVM and others) travel with
+# the programs: an archive taken without the installer carries them too.
+cp LICENSE THIRD-PARTY-LICENSES.txt "$STAGE/"
+
 mkdir -p "$OUT"
-COPYFILE_DISABLE=1 tar --no-xattrs -czf "$TARBALL" -C "$STAGE" libexec lib 2>/dev/null \
-  || COPYFILE_DISABLE=1 tar -czf "$TARBALL" -C "$STAGE" libexec lib
+COPYFILE_DISABLE=1 tar --no-xattrs -czf "$TARBALL" -C "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib 2>/dev/null \
+  || COPYFILE_DISABLE=1 tar -czf "$TARBALL" -C "$STAGE" LICENSE THIRD-PARTY-LICENSES.txt libexec lib
 
 echo "make-bindist: OK -> $TARBALL ($(du -h "$TARBALL" | cut -f1)), $BUILT"
