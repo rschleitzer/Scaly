@@ -3,36 +3,37 @@
 
   <section xml:id="intro-overview">
     <title>Overview</title>
-    <para>Scaly is a programming language designed to be self-scaling: it adapts
-      to the needs of the developer, from simple scripts to complex systems. The
-      language combines a uniform grammar — with no hardcoded operators, since
-      operators are ordinary identifiers — with optional region-based memory
-      management. An operation is read from left to right, the type of the value
-      in hand saying what comes next; how strongly operators bind is stated by
-      the standard library, not by the compiler, and parentheses give explicit
-      control where it is needed.</para>
-  </section>
-
-  <section xml:id="intro-philosophy">
-    <title>Design Philosophy</title>
-    <para>Scaly follows these core principles:</para>
+    <para>Scaly is a compiled programming language. Three ideas shape
+      it:</para>
     <itemizedlist>
       <listitem>
-        <para><emphasis>Uniform syntax</emphasis> — Operators are ordinary
-        identifiers rather than keywords baked into the grammar, so the language
-        and its standard library share one small, regular syntax.</para>
+        <para><emphasis>Self-scaling</emphasis> — A plain
+        <code>for</code> loop is spread across the cores when the compiler can
+        prove that its iterations are independent and the work pays for it;
+        there is no syntax to ask for it. The proof rests on the difference
+        between a <code>function</code>, which only reads its arguments and
+        returns a value, and a <code>procedure</code>, which may change
+        things.</para>
       </listitem>
       <listitem>
-        <para><emphasis>Safety without ceremony</emphasis> — Memory is managed
-        through regions the compiler infers, and an escape checker proves at
-        compile time that no reference outlives its memory; ordinary code
-        carries no annotations.</para>
+        <para><emphasis>Memory without ceremony</emphasis> — Memory is managed
+        in regions the compiler infers: no garbage collector, no reference
+        counting, no manual freeing, and in ordinary code no annotations. An
+        escape checker proves at compile time that no reference outlives its
+        memory.</para>
       </listitem>
       <listitem>
-        <para><emphasis>Incremental complexity</emphasis> — Simple programs
-        stay simple; advanced features are available when needed.</para>
+        <para><emphasis>A uniform grammar</emphasis> — Operators are ordinary
+        identifiers rather than keywords baked into the grammar, so the
+        language and its standard library share one small, regular syntax. An
+        operation is read from left to right, the type of the value in hand
+        saying what comes next; how strongly operators bind is stated by the
+        standard library, not by the compiler.</para>
       </listitem>
     </itemizedlist>
+    <para>Simple programs stay simple — a program is a file of statements,
+      with nothing to declare and nothing to import — and the rest of the
+      language is there when a program needs it.</para>
   </section>
 
   <section xml:id="intro-change">

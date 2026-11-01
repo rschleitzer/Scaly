@@ -90,18 +90,10 @@ class="num"
 ></li
 ><li
 ><a
-href="introduction.htm#intro-philosophy"
-><span
-class="num"
->1.2</span
->Design Philosophy</a
-></li
-><li
-><a
 href="introduction.htm#intro-change"
 ><span
 class="num"
->1.3</span
+>1.2</span
 >A Language Still Changing</a
 ></li
 ></ol
@@ -986,51 +978,53 @@ href="#intro-overview"
 >Overview</a
 ></h2
 ><p
->Scaly is a programming language designed to be self-scaling: it adapts
-      to the needs of the developer, from simple scripts to complex systems. The
-      language combines a uniform grammar — with no hardcoded operators, since
-      operators are ordinary identifiers — with optional region-based memory
-      management. An operation is read from left to right, the type of the value
-      in hand saying what comes next; how strongly operators bind is stated by
-      the standard library, not by the compiler, and parentheses give explicit
-      control where it is needed.</p
-></section
-><section
-id="intro-philosophy"
-><h2
-><a
-class="header"
-href="#intro-philosophy"
->Design Philosophy</a
-></h2
-><p
->Scaly follows these core principles:</p
+>Scaly is a compiled programming language. Three ideas shape
+      it:</p
 ><ul
 ><li
 ><p
 ><em
->Uniform syntax</em
-> — Operators are ordinary
-        identifiers rather than keywords baked into the grammar, so the language
-        and its standard library share one small, regular syntax.</p
+>Self-scaling</em
+> — A plain
+        <code
+>for</code
+> loop is spread across the cores when the compiler can
+        prove that its iterations are independent and the work pays for it;
+        there is no syntax to ask for it. The proof rests on the difference
+        between a <code
+>function</code
+>, which only reads its arguments and
+        returns a value, and a <code
+>procedure</code
+>, which may change
+        things.</p
 ></li
 ><li
 ><p
 ><em
->Safety without ceremony</em
+>Memory without ceremony</em
 > — Memory is managed
-        through regions the compiler infers, and an escape checker proves at
-        compile time that no reference outlives its memory; ordinary code
-        carries no annotations.</p
+        in regions the compiler infers: no garbage collector, no reference
+        counting, no manual freeing, and in ordinary code no annotations. An
+        escape checker proves at compile time that no reference outlives its
+        memory.</p
 ></li
 ><li
 ><p
 ><em
->Incremental complexity</em
-> — Simple programs
-        stay simple; advanced features are available when needed.</p
+>A uniform grammar</em
+> — Operators are ordinary
+        identifiers rather than keywords baked into the grammar, so the
+        language and its standard library share one small, regular syntax. An
+        operation is read from left to right, the type of the value in hand
+        saying what comes next; how strongly operators bind is stated by the
+        standard library, not by the compiler.</p
 ></li
 ></ul
+><p
+>Simple programs stay simple — a program is a file of statements,
+      with nothing to declare and nothing to import — and the rest of the
+      language is there when a program needs it.</p
 ></section
 ><section
 id="intro-change"
