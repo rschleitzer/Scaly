@@ -28,6 +28,7 @@ window.SCALY_RUNNABLE = [
   "2ded1706",
   "2ed3283a",
   "37d09701",
+  "3c485178",
   "3d7661c5",
   "3d9256fb",
   "4335256a",
@@ -100,6 +101,7 @@ window.SCALY_RUNNABLE = [
   "ba23c315",
   "ba8fe8f4",
   "bb3c773b",
+  "c0e7cea9",
   "c2dd9dca",
   "c2f267e0",
   "c3d9327f",
@@ -125,6 +127,5 @@ window.SCALY_RUNNABLE = [
   "f7dfe0eb",
   "f7fc42f7",
   "f8b76967",
-  "fbcd5001",
   "ffc6f2ad",
 ];

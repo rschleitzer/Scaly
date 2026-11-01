@@ -1246,15 +1246,16 @@ href="#lex-equals"
 ><pre
 class="listing"
 ><code
->&#13;; Equality comparison
-if x = 42 { ... }         ; tests if x equals 42
-
-; Variable declaration (NO equals sign)
-let x 42                  ; declares x with value 42
+>&#13;; Variable declaration (NO equals sign)
+var x 42                  ; declares x with value 42
 let y: i32 100            ; with type annotation
 
 ; Assignment (its own sign)
-x := 43                 ; assigns 43 to x
+x := 43                   ; assigns 43 to x
+
+; Equality comparison
+if x = 43                 ; tests if x equals 43
+    print "x is 43"
       </code
 ></pre
 ><p

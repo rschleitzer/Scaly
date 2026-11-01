@@ -45,6 +45,8 @@ function ++(n: int) returns int               ; operator-char-named function
 
 let a 'add seven'(35)                          ; applied prefix -> 42
 let b ++(41)                                   ; applied prefix -> 42
+let c ++ 41                                    ; one argument needs no parentheses -> 42
+let c ++ 41                                    ; one argument needs no parentheses -> 42
     </programlisting>
 
     <para>Operators may be declared at the top level, not only as members of a
