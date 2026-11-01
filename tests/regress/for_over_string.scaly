@@ -1,0 +1,56 @@
+; Regression (2026-11-01): `for c in text` over a String, and the String's
+; iterator called by hand. Two defects, both in the emitter. (1) A for loop
+; looked get_iterator and next up by name in the module and gave up without a
+; word when they were missing -- a non-generic iterable of another package
+; (String) is linked, not instantiated, so they always were: the parallel
+; loop left pfor.dispatch without a terminator and LLVM aborted. (2)
+; StringIterator is two pointers but sat on the opaque runtime list, so a
+; program sized its sret slot with the one-pointer placeholder: the stdlib
+; wrote 16 bytes into 8, and the iterator counted garbage or never ended.
+; A char is a byte, so the loop walks the bytes.
+
+procedure count(text: String) returns int
+{
+    var n 0
+    for c in text
+        n := n + 1
+    n
+}
+
+procedure count_by_hand(text: String) returns int
+{
+    var n 0
+    var it text.get_iterator()
+    repeat
+    {
+        let p it.next()
+        if p = null
+            break
+        n := n + 1
+        ; the broken layout never ended: answer a count no test expects
+        if n > 1000
+            break
+    }
+    n
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let text String("a\nbc\n")
+    var lines 0
+    for c in text
+    {
+        if c = ("\n" as char)
+            lines := lines + 1
+    }
+    if lines <> 2
+        return 1
+    if count(text) <> 5 or count(String("ab")) <> 2
+        return 2
+    if count_by_hand(text) <> 5 or count_by_hand(String("abc")) <> 3
+        return 3
+    if count(String("é")) <> 2
+        return 4
+    print "PASS\n"
+    0
+}

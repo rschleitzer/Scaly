@@ -1,0 +1,19 @@
+; Regression (2026-11-01): a `throw` without a value outside a catch arm has no
+; error to pass on -- it set the wrapper's status and left its data as it was.
+;
+; xfail: a throw without a value passes on the error a catch arm handles
+
+define E union(Bad)
+
+function f(n: int) returns int throws E
+{
+    if n < 0
+        throw
+    n
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    print "FAIL\n"
+    0
+}

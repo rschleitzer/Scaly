@@ -1,4 +1,8 @@
-; xfail: unknown binary operator
+; xfail: no operator // between size_t and size_t
+;
+; Since 2026-11-01 the planner says so with the line
+; (report_unknown_scalar_operator#); before, the emitter stopped with
+; "unknown binary operator", exit 14, no file and no line.
 ;
 ; An unknown intrinsic operator (`//` has no definition, no `operator //`,
 ; precedence 0) must HARD-FAIL the compile, not silently lower to a null

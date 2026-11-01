@@ -1,0 +1,37 @@
+; Regression (2026-11-01): `try let t f(x)` over a throwing call whose else
+; (or a when arm) does not leave, with t used after the try: t was the value
+; loaded in try.ok, which does not dominate try.end -- "Instruction does not
+; dominate all uses", LLVM aborted. The panic-catch path had the spill since
+; 2026-10-03 (try_value_after_catch.scaly); the throwing-call path has it now.
+;
+; An IR gate as well, because a run cannot tell: the AOT binary of the broken
+; IR runs (only the JIT's verifier refused it, under scaly run).
+; expect-ir: store i64 %ok.val, ptr %try.value
+; expect-ir: = load i64, ptr %try.value
+
+define E union(Bad)
+
+function f(x: int) returns int throws E
+{
+    if x < 0
+        throw E.Bad
+    x * 2
+}
+
+procedure run(x: int) returns int
+{
+    var noted 0
+    try let t f(x)
+        else noted := 1
+    if noted = 1
+        return 0
+    t
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if run(4) <> 8 or run(-1) <> 0
+        return 1
+    print "PASS\n"
+    0
+}

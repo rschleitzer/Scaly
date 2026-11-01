@@ -1,0 +1,49 @@
+; Regression (2026-11-01): `else throw` and a bare `throw` in a catch arm pass
+; on the error they handle. Two halves: plan_throw# kept a holder of one EMPTY
+; slot for a throw without a value, which the emitter wrote as the constant
+; false into the data field, and the emitter never copied the caught error --
+; the caller met variant 0 whatever was thrown, at rc 0. Now the planner keeps
+; no operand and Emitter.emit_rethrow# copies the caught error union.
+
+define PE union
+(
+    Empty
+    Bad: u8
+    Far: (a: int, b: int)
+)
+
+function f(n: int) returns int throws PE
+{
+    if n = 0
+        throw PE.Empty
+    if n = 1
+        throw PE.Bad(65)
+    if n = 2
+        throw PE.Far((a: 7, b: 9))
+    n
+}
+
+function g(n: int) returns int throws PE
+{
+    try let d f(n)
+        when e: Empty: throw
+        else throw
+    d * 2
+}
+
+function code(n: int) returns int
+{
+    try let d g(n)
+        when e: Empty: return 100
+        when b: Bad: return 200 + (b as int)
+        when x: Far: return 300 + x.a * 10 + x.b
+    d
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if code(0) <> 100 or code(1) <> 265 or code(2) <> 379 or code(5) <> 10
+        return 1
+    print "PASS\n"
+    0
+}

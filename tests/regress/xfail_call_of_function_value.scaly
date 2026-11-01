@@ -1,0 +1,19 @@
+; Regression (2026-11-01): `make_adder(5)(2)` -- a tuple after a call that
+; answers a delegate -- dropped the tuple, and the operation answered the
+; function itself: `let r make_adder(5)(2)` bound an IntFn at rc 0.
+;
+; xfail: a function a call answers is called through a name
+
+define IntFn delegate(int) returns int
+
+function make_adder(n: int) returns IntFn
+{
+    return \x: x + n
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let r make_adder(5)(2)
+    print "FAIL\n"
+    0
+}

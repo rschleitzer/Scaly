@@ -1,0 +1,12 @@
+; Regression (2026-11-01): an operator no scalar has reached the emitter,
+; which stopped with exit 14 and no file or line -- `x += 1` above all.
+;
+; xfail: no operator += between int and int - an assignment is written x := x + 1
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var x 1
+    x += 1
+    print "FAIL\n"
+    0
+}

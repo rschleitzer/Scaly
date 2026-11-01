@@ -287,6 +287,11 @@ define Emitter
         var current_function: LLVMValueRef
         current_block: LLVMBasicBlockRef
         var current_function_can_throw: bool
+        ; The Result wrapper of the throwing call a `try` is handling, while
+        ; its catch arms and its else are emitted: a `throw` without a value
+        ; there (`else throw`) passes on THAT error (emit_rethrow#). Null
+        ; outside a catch.
+        var rethrow_wrapper: LLVMValueRef
         ; s196: the current function's local root page for transient #/$/for
         ; allocations in a non-rp function. Mirrors stage-0's
         ; CurrentRegion.LocalPage but kept SEPARATE from current_region.local_page
@@ -508,6 +513,7 @@ define Emitter
             current_function := null
             current_block := null
             current_function_can_throw := false
+            rethrow_wrapper := null
             function_local_frame := null
             function_local_page := null
             function_local_page_block := null
@@ -3842,13 +3848,28 @@ define Emitter
             ; (the first byte of the string contents) and SEGVs. Returning
             ; a literal `{ ptr }` here matches String's actual layout and
             ; routes the deref through the struct path. Same shape works
-            ; for other 1-ptr-field stdlib types (StringIterator, Path,
-            ; ListIterator, etc.); add them only when needed.
+            ; for other 1-ptr-field stdlib types (Path, ListIterator, etc.);
+            ; add them only when needed.
             if planned_type.name = "String"
             {
                 var fields Vector[LLVMTypeRef](1)
                 fields.put(0, LLVMPointerTypeInContext(context, 0))
                 return LLVMStructTypeInContext(context, fields.data, 1, 0)
+            }
+            ; StringIterator is TWO pointers (current, last) and on the
+            ; opaque list, so outside the stdlib its layout came out of the
+            ; one-pointer placeholder: a program's `s.get_iterator()` sized
+            ; the sret slot at 8 bytes, the stdlib wrote 16, and the iterator
+            ; read back as garbage -- a count of 31113621559, or a walk that
+            ; never ended (2026-11-01; it was once listed above as one
+            ; pointer). Layout of packages/scaly/<v>/scaly/containers/
+            ; StringIterator.scaly.
+            if planned_type.name = "StringIterator"
+            {
+                var si_fields Vector[LLVMTypeRef](2)
+                si_fields.put(0, LLVMPointerTypeInContext(context, 0))
+                si_fields.put(1, LLVMPointerTypeInContext(context, 0))
+                return LLVMStructTypeInContext(context, si_fields.data, 2, 0)
             }
 
             ; Fallback: opaque pointer (LLVM 15+ everything-is-ptr) instead
@@ -4271,6 +4292,39 @@ define Emitter
         function noalias_kind_id(this) returns u32
         {
             LLVMGetEnumAttributeKindForName("noalias" as pointer[const_char], 7)
+        }
+
+        ; The get_iterator or the next of a `for` loop, declared where the
+        ; module has neither: a non-generic iterable of another package
+        ; (`String`) is linked, not instantiated here, and nothing else in
+        ; the program need call it. Both loop lowerings looked the two up by
+        ; name and gave up without a word when they were missing -- the
+        ; parallel one then left `pfor.dispatch` without a terminator and
+        ; LLVM aborted (2026-11-01, `for c in someString`). The shapes are
+        ; the ones both lowerings call: get_iterator(sret iterator, page,
+        ; collection) and next(iterator) answering the element's pointer.
+        ; The sret attribute belongs on the declaration: AArch64 passes that
+        ; argument in x8, and a declaration without it would hand it in x0.
+        procedure iterator_function(mutable this, mutable name: String, is_get_iterator: bool, mutable iter_type: LLVMTypeRef) returns LLVMValueRef
+        {
+            let found LLVMGetNamedFunction(llvm_module, name.c_data())
+            if found <> null
+                return found
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            if is_get_iterator
+            {
+                var gi_tys Vector[LLVMTypeRef](3)
+                gi_tys.put(0, ptr_ty)
+                gi_tys.put(1, ptr_ty)
+                gi_tys.put(2, ptr_ty)
+                let gi_fn LLVMAddFunction(llvm_module, name.c_data(), LLVMFunctionType(LLVMVoidTypeInContext(context), gi_tys.data, 3, 0))
+                LLVMAddAttributeAtIndex(gi_fn, 1, LLVMCreateTypeAttribute(context, this.sret_kind_id(), iter_type))
+                LLVMAddAttributeAtIndex(gi_fn, 1, LLVMCreateEnumAttribute(context, this.noalias_kind_id(), 0))
+                return gi_fn
+            }
+            var nx_tys Vector[LLVMTypeRef](1)
+            nx_tys.put(0, ptr_ty)
+            LLVMAddFunction(llvm_module, name.c_data(), LLVMFunctionType(ptr_ty, nx_tys.data, 1, 0))
         }
 
         ; A callee that never returns must SAY so, or the block after the call
@@ -18349,10 +18403,9 @@ define Emitter
                 LLVMBuildStore(builder, collection, collection_ptr)
             }
 
-            ; Look up get_iterator function
-            let get_iter_fn LLVMGetNamedFunction(llvm_module, for_expr.get_iterator_method.c_data())
-            if get_iter_fn = null
-                return null
+            ; Look up get_iterator function (declared here where it is linked)
+            let iter_type map_type for_expr.iterator_type
+            let get_iter_fn this.iterator_function(for_expr.get_iterator_method, true, iter_type)
 
             ; Call get_iterator() on collection.
             ; Stage-0 / stage-1's planner emits get_iterator with sret-return for
@@ -18362,7 +18415,6 @@ define Emitter
             ; runtime the callee reads garbage for page/coll, returning an
             ; uninitialized iterator — next() then immediately yields null and
             ; the for-loop body never runs. Build the 3-arg sret call to match.
-            let iter_type map_type for_expr.iterator_type
             let iter_alloca entry_alloca(iter_type, "iter.alloca")
 
             let page_ptr_ty LLVMPointerTypeInContext(context, 0)
@@ -18393,10 +18445,8 @@ define Emitter
             let get_iter_func_type LLVMFunctionType(void_ret_ty, get_iter_param_types.data, 3, 0)
             LLVMBuildCall2(builder, get_iter_func_type, get_iter_fn, get_iter_args.data, 3, "")
 
-            ; Look up next function
-            let next_fn LLVMGetNamedFunction(llvm_module, for_expr.next_method.c_data())
-            if next_fn = null
-                return null
+            ; Look up next function (declared here where it is linked)
+            let next_fn this.iterator_function(for_expr.next_method, false, iter_type)
 
             ; Create basic blocks
             let cond_block create_block("for.cond")
@@ -20330,10 +20380,8 @@ define Emitter
                     collection_ptr := entry_alloca(coll_type, "parfor.coll.tmp")
                     LLVMBuildStore(builder, seq_value, collection_ptr)
                 }
-                let get_iter_fn LLVMGetNamedFunction(llvm_module, for_expr.get_iterator_method.c_data())
-                if get_iter_fn = null
-                    return null
                 let iter_type map_type for_expr.iterator_type
+                let get_iter_fn this.iterator_function(for_expr.get_iterator_method, true, iter_type)
                 let iter_alloca entry_alloca(iter_type, "parfor.iter")
                 let rp_val lookup_variable("_rp")
                 var page_arg: LLVMValueRef rp_val
@@ -20351,9 +20399,7 @@ define Emitter
                 gi_tys.put(2, ptr_ty)
                 let gi_fn_ty LLVMFunctionType(void_ty, gi_tys.data, 3, 0)
                 LLVMBuildCall2(builder, gi_fn_ty, get_iter_fn, gi_args.data, 3, "")
-                let next_fn LLVMGetNamedFunction(llvm_module, for_expr.next_method.c_data())
-                if next_fn = null
-                    return null
+                let next_fn this.iterator_function(for_expr.next_method, false, iter_type)
                 var next_args Vector[LLVMValueRef](1)
                 var next_tys Vector[LLVMTypeRef](1)
                 next_args.put(0, iter_alloca)
@@ -21324,6 +21370,9 @@ define Emitter
             if err_block = null
                 err_target := merge_block
             LLVMBuildCondBr(builder, is_ok, ok_block, err_target)
+            ; does an error path reach the end too? Then the bound value is
+            ; spilled there (try_value_at_end#)
+            var err_reaches_end: bool err_block = null
 
             ; --- Ok block: bind the success value; it leaks into the enclosing
             ; scope (the planner defines it there). The success path is the only
@@ -21363,6 +21412,8 @@ define Emitter
             ; --- Error path. On error the wrapper data field holds the thrown
             ; error union INLINE; the catch arms select on that union's OWN
             ; variant tag (NOT the wrapper status, which is 1 for every error).
+            let outer_rethrow rethrow_wrapper
+            rethrow_wrapper := result_ptr
             if err_block <> null
             {
                 LLVMPositionBuilderAtEnd(builder, err_block)
@@ -21437,7 +21488,10 @@ define Emitter
 
                         let cterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                         if cterm = null
+                        {
                             LLVMBuildBr(builder, merge_block)
+                            err_reaches_end := true
+                        }
                     }
 
                     LLVMPositionBuilderAtEnd(builder, default_block)
@@ -21452,7 +21506,10 @@ define Emitter
                         }
                         let dterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                         if dterm = null
+                        {
                             LLVMBuildBr(builder, merge_block)
+                            err_reaches_end := true
+                        }
                     }
                 }
 
@@ -21466,12 +21523,24 @@ define Emitter
                     }
                     let eterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                     if eterm = null
+                    {
                         LLVMBuildBr(builder, merge_block)
+                        err_reaches_end := true
+                    }
                 }
             }
 
-            ; Continue at merge block.
+            rethrow_wrapper := outer_rethrow
+
+            ; Continue at merge block. Where an error path falls through to it
+            ; as well -- an arm or an else that does not leave --, the success
+            ; value made in try.ok does not dominate the end: spill it, as the
+            ; panic catch does (2026-11-01: `try let t f(4)  else print ...`
+            ; followed by a use of t was "Instruction does not dominate all
+            ; uses", LLVM aborted). A `var` binding has its slot already.
             LLVMPositionBuilderAtEnd(builder, merge_block)
+            if err_reaches_end and try_expr.cond.binding_type <> "var"
+                return this.try_value_at_end(try_expr, ok_value, ok_block, merge_block)
             ok_value
         }
 
@@ -24331,6 +24400,10 @@ define Emitter
             let tag_val LLVMConstInt(i8_ty, 1, 0)
             LLVMBuildStore(builder, tag_val, tag_ptr)
 
+            ; A throw without a value inside a catch passes on the caught error
+            if this.throw_has_no_value(throw_stmt) and rethrow_wrapper <> null
+                this.emit_rethrow(result_ptr, result_ty)
+
             ; Evaluate the thrown value and store in the data portion
             if throw_stmt.result <> null
             {
@@ -24374,6 +24447,49 @@ define Emitter
             }
 
             true
+        }
+
+        function throw_has_no_value(this, throw_stmt: PlannedThrow) returns bool
+        {
+            if throw_stmt.result = null
+                return true
+            throw_stmt.result.length = 0
+        }
+
+        ; `else throw` / a bare `throw` in a catch arm: copy the caught
+        ; error union -- the data field of the handled call's wrapper, from
+        ; byte 1 -- into this routine's wrapper, as many bytes as both data
+        ; fields hold. Before 2026-11-01 only the status was set, so the
+        ; caller met whatever lay in the data field: the error union's tag
+        ; read 0, the FIRST variant, at rc 0 (`try let d f(s)  else throw`
+        ; turned every BadDigit into Empty).
+        procedure emit_rethrow(mutable this, mutable result_ptr: LLVMValueRef, mutable result_ty: LLVMTypeRef)
+        {
+            let i8_ty LLVMInt8TypeInContext(context)
+            var n_fields: int 0
+            if LLVMGetTypeKind(result_ty) = LLVMTypeKind.Struct()
+                n_fields := LLVMCountStructElementTypes(result_ty)
+            if n_fields < 2
+                return
+            var size this.llvm_type_abi_size(LLVMStructGetTypeAtIndex(result_ty, 1))
+            let caught rethrow_wrapper
+            if LLVMIsAAllocaInst(caught) <> null
+            {
+                let caught_ty LLVMGetAllocatedType(caught)
+                if LLVMGetTypeKind(caught_ty) = LLVMTypeKind.Struct() and LLVMCountStructElementTypes(caught_ty) >= 2
+                {
+                    let caught_size this.llvm_type_abi_size(LLVMStructGetTypeAtIndex(caught_ty, 1))
+                    if caught_size < size
+                        size := caught_size
+                }
+            }
+            if size = 0
+                return
+            var one Vector[LLVMValueRef](1)
+            one.put(0, LLVMConstInt(LLVMInt64TypeInContext(context), 1, 0))
+            let from LLVMBuildInBoundsGEP2(builder, i8_ty, caught, one.data, 1, "rethrow.from")
+            let to LLVMBuildStructGEP2(builder, result_ty, result_ptr, 1, "rethrow.to")
+            LLVMBuildMemCpy(builder, to, 1, from, 1, LLVMConstInt(LLVMInt64TypeInContext(context), size, 0))
         }
 
         ; Emit a break statement

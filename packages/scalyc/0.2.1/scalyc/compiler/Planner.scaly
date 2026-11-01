@@ -907,6 +907,10 @@ define Planner
         ; methods named without a tuple, waiting for a delegate (BareMethod)
         var bare_methods: Array[BareMethod]
         var statement_depth: size_t
+        ; how many catch arms of a THROWING try are being planned around
+        ; the current statement: a `throw` without a value passes on the
+        ; error such an arm handles, and means nothing anywhere else
+        var catch_depth: size_t
         ; functions with a lazy parameter, put in where they are called
         ; (put_in_lazy_call#): whether there is one, the arguments of the
         ; put-ins under way, the first of the innermost one's, the names
@@ -1627,6 +1631,7 @@ define Planner
             lambda_arg_starts := Array[size_t]^this()
             bare_methods := Array[BareMethod]^this()
             statement_depth := 0
+            catch_depth := 0
             has_lazy_functions := false
             lazy_args := Array[LazyArg]^this()
             lazy_frame := 0
@@ -13032,6 +13037,7 @@ define Planner
                 ; machinery that already handles `name.length()`. Mirrors
                 ; stage-0's IsZeroArgMethodCall auto-call (Planner.cpp:5117).
                 let only_op (*only_ptr)
+                this.report_vector_literal_value(only_op)
                 if only_op.member_access <> null
                 {
                     let ma (*only_op.member_access)
@@ -19045,6 +19051,9 @@ define Planner
                 ; ... and a record compared with a scalar has no `=` at all --
                 ; report_record_scalar_compare#.
                 this.report_record_scalar_compare(result.result_type, rhs.result_type, op_name, result.loc)
+                ; ... and an operator no scalar has (`x += 1`) reached the
+                ; emitter, exit 14 without a file -- report_unknown_scalar_operator#
+                this.report_unknown_scalar_operator(result.result_type, rhs.result_type, op_name, result.loc)
 
                 ; s90: built-in comparison operators on primitive
                 ; types return bool. Without this, the fresh type
@@ -26709,6 +26718,8 @@ define Planner
                     union_for_catches := Planner.make_runtime_fault_type()
                 }
 
+            if is_throwing
+                catch_depth := catch_depth + 1
             var catches_arr Array[PlannedWhen]()
             var ci: size_t 0
             while ci < t.catches.length
@@ -26730,6 +26741,8 @@ define Planner
                 alternative_ref := &^this this.plan_statement(alt)
                 this.pop_scope()
             }
+            if is_throwing
+                catch_depth := catch_depth - 1
 
             var catches_holder Vector[PlannedWhen](catches_arr)
             PlannedTry(t.span, planned_bind, &catches_holder, alternative_ref, catches_panic, throws_type, is_throwing)
@@ -29837,6 +29850,8 @@ define Planner
                         if kind = 5
                             slot := 37
                     }
+                    if kind = 4
+                        this.report_call_of_function_value(cur, next)
                     if kind = 4 and this.operation_call_is_plain(cur)
                     {
                         let named this.operation_name(cur)
@@ -36112,6 +36127,27 @@ define Planner
             this.add_diagnostic(second.loc, String^this(rumc_msg))
         }
 
+        ; A vector literal standing as a VALUE inside a statement -- `let w
+        ; [1, 2, 3]`, `f([1, 2])`, `let ys: Vector[int] [5, 6, 7]` -- has no
+        ; lowering: plan_matrix# gives it the type of no value and the emitter
+        ; builds a stack array of empty records, so an untyped binding was
+        ; `()` ("no 'f' takes (())", or exit 16 at `.length`), and a typed
+        ; one passed every conformance check (a `()` source is accepted) and
+        ; read the array's address as the vector's length, at rc 0
+        ; (2026-11-01). A vector literal after a type is a generic argument
+        ; list, after a value an index, and a constant array global's
+        ; elements are folded elsewhere; none of those reaches here alone.
+        procedure report_vector_literal_value(mutable this: Planner, op: PlannedOperand)
+        {
+            if statement_depth = 0 or op.member_access <> null
+                return
+            choose op.expr
+                when mx: PlannedMatrix
+                    this.add_diagnostic(op.loc, String^this("a vector literal is not a value: build a Vector[T](n) and put its elements, or add them to an Array[T]"))
+                else
+                    return
+        }
+
         procedure report_unknown_identifier(mutable this: Planner, op: PlannedOperand)
         {
             let uname this.unknown_identifier_name(op)
@@ -37368,6 +37404,57 @@ define Planner
         ; line (`'=' between operands of different LLVM kinds ... ptr vs i64`).
         ; The usual source is a subscript on a `pointer[Array[T]]`: pointer
         ; arithmetic at Array stride that yields the Array itself (2026-09-24).
+        ; A tuple after a VALUE whose type is a delegate -- `make_adder(5)(2)`,
+        ; the function a call hands back, called at once: the pair reading
+        ; dropped the tuple and the operation answered the function itself,
+        ; so `let r make_adder(5)(2)` bound an IntFn at rc 0 (2026-11-01). A
+        ; delegate is called through a name.
+        procedure report_call_of_function_value(mutable this: Planner, cur: PlannedOperand, next: PlannedOperand)
+        {
+            if this.is_delegate_type(cur.result_type.name) = false
+                return
+            ; a CALL's result only: a name bound to a delegate is called
+            ; through it, and so is a cast (`current_task as TaskFn` then
+            ; `f()`)
+            choose cur.expr
+                when c: PlannedCall
+                {
+                    if c.is_indirect
+                        return
+                }
+                else
+                    return
+            this.add_diagnostic(next.loc, String^this("a function a call answers is called through a name: bind it first (let f make_adder(5)), then call f(2)"))
+        }
+
+        ; An operator between two scalars that none of them has: the
+        ; intrinsic fall-through took every name, and the emitter, which
+        ; lowers only the operators below, stopped with exit 14 naming a
+        ; function and no line -- `x += 1` above all (2026-11-01). The names
+        ; are emit_intrinsic_binary_op#'s.
+        procedure report_unknown_scalar_operator(mutable this: Planner, lhs: PlannedType, rhs: PlannedType, op_name: String, at: Span)
+        {
+            if Planner.is_value_scalar_name(lhs.name) = false or Planner.is_value_scalar_name(rhs.name) = false
+                return
+            match op_name
+                case "+" case "-" case "*" case "/" case "%" case "div" case "mod": return
+                case "<<" case ">>" case "&" case "|" case "xor" case "^": return
+                case "=" case "<>" case "<" case ">" case "<=" case ">=": return
+                case "and" case "or" case "&&" case "||": return
+                else 0
+            var sb StringBuilder()
+            sb.append "no operator "
+            sb.append op_name
+            sb.append " between "
+            sb.append lhs.name
+            sb.append " and "
+            sb.append rhs.name
+            if op_name.get_length() = 2 and op_name.get(1) = 61
+                sb.append " - an assignment is written x := x + 1"
+            let msg sb.to_string()
+            this.add_diagnostic(at, String^this(msg))
+        }
+
         procedure report_record_scalar_compare(mutable this: Planner, lhs: PlannedType, rhs: PlannedType, op_name: String, at: Span)
         {
             let is_cmp op_name = "=" or op_name = "<>" or op_name = "<" or op_name = ">" or op_name = "<=" or op_name = ">="
@@ -51266,9 +51353,18 @@ define Planner
                 if throw_promoted <> null
                     planned_collapsed := (*throw_promoted)
             }
+            ; A throw without a value (`else throw`) passes on the error the
+            ; enclosing catch is handling (Emitter.emit_rethrow#); a holder of
+            ; one EMPTY slot was emitted as the constant `false` into the data
+            ; field, the caller read variant 0 (2026-11-01)
+            if planned_flat.length = 0
+            {
+                if catch_depth = 0
+                    this.add_diagnostic(t.span, String^this("a throw without a value passes on the error a catch arm handles, and there is none here - throw an error value"))
+                return PlannedThrow(t.span, null)
+            }
             var holder Vector[PlannedOperand](1)
-            if planned_flat.length > 0
-                holder.put(0, planned_collapsed)
+            holder.put(0, planned_collapsed)
             PlannedThrow(t.span, &holder)
         }
 
