@@ -32,7 +32,8 @@
 #   SCALY_ACCEPT_LICENSE  set to 1 to accept the license without being asked
 #   SCALY_PREFIX          install location           (default ~/.scaly)
 #   SCALY_VERSION         version to fetch           (default: the newest,
-#                         which <base>/downloads/latest names)
+#                         which <base>/downloads/latest names; only the
+#                         newest version's archives are kept)
 #   SCALY_INSTALL_BASE    base URL for downloads     (default https://scaly.io)
 #   SCALY_NO_MODIFY_PATH  set to 1 to skip editing your shell profile
 #   SCALY_FROM_SEED       set to 1 to build from the seed in any case
@@ -277,7 +278,10 @@ verify() {
 
 URL="$BASE_URL/downloads/$TARBALL"
 say "downloading $URL"
-fetch "$URL" "$WORK/$TARBALL" || die "download failed: $URL"
+if ! fetch "$URL" "$WORK/$TARBALL"; then
+  [ -n "${SCALY_VERSION:-}" ] && die "Scaly $VERSION is not at $BASE_URL (only the newest version is kept) - leave SCALY_VERSION unset to install that one"
+  die "download failed: $URL"
+fi
 verify "$WORK/$TARBALL"
 
 rm -rf "$NEW"

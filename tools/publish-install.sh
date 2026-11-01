@@ -116,8 +116,10 @@ fi
 
 # A published version does not change: its archives are out, installed and
 # cached under their names. What is there already is not replaced -- the next
-# upload is the next version (the VERSION file).
-if [ "$OVERWRITE" = 0 ] && [ "$DRY" = 0 ] && curl -fsSI "https://scaly.io/downloads/scaly-$VERSION.tar.gz?t=$(date +%s)" > /dev/null 2>&1; then
+# upload is the next version (the VERSION file). The mark is the version's
+# SHA256SUMS-<version>, which stays when its archives are taken down (only
+# the newest version's archives are kept).
+if [ "$OVERWRITE" = 0 ] && [ "$DRY" = 0 ] && curl -fsSI "https://scaly.io/downloads/SHA256SUMS-$VERSION?t=$(date +%s)" > /dev/null 2>&1; then
   echo "publish-install: FAIL — version $VERSION is published: a published version does not change. Raise the VERSION file (or --overwrite for a botched upload)."
   exit 1
 fi

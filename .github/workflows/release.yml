@@ -10,8 +10,10 @@
 # Nothing is kept as a workflow artifact: artifacts count against the
 # account's Actions storage (0.5 GB a month; fourteen runs' worth, kept the
 # default ninety days, used it up in five days of October 2026), release
-# assets do not. A run for a version scaly.io already has is refused -- a
-# published version does not change, raise VERSION.
+# assets do not. A run for a version scaly.io has published is refused -- a
+# published version does not change, raise VERSION. The mark is the
+# version's SHA256SUMS-<version>, which stays when its archives are taken
+# down (scaly.io keeps the newest version's archives only).
 #
 # What it makes (the names docs/website/install.sh and install.ps1 ask for):
 #   scaly-<v>-darwin-arm64.tar.gz     macOS 26 (Tahoe) on Apple silicon
@@ -75,7 +77,7 @@ jobs:
           set -e
           v="${{ inputs.version }}"
           [ -n "$v" ] || v="$(cat VERSION)"
-          if curl -fsSI "https://scaly.io/downloads/scaly-$v.tar.gz?t=$(date +%s)" > /dev/null 2>&1; then
+          if curl -fsSI "https://scaly.io/downloads/SHA256SUMS-$v?t=$(date +%s)" > /dev/null 2>&1; then
             echo "scaly $v is published at scaly.io -- a published version does not change; raise VERSION"
             exit 1
           fi

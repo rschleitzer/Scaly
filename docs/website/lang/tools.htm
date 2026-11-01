@@ -1136,13 +1136,16 @@ href="#tools-install-versions"
 >Versions, updates, removal</a
 ></h3
 ><p
->The installer takes the newest version of the toolchain. A
-        version that is out does not change afterwards, so a particular one
-        can be asked for by its number and is the same every time:</p
+>The installer takes the newest version of the toolchain, and
+        only the newest one is kept for download. A version that is out does
+        not change afterwards, so naming it pins exactly that version — a
+        Dockerfile or a CI script does, so that its build stays the same.
+        Once a newer version is out, the older one's archives are taken down,
+        and the pin has to move with it:</p
 ><pre
 class="listing"
 ><code
->curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.0 sh</code
+>curl -fsSL https://scaly.io/install.sh | SCALY_VERSION=0.2.29 sh</code
 ></pre
 ><p
 >The toolchain's number is its own. The packages it brings — the

@@ -27,7 +27,8 @@
 #   SCALY_ACCEPT_LICENSE  set to 1 to accept the license without being asked
 #   SCALY_PREFIX          install location            (default %USERPROFILE%\.scaly)
 #   SCALY_VERSION         version to fetch            (default: the newest,
-#                         which <base>/downloads/latest names)
+#                         which <base>/downloads/latest names; only the
+#                         newest version's archives are kept)
 #   SCALY_INSTALL_BASE    base URL for downloads, or a local directory holding
 #                         the two archives            (default https://scaly.io)
 #   SCALY_NO_MODIFY_PATH  set to 1 to leave PATH alone
@@ -163,7 +164,10 @@ SOFTWARE.
                 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
                 $ProgressPreference = 'SilentlyContinue'
                 try { Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $dest }
-                catch { Say "error: could not fetch $url ($($_.Exception.Message))"; return }
+                catch {
+                    if ($env:SCALY_VERSION) { Say "error: Scaly $version is not at $base (only the newest version is kept) - leave SCALY_VERSION unset to install that one"; return }
+                    Say "error: could not fetch $url ($($_.Exception.Message))"; return
+                }
             }
         }
 
