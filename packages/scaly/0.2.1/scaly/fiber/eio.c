@@ -1779,6 +1779,39 @@ long long scaly_stack_limit(void)
     return (long long)rl.rlim_cur;
 }
 
+/* THE macOS VERSION, shim category (a): kern.osproductversion is a Darwin
+ * sysctl, and sysctlbyname is no symbol on Linux. The compiler asks it for the
+ * version it writes into an object's triple (Emitter.host_triple#): LLVM's
+ * default triple names the KERNEL (`arm64-apple-darwin27.0.0`), and the macOS
+ * LLVM derives from a kernel number LLVM has not seen yet need not be the one
+ * the system is -- macOS 27 with darwin 27 came out as an object for macOS 28,
+ * which the linker, targeting 27.0, warned about on every link. The version
+ * is written into buf without a terminator; the answer is its length, 0 where
+ * there is none (not macOS, or it does not fit).
+ */
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#endif
+
+unsigned long long scaly_macos_version(char* buf, unsigned long long cap)
+{
+#ifdef __APPLE__
+    char v[64];
+    size_t n = sizeof v;
+    if (sysctlbyname("kern.osproductversion", v, &n, NULL, 0) != 0 || n == 0)
+        return 0;
+    if (v[n - 1] == 0)
+        n--;
+    if (n == 0 || n > cap)
+        return 0;
+    memcpy(buf, v, n);
+    return n;
+#else
+    (void)buf; (void)cap;
+    return 0;
+#endif
+}
+
 /* THE SIZED THREAD SPAWN, shim category (a): pthread_attr_t is an opaque,
  * OS-specific block, so the stack size cannot be set from the Scaly side of
  * a direct pthread_create extern. A thread a Scaly program spawns runs what

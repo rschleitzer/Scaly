@@ -40,6 +40,10 @@ function dlsym(handle: pointer[void], symbol: pointer[const_char]) returns point
 ; `scaly test` drains what a test printed through stdio before the tool writes
 ; its verdict, so the two arrive in order
 function fflush(stream: pointer[void]) returns i32 extern
+; the macOS version, for the host's triple (Emitter.host_triple#; the shim
+; beside eio, scaly/fiber/eio.c): written into buf, the answer its length, 0
+; where there is none
+procedure scaly_macos_version(mutable buf: pointer[void], cap: size_t) returns size_t extern
 
 define Emitter
 {
@@ -604,6 +608,49 @@ define Emitter
             init_debug_info()
         }
 
+        ; The host's triple, as the objects are to name it: LLVM's default, but
+        ; on macOS the macOS version in place of the kernel's. LLVM's default
+        ; names the kernel (`arm64-apple-darwin27.0.0`) and derives the macOS
+        ; from it, which is only right for a kernel LLVM knows: on macOS 27,
+        ; darwin 27, every object said macOS 28 and the link (clang, for the
+        ; system's 27.0) warned that it was built for a newer macOS. The
+        ; version: MACOSX_DEPLOYMENT_TARGET where it is set, as clang takes
+        ; it, else the system's major version.
+        procedure host_triple(this) returns String
+        {
+            let t LLVMGetDefaultTargetTriple()
+            if t = null
+                return String()
+            let s String(t as pointer[const_char])
+            LLVMDisposeMessage t
+            if s.contains(String("-apple-darwin")) = false
+                return s
+            var version String()
+            let env getenv("MACOSX_DEPLOYMENT_TARGET")
+            if env <> null
+                version := String(env)
+            if version.get_length() = 0
+            {
+                var buf u8[64]
+                let n scaly_macos_version(buf as pointer[void], 64)
+                if n = 0
+                    return s
+                let system String(buf as pointer[const_char], n)
+                ; the major version: clang links for the SDK's version (27.0
+                ; on 27.0.1), and an object for a NEWER macOS than the link
+                ; is what the linker warns about; an older one is not
+                let dot system.index_of("." as char)
+                if dot > 0
+                    version := "`system.substring(0, dot as size_t)`.0"
+                else
+                    version := "`system`.0"
+            }
+            let dash s.index_of("-" as char)
+            if dash <= 0
+                return s
+            "`s.substring(0, dash as size_t)`-apple-macosx`version`"
+        }
+
         ; Resolve the emission triple (host default, or --target override) to a
         ; TargetMachine and copy its DataLayout string onto the module. Best
         ; effort: on any failure the module keeps no layout — the llc path
@@ -620,16 +667,14 @@ define Emitter
             LLVMInitializeWebAssemblyTarget()
             LLVMInitializeWebAssemblyTargetMC()
 
-            var triple (LLVMGetDefaultTargetTriple() as pointer[const_char])
+            let host this.host_triple()
+            if config.target_triple.get_length() = 0 and host.get_length() = 0
+                return
+            var triple host.to_c_string()
             if config.target_triple.get_length() > 0
             {
                 let override_triple config.target_triple.to_c_string()
                 triple := override_triple
-            }
-            else
-            {
-                if triple = null
-                    return
             }
 
             ; Stage 7: the object format decides whether a linkonce_odr function
@@ -9781,16 +9826,14 @@ define Emitter
             ; that triple instead of the host default -- an LP64 one (arm64,
             ; x86_64 on darwin, linux, windows) or WebAssembly (wasm32). The
             ; module carries the triple's datalayout (apply_target_layout#).
-            var triple (LLVMGetDefaultTargetTriple() as pointer[const_char])
+            let host this.host_triple()
+            if config.target_triple.get_length() = 0 and host.get_length() = 0
+                return false
+            var triple host.to_c_string()
             if config.target_triple.get_length() > 0
             {
                 let override_triple config.target_triple.to_c_string()
                 triple := override_triple
-            }
-            else
-            {
-                if triple = null
-                    return false
             }
 
             LLVMSetTarget(llvm_module, triple)

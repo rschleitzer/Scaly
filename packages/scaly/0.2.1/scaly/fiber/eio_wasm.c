@@ -280,6 +280,13 @@ int scaly_eio_dir_close(void* dir)
 /* 0: cannot tell -- the linker's stack size is not something WASI reports */
 long long scaly_stack_limit(void) { return 0; }
 
+/* not macOS: no version to write into a triple (see eio.c) */
+unsigned long long scaly_macos_version(char* buf, unsigned long long cap)
+{
+    (void)buf; (void)cap;
+    return 0;
+}
+
 /* no threads in this profile: a spawn fails as pthread_create does where it
  * cannot start one, and the caller reports it (Thread.spawn's trap) */
 int scaly_thread_spawn_sized(unsigned long long* thread, void* start, void* arg, unsigned long long stack_size)

@@ -1232,6 +1232,13 @@ long long scaly_stack_limit(void)
     return (long long)(high - low);
 }
 
+/* not macOS: no version to write into a triple (see eio.c) */
+unsigned long long scaly_macos_version(char* buf, unsigned long long cap)
+{
+    (void)buf; (void)cap;
+    return 0;
+}
+
 /* The sized thread spawn, the Windows half of eio.c's (see the account
  * there). CreateThread's size argument is the initial COMMIT unless
  * STACK_SIZE_PARAM_IS_A_RESERVATION says otherwise -- without the flag a
