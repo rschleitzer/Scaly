@@ -14,7 +14,7 @@
         (file "packages/scaly/0.2.1/scaly/operation.scaly"
             (generate-operation)
         )
-        (file "packages/scalyls/0.2.0/scalyls/grammar.scaly"
+        (file "packages/scalyls/0.2.1/scalyls/grammar.scaly"
             (generate-highlight)
         )
         (file "editors/vscode/syntaxes/scaly.tmLanguage.json"
