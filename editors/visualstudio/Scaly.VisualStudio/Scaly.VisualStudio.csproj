@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Scaly for Visual Studio. A VisualStudio.Extensibility extension hosted in
+    process (VssdkCompatibleExtension), because two of its parts need what only
+    the in-process model offers: the TextMate grammar is registered by a
+    .pkgdef, and Open Folder build, debug and test are MEF parts of the
+    Microsoft.VisualStudio.Workspace and Test Explorer APIs.
+
+    Build it with Visual Studio's MSBuild (../build.sh); `dotnet build` does not
+    find the VSSDK targets.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Scaly.VisualStudio</RootNamespace>
+    <AssemblyName>Scaly.VisualStudio</AssemblyName>
+    <VssdkCompatibleExtension>true</VssdkCompatibleExtension>
+    <TargetVsixContainerName>scaly-visualstudio.vsix</TargetVsixContainerName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Sdk" Version="17.14.40265" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Workspace" Version="17.12.19" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.Extensions.VS" Version="17.12.19" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="17.12.19" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.14.40608" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40608" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- The Test Explorer interfaces are not on NuGet in a current version: compile
+       against the copies of the Visual Studio that builds, never carry them. -->
+  <PropertyGroup>
+    <TestWindowDir>$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\TestWindow\</TestWindowDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.TestWindow.Interfaces">
+      <HintPath>$(TestWindowDir)Microsoft.VisualStudio.TestWindow.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.TestPlatform.ObjectModel">
+      <HintPath>$(TestWindowDir)Microsoft.VisualStudio.TestPlatform.ObjectModel.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- One source of truth: the grammar, the language configuration, the icon and
+       the notices are the VS Code extension's files, taken at build time. -->
+  <ItemGroup>
+    <Content Include="..\..\vscode\syntaxes\scaly.tmLanguage.json" Link="Grammars\scaly.tmLanguage.json" />
+    <Content Include="..\..\vscode\language-configuration.json" Link="language-configuration.json" />
+    <Content Include="..\..\vscode\icon.png" Link="icon.png" />
+    <Content Include="..\..\vscode\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" />
+    <Content Include="..\LICENSE" Link="LICENSE" />
+    <Content Include="scaly.pkgdef" />
+    <None Include="source.extension.vsixmanifest" />
+  </ItemGroup>
+
+  <!-- The test adapter runs in the test host, not in Visual Studio: its own
+       assembly, carried in the VSIX as a UnitTestExtension. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Scaly.TestAdapter\Scaly.TestAdapter.csproj" ReferenceOutputAssembly="false" />
+    <Content Include="..\Scaly.TestAdapter\bin\$(Configuration)\net472\Scaly.TestAdapter.dll" Link="Scaly.TestAdapter.dll" />
+  </ItemGroup>
+</Project>

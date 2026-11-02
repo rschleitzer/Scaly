@@ -1,0 +1,5 @@
+[$RootKey$\TextMate\Repositories]
+"Scaly"="$PackageFolder$\Grammars"
+
+[$RootKey$\TextMate\LanguageConfiguration\GrammarMapping]
+"source.scaly"="$PackageFolder$\language-configuration.json"

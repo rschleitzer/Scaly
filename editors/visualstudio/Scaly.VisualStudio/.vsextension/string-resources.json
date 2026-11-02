@@ -1,0 +1,11 @@
+{
+  "Scaly.Settings.Category": "Scaly",
+  "Scaly.Settings.Category.Description": "Where Visual Studio finds the Scaly programs.",
+  "Scaly.Settings.ServerPath": "Language server",
+  "Scaly.Settings.ServerPath.Description": "Path to scalyls.exe. Empty: scalyls on PATH, then the scaly.io installation (%USERPROFILE%\\.scaly\\toolchain\\libexec). Takes effect when the server starts next.",
+  "Scaly.Settings.ToolPath": "Scaly tool",
+  "Scaly.Settings.ToolPath.Description": "Path to scaly.exe, used to build and debug a .scaly file. Empty: scaly on PATH, then the scaly.io installation.",
+  "Scaly.Settings.Home": "SCALY_HOME",
+  "Scaly.Settings.Home.Description": "The prelude and package root handed to the language server and the build. Empty: the open folder when it is a Scaly checkout (holds packages/scaly), else what the installed programs set themselves.",
+  "Scaly.LanguageServer.DisplayName": "Scaly Language Server"
+}

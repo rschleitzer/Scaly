@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="scaly-visualstudio" Version="0.1.0" Language="en-US" Publisher="Scaly" />
+    <DisplayName>Scaly</DisplayName>
+    <Description xml:space="preserve">Scaly language support: the scalyls language server, TextMate highlighting, and build, debug and test of .scaly files in Open Folder.</Description>
+    <MoreInfo>https://scaly.io</MoreInfo>
+    <License>LICENSE</License>
+    <Icon>icon.png</Icon>
+    <Tags>Scaly</Tags>
+  </Metadata>
+  <Installation ExtensionType="VSSDK+VisualStudio.Extensibility">
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[18.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[18.0,19.0)">
+      <ProductArchitecture>arm64</ProductArchitecture>
+    </InstallationTarget>
+  </Installation>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[18.0,)" DisplayName="Visual Studio core editor" />
+  </Prerequisites>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="scaly.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
+    <Asset Type="UnitTestExtension" Path="Scaly.TestAdapter.dll" />
+  </Assets>
+</PackageManifest>
