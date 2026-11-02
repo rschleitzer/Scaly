@@ -4,13 +4,15 @@ Visual Studio 2026 support for [Scaly](https://scaly.io), on the Open Folder
 model: open a folder of `.scaly` files (File > Open > Folder), no project file.
 The extension adds nothing of its own to the language; it wires what exists:
 
-- **Editor**: the content type `scaly` for `*.scaly`, coloured by the TextMate
+- **Editor**: the content type `scaly` for `*.scaly`, with the Scaly icon in
+  Solution Explorer, coloured by the TextMate
   grammar of the VS Code extension (`../vscode/syntaxes/`), with its comments
   and brackets (`../vscode/language-configuration.json`). Both are taken from
   there at build time, so the VS Code extension stays their one source.
 - **Language server**: `scalyls` over stdio: diagnostics in the editor and the
-  Error List, hover, Go to Definition, Find All References, rename,
-  completion, semantic tokens.
+  Error List, hover, Go to Definition (F12), Find All References
+  (Shift+F12), rename (Ctrl+R, Ctrl+R), Go to All (Ctrl+T), signature help,
+  folding, semantic tokens, completion.
 - **Build**: Build on a `.scaly` file in Solution Explorer runs
   `scaly build -g file.scaly -o file.exe`; the output goes to the Build pane,
   errors with file and line to the Error List.
@@ -23,6 +25,16 @@ The programs are found on `PATH`, else where the scaly.io installer puts them
 (`%USERPROFILE%\.scaly\toolchain\libexec`); Tools > Options > Scaly sets them
 explicitly, and `SCALY_HOME`. The test adapter runs apart from Visual Studio
 and does not read those settings.
+
+## Limits
+
+- Visual Studio does not ask a language server for code lenses or the call
+  hierarchy, so neither appears, though `scalyls` offers both.
+- Completion comes from `scalyls`, which answers only while the file parses:
+  on a half-typed line the list is empty. VS Code falls back to word
+  completion there; Visual Studio shows nothing.
+- Hover on a call shows what the call yields; hover on the definition shows
+  the signature.
 
 ## Building
 

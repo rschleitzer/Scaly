@@ -53,9 +53,18 @@
     <Content Include="..\..\vscode\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" />
     <Content Include="..\LICENSE" Link="LICENSE" />
     <Content Include="scaly.pkgdef" />
+    <Content Include="scaly.imagemanifest" />
     <None Include="source.extension.vsixmanifest" />
   </ItemGroup>
 
+  <!-- The file icon: the image manifest names it by a component pack URI into
+       this assembly, so the picture is a WPF resource here. -->
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="..\..\vscode\icon.png" Link="Resources\scaly.png" />
+  </ItemGroup>
   <!-- The test adapter runs in the test host, not in Visual Studio: its own
        assembly, carried in the VSIX as a UnitTestExtension. -->
   <ItemGroup>

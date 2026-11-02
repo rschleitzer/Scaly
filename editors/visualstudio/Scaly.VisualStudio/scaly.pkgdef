@@ -3,3 +3,9 @@
 
 [$RootKey$\TextMate\LanguageConfiguration\GrammarMapping]
 "source.scaly"="$PackageFolder$\language-configuration.json"
+
+[$RootKey$\BindingPaths\{5fb600de-79c5-47d4-9e20-95615b5e7fd1}]
+"$PackageFolder$"=""
+
+[$RootKey$\ShellFileAssociations\.scaly]
+"DefaultIconMoniker"="c085d1e4-818c-44be-b1dd-df196038da8f:1"

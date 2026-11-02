@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The file icon of .scaly (scaly.pkgdef, ShellFileAssociations): the VS Code
+     extension's icon.png, a resource of this extension's assembly (a PNG must be
+     a managed resource; scaly.pkgdef's BindingPaths lets Visual Studio find the
+     assembly by name before the extension has loaded). -->
+<ImageManifest xmlns="http://schemas.microsoft.com/VisualStudio/ImageManifestSchema/2014">
+  <Symbols>
+    <String Name="Resources" Value="/Scaly.VisualStudio;component/Resources" />
+    <Guid Name="ScalyImages" Value="{c085d1e4-818c-44be-b1dd-df196038da8f}" />
+    <ID Name="ScalyFile" Value="1" />
+  </Symbols>
+  <Images>
+    <Image Guid="$(ScalyImages)" ID="$(ScalyFile)" AllowColorInversion="false">
+      <Source Uri="$(Resources)/scaly.png">
+        <SizeRange MinSize="16" MaxSize="256" />
+      </Source>
+    </Image>
+  </Images>
+</ImageManifest>
