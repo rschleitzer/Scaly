@@ -182,7 +182,7 @@ lsp_build_server /tmp/scalyls$X
 # coalesce the didOpen and didChange analyses away and this test would be
 # asserting the batch behaviour instead of the editor one. See the
 # typing-burst group below, which asserts exactly that coalescing.
-python3 - "$@" <<'PY'
+SCALYLS_VERSION="$(tools/version.sh scalyls)" python3 - "$@" <<'PY'
 import sys, json, subprocess, os, select, time
 def frame(o):
     b = json.dumps(o).encode()
@@ -279,6 +279,8 @@ if failures:
     sys.exit(1)
 check(frames[0].get("id") == 1 and "capabilities" in frames[0].get("result", {}), "initialize -> capabilities")
 check(frames[0]["result"]["capabilities"].get("textDocumentSync") == 2, "textDocumentSync == 2 (incremental)")
+check(frames[0]["result"].get("serverInfo", {}).get("version") == os.environ["SCALYLS_VERSION"],
+      "serverInfo.version is the package's version directory (%s)" % os.environ["SCALYLS_VERSION"])
 check(frames[1].get("method") == "textDocument/publishDiagnostics", "didOpen -> publishDiagnostics")
 check(frames[1]["params"]["diagnostics"] == [], "valid doc -> no diagnostics")
 diags = frames[2]["params"]["diagnostics"]

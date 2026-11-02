@@ -1222,7 +1222,8 @@ define server
 
     ; {"jsonrpc":"2.0","id":<id>,"result":{"capabilities":
     ;   {"textDocumentSync":1},"serverInfo":{"name":"scalyls",
-    ;   "version":"0.1.0"}}}
+    ;   "version":"0.2.1"}}} -- the version of this package, the name of its
+    ;   directory; tests/lsp/run.sh compares the two
     function initialize_response(id: i64) returns String
     {
         var sb StringBuilder()
@@ -1400,7 +1401,7 @@ define server
         sb.append(server.quoted("scalyls"))
         sb.append("," as char)
         sb.append(server.key("version"))
-        sb.append(server.quoted("0.1.0"))
+        sb.append(server.quoted("0.2.1"))
         sb.append("}" as char)                    ; } serverInfo
         sb.append("}" as char)                    ; } result
         sb.append("}" as char)                    ; } root
