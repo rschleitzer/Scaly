@@ -873,9 +873,11 @@ else
   out=$(ft run main.scaly 2> "$TMP/fetch2.err")
   [ "$out" = "Hello, Hello, git!!" ] && [ ! -s "$TMP/fetch2.err" ] && ok || bad "fetch: the second run said '$(head -1 "$TMP/fetch2.err" | cut -c1-120)'"
   ft build main.scaly --release -o "$TMP/fetch_m$SCALY_EXE" > "$TMP/fetchb.log" 2>&1 && [ "$("$TMP/fetch_m$SCALY_EXE")" = "Hello, Hello, git!!" ] && ok || bad "fetch: --release $(tail -1 "$TMP/fetchb.log" | cut -c1-120)"
-  # laid down read-only, commit and tree beside it
+  # laid down read-only, commit and tree beside it -- read-only where the
+  # system has chmod: the tool leaves the files as they are on Windows
+  # (tool.fetch_package#, "where the system has chmod")
   fd=$(find "$fb" -type d -path '*/inner/packages/inner/0.1.0' | head -1)
-  if [ -n "$fd" ] && [ ! -w "$fd/inner.scaly" ] && grep -q '^commit [0-9a-f]\{40\}$' "$fd.fetched" && grep -q '^tree [0-9a-f]\{40\}$' "$fd.fetched"; then ok; else bad "fetch: the record or the read-only files ($fd)"; fi
+  if [ -n "$fd" ] && { [ "$SCALY_COFF" = 1 ] || [ ! -w "$fd/inner.scaly" ]; } && grep -q '^commit [0-9a-f]\{40\}$' "$fd.fetched" && grep -q '^tree [0-9a-f]\{40\}$' "$fd.fetched"; then ok; else bad "fetch: the record or the read-only files ($fd)"; fi
   # a published version does not change
   ( cd "$fr/inner" && sed 's/Hello/Changed/' packages/inner/0.1.0/inner.scaly > x && mv x packages/inner/0.1.0/inner.scaly && tg commit -q -am two ) > /dev/null 2>&1
   rm -rf "$fd"
@@ -964,8 +966,10 @@ else
   printf 'package scaly 0.2.0\n\ndefine bare\n{\n    function one() returns int\n        1\n}\n' > "$kr/packages/bare/0.1.0/bare.scaly"
   ( cd "$kr" && tg init -q && tg add -A && tg commit -q -m one ) > /dev/null 2>&1
   kb="$TMP/kitbin"
+  # the directory and the source as the program prints them (scaly_path#)
+  kbs=$(scaly_path "$kb"); krs=$(scaly_path "$kr")
   out=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 2> "$TMP/install.err"); rc=$?
-  if [ "$rc" = 0 ] && echo "$out" | grep -q "^installed $kb/kit$SCALY_EXE\$" && echo "$out" | grep -q "^installed $kb/kit_twice$SCALY_EXE\$" \
+  if [ "$rc" = 0 ] && echo "$out" | grep -q "^installed $kbs/kit$SCALY_EXE\$" && echo "$out" | grep -q "^installed $kbs/kit_twice$SCALY_EXE\$" \
      && [ "$("$kb/kit$SCALY_EXE")" = "kit says hello!1" ] && [ "$("$kb/kit_twice$SCALY_EXE")" = "kit says twice twice!1" ] \
      && grep -q '^scaly: fetching kithelp 0.1.0 from ' "$TMP/install.err"; then
     ok
@@ -975,7 +979,7 @@ else
   # a directory that is not on the PATH is said, one that is, is not
   noted=$(cd "$fp" && SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 kit 2>/dev/null)
   quiet=$(cd "$fp" && PATH="$PATH:$kb/" SCALY_HOME="$here" SCALY_PACKAGES="$fb" SCALY_BIN="$kb" "$scaly_abs" install "$kr" kit 0.1.0 kit 2>/dev/null)
-  echo "$noted" | grep -q "^note: $kb is not on your PATH" && ! echo "$quiet" | grep -q 'not on your PATH' && ok \
+  echo "$noted" | grep -q "^note: $kbs is not on your PATH" && ! echo "$quiet" | grep -q 'not on your PATH' && ok \
     || bad "install: the PATH note '$(echo "$noted" | tail -1 | cut -c1-120)' / '$(echo "$quiet" | tail -1 | cut -c1-80)'"
   # what was installed is listed, and uninstall removes one of THOSE and
   # nothing else of the directory
@@ -984,7 +988,7 @@ else
   gone=$(SCALY_HOME="$here" SCALY_BIN="$kb" "$scaly_abs" uninstall kit 2>&1); rc_gone=$?
   refused=$(SCALY_HOME="$here" SCALY_BIN="$kb" "$scaly_abs" uninstall mine 2>&1); rc_ref=$?
   after=$(SCALY_HOME="$here" SCALY_BIN="$kb" "$scaly_abs" install 2>&1)
-  if echo "$listed" | grep -q "^  kit kit 0.1.0 $kr\$" && echo "$listed" | grep -q "^  kit_twice kit 0.1.0 " \
+  if echo "$listed" | grep -q "^  kit kit 0.1.0 $krs\$" && echo "$listed" | grep -q "^  kit_twice kit 0.1.0 " \
      && [ "$rc_gone" = 0 ] && [ ! -e "$kb/kit$SCALY_EXE" ] && [ -x "$kb/kit_twice$SCALY_EXE" ] \
      && [ "$rc_ref" != 0 ] && [ -e "$kb/mine$SCALY_EXE" ] && echo "$refused" | grep -q 'was not installed by scaly install' \
      && ! echo "$after" | grep -q '^  kit kit ' && echo "$after" | grep -q '^  kit_twice kit '; then

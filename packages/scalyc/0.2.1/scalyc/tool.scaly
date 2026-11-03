@@ -1871,8 +1871,11 @@ define tool
             unlink(out.to_c_string())
             return 1
         }
-        ; every tracked text file that names the old directory
-        system("git grep -lI -F \"`old_dir`\" > \"`out`\" 2> /dev/null".to_c_string())
+        ; every tracked text file that names the old directory. git's complaints
+        ; go to a file of their own, not to /dev/null: system() runs cmd.exe on
+        ; Windows, which knows no /dev/null and then runs nothing at all.
+        let err "`base`/scaly-next.`pid`.err"
+        system("git grep -lI -F \"`old_dir`\" > \"`out`\" 2> \"`err`\"".to_c_string())
         var files Array[String]()
         tool.read_lines(out, &files)
         unlink(out.to_c_string())
@@ -1894,10 +1897,11 @@ define tool
         }
         Console.println("next: `pkg` `old` -> `version` (`new_dir`; `changed` files named the old directory)")
         ; what the rename cannot follow: the number behind a variable
-        system("git grep -lI -F \"/`old`/\" > \"`out`\" 2> /dev/null".to_c_string())
+        system("git grep -lI -F \"/`old`/\" > \"`out`\" 2> \"`err`\"".to_c_string())
         var maybe Array[String]()
         tool.read_lines(out, &maybe)
         unlink(out.to_c_string())
+        unlink(err.to_c_string())
         var loose Array[String]()
         var g: size_t 0
         while g < maybe.length

@@ -93,3 +93,10 @@ scaly_jit_available() { true; }
 # in `$(...)`; a second line keeps its CR, which is how cluster's roundtrip
 # ('R1 PASS' / 'R2 PASS') fell while forty-five single-line fiber fixtures did not.
 scaly_lf() { if [ "$SCALY_COFF" = 1 ]; then LC_ALL=C tr -d '\r'; else cat; fi; }
+
+# The spelling in which a Scaly program prints back a path the shell handed it
+# (an argument, an environment variable). On Windows msys converts the path on
+# the way into the program -- /tmp/x arrives as C:/Users/.../Temp/x -- so a
+# comparison of the program's OUTPUT with the shell's spelling must convert it
+# the same way; a test of the FILE keeps the shell's. Identity on POSIX.
+scaly_path() { if [ "$SCALY_COFF" = 1 ]; then cygpath -m "$1"; else printf '%s' "$1"; fi; }
