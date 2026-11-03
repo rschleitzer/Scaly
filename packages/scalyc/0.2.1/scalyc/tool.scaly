@@ -815,6 +815,12 @@ define tool
                 ; exception handling, as the compiler's own code does
                 if tool.triple_os(triple) = "wasm"
                     cmd.append(" -mllvm -wasm-enable-sjlj")
+                ; Windows: clang stamps a COFF object with the time it was
+                ; made (TimeDateStamp, for an incremental linker we never
+                ; use), so two caches held different bytes for one source
+                ; (tests/tool parts). Without the stamp the field is 0.
+                if tool.triple_os(triple) = "windows"
+                    cmd.append(" -mno-incremental-linker-compatible")
                 if cmd_wrap
                     cmd.append("\"")
                 let cmd_str cmd.to_string()
