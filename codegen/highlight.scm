@@ -71,6 +71,24 @@
 (define (keyword-list)
     (map id (node-list->list (select-elements (children (current-node)) "keyword"))))
 
+;; Keywords RESERVED without a meaning: the grammar keeps them as keywords so
+;; they cannot be names, and nothing parses them. Authoritative list:
+;; Modeler.reserved_word_note, which says so at a line beginning with one.
+;; Completion leaves them out -- it offers what can be written.
+(define reserved-words '("extends" "implement" "macro" "trait"))
+
+;; `words` without the ones in `drop`, order kept.
+(define (words-except words drop)
+    (if (null? words)
+        '()
+        (if (member (car words) drop)
+            (words-except (cdr words) drop)
+            (cons (car words) (words-except (cdr words) drop)))))
+
+;; "a b c" -- words separated by single spaces, none trailing.
+(define (spaced words)
+    (apply $ (cons (car words) (map (lambda (w) ($ " " w)) (cdr words)))))
+
 ;; The body of a Scaly `(word: String) returns bool` predicate: one test per word.
 (define (word-tests words)
     (apply $ (map (lambda (w) ($
@@ -133,6 +151,14 @@ define grammar
     {
 "   (word-tests value-words)
 "        false
+    }
+
+    ; The words completion offers beside the names in scope: every keyword
+    ; but those reserved without a meaning (Modeler.reserved_word_note), then
+    ; the word operators and the value words. Separated by single spaces.
+    function completion_words() returns String
+    {
+        String(\"" (spaced (append (words-except (keyword-list) reserved-words) word-operators value-words)) "\")
     }
 }
 "

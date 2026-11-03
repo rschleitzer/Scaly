@@ -46,6 +46,7 @@ use scalyls.symindex
 use scalyls.grammar
 use scalyls.nameset
 use scalyls.semantic
+use scalyls.scope
 
 use scalyc.compiler.parser
 
@@ -4322,7 +4323,7 @@ define symbols
                     if cmem.get_length() > 0
                         return cmem
                 }
-                return symbols.flat_items(parse_source, uri)
+                return symbols.flat_items(parse_source, uri, offset, false)
             }
 
         let receiver symbols.receiver_before_cursor(source, offset)
@@ -4440,15 +4441,37 @@ define symbols
             if xpkg.get_length() > 0
                 return xpkg
         }
-        symbols.flat_items(parse_source, uri)
+        symbols.flat_items(parse_source, uri, offset, scope.after_dot(source, offset) = false)
     }
 
-    ; The flat all-names list of THIS document, tagged with its own uri so
-    ; completionItem/resolve knows where to read the doc blocks from.
-    procedure flat_items(mutable parse_source: String, uri: String) returns String
+    ; The flat list of THIS document: what it declares (completion_items#), then
+    ; -- with `in_scope_too`, i.e. where no `.` precedes the cursor -- the names
+    ; in scope at the cursor and the keywords (scope.items#), tagged with its
+    ; own uri so completionItem/resolve knows where to read the doc blocks from.
+    ; After a dot whose receiver resolved to nothing a local or a keyword is no
+    ; member, so the fallback there stays the declared names alone.
+    procedure flat_items(mutable parse_source: String, uri: String, offset: size_t, in_scope_too: bool) returns String
     {
-        let items symbols.completion_items parse_source
-        symbols.with_item_data(items, uri)
+        let declared symbols.completion_items parse_source
+        if in_scope_too = false
+            return symbols.with_item_data(declared, uri)
+        let in_scope scope.items(parse_source, offset)
+        if in_scope.get_length() = 0
+            return symbols.with_item_data(declared, uri)
+        ; join the fragment into the array: "[a,b]" + "c,d" -> "[a,b,c,d]"
+        var sb StringBuilder()
+        let n declared.get_length()
+        var i: size_t 0
+        while i + 1 < n
+        {
+            sb.append(declared.get(i) as char)
+            i := i + 1
+        }
+        if n > 2
+            sb.append("," as char)
+        sb.append(in_scope)
+        sb.append("]" as char)
+        symbols.with_item_data(sb.to_string(), uri)
     }
 
     ; ====================================================================

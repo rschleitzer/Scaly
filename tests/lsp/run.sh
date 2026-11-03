@@ -1109,8 +1109,9 @@ if [ $rc -eq 0 ]; then ok "lsp documentHighlight"; else bad "lsp documentHighlig
 
 # ---- completion: every declared name (top-level + members) ----
 # Parse-only flat CompletionItem[]: top-level functions/mutables/types plus
-# struct methods and union variants, each with its CompletionItemKind. The
-# cursor position is not used (the editor prefix-filters).
+# struct methods and union variants, each with its CompletionItemKind, FIRST
+# and in source order; the names in scope at the cursor and the keywords follow
+# (`lsp completion scope` below). The editor prefix-filters.
 python3 - <<'PY'
 import sys, json, subprocess
 src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
@@ -1154,8 +1155,8 @@ items = (r or {}).get("result")
 check(isinstance(items, list), "completion -> array result")
 items = items or []
 by = {it["label"]: it["kind"] for it in items}
-check([it["label"] for it in items] == ["add","counter","Point","get_x","Shape","Circle","Square"],
-      "flat names: top-level + members, in source order")
+check([it["label"] for it in items][:7] == ["add","counter","Point","get_x","Shape","Circle","Square"],
+      "flat names: top-level + members, in source order, first")
 check(by.get("add") == 3, "function -> Function(3)")
 check(by.get("counter") == 6, "mutable -> Variable(6)")
 check(by.get("Point") == 22, "define struct -> Struct(22)")
@@ -1166,6 +1167,95 @@ sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp completion"; else bad "lsp completion"; fi
+
+# ---- completion: the names in scope at the cursor, then the keywords ----
+# What a body binds is offered where it is visible (scalyls/scope.scaly): the
+# routine's parameters, the bindings whose statement ENDED above the cursor in
+# the blocks around it, a loop variable inside its body -- not a later
+# binding, not a sibling routine's, and a program's own statements only
+# outside its routines. Then the keywords, word operators and value words,
+# without those reserved without a meaning. Last case: a half-typed last line
+# of a body without braces, which the parse repair blanks, still counts as in
+# that routine.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function double(n: int) returns int\n"          # 0
+       "    n * 2\n"                                     # 1
+       "\n"                                              # 2
+       "function sum(xs: Vector[int]) returns int\n"     # 3
+       "{\n"                                             # 4
+       "    var total 0\n"                               # 5
+       "    for x in xs\n"                               # 6
+       "    {\n"                                         # 7
+       "        let doubled double(x)\n"                 # 8
+       "        total := total + doubled\n"              # 9
+       "    }\n"                                         # 10
+       "    total\n"                                     # 11
+       "}\n"                                             # 12
+       "\n"                                              # 13
+       "let d double(21)\n"                              # 14
+       "let p d + 1\n"                                   # 15
+       "print \"`p`\"\n")                                # 16
+typing = src.replace("    n * 2\n", "    n * 2\n    nn\n", 1)
+import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/completion_scope"; _sh.rmtree(_ws, ignore_errors=True); _os.makedirs(_ws)
+path = _ws + "/scope.scaly"
+open(path, "w").write(src)
+tpath = _ws + "/typing.scaly"
+open(tpath, "w").write(typing)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def comp(idn, p, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/completion",
+                  "params":{"textDocument":{"uri":"file://"+p},"position":{"line":line,"character":char}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":
+              {"uri":"file://"+tpath,"languageId":"scaly","version":1,"text":typing}}})
+inp += comp(2, path, 1, 4)     # in double's body
+inp += comp(3, path, 9, 8)     # in the loop body, after `let doubled`
+inp += comp(4, path, 8, 8)     # in the loop body, at `let doubled`
+inp += comp(5, path, 11, 4)    # in sum's body, after the loop
+inp += comp(6, path, 16, 0)    # among the program's statements
+inp += comp(7, path, 14, 6)    # in `let d`'s own initializer
+inp += comp(8, tpath, 2, 6)    # typing a last line of double: `    nn`
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def items(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return {it["label"]: it for it in ((f or {}).get("result") or [])}
+def names(idn):
+    return {k for k, it in items(idn).items() if it.get("kind") == 6}
+d2 = items(2)
+check("n" in names(2), "double's body: its parameter n")
+check(d2.get("n", {}).get("detail") == "int", "a parameter's detail is its type")
+check(not ({"xs","total","x","doubled","d","p"} & names(2)), "double's body: nothing of sum or the program")
+check(d2.get("let", {}).get("kind") == 14, "keyword `let` -> Keyword(14)")
+check(all(k in d2 for k in ("return","function","if","and","true","this")), "keywords, word operators, value words")
+check(not ({"trait","implement","extends","macro"} & set(d2)), "words reserved without a meaning are not offered")
+check({"xs","total","x","doubled"} <= names(3), "loop body after `let doubled`: xs, total, x, doubled")
+check(items(3).get("xs", {}).get("detail") == "Vector[int]", "detail of xs is Vector[int]")
+check("n" not in names(3), "sum's body: not double's parameter")
+check("x" in names(4) and "doubled" not in names(4), "at `let doubled`: x, not yet doubled")
+check({"xs","total"} <= names(5) and not ({"x","doubled"} & names(5)), "after the loop: xs, total; not x, doubled")
+check({"d","p"} <= names(6) and not ({"n","xs","total"} & names(6)), "program statements: d, p; no routine's names")
+check("d" not in names(7), "`let d`'s own initializer: not d")
+check("n" in names(8) and "d" not in names(8), "half-typed last line of a braceless body: still in double")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp completion scope"; else bad "lsp completion scope"; fi
 
 # ---- completion `detail`: the grey text beside the label ----
 # A list of bare names cannot be read: `append` says nothing about whether it
@@ -2572,7 +2662,7 @@ check(labels(3) == ["Circle","Square"], "`Shape.` -> only the union's variants")
 check(kinds(3).get("Circle") == 20, "variant kept its CompletionItemKind (EnumMember=20)")
 flat = ["add","counter","Point","get_x","Shape","Circle","Square","trigger"]
 check(labels(4) == ["x","get_x"], "variable receiver `p.` (p: Point) -> Point's members")
-check(labels(5) == flat, "no dot -> flat all-names list (unchanged)")
+check(labels(5)[:len(flat)] == flat, "no dot -> flat all-names list first (then scope and keywords)")
 sys.exit(1 if failures else 0)
 PY
 rc=$?

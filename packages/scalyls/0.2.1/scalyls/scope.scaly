@@ -1,0 +1,918 @@
+; scope.scaly - the names completion offers at the cursor.
+;
+; completion_items# (symbols.scaly) lists what a FILE declares: its routines,
+; its types, their members. What a body binds is not there -- the parameters
+; of the routine the cursor is in, the `let`/`var` above the cursor in the
+; blocks around it, a loop variable, a `when` binding, a lambda's inputs, and
+; in a program the bindings of its own statements. This walk adds them, from
+; the parse tree alone (no planner: a completion is asked at every keystroke).
+;
+; Visibility is the language's: a binding is visible once its statement has
+; ENDED before the cursor (so `let x f(` does not offer x), in its block and
+; the blocks inside it; a routine's names are visible in its body only, and a
+; program's statements are not visible in its routines.
+;
+; Every node's `start` is the parser's previous_position -- the end of the
+; token BEFORE it, often on an earlier line -- so a span test on `start` would
+; put a blank line in front of a routine inside it. first_token# skips the
+; white space and comments to the node's own first token.
+;
+; The answer is a comma-joined fragment of CompletionItems (no brackets), the
+; shape completion_items# answers inside its brackets; flat_items# joins them.
+
+use scalyc.compiler.parser
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+use scalyls.symbols
+use scalyls.grammar
+
+define scope
+{
+    ; CompletionItemKind values used here (LSP).
+    define VARIABLE: i64 6
+    define KEYWORD: i64 14
+
+    ; The names in scope at `offset` in `source`, then the keywords, as a
+    ; comma-joined fragment of items. `source` must be the text the cursor
+    ; offset indexes (the repaired copy keeps every offset).
+    procedure items(mutable source: String, offset: size_t) returns String
+    {
+        var found StringBuilder()
+        var p parser.Parser(source)
+        choose p.parse_program()
+            when err: Error {}
+            when program: Success
+            {
+                var in_routine false
+                let file program.file
+                if file.declarations <> null
+                    in_routine := scope.declarations(&found, source, (*file.declarations), offset)
+                if in_routine = false and program.statements <> null
+                    scope.statements(&found, source, (*program.statements), offset)
+            }
+        scope.keywords(&found)
+        scope.to_items(found.to_string())
+    }
+
+    ; ------------------------------------------------------------------
+    ; Collecting. Each name is recorded as "\n<kind> <name>\t<detail>"; the
+    ; first record of a name wins (to_items#), so an inner shadow and an outer
+    ; binding of one name are offered once.
+
+    procedure add(mutable out: ref[StringBuilder], name: String, detail: String, kind: i64)
+    {
+        if name.get_length() = 0
+            return
+        out.append("\n" as char)
+        out.append(kind)
+        out.append(" " as char)
+        out.append(name)
+        out.append("\t" as char)
+        out.append(detail)
+    }
+
+    ; The keywords, the word operators and the value words (grammar.scaly,
+    ; generated from scaly.sgm). Each record is written from its view into
+    ; the word list: no String is built for it.
+    procedure keywords(mutable out: ref[StringBuilder])
+    {
+        let words grammar.completion_words()
+        let all words.as_slice()
+        let n words.get_length()
+        var start: size_t 0
+        var i: size_t 0
+        while i <= n
+        {
+            if i = n or words.get(i) = (" " as char)
+            {
+                if i > start
+                {
+                    let word all.subslice(start, i)
+                    out.append("\n" as char)
+                    out.append(scope.KEYWORD)
+                    out.append(" " as char)
+                    out.append(word)
+                    out.append("\t" as char)
+                }
+                start := i + 1
+            }
+            i := i + 1
+        }
+    }
+
+    ; ------------------------------------------------------------------
+    ; Declarations: find the routine the cursor is in. Answers true when one
+    ; was found (its names are then the whole scope; a program's statements
+    ; are not visible in a routine).
+
+    procedure declarations(mutable out: ref[StringBuilder], source: String, decls: Vector[DeclarationSyntax], offset: size_t) returns bool
+    {
+        var i: size_t 0
+        while i < decls.length
+        {
+            let dptr decls.get i
+            if dptr <> null
+            {
+                if scope.declaration(out, source, (*dptr), offset)
+                    return true
+            }
+            i := i + 1
+        }
+        false
+    }
+
+    procedure declaration(mutable out: ref[StringBuilder], source: String, decl: DeclarationSyntax, offset: size_t) returns bool
+    {
+        choose decl
+            when f: FunctionSyntax
+                return scope.target(out, source, f.target, f.start, f.end, offset)
+            when pr: ProcedureSyntax
+                return scope.target(out, source, pr.target, pr.start, pr.end, offset)
+            when op: OperatorSyntax
+                return scope.target(out, source, op.target, op.start, op.end, offset)
+            when def: DefinitionSyntax
+                return scope.definition(out, source, def, offset)
+            when priv: PrivateSyntax
+                return scope.export_decl(out, source, priv.export_, offset)
+            else
+                return false
+    }
+
+    procedure export_decl(mutable out: ref[StringBuilder], source: String, export_: ExportSyntax, offset: size_t) returns bool
+    {
+        choose export_
+            when f: FunctionSyntax
+                return scope.target(out, source, f.target, f.start, f.end, offset)
+            when pr: ProcedureSyntax
+                return scope.target(out, source, pr.target, pr.start, pr.end, offset)
+            when op: OperatorSyntax
+                return scope.target(out, source, op.target, op.start, op.end, offset)
+            when def: DefinitionSyntax
+                return scope.definition(out, source, def, offset)
+            else
+                return false
+    }
+
+    procedure definition(mutable out: ref[StringBuilder], source: String, def: DefinitionSyntax, offset: size_t) returns bool
+    {
+        if offset < scope.first_token(source, def.start)
+            return false
+        if offset > def.end
+            return false
+        choose def.concept_
+            when c: ClassSyntax
+                return scope.body(out, source, c.body, offset)
+            when un: UnionSyntax
+                return scope.body(out, source, un.body, offset)
+            when ns: NamespaceSyntax
+            {
+                if ns.declarations = null
+                    return false
+                return scope.declarations(out, source, (*ns.declarations), offset)
+            }
+            else
+                return false
+    }
+
+    procedure body(mutable out: ref[StringBuilder], source: String, body: ref[BodySyntax]?, offset: size_t) returns bool
+    {
+        if body = null
+            return false
+        let b (*body)
+        if b.members = null
+            return false
+        let members (*b.members)
+        var i: size_t 0
+        while i < members.length
+        {
+            let mptr members.get i
+            if mptr <> null
+            {
+                if scope.member(out, source, (*mptr), offset)
+                    return true
+            }
+            i := i + 1
+        }
+        false
+    }
+
+    procedure member(mutable out: ref[StringBuilder], source: String, member: MemberSyntax, offset: size_t) returns bool
+    {
+        choose member
+            when f: FunctionSyntax
+                return scope.target(out, source, f.target, f.start, f.end, offset)
+            when pr: ProcedureSyntax
+                return scope.target(out, source, pr.target, pr.start, pr.end, offset)
+            when op: OperatorSyntax
+                return scope.target(out, source, op.target, op.start, op.end, offset)
+            when ini: InitSyntax
+            {
+                if scope.holds(source, ini.start, ini.end, offset) = false
+                    return false
+                scope.parameters(out, source, ini.parameters)
+                choose ini.implementation
+                    when a: ActionSyntax
+                        scope.action(out, source, a, offset)
+                    else {}
+                return true
+            }
+            when def: DefinitionSyntax
+                return scope.definition(out, source, def, offset)
+            else
+                return false
+    }
+
+    ; A function, procedure or operator spanning [start, end].
+    procedure target(mutable out: ref[StringBuilder], source: String, target: TargetSyntax, start: size_t, end: size_t, offset: size_t) returns bool
+    {
+        if scope.holds(source, start, end, offset) = false
+            return false
+        choose target
+            when n: NamedSyntax
+                scope.routine(out, source, n.routine, offset)
+            when r: RoutineSyntax
+                scope.routine(out, source, r, offset)
+        true
+    }
+
+    procedure routine(mutable out: ref[StringBuilder], source: String, routine: RoutineSyntax, offset: size_t)
+    {
+        scope.parameters(out, source, routine.parameters)
+        choose routine.implementation
+            when a: ActionSyntax
+                scope.action(out, source, a, offset)
+            else {}
+    }
+
+    procedure parameters(mutable out: ref[StringBuilder], source: String, set: ref[ParameterSetSyntax]?)
+    {
+        if set = null
+            return
+        choose (*set)
+            when ps: ParametersSyntax
+            {
+                if ps.items = null
+                    return
+                let items (*ps.items)
+                var i: size_t 0
+                while i < items.length
+                {
+                    let ip items.get i
+                    if ip <> null
+                    {
+                        let item (*ip)
+                        var detail ""
+                        if item.annotation <> null
+                            detail := scope.text(source, (*item.annotation).type.start, (*item.annotation).type.end)
+                        scope.add(out, item.name, detail, scope.VARIABLE)
+                    }
+                    i := i + 1
+                }
+            }
+            else {}
+    }
+
+    ; ------------------------------------------------------------------
+    ; Statements, blocks and the expressions that open a scope.
+
+    ; The bindings of the statements that END before the cursor, then the
+    ; scopes inside the statement the cursor is in. The statements after it
+    ; are not visible.
+    procedure statements(mutable out: ref[StringBuilder], source: String, stmts: Vector[StatementSyntax], offset: size_t)
+    {
+        var i: size_t 0
+        while i < stmts.length
+        {
+            let sp stmts.get i
+            if sp <> null
+            {
+                let s (*sp)
+                if scope.statement_end(s) <= offset
+                    scope.statement_names(out, source, s)
+                else
+                {
+                    if scope.first_token(source, scope.statement_start(s)) <= offset
+                        scope.statement_inner(out, source, s, offset)
+                    break
+                }
+            }
+            i := i + 1
+        }
+    }
+
+    procedure statement_names(mutable out: ref[StringBuilder], source: String, s: StatementSyntax)
+    {
+        choose s
+            when l: LetSyntax
+                scope.binding_names(out, source, l.binding)
+            when v: VarSyntax
+                scope.binding_names(out, source, v.binding)
+            when m: MutableSyntax
+                scope.add(out, m.binding.name, scope.annotation_text(source, m.binding.annotation), scope.VARIABLE)
+            else {}
+    }
+
+    procedure binding_names(mutable out: ref[StringBuilder], source: String, b: LetBindingSyntax)
+    {
+        choose b
+            when bn: BindingSyntax
+                scope.add(out, bn.name, scope.annotation_text(source, bn.annotation), scope.VARIABLE)
+            when d: DecompositionSyntax
+            {
+                if d.names = null
+                    return
+                let names (*d.names)
+                var i: size_t 0
+                while i < names.length
+                {
+                    let np names.get i
+                    if np <> null
+                        scope.add(out, (*np).name, "", scope.VARIABLE)
+                    i := i + 1
+                }
+            }
+    }
+
+    ; The scopes inside ONE statement that holds the cursor: a block or a
+    ; loop among its operands.
+    procedure statement_inner(mutable out: ref[StringBuilder], source: String, s: StatementSyntax, offset: size_t)
+    {
+        choose s
+            when op: OperationSyntax
+                scope.operation(out, source, op, offset)
+            when l: LetSyntax
+                scope.binding_operands(out, source, l.binding, offset)
+            when v: VarSyntax
+                scope.binding_operands(out, source, v.binding, offset)
+            when m: MutableSyntax
+                scope.operands(out, source, m.binding.operation, offset)
+            when r: ReturnSyntax
+                scope.operands(out, source, r.result, offset)
+            when t: ThrowSyntax
+                scope.operands(out, source, t.result, offset)
+            when b: BreakSyntax
+                scope.operands(out, source, b.result, offset)
+            else {}
+    }
+
+    ; A single statement as an arm (`if`, `else`, `when`, a `match` branch):
+    ; its own binding is not visible after it, only what is inside it.
+    procedure arm(mutable out: ref[StringBuilder], source: String, s: StatementSyntax, offset: size_t)
+    {
+        if scope.holds(source, scope.statement_start(s), scope.statement_end(s), offset)
+            scope.statement_inner(out, source, s, offset)
+    }
+
+    procedure binding_operands(mutable out: ref[StringBuilder], source: String, b: LetBindingSyntax, offset: size_t)
+    {
+        choose b
+            when bn: BindingSyntax
+                scope.operands(out, source, bn.operation, offset)
+            when d: DecompositionSyntax
+                scope.operands(out, source, d.operation, offset)
+    }
+
+    procedure operation(mutable out: ref[StringBuilder], source: String, op: OperationSyntax, offset: size_t)
+    {
+        scope.operands(out, source, op.operands, offset)
+        if op.becomes <> null
+            scope.operands(out, source, (*op.becomes).source, offset)
+    }
+
+    procedure action(mutable out: ref[StringBuilder], source: String, a: ActionSyntax, offset: size_t)
+    {
+        choose a
+            when op: OperationSyntax
+                scope.operation(out, source, op, offset)
+            when b: BlockSyntax
+                scope.block(out, source, b, offset)
+    }
+
+    procedure block(mutable out: ref[StringBuilder], source: String, b: BlockSyntax, offset: size_t)
+    {
+        if b.statements = null
+            return
+        if scope.holds(source, b.start, b.end, offset)
+            scope.statements(out, source, (*b.statements), offset)
+    }
+
+    procedure operands(mutable out: ref[StringBuilder], source: String, ops: ref[Vector[OperandSyntax]]?, offset: size_t)
+    {
+        if ops = null
+            return
+        let list (*ops)
+        var i: size_t 0
+        while i < list.length
+        {
+            let op list.get i
+            if op <> null
+            {
+                if scope.holds(source, (*op).start, (*op).end, offset)
+                    scope.expression(out, source, (*op).expression, offset)
+            }
+            i := i + 1
+        }
+    }
+
+    procedure expression(mutable out: ref[StringBuilder], source: String, e: ExpressionSyntax, offset: size_t)
+    {
+        choose e
+            when b: BlockSyntax
+                scope.block(out, source, b, offset)
+            when i: IfSyntax
+            {
+                scope.operands(out, source, i.condition, offset)
+                scope.arm(out, source, i.consequent.statement, offset)
+                if i.alternative <> null
+                    scope.arm(out, source, (*i.alternative).alternative, offset)
+            }
+            when f: ForSyntax
+            {
+                scope.operands(out, source, f.operation, offset)
+                if scope.in_action(source, f.action, offset)
+                {
+                    var detail ""
+                    if f.annotation <> null
+                        detail := scope.text(source, (*f.annotation).type.start, (*f.annotation).type.end)
+                    scope.add(out, f.variable, detail, scope.VARIABLE)
+                    scope.action(out, source, f.action, offset)
+                }
+            }
+            when w: WhileSyntax
+            {
+                choose w.condition
+                    when op: OperationSyntax
+                        scope.operation(out, source, op, offset)
+                    when l: LetSyntax
+                    {
+                        if scope.in_action(source, w.action, offset)
+                            scope.binding_names(out, source, l.binding)
+                        else
+                            scope.binding_operands(out, source, l.binding, offset)
+                    }
+                scope.action(out, source, w.action, offset)
+            }
+            when c: ChooseSyntax
+            {
+                scope.operands(out, source, c.condition, offset)
+                scope.cases(out, source, c.cases, offset)
+                if c.alternative <> null
+                    scope.arm(out, source, (*c.alternative).alternative, offset)
+            }
+            when t: TrySyntax
+            {
+                choose t.condition
+                    when op: OperationSyntax
+                        scope.operation(out, source, op, offset)
+                    when l: LetSyntax
+                        scope.binding_operands(out, source, l.binding, offset)
+                scope.cases(out, source, t.cases, offset)
+                if t.dropper <> null
+                    scope.arm(out, source, (*t.dropper).alternative, offset)
+            }
+            when m: MatchSyntax
+            {
+                scope.operands(out, source, m.scrutinee, offset)
+                if m.branches <> null
+                {
+                    let branches (*m.branches)
+                    var i: size_t 0
+                    while i < branches.length
+                    {
+                        let bp branches.get i
+                        if bp <> null
+                            scope.arm(out, source, (*bp).consequent, offset)
+                        i := i + 1
+                    }
+                }
+                if m.alternative <> null
+                    scope.arm(out, source, (*m.alternative).alternative, offset)
+            }
+            when l: LambdaSyntax
+            {
+                if scope.in_action(source, l.block, offset)
+                {
+                    scope.lambda_inputs(out, l.input)
+                    scope.action(out, source, l.block, offset)
+                }
+            }
+            when r: RepeatSyntax
+                scope.action(out, source, r.action, offset)
+            when o: ObjectSyntax
+                scope.components(out, source, o.components, offset)
+            else {}
+    }
+
+    ; The `when` arms of a choose or a try: the arm holding the cursor binds
+    ; its name for its statement.
+    procedure cases(mutable out: ref[StringBuilder], source: String, cases: ref[Vector[WhenSyntax]]?, offset: size_t)
+    {
+        if cases = null
+            return
+        let list (*cases)
+        var i: size_t 0
+        while i < list.length
+        {
+            let wp list.get i
+            if wp <> null
+            {
+                let w (*wp)
+                if scope.holds(source, w.start, w.end, offset)
+                {
+                    scope.add(out, w.name, scope.text(source, w.variant.start, w.variant.end), scope.VARIABLE)
+                    scope.arm(out, source, w.statement, offset)
+                }
+            }
+            i := i + 1
+        }
+    }
+
+    ; A lambda's inputs are names written as operands (`\x y: ...`).
+    procedure lambda_inputs(mutable out: ref[StringBuilder], inputs: ref[Vector[OperandSyntax]]?)
+    {
+        if inputs = null
+            return
+        let list (*inputs)
+        var i: size_t 0
+        while i < list.length
+        {
+            let op list.get i
+            if op <> null
+            {
+                choose (*op).expression
+                    when n: NameSyntax
+                        scope.add(out, n.name, "", scope.VARIABLE)
+                    else {}
+            }
+            i := i + 1
+        }
+    }
+
+    ; A tuple's components: a lambda or a block handed as an argument.
+    procedure components(mutable out: ref[StringBuilder], source: String, comps: ref[Vector[ComponentSyntax]]?, offset: size_t)
+    {
+        if comps = null
+            return
+        let list (*comps)
+        var i: size_t 0
+        while i < list.length
+        {
+            let cp list.get i
+            if cp <> null
+            {
+                let c (*cp)
+                scope.operands(out, source, c.operands, offset)
+                if c.value <> null
+                    scope.operands(out, source, (*c.value).value, offset)
+            }
+            i := i + 1
+        }
+    }
+
+    ; ------------------------------------------------------------------
+    ; Spans.
+
+    function statement_start(s: StatementSyntax) returns size_t
+    {
+        choose s
+            when e: EmptySyntax
+                return e.start
+            when op: OperationSyntax
+                return op.start
+            when l: LetSyntax
+                return l.start
+            when v: VarSyntax
+                return v.start
+            when m: MutableSyntax
+                return m.start
+            when c: ContinueSyntax
+                return c.start
+            when b: BreakSyntax
+                return b.start
+            when r: ReturnSyntax
+                return r.start
+            when t: ThrowSyntax
+                return t.start
+    }
+
+    function statement_end(s: StatementSyntax) returns size_t
+    {
+        choose s
+            when e: EmptySyntax
+                return e.end
+            when op: OperationSyntax
+                return op.end
+            when l: LetSyntax
+                return l.end
+            when v: VarSyntax
+                return v.end
+            when m: MutableSyntax
+                return m.end
+            when c: ContinueSyntax
+                return c.end
+            when b: BreakSyntax
+                return b.end
+            when r: ReturnSyntax
+                return r.end
+            when t: ThrowSyntax
+                return t.end
+    }
+
+    function action_start(a: ActionSyntax) returns size_t
+    {
+        choose a
+            when op: OperationSyntax
+                return op.start
+            when b: BlockSyntax
+                return b.start
+    }
+
+    ; The cursor is in a loop's or a lambda's body (not in its header).
+    function in_action(source: String, a: ActionSyntax, offset: size_t) returns bool
+    {
+        scope.first_token(source, scope.action_start(a)) <= offset
+    }
+
+    ; [start, end] holds the cursor, `start` taken at its first token -- or
+    ; the cursor TRAILS the node: below its last line, on a line indented
+    ; deeper than the node, with only white space between. That is the line
+    ; being typed at the end of a body without braces, which the repaired
+    ; source has blanked, so the node itself ends above it.
+    function holds(source: String, start: size_t, end: size_t, offset: size_t) returns bool
+    {
+        let first scope.first_token(source, start)
+        if offset < first
+            return false
+        let last scope.last_byte(source, first, end)
+        if offset <= last
+            return true
+        scope.trails(source, first, last, offset)
+    }
+
+    ; A node's `end` is where the lexer stands after it: at the NEXT token,
+    ; the line feeds and the indentation before it included. The end of the
+    ; node's own text is found by stepping back over that white space.
+    function last_byte(source: String, first: size_t, end: size_t) returns size_t
+    {
+        var last end
+        if last > source.get_length()
+            last := source.get_length()
+        while last > first and scope.is_space(source.get(last - 1))
+        {
+            last := last - 1
+        }
+        last
+    }
+
+    function trails(source: String, first: size_t, end: size_t, offset: size_t) returns bool
+    {
+        let len source.get_length()
+        if offset > len
+            return false
+        let line scope.line_start(source, offset)
+        if line <= end
+            return false
+        ; only white space between the node's end and the cursor's line
+        var i end
+        while i < line
+        {
+            if scope.is_space(source.get(i)) = false
+                return false
+            i := i + 1
+        }
+        ; the cursor's line: indentation, then at most the word being typed
+        var j line
+        while j < offset and (source.get(j) = (" " as char) or source.get(j) = ("\t" as char))
+        {
+            j := j + 1
+        }
+        let indent j - line
+        while j < offset
+        {
+            if scope.is_word(source.get(j)) = false
+                return false
+            j := j + 1
+        }
+        indent > first - scope.line_start(source, first)
+    }
+
+    ; The first token at or after `pos`: white space, `;` line comments and
+    ; `;* ... *;` block comments are skipped.
+    function first_token(source: String, pos: size_t) returns size_t
+    {
+        let len source.get_length()
+        var i pos
+        while i < len
+        {
+            let c source.get(i)
+            if scope.is_space(c)
+                i := i + 1
+            else
+            {
+                if c <> (";" as char)
+                    return i
+                if i + 1 < len and source.get(i + 1) = ("*" as char)
+                {
+                    i := i + 2
+                    while i + 1 < len and (source.get(i) <> ("*" as char) or source.get(i + 1) <> (";" as char))
+                    {
+                        i := i + 1
+                    }
+                    i := i + 2
+                }
+                else
+                {
+                    while i < len and source.get(i) <> ("\n" as char)
+                    {
+                        i := i + 1
+                    }
+                }
+            }
+        }
+        len
+    }
+
+    ; A `.` precedes the word being typed at `offset` (`p.na|`, `f().|`):
+    ; what may follow is a member, never a name in scope or a keyword.
+    function after_dot(source: String, offset: size_t) returns bool
+    {
+        var p offset
+        if p > source.get_length()
+            p := source.get_length()
+        while p > 0 and scope.is_word(source.get(p - 1))
+        {
+            p := p - 1
+        }
+        while p > 0 and (source.get(p - 1) = (" " as char) or source.get(p - 1) = ("\t" as char))
+        {
+            p := p - 1
+        }
+        p > 0 and source.get(p - 1) = ("." as char)
+    }
+
+    function line_start(source: String, offset: size_t) returns size_t
+    {
+        var i offset
+        let len source.get_length()
+        if i > len
+            i := len
+        while i > 0 and source.get(i - 1) <> ("\n" as char)
+        {
+            i := i - 1
+        }
+        i
+    }
+
+    function is_space(c: char) returns bool
+    {
+        c = (" " as char) or c = ("\t" as char) or c = ("\n" as char) or c = ("\r" as char)
+    }
+
+    function is_word(c: char) returns bool
+    {
+        (c >= ("a" as char) and c <= ("z" as char)) or (c >= ("A" as char) and c <= ("Z" as char)) or (c >= ("0" as char) and c <= ("9" as char)) or c = ("_" as char)
+    }
+
+    ; ------------------------------------------------------------------
+    ; Text.
+
+    ; A type as written, for the grey detail beside a name: from the first
+    ; token at `start` to the first space, comma, colon or closing bracket at
+    ; bracket depth 0 -- a node's `end` lies at the token AFTER it, which is
+    ; that bracket or comma as often as not.
+    function text(source: String, start: size_t, end: size_t) returns String
+    {
+        let len source.get_length()
+        var b end
+        if b > len
+            b := len
+        let a scope.first_token(source, start)
+        if a >= b
+            return ""
+        var depth: size_t 0
+        var i a
+        while i < b
+        {
+            let c source.get(i)
+            if c = ("[" as char) or c = ("(" as char)
+                depth := depth + 1
+            else
+            {
+                if c = ("]" as char) or c = (")" as char)
+                {
+                    if depth = 0
+                        break
+                    depth := depth - 1
+                }
+                else
+                {
+                    if depth = 0 and (scope.is_space(c) or c = ("," as char) or c = (":" as char) or c = (";" as char))
+                        break
+                }
+            }
+            i := i + 1
+        }
+        String(source.as_slice().subslice(a, i))
+    }
+
+    ; A binding's `: T`, without the colon.
+    function annotation_text(source: String, annotation: ref[BindingAnnotationSyntax]?) returns String
+    {
+        if annotation = null
+            return ""
+        let a (*annotation)
+        var start a.start
+        let len source.get_length()
+        while start < a.end and start < len and (scope.is_space(source.get(start)) or source.get(start) = (":" as char))
+        {
+            start := start + 1
+        }
+        scope.text(source, start, a.end)
+    }
+
+    ; ------------------------------------------------------------------
+    ; The recorded names as CompletionItems, comma-joined, each name once.
+
+    procedure to_items(found: String) returns String
+    {
+        var sb StringBuilder()
+        let n found.get_length()
+        var first true
+        var i: size_t 0
+        while i < n
+        {
+            ; one record: "\n<kind> <name>\t<detail>"
+            var k i + 1
+            var kind: i64 0
+            while k < n and found.get(k) <> (" " as char)
+            {
+                kind := kind * 10 + ((found.get(k) - ("0" as char)) as i64)
+                k := k + 1
+            }
+            let name_start k + 1
+            var t name_start
+            while t < n and found.get(t) <> ("\t" as char)
+            {
+                t := t + 1
+            }
+            var e t + 1
+            while e < n and found.get(e) <> ("\n" as char)
+            {
+                e := e + 1
+            }
+            if scope.recorded_before(found, i, name_start, t) = false
+            {
+                if first = false
+                    sb.append("," as char)
+                let name String(found.as_slice().subslice(name_start, t))
+                var detail ""
+                if t + 1 < e
+                    detail := String(found.as_slice().subslice(t + 1, e))
+                sb.append(symbols.completion_item_detail(name, kind, detail))
+                first := false
+            }
+            i := e
+        }
+        sb.to_string()
+    }
+
+    ; The name at [from, to) of the record starting at `record` was recorded
+    ; by an earlier record.
+    function recorded_before(found: String, record: size_t, from: size_t, to: size_t) returns bool
+    {
+        let len to - from
+        var i: size_t 0
+        while i < record
+        {
+            ; at a record start: skip "\n<kind> "
+            if found.get(i) = ("\n" as char)
+            {
+                var k i + 1
+                while k < record and found.get(k) <> (" " as char)
+                {
+                    k := k + 1
+                }
+                let s k + 1
+                if s + len < record and found.get(s + len) = ("\t" as char)
+                {
+                    var same true
+                    var j: size_t 0
+                    while j < len
+                    {
+                        if found.get(s + j) <> found.get(from + j)
+                        {
+                            same := false
+                            break
+                        }
+                        j := j + 1
+                    }
+                    if same
+                        return true
+                }
+                i := k
+            }
+            i := i + 1
+        }
+        false
+    }
+}

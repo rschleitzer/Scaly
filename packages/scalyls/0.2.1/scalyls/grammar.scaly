@@ -178,4 +178,12 @@ define grammar
             return true
         false
     }
+
+    ; The words completion offers beside the names in scope: every keyword
+    ; but those reserved without a meaning (Modeler.reserved_word_note), then
+    ; the word operators and the value words. Separated by single spaces.
+    function completion_words() returns String
+    {
+        String("alignof as atomic break case choose continue define delegate else extern for function if in init instruction intrinsic io is label lazy let linked loop match module mutable operator private procedure reads repeat return returns sizeof throw throws try union use var when while package pending shared and not or xor false null true this")
+    }
 }

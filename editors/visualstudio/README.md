@@ -30,9 +30,9 @@ and does not read those settings.
 
 - Visual Studio does not ask a language server for code lenses or the call
   hierarchy, so neither appears, though `scalyls` offers both.
-- Completion comes from `scalyls`, which answers only while the file parses:
-  on a half-typed line the list is empty. VS Code falls back to word
-  completion there; Visual Studio shows nothing.
+- Completion comes from `scalyls`, which answers from the last analysis that
+  succeeded, so a half-typed line still completes. A file that has not parsed
+  once since it was opened gets an empty list.
 - Hover on a call shows what the call yields; hover on the definition shows
   the signature.
 
