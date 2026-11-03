@@ -369,8 +369,23 @@ int scaly_eio_arm(int q, int fd, int for_write, void* tag)
     /* rc == 0 means it finished synchronously — the completion is STILL
      * queued to the port (we never set FILE_SKIP_COMPLETION_PORT_ON_SUCCESS),
      * so both outcomes are handled by wait() alone. */
-    if (rc == SOCKET_ERROR && WSAGetLastError() != WSA_IO_PENDING) {
+    if (rc == SOCKET_ERROR) {
+        int e = WSAGetLastError();
+        if (e == WSA_IO_PENDING)
+            return 0;
         free(a);
+        /* ★A connection that is already OVER is ready, not a poller failure:
+         * the zero-byte WSASend/WSARecv fails at once when the peer has reset
+         * it (a send into a peer that closed with our data unread) or it was
+         * shut down. epoll and kqueue accept that registration and report the
+         * error as an event (EPOLLERR, EV_EOF), and the read or write that
+         * follows answers it -- so the waiter is woken here the same way: the
+         * tag goes to the port as a posted entry, which wait() hands back like
+         * a completion. Answering -1 instead made Io.park exit 107 (tests/
+         * cluster/lateframe.scaly: a send to a peer that had said goodbye). */
+        if (e == WSAECONNRESET || e == WSAECONNABORTED || e == WSAENETRESET
+            || e == WSAESHUTDOWN || e == WSAENOTCONN)
+            return PostQueuedCompletionStatus(port, 0, (ULONG_PTR)tag, NULL) ? 0 : -1;
         return -1;
     }
     return 0;
