@@ -1469,7 +1469,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 6639220224354199806
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 6884932394983849985
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -466767,6 +466767,10 @@ declare void @LLVMOrcLLJITBuilderSetJITTargetMachineBuilder(ptr, ptr)
 
 declare void @scaly_jit_use_arena(ptr)
 
+declare ptr @LLVMOrcLLJITGetObjLinkingLayer(ptr)
+
+declare void @scalyc_jit_coff_flags(ptr)
+
 declare ptr @LLVMOrcLLJITGetMainJITDylib(ptr)
 
 declare i8 @LLVMOrcLLJITGetGlobalPrefix(ptr)
@@ -502842,25 +502846,25 @@ declare void @_ZN7Console5printEP10const_char(ptr)
 
 define linkonce_odr i64 @_ZN7EmitterB6scalycB4v0_27jit_runEPN4scaly6memory4PageE4PlanB6scalycB4v0_26String6String6OptionIR5ArrayI6StringEER5ArrayI6StringEiPPc6OptionIR5ArrayI6StringEE6OptionIR5ArrayI6StringEE(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6, i64 %7, ptr %8, ptr %9, ptr %10) {
 entry:
-  %arg.tmp175 = alloca %_Z5SliceIcE, align 8
-  %tuple171 = alloca %_Z5SliceIcE, align 8
+  %arg.tmp184 = alloca %_Z5SliceIcE, align 8
+  %tuple180 = alloca %_Z5SliceIcE, align 8
   %sret.result = alloca { ptr }, align 8
-  %arg.tmp146 = alloca %_Z5SliceIcE, align 8
-  %tuple142 = alloca %_Z5SliceIcE, align 8
+  %arg.tmp155 = alloca %_Z5SliceIcE, align 8
+  %tuple151 = alloca %_Z5SliceIcE, align 8
   %taddr = alloca i64, align 8
   %ti = alloca i64, align 8
-  %arg.tmp116 = alloca %_Z5SliceIcE, align 8
-  %tuple112 = alloca %_Z5SliceIcE, align 8
-  %arg.tmp105 = alloca %_Z5SliceIcE, align 8
-  %tuple101 = alloca %_Z5SliceIcE, align 8
+  %arg.tmp125 = alloca %_Z5SliceIcE, align 8
+  %tuple121 = alloca %_Z5SliceIcE, align 8
+  %arg.tmp114 = alloca %_Z5SliceIcE, align 8
+  %tuple110 = alloca %_Z5SliceIcE, align 8
   %objbuf = alloca ptr, align 8
-  %deref.tmp89 = alloca { ptr }, align 8
+  %deref.tmp98 = alloca { ptr }, align 8
   %oi = alloca i64, align 8
   %deref.tmp = alloca %_Z5ArrayI6StringE, align 8
+  %arg.tmp88 = alloca %_Z5SliceIcE, align 8
+  %tuple84 = alloca %_Z5SliceIcE, align 8
   %arg.tmp79 = alloca %_Z5SliceIcE, align 8
   %tuple75 = alloca %_Z5SliceIcE, align 8
-  %arg.tmp70 = alloca %_Z5SliceIcE, align 8
-  %tuple66 = alloca %_Z5SliceIcE, align 8
   %arg.tmp53 = alloca %_Z5SliceIcE, align 8
   %tuple = alloca %_Z5SliceIcE, align 8
   %jit_target = alloca ptr, align 8
@@ -503027,267 +503031,283 @@ if.then50:                                        ; preds = %if.end29
   ret i64 127
 
 if.end51:                                         ; preds = %if.end29
-  %jit54 = load ptr, ptr %jit, align 8
-  %call55 = call ptr @LLVMOrcLLJITGetMainJITDylib(ptr %jit54)
-  %jit56 = load ptr, ptr %jit, align 8
-  %call57 = call i8 @LLVMOrcLLJITGetGlobalPrefix(ptr %jit56)
-  %load.struct58 = load %_Z7EmitterB6scalycB4v0_2, ptr %1, align 8
-  %target_is_coff59 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct58, 4
-  br i1 %target_is_coff59, label %if.then60, label %if.end61
+  %load.struct57 = load %_Z7EmitterB6scalycB4v0_2, ptr %1, align 8
+  %target_is_coff58 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct57, 4
+  br i1 %target_is_coff58, label %land.rhs56, label %if.end55
 
-if.then60:                                        ; preds = %if.end51
+if.then54:                                        ; preds = %land.rhs56
+  %jit61 = load ptr, ptr %jit, align 8
+  %call62 = call ptr @LLVMOrcLLJITGetObjLinkingLayer(ptr %jit61)
+  call void @scalyc_jit_coff_flags(ptr %call62)
+  br label %if.end55
+
+if.end55:                                         ; preds = %if.then54, %land.rhs56, %if.end51
+  %jit63 = load ptr, ptr %jit, align 8
+  %call64 = call ptr @LLVMOrcLLJITGetMainJITDylib(ptr %jit63)
+  %jit65 = load ptr, ptr %jit, align 8
+  %call66 = call i8 @LLVMOrcLLJITGetGlobalPrefix(ptr %jit65)
+  %load.struct67 = load %_Z7EmitterB6scalycB4v0_2, ptr %1, align 8
+  %target_is_coff68 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct67, 4
+  br i1 %target_is_coff68, label %if.then69, label %if.end70
+
+land.rhs56:                                       ; preds = %if.end51
+  %jit_builder59 = load ptr, ptr %jit_builder, align 8
+  %ne60 = icmp ne ptr %jit_builder59, null
+  br i1 %ne60, label %if.then54, label %if.end55
+
+if.then69:                                        ; preds = %if.end55
   store ptr null, ptr %jit_target, align 1
-  %call62 = call ptr @LLVMOrcCreateDynamicLibrarySearchGeneratorForPath(ptr %jit_target, ptr @.str.5029, i8 %call57, ptr null, ptr null)
-  %eq63 = icmp eq ptr %call62, null
-  br i1 %eq63, label %if.then64, label %if.else
+  %call71 = call ptr @LLVMOrcCreateDynamicLibrarySearchGeneratorForPath(ptr %jit_target, ptr @.str.5029, i8 %call66, ptr null, ptr null)
+  %eq72 = icmp eq ptr %call71, null
+  br i1 %eq72, label %if.then73, label %if.else
 
-if.end61:                                         ; preds = %if.end65, %if.end51
+if.end70:                                         ; preds = %if.end74, %if.end55
   store ptr null, ptr %jit_target, align 1
-  %call71 = call ptr @LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(ptr %jit_target, i8 %call57, ptr null, ptr null)
-  %ne72 = icmp ne ptr %call71, null
-  br i1 %ne72, label %if.then73, label %if.end74
+  %call80 = call ptr @LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(ptr %jit_target, i8 %call66, ptr null, ptr null)
+  %ne81 = icmp ne ptr %call80, null
+  br i1 %ne81, label %if.then82, label %if.end83
 
-if.then64:                                        ; preds = %if.then60
+if.then73:                                        ; preds = %if.then69
   %ucrt = load ptr, ptr %jit_target, align 8
-  call void @LLVMOrcJITDylibAddGenerator(ptr %call55, ptr %ucrt)
-  br label %if.end65
+  call void @LLVMOrcJITDylibAddGenerator(ptr %call64, ptr %ucrt)
+  br label %if.end74
 
-if.else:                                          ; preds = %if.then60
-  %tuple.field67 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple66, i32 0, i32 0
-  store i64 27, ptr %tuple.field67, align 1
-  %tuple.field68 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple66, i32 0, i32 1
-  store ptr @.str.5030, ptr %tuple.field68, align 1
-  %tuple.val69 = load %_Z5SliceIcE, ptr %tuple66, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp70, ptr align 1 %tuple66, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call62, ptr %arg.tmp70)
-  br label %if.end65
-
-if.end65:                                         ; preds = %if.else, %if.then64
-  br label %if.end61
-
-if.then73:                                        ; preds = %if.end61
+if.else:                                          ; preds = %if.then69
   %tuple.field76 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple75, i32 0, i32 0
-  store i64 39, ptr %tuple.field76, align 1
+  store i64 27, ptr %tuple.field76, align 1
   %tuple.field77 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple75, i32 0, i32 1
-  store ptr @.str.5031, ptr %tuple.field77, align 1
+  store ptr @.str.5030, ptr %tuple.field77, align 1
   %tuple.val78 = load %_Z5SliceIcE, ptr %tuple75, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp79, ptr align 1 %tuple75, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call71, ptr %arg.tmp79)
+  br label %if.end74
+
+if.end74:                                         ; preds = %if.else, %if.then73
+  br label %if.end70
+
+if.then82:                                        ; preds = %if.end70
+  %tuple.field85 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple84, i32 0, i32 0
+  store i64 39, ptr %tuple.field85, align 1
+  %tuple.field86 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple84, i32 0, i32 1
+  store ptr @.str.5031, ptr %tuple.field86, align 1
+  %tuple.val87 = load %_Z5SliceIcE, ptr %tuple84, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp88, ptr align 1 %tuple84, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call80, ptr %arg.tmp88)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 127
 
-if.end74:                                         ; preds = %if.end61
+if.end83:                                         ; preds = %if.end70
   %gen = load ptr, ptr %jit_target, align 8
-  call void @LLVMOrcJITDylibAddGenerator(ptr %call55, ptr %gen)
-  %ne80 = icmp ne ptr %5, null
-  br i1 %ne80, label %if.then81, label %if.end82
+  call void @LLVMOrcJITDylibAddGenerator(ptr %call64, ptr %gen)
+  %ne89 = icmp ne ptr %5, null
+  br i1 %ne89, label %if.then90, label %if.end91
 
-if.then81:                                        ; preds = %if.end74
+if.then90:                                        ; preds = %if.end83
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %5, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z5ArrayI6StringE, ptr %deref.tmp, align 8
   store i64 0, ptr %oi, align 1
   br label %while.cond
 
-if.end82:                                         ; preds = %while.exit, %if.end74
-  %jit107 = load ptr, ptr %jit, align 8
-  %call108 = call ptr @LLVMOrcLLJITAddLLVMIRModule(ptr %jit107, ptr %call55, ptr %call25)
-  %ne109 = icmp ne ptr %call108, null
-  br i1 %ne109, label %if.then110, label %if.end111
+if.end91:                                         ; preds = %while.exit, %if.end83
+  %jit116 = load ptr, ptr %jit, align 8
+  %call117 = call ptr @LLVMOrcLLJITAddLLVMIRModule(ptr %jit116, ptr %call64, ptr %call25)
+  %ne118 = icmp ne ptr %call117, null
+  br i1 %ne118, label %if.then119, label %if.end120
 
-while.cond:                                       ; preds = %if.end88, %if.then81
-  %oi83 = load i64, ptr %oi, align 8
+while.cond:                                       ; preds = %if.end97, %if.then90
+  %oi92 = load i64, ptr %oi, align 8
   %length = extractvalue %_Z5ArrayI6StringE %grp.deref.val, 0
-  %lt = icmp ult i64 %oi83, %length
+  %lt = icmp ult i64 %oi92, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   store %_Z5ArrayI6StringE %grp.deref.val, ptr %deref.tmp, align 1
-  %oi84 = load i64, ptr %oi, align 8
-  %call85 = call ptr @_ZN5ArrayI6StringE3getEm(ptr %deref.tmp, i64 %oi84)
-  %ne86 = icmp ne ptr %call85, null
-  br i1 %ne86, label %if.then87, label %if.end88
+  %oi93 = load i64, ptr %oi, align 8
+  %call94 = call ptr @_ZN5ArrayI6StringE3getEm(ptr %deref.tmp, i64 %oi93)
+  %ne95 = icmp ne ptr %call94, null
+  br i1 %ne95, label %if.then96, label %if.end97
 
 while.exit:                                       ; preds = %while.cond
-  br label %if.end82
+  br label %if.end91
 
-if.then87:                                        ; preds = %while.body
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp89, ptr align 1 %call85, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+if.then96:                                        ; preds = %while.body
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp98, ptr align 1 %call94, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   store ptr null, ptr %objbuf, align 1
-  %call90 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %deref.tmp89)
-  %call91 = call i32 @LLVMCreateMemoryBufferWithContentsOfFile(ptr %call90, ptr %objbuf, ptr null)
-  %ne92 = icmp ne i32 %call91, 0
-  br i1 %ne92, label %if.then93, label %if.end94
+  %call99 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %deref.tmp98)
+  %call100 = call i32 @LLVMCreateMemoryBufferWithContentsOfFile(ptr %call99, ptr %objbuf, ptr null)
+  %ne101 = icmp ne i32 %call100, 0
+  br i1 %ne101, label %if.then102, label %if.end103
 
-if.end88:                                         ; preds = %if.end100, %while.body
-  %oi106 = load i64, ptr %oi, align 8
-  %add = add i64 %oi106, 1
+if.end97:                                         ; preds = %if.end109, %while.body
+  %oi115 = load i64, ptr %oi, align 8
+  %add = add i64 %oi115, 1
   store i64 %add, ptr %oi, align 1
   br label %while.cond
 
-if.then93:                                        ; preds = %if.then87
+if.then102:                                       ; preds = %if.then96
   call void @_ZN7Console7printlnEP10const_char(ptr @.str.5032)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 127
 
-if.end94:                                         ; preds = %if.then87
-  %jit95 = load ptr, ptr %jit, align 8
-  %objbuf96 = load ptr, ptr %objbuf, align 8
-  %call97 = call ptr @LLVMOrcLLJITAddObjectFile(ptr %jit95, ptr %call55, ptr %objbuf96)
-  %ne98 = icmp ne ptr %call97, null
-  br i1 %ne98, label %if.then99, label %if.end100
+if.end103:                                        ; preds = %if.then96
+  %jit104 = load ptr, ptr %jit, align 8
+  %objbuf105 = load ptr, ptr %objbuf, align 8
+  %call106 = call ptr @LLVMOrcLLJITAddObjectFile(ptr %jit104, ptr %call64, ptr %objbuf105)
+  %ne107 = icmp ne ptr %call106, null
+  br i1 %ne107, label %if.then108, label %if.end109
 
-if.then99:                                        ; preds = %if.end94
-  %tuple.field102 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple101, i32 0, i32 0
-  store i64 36, ptr %tuple.field102, align 1
-  %tuple.field103 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple101, i32 0, i32 1
-  store ptr @.str.5033, ptr %tuple.field103, align 1
-  %tuple.val104 = load %_Z5SliceIcE, ptr %tuple101, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp105, ptr align 1 %tuple101, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call97, ptr %arg.tmp105)
+if.then108:                                       ; preds = %if.end103
+  %tuple.field111 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple110, i32 0, i32 0
+  store i64 36, ptr %tuple.field111, align 1
+  %tuple.field112 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple110, i32 0, i32 1
+  store ptr @.str.5033, ptr %tuple.field112, align 1
+  %tuple.val113 = load %_Z5SliceIcE, ptr %tuple110, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp114, ptr align 1 %tuple110, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call106, ptr %arg.tmp114)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 127
 
-if.end100:                                        ; preds = %if.end94
-  br label %if.end88
+if.end109:                                        ; preds = %if.end103
+  br label %if.end97
 
-if.then110:                                       ; preds = %if.end82
-  %tuple.field113 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple112, i32 0, i32 0
-  store i64 25, ptr %tuple.field113, align 1
-  %tuple.field114 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple112, i32 0, i32 1
-  store ptr @.str.5034, ptr %tuple.field114, align 1
-  %tuple.val115 = load %_Z5SliceIcE, ptr %tuple112, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp116, ptr align 1 %tuple112, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call108, ptr %arg.tmp116)
+if.then119:                                       ; preds = %if.end91
+  %tuple.field122 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple121, i32 0, i32 0
+  store i64 25, ptr %tuple.field122, align 1
+  %tuple.field123 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple121, i32 0, i32 1
+  store ptr @.str.5034, ptr %tuple.field123, align 1
+  %tuple.val124 = load %_Z5SliceIcE, ptr %tuple121, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp125, ptr align 1 %tuple121, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call117, ptr %arg.tmp125)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 127
 
-if.end111:                                        ; preds = %if.end82
-  %ne120 = icmp ne ptr %9, null
-  br i1 %ne120, label %land.rhs119, label %if.end118
+if.end120:                                        ; preds = %if.end91
+  %ne129 = icmp ne ptr %9, null
+  br i1 %ne129, label %land.rhs128, label %if.end127
 
-if.then117:                                       ; preds = %land.rhs119
+if.then126:                                       ; preds = %land.rhs128
   store i64 0, ptr %oi, align 1
   store i64 0, ptr %ti, align 1
-  br label %while.cond122
+  br label %while.cond131
 
-if.end118:                                        ; preds = %land.rhs119, %if.end111
+if.end127:                                        ; preds = %land.rhs128, %if.end120
   store i64 0, ptr %oi, align 1
-  %jit165 = load ptr, ptr %jit, align 8
-  %call166 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %4)
-  %call167 = call ptr @LLVMOrcLLJITLookup(ptr %jit165, ptr %oi, ptr %call166)
-  %ne168 = icmp ne ptr %call167, null
-  br i1 %ne168, label %if.then169, label %if.end170
+  %jit174 = load ptr, ptr %jit, align 8
+  %call175 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %4)
+  %call176 = call ptr @LLVMOrcLLJITLookup(ptr %jit174, ptr %oi, ptr %call175)
+  %ne177 = icmp ne ptr %call176, null
+  br i1 %ne177, label %if.then178, label %if.end179
 
-land.rhs119:                                      ; preds = %if.end111
-  %ne121 = icmp ne ptr %10, null
-  br i1 %ne121, label %if.then117, label %if.end118
+land.rhs128:                                      ; preds = %if.end120
+  %ne130 = icmp ne ptr %10, null
+  br i1 %ne130, label %if.then126, label %if.end127
 
-while.cond122:                                    ; preds = %if.end153, %if.then140, %if.then117
-  %ti125 = load i64, ptr %ti, align 8
-  %load.struct126 = load %_Z5ArrayI6StringE, ptr %9, align 8
-  %length127 = extractvalue %_Z5ArrayI6StringE %load.struct126, 0
-  %lt128 = icmp ult i64 %ti125, %length127
-  br i1 %lt128, label %while.body123, label %while.exit124
+while.cond131:                                    ; preds = %if.end162, %if.then149, %if.then126
+  %ti134 = load i64, ptr %ti, align 8
+  %load.struct135 = load %_Z5ArrayI6StringE, ptr %9, align 8
+  %length136 = extractvalue %_Z5ArrayI6StringE %load.struct135, 0
+  %lt137 = icmp ult i64 %ti134, %length136
+  br i1 %lt137, label %while.body132, label %while.exit133
 
-while.body123:                                    ; preds = %while.cond122
-  %ti129 = load i64, ptr %ti, align 8
-  %call130 = call ptr @_ZN5ArrayI6StringE2atEm(ptr %9, i64 %ti129)
-  %ti131 = load i64, ptr %ti, align 8
-  %call132 = call ptr @_ZN5ArrayI6StringE2atEm(ptr %10, i64 %ti131)
-  %ti133 = load i64, ptr %ti, align 8
-  %add134 = add i64 %ti133, 1
-  store i64 %add134, ptr %ti, align 1
+while.body132:                                    ; preds = %while.cond131
+  %ti138 = load i64, ptr %ti, align 8
+  %call139 = call ptr @_ZN5ArrayI6StringE2atEm(ptr %9, i64 %ti138)
+  %ti140 = load i64, ptr %ti, align 8
+  %call141 = call ptr @_ZN5ArrayI6StringE2atEm(ptr %10, i64 %ti140)
+  %ti142 = load i64, ptr %ti, align 8
+  %add143 = add i64 %ti142, 1
+  store i64 %add143, ptr %ti, align 1
   call void @_ZN7Console5printEP10const_char(ptr @.str.5035)
-  %call135 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %call132)
-  call void @_ZN7Console5printEP10const_char(ptr %call135)
+  %call144 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %call141)
+  call void @_ZN7Console5printEP10const_char(ptr %call144)
   call void @_ZN7Console5printEP10const_char(ptr @.str.5036)
   store i64 0, ptr %taddr, align 1
-  %jit136 = load ptr, ptr %jit, align 8
-  %call137 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %call130)
-  %call138 = call ptr @LLVMOrcLLJITLookup(ptr %jit136, ptr %taddr, ptr %call137)
-  %ne139 = icmp ne ptr %call138, null
-  br i1 %ne139, label %if.then140, label %if.end141
+  %jit145 = load ptr, ptr %jit, align 8
+  %call146 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %call139)
+  %call147 = call ptr @LLVMOrcLLJITLookup(ptr %jit145, ptr %taddr, ptr %call146)
+  %ne148 = icmp ne ptr %call147, null
+  br i1 %ne148, label %if.then149, label %if.end150
 
-while.exit124:                                    ; preds = %while.cond122
-  %failed164 = load i64, ptr %oi, align 8
+while.exit133:                                    ; preds = %while.cond131
+  %failed173 = load i64, ptr %oi, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i64 %failed164
+  ret i64 %failed173
 
-if.then140:                                       ; preds = %while.body123
-  %tuple.field143 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple142, i32 0, i32 0
-  store i64 23, ptr %tuple.field143, align 1
-  %tuple.field144 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple142, i32 0, i32 1
-  store ptr @.str.5037, ptr %tuple.field144, align 1
-  %tuple.val145 = load %_Z5SliceIcE, ptr %tuple142, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp146, ptr align 1 %tuple142, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call138, ptr %arg.tmp146)
+if.then149:                                       ; preds = %while.body132
+  %tuple.field152 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple151, i32 0, i32 0
+  store i64 23, ptr %tuple.field152, align 1
+  %tuple.field153 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple151, i32 0, i32 1
+  store ptr @.str.5037, ptr %tuple.field153, align 1
+  %tuple.val154 = load %_Z5SliceIcE, ptr %tuple151, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp155, ptr align 1 %tuple151, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call147, ptr %arg.tmp155)
   %failed = load i64, ptr %oi, align 8
-  %add147 = add i64 %failed, 1
-  store i64 %add147, ptr %oi, align 1
-  br label %while.cond122
+  %add156 = add i64 %failed, 1
+  store i64 %add156, ptr %oi, align 1
+  br label %while.cond131
 
-if.end141:                                        ; preds = %while.body123
-  %taddr148 = load i64, ptr %taddr, align 8
-  %as.inttoptr = inttoptr i64 %taddr148 to ptr
+if.end150:                                        ; preds = %while.body132
+  %taddr157 = load i64, ptr %taddr, align 8
+  %as.inttoptr = inttoptr i64 %taddr157 to ptr
   %jit.call = call i64 %as.inttoptr()
-  %call149 = call i32 @fflush(ptr null)
-  %eq150 = icmp eq i64 %jit.call, 0
-  br i1 %eq150, label %if.then151, label %if.else152
+  %call158 = call i32 @fflush(ptr null)
+  %eq159 = icmp eq i64 %jit.call, 0
+  br i1 %eq159, label %if.then160, label %if.else161
 
-if.then151:                                       ; preds = %if.end141
+if.then160:                                       ; preds = %if.end150
   call void @_ZN7Console7printlnEP10const_char(ptr @.str.5038)
-  br label %if.end153
+  br label %if.end162
 
-if.else152:                                       ; preds = %if.end141
-  %frame.page154 = load ptr, ptr %frame, align 8
-  %frame.has_page155 = icmp ne ptr %frame.page154, null
-  br i1 %frame.has_page155, label %frame.forced157, label %frame.force156
+if.else161:                                       ; preds = %if.end150
+  %frame.page163 = load ptr, ptr %frame, align 8
+  %frame.has_page164 = icmp ne ptr %frame.page163, null
+  br i1 %frame.has_page164, label %frame.forced166, label %frame.force165
 
-if.end153:                                        ; preds = %frame.forced157, %if.then151
-  br label %while.cond122
+if.end162:                                        ; preds = %frame.forced166, %if.then160
+  br label %while.cond131
 
-frame.force156:                                   ; preds = %if.else152
-  %forced_page158 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced157
+frame.force165:                                   ; preds = %if.else161
+  %forced_page167 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced166
 
-frame.forced157:                                  ; preds = %frame.force156, %if.else152
-  %forced_page159 = phi ptr [ %frame.page154, %if.else152 ], [ %forced_page158, %frame.force156 ]
-  %struct.region160 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page159, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1Ev(ptr %struct.region160)
-  store { ptr } { ptr @.sconst.5039 }, ptr %deref.tmp89, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region160, ptr %deref.tmp89)
-  call void @_ZN13StringBuilder6appendEi(ptr %struct.region160, i64 %jit.call)
-  call void @_ZN13StringBuilder6appendEc(ptr %struct.region160, i8 41)
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %struct.region160)
-  %call161 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %sret.result)
-  call void @_ZN7Console7printlnEP10const_char(ptr %call161)
-  %failed162 = load i64, ptr %oi, align 8
-  %add163 = add i64 %failed162, 1
-  store i64 %add163, ptr %oi, align 1
-  br label %if.end153
+frame.forced166:                                  ; preds = %frame.force165, %if.else161
+  %forced_page168 = phi ptr [ %frame.page163, %if.else161 ], [ %forced_page167, %frame.force165 ]
+  %struct.region169 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page168, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region169)
+  store { ptr } { ptr @.sconst.5039 }, ptr %deref.tmp98, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region169, ptr %deref.tmp98)
+  call void @_ZN13StringBuilder6appendEi(ptr %struct.region169, i64 %jit.call)
+  call void @_ZN13StringBuilder6appendEc(ptr %struct.region169, i8 41)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %struct.region169)
+  %call170 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %0, ptr %sret.result)
+  call void @_ZN7Console7printlnEP10const_char(ptr %call170)
+  %failed171 = load i64, ptr %oi, align 8
+  %add172 = add i64 %failed171, 1
+  store i64 %add172, ptr %oi, align 1
+  br label %if.end162
 
-if.then169:                                       ; preds = %if.end118
-  %tuple.field172 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple171, i32 0, i32 0
-  store i64 25, ptr %tuple.field172, align 1
-  %tuple.field173 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple171, i32 0, i32 1
-  store ptr @.str.5040, ptr %tuple.field173, align 1
-  %tuple.val174 = load %_Z5SliceIcE, ptr %tuple171, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp175, ptr align 1 %tuple171, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call167, ptr %arg.tmp175)
+if.then178:                                       ; preds = %if.end127
+  %tuple.field181 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple180, i32 0, i32 0
+  store i64 25, ptr %tuple.field181, align 1
+  %tuple.field182 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple180, i32 0, i32 1
+  store ptr @.str.5040, ptr %tuple.field182, align 1
+  %tuple.val183 = load %_Z5SliceIcE, ptr %tuple180, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp184, ptr align 1 %tuple180, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7EmitterB6scalycB4v0_216report_jit_errorEP15LLVMOpaqueErrorB6scalycB4v0_25SliceIcE(ptr %1, ptr %call176, ptr %arg.tmp184)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 127
 
-if.end170:                                        ; preds = %if.end118
+if.end179:                                        ; preds = %if.end127
   %addr = load i64, ptr %oi, align 8
-  %as.inttoptr176 = inttoptr i64 %addr to ptr
-  %call177 = call i64 @scaly_eio_now_ns()
-  %jit.call178 = call i64 %as.inttoptr176(i64 %7, ptr %8)
-  %call179 = call i64 @scaly_eio_now_ns()
-  %sub = sub i64 %call179, %call177
+  %as.inttoptr185 = inttoptr i64 %addr to ptr
+  %call186 = call i64 @scaly_eio_now_ns()
+  %jit.call187 = call i64 %as.inttoptr185(i64 %7, ptr %8)
+  %call188 = call i64 @scaly_eio_now_ns()
+  %sub = sub i64 %call188, %call186
   %run_ns = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %1, i32 0, i32 81
   store i64 %sub, ptr %run_ns, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i64 %jit.call178
+  ret i64 %jit.call187
 }
 
 define linkonce_odr void @_ZN7EmitterB6scalycB4v0_221hide_side_definitionsEv(ptr %0) {

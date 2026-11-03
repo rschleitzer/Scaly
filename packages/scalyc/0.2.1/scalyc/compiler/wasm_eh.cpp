@@ -31,6 +31,33 @@ extern "C" void scalyc_target_machine_wasm_eh(LLVMTargetMachineRef ref)
     const_cast<llvm::MCAsmInfo *>(tm->getMCAsmInfo())->setExceptionsType(llvm::ExceptionHandling::Wasm);
 }
 
+// The JIT on Windows: a COFF object says nothing of "weak", and every object
+// of a session defines the constants LLVM invents for it (`__real@...`, a
+// comdat each) as a strong symbol of its own -- the package objects and the
+// program module many of the same ones. LLJIT tells the object layer it makes
+// for a COFF target to take the symbols' flags from what each module claims
+// and to claim what the object adds; the layer the arena installs
+// (scaly/fiber/eio_windows.c, scaly_jit_use_arena) is made through the C API,
+// which has no word for either, and a large program failed to materialize
+// (`scaly test` on dazzle: "Failed to materialize symbols: __real@..."). The
+// two setters are inline members, as above: nothing of the C++ library.
+// The cast holds on a COFF target whichever layer it is: the arena's is an
+// RTDyld layer, and LLJIT's own default there is one too (it takes JITLink
+// for x86_64 and aarch64 only where the format is NOT COFF).
+#if !defined(__wasi__)
+#include "llvm-c/Orc.h"
+#include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
+
+extern "C" void scalyc_jit_coff_flags(LLVMOrcObjectLayerRef ref)
+{
+    auto *layer = static_cast<llvm::orc::RTDyldObjectLinkingLayer *>(reinterpret_cast<llvm::orc::ObjectLayer *>(ref));
+    layer->setOverrideObjectFlagsWithResponsibilityFlags(true);
+    layer->setAutoClaimResponsibilityForObjectSymbols(true);
+}
+#else
+extern "C" void scalyc_jit_coff_flags(void *ref) { (void)ref; }
+#endif
+
 // The compiler in a page (the REPL in the browser): where it is built for
 // WebAssembly there is no JIT, so an entry is linked by lld's wasm linker --
 // a library of the program there -- and run by the host, which starts the

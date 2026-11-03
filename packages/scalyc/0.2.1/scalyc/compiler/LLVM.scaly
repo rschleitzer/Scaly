@@ -832,6 +832,8 @@ define LLVMOrcOpaqueLLJITBuilder()
 define LLVMOrcLLJITBuilderRef pointer[LLVMOrcOpaqueLLJITBuilder]
 define LLVMOrcOpaqueJITDylib()
 define LLVMOrcJITDylibRef pointer[LLVMOrcOpaqueJITDylib]
+define LLVMOrcOpaqueObjectLayer()
+define LLVMOrcObjectLayerRef pointer[LLVMOrcOpaqueObjectLayer]
 define LLVMOrcOpaqueThreadSafeContext()
 define LLVMOrcThreadSafeContextRef pointer[LLVMOrcOpaqueThreadSafeContext]
 define LLVMOrcOpaqueThreadSafeModule()
@@ -867,6 +869,10 @@ procedure LLVMOrcLLJITBuilderSetJITTargetMachineBuilder(builder: LLVMOrcLLJITBui
 ; a no-op in eio.c). It installs a linking layer whose sections all come out of
 ; one reservation, so a PC-relative reference between them stays in range.
 procedure scaly_jit_use_arena(builder: LLVMOrcLLJITBuilderRef) extern
+function LLVMOrcLLJITGetObjLinkingLayer(j: LLVMOrcLLJITRef) returns LLVMOrcObjectLayerRef extern
+; Not LLVM's C API: compiler/wasm_eh.cpp. The COFF flags LLJIT gives the
+; object layer it makes itself, for the one the arena installs (the file says why).
+procedure scalyc_jit_coff_flags(mutable layer: LLVMOrcObjectLayerRef) extern
 function LLVMOrcLLJITGetMainJITDylib(j: LLVMOrcLLJITRef) returns LLVMOrcJITDylibRef extern
 function LLVMOrcLLJITGetGlobalPrefix(j: LLVMOrcLLJITRef) returns char extern
 

@@ -9307,6 +9307,10 @@ define Emitter
                 report_jit_error(create_err, "JIT: could not create LLJIT")
                 return 127
             }
+            ; COFF: the arena's layer (an RTDyld layer, made through the C API)
+            ; gets the two flags LLJIT gives its own there (wasm_eh.cpp says why)
+            if target_is_coff and jit_builder <> null
+                scalyc_jit_coff_flags(LLVMOrcLLJITGetObjLinkingLayer(jit))
 
             ; Resolve libc symbols (malloc/free/write/exit/...) from the host.
             let jd LLVMOrcLLJITGetMainJITDylib(jit)
