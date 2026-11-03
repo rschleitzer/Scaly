@@ -13,6 +13,9 @@ stdout and (where given) its stderr are what its markers say:
   ; Isolated: <reason>     run ALONE, after the others: its verdict counts
                            forks, submits or steals, which follow measured time,
                            and a core shared with another fixture moves them
+  ; NotOnWindows: <reason> SKIPPED by name on Windows, the reason said: what it
+                           drives does not exist there (a POSIX signal sent
+                           with kill(), say)
 
 A driver and not a shell loop since 2026-10-03:
 the loop ran the 65 fixtures one after another, each wrapped in a handful of
@@ -51,6 +54,7 @@ class Fixture:
         limit = markers(text, "Timeout")
         self.timeout = float(limit[0]) if limit and limit[0].strip() else None
         self.isolated = bool(markers(text, "Isolated"))
+        self.not_on_windows = (markers(text, "NotOnWindows") or [None])[0]
         self.binp = os.path.join(tmp, "fiber_" + self.name + exe)
         self.errp = os.path.join(tmp, "fiber_" + self.name + ".err")
         self.built = False
@@ -94,6 +98,11 @@ def main():
     scaly, exe, tmp, jobs = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
     fixtures = [Fixture(p, tmp, exe)
                 for p in sorted(glob.glob(os.path.join(REPO, "tests", "fiber", "*.scaly")))]
+    if os.name == "nt":
+        for fx in fixtures:
+            if fx.not_on_windows is not None:
+                print("SKIP %s (%s)" % (fx.name, fx.not_on_windows))
+        fixtures = [fx for fx in fixtures if fx.not_on_windows is None]
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as pool:
         list(pool.map(lambda fx: build(fx, scaly), fixtures))
         list(pool.map(run, [fx for fx in fixtures if fx.built and not fx.isolated]))

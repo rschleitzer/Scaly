@@ -9,6 +9,7 @@
 ;   2. Io.block_termination, then SIGTERM sent to this process:
 ;      Io.wait_termination answers 15 and the process is still there.
 ; Expected: pong ended slow ended stopped signal 15
+; NotOnWindows: sends itself SIGTERM with kill(); Windows has no signals, its termination request is a console control event, which reaches the whole console group and with it the shell that runs the suite
 
 procedure kill(pid: i32, signal: i32) returns i32 extern
 procedure getpid() returns i32 extern
