@@ -130,6 +130,9 @@ fi
 # which is exactly what the engine build above needs not to happen.
 gen() { SCALY_HOME="${DAZZLE_HOME_FOR_ENGINE:-$PWD}" "${ENGINE[@]}" "$@"; }
 
+MARK="$SNAP/.generation-start"
+: > "$MARK"
+
 if [ ${#ENGINE[@]} -ne 0 ]; then
     # Generate parser.scaly, Syntax.scaly, scalyls' grammar, the tmLanguage
     gen codegen/scaly.dsl scaly.sgm
@@ -140,6 +143,21 @@ if [ ${#ENGINE[@]} -ne 0 ]; then
     gen codegen/test-choose.dsl tests/choose.sgm
     gen codegen/test-controlflow.dsl tests/controlflow.sgm
 fi
+
+# ★On Windows the engine ends a line with CR LF, as openjade does there: the
+# DSSSL transform backend writes a record end as the platform's newline
+# (OpenSP's RecordOutputCharStream, SP_LINE_TERM1/2 under SP_HAVE_SETMODE), and
+# dazzle matches openjade byte for byte. This repository stores its generated
+# files with LF on every host (.gitattributes: `* -text`, nothing converts),
+# so every file this run wrote loses the CR before its line feeds -- on
+# Windows only, and BEFORE the restore below, which then compares LF with LF.
+# Without it a correct engine rewrote all generated files on that host.
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+        find . -path ./.git -prune -o -path ./scalyc -prune -o -type f -newer "$MARK" -print \
+            | while IFS= read -r f; do sed -i 's/\r$//' "$f"; done
+        ;;
+esac
 
 # Restore byte-identical files to their pre-generation mtime so ninja skips
 # them; leave genuinely-changed files (new content + new mtime) in place.

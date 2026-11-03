@@ -18,9 +18,13 @@ case "$BIN" in /*) ;; *) BIN="$ROOT/$BIN" ;; esac
 cd "$ROOT"
 set -u
 
-DZ="$(mktemp -d)/dazzle"
+# ★The scratch directory is named when it is MADE: the trap runs at exit, and
+# with $DAZZLE_PREBUILT the variable DZ names the caller's engine by then --
+# `dirname "$DZ"` removed the directory that held it (scalyc/build).
+DZTMP="$(mktemp -d)"
+DZ="$DZTMP/dazzle"
 SNAP="$(mktemp -d)"
-trap 'rm -rf "$(dirname "$DZ")" "$SNAP"' EXIT
+trap 'rm -rf "$DZTMP" "$SNAP"' EXIT
 
 # The engine is a repository of its own since 2026-10-05
 # (github.com/rschleitzer/dazzle), expected beside this one or at $DAZZLE_REPO:
@@ -54,6 +58,13 @@ run_case() {
   if ! (cd "$out" && SCALY_HOME="$DAZZLE_REPO" "$DZ" -t sgml -d "$ROOT/$spec" "$ROOT/$doc" > "$SNAP/stdout" 2>"$SNAP/stderr"); then
     echo "dazzle-codegen: FAIL ($spec)"; cat "$SNAP/stderr"; return 1
   fi
+  # On Windows the engine ends a line with CR LF, as openjade does there, and
+  # ./mkp takes the CR out before a generated file reaches the tree (the note
+  # there says why): compare what ./mkp would write.
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+      for f in "$@"; do [ -f "$out/$f" ] && sed -i 's/\r$//' "$out/$f"; done ;;
+  esac
   local rc=0
   for f in "$@"; do
     if [ ! -f "$out/$f" ]; then

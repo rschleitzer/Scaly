@@ -271,7 +271,14 @@ except Exception:
     p.kill()
 _err.close()
 _gaveup = [l for l in open(_errpath).read().splitlines() if "exceeded its" in l]
-os.remove(_errpath)
+# The worker inherits the server's stderr and may outlive it for a moment;
+# Windows refuses to remove a file another process holds (POSIX does not care).
+for _try in range(50):
+    try:
+        os.remove(_errpath)
+        break
+    except PermissionError:
+        time.sleep(0.1)
 for l in _gaveup:
     print("STALL  server: " + l)
 check(not _gaveup, "no request gave up on its budget (an empty answer is no answer)")
