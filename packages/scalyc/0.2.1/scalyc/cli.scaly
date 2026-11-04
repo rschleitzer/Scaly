@@ -104,6 +104,7 @@ define Options
     program_argv: pointer[pointer[char]]
     test_mode: bool                 ; `scaly test file [filter]`: run the test functions
     test_filter: String             ; only tests whose name contains it
+    test_list: bool                 ; `scaly test file --list`: name, file and line of each test, nothing run
 )
 {
     init()
@@ -159,6 +160,7 @@ define Options
         program_argv := null
         test_mode := false
         test_filter := String()
+        test_list := false
     }
 
     function has_error(this) returns bool
@@ -1220,9 +1222,19 @@ define cli
                     {
                         test_names.add(String(f.mangled_name))
                         test_labels.add(cli.label_of_test(f.mangled_name))
+                        ; --list: the name the filter and the results use, the
+                        ; file it is written in (a module of the program's
+                        ; own included) and its line, separated by tabs
+                        if opts.test_list
+                        {
+                            let entry "`cli.label_of_test(f.mangled_name)`\t`f.file`\t`cli.test_line(f.file, f.loc.start)`"
+                            Console.println(entry.to_c_string())
+                        }
                     }
                 }
             }
+            if opts.test_list
+                return 0
             if test_names.length = 0
             {
                 Console.println "no tests: a test is a function or procedure named test or test_<name>, taking nothing and answering an int (0 for passed)"
@@ -1911,6 +1923,50 @@ define cli
             i := i + 1
         }
         filter.get_length() = 0 or cli.label_of_test(f.mangled_name).contains(filter)
+    }
+
+    ; the line a test's declaration begins on. A declaration's span starts
+    ; where the token before it ended, so the white space and the comments
+    ; between are stepped over first; 0 where the file cannot be read.
+    procedure test_line(file: String, offset: size_t) returns int
+    {
+        let text File.read_to_string(file)
+        let n text.get_length()
+        if offset > n
+            return 0
+        var i offset
+        var stepping true
+        while stepping and i < n
+        {
+            let c text.get i
+            if c = (" " as char) or c = ("\t" as char) or c = ("\r" as char) or c = ("\n" as char)
+                i := i + 1
+            else if c = (";" as char)
+            {
+                if i + 1 < n and text.get(i + 1) = ("*" as char)
+                {
+                    ; ;* ... *;
+                    i := i + 2
+                    while i + 1 < n and (text.get(i) <> ("*" as char) or text.get(i + 1) <> (";" as char))
+                        i := i + 1
+                    i := i + 2
+                }
+                else
+                    while i < n and text.get(i) <> ("\n" as char)
+                        i := i + 1
+            }
+            else
+                stepping := false
+        }
+        var line 1
+        var k: size_t 0
+        while k < i and k < n
+        {
+            if text.get(k) = ("\n" as char)
+                line := line + 1
+            k := k + 1
+        }
+        line
     }
 
     function contains_string(names: ref[Array[String]], s: String) returns bool
@@ -2701,7 +2757,7 @@ define cli
         {
             if argc < 3
             {
-                Console.println "Usage: scaly test <file> [filter]"
+                Console.println "Usage: scaly test <file> [--list] [filter]"
                 return 1
             }
             var test_seen Array[String]()
@@ -2711,8 +2767,18 @@ define cli
             var test_opts Options()
             test_opts.input_file := String(*(argv + 2))
             test_opts.test_mode := true
-            if argc > 3
-                test_opts.test_filter := String(*(argv + 3))
+            ; `--list` names the tests instead of running them, for a tool that
+            ; shows them (an editor's test explorer); the filter follows it
+            var ta 3
+            while ta < argc
+            {
+                let targ String(*(argv + ta))
+                if targ.equals("--list")
+                    test_opts.test_list := true
+                else
+                    test_opts.test_filter := targ
+                ta := ta + 1
+            }
             return cli.run(test_opts)
         }
         if command.equals("build")

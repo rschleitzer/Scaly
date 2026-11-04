@@ -364,6 +364,14 @@ if scaly_jit_available 2>/dev/null; then
   [ "$rc" = 0 ] && [ "$out" = "$(printf 'test test_sum ... ok\n1 passed')" ] && ok || bad "test filter: rc=$rc '$out'"
 fi
 
+# test --list: name, file and line of each test, tab-separated, nothing run
+# (the Visual Studio test adapter's discovery); the filter applies
+out=$("$SCALY" test tests/tool/listed.scaly --list 2>&1 | tr -d '\r'); rc=$?
+want=$(printf 'test_add\ttests/tool/listed.scaly\t11\ntest_procedure\ttests/tool/listed.scaly\t16\nSuite.test_inside\ttests/tool/listed.scaly\t29')
+[ "$rc" = 0 ] && [ "$out" = "$want" ] && ok || bad "test --list: rc=$rc '$(echo "$out" | tr '\n\t' '|>')'"
+out=$("$SCALY" test tests/tool/listed.scaly --list inside 2>&1 | tr -d '\r')
+[ "$out" = "$(printf 'Suite.test_inside\ttests/tool/listed.scaly\t29')" ] && ok || bad "test --list filter: '$(echo "$out" | tr '\n\t' '|>')'"
+
 # run nothing: a file of definitions alone has nothing to run -- the JIT found
 # the tool's own main and started the REPL (Emitter.nothing_to_run)
 if scaly_jit_available 2>/dev/null; then

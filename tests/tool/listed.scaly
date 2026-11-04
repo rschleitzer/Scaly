@@ -1,0 +1,31 @@
+; `scaly test --list` (tests/tool/run.sh): what an editor's test explorer
+; shows -- the name, the file and the line of every test, from the
+; compiler's own selection. A test in a comment, a function named testFoo and
+; a test taking an argument are none; a procedure is one; a test in a
+; namespace is named through it; the line is the declaration's, past the
+; comments before it.
+; function test_in_comment() returns int
+function add(a: int, b: int) returns int
+    a + b
+
+function test_add() returns int
+    if add(1, 2) = 3: 0 else 1
+
+;* a block comment
+   before a test *;
+procedure test_procedure() returns int
+{
+    0
+}
+
+function testFoo() returns int
+    1
+
+function test_with(n: int) returns int
+    n
+
+define Suite
+{
+    function test_inside() returns int
+        if add(1, 1) = 3: 0 else 1
+}
