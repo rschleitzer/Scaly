@@ -34,6 +34,7 @@ internal sealed class ScalyLanguageServerProvider : LanguageServerProvider
         : base(container, extensibility)
     {
         this.workspaceService = workspaceService;
+        ScalyPrograms.Extensibility = extensibility;
     }
 
     /// <summary>The content type of a .scaly file.</summary>

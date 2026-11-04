@@ -7,5 +7,6 @@
   "Scaly.Settings.ToolPath.Description": "Path to scaly.exe, used to build and debug a .scaly file. Empty: scaly on PATH, then the scaly.io installation.",
   "Scaly.Settings.Home": "SCALY_HOME",
   "Scaly.Settings.Home.Description": "The prelude and package root handed to the language server and the build. Empty: the open folder when it is a Scaly checkout (holds packages/scaly), else what the installed programs set themselves.",
-  "Scaly.LanguageServer.DisplayName": "Scaly Language Server"
+  "Scaly.LanguageServer.DisplayName": "Scaly Language Server",
+  "Scaly.LaunchSettings.DisplayName": "Scaly Launch Settings..."
 }

@@ -75,6 +75,7 @@ internal static class ScalyBuild
         }
 #pragma warning restore VSTHRD003
 
+        ScalyPrograms.SettingsError = null;
         var tool = await ScalyPrograms.FindAsync(ScalySettings.ToolPath, "scaly", cancellationToken);
         if (tool is null)
         {
@@ -99,7 +100,15 @@ internal static class ScalyBuild
         {
             info.EnvironmentVariables["SCALY_HOME"] = home;
         }
-        Report($"scaly build -g {Path.GetFileName(source)} -o {Path.GetFileName(output)}");
+        if (ScalyPrograms.SettingsError is { } settingsError)
+        {
+            Report("Warning: " + settingsError + "; the defaults apply.");
+        }
+        Report($"{tool} build -g {Path.GetFileName(source)} -o {Path.GetFileName(output)}");
+        if (home is not null)
+        {
+            Report($"SCALY_HOME={home}");
+        }
 
         using var process = new Process { StartInfo = info, EnableRaisingEvents = true };
         var exited = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);

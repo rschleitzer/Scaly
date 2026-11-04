@@ -20,6 +20,18 @@ internal static class ScalyPrograms
 {
     public const string InstallCommand = "irm https://scaly.io/install.ps1 | iex";
 
+    /// <summary>
+    /// The extensibility object the settings are read through. Visual Studio
+    /// does not offer it as a service to this extension (measured:
+    /// ServiceUnavailableException), so the extension's parts, which get it
+    /// injected, leave it here when they are made: the language server
+    /// provider with the first .scaly document, a command when it runs.
+    /// </summary>
+    public static VisualStudioExtensibility? Extensibility { get; set; }
+
+    /// <summary>Why the last setting read fell back to the default, or null.</summary>
+    public static string? SettingsError { get; set; }
+
     public static async Task<string?> FindAsync(Setting.String setting, string name, CancellationToken cancellationToken)
     {
         var configured = (await ReadAsync(setting, cancellationToken)).Trim();
@@ -95,13 +107,24 @@ internal static class ScalyPrograms
     {
         try
         {
-            var extensibility = await AsyncServiceProvider.GlobalProvider.GetServiceAsync<VisualStudioExtensibility, VisualStudioExtensibility>();
+            var extensibility = Extensibility
+                ?? await AsyncServiceProvider.GlobalProvider.GetServiceAsync<VisualStudioExtensibility, VisualStudioExtensibility>();
             var value = await extensibility.Settings().ReadEffectiveValueAsync(setting, cancellationToken);
-            return value.ValueOrDefault(defaultValue: "") ?? "";
+            if (!value.Succeeded)
+            {
+                // ValueOrDefault would answer the default without a word.
+                SettingsError = $"a Scaly setting could not be read ({value.Error})";
+                return "";
+            }
+            return value.Value ?? "";
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
-            // An unreadable setting is an empty one: fall back to PATH and the installation.
+            // An unreadable setting is an empty one: fall back to PATH and the
+            // installation, and say why where the build reports.
+            SettingsError = Extensibility is null
+                ? "the Scaly settings are read once a .scaly file has been opened in the editor"
+                : $"a Scaly setting could not be read ({e.GetType().Name}: {e.Message})";
             return "";
         }
     }

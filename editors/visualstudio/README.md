@@ -17,7 +17,14 @@ The extension adds nothing of its own to the language; it wires what exists:
   `scaly build -g file.scaly -o file.exe`; the output goes to the Build pane,
   errors with file and line to the Error List.
 - **Debug**: F5 on a `.scaly` file builds it and starts the program under the
-  native debugger; breakpoints bind in the `.scaly` source.
+  native debugger; breakpoints bind in the `.scaly` source. Ctrl+F5 builds it
+  and runs it without the debugger.
+- **Launch settings**: "Scaly Launch Settings..." on a `.scaly` file (Solution
+  Explorer or the editor's context menu) sets the program's arguments, working
+  directory and environment variables for F5 and Ctrl+F5. They are kept in
+  `.vs\scaly\launch.txt` of the folder, one section per file. An entry for the
+  file in `.vs\launch.vs.json`, where one was written, takes precedence for each
+  key it sets (`args`, `currentDir`, `env`).
 - **Test**: the Test Explorer lists the `test*` functions of every `.scaly`
   file of the folder and runs them with `scaly test`.
 
