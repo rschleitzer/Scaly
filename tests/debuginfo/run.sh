@@ -94,6 +94,13 @@ for v in pt base name out; do
   need "top-level let $v missing from main" "\"$v\"" /tmp/debuginfo_main.txt
 done
 
+# 3b. The variable of a `for`, sequential (k) and through the parallel driver's
+#     inline rounds (each): bound as values like a `let`, they had no variable
+#     at all, and a debugger showed every local of a loop body but its own.
+for v in k each; do
+  need "loop variable $v missing from main" "\"$v\"" /tmp/debuginfo_main.txt
+done
+
 # 4. String: the type itself, its member, and — the half that is easy to get
 #    backwards — the DEREF in the location. `name` holds a POINTER to the
 #    String, so a location without DW_OP_deref would read the pointer's own

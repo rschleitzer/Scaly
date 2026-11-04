@@ -15,6 +15,7 @@
 ;           a member only for variants that have a payload, so its member index
 ;           stops being the tag value and no reader can map one to the other.
 ;   items   a Vector, for the lldb synthetic-children formatter.
+;   k/each  loop variables, at the end so the breakpoint lines stay put.
 ;
 ; Expected stdout: 34
 package scaly 0.2.0
@@ -47,3 +48,17 @@ if out = 34
     print("34")
 else
     print("WRONG")
+
+; The variables of a `for`: k in a sequential range loop (the break keeps it
+; off the parallel driver), each in an iterator loop the driver takes, whose
+; first rounds run inline in main. Neither was in the debug info before
+; 2026-11-04.
+var seen 0
+for k in 3
+{
+    if k = 2
+        break
+    seen := seen + k
+}
+for each in items
+    seen := seen + each

@@ -1410,6 +1410,35 @@ define Emitter
                 debug_declare_at(name, slot, dty, dpos, 0, false)
         }
 
+        ; -g: the variable of a sequential `for`, which define_variable binds as
+        ; a value like a `let` -- so it had no DWARF/CodeView variable at all, and
+        ; the debugger showed every local of a loop body but the one the loop is
+        ; about. A range loop binds the index (element_type is its type); an
+        ; iterator loop binds next()'s element, element_type `pointer[T]`: the
+        ; loaded T where T is a value, else the element's address, which
+        ; debug_declare_value then declares one dereference away. Declared in
+        ; the body block, where the binding is made each round.
+        procedure debug_declare_loop_variable(mutable this, mutable for_expr: PlannedFor, mutable value: LLVMValueRef)
+        {
+            if config.emit_debug_info = false
+                return
+            var pt for_expr.element_type
+            if for_expr.is_iterator_loop
+            {
+                if pt.generics = null
+                    return
+                let gens (*pt.generics)
+                if gens.length = 0
+                    return
+                let pointee gens.get 0
+                if pointee = null
+                    return
+                pt := (*pointee)
+            }
+            let dpos compute_debug_pos for_expr.loc.start
+            debug_declare_value(for_expr.identifier, value, pt, dpos, 0)
+        }
+
         procedure di_type_for(mutable this, mutable pt: PlannedType) returns LLVMMetadataRef
         {
             ; pointer[T] / ref[T] — both lower to ptr; point at the pointee's
@@ -18395,6 +18424,7 @@ define Emitter
             ; Load current index and bind as loop variable
             let body_index LLVMBuildLoad2(builder, index_type, loop_counter, for_expr.identifier.c_data())
             define_variable(for_expr.identifier, body_index)
+            debug_declare_loop_variable(for_expr, body_index)
 
             ; Emit body
             emit_action for_expr.body
@@ -18546,6 +18576,7 @@ define Emitter
                 loop_bind := LLVMBuildLoad2(builder, scalar_ty, next_result, for_expr.identifier.c_data())
             }
             define_variable(for_expr.identifier, loop_bind)
+            debug_declare_loop_variable(for_expr, loop_bind)
 
             ; Execute loop body
             emit_action for_expr.body
@@ -19832,6 +19863,7 @@ define Emitter
                     pf_loop_bind := LLVMBuildTrunc(builder, iv, index_ty, for_expr.identifier.c_data())
             }
             define_variable(for_expr.identifier, pf_loop_bind)
+            debug_declare_loop_variable(for_expr, pf_loop_bind)
             rk := 0
             while rk < n_red
             {
@@ -20278,6 +20310,7 @@ define Emitter
                 if nw < 64
                     il_bind := LLVMBuildTrunc(builder, ib_i, index_ty, for_expr.identifier.c_data())
                 define_variable(for_expr.identifier, il_bind)
+                debug_declare_loop_variable(for_expr, il_bind)
                 let il_parts this.fp_iteration_partials(red_names, red_ops, red_slots)
                 push_loop(done_block, il_inc, for_expr.loop_label, null as LLVMValueRef)
                 emit_action for_expr.body
@@ -20525,6 +20558,7 @@ define Emitter
                     it_bind := LLVMBuildLoad2(builder, it_sc_ty, it_e, for_expr.identifier.c_data())
                 }
                 define_variable(for_expr.identifier, it_bind)
+                debug_declare_loop_variable(for_expr, it_bind)
                 let it_parts this.fp_iteration_partials(red_names, red_ops, red_slots)
                 push_loop(done_block, it_inc, for_expr.loop_label, null as LLVMValueRef)
                 emit_action for_expr.body
