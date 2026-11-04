@@ -8,6 +8,10 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Xml;
+using System.Xml.XPath;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.TestWindow.Extensibility.Model;
@@ -17,7 +21,9 @@ using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 internal sealed class ScalyTestContainerDiscoverer : ITestContainerDiscoverer, IDisposable
 {
     public static readonly Uri Executor = new("executor://scaly/v1");
-    private static readonly Regex TestFunction = new(@"^\s*function\s+test\w*\s*\(\s*\)\s+returns\s+int\b", RegexOptions.Multiline);
+    // A file is offered when a line opens something that may be a test; the
+    // adapter asks the tool which tests it holds (scaly test --list).
+    private static readonly Regex TestFunction = new(@"^\s*(?:function|procedure)\s+test(?:_\w*)?\s*\(", RegexOptions.Multiline);
 
     private readonly IVsFolderWorkspaceService workspaceService;
     private FileSystemWatcher? watcher;
@@ -71,6 +77,50 @@ internal sealed class ScalyTestContainerDiscoverer : ITestContainerDiscoverer, I
     }
 
     public void Dispose() => this.watcher?.Dispose();
+}
+
+/// <summary>
+/// Hands the test adapter, which runs in the test host apart from Visual
+/// Studio, the tool and SCALY_HOME the builds use: an element
+/// <c>&lt;ScalyAdapter&gt;&lt;Tool/&gt;&lt;Home/&gt;&lt;/ScalyAdapter&gt;</c> in the run settings.
+/// </summary>
+[Export(typeof(IRunSettingsService))]
+internal sealed class ScalyRunSettings : IRunSettingsService
+{
+    private readonly IVsFolderWorkspaceService workspaceService;
+
+    [ImportingConstructor]
+    public ScalyRunSettings(IVsFolderWorkspaceService workspaceService)
+    {
+        this.workspaceService = workspaceService;
+    }
+
+    public string Name => "ScalyAdapter";
+
+    public IXPathNavigable AddRunSettings(IXPathNavigable inputRunSettingDocument, IRunSettingsConfigurationInfo configurationInfo, ILogger log)
+    {
+        var folder = this.workspaceService.CurrentWorkspace?.Location;
+        var (tool, home) = ThreadHelper.JoinableTaskFactory.Run(async () =>
+            (await ScalyPrograms.FindAsync(ScalySettings.ToolPath, "scaly", CancellationToken.None),
+             await ScalyPrograms.HomeAsync(folder, CancellationToken.None)));
+
+        var document = new XmlDocument();
+        document.LoadXml(inputRunSettingDocument.CreateNavigator()!.OuterXml);
+        var root = document.DocumentElement;
+        if (root is null)
+        {
+            return inputRunSettingDocument;
+        }
+        if (root.SelectSingleNode(this.Name) is XmlNode old)
+        {
+            root.RemoveChild(old);
+        }
+        var element = document.CreateElement(this.Name);
+        element.AppendChild(document.CreateElement("Tool")).InnerText = tool ?? "";
+        element.AppendChild(document.CreateElement("Home")).InnerText = home ?? "";
+        root.AppendChild(element);
+        return document;
+    }
 }
 
 internal sealed class ScalyTestContainer : ITestContainer

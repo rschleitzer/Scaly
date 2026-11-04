@@ -25,8 +25,14 @@ The extension adds nothing of its own to the language; it wires what exists:
   `.vs\scaly\launch.txt` of the folder, one section per file. An entry for the
   file in `.vs\launch.vs.json`, where one was written, takes precedence for each
   key it sets (`args`, `currentDir`, `env`).
-- **Test**: the Test Explorer lists the `test*` functions of every `.scaly`
-  file of the folder and runs them with `scaly test`.
+- **Test**: the Test Explorer lists the tests of every `.scaly` file of the
+  folder (a function or procedure named `test` or `test_<name>`, taking
+  nothing, answering an int) as `scaly test file --list` names them, a test of
+  a module file and of a namespace (`Suite.test_inside`) included, and runs
+  them with `scaly test`; a double-click goes to the declaration. A test that
+  traps fails with the trap's message, and the tests after it in its file are
+  shown as not run. Where a file does not compile, its tests are read from the
+  source until it does.
 
 The programs are found on `PATH`, else where the scaly.io installer puts them
 (`%USERPROFILE%\.scaly\toolchain\libexec`); Tools > Options > Scaly sets them
@@ -35,7 +41,8 @@ opened in the editor. The Target setting builds for another triple
 (`--target`): `x86_64-pc-windows-msvc` on an Arm PC gives an x64 program that
 Windows runs, and Visual Studio debugs, under emulation. The Build pane names
 the tool, the target and `SCALY_HOME` of every build. The test adapter runs
-apart from Visual Studio and does not read those settings.
+apart from Visual Studio, in the test host; the extension hands it the same
+tool and `SCALY_HOME` through the run settings (`<ScalyAdapter>`).
 
 ## Limits
 
