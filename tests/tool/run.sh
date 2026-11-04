@@ -426,8 +426,18 @@ if [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" = arm64 ] \
       bad "target $mode(build): $(grep -v 'ld: warning' "$TMP/x86.log" | tail -2 | tr '\n' ' ')"
     fi
   done
+elif [ "$SCALY_COFF" = 1 ]; then
+  # Windows: a build that names its target still runs its C compiles through
+  # cmd.exe, whose quoting it got wrong until 2026-11-04 (it asked the target
+  # rather than the host). x64 runs on an x64 host and under emulation on Arm.
+  if "$SCALY" build tests/tool/hello.scaly --target x86_64-pc-windows-msvc -o "$TMP/hello_x64$SCALY_EXE" > "$TMP/x64.log" 2>&1; then
+    out=$("$TMP/hello_x64$SCALY_EXE" one two)
+    [ "$out" = "hello one two" ] && ok || bad "target x64: '$out'"
+  else
+    bad "target x64(build): $(tail -2 "$TMP/x64.log" | tr '\n' ' ')"
+  fi
 else
-  echo "SKIP target (needs an arm64 Mac with Rosetta 2 and a universal SDK)"
+  echo "SKIP target (needs an arm64 Mac with Rosetta 2 and a universal SDK, or Windows)"
 fi
 
 # pgo: an instrumented build, its run writes a profile, the build with that

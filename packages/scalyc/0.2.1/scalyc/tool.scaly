@@ -789,10 +789,13 @@ define tool
                 let ntmp "`nobj`.`getpid() as int`.tmp"
                 ; cmd.exe strips the first and the last quote of a line that
                 ; begins with one and holds more than two, so on a Windows
-                ; host the whole line takes a pair of its own. A cross build
-                ; names its triple and runs under a POSIX shell, which would
-                ; read that pair as an empty argument.
-                let cmd_wrap given_triple.get_length() = 0 and triple.contains(String("windows"))
+                ; host the whole line takes a pair of its own -- the HOST's
+                ; shell decides, not the target: a POSIX shell would read the
+                ; pair as an empty argument, and a cross build on Windows
+                ; (`--target x86_64-pc-windows-msvc` on arm64) runs cmd.exe
+                ; too (until 2026-11-04 it asked the target and lost both
+                ; quotes there)
+                let cmd_wrap tool.target_triple(String()).contains(String("windows"))
                 var cmd StringBuilder()
                 if cmd_wrap
                     cmd.append("\"")
