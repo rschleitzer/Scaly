@@ -42,6 +42,10 @@ internal static class ScalyPrograms
         return OnPath(name) ?? Installed(name);
     }
 
+    /// <summary>The target triple to build for, or empty: the machine's own.</summary>
+    public static async Task<string> TargetAsync(CancellationToken cancellationToken)
+        => (await ReadAsync(ScalySettings.Target, cancellationToken)).Trim();
+
     /// <summary>
     /// SCALY_HOME: the setting, else the open folder when it is a Scaly checkout,
     /// else null (an installed program sets its own).

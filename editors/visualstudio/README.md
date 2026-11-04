@@ -30,8 +30,12 @@ The extension adds nothing of its own to the language; it wires what exists:
 
 The programs are found on `PATH`, else where the scaly.io installer puts them
 (`%USERPROFILE%\.scaly\toolchain\libexec`); Tools > Options > Scaly sets them
-explicitly, and `SCALY_HOME`. The test adapter runs apart from Visual Studio
-and does not read those settings.
+explicitly, and `SCALY_HOME`; they are read once a `.scaly` file has been
+opened in the editor. The Target setting builds for another triple
+(`--target`): `x86_64-pc-windows-msvc` on an Arm PC gives an x64 program that
+Windows runs, and Visual Studio debugs, under emulation. The Build pane names
+the tool, the target and `SCALY_HOME` of every build. The test adapter runs
+apart from Visual Studio and does not read those settings.
 
 ## Limits
 

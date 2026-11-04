@@ -47,6 +47,12 @@ internal static class ScalySettings
     {
         Description = "%Scaly.Settings.Home.Description%",
     };
+
+    [VisualStudioContribution]
+    internal static Setting.String Target { get; } = new("target", "%Scaly.Settings.Target%", Category, defaultValue: "")
+    {
+        Description = "%Scaly.Settings.Target.Description%",
+    };
 }
 
 #pragma warning restore VSEXTPREVIEW_SETTINGS

@@ -87,7 +87,9 @@ internal static class ScalyBuild
 
         var directory = Path.GetDirectoryName(source)!;
         var output = ProgramOf(source);
-        var info = new ProcessStartInfo(tool, $"build -g \"{source}\" -o \"{output}\"")
+        var target = await ScalyPrograms.TargetAsync(cancellationToken);
+        var targetArgument = target.Length == 0 ? "" : $" --target {target}";
+        var info = new ProcessStartInfo(tool, $"build -g{targetArgument} \"{source}\" -o \"{output}\"")
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -104,7 +106,7 @@ internal static class ScalyBuild
         {
             Report("Warning: " + settingsError + "; the defaults apply.");
         }
-        Report($"{tool} build -g {Path.GetFileName(source)} -o {Path.GetFileName(output)}");
+        Report($"{tool} build -g{targetArgument} {Path.GetFileName(source)} -o {Path.GetFileName(output)}");
         if (home is not null)
         {
             Report($"SCALY_HOME={home}");
