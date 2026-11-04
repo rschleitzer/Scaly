@@ -882,18 +882,18 @@ for name in os.arguments()
 
     <section xml:id="tut-windows-vs">
       <title>Using Scaly with Visual Studio</title>
-      <para>Visual Studio debugs a Scaly program with the debugger it uses for
-        C++. It has no Scaly project type and does not know the language yet:
-        it works on a folder, builds through a task you write once, and shows a
-        <filename>.scaly</filename> file as plain text. For highlighting,
-        completion and the rest of the language server, edit in VS Code
-        (<xref linkend="tut-windows-vscode"/>); both can have the same folder
-        open at once.</para>
+      <para>Visual Studio works on a folder of <filename>.scaly</filename>
+        files, without a project file. The Scaly extension colours the source,
+        runs the language server, builds and debugs a file with
+        <keycap>F5</keycap>, and lists its tests in the
+        <guilabel>Test Explorer</guilabel>. VS Code
+        (<xref linkend="tut-windows-vscode"/>) can have the same folder open
+        at the same time.</para>
 
       <section xml:id="tut-windows-vs-install">
-        <title>Installing Visual Studio and Scaly</title>
-        <para>Visual Studio comes first: Scaly builds programs with its C++
-          tools, and when it finds them it installs nothing of its own.</para>
+        <title>Installing Visual Studio, Scaly and the Extension</title>
+        <para>Install Visual Studio first. Scaly builds programs with its C++
+          tools, and when it finds them, it installs nothing of its own.</para>
         <orderedlist>
           <listitem>
             <para>Download Visual Studio 2026 from
@@ -913,16 +913,16 @@ for name in os.arguments()
               <guimenu>Settings</guimenu> &gt;
               <guimenuitem>System</guimenuitem> &gt;
               <guimenuitem>About</guimenuitem> says
-              <quote>ARM-based processor</quote>), the tools for Arm must be
-              ticked as well: in the <guilabel>Installation details</guilabel>
-              on the right, under <guilabel>Desktop development with
-              C++</guilabel>, tick the entry for <guilabel>C++ ARM64/ARM64EC
-              build tools</guilabel>. On any other PC, skip this step.</para>
+              <quote>ARM-based processor</quote>), also tick the tools for Arm:
+              in the <guilabel>Installation details</guilabel> on the right,
+              under <guilabel>Desktop development with C++</guilabel>, tick
+              <guilabel>C++ ARM64/ARM64EC build tools</guilabel>. On any other
+              PC, skip this step.</para>
           </listitem>
           <listitem>
             <para>Click <guibutton>Install</guibutton> (or
               <guibutton>Modify</guibutton>) and wait until the installer is
-              done. Should it ask you to restart your PC, do so.</para>
+              done. If it asks you to restart your PC, do so.</para>
           </listitem>
           <listitem>
             <para>Install Scaly. Click <guilabel>Start</guilabel>, type
@@ -937,22 +937,39 @@ for name in os.arguments()
               in place. Close PowerShell.</para>
           </listitem>
           <listitem>
-            <para>Start Visual Studio. If it was running while Scaly was
-              installed, close it and start it again, so that it finds
-              Scaly.</para>
+            <para>Download the Scaly extension,
+              <uri xlink:href="https://scaly.io/downloads/scaly-visualstudio.vsix">scaly.io/downloads/scaly-visualstudio.vsix</uri>.
+              If the browser warns that the file is not commonly downloaded,
+              choose to keep it.</para>
+          </listitem>
+          <listitem>
+            <para>Close every Visual Studio window. Then open your
+              <filename>Downloads</filename> folder and double-click
+              <filename>scaly-visualstudio.vsix</filename>. The
+              <application>VSIX Installer</application> opens and names your
+              Visual Studio. Click <guibutton>Install</guibutton>. It
+              mentions that the extension carries no digital signature; that
+              is expected. When it says the installation is complete, click
+              <guibutton>Close</guibutton>.</para>
           </listitem>
         </orderedlist>
+        <para>The extension finds <command>scaly</command> and
+          <command>scalyls</command> on your <envar>PATH</envar>, else where
+          the installer put them. If they are somewhere else, set their paths
+          under <guimenu>Tools</guimenu> &gt;
+          <guimenuitem>Options</guimenuitem> &gt;
+          <guimenuitem>Scaly</guimenuitem>.</para>
       </section>
 
       <section xml:id="tut-windows-vs-folder">
-        <title>Opening the Folder</title>
+        <title>Opening the Folder and Checking the Language Server</title>
         <orderedlist>
           <listitem>
-            <para>In Visual Studio's start window, choose
-              <guibutton>Open a local folder</guibutton>; with Visual Studio
-              already open, choose <guimenu>File</guimenu> &gt;
+            <para>Start Visual Studio. In its start window, choose
+              <guibutton>Open a local folder</guibutton>. If Visual Studio
+              is already open, choose <guimenu>File</guimenu> &gt;
               <guimenuitem>Open</guimenuitem> &gt;
-              <guimenuitem>Folder…</guimenuitem> and go to
+              <guimenuitem>Folder…</guimenuitem> instead. Go to
               <filename>Documents</filename>. If there is no
               <filename>scaly-tutorial</filename> yet from
               <xref linkend="tut-windows-vscode"/>, click
@@ -963,20 +980,94 @@ for name in os.arguments()
           </listitem>
           <listitem>
             <para>The <guilabel>Solution Explorer</guilabel> lists the
-              folder's files (<guimenu>View</guimenu> &gt;
-              <guimenuitem>Solution Explorer</guimenuitem>, or
-              <keycap>Ctrl</keycap>+<keycap>Alt</keycap>+<keycap>L</keycap>,
-              should it not be there).</para>
+              folder's files. If it is not there, choose
+              <guimenu>View</guimenu> &gt; <guimenuitem>Solution
+              Explorer</guimenuitem>, or press
+              <keycap>Ctrl</keycap>+<keycap>Alt</keycap>+<keycap>L</keycap>.</para>
           </listitem>
+          <listitem>
+            <para>If <filename>double.scaly</filename> is there already, from
+              <xref linkend="tut-windows-vscode-lsp"/>, double-click it.
+              Otherwise, right-click the folder at the top of the
+              <guilabel>Solution Explorer</guilabel>, choose
+              <guimenuitem>Add</guimenuitem> &gt; <guimenuitem>New
+              File…</guimenuitem>, name it <userinput>double.scaly</userinput>,
+              type this program, and save it with
+              <keycap>Ctrl</keycap>+<keycap>S</keycap>:</para>
+            <programlisting>function double(n: int) returns int
+    n * 2
+
+let d double(21)
+if d = 42
+    print "doubled!"</programlisting>
+            <para>The words <code>function</code>, <code>returns</code> and
+              <code>let</code> are coloured. The Scaly file has the Scaly
+              lizard as its icon in the <guilabel>Solution
+              Explorer</guilabel>.</para>
+          </listitem>
+          <listitem>
+            <para>Change <code>double(21)</code> to
+              <code>doubel(21)</code>. A red squiggle appears under it, and the
+              <guilabel>Error List</guilabel> (<guimenu>View</guimenu> &gt;
+              <guimenuitem>Error List</guimenuitem>) shows
+              <computeroutput>function not found: doubel</computeroutput>:
+              the language server is running. Change it back, and the
+              squiggle clears.</para>
+          </listitem>
+          <listitem>
+            <para>Rest the mouse on <code>double</code> in its definition to
+              see its signature. Press <keycap>F12</keycap> on a use to go to
+              the definition, and <keycap>Shift</keycap>+<keycap>F12</keycap>
+              to list every use. To rename it everywhere, press
+              <keycap>Ctrl</keycap>+<keycap>R</keycap>, then
+              <keycap>Ctrl</keycap>+<keycap>R</keycap> again.
+              <keycap>Ctrl</keycap>+<keycap>T</keycap> searches symbols
+              across the folder, and while you type, Visual Studio offers
+              completions.</para>
+          </listitem>
+        </orderedlist>
+        <para>If the squiggle never appears, Visual Studio did not find the
+          language server: check that Scaly is installed
+          (<xref linkend="tut-windows-vs-install"/>), then close Visual
+          Studio and start it again.</para>
+      </section>
+
+      <section xml:id="tut-windows-vs-build">
+        <title>Building and Running</title>
+        <orderedlist>
+          <listitem>
+            <para>Right-click <filename>double.scaly</filename> in the
+              <guilabel>Solution Explorer</guilabel> and choose
+              <guimenuitem>Build</guimenuitem>. The
+              <guilabel>Output</guilabel> window (<guimenu>View</guimenu>
+              &gt; <guimenuitem>Output</guimenuitem>) shows the command line
+              and <computeroutput>Build succeeded.</computeroutput>, and
+              <filename>double.exe</filename>, the program, and
+              <filename>double.pdb</filename>, its debug information, appear
+              beside the source.</para>
+          </listitem>
+          <listitem>
+            <para>With <filename>double.scaly</filename> in the editor, press
+              <keycap>Ctrl</keycap>+<keycap>F5</keycap>. Visual Studio builds
+              the file and runs the program without the debugger, in a
+              console window of its own, which prints
+              <computeroutput>doubled!</computeroutput>.</para>
+          </listitem>
+        </orderedlist>
+        <para>A compiler error goes to the <guilabel>Error List</guilabel>;
+          double-click it to go to its line. If the build says that it has
+          nothing to link with, the C++ tools of Visual Studio are missing:
+          go back to <xref linkend="tut-windows-vs-install"/>.</para>
+      </section>
+
+      <section xml:id="tut-windows-vs-debug">
+        <title>Setting a Breakpoint and Stepping</title>
+        <orderedlist>
           <listitem>
             <para>If <filename>area.scaly</filename> is there already, from
               <xref linkend="tut-windows-vscode-debug"/>, double-click it.
-              Otherwise right-click the folder at the top of the
-              <guilabel>Solution Explorer</guilabel>, choose
-              <guimenuitem>Add</guimenuitem> &gt; <guimenuitem>New
-              File…</guimenuitem>, name it <userinput>area.scaly</userinput>,
-              type this program, and save it with
-              <keycap>Ctrl</keycap>+<keycap>S</keycap>:</para>
+              Otherwise, add it to the folder as you added
+              <filename>double.scaly</filename>, with this program:</para>
             <programlisting>var width 8
 var height 5
 var area width * height
@@ -985,86 +1076,24 @@ if area = 40
 else
     print "unexpected area"</programlisting>
           </listitem>
-        </orderedlist>
-      </section>
-
-      <section xml:id="tut-windows-vs-build">
-        <title>Building</title>
-        <para>A task tells Visual Studio how to build a
-          <filename>.scaly</filename> file. It is written once per folder:</para>
-        <orderedlist>
           <listitem>
-            <para>Right-click <filename>area.scaly</filename> in the
-              <guilabel>Solution Explorer</guilabel> and choose
-              <guimenuitem>Configure Tasks</guimenuitem>. Visual Studio
-              creates <filename>.vs\tasks.vs.json</filename> and opens
-              it.</para>
+            <para>Click in the grey margin left of <code>var area width *
+              height</code>, or put the cursor on that line and press
+              <keycap>F9</keycap>. A red dot appears: a breakpoint.</para>
           </listitem>
           <listitem>
-            <para>Replace all of its content with this task, which builds the
-              file with debug information, and save it
-              (<keycap>Ctrl</keycap>+<keycap>S</keycap>):</para>
-            <programlisting>{
-    "version": "0.2.1",
-    "tasks": [
-        {
-            "taskLabel": "scaly build",
-            "appliesTo": "*.scaly",
-            "type": "launch",
-            "contextType": "build",
-            "command": "scaly",
-            "args": [ "build", "-g", "${file}",
-                      "-o", "${fileDirname}\\${fileBasenameNoExtension}.exe" ]
-        }
-    ]
-}</programlisting>
-          </listitem>
-          <listitem>
-            <para>Right-click <filename>area.scaly</filename> again: the menu
-              now has <guimenuitem>Build</guimenuitem>. Choose it. The
-              compiler's messages appear in the <guilabel>Output</guilabel>
-              window (<guimenu>View</guimenu> &gt;
-              <guimenuitem>Output</guimenuitem>), and
-              <filename>area.exe</filename> and
-              <filename>area.pdb</filename> appear beside the source. Should
-              the <guilabel>Solution Explorer</guilabel> not show them yet,
-              click its <guibutton>Refresh</guibutton> button.</para>
-          </listitem>
-        </orderedlist>
-        <para>The task applies to every <filename>.scaly</filename> file in
-          the folder: each one's menu has <guimenuitem>Build</guimenuitem>,
-          and each builds into an <filename>.exe</filename> of its own
-          name.</para>
-      </section>
-
-      <section xml:id="tut-windows-vs-debug">
-        <title>Setting a Breakpoint and Stepping</title>
-        <orderedlist>
-          <listitem>
-            <para>Right-click <filename>area.exe</filename> in the
-              <guilabel>Solution Explorer</guilabel> and choose
-              <guimenuitem>Set as Startup Item</guimenuitem>. The start button
-              in the toolbar (the green triangle) now says
-              <guilabel>area.exe</guilabel>.</para>
-          </listitem>
-          <listitem>
-            <para>In <filename>area.scaly</filename>, click in the grey margin
-              left of <code>var area width * height</code>, or put the cursor
-              on that line and press <keycap>F9</keycap>. A red dot appears: a
-              breakpoint.</para>
-          </listitem>
-          <listitem>
-            <para>Press <keycap>F5</keycap>. A console window opens for the
-              program, and Visual Studio stops at the breakpoint, before the
-              line runs; a yellow arrow marks the line.</para>
+            <para>With <filename>area.scaly</filename> in the editor, press
+              <keycap>F5</keycap>. Visual Studio builds the file, starts the
+              program in a console window, and stops at the breakpoint
+              before the line runs; a yellow arrow marks the line.</para>
           </listitem>
           <listitem>
             <para>The <guilabel>Locals</guilabel> window at the bottom shows
               the bindings: <code>width</code> is
               <computeroutput>8</computeroutput>, <code>height</code> is
-              <computeroutput>5</computeroutput>. (If it is not there:
+              <computeroutput>5</computeroutput>. If it is not there, choose
               <guimenu>Debug</guimenu> &gt; <guimenuitem>Windows</guimenuitem>
-              &gt; <guimenuitem>Locals</guimenuitem>.) Resting the mouse on a
+              &gt; <guimenuitem>Locals</guimenuitem>. Resting the mouse on a
               name in the editor shows its value too.</para>
           </listitem>
           <listitem>
@@ -1078,30 +1107,21 @@ else
               its console window.</para>
           </listitem>
         </orderedlist>
-        <para>Two things to know. The console window closes when the program
-          ends; to read its output afterwards, untick
+        <para><keycap>F5</keycap> builds the file every time, so a change to
+          the source is in the program you debug. The console window closes
+          when the program ends. To read its output afterwards, untick
           <guimenu>Tools</guimenu> &gt; <guimenuitem>Options</guimenuitem>
           &gt; <guimenuitem>Debugging</guimenuitem> &gt;
           <guilabel>Automatically close the console when debugging
-          stops</guilabel>. And <keycap>F5</keycap> runs the
-          <filename>.exe</filename> as it is: after changing the source,
-          choose <guimenuitem>Build</guimenuitem> again first. Should Visual
-          Studio refuse a breakpoint in the <filename>.scaly</filename> file,
-          start with <keycap>F11</keycap> instead of <keycap>F5</keycap>: the
-          program stops at its first statement, and from there
-          <keycap>F10</keycap> walks it line by line.</para>
+          stops</guilabel>.</para>
       </section>
 
       <section xml:id="tut-windows-vs-callstack">
         <title>Stepping into Functions and the Call Stack</title>
         <orderedlist>
           <listitem>
-            <para>In the <guilabel>Solution Explorer</guilabel>, right-click
-              the folder at the top, choose <guimenuitem>Add</guimenuitem>
-              &gt; <guimenuitem>New File…</guimenuitem>, name it
-              <userinput>rectangle.scaly</userinput>, and type the area
-              calculation with a function in it; save it with
-              <keycap>Ctrl</keycap>+<keycap>S</keycap>:</para>
+            <para>Add <filename>rectangle.scaly</filename> to the folder,
+              with the area calculation in a function:</para>
             <programlisting>function area(w: int, h: int) returns int
 {
     var result w * h
@@ -1117,14 +1137,8 @@ else
     print "unexpected area"</programlisting>
           </listitem>
           <listitem>
-            <para>Right-click it and choose <guimenuitem>Build</guimenuitem>,
-              then right-click <filename>rectangle.exe</filename> and choose
-              <guimenuitem>Set as Startup Item</guimenuitem>.</para>
-          </listitem>
-          <listitem>
-            <para>Open <filename>rectangle.scaly</filename>, set a breakpoint
-              on <code>var a area(width, height)</code> and press
-              <keycap>F5</keycap>.</para>
+            <para>Set a breakpoint on <code>var a area(width, height)</code>
+              and press <keycap>F5</keycap>.</para>
           </listitem>
           <listitem>
             <para>Press <keycap>F11</keycap> (<guimenuitem>Step
@@ -1156,70 +1170,95 @@ else
         <title>Arguments and the Environment</title>
         <orderedlist>
           <listitem>
-            <para>In the <guilabel>Solution Explorer</guilabel>, right-click
-              the folder at the top, choose <guimenuitem>Add</guimenuitem>
-              &gt; <guimenuitem>New File…</guimenuitem>, name it
-              <userinput>greet.scaly</userinput>, type this program and save
-              it with <keycap>Ctrl</keycap>+<keycap>S</keycap>. It greets
-              everyone named on its command line, with the greeting the
-              environment variable <envar>GREETING</envar> holds, and
-              <quote>Hello</quote> where there is none:</para>
+            <para>Add <filename>greet.scaly</filename> to the folder. It
+              greets everyone named on its command line, with the greeting
+              that the environment variable <envar>GREETING</envar> holds, or
+              <quote>Hello</quote> if it is not set:</para>
             <programlisting>var greeting os.environment_variable("GREETING")
 if greeting.length = 0
     greeting := "Hello"
 for name in os.arguments()
     print "`greeting`, `name`!"</programlisting>
             <para><code>os.arguments()</code> answers the arguments the program
-              was started with, its own name left out;
+              was started with, its own name left out.
               <code>os.environment_variable</code> reads a variable of the
-              environment, and is empty where it is not set.</para>
+              environment and is empty if the variable is not set.</para>
           </listitem>
           <listitem>
-            <para>Right-click <filename>greet.scaly</filename> and choose
-              <guimenuitem>Build</guimenuitem>.</para>
+            <para>Right-click <filename>greet.scaly</filename>, in the
+              <guilabel>Solution Explorer</guilabel> or in the editor, and
+              choose <guimenuitem>Scaly Launch Settings…</guimenuitem>. In the
+              dialog, type <userinput>Ada Grace</userinput> under
+              <guilabel>Arguments</guilabel> and
+              <userinput>GREETING=Hi</userinput> under
+              <guilabel>Environment</guilabel>, and click
+              <guibutton>OK</guibutton>. <guilabel>Working
+              directory</guilabel> can stay empty: the program then starts in
+              the folder of its file.</para>
           </listitem>
           <listitem>
-            <para>Right-click <filename>greet.exe</filename>, choose
-              <guimenuitem>Add Debug Configuration</guimenuitem>, and in the
-              list that opens, <guimenuitem>Default</guimenuitem>. Visual
-              Studio writes <filename>.vs\launch.vs.json</filename> and opens
-              it.</para>
-          </listitem>
-          <listitem>
-            <para>Add the arguments, the folder as working directory and a
-              variable in the environment to its entry, and save it:</para>
-            <programlisting>{
-    "version": "0.2.1",
-    "defaults": {},
-    "configurations": [
-        {
-            "type": "default",
-            "project": "greet.exe",
-            "name": "greet.exe",
-            "args": [ "Ada", "Grace" ],
-            "currentDir": "${workspaceRoot}",
-            "env": { "GREETING": "Hello" }
-        }
-    ]
-}</programlisting>
-          </listitem>
-          <listitem>
-            <para>Right-click <filename>greet.exe</filename> and choose
-              <guimenuitem>Set as Startup Item</guimenuitem>. Set a
-              breakpoint on the <code>print</code> line of
-              <filename>greet.scaly</filename> and press
-              <keycap>F5</keycap>. The program stops there;
-              <guilabel>Locals</guilabel> shows <code>name</code> as
+            <para>Set a breakpoint on the <code>print</code> line and press
+              <keycap>F5</keycap>. The program stops there, and
+              <guilabel>Locals</guilabel> shows <code>greeting</code> as
+              <computeroutput>"Hi"</computeroutput> and <code>name</code> as
               <computeroutput>"Ada"</computeroutput>.</para>
           </listitem>
           <listitem>
             <para>Press <keycap>F5</keycap>: the next round stops with
               <computeroutput>"Grace"</computeroutput>. Press
               <keycap>F5</keycap> once more to run to the end; the console
-              window shows <computeroutput>Hello, Ada!</computeroutput> and
-              <computeroutput>Hello, Grace!</computeroutput>.</para>
+              window shows <computeroutput>Hi, Ada!</computeroutput> and
+              <computeroutput>Hi, Grace!</computeroutput>.</para>
           </listitem>
         </orderedlist>
+        <para>The settings belong to the file and apply to
+          <keycap>Ctrl</keycap>+<keycap>F5</keycap> too. Visual Studio keeps
+          them in the folder's hidden <filename>.vs</filename> folder.</para>
+      </section>
+
+      <section xml:id="tut-windows-vs-test">
+        <title>Tests in the Test Explorer</title>
+        <orderedlist>
+          <listitem>
+            <para>Add <filename>sums.scaly</filename> to the folder. A test
+              is a function whose name is <code>test</code> or begins with
+              <code>test_</code>, that takes nothing and answers an
+              <code>int</code>: 0 when it passes, anything else when it
+              fails. The third test fails on purpose:</para>
+            <programlisting>function add(a: int, b: int) returns int
+    a + b
+
+function test_add() returns int
+    if add(1, 2) = 3: 0 else 1
+
+function test_zero() returns int
+    if add(0, 0) = 0: 0 else 1
+
+function test_wrong() returns int
+    if add(1, 1) = 3: 0 else 1</programlisting>
+          </listitem>
+          <listitem>
+            <para>Choose <guimenu>Test</guimenu> &gt; <guimenuitem>Test
+              Explorer</guimenuitem>. It lists the three tests under
+              <filename>sums.scaly</filename>.</para>
+          </listitem>
+          <listitem>
+            <para>Click <guibutton>Run All Tests</guibutton>, the double
+              triangle in the Test Explorer's toolbar.
+              <code>test_add</code> and <code>test_zero</code> pass and turn
+              green; <code>test_wrong</code> fails and turns red. Click it:
+              the pane below says <computeroutput>(answered
+              1)</computeroutput>.</para>
+          </listitem>
+          <listitem>
+            <para>Double-click <code>test_wrong</code> to go to it in the
+              editor. Change the <code>3</code> to <code>2</code>, save, and
+              run the test again: it passes.</para>
+          </listitem>
+        </orderedlist>
+        <para>A test that stops the program, for instance with an index out
+          of bounds, fails with the message the program gave. The tests of
+          its file that would have run after it are shown as not run.</para>
       </section>
 
       <section xml:id="tut-windows-vs-limits">
@@ -1232,7 +1271,7 @@ for name in os.arguments()
               pointers with their fields to expand; a <code>String</code> as
               its text; a <code>Vector</code>, <code>Array</code> or
               <code>List</code> with its elements. A generic type is written as
-              in C++, <computeroutput>Vector&lt;int&gt;</computeroutput>.</para>
+              in C++: <computeroutput>Vector&lt;int&gt;</computeroutput>.</para>
           </listitem>
           <listitem>
             <para>The <guilabel>Watch</guilabel> and
@@ -1240,8 +1279,17 @@ for name in os.arguments()
               Scaly.</para>
           </listitem>
           <listitem>
-            <para>The editor shows a <filename>.scaly</filename> file as plain
-              text: no colours, no squiggles, no completion.</para>
+            <para>Visual Studio does not show code lenses or the call
+              hierarchy for Scaly, though the language server offers both;
+              VS Code shows them.</para>
+          </listitem>
+          <listitem>
+            <para>On a PC with an Arm processor, the
+              <guilabel>Target</guilabel> setting under
+              <guimenu>Tools</guimenu> &gt; <guimenuitem>Options</guimenuitem>
+              &gt; <guimenuitem>Scaly</guimenuitem> builds for x64 instead:
+              <userinput>x86_64-pc-windows-msvc</userinput>. Windows runs such
+              a program, and Visual Studio debugs it, under emulation.</para>
           </listitem>
         </itemizedlist>
       </section>

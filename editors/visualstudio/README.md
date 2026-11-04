@@ -44,6 +44,13 @@ the tool, the target and `SCALY_HOME` of every build. The test adapter runs
 apart from Visual Studio, in the test host; the extension hands it the same
 tool and `SCALY_HOME` through the run settings (`<ScalyAdapter>`).
 
+## Installing
+
+Download [scaly-visualstudio.vsix](https://scaly.io/downloads/scaly-visualstudio.vsix),
+close Visual Studio and double-click the file; the VSIX Installer does the
+rest. The tutorial's chapter "Using Scaly with Visual Studio" walks through
+it, from installing Visual Studio to the Test Explorer.
+
 ## Limits
 
 - Visual Studio does not ask a language server for code lenses or the call
@@ -69,6 +76,11 @@ Studio's MSBuild:
 
 From Git Bash, start devenv with `MSYS_NO_PATHCONV=1`, or `/rootSuffix`
 becomes a path.
+
+`publish.sh` builds the Release VSIX and uploads it as
+`scaly.io/downloads/scaly-visualstudio.vsix` (the aws CLI, signed in);
+`publish.sh <file.vsix>` uploads one built on another machine,
+`--dry-run` says what it would upload.
 
 ## Layout
 

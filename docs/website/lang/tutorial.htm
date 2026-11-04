@@ -3201,30 +3201,35 @@ href="#tut-windows-vs"
 >Using Scaly with Visual Studio</a
 ></h3
 ><p
->Visual Studio debugs a Scaly program with the debugger it uses for
-        C++. It has no Scaly project type and does not know the language yet:
-        it works on a folder, builds through a task you write once, and shows a
-        <code
+>Visual Studio works on a folder of <code
 class="filename"
 >.scaly</code
-> file as plain text. For highlighting,
-        completion and the rest of the language server, edit in VS Code
+>
+        files, without a project file. The Scaly extension colours the source,
+        runs the language server, builds and debugs a file with
+        <kbd
+>F5</kbd
+>, and lists its tests in the
+        <span
+class="gui"
+>Test Explorer</span
+>. VS Code
         (<a
 href="#tut-windows-vscode"
 >Using Scaly with Visual Studio Code on Windows</a
->); both can have the same folder
-        open at once.</p
+>) can have the same folder open
+        at the same time.</p
 ><section
 id="tut-windows-vs-install"
 ><h4
 ><a
 class="header"
 href="#tut-windows-vs-install"
->Installing Visual Studio and Scaly</a
+>Installing Visual Studio, Scaly and the Extension</a
 ></h4
 ><p
->Visual Studio comes first: Scaly builds programs with its C++
-          tools, and when it finds them it installs nothing of its own.</p
+>Install Visual Studio first. Scaly builds programs with its C++
+          tools, and when it finds them, it installs nothing of its own.</p
 ><ol
 ><li
 ><p
@@ -3273,20 +3278,20 @@ class="gui"
 > says
               <q
 >ARM-based processor</q
->), the tools for Arm must be
-              ticked as well: in the <span
+>), also tick the tools for Arm:
+              in the <span
 class="gui"
 >Installation details</span
->
-              on the right, under <span
+> on the right,
+              under <span
 class="gui"
->Desktop development with
-              C++</span
->, tick the entry for <span
+>Desktop development with C++</span
+>, tick
+              <span
 class="gui"
->C++ ARM64/ARM64EC
-              build tools</span
->. On any other PC, skip this step.</p
+>C++ ARM64/ARM64EC build tools</span
+>. On any other
+              PC, skip this step.</p
 ></li
 ><li
 ><p
@@ -3298,7 +3303,7 @@ class="gui"
 class="gui"
 >Modify</span
 >) and wait until the installer is
-              done. Should it ask you to restart your PC, do so.</p
+              done. If it asks you to restart your PC, do so.</p
 ></li
 ><li
 ><p
@@ -3333,11 +3338,66 @@ class="computeroutput"
 ></li
 ><li
 ><p
->Start Visual Studio. If it was running while Scaly was
-              installed, close it and start it again, so that it finds
-              Scaly.</p
+>Download the Scaly extension,
+              <a
+href="https://scaly.io/downloads/scaly-visualstudio.vsix"
+>scaly.io/downloads/scaly-visualstudio.vsix</a
+>.
+              If the browser warns that the file is not commonly downloaded,
+              choose to keep it.</p
+></li
+><li
+><p
+>Close every Visual Studio window. Then open your
+              <code
+class="filename"
+>Downloads</code
+> folder and double-click
+              <code
+class="filename"
+>scaly-visualstudio.vsix</code
+>. The
+              <span
+class="application"
+>VSIX Installer</span
+> opens and names your
+              Visual Studio. Click <span
+class="gui"
+>Install</span
+>. It
+              mentions that the extension carries no digital signature; that
+              is expected. When it says the installation is complete, click
+              <span
+class="gui"
+>Close</span
+>.</p
 ></li
 ></ol
+><p
+>The extension finds <code
+class="command"
+>scaly</code
+> and
+          <code
+class="command"
+>scalyls</code
+> on your <code
+class="envar"
+>PATH</code
+>, else where
+          the installer put them. If they are somewhere else, set their paths
+          under <span
+class="gui"
+>Tools</span
+> &#62;
+          <span
+class="gui"
+>Options</span
+> &#62;
+          <span
+class="gui"
+>Scaly</span
+>.</p
 ></section
 ><section
 id="tut-windows-vs-folder"
@@ -3345,17 +3405,17 @@ id="tut-windows-vs-folder"
 ><a
 class="header"
 href="#tut-windows-vs-folder"
->Opening the Folder</a
+>Opening the Folder and Checking the Language Server</a
 ></h4
 ><ol
 ><li
 ><p
->In Visual Studio's start window, choose
+>Start Visual Studio. In its start window, choose
               <span
 class="gui"
 >Open a local folder</span
->; with Visual Studio
-              already open, choose <span
+>. If Visual Studio
+              is already open, choose <span
 class="gui"
 >File</span
 > &#62;
@@ -3366,7 +3426,7 @@ class="gui"
               <span
 class="gui"
 >Folder…</span
-> and go to
+> instead. Go to
               <code
 class="filename"
 >Documents</code
@@ -3402,34 +3462,34 @@ class="gui"
 class="gui"
 >Solution Explorer</span
 > lists the
-              folder's files (<span
-class="gui"
->View</span
-> &#62;
+              folder's files. If it is not there, choose
               <span
 class="gui"
->Solution Explorer</span
->, or
+>View</span
+> &#62; <span
+class="gui"
+>Solution
+              Explorer</span
+>, or press
               <kbd
 >Ctrl</kbd
 >+<kbd
 >Alt</kbd
 >+<kbd
 >L</kbd
->,
-              should it not be there).</p
+>.</p
 ></li
 ><li
 ><p
 >If <code
 class="filename"
->area.scaly</code
+>double.scaly</code
 > is there already, from
               <a
-href="#tut-windows-vscode-debug"
->Setting a Breakpoint and Stepping</a
+href="#tut-windows-vscode-lsp"
+>Checking the Language Server</a
 >, double-click it.
-              Otherwise right-click the folder at the top of the
+              Otherwise, right-click the folder at the top of the
               <span
 class="gui"
 >Solution Explorer</span
@@ -3443,7 +3503,7 @@ class="gui"
               File…</span
 >, name it <code
 class="userinput"
->area.scaly</code
+>double.scaly</code
 >,
               type this program, and save it with
               <kbd
@@ -3454,16 +3514,95 @@ class="userinput"
 ><pre
 class="listing"
 ><code
->var width 8
-var height 5
-var area width * height
-if area = 40
-    print "the area is 40"
-else
-    print "unexpected area"</code
+>function double(n: int) returns int
+    n * 2
+
+let d double(21)
+if d = 42
+    print "doubled!"</code
 ></pre
+><p
+>The words <code
+>function</code
+>, <code
+>returns</code
+> and
+              <code
+>let</code
+> are coloured. The Scaly file has the Scaly
+              lizard as its icon in the <span
+class="gui"
+>Solution
+              Explorer</span
+>.</p
+></li
+><li
+><p
+>Change <code
+>double(21)</code
+> to
+              <code
+>doubel(21)</code
+>. A red squiggle appears under it, and the
+              <span
+class="gui"
+>Error List</span
+> (<span
+class="gui"
+>View</span
+> &#62;
+              <span
+class="gui"
+>Error List</span
+>) shows
+              <code
+class="computeroutput"
+>function not found: doubel</code
+>:
+              the language server is running. Change it back, and the
+              squiggle clears.</p
+></li
+><li
+><p
+>Rest the mouse on <code
+>double</code
+> in its definition to
+              see its signature. Press <kbd
+>F12</kbd
+> on a use to go to
+              the definition, and <kbd
+>Shift</kbd
+>+<kbd
+>F12</kbd
+>
+              to list every use. To rename it everywhere, press
+              <kbd
+>Ctrl</kbd
+>+<kbd
+>R</kbd
+>, then
+              <kbd
+>Ctrl</kbd
+>+<kbd
+>R</kbd
+> again.
+              <kbd
+>Ctrl</kbd
+>+<kbd
+>T</kbd
+> searches symbols
+              across the folder, and while you type, Visual Studio offers
+              completions.</p
 ></li
 ></ol
+><p
+>If the squiggle never appears, Visual Studio did not find the
+          language server: check that Scaly is installed
+          (<a
+href="#tut-windows-vs-install"
+>Installing Visual Studio, Scaly and the Extension</a
+>), then close Visual
+          Studio and start it again.</p
 ></section
 ><section
 id="tut-windows-vs-build"
@@ -3471,20 +3610,14 @@ id="tut-windows-vs-build"
 ><a
 class="header"
 href="#tut-windows-vs-build"
->Building</a
+>Building and Running</a
 ></h4
-><p
->A task tells Visual Studio how to build a
-          <code
-class="filename"
->.scaly</code
-> file. It is written once per folder:</p
 ><ol
 ><li
 ><p
 >Right-click <code
 class="filename"
->area.scaly</code
+>double.scaly</code
 > in the
               <span
 class="gui"
@@ -3492,96 +3625,63 @@ class="gui"
 > and choose
               <span
 class="gui"
->Configure Tasks</span
->. Visual Studio
-              creates <code
-class="filename"
->.vs\tasks.vs.json</code
-> and opens
-              it.</p
-></li
-><li
-><p
->Replace all of its content with this task, which builds the
-              file with debug information, and save it
-              (<kbd
->Ctrl</kbd
->+<kbd
->S</kbd
->):</p
-><pre
-class="listing"
-><code
->{
-    "version": "0.2.1",
-    "tasks": [
-        {
-            "taskLabel": "scaly build",
-            "appliesTo": "*.scaly",
-            "type": "launch",
-            "contextType": "build",
-            "command": "scaly",
-            "args": [ "build", "-g", "${file}",
-                      "-o", "${fileDirname}\\${fileBasenameNoExtension}.exe" ]
-        }
-    ]
-}</code
-></pre
-></li
-><li
-><p
->Right-click <code
-class="filename"
->area.scaly</code
-> again: the menu
-              now has <span
-class="gui"
 >Build</span
->. Choose it. The
-              compiler's messages appear in the <span
-class="gui"
->Output</span
->
-              window (<span
-class="gui"
->View</span
-> &#62;
+>. The
               <span
 class="gui"
 >Output</span
->), and
+> window (<span
+class="gui"
+>View</span
+>
+              &#62; <span
+class="gui"
+>Output</span
+>) shows the command line
+              and <code
+class="computeroutput"
+>Build succeeded.</code
+>, and
               <code
 class="filename"
->area.exe</code
-> and
+>double.exe</code
+>, the program, and
               <code
 class="filename"
->area.pdb</code
-> appear beside the source. Should
-              the <span
-class="gui"
->Solution Explorer</span
-> not show them yet,
-              click its <span
-class="gui"
->Refresh</span
-> button.</p
+>double.pdb</code
+>, its debug information, appear
+              beside the source.</p
+></li
+><li
+><p
+>With <code
+class="filename"
+>double.scaly</code
+> in the editor, press
+              <kbd
+>Ctrl</kbd
+>+<kbd
+>F5</kbd
+>. Visual Studio builds
+              the file and runs the program without the debugger, in a
+              console window of its own, which prints
+              <code
+class="computeroutput"
+>doubled!</code
+>.</p
 ></li
 ></ol
 ><p
->The task applies to every <code
-class="filename"
->.scaly</code
-> file in
-          the folder: each one's menu has <span
+>A compiler error goes to the <span
 class="gui"
->Build</span
->,
-          and each builds into an <code
-class="filename"
->.exe</code
-> of its own
-          name.</p
+>Error List</span
+>;
+          double-click it to go to its line. If the build says that it has
+          nothing to link with, the C++ tools of Visual Studio are missing:
+          go back to <a
+href="#tut-windows-vs-install"
+>Installing Visual Studio, Scaly and the Extension</a
+>.</p
 ></section
 ><section
 id="tut-windows-vs-debug"
@@ -3594,45 +3694,52 @@ href="#tut-windows-vs-debug"
 ><ol
 ><li
 ><p
->Right-click <code
-class="filename"
->area.exe</code
-> in the
-              <span
-class="gui"
->Solution Explorer</span
-> and choose
-              <span
-class="gui"
->Set as Startup Item</span
->. The start button
-              in the toolbar (the green triangle) now says
-              <span
-class="gui"
->area.exe</span
->.</p
-></li
-><li
-><p
->In <code
+>If <code
 class="filename"
 >area.scaly</code
->, click in the grey margin
-              left of <code
->var area width * height</code
->, or put the cursor
-              on that line and press <kbd
->F9</kbd
->. A red dot appears: a
-              breakpoint.</p
+> is there already, from
+              <a
+href="#tut-windows-vscode-debug"
+>Setting a Breakpoint and Stepping</a
+>, double-click it.
+              Otherwise, add it to the folder as you added
+              <code
+class="filename"
+>double.scaly</code
+>, with this program:</p
+><pre
+class="listing"
+><code
+>var width 8
+var height 5
+var area width * height
+if area = 40
+    print "the area is 40"
+else
+    print "unexpected area"</code
+></pre
 ></li
 ><li
 ><p
->Press <kbd
+>Click in the grey margin left of <code
+>var area width *
+              height</code
+>, or put the cursor on that line and press
+              <kbd
+>F9</kbd
+>. A red dot appears: a breakpoint.</p
+></li
+><li
+><p
+>With <code
+class="filename"
+>area.scaly</code
+> in the editor, press
+              <kbd
 >F5</kbd
->. A console window opens for the
-              program, and Visual Studio stops at the breakpoint, before the
-              line runs; a yellow arrow marks the line.</p
+>. Visual Studio builds the file, starts the
+              program in a console window, and stops at the breakpoint
+              before the line runs; a yellow arrow marks the line.</p
 ></li
 ><li
 ><p
@@ -3652,7 +3759,7 @@ class="computeroutput"
               <code
 class="computeroutput"
 >5</code
->. (If it is not there:
+>. If it is not there, choose
               <span
 class="gui"
 >Debug</span
@@ -3663,7 +3770,7 @@ class="gui"
               &#62; <span
 class="gui"
 >Locals</span
->.) Resting the mouse on a
+>. Resting the mouse on a
               name in the editor shows its value too.</p
 ></li
 ><li
@@ -3695,8 +3802,11 @@ class="computeroutput"
 ></li
 ></ol
 ><p
->Two things to know. The console window closes when the program
-          ends; to read its output afterwards, untick
+><kbd
+>F5</kbd
+> builds the file every time, so a change to
+          the source is in the program you debug. The console window closes
+          when the program ends. To read its output afterwards, untick
           <span
 class="gui"
 >Tools</span
@@ -3712,30 +3822,7 @@ class="gui"
 class="gui"
 >Automatically close the console when debugging
           stops</span
->. And <kbd
->F5</kbd
-> runs the
-          <code
-class="filename"
->.exe</code
-> as it is: after changing the source,
-          choose <span
-class="gui"
->Build</span
-> again first. Should Visual
-          Studio refuse a breakpoint in the <code
-class="filename"
->.scaly</code
-> file,
-          start with <kbd
->F11</kbd
-> instead of <kbd
->F5</kbd
->: the
-          program stops at its first statement, and from there
-          <kbd
->F10</kbd
-> walks it line by line.</p
+>.</p
 ></section
 ><section
 id="tut-windows-vs-callstack"
@@ -3748,28 +3835,11 @@ href="#tut-windows-vs-callstack"
 ><ol
 ><li
 ><p
->In the <span
-class="gui"
->Solution Explorer</span
->, right-click
-              the folder at the top, choose <span
-class="gui"
->Add</span
->
-              &#62; <span
-class="gui"
->New File…</span
->, name it
-              <code
-class="userinput"
+>Add <code
+class="filename"
 >rectangle.scaly</code
->, and type the area
-              calculation with a function in it; save it with
-              <kbd
->Ctrl</kbd
->+<kbd
->S</kbd
->:</p
+> to the folder,
+              with the area calculation in a function:</p
 ><pre
 class="listing"
 ><code
@@ -3790,29 +3860,10 @@ else
 ></li
 ><li
 ><p
->Right-click it and choose <span
-class="gui"
->Build</span
->,
-              then right-click <code
-class="filename"
->rectangle.exe</code
-> and choose
-              <span
-class="gui"
->Set as Startup Item</span
->.</p
-></li
-><li
-><p
->Open <code
-class="filename"
->rectangle.scaly</code
->, set a breakpoint
-              on <code
+>Set a breakpoint on <code
 >var a area(width, height)</code
-> and press
-              <kbd
+>
+              and press <kbd
 >F5</kbd
 >.</p
 ></li
@@ -3914,35 +3965,18 @@ href="#tut-windows-vs-args"
 ><ol
 ><li
 ><p
->In the <span
-class="gui"
->Solution Explorer</span
->, right-click
-              the folder at the top, choose <span
-class="gui"
->Add</span
->
-              &#62; <span
-class="gui"
->New File…</span
->, name it
-              <code
-class="userinput"
+>Add <code
+class="filename"
 >greet.scaly</code
->, type this program and save
-              it with <kbd
->Ctrl</kbd
->+<kbd
->S</kbd
->. It greets
-              everyone named on its command line, with the greeting the
-              environment variable <code
+> to the folder. It
+              greets everyone named on its command line, with the greeting
+              that the environment variable <code
 class="envar"
 >GREETING</code
-> holds, and
+> holds, or
               <q
 >Hello</q
-> where there is none:</p
+> if it is not set:</p
 ><pre
 class="listing"
 ><code
@@ -3956,90 +3990,70 @@ for name in os.arguments()
 ><code
 >os.arguments()</code
 > answers the arguments the program
-              was started with, its own name left out;
+              was started with, its own name left out.
               <code
 >os.environment_variable</code
 > reads a variable of the
-              environment, and is empty where it is not set.</p
+              environment and is empty if the variable is not set.</p
 ></li
 ><li
 ><p
 >Right-click <code
 class="filename"
 >greet.scaly</code
-> and choose
+>, in the
               <span
 class="gui"
->Build</span
->.</p
-></li
-><li
-><p
->Right-click <code
-class="filename"
->greet.exe</code
->, choose
+>Solution Explorer</span
+> or in the editor, and
+              choose <span
+class="gui"
+>Scaly Launch Settings…</span
+>. In the
+              dialog, type <code
+class="userinput"
+>Ada Grace</code
+> under
               <span
 class="gui"
->Add Debug Configuration</span
->, and in the
-              list that opens, <span
-class="gui"
->Default</span
->. Visual
-              Studio writes <code
-class="filename"
->.vs\launch.vs.json</code
-> and opens
-              it.</p
-></li
-><li
-><p
->Add the arguments, the folder as working directory and a
-              variable in the environment to its entry, and save it:</p
-><pre
-class="listing"
-><code
->{
-    "version": "0.2.1",
-    "defaults": {},
-    "configurations": [
-        {
-            "type": "default",
-            "project": "greet.exe",
-            "name": "greet.exe",
-            "args": [ "Ada", "Grace" ],
-            "currentDir": "${workspaceRoot}",
-            "env": { "GREETING": "Hello" }
-        }
-    ]
-}</code
-></pre
-></li
-><li
-><p
->Right-click <code
-class="filename"
->greet.exe</code
-> and choose
-              <span
-class="gui"
->Set as Startup Item</span
->. Set a
-              breakpoint on the <code
->print</code
-> line of
+>Arguments</span
+> and
               <code
-class="filename"
->greet.scaly</code
-> and press
+class="userinput"
+>GREETING=Hi</code
+> under
+              <span
+class="gui"
+>Environment</span
+>, and click
+              <span
+class="gui"
+>OK</span
+>. <span
+class="gui"
+>Working
+              directory</span
+> can stay empty: the program then starts in
+              the folder of its file.</p
+></li
+><li
+><p
+>Set a breakpoint on the <code
+>print</code
+> line and press
               <kbd
 >F5</kbd
->. The program stops there;
+>. The program stops there, and
               <span
 class="gui"
 >Locals</span
 > shows <code
+>greeting</code
+> as
+              <code
+class="computeroutput"
+>"Hi"</code
+> and <code
 >name</code
 > as
               <code
@@ -4061,14 +4075,120 @@ class="computeroutput"
 > once more to run to the end; the console
               window shows <code
 class="computeroutput"
->Hello, Ada!</code
+>Hi, Ada!</code
 > and
               <code
 class="computeroutput"
->Hello, Grace!</code
+>Hi, Grace!</code
 >.</p
 ></li
 ></ol
+><p
+>The settings belong to the file and apply to
+          <kbd
+>Ctrl</kbd
+>+<kbd
+>F5</kbd
+> too. Visual Studio keeps
+          them in the folder's hidden <code
+class="filename"
+>.vs</code
+> folder.</p
+></section
+><section
+id="tut-windows-vs-test"
+><h4
+><a
+class="header"
+href="#tut-windows-vs-test"
+>Tests in the Test Explorer</a
+></h4
+><ol
+><li
+><p
+>Add <code
+class="filename"
+>sums.scaly</code
+> to the folder. A test
+              is a function whose name is <code
+>test</code
+> or begins with
+              <code
+>test_</code
+>, that takes nothing and answers an
+              <code
+>int</code
+>: 0 when it passes, anything else when it
+              fails. The third test fails on purpose:</p
+><pre
+class="listing"
+><code
+>function add(a: int, b: int) returns int
+    a + b
+
+function test_add() returns int
+    if add(1, 2) = 3: 0 else 1
+
+function test_zero() returns int
+    if add(0, 0) = 0: 0 else 1
+
+function test_wrong() returns int
+    if add(1, 1) = 3: 0 else 1</code
+></pre
+></li
+><li
+><p
+>Choose <span
+class="gui"
+>Test</span
+> &#62; <span
+class="gui"
+>Test
+              Explorer</span
+>. It lists the three tests under
+              <code
+class="filename"
+>sums.scaly</code
+>.</p
+></li
+><li
+><p
+>Click <span
+class="gui"
+>Run All Tests</span
+>, the double
+              triangle in the Test Explorer's toolbar.
+              <code
+>test_add</code
+> and <code
+>test_zero</code
+> pass and turn
+              green; <code
+>test_wrong</code
+> fails and turns red. Click it:
+              the pane below says <code
+class="computeroutput"
+>(answered
+              1)</code
+>.</p
+></li
+><li
+><p
+>Double-click <code
+>test_wrong</code
+> to go to it in the
+              editor. Change the <code
+>3</code
+> to <code
+>2</code
+>, save, and
+              run the test again: it passes.</p
+></li
+></ol
+><p
+>A test that stops the program, for instance with an index out
+          of bounds, fails with the message the program gave. The tests of
+          its file that would have run after it are shown as not run.</p
 ></section
 ><section
 id="tut-windows-vs-limits"
@@ -4101,7 +4221,7 @@ class="gui"
               <code
 >List</code
 > with its elements. A generic type is written as
-              in C++, <code
+              in C++: <code
 class="computeroutput"
 >Vector&#60;int&#62;</code
 >.</p
@@ -4120,11 +4240,33 @@ class="gui"
 ></li
 ><li
 ><p
->The editor shows a <code
-class="filename"
->.scaly</code
-> file as plain
-              text: no colours, no squiggles, no completion.</p
+>Visual Studio does not show code lenses or the call
+              hierarchy for Scaly, though the language server offers both;
+              VS Code shows them.</p
+></li
+><li
+><p
+>On a PC with an Arm processor, the
+              <span
+class="gui"
+>Target</span
+> setting under
+              <span
+class="gui"
+>Tools</span
+> &#62; <span
+class="gui"
+>Options</span
+>
+              &#62; <span
+class="gui"
+>Scaly</span
+> builds for x64 instead:
+              <code
+class="userinput"
+>x86_64-pc-windows-msvc</code
+>. Windows runs such
+              a program, and Visual Studio debugs it, under emulation.</p
 ></li
 ></ul
 ></section
