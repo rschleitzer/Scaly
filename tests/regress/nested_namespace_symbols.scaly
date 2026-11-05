@@ -1,8 +1,13 @@
-; Regression (2026-11-05): two namespaces A and B, each with a namespace Inner
-; holding value(). A namespace's routines were named after the INNERMOST
-; namespace only, so both mangled to `_ZN5Inner5valueEv`, one body was kept,
-; and `A.Inner.value()` and `B.Inner.value()` both answered 1, at rc 0.
-; xfail: error: function value mangles to the symbol _ZN5Inner5valueEv
+; Regression (2026-11-05): two namespaces A and B, each with a namespace Inner.
+; A namespace's routines were named after the INNERMOST namespace only: both
+; value() mangled to `_ZN5Inner5valueEv`, one body was kept and A.Inner.value()
+; and B.Inner.value() both answered 1, at rc 0 -- and a call through a nested
+; qualifier found its namespace by the last name alone, so `A.Inner.value()`
+; met B's Inner (`wrong number of arguments` where B's took a parameter).
+; Since then a routine carries the chain of defines it stands in
+; (`_ZN1A5Inner5valueEv`), and a qualifier is resolved by its path, written
+; from the namespace being planned outward (Planner.resolve_ns_path#).
+; Expected: PASS
 
 define A
 {
@@ -10,6 +15,10 @@ define A
     {
         function value() returns int
             1
+
+        ; a sibling, unqualified
+        function twice() returns int
+            value() * 2
     }
 }
 
@@ -19,10 +28,17 @@ define B
     {
         function value() returns int
             2
+
+        function plus(k: int) returns int
+            value() + k
     }
+
+    ; relative: Inner here is B.Inner
+    function outer() returns int
+        Inner.plus(5)
 }
 
-if A.Inner.value() = 1 and B.Inner.value() = 2
+if A.Inner.value() = 1 and B.Inner.value() = 2 and A.Inner.twice() = 2 and B.outer() = 7 and B.Inner.plus(1) = 3
     print("PASS")
 else
     print("FAIL")
