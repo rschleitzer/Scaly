@@ -69,6 +69,8 @@
        assembly, carried in the VSIX as a UnitTestExtension. -->
   <ItemGroup>
     <ProjectReference Include="..\Scaly.TestAdapter\Scaly.TestAdapter.csproj" ReferenceOutputAssembly="false" />
+    <!-- Which files are modules of another: the containers here, the adapter's fallback there. -->
+    <Compile Include="..\Scaly.TestAdapter\ScalyModules.cs" Link="Testing\ScalyModules.cs" />
     <Content Include="..\Scaly.TestAdapter\bin\$(Configuration)\net472\Scaly.TestAdapter.dll" Link="Scaly.TestAdapter.dll" />
   </ItemGroup>
 </Project>

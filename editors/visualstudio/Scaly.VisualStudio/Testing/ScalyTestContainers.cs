@@ -16,6 +16,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.TestWindow.Extensibility.Model;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
+using Scaly.Modules;
 
 [Export(typeof(ITestContainerDiscoverer))]
 internal sealed class ScalyTestContainerDiscoverer : ITestContainerDiscoverer, IDisposable
@@ -49,11 +50,28 @@ internal sealed class ScalyTestContainerDiscoverer : ITestContainerDiscoverer, I
                 return Array.Empty<ITestContainer>();
             }
             this.Watch(root);
-            return Directory.EnumerateFiles(root, "*.scaly", SearchOption.AllDirectories)
-                .Where(HasTests)
-                .Select(f => (ITestContainer)new ScalyTestContainer(this, f))
-                .ToList();
+            // A module's tests belong to the program that loads it: the
+            // program is the container, and a change to the module makes it
+            // one to discover again.
+            var files = Directory.EnumerateFiles(root, "*.scaly", SearchOption.AllDirectories).ToList();
+            var modules = ScalyModules.ModuleFiles(files);
+            var containers = new List<ITestContainer>();
+            foreach (var file in files.Where(f => !modules.Contains(Path.GetFullPath(f))))
+            {
+                var closure = ScalyModules.Closure(file);
+                if (closure.Any(HasTests))
+                {
+                    containers.Add(new ScalyTestContainer(this, file, closure.Max(LastWrite)));
+                }
+            }
+            return containers;
         }
+    }
+
+    private static DateTime LastWrite(string file)
+    {
+        try { return File.GetLastWriteTimeUtc(file); }
+        catch (IOException) { return DateTime.MinValue; }
     }
 
     private static bool HasTests(string file)
@@ -127,12 +145,8 @@ internal sealed class ScalyTestContainer : ITestContainer
 {
     private readonly DateTime stamp;
 
-    public ScalyTestContainer(ITestContainerDiscoverer discoverer, string source)
-        : this(discoverer, source, File.GetLastWriteTimeUtc(source))
-    {
-    }
-
-    private ScalyTestContainer(ITestContainerDiscoverer discoverer, string source, DateTime stamp)
+    /// <param name="stamp">The newest write of the file and the modules it loads.</param>
+    public ScalyTestContainer(ITestContainerDiscoverer discoverer, string source, DateTime stamp)
     {
         this.Discoverer = discoverer;
         this.Source = source;

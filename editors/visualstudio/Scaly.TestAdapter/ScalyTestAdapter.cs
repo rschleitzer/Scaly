@@ -16,6 +16,7 @@ using System.Xml.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
+using Scaly.Modules;
 
 /// <summary>The tool and the home the tests run with.</summary>
 internal sealed class ScalyRun
@@ -107,7 +108,7 @@ internal static class ScalyTests
     public const string ExecutorUri = "executor://scaly/v1";
 
     // The fallback where `scaly test --list` has no answer: the file does not
-    // compile, or the tool predates the flag. It reads only the file itself,
+    // compile, or the tool predates the flag. It reads the file and its modules,
     // misses a signature spread over lines and does not see a namespace.
     private static readonly Regex TestFunction = new(@"^\s*(?:function|procedure)\s+(test(?:_\w*)?)\s*\(\s*\)\s+returns\s+int\b");
 
@@ -128,12 +129,7 @@ internal static class ScalyTests
                     {
                         continue;
                     }
-                    found.Add(new TestCase(parts[0], new Uri(ExecutorUri), source)
-                    {
-                        DisplayName = parts[0],
-                        CodeFilePath = Path.GetFullPath(Path.Combine(directory, parts[1])),
-                        LineNumber = number,
-                    });
+                    found.Add(Test(parts[0], source, Path.GetFullPath(Path.Combine(directory, parts[1])), number));
                 }
                 return found;
             }
@@ -144,20 +140,47 @@ internal static class ScalyTests
         return FromSource(source);
     }
 
+    // Where the Test Explorer puts a test: container, namespace, class, test
+    // group. Without it, it splits the name at its dots and shows
+    // <Empty Namespace> and <Empty Class> for a name without any.
+    private static readonly TestProperty Hierarchy = TestProperty.Register(
+        "TestCase.Hierarchy", "Hierarchy", typeof(string[]), TestPropertyAttributes.Immutable, typeof(TestCase));
+
+    // A test as the tool names it (`test_add`, `Suite.test_inside`), under its
+    // container (the program), the folder of the file it is written in, named
+    // from the program's folder on (`modules`, `modules\helpers`), and the file.
+    private static TestCase Test(string label, string source, string file, int line)
+    {
+        var test = new TestCase(label, new Uri(ExecutorUri), source)
+        {
+            DisplayName = label,
+            CodeFilePath = file,
+            LineNumber = line,
+        };
+        var home = Path.GetDirectoryName(source)!.TrimEnd(Path.DirectorySeparatorChar);
+        var folder = Path.GetDirectoryName(file)!.TrimEnd(Path.DirectorySeparatorChar);
+        var parent = Path.GetDirectoryName(home);
+        var shown = parent is not null && folder.StartsWith(parent + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            ? folder.Substring(parent.Length + 1)
+            : folder;
+        test.SetPropertyValue(Hierarchy, new string?[] { null, shown, Path.GetFileName(file), label });
+        return test;
+    }
+
+    // The file's own tests and those of the modules it loads, which the tool
+    // would list with the file too.
     private static IEnumerable<TestCase> FromSource(string source)
     {
-        var lines = File.ReadAllLines(source);
-        for (int i = 0; i < lines.Length; i++)
+        foreach (var file in ScalyModules.Closure(source))
         {
-            var m = TestFunction.Match(lines[i]);
-            if (m.Success)
+            var lines = File.ReadAllLines(file);
+            for (int i = 0; i < lines.Length; i++)
             {
-                yield return new TestCase(m.Groups[1].Value, new Uri(ExecutorUri), source)
+                var m = TestFunction.Match(lines[i]);
+                if (m.Success)
                 {
-                    DisplayName = m.Groups[1].Value,
-                    CodeFilePath = source,
-                    LineNumber = i + 1,
-                };
+                    yield return Test(m.Groups[1].Value, source, file, i + 1);
+                }
             }
         }
     }

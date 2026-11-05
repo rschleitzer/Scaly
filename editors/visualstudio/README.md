@@ -29,7 +29,10 @@ The extension adds nothing of its own to the language; it wires what exists:
   folder (a function or procedure named `test` or `test_<name>`, taking
   nothing, answering an int) as `scaly test file --list` names them, a test of
   a module file and of a namespace (`Suite.test_inside`) included, and runs
-  them with `scaly test`; a double-click goes to the declaration. A test that
+  them with `scaly test`; a double-click goes to the declaration. A file that
+  another loads with `module` is no entry of its own: its tests appear under
+  the program, each under its folder and file (`prog` › `modules\helpers` ›
+  `inner.scaly` › `test_inner`). A test that
   traps fails with the trap's message, and the tests after it in its file are
   shown as not run. Where a file does not compile, its tests are read from the
   source until it does.
