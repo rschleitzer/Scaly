@@ -39,8 +39,9 @@
 #   Ubuntu   apt install llvm-21 llvm-21-dev lld-21 clang zlib1g-dev libzstd-dev libxml2-dev
 # ★The archive runs on the system it was built on and newer ones: Homebrew's
 # LLVM is built for the macOS it runs on (26, the minimum we promise), and a
-# Linux build carries the glibc version of its host as its floor — build it on
-# the OLDEST Ubuntu we support (26.04).
+# Linux build carries the glibc version of its host as its floor — the
+# archives handed out are built by tools/make-bindist-linux.sh, which runs this
+# script in an AlmaLinux 9 container (glibc 2.34).
 #
 # Usage: tools/make-bindist.sh [version] [outdir]   (default: the VERSION file, dist)
 set -e
@@ -104,6 +105,8 @@ if [ "$PROFILE" != none ]; then
     archives=()
     for a in libz.a libzstd.a libxml2.a libstdc++.a; do
       f="$(${CLANG:-clang} -print-file-name=$a)"
+      # libxml2 is named by llvm-config and taken nothing from (build-from-seed.sh)
+      if [ ! -f "$f" ] && [ "$a" = libxml2.a ]; then continue; fi
       [ -f "$f" ] || { echo "make-bindist: FAIL — $a not found (zlib1g-dev libzstd-dev libxml2-dev, libstdc++)"; exit 1; }
       archives+=("$f")
     done

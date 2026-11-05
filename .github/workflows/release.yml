@@ -20,8 +20,9 @@
 #   scaly-<v>-darwin-x86_64.tar.gz    macOS on Intel — supported as long as
 #                                     Tahoe, the last macOS for Intel, gets
 #                                     security updates (decided 2026-10-04)
-#   scaly-<v>-linux-x86_64.tar.gz     Ubuntu 26.04 and newer, any x86-64 CPU
-#   scaly-<v>-linux-aarch64.tar.gz    Ubuntu 26.04 and newer
+#   scaly-<v>-linux-x86_64.tar.gz     glibc 2.34 and newer (RHEL 9, Debian 12,
+#                                     Ubuntu 22.04 ...), an x86-64-v2 CPU
+#   scaly-<v>-linux-aarch64.tar.gz    glibc 2.34 and newer
 #   scaly-<v>-windows-x86_64.zip      Windows 10 and newer
 #   scaly-<v>-windows-arm64.zip       Windows 11 on arm64
 # Each holds the three programs — scalyc, scaly, scalyls — with LLVM linked in
@@ -36,8 +37,9 @@
 # tools/publish-install.sh uploads all seven.
 #
 # ★An archive runs on the system it was built on and newer ones, so each
-# runner is the OLDEST system we promise: Ubuntu 26.04 (glibc 2.43), macOS 26
-# for Apple silicon. The Intel Mac leg runs on macos-15-intel — GitHub's last
+# build host is the OLDEST system we promise: for Linux an AlmaLinux 9
+# container (glibc 2.34; until 0.2.32 the Ubuntu 26.04 runner itself, glibc
+# 2.43), macOS 26 for Apple silicon. The Intel Mac leg runs on macos-15-intel — GitHub's last
 # Intel image — so that archive's floor is macOS 15, below what we promise.
 #
 # ★COST: every leg builds the compiler twice (the seed recipe, then with the
@@ -95,8 +97,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { system: linux-x86_64,  runner: ubuntu-26.04 }
-          - { system: linux-aarch64, runner: ubuntu-26.04-arm }
+          - { system: linux-x86_64,  runner: ubuntu-24.04 }
+          - { system: linux-aarch64, runner: ubuntu-24.04-arm }
           - { system: darwin-arm64,  runner: macos-26 }
           - { system: darwin-x86_64, runner: macos-15-intel }
     steps:
@@ -110,41 +112,10 @@ jobs:
           [ -n "$v" ] || v="$(cat VERSION)"
           echo "RELEASE_VERSION=$v" >> "$GITHUB_ENV"
 
-      - name: LLVM 21 (Linux)
-        if: runner.os == 'Linux'
-        uses: ./.github/actions/llvm21
-
-      - name: What the static link needs beside it (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get install -y clang zlib1g-dev libzstd-dev libxml2-dev
-
-      # apt takes the highest architecture variant the CPU runs
-      # (APT::Architecture-Variants "auto"), and this runner's is amd64v3: the
-      # static libraries the programs link -- LLVM, libstdc++, libgcc, zlib,
-      # zstd, libxml2 -- were AVX2 code, and scalyc died of SIGILL before main
-      # on a CPU without it (an i7 of 2010, 0.2.24). The baseline variant is
-      # what Ubuntu 26.04 itself runs on; its packages again, at their versions
-      - name: The static libraries of the amd64 baseline (linux-x86_64)
-        if: matrix.system == 'linux-x86_64'
-        run: |
-          set -e
-          # the variant names are dpkg's (/usr/share/dpkg/varianttable): amd64v1
-          # is the baseline; "amd64" is refused
-          echo 'APT::Architecture-Variants "amd64v1";' | sudo tee /etc/apt/apt.conf.d/99scaly-baseline
-          sudo apt-get update
-          files="$(llvm-config-21 --libdir)/libLLVMCore.a"
-          for a in libz.a libzstd.a libxml2.a libstdc++.a libgcc.a crt1.o libc_nonshared.a; do
-            # clang names /lib/..., dpkg knows /usr/lib/... (usrmerge)
-            files="$files $(readlink -f "$(clang-21 -print-file-name=$a)")"
-          done
-          # ... and the loader and libc the gate below runs the compiler on:
-          # the runner's own are amd64v3 too, and died of SIGILL under qemu64
-          # before a byte of ours ran
-          files="$files $(readlink -f /lib64/ld-linux-x86-64.so.2) $(readlink -f /lib/x86_64-linux-gnu/libc.so.6)"
-          pkgs=$(dpkg -S $files | cut -d: -f1 | sort -u)
-          echo "reinstalled at the baseline: $pkgs"
-          sudo apt-get install -y --reinstall $pkgs
-
+      # Linux builds in a container of the oldest system we promise (glibc
+      # 2.34): tools/make-bindist-linux.sh brings its own LLVM 21 and libraries.
+      # The runner only lends docker -- and then, below, a system that has no
+      # LLVM at all to start the unpacked compiler on.
       - name: LLVM 21 (macOS)
         if: runner.os == 'macOS'
         run: brew install llvm@21 zstd
@@ -153,7 +124,8 @@ jobs:
         run: |
           set -e
           uname -a
-          tools/make-bindist.sh "${{ env.RELEASE_VERSION }}" dist
+          if [ "$RUNNER_OS" = Linux ]; then tools/make-bindist-linux.sh "${{ env.RELEASE_VERSION }}" dist
+          else tools/make-bindist.sh "${{ env.RELEASE_VERSION }}" dist; fi
           ls -l dist
           # the name the installer asks for on this machine is the one we promised
           [ -f "dist/scaly-${{ env.RELEASE_VERSION }}-${{ matrix.system }}.tar.gz" ]
@@ -171,21 +143,23 @@ jobs:
           if [ "$RUNNER_OS" = Linux ]; then ldd "$RUNNER_TEMP/home/libexec/scalyc" | grep -i llvm && exit 1 || true
           else otool -L "$RUNNER_TEMP/home/libexec/scalyc" | grep -i llvm && exit 1 || true; fi
 
-      # ... and on the x86-64 baseline: qemu's qemu64 is x86-64 with SSE3 and
-      # nothing newer, so an AVX instruction anywhere on the way is SIGILL
-      # (the 0.2.24 compiler died so before main; -cpu max ran it)
-      - name: The unpacked compiler runs on the x86-64 baseline (linux-x86_64)
+      # ... and on the oldest x86-64 CPU we promise: x86-64-v2, what AlmaLinux
+      # 9's packages are built for, and qemu's Nehalem is that and nothing
+      # newer -- so an AVX instruction anywhere on the way is SIGILL (the
+      # 0.2.24 compiler died so before main on a CPU without AVX2; until
+      # 0.2.32 the gate was qemu64, the x86-64 baseline of Ubuntu's packages)
+      - name: The unpacked compiler runs on x86-64-v2 (linux-x86_64)
         if: matrix.system == 'linux-x86_64'
         run: |
           set -e
           sudo apt-get install -y qemu-user
           bin="$RUNNER_TEMP/home/libexec/scalyc"
           if ! env -u LD_LIBRARY_PATH SCALY_HOME="$PWD" \
-              qemu-x86_64 -cpu qemu64 "$bin" -S -o "$RUNNER_TEMP/hello-baseline.ll" tests/aot/hello.scaly; then
+              qemu-x86_64 -cpu Nehalem "$bin" -S -o "$RUNNER_TEMP/hello-baseline.ll" tests/aot/hello.scaly; then
             # where it died: qemu's gdb stub, gdb at the faulting instruction;
             # and which functions hold VEX code at all
             sudo apt-get install -y gdb binutils
-            ( SCALY_HOME="$PWD" qemu-x86_64 -g 31234 -cpu qemu64 "$bin" -S -o /dev/null tests/aot/hello.scaly & )
+            ( SCALY_HOME="$PWD" qemu-x86_64 -g 31234 -cpu Nehalem "$bin" -S -o /dev/null tests/aot/hello.scaly & )
             sleep 2
             gdb -q -batch -ex 'target remote :31234' -ex continue -ex 'x/3i $pc' -ex 'info symbol $pc' -ex bt "$bin" 2>&1 | tail -20 || true
             objdump -d --no-show-raw-insn "$bin" | awk '/^[0-9a-f]+ </ { f = $2 } $2 ~ /^v[a-z]/ && $2 !~ /^ver[rw]$/ { n[f]++ } END { for (k in n) print n[k], k }' \

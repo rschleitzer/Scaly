@@ -30,7 +30,8 @@ LLVM to install: `scaly` (the tool: REPL, `run`, `build`, `test`, `new`,
 `install`), `scalyc` (the compiler) and `scalyls` (the language server). It
 needs a C compiler for linking (clang; on Windows the Build Tools for Visual
 Studio, which it offers to install). Ready-made programs exist for macOS 26
-on Apple silicon, macOS 15 on Intel, Ubuntu 26.04 on x86_64 and arm64, and
+on Apple silicon, macOS 15 on Intel, Linux with glibc 2.35 or newer (RHEL 9,
+Debian 12, Ubuntu 22.04 and later) on x86_64 and arm64, and
 Windows 10/11 on x86_64 and arm64; elsewhere the installer builds them from
 source. More on [scaly.io/download](https://scaly.io/download/).
 

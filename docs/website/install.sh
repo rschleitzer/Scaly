@@ -12,7 +12,8 @@
 #
 # The programs are downloaded ready to run for
 #   macOS 26 (Apple silicon), macOS 15 and newer (Intel),
-#   Ubuntu 26.04 and newer (arm64, x86-64)
+#   Linux with glibc 2.35 or newer -- RHEL 9, Debian 12, Ubuntu 22.04 and
+#   later (arm64, x86-64-v2)
 # and need nothing but a C compiler, which links the programs you build.
 # Where there is none this script FETCHES it (2026-10-04) -- Apple's Command
 # Line Tools on macOS, clang through apt on Ubuntu -- and all that asks of you

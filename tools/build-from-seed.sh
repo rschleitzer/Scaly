@@ -144,7 +144,8 @@ fi
 # system does not carry it. Measured 2026-10-03: scalyc and scaly 69 MB each
 # on macOS (81 MB on Linux), emission byte-identical, and nothing left to load
 # but the system's own libraries. ★The minimum system is the one the LLVM
-# libraries were built for: Homebrew's say macOS 26, Ubuntu 26.04's glibc 2.43.
+# libraries were built for: Homebrew's say macOS 26, Ubuntu 26.04's glibc 2.43,
+# AlmaLinux 9's glibc 2.34 (tools/make-bindist-linux.sh).
 LINKER=${CLANG:-clang}
 LLVM_LINK_ARGS=(-L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME")
 if [ "${SCALY_STATIC_LLVM:-0}" = "1" ]; then
@@ -163,9 +164,14 @@ if [ "${SCALY_STATIC_LLVM:-0}" = "1" ]; then
         # shellcheck disable=SC2206
         LLVM_LINK_ARGS=(-L"$LLVM_LIBDIR" $static_libs "$zstd_a" -lz -lxml2 -Wl,-dead_strip_dylibs)
     else
+        # libxml2 only where its archive is there: the linker takes nothing
+        # from it (llvm-config names it for LLVMWindowsManifest, which the
+        # compiler never reaches), and RHEL ships no libxml2.a.
+        xml2=()
+        [ -f "$(${CLANG:-clang} -print-file-name=libxml2.a)" ] && xml2=(-lxml2)
         # shellcheck disable=SC2206
         LLVM_LINK_ARGS=(-static-libstdc++ -static-libgcc -L"$LLVM_LIBDIR" $static_libs
-                        -Wl,-Bstatic -lz -lzstd -lxml2 -Wl,-Bdynamic -Wl,--as-needed)
+                        -Wl,-Bstatic -lz -lzstd ${xml2[@]+"${xml2[@]}"} -Wl,-Bdynamic -Wl,--as-needed)
     fi
 fi
 

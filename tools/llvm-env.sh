@@ -87,6 +87,14 @@ if [ -z "${LLC:-}" ]; then
 fi
 
 # 3. lib dir + libLLVM name (so the final link finds -lLLVM-21)
+#    Fedora and RHEL put the libraries under lib64 (/usr/lib64/llvm21/lib64):
+#    where lib holds no libLLVM, the prefix's own llvm-config names the place.
+#    Only then -- Homebrew's llvm-config answers the versioned Cellar path,
+#    which a brew upgrade takes away.
+if [ -z "${LLVM_LIBDIR:-}" ] && [ -x "$LLVM_PREFIX/bin/llvm-config" ] \
+   && ! ls "$LLVM_PREFIX"/lib/libLLVM* > /dev/null 2>&1; then
+  LLVM_LIBDIR=$("$LLVM_PREFIX/bin/llvm-config" --libdir)
+fi
 LLVM_LIBDIR=${LLVM_LIBDIR:-$LLVM_PREFIX/lib}
 LLVM_LIBNAME=${LLVM_LIBNAME:-LLVM-$LLVM_MAJOR}
 
