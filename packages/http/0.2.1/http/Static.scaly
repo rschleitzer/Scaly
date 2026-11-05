@@ -148,63 +148,18 @@ function safe_relative(rel: Slice[u8]) returns bool
     true
 }
 
-; The q-value (in thousandths) Accept-Encoding gives coding `name`: an
-; explicit entry, else a `*` entry, else 0.
-function coding_quality(accept: Slice[u8], name: Slice[u8]) returns i64
+; The weight (in thousandths) Accept-Encoding gives coding `name` for a file:
+; its own entry, else a `*` entry, else 0. Each entry is read by
+; Text.coding_quality#, as Request.accepts_encoding# reads it.
+function served_quality(accept: Slice[u8], name: Slice[u8]) returns int
 {
-    var star: i64 0 - 1
-    var at: size_t 0
-    while at < accept.length
-    {
-        var end at
-        while end < accept.length and accept[end] <> 44
-            end := end + 1
-        let item trim(accept.subslice(at, end))
-        var semi: size_t 0
-        while semi < item.length and item[semi] <> 59
-            semi := semi + 1
-        let coding trim(item.slice_to(semi))
-        var q: i64 1000
-        var p semi
-        while p < item.length
-        {
-            if item[p] = 113 and p + 1 < item.length and item[p + 1] = 61
-            {
-                q := quality_value(item.slice_from(p + 2))
-                break
-            }
-            p := p + 1
-        }
-        if coding.equals(name)
-            return q
-        if coding.equals("*")
-            star := q
-        at := end + 1
-    }
-    if star < 0
-        return 0
-    star
-}
-
-; "1", "0.8", "0.125" as thousandths.
-function quality_value(s: Slice[u8]) returns i64
-{
-    if s.length = 0
-        return 1000
-    if s[0] = 49
-        return 1000
-    if s[0] <> 48
-        return 0
-    var v: i64 0
-    var scale: i64 100
-    var i: size_t 2
-    while i < s.length and scale > 0 and s[i] >= 48 and s[i] <= 57
-    {
-        v := v + ((s[i] - 48) as i64) * scale
-        scale := scale / 10
-        i := i + 1
-    }
-    v
+    let named coding_quality(accept, name)
+    if named >= 0
+        return named
+    let star coding_quality(accept, "*")
+    if star >= 0
+        return star
+    0
 }
 
 ; This thread's cache.
@@ -358,8 +313,8 @@ procedure serve_file(req: ref[Request], mutable res: ref[Response], root: Slice[
     path.add(rel)
     let base path.length
     let accept req.header("accept-encoding")
-    let q_br coding_quality(accept, "br")
-    let q_gzip coding_quality(accept, "gzip")
+    let q_br served_quality(accept, "br")
+    let q_gzip served_quality(accept, "gzip")
     ; the codings worth trying, best first, then the file itself
     var first: Slice[u8] ""
     var second: Slice[u8] ""

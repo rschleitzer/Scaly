@@ -1,6 +1,7 @@
 ; The http package's content-coding negotiation:
 ;   quality   coding_quality reads a coding's weight off an Accept-Encoding
-;             value: bare, with q, case-insensitive, absent
+;             value: bare, with q, case-insensitive, absent; served_quality,
+;             what the static server asks: the entry, else `*`, else 0
 ;   accepts   Request.accepts_encoding: named with q > 0, refused by q=0,
 ;             covered by `*`, `*` overruled by name, no field at all
 ;   send      Response.send_encoded writes Content-Encoding beside the type
@@ -48,6 +49,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     if coding_quality("br", "gzip") <> (0 - 1) or coding_quality("", "gzip") <> (0 - 1) or coding_quality("x-gzip", "gzip") <> (0 - 1)
         ok := false
     if coding_quality("gzip;level=1;q=0.25", "gzip") <> 250
+        ok := false
+    if served_quality("*", "br") <> 1000 or served_quality("gzip;q=0, *;q=0.5", "gzip") <> 0 or served_quality("GZIP;q=0.5", "gzip") <> 500 or served_quality("br", "gzip") <> 0
         ok := false
     if ok = false
         return 1
