@@ -9826,14 +9826,6 @@ define Emitter
             ok
         }
 
-        ; Write bitcode to file
-        procedure write_bitcode_to_file(mutable this, mutable filename: String) returns bool
-        {
-            let c_name filename.to_c_string()
-            let result LLVMWriteBitcodeToFile(llvm_module, c_name)
-            result = 0
-        }
-
         ; Write native object file via host target machine.
         ; LLVMObjectFile codegen type = 1. Reloc=PIC(2), OptLevel=None(0).
         procedure write_object_to_file(mutable this, mutable filename: String) returns bool

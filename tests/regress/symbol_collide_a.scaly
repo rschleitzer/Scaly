@@ -1,0 +1,17 @@
+; Sidecar for xfail_symbol_collision.scaly: a Gauge whose read adds 1, used
+; inside this file. Alone it is an ordinary program.
+; Expected: PASS
+
+define Gauge(v: int)
+{
+    function read(this) returns int
+        v + 1
+}
+
+function probe_a() returns int
+    Gauge(10).read()
+
+if probe_a() = 11
+    print("PASS")
+else
+    print("FAIL")

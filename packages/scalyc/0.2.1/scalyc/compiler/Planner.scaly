@@ -2471,6 +2471,129 @@ define Planner
                 " is written twice with one parameter list; both mangle to one symbol, the first body is kept and every call reaches it")
         }
 
+        ; ====================================================================
+        ; (e) ONE SYMBOL, TWO DECLARATIONS (2026-11-05): two routines with a
+        ; body each, declared in different places, that mangle to one symbol.
+        ; Both are emitted `linkonce_odr`, so one body is kept and every call
+        ; of either reaches it -- `A.Inner.value()` answered what
+        ; `B.Inner.value()` computes, and the method of a record `Rec` in one
+        ; namespace ran for the `Rec` of another, at rc 0. (d) judges the
+        ; source (one name, one parameter list, one place); this judges the
+        ; SYMBOL, whatever made two places agree on it.
+        ;
+        ; A routine planned more than once -- a module tree walked again, a
+        ; template instantiated for one argument list twice -- comes from ONE
+        ; declaration (its file and span), and is no collision. Reported at the
+        ; later one, naming the first.
+        ; ====================================================================
+        procedure check_symbol_collisions(mutable this: Planner)
+        {
+            var symbols Array[String]()
+            var files Array[String]()
+            var starts Array[size_t]()
+            var names Array[String]()
+            var i: size_t 0
+            while i < instantiated_functions.length
+            {
+                this.note_symbol(instantiated_functions.at(i), &symbols, &files, &starts, &names)
+                i := i + 1
+            }
+            i := 0
+            while i < instantiated_structures.length
+            {
+                let ms instantiated_structures.at(i).methods
+                if ms <> null
+                {
+                    var j: size_t 0
+                    while j < ms.length
+                    {
+                        this.note_symbol(ms.at(j), &symbols, &files, &starts, &names)
+                        j := j + 1
+                    }
+                }
+                i := i + 1
+            }
+            i := 0
+            while i < instantiated_unions.length
+            {
+                let mu instantiated_unions.at(i).methods
+                if mu <> null
+                {
+                    var j: size_t 0
+                    while j < mu.length
+                    {
+                        this.note_symbol(mu.at(j), &symbols, &files, &starts, &names)
+                        j := j + 1
+                    }
+                }
+                i := i + 1
+            }
+            var cap: size_t 1024
+            while cap < symbols.length * 2
+                cap := cap * 2
+            var seen ConceptIndex.create(cap)
+            ; a method is in a record's list and may be among the functions as
+            ; well: one report per place
+            var reported ConceptIndex.create(cap)
+            i := 0
+            while i < symbols.length
+            {
+                let k seen.lookup(symbols[i])
+                if k < 0
+                    seen.insert(symbols[i], i)
+                else
+                {
+                    let first k as size_t
+                    let place "`symbols[i]` `files[i]` `starts[i]`"
+                    if (files[first].equals(files[i]) = false or starts[first] <> starts[i]) and reported.lookup(place) < 0
+                    {
+                        reported.insert(String^this(place), i)
+                        let line Planner.line_in_file(files[first], starts[first])
+                        diagnostics.add(PlannerDiagnostic(starts[i],
+                            String^this("function `names[i]` mangles to the symbol `symbols[i]` of the function `names[first]` at `files[first]`:`line`; one body would be kept and every call reach it -- rename one of them"),
+                            String^this(files[i])))
+                    }
+                }
+                i := i + 1
+            }
+            seen.release()
+            reported.release()
+        }
+
+        ; A routine with a body of its own, entered for check_symbol_collisions#.
+        procedure note_symbol(this: Planner, f: PlannedFunction, mutable symbols: ref[Array[String]], mutable files: ref[Array[String]], mutable starts: ref[Array[size_t]], mutable names: ref[Array[String]])
+        {
+            choose f.impl
+                when a: Action
+                {
+                    if f.mangled_name.get_length() = 0 or f.file.get_length() = 0
+                        return
+                    symbols.add(f.mangled_name)
+                    files.add(f.file)
+                    starts.add(f.loc.start)
+                    names.add(f.name)
+                }
+                else
+                    0
+        }
+
+        ; The line (from 1) of a byte offset in a file, 0 where it cannot be read.
+        procedure line_in_file(mutable file: String, offset: size_t) returns size_t
+        {
+            if File.exists(file) = false
+                return 0
+            let text File.read_to_string(file)
+            var line: size_t 1
+            var i: size_t 0
+            while i < offset and i < text.get_length()
+            {
+                if text.get(i) = 10
+                    line := line + 1
+                i := i + 1
+            }
+            line
+        }
+
         ; Structural equality of two WRITTEN types: the name segments and the
         ; generic arguments. A lifetime says nothing about a mangled name.
         function model_types_equal(a: ref[Type]?, b: ref[Type]?) returns bool
@@ -57893,6 +58016,7 @@ define Planner
             ; supplying the same concept name into one file). Registration
             ; and the use tables are complete by here.
             this.check_glob_ambiguities()
+            this.check_symbol_collisions()
             this.phase_mark("D1-glob-check")
 
             ; Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee.

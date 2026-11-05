@@ -1,0 +1,16 @@
+; Regression (2026-11-05): two records of one name and one layout in two
+; modules of one program, each with a method `read` of one parameter list. A
+; record's type is its bare name within a package, so both methods mangle to
+; `_ZN5Gauge4readEv`; the layout check (xfail_record_layout_collision) is
+; silent because the fields agree, both bodies are emitted `linkonce_odr`, one
+; is kept and probe_b answered what probe_a's Gauge computes, at rc 0.
+; Planner.check_symbol_collisions# judges the SYMBOL: two places, one name.
+; xfail: error: function read mangles to the symbol _ZN5Gauge4readEv
+
+module symbol_collide_a
+module symbol_collide_b
+
+if probe_a() = 11 and probe_b() = 12
+    print("PASS")
+else
+    print("FAIL")

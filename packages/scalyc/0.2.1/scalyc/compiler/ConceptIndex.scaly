@@ -31,6 +31,7 @@
 ; libc allocator. malloc declared locally (fixpoint-safe — touches no scaly
 ; source); the table is leaked at process exit (one table per compile).
 function malloc(size: c_size) returns pointer[void] extern
+procedure free(mutable p: pointer[void]) extern
 
 ; Slot count: a power of two so the probe mask is cap-1. Generous for the whole
 ; cross-package scalyc concept set (low thousands) at a low load factor. On a
@@ -135,6 +136,15 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
             scaly_eputs "ConceptIndex: table full\n"
             exit 14
         }
+    }
+
+    ; Gives the slots back, for a table that lives only as long as one pass
+    ; (Planner.check_symbol_collisions#) in a process that plans again and
+    ; again (the REPL). The table is not asked again afterwards.
+    procedure release(mutable this: ConceptIndex)
+    {
+        if slots <> null
+            free(slots as pointer[void])
     }
 
     ; The registry index for `name`, or -1 if absent.

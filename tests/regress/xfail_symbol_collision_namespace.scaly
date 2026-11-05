@@ -1,0 +1,28 @@
+; Regression (2026-11-05): two namespaces A and B, each with a namespace Inner
+; holding value(). A namespace's routines were named after the INNERMOST
+; namespace only, so both mangled to `_ZN5Inner5valueEv`, one body was kept,
+; and `A.Inner.value()` and `B.Inner.value()` both answered 1, at rc 0.
+; xfail: error: function value mangles to the symbol _ZN5Inner5valueEv
+
+define A
+{
+    define Inner
+    {
+        function value() returns int
+            1
+    }
+}
+
+define B
+{
+    define Inner
+    {
+        function value() returns int
+            2
+    }
+}
+
+if A.Inner.value() = 1 and B.Inner.value() = 2
+    print("PASS")
+else
+    print("FAIL")
