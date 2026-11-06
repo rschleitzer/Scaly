@@ -1610,6 +1610,14 @@ define CppEmitter
                     return
                 }
             }
+            when mt: Match
+            {
+                if op.member_access = null
+                {
+                    this.match_statement(out, mt, depth, tail)
+                    return
+                }
+            }
             when f: For
             {
                 this.for_statement(out, f, depth)
@@ -2070,7 +2078,7 @@ define CppEmitter
                 return "((`text`).tag == `test.variant_tag`)"
             }
             when m: Match
-                return this.untranslated("match")
+                return this.statement_value(e, result_type)
             when tr: Try
                 return this.untranslated("try")
             when l: Lambda
@@ -2372,6 +2380,8 @@ define CppEmitter
                 this.block(&out, b, 2, unit = false)
             when c: Choose
                 this.choose_statement(&out, c, 2, unit = false)
+            when m: Match
+                this.match_statement(&out, m, 2, unit = false)
             else
                 0
         this.sink := saved
@@ -2443,6 +2453,56 @@ define CppEmitter
         out.append "`ind`    }\n`ind`}\n"
     }
 
+    ; `match`: the scrutinee once, then each branch's cases in turn
+    ; (Emitter.emit_match#, a short-circuit chain).
+    procedure match_statement(mutable this, mutable out: ref[StringBuilder], m: PlannedMatch, depth: size_t, tail: bool)
+    {
+        let ind CppEmitter.indent_of(depth)
+        if m.condition = null or m.condition.length = 0
+            return
+        let subject (*m.condition)[0]
+        let v this.temp()
+        out.append "`ind`{\n`ind`    auto&& `v` = `this.operand(subject)`;\n"
+        var first true
+        if m.branches <> null
+        {
+            for b in m.branches
+            {
+                var test StringBuilder()
+                if b.cases <> null
+                {
+                    for c in b.cases
+                    {
+                        if test.get_length() > 0
+                            test.append " || "
+                        test.append "`v` == `this.operands(c.condition)`"
+                    }
+                }
+                if test.get_length() = 0
+                    test.append "false"
+                if first
+                    out.append "`ind`    if (`test.to_string()`)\n"
+                else
+                    out.append "`ind`    else if (`test.to_string()`)\n"
+                first := false
+                out.append "`ind`    {\n"
+                if b.consequent <> null
+                    this.arm_statements(out, *b.consequent, depth + 2, tail)
+                out.append "`ind`    }\n"
+            }
+        }
+        if m.alternative <> null
+        {
+            if first
+                out.append "`ind`    {\n"
+            else
+                out.append "`ind`    else\n`ind`    {\n"
+            this.arm_statements(out, *m.alternative, depth + 2, tail)
+            out.append "`ind`    }\n"
+        }
+        out.append "`ind`}\n"
+    }
+
     procedure arm_statements(mutable this, mutable out: ref[StringBuilder], s: PlannedStatement, depth: size_t, tail: bool)
     {
         choose s
@@ -2463,10 +2523,7 @@ define CppEmitter
         if c.is_indirect
             return this.indirect_call(c)
         if c.is_intrinsic
-        {
-            this.errors := this.errors + 1
-            return "SCALY_UNTRANSLATED /* intrinsic `c.name` */"
-        }
+            return this.intrinsic_function(c)
         if c.mangled_name.contains("C1E")
             return this.construction(c)
         let lowered this.lowered_call(c)
@@ -2769,6 +2826,31 @@ define CppEmitter
             case "scaly_call_ptr"
                 return "((void*(*)(void*))(`a0`))((void*)(`a1`))"
         String()
+    }
+
+    ; Emitter.emit_intrinsic_function#: unwrap reads the payload without
+    ; looking at the tag (an Option of a reference is the reference itself);
+    ; unwrap_or answers its default -- as the LLVM emitter does, whatever
+    ; the Option holds.
+    procedure intrinsic_function(mutable this, c: PlannedCall) returns String
+    {
+        if c.args = null or c.args.length = 0
+            return this.untranslated("intrinsic `c.name` without arguments")
+        let all (*c.args)
+        if c.name = "unwrap" and all.length = 1
+        {
+            let o all[0]
+            let ot this.cpp_type(o)
+            let text this.operand(o)
+            if CppEmitter.is_pointer_type(ot) and CppEmitter.is_pointer_type(c.result_type)
+                return "((`CppEmitter.ctype(c.result_type)`)(`text`))"
+            if CppEmitter.is_pointer_type(ot)
+                return "scaly_payload<`CppEmitter.ctype(c.result_type)`>(*(`text`))"
+            return "scaly_payload<`CppEmitter.ctype(c.result_type)`>(`text`)"
+        }
+        if c.name = "unwrap_or" and all.length = 2
+            return this.operand(all[1])
+        this.untranslated("intrinsic `c.name`")
     }
 
     procedure kinds_of(this, mangled: String) returns String
