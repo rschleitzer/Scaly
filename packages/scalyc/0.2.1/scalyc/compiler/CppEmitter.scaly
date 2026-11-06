@@ -171,7 +171,9 @@ define CppEmitter
         {
             for f in plan.functions
             {
-                if this.wanted(f) and CppEmitter.contains(&this.defined, f.mangled_name) = false
+                ; a body only: a module may declare the routine ahead as an
+                ; extern under its symbol, and the plan lists that first
+                if this.wanted(f) and CppEmitter.has_body(f) and CppEmitter.contains(&this.defined, f.mangled_name) = false
                 {
                     this.defined.add(String(f.mangled_name))
                     this.define_function(&out, f)
@@ -188,17 +190,34 @@ define CppEmitter
             if n > 0
             {
                 out.append "int main(int argc, char** argv)\n{\n"
-                out.append "    scaly_frame_guard scaly_local{{nullptr, nullptr}};\n"
                 this.has_page := false
                 this.held := Array[String]()
                 this.locals := Array[String]()
                 this.returns_value := false
+                var b StringBuilder()
                 for s in plan.statements
-                    this.statement(&out, s, 1, false)
+                    this.statement(&b, s, 1, false)
+                let text b.to_string()
+                if text.contains("scaly_local")
+                    out.append "    scaly_frame_guard scaly_local{{nullptr, nullptr}};\n"
+                out.append text
                 out.append "    return 0;\n}\n"
             }
         }
 
+        ; the free `get` the runtime declares, forwarding to Page.get
+        ; (Emitter.ensure_free_page_get#)
+        let free_get this.declared_name("_Z3getPv")
+        let page_get this.declared_name("_ZN4Page3getEPv")
+        if free_get.get_length() > 0 and page_get.get_length() > 0 and CppEmitter.contains(&this.defined, "_Z3getPv") = false and CppEmitter.contains(&this.defined, "_ZN4Page3getEPv")
+        {
+            let rt CppEmitter.first_return_ctype(plan, "_Z3getPv")
+            out.append "\n`rt` `free_get`(void* address)\n{\n    return (`rt`)`page_get`(address);\n}\n"
+        }
+        ; a program carries its stamp, a hash of its text (Emitter.emit_build_stamp#)
+        let text out.to_string()
+        if CppEmitter.has_main(text)
+            out.append "\nextern \"C\" int64_t scaly_build_stamp()\n{\n    return (int64_t)`CppEmitter.text_hash(text)`ULL;\n}\n"
         if File.write_from_string(path, out.to_string()) = false
         {
             Console.println "error: cannot write `path`"
@@ -209,6 +228,40 @@ define CppEmitter
             Console.println "scalyc --emit-cpp: `this.errors` constructs are not translated yet (#error lines in `path`)"
         }
         true
+    }
+
+    function has_main(text: String) returns bool
+    {
+        text.contains("\nint main(int argc, char** argv)")
+    }
+
+    ; FNV-1a over the bytes, 64 bits
+    function text_hash(text: String) returns size_t
+    {
+        var h: size_t 0xcbf29ce484222325
+        let n text.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            h := h xor (text.get(i) as size_t)
+            h := h * 0x100000001b3
+            i := i + 1
+        }
+        if h = 0
+            h := 1
+        h
+    }
+
+    function first_return_ctype(plan: Plan, mangled: String) returns String
+    {
+        if plan.functions = null
+            return "void*"
+        for f in plan.functions
+        {
+            if f.mangled_name.equals(mangled)
+                return CppEmitter.return_ctype(f)
+        }
+        "void*"
     }
 
     function contains(names: ref[Array[String]], name: String) returns bool
@@ -948,6 +1001,16 @@ define CppEmitter
         false
     }
 
+    function has_body(f: PlannedFunction) returns bool
+    {
+        choose f.impl
+            when a: Action
+                return true
+            else
+                return false
+        false
+    }
+
     function is_entry(f: PlannedFunction) returns bool
     {
         f.name = "main" and f.mangled_name.starts_with("_ZN") = false
@@ -1029,8 +1092,16 @@ define CppEmitter
         else
             out.append "void scaly_rt_release_frame(scaly_frame* f) asm(\"_Z19scaly_release_frameP5Frame\");\n"
         let pg this.declared_name("_Z3getPv")
+        let mg this.declared_name("_ZN4Page3getEPv")
         if pg.get_length() > 0
             out.append "static inline void* scaly_rt_page_get(void* a) { return (void*)`pg`(a); }\n"
+        else if mg.get_length() > 0 and CppEmitter.defines(plan, "_ZN4Page3getEPv")
+        {
+            ; the free `get` other files call, where Page.get has its body
+            ; (Emitter.ensure_free_page_get#)
+            out.append "void* scaly_rt_page_get(void* a) asm(\"_Z3getPv\");\n"
+            out.append "void* scaly_rt_page_get(void* a) { return (void*)`mg`(a); }\n"
+        }
         else
             out.append "void* scaly_rt_page_get(void* a) asm(\"_Z3getPv\");\n"
         let al this.declared_name("_ZN4Page8allocateEmm")
@@ -1056,6 +1127,18 @@ define CppEmitter
             i := i + 1
         }
         String()
+    }
+
+    function defines(plan: Plan, mangled: String) returns bool
+    {
+        if plan.functions = null
+            return false
+        for f in plan.functions
+        {
+            if f.mangled_name.equals(mangled) and CppEmitter.has_body(f)
+                return true
+        }
+        false
     }
 
     function first_param_ctype(plan: Plan, mangled: String) returns String
@@ -1182,23 +1265,36 @@ define CppEmitter
                             this.locals.add(String(*item.name))
                     }
                 }
+                var named_page String()
                 if this.has_page
                 {
-                    out.append "    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};\n"
                     ; a page parameter of a name of its own is the page itself
                     let pname String(*f.page_parameter)
                     if pname.equals("_rp") = false and pname.equals("rp") = false
                     {
-                        out.append "    void* `CppEmitter.local_name(pname)` = scaly_rt_force_frame(scaly_rp);\n"
+                        named_page := "    void* `CppEmitter.local_name(pname)` = scaly_rt_force_frame(scaly_rp);\n"
                         this.locals.add(pname)
                     }
                 }
-                else
-                    out.append "    scaly_frame_guard scaly_local{{nullptr, nullptr}};\n"
                 this.returns_value := f.return_type <> null and CppEmitter.is_unit(*f.return_type) = false
                 if f.return_type <> null
                     this.ret_type := (*f.return_type)
-                this.body(out, a, 1, this.returns_value)
+                ; the body first: the frame is there only where the body uses
+                ; it, as the LLVM emitter makes it on demand -- the runtime's
+                ; own routines must have none (scaly_release_frame would
+                ; release itself)
+                var b StringBuilder()
+                this.body(&b, a, 1, this.returns_value)
+                let text b.to_string()
+                if text.contains("scaly_local") or named_page.get_length() > 0
+                {
+                    if this.has_page
+                        out.append "    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};\n"
+                    else
+                        out.append "    scaly_frame_guard scaly_local{{nullptr, nullptr}};\n"
+                }
+                out.append named_page
+                out.append text
                 out.append "}\n"
             }
             else
@@ -1608,7 +1704,11 @@ define CppEmitter
             return
         }
         let it this.temp()
-        let et CppEmitter.ctype(f.element_type)
+        ; the element type is what next() answers, pointer[T]
+        var elem f.element_type
+        if CppEmitter.is_pointer_type(elem)
+            elem := CppEmitter.first_generic(elem)
+        let et CppEmitter.ctype(elem)
         var source this.operand(coll)
         if CppEmitter.is_pointer_type(this.cpp_type(coll))
             source := "*(`source`)"
@@ -1627,7 +1727,7 @@ define CppEmitter
         else
         {
             out.append "`ind`    `et`* `x` = `it`_at;\n"
-            if CppEmitter.is_record(f.element_type)
+            if CppEmitter.is_record(elem)
                 this.held.add(String(f.identifier))
         }
         this.body(out, f.body, depth + 1, false)
@@ -2185,6 +2285,9 @@ define CppEmitter
         }
         if c.mangled_name.contains("C1E")
             return this.construction(c)
+        let lowered this.lowered_call(c)
+        if lowered.get_length() > 0
+            return lowered
         var callee String()
         var i: size_t 0
         while i < this.fn_mangled.length
@@ -2344,7 +2447,77 @@ define CppEmitter
         }
         if c.name = "__jit_indirect"
             return "((int64_t(*)(`types.to_string()`))(`callee`))(`values.to_string()`)"
-        this.untranslated("call of a closure")
+        ; a closure: the record's first word is its thunk, which takes the
+        ; record before the arguments (a record argument by reference)
+        var ptypes StringBuilder()
+        ptypes.append "void*"
+        var j: size_t 1
+        while j < all.length
+        {
+            let pt this.cpp_type(all[j])
+            ptypes.append ", `CppEmitter.ctype(pt)`"
+            if CppEmitter.is_record(pt)
+                ptypes.append("&" as char)
+            j := j + 1
+        }
+        var rest String()
+        if values.get_length() > 0
+            rest := ", `values.to_string()`"
+        let rt CppEmitter.ctype(c.result_type)
+        "((`rt`(*)(`ptypes.to_string()`))(*(void**)(`callee`)))((void*)(`callee`)`rest`)"
+    }
+
+    ; The calls the LLVM emitter lowers to instructions instead of calling
+    ; (Emitter.emit_atomic_call#, emit_bits_call#, emit_ptr_call#): no such
+    ; symbol exists to link against.
+    procedure lowered_call(mutable this, c: PlannedCall) returns String
+    {
+        let m c.mangled_name
+        if m.starts_with("scaly_atomic_") = false and m.starts_with("scaly_bits_") = false and m <> "scaly_call_ptr"
+            return String()
+        if c.args = null or c.args.length = 0
+            return String()
+        let all (*c.args)
+        let a0 this.operand(all[0])
+        var a1 String()
+        if all.length > 1
+            a1 := this.operand(all[1])
+        var a2 String()
+        if all.length > 2
+            a2 := this.operand(all[2])
+        let rt CppEmitter.ctype(c.result_type)
+        match m
+            case "scaly_atomic_load_u64"
+                return "((`rt`)__atomic_load_n((uint64_t*)(`a0`), __ATOMIC_SEQ_CST))"
+            case "scaly_atomic_store_u64"
+                return "__atomic_store_n((uint64_t*)(`a0`), (uint64_t)(`a1`), __ATOMIC_SEQ_CST)"
+            case "scaly_atomic_or_u64"
+                return "((`rt`)__atomic_fetch_or((uint64_t*)(`a0`), (uint64_t)(`a1`), __ATOMIC_SEQ_CST))"
+            case "scaly_atomic_and_u64"
+                return "((`rt`)__atomic_fetch_and((uint64_t*)(`a0`), (uint64_t)(`a1`), __ATOMIC_SEQ_CST))"
+            case "scaly_atomic_add_u64"
+                return "((`rt`)__atomic_fetch_add((uint64_t*)(`a0`), (uint64_t)(`a1`), __ATOMIC_SEQ_CST))"
+            case "scaly_atomic_cas_u64"
+            {
+                ; the old value, whether it was exchanged or not
+                let e this.temp()
+                return "({ uint64_t `e` = (uint64_t)(`a1`); __atomic_compare_exchange_n((uint64_t*)(`a0`), &`e`, (uint64_t)(`a2`), false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST); (`rt`)`e`; })"
+            }
+            case "scaly_bits_count_ones"
+                return "((`rt`)__builtin_popcountll((uint64_t)(`a0`)))"
+            case "scaly_bits_trailing_zeros"
+            {
+                let v this.temp()
+                return "({ uint64_t `v` = (uint64_t)(`a0`); (`rt`)(`v` == 0 ? 64 : __builtin_ctzll(`v`)); })"
+            }
+            case "scaly_bits_leading_zeros"
+            {
+                let v this.temp()
+                return "({ uint64_t `v` = (uint64_t)(`a0`); (`rt`)(`v` == 0 ? 64 : __builtin_clzll(`v`)); })"
+            }
+            case "scaly_call_ptr"
+                return "((void*(*)(void*))(`a0`))((void*)(`a1`))"
+        String()
     }
 
     procedure kinds_of(this, mangled: String) returns String
