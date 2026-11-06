@@ -116,3 +116,10 @@ put_number((u / 3) as int)
 line()
 put_number((u >> 30) as int)
 line()
+; ~ on a bool is its negation (the parser writes `if ~lexer.parse_punctuation(":")`)
+let yes true
+if ~yes
+    put_number(1)
+else
+    put_number(2)
+line()

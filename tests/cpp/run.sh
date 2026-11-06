@@ -43,7 +43,7 @@ one() {
     echo "FAIL $name: --emit-cpp: $(tail -1 "$T/$name.cpp.log")"; return
   fi
   if ! $CXX "${CXXFLAGS[@]}" -o "$T/$name.cxx" "$T/$name.cpp" ${objs[@]+"${objs[@]}"} -lm > "$T/$name.cxx.log" 2>&1; then
-    echo "FAIL $name: c++: $(grep -m1 'error' "$T/$name.cxx.log" | sed 's/^[^ ]*: error: //')"; return
+    echo "FAIL $name: c++: $(grep -m1 -e "error" -e "^  \"" "$T/$name.cxx.log" | sed "s/^[^ ]*: error: //")"; return
   fi
   perl -e 'alarm 30; exec @ARGV' "$T/$name.llvm" > "$T/$name.llvm.out" 2>&1; local lrc=$?
   perl -e 'alarm 30; exec @ARGV' "$T/$name.cxx" > "$T/$name.cxx.out" 2>&1; local crc=$?
@@ -59,7 +59,11 @@ LIST="$T/list"
 for src in tests/cpp/*.scaly; do
   name="$(basename "$src" .scaly)"
   [ -n "$FILTER" ] && [[ "$name" != *"$FILTER"* ]] && continue
-  echo "$name $src" >> "$LIST"
+  if head -5 "$src" | grep -q '^; no-prelude'; then
+    echo "$name $src" >> "$LIST"
+  else
+    echo "$name $src lib" >> "$LIST"
+  fi
 done
 
 # the standard library as C++, and the shims

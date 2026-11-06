@@ -2356,7 +2356,13 @@ define CppEmitter
             when a: As
                 return this.cast(a)
             when s: SizeOf
-                return "((uint64_t)`s.size`)"
+            {
+                ; the type's own size, as LLVMSizeOf answers it
+                ; (Emitter.emit_sizeof#); the planner's number where it has none
+                if CppEmitter.is_unit(s.sized_type) or this.is_template_type(s.sized_type)
+                    return "((uint64_t)`s.size`)"
+                return "((uint64_t)sizeof(`CppEmitter.ctype(s.sized_type)`))"
+            }
             when al: AlignOf
                 return "((uint64_t)`al.alignment`)"
             when i: If
@@ -3448,7 +3454,14 @@ define CppEmitter
             case "not" case "!"
                 return "(!(`v`))"
             case "~"
+            {
+                ; on a bool the complement of one bit (LLVM's xor with 1 on
+                ; an i1); C++ would complement the int it promotes to, and
+                ; ~0 and ~1 are both true
+                if this.cpp_type(a).name = "bool"
+                    return "(!(`v`))"
                 return "((`CppEmitter.ctype(t)`)(~(`v`)))"
+            }
             case "*"
                 return "(*(`v`))"
             case "&"

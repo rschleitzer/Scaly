@@ -1,0 +1,54 @@
+; throws, try and choose over a throwing call: the parser's pattern.
+define Detail(code: int)
+
+define Problem union
+(
+    Different: Detail
+    Invalid: Detail
+)
+
+function pick(n: int) returns int throws Problem
+{
+    if n = 0
+        throw Problem.Different(Detail(7))
+    if n < 0
+        throw Problem.Invalid(Detail(0 - n))
+    n * 10
+}
+
+function optional_pick(n: int) returns int throws Problem
+{
+    var got 0
+    choose pick(n)
+        when err: Error
+        {
+            choose err
+                when d: Different
+                    got := 0 - 1
+                when i: Invalid
+                    throw Problem.Invalid(i)
+        }
+        when success: Success
+            got := success
+    got
+}
+
+function caught(n: int) returns int
+{
+    try let v optional_pick(n)
+        when e: Invalid
+            return 1000 + e.code
+        when d: Different
+            return 2000 + d.code
+    v
+}
+
+function plain(n: int) returns int
+{
+    try let w pick(n)
+        else
+            return 77
+    w
+}
+
+print "`caught(5)` `caught(0)` `caught(0 - 3)` `plain(4)` `plain(0)`"
