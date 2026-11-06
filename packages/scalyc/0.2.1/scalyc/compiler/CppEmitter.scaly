@@ -53,7 +53,13 @@ define CppEmitter
     var no_prelude: bool            ; no runtime: a frame is never forced (--no-prelude, not the stdlib)
     var has_page: bool              ; the routine being written received a frame (its caller page)
     var held: Array[String]         ; locals that hold a record by its address on a page (binding#)
-    var locals: Array[String]       ; the names bound in the routine being written
+    var locals: Array[String]       ; the names bound in the routine being written ...
+    var local_kinds: Array[String]  ; ... and how C++ holds each: P a pointer, R a record, V a value
+    var local_cnames: Array[String] ; ... and its C++ name (a name bound again is renamed: C++ has no
+                                    ; second binding in one block, and sees a new one in its own initializer)
+    var scope_start: size_t         ; where the locals of the innermost block begin
+    var struct_names: Array[String] ; the records laid out, by symbol ...
+    var struct_fields: Array[String] ; ... and their fields: kind and C++ type each, tab-separated
     var fn_ptypes: Array[String]    ; per routine declared, its parameters' C++ types, tab-separated
     var ret_type: PlannedType       ; the result type of the routine being written
     var types_header: String        ; where the standard library writes its records ("" for a program)
@@ -80,6 +86,11 @@ define CppEmitter
         has_page := false
         held := Array[String]()
         locals := Array[String]()
+        local_kinds := Array[String]()
+        local_cnames := Array[String]()
+        scope_start := 0
+        struct_names := Array[String]()
+        struct_fields := Array[String]()
         fn_ptypes := Array[String]()
         ret_type := Planner.make_void_type()
         types_header := String()
@@ -88,6 +99,87 @@ define CppEmitter
         wrapper := String()
         caught := String()
         caught_type := String()
+    }
+
+    ; A name bound in the routine being written, and how C++ holds it.
+    procedure declare(mutable this, name: String, kind: String) returns String
+    {
+        var cname CppEmitter.local_name(name)
+        var taken false
+        for n in this.locals
+        {
+            if n.equals(name)
+                taken := true
+        }
+        if taken
+        {
+            var k: size_t 2
+            var candidate "`cname`_`k`"
+            while CppEmitter.contains(&this.local_cnames, candidate)
+            {
+                k := k + 1
+                candidate := "`cname`_`k`"
+            }
+            cname := candidate
+        }
+        this.locals.add(String(name))
+        this.local_kinds.add(String(kind))
+        this.local_cnames.add(String(cname))
+        cname
+    }
+
+    ; The bindings since `mark` end (a C++ scope closes).
+    procedure end_scope(mutable this, mark: size_t)
+    {
+        if this.locals.length <= mark
+            return
+        this.locals.length := mark
+        this.local_kinds.length := mark
+        this.local_cnames.length := mark
+    }
+
+    ; The C++ name of the local of that name (its latest binding).
+    procedure local_cname(this, name: String) returns String
+    {
+        var i this.locals.length
+        while i > 0
+        {
+            i := i - 1
+            if this.locals[i].equals(name)
+                return String(this.local_cnames[i])
+        }
+        CppEmitter.local_name(name)
+    }
+
+    ; How C++ holds the local of that name (its latest binding), "" for none.
+    procedure local_kind(this, name: String) returns String
+    {
+        var i this.locals.length
+        while i > 0
+        {
+            i := i - 1
+            if this.locals[i].equals(name)
+                return String(this.local_kinds[i])
+        }
+        String()
+    }
+
+    function kind_of(t: PlannedType) returns String
+    {
+        if CppEmitter.is_pointer_type(t)
+            return String("P")
+        if CppEmitter.is_record(t)
+            return String("R")
+        String("V")
+    }
+
+    procedure reset_locals(mutable this)
+    {
+        this.held := Array[String]()
+        this.locals := Array[String]()
+        this.local_kinds := Array[String]()
+        this.local_cnames := Array[String]()
+        this.scope_start := 0
     }
 
     ; A C++ name no routine may take (a record's).
@@ -205,7 +297,22 @@ define CppEmitter
         if plan.structures <> null
         {
             for st in plan.structures
+            {
                 this.reserve(CppEmitter.type_name_of(st.mangled_name))
+                var fields StringBuilder()
+                if st.properties <> null
+                {
+                    for pr in st.properties
+                    {
+                        if fields.get_length() > 0
+                            fields.append("\t" as char)
+                        fields.append(CppEmitter.kind_of(pr.prop_type))
+                        fields.append(CppEmitter.ctype(pr.prop_type))
+                    }
+                }
+                this.struct_names.add(String(st.mangled_name))
+                this.struct_fields.add(fields.to_string())
+            }
         }
         if plan.unions <> null
         {
@@ -252,8 +359,7 @@ define CppEmitter
             {
                 bodies.append "int main(int argc, char** argv)\n{\n"
                 this.has_page := false
-                this.held := Array[String]()
-                this.locals := Array[String]()
+                this.reset_locals()
                 this.returns_value := false
                 var b StringBuilder()
                 for s in plan.statements
@@ -1421,14 +1527,19 @@ define CppEmitter
                 if receiver.get_length() > 0
                     out.append receiver
                 this.has_page := f.page_parameter <> null
-                this.held := Array[String]()
-                this.locals := Array[String]()
+                this.reset_locals()
                 if f.input <> null
                 {
                     for item in f.input
                     {
-                        if item.name <> null
-                            this.locals.add(String(*item.name))
+                        if item.name <> null and item.item_type <> null
+                        {
+                            ; a record's `this` is the pointer this_ here
+                            if (*item.name).equals("this")
+                                this.declare(*item.name, String("P"))
+                            else
+                                this.declare(*item.name, CppEmitter.kind_of(*item.item_type))
+                        }
                     }
                 }
                 var named_page String()
@@ -1438,8 +1549,8 @@ define CppEmitter
                     let pname String(*f.page_parameter)
                     if pname.equals("_rp") = false and pname.equals("rp") = false
                     {
-                        named_page := "    void* `CppEmitter.local_name(pname)` = scaly_rt_force_frame(scaly_rp);\n"
-                        this.locals.add(pname)
+                        let pcname this.declare(pname, String("P"))
+                        named_page := "    void* `pcname` = scaly_rt_force_frame(scaly_rp);\n"
                     }
                 }
                 this.returns_value := f.return_type <> null and CppEmitter.is_unit(*f.return_type) = false
@@ -1599,7 +1710,7 @@ define CppEmitter
                             let at this.storage((*a.source)[0])
                             if at.get_length() > 0
                             {
-                                out.append "`ind``CppEmitter.local_name(v.name)` = `at`;\n"
+                                out.append "`ind``this.local_cname(v.name)` = `at`;\n"
                                 return
                             }
                         }
@@ -1684,9 +1795,9 @@ define CppEmitter
             if this.sink.get_length() > 0
                 out.append "`ind``this.sink` = `text`;\n"
             else if this.wrapper.get_length() > 0
-                out.append "`ind`return scaly_ok<`this.wrapper`>(`this.converted(a.source, this.ret_type)`);\n"
+                out.append "`ind`return scaly_ok<`this.wrapper`>(`this.returned(a.source)`);\n"
             else
-                out.append "`ind`return `this.converted(a.source, this.ret_type)`;\n"
+                out.append "`ind`return `this.returned(a.source)`;\n"
         }
         else
             out.append "`ind``text`;\n"
@@ -1727,12 +1838,20 @@ define CppEmitter
         if ss = null
             return
         let n ss.length
+        ; the block's bindings end with it
+        let mark this.locals.length
+        let saved_start this.scope_start
+        this.scope_start := mark
         var i: size_t 0
         for s in ss
         {
             this.statement(out, s, depth, tail and i + 1 = n)
             i := i + 1
         }
+        this.locals.length := mark
+        this.local_kinds.length := mark
+        this.local_cnames.length := mark
+        this.scope_start := saved_start
     }
 
     procedure statement(mutable this, mutable out: ref[StringBuilder], s: PlannedStatement, depth: size_t, tail: bool)
@@ -1750,12 +1869,12 @@ define CppEmitter
                     if r.result = null or r.result.length = 0 or this.returns_value = false
                         out.append "`ind`return `this.wrapper`{};\n"
                     else
-                        out.append "`ind`return scaly_ok<`this.wrapper`>(`this.converted(r.result, this.ret_type)`);\n"
+                        out.append "`ind`return scaly_ok<`this.wrapper`>(`this.returned(r.result)`);\n"
                 }
                 else if r.result = null or r.result.length = 0 or this.returns_value = false
                     out.append "`ind`return;\n"
                 else
-                    out.append "`ind`return `this.converted(r.result, this.ret_type)`;\n"
+                    out.append "`ind`return `this.returned(r.result)`;\n"
             }
             when br: Break
             {
@@ -1831,8 +1950,7 @@ define CppEmitter
         var name String()
         if tr.cond.binding_item.name <> null
         {
-            name := CppEmitter.local_name(*tr.cond.binding_item.name)
-            this.locals.add(String(*tr.cond.binding_item.name))
+            name := this.declare(*tr.cond.binding_item.name, CppEmitter.kind_of(t))
             out.append "`ind``CppEmitter.ctype(t)` `name`{};\n"
         }
         let w this.temp()
@@ -1857,12 +1975,16 @@ define CppEmitter
                 else
                     out.append "`ind`        else if (`w`.data[0] == `c.variant_index`)\n`ind`        {\n"
                 first := false
+                let arm_mark this.locals.length
                 if c.name.get_length() > 0
-                    this.locals.add(String(c.name))
-                if c.name.get_length() > 0 and CppEmitter.is_unit(c.variant_type) = false
-                    out.append "`ind`            `CppEmitter.ctype(c.variant_type)` `CppEmitter.local_name(c.name)` = scaly_result_at<`CppEmitter.ctype(c.variant_type)`>(`w`, 1);\n"
+                {
+                    let ccname this.declare(c.name, CppEmitter.kind_of(c.variant_type))
+                    if CppEmitter.is_unit(c.variant_type) = false
+                        out.append "`ind`            `CppEmitter.ctype(c.variant_type)` `ccname` = scaly_result_at<`CppEmitter.ctype(c.variant_type)`>(`w`, 1);\n"
+                }
                 if c.consequent <> null
                     this.arm_statements(out, *c.consequent, depth + 3, tail)
+                this.end_scope(arm_mark)
                 out.append "`ind`        }\n"
             }
             out.append "`ind`        else\n`ind`        {\n"
@@ -1886,9 +2008,9 @@ define CppEmitter
     procedure binding(mutable this, mutable out: ref[StringBuilder], b: PlannedBinding, depth: size_t)
     {
         let ind CppEmitter.indent_of(depth)
-        var name String("_")
+        var raw String("_")
         if b.binding_item.name <> null
-            name := CppEmitter.local_name(*b.binding_item.name)
+            raw := String(*b.binding_item.name)
         var t: PlannedType Planner.make_void_type()
         var known false
         if b.binding_item.item_type <> null
@@ -1909,28 +2031,27 @@ define CppEmitter
                 var elem t
                 if CppEmitter.is_pointer_type(t)
                     elem := CppEmitter.first_generic(t)
-                out.append "`ind``CppEmitter.ctype(elem)` `name`[`t.array_size`] {};\n"
-                if b.binding_item.name <> null
-                    this.locals.add(String(*b.binding_item.name))
+                let aname this.declare(raw, String("P"))
+                out.append "`ind``CppEmitter.ctype(elem)` `aname`[`t.array_size`] {};\n"
                 return
             }
-            out.append "`ind``CppEmitter.ctype(t)` `name` {};\n"
+            let zname this.declare(raw, CppEmitter.kind_of(t))
+            out.append "`ind``CppEmitter.ctype(t)` `zname` {};\n"
             return
         }
-        if b.binding_item.name <> null
-            this.locals.add(String(*b.binding_item.name))
         if CppEmitter.is_record(t) and b.binding_type <> "copy"
         {
             let at this.storage((*b.operation)[0])
             if at.get_length() > 0
             {
-                out.append "`ind``CppEmitter.ctype(t)`* `name` = `at`;\n"
-                if b.binding_item.name <> null
-                    this.held.add(String(*b.binding_item.name))
+                let hname this.declare(raw, String("P"))
+                this.held.add(String(raw))
+                out.append "`ind``CppEmitter.ctype(t)`* `hname` = `at`;\n"
                 return
             }
         }
         let value this.converted(b.operation, t)
+        let name this.declare(raw, CppEmitter.kind_of(t))
         out.append "`ind``CppEmitter.ctype(t)` `name` = `value`;\n"
     }
 
@@ -1968,9 +2089,10 @@ define CppEmitter
         {
             ; `while x next()`: bound and tested, as long as it is not null
             let wn String(*w.cond.binding_item.name)
-            this.locals.add(String(wn))
             let wt (*w.cond.operation)[0].result_type
-            out.append "`ind`while (`CppEmitter.ctype(wt)` `CppEmitter.local_name(wn)` = `this.operands(w.cond.operation)`)\n"
+            let wvalue this.operands(w.cond.operation)
+            let wcname this.declare(wn, CppEmitter.kind_of(wt))
+            out.append "`ind`while (`CppEmitter.ctype(wt)` `wcname` = `wvalue`)\n"
         }
         else
             out.append "`ind`while (`this.operands(w.cond.operation)`)\n"
@@ -2006,8 +2128,11 @@ define CppEmitter
         let k this.temp()
         out.append "`ind`for (`t` `k` = 0, `k`_end = `this.operand(end)`; (`s`)`k` < (`s`)`k`_end; `k`++)\n"
         out.append "`ind`{\n"
-        out.append "`ind`    `t` `CppEmitter.local_name(f.identifier)` = `k`;\n"
+        let loop_mark this.locals.length
+        let icname this.declare(f.identifier, String("V"))
+        out.append "`ind`    `t` `icname` = `k`;\n"
         this.body(out, f.body, depth + 1, false)
+        this.end_scope(loop_mark)
         out.append "`ind`}\n"
     }
 
@@ -2045,17 +2170,21 @@ define CppEmitter
         out.append "`ind`for (auto `it` = `get_iter`(`first``source`);;)\n`ind`{\n"
         out.append "`ind`    `et`* `it`_at = (`et`*)`next`(`it`);\n"
         out.append "`ind`    if (`it`_at == nullptr)\n`ind`        break;\n"
-        let x CppEmitter.local_name(f.identifier)
-        this.locals.add(String(f.identifier))
+        let loop_mark this.locals.length
         if f.element_is_scalar
+        {
+            let x this.declare(f.identifier, CppEmitter.kind_of(elem))
             out.append "`ind`    `et` `x` = *`it`_at;\n"
+        }
         else
         {
+            let x this.declare(f.identifier, String("P"))
             out.append "`ind`    `et`* `x` = `it`_at;\n"
             if CppEmitter.is_record(elem)
                 this.held.add(String(f.identifier))
         }
         this.body(out, f.body, depth + 1, false)
+        this.end_scope(loop_mark)
         out.append "`ind`}\n"
     }
 
@@ -2074,6 +2203,25 @@ define CppEmitter
         if ops = null or ops.length = 0
             return String()
         this.operand((*ops)[0])
+    }
+
+    ; The value a routine returns: as converted#, but a record where the
+    ; result is a reference is copied onto the caller page first
+    ; (Emitter.emit_function_body_into#, ret.region).
+    procedure returned(mutable this, ops: ref[Vector[PlannedOperand]]?) returns String
+    {
+        if ops <> null and ops.length > 0 and this.has_page and CppEmitter.is_pointer_type(this.ret_type)
+        {
+            let op (*ops)[0]
+            let ct this.cpp_type(op)
+            if CppEmitter.is_record(ct) and this.storage(op).get_length() = 0
+            {
+                let t CppEmitter.ctype(ct)
+                let p this.temp()
+                return "(`CppEmitter.ctype(this.ret_type)`)({ `t`* `p` = (`t`*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(`t`), alignof(`t`)); *`p` = `this.operand(op)`; `p`; })"
+            }
+        }
+        this.converted(ops, this.ret_type)
     }
 
     ; The value of `ops` as type `t`: a cast where the C++ types differ and
@@ -2142,8 +2290,6 @@ define CppEmitter
             {
                 if v.name = "_rp" or (v.name = "rp" and CppEmitter.contains(&this.locals, v.name) = false)
                     return op.result_type
-                if CppEmitter.contains(&this.held, v.name) and CppEmitter.is_pointer_type(v.variable_type) = false
-                    return op.result_type
                 return v.variable_type
             }
             when c: Call
@@ -2184,9 +2330,15 @@ define CppEmitter
             {
                 if v.name = "_rp" or (v.name = "rp" and CppEmitter.contains(&this.locals, v.name) = false)
                     return this.frame_of_caller()
-                if CppEmitter.contains(&this.held, v.name) and CppEmitter.is_pointer_type(v.variable_type) = false
-                    return "(*`CppEmitter.local_name(v.name)`)"
-                return CppEmitter.local_name(v.name)
+                ; as the plan reads it: a local C++ holds as a pointer where the
+                ; plan reads the record, or the other way round
+                let k this.local_kind(v.name)
+                let cn this.local_cname(v.name)
+                if k = "P" and CppEmitter.is_record(v.variable_type)
+                    return "(*`cn`)"
+                if k = "R" and CppEmitter.is_pointer_type(v.variable_type)
+                    return "(&`cn`)"
+                return cn
             }
             when g: GlobalRef
             {
@@ -2449,17 +2601,75 @@ define CppEmitter
         sb.append("{" as char)
         if t.components <> null
         {
+            ; each component as its field holds it (a record built on a page
+            ; into a reference field, its address)
+            let fields this.fields_of(t.tuple_type.mangled_name)
             var first true
+            var k: size_t 0
             for c in t.components
             {
                 if first = false
                     sb.append ", "
                 first := false
-                sb.append(this.operands(c.value))
+                let field CppEmitter.tab_field(fields, k)
+                if field.get_length() > 1 and c.value <> null and c.value.length > 0
+                    sb.append(this.as_kind((*c.value)[0], field.substring(0, 1), field.substring(1, field.get_length() - 1)))
+                else
+                    sb.append(this.operands(c.value))
+                k := k + 1
             }
         }
         sb.append("}" as char)
         sb.to_string()
+    }
+
+    procedure fields_of(this, mangled: String) returns String
+    {
+        var i: size_t 0
+        while i < this.struct_names.length
+        {
+            if this.struct_names[i].equals(mangled)
+                return String(this.struct_fields[i])
+            i := i + 1
+        }
+        String()
+    }
+
+    function tab_field(all: String, k: size_t) returns String
+    {
+        var field: size_t 0
+        var start: size_t 0
+        var j: size_t 0
+        let n all.get_length()
+        while j <= n
+        {
+            if j = n or all.get(j) = 0x09
+            {
+                if field = k
+                    return all.substring(start, j - start)
+                field := field + 1
+                start := j + 1
+            }
+            j := j + 1
+        }
+        String()
+    }
+
+    ; An operand as C++ holds a target of that kind (P, R, V) and type.
+    procedure as_kind(mutable this, op: PlannedOperand, kind: String, want: String) returns String
+    {
+        let text this.operand(op)
+        let ct this.cpp_type(op)
+        let have CppEmitter.ctype(ct)
+        if have.equals(want)
+            return text
+        if kind = "P" and CppEmitter.is_record(ct)
+            return "(`want`)&(`text`)"
+        if kind = "R" and CppEmitter.is_pointer_type(ct)
+            return "*(`text`)"
+        if kind = "R" or CppEmitter.is_record(ct)
+            return text
+        "(`want`)(`text`)"
     }
 
     procedure if_value(mutable this, i: PlannedIf, t: PlannedType) returns String
@@ -2586,17 +2796,19 @@ define CppEmitter
                     else
                         out.append "`ind`    else if (`test`)\n`ind`    {\n"
                     first := false
+                    let arm_mark this.locals.length
                     if w.name.get_length() > 0
                     {
-                        this.locals.add(String(w.name))
                         var bt w.variant_type
                         if w.variant_index = 0
                             bt := st
+                        let bcname this.declare(w.name, CppEmitter.kind_of(bt))
                         if CppEmitter.is_unit(bt) = false
-                            out.append "`ind`        `CppEmitter.ctype(bt)` `CppEmitter.local_name(w.name)` = scaly_result_at<`CppEmitter.ctype(bt)`>(`v`, 0);\n"
+                            out.append "`ind`        `CppEmitter.ctype(bt)` `bcname` = scaly_result_at<`CppEmitter.ctype(bt)`>(`v`, 0);\n"
                     }
                     if w.consequent <> null
                         this.arm_statements(out, *w.consequent, depth + 2, tail)
+                    this.end_scope(arm_mark)
                     out.append "`ind`    }\n"
                 }
             }
@@ -2610,13 +2822,15 @@ define CppEmitter
             {
                 for w in c.cases
                 {
+                    let arm_mark this.locals.length
                     if w.name.get_length() > 0
                     {
-                        this.locals.add(String(w.name))
-                        out.append "`ind`    `CppEmitter.ctype(w.variant_type)` `CppEmitter.local_name(w.name)` = `v`;\n"
+                        let ncname this.declare(w.name, CppEmitter.kind_of(w.variant_type))
+                        out.append "`ind`    `CppEmitter.ctype(w.variant_type)` `ncname` = `v`;\n"
                     }
                     if w.consequent <> null
                         this.arm_statements(out, *w.consequent, depth + 1, tail)
+                    this.end_scope(arm_mark)
                 }
             }
             out.append "`ind`}\n"
@@ -2643,17 +2857,21 @@ define CppEmitter
                 else
                     out.append "`ind`    else if (`v``access`tag == `w.variant_index`)\n`ind`    {\n"
                 first := false
+                let arm_mark this.locals.length
                 if w.name.get_length() > 0
-                    this.locals.add(String(w.name))
-                if w.name.get_length() > 0 and CppEmitter.is_unit(w.variant_type) = false
                 {
-                    var source v
-                    if CppEmitter.is_pointer_type(st)
-                        source := "*`v`"
-                    out.append "`ind`        `CppEmitter.ctype(w.variant_type)` `CppEmitter.local_name(w.name)` = scaly_payload<`CppEmitter.ctype(w.variant_type)`>(`source`);\n"
+                    let ucname this.declare(w.name, CppEmitter.kind_of(w.variant_type))
+                    if CppEmitter.is_unit(w.variant_type) = false
+                    {
+                        var source v
+                        if CppEmitter.is_pointer_type(st)
+                            source := "*`v`"
+                        out.append "`ind`        `CppEmitter.ctype(w.variant_type)` `ucname` = scaly_payload<`CppEmitter.ctype(w.variant_type)`>(`source`);\n"
+                    }
                 }
                 if w.consequent <> null
                     this.arm_statements(out, *w.consequent, depth + 2, tail)
+                this.end_scope(arm_mark)
                 out.append "`ind`    }\n"
             }
         }
@@ -3164,7 +3382,16 @@ define CppEmitter
             var kind: u8 0x56      ; V
             if k < kinds.get_length()
                 kind := kinds.get(k)
-            if kind = 0x52 and CppEmitter.is_pointer_type(at)       ; R from a pointer
+            var pt String()
+            if callee.get_length() > 0
+                pt := this.ptype_of(callee, first_param + k)
+            if kind = 0x52 and CppEmitter.is_record(at) and pt.get_length() > 0 and pt.equals(CppEmitter.ctype(at)) = false
+            {
+                ; one layout under two C++ names (Slice[u8] where Slice[char]
+                ; is declared, which Scaly accepts)
+                sb.append "*(`pt`*)&scaly_lvalue(`text`)"
+            }
+            else if kind = 0x52 and CppEmitter.is_pointer_type(at)       ; R from a pointer
                 sb.append "*(`text`)"
             else if kind = 0x50 and CppEmitter.is_record(at)        ; P from a record
                 sb.append "&(`text`)"
@@ -3172,7 +3399,6 @@ define CppEmitter
                 sb.append "scaly_lvalue(`text`)"
             else if kind = 0x50 and callee.get_length() > 0
             {
-                let pt this.ptype_of(callee, first_param + k)
                 if pt.get_length() > 0 and pt.equals(CppEmitter.ctype(at)) = false
                     sb.append "(`pt`)(`text`)"
                 else
@@ -3226,7 +3452,22 @@ define CppEmitter
             case "*"
                 return "(*(`v`))"
             case "&"
+            {
+                ; a reference parameter or let has no slot: & is the reference
+                ; itself (Emitter.address_of_is_identity#)
+                if a.member_access = null
+                {
+                    choose a.expr
+                        when av: Variable
+                        {
+                            if av.is_mutable = false and CppEmitter.is_pointer_type(av.variable_type)
+                                return v
+                        }
+                        else
+                            0
+                }
                 return "(&(`v`))"
+            }
         this.errors := this.errors + 1
         "SCALY_UNTRANSLATED /* prefix `name` */"
     }
