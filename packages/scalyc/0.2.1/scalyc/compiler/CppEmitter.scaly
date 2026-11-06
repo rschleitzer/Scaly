@@ -55,8 +55,9 @@ define CppEmitter
     var held: Array[String]         ; locals that hold a record by its address on a page (binding#)
     var locals: Array[String]       ; the names bound in the routine being written ...
     var local_kinds: Array[String]  ; ... and how C++ holds each: P a pointer, R a record, V a value
-    var local_cnames: Array[String] ; ... and its C++ name (a name bound again is renamed: C++ has no
-                                    ; second binding in one block, and sees a new one in its own initializer)
+    ; a name bound again is renamed: C++ has no second binding in one block,
+    ; and sees a new one in its own initializer
+    var local_cnames: Array[String] ; ... and its C++ name
     var scope_start: size_t         ; where the locals of the innermost block begin
     var struct_names: Array[String] ; the records laid out, by symbol ...
     var struct_fields: Array[String] ; ... and their fields: kind and C++ type each, tab-separated
@@ -885,20 +886,16 @@ define CppEmitter
     ; A Scaly name as a C++ identifier: a keyword of C++ gains a `_`.
     function local_name(name: String) returns String
     {
-        match name
-            case "this" case "int" case "char" case "bool" case "float" case "double" case "long" case "short"
-            case "signed" case "unsigned" case "void" case "auto" case "class" case "struct" case "union"
-            case "enum" case "template" case "typename" case "namespace" case "new" case "delete" case "default"
-            case "switch" case "case" case "do" case "goto" case "const" case "static" case "extern" case "register"
-            case "volatile" case "inline" case "operator" case "private" case "public" case "protected"
-            case "virtual" case "friend" case "explicit" case "export" case "mutable" case "typedef" case "sizeof"
-            case "alignof" case "typeid" case "try" case "catch" case "throw" case "true" case "false" case "nullptr"
-            case "and" case "or" case "not" case "xor" case "bitand" case "bitor" case "compl" case "main"
-            case "asm" case "concept" case "requires" case "union_" case "module" case "import"
-            case "int8_t" case "int16_t" case "int32_t" case "int64_t" case "uint8_t" case "uint16_t"
-            case "uint32_t" case "uint64_t" case "size_t" case "nullptr_t" case "this_"
-                return "`name`_"
+        if CppEmitter.reserved().contains(" `name` ")
+            return "`name`_"
         name
+    }
+
+    ; the words a Scaly name may be that C++ reserves, and the names this
+    ; file's C++ gives its own types and the receiver
+    function reserved() returns String
+    {
+        String(" this int char bool float double long short signed unsigned void auto class struct union enum template typename namespace new delete default switch case do goto const static extern register volatile inline operator private public protected virtual friend explicit export mutable typedef sizeof alignof typeid try catch throw true false nullptr and or not xor bitand bitor compl main asm concept requires module import int8_t int16_t int32_t int64_t uint8_t uint16_t uint32_t uint64_t size_t nullptr_t this_ ")
     }
 
     ; The C++ name of the routine with that symbol: its readable name, made
@@ -1112,8 +1109,7 @@ define CppEmitter
     function is_signed(name: String) returns bool
     {
         match name
-            case "u8" case "u16" case "u32" case "u64" case "uint" case "size_t" case "c_size" case "size"
-            case "usize" case "bool" case "char"
+            case "u8" case "u16" case "u32" case "u64" case "uint" case "size_t" case "c_size" case "size" case "usize" case "bool" case "char"
                 return false
         true
     }
