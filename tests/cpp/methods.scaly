@@ -1,0 +1,95 @@
+; no-prelude
+; Methods, an initializer, a union and choose.
+function putchar(c: i32) returns i32 extern
+
+procedure put_number(n: int)
+{
+    if n < 0
+    {
+        putchar(45)
+        put_number(0 - n)
+        return
+    }
+    if n >= 10
+        put_number(n / 10)
+    putchar((48 + n % 10) as i32)
+}
+
+procedure line()
+{
+    putchar(10)
+}
+
+define Counter
+(
+    var count: int
+    var steps: int
+)
+{
+    init(start: int)
+    {
+        count := start
+        steps := 0
+    }
+
+    procedure bump(mutable this, by: int)
+    {
+        count := count + by
+        steps := steps + 1
+    }
+
+    function doubled(this) returns int
+    {
+        count * 2
+    }
+}
+
+define Shape union
+(
+    Circle: int
+    Square: int
+    Empty
+)
+
+function area(s: Shape) returns int
+{
+    choose s
+        when c: Circle
+            3 * c * c
+        when q: Square
+            q * q
+        else
+            0
+}
+
+; (`s is Circle` would belong here; it kills the compiler, rc 139, with or
+; without the prelude -- found 2026-11-06, not yet fixed)
+function kind(s: Shape) returns int
+{
+    choose s
+        when c: Circle
+            return 1
+        when e: Empty
+            return 3
+        else
+            0
+    2
+}
+
+var c Counter(10)
+c.bump(5)
+c.bump(7)
+put_number(c.count)
+line()
+put_number(c.steps)
+line()
+put_number(c.doubled())
+line()
+put_number(area(Shape.Circle(2)))
+line()
+put_number(area(Shape.Square(5)))
+line()
+put_number(area(Shape.Empty))
+line()
+put_number(kind(Shape.Square(1)))
+line()
