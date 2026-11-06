@@ -50,6 +50,10 @@ define CppEmitter
     var fn_kinds: Array[String]     ; per routine declared, how each parameter is passed (parameter_kinds#)
     var defined: Array[String]      ; the symbols whose body is written (the plan may list one twice)
     var template_names: Array[String] ; the generic concepts planned as templates (is_concept_template#)
+    var no_prelude: bool            ; no runtime: a frame is never forced (--no-prelude, not the stdlib)
+    var has_page: bool              ; the routine being written received a frame (its caller page)
+    var held: Array[String]         ; locals that hold a record by its address on a page (binding#)
+    var locals: Array[String]       ; the names bound in the routine being written
 )
 {
     init()
@@ -64,6 +68,10 @@ define CppEmitter
         fn_kinds := Array[String]()
         defined := Array[String]()
         template_names := Array[String]()
+        no_prelude := false
+        has_page := false
+        held := Array[String]()
+        locals := Array[String]()
     }
 
     ; Writes the plan as one C++ file to `path`. Answers whether it could.
@@ -77,7 +85,10 @@ define CppEmitter
         out.append "template <class U, class V> static inline U scaly_variant(uint8_t tag, V v) { U u{}; u.tag = tag; __builtin_memcpy(u.data, &v, sizeof v); return u; }\n"
         out.append "template <class U> static inline U scaly_unit_variant(uint8_t tag) { U u{}; u.tag = tag; return u; }\n"
         out.append "template <class V, class U> static inline V scaly_payload(const U& u) { V v; __builtin_memcpy(&v, u.data, sizeof v); return v; }\n"
-        out.append "template <class... T> constexpr size_t scaly_max_size() { size_t m = 0; ((m = sizeof(T) > m ? sizeof(T) : m), ...); return m; }\n\n"
+        out.append "template <class... T> constexpr size_t scaly_max_size() { size_t m = 0; ((m = sizeof(T) > m ? sizeof(T) : m), ...); return m; }\n"
+        ; a routine's frame (root_pages.scaly, Frame): its page, made only
+        ; when something is allocated on it, and the frame it received
+        out.append "struct scaly_frame { void* page; scaly_frame* parent; };\n\n"
 
         ; the records: declared first, then defined, each after the records
         ; it holds by value
@@ -129,6 +140,11 @@ define CppEmitter
                     this.declare_function(&out, f)
             }
             out.append("\n" as char)
+        }
+        this.runtime(&out, plan)
+        this.globals(&out, plan)
+        if plan.functions <> null
+        {
             for f in plan.functions
             {
                 if this.wanted(f) and CppEmitter.contains(&this.defined, f.mangled_name) = false
@@ -148,6 +164,10 @@ define CppEmitter
             if n > 0
             {
                 out.append "int main(int argc, char** argv)\n{\n"
+                out.append "    scaly_frame_guard scaly_local{{nullptr, nullptr}};\n"
+                this.has_page := false
+                this.held := Array[String]()
+                this.locals := Array[String]()
                 this.returns_value := false
                 for s in plan.statements
                     this.statement(&out, s, 1, false)
@@ -361,11 +381,14 @@ define CppEmitter
     {
         var sb StringBuilder()
         let n mangled.get_length()
-        if n < 3 or mangled.get(0) <> 0x5F or mangled.get(1) <> 0x5A
-            return CppEmitter.identifier_of(mangled)
         var i: size_t 2
+        ; a symbol of the plan that is only its source names (a global's)
+        if n > 0 and mangled.get(0) >= 0x30 and mangled.get(0) <= 0x39
+            i := 0
+        else if n < 3 or mangled.get(0) <> 0x5F or mangled.get(1) <> 0x5A
+            return CppEmitter.identifier_of(mangled)
         var nested false
-        if mangled.get(i) = 0x4E
+        if i < n and mangled.get(i) = 0x4E
         {
             nested := true
             i := i + 1
@@ -568,7 +591,23 @@ define CppEmitter
         }
         this.fn_mangled.add(String(mangled))
         this.fn_names.add(String(name))
+        this.fn_kinds.add(String())
         name
+    }
+
+    ; How the routine with that symbol takes its parameters (parameter_kinds#).
+    procedure set_kinds(mutable this, mangled: String, kinds: String)
+    {
+        var i: size_t 0
+        while i < this.fn_mangled.length
+        {
+            if this.fn_mangled[i].equals(mangled)
+            {
+                this.fn_kinds.put(i, String(kinds))
+                return
+            }
+            i := i + 1
+        }
     }
 
     ; ------------------------------------------------------------------
@@ -821,9 +860,17 @@ define CppEmitter
     function parameters(f: PlannedFunction, named: bool) returns String
     {
         var sb StringBuilder()
+        var first true
+        ; the caller page: a frame, first (the order is this file's own)
+        if f.page_parameter <> null
+        {
+            sb.append "scaly_frame*"
+            if named
+                sb.append " scaly_rp"
+            first := false
+        }
         if f.input <> null
         {
-            var first true
             for item in f.input
             {
                 if item.item_type <> null
@@ -854,9 +901,113 @@ define CppEmitter
         sb.to_string()
     }
 
+    ; The four runtime routines a frame and an allocation need, under names
+    ; of their own: the plan's where it has them (the standard library's own
+    ; file), else declared by their symbols; without a runtime at all, a
+    ; frame is never forced.
+    procedure runtime(mutable this, mutable out: ref[StringBuilder], plan: Plan)
+    {
+        let ff this.declared_name("_Z17scaly_force_frameP5Frame")
+        let ffp CppEmitter.first_param_ctype(plan, "_Z17scaly_force_frameP5Frame")
+        if ff.get_length() > 0
+            out.append "static inline void* scaly_rt_force_frame(scaly_frame* f) { return (void*)`ff`((`ffp`)f); }\n"
+        else if this.no_prelude
+            out.append "static inline void* scaly_rt_force_frame(scaly_frame* f) { return nullptr; }\n"
+        else
+            out.append "void* scaly_rt_force_frame(scaly_frame* f) asm(\"_Z17scaly_force_frameP5Frame\");\n"
+        let rf this.declared_name("_Z19scaly_release_frameP5Frame")
+        let rfp CppEmitter.first_param_ctype(plan, "_Z19scaly_release_frameP5Frame")
+        if rf.get_length() > 0
+            out.append "static inline void scaly_rt_release_frame(scaly_frame* f) { `rf`((`rfp`)f); }\n"
+        else if this.no_prelude
+            out.append "static inline void scaly_rt_release_frame(scaly_frame* f) { }\n"
+        else
+            out.append "void scaly_rt_release_frame(scaly_frame* f) asm(\"_Z19scaly_release_frameP5Frame\");\n"
+        let pg this.declared_name("_Z3getPv")
+        if pg.get_length() > 0
+            out.append "static inline void* scaly_rt_page_get(void* a) { return (void*)`pg`(a); }\n"
+        else
+            out.append "void* scaly_rt_page_get(void* a) asm(\"_Z3getPv\");\n"
+        let al this.declared_name("_ZN4Page8allocateEmm")
+        if al.get_length() > 0
+        {
+            let pt CppEmitter.first_param_ctype(plan, "_ZN4Page8allocateEmm")
+            out.append "static inline void* scaly_rt_allocate(void* page, uint64_t size, uint64_t align) { return (void*)`al`(*(`pt`*)page, size, align); }\n"
+        }
+        else
+            out.append "void* scaly_rt_allocate(void* page, uint64_t size, uint64_t align) asm(\"_ZN4Page8allocateEmm\");\n"
+        ; released on every way out, after the value returned is made
+        ; (Emitter.emit_release_before_return#)
+        out.append "struct scaly_frame_guard { scaly_frame f; ~scaly_frame_guard() { scaly_rt_release_frame(&f); } };\n\n"
+    }
+
+    procedure declared_name(this, mangled: String) returns String
+    {
+        var i: size_t 0
+        while i < this.fn_mangled.length
+        {
+            if this.fn_mangled[i].equals(mangled)
+                return String(this.fn_names[i])
+            i := i + 1
+        }
+        String()
+    }
+
+    function first_param_ctype(plan: Plan, mangled: String) returns String
+    {
+        if plan.functions = null
+            return "void*"
+        for f in plan.functions
+        {
+            if f.mangled_name.equals(mangled)
+                return CppEmitter.parameter_ctype(f, 0)
+        }
+        "void*"
+    }
+
+    ; The globals: a `mutable` one thread-local (a `shared` one process-
+    ; wide), a constant internal, one of another package only declared.
+    procedure globals(mutable this, mutable out: ref[StringBuilder], plan: Plan)
+    {
+        if plan.globals = null
+            return
+        for g in plan.globals
+        {
+            if CppEmitter.contains(&this.fn_mangled, g.mangled_name) = false
+            {
+                let name this.function_name(g.mangled_name, false)
+                let t CppEmitter.ctype(g.global_type)
+                var tls String()
+                if g.is_mutable and g.is_shared = false
+                    tls := String("thread_local ")
+                if g.global_type.array_size.get_length() > 0
+                {
+                    out.append "#error \"array global `g.name`\"\n"
+                    this.errors := this.errors + 1
+                }
+                else if g.is_foreign
+                    out.append "extern `tls``t` `name` asm(\"`g.mangled_name`\");\n"
+                else
+                {
+                    var initial String("{}")
+                    if g.value <> null and g.value.length > 0
+                        initial := this.converted(g.value, g.global_type)
+                    if g.is_mutable
+                        out.append "`tls``t` `name` asm(\"`g.mangled_name`\") = `initial`;\n"
+                    else
+                        out.append "static const `t` `name` = `initial`;\n"
+                }
+            }
+        }
+        out.append("\n" as char)
+    }
+
     procedure declare_function(mutable this, mutable out: ref[StringBuilder], f: PlannedFunction)
     {
-        if CppEmitter.is_extern(f)
+        ; an extern under a Scaly symbol (a module declaring a routine of
+        ; another ahead of it) is that routine: linked by its symbol, as the
+        ; LLVM emitter does
+        if CppEmitter.is_extern(f) and f.mangled_name.equals(f.name)
         {
             ; once: the modules declare a C function each in their own words
             if CppEmitter.contains(&this.fn_names, f.name)
@@ -868,7 +1019,7 @@ define CppEmitter
             return
         }
         let name this.function_name(f.mangled_name, CppEmitter.is_entry(f))
-        this.fn_kinds.add(CppEmitter.parameter_kinds(f))
+        this.set_kinds(f.mangled_name, CppEmitter.parameter_kinds(f))
         out.append "`CppEmitter.return_ctype(f)` `name`(`CppEmitter.parameters(f, false)`)"
         if CppEmitter.is_entry(f) = false
             out.append " asm(\"`f.mangled_name`\")"
@@ -886,6 +1037,30 @@ define CppEmitter
                 let receiver CppEmitter.receiver_line(f)
                 if receiver.get_length() > 0
                     out.append receiver
+                this.has_page := f.page_parameter <> null
+                this.held := Array[String]()
+                this.locals := Array[String]()
+                if f.input <> null
+                {
+                    for item in f.input
+                    {
+                        if item.name <> null
+                            this.locals.add(String(*item.name))
+                    }
+                }
+                if this.has_page
+                {
+                    out.append "    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};\n"
+                    ; a page parameter of a name of its own is the page itself
+                    let pname String(*f.page_parameter)
+                    if pname.equals("_rp") = false and pname.equals("rp") = false
+                    {
+                        out.append "    void* `CppEmitter.local_name(pname)` = scaly_rt_force_frame(scaly_rp);\n"
+                        this.locals.add(pname)
+                    }
+                }
+                else
+                    out.append "    scaly_frame_guard scaly_local{{nullptr, nullptr}};\n"
                 this.returns_value := f.return_type <> null and CppEmitter.is_unit(*f.return_type) = false
                 this.body(out, a, 1, this.returns_value)
                 out.append "}\n"
@@ -925,6 +1100,8 @@ define CppEmitter
     function parameter_kinds(f: PlannedFunction) returns String
     {
         var sb StringBuilder()
+        if f.page_parameter <> null
+            sb.append("F" as char)
         if f.input <> null
         {
             for item in f.input
@@ -978,6 +1155,25 @@ define CppEmitter
         let ind CppEmitter.indent_of(depth)
         if a.target <> null and a.target.length > 0
         {
+            let target (*a.target)[0]
+            if a.source <> null and a.source.length > 0 and target.member_access = null
+            {
+                choose target.expr
+                    when v: Variable
+                    {
+                        if CppEmitter.contains(&this.held, v.name)
+                        {
+                            let at this.storage((*a.source)[0])
+                            if at.get_length() > 0
+                            {
+                                out.append "`ind``CppEmitter.local_name(v.name)` = `at`;\n"
+                                return
+                            }
+                        }
+                    }
+                    else
+                        0
+            }
             out.append "`ind``this.operands(a.target)` = `this.operands(a.source)`;\n"
             return
         }
@@ -1143,6 +1339,19 @@ define CppEmitter
             out.append "`ind``CppEmitter.ctype(t)` `name` {};\n"
             return
         }
+        if b.binding_item.name <> null
+            this.locals.add(String(*b.binding_item.name))
+        if CppEmitter.is_record(t) and b.binding_type <> "copy"
+        {
+            let at this.storage((*b.operation)[0])
+            if at.get_length() > 0
+            {
+                out.append "`ind``CppEmitter.ctype(t)`* `name` = `at`;\n"
+                if b.binding_item.name <> null
+                    this.held.add(String(*b.binding_item.name))
+                return
+            }
+        }
         let value this.converted(b.operation, t)
         out.append "`ind``CppEmitter.ctype(t)` `name` = `value`;\n"
     }
@@ -1177,7 +1386,16 @@ define CppEmitter
     procedure while_statement(mutable this, mutable out: ref[StringBuilder], w: PlannedWhile, depth: size_t)
     {
         let ind CppEmitter.indent_of(depth)
-        out.append "`ind`while (`this.operands(w.cond.operation)`)\n"
+        if w.cond.binding_item.name <> null and w.cond.operation <> null and w.cond.operation.length > 0
+        {
+            ; `while x next()`: bound and tested, as long as it is not null
+            let wn String(*w.cond.binding_item.name)
+            this.locals.add(String(wn))
+            let wt (*w.cond.operation)[0].result_type
+            out.append "`ind`while (`CppEmitter.ctype(wt)` `CppEmitter.local_name(wn)` = `this.operands(w.cond.operation)`)\n"
+        }
+        else
+            out.append "`ind`while (`this.operands(w.cond.operation)`)\n"
         out.append "`ind`{\n"
         this.body(out, w.body, depth + 1, false)
         out.append "`ind`}\n"
@@ -1198,8 +1416,7 @@ define CppEmitter
         let ind CppEmitter.indent_of(depth)
         if f.is_iterator_loop
         {
-            out.append "#error \"for over an iterator\"\n"
-            this.errors := this.errors + 1
+            this.iterator_loop(out, f, depth)
             return
         }
         if f.expr = null or f.expr.length = 0
@@ -1212,6 +1429,50 @@ define CppEmitter
         out.append "`ind`for (`t` `k` = 0, `k`_end = `this.operand(end)`; (`s`)`k` < (`s`)`k`_end; `k`++)\n"
         out.append "`ind`{\n"
         out.append "`ind`    `t` `CppEmitter.local_name(f.identifier)` = `k`;\n"
+        this.body(out, f.body, depth + 1, false)
+        out.append "`ind`}\n"
+    }
+
+    ; `for x in c`: get_iterator (with the frame, Emitter.emit_for_iterator#),
+    ; then next until it answers null; x is the element's value for a
+    ; scalar, else its address.
+    procedure iterator_loop(mutable this, mutable out: ref[StringBuilder], f: PlannedFor, depth: size_t)
+    {
+        let ind CppEmitter.indent_of(depth)
+        if f.expr = null or f.expr.length = 0
+            return
+        let coll (*f.expr)[0]
+        let get_iter this.declared_name(f.get_iterator_method)
+        let next this.declared_name(f.next_method)
+        if get_iter.get_length() = 0 or next.get_length() = 0
+        {
+            out.append "#error \"for: iterator `f.get_iterator_method` or `f.next_method` not declared\"\n"
+            this.errors := this.errors + 1
+            return
+        }
+        let it this.temp()
+        let et CppEmitter.ctype(f.element_type)
+        var source this.operand(coll)
+        if CppEmitter.is_pointer_type(this.cpp_type(coll))
+            source := "*(`source`)"
+        else if CppEmitter.is_lvalue(coll) = false
+            source := "scaly_lvalue(`source`)"
+        var first String()
+        if this.kinds_of(f.get_iterator_method).starts_with("F")
+            first := "`this.frame_of_caller()`, "
+        out.append "`ind`for (auto `it` = `get_iter`(`first``source`);;)\n`ind`{\n"
+        out.append "`ind`    `et`* `it`_at = (`et`*)`next`(`it`);\n"
+        out.append "`ind`    if (`it`_at == nullptr)\n`ind`        break;\n"
+        let x CppEmitter.local_name(f.identifier)
+        this.locals.add(String(f.identifier))
+        if f.element_is_scalar
+            out.append "`ind`    `et` `x` = *`it`_at;\n"
+        else
+        {
+            out.append "`ind`    `et`* `x` = `it`_at;\n"
+            if CppEmitter.is_record(f.element_type)
+                this.held.add(String(f.identifier))
+        }
         this.body(out, f.body, depth + 1, false)
         out.append "`ind`}\n"
     }
@@ -1268,6 +1529,36 @@ define CppEmitter
         text
     }
 
+    ; The type the C++ text of an operand has: the plan types a reference
+    ; read as its pointee where the C++ still holds the pointer.
+    procedure cpp_type(this, op: PlannedOperand) returns PlannedType
+    {
+        if op.member_access <> null and op.member_access.length > 0
+        {
+            var last op.result_type
+            for m in op.member_access
+                last := m.result_type
+            return last
+        }
+        choose op.expr
+            when v: Variable
+            {
+                if v.name = "_rp" or v.name = "rp"
+                    return op.result_type
+                if CppEmitter.contains(&this.held, v.name)
+                    return op.result_type
+                return v.variable_type
+            }
+            when c: Call
+            {
+                if c.is_intrinsic = false
+                    return c.result_type
+            }
+            else
+                0
+        op.result_type
+    }
+
     ; the type an expression has before any member hop
     function expression_type(e: PlannedExpression) returns PlannedType
     {
@@ -1293,9 +1584,22 @@ define CppEmitter
             when c: Constant
                 return CppEmitter.constant(c, result_type)
             when v: Variable
+            {
+                if v.name = "_rp" or v.name = "rp"
+                    return this.frame_of_caller()
+                if CppEmitter.contains(&this.held, v.name)
+                    return "(*`CppEmitter.local_name(v.name)`)"
                 return CppEmitter.local_name(v.name)
+            }
             when g: GlobalRef
+            {
+                let gn this.declared_name(g.mangled_name)
+                if gn.get_length() > 0
+                    return gn
                 return CppEmitter.identifier_of(g.mangled_name)
+            }
+            when bx: Box
+                return this.box(bx)
             when c: Call
                 return this.call(c)
             when t: Tuple
@@ -1453,11 +1757,39 @@ define CppEmitter
         if a.value = null
             return String()
         let inner (*a.value)
+        if CppEmitter.is_pointer_type(a.target_type) and inner.member_access = null
+        {
+            choose inner.expr
+                when c: Constant
+                {
+                    choose c.value
+                        when sc: String
+                            return "((`CppEmitter.ctype(a.target_type)`)\"`CppEmitter.escaped(sc.value)`\")"
+                        else
+                            0
+                }
+                else
+                    0
+        }
         "((`CppEmitter.ctype(a.target_type)`)(`this.operand(inner)`))"
     }
 
     ; A positional construction (no init of its arity): an aggregate.
     procedure tuple(mutable this, t: PlannedTuple) returns String
+    {
+        if t.is_region_alloc and CppEmitter.is_record(t.tuple_type)
+            return "(*`this.tuple_storage(t)`)"
+        this.tuple_value(t)
+    }
+
+    procedure tuple_storage(mutable this, t: PlannedTuple) returns String
+    {
+        let ct CppEmitter.ctype(t.tuple_type)
+        let p this.temp()
+        "({ `ct`* `p` = (`ct`*)scaly_rt_allocate(`this.page_for(t.life)`, sizeof(`ct`), alignof(`ct`)); *`p` = `this.tuple_value(t)`; `p`; })"
+    }
+
+    procedure tuple_value(mutable this, t: PlannedTuple) returns String
     {
         var sb StringBuilder()
         var count: size_t 0
@@ -1670,8 +2002,129 @@ define CppEmitter
             i := i + 1
         }
         if callee.get_length() = 0
-            callee := String(c.name)
-        "`callee`(`this.arguments(c.args, this.kinds_of(c.mangled_name))`)"
+        {
+            this.errors := this.errors + 1
+            callee := "SCALY_UNDECLARED /* `c.mangled_name` */ `c.name`"
+        }
+        var kinds this.kinds_of(c.mangled_name)
+        if kinds.starts_with("F")
+            kinds := kinds.substring(1, kinds.get_length() - 1)
+        let args this.arguments(c.args, kinds)
+        if c.requires_page_param
+        {
+            let frame this.frame_for(c.life)
+            if args.get_length() = 0
+                return "`callee`(`frame`)"
+            return "`callee`(`frame`, `args`)"
+        }
+        "`callee`(`args`)"
+    }
+
+    ; ------------------------------------------------------------------
+    ; Pages and frames (Emitter.region_alloc_life#, resolve_reference_*)
+    ; ------------------------------------------------------------------
+
+    ; The frame this routine hands on as its callee's caller page: the one
+    ; it received, else its own.
+    procedure frame_of_caller(this) returns String
+    {
+        if this.has_page
+            return String("scaly_rp")
+        String("&scaly_local.f")
+    }
+
+    ; The frame a call or a construction of that lifetime hands on: its own
+    ; for Local, a named page wrapped in a frame of its own for `^name`, else
+    ; the caller page.
+    procedure frame_for(this, life: Lifetime) returns String
+    {
+        choose life
+            when l: Local
+                return String("&scaly_local.f")
+            when r: Reference
+            {
+                if r.location = "_rp" or r.location = "rp"
+                    return this.frame_of_caller()
+                return "&scaly_lvalue(scaly_frame{`this.page_of(r.location)`, nullptr})"
+            }
+            else
+                0
+        this.frame_of_caller()
+    }
+
+    ; The page a construction of that lifetime is allocated on.
+    procedure page_for(this, life: Lifetime) returns String
+    {
+        choose life
+            when l: Local
+                return String("scaly_rt_force_frame(&scaly_local.f)")
+            when r: Reference
+                return this.page_of(r.location)
+            else
+                0
+        "scaly_rt_force_frame(`this.frame_of_caller()`)"
+    }
+
+    ; The page `^name` means: the caller page, the receiver's own, a page
+    ; variable, else a page field of the receiver.
+    procedure page_of(this, name: String) returns String
+    {
+        if name = "_rp" or name = "rp"
+            return "scaly_rt_force_frame(`this.frame_of_caller()`)"
+        if name = "this"
+            return String("scaly_rt_page_get((void*)this_)")
+        if CppEmitter.contains(&this.locals, name)
+            return "(void*)(`CppEmitter.local_name(name)`)"
+        "(void*)(this_->`CppEmitter.local_name(name)`)"
+    }
+
+    function is_region_life(life: Lifetime) returns bool
+    {
+        choose life
+            when l: Local
+                return true
+            when c: Call
+                return true
+            when r: Reference
+                return true
+            else
+                return false
+        false
+    }
+
+    ; An operand that IS a record's address on a page: a construction there.
+    ; Answers the pointer's text, or "" for any other operand.
+    procedure storage(mutable this, op: PlannedOperand) returns String
+    {
+        if op.member_access <> null and op.member_access.length > 0
+            return String()
+        if CppEmitter.is_record(op.result_type) = false
+            return String()
+        choose op.expr
+            when c: Call
+            {
+                if c.is_intrinsic = false and c.mangled_name.contains("C1E") and CppEmitter.is_region_life(c.life)
+                    return this.construction_storage(c)
+            }
+            when t: Tuple
+            {
+                if t.is_region_alloc
+                    return this.tuple_storage(t)
+            }
+            else
+                0
+        String()
+    }
+
+    ; `&^page v`: a copy of v on that page, its address.
+    procedure box(mutable this, b: PlannedBox) returns String
+    {
+        if b.value = null
+            return String("nullptr")
+        let v (*b.value)
+        let t CppEmitter.ctype(v.result_type)
+        let p this.temp()
+        "({ `t`* `p` = (`t`*)scaly_rt_allocate(`this.page_of(b.target_page)`, sizeof(`t`), alignof(`t`)); *`p` = `this.operand(v)`; `p`; })"
     }
 
     procedure kinds_of(this, mangled: String) returns String
@@ -1686,32 +2139,60 @@ define CppEmitter
         String()
     }
 
-    ; `T(args)` through an init: a temporary the init fills.
+    ; `T(args)` through an init: on a page its address (storage#, the
+    ; operand reads `*` of it), else a temporary the init fills.
     procedure construction(mutable this, c: PlannedCall) returns String
     {
-        if CppEmitter.is_pointer_type(c.result_type) or c.requires_page_param
-        {
-            this.errors := this.errors + 1
-            return "SCALY_UNTRANSLATED /* initializer on a page `c.mangled_name` */"
-        }
-        var callee String()
-        var i: size_t 0
-        while i < this.fn_mangled.length
-        {
-            if this.fn_mangled[i].equals(c.mangled_name)
-                callee := String(this.fn_names[i])
-            i := i + 1
-        }
+        if CppEmitter.is_region_life(c.life)
+            return "(*`this.construction_storage(c)`)"
         let t CppEmitter.ctype(c.result_type)
         let v this.temp()
-        let kinds this.kinds_of(c.mangled_name)
+        "({ `t` `v`{}; `this.init_call(c, v)`; `v`; })"
+    }
+
+    procedure construction_storage(mutable this, c: PlannedCall) returns String
+    {
+        var rt c.result_type
+        if CppEmitter.is_pointer_type(rt)
+            rt := CppEmitter.first_generic(rt)
+        let t CppEmitter.ctype(rt)
+        let p this.temp()
+        let deref "(*`p`)"
+        "({ `t`* `p` = (`t`*)scaly_rt_allocate(`this.page_for(c.life)`, sizeof(`t`), alignof(`t`)); *`p` = `t`{}; `this.init_call(c, deref)`; `p`; })"
+    }
+
+    ; The init on `target`: with the frame where it takes a caller page. A
+    ; generic record built from nothing is zeroed, its init not called
+    ; (Emitter.emit_constructor_call_into#).
+    procedure init_call(mutable this, c: PlannedCall, target: String) returns String
+    {
+        var callee this.declared_name(c.mangled_name)
+        var count: size_t 0
+        if c.args <> null
+            count := c.args.length
+        if count = 0 and c.requires_page_param = false and c.result_type.generics <> null and c.result_type.generics.length > 0
+            return String("(void)0")
+        if callee.get_length() = 0
+        {
+            this.errors := this.errors + 1
+            return "SCALY_UNTRANSLATED /* init `c.mangled_name` not declared */"
+        }
+        var kinds this.kinds_of(c.mangled_name)
+        if kinds.starts_with("F")
+            kinds := kinds.substring(1, kinds.get_length() - 1)
         var rest String()
         if kinds.get_length() > 0
             rest := kinds.substring(1, kinds.get_length() - 1)
         let args this.arguments(c.args, rest)
-        if args.get_length() = 0
-            return "({ `t` `v`{}; `callee`(`v`); `v`; })"
-        "({ `t` `v`{}; `callee`(`v`, `args`); `v`; })"
+        var sb StringBuilder()
+        sb.append "`callee`("
+        if c.requires_page_param
+            sb.append "`this.frame_for(c.life)`, "
+        sb.append(target)
+        if args.get_length() > 0
+            sb.append ", `args`"
+        sb.append(")" as char)
+        sb.to_string()
     }
 
     ; The arguments of a call, each as its parameter takes it (`kinds`, from
@@ -1729,12 +2210,13 @@ define CppEmitter
                 sb.append ", "
             first := false
             let text this.operand(a)
+            let at this.cpp_type(a)
             var kind: u8 0x56      ; V
             if k < kinds.get_length()
                 kind := kinds.get(k)
-            if kind = 0x52 and CppEmitter.is_pointer_type(a.result_type)       ; R from a pointer
+            if kind = 0x52 and CppEmitter.is_pointer_type(at)       ; R from a pointer
                 sb.append "*(`text`)"
-            else if kind = 0x50 and CppEmitter.is_record(a.result_type)        ; P from a record
+            else if kind = 0x50 and CppEmitter.is_record(at)        ; P from a record
                 sb.append "&(`text`)"
             else if CppEmitter.is_record(a.result_type) and CppEmitter.is_lvalue(a) = false
                 sb.append "scaly_lvalue(`text`)"

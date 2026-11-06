@@ -1345,6 +1345,7 @@ define cli
             }
             var cpp CppEmitter()
             cpp.skip_tests := opts.no_tests
+            cpp.no_prelude := opts.no_prelude and opts.input_file.ends_with("/scaly.scaly") = false
             if cpp.emit(plan, opts.output_file) = false
                 return 5
             return 0
