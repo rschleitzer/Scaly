@@ -1346,6 +1346,15 @@ define cli
             var cpp CppEmitter()
             cpp.skip_tests := opts.no_tests
             cpp.no_prelude := opts.no_prelude and opts.input_file.ends_with("/scaly.scaly") = false
+            ; the standard library's records go beside its C++ for the programs
+            if opts.input_file.ends_with("/scaly.scaly")
+            {
+                let slash opts.output_file.last_index_of(47)
+                if slash > 0
+                    cpp.types_header := "`opts.output_file.substring(0, slash as size_t)`/scaly_types.h"
+                else
+                    cpp.types_header := String("scaly_types.h")
+            }
             if cpp.emit(plan, opts.output_file) = false
                 return 5
             return 0
