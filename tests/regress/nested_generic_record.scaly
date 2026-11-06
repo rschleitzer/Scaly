@@ -1,0 +1,73 @@
+; Regression (2026-11-06): a record or union declared inside a GENERIC
+; record that names the outer's type parameter (`define Tally(n: T)` in
+; `define Shell[T]`) was ONE record for every instance -- laid out with T a
+; pointer placeholder, `{ ptr }`, with one `get` -- so `Shell[int]` and
+; `Shell[bool]` read garbage through it, at rc 0. It belongs to the instance
+; now: registered with the outer's parameters before its own
+; (Planner.with_outer_parameters#), `Tally` written without arguments is
+; `Tally[T]` (outer_arguments#), and `Shell[int]` has its `Tally[int]`. A
+; union, a record with parameters of its own, and a record two levels down.
+; Expected: PASS
+
+define Shell[T](item: T)
+{
+    define Tally(n: T)
+    {
+        function get(this) returns T
+            n
+    }
+
+    define Slot union (Full: T, Empty)
+
+    define Pair[U](a: T, b: U)
+    {
+        function first(this) returns T
+            a
+        function second(this) returns U
+            b
+    }
+
+    define Box(v: T)
+    {
+        define Inner(w: T)
+        {
+            function get(this) returns T
+                w
+        }
+        function inner(this) returns T
+            Inner(v).get()
+    }
+
+    function first(this) returns T
+        Tally(item).get()
+
+    function slot(this) returns Slot
+        Slot.Full(item)
+
+    function full(this) returns T
+        choose this.slot()
+            when f: Slot.Full
+                f
+            else
+                item
+
+    function pair(this) returns int
+        Pair[int](item, 5).second()
+
+    function same(this) returns T
+        Pair[bool](item, true).first()
+
+    function deep(this) returns T
+        Box(item).inner()
+
+    function made(this) returns Box
+        Box(item)
+}
+
+let a Shell[int](41)
+let b Shell[String](String("abc"))
+let c Shell[bool](true)
+if a.first() = 41 and b.first().length() = 3 and c.first() and a.full() = 41 and b.full().length() = 3 and a.pair() = 5 and a.same() = 41 and b.same().length() = 3 and a.deep() = 41 and b.deep().length() = 3 and a.made().v = 41
+    print("PASS")
+else
+    print("FAIL")

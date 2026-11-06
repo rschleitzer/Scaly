@@ -1589,6 +1589,10 @@ define Planner
         ; whether any name is met at two paths (ns_multi_names): the one
         ; question lookup_concept# asks before it answers as it always did
         var ns_multi_any: bool
+        ; whether a record or union was registered inside a generic record
+        ; (with_outer_parameters#): the one question plan_type# asks before
+        ; it fills in the outer's arguments (outer_arguments#)
+        var outer_generics_any: bool
         ; SCALYC_NS_PROBE=1: what a namespace path would move (ns_probe#);
         ; asked once in plan_program#, an init may not read the environment
         var ns_probe_on: bool
@@ -1820,6 +1824,7 @@ define Planner
             planning_ns_path := String^this("")
             body_ns_path := String^this("")
             ns_multi_any := false
+            outer_generics_any := false
             ns_probe_on := false
             registering_file := String^this("")
             registering_path := String^this("")
@@ -23325,6 +23330,16 @@ define Planner
             let head t.name.get 0
             if head <> null and (*head) = "()"
                 return this.plan_tuple_type(t)
+            ; `Tally` in `Shell[T]` is `Tally[T]` (with_outer_parameters#)
+            if outer_generics_any
+            {
+                let with_outer this.outer_arguments(t)
+                if with_outer <> null
+                {
+                    var filled: Type *with_outer
+                    return this.plan_type(filled)
+                }
+            }
             this.report_unknown_page_name(t)
             var mt: Type t
             if has_type_aliases and this.model_type_has_alias(t, 0)
@@ -56516,10 +56531,12 @@ define Planner
             ; refuses (2026-10-29, found by the reference's Run buttons). The
             ; flag tells the Emitter (template_names).
             var is_template false
+            var is_generic_record false
             let c_for_gens_ref this.lookup_concept(name)
             if c_for_gens_ref <> null
             {
                 let c_for_gens (*c_for_gens_ref)
+                is_generic_record := c_for_gens.parameters.length > 0
                 var pi: size_t 0
                 while pi < c_for_gens.parameters.length
                 {
@@ -56595,9 +56612,10 @@ define Planner
                             ; record_structure#): before, its routines were
                             ; never planned, and a call of one answered 0 at
                             ; rc 0 -- `Piece(k).get()` in `define Outer`.
-                            ; Not in a generic record's TEMPLATE plan: its
-                            ; instances plan it, each with its arguments.
-                            if is_template = false
+                            ; Not in a GENERIC record: there it is generic in
+                            ; the record's parameters (with_outer_parameters#)
+                            ; and planned per instance where it is used.
+                            if is_template = false and is_generic_record = false
                             {
                                 let inner_planned this.plan_concept(inner)
                             }
@@ -57720,7 +57738,7 @@ define Planner
                             choose mem
                                 when inner: Concept
                                 {
-                                    this.register_concept_recursive(inner)
+                                    this.register_concept_recursive(this.with_outer_parameters(c, inner))
                                     0
                                 }
                                 else
@@ -57744,7 +57762,7 @@ define Planner
                             choose mem
                                 when inner: Concept
                                 {
-                                    this.register_concept_recursive(inner)
+                                    this.register_concept_recursive(this.with_outer_parameters(c, inner))
                                     0
                                 }
                                 else
@@ -57758,6 +57776,121 @@ define Planner
                 else
                     0
             this.registering_ns_path := saved_ns_path
+        }
+
+        ; with_outer_parameters#: a record or union declared inside a GENERIC
+        ; record or union belongs to its instance -- `Tally` in `Shell[T]` is
+        ; `Tally[T]`, `Shell[int]`'s with an `int` --, so it is registered with
+        ; the outer's parameters before its own (outer_arguments# fills them in
+        ; where it is written without). Before 2026-11-06 every instance shared
+        ; ONE `Tally`, laid out with T a pointer placeholder, and one routine:
+        ; garbage at rc 0. Any other member, and one of a record without
+        ; parameters, is registered as it stands.
+        procedure with_outer_parameters(mutable this: Planner, outer: Concept, inner: Concept) returns Concept
+        {
+            if outer.parameters.length = 0
+                return inner
+            var is_record false
+            choose inner.definition
+                when s: Structure
+                    is_record := true
+                when u: scalyc.compiler.Model.Union
+                    is_record := true
+                else
+                    0
+            if is_record = false
+                return inner
+            var params Array[GenericParameter]()
+            var i: size_t 0
+            while i < outer.parameters.length
+            {
+                params.add(outer.parameters[i])
+                i := i + 1
+            }
+            i := 0
+            while i < inner.parameters.length
+            {
+                params.add(inner.parameters[i])
+                i := i + 1
+            }
+            outer_generics_any := true
+            Concept(inner.span, inner.name, Vector[GenericParameter]^this(params), inner.attributes, inner.definition)
+        }
+
+        ; outer_parameter_count#: how many of the parameters of the concept at
+        ; `at` it took from the generic record or union it is declared in
+        ; (with_outer_parameters#) -- that concept's own count, by the path
+        function outer_parameter_count(this: Planner, at: size_t) returns size_t
+        {
+            if at >= concept_ns_paths.length or at >= concepts.length
+                return 0
+            let path concept_ns_paths[at]
+            let dot path.last_index_of(46)
+            if dot < 0
+                return 0
+            let parent_at ns_path_index.table.lookup(path.substring(0, dot as size_t))
+            if parent_at < 0 or (parent_at as size_t) >= concepts.length
+                return 0
+            let parent concepts[parent_at as size_t].value
+            var counted 0
+            choose parent.definition
+                when s: Structure
+                    counted := 1
+                when u: scalyc.compiler.Model.Union
+                    counted := 1
+                else
+                    0
+            if counted = 0
+                return 0
+            let own concepts[at].value
+            if own.parameters.length < parent.parameters.length
+                return 0
+            parent.parameters.length
+        }
+
+        ; outer_arguments#: `Tally` written without arguments where it is
+        ; generic in the record it is declared in -- `Tally(item)` in a routine
+        ; of `Shell[T]` -- is `Tally[T]`, the outer's parameters as written
+        ; arguments, which the instance being planned substitutes (`Tally[int]`
+        ; in `Shell[int]`); a written list of its OWN parameters gets them in
+        ; front. null where the name is no such record.
+        procedure outer_arguments(mutable this: Planner, t: Type) returns ref[Type]?
+        {
+            if t.name.length <> 1
+                return null
+            let at this.answered_concept_at(t.name[0])
+            if at < 0
+                return null
+            let n_outer this.outer_parameter_count(at as size_t)
+            if n_outer = 0
+                return null
+            let c concepts[at as size_t].value
+            var written: size_t 0
+            if t.generics <> null
+                written := t.generics.length
+            if written + n_outer <> c.parameters.length
+                return null
+            var args Array[Type]()
+            var i: size_t 0
+            while i < n_outer
+            {
+                var pname Vector[String]^this(1)
+                pname.put(0, String^this(c.parameters[i].name))
+                args.add(Type(t.span, pname, null, t.lifetime))
+                i := i + 1
+            }
+            if t.generics <> null
+            {
+                let own (*t.generics)
+                i := 0
+                while i < own.length
+                {
+                    args.add(own[i])
+                    i := i + 1
+                }
+            }
+            let gens Vector[Type]^this(args)
+            Type^this(t.span, t.name, &gens, t.lifetime)
         }
 
         ; extend_ns_path#: the namespace path one `define` further in; a
