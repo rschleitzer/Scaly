@@ -13,7 +13,8 @@
 # The programs are downloaded ready to run for
 #   macOS 26 (Apple silicon), macOS 15 and newer (Intel),
 #   Linux with glibc 2.35 or newer -- RHEL 9, Debian 12, Ubuntu 22.04 and
-#   later (arm64, x86-64-v2)
+#   later, NixOS too: the programs are given the C library's loader there
+#   (arm64, x86-64-v2)
 # and need nothing but a C compiler, which links the programs you build.
 # Where there is none this script FETCHES it (2026-10-04) -- Apple's Command
 # Line Tools on macOS, clang through apt on Ubuntu -- and all that asks of you
@@ -304,6 +305,45 @@ printf 'print("Hello, World!")\n' > "$WORK/check/hello.scaly"
 #    of libexec/ and lib/. They are taken only if they START here — an older
 #    macOS or C library than they were built for sends us to the seed instead.
 # ---------------------------------------------------------------------------
+# NixOS (and Guix) keep the C library in a store, and with it its loader: the
+# path a Linux program names for it (/lib/ld-linux-aarch64.so.1,
+# /lib64/ld-linux-x86-64.so.2) is not there, and the programs do not start.
+# Unless nix-ld puts it there, the programs are given the loader the
+# system's own programs use, by patchelf -- the one on PATH, else the one Nix
+# fetches -- and a garbage-collector root keeps that C library while the
+# installation lives (see step 8). Anything missing: nothing is changed, and
+# the probe below sends us to the seed as before.
+LOADER_STORE=""
+fit_loader() {
+  [ "$OS" = Linux ] || return 0
+  case "$(uname -m)" in
+    x86_64)  want=/lib64/ld-linux-x86-64.so.2 ;;
+    aarch64) want=/lib/ld-linux-aarch64.so.1 ;;
+    *) return 0 ;;
+  esac
+  [ -e "$want" ] && return 0
+  pe=""
+  if have patchelf; then
+    pe=patchelf
+  elif have nix; then
+    say "this system keeps its C library in the Nix store; fetching patchelf with Nix"
+    out="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths nixpkgs#patchelf 2>/dev/null | head -1)" || out=""
+    if [ -z "$out" ] && have nix-build; then
+      out="$(nix-build '<nixpkgs>' -A patchelf --no-out-link 2>/dev/null | head -1)" || out=""
+    fi
+    [ -x "$out/bin/patchelf" ] && pe="$out/bin/patchelf"
+  fi
+  [ -n "$pe" ] || { say "the programs name $want, which is not there, and there is no patchelf"; return 0; }
+  ref="$(readlink -f "$(command -v env)" 2>/dev/null)" || return 0
+  ld="$("$pe" --print-interpreter "$ref" 2>/dev/null)" || return 0
+  [ -n "$ld" ] && [ -e "$ld" ] || return 0
+  for p in scalyc scaly scalyls; do
+    "$pe" --set-interpreter "$ld" "$NEW/libexec/$p" 2>/dev/null || return 0
+  done
+  case "$ld" in /nix/store/*) LOADER_STORE="$(printf '%s\n' "$ld" | sed 's|^\(/nix/store/[^/]*\).*|\1|')" ;; esac
+  say "the programs load the C library from $ld"
+}
+
 READY=0
 # why the seed, for the error that says what it needs
 SEED_REASON="SCALY_FROM_SEED=1 asks for it"
@@ -312,6 +352,7 @@ if [ "${SCALY_FROM_SEED:-0}" != "1" ]; then
   if fetch "$BASE_URL/downloads/$BIN_TARBALL" "$WORK/$BIN_TARBALL"; then
     verify "$WORK/$BIN_TARBALL"
     if tar -xzf "$WORK/$BIN_TARBALL" -C "$NEW" 2>/dev/null \
+       && fit_loader \
        && SCALY_HOME="$NEW" "$NEW/libexec/scalyc" -S -o "$WORK/check/probe.ll" "$WORK/check/hello.scaly" >/dev/null 2>&1; then
       READY=1
       say "installed the programs for $SYSTEM"
@@ -467,6 +508,13 @@ if [ -f "$PREFIX/seed/scalyc.ll" ]; then
 fi
 rm -rf "$TOOLCHAIN"
 mv "$NEW" "$TOOLCHAIN"
+# the C library the programs were given (step 3) stays while ~/.scaly does:
+# a root beside the toolchain, which rm -rf ~/.scaly takes away with it
+rm -f "$PREFIX/nix-loader"
+if [ -n "$LOADER_STORE" ] && have nix-store; then
+  nix-store --add-root "$PREFIX/nix-loader" --indirect --realise "$LOADER_STORE" >/dev/null 2>&1 \
+    || say "NOTE: could not keep $LOADER_STORE from Nix's garbage collector; after a collection, run this installer again"
+fi
 
 BINDIR="$PREFIX/bin"
 mkdir -p "$BINDIR"
@@ -516,6 +564,9 @@ if [ -z "$CC" ]; then
   say "NOTE: no C compiler found. scaly run, scaly test and the REPL work;"
   if [ "$OS" = "Darwin" ]; then
     say "      scaly build needs one to link:  xcode-select --install"
+  elif [ -e /etc/NIXOS ]; then
+    say "      scaly build needs one to link: pkgs.clang in environment.systemPackages"
+    say "      of /etc/nixos/configuration.nix, or for one shell:  nix-shell -p clang"
   else
     say "      scaly build needs one to link:  sudo apt install clang"
   fi

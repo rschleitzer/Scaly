@@ -35,8 +35,8 @@
         <listitem><para>macOS 26 on Apple silicon, macOS 15 and newer on
           Intel</para></listitem>
         <listitem><para>Linux with glibc 2.35 or newer (RHEL 9,
-          Debian 12, Ubuntu 22.04 and later, Fedora, openSUSE, Arch), on arm64
-          and x86-64</para></listitem>
+          Debian 12, Ubuntu 22.04 and later, Fedora, openSUSE, Arch, NixOS), on
+          arm64 and x86-64</para></listitem>
         <listitem><para>Windows 10 and 11, on x64 and arm64</para></listitem>
       </itemizedlist>
       <para>Building a program needs a C compiler, which links it: Apple's
