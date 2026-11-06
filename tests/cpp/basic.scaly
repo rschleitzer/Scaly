@@ -1,0 +1,118 @@
+; no-prelude
+; The first slice of the C++ emitter: a program without the prelude.
+; tests/cpp/run.sh builds it through LLVM and through C++ and compares.
+function putchar(c: i32) returns i32 extern
+
+define Point
+(
+    var x: int
+    var y: int
+)
+
+procedure put_digit(d: int)
+{
+    putchar((48 + d) as i32)
+}
+
+procedure put_number(n: int)
+{
+    if n < 0
+    {
+        putchar(45)
+        put_number(0 - n)
+        return
+    }
+    if n >= 10
+        put_number(n / 10)
+    put_digit(n % 10)
+}
+
+procedure line()
+{
+    putchar(10)
+}
+
+function fib(n: int) returns int
+{
+    if n < 2
+        return n
+    fib(n - 1) + fib(n - 2)
+}
+
+function sum_to(n: int) returns int
+{
+    var total 0
+    var i 0
+    while i <= n
+    {
+        total := total + i
+        i := i + 1
+    }
+    total
+}
+
+function manhattan(p: Point) returns int
+{
+    var d 0
+    if p.x < 0
+        d := 0 - p.x
+    else
+        d := p.x
+    if p.y < 0
+        d := d - p.y
+    else
+        d := d + p.y
+    d
+}
+
+procedure shift(mutable p: Point, by: int)
+{
+    p.x := p.x + by
+    p.y := p.y - by
+}
+
+function narrow(a: u8, b: u8) returns u8
+{
+    a + b
+}
+
+function mixed(a: i32, b: int) returns int
+{
+    a + b
+}
+
+put_number(fib(20))
+line()
+put_number(sum_to(100))
+line()
+var p Point(3, 0 - 4)
+put_number(manhattan(p))
+line()
+shift(p, 5)
+put_number(p.x)
+putchar(32)
+put_number(p.y)
+line()
+put_number(narrow(200, 100) as int)
+line()
+put_number(mixed(0 - 7 as i32, 10))
+line()
+var k 0
+for i in 5
+    k := k + i * i
+put_number(k)
+line()
+var q: int 1
+repeat
+{
+    q := q * 3
+    if q > 1000
+        break
+}
+put_number(q)
+line()
+let u: u32 4000000000
+put_number((u / 3) as int)
+line()
+put_number((u >> 30) as int)
+line()

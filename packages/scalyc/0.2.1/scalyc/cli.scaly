@@ -40,6 +40,7 @@ use scalyc.compiler.Interface.InterfaceFact
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Emitter
 use scalyc.compiler.Emitter.EmitterConfig
+use scalyc.compiler.CppEmitter.CppEmitter
 use scalyc.compiler.lexer.*
 use scalyc.compiler.parser.*
 use scalyc.compiler.Syntax.*
@@ -90,6 +91,7 @@ define Options
     target_cpu: String              ; -mcpu=<name>|native: the CPU codegen tunes for (empty = generic)
     opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
     portable_simd: bool             ; --portable-simd: no target form for a SIMD operation (the seed)
+    emit_cpp: bool                  ; --emit-cpp: the plan written as C++ (compiler/CppEmitter.scaly, ROADMAP-trust)
     library: bool                   ; a package object for the build cache (tool.package_objects)
     tool_build: bool                ; `scaly build`: link against the cached package objects
     release: bool                   ; `scaly build --release`: the whole program as one module at -O2
@@ -146,6 +148,7 @@ define Options
         target_cpu := String()
         opt_level := 0
         portable_simd := false
+        emit_cpp := false
         library := false
         tool_build := false
         release := false
@@ -372,6 +375,13 @@ define cli
                     {
                         opts.error_message := "--target requires a triple"
                     }
+                }
+                else if arg = "--emit-cpp"
+                {
+                    ; The plan written as C++ instead of LLVM IR, into -o: the
+                    ; compiler as a program any C++ compiler builds, which
+                    ; emits the seed again (compiler/CppEmitter.scaly).
+                    opts.emit_cpp := true
                 }
                 else if arg = "--portable-simd"
                 {
@@ -1321,6 +1331,23 @@ define cli
                 return prog_emitter.wasm_run(plan, program_name, &prog_dep_objs, opts.program_argc, opts.program_argv) as int
             let prog_rc prog_emitter.jit_run(plan, program_name, "main", &prog_dep_objs, &prog_dep_syms, opts.program_argc, opts.program_argv, null, null)
             return prog_rc as int
+        }
+
+        ; ================================================================
+        ; --emit-cpp: the plan as C++ instead of LLVM IR
+        ; ================================================================
+        if opts.emit_cpp
+        {
+            if opts.output_file.get_length() = 0
+            {
+                Console.println "Error: --emit-cpp requires -o <file>"
+                return 6
+            }
+            var cpp CppEmitter()
+            cpp.skip_tests := opts.no_tests
+            if cpp.emit(plan, opts.output_file) = false
+                return 5
+            return 0
         }
 
         ; ================================================================

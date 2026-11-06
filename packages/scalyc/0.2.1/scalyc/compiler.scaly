@@ -21,6 +21,7 @@ define compiler
     module LLVM
     module Parts  ; the code generation of a large module in parts, side by side
     module Emitter
+    module CppEmitter  ; --emit-cpp: the plan as readable C++ (ROADMAP-trust)
 
     procedure test() returns int mutable modeler_error_count
     {
