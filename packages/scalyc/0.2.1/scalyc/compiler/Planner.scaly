@@ -18090,11 +18090,20 @@ define Planner
                 if dot_idx > 0
                 {
                     let dot_pos dot_idx as size_t
-                    let prefix fn_name.substring(0, dot_pos)
+                    var prefix: String fn_name.substring(0, dot_pos)
                     let suffix fn_name.substring(
                         dot_pos + 1,
                         fn_name.get_length() - dot_pos - 1
                     )
+                    ; `A.Shape.Line(x)`: the union by its namespace path, its
+                    ; last name looked up where it is declared
+                    let saved_scope planning_ns_path
+                    let q_scope this.qualified_concept_scope(prefix)
+                    if q_scope.get_length() > 0
+                    {
+                        planning_ns_path := String^this(q_scope)
+                        prefix := Planner.last_name_segment(prefix)
+                    }
                     let union_ref this.lookup_concept(prefix)
                     if union_ref <> null
                     {
@@ -18141,6 +18150,7 @@ define Planner
                             }
                         }
                     }
+                    planning_ns_path := saved_scope
                 }
             }
             var kind 0
@@ -18617,6 +18627,28 @@ define Planner
         ; A union's variant applied to a tuple, of collapse_application#: the
         ; variant construction, its payload the tuple's one component.
         procedure collapse_variant(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable second: PlannedOperand,
+            mutable ctor_union_type: PlannedType,
+            ctor_variant_name: String,
+            ctor_variant_tag: size_t
+        ) returns PlannedOperand
+        {
+            ; the union is the one its type names, where its name is met at
+            ; two namespace paths (`A.Shape.Line(4)` anywhere), as for a
+            ; construction (collapse_construction#)
+            if this.type_name_is_multi(ctor_union_type) = false
+                return this.collapse_variant_in(ops, first, second, ctor_union_type, ctor_variant_name, ctor_variant_tag)
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(Planner.ns_path_in(Planner.pointee_mangled(ctor_union_type)))
+            let answer this.collapse_variant_in(ops, first, second, ctor_union_type, ctor_variant_name, ctor_variant_tag)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        procedure collapse_variant_in(
             mutable this: Planner,
             mutable ops: Vector[PlannedOperand],
             mutable first: PlannedOperand,
@@ -23569,9 +23601,19 @@ define Planner
                     let vc_total canonical_name.get_length()
                     if vc_total > vc_start
                     {
-                        let vc_prefix canonical_name.substring(0, vc_dot as size_t)
+                        var vc_prefix: String canonical_name.substring(0, vc_dot as size_t)
                         let vc_suffix canonical_name.substring(vc_start, vc_total - vc_start)
+                        ; `A.Shape.Line`: the union by its namespace path, asked
+                        ; where it is declared (qualified_concept_scope#)
+                        let vc_saved_scope planning_ns_path
+                        let vc_scope this.qualified_concept_scope(vc_prefix)
+                        if vc_scope.get_length() > 0
+                        {
+                            planning_ns_path := String^this(vc_scope)
+                            vc_prefix := Planner.last_name_segment(vc_prefix)
+                        }
                         let vc_union_ref this.lookup_concept(vc_prefix)
+                        var vc_keep false
                         if vc_union_ref <> null
                         {
                             let vc_uconc (*vc_union_ref)
@@ -23585,9 +23627,12 @@ define Planner
                             {
                                 let vc_tag this.lookup_variant_tag(vc_prefix, vc_suffix)
                                 if vc_tag >= 0
-                                    return after_subst
+                                    vc_keep := true
                             }
                         }
+                        planning_ns_path := vc_saved_scope
+                        if vc_keep
+                            return after_subst
                     }
                 }
             }
@@ -27336,6 +27381,14 @@ define Planner
                     variant_name := (*last_ptr)
             }
 
+            ; the variant of the union the subject's type names, where its
+            ; name is met at two namespace paths (`when l: A.Shape.Line`
+            ; outside A answered B.Shape's Line), as for a construction
+            ; (collapse_construction#); the arm's body is planned where it
+            ; stands
+            let when_saved_scope planning_ns_path
+            if Planner.is_unit_type(union_type) = false and this.type_name_is_multi(union_type)
+                planning_ns_path := String^this(Planner.ns_path_in(Planner.pointee_mangled(union_type)))
             if Planner.is_unit_type(union_type) = false
             {
                 ; s184: bind the union's generic parameters to the
@@ -27417,6 +27470,7 @@ define Planner
                     }
                 }
             }
+            planning_ns_path := when_saved_scope
 
             ; s143: throws-call synthetic Error/Success variant assignment.
             ; Mirrors stage-0 Planner.cpp:11363-11382. When the surrounding
@@ -29151,6 +29205,20 @@ define Planner
             }
             else
             {
+                if t.name.length > 2
+                {
+                    ; `A.Shape.Dot`: the union by its namespace path
+                    ; (qualified_concept_scope#), asked where it is declared
+                    let written Planner.join_dotted_prefix(t.name, t.name.length - 1)
+                    let q_scope this.qualified_concept_scope(written)
+                    if q_scope.get_length() = 0
+                        return null
+                    let saved_scope planning_ns_path
+                    planning_ns_path := String^this(q_scope)
+                    let answer this.unit_variant_operand(Planner.last_name_segment(written), t.name[t.name.length - 1], loc)
+                    planning_ns_path := saved_scope
+                    return answer
+                }
                 if t.name.length <> 2
                     return null
                 let u_ptr t.name.get 0
@@ -29164,6 +29232,13 @@ define Planner
                 if this.lookup_local_binding(union_name) <> null
                     return null
             }
+            this.unit_variant_operand(union_name, variant_name, loc)
+        }
+
+        ; unit_variant_operand#: the value of the unit variant `variant_name`
+        ; of the union `union_name`, or null where it is none
+        procedure unit_variant_operand(mutable this: Planner, union_name: String, variant_name: String, loc: Span) returns ref[PlannedOperand]?
+        {
             let uconc_ref this.lookup_concept(union_name)
             if uconc_ref = null
                 return null
@@ -57733,6 +57808,39 @@ define Planner
                 return (0 - 1) as i64
             if ns_multi_names.table.lookup(segs[segs.length - 1]) < 0
                 return (0 - 1) as i64
+            this.search_ns_path(written)
+        }
+
+        ; qualified_concept_scope#: for a concept written with its namespace
+        ; path (`A.Shape` in `A.Shape.Line(4)`), which the concept table does
+        ; not know by that name, the path of the concept it names -- the
+        ; scope its last name is then looked up in --; "" where the name is
+        ; no such path. A record so written is shortened to its last name by
+        ; plan_type#; a union's VARIANT ends the name, so that never reached
+        ; the union (`function not found: A.Shape.Line`). The WHOLE qualifier
+        ; must be the path, never a tail of it: `scalyc.compiler.Model.Tuple`
+        ; is a module path and the record Tuple, not the variant Tuple of the
+        ; union `Model` that tail names.
+        procedure qualified_concept_scope(mutable this: Planner, written: String) returns String
+        {
+            if written.index_of(46) < 0 or this.lookup_concept(written) <> null
+                return String("")
+            let at this.search_ns_path(written)
+            if at < 0 or (at as size_t) >= concept_ns_paths.length
+                return String("")
+            let path concept_ns_paths[at as size_t]
+            if path.equals(written) = false and path.ends_with(".`written`") = false
+                return String("")
+            String^this(path)
+        }
+
+        ; search_ns_path#: the concept a qualifier as WRITTEN here names by
+        ; its namespace path, for any name (resolve_ns_path#'s search)
+        procedure search_ns_path(mutable this: Planner, written: String) returns i64
+        {
+            let segs Planner.split_dotted(written)
+            if segs.length = 0
+                return (0 - 1) as i64
             var k: size_t 0
             while k < segs.length
             {
@@ -64111,6 +64219,21 @@ define Planner
             if p_ptr <> null
                 sb.append((*p_ptr))
 
+            i := i + 1
+        }
+        sb.to_string()
+    }
+
+    ; the first `count` names of `parts`, dotted (`A.Shape` of A.Shape.Dot)
+    function join_dotted_prefix(parts: Vector[String], count: size_t) returns String
+    {
+        var sb StringBuilder()
+        var i: size_t 0
+        while i < count and i < parts.length
+        {
+            if i > 0
+                sb.append("." as char)
+            sb.append(parts[i])
             i := i + 1
         }
         sb.to_string()

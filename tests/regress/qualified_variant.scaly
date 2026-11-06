@@ -1,0 +1,75 @@
+; Regression (2026-11-06): a union variant written with the union's
+; namespace path, `A.Shape.Line(7)` outside `A`, was `function not found:
+; A.Shape.Line` -- the concept table knows a union by its last name, and a
+; record so written is shortened to that (`A.Rec(3)`), but here the VARIANT
+; ends the name, so the union was asked as `A.Shape` and never found. It is
+; found by its namespace path now (Planner.qualified_concept_scope#), where
+; the union's name is met at one path and where it is met at two, with a
+; variant named like a record, and a union two namespaces deep.
+; Expected: PASS
+
+define A
+{
+    define Shape union (Line: int, Dot)
+
+    function inside() returns int
+        choose Shape.Line(4)
+            when l: Shape.Line
+                l
+            else
+                0
+}
+
+; the same union name at another path, the variants in another order
+define B
+{
+    define Shape union (Dot, Line: String)
+}
+
+; a variant named like a record
+define Mark(m: int)
+
+define C
+{
+    define Tag union (Mark: int, None)
+
+    define D
+    {
+        define Deep union (Leaf: int, Empty)
+    }
+}
+
+function a_line(s: A.Shape) returns int
+    choose s
+        when l: A.Shape.Line
+            l
+        else
+            0
+
+function b_line(s: B.Shape) returns int
+    choose s
+        when l: B.Shape.Line
+            l.length() as int
+        else
+            0
+
+function tag(t: C.Tag) returns int
+    choose t
+        when m: C.Tag.Mark
+            m
+        else
+            0
+
+function deep(d: C.D.Deep) returns int
+    choose d
+        when l: C.D.Deep.Leaf
+            l
+        else
+            0
+
+let typed: A.Shape A.Shape.Line(5)
+let b B.Shape.Line(String("three"))
+if A.inside() = 4 and a_line(A.Shape.Line(7)) = 7 and a_line(typed) = 5 and b_line(b) = 5 and b_line(B.Shape.Dot) = 0 and tag(C.Tag.Mark(11)) = 11 and Mark(2).m = 2 and deep(C.D.Deep.Leaf(13)) = 13
+    print("PASS")
+else
+    print("FAIL")
