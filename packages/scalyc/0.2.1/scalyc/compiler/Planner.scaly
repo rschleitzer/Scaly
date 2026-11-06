@@ -23527,9 +23527,10 @@ define Planner
             ; `A.Rec` where `Rec` is met at two namespace paths: the written
             ; qualifier says which, and the type is planned as `Rec` written
             ; inside `A.Rec` -- what the shortening below to the last name
-            ; would otherwise leave to the scope being planned
-            ;
-            if ns_multi_any and canonical_name.index_of(46) >= 0 and this.has_concept(canonical_name) = false
+            ; would otherwise leave to the scope being planned. Only a
+            ; qualifier WRITTEN (more than one name in the model): the inner
+            ; call hands one name, and nothing may pin again
+            if ns_multi_any and mt.name.length > 1 and canonical_name.index_of(46) >= 0 and this.has_concept(canonical_name) = false
             {
                 let pinned this.resolve_ns_path(canonical_name)
                 if pinned >= 0 and (pinned as size_t) < concept_ns_paths.length
@@ -56509,6 +56510,22 @@ define Planner
                         when o: Operator
                         {
                             planned_operators.add(this.plan_operator(o, parent_ref))
+                            0
+                        }
+                        when inner: Concept
+                        {
+                            ; a record or union declared INSIDE this one is
+                            ; planned as a namespace plans its own (its plan
+                            ; is recorded where the emitter takes it from,
+                            ; record_structure#): before, its routines were
+                            ; never planned, and a call of one answered 0 at
+                            ; rc 0 -- `Piece(k).get()` in `define Outer`.
+                            ; Not in a generic record's TEMPLATE plan: its
+                            ; instances plan it, each with its arguments.
+                            if is_template = false
+                            {
+                                let inner_planned this.plan_concept(inner)
+                            }
                             0
                         }
                         else

@@ -5998,11 +5998,30 @@ define Emitter
                 if mangled.get_length() > end and mangled.substring(3, t.get_length()).equals(t)
                 {
                     let c mangled.get end
-                    if c >= ("0" as char) and c <= ("9" as char)
+                    if c >= ("0" as char) and c <= ("9" as char) and Emitter.one_name_then_end(mangled, end)
                         return true
                 }
             }
             false
+        }
+
+        ; one_name_then_end#: whether the mangled name holds exactly ONE
+        ; source name at `at` and then the `E` that closes the nested name --
+        ; a routine of the concept itself (`_ZN5Shell5countEv`), not of a
+        ; record declared inside it (`_ZN5Shell5Tally5twiceEv`), which is no
+        ; template and keeps its body
+        function one_name_then_end(mangled: String, at: size_t) returns bool
+        {
+            let n mangled.get_length()
+            var i at
+            var len: size_t 0
+            while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+            {
+                len := len * 10 + ((mangled.get(i) - 48) as size_t)
+                i := i + 1
+            }
+            let after i + len
+            after < n and mangled.get(after) = 69
         }
 
         function is_uninstantiated_template(this, mangled: String) returns bool

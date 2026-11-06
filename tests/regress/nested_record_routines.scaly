@@ -1,0 +1,78 @@
+; Regression (2026-11-06): a record or union declared INSIDE another record
+; had its routines never planned. `Piece(k).get()` in a method of `Outer`
+; called `_ZN5Outer5Piece3getEv`, which nothing defined: a link error built,
+; and under the JIT (`scaly run`) a stub answering 0, at rc 0. A record nested
+; in a namespace always had its routines. Since then a record plans the
+; concepts it declares as a namespace does -- in a generic record's instances,
+; not in its template plan -- and a routine of a record nested in a generic
+; one (`_ZN5Shell5Tally5twiceEv`) is no routine of the template, whose empty
+; stub it got (Emitter.is_concept_template#).
+; Expected: PASS
+
+define Outer(k: int)
+{
+    define Part(p: int)
+    {
+        function get(this) returns int
+            p + 300
+    }
+
+    define Mark union (None, Some: int)
+
+    function part(this) returns int
+        Part(k).get()
+
+    function mark(this) returns int
+        choose Mark.Some(k)
+            when s: Mark.Some
+                s + 50
+            else
+                0
+}
+
+; the same name inside another record, another layout
+define Other(k: int)
+{
+    define Part(q: String, p: int)
+    {
+        function get(this) returns int
+            p + 400 + q.length() as int
+    }
+
+    function part(this) returns int
+        Part(String("q"), k).get()
+}
+
+; inside a generic record, two instances
+define Shell[T](item: T)
+{
+    define Tally(n: int)
+    {
+        function twice(this) returns int
+            n * 2
+    }
+
+    function count(this) returns int
+        Tally(7).twice()
+}
+
+; a record in a record in a namespace
+define Ns
+{
+    define Host(v: int)
+    {
+        define Leaf(w: int)
+        {
+            function get(this) returns int
+                w + 1000
+        }
+
+        function leaf(this) returns int
+            Leaf(v).get()
+    }
+}
+
+if Outer(1).part() = 301 and Other(2).part() = 403 and Outer(3).mark() = 53 and Shell[int](1).count() + Shell[bool](true).count() = 28 and Ns.Host(5).leaf() = 1005
+    print("PASS")
+else
+    print("FAIL")
