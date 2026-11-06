@@ -2478,14 +2478,16 @@ define CppEmitter
         if CppEmitter.is_float(t.name)
             return "((`CppEmitter.ctype(t)`)`value`)"
         let ct CppEmitter.ctype(t)
+        ; 64 bits, LL: a bare number is a C++ int, and 1048576 * 1048576 of
+        ; two of them is computed in 32 bits (the parallel driver's cap)
         if CppEmitter.int_width(t.name) = 0 and CppEmitter.is_pointer_type(t) = false
         {
-            if value < 0x80000000
-                return "`value`"
+            if value < 0x8000000000000000
+                return "`value`LL"
             return "(int64_t)`value`ULL"
         }
-        if ct = "int64_t" and value < 0x80000000
-            return "`value`"
+        if ct = "int64_t" and value < 0x8000000000000000
+            return "`value`LL"
         if ct = "bool"
         {
             if value = 0
