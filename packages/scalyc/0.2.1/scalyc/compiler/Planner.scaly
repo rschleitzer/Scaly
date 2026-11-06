@@ -1568,20 +1568,27 @@ define Planner
         var registering_namespace: String
         ; the chain of `define`s enclosing what is being registered, in its
         ; own FILE ("A.Inner"; a module starts it anew; a define named like
-        ; the one enclosing it counts once) -- ROADMAP-namespaces.md
+        ; the one enclosing it counts once)
         var registering_ns_path: String
         ; the full namespace path of every registered concept, in lockstep
         ; with `concepts` ("A.Inner", "Emitter.DebugPos", "Box" at file
         ; level); `ns_path_index` full path -> its last concept,
         ; `ns_first_path` a name -> its first concept, `ns_multi_names` the
         ; names met at two paths -- only for those does resolve_ns_path#
-        ; search (ROADMAP-namespaces.md)
+        ; search
         concept_ns_paths: ref[Array[String]]
         ns_path_index: ref[NameIndex]
         ns_first_path: ref[NameIndex]
         ns_multi_names: ref[NameIndex]
         ; the namespace path being planned (plan_namespace#), "" at file level
         var planning_ns_path: String
+        ; ... and the namespace whose BODY is being planned: planning_ns_path
+        ; is moved to a callee's scope while its signature is matched, the
+        ; namespace a sibling call is made from is not (sibling_ns_symbol#)
+        var body_ns_path: String
+        ; whether any name is met at two paths (ns_multi_names): the one
+        ; question lookup_concept# asks before it answers as it always did
+        var ns_multi_any: bool
         ; SCALYC_NS_PROBE=1: what a namespace path would move (ns_probe#);
         ; asked once in plan_program#, an init may not read the environment
         var ns_probe_on: bool
@@ -1589,6 +1596,9 @@ define Planner
         ; parallel to the registry as well: the source FILE a function was
         ; registered from ("" outside a module walk) -- function_origin_file#
         function_origin_files: ref[Array[String]]
+        ; ... and the namespace path it was registered in ("A.Inner"), the scope
+        ; its signature is written in (function_ns_path#)
+        function_ns_paths: ref[Array[String]]
         ; the start offsets of variant constructions made from a BARE name
         ; (`Hit(5)`, `Blue`) -- retarget_bare_variant# may move them onto the
         ; union a declared target type names
@@ -1798,6 +1808,7 @@ define Planner
             function_origin_paths := Array[String]^this()
             function_namespaces := &Array[String]^this()
             function_origin_files := &Array[String]^this()
+            function_ns_paths := &Array[String]^this()
             bare_variant_starts := &Array[size_t]^this()
             registering_namespace := String^this("")
             registering_ns_path := String^this("")
@@ -1807,6 +1818,8 @@ define Planner
             ns_first_path := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
             ns_multi_names := &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
             planning_ns_path := String^this("")
+            body_ns_path := String^this("")
+            ns_multi_any := false
             ns_probe_on := false
             registering_file := String^this("")
             registering_path := String^this("")
@@ -2845,6 +2858,25 @@ define Planner
             ; find_initializer# / lookup_property / lookup_method# /
             ; is_struct_ctor all `choose c.definition when s: Structure ...`
             ; and need the LATER (Structure) entry. (s95)
+            ;
+            ; A name met at two namespace paths (`A.Rec`, `B.Rec`) means the
+            ; one of the scope being planned, innermost first
+            ; (resolve_ns_path#); only where no scope has it does the last
+            ; registered answer, as always.
+            if ns_multi_any and name.index_of(46) < 0
+            {
+                let at this.resolve_ns_path(name)
+                if at >= 0
+                {
+                    let ns_ptr concepts.get(at as size_t)
+                    if ns_ptr <> null
+                    {
+                        if use_vis_enforce and value_access = false and lookup_directed = false and this.use_vis_check(name, at as size_t) = false
+                            return null
+                        return &ns_ptr.value
+                    }
+                }
+            }
             let idx concept_index.lookup name
             if idx >= 0
             {
@@ -4873,9 +4905,46 @@ define Planner
             Planner.package_of_file(this.function_origin_file(f))
 
         ; type_symbol#: the mangled name of the concept `name` with these
-        ; arguments -- its IDENTITY, the package it comes from included.
+        ; arguments -- its IDENTITY, the package it comes from included, and
+        ; the chain of defines it stands in: a concept inside another define
+        ; is the Itanium nested name, `_ZN1A3RecE`.
         procedure type_symbol(mutable this, name: String, generic_args: ref[Vector[PlannedType]]?) returns String
-            Planner.mangle_structure_in(name, generic_args, Planner.package_tag(this.resolved_package(name)))
+        {
+            let tag Planner.package_tag(this.resolved_package(name))
+            if name.index_of(46) < 0
+            {
+                let at this.answered_concept_at(name)
+                if at >= 0 and (at as size_t) < concept_ns_paths.length
+                {
+                    let path concept_ns_paths[at as size_t]
+                    if Planner.ns_path_segments(path) >= 2
+                        return Planner.nested_structure_symbol(Planner.ns_path_prefix(path), name, generic_args, tag)
+                }
+            }
+            Planner.mangle_structure_in(name, generic_args, tag)
+        }
+
+        ; answered_concept_at#: the registry position of the concept a name
+        ; written here resolves to, as lookup_concept# answers it -- by its
+        ; namespace path where the name is met at two (resolve_ns_path#), the
+        ; directed package's where two packages declare it, else the last
+        ; registered; -1 for none
+        procedure answered_concept_at(mutable this: Planner, name: String) returns i64
+        {
+            if ns_multi_any
+            {
+                let at this.resolve_ns_path(name)
+                if at >= 0
+                    return at
+            }
+            if cross_package_index.cap > 0 and cross_package_index.lookup(name) >= 0
+            {
+                let directed this.directed_concept_index(name)
+                if directed >= 0
+                    return directed
+            }
+            concept_index.lookup name
+        }
 
         ; package_probe# (SCALYC_PKG_PROBE=1): whether the package of every
         ; registered definition is KNOWN -- its origin file -- before any name
@@ -7499,6 +7568,7 @@ define Planner
             function_origin_paths.add(String^this(registering_path))
             function_namespaces.add(String^this(registering_namespace))
             function_origin_files.add(String^this(registering_file))
+            function_ns_paths.add(String^this(registering_ns_path))
             if Planner.ns_path_segments(registering_ns_path) > 1
                 this.ns_probe_note("function", f.name)
         }
@@ -7540,6 +7610,25 @@ define Planner
                     let fof function_origin_files.get(cur as size_t)
                     if fof <> null
                         return String((*fof))
+                }
+                cur := model_function_index.next_of(cur as size_t)
+            }
+            String("")
+        }
+
+        ; function_ns_path#: the namespace path a registered function stands in,
+        ; "" at file level -- the scope its signature is written in
+        function function_ns_path(this: Planner, f: Function) returns String
+        {
+            var cur model_function_index.lookup_head f.name
+            while cur <> ((0 - 1) as i64)
+            {
+                let kvp_ptr model_functions.get(cur as size_t)
+                if kvp_ptr <> null and kvp_ptr.value.span.start = f.span.start and kvp_ptr.value.span.end = f.span.end
+                {
+                    let fnp function_ns_paths.get(cur as size_t)
+                    if fnp <> null
+                        return String((*fnp))
                 }
                 cur := model_function_index.next_of(cur as size_t)
             }
@@ -10435,15 +10524,24 @@ define Planner
             arg_types: Vector[PlannedType]
         ) returns bool
         {
-            if cross_package_index.cap = 0
+            if cross_package_index.cap = 0 and ns_multi_any = false
                 return this.candidate_matches_string_i8_in(f, arg_types)
+            ; directed to the package of `f` and planned in the scope of
+            ; its namespace (function_ns_path#): its signature is written there
             let saved_package lookup_package
             let saved_directed lookup_directed
-            lookup_package := String^this(this.function_package(f))
-            lookup_directed := true
+            let saved_scope planning_ns_path
+            if cross_package_index.cap > 0
+            {
+                lookup_package := String^this(this.function_package(f))
+                lookup_directed := true
+            }
+            if ns_multi_any
+                planning_ns_path := String^this(this.function_ns_path(f))
             let answer this.candidate_matches_string_i8_in(f, arg_types)
             lookup_package := saved_package
             lookup_directed := saved_directed
+            planning_ns_path := saved_scope
             answer
         }
 
@@ -10528,15 +10626,24 @@ define Planner
             exact_only: bool
         ) returns bool
         {
-            if cross_package_index.cap = 0
+            if cross_package_index.cap = 0 and ns_multi_any = false
                 return this.candidate_matches_in(f, arg_types, exact_only)
+            ; directed to the package of `f` and planned in the scope of
+            ; its namespace (function_ns_path#): its signature is written there
             let saved_package lookup_package
             let saved_directed lookup_directed
-            lookup_package := String^this(this.function_package(f))
-            lookup_directed := true
+            let saved_scope planning_ns_path
+            if cross_package_index.cap > 0
+            {
+                lookup_package := String^this(this.function_package(f))
+                lookup_directed := true
+            }
+            if ns_multi_any
+                planning_ns_path := String^this(this.function_ns_path(f))
             let answer this.candidate_matches_in(f, arg_types, exact_only)
             lookup_package := saved_package
             lookup_directed := saved_directed
+            planning_ns_path := saved_scope
             answer
         }
 
@@ -10607,15 +10714,24 @@ define Planner
             arg_ops: Vector[PlannedOperand]
         ) returns bool
         {
-            if cross_package_index.cap = 0
+            if cross_package_index.cap = 0 and ns_multi_any = false
                 return this.candidate_matches_char_fold_in(f, arg_types, arg_ops)
+            ; directed to the package of `f` and planned in the scope of
+            ; its namespace (function_ns_path#): its signature is written there
             let saved_package lookup_package
             let saved_directed lookup_directed
-            lookup_package := String^this(this.function_package(f))
-            lookup_directed := true
+            let saved_scope planning_ns_path
+            if cross_package_index.cap > 0
+            {
+                lookup_package := String^this(this.function_package(f))
+                lookup_directed := true
+            }
+            if ns_multi_any
+                planning_ns_path := String^this(this.function_ns_path(f))
             let answer this.candidate_matches_char_fold_in(f, arg_types, arg_ops)
             lookup_package := saved_package
             lookup_directed := saved_directed
+            planning_ns_path := saved_scope
             answer
         }
 
@@ -10960,15 +11076,24 @@ define Planner
             arg_ops: Vector[PlannedOperand]
         ) returns ref[MethodMatch]?
         {
-            if cross_package_index.cap = 0
+            if cross_package_index.cap = 0 and ns_multi_any = false
                 return this.check_function_match_in(f, arg_types, exact_only, char_fold, arg_ops)
+            ; directed to the package of `f` and planned in the scope of
+            ; its namespace (function_ns_path#): its signature is written there
             let saved_package lookup_package
             let saved_directed lookup_directed
-            lookup_package := String^this(this.function_package(f))
-            lookup_directed := true
+            let saved_scope planning_ns_path
+            if cross_package_index.cap > 0
+            {
+                lookup_package := String^this(this.function_package(f))
+                lookup_directed := true
+            }
+            if ns_multi_any
+                planning_ns_path := String^this(this.function_ns_path(f))
             let answer this.check_function_match_in(f, arg_types, exact_only, char_fold, arg_ops)
             lookup_package := saved_package
             lookup_directed := saved_directed
+            planning_ns_path := saved_scope
             answer
         }
 
@@ -13988,12 +14113,20 @@ define Planner
                                                                     0
                                                                 else
                                                                     final_life := nm2.life
+                                                            ; `A.Box[int]` where Box is met at
+                                                            ; two namespace paths: the name is
+                                                            ; written in the scope its type
+                                                            ; says
+                                                            let merged_scope planning_ns_path
+                                                            if this.type_name_is_multi(ct2)
+                                                                planning_ns_path := String^this(Planner.ns_path_in(ct2.mangled_name))
                                                             let merged_type this.plan_type(Type(
                                                                 ct2.loc,
                                                                 name_path,
                                                                 &model_gens,
                                                                 final_life
                                                             ))
+                                                            planning_ns_path := merged_scope
                                                             ; s184: the Matrix operand's member
                                                             ; chain was resolved against the
                                                             ; matrix ELEMENT type (garbage for
@@ -16909,6 +17042,59 @@ define Planner
             mutable ns_coerce_params: ref[Array[PlannedType]]
         ) returns NamespaceArm
         {
+            ; the routine's signature is written in its namespace: planned in
+            ; that scope where a name is met at two namespace paths
+            ; (`A.make(1)` returns A's `Rec` wherever it is called)
+            let qual_dot fn_name.last_index_of(46)
+            if ns_multi_any = false or qual_dot < 0
+                return this.call_arm_namespace_in(result, fn_name, arg_types, arg_ops, return_type, ns_coerce_params)
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(this.namespace_scope_of(fn_name))
+            let answer this.call_arm_namespace_in(result, fn_name, arg_types, arg_ops, return_type, ns_coerce_params)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        ; namespace_scope_of#: the full path of the namespace (or record) the
+        ; qualifier of `qualified` names here (`A.Inner` of `A.Inner.value`)
+        ; -- by its path where its name is met at two (resolve_ns_path#), else
+        ; the namespace of its last name; "" for none. ★It takes the whole
+        ; qualified name and cuts it itself: a qualifier cut at the call site
+        ; and handed in was a temporary whose page the compiler chose one way
+        ; reading the standard library from its sources and the other way
+        ; through its interface -- the seed did not reproduce itself.
+        procedure namespace_scope_of(mutable this: Planner, qualified: String) returns String
+        {
+            let qdot qualified.last_index_of(46)
+            if qdot <= 0
+                return ""
+            let written qualified.substring(0, qdot as size_t)
+            var at this.resolve_ns_path(written)
+            if at < 0
+            {
+                var simple String(written)
+                let dot written.last_index_of(46)
+                if dot >= 0
+                    simple := written.substring((dot as size_t) + 1, written.get_length() - (dot as size_t) - 1)
+                at := namespace_index.table.lookup(simple)
+                if at < 0
+                    at := concept_index.lookup simple
+            }
+            if at < 0 or (at as size_t) >= concept_ns_paths.length
+                return ""
+            String(concept_ns_paths[at as size_t])
+        }
+
+        procedure call_arm_namespace_in(
+            mutable this: Planner,
+            mutable result: PlannedOperand,
+            mutable fn_name: String,
+            mutable arg_types: Vector[PlannedType],
+            mutable arg_ops: Vector[PlannedOperand],
+            return_type: PlannedType,
+            mutable ns_coerce_params: ref[Array[PlannedType]]
+        ) returns NamespaceArm
+        {
             var match_ref: ref[MethodMatch]? null
             var ns_mangled: String ""
             var has_ns_mangled: bool false
@@ -17382,6 +17568,26 @@ define Planner
             mutable arg_ops: Vector[PlannedOperand]
         ) returns ref[MethodMatch]?
         {
+            ; planned in the scope of the namespace or record named, as
+            ; call_arm_namespace#
+            let qual_dot fn_name.last_index_of(46)
+            if ns_multi_any = false or qual_dot <= 0
+                return this.call_arm_static_in(result, fn_name, arg_types, arg_ops)
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(this.namespace_scope_of(fn_name))
+            let answer this.call_arm_static_in(result, fn_name, arg_types, arg_ops)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        procedure call_arm_static_in(
+            mutable this: Planner,
+            mutable result: PlannedOperand,
+            fn_name: String,
+            mutable arg_types: Vector[PlannedType],
+            mutable arg_ops: Vector[PlannedOperand]
+        ) returns ref[MethodMatch]?
+        {
             var match_ref: ref[MethodMatch]? null
             let dot_idx fn_name.last_index_of(46)
             if dot_idx <= 0
@@ -17775,7 +17981,13 @@ define Planner
             ; downstream reference (e.g. `arg.starts_with(...)`)
             ; with it. parse_args body went from full option-
             ; parsing to a bare `let arg_ptr; set i: i+1`.
-            let conc_ref this.lookup_concept(fn_name)
+            var conc_ref this.lookup_concept(fn_name)
+            choose result.expr
+                when written: PlannedType
+                    if this.type_name_is_multi(written)
+                        conc_ref := this.concept_in_scope_of(fn_name, written)
+                else
+                    0
             if conc_ref <> null
             {
                 let conc (*conc_ref)
@@ -17953,6 +18165,27 @@ define Planner
         ; is the type (handed in as `first`), `second` its tuple; what follows
         ; in ops is collapsed behind the constructed value.
         procedure collapse_construction(
+            mutable this: Planner,
+            mutable ops: Vector[PlannedOperand],
+            mutable first: PlannedOperand,
+            mutable second: PlannedOperand,
+            mutable fn_name: String,
+            mutable ctor_struct_type: PlannedType
+        ) returns PlannedOperand
+        {
+            ; the concept is the one the type's name says, where its name is
+            ; met at two namespace paths (`A.Rec(3)` anywhere), as for a
+            ; member (lookup_method#)
+            if this.type_name_is_multi(ctor_struct_type) = false
+                return this.collapse_construction_in(ops, first, second, fn_name, ctor_struct_type)
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(Planner.ns_path_in(Planner.pointee_mangled(ctor_struct_type)))
+            let answer this.collapse_construction_in(ops, first, second, fn_name, ctor_struct_type)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        procedure collapse_construction_in(
             mutable this: Planner,
             mutable ops: Vector[PlannedOperand],
             mutable first: PlannedOperand,
@@ -19835,7 +20068,7 @@ define Planner
         {
             var sb StringBuilder()
             sb.append "_ZN"
-            sb.append(Planner.encode_type(parent))
+            sb.append(Planner.encode_parent(parent))
             sb.append(Planner.encode_name method_name)
             sb.append "E"
 
@@ -20339,7 +20572,57 @@ define Planner
             )
         }
 
+        ; lookup_method#: the members of a value's type are written in the
+        ; scope of its definition -- where its name is met at two namespace
+        ; paths, the one its mangled name spells (ns_path_in#), not the one
+        ; being planned
         procedure lookup_method(
+            mutable this: Planner,
+            mutable struct_type: PlannedType,
+            mutable method_name: String,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand]
+        ) returns ref[MethodMatch]?
+        {
+            if this.type_name_is_multi(struct_type) = false
+                return this.lookup_method_by_package(struct_type, method_name, arg_types, arg_ops)
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(Planner.ns_path_in(Planner.pointee_mangled(struct_type)))
+            let answer this.lookup_method_by_package(struct_type, method_name, arg_types, arg_ops)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        ; type_name_is_multi#: is `t` (or what it points at or holds) a
+        ; concept whose name is met at two namespace paths?
+        function type_name_is_multi(this: Planner, t: PlannedType) returns bool
+            ns_multi_any and ns_multi_names.table.lookup(Planner.pointee_name(t)) >= 0
+
+        ; concept_in_scope_of#: the concept `name` as written in the scope of
+        ; the definition of the type `t` (ns_path_in#)
+        procedure concept_in_scope_of(mutable this: Planner, name: String, t: PlannedType) returns ref[Concept]?
+        {
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(Planner.ns_path_in(Planner.pointee_mangled(t)))
+            let answer this.lookup_concept(name)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        ; pointee_mangled#: the mangled name of `t`, or of what it points at
+        ; or holds as an Option
+        function pointee_mangled(t: PlannedType) returns String
+        {
+            if (t.name = "pointer" or t.name = "ref" or t.name = "Option") and t.generics <> null
+            {
+                let gens (*t.generics)
+                if gens.length = 1
+                    return Planner.pointee_mangled(gens[0])
+            }
+            String(t.mangled_name)
+        }
+
+        procedure lookup_method_by_package(
             mutable this: Planner,
             mutable struct_type: PlannedType,
             mutable method_name: String,
@@ -21642,6 +21925,23 @@ define Planner
         ; The produced access chain feeds `PlannedOperand.member_access`.
         ; ================================================================
         procedure resolve_member_access(
+            mutable this: Planner,
+            mutable base_type: PlannedType,
+            mutable members: Vector[String],
+            at: Span
+        ) returns Vector[PlannedMemberAccess]
+        {
+            ; in the scope of the type's definition, as lookup_method#
+            if this.type_name_is_multi(base_type) = false
+                return this.resolve_member_access_by_package(base_type, members, at)
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(Planner.ns_path_in(Planner.pointee_mangled(base_type)))
+            let answer this.resolve_member_access_by_package(base_type, members, at)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        procedure resolve_member_access_by_package(
             mutable this: Planner,
             mutable base_type: PlannedType,
             mutable members: Vector[String],
@@ -23223,6 +23523,28 @@ define Planner
             ; (lookupConcept dotted) and 6263-6311 (resolveType module
             ; stack fallback).
             var canonical_name: String String(after_subst.name)
+
+            ; `A.Rec` where `Rec` is met at two namespace paths: the written
+            ; qualifier says which, and the type is planned as `Rec` written
+            ; inside `A.Rec` -- what the shortening below to the last name
+            ; would otherwise leave to the scope being planned
+            ;
+            if ns_multi_any and canonical_name.index_of(46) >= 0 and this.has_concept(canonical_name) = false
+            {
+                let pinned this.resolve_ns_path(canonical_name)
+                if pinned >= 0 and (pinned as size_t) < concept_ns_paths.length
+                {
+                    let pin_dot canonical_name.last_index_of(46)
+                    let pin_start (pin_dot as size_t) + 1
+                    var pin_names Vector[String](1)
+                    pin_names.put(0, canonical_name.substring(pin_start, canonical_name.get_length() - pin_start))
+                    let saved_scope planning_ns_path
+                    planning_ns_path := String^this(concept_ns_paths[pinned as size_t])
+                    let pinned_type this.plan_type(Type(mt.span, pin_names, mt.generics, mt.lifetime))
+                    planning_ns_path := saved_scope
+                    return pinned_type
+                }
+            }
 
             ; Union.Variant pattern: a dotted name like `Member.Function`
             ; where the prefix is a Union concept and the suffix is one of
@@ -56027,7 +56349,31 @@ define Planner
         ; deinitializer. mangled_name is built via mangle_structure so
         ; method/operator mangling can reference the parent.
         ; ================================================================
+        ; plan_structure#: a record's members are written inside it -- planned in
+        ; the scope of its full namespace path, where a name is met at two
+        ; (`Part` in `Outer` is `Outer.Part`)
         procedure plan_structure(mutable this: Planner, mutable s: Structure, name: String) returns PlannedStructure
+        {
+            if ns_multi_any = false
+                return this.plan_structure_in(s, name)
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(this.concept_scope(name))
+            let answer this.plan_structure_in(s, name)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        ; concept_scope#: the full namespace path of the concept `name`
+        ; answers here (answered_concept_at#), "" for none
+        procedure concept_scope(mutable this: Planner, name: String) returns String
+        {
+            let at this.answered_concept_at(name)
+            if at < 0 or (at as size_t) >= concept_ns_paths.length
+                return ""
+            String(concept_ns_paths[at as size_t])
+        }
+
+        procedure plan_structure_in(mutable this: Planner, mutable s: Structure, name: String) returns PlannedStructure
         {
             var planned_props Array[PlannedProperty]()
             var i: size_t 0
@@ -56237,6 +56583,18 @@ define Planner
         ; link). With plan_inits=false the struct stays declare-only here
         ; and the real body is resolved cross-unit at link time.
         procedure plan_structure_layout_opt(mutable this: Planner, mutable s: Structure, name: String, plan_inits: bool) returns PlannedStructure
+        {
+            if ns_multi_any = false
+                return this.plan_structure_layout_opt_in(s, name, plan_inits)
+            ; in the scope of its path, as plan_structure#
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(this.concept_scope(name))
+            let answer this.plan_structure_layout_opt_in(s, name, plan_inits)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        procedure plan_structure_layout_opt_in(mutable this: Planner, mutable s: Structure, name: String, plan_inits: bool) returns PlannedStructure
         {
             var planned_props Array[PlannedProperty]()
             var i: size_t 0
@@ -56943,8 +57301,10 @@ define Planner
             ; own name as a type's (type_symbol#, its package included), so
             ; that `_ZN<NSName><FnName>E…` is what a call of a member makes.
             ; nested in another define, the whole path (ns_path_symbol#)
+            let saved_body_ns this.body_ns_path
             let saved_planning_ns this.planning_ns_path
             this.planning_ns_path := this.extend_ns_path(saved_planning_ns, name)
+            this.body_ns_path := String^this(planning_ns_path)
             let ns_mangled this.ns_path_symbol(planning_ns_path, name)
             let parent_ref PlannedType^this(
                 ns.span,
@@ -57026,6 +57386,7 @@ define Planner
             current_namespace := old_ns
             current_namespace_name := old_ns_name
             this.planning_ns_path := saved_planning_ns
+            this.body_ns_path := saved_body_ns
 
             var funcs_holder Vector[PlannedFunction](functions)
             var ops_holder Vector[PlannedOperator](operators)
@@ -57335,7 +57696,10 @@ define Planner
             }
             let fi first as size_t
             if fi < concept_ns_paths.length and concept_ns_paths[fi].equals(full) = false
+            {
                 this.name_index_put(ns_multi_names, name, pos)
+                ns_multi_any := true
+            }
         }
 
         ; resolve_ns_path#: the concept a qualifier as WRITTEN here means,
@@ -57387,12 +57751,11 @@ define Planner
             (0 - 1) as i64
         }
 
-        ; ns_type_symbol#: the mangled name a NAMESPACE written `written`
-        ; carries as the parent of its routines -- type_symbol# of its own
-        ; name (one level, as always), or, nested in another define, the
-        ; whole path, `_Z1A5Inner` with the package's tag after the last
-        ; name, so a routine is `_ZN1A5Inner5valueEv`. A record is left to
-        ; type_symbol# (step 3 of ROADMAP-namespaces.md).
+        ; ns_type_symbol#: the mangled name a namespace or a record written
+        ; `written` carries as the parent of its routines -- type_symbol# of
+        ; its own name (one level, as always), or, nested in another define,
+        ; the whole path, `_ZN1A5InnerE` with the package's tag after the
+        ; last name, so a routine is `_ZN1A5Inner5valueEv`.
         procedure ns_type_symbol(mutable this: Planner, written: String, simple: String) returns String
         {
             let at this.resolve_ns_path(written)
@@ -57401,13 +57764,7 @@ define Planner
                 let i at as size_t
                 let kvp_ptr concepts.get i
                 if kvp_ptr <> null and i < concept_ns_paths.length
-                {
-                    choose kvp_ptr.value.definition
-                        when n: Namespace
-                            return this.ns_path_symbol(concept_ns_paths[i], kvp_ptr.value.name)
-                        else
-                            0
-                }
+                    return this.ns_path_symbol(concept_ns_paths[i], kvp_ptr.value.name)
             }
             this.type_symbol(simple, null)
         }
@@ -57416,8 +57773,8 @@ define Planner
         ; the namespace being planned, `name` its own name
         procedure sibling_ns_symbol(mutable this: Planner, name: String) returns String
         {
-            if planning_ns_path.equals(name) or planning_ns_path.ends_with(".`name`")
-                return this.ns_path_symbol(planning_ns_path, name)
+            if body_ns_path.equals(name) or body_ns_path.ends_with(".`name`")
+                return this.ns_path_symbol(body_ns_path, name)
             this.ns_type_symbol(name, name)
         }
 
@@ -57425,20 +57782,8 @@ define Planner
         ; `path` whose own name is `name`
         procedure ns_path_symbol(mutable this: Planner, path: String, name: String) returns String
         {
-            if Planner.ns_path_segments(path) < 2
-                return this.type_symbol(name, null)
-            let tag Planner.package_tag_in(this.type_symbol(name, null), name)
-            var sb StringBuilder()
-            sb.append "_Z"
-            let segs Planner.split_dotted(path)
-            var i: size_t 0
-            while i < segs.length
-            {
-                sb.append(Planner.encode_name(segs[i]))
-                i := i + 1
-            }
-            sb.append tag
-            sb.to_string()
+            let tag Planner.package_tag(this.resolved_package(name))
+            Planner.nested_structure_symbol(Planner.ns_path_prefix(path), name, null, tag)
         }
 
         ; resolved_ns_concept#: the concept a qualifier written here means,
@@ -57614,8 +57959,10 @@ define Planner
             if m.file.get_length() > 0
                 this.file := String^this(m.file)
             ; a module is a file of its own: its namespace path starts anew
+            let saved_body_ns this.body_ns_path
             let saved_planning_ns this.planning_ns_path
             this.planning_ns_path := String^this("")
+            this.body_ns_path := String^this("")
 
             ; Propagate this module's Use clauses into program_use_aliases
             ; so the dotted-call extern-decl gate fires for prefixes
@@ -57748,6 +58095,7 @@ define Planner
 
             this.file := saved_file
             this.planning_ns_path := saved_planning_ns
+            this.body_ns_path := saved_body_ns
             ; Pop this module's Use aliases off the stack (see the save above).
             program_use_aliases.length := saved_use_aliases_len
             program_use_namespaces.length := saved_use_aliases_len
@@ -58042,6 +58390,18 @@ define Planner
         ; belong to the union's own package's object (same reasoning as
         ; plan_structure_layout_opt#).
         procedure plan_union_opt(mutable this: Planner, mutable u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion
+        {
+            if ns_multi_any = false
+                return this.plan_union_opt_in(u, name, plan_methods)
+            ; in the scope of its path, as plan_structure#
+            let saved_scope planning_ns_path
+            planning_ns_path := String^this(this.concept_scope(name))
+            let answer this.plan_union_opt_in(u, name, plan_methods)
+            planning_ns_path := saved_scope
+            answer
+        }
+
+        procedure plan_union_opt_in(mutable this: Planner, mutable u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion
         {
             var planned_vs Array[PlannedVariant]()
             var tag: int 0
@@ -59954,7 +60314,10 @@ define Planner
     ; no concept to ask. "" for none, and for a name that is no concept's.
     function package_tag_in(mangled: String, name: String) returns String
     {
-        let head "_Z`Planner.encode_name name`"
+        var head "_Z`Planner.encode_name name`"
+        ; a nested type: `_ZN1A3RecB5alphaE`, the tag behind the last name
+        if mangled.starts_with("_ZN")
+            head := "_ZN`Planner.ns_prefix_in(mangled)``Planner.encode_name name`"
         let n mangled.get_length()
         var i head.get_length()
         if mangled.starts_with(head) = false or i + 1 >= n or mangled.get(i) <> 66
@@ -59975,6 +60338,98 @@ define Planner
             end := j + len
         }
         mangled.substring(i, end - i)
+    }
+
+    ; ns_prefix_in#: the enclosing defines in a NESTED type's mangled name
+    ; as written there, `1A` of `_ZN1A3RecE` and of `_ZN1A3RecB5alphaIiEE`
+    ; -- every name but the last; "" for a type at file level (`_Z3Rec`)
+    function ns_prefix_in(mangled: String) returns String
+    {
+        if mangled.starts_with("_ZN") = false
+            return ""
+        let n mangled.get_length()
+        var i: size_t 3
+        var last: size_t 3
+        while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+        {
+            last := i
+            var len: size_t 0
+            while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+            {
+                len := len * 10 + ((mangled.get(i) - 48) as size_t)
+                i := i + 1
+            }
+            i := i + len
+        }
+        mangled.substring(3, last - 3)
+    }
+
+    ; ns_path_in#: the full namespace path a type's mangled name spells,
+    ; "A.Rec" of `_ZN1A3RecE`; "" for a type at file level -- the scope its
+    ; members' names are written in (lookup_method#, resolve_member_access#)
+    function ns_path_in(mangled: String) returns String
+    {
+        if mangled.starts_with("_ZN") = false
+            return ""
+        let n mangled.get_length()
+        var sb StringBuilder()
+        var i: size_t 3
+        while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+        {
+            var len: size_t 0
+            while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+            {
+                len := len * 10 + ((mangled.get(i) - 48) as size_t)
+                i := i + 1
+            }
+            if i + len > n
+                break
+            if sb.get_length() > 0
+                sb.append("." as char)
+            sb.append(mangled.substring(i, len))
+            i := i + len
+        }
+        sb.to_string()
+    }
+
+    ; ns_path_prefix#: the enclosing defines of a namespace path as a
+    ; mangled name writes them, `1A` of "A.Rec" -- every name but the last
+    function ns_path_prefix(path: String) returns String
+    {
+        let segs Planner.split_dotted(path)
+        var sb StringBuilder()
+        var i: size_t 0
+        while i + 1 < segs.length
+        {
+            sb.append(Planner.encode_name(segs[i]))
+            i := i + 1
+        }
+        sb.to_string()
+    }
+
+    ; nested_structure_symbol#: a type's mangled name inside the defines
+    ; `prefix` spells (ns_path_prefix#) -- the Itanium nested name,
+    ; `_ZN1A3RecE`, `_ZN1A3RecB5alphaE`, `_ZN1A4ListIiEE`; at file level
+    ; (an empty prefix) mangle_structure_in# as always
+    function nested_structure_symbol(prefix: String, name: String, generic_args: ref[Vector[PlannedType]]?, tag: String) returns String
+    {
+        let plain Planner.mangle_structure_in(name, generic_args, tag)
+        if prefix.get_length() = 0
+            return plain
+        "_ZN`prefix``plain.substring(2, plain.get_length() - 2)`E"
+    }
+
+    ; encode_parent#: the code of a routine's parent type inside the
+    ; routine's own nested name -- encode_type# without the `N…E` a nested
+    ; type carries (`_ZN1A3RecE` is `N1A3RecE` as a parameter, and its
+    ; method is `_ZN1A3Rec3getEv`)
+    function encode_parent(parent: PlannedType) returns String
+    {
+        let enc Planner.encode_type(parent)
+        let n enc.get_length()
+        if n >= 2 and enc.get(0) = 78 and enc.get(n - 1) = 69
+            return enc.substring(1, n - 2)
+        enc
     }
 
     ; mangle_structure_in#: mangle_structure with the package's tag (as
@@ -60046,7 +60501,7 @@ define Planner
         {
             let p (*parent)
             sb.append "N"
-            sb.append(Planner.encode_type(p))
+            sb.append(Planner.encode_parent(p))
             ; Itanium ABI: methods named "init" on a struct are constructors;
             ; emit C1 (complete-object ctor) instead of "<len>init". Mirrors
             ; stage-0 Planner.cpp:12100-12103. Required so constructor call-
@@ -60235,7 +60690,7 @@ define Planner
         {
             let p (*parent)
             sb.append "N"
-            sb.append(Planner.encode_type(p))
+            sb.append(Planner.encode_parent(p))
             sb.append op_code
             sb.append "E"
         }
@@ -60315,7 +60770,7 @@ define Planner
         {
             let p (*parent)
             sb.append "N"
-            sb.append(Planner.encode_type(p))
+            sb.append(Planner.encode_parent(p))
             sb.append op_code
             sb.append "E"
         }
@@ -61866,7 +62321,7 @@ define Planner
         }
         if t.mangled_name.get_length() = 0
             return ""
-        Planner.mangle_structure_in(t.name, gens, Planner.package_tag_in(t.mangled_name, t.name))
+        Planner.nested_structure_symbol(Planner.ns_prefix_in(t.mangled_name), t.name, gens, Planner.package_tag_in(t.mangled_name, t.name))
     }
 
     ; apply_name_substitution: substitute type-parameter names (e.g. "T",

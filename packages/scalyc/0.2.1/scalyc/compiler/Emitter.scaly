@@ -3641,7 +3641,7 @@ define Emitter
                 Console.println("id-empty `planned_type.name` g=`planned_type.generics <> null` in `String(this.current_function_label())`")
                 return
             }
-            let want Planner.mangle_structure_in(planned_type.name, planned_type.generics, Planner.package_tag_in(planned_type.mangled_name, planned_type.name))
+            let want Planner.nested_structure_symbol(Planner.ns_prefix_in(planned_type.mangled_name), planned_type.name, planned_type.generics, Planner.package_tag_in(planned_type.mangled_name, planned_type.name))
             if want.equals(planned_type.mangled_name)
                 Console.println("id-ok")
             else
@@ -5990,7 +5990,10 @@ define Emitter
                 i := i + 1
                 if symbol.starts_with("_Z") = false or symbol.get_length() < 3
                     continue
-                let t symbol.substring(2, symbol.get_length() - 2)
+                var t symbol.substring(2, symbol.get_length() - 2)
+                ; a nested concept (`_ZN1A4PairE`) is `1A4Pair` in its routines
+                if symbol.starts_with("_ZN") and t.get_length() >= 2
+                    t := t.substring(1, t.get_length() - 2)
                 let end t.get_length() + 3
                 if mangled.get_length() > end and mangled.substring(3, t.get_length()).equals(t)
                 {

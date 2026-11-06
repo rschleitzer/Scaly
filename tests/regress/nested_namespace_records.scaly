@@ -1,0 +1,132 @@
+; Regression (2026-11-05): a record's identity was its bare name in a
+; package, so `Rec` in `define A` and `Rec` in `define B` were one type: one
+; LLVM struct, one `_ZN3Rec3getEv`, and a call reached whichever body was
+; kept. Since then a record carries the chain of defines it stands in
+; (`_ZN1A3RecE`, its method `_ZN1A3Rec3getEv`), and a name met at two paths
+; means the one of the scope it is written in: unqualified inside its
+; namespace, qualified (`A.Rec`) anywhere, the members of a value in the
+; scope its type says, a namespace routine's signature in its namespace.
+; Expected: PASS
+
+define Rec(z: int, w: int)
+{
+    function get(this) returns int
+        z * w
+}
+
+define A
+{
+    define Rec(x: int)
+    {
+        function get(this) returns int
+            x + 10
+
+        function twin(this) returns Rec
+            Rec(x + 1)
+    }
+
+    define Holder(r: Rec, n: int)
+    {
+        function total(this) returns int
+            r.get() + n
+    }
+
+    define Shape union (Dot: int, Line: Rec)
+
+    define Box[T](item: T)
+    {
+        function held(this) returns T
+            item
+    }
+
+    function make(v: int) returns Rec
+        Rec(v)
+
+    function read(r: Rec) returns int
+        r.get()
+
+    function line(r: Rec) returns Shape
+        Shape.Line(r)
+
+    function measure(s: Shape) returns int
+        choose s
+            when d: Shape.Dot
+                d
+            when l: Shape.Line
+                l.get()
+            else
+                0
+}
+
+define B
+{
+    define Rec(tag: String, y: int)
+    {
+        function get(this) returns int
+            y + 20
+
+        function size(this) returns int
+            tag.length() as int
+
+        function twin(this) returns Rec
+            Rec(String("twin"), y + 1)
+    }
+
+    define Holder(r: Rec)
+    {
+        function total(this) returns int
+            r.get() + 100
+    }
+
+    define Shape union (Dot: Rec, Line: int)
+
+    define Box[T](item: T, extra: int)
+    {
+        function held(this) returns T
+            item + extra
+    }
+
+    function make(v: int) returns Rec
+        Rec(String("bee"), v)
+
+    function read(r: Rec) returns int
+        r.get() + r.size()
+
+    function dot(r: Rec) returns Shape
+        Shape.Dot(r)
+
+    function measure(s: Shape) returns int
+        choose s
+            when d: Shape.Dot
+                d.get()
+            when l: Shape.Line
+                l + 1000
+            else
+                0
+}
+
+function top(r: A.Rec) returns int
+    r.get()
+
+; file level: the record declared there
+let plain Rec(3, 4)
+; built by the namespace, read through it and directly
+let a A.make(1)
+let b B.make(2)
+; qualified, and typed bindings
+let qa A.Rec(3)
+let qb B.Rec(String("q"), 4)
+let typed: A.Rec A.make(5)
+let other: B.Rec B.Rec(String("x"), 6)
+; a field of the namespace's record, a union, a generic
+let ha A.Holder(A.Rec(1), 2)
+let hb B.Holder(B.Rec(String("y"), 3))
+let sa A.line(A.Rec(7))
+let sb B.dot(B.Rec(String("z"), 8))
+let ba A.Box[int](40)
+let bb B.Box[int](50, 1)
+
+if plain.get() = 12 and a.get() = 11 and b.get() = 22 and A.read(a) = 11 and B.read(b) = 25 and qa.get() = 13 and qb.get() = 24 and qb.size() = 1 and top(typed) = 15 and typed.twin().get() = 16 and other.twin().get() = 27 and ha.total() = 13 and hb.total() = 123 and A.measure(sa) = 17 and B.measure(sb) = 28 and ba.held() = 40 and bb.held() = 51
+    print("PASS")
+else
+    print("FAIL")

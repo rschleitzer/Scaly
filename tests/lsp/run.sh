@@ -5874,8 +5874,9 @@ rc = subprocess.run([scalyc, "-S", "--no-prelude", "-o", ir, ws + "/pkg/0.1.0/pk
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
 check(rc == 0 and os.path.exists(ir), "the fixture package compiles to IR")
 if os.path.exists(ir):
-    # `Box::get` in Itanium: _ZN3Box(I<args>E)?3getE...
-    defs = set(re.findall(r"^define [^@]*@(_ZN3Box(?:I.*?E)?3getE[^(]*)\(", open(ir).read(), re.M))
+    # `boxes::Box::get` in Itanium: _ZN5boxes3Box(I<args>E)?3getE... -- Box
+    # stands in `define boxes`, and a record carries its chain of defines
+    defs = set(re.findall(r"^define [^@]*@(_ZN5boxes3Box(?:I.*?E)?3getE[^(]*)\(", open(ir).read(), re.M))
     check(len(defs) == lens_count,
           "the lens count equals the emitted definition count (%d vs %d)" % (lens_count, len(defs)))
     check(len(defs) > 2, "  and the fixture really produced several (%d)" % len(defs))
