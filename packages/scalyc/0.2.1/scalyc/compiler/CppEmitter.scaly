@@ -48,6 +48,8 @@ define CppEmitter
     var returns_value: bool         ; the routine being written answers a value
     var sink: String                ; where a statement in value position puts its value ("" returns it)
     var fn_kinds: Array[String]     ; per routine declared, how each parameter is passed (parameter_kinds#)
+    var defined: Array[String]      ; the symbols whose body is written (the plan may list one twice)
+    var template_names: Array[String] ; the generic concepts planned as templates (is_concept_template#)
 )
 {
     init()
@@ -60,6 +62,8 @@ define CppEmitter
         returns_value := false
         sink := String()
         fn_kinds := Array[String]()
+        defined := Array[String]()
+        template_names := Array[String]()
     }
 
     ; Writes the plan as one C++ file to `path`. Answers whether it could.
@@ -83,6 +87,8 @@ define CppEmitter
             {
                 if st.is_generic_placeholder = false
                     out.append "struct `CppEmitter.type_name_of(st.mangled_name)`;\n"
+                else
+                    this.template_names.add(String(st.mangled_name))
             }
         }
         if plan.unions <> null
@@ -91,6 +97,8 @@ define CppEmitter
             {
                 if un.is_generic_placeholder = false
                     out.append "struct `CppEmitter.type_name_of(un.mangled_name)`;\n"
+                else
+                    this.template_names.add(String(un.mangled_name))
             }
         }
         out.append("\n" as char)
@@ -117,14 +125,17 @@ define CppEmitter
         {
             for f in plan.functions
             {
-                if this.wanted(f)
+                if this.wanted(f) and CppEmitter.contains(&this.fn_mangled, f.mangled_name) = false
                     this.declare_function(&out, f)
             }
             out.append("\n" as char)
             for f in plan.functions
             {
-                if this.wanted(f)
+                if this.wanted(f) and CppEmitter.contains(&this.defined, f.mangled_name) = false
+                {
+                    this.defined.add(String(f.mangled_name))
                     this.define_function(&out, f)
+                }
             }
         }
 
@@ -156,13 +167,115 @@ define CppEmitter
         true
     }
 
+    function contains(names: ref[Array[String]], name: String) returns bool
+    {
+        for n in names
+        {
+            if n.equals(name)
+                return true
+        }
+        false
+    }
+
     procedure wanted(this, f: PlannedFunction) returns bool
     {
+        ; a generic routine planned as its template is never called: the
+        ; LLVM emitter gives it an empty body (Emitter.is_uninstantiated_template#)
+        if CppEmitter.is_uninstantiated_template(f.mangled_name) or this.is_concept_template(f.mangled_name)
+            return false
         if this.skip_tests and CppEmitter.is_test_name(f.name) and CppEmitter.param_count(f) = 0
             return false
         if f.mangled_name.get_length() = 0
             return false
         true
+    }
+
+    ; Emitter.is_uninstantiated_template#, the same reading of the symbol: a
+    ; one-letter type name T, K or V, or any capital letter in a type position.
+    function is_uninstantiated_template(mangled: String) returns bool
+    {
+        let n mangled.get_length()
+        if n <= 2
+            return false
+        var i: size_t 2
+        while i < n
+        {
+            let c mangled.get i
+            if c < 0x30 or c > 0x39
+            {
+                i := i + 1
+                continue
+            }
+            let before mangled.get(i - 1)
+            if before = 0x43 or before = 0x44           ; C, D
+            {
+                i := i + 1
+                continue
+            }
+            var length: size_t 0
+            while i < n and mangled.get(i) >= 0x30 and mangled.get(i) <= 0x39
+            {
+                length := length * 10 + ((mangled.get(i) - 0x30) as size_t)
+                i := i + 1
+            }
+            if before = 0x42                            ; B
+            {
+                i := i + length
+                continue
+            }
+            if length = 1 and i < n
+            {
+                let letter mangled.get i
+                if letter = 0x54 or letter = 0x4B or letter = 0x56
+                    return true
+                if letter >= 0x41 and letter <= 0x5A
+                {
+                    if before = 0x49 or before = 0x52 or before = 0x50 or before = 0x45
+                        return true
+                }
+            }
+            i := i + length
+        }
+        false
+    }
+
+    ; Emitter.is_concept_template#: a routine of a generic concept planned
+    ; as its template (its name carries the concept's without arguments).
+    procedure is_concept_template(this, mangled: String) returns bool
+    {
+        if this.template_names.length = 0 or mangled.starts_with("_ZN") = false
+            return false
+        for symbol in this.template_names
+        {
+            if symbol.starts_with("_Z") and symbol.get_length() >= 3
+            {
+                var t symbol.substring(2, symbol.get_length() - 2)
+                if symbol.starts_with("_ZN") and t.get_length() >= 2
+                    t := t.substring(1, t.get_length() - 2)
+                let end t.get_length() + 3
+                if mangled.get_length() > end and mangled.substring(3, t.get_length()).equals(t)
+                {
+                    let c mangled.get end
+                    if c >= 0x30 and c <= 0x39 and CppEmitter.one_name_then_end(mangled, end)
+                        return true
+                }
+            }
+        }
+        false
+    }
+
+    function one_name_then_end(mangled: String, at: size_t) returns bool
+    {
+        let n mangled.get_length()
+        var i at
+        var len: size_t 0
+        while i < n and mangled.get(i) >= 0x30 and mangled.get(i) <= 0x39
+        {
+            len := len * 10 + ((mangled.get(i) - 0x30) as size_t)
+            i := i + 1
+        }
+        let after i + len
+        after < n and mangled.get(after) = 0x45
     }
 
     function is_test_name(name: String) returns bool
@@ -745,6 +858,12 @@ define CppEmitter
     {
         if CppEmitter.is_extern(f)
         {
+            ; once: the modules declare a C function each in their own words
+            if CppEmitter.contains(&this.fn_names, f.name)
+                return
+            this.fn_mangled.add(String(f.mangled_name))
+            this.fn_names.add(String(f.name))
+            this.fn_kinds.add(CppEmitter.parameter_kinds(f))
             out.append "extern \"C\" `CppEmitter.return_ctype(f)` `f.name`(`CppEmitter.parameters(f, false)`);\n"
             return
         }
@@ -1236,7 +1355,17 @@ define CppEmitter
             when f: FloatingPoint
                 return "((`CppEmitter.ctype(t)`)`f.value as f64`)"
             when s: String
+            {
+                ; a String record: its bytes behind their varint length, as
+                ; Emitter.emit_string_constant# lays them out
+                if t.name = "String"
+                {
+                    if s.value.get_length() = 0
+                        return "String{nullptr}"
+                    return "String{(uint8_t*)\"`CppEmitter.varint_text(s.value.get_length())``CppEmitter.escaped(s.value)`\"}"
+                }
                 return "((`CppEmitter.ctype(t)`)\"`CppEmitter.escaped(s.value)`\")"
+            }
             when ch: Character
                 return "((uint8_t)\'`CppEmitter.escaped(ch.value)`\')"
             when fr: Fragment
@@ -1270,6 +1399,27 @@ define CppEmitter
         if ct = "uint64_t"
             return "`value`ULL"
         "(`ct`)`value`ULL"
+    }
+
+    ; A length as the varint the runtime's String reads, in octal escapes.
+    function varint_text(length: size_t) returns String
+    {
+        var sb StringBuilder()
+        var rest length
+        repeat
+        {
+            var b: size_t rest & 0x7F
+            rest := rest >> 7
+            if rest > 0
+                b := b | 0x80
+            sb.append("\\" as char)
+            sb.append((0x30 + ((b >> 6) & 7)) as char)
+            sb.append((0x30 + ((b >> 3) & 7)) as char)
+            sb.append((0x30 + (b & 7)) as char)
+            if rest = 0
+                break
+        }
+        sb.to_string()
     }
 
     ; A string's bytes (the Modeler decoded its escapes) as the inside of a
