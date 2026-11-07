@@ -31707,6 +31707,14 @@ define Planner
                 }
                 return this.plan_operands(rest)
             }
+            ; `Shell[int].Tally(5)`: a record declared in a generic record,
+            ; reached through an instance (outer_instance_operands#)
+            if outer_generics_any and ops.length > 1
+            {
+                let through_instance this.outer_instance_operands(ops)
+                if through_instance.length > 0
+                    return this.plan_operands(through_instance)
+            }
             ; an operation with a delayed operand (`and`, `or`): read on the
             ; model, its right side planned where the body puts it
             ; (lazy_operation#)
@@ -57923,7 +57931,21 @@ define Planner
             let n_outer this.outer_parameter_count(at as size_t)
             if n_outer = 0
                 return null
+            ; only where the outer's parameters are in scope -- inside the
+            ; record it is declared in, or deeper, or where an instance's
+            ; arguments stand for them (`returns Box` of `Shell[int].made`,
+            ; planned at a call from outside). Elsewhere `Tally` has no T:
+            ; filled with it, a file-level `Tally[int](5)` became `Tally[T]`,
+            ; the written `[int]` no longer merged (collapse_generics# takes a
+            ; type WITHOUT arguments), and `get` read a placeholder at rc 0
             let c concepts[at as size_t].value
+            let inner_path concept_ns_paths[at as size_t]
+            let dot inner_path.last_index_of(46)
+            if dot < 0
+                return null
+            let parent_path inner_path.substring(0, dot as size_t)
+            if planning_ns_path.equals(parent_path) = false and planning_ns_path.starts_with("`parent_path`.") = false and this.lookup_type_substitution(c.parameters[0].name) = null
+                return null
             var written: size_t 0
             if t.generics <> null
                 written := t.generics.length
@@ -57950,6 +57972,174 @@ define Planner
             }
             let gens Vector[Type]^this(args)
             Type^this(t.span, t.name, &gens, t.lifetime)
+        }
+
+        ; outer_instance_operands#: `Shell[int].Tally(5)` -- a record or union
+        ; declared in a generic record, reached through an INSTANCE of it -- is
+        ; `Shell.Tally[int](5)`, the outer's arguments first, and
+        ; `Shell[int].Pair[bool](...)` is `Shell.Pair[int, bool](...)`; deeper
+        ; alike (`Shell[int].Box.Inner(...)`). The operands are written again
+        ; so, at the first such pair; empty where none stands. Before
+        ; 2026-11-07 the instance's hop was asked as a STATIC of `Shell[int]`:
+        ; `function not found: Tally`.
+        procedure outer_instance_operands(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand]) returns Vector[scalyc.compiler.Model.Operand]
+        {
+            var i: size_t 0
+            while i + 1 < ops.length
+            {
+                let rewritten this.outer_instance_at(ops, i)
+                if rewritten.length > 0
+                    return rewritten
+                i := i + 1
+            }
+            Vector[scalyc.compiler.Model.Operand]^this(0)
+        }
+
+        ; outer_instance_operands# at operand i: a type written without
+        ; arguments, then its argument list carrying the hops
+        procedure outer_instance_at(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand], i: size_t) returns Vector[scalyc.compiler.Model.Operand]
+        {
+            let none Vector[scalyc.compiler.Model.Operand]^this(0)
+            let head ops[i]
+            let next ops[i + 1]
+            if head.member_access <> null or next.member_access = null
+                return none
+            var tname Vector[String](0)
+            var tlife: Lifetime Lifetime.Unspecified(Unspecified())
+            var plain false
+            choose head.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.generics = null
+                    {
+                        tname := t.name
+                        tlife := t.lifetime
+                        plain := true
+                    }
+                }
+                else
+                    0
+            if plain = false or tname.length = 0
+                return none
+            var rows Vector[Vector[scalyc.compiler.Model.Operand]](0)
+            var mlife: Lifetime Lifetime.Unspecified(Unspecified())
+            var is_matrix false
+            choose next.expression
+                when m: scalyc.compiler.Model.Matrix
+                {
+                    rows := m.operations
+                    mlife := m.life
+                    is_matrix := true
+                }
+                else
+                    0
+            if is_matrix = false
+                return none
+            let hops (*next.member_access)
+            ; the generic concept the head names, by its namespace path
+            var at this.answered_concept_at(tname[tname.length - 1])
+            if tname.length > 1 and ns_multi_any
+            {
+                let q this.search_ns_path(Planner.join_dotted_prefix(tname, tname.length))
+                if q >= 0
+                    at := q
+            }
+            if at < 0 or (at as size_t) >= concept_ns_paths.length
+                return none
+            ; the hops that name a record declared in it, one level a hop
+            var path String(concept_ns_paths[at as size_t])
+            var inner_at: i64 0 - 1
+            var k: size_t 0
+            while k < hops.length
+            {
+                let cand "`path`.`hops[k]`"
+                let c_at ns_path_index.table.lookup(cand)
+                if c_at < 0
+                    break
+                if this.outer_parameter_count(c_at as size_t) = 0
+                    break
+                path := cand
+                inner_at := c_at
+                k := k + 1
+            }
+            if k = 0 or inner_at < 0
+                return none
+            ; its own arguments: the list right after it
+            let inner_c concepts[inner_at as size_t].value
+            var own_rows Vector[Vector[scalyc.compiler.Model.Operand]](0)
+            var consumed false
+            if inner_c.parameters.length > rows.length and k = hops.length and i + 2 < ops.length
+            {
+                choose ops[i + 2].expression
+                    when own: scalyc.compiler.Model.Matrix
+                    {
+                        own_rows := own.operations
+                        consumed := true
+                    }
+                    else
+                        0
+            }
+            var all_rows Vector[Vector[scalyc.compiler.Model.Operand]]^this(rows.length + own_rows.length)
+            var r: size_t 0
+            while r < rows.length
+            {
+                all_rows.put(r, rows[r])
+                r := r + 1
+            }
+            r := 0
+            while r < own_rows.length
+            {
+                all_rows.put(rows.length + r, own_rows[r])
+                r := r + 1
+            }
+            ; the hops left over ride on the argument list, as they do on
+            ; `Shell.Slot[int].Full`
+            var access: ref[Vector[String]]? null
+            if consumed
+                access := ops[i + 2].member_access
+            if consumed = false and k < hops.length
+            {
+                let rest_names Vector[String]^this(hops.length - k)
+                var h: size_t k
+                while h < hops.length
+                {
+                    rest_names.put(h - k, String^this(hops[h]))
+                    h := h + 1
+                }
+                access := &rest_names
+            }
+            var new_name Vector[String]^this(tname.length + k)
+            var n: size_t 0
+            while n < tname.length
+            {
+                new_name.put(n, tname[n])
+                n := n + 1
+            }
+            n := 0
+            while n < k
+            {
+                new_name.put(tname.length + n, String^this(hops[n]))
+                n := n + 1
+            }
+            var skip: size_t 0
+            if consumed
+                skip := 1
+            var out Vector[scalyc.compiler.Model.Operand]^this(ops.length - skip)
+            var j: size_t 0
+            while j < i
+            {
+                out.put(j, ops[j])
+                j := j + 1
+            }
+            out.put(i, Operand(head.span, Expression.Type(scalyc.compiler.Model.Type(head.span, new_name, null, tlife)), null))
+            out.put(i + 1, Operand(next.span, Expression.Matrix(scalyc.compiler.Model.Matrix(next.span, all_rows, mlife)), access))
+            j := i + 2 + skip
+            while j < ops.length
+            {
+                out.put(j - skip, ops[j])
+                j := j + 1
+            }
+            out
         }
 
         ; extend_ns_path#: the namespace path one `define` further in; a
