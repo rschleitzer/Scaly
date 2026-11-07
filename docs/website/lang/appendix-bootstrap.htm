@@ -984,9 +984,9 @@ href="tutorial.htm#tut-install"
 >Installing Scaly</a
 > does on your machine; it needs only LLVM 21
     and a C compiler. A
-    single seed covers every 64-bit little-endian (LP64) target, and a CI
-    matrix builds and verifies it natively on macOS and Linux, on both x86-64
-    and AArch64.</p
+    single seed covers every 64-bit little-endian target, Windows included,
+    and the release workflow builds the programs from it natively on macOS,
+    Linux and Windows, on both x86-64 and AArch64.</p
 ><p
 >The seed is refreshed by <code
 class="filename"
@@ -1016,11 +1016,45 @@ class="filename"
 class="filename"
 >retired/scalyc0/</code
 > as a historical reference, it
-    has no build, and it cannot parse the current language. No C++ toolchain
-    appears anywhere in today's build.</p
+    has no build, and it cannot parse the current language. Today's build
+    needs no C++ toolchain; C++ comes back only as a check on the seed.</p
 ><p
->Targets with a different data model (32-bit, big-endian, or LLP64
-    such as Windows) are not covered by the seed; supporting one would mean
+>A compiler that compiles itself could carry something its sources do
+    not say and hand it on through every seed — Ken Thompson's
+    <em
+>Reflections on Trusting Trust</em
+>. So the repository also
+    holds the compiler as C++, under <code
+class="filename"
+>trust/</code
+>, written by
+    the compiler's second back end (<code
+>scalyc --emit-cpp</code
+>) from
+    the same plan the LLVM back end reads, and written again whenever the seed
+    is. <code
+class="filename"
+>trust/check.sh</code
+> builds a compiler from that C++
+    with a C++ compiler of your choice, lets it emit the seed, and compares
+    the result with <code
+class="filename"
+>seed/</code
+> byte for byte; if they agree,
+    the seed is what the sources say. This is David A. Wheeler's
+    <em
+>diverse double-compiling</em
+>. The release workflow runs the
+    check with GCC, in a container without clang, before it builds anything;
+    <code
+class="filename"
+>trust/README.md</code
+> says what the check proves and what
+    stays trusted (the C++ compiler, libLLVM 21, the runtime's few C and
+    assembly files, and the C++ itself).</p
+><p
+>Hosts with a different data model (32-bit or big-endian) are not
+    covered by the seed; supporting one would mean
     generalizing the compiler's size and alignment emission off its fixed
     64-bit constants and minting a seed for that data model.</p
 ></article

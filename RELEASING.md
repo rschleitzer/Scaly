@@ -68,7 +68,8 @@ declarations break.
 ## The steps
 
 1. **The bar.** `tools/bar.sh` — bootstrap, seed refresh, every suite, the
-   published directories unchanged. Commit what it refreshed (`seed/`).
+   published directories unchanged, and `trust/check.sh`. Commit what it
+   refreshed (`seed/` and `trust/`).
 2. **The packages.** `scaly publish --check` at the root: every published
    version is what its record names, every new version's number says its
    change. `scaly publish` when a package's new version is done — it writes
@@ -77,7 +78,9 @@ declarations break.
 4. **The installer gate.** `tests/install/run.sh` — archives of this tree
    into a scratch prefix by both routes (ready-made programs, the seed).
    `tests/install/run-windows.sh` on a Windows machine.
-5. **The programs.** `gh workflow run release` builds the six archives on
+5. **The programs.** `gh workflow run release` first runs
+   `trust/check-gcc.sh` (below, *The compiler as C++*) and goes no further
+   when the seed does not come out of the C++; then it builds the six archives on
    GitHub's runners from the pushed commit (the version is the `VERSION`
    file's unless one is given) and hangs each on the GitHub release
    `v<version>`, a prerelease so far. Wait for all six. It keeps no
@@ -94,7 +97,8 @@ declarations break.
    `docs/scaly/`; commit them; `docs/deploy.sh` puts the website up.
 
 A push proves nothing by itself: no workflow verifies a commit. The bar on a
-machine is the gate, and the release workflow only builds.
+machine is the gate; the release workflow checks one thing, the seed against
+the C++, and otherwise builds.
 
 ## The seed
 
@@ -111,3 +115,15 @@ library or the language server is not done before that is committed.
 
 LLVM 21 is required to build from the seed (`llc`, `libLLVM`) and any clang
 to link.
+
+## The compiler as C++
+
+`trust/` holds the compiler and the standard library as C++, written by
+`scalyc --emit-cpp` (`trust/emit.sh`). The bar writes it again with every
+seed refresh, from the same tree, and like the seed it is never merged, only
+written anew. `trust/check.sh` builds a compiler from it with any C++20
+compiler and checks that it emits `seed/` byte for byte: a seed that carried
+anything the sources do not say would have to come out of the C++ too, where
+it can be read. `trust/check-gcc.sh` does it with GCC in an AlmaLinux 9
+container without clang, and the release workflow runs that before it builds
+anything. `trust/README.md` has what it proves and what stays trusted.
