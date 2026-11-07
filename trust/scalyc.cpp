@@ -12907,6 +12907,7 @@ struct Planner
     String planning_ns_path;
     String body_ns_path;
     bool ns_multi_any;
+    bool outer_generics_any;
     bool ns_probe_on;
     Array<String>* ns_probe_lines;
     Array<String>* function_origin_files;
@@ -15935,6 +15936,7 @@ MethodMatch* Planner_call_arm_static_in(scaly_frame*, Planner&, PlannedOperand&,
 bool Planner_is_this_wrapper_name(String&) asm("_ZN7PlannerB6scalycB4v0_220is_this_wrapper_nameE6String");
 void Planner_check_lazy_shadow(Planner&, String&, Span&) asm("_ZN7PlannerB6scalycB4v0_217check_lazy_shadowE6String4SpanB6scalycB4v0_2");
 Concept* Planner_concept_in_scope_of(Planner&, String&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_219concept_in_scope_ofE6String11PlannedTypeB6scalycB4v0_2");
+String Planner_qualified_concept_scope(scaly_frame*, Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_223qualified_concept_scopeEPN4scaly6memory4PageE6String");
 PlannedOperand Planner_collapse_construction_in(scaly_frame*, Planner&, Vector<PlannedOperand>&, PlannedOperand&, PlannedOperand&, String&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_224collapse_construction_inEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_26String11PlannedTypeB6scalycB4v0_2");
 String Planner_pointee_mangled(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_215pointee_mangledEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 void Planner_ensure_layout_by_name(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_221ensure_layout_by_nameE6String");
@@ -15942,6 +15944,7 @@ Vector<PlannedType> Planner_extract_arg_types(scaly_frame*, PlannedOperand&) asm
 Vector<PlannedItem> Planner_plan_items(scaly_frame*, Planner&, Vector<Item>&) asm("_ZN7PlannerB6scalycB4v0_210plan_itemsEPN4scaly6memory4PageE6VectorI4ItemB6scalycB4v0_2E");
 Vector<PlannedOperand>* Planner_restamp_args(scaly_frame*, Planner&, Vector<PlannedOperand>&, Lifetime&) asm("_ZN7PlannerB6scalycB4v0_212restamp_argsEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E8LifetimeB6scalycB4v0_2");
 Vector<PlannedComponent>* Planner_restamp_components(scaly_frame*, Planner&, Vector<PlannedComponent>&, Lifetime&) asm("_ZN7PlannerB6scalycB4v0_218restamp_componentsEPN4scaly6memory4PageE6VectorI16PlannedComponentB6scalycB4v0_2E8LifetimeB6scalycB4v0_2");
+PlannedOperand Planner_collapse_variant_in(scaly_frame*, Planner&, Vector<PlannedOperand>&, PlannedOperand&, PlannedOperand&, PlannedType&, String&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_219collapse_variant_inEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_211PlannedTypeB6scalycB4v0_26Stringm");
 void Planner_ensure_union_layout(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_219ensure_union_layoutE6String");
 PlannedOperand Planner_operation_left(scaly_frame*, Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_214operation_leftEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
 PlannedOperand Planner_operation_postfix(scaly_frame*, Planner&, PlannedOperand&, PlannedOperand&, bool*) asm("_ZN7PlannerB6scalycB4v0_217operation_postfixEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2Rb");
@@ -16027,6 +16030,7 @@ bool Planner_model_type_has_alias(Planner&, Type&, int64_t) asm("_ZN7PlannerB6sc
 Type Planner_resolve_model_type_aliases(scaly_frame*, Planner&, Type&, int64_t) asm("_ZN7PlannerB6scalycB4v0_226resolve_model_type_aliasesEPN4scaly6memory4PageE4TypeB6scalycB4v0_2i");
 PlannedType Planner_tuple_type(scaly_frame*, Vector<PlannedType>&, bool, Vector<String>&) asm("_ZN7PlannerB6scalycB4v0_210tuple_typeEPN4scaly6memory4PageE6VectorI11PlannedTypeB6scalycB4v0_2Eb6VectorI6StringE");
 PlannedType Planner_plan_tuple_type(scaly_frame*, Planner&, Type&) asm("_ZN7PlannerB6scalycB4v0_215plan_tuple_typeEPN4scaly6memory4PageE4TypeB6scalycB4v0_2");
+Type* Planner_outer_arguments(scaly_frame*, Planner&, Type&) asm("_ZN7PlannerB6scalycB4v0_215outer_argumentsEPN4scaly6memory4PageE4TypeB6scalycB4v0_2");
 PlannedType Planner_resolve_type_base(scaly_frame*, Type&) asm("_ZN7PlannerB6scalycB4v0_217resolve_type_baseEPN4scaly6memory4PageE4TypeB6scalycB4v0_2");
 PlannedType Planner_apply_name_substitution(scaly_frame*, PlannedType&, Vector<KeyValuePair<String, PlannedType>>*) asm("_ZN7PlannerB6scalycB4v0_223apply_name_substitutionEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26OptionIR6VectorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EEE");
 Vector<PlannedType>* Planner_named_arguments(scaly_frame*, Planner&, PlannedType&, Type&) asm("_ZN7PlannerB6scalycB4v0_215named_argumentsEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_24TypeB6scalycB4v0_2");
@@ -16122,6 +16126,8 @@ PlannedTuple Planner_plan_new(scaly_frame*, Planner&, New&) asm("_ZN7PlannerB6sc
 PlannedBlock Planner_plan_block(scaly_frame*, Planner&, Block&) asm("_ZN7PlannerB6scalycB4v0_210plan_blockEPN4scaly6memory4PageE5BlockB6scalycB4v0_2");
 PlannedOperand Planner_plan_operand(scaly_frame*, Planner&, Operand&) asm("_ZN7PlannerB6scalycB4v0_212plan_operandEPN4scaly6memory4PageE7OperandB6scalycB4v0_2");
 String Planner_unit_variant_owner(scaly_frame*, Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_218unit_variant_ownerEPN4scaly6memory4PageE6String");
+String Planner_join_dotted_prefix(scaly_frame*, Vector<String>&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_218join_dotted_prefixEPN4scaly6memory4PageE6VectorI6StringEm");
+PlannedOperand* Planner_unit_variant_operand(scaly_frame*, Planner&, String&, String&, Span&) asm("_ZN7PlannerB6scalycB4v0_220unit_variant_operandEPN4scaly6memory4PageE6String6String4SpanB6scalycB4v0_2");
 PlannedOperand* Planner_try_plan_unit_variant(scaly_frame*, Planner&, Type&, Span&) asm("_ZN7PlannerB6scalycB4v0_221try_plan_unit_variantEPN4scaly6memory4PageE4TypeB6scalycB4v0_24SpanB6scalycB4v0_2");
 bool Planner_union_variant_is_unit(Planner&, String&, String&) asm("_ZN7PlannerB6scalycB4v0_221union_variant_is_unitE6String6String");
 PlannedOperand* Planner_unit_variant_with_chain(scaly_frame*, Planner&, PlannedExpression&, PlannedType&, Vector<String>&, Span&) asm("_ZN7PlannerB6scalycB4v0_223unit_variant_with_chainEPN4scaly6memory4PageE17PlannedExpressionB6scalycB4v0_211PlannedTypeB6scalycB4v0_26VectorI6StringE4SpanB6scalycB4v0_2");
@@ -16637,6 +16643,9 @@ void Planner_plan_namespace_modules(scaly_frame*, Planner&, Namespace&) asm("_ZN
 PlannedNamespace Planner_plan_namespace(scaly_frame*, Planner&, Namespace&, String&) asm("_ZN7PlannerB6scalycB4v0_214plan_namespaceEPN4scaly6memory4PageE9NamespaceB6scalycB4v0_26String");
 void Planner_plan_namespace_module_one(scaly_frame*, Planner&, Module&) asm("_ZN7PlannerB6scalycB4v0_225plan_namespace_module_oneEPN4scaly6memory4PageE6ModuleB6scalycB4v0_2");
 void Planner_register_concept_recursive(Planner&, Concept&) asm("_ZN7PlannerB6scalycB4v0_226register_concept_recursiveE7ConceptB6scalycB4v0_2");
+Concept Planner_with_outer_parameters(scaly_frame*, Planner&, Concept&, Concept&) asm("_ZN7PlannerB6scalycB4v0_221with_outer_parametersEPN4scaly6memory4PageE7ConceptB6scalycB4v0_27ConceptB6scalycB4v0_2");
+uint64_t Planner_outer_parameter_count(Planner&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_221outer_parameter_countEm");
+int64_t Planner_search_ns_path(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_214search_ns_pathE6String");
 void Planner_ns_probe(Planner&) asm("_ZN7PlannerB6scalycB4v0_28ns_probeEv");
 void Planner_build_transitive_page_set(Planner&) asm("_ZN7PlannerB6scalycB4v0_225build_transitive_page_setEv");
 bool Planner_is_npo_option_type(Type&) asm("_ZN7PlannerB6scalycB4v0_218is_npo_option_typeE4TypeB6scalycB4v0_2");
@@ -18455,9 +18464,9 @@ template <class T> static void Array_put111(Array<T>&, uint64_t, T);
 template <class T> static void List_add113(List<T>&, T);
 template <class T> static void List_add_on113(List<T>&, Page*, T);
 template <class T1> static T1 Array21(Array<T1>&, uint64_t);
-template <class T1> static T1 Vector22(Vector<T1>&, uint64_t);
+template <class T1> static T1 Vector23(Vector<T1>&, uint64_t);
 PlannedType Array25(Array<PlannedType>&, uint64_t) asm("_ZN5ArrayI11PlannedTypeB6scalycB4v0_2EixEm");
-template <class T> static T Vector26(Vector<T>&, uint64_t);
+template <class T> static T Vector27(Vector<T>&, uint64_t);
 
 // routines of other files the plan names only at their calls
 void scaly_panic_oob(const char*, uint64_t, uint64_t) asm("_Z15scaly_panic_oobP10const_charmm");
@@ -53039,16 +53048,23 @@ __attribute__((weak)) Planner_ApplicationTarget Planner_application_target(scaly
             uint64_t dot_pos = ((uint64_t)(dot_idx));
             String prefix = String_substring(scaly_rp, fn_name, 0ULL, dot_pos);
             String suffix = String_substring(scaly_rp, fn_name, (dot_pos + 1ULL), ((String_get_length(fn_name) - dot_pos) - 1ULL));
+            String saved_scope = this_->planning_ns_path;
+            String q_scope = Planner_qualified_concept_scope(scaly_rp, *(this_), prefix);
+            if ((String_get_length(q_scope) > 0ULL))
+            {
+                this_->planning_ns_path = (*({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init2((*scaly_t9), q_scope); scaly_t9; }));
+                prefix = Planner_last_name_segment(scaly_rp, prefix);
+            }
             Concept* union_ref = Planner_lookup_concept(*(this_), prefix);
             if (((union_ref) != (nullptr)))
             {
                 Concept uconc = ((*(union_ref)));
                 bool is_union_def = false;
                 {
-                    auto&& scaly_t9 = (uconc).definition;
-                    if (scaly_t9.tag == 4)
+                    auto&& scaly_t10 = (uconc).definition;
+                    if (scaly_t10.tag == 4)
                     {
-                        Union u = scaly_payload<Union>(scaly_t9);
+                        Union u = scaly_payload<Union>(scaly_t10);
                         is_union_def = true;
                     }
                     else
@@ -53064,10 +53080,10 @@ __attribute__((weak)) Planner_ApplicationTarget Planner_application_target(scaly
                         is_variant_ctor = true;
                         Lifetime variant_life = scaly_variant<Lifetime>(0, Unspecified{});
                         {
-                            auto&& scaly_t10 = (result).expr;
-                            if (scaly_t10.tag == 1)
+                            auto&& scaly_t11 = (result).expr;
+                            if (scaly_t11.tag == 1)
                             {
-                                PlannedType vt = scaly_payload<PlannedType>(scaly_t10);
+                                PlannedType vt = scaly_payload<PlannedType>(scaly_t11);
                                 variant_life = (vt).life;
                             }
                             else
@@ -53075,12 +53091,13 @@ __attribute__((weak)) Planner_ApplicationTarget Planner_application_target(scaly
                                 0LL;
                             }
                         }
-                        ctor_union_type = (*({ PlannedType* scaly_t11 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t11 = PlannedType{(result).loc, prefix, Planner_type_symbol(scaly_rp, *(this_), prefix, (Vector<PlannedType>*)(nullptr)), (Vector<PlannedType>*)(nullptr), variant_life, (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)}; scaly_t11; }));
+                        ctor_union_type = (*({ PlannedType* scaly_t12 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t12 = PlannedType{(result).loc, prefix, Planner_type_symbol(scaly_rp, *(this_), prefix, (Vector<PlannedType>*)(nullptr)), (Vector<PlannedType>*)(nullptr), variant_life, (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)}; scaly_t12; }));
                         ctor_variant_name = suffix;
                         ctor_variant_tag = ((uint64_t)(tag));
                     }
                 }
             }
+            this_->planning_ns_path = saved_scope;
         }
     }
     int64_t kind = 0LL;
@@ -53387,6 +53404,21 @@ __attribute__((weak)) PlannedOperand Planner_collapse_construction_in(scaly_fram
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
 __attribute__((weak)) PlannedOperand Planner_collapse_variant(scaly_frame* scaly_rp, Planner& scaly_self, Vector<PlannedOperand>& ops, PlannedOperand& first, PlannedOperand& second, PlannedType& ctor_union_type, String& ctor_variant_name, uint64_t ctor_variant_tag)
+{
+    Planner* this_ = &scaly_self;
+    if (((Planner_type_name_is_multi(*(this_), ctor_union_type)) == (false)))
+    {
+        return Planner_collapse_variant_in(scaly_rp, *(this_), ops, first, second, ctor_union_type, ctor_variant_name, ctor_variant_tag);
+    }
+    String saved_scope = this_->planning_ns_path;
+    this_->planning_ns_path = (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(Planner_ns_path_in(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), scaly_lvalue(Planner_pointee_mangled(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), ctor_union_type))))); scaly_t1; }));
+    PlannedOperand answer = Planner_collapse_variant_in(scaly_rp, *(this_), ops, first, second, ctor_union_type, ctor_variant_name, ctor_variant_tag);
+    this_->planning_ns_path = saved_scope;
+    return answer;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) PlannedOperand Planner_collapse_variant_in(scaly_frame* scaly_rp, Planner& scaly_self, Vector<PlannedOperand>& ops, PlannedOperand& first, PlannedOperand& second, PlannedType& ctor_union_type, String& ctor_variant_name, uint64_t ctor_variant_tag)
 {
     Planner* this_ = &scaly_self;
     PlannedOperand result = first;
@@ -57652,6 +57684,15 @@ __attribute__((weak)) PlannedType Planner_plan_type(scaly_frame* scaly_rp, Plann
     {
         return Planner_plan_tuple_type(scaly_rp, *(this_), t);
     }
+    if (this_->outer_generics_any)
+    {
+        Type* with_outer = Planner_outer_arguments(scaly_rp, *(this_), t);
+        if (((with_outer) != (nullptr)))
+        {
+            Type filled = (*(with_outer));
+            return Planner_plan_type(scaly_rp, *(this_), filled);
+        }
+    }
     Planner_report_unknown_page_name(*(this_), t);
     Type mt = t;
     if ((this_->has_type_aliases ? Planner_model_type_has_alias(*(this_), t, 0LL) : false))
@@ -57802,18 +57843,26 @@ __attribute__((weak)) PlannedType Planner_plan_type(scaly_frame* scaly_rp, Plann
             uint64_t vc_total = String_get_length((*canonical_name));
             if ((vc_total > vc_start))
             {
-                String vc_prefix = String_substring(&scaly_local.f, (*canonical_name), 0ULL, ((uint64_t)(vc_dot)));
+                String vc_prefix = String_substring(scaly_rp, (*canonical_name), 0ULL, ((uint64_t)(vc_dot)));
                 String vc_suffix = String_substring(&scaly_local.f, (*canonical_name), vc_start, (vc_total - vc_start));
+                String vc_saved_scope = this_->planning_ns_path;
+                String vc_scope = Planner_qualified_concept_scope(&scaly_local.f, *(this_), vc_prefix);
+                if ((String_get_length(vc_scope) > 0ULL))
+                {
+                    this_->planning_ns_path = (*({ String* scaly_t21 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t21 = String{}; String_init2((*scaly_t21), vc_scope); scaly_t21; }));
+                    vc_prefix = Planner_last_name_segment(scaly_rp, vc_prefix);
+                }
                 Concept* vc_union_ref = Planner_lookup_concept(*(this_), vc_prefix);
+                bool vc_keep = false;
                 if (((vc_union_ref) != (nullptr)))
                 {
                     Concept vc_uconc = ((*(vc_union_ref)));
                     bool vc_is_union = false;
                     {
-                        auto&& scaly_t21 = (vc_uconc).definition;
-                        if (scaly_t21.tag == 4)
+                        auto&& scaly_t22 = (vc_uconc).definition;
+                        if (scaly_t22.tag == 4)
                         {
-                            Union u = scaly_payload<Union>(scaly_t21);
+                            Union u = scaly_payload<Union>(scaly_t22);
                             vc_is_union = true;
                         }
                         else
@@ -57826,9 +57875,14 @@ __attribute__((weak)) PlannedType Planner_plan_type(scaly_frame* scaly_rp, Plann
                         int64_t vc_tag = Planner_lookup_variant_tag(*(this_), vc_prefix, vc_suffix);
                         if ((vc_tag >= 0LL))
                         {
-                            return after_subst;
+                            vc_keep = true;
                         }
                     }
+                }
+                this_->planning_ns_path = vc_saved_scope;
+                if (vc_keep)
+                {
+                    return after_subst;
                 }
             }
         }
@@ -57849,10 +57903,10 @@ __attribute__((weak)) PlannedType Planner_plan_type(scaly_frame* scaly_rp, Plann
                 {
                     Concept nf_conc = ((*(nf_ns_ref)));
                     {
-                        auto&& scaly_t22 = (nf_conc).definition;
-                        if (scaly_t22.tag == 2)
+                        auto&& scaly_t23 = (nf_conc).definition;
+                        if (scaly_t23.tag == 2)
                         {
-                            Namespace nf_ns = scaly_payload<Namespace>(scaly_t22);
+                            Namespace nf_ns = scaly_payload<Namespace>(scaly_t23);
                             uint64_t nf_mi = 0ULL;
                             while ((nf_mi < ((nf_ns).members).length))
                             {
@@ -57861,10 +57915,10 @@ __attribute__((weak)) PlannedType Planner_plan_type(scaly_frame* scaly_rp, Plann
                                 {
                                     Member nf_mem = ((*(nf_m_ptr)));
                                     {
-                                        auto&& scaly_t23 = nf_mem;
-                                        if (scaly_t23.tag == 3)
+                                        auto&& scaly_t24 = nf_mem;
+                                        if (scaly_t24.tag == 3)
                                         {
-                                            Function nff = scaly_payload<Function>(scaly_t23);
+                                            Function nff = scaly_payload<Function>(scaly_t24);
                                             if (String_equals((nff).name, suffix))
                                             {
                                                 nf_keep_dotted = true;
@@ -57920,15 +57974,15 @@ __attribute__((weak)) PlannedType Planner_plan_type(scaly_frame* scaly_rp, Plann
         {
             bool is_struct = false;
             {
-                auto&& scaly_t24 = (conc).definition;
-                if (scaly_t24.tag == 3)
+                auto&& scaly_t25 = (conc).definition;
+                if (scaly_t25.tag == 3)
                 {
-                    Structure s = scaly_payload<Structure>(scaly_t24);
+                    Structure s = scaly_payload<Structure>(scaly_t25);
                     is_struct = true;
                 }
-                else if (scaly_t24.tag == 4)
+                else if (scaly_t25.tag == 4)
                 {
-                    Union un = scaly_payload<Union>(scaly_t24);
+                    Union un = scaly_payload<Union>(scaly_t25);
                     is_struct = ((Planner_planned_type_is_npo_reference(after_subst)) == (false));
                 }
                 else
@@ -57943,17 +57997,17 @@ __attribute__((weak)) PlannedType Planner_plan_type(scaly_frame* scaly_rp, Plann
                 {
                     if ((((after_subst).generics) != (nullptr)))
                     {
-                        Vector<PlannedType>* g = ({ Vector<PlannedType>* scaly_t25 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t25 = ((*((after_subst).generics))); scaly_t25; });
+                        Vector<PlannedType>* g = ({ Vector<PlannedType>* scaly_t26 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t26 = ((*((after_subst).generics))); scaly_t26; });
                         if ((((*g)).length == ((conc).parameters).length))
                         {
-                            Vector<PlannedType>* canon_gens_inst = ({ Vector<PlannedType>* scaly_t26 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t26 = Vector<PlannedType>{}; Vector_init3<PlannedType>((*scaly_t26), ((*g)).length); scaly_t26; });
+                            Vector<PlannedType>* canon_gens_inst = ({ Vector<PlannedType>* scaly_t27 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t27 = Vector<PlannedType>{}; Vector_init3<PlannedType>((*scaly_t27), ((*g)).length); scaly_t27; });
                             uint64_t ggi = 0ULL;
                             while ((ggi < ((*g)).length))
                             {
                                 PlannedType* gp_ptr = Vector_get<PlannedType>((*g), ggi);
                                 if (((gp_ptr) != (nullptr)))
                                 {
-                                    PlannedType* gp = ({ PlannedType* scaly_t27 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t27 = ((*(gp_ptr))); scaly_t27; });
+                                    PlannedType* gp = ({ PlannedType* scaly_t28 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t28 = ((*(gp_ptr))); scaly_t28; });
                                     bool need_replan = false;
                                     if (Planner_pointee_unnamed((*gp)))
                                     {
@@ -57985,13 +58039,13 @@ __attribute__((weak)) PlannedType Planner_plan_type(scaly_frame* scaly_rp, Plann
                                     {
                                         if ((((t).generics) != (nullptr)))
                                         {
-                                            Vector<Type>* mg = ({ Vector<Type>* scaly_t28 = (Vector<Type>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<Type>), alignof(Vector<Type>)); *scaly_t28 = ((*((t).generics))); scaly_t28; });
+                                            Vector<Type>* mg = ({ Vector<Type>* scaly_t29 = (Vector<Type>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<Type>), alignof(Vector<Type>)); *scaly_t29 = ((*((t).generics))); scaly_t29; });
                                             if ((ggi < ((*mg)).length))
                                             {
                                                 Type* mp_ptr = Vector_get<Type>((*mg), ggi);
                                                 if (((mp_ptr) != (nullptr)))
                                                 {
-                                                    Type* mp = ({ Type* scaly_t29 = (Type*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Type), alignof(Type)); *scaly_t29 = ((*(mp_ptr))); scaly_t29; });
+                                                    Type* mp = ({ Type* scaly_t30 = (Type*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Type), alignof(Type)); *scaly_t30 = ((*(mp_ptr))); scaly_t30; });
                                                     PlannedType cgi = Planner_plan_type(scaly_rp, *(this_), (*mp));
                                                     Vector_put<PlannedType>((*canon_gens_inst), ggi, cgi);
                                                 }
@@ -61112,12 +61166,17 @@ __attribute__((weak)) PlannedWhen Planner_plan_when(scaly_frame* scaly_rp, Plann
             variant_name = (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = ((*(last_ptr))); scaly_t1; }));
         }
     }
+    String when_saved_scope = this_->planning_ns_path;
+    if ((((Planner_is_unit_type(union_type)) == (false)) ? Planner_type_name_is_multi(*(this_), union_type) : false))
+    {
+        this_->planning_ns_path = (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(Planner_ns_path_in(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), scaly_lvalue(Planner_pointee_mangled(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), union_type))))); scaly_t2; }));
+    }
     if (((Planner_is_unit_type(union_type)) == (false)))
     {
         uint64_t saved_subst_when = (this_->type_substitutions).length;
         if ((((union_type).generics) != (nullptr)))
         {
-            Vector<PlannedType>* wgens = ({ Vector<PlannedType>* scaly_t2 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t2 = ((*((union_type).generics))); scaly_t2; });
+            Vector<PlannedType>* wgens = ({ Vector<PlannedType>* scaly_t3 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t3 = ((*((union_type).generics))); scaly_t3; });
             Concept* wconc_ref = Planner_lookup_concept(*(this_), (union_type).name);
             if (((wconc_ref) != (nullptr)))
             {
@@ -61146,7 +61205,7 @@ __attribute__((weak)) PlannedWhen Planner_plan_when(scaly_frame* scaly_rp, Plann
         if (((payload_ref) != (nullptr)))
         {
             binding_ty = ((*(payload_ref)));
-            variant_type = (*({ PlannedType* scaly_t3 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t3 = ((*(payload_ref))); scaly_t3; }));
+            variant_type = (*({ PlannedType* scaly_t4 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t4 = ((*(payload_ref))); scaly_t4; }));
         }
         int64_t tag = Planner_when_variant_tag(*(this_), (union_type).name, variant_name);
         if ((tag >= 0LL))
@@ -61162,10 +61221,10 @@ __attribute__((weak)) PlannedWhen Planner_plan_when(scaly_frame* scaly_rp, Plann
                 if (((b3_cref) != (nullptr)))
                 {
                     {
-                        auto&& scaly_t4 = (((*(b3_cref)))).definition;
-                        if (scaly_t4.tag == 4)
+                        auto&& scaly_t5 = (((*(b3_cref)))).definition;
+                        if (scaly_t5.tag == 4)
                         {
-                            Union b3u = scaly_payload<Union>(scaly_t4);
+                            Union b3u = scaly_payload<Union>(scaly_t5);
                             b3_union_resolved = true;
                         }
                         else
@@ -61180,20 +61239,21 @@ __attribute__((weak)) PlannedWhen Planner_plan_when(scaly_frame* scaly_rp, Plann
                     if (((b3_vconc) == (nullptr)))
                     {
                         Planner_add_diagnostic(*(this_), (w).span, scaly_lvalue(({
-        String scaly_t5{};
+        String scaly_t6{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t6 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t6 = StringBuilder{}; StringBuilder_init((*scaly_t6)); scaly_t6; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t7 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t7 = StringBuilder{}; StringBuilder_init((*scaly_t7)); scaly_t7; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\021unknown variant: "}));
             StringBuilder_append2((*isb$), scaly_lvalue((variant_name)));
-            scaly_t5 = StringBuilder_to_string(scaly_rp, (*isb$));
+            scaly_t6 = StringBuilder_to_string(scaly_rp, (*isb$));
         }
-        scaly_t5;
+        scaly_t6;
     })));
                     }
                 }
             }
         }
     }
+    this_->planning_ns_path = when_saved_scope;
     if (Planner_is_unit_type(variant_type))
     {
         if (is_throws_call)
@@ -61213,7 +61273,7 @@ __attribute__((weak)) PlannedWhen Planner_plan_when(scaly_frame* scaly_rp, Plann
                 variant_tag = 1ULL;
                 if (((throws_ty) != (nullptr)))
                 {
-                    PlannedType* tt = ({ PlannedType* scaly_t7 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t7 = ((*(throws_ty))); scaly_t7; });
+                    PlannedType* tt = ({ PlannedType* scaly_t8 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t8 = ((*(throws_ty))); scaly_t8; });
                     binding_ty = (*tt);
                     variant_type = (*tt);
                 }
@@ -61249,7 +61309,7 @@ __attribute__((weak)) PlannedWhen Planner_plan_when(scaly_frame* scaly_rp, Plann
     }
     Planner_define_local(*(this_), (w).name, binding_ty, false, false);
     Planner_mark_when_copy(*(this_), (w).name);
-    PlannedStatement* cons_box = ({ PlannedStatement* scaly_t8 = (PlannedStatement*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedStatement), alignof(PlannedStatement)); *scaly_t8 = Planner_plan_statement(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), *(this_), (w).consequent); scaly_t8; });
+    PlannedStatement* cons_box = ({ PlannedStatement* scaly_t9 = (PlannedStatement*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedStatement), alignof(PlannedStatement)); *scaly_t9 = Planner_plan_statement(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), *(this_), (w).consequent); scaly_t9; });
     Planner_pop_scope(*(this_));
     return PlannedWhen{(w).span, (w).name, variant_type, variant_tag, cons_box};
 }
@@ -62894,6 +62954,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_operand(scaly_frame* scaly_rp,
 __attribute__((weak)) PlannedOperand* Planner_try_plan_unit_variant(scaly_frame* scaly_rp, Planner& scaly_self, Type& t, Span& loc)
 {
     Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     String union_name = String{nullptr};
     String variant_name = String{nullptr};
     if ((((t).name).length == 1ULL))
@@ -62923,6 +62984,20 @@ __attribute__((weak)) PlannedOperand* Planner_try_plan_unit_variant(scaly_frame*
     }
     else
     {
+        if ((((t).name).length > 2ULL))
+        {
+            String written = Planner_join_dotted_prefix(scaly_rp, (t).name, (((t).name).length - 1ULL));
+            String q_scope = Planner_qualified_concept_scope(&scaly_local.f, *(this_), written);
+            if ((String_get_length(q_scope) == 0ULL))
+            {
+                return (PlannedOperand*)(nullptr);
+            }
+            String saved_scope = this_->planning_ns_path;
+            this_->planning_ns_path = (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), q_scope); scaly_t4; }));
+            PlannedOperand* answer = Planner_unit_variant_operand(scaly_rp, *(this_), scaly_lvalue(Planner_last_name_segment(scaly_rp, written)), scaly_lvalue(Vector3((t).name, (((t).name).length - 1ULL))), loc);
+            this_->planning_ns_path = saved_scope;
+            return answer;
+        }
         if ((((t).name).length != 2ULL))
         {
             return (PlannedOperand*)(nullptr);
@@ -62937,13 +63012,20 @@ __attribute__((weak)) PlannedOperand* Planner_try_plan_unit_variant(scaly_frame*
         {
             return (PlannedOperand*)(nullptr);
         }
-        union_name = (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = ((*(u_ptr))); scaly_t5; })))); scaly_t4; }));
-        variant_name = (*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), scaly_lvalue((*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = ((*(v_ptr))); scaly_t7; })))); scaly_t6; }));
+        union_name = (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue((*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t6 = ((*(u_ptr))); scaly_t6; })))); scaly_t5; }));
+        variant_name = (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init2((*scaly_t7), scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = ((*(v_ptr))); scaly_t8; })))); scaly_t7; }));
         if (((Planner_lookup_local_binding(*(this_), union_name)) != (nullptr)))
         {
             return (PlannedOperand*)(nullptr);
         }
     }
+    return Planner_unit_variant_operand(scaly_rp, *(this_), union_name, variant_name, loc);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) PlannedOperand* Planner_unit_variant_operand(scaly_frame* scaly_rp, Planner& scaly_self, String& union_name, String& variant_name, Span& loc)
+{
+    Planner* this_ = &scaly_self;
     Concept* uconc_ref = Planner_lookup_concept(*(this_), union_name);
     if (((uconc_ref) == (nullptr)))
     {
@@ -62952,10 +63034,10 @@ __attribute__((weak)) PlannedOperand* Planner_try_plan_unit_variant(scaly_frame*
     Concept uconc = ((*(uconc_ref)));
     bool unit_variant = false;
     {
-        auto&& scaly_t8 = (uconc).definition;
-        if (scaly_t8.tag == 4)
+        auto&& scaly_t1 = (uconc).definition;
+        if (scaly_t1.tag == 4)
         {
-            Union uvd = scaly_payload<Union>(scaly_t8);
+            Union uvd = scaly_payload<Union>(scaly_t1);
             uint64_t uvi = 0ULL;
             while ((uvi < ((uvd).variants).length))
             {
@@ -62988,9 +63070,9 @@ __attribute__((weak)) PlannedOperand* Planner_try_plan_unit_variant(scaly_frame*
     {
         return (PlannedOperand*)(nullptr);
     }
-    PlannedType* unit_union_ty = ({ PlannedType* scaly_t9 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t9 = PlannedType{loc, union_name, Planner_type_symbol(scaly_rp, *(this_), union_name, (Vector<PlannedType>*)(nullptr)), (Vector<PlannedType>*)(nullptr), scaly_variant<Lifetime>(0, Unspecified{}), (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)}; scaly_t9; });
-    PlannedVariantConstruction* unit_vc = ({ PlannedVariantConstruction* scaly_t10 = (PlannedVariantConstruction*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedVariantConstruction), alignof(PlannedVariantConstruction)); *scaly_t10 = PlannedVariantConstruction{loc, (*unit_union_ty), variant_name, ((uint64_t)(unit_tag)), (PlannedOperand*)(nullptr)}; scaly_t10; });
-    return (PlannedOperand*)&((*({ PlannedOperand* scaly_t13 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t13 = PlannedOperand{loc, scaly_variant<PlannedExpression>(20, (*unit_vc)), (Vector<PlannedMemberAccess>*)(nullptr), (*unit_union_ty)}; scaly_t13; })));
+    PlannedType* unit_union_ty = ({ PlannedType* scaly_t2 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t2 = PlannedType{loc, union_name, Planner_type_symbol(scaly_rp, *(this_), union_name, (Vector<PlannedType>*)(nullptr)), (Vector<PlannedType>*)(nullptr), scaly_variant<Lifetime>(0, Unspecified{}), (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)}; scaly_t2; });
+    PlannedVariantConstruction* unit_vc = ({ PlannedVariantConstruction* scaly_t3 = (PlannedVariantConstruction*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedVariantConstruction), alignof(PlannedVariantConstruction)); *scaly_t3 = PlannedVariantConstruction{loc, (*unit_union_ty), variant_name, ((uint64_t)(unit_tag)), (PlannedOperand*)(nullptr)}; scaly_t3; });
+    return (PlannedOperand*)&((*({ PlannedOperand* scaly_t6 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t6 = PlannedOperand{loc, scaly_variant<PlannedExpression>(20, (*unit_vc)), (Vector<PlannedMemberAccess>*)(nullptr), (*unit_union_ty)}; scaly_t6; })));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -94033,10 +94115,12 @@ __attribute__((weak)) PlannedStructure Planner_plan_structure_in(scaly_frame* sc
     uint64_t total_align = Planner_compute_struct_alignment((&((*props_holder))));
     Array<PlannedType>* gens_arr = ({ Array<PlannedType>* scaly_t8 = (Array<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<PlannedType>), alignof(Array<PlannedType>)); *scaly_t8 = Array<PlannedType>{}; (void)0; scaly_t8; });
     bool is_template = false;
+    bool is_generic_record = false;
     Concept* c_for_gens_ref = Planner_lookup_concept(*(this_), name);
     if (((c_for_gens_ref) != (nullptr)))
     {
         Concept c_for_gens = ((*(c_for_gens_ref)));
+        is_generic_record = (((c_for_gens).parameters).length > 0ULL);
         uint64_t pi = 0ULL;
         while ((pi < ((c_for_gens).parameters).length))
         {
@@ -94098,7 +94182,7 @@ __attribute__((weak)) PlannedStructure Planner_plan_structure_in(scaly_frame* sc
                 else if (scaly_t17.tag == 1)
                 {
                     Concept inner = scaly_payload<Concept>(scaly_t17);
-                    if (((is_template) == (false)))
+                    if ((((is_template) == (false)) ? ((is_generic_record) == (false)) : false))
                     {
                         PlannedConcept inner_planned = Planner_plan_concept(scaly_rp, *(this_), inner);
                     }
@@ -94957,7 +95041,7 @@ __attribute__((weak)) void Planner_register_concept_recursive(Planner& scaly_sel
                         if (scaly_t7.tag == 1)
                         {
                             Concept inner = scaly_payload<Concept>(scaly_t7);
-                            Planner_register_concept_recursive(*(this_), inner);
+                            Planner_register_concept_recursive(*(this_), scaly_lvalue(Planner_with_outer_parameters(&scaly_local.f, *(this_), c, inner)));
                             0LL;
                         }
                         else
@@ -94987,7 +95071,7 @@ __attribute__((weak)) void Planner_register_concept_recursive(Planner& scaly_sel
                         if (scaly_t9.tag == 1)
                         {
                             Concept inner = scaly_payload<Concept>(scaly_t9);
-                            Planner_register_concept_recursive(*(this_), inner);
+                            Planner_register_concept_recursive(*(this_), scaly_lvalue(Planner_with_outer_parameters(&scaly_local.f, *(this_), c, inner)));
                             0LL;
                         }
                         else
@@ -95007,6 +95091,155 @@ __attribute__((weak)) void Planner_register_concept_recursive(Planner& scaly_sel
         }
     }
     this_->registering_ns_path = saved_ns_path;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) Concept Planner_with_outer_parameters(scaly_frame* scaly_rp, Planner& scaly_self, Concept& outer, Concept& inner)
+{
+    Planner* this_ = &scaly_self;
+    if ((((outer).parameters).length == 0ULL))
+    {
+        return inner;
+    }
+    bool is_record = false;
+    {
+        auto&& scaly_t1 = (inner).definition;
+        if (scaly_t1.tag == 3)
+        {
+            Structure s = scaly_payload<Structure>(scaly_t1);
+            is_record = true;
+        }
+        else if (scaly_t1.tag == 4)
+        {
+            Union u = scaly_payload<Union>(scaly_t1);
+            is_record = true;
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    if (((is_record) == (false)))
+    {
+        return inner;
+    }
+    Array<GenericParameter>* params = ({ Array<GenericParameter>* scaly_t2 = (Array<GenericParameter>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<GenericParameter>), alignof(Array<GenericParameter>)); *scaly_t2 = Array<GenericParameter>{}; (void)0; scaly_t2; });
+    uint64_t i = 0ULL;
+    while ((i < ((outer).parameters).length))
+    {
+        Array_add<GenericParameter>((*params), scaly_lvalue(Vector7<GenericParameter>((outer).parameters, i)));
+        i = (i + 1ULL);
+    }
+    i = 0ULL;
+    while ((i < ((inner).parameters).length))
+    {
+        Array_add<GenericParameter>((*params), scaly_lvalue(Vector7<GenericParameter>((inner).parameters, i)));
+        i = (i + 1ULL);
+    }
+    this_->outer_generics_any = true;
+    return Concept{(inner).span, (inner).name, (*({ Vector<GenericParameter>* scaly_t4 = (Vector<GenericParameter>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<GenericParameter>), alignof(Vector<GenericParameter>)); *scaly_t4 = Vector<GenericParameter>{}; Vector_init7<GenericParameter>((*scaly_t4), (*params)); scaly_t4; })), (inner).attributes, (inner).definition};
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) uint64_t Planner_outer_parameter_count(Planner& scaly_self, uint64_t at)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((at >= this_->concept_ns_paths->length) ? true : (at >= (this_->concepts).length)))
+    {
+        return 0ULL;
+    }
+    String path = Array5(*(this_->concept_ns_paths), at);
+    int64_t dot = String_last_index_of(path, (uint8_t)46ULL);
+    if ((dot < 0LL))
+    {
+        return 0ULL;
+    }
+    int64_t parent_at = ConceptIndex_lookup(this_->ns_path_index->table, scaly_lvalue(String_substring(&scaly_local.f, path, 0ULL, ((uint64_t)(dot)))));
+    if (((parent_at < 0LL) ? true : ((((uint64_t)(parent_at))) >= (this_->concepts).length)))
+    {
+        return 0ULL;
+    }
+    Concept parent = (Array6<KeyValuePair<String, Concept>>(this_->concepts, ((uint64_t)(parent_at)))).value;
+    int64_t counted = 0LL;
+    {
+        auto&& scaly_t1 = (parent).definition;
+        if (scaly_t1.tag == 3)
+        {
+            Structure s = scaly_payload<Structure>(scaly_t1);
+            counted = 1LL;
+        }
+        else if (scaly_t1.tag == 4)
+        {
+            Union u = scaly_payload<Union>(scaly_t1);
+            counted = 1LL;
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    if ((counted == 0LL))
+    {
+        return 0ULL;
+    }
+    Concept own = (Array6<KeyValuePair<String, Concept>>(this_->concepts, at)).value;
+    if ((((own).parameters).length < ((parent).parameters).length))
+    {
+        return 0ULL;
+    }
+    return ((parent).parameters).length;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) Type* Planner_outer_arguments(scaly_frame* scaly_rp, Planner& scaly_self, Type& t)
+{
+    Planner* this_ = &scaly_self;
+    if ((((t).name).length != 1ULL))
+    {
+        return (Type*)(nullptr);
+    }
+    int64_t at = Planner_answered_concept_at(*(this_), scaly_lvalue(Vector3((t).name, 0LL)));
+    if ((at < 0LL))
+    {
+        return (Type*)(nullptr);
+    }
+    uint64_t n_outer = Planner_outer_parameter_count(*(this_), ((uint64_t)(at)));
+    if ((n_outer == 0ULL))
+    {
+        return (Type*)(nullptr);
+    }
+    Concept c = (Array6<KeyValuePair<String, Concept>>(this_->concepts, ((uint64_t)(at)))).value;
+    uint64_t written = 0ULL;
+    if ((((t).generics) != (nullptr)))
+    {
+        written = (t).generics->length;
+    }
+    if (((written + n_outer) != ((c).parameters).length))
+    {
+        return (Type*)(nullptr);
+    }
+    Array<Type>* args = ({ Array<Type>* scaly_t1 = (Array<Type>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<Type>), alignof(Array<Type>)); *scaly_t1 = Array<Type>{}; (void)0; scaly_t1; });
+    uint64_t i = 0ULL;
+    while ((i < n_outer))
+    {
+        Vector<String>* pname = ({ Vector<String>* scaly_t2 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t2 = Vector<String>{}; Vector_init3<String>((*scaly_t2), 1ULL); scaly_t2; });
+        Vector_put<String>((*pname), 0ULL, scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue((Vector7<GenericParameter>((c).parameters, i)).name)); scaly_t3; }))));
+        Array_add<Type>((*args), scaly_lvalue((*({ Type* scaly_t4 = (Type*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Type), alignof(Type)); *scaly_t4 = Type{(t).span, (*pname), (Vector<Type>*)(nullptr), (t).lifetime}; scaly_t4; }))));
+        i = (i + 1ULL);
+    }
+    if ((((t).generics) != (nullptr)))
+    {
+        Vector<Type> own = ((*((t).generics)));
+        i = 0ULL;
+        while ((i < (own).length))
+        {
+            Array_add<Type>((*args), scaly_lvalue(Vector7<Type>(own, i)));
+            i = (i + 1ULL);
+        }
+    }
+    Vector<Type>* gens = ({ Vector<Type>* scaly_t5 = (Vector<Type>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Type>), alignof(Vector<Type>)); *scaly_t5 = Vector<Type>{}; Vector_init7<Type>((*scaly_t5), (*args)); scaly_t5; });
+    return (Type*)&((*({ Type* scaly_t8 = (Type*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Type), alignof(Type)); *scaly_t8 = Type{(t).span, (t).name, (&((*gens))), (t).lifetime}; scaly_t8; })));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -95077,6 +95310,50 @@ __attribute__((weak)) int64_t Planner_resolve_ns_path(Planner& scaly_self, Strin
         return ((int64_t)(((0LL - 1LL))));
     }
     if ((ConceptIndex_lookup(this_->ns_multi_names->table, scaly_lvalue(Vector3(segs, ((segs).length - 1ULL)))) < 0LL))
+    {
+        return ((int64_t)(((0LL - 1LL))));
+    }
+    return Planner_search_ns_path(*(this_), written);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) String Planner_qualified_concept_scope(scaly_frame* scaly_rp, Planner& scaly_self, String& written)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    if (((String_index_of(written, (uint8_t)46ULL) < 0LL) ? true : ((Planner_lookup_concept(*(this_), written)) != (nullptr))))
+    {
+        return (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{nullptr})); scaly_t1; }));
+    }
+    int64_t at = Planner_search_ns_path(*(this_), written);
+    if (((at < 0LL) ? true : ((((uint64_t)(at))) >= this_->concept_ns_paths->length)))
+    {
+        return (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{nullptr})); scaly_t2; }));
+    }
+    String path = Array5(*(this_->concept_ns_paths), ((uint64_t)(at)));
+    if ((((String_equals(path, written)) == (false)) ? ((String_ends_with(path, scaly_lvalue(({
+        String scaly_t3{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
+            StringBuilder_append((*isb$), ((uint8_t)'.'));
+            StringBuilder_append2((*isb$), scaly_lvalue((written)));
+            scaly_t3 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t3;
+    })))) == (false)) : false))
+    {
+        return (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(String{nullptr})); scaly_t5; }));
+    }
+    return (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init2((*scaly_t7), path); scaly_t7; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) int64_t Planner_search_ns_path(Planner& scaly_self, String& written)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    Vector<String> segs = Planner_split_dotted(&scaly_local.f, written);
+    if (((segs).length == 0ULL))
     {
         return ((int64_t)(((0LL - 1LL))));
     }
@@ -98012,6 +98289,7 @@ __attribute__((weak)) void Planner_init(Planner& scaly_self, String& filename)
     this_->planning_ns_path = (*({ String* scaly_t193 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t193 = String{}; String_init2((*scaly_t193), scaly_lvalue(String{nullptr})); scaly_t193; }));
     this_->body_ns_path = (*({ String* scaly_t194 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t194 = String{}; String_init2((*scaly_t194), scaly_lvalue(String{nullptr})); scaly_t194; }));
     this_->ns_multi_any = false;
+    this_->outer_generics_any = false;
     this_->ns_probe_on = false;
     this_->registering_file = (*({ String* scaly_t195 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t195 = String{}; String_init2((*scaly_t195), scaly_lvalue(String{nullptr})); scaly_t195; }));
     this_->registering_path = (*({ String* scaly_t196 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t196 = String{}; String_init2((*scaly_t196), scaly_lvalue(String{nullptr})); scaly_t196; }));
@@ -102223,6 +102501,24 @@ __attribute__((weak)) String Planner_join_dotted_name(scaly_frame* scaly_rp, Vec
         {
             StringBuilder_append2((*sb), scaly_lvalue(((*(p_ptr)))));
         }
+        i = (i + 1ULL);
+    }
+    return StringBuilder_to_string(scaly_rp, (*sb));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) String Planner_join_dotted_prefix(scaly_frame* scaly_rp, Vector<String>& parts, uint64_t count)
+{
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    StringBuilder* sb = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
+    uint64_t i = 0ULL;
+    while (((i < count) ? (i < (parts).length) : false))
+    {
+        if ((i > 0ULL))
+        {
+            StringBuilder_append((*sb), ((uint8_t)'.'));
+        }
+        StringBuilder_append2((*sb), scaly_lvalue(Vector3(parts, i)));
         i = (i + 1ULL);
     }
     return StringBuilder_to_string(scaly_rp, (*sb));
@@ -126401,7 +126697,7 @@ __attribute__((weak)) LLVMOpaqueType* Emitter_frame_struct_type(Emitter& scaly_s
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
-template <class T1> static T1 Vector22(Vector<T1>& scaly_self, uint64_t i)
+template <class T1> static T1 Vector23(Vector<T1>& scaly_self, uint64_t i)
 {
     Vector<T1>* this_ = &scaly_self;
     if ((i >= this_->length))
@@ -126432,7 +126728,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_force_frame(Emitter& scaly_self, 
         return LLVMBuildCall2(this_->builder, fty, fn, ((*args)).data, (uint32_t)1ULL, ((const char*)"forced_page"));
     }
     LLVMOpaqueBasicBlock* here = LLVMGetInsertBlock(this_->builder);
-    LLVMOpaqueValue* fv = Vector22<LLVMOpaqueValue*>((*args), 0LL);
+    LLVMOpaqueValue* fv = Vector23<LLVMOpaqueValue*>((*args), 0LL);
     LLVMOpaqueValue* known = LLVMBuildLoad2(this_->builder, ptr_ty, fv, ((const char*)"frame.page"));
     LLVMOpaqueValue* has = LLVMBuildICmp(this_->builder, LLVMIntPredicate_NE(), known, LLVMConstNull(ptr_ty), ((const char*)"frame.has_page"));
     LLVMOpaqueBasicBlock* slow_bb = LLVMAppendBasicBlockInContext(this_->context, this_->current_function, ((const char*)"frame.force"));
@@ -128416,7 +128712,7 @@ __attribute__((weak)) void Emitter_mark_noalias_params(Emitter& scaly_self, Plan
         if ((((idx < n) ? ((item_ptr) != (nullptr)) : false) ? (((((*(item_ptr)))).item_type) != (nullptr)) : false))
         {
             PlannedType it = (*(((PlannedType*)(((*(item_ptr))).item_type))));
-            if ((((int64_t)LLVMGetTypeKind(Vector22<LLVMOpaqueType*>((*ptys), idx)) == LLVMTypeKind_Pointer()) ? StoreEffects_param_noalias(this_->store_effects, (func).mangled_name, it) : false))
+            if ((((int64_t)LLVMGetTypeKind(Vector23<LLVMOpaqueType*>((*ptys), idx)) == LLVMTypeKind_Pointer()) ? StoreEffects_param_noalias(this_->store_effects, (func).mangled_name, it) : false))
             {
                 LLVMAddAttributeAtIndex(llvm_func, ((uint32_t)(((idx + 1ULL)))), LLVMCreateEnumAttribute(this_->context, Emitter_noalias_kind_id(*(this_)), 0ULL));
             }
@@ -130912,7 +131208,7 @@ __attribute__((weak)) bool Emitter_fork_join_eligible(Emitter& scaly_self, Plann
     uint64_t i = 0ULL;
     while ((i < n))
     {
-        int32_t k = LLVMGetTypeKind(Vector22<LLVMOpaqueType*>((*ptys), i));
+        int32_t k = LLVMGetTypeKind(Vector23<LLVMOpaqueType*>((*ptys), i));
         if ((((((int64_t)k != LLVMTypeKind_Integer()) ? ((int64_t)k != LLVMTypeKind_Float()) : false) ? ((int64_t)k != LLVMTypeKind_Double()) : false) ? ((int64_t)k != LLVMTypeKind_Pointer()) : false))
         {
             return false;
@@ -131022,7 +131318,7 @@ __attribute__((weak)) Vector<LLVMOpaqueValue*> Emitter_fj_args(scaly_frame* scal
             if (((ap) != (nullptr)))
             {
                 LLVMOpaqueValue* v = Emitter_emit_operand(*(this_), scaly_lvalue((*(ap))));
-                LLVMOpaqueType* want = Vector22<LLVMOpaqueType*>((*ptys), i);
+                LLVMOpaqueType* want = Vector23<LLVMOpaqueType*>((*ptys), i);
                 if ((((int64_t)LLVMGetTypeKind(want) == LLVMTypeKind_Integer()) ? ((int64_t)LLVMGetTypeKind(LLVMTypeOf(v)) == LLVMTypeKind_Integer()) : false))
                 {
                     if ((LLVMGetIntTypeWidth(want) != LLVMGetIntTypeWidth(LLVMTypeOf(v))))
@@ -131273,7 +131569,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_fj_fork(Emitter& scaly_self,
     uint64_t i = 0ULL;
     while ((i < n))
     {
-        LLVMBuildStore(this_->builder, Vector22<LLVMOpaqueValue*>(args, i), LLVMBuildStructGEP2(this_->builder, cell_ty, cell, ((uint32_t)(i)), ((const char*)"fj.arg.slot")));
+        LLVMBuildStore(this_->builder, Vector23<LLVMOpaqueValue*>(args, i), LLVMBuildStructGEP2(this_->builder, cell_ty, cell, ((uint32_t)(i)), ((const char*)"fj.arg.slot")));
         i = (i + 1ULL);
     }
     LLVMOpaqueType* ptr_ty = Emitter_fj_ptr(*(this_));
@@ -131456,7 +131752,7 @@ __attribute__((weak)) void Emitter_emit_fj_task(Emitter& scaly_self, LLVMOpaqueT
     uint64_t i = 0ULL;
     while ((i < n))
     {
-        Vector_put111<LLVMOpaqueValue*>((*args), i, LLVMBuildLoad2(this_->builder, Vector22<LLVMOpaqueType*>((*ptys), i), LLVMBuildStructGEP2(this_->builder, cell_ty, cell, ((uint32_t)(i)), ((const char*)"fj.arg.slot")), ((const char*)"fj.arg")));
+        Vector_put111<LLVMOpaqueValue*>((*args), i, LLVMBuildLoad2(this_->builder, Vector23<LLVMOpaqueType*>((*ptys), i), LLVMBuildStructGEP2(this_->builder, cell_ty, cell, ((uint32_t)(i)), ((const char*)"fj.arg.slot")), ((const char*)"fj.arg")));
         i = (i + 1ULL);
     }
     Vector_put111<LLVMOpaqueValue*>((*args), n, depth);
@@ -132459,7 +132755,7 @@ __attribute__((weak)) void Emitter_name_wasm_entry(Emitter& scaly_self)
     while (((k < n) ? (k < (uint32_t)2ULL) : false))
     {
         LLVMOpaqueValue* a = LLVMGetParam(entry, k);
-        LLVMOpaqueType* want = Vector22<LLVMOpaqueType*>((*main_ptys), ((uint64_t)(k)));
+        LLVMOpaqueType* want = Vector23<LLVMOpaqueType*>((*main_ptys), ((uint64_t)(k)));
         if ((((k == (uint32_t)0ULL) ? ((int64_t)LLVMGetTypeKind(want) == LLVMTypeKind_Integer()) : false) ? (LLVMGetIntTypeWidth(want) > (uint32_t)32ULL) : false))
         {
             a = LLVMBuildSExt(this_->builder, a, want, ((const char*)"argc"));
@@ -138640,8 +138936,8 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_simd_join(Emitter& scaly_self, Ar
         Vector_put111<LLVMOpaqueType*>((*ps), 0ULL, v16);
         Vector_put111<LLVMOpaqueType*>((*ps), 1ULL, v16);
         LLVMOpaqueValue* f = Emitter_simd_intrinsic_n(*(this_), scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(String{(uint8_t*)"\034llvm.aarch64.neon.addp.v16i8"})); scaly_t5; }))), v16, (*ps));
-        LLVMOpaqueValue* p01 = Emitter_simd_call2(*(this_), f, Vector22<LLVMOpaqueValue*>((*w), 0LL), Vector22<LLVMOpaqueValue*>((*w), 1LL));
-        LLVMOpaqueValue* p23 = Emitter_simd_call2(*(this_), f, Vector22<LLVMOpaqueValue*>((*w), 2LL), Vector22<LLVMOpaqueValue*>((*w), 3LL));
+        LLVMOpaqueValue* p01 = Emitter_simd_call2(*(this_), f, Vector23<LLVMOpaqueValue*>((*w), 0LL), Vector23<LLVMOpaqueValue*>((*w), 1LL));
+        LLVMOpaqueValue* p23 = Emitter_simd_call2(*(this_), f, Vector23<LLVMOpaqueValue*>((*w), 2LL), Vector23<LLVMOpaqueValue*>((*w), 3LL));
         LLVMOpaqueValue* p = Emitter_simd_call2(*(this_), f, p01, p23);
         LLVMOpaqueValue* q = Emitter_simd_call2(*(this_), f, p, p);
         LLVMOpaqueValue* as64 = LLVMBuildBitCast(this_->builder, q, LLVMVectorType(i64_ty, (uint32_t)2ULL), ((const char*)"simd.join.words"));
@@ -138770,7 +139066,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_simd_call(Emitter& scaly_self, St
     uint64_t i = 0ULL;
     while ((i < (args).length))
     {
-        Vector_put111<LLVMOpaqueType*>((*ps), i, LLVMTypeOf(Vector22<LLVMOpaqueValue*>(args, i)));
+        Vector_put111<LLVMOpaqueType*>((*ps), i, LLVMTypeOf(Vector23<LLVMOpaqueValue*>(args, i)));
         i = (i + 1ULL);
     }
     LLVMOpaqueValue* f = Emitter_simd_intrinsic_n(*(this_), fname, ret, (*ps));
@@ -140255,11 +140551,11 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_block_statements(Emitter& sc
         uint64_t si = 0ULL;
         while ((si < (stmts).length))
         {
-            PlannedStatement stmt = Vector22<PlannedStatement>(stmts, si);
+            PlannedStatement stmt = Vector23<PlannedStatement>(stmts, si);
             si = (si + 1ULL);
             if (((String_get_length(this_->fj_self) > 0ULL) ? (si < (stmts).length) : false))
             {
-                if (Emitter_fj_let_pair(*(this_), stmt, scaly_lvalue(Vector22<PlannedStatement>(stmts, si))))
+                if (Emitter_fj_let_pair(*(this_), stmt, scaly_lvalue(Vector23<PlannedStatement>(stmts, si))))
                 {
                     if ((this_->fj_mode == 0LL))
                     {
@@ -140267,7 +140563,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_block_statements(Emitter& sc
                     }
                     if ((this_->fj_mode == 2LL))
                     {
-                        Emitter_emit_fj_let_pair(*(this_), stmt, scaly_lvalue(Vector22<PlannedStatement>(stmts, si)));
+                        Emitter_emit_fj_let_pair(*(this_), stmt, scaly_lvalue(Vector23<PlannedStatement>(stmts, si)));
                         si = (si + 1ULL);
                         continue;
                     }
@@ -149906,7 +150202,7 @@ __attribute__((weak)) void CppEmitter_forward_declaration(scaly_frame* scaly_rp,
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/CppEmitter.scaly
-template <class T> static T Vector26(Vector<T>& scaly_self, uint64_t i)
+template <class T> static T Vector27(Vector<T>& scaly_self, uint64_t i)
 {
     Vector<T>* this_ = &scaly_self;
     if ((i >= this_->length))
@@ -149930,7 +150226,7 @@ __attribute__((weak)) void CppEmitter_register_instances(scaly_frame* scaly_rp, 
     uint64_t i = 0ULL;
     while ((i < (fs).length))
     {
-        PlannedFunction f = Vector26<PlannedFunction>(fs, i);
+        PlannedFunction f = Vector27<PlannedFunction>(fs, i);
         if (((((CppEmitter_wanted(*(this_), f) ? CppEmitter_has_body(f) : false) ? ((CppEmitter_is_entry(f)) == (false)) : false) ? ((CppEmitter_contains((&((*seen))), (f).mangled_name)) == (false)) : false) ? (CppEmitter_symbol_at(*(this_), (f).mangled_name) == (this_->fn_mangled).length) : false))
         {
             String args = CppEmitter_instance_part(scaly_rp, (f).mangled_name, false);
@@ -150013,7 +150309,7 @@ __attribute__((weak)) void CppEmitter_fold_templates(scaly_frame* scaly_rp, CppE
         uint64_t k = 0ULL;
         while ((k < (this_->c_at).length))
         {
-            String m = (Vector26<PlannedFunction>(fs, Array3(this_->c_at, k))).mangled_name;
+            String m = (Vector27<PlannedFunction>(fs, Array3(this_->c_at, k))).mangled_name;
             if (Array6<bool>(this_->c_folded, k))
             {
                 String comma = String{(uint8_t*)"\002, "};
@@ -150042,7 +150338,7 @@ __attribute__((weak)) void CppEmitter_fold_templates(scaly_frame* scaly_rp, CppE
         k = 0ULL;
         while ((k < (this_->c_at).length))
         {
-            PlannedFunction f = Vector26<PlannedFunction>(fs, Array3(this_->c_at, k));
+            PlannedFunction f = Vector27<PlannedFunction>(fs, Array3(this_->c_at, k));
             uint64_t family = Array3(this_->c_family, k);
             String text = CppEmitter_instance_text(scaly_rp, *(this_), f, scaly_lvalue(Array5(this_->f_name, family)));
             Array_add<String>((*c_text), scaly_lvalue((*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), text); scaly_t6; }))));
@@ -150133,7 +150429,7 @@ __attribute__((weak)) void CppEmitter_fold_templates(scaly_frame* scaly_rp, CppE
     uint64_t k = 0ULL;
     while ((k < (this_->c_at).length))
     {
-        PlannedFunction f = Vector26<PlannedFunction>(fs, Array3(this_->c_at, k));
+        PlannedFunction f = Vector27<PlannedFunction>(fs, Array3(this_->c_at, k));
         uint64_t family = Array3(this_->c_family, k);
         if (Array6<bool>(this_->c_folded, k))
         {
@@ -151618,7 +151914,7 @@ __attribute__((weak)) String CppEmitter_parameter_ctype(scaly_frame* scaly_rp, P
         return String{(uint8_t*)"\005void*"};
     }
     Vector<PlannedItem> items = ((*((f).input)));
-    PlannedItem item = Vector26<PlannedItem>(items, k);
+    PlannedItem item = Vector27<PlannedItem>(items, k);
     if ((((item).item_type) == (nullptr)))
     {
         return String{(uint8_t*)"\005void*"};
