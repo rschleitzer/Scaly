@@ -11,11 +11,13 @@ the second, independent compiler.
 ```
 trust/check.sh                 # build from the C++, emit the seed, compare
 CXX=g++ CC=gcc trust/check.sh  # the same without any of LLVM's toolchain
+trust/check-gcc.sh             # that, in an AlmaLinux 9 container without clang
 trust/build.sh [out-dir]       # only the build: <out-dir>/scalyc
 ```
 
 `check.sh` prints `OK` when the compiler built from the C++ emits all seven
-files of `seed/` exactly as they are committed.
+files of `seed/` exactly as they are committed. The release workflow runs
+`check-gcc.sh` first and makes no release of a version that does not pass it.
 
 ## What is here
 
@@ -27,6 +29,7 @@ files of `seed/` exactly as they are committed.
 | `scaly_types.h` | the standard library's records, included by the other two |
 | `emit.sh` | writes the four files above from the sources |
 | `build.sh`, `check.sh` | build the compiler from them; compare its output with `seed/` |
+| `check-gcc.sh` | `check.sh` with GCC in a container, as the release runs it |
 
 The C++ is written by the compiler's second back end, `scalyc --emit-cpp`
 (`packages/scalyc/<version>/scalyc/compiler/CppEmitter.scaly`). It translates

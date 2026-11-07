@@ -32,6 +32,12 @@
 # seed's does, the profiled tool runs a program in process); the step after
 # them only shows that the unpacked compiler STARTS with no LLVM beside it.
 #
+# ★Before anything is made, the seed must come out of the C++ (job `trust`):
+# trust/check-gcc.sh builds the compiler from trust/*.cpp with GCC in an
+# AlmaLinux 9 container, no clang installed, and compares what it emits with
+# seed/ byte for byte (trust/README.md). A version that fails gets no
+# release and no archive.
+#
 # NOT made here: scaly-<v>.tar.gz, the packages and the seed. It is the same
 # for every system and no build — tools/make-dist.sh on any machine, and
 # tools/publish-install.sh uploads all seven.
@@ -66,9 +72,20 @@ permissions:
   contents: write
 
 jobs:
+  # the compiler built from the C++ by GCC emits the committed seed
+  trust:
+    name: trust
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: the seed out of the C++, with GCC
+        run: trust/check-gcc.sh
+
   # the release the legs hang their archives on: made anew for this commit
   prepare:
     name: prepare
+    needs: trust
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
