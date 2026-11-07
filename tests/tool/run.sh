@@ -831,6 +831,25 @@ said=$(cat "$TMP/deepret-cache"/kit-*.iface/interface/kit/parts.scaly 2>/dev/nul
 std=$(cat "$TMP/deepret-cache"/scaly-*.iface/interface/scaly/containers/String.scaly 2>/dev/null | grep -c 'function substring(.*@deep_ret_0 true')
 [ "$said" = 1 ] && [ "$std" = 1 ] && ok || bad "deepret: the interfaces: head $said, String.substring $std statement(s) of handing back none"
 
+# storesmask: WHERE a routine stores a value it builds (R8's mask, `@stores_N`)
+# -- `Shelf.keep` into its receiver alone. `@stores true` without it read back
+# as every position, and a namespace routine named alike (`tally.keep`, met by
+# name) made its caller `tally.write`, which hands it its own `out`, take a
+# caller page through the interface and none from the sources.
+sm="$TMP/storesmask"; mkdir -p "$sm/packages/kit/0.1.0/kit" "$TMP/storesmask-cache" "$TMP/storesmask-empty"
+printf 'package scaly 0.2.0\n\ndefine kit\n{\n    module parts\n}\n' > "$sm/packages/kit/0.1.0/kit.scaly"
+printf 'define Shelf\n(\n    var names: Array[String]\n)\n{\n    procedure keep(mutable this, n: int)\n    {\n        names.add(String("item"))\n    }\n}\n' > "$sm/packages/kit/0.1.0/kit/parts.scaly"
+printf 'package kit 0.1.0\nuse kit.parts.Shelf\n\ndefine tally\n{\n    procedure keep(mutable out: ref[StringBuilder], n: int)\n    {\n        out.append(n)\n    }\n\n    procedure write(mutable out: ref[StringBuilder])\n    {\n        tally.keep(out, 7)\n    }\n}\n\nvar s Shelf(Array[String]())\ns.keep(1)\nvar sb StringBuilder()\ntally.write(&sb)\nprint(sb.to_string().to_c_string())\n' > "$sm/main.scaly"
+case "$BIN" in /*) sm_bin="$BIN" ;; *) sm_bin="$here/$BIN" ;; esac
+out=$(cd "$sm" && SCALY_HOME="$here" SCALY_CACHE="$TMP/storesmask-cache" "$sm_bin" --emit-interface packages/kit/0.1.0/kit.scaly 2>&1 \
+  && SCALY_HOME="$here" SCALY_CACHE="$TMP/storesmask-cache" "$sm_bin" -S -o "$TMP/storesmask-if.ll" main.scaly 2>&1 \
+  && SCALY_HOME="$here" SCALY_CACHE="$TMP/storesmask-empty" "$sm_bin" -S -o "$TMP/storesmask-src.ll" main.scaly 2>&1); rc=$?
+said=$(cat "$TMP/storesmask-cache"/kit-*.iface/interface/kit/parts.scaly 2>/dev/null | grep -c 'procedure keep(.*@stores_1 true')
+[ "$rc" = 0 ] && [ "$said" = 1 ] && cmp -s "$TMP/storesmask-if.ll" "$TMP/storesmask-src.ll" && ok \
+  || bad "storesmask: rc=$rc, $said statement(s) of storing into the receiver, $(grep -ho 'define [^@]*@_ZN5tally5write[^(]*' "$TMP/storesmask-if.ll" "$TMP/storesmask-src.ll" 2>/dev/null | tr '\n' ' ')"
+out=$(cd "$sm" && SCALY_CACHE="$TMP/storesmask-cache" SCALY_HOME="$here" "$scaly_abs" build main.scaly -o "$TMP/storesmask-bin" 2>&1 && "$TMP/storesmask-bin"); rc=$?
+[ "$out" = "7" ] && ok || bad "storesmask: the build: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)'"
+
 # source: the third place a package is looked for, what a fetch laid down
 src="$TMP/source"
 fetched="$TMP/userhome2/.scaly/packages"

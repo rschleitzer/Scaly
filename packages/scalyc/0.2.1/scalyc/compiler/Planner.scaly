@@ -8834,8 +8834,17 @@ define Planner
                 sb.append " @transitive true"
             if returnpage
                 sb.append " @returnpage true"
-            if g = false and this.array_contains_name(store_page_names, Planner.store_key(f))
-                sb.append " @stores true"
+            ; R8's mask, the positions it stores into: `@stores true` alone
+            ; read back as EVERY position, and a caller handing its own state
+            ; at any of them joined -- through scalyc's interface scalyls'
+            ; `scope.operation(out, ...)` met Planner.operation by name and
+            ; 20 routines took a page they do not take from the sources
+            if g = false
+            {
+                let smask this.store_mask_of(Planner.store_key(f))
+                if smask <> 0
+                    sb.append(" @stores_`smask as size_t` true")
+            }
             let rr_c this.return_residence_class(f)
             let rr_a this.return_residence_arg(f)
             if rr_c = 1
@@ -47456,6 +47465,20 @@ define Planner
             0 - 1
         }
 
+        ; R8's mask of a linked routine (`@stores_N true`, facts_function#);
+        ; `@stores true` without one is every position; 0 where it says none
+        function linked_stores_mask(f: Function) returns u64
+        {
+            if Planner.is_linked(f) = false
+                return 0
+            let said Planner.linked_return_prefixed(f, "stores_")
+            if said > 0
+                return said as u64
+            if Planner.attributes_have(f.attributes, "stores")
+                return (0 as u64) - (1 as u64)
+            0
+        }
+
         ; ---- the classifier over one body -----------------------------------
         ; Phase 2 of the residence fixpoint. Phase 1 decides a body only once
         ; every callee is decided, so a CYCLE (generate_name_for_node ->
@@ -59079,8 +59102,9 @@ define Planner
                         let key Planner.store_key(f)
                         let old_mask this.store_mask_of(key)
                         var m: u64 0
-                        if Planner.linked_says(f, "stores")
-                            m := (0 as u64) - (1 as u64)
+                        let said Planner.linked_stores_mask(f)
+                        if said <> 0
+                            m := said
                         else
                             m := this.function_store_mask(f, op)
                         let new_mask old_mask | m
