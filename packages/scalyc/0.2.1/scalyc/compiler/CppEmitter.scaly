@@ -43,6 +43,8 @@ define CppEmitter
     var skip_tests: bool
     var fn_mangled: Array[String]   ; every routine declared, by symbol ...
     var fn_names: Array[String]     ; ... and the C++ name it has here
+    var fn_slots: Array[size_t]     ; ... found by symbol: a table of places + 1, 0 for none (symbol_at#)
+    var name_slots: Array[size_t]   ; ... and by C++ name (name_taken#)
     var temp_count: size_t          ; names of the temporaries a statement expression needs
     var errors: size_t              ; constructs written as #error
     var returns_value: bool         ; the routine being written answers a value
@@ -69,6 +71,22 @@ define CppEmitter
     var wrapper: String             ; the result wrapper of the throwing routine being written ("" for none)
     var caught: String              ; the result a catch arm is in (a bare throw throws it on)
     var caught_type: String         ; ... and the error union's C++ type
+    var def_name: String            ; the name a definition is written under ("" its own, weak)
+    var folded: Array[String]       ; the routines written as an instance of a template ...
+    var folded_family: Array[String] ; ... and that template's name
+    var family_names: Array[String] ; the templates of routines ...
+    var family_defs: Array[String]  ; ... and their definitions
+    var written: Array[String]      ; the templates whose definition is written
+    var source_paths: Array[String] ; the source files read for a template's parameters ...
+    var source_texts: Array[String] ; ... and their text
+    var c_at: Array[size_t]         ; the generic instances: their place in the plan ...
+    var c_args: Array[String]       ; ... their C++ arguments, tab-separated
+    var c_family: Array[size_t]     ; ... the template they may be of
+    var c_alone: Array[String]      ; ... their name as a routine of their own
+    var c_folded: Array[bool]       ; ... and whether they are the template's
+    var f_key: Array[String]        ; the templates: the routine of the source ...
+    var f_name: Array[String]       ; ... their name
+    var f_params: Array[String]     ; ... their parameters, tab-separated
 )
 {
     init()
@@ -76,6 +94,8 @@ define CppEmitter
         skip_tests := false
         fn_mangled := Array[String]()
         fn_names := Array[String]()
+        fn_slots := Array[size_t]()
+        name_slots := Array[size_t]()
         temp_count := 0
         errors := 0
         returns_value := false
@@ -100,6 +120,22 @@ define CppEmitter
         wrapper := String()
         caught := String()
         caught_type := String()
+        def_name := String()
+        folded := Array[String]()
+        folded_family := Array[String]()
+        family_names := Array[String]()
+        family_defs := Array[String]()
+        written := Array[String]()
+        source_paths := Array[String]()
+        source_texts := Array[String]()
+        c_at := Array[size_t]()
+        c_args := Array[String]()
+        c_family := Array[size_t]()
+        c_alone := Array[String]()
+        c_folded := Array[bool]()
+        f_key := Array[String]()
+        f_name := Array[String]()
+        f_params := Array[String]()
     }
 
     ; A name bound in the routine being written, and how C++ holds it.
@@ -186,12 +222,9 @@ define CppEmitter
     ; A C++ name no routine may take (a record's).
     procedure reserve(mutable this, name: String)
     {
-        if CppEmitter.contains(&this.fn_names, name)
+        if this.name_taken(name)
             return
-        this.fn_mangled.add(String())
-        this.fn_names.add(String(name))
-        this.fn_kinds.add(String())
-        this.fn_ptypes.add(String())
+        this.add_symbol(String(), name)
     }
 
     ; Writes the plan as one C++ file to `path`. Answers whether it could.
@@ -327,18 +360,22 @@ define CppEmitter
                 this.reserve(CppEmitter.template_base(CppEmitter.type_name_of(un.mangled_name)))
         }
 
+        ; the routines of generic instances, named ahead (fold_templates#)
+        this.register_instances(plan)
         ; every routine declared, so the bodies may call each other in any order
         if plan.functions <> null
         {
             for f in plan.functions
             {
-                if this.wanted(f) and CppEmitter.contains(&this.fn_mangled, f.mangled_name) = false
+                if this.wanted(f) and this.symbol_at(f.mangled_name) = this.fn_mangled.length
                     this.declare_function(&out, f)
             }
             out.append("\n" as char)
         }
         this.runtime(&out, plan)
         this.globals(&out, plan)
+        ; the routines of generic instances: a template where they agree
+        this.fold_templates(&out, plan)
         ; the bodies: written apart, since they may call routines the plan
         ; only names at the call (late_declarations#)
         var bodies StringBuilder()
@@ -351,7 +388,19 @@ define CppEmitter
                 if this.wanted(f) and CppEmitter.has_body(f) and CppEmitter.contains(&this.defined, f.mangled_name) = false
                 {
                     this.defined.add(String(f.mangled_name))
-                    this.define_function(&bodies, f)
+                    let at CppEmitter.position_of(&this.folded, f.mangled_name)
+                    if at < this.folded.length
+                    {
+                        ; an instance of a template: the template, once
+                        let family this.folded_family[at]
+                        if CppEmitter.contains(&this.written, family) = false
+                        {
+                            this.written.add(String(family))
+                            bodies.append(this.family_defs[CppEmitter.position_of(&this.family_names, family)])
+                        }
+                    }
+                    else
+                        this.define_function(&bodies, f)
                 }
             }
         }
@@ -1145,6 +1194,12 @@ define CppEmitter
     ; does not read.
     function cpp_arguments_at(m: String, at: size_t) returns String
     {
+        CppEmitter.joined(CppEmitter.cpp_argument_list_at(m, at), ", ")
+    }
+
+    ; ... tab-separated.
+    function cpp_argument_list_at(m: String, at: size_t) returns String
+    {
         let n m.get_length()
         var sb StringBuilder()
         var i at + 1
@@ -1155,7 +1210,7 @@ define CppEmitter
             if t.get_length() = 0 or next <= i
                 return String()
             if sb.get_length() > 0
-                sb.append ", "
+                sb.append("\t" as char)
             sb.append t
             i := next
         }
@@ -1199,82 +1254,53 @@ define CppEmitter
     ; unique in this file by a number (the symbol is its link name).
     procedure function_name(mutable this, mangled: String, entry: bool) returns String
     {
-        var i: size_t 0
-        while i < this.fn_mangled.length
-        {
-            if this.fn_mangled[i].equals(mangled)
-                return String(this.fn_names[i])
-            i := i + 1
-        }
+        let at this.symbol_at(mangled)
+        if at < this.fn_mangled.length
+            return String(this.fn_names[at])
         var base CppEmitter.local_name(CppEmitter.routine_name_of(mangled))
         if entry
             base := String("scaly_main")
         var name String(base)
         var k: size_t 2
-        var taken true
-        while taken
+        while this.name_taken(name)
         {
-            taken := false
-            for other in this.fn_names
-            {
-                if other.equals(name)
-                    taken := true
-            }
-            if taken
-            {
-                name := "`base``k`"
-                k := k + 1
-            }
+            name := "`base``k`"
+            k := k + 1
         }
-        this.fn_mangled.add(String(mangled))
-        this.fn_names.add(String(name))
-        this.fn_kinds.add(String())
-        this.fn_ptypes.add(String())
+        this.add_symbol(mangled, name)
         name
     }
 
     procedure set_ptypes(mutable this, mangled: String, types: String)
     {
-        var i: size_t 0
-        while i < this.fn_mangled.length
-        {
-            if this.fn_mangled[i].equals(mangled)
-            {
-                this.fn_ptypes.put(i, String(types))
-                return
-            }
-            i := i + 1
-        }
+        let at this.symbol_at(mangled)
+        if at < this.fn_mangled.length
+            this.fn_ptypes.put(at, String(types))
     }
 
     ; The C++ type of parameter k of the routine with that symbol, "" for
     ; none known (the caller page not counted).
     procedure ptype_of(this, mangled: String, k: size_t) returns String
     {
-        var i: size_t 0
-        while i < this.fn_mangled.length
+        let i this.symbol_at(mangled)
+        if i < this.fn_mangled.length and i < this.fn_ptypes.length
         {
-            if this.fn_mangled[i].equals(mangled) and i < this.fn_ptypes.length
+            let all this.fn_ptypes[i]
+            var field: size_t 0
+            var start: size_t 0
+            var j: size_t 0
+            let n all.get_length()
+            while j <= n
             {
-                let all this.fn_ptypes[i]
-                var field: size_t 0
-                var start: size_t 0
-                var j: size_t 0
-                let n all.get_length()
-                while j <= n
+                if j = n or all.get(j) = 0x09
                 {
-                    if j = n or all.get(j) = 0x09
-                    {
-                        if field = k
-                            return all.substring(start, j - start)
-                        field := field + 1
-                        start := j + 1
-                    }
-                    j := j + 1
+                    if field = k
+                        return all.substring(start, j - start)
+                    field := field + 1
+                    start := j + 1
                 }
-                return String()
+                j := j + 1
             }
-            i := i + 1
         }
         String()
     }
@@ -1282,15 +1308,125 @@ define CppEmitter
     ; How the routine with that symbol takes its parameters (parameter_kinds#).
     procedure set_kinds(mutable this, mangled: String, kinds: String)
     {
-        var i: size_t 0
-        while i < this.fn_mangled.length
+        let at this.symbol_at(mangled)
+        if at < this.fn_mangled.length
+            this.fn_kinds.put(at, String(kinds))
+    }
+
+    ; The place of a symbol among the routines declared, their number for
+    ; none: its hash's slot in fn_slots, then the next ones.
+    procedure symbol_at(this, mangled: String) returns size_t
+    {
+        let capacity this.fn_slots.length
+        if capacity = 0 or mangled.get_length() = 0
+            return this.fn_mangled.length
+        var slot mangled.hash() & (capacity - 1)
+        repeat
         {
-            if this.fn_mangled[i].equals(mangled)
+            let entry this.fn_slots[slot]
+            if entry = 0
+                return this.fn_mangled.length
+            if this.fn_mangled[entry - 1].equals(mangled)
+                return entry - 1
+            slot := (slot + 1) & (capacity - 1)
+        }
+        this.fn_mangled.length
+    }
+
+    ; A routine declared under a symbol and a C++ name.
+    procedure add_symbol(mutable this, mangled: String, name: String)
+    {
+        this.fn_mangled.add(String(mangled))
+        this.fn_names.add(String(name))
+        this.fn_kinds.add(String())
+        this.fn_ptypes.add(String())
+        ; the tables at most half full
+        if this.fn_slots.length < this.fn_mangled.length * 2
+        {
+            var capacity: size_t 1024
+            while capacity < this.fn_mangled.length * 4
+                capacity := capacity * 2
+            this.fn_slots := Array[size_t]()
+            this.name_slots := Array[size_t]()
+            var k: size_t 0
+            while k < capacity
             {
-                this.fn_kinds.put(i, String(kinds))
+                this.fn_slots.add(0)
+                this.name_slots.add(0)
+                k := k + 1
+            }
+            k := 0
+            while k < this.fn_mangled.length
+            {
+                this.index_symbol(k)
+                this.index_name(k)
+                k := k + 1
+            }
+            return
+        }
+        this.index_symbol(this.fn_mangled.length - 1)
+        this.index_name(this.fn_mangled.length - 1)
+    }
+
+    ; Whether a routine has that C++ name here (or had it, under a name
+    ; changed since: set_name#).
+    procedure name_taken(this, name: String) returns bool
+    {
+        let capacity this.name_slots.length
+        if capacity = 0
+            return false
+        var slot name.hash() & (capacity - 1)
+        repeat
+        {
+            let entry this.name_slots[slot]
+            if entry = 0
+                return false
+            if this.fn_names[entry - 1].equals(name)
+                return true
+            slot := (slot + 1) & (capacity - 1)
+        }
+        false
+    }
+
+    procedure index_name(mutable this, k: size_t)
+    {
+        let name this.fn_names[k]
+        let capacity this.name_slots.length
+        var slot name.hash() & (capacity - 1)
+        repeat
+        {
+            let entry this.name_slots[slot]
+            if entry = 0
+            {
+                this.name_slots.put(slot, k + 1)
                 return
             }
-            i := i + 1
+            if this.fn_names[entry - 1].equals(name)
+                return
+            slot := (slot + 1) & (capacity - 1)
+        }
+    }
+
+    ; The routine at place k found by its symbol (the first of a symbol
+    ; declared twice).
+    procedure index_symbol(mutable this, k: size_t)
+    {
+        let mangled this.fn_mangled[k]
+        if mangled.get_length() = 0
+            return
+        let capacity this.fn_slots.length
+        var slot mangled.hash() & (capacity - 1)
+        repeat
+        {
+            let entry this.fn_slots[slot]
+            if entry = 0
+            {
+                this.fn_slots.put(slot, k + 1)
+                return
+            }
+            if this.fn_mangled[entry - 1].equals(mangled)
+                return
+            slot := (slot + 1) & (capacity - 1)
         }
     }
 
@@ -1627,6 +1763,640 @@ define CppEmitter
     }
 
     ; ------------------------------------------------------------------
+    ; Templates
+    ; ------------------------------------------------------------------
+
+    ; The routines of generic instances, written once as a template where
+    ; the instances agree. Each instance is written as text first, its type
+    ; arguments replaced by the names of the parameters in the source; the
+    ; text most instances share is the template. An instance IS one of it
+    ; only where the template, its arguments put back in by text, is that
+    ; instance's own text, character for character -- so the template says
+    ; nothing the plan does not: every call in it names its callee and the
+    ; callee's arguments, `Vector_get_ptr<T>(...)`. Every other instance
+    ; stays a routine of its own, as before. A template is `static`: each
+    ; file's instances are its own, two files need not agree on the text.
+    ; Writes the declarations of both into `out`.
+    procedure register_instances(mutable this, plan: Plan)
+    {
+        if plan.functions = null
+            return
+        let fs (*plan.functions)
+        var seen Array[String]()
+        var i: size_t 0
+        while i < fs.length
+        {
+            let f fs[i]
+            if this.wanted(f) and CppEmitter.has_body(f) and CppEmitter.is_entry(f) = false and CppEmitter.contains(&seen, f.mangled_name) = false and this.symbol_at(f.mangled_name) = this.fn_mangled.length
+            {
+                let args CppEmitter.instance_part(f.mangled_name, false)
+                if args.get_length() > 0
+                {
+                    seen.add(String(f.mangled_name))
+                    ; one routine of the source, its parameters passed alike
+                    ; (a record by reference, a scalar by value)
+                    let key "`f.file`:`f.loc.start`:`f.loc.end`:`CppEmitter.routine_name_of(f.mangled_name)`:`CppEmitter.parameter_kinds(f)`"
+                    var family CppEmitter.position_of(&this.f_key, key)
+                    if family = this.f_key.length
+                    {
+                        let fname this.fresh_name(CppEmitter.local_name(CppEmitter.routine_name_of(f.mangled_name)))
+                        let params this.template_parameters(f, CppEmitter.count_fields(args))
+                        this.add_family(key, fname, params)
+                    }
+                    let alone this.fresh_name(CppEmitter.local_name(CppEmitter.routine_name_of(f.mangled_name)))
+                    this.add_instance(i, args, family, alone)
+                    this.set_name(f.mangled_name, String())
+                    this.set_kinds(f.mangled_name, CppEmitter.parameter_kinds(f))
+                    this.set_ptypes(f.mangled_name, CppEmitter.parameter_ctypes(f))
+                }
+            }
+            i := i + 1
+        }
+    }
+
+    procedure add_family(mutable this, key: String, name: String, params: String)
+    {
+        this.f_key.add(String(key))
+        this.f_name.add(String(name))
+        this.f_params.add(String(params))
+    }
+
+    procedure add_instance(mutable this, at: size_t, args: String, family: size_t, alone: String)
+    {
+        this.c_at.add(at)
+        this.c_args.add(String(args))
+        this.c_family.add(family)
+        this.c_alone.add(String(alone))
+        this.c_folded.add(true)
+    }
+
+    procedure fold_templates(mutable this, mutable out: ref[StringBuilder], plan: Plan)
+    {
+        if plan.functions = null or this.c_at.length = 0
+            return
+        let fs (*plan.functions)
+        ; until nothing moves: an instance that leaves its template renames
+        ; its calls, so the texts of its callers change
+        let errors_before this.errors
+        var f_text Array[String]()
+        var changed true
+        var rounds: size_t 0
+        while changed
+        {
+            changed := false
+            rounds := rounds + 1
+            var k: size_t 0
+            while k < this.c_at.length
+            {
+                let m fs[this.c_at[k]].mangled_name
+                if this.c_folded[k]
+                {
+                    let comma ", "
+                    let args CppEmitter.joined(this.c_args[k], comma)
+                    this.set_name(m, "`this.f_name[this.c_family[k]]`<`args`>")
+                }
+                else
+                    this.set_name(m, this.c_alone[k])
+                k := k + 1
+            }
+            var c_text Array[String]()
+            var c_sub Array[String]()
+            k := 0
+            while k < this.c_at.length
+            {
+                let f fs[this.c_at[k]]
+                let family this.c_family[k]
+                let text this.instance_text(f, this.f_name[family])
+                c_text.add(String(text))
+                if this.c_folded[k]
+                {
+                    if CppEmitter.has_any_token(text, this.f_params[family])
+                    {
+                        ; a name of the parameters is in the text already
+                        this.c_folded.put(k, false)
+                        changed := true
+                        c_sub.add(String())
+                    }
+                    else
+                        c_sub.add(CppEmitter.substituted(text, this.c_args[k], this.f_params[family]))
+                }
+                else
+                    c_sub.add(String())
+                k := k + 1
+            }
+            ; per template, the text most of its instances have; an instance
+            ; whose text that is not with its arguments leaves it
+            f_text := Array[String]()
+            var family: size_t 0
+            while family < this.f_key.length
+            {
+                var best String()
+                var best_count: size_t 0
+                var a: size_t 0
+                while a < this.c_at.length
+                {
+                    if this.c_family[a] = family and this.c_folded[a]
+                    {
+                        var count: size_t 0
+                        var b: size_t 0
+                        while b < this.c_at.length
+                        {
+                            if this.c_family[b] = family and this.c_folded[b] and c_sub[b].equals(c_sub[a])
+                                count := count + 1
+                            b := b + 1
+                        }
+                        if count > best_count
+                        {
+                            best := String(c_sub[a])
+                            best_count := count
+                        }
+                    }
+                    a := a + 1
+                }
+                var members: size_t 0
+                a := 0
+                while a < this.c_at.length
+                {
+                    if this.c_family[a] = family and this.c_folded[a]
+                    {
+                        if CppEmitter.substituted(best, this.f_params[family], this.c_args[a]).equals(c_text[a])
+                            members := members + 1
+                        else
+                        {
+                            this.c_folded.put(a, false)
+                            changed := true
+                        }
+                    }
+                    a := a + 1
+                }
+                ; a template of one instance says nothing
+                if members < 2
+                {
+                    a := 0
+                    while a < this.c_at.length
+                    {
+                        if this.c_family[a] = family and this.c_folded[a]
+                        {
+                            this.c_folded.put(a, false)
+                            changed := true
+                        }
+                        a := a + 1
+                    }
+                }
+                f_text.add(best)
+                family := family + 1
+            }
+        }
+        this.errors := errors_before
+        ; the declarations: each template once, each other instance its own
+        var k: size_t 0
+        while k < this.c_at.length
+        {
+            let f fs[this.c_at[k]]
+            let family this.c_family[k]
+            if this.c_folded[k]
+            {
+                this.folded.add(String(f.mangled_name))
+                this.folded_family.add(String(this.f_name[family]))
+                if CppEmitter.contains(&this.family_names, this.f_name[family]) = false
+                {
+                    let text f_text[family]
+                    let head CppEmitter.template_head(this.f_params[family])
+                    ; the text is the declaration's line, then the definition
+                    ; after the line of its file
+                    let line_end text.index_of("\n" as u8)
+                    let decl text.substring(0, (line_end + 1) as size_t)
+                    let def text.substring((line_end + 1) as size_t, text.get_length() - (line_end + 1) as size_t)
+                    let file_end def.index_of("\n" as u8, 1)
+                    let def_at (file_end + 1) as size_t
+                    out.append "`head``decl`"
+                    this.family_names.add(String(this.f_name[family]))
+                    this.family_defs.add("`def.substring(0, def_at)``head``def.substring(def_at, def.get_length() - def_at)`")
+                }
+            }
+            else
+                this.declare_function(out, f)
+            k := k + 1
+        }
+        out.append("\n" as char)
+    }
+
+    ; The declaration line of an instance and its definition, under the
+    ; template's name.
+    procedure instance_text(mutable this, f: PlannedFunction, name: String) returns String
+    {
+        var b StringBuilder()
+        b.append "`CppEmitter.return_ctype(f)` `name`(`CppEmitter.parameters(f, false)`);\n"
+        this.def_name := String(name)
+        this.define_function(&b, f)
+        this.def_name := String()
+        b.to_string()
+    }
+
+    ; `template <class T> static `
+    function template_head(params: String) returns String
+    {
+        let by ", class "
+        "template <class `CppEmitter.joined(params, by)`> static "
+    }
+
+    ; The C++ name a routine has here, given or changed.
+    procedure set_name(mutable this, mangled: String, name: String)
+    {
+        let at this.symbol_at(mangled)
+        if at < this.fn_mangled.length
+        {
+            this.fn_names.put(at, String(name))
+            return
+        }
+        this.add_symbol(mangled, name)
+    }
+
+    ; A name no routine has here yet, taken.
+    procedure fresh_name(mutable this, base: String) returns String
+    {
+        var name String(base)
+        var k: size_t 2
+        while this.name_taken(name)
+        {
+            name := "`base``k`"
+            k := k + 1
+        }
+        this.reserve(name)
+        name
+    }
+
+    function position_of(names: ref[Array[String]], name: String) returns size_t
+    {
+        var i: size_t 0
+        while i < names.length
+        {
+            if names[i].equals(name)
+                return i
+            i := i + 1
+        }
+        names.length
+    }
+
+    ; The parameters of the generic concept or function an instance comes
+    ; from, read off its declaration in the source (`define Vector[T]`),
+    ; tab-separated; T1, T2, ... where the source does not say.
+    procedure template_parameters(mutable this, f: PlannedFunction, count: size_t) returns String
+    {
+        let owner CppEmitter.instance_part(f.mangled_name, true)
+        var at CppEmitter.position_of(&this.source_paths, f.file)
+        if at = this.source_paths.length
+        {
+            this.source_paths.add(String(f.file))
+            this.source_texts.add(File.read_to_string(f.file))
+        }
+        let text this.source_texts[at]
+        var found CppEmitter.parameters_after(text, "define `owner`[")
+        if found.get_length() = 0
+            found := CppEmitter.parameters_after(text, "function `owner`[")
+        if found.get_length() = 0
+            found := CppEmitter.parameters_after(text, "procedure `owner`[")
+        if found.get_length() > 0 and CppEmitter.count_fields(found) = count
+            return found
+        var sb StringBuilder()
+        var k: size_t 1
+        while k <= count
+        {
+            if k > 1
+                sb.append("\t" as char)
+            sb.append "T`k`"
+            k := k + 1
+        }
+        sb.to_string()
+    }
+
+    ; The names in the brackets after the first `pattern` in the text,
+    ; tab-separated ("" where none).
+    function parameters_after(text: String, pattern: String) returns String
+    {
+        let at CppEmitter.find(text, pattern)
+        if at >= text.get_length()
+            return String()
+        var sb StringBuilder()
+        var i at + pattern.get_length()
+        let n text.get_length()
+        var name StringBuilder()
+        while i < n and text.get(i) <> 0x5D
+        {
+            let c text.get i
+            if CppEmitter.is_identifier_char(c)
+                name.append(c as char)
+            else if c = 0x2C
+            {
+                if sb.get_length() > 0
+                    sb.append("\t" as char)
+                sb.append(name.to_string())
+                name := StringBuilder()
+            }
+            else if c <> 0x20
+                return String()
+            i := i + 1
+        }
+        if name.get_length() = 0
+            return String()
+        if sb.get_length() > 0
+            sb.append("\t" as char)
+        sb.append(name.to_string())
+        sb.to_string()
+    }
+
+    ; Where `pattern` first stands in the text, its length where nowhere.
+    function find(text: String, pattern: String) returns size_t
+    {
+        let n text.get_length()
+        let m pattern.get_length()
+        if m = 0 or m > n
+            return n
+        var i: size_t 0
+        while i + m <= n
+        {
+            if text.get(i) = pattern.get(0)
+            {
+                var j: size_t 1
+                while j < m and text.get(i + j) = pattern.get(j)
+                    j := j + 1
+                if j = m
+                    return i
+            }
+            i := i + 1
+        }
+        n
+    }
+
+    function count_fields(tabbed: String) returns size_t
+    {
+        if tabbed.get_length() = 0
+            return 0
+        var count: size_t 1
+        var i: size_t 0
+        while i < tabbed.get_length()
+        {
+            if tabbed.get(i) = 0x09
+                count := count + 1
+            i := i + 1
+        }
+        count
+    }
+
+    ; The fields of a tab-separated text joined by `by`.
+    function joined(tabbed: String, by: String) returns String
+    {
+        var sb StringBuilder()
+        var i: size_t 0
+        while i < tabbed.get_length()
+        {
+            let c tabbed.get i
+            if c = 0x09
+                sb.append by
+            else
+                sb.append(c as char)
+            i := i + 1
+        }
+        sb.to_string()
+    }
+
+    ; Field k of a tab-separated text.
+    function field_of(tabbed: String, k: size_t) returns String
+    {
+        var field: size_t 0
+        var start: size_t 0
+        var j: size_t 0
+        let n tabbed.get_length()
+        while j <= n
+        {
+            if j = n or tabbed.get(j) = 0x09
+            {
+                if field = k
+                    return tabbed.substring(start, j - start)
+                field := field + 1
+                start := j + 1
+            }
+            j := j + 1
+        }
+        String()
+    }
+
+    ; Whether one of the tab-separated names stands in the text as a
+    ; word of its own.
+    function has_any_token(text: String, names: String) returns bool
+    {
+        var k: size_t 0
+        let count CppEmitter.count_fields(names)
+        while k < count
+        {
+            let name CppEmitter.field_of(names, k)
+            if CppEmitter.substituted(text, name, "@").equals(text) = false
+                return true
+            k := k + 1
+        }
+        false
+    }
+
+    ; The text with each of the tab-separated `from` replaced by the one at
+    ; its place in `to`, where it stands as a whole: not inside a longer
+    ; name, a string literal or a comment. A longer `from` is tried first.
+    function substituted(text: String, from: String, to: String) returns String
+    {
+        let count CppEmitter.count_fields(from)
+        ; the patterns, the longest first
+        var patterns Array[String]()
+        var replacements Array[String]()
+        var taken Array[size_t]()
+        var k: size_t 0
+        while k < count
+        {
+            var best: size_t 0
+            var best_length: size_t 0
+            var found false
+            var j: size_t 0
+            while j < count
+            {
+                if CppEmitter.contains_index(&taken, j) = false
+                {
+                    let length CppEmitter.field_of(from, j).get_length()
+                    if found = false or length > best_length
+                    {
+                        best := j
+                        best_length := length
+                        found := true
+                    }
+                }
+                j := j + 1
+            }
+            taken.add(best)
+            patterns.add(CppEmitter.field_of(from, best))
+            replacements.add(CppEmitter.field_of(to, best))
+            k := k + 1
+        }
+        var sb StringBuilder()
+        let n text.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            let c text.get i
+            if c = 0x22 or c = 0x27                         ; a literal
+            {
+                sb.append(c as char)
+                i := i + 1
+                while i < n and text.get(i) <> c
+                {
+                    if text.get(i) = 0x5C and i + 1 < n
+                    {
+                        sb.append(text.get(i) as char)
+                        i := i + 1
+                    }
+                    sb.append(text.get(i) as char)
+                    i := i + 1
+                }
+                if i < n
+                {
+                    sb.append(c as char)
+                    i := i + 1
+                }
+                continue
+            }
+            if c = 0x2F and i + 1 < n and text.get(i + 1) = 0x2F      ; a comment
+            {
+                while i < n and text.get(i) <> 0x0A
+                {
+                    sb.append(text.get(i) as char)
+                    i := i + 1
+                }
+                continue
+            }
+            var replaced false
+            if i = 0 or CppEmitter.is_identifier_char(text.get(i - 1)) = false or CppEmitter.is_identifier_char(c) = false
+            {
+                var o: size_t 0
+                while o < patterns.length and replaced = false
+                {
+                    let pattern patterns[o]
+                    let m pattern.get_length()
+                    if m > 0 and i + m <= n and pattern.get(0) = c and CppEmitter.text_at(text, i, pattern)
+                    {
+                        var whole true
+                        if CppEmitter.is_identifier_char(pattern.get(m - 1)) and i + m < n and CppEmitter.is_identifier_char(text.get(i + m))
+                            whole := false
+                        if whole
+                        {
+                            sb.append(replacements[o])
+                            i := i + m
+                            replaced := true
+                        }
+                    }
+                    o := o + 1
+                }
+            }
+            if replaced = false
+            {
+                ; a word that is none of them is passed whole
+                if CppEmitter.is_identifier_char(c)
+                {
+                    while i < n and CppEmitter.is_identifier_char(text.get(i))
+                    {
+                        sb.append(text.get(i) as char)
+                        i := i + 1
+                    }
+                }
+                else
+                {
+                    sb.append(c as char)
+                    i := i + 1
+                }
+            }
+        }
+        sb.to_string()
+    }
+
+    function contains_index(list: ref[Array[size_t]], value: size_t) returns bool
+    {
+        for v in list
+        {
+            if v = value
+                return true
+        }
+        false
+    }
+
+    function text_at(text: String, at: size_t, pattern: String) returns bool
+    {
+        var j: size_t 0
+        let m pattern.get_length()
+        while j < m
+        {
+            if text.get(at + j) <> pattern.get(j)
+                return false
+            j := j + 1
+        }
+        true
+    }
+
+    ; Of a generic instance's routine symbol: its type arguments in C++,
+    ; tab-separated, or (owner) the source name they belong to -- "" where
+    ; the symbol is no instance or one this reading does not take apart
+    ; (two argument lists, a member of a nested generic).
+    function instance_part(mangled: String, owner: bool) returns String
+    {
+        let n mangled.get_length()
+        if n < 3 or mangled.starts_with("_Z") = false
+            return String()
+        var i: size_t 2
+        var nested false
+        if mangled.get(i) = 0x4E
+        {
+            nested := true
+            i := i + 1
+        }
+        var args String()
+        var name String()
+        var last String()
+        repeat
+        {
+            if i >= n
+                break
+            let c mangled.get i
+            if c = 0x42                                 ; B: an ABI tag
+            {
+                i := CppEmitter.skip_source_name(mangled, i + 1)
+                continue
+            }
+            if c = 0x49                                 ; I
+            {
+                if args.get_length() > 0
+                    return String()
+                args := CppEmitter.cpp_argument_list_at(mangled, i)
+                if args.get_length() = 0
+                    return String()
+                name := String(last)
+                i := CppEmitter.skip_arguments(mangled, i)
+                if nested = false
+                    break
+                continue
+            }
+            if c < 0x30 or c > 0x39
+                break
+            var len: size_t 0
+            while i < n and mangled.get(i) >= 0x30 and mangled.get(i) <= 0x39
+            {
+                len := len * 10 + ((mangled.get(i) - 0x30) as size_t)
+                i := i + 1
+            }
+            last := mangled.substring(i, len)
+            i := i + len
+            if nested = false and (i >= n or (mangled.get(i) <> 0x49 and mangled.get(i) <> 0x42))
+                break
+        }
+        if owner
+            return name
+        args
+    }
+
+    ; ------------------------------------------------------------------
     ; Routines
     ; ------------------------------------------------------------------
 
@@ -1776,13 +2546,9 @@ define CppEmitter
 
     procedure declared_name(this, mangled: String) returns String
     {
-        var i: size_t 0
-        while i < this.fn_mangled.length
-        {
-            if this.fn_mangled[i].equals(mangled)
-                return String(this.fn_names[i])
-            i := i + 1
-        }
+        let at this.symbol_at(mangled)
+        if at < this.fn_mangled.length
+            return String(this.fn_names[at])
         String()
     }
 
@@ -1818,7 +2584,7 @@ define CppEmitter
             return
         for g in plan.globals
         {
-            if CppEmitter.contains(&this.fn_mangled, g.mangled_name) = false
+            if this.symbol_at(g.mangled_name) = this.fn_mangled.length
             {
                 let name this.function_name(g.mangled_name, false)
                 let t CppEmitter.ctype(g.global_type)
@@ -1882,12 +2648,11 @@ define CppEmitter
         if CppEmitter.is_extern(f) and f.mangled_name.equals(f.name)
         {
             ; once: the modules declare a C function each in their own words
-            if CppEmitter.contains(&this.fn_names, f.name)
+            if this.name_taken(f.name)
                 return
-            this.fn_mangled.add(String(f.mangled_name))
-            this.fn_names.add(String(f.name))
-            this.fn_kinds.add(CppEmitter.parameter_kinds(f))
-            this.fn_ptypes.add(CppEmitter.parameter_ctypes(f))
+            this.add_symbol(f.mangled_name, f.name)
+            this.set_kinds(f.mangled_name, CppEmitter.parameter_kinds(f))
+            this.set_ptypes(f.mangled_name, CppEmitter.parameter_ctypes(f))
             out.append "extern \"C\" `CppEmitter.return_ctype(f)` `f.name`(`CppEmitter.parameters(f, false)`);\n"
             return
         }
@@ -1905,12 +2670,17 @@ define CppEmitter
         choose f.impl
             when a: Action
             {
-                let name this.function_name(f.mangled_name, CppEmitter.is_entry(f))
+                var name this.function_name(f.mangled_name, CppEmitter.is_entry(f))
+                if this.def_name.get_length() > 0
+                    name := String(this.def_name)
+                ; a statement expression's temporaries count from 0 in each
+                this.temp_count := 0
                 out.append "\n// `f.file`\n"
                 ; a definition every file may hold (a generic instance in the
                 ; library and in the program): weak, the LLVM emitter's
-                ; linkonce_odr; the entry is the one strong definition
-                if CppEmitter.is_entry(f) = false
+                ; linkonce_odr; the entry is the one strong definition (a
+                ; template's is written by fold_templates#)
+                if CppEmitter.is_entry(f) = false and this.def_name.get_length() = 0
                     out.append "__attribute__((weak)) "
                 out.append "`CppEmitter.return_ctype(f)` `name`(`CppEmitter.parameters(f, true)`)\n{\n"
                 let receiver CppEmitter.receiver_line(f)
@@ -3361,14 +4131,7 @@ define CppEmitter
         let lowered this.lowered_call(c)
         if lowered.get_length() > 0
             return lowered
-        var callee String()
-        var i: size_t 0
-        while i < this.fn_mangled.length
-        {
-            if this.fn_mangled[i].equals(c.mangled_name)
-                callee := String(this.fn_names[i])
-            i := i + 1
-        }
+        var callee this.declared_name(c.mangled_name)
         if callee.get_length() = 0
             callee := this.declare_from_call(c, false)
         var kinds this.kinds_of(c.mangled_name)
@@ -3523,6 +4286,9 @@ define CppEmitter
             types.append(CppEmitter.ctype(rt))
             first := false
         }
+        ; a C function takes an address as `void*`, not as the type of the
+        ; first call that is met
+        let c_function c.mangled_name.starts_with("_Z") = false
         if c.args <> null
         {
             for a in c.args
@@ -3533,8 +4299,11 @@ define CppEmitter
                 if types.get_length() > 0
                     types.append("\t" as char)
                 first := false
-                params.append(CppEmitter.ctype(t))
-                types.append(CppEmitter.ctype(t))
+                var pt CppEmitter.ctype(t)
+                if c_function and CppEmitter.is_pointer_type(t)
+                    pt := String("void*")
+                params.append pt
+                types.append pt
                 if CppEmitter.is_record(t)
                 {
                     params.append("&" as char)
@@ -3689,13 +4458,9 @@ define CppEmitter
 
     procedure kinds_of(this, mangled: String) returns String
     {
-        var i: size_t 0
-        while i < this.fn_mangled.length
-        {
-            if this.fn_mangled[i].equals(mangled) and i < this.fn_kinds.length
-                return String(this.fn_kinds[i])
-            i := i + 1
-        }
+        let at this.symbol_at(mangled)
+        if at < this.fn_mangled.length and at < this.fn_kinds.length
+            return String(this.fn_kinds[at])
         String()
     }
 
