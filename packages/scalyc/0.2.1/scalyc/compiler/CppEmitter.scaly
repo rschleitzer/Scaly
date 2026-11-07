@@ -244,12 +244,16 @@ define CppEmitter
         var rec StringBuilder()
         ; the records: declared first, then defined, each after the records
         ; it holds by value
+        ; a generic instance is an explicit specialization of its template,
+        ; which is only declared: every instance's layout is written out
+        var templates Array[String]()
+        var forwards StringBuilder()
         if plan.structures <> null
         {
             for st in plan.structures
             {
                 if st.is_generic_placeholder = false and CppEmitter.is_uninstantiated_template(st.mangled_name) = false
-                    rec.append "struct `CppEmitter.type_name_of(st.mangled_name)`;\n"
+                    CppEmitter.forward_declaration(&rec, &forwards, &templates, CppEmitter.type_name_of(st.mangled_name))
                 else
                     this.template_names.add(String(st.mangled_name))
             }
@@ -259,11 +263,13 @@ define CppEmitter
             for un in plan.unions
             {
                 if un.is_generic_placeholder = false and CppEmitter.is_uninstantiated_template(un.mangled_name) = false
-                    rec.append "struct `CppEmitter.type_name_of(un.mangled_name)`;\n"
+                    CppEmitter.forward_declaration(&rec, &forwards, &templates, CppEmitter.type_name_of(un.mangled_name))
                 else
                     this.template_names.add(String(un.mangled_name))
             }
         }
+        rec.append("\n" as char)
+        rec.append(forwards.to_string())
         rec.append("\n" as char)
         var done Array[String]()
         if plan.structures <> null
@@ -299,7 +305,7 @@ define CppEmitter
         {
             for st in plan.structures
             {
-                this.reserve(CppEmitter.type_name_of(st.mangled_name))
+                this.reserve(CppEmitter.template_base(CppEmitter.type_name_of(st.mangled_name)))
                 var fields StringBuilder()
                 if st.properties <> null
                 {
@@ -318,7 +324,7 @@ define CppEmitter
         if plan.unions <> null
         {
             for un in plan.unions
-                this.reserve(CppEmitter.type_name_of(un.mangled_name))
+                this.reserve(CppEmitter.template_base(CppEmitter.type_name_of(un.mangled_name)))
         }
 
         ; every routine declared, so the bodies may call each other in any order
@@ -391,10 +397,17 @@ define CppEmitter
             out.append "\n`rt` `free_get`(void* address)\n{\n    return (`rt`)`page_get`(address);\n}\n"
         }
         ; a program carries its stamp, a hash of its text (Emitter.emit_build_stamp#)
-        let text out.to_string()
+        var text out.to_string()
+        ; a record of the program named as a template is (Node of its own
+        ; beside the library's Node[T]): the program's is renamed
+        let clashes this.clashing_names(plan, path)
+        if clashes.length > 0
+            text := CppEmitter.renamed(text, &clashes)
+        var whole StringBuilder()
+        whole.append text
         if CppEmitter.has_main(text)
-            out.append "\nextern \"C\" int64_t scaly_build_stamp()\n{\n    return (int64_t)`CppEmitter.text_hash(text)`ULL;\n}\n"
-        if File.write_from_string(path, out.to_string()) = false
+            whole.append "\nextern \"C\" int64_t scaly_build_stamp()\n{\n    return (int64_t)`CppEmitter.text_hash(text)`ULL;\n}\n"
+        if File.write_from_string(path, whole.to_string()) = false
         {
             Console.println "error: cannot write `path`"
             return false
@@ -404,6 +417,143 @@ define CppEmitter
             Console.println "scalyc --emit-cpp: `this.errors` constructs are not translated yet (#error lines in `path`)"
         }
         true
+    }
+
+    ; The names of this plan's own records that a template has too: one
+    ; of this plan's generic instances, or of the standard library's
+    ; records, whose header lies beside the program's file.
+    procedure clashing_names(this, plan: Plan, path: String) returns Array[String]
+    {
+        var bases Array[String]()
+        var plain Array[String]()
+        if plan.structures <> null
+        {
+            for st in plan.structures
+            {
+                if CppEmitter.contains(&this.template_names, st.mangled_name) = false
+                    CppEmitter.sort_name(&bases, &plain, CppEmitter.type_name_of(st.mangled_name))
+            }
+        }
+        if plan.unions <> null
+        {
+            for un in plan.unions
+            {
+                if CppEmitter.contains(&this.template_names, un.mangled_name) = false
+                    CppEmitter.sort_name(&bases, &plain, CppEmitter.type_name_of(un.mangled_name))
+            }
+        }
+        if this.no_prelude = false and this.types_header.get_length() = 0
+        {
+            var dir String()
+            let slash path.last_index_of("/" as u8)
+            if slash >= 0
+                dir := path.substring(0, (slash + 1) as size_t)
+            ; its declarations of templates: `template <class> struct Node;`
+            let header File.read_to_string("`dir`scaly_types.h")
+            let n header.get_length()
+            var start: size_t 0
+            var i: size_t 0
+            while i <= n
+            {
+                if i = n or header.get(i) = 0x0A
+                {
+                    let line header.substring(start, i - start)
+                    if line.starts_with("template <") and line.ends_with(";")
+                    {
+                        let close line.index_of(">" as u8)
+                        let from (close as size_t) + 9
+                        if close >= 0 and from < line.get_length()
+                            bases.add(line.substring(from, line.get_length() - from - 1))
+                    }
+                    start := i + 1
+                }
+                i := i + 1
+            }
+        }
+        var clashes Array[String]()
+        for name in plain
+        {
+            if CppEmitter.contains(&bases, name) and CppEmitter.contains(&clashes, name) = false
+                clashes.add(String(name))
+        }
+        clashes
+    }
+
+    procedure sort_name(mutable bases: ref[Array[String]], mutable plain: ref[Array[String]], name: String)
+    {
+        if name.contains("<")
+            bases.add(CppEmitter.template_base(name))
+        else
+            plain.add(String(name))
+    }
+
+    ; The text with every identifier of those names that is not a
+    ; template's (a `<` follows) renamed `name_`; string literals and
+    ; comments are left alone.
+    function renamed(text: String, names: ref[Array[String]]) returns String
+    {
+        var sb StringBuilder()
+        let n text.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            let c text.get i
+            if c = 0x22 or c = 0x27                         ; a literal
+            {
+                sb.append(c as char)
+                i := i + 1
+                while i < n and text.get(i) <> c
+                {
+                    if text.get(i) = 0x5C and i + 1 < n
+                    {
+                        sb.append(text.get(i) as char)
+                        i := i + 1
+                    }
+                    sb.append(text.get(i) as char)
+                    i := i + 1
+                }
+                if i < n
+                {
+                    sb.append(c as char)
+                    i := i + 1
+                }
+                continue
+            }
+            if c = 0x2F and i + 1 < n and text.get(i + 1) = 0x2F      ; a comment
+            {
+                while i < n and text.get(i) <> 0x0A
+                {
+                    sb.append(text.get(i) as char)
+                    i := i + 1
+                }
+                continue
+            }
+            if CppEmitter.is_identifier_char(c)
+            {
+                let start i
+                while i < n and CppEmitter.is_identifier_char(text.get(i))
+                    i := i + 1
+                let word text.substring(start, i - start)
+                sb.append word
+                if (c < 0x30 or c > 0x39) and CppEmitter.contains(names, word)
+                {
+                    var j i
+                    while j < n and text.get(j) = 0x20
+                        j := j + 1
+                    if j >= n or text.get(j) <> 0x3C
+                        sb.append("_" as char)
+                }
+                continue
+            }
+            sb.append(c as char)
+            i := i + 1
+        }
+        sb.to_string()
+    }
+
+    function is_identifier_char(c: u8) returns bool
+    {
+        (c >= 0x30 and c <= 0x39) or (c >= 0x41 and c <= 0x5A) or (c >= 0x61 and c <= 0x7A) or c = 0x5F
     }
 
     function has_main(text: String) returns bool
@@ -609,8 +759,15 @@ define CppEmitter
     ; name does not take apart is its symbol, made a C++ identifier.
     function type_name_of(mangled: String) returns String
     {
-        var sb StringBuilder()
         let n mangled.get_length()
+        ; a generic instance: its template with the arguments, Vector<UseSyntax>
+        if n > 2 and mangled.starts_with("_Z")
+        {
+            let t CppEmitter.cpp_type_at(mangled, 2)
+            if t.contains("<") and CppEmitter.skip_type(mangled, 2) = n
+                return t
+        }
+        var sb StringBuilder()
         var i: size_t 0
         if n >= 2 and mangled.get(0) = 0x5F and mangled.get(1) = 0x5A    ; _Z
             i := 2
@@ -863,6 +1020,146 @@ define CppEmitter
             i := next
         }
         i + 1
+    }
+
+    ; The C++ spelling of the type whose code begins at `at` in a symbol, ""
+    ; where this reading stops: the codes of Planner.encode_type#, a generic
+    ; instance as its template and the arguments (`Vector<UseSyntax>`), an
+    ; Option of a reference as the pointer (ctype#).
+    function cpp_type_at(m: String, at: size_t) returns String
+    {
+        let n m.get_length()
+        if at >= n
+            return String()
+        let c m.get at
+        if c = 0x50 or c = 0x52                     ; P R
+        {
+            let inner CppEmitter.cpp_type_at(m, at + 1)
+            if inner.get_length() = 0
+                return String()
+            if inner.equals("void")
+                return String("void*")
+            return "`inner`*"
+        }
+        match c
+            case 0x76
+                return String("void")
+            case 0x62
+                return String("bool")
+            case 0x63
+                return String("uint8_t")
+            case 0x69 case 0x6C
+                return String("int64_t")
+            case 0x6A case 0x6D
+                return String("uint64_t")
+            case 0x66
+                return String("float")
+            case 0x64
+                return String("double")
+        var nested false
+        var i at
+        if c = 0x4E                                 ; N ... E
+        {
+            nested := true
+            i := i + 1
+        }
+        var sb StringBuilder()
+        var parts: size_t 0
+        var args String()
+        var args_at: size_t 0
+        repeat
+        {
+            if i >= n
+                return String()
+            let d m.get i
+            if nested and d = 0x45
+            {
+                i := i + 1
+                break
+            }
+            if d = 0x42                             ; B: an ABI tag
+            {
+                i := CppEmitter.skip_source_name(m, i + 1)
+                continue
+            }
+            if d = 0x49                             ; I: the arguments, of the last name only
+            {
+                if args.get_length() > 0
+                    return String()
+                args := CppEmitter.cpp_arguments_at(m, i)
+                if args.get_length() = 0
+                    return String()
+                args_at := i
+                i := CppEmitter.skip_arguments(m, i)
+                if nested = false
+                    break
+                continue
+            }
+            if d < 0x30 or d > 0x39
+                return String()
+            if args.get_length() > 0
+                return String()
+            var len: size_t 0
+            while i < n and m.get(i) >= 0x30 and m.get(i) <= 0x39
+            {
+                len := len * 10 + ((m.get(i) - 0x30) as size_t)
+                i := i + 1
+            }
+            if parts > 0
+                sb.append("_" as char)
+            sb.append(m.substring(i, len))
+            parts := parts + 1
+            i := i + len
+            if nested = false and (i >= n or (m.get(i) <> 0x42 and m.get(i) <> 0x49))
+                break
+            if nested = false and i < n and m.get(i) = 0x42
+            {
+                ; the tags of a name that is not nested, then its arguments
+                while i < n and m.get(i) = 0x42
+                    i := CppEmitter.skip_source_name(m, i + 1)
+                if i < n and m.get(i) = 0x49
+                    continue
+                break
+            }
+        }
+        let name sb.to_string()
+        if args.get_length() = 0
+        {
+            let p CppEmitter.primitive(name)
+            if p.get_length() > 0
+                return p
+            return name
+        }
+        ; an Option of a reference is the pointer
+        if name.equals("Option")
+        {
+            let a m.get(args_at + 1)
+            let after CppEmitter.skip_type(m, args_at + 1)
+            if (a = 0x50 or a = 0x52) and after < n and m.get(after) = 0x45
+                return args
+        }
+        "`name`<`args`>"
+    }
+
+    ; The arguments `I <types> E` at `at`, comma-separated, "" where one
+    ; does not read.
+    function cpp_arguments_at(m: String, at: size_t) returns String
+    {
+        let n m.get_length()
+        var sb StringBuilder()
+        var i at + 1
+        while i < n and m.get(i) <> 0x45
+        {
+            let t CppEmitter.cpp_type_at(m, i)
+            let next CppEmitter.skip_type(m, i)
+            if t.get_length() = 0 or next <= i
+                return String()
+            if sb.get_length() > 0
+                sb.append ", "
+            sb.append t
+            i := next
+        }
+        sb.to_string()
     }
 
     ; A symbol made an identifier: every character that is none becomes `_`.
@@ -1179,9 +1476,8 @@ define CppEmitter
                             this.define_structure(out, plan, p.prop_type.mangled_name, done, depth + 1)
                     }
                 }
-                let guard "SCALY_TYPE_`CppEmitter.identifier_of(st.mangled_name)`"
-                out.append "#ifndef `guard`\n#define `guard`\n"
-                out.append "struct `CppEmitter.type_name_of(st.mangled_name)`\n{\n"
+                out.append(CppEmitter.record_head(st.mangled_name))
+                out.append "\n{\n"
                 if st.properties <> null
                 {
                     for p in st.properties
@@ -1219,9 +1515,8 @@ define CppEmitter
                         }
                     }
                 }
-                let guard "SCALY_TYPE_`CppEmitter.identifier_of(un.mangled_name)`"
-                out.append "#ifndef `guard`\n#define `guard`\n"
-                out.append "struct `CppEmitter.type_name_of(un.mangled_name)`\n{\n    uint8_t tag;\n"
+                out.append(CppEmitter.record_head(un.mangled_name))
+                out.append "\n{\n    uint8_t tag;\n"
                 if sizes.get_length() = 0
                     out.append "    uint8_t data[0];\n"
                 else
@@ -1230,6 +1525,105 @@ define CppEmitter
                 return
             }
         }
+    }
+
+    ; The guard and the head of a record's definition. A generic instance
+    ; is guarded by its C++ name: two Scaly types may be one C++ type
+    ; (Slice[char] and Slice[u8] are both Slice<uint8_t>, of one layout).
+    function record_head(mangled: String) returns String
+    {
+        let name CppEmitter.type_name_of(mangled)
+        if name.contains("<")
+        {
+            let guard "SCALY_TYPE_`CppEmitter.guard_of(name)`"
+            return "#ifndef `guard`\n#define `guard`\ntemplate <> struct `name`"
+        }
+        let guard "SCALY_TYPE_`CppEmitter.identifier_of(mangled)`"
+        "#ifndef `guard`\n#define `guard`\nstruct `name`"
+    }
+
+    ; A C++ type name as part of a macro name, one way back.
+    function guard_of(name: String) returns String
+    {
+        var sb StringBuilder()
+        let n name.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            let c name.get i
+            match c
+                case 0x3C
+                    sb.append "_L"
+                case 0x3E
+                    sb.append "_R"
+                case 0x2C
+                    sb.append "_C"
+                case 0x2A
+                    sb.append "_P"
+                case 0x20
+                    sb.append "_S"
+                case 0x5F
+                    sb.append "__"
+                else
+                    sb.append(c as char)
+            i := i + 1
+        }
+        sb.to_string()
+    }
+
+    ; The name of a template, Vector of Vector<UseSyntax>; any other name
+    ; is its own.
+    function template_base(name: String) returns String
+    {
+        let at name.index_of("<" as u8)
+        if at < 0
+            return name
+        name.substring(0, at as size_t)
+    }
+
+    ; A record declared ahead: `struct Point;`, and for a generic instance
+    ; its template, once: `template <class, class> struct KeyValuePair;`.
+    procedure forward_declaration(mutable plain: ref[StringBuilder], mutable generic: ref[StringBuilder], mutable templates: ref[Array[String]], name: String)
+    {
+        if name.contains("<") = false
+        {
+            plain.append "struct `name`;\n"
+            return
+        }
+        let base CppEmitter.template_base(name)
+        if CppEmitter.contains(templates, base)
+            return
+        templates.add(String(base))
+        ; the arguments: one more than the commas outside nested brackets
+        var count: size_t 1
+        var depth: size_t 0
+        let n name.get_length()
+        var i base.get_length() + 1
+        while i < n
+        {
+            let c name.get i
+            if c = 0x3C
+                depth := depth + 1
+            else if c = 0x3E
+            {
+                if depth = 0
+                    break
+                depth := depth - 1
+            }
+            else if c = 0x2C and depth = 0
+                count := count + 1
+            i := i + 1
+        }
+        var params StringBuilder()
+        var k: size_t 0
+        while k < count
+        {
+            if k > 0
+                params.append ", "
+            params.append "class"
+            k := k + 1
+        }
+        generic.append "template <`params.to_string()`> struct `base`;\n"
     }
 
     ; ------------------------------------------------------------------
