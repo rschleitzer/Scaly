@@ -8,13 +8,14 @@
 #   ./mkp -> tools/bootstrap.sh -> tools/seed.sh -> tools/build-from-seed.sh
 # seed.sh emits into a scratch directory; when its five roots differ from seed/
 # they are copied in and SHA256SUMS is rewritten (the seed refresh an emission
-# change owes), and build-from-seed then builds the compiler every suite uses
+# change owes), the compiler as C++ is written again into trust/ alike
+# (trust/emit.sh), and build-from-seed then builds the compiler every suite uses
 # from THAT seed. tools/cycle.sh is not run: seed.sh's fixed point is the
 # stronger gate and its bootstrap is the same one.
 #
 # Phase 2 runs in lanes, all at once; inside a lane the steps are in order:
 #   compiler  regress, selfhosted, target, wasm, fiber, escape, pointer-report,
-#             write-report, abi, published, debuginfo
+#             write-report, abi, published, debuginfo, trust (trust/check.sh)
 #   lsp       tests/lsp/run.sh — once the tscaly lane has compiled its package
 #   ports     likewise; dazzle and opensp from THEIR repository (../dazzle or
 #             $DAZZLE_REPO, SKIPPED by name without it): its tests/run.sh with
@@ -97,6 +98,11 @@ seed_refresh() {
   for f in main.ll scaly_main.ll scalyc.ll scaly.ll scalyls.ll scalyls_main.ll json.ll; do
     cmp -s "$out/$f" "seed/$f" || { cp "$out/$f" "seed/$f"; changed="$changed $f"; }
   done
+  # the compiler as C++ (trust/): written again with the seed, never merged
+  trust/emit.sh /tmp/scalyc_stage2 "$out/trust" > "$out/trust.log" 2>&1 || { tail -3 "$out/trust.log"; return 1; }
+  for f in libscaly.cpp scalyc.cpp main.cpp scaly_types.h; do
+    cmp -s "$out/trust/$f" "trust/$f" || { cp "$out/trust/$f" "trust/$f"; changed="$changed trust/$f"; }
+  done
   if [ -n "$changed" ]; then
     # The sed: Perl's shasum marks the read mode before the name, a space for
     # text and a `*` for binary -- and in Git Bash it reads binary, so a refresh
@@ -154,6 +160,12 @@ lane_compiler() {
   step abi tests/abi/run.sh || rc=1
   step published tools/published.sh || rc=1
   step debuginfo tests/debuginfo/run.sh "$BIN" || rc=1
+  # the compiler built from trust/*.cpp emits seed/ byte for byte (not on
+  # Windows: the C++ build is for a POSIX box, the seed is one for all targets)
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) echo "SKIP trust (a POSIX build)" ;;
+    *) step trust trust/check.sh "$LOG/trust" || rc=1 ;;
+  esac
   return $rc
 }
 
