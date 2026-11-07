@@ -8915,6 +8915,29 @@ define Planner
                     sb.append(" @deep_into_`k`_`iv` true")
                 k := k + 1
             }
+            ; what the RESULT hands back of the inputs, by this verdict (and
+            ; which of them whole, where not all of those): a caller reading
+            ; the sources asks it, and one reading the interface had only the
+            ; write census's `@ret_reach`, which answers ITS question -- what
+            ; the result may alias -- and says `String.substring` keeps its
+            ; receiver (a String built from a pointer into it; the init
+            ; copies). The two disagreed on where a substring handed to a
+            ; root routine lives, and the seed did not reproduce itself.
+            var rmask: size_t 0
+            let rp gate.deep_ret_state.get d
+            if rp <> null
+                rmask := (*rp)
+            sb.append(" @deep_ret_`rmask` true")
+            if rmask <> 0
+            {
+                var rname String(f.name)
+                let rown ret_res_owner.get d
+                if rown <> null and (*rown).get_length() > 0
+                    rname := "`(*rown)`.`f.name`"
+                let whole this.deep_returns_whole_of(rname) & (rmask as u64)
+                if whole <> (rmask as u64)
+                    sb.append(" @deep_retwhole_`whole as size_t` true")
+            }
             sb.to_string()
         }
 
@@ -43284,11 +43307,24 @@ define Planner
                 let said Planner.linked_return_prefixed(f, "ret_reach_")
                 if said >= 0
                     reach := said as u64
+                ; the deep verdict itself where the interface states it
+                ; (facts_deep_attributes#): what a caller reading the sources
+                ; is told; `@ret_reach` answers the write census's question
+                var whole_reach reach
+                let deep_said Planner.linked_return_prefixed(f, "deep_ret_")
+                if deep_said >= 0
+                {
+                    reach := deep_said as u64
+                    whole_reach := reach
+                    let whole_said Planner.linked_return_prefixed(f, "deep_retwhole_")
+                    if whole_said >= 0
+                        whole_reach := whole_said as u64
+                }
                 if reach <> (0 as u64)
                 {
                     persistence.persist_ret_hit := true
                     gate.deep_ret_mask := reach
-                    gate.deep_ret_whole.cur := reach
+                    gate.deep_ret_whole.cur := whole_reach
                 }
                 ; a generated interface that states the deep masks (`@deep`):
                 ; the body's own verdict, per position and destination

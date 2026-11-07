@@ -814,6 +814,23 @@ done
 said=$(cat "$TMP/reach-cache"/kit-*.iface/interface/kit/parts.scaly 2>/dev/null | grep -c 'procedure dial(.*@ret_reach_0 true')
 [ "$said" = 1 ] && ok || bad "reach: the interface: $said statement(s) of dial's reach"
 
+# deepret: what a routine's result hands back of its inputs, as the planner's
+# own deep verdict says it (`@deep_ret_N`) -- a caller reading the package's
+# sources is told that, one reading the interface had only the write census's
+# `@ret_reach_N`, which says a String built from a pointer into the receiver
+# (`substring`) keeps the receiver: a temporary handed to such a routine lived
+# on one page from the sources and on another through the interface, and the
+# compiler's seed did not reproduce itself. `head` copies: it hands back none.
+dr="$TMP/deepret"; mkdir -p "$dr/packages/kit/0.1.0/kit"
+printf 'package scaly 0.2.0\n\ndefine kit\n{\n    module parts\n}\n' > "$dr/packages/kit/0.1.0/kit.scaly"
+printf 'define Name\n(\n    text: String\n)\n{\n    function head(this, n: size_t) returns String\n        text.substring(0, n)\n}\n' > "$dr/packages/kit/0.1.0/kit/parts.scaly"
+printf 'package kit 0.1.0\nuse kit.parts.Name\n\nlet n Name(String("namespace"))\nprint(n.head(4).to_c_string())\n' > "$dr/main.scaly"
+out=$(cd "$dr" && SCALY_CACHE="$TMP/deepret-cache" SCALY_HOME="$here" "$scaly_abs" build main.scaly -o "$TMP/deepret-bin" 2>&1 && "$TMP/deepret-bin"); rc=$?
+[ "$out" = "name" ] && ok || bad "deepret: the build: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)'"
+said=$(cat "$TMP/deepret-cache"/kit-*.iface/interface/kit/parts.scaly 2>/dev/null | grep -c 'function head(.*@deep_ret_0 true')
+std=$(cat "$TMP/deepret-cache"/scaly-*.iface/interface/scaly/containers/String.scaly 2>/dev/null | grep -c 'function substring(.*@deep_ret_0 true')
+[ "$said" = 1 ] && [ "$std" = 1 ] && ok || bad "deepret: the interfaces: head $said, String.substring $std statement(s) of handing back none"
+
 # source: the third place a package is looked for, what a fetch laid down
 src="$TMP/source"
 fetched="$TMP/userhome2/.scaly/packages"
