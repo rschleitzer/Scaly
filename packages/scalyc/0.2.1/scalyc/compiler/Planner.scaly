@@ -18047,7 +18047,10 @@ define Planner
                             is_struct_ctor := true
                             choose result.expr
                                 when t: PlannedType
+                                {
                                     ctor_struct_type := t
+                                    this.report_generic_without_arguments(conc, t, result.result_type, result.loc)
+                                }
                                 else
                                     0
                         }
@@ -57974,6 +57977,26 @@ define Planner
             Type^this(t.span, t.name, &gens, t.lifetime)
         }
 
+        ; report_generic_without_arguments#: `Plain(5)` for `define Plain[T](v:
+        ; T)` -- a GENERIC record constructed without its type arguments. They
+        ; are not inferred from the values: the construction took the
+        ; template, laid out with T a pointer placeholder, and
+        ; `let a: int Plain(5).get()` answered garbage at rc 0 (the author,
+        ; 2026-11-07: rc 4, write them). Inside a generic template, where T is
+        ; itself unresolved, it is left alone.
+        procedure report_generic_without_arguments(mutable this: Planner, c: Concept, t: PlannedType, typed: PlannedType, at: Span)
+        {
+            if c.parameters.length = 0 or this.planning_template
+                return
+            if t.generics <> null and t.generics.length > 0
+                return
+            ; arguments the operand's type carries where the written list did
+            ; not merge into the name (a tuple type: `Array[(n: int)]()`)
+            if typed.generics <> null and typed.generics.length > 0
+                return
+            this.add_diagnostic(at, String^this("`c.name` is generic: write its type arguments, `c.name`[...](...) - they are not inferred from the values"))
+        }
+
         ; outer_instance_operands#: `Shell[int].Tally(5)` -- a record or union
         ; declared in a generic record, reached through an INSTANCE of it -- is
         ; `Shell.Tally[int](5)`, the outer's arguments first, and
@@ -63764,7 +63787,7 @@ define Planner
                         ; `Option[()].Some(x)` as a block's last statement
                         ; fell apart into a nameless operator (rc 4).
                         if tp.components <> null and (*tp.components).length > 0
-                            return null
+                            return Planner.tuple_row_to_type(cell.loc, (*tp.components))
                         var unit_path Vector[String](1)
                         unit_path.put(0, "void")
                         var holder Vector[Type](1)
@@ -63777,6 +63800,67 @@ define Planner
         }
 
         null
+    }
+
+    ; tuple_row_to_type#: a TUPLE TYPE as a generic argument,
+    ; `Array[(n: int, s: String)]()` -- the row holds a tuple whose components
+    ; are types, labelled or not -- as the Modeler writes a tuple type
+    ; (handle_tuple_type): the path `()` and, where one is labelled, the labels
+    ; after it; the component types as its arguments. Until 2026-11-07 the
+    ; row was refused, the list did not merge into the name, and the
+    ; construction built the TEMPLATE (`_ZN5ArrayC1Ev`) -- an empty Array
+    ; does not depend on T, so it ran. `(int)` alone is a grouping: int.
+    function tuple_row_to_type(loc: Span, comps: Vector[PlannedComponent]) returns ref[Type]?
+    {
+        var labelled false
+        var i: size_t 0
+        while i < comps.length
+        {
+            if comps[i].name <> null
+                labelled := true
+            i := i + 1
+        }
+        var types Array[Type]()
+        i := 0
+        while i < comps.length
+        {
+            let value comps[i].value
+            if value = null
+                return null
+            let component Planner.extract_row_to_type((*value))
+            if component = null
+                return null
+            types.add((*component))
+            i := i + 1
+        }
+        if comps.length = 1 and labelled = false
+        {
+            var single Vector[Type]#(1)
+            single.put(0, types[0])
+            return single.get 0
+        }
+        var path_length: size_t 1
+        if labelled
+            path_length := 1 + comps.length
+        var path Vector[String]#(path_length)
+        path.put(0, "()")
+        if labelled
+        {
+            i := 0
+            while i < comps.length
+            {
+                let named comps[i].name
+                if named <> null
+                    path.put(i + 1, String#((*named)))
+                else
+                    path.put(i + 1, String#())
+                i := i + 1
+            }
+        }
+        var gens Vector[Type]#(types)
+        var holder Vector[Type]#(1)
+        holder.put(0, Type(loc, path, &gens, Lifetime.Unspecified(Unspecified())))
+        holder.get 0
     }
 
     ; resolve_type_base: convert a Model.Type into a PlannedType skeleton.

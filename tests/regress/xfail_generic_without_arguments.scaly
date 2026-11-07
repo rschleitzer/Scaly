@@ -1,0 +1,14 @@
+; Regression (2026-11-07): a GENERIC record constructed without its type
+; arguments took the template, laid out with T a pointer placeholder, and
+; `Plain(5).get()` answered garbage at rc 0. The arguments are not inferred
+; from the values; it is rc 4 now (Planner.report_generic_without_arguments#).
+; Written, `Plain[int](5)`, it runs (generic_static_call.scaly and the like).
+; xfail: Plain is generic: write its type arguments
+define Plain[T](v: T)
+{
+    function get(this) returns T
+        v
+}
+
+let a: int Plain(5).get()
+print "`a`"
