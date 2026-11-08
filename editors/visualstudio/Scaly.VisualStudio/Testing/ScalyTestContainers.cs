@@ -27,6 +27,7 @@ internal sealed class ScalyTestContainerDiscoverer : ITestContainerDiscoverer, I
     private static readonly Regex TestFunction = new(@"^\s*(?:function|procedure)\s+test(?:_\w*)?\s*\(", RegexOptions.Multiline);
 
     private readonly IVsFolderWorkspaceService workspaceService;
+    private readonly EventHandler settingsChanged;
     private FileSystemWatcher? watcher;
     private string? watchedRoot;
 
@@ -34,6 +35,11 @@ internal sealed class ScalyTestContainerDiscoverer : ITestContainerDiscoverer, I
     public ScalyTestContainerDiscoverer(IVsFolderWorkspaceService workspaceService)
     {
         this.workspaceService = workspaceService;
+        // Another tool or SCALY_HOME names the tests anew (a newer tool lists
+        // `Outer.Inner.test_deep` where an older one is read from the source):
+        // every container is one to discover again.
+        this.settingsChanged = (_, _) => this.TestContainersUpdated?.Invoke(this, EventArgs.Empty);
+        ScalyPrograms.SettingsChanged += this.settingsChanged;
     }
 
     public Uri ExecutorUri => Executor;
@@ -61,7 +67,9 @@ internal sealed class ScalyTestContainerDiscoverer : ITestContainerDiscoverer, I
                 var closure = ScalyModules.Closure(file);
                 if (closure.Any(HasTests))
                 {
-                    containers.Add(new ScalyTestContainer(this, file, closure.Max(LastWrite)));
+                    var written = closure.Max(LastWrite);
+                    var settings = ScalyPrograms.SettingsChangedAt;
+                    containers.Add(new ScalyTestContainer(this, file, settings > written ? settings : written));
                 }
             }
             return containers;
@@ -94,7 +102,11 @@ internal sealed class ScalyTestContainerDiscoverer : ITestContainerDiscoverer, I
         this.watcher.EnableRaisingEvents = true;
     }
 
-    public void Dispose() => this.watcher?.Dispose();
+    public void Dispose()
+    {
+        ScalyPrograms.SettingsChanged -= this.settingsChanged;
+        this.watcher?.Dispose();
+    }
 }
 
 /// <summary>
@@ -145,7 +157,7 @@ internal sealed class ScalyTestContainer : ITestContainer
 {
     private readonly DateTime stamp;
 
-    /// <param name="stamp">The newest write of the file and the modules it loads.</param>
+    /// <param name="stamp">The newest write of the file and the modules it loads, or the last change of the tool or home setting if that is newer.</param>
     public ScalyTestContainer(ITestContainerDiscoverer discoverer, string source, DateTime stamp)
     {
         this.Discoverer = discoverer;
