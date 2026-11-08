@@ -1,0 +1,28 @@
+; Regression (2026-11-08): the members of a concept were judged only at the
+; FIRST registration of its NAME -- `Rec` in `define B`, registered after
+; `Rec` in `define A`, was never judged (xfail_duplicate_method_folded.scaly).
+; xfail: error: function get of Rec is written twice with one parameter list
+
+define A
+{
+    define Rec(x: int)
+    {
+        function get(this) returns int
+            x
+    }
+}
+
+define B
+{
+    define Rec(y: int)
+    {
+        function get(this) returns int
+            y
+
+        function get(this) returns int
+            y + 1
+    }
+}
+
+let b B.Rec(2)
+print("`b.get()`")

@@ -1492,6 +1492,9 @@ define Planner
         ; identity*: a bare name means the declaring package's own concept
         ; before anything a `use` brings in.
         var cross_package_index: ConceptIndex
+        ; the concept DECLARATIONS whose members were judged, `<file>@<start>`
+        ; (register_concept#): once per declaration, not per name
+        var member_checked: ConceptIndex
         ; who declared which package: entries `<declaring package>|<declared
         ; package>`, each a name and its line as package_of_file# answers
         ; ("" for the program) -- from Program.declared, read_declared#
@@ -1796,6 +1799,7 @@ define Planner
             concept_origin_paths := Array[String]^this()
             ambiguous_index := ConceptIndex.create(4096)
             cross_package_index := ConceptIndex()
+            member_checked := ConceptIndex.create(65536)
             declared_lines := &Array[String]^this()
             lines_doubled := false
             global_packages := &Array[String]^this()
@@ -2810,11 +2814,28 @@ define Planner
                     }
                 }
             }
-            ; The two silent collisions inside ONE concept, checked here and
-            ; only on the FIRST registration of a name (a module tree is walked
-            ; more than once; see check_concept_member_names# above).
-            if prev_idx < 0
-                this.check_concept_member_names(c, registering_file)
+            ; The silent collisions inside ONE concept, checked here once per
+            ; DECLARATION -- a module tree is walked more than once. Keyed by
+            ; the NAME (the first registration of it) until 2026-11-08, which
+            ; left out every record whose name was taken before: the record
+            ; of `define Emitter { define Emitter(...) }` (the namespace came
+            ; first -- a second write_bitcode_to_file there was not reported),
+            ; `Rec` in `define B` beside `Rec` in `define A`, a same-named
+            ; record of another module. An unknown origin keeps the old rule.
+            if registering_file.get_length() = 0
+            {
+                if prev_idx < 0
+                    this.check_concept_member_names(c, registering_file)
+            }
+            else
+            {
+                let member_key "`registering_file`@`c.span.start`"
+                if member_checked.lookup(member_key) < 0
+                {
+                    member_checked.insert(String^this(member_key), 1)
+                    this.check_concept_member_names(c, registering_file)
+                }
+            }
 
             let concept_pos concepts.length
             concepts.add(KeyValuePair[String, Concept](c.name, c))

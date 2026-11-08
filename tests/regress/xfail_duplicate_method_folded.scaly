@@ -1,0 +1,23 @@
+; Regression (2026-11-08): the members of a concept were judged only at the
+; FIRST registration of its NAME, so a record whose name was taken before
+; was never judged -- here the record of `define Shell { define Shell }`
+; (the namespace comes first; the compiler's own Emitter has the shape, and
+; a second write_bitcode_to_file there went unreported). Only the symbol
+; check (check_symbol_collisions#) said something, about the symbol.
+; xfail: error: function put of Shell is written twice with one parameter list
+
+define Shell
+{
+    define Shell(k: int)
+    {
+        procedure put(mutable this, mutable name: String) returns bool
+            true
+
+        procedure put(mutable this, mutable name: String) returns bool
+            false
+    }
+}
+
+var s Shell(1)
+var n String("x")
+print("`s.put(n)`")
