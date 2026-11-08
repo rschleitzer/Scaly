@@ -1492,6 +1492,9 @@ define Planner
         ; identity*: a bare name means the declaring package's own concept
         ; before anything a `use` brings in.
         var cross_package_index: ConceptIndex
+        ; the concept DECLARATIONS whose members were judged, `<file>@<start>`
+        ; (register_concept#): once per declaration, not per name
+        var member_checked: ConceptIndex
         ; who declared which package: entries `<declaring package>|<declared
         ; package>`, each a name and its line as package_of_file# answers
         ; ("" for the program) -- from Program.declared, read_declared#
@@ -1796,6 +1799,7 @@ define Planner
             concept_origin_paths := Array[String]^this()
             ambiguous_index := ConceptIndex.create(4096)
             cross_package_index := ConceptIndex()
+            member_checked := ConceptIndex.create(65536)
             declared_lines := &Array[String]^this()
             lines_doubled := false
             global_packages := &Array[String]^this()
@@ -2810,11 +2814,28 @@ define Planner
                     }
                 }
             }
-            ; The two silent collisions inside ONE concept, checked here and
-            ; only on the FIRST registration of a name (a module tree is walked
-            ; more than once; see check_concept_member_names# above).
-            if prev_idx < 0
-                this.check_concept_member_names(c, registering_file)
+            ; The silent collisions inside ONE concept, checked here once per
+            ; DECLARATION -- a module tree is walked more than once. Keyed by
+            ; the NAME (the first registration of it) until 2026-11-08, which
+            ; left out every record whose name was taken before: the record
+            ; of `define Emitter { define Emitter(...) }` (the namespace came
+            ; first -- a second write_bitcode_to_file there was not reported),
+            ; `Rec` in `define B` beside `Rec` in `define A`, a same-named
+            ; record of another module. An unknown origin keeps the old rule.
+            if registering_file.get_length() = 0
+            {
+                if prev_idx < 0
+                    this.check_concept_member_names(c, registering_file)
+            }
+            else
+            {
+                let member_key "`registering_file`@`c.span.start`"
+                if member_checked.lookup(member_key) < 0
+                {
+                    member_checked.insert(String^this(member_key), 1)
+                    this.check_concept_member_names(c, registering_file)
+                }
+            }
 
             let concept_pos concepts.length
             concepts.add(KeyValuePair[String, Concept](c.name, c))
@@ -8834,8 +8855,17 @@ define Planner
                 sb.append " @transitive true"
             if returnpage
                 sb.append " @returnpage true"
-            if g = false and this.array_contains_name(store_page_names, Planner.store_key(f))
-                sb.append " @stores true"
+            ; R8's mask, the positions it stores into: `@stores true` alone
+            ; read back as EVERY position, and a caller handing its own state
+            ; at any of them joined -- through scalyc's interface scalyls'
+            ; `scope.operation(out, ...)` met Planner.operation by name and
+            ; 20 routines took a page they do not take from the sources
+            if g = false
+            {
+                let smask this.store_mask_of(Planner.store_key(f))
+                if smask <> 0
+                    sb.append(" @stores_`smask as size_t` true")
+            }
             let rr_c this.return_residence_class(f)
             let rr_a this.return_residence_arg(f)
             if rr_c = 1
@@ -8914,6 +8944,29 @@ define Planner
                 if iv <> 0
                     sb.append(" @deep_into_`k`_`iv` true")
                 k := k + 1
+            }
+            ; what the RESULT hands back of the inputs, by this verdict (and
+            ; which of them whole, where not all of those): a caller reading
+            ; the sources asks it, and one reading the interface had only the
+            ; write census's `@ret_reach`, which answers ITS question -- what
+            ; the result may alias -- and says `String.substring` keeps its
+            ; receiver (a String built from a pointer into it; the init
+            ; copies). The two disagreed on where a substring handed to a
+            ; root routine lives, and the seed did not reproduce itself.
+            var rmask: size_t 0
+            let rp gate.deep_ret_state.get d
+            if rp <> null
+                rmask := (*rp)
+            sb.append(" @deep_ret_`rmask` true")
+            if rmask <> 0
+            {
+                var rname String(f.name)
+                let rown ret_res_owner.get d
+                if rown <> null and (*rown).get_length() > 0
+                    rname := "`(*rown)`.`f.name`"
+                let whole this.deep_returns_whole_of(rname) & (rmask as u64)
+                if whole <> (rmask as u64)
+                    sb.append(" @deep_retwhole_`whole as size_t` true")
             }
             sb.to_string()
         }
@@ -18015,7 +18068,10 @@ define Planner
                             is_struct_ctor := true
                             choose result.expr
                                 when t: PlannedType
+                                {
                                     ctor_struct_type := t
+                                    this.report_generic_without_arguments(conc, t, result.result_type, result.loc)
+                                }
                                 else
                                     0
                         }
@@ -23057,12 +23113,123 @@ define Planner
                 ; index use_vis_hint# reads — a hint here could only ever be
                 ; empty. A type hidden by visibility is a different diagnosis
                 ; and is not reported here.
+                ; A DOTTED name is the exception: `A.Rec` of another module
+                ; stays dotted where its last name is hidden, and the hint
+                ; names the `use` that makes it writable.
                 var tsb StringBuilder()
                 tsb.append "unknown type: "
                 tsb.append uk
+                let last_dot uk.last_index_of("." as u8)
+                if last_dot >= 0
+                {
+                    let from (last_dot as size_t) + 1
+                    tsb.append(this.use_vis_hint(uk.substring(from, uk.get_length() - from)))
+                }
                 let tmsg tsb.to_string()
                 this.add_diagnostic(t.loc, String^this(tmsg))
             }
+        }
+
+        ; report_unknown_qualifier#: the QUALIFIER of a written annotation
+        ; must name something (2026-11-08). plan_type# shortens `Nope.Rec` to
+        ; `Rec` wherever a `Rec` is seen, so a qualifier that names nothing
+        ; -- a typo, a namespace that does not hold it -- was dropped without
+        ; a word. Judged at the annotation sites only, beside
+        ; report_unknown_type# and for the same reason: plan_type# itself
+        ; runs on every Type-shaped expression. A qualifier is known when it
+        ; is a concept, a namespace path or a tail of one (search_ns_path#),
+        ; a module path, or a `use` alias; generic arguments are judged where
+        ; they are planned as annotations of their own.
+        procedure report_unknown_qualifier(mutable this: Planner, mt: Type)
+        {
+            if mt.name.length < 2
+                return
+            ; a tuple type: `()` and its labels, no qualifier
+            if mt.name[0].starts_with("(")
+                return
+            var qsb StringBuilder()
+            var i: size_t 0
+            while i + 1 < mt.name.length
+            {
+                if i > 0
+                    qsb.append("." as char)
+                qsb.append(mt.name[i])
+                i := i + 1
+            }
+            let qualifier qsb.to_string()
+            let last mt.name[mt.name.length - 1]
+            if this.qualified_name_known(qualifier, "`qualifier`.`last`")
+                return
+            let msg "unknown qualifier `qualifier` of the type `qualifier`.`last`: no type of that name stands in a namespace, module or use alias so named"
+            this.add_diagnostic(mt.span, String^this(msg))
+        }
+
+        ; qualified_name_known#: whether the written `qualifier.Name` names a
+        ; concept -- its namespace path, from the scope being planned
+        ; outwards, or that path behind the MODULE it is declared in (a front
+        ; cut off must be a module path: `p.shapes.A.Rec`, `scaly.memory.Page`),
+        ; or the qualifier is a `use` alias. A namespace that does not hold the
+        ; name (`Ns.Rec` with `Rec` in `A`) is no qualifier of it.
+        procedure qualified_name_known(mutable this: Planner, qualifier: String, written: String) returns bool
+        {
+            if this.lookup_use_alias_namespace(qualifier).get_length() > 0
+                return true
+            if this.lookup_concept_any(written) <> null
+                return true
+            let segs Planner.split_dotted(written)
+            var k: size_t 0
+            while k < segs.length
+            {
+                var front StringBuilder()
+                var tail StringBuilder()
+                var j: size_t 0
+                while j < segs.length
+                {
+                    if j < k
+                    {
+                        if j > 0
+                            front.append("." as char)
+                        front.append(segs[j])
+                    }
+                    else
+                    {
+                        if j > k
+                            tail.append("." as char)
+                        tail.append(segs[j])
+                    }
+                    j := j + 1
+                }
+                if k = 0 or this.module_path_known(front.to_string())
+                {
+                    if this.ns_path_in_scope(tail.to_string())
+                        return true
+                }
+                k := k + 1
+            }
+            false
+        }
+
+        ; ns_path_in_scope#: whether `candidate` is a namespace path from the
+        ; scope being planned outwards (search_ns_path#'s walk, no tails)
+        procedure ns_path_in_scope(mutable this: Planner, candidate: String) returns bool
+        {
+            var scope String(planning_ns_path)
+            repeat
+            {
+                var full String(candidate)
+                if scope.get_length() > 0
+                    full := "`scope`.`candidate`"
+                if ns_path_index.table.lookup(full) >= 0
+                    return true
+                if scope.get_length() = 0
+                    break
+                let dot scope.last_index_of(46)
+                if dot < 0
+                    scope := String("")
+                else
+                    scope := scope.substring(0, dot as size_t)
+            }
+            false
         }
 
         function unknown_type_name(this: Planner, t: PlannedType) returns String
@@ -23090,8 +23257,14 @@ define Planner
                 }
                 return ""
             }
-            if tname.contains(".")
-                return ""
+            ; A DOTTED name is judged too since 2026-11-08: plan_type#
+            ; shortens a written `A.Rec` to the type it finds, so a planned
+            ; name that is still dotted named nothing -- `let t: Nope.Rec 5`,
+            ; a return `Nope.Rec`, and `A.Rec` of another module not `use`d
+            ; bound the value as the opaque placeholder at rc 0 (an `int`
+            ; bound as a `Rec` without a word). The exemption had been
+            ; "namespace machinery owns those"; measured, no root of the tree
+            ; nor of dazzle holds such an annotation.
             if Planner.is_primitive_type_name(tname)
                 return ""
             if Planner.is_generic_type_param_name(tname)
@@ -24124,6 +24297,7 @@ define Planner
                 ; `generics` pointer still points into the frame. Doing it the
                 ; other way SIGSEGVs in encode_type via mangle_function.
                 this.report_unknown_type((*planned_type))
+                this.report_unknown_qualifier(model_type)
             }
 
             ; a parameter's attributes (R1's `mutable`) reach the plan, where the
@@ -24287,7 +24461,7 @@ define Planner
         ; plan_as: `x as TargetType` — explicit cast. Resolves the
         ; target type; the value operand is stitched in at the use site
         ; (typically during collapse, like PlannedIs).
-        procedure plan_as(mutable this: Planner, mutable a: scaly.compiler.Model.As) returns PlannedAs
+        procedure plan_as(mutable this: Planner, mutable a: scalyc.compiler.Model.As) returns PlannedAs
         {
             let target this.plan_type(a.target_type)
             PlannedAs(a.span, target, null)
@@ -24300,7 +24474,7 @@ define Planner
         ; `page.allocate(sizeof int, alignof int)` passing align=0.
         procedure plan_alignof(
             mutable this: Planner,
-            mutable a: scaly.compiler.Model.AlignOf
+            mutable a: scalyc.compiler.Model.AlignOf
         ) returns PlannedAlignOf
         {
             let planned this.plan_type(a.type)
@@ -29097,7 +29271,7 @@ define Planner
                         Planner.make_size_type()
                     )
                 }
-                when ao: scaly.compiler.Model.AlignOf
+                when ao: scalyc.compiler.Model.AlignOf
                 {
                     let pa this.plan_alignof(ao)
                     PlannedOperand(
@@ -29112,7 +29286,7 @@ define Planner
                     let pi this.plan_is(isx)
                     PlannedOperand(op.span, PlannedExpression.Is pi, null, Planner.make_bool_type())
                 }
-                when asx: scaly.compiler.Model.As
+                when asx: scalyc.compiler.Model.As
                 {
                     let pa this.plan_as(asx)
                     PlannedOperand(
@@ -31674,6 +31848,14 @@ define Planner
                     ri := ri + 1
                 }
                 return this.plan_operands(rest)
+            }
+            ; `Shell[int].Tally(5)`: a record declared in a generic record,
+            ; reached through an instance (outer_instance_operands#)
+            if outer_generics_any and ops.length > 1
+            {
+                let through_instance this.outer_instance_operands(ops)
+                if through_instance.length > 0
+                    return this.plan_operands(through_instance)
             }
             ; an operation with a delayed operand (`and`, `or`): read on the
             ; model, its right side planned where the body puts it
@@ -43284,11 +43466,24 @@ define Planner
                 let said Planner.linked_return_prefixed(f, "ret_reach_")
                 if said >= 0
                     reach := said as u64
+                ; the deep verdict itself where the interface states it
+                ; (facts_deep_attributes#): what a caller reading the sources
+                ; is told; `@ret_reach` answers the write census's question
+                var whole_reach reach
+                let deep_said Planner.linked_return_prefixed(f, "deep_ret_")
+                if deep_said >= 0
+                {
+                    reach := deep_said as u64
+                    whole_reach := reach
+                    let whole_said Planner.linked_return_prefixed(f, "deep_retwhole_")
+                    if whole_said >= 0
+                        whole_reach := whole_said as u64
+                }
                 if reach <> (0 as u64)
                 {
                     persistence.persist_ret_hit := true
                     gate.deep_ret_mask := reach
-                    gate.deep_ret_whole.cur := reach
+                    gate.deep_ret_whole.cur := whole_reach
                 }
                 ; a generated interface that states the deep masks (`@deep`):
                 ; the body's own verdict, per position and destination
@@ -47418,6 +47613,20 @@ define Planner
                 i := i + 1
             }
             0 - 1
+        }
+
+        ; R8's mask of a linked routine (`@stores_N true`, facts_function#);
+        ; `@stores true` without one is every position; 0 where it says none
+        function linked_stores_mask(f: Function) returns u64
+        {
+            if Planner.is_linked(f) = false
+                return 0
+            let said Planner.linked_return_prefixed(f, "stores_")
+            if said > 0
+                return said as u64
+            if Planner.attributes_have(f.attributes, "stores")
+                return (0 as u64) - (1 as u64)
+            0
         }
 
         ; ---- the classifier over one body -----------------------------------
@@ -52787,6 +52996,7 @@ define Planner
                 prop_type := this.plan_type(t)
                 ; Annotation position — see report_unknown_type#.
                 this.report_unknown_type(prop_type)
+                this.report_unknown_qualifier(t)
             }
 
             var initializer_ref: ref[Vector[PlannedOperand]]? null
@@ -55209,6 +55419,7 @@ define Planner
                 ; Annotation position — read back through the ref, never via a
                 ; local; see the note in plan_item#.
                 this.report_unknown_type((*return_type))
+                this.report_unknown_qualifier(rt)
             }
 
             var throws_type: ref[PlannedType]? null
@@ -57186,6 +57397,7 @@ define Planner
             ; an `unknown assignment target` at the USE, which names the wrong
             ; place.
             this.report_unknown_type(planned_type)
+            this.report_unknown_qualifier(g.type)
             let planned_value this.plan_operands(g.value)
             var value_holder Vector[PlannedOperand](planned_value)
             ; Module-level mutable globals (stack_head etc.) keep their bare
@@ -57864,7 +58076,21 @@ define Planner
             let n_outer this.outer_parameter_count(at as size_t)
             if n_outer = 0
                 return null
+            ; only where the outer's parameters are in scope -- inside the
+            ; record it is declared in, or deeper, or where an instance's
+            ; arguments stand for them (`returns Box` of `Shell[int].made`,
+            ; planned at a call from outside). Elsewhere `Tally` has no T:
+            ; filled with it, a file-level `Tally[int](5)` became `Tally[T]`,
+            ; the written `[int]` no longer merged (collapse_generics# takes a
+            ; type WITHOUT arguments), and `get` read a placeholder at rc 0
             let c concepts[at as size_t].value
+            let inner_path concept_ns_paths[at as size_t]
+            let dot inner_path.last_index_of(46)
+            if dot < 0
+                return null
+            let parent_path inner_path.substring(0, dot as size_t)
+            if planning_ns_path.equals(parent_path) = false and planning_ns_path.starts_with("`parent_path`.") = false and this.lookup_type_substitution(c.parameters[0].name) = null
+                return null
             var written: size_t 0
             if t.generics <> null
                 written := t.generics.length
@@ -57891,6 +58117,194 @@ define Planner
             }
             let gens Vector[Type]^this(args)
             Type^this(t.span, t.name, &gens, t.lifetime)
+        }
+
+        ; report_generic_without_arguments#: `Plain(5)` for `define Plain[T](v:
+        ; T)` -- a GENERIC record constructed without its type arguments. They
+        ; are not inferred from the values: the construction took the
+        ; template, laid out with T a pointer placeholder, and
+        ; `let a: int Plain(5).get()` answered garbage at rc 0 (the author,
+        ; 2026-11-07: rc 4, write them). Inside a generic template, where T is
+        ; itself unresolved, it is left alone.
+        procedure report_generic_without_arguments(mutable this: Planner, c: Concept, t: PlannedType, typed: PlannedType, at: Span)
+        {
+            if c.parameters.length = 0 or this.planning_template
+                return
+            if t.generics <> null and t.generics.length > 0
+                return
+            ; arguments the operand's type carries where the written list did
+            ; not merge into the name (a tuple type: `Array[(n: int)]()`)
+            if typed.generics <> null and typed.generics.length > 0
+                return
+            this.add_diagnostic(at, String^this("`c.name` is generic: write its type arguments, `c.name`[...](...) - they are not inferred from the values"))
+        }
+
+        ; outer_instance_operands#: `Shell[int].Tally(5)` -- a record or union
+        ; declared in a generic record, reached through an INSTANCE of it -- is
+        ; `Shell.Tally[int](5)`, the outer's arguments first, and
+        ; `Shell[int].Pair[bool](...)` is `Shell.Pair[int, bool](...)`; deeper
+        ; alike (`Shell[int].Box.Inner(...)`). The operands are written again
+        ; so, at the first such pair; empty where none stands. Before
+        ; 2026-11-07 the instance's hop was asked as a STATIC of `Shell[int]`:
+        ; `function not found: Tally`.
+        procedure outer_instance_operands(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand]) returns Vector[scalyc.compiler.Model.Operand]
+        {
+            var i: size_t 0
+            while i + 1 < ops.length
+            {
+                let rewritten this.outer_instance_at(ops, i)
+                if rewritten.length > 0
+                    return rewritten
+                i := i + 1
+            }
+            Vector[scalyc.compiler.Model.Operand]^this(0)
+        }
+
+        ; outer_instance_operands# at operand i: a type written without
+        ; arguments, then its argument list carrying the hops
+        procedure outer_instance_at(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand], i: size_t) returns Vector[scalyc.compiler.Model.Operand]
+        {
+            let none Vector[scalyc.compiler.Model.Operand]^this(0)
+            let head ops[i]
+            let next ops[i + 1]
+            if head.member_access <> null or next.member_access = null
+                return none
+            var tname Vector[String](0)
+            var tlife: Lifetime Lifetime.Unspecified(Unspecified())
+            var plain false
+            choose head.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.generics = null
+                    {
+                        tname := t.name
+                        tlife := t.lifetime
+                        plain := true
+                    }
+                }
+                else
+                    0
+            if plain = false or tname.length = 0
+                return none
+            var rows Vector[Vector[scalyc.compiler.Model.Operand]](0)
+            var mlife: Lifetime Lifetime.Unspecified(Unspecified())
+            var is_matrix false
+            choose next.expression
+                when m: scalyc.compiler.Model.Matrix
+                {
+                    rows := m.operations
+                    mlife := m.life
+                    is_matrix := true
+                }
+                else
+                    0
+            if is_matrix = false
+                return none
+            let hops (*next.member_access)
+            ; the generic concept the head names, by its namespace path
+            var at this.answered_concept_at(tname[tname.length - 1])
+            if tname.length > 1 and ns_multi_any
+            {
+                let q this.search_ns_path(Planner.join_dotted_prefix(tname, tname.length))
+                if q >= 0
+                    at := q
+            }
+            if at < 0 or (at as size_t) >= concept_ns_paths.length
+                return none
+            ; the hops that name a record declared in it, one level a hop
+            var path String(concept_ns_paths[at as size_t])
+            var inner_at: i64 0 - 1
+            var k: size_t 0
+            while k < hops.length
+            {
+                let cand "`path`.`hops[k]`"
+                let c_at ns_path_index.table.lookup(cand)
+                if c_at < 0
+                    break
+                if this.outer_parameter_count(c_at as size_t) = 0
+                    break
+                path := cand
+                inner_at := c_at
+                k := k + 1
+            }
+            if k = 0 or inner_at < 0
+                return none
+            ; its own arguments: the list right after it
+            let inner_c concepts[inner_at as size_t].value
+            var own_rows Vector[Vector[scalyc.compiler.Model.Operand]](0)
+            var consumed false
+            if inner_c.parameters.length > rows.length and k = hops.length and i + 2 < ops.length
+            {
+                choose ops[i + 2].expression
+                    when own: scalyc.compiler.Model.Matrix
+                    {
+                        own_rows := own.operations
+                        consumed := true
+                    }
+                    else
+                        0
+            }
+            var all_rows Vector[Vector[scalyc.compiler.Model.Operand]]^this(rows.length + own_rows.length)
+            var r: size_t 0
+            while r < rows.length
+            {
+                all_rows.put(r, rows[r])
+                r := r + 1
+            }
+            r := 0
+            while r < own_rows.length
+            {
+                all_rows.put(rows.length + r, own_rows[r])
+                r := r + 1
+            }
+            ; the hops left over ride on the argument list, as they do on
+            ; `Shell.Slot[int].Full`
+            var access: ref[Vector[String]]? null
+            if consumed
+                access := ops[i + 2].member_access
+            if consumed = false and k < hops.length
+            {
+                let rest_names Vector[String]^this(hops.length - k)
+                var h: size_t k
+                while h < hops.length
+                {
+                    rest_names.put(h - k, String^this(hops[h]))
+                    h := h + 1
+                }
+                access := &rest_names
+            }
+            var new_name Vector[String]^this(tname.length + k)
+            var n: size_t 0
+            while n < tname.length
+            {
+                new_name.put(n, tname[n])
+                n := n + 1
+            }
+            n := 0
+            while n < k
+            {
+                new_name.put(tname.length + n, String^this(hops[n]))
+                n := n + 1
+            }
+            var skip: size_t 0
+            if consumed
+                skip := 1
+            var out Vector[scalyc.compiler.Model.Operand]^this(ops.length - skip)
+            var j: size_t 0
+            while j < i
+            {
+                out.put(j, ops[j])
+                j := j + 1
+            }
+            out.put(i, Operand(head.span, Expression.Type(scalyc.compiler.Model.Type(head.span, new_name, null, tlife)), null))
+            out.put(i + 1, Operand(next.span, Expression.Matrix(scalyc.compiler.Model.Matrix(next.span, all_rows, mlife)), access))
+            j := i + 2 + skip
+            while j < ops.length
+            {
+                out.put(j - skip, ops[j])
+                j := j + 1
+            }
+            out
         }
 
         ; extend_ns_path#: the namespace path one `define` further in; a
@@ -57963,8 +58377,35 @@ define Planner
                 return String("")
             let path concept_ns_paths[at as size_t]
             if path.equals(written) = false and path.ends_with(".`written`") = false
-                return String("")
+            {
+                ; or the qualifier begins with the MODULE the concept is
+                ; declared in: `p.shapes.A.Shape` (also `shapes.A.Shape`) is
+                ; the full path of `A.Shape` in module p.shapes -- what
+                ; the union is, not a tail cut to fit (2026-11-08)
+                if this.module_qualified_concept(at as size_t, path, written) = false
+                    return String("")
+            }
             String^this(path)
+        }
+
+        ; module_qualified_concept#: whether `written` names the concept at
+        ; `at` (namespace path `path`) by its module path and namespace path,
+        ; `<module>.A.Shape` -- its origin (the module and the defines it
+        ; stands in) and its name, or a dotted tail of that which still holds
+        ; the whole namespace path (qualified_concept_scope#)
+        function module_qualified_concept(this: Planner, at: size_t, path: String, written: String) returns bool
+        {
+            if written.ends_with(".`path`") = false
+                return false
+            if at >= concept_origin_paths.length or at >= concepts.length
+                return false
+            let origin concept_origin_paths[at]
+            if origin.get_length() = 0
+                return false
+            let named concepts[at].key
+            let by_name "`origin`.`named`"
+            let by_path "`origin`.`path`"
+            by_name.equals(written) or by_name.ends_with(".`written`") or by_path.equals(written) or by_path.ends_with(".`written`")
         }
 
         ; search_ns_path#: the concept a qualifier as WRITTEN here names by
@@ -59043,8 +59484,9 @@ define Planner
                         let key Planner.store_key(f)
                         let old_mask this.store_mask_of(key)
                         var m: u64 0
-                        if Planner.linked_says(f, "stores")
-                            m := (0 as u64) - (1 as u64)
+                        let said Planner.linked_stores_mask(f)
+                        if said <> 0
+                            m := said
                         else
                             m := this.function_store_mask(f, op)
                         let new_mask old_mask | m
@@ -60578,17 +61020,17 @@ define Planner
             head := "_ZN`Planner.ns_prefix_in(mangled)``Planner.encode_name name`"
         let n mangled.get_length()
         var i head.get_length()
-        if mangled.starts_with(head) = false or i + 1 >= n or mangled.get(i) <> 66
+        if mangled.starts_with(head) = false or i + 1 >= n or mangled.get(i) <> ("B" as char)
             return ""
         ; one tag or two (name, line), each `B<length><text>`
         var end i
-        while end + 1 < n and mangled.get(end) = 66 and mangled.get(end + 1) >= 48 and mangled.get(end + 1) <= 57
+        while end + 1 < n and mangled.get(end) = ("B" as char) and mangled.get(end + 1) >= ("0" as char) and mangled.get(end + 1) <= ("9" as char)
         {
             var j end + 1
             var len: size_t 0
-            while j < n and mangled.get(j) >= 48 and mangled.get(j) <= 57
+            while j < n and mangled.get(j) >= ("0" as char) and mangled.get(j) <= ("9" as char)
             {
-                len := len * 10 + ((mangled.get(j) - 48) as size_t)
+                len := len * 10 + ((mangled.get(j) - ("0" as char)) as size_t)
                 j := j + 1
             }
             if j + len > n
@@ -60608,13 +61050,13 @@ define Planner
         let n mangled.get_length()
         var i: size_t 3
         var last: size_t 3
-        while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+        while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
         {
             last := i
             var len: size_t 0
-            while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+            while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
             {
-                len := len * 10 + ((mangled.get(i) - 48) as size_t)
+                len := len * 10 + ((mangled.get(i) - ("0" as char)) as size_t)
                 i := i + 1
             }
             i := i + len
@@ -60632,12 +61074,12 @@ define Planner
         let n mangled.get_length()
         var sb StringBuilder()
         var i: size_t 3
-        while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+        while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
         {
             var len: size_t 0
-            while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+            while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
             {
-                len := len * 10 + ((mangled.get(i) - 48) as size_t)
+                len := len * 10 + ((mangled.get(i) - ("0" as char)) as size_t)
                 i := i + 1
             }
             if i + len > n
@@ -60648,6 +61090,18 @@ define Planner
             i := i + len
         }
         sb.to_string()
+    }
+
+    ; ns_debug_prefix#: the enclosing defines of a NESTED type's mangled
+    ; name as a debugger shows them, `A.` of `_ZN1A3RecE`, `A.Inner.` of
+    ; `_ZN1A5Inner3BoxIiEE`; "" at file level (get_debug_name#)
+    function ns_debug_prefix(mangled: String) returns String
+    {
+        let path Planner.ns_path_in(mangled)
+        let dot path.last_index_of("." as u8)
+        if dot < 0
+            return String("")
+        path.substring(0, (dot as size_t) + 1)
     }
 
     ; ns_path_prefix#: the enclosing defines of a namespace path as a
@@ -61171,6 +61625,9 @@ define Planner
             sb.append pkg
             sb.append("." as char)
         }
+        ; and the defines it stands in, `A.Rec` of `_ZN1A3RecE`: `Rec` in
+        ; `define A` and in `define B` were one type to lldb as well
+        sb.append(Planner.ns_debug_prefix(type_value.mangled_name))
         sb.append type_value.name
         if type_value.generics <> null
         {
@@ -63514,7 +63971,7 @@ define Planner
                         ; `Option[()].Some(x)` as a block's last statement
                         ; fell apart into a nameless operator (rc 4).
                         if tp.components <> null and (*tp.components).length > 0
-                            return null
+                            return Planner.tuple_row_to_type(cell.loc, (*tp.components))
                         var unit_path Vector[String](1)
                         unit_path.put(0, "void")
                         var holder Vector[Type](1)
@@ -63527,6 +63984,67 @@ define Planner
         }
 
         null
+    }
+
+    ; tuple_row_to_type#: a TUPLE TYPE as a generic argument,
+    ; `Array[(n: int, s: String)]()` -- the row holds a tuple whose components
+    ; are types, labelled or not -- as the Modeler writes a tuple type
+    ; (handle_tuple_type): the path `()` and, where one is labelled, the labels
+    ; after it; the component types as its arguments. Until 2026-11-07 the
+    ; row was refused, the list did not merge into the name, and the
+    ; construction built the TEMPLATE (`_ZN5ArrayC1Ev`) -- an empty Array
+    ; does not depend on T, so it ran. `(int)` alone is a grouping: int.
+    function tuple_row_to_type(loc: Span, comps: Vector[PlannedComponent]) returns ref[Type]?
+    {
+        var labelled false
+        var i: size_t 0
+        while i < comps.length
+        {
+            if comps[i].name <> null
+                labelled := true
+            i := i + 1
+        }
+        var types Array[Type]()
+        i := 0
+        while i < comps.length
+        {
+            let value comps[i].value
+            if value = null
+                return null
+            let component Planner.extract_row_to_type((*value))
+            if component = null
+                return null
+            types.add((*component))
+            i := i + 1
+        }
+        if comps.length = 1 and labelled = false
+        {
+            var single Vector[Type]#(1)
+            single.put(0, types[0])
+            return single.get 0
+        }
+        var path_length: size_t 1
+        if labelled
+            path_length := 1 + comps.length
+        var path Vector[String]#(path_length)
+        path.put(0, "()")
+        if labelled
+        {
+            i := 0
+            while i < comps.length
+            {
+                let named comps[i].name
+                if named <> null
+                    path.put(i + 1, String#((*named)))
+                else
+                    path.put(i + 1, String#())
+                i := i + 1
+            }
+        }
+        var gens Vector[Type]#(types)
+        var holder Vector[Type]#(1)
+        holder.put(0, Type(loc, path, &gens, Lifetime.Unspecified(Unspecified())))
+        holder.get 0
     }
 
     ; resolve_type_base: convert a Model.Type into a PlannedType skeleton.

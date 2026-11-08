@@ -1223,9 +1223,50 @@ define Emitter
                 return readable
             if mangled.ends_with("E") = false
                 return readable
-            if mangled.contains("I" as u8) = false
+            if Emitter.mangled_type_args_follow(mangled) = false
                 return readable
             mangled
+        }
+
+        ; whether type arguments follow the NAMES of a type's mangled name --
+        ; `_Z6VectorIiE`, `_ZN1A3BoxIiEE` -- read by their lengths and past a
+        ; package's tags: a nested name ends in `E` too, and an `I` inside a
+        ; name (`_ZN7Emitter17IntrinsicTypeInfoE`) is no argument list
+        function mangled_type_args_follow(mangled: String) returns bool
+        {
+            let n mangled.get_length()
+            if mangled.starts_with("_Z") = false
+                return false
+            ; `_ZN`: a nested name
+            var i: size_t 2
+            if i < n and mangled.get(i) = ("N" as char)
+                i := 3
+            repeat
+            {
+                ; `B5alpha`: a package's tag behind a name, read like one
+                if i < n and mangled.get(i) = ("B" as char)
+                    i := i + 1
+                if Emitter.digit_at(mangled, i) = false
+                    break
+                var length: size_t 0
+                while Emitter.digit_at(mangled, i)
+                {
+                    length := length * 10 + ((mangled.get(i) - ("0" as char)) as size_t)
+                    i := i + 1
+                }
+                i := i + length
+            }
+            ; `I...E`: the type arguments
+            i < n and mangled.get(i) = ("I" as char)
+        }
+
+        ; whether `text` holds a decimal digit at `i`
+        function digit_at(text: String, i: size_t) returns bool
+        {
+            if i >= text.get_length()
+                return false
+            let c text.get i
+            c >= ("0" as char) and c <= ("9" as char)
         }
 
         ; a path with Windows separators (init_debug_info#)
@@ -10687,7 +10728,7 @@ define Emitter
 
         ; Resolve the page a closure record is allocated on from its lifetime:
         ; Local → this function's local region; Call (`#`) → caller's `rp`.
-        procedure resolve_closure_page(mutable this, life: scaly.compiler.Model.Lifetime) returns LLVMValueRef
+        procedure resolve_closure_page(mutable this, life: scalyc.compiler.Model.Lifetime) returns LLVMValueRef
         {
             var on_caller: bool false
             choose life

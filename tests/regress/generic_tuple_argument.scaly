@@ -1,0 +1,24 @@
+; Regression (2026-11-07): a TUPLE TYPE as the type argument of a
+; construction -- `Array[(n: int, s: String)]()` -- did not merge into the
+; name (Planner.extract_row_to_type# refused the row), and the construction
+; built the TEMPLATE `Array` (`_ZN5ArrayC1Ev`): an empty one ran, by luck. The
+; row is the tuple type now (Planner.tuple_row_to_type#), labelled or not;
+; xfail_generic_without_arguments.scaly is what made it visible.
+; Expected: PASS
+
+define Box[T](v: T)
+{
+    function get(this) returns T
+        v
+}
+
+var pairs Array[(n: int, s: String)]()
+pairs.add((n: 1, s: String("one")))
+pairs.add((n: 2, s: String("two")))
+let plain Box[(int, bool)]((7, true))
+let (seven, yes) plain.get()
+let second pairs[1]
+if pairs.length = 2 and second.n = 2 and second.s.equals("two") and pairs[0].s.equals("one") and seven = 7 and yes
+    print("PASS")
+else
+    print("FAIL")

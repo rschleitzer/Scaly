@@ -1,0 +1,23 @@
+; Regression (2026-11-08): the QUALIFIER of a type annotation was never
+; judged. plan_type# shortens a written `Nope.Rec` to `Rec` wherever a `Rec`
+; is seen, so a typo or a namespace that does not hold the type compiled at
+; rc 0 -- here `Ns.Rec`, where `Rec` stands in `A`. A qualifier must name a
+; type, a namespace (or a tail of its path), a module or a `use` alias
+; (Planner.report_unknown_qualifier#, at the annotation sites).
+; xfail: error: unknown qualifier Ns of the type Ns.Rec
+
+define A
+{
+    define Rec(x: int)
+}
+
+define Ns
+{
+    define Other(y: int)
+}
+
+function first(r: A.Rec) returns int
+    r.x
+
+let r: Ns.Rec A.Rec(3)
+print("`first(r)`")

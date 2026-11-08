@@ -93,7 +93,7 @@ define PlannedAttribute
 (
     loc: Span
     name: String
-    value: scaly.compiler.Model.Model
+    value: scalyc.compiler.Model.Model
 )
 
 define PlannedItem

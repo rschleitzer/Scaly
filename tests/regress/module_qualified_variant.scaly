@@ -1,0 +1,40 @@
+; Regression (2026-11-08): a union variant written with the MODULE the union
+; is declared in in front of its namespace path --
+; `module_qualified_variant.modq_shapes.A.Shape.Line(5)`, or relative
+; `modq_shapes.A.Shape.Dot(6)` -- was `function not found`: the whole
+; qualifier had to be the namespace path (qualified_concept_scope#), and a
+; tail cut to fit is refused on purpose (`scalyc.compiler.Model.Tuple` is a
+; module and a record, not the variant Tuple of a union Model). A module in
+; front is taken where it is the module the union is declared in
+; (Planner.module_qualified_concept#). Arms and annotations so written
+; worked before.
+; Expected: PASS
+
+module modq_shapes
+use module_qualified_variant.modq_shapes.A.*
+
+let s module_qualified_variant.modq_shapes.A.Shape.Line(5)
+let t modq_shapes.A.Shape.Dot(6)
+let u: modq_shapes.A.Shape A.Shape.Line(7)
+let r module_qualified_variant.modq_shapes.A.Rec(8)
+
+var sum 0
+choose s
+    when d: module_qualified_variant.modq_shapes.A.Shape.Dot
+        sum := sum + 100
+    when l: module_qualified_variant.modq_shapes.A.Shape.Line
+        sum := sum + l
+choose t
+    when d: modq_shapes.A.Shape.Dot
+        sum := sum + d
+    else
+        sum := sum + 1000
+choose u
+    when l: A.Shape.Line
+        sum := sum + l
+    else
+        sum := sum + 1000
+if sum = 18 and r.x = 8
+    print("PASS")
+else
+    print("FAIL")

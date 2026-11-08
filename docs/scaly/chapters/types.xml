@@ -623,6 +623,10 @@ define Pair[T] ( first: T, second: T )
 let p Pair[int](20, 22)
 p.sum()                      ; 42
     </programlisting>
+    <para>The type arguments are written where a generic type is
+      constructed: they are not inferred from the values, and
+      <literal>Pair(20, 22)</literal> is an error that says so. A tuple type
+      is an argument like any other: <literal>Array[(n: int, s: String)]()</literal>.</para>
     <para>The standard library's containers are generic the same way:
       <literal>Vector[T]</literal>, <literal>List[T]</literal>,
       <literal>HashMap[K, V]</literal>, <literal>Option[T]</literal>,

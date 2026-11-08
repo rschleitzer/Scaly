@@ -765,11 +765,14 @@ define lexer
                     if current = null
                         return
 
+                    ; a line comment runs to its line feed and leaves it --
+                    ; nothing is read past the ';' first: where the ';' ends
+                    ; its line, that read took the LINE FEED, and the comment
+                    ; ran on through the NEXT line -- `;` alone on a line
+                    ; swallowed the `if cond` below it and left its block
+                    ; unconditional, at rc 0 (2026-11-07)
                     if *current <> 42  ; not '*'
-                    {
-                        read_character()
                         handle_single_line_comment()
-                    }
                     else
                     {
                         read_character()

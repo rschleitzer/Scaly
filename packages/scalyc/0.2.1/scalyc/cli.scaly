@@ -2026,7 +2026,7 @@ define cli
         let n mangled.get_length()
         var i: size_t 2
         var nested false
-        if n > 2 and mangled.get(2) = 78
+        if n > 2 and mangled.get(2) = ("N" as char)
         {
             nested := true
             i := 3
@@ -2039,9 +2039,9 @@ define cli
             if c < 48 or c > 57
                 break
             var len: size_t 0
-            while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+            while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
             {
-                len := len * 10 + ((mangled.get(i) - 48) as size_t)
+                len := len * 10 + ((mangled.get(i) - ("0" as char)) as size_t)
                 i := i + 1
             }
             if first = false

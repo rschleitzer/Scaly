@@ -1,0 +1,53 @@
+; Regression (2026-11-07): a record or union declared inside a GENERIC
+; record, named from OUTSIDE through an instance -- `Shell[int].Tally(5)`,
+; `Shell[int].Pair[bool](...)`, `Shell[int].Box.Inner(4)`,
+; `Shell[int].Mark.Full(3)` -- was `function not found: Tally` (the hop was
+; asked as a static of `Shell[int]`). It is `Shell.Tally[int](5)` now, the
+; outer's arguments first (Planner.outer_instance_operands#). And a
+; file-level `Tally[int](6)` read a placeholder at rc 0: the outer's T was
+; filled in where no T is in scope, so the written `[int]` was lost
+; (Planner.outer_arguments# asks the scope now).
+; Expected: PASS
+
+define Shell[T](item: T)
+{
+    define Tally(n: T)
+    {
+        function get(this) returns T
+            n
+    }
+
+    define Pair[U](a: T, b: U)
+    {
+        function second(this) returns U
+            b
+    }
+
+    define Mark union (Full: T, Empty)
+
+    define Box(v: T)
+    {
+        define Inner(w: T)
+        {
+            function get(this) returns T
+                w
+        }
+    }
+}
+
+function full(m: Shell.Mark[int]) returns int
+    choose m
+        when f: Shell.Mark.Full
+            f
+        else
+            0
+
+function tally(t: Shell.Tally[int]) returns int
+    t.get()
+
+let typed: Shell.Tally[int] Shell[int].Tally(7)
+let text Shell[String].Tally(String("abc"))
+if Shell[int].Tally(5).get() = 5 and text.get().length() = 3 and Shell[int].Pair[bool](1, true).second() and Shell[int].Box.Inner(4).get() = 4 and full(Shell[int].Mark.Full(3)) = 3 and full(Shell[int].Mark.Empty) = 0 and Tally[int](6).get() = 6 and tally(typed) = 7
+    print("PASS")
+else
+    print("FAIL")

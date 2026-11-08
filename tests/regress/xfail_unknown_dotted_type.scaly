@@ -1,0 +1,15 @@
+; Regression (2026-11-08): a DOTTED type annotation that names nothing was
+; exempt from the unknown-type check ("namespace machinery owns those"), and
+; plan_type# lets an unresolved name through as an opaque placeholder:
+; `let t: Nope.Thing 5` bound the int as that placeholder, and a parameter or
+; a return `Nope.Thing` compiled, at rc 0. A planned name that is still dotted
+; named nothing (Planner.unknown_type_name#).
+; xfail: error: unknown type: Nope.Thing
+
+define A
+{
+    define Rec(x: int)
+}
+
+let t: Nope.Thing 5
+print("done")

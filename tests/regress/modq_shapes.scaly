@@ -1,0 +1,16 @@
+; Sidecar for module_qualified_variant.scaly: a union and a record in a
+; define of a module of their own. Alone it is an ordinary program.
+; Expected: PASS
+
+define A
+{
+    define Shape union (Dot: int, Line: int)
+    define Rec(x: int)
+}
+
+let alone A.Shape.Line(2)
+choose alone
+    when l: A.Shape.Line
+        print("PASS")
+    else
+        print("FAIL")
