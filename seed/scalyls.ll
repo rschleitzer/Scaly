@@ -236,7 +236,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_ZN5lexer5LexerB6scalycB4v0_2E = type { { ptr }, ptr, ptr, i64, i64, %_ZN5lexer5TokenB6scalycB4v0_2E, %_Z5SliceImE, i64, ptr }
 %_ZN5lexer5TokenB6scalycB4v0_2E = type { i8, <{ [1 x i64], [1 x i8] }> }
 %_ZN6parser11ParserErrorB6scalycB4v0_2E = type { i8, <{ [3 x i64], [0 x i8] }> }
-%_Z7PlannerB6scalycB4v0_2 = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, i64, %_Z5ArrayI14TypeConstraintB6scalycB4v0_2E, %_Z5ArrayI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, %_Z5ArrayI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, %_Z12ConceptIndexB6scalycB4v0_2, ptr, %_Z5ArrayI16PlannedStructureB6scalycB4v0_2E, %_Z5ArrayI12PlannedUnionB6scalycB4v0_2E, %_Z5ArrayI6StringE, i1, i1, i64, ptr, i1, i1, i64, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaB6scalycB4v0_2E, %_Z5ArrayImE, %_Z5ArrayIN7Planner10BareMethodB6scalycB4v0_2EE, i64, i64, i1, %_Z5ArrayIN7Planner7LazyArgB6scalycB4v0_2EE, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z6VectorImE, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E, %_Z12ConceptIndexB6scalycB4v0_2, %_Z5ArrayI13PlannedGlobalB6scalycB4v0_2E, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, %_Z5ArrayI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, %_Z13FunctionIndexB6scalycB4v0_2, %_Z5ArrayI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, %_Z13FunctionIndexB6scalycB4v0_2, i1, %_Z6VectorI11PlannedTypeB6scalycB4v0_2E, %_Z5ArrayI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, %_Z5ArrayI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticB6scalycB4v0_2E, %_Z5ArrayI7ProgramB6scalycB4v0_2E, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, %_Z12ConceptIndexB6scalycB4v0_2, ptr, ptr, ptr, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndexB6scalycB4v0_2, %_Z12ConceptIndexB6scalycB4v0_2, ptr, i1, ptr, i1, i1, { ptr }, i1, i1, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, { ptr }, ptr, ptr, ptr, ptr, { ptr }, { ptr }, i1, i1, i1, ptr, ptr, ptr, ptr, i64, i64 }
+%_Z7PlannerB6scalycB4v0_2 = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE, i64, %_Z5ArrayI14TypeConstraintB6scalycB4v0_2E, %_Z5ArrayI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EE, %_Z5ArrayI12KeyValuePairI6String7ConceptB6scalycB4v0_2EE, %_Z12ConceptIndexB6scalycB4v0_2, ptr, %_Z5ArrayI16PlannedStructureB6scalycB4v0_2E, %_Z5ArrayI12PlannedUnionB6scalycB4v0_2E, %_Z5ArrayI6StringE, i1, i1, i64, ptr, i1, i1, i64, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaB6scalycB4v0_2E, %_Z5ArrayImE, %_Z5ArrayIN7Planner10BareMethodB6scalycB4v0_2EE, i64, i64, i1, %_Z5ArrayIN7Planner7LazyArgB6scalycB4v0_2EE, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z6VectorImE, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionB6scalycB4v0_2E, %_Z12ConceptIndexB6scalycB4v0_2, %_Z5ArrayI13PlannedGlobalB6scalycB4v0_2E, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionB6scalycB4v0_2EE, %_Z5ArrayI12KeyValuePairI6String6LambdaB6scalycB4v0_2EE, %_Z13FunctionIndexB6scalycB4v0_2, %_Z5ArrayI12KeyValuePairI6String8OperatorB6scalycB4v0_2EE, %_Z13FunctionIndexB6scalycB4v0_2, i1, %_Z6VectorI11PlannedTypeB6scalycB4v0_2E, %_Z5ArrayI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, %_Z5ArrayI12KeyValuePairI6String6ModuleB6scalycB4v0_2EE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticB6scalycB4v0_2E, %_Z5ArrayI7ProgramB6scalycB4v0_2E, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordB6scalycB4v0_2E, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, %_Z12ConceptIndexB6scalycB4v0_2, ptr, ptr, ptr, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndexB6scalycB4v0_2, %_Z12ConceptIndexB6scalycB4v0_2, %_Z12ConceptIndexB6scalycB4v0_2, ptr, i1, ptr, i1, i1, { ptr }, i1, i1, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, { ptr }, ptr, ptr, ptr, ptr, { ptr }, { ptr }, i1, i1, i1, ptr, ptr, ptr, ptr, i64, i64 }
 %_Z5ArrayI12KeyValuePairI6String12LocalBindingB6scalycB4v0_2EE = type { i64, i64, ptr }
 %_Z5ArrayI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE = type { i64, i64, ptr }
 %_Z5ArrayI14TypeConstraintB6scalycB4v0_2E = type { i64, i64, ptr }
@@ -138037,11 +138037,11 @@ entry:
   %sret.result20 = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %sb = alloca ptr, align 8
+  %sret.result5 = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr %1, ptr %frame.parent, align 8
-  %sret.result5 = alloca { ptr }, align 8
   %sret.result1 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   call void @_ZN7symbolsB7scalylsB4v0_216completion_itemsEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2)
@@ -138056,7 +138056,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  call void @_ZN5scopeB7scalylsB4v0_25itemsEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %2, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_25itemsEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result1, ptr %frame, ptr %2, i64 %4)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result1)
   %eq2 = icmp eq i64 %call, 0
   br i1 %eq2, label %if.then3, label %if.end4
@@ -139475,7 +139475,7 @@ choose.when10:                                    ; preds = %frame.forced5
 if.then:                                          ; preds = %choose.when10
   %addr.heap = load ptr, ptr %found, align 8
   %declarations11 = extractvalue %_Z10FileSyntaxB6scalycB4v0_2 %file, 2
-  %call = call i1 @_ZN5scopeB7scalylsB4v0_212declarationsEPN4scaly6memory4PageER13StringBuilder6String6VectorI17DeclarationSyntaxB6scalycB4v0_2Em(ptr %1, ptr %addr.heap, ptr %2, ptr %declarations11, i64 %3)
+  %call = call i1 @_ZN5scopeB7scalylsB4v0_212declarationsER13StringBuilder6String6VectorI17DeclarationSyntaxB6scalycB4v0_2Em(ptr %addr.heap, ptr %2, ptr %declarations11, i64 %3)
   store i1 %call, ptr %in_routine, align 1
   br label %if.end
 
@@ -139487,7 +139487,7 @@ if.end:                                           ; preds = %if.then, %choose.wh
 if.then12:                                        ; preds = %land.rhs
   %addr.heap16 = load ptr, ptr %found, align 8
   %statements17 = extractvalue %_Z13ProgramSyntaxB6scalycB4v0_2 %throws.success.val, 3
-  call void @_ZN5scopeB7scalylsB4v0_210statementsEPN4scaly6memory4PageER13StringBuilder6String6VectorI15StatementSyntaxB6scalycB4v0_2Em(ptr %1, ptr %addr.heap16, ptr %2, ptr %statements17, i64 %3)
+  call void @_ZN5scopeB7scalylsB4v0_210statementsER13StringBuilder6String6VectorI15StatementSyntaxB6scalycB4v0_2Em(ptr %addr.heap16, ptr %2, ptr %statements17, i64 %3)
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %land.rhs, %if.end
@@ -167597,7 +167597,7 @@ if.end29:                                         ; preds = %if.then28, %if.then
   br label %if.end23
 }
 
-define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_212declarationsEPN4scaly6memory4PageER13StringBuilder6String6VectorI17DeclarationSyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_212declarationsER13StringBuilder6String6VectorI17DeclarationSyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
@@ -167605,14 +167605,14 @@ entry:
 
 while.cond:                                       ; preds = %if.end, %entry
   %i1 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %3, align 8
+  %load.struct = load %_Z6VectorI17DeclarationSyntaxB6scalycB4v0_2E, ptr %2, align 8
   %length = extractvalue %_Z6VectorI17DeclarationSyntaxB6scalycB4v0_2E %load.struct, 0
   %lt = icmp ult i64 %i1, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %i2 = load i64, ptr %i, align 8
-  %call = call ptr @_ZN6VectorI17DeclarationSyntaxB6scalycB4v0_2E3getEm(ptr %3, i64 %i2)
+  %call = call ptr @_ZN6VectorI17DeclarationSyntaxB6scalycB4v0_2E3getEm(ptr %2, i64 %i2)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -167620,7 +167620,7 @@ while.exit:                                       ; preds = %while.cond
   ret i1 false
 
 if.then:                                          ; preds = %while.body
-  %call3 = call i1 @_ZN5scopeB7scalylsB4v0_211declarationEPN4scaly6memory4PageER13StringBuilder6String17DeclarationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %call, i64 %4)
+  %call3 = call i1 @_ZN5scopeB7scalylsB4v0_211declarationER13StringBuilder6String17DeclarationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %call, i64 %3)
   br i1 %call3, label %if.then4, label %if.end5
 
 if.end:                                           ; preds = %if.end5, %while.body
@@ -167636,7 +167636,7 @@ if.end5:                                          ; preds = %if.then
   br label %if.end
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_210statementsEPN4scaly6memory4PageER13StringBuilder6String6VectorI15StatementSyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_210statementsER13StringBuilder6String6VectorI15StatementSyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp12 = alloca %_Z15StatementSyntaxB6scalycB4v0_2, align 8
   %arg.tmp6 = alloca %_Z15StatementSyntaxB6scalycB4v0_2, align 8
@@ -167648,14 +167648,14 @@ entry:
 
 while.cond:                                       ; preds = %if.end, %entry
   %i1 = load i64, ptr %i, align 8
-  %load.struct = load %_Z6VectorI15StatementSyntaxB6scalycB4v0_2E, ptr %3, align 8
+  %load.struct = load %_Z6VectorI15StatementSyntaxB6scalycB4v0_2E, ptr %2, align 8
   %length = extractvalue %_Z6VectorI15StatementSyntaxB6scalycB4v0_2E %load.struct, 0
   %lt = icmp ult i64 %i1, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %i2 = load i64, ptr %i, align 8
-  %call = call ptr @_ZN6VectorI15StatementSyntaxB6scalycB4v0_2E3getEm(ptr %3, i64 %i2)
+  %call = call ptr @_ZN6VectorI15StatementSyntaxB6scalycB4v0_2E3getEm(ptr %2, i64 %i2)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -167666,7 +167666,7 @@ if.then:                                          ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15StatementSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z15StatementSyntaxB6scalycB4v0_2, ptr %deref.tmp, align 1
   %call3 = call i64 @_ZN5scopeB7scalylsB4v0_213statement_endE15StatementSyntaxB6scalycB4v0_2(ptr %deref.tmp)
-  %le = icmp ule i64 %call3, %4
+  %le = icmp ule i64 %call3, %3
   br i1 %le, label %if.then4, label %if.else
 
 if.end:                                           ; preds = %if.end5, %while.body
@@ -167677,14 +167677,14 @@ if.end:                                           ; preds = %if.end5, %while.bod
 
 if.then4:                                         ; preds = %if.then
   store %_Z15StatementSyntaxB6scalycB4v0_2 %grp.deref.val, ptr %arg.tmp, align 1
-  call void @_ZN5scopeB7scalylsB4v0_215statement_namesER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2(ptr %1, ptr %2, ptr %arg.tmp)
+  call void @_ZN5scopeB7scalylsB4v0_215statement_namesER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2(ptr %0, ptr %1, ptr %arg.tmp)
   br label %if.end5
 
 if.else:                                          ; preds = %if.then
   store %_Z15StatementSyntaxB6scalycB4v0_2 %grp.deref.val, ptr %arg.tmp6, align 1
   %call7 = call i64 @_ZN5scopeB7scalylsB4v0_215statement_startE15StatementSyntaxB6scalycB4v0_2(ptr %arg.tmp6)
-  %call8 = call i64 @_ZN5scopeB7scalylsB4v0_211first_tokenE6Stringm(ptr %2, i64 %call7)
-  %le9 = icmp ule i64 %call8, %4
+  %call8 = call i64 @_ZN5scopeB7scalylsB4v0_211first_tokenE6Stringm(ptr %1, i64 %call7)
+  %le9 = icmp ule i64 %call8, %3
   br i1 %le9, label %if.then10, label %if.end11
 
 if.end5:                                          ; preds = %if.then4
@@ -167692,7 +167692,7 @@ if.end5:                                          ; preds = %if.then4
 
 if.then10:                                        ; preds = %if.else
   store %_Z15StatementSyntaxB6scalycB4v0_2 %grp.deref.val, ptr %arg.tmp12, align 1
-  call void @_ZN5scopeB7scalylsB4v0_215statement_innerEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp12, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_215statement_innerER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp12, i64 %3)
   br label %if.end11
 
 if.end11:                                         ; preds = %if.then10, %if.else
@@ -168002,12 +168002,12 @@ if.end:                                           ; preds = %entry
 
 declare void @_ZN13StringBuilder6appendE5SliceI2u8E(ptr, ptr)
 
-define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_211declarationEPN4scaly6memory4PageER13StringBuilder6String17DeclarationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_211declarationER13StringBuilder6String17DeclarationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp23 = alloca %_Z12ExportSyntaxB6scalycB4v0_2, align 8
   %arg.tmp18 = alloca %_Z16DefinitionSyntaxB6scalycB4v0_2, align 8
   %arg.tmp = alloca %_Z12TargetSyntaxB6scalycB4v0_2, align 8
-  %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 6, label %choose.when
@@ -168024,56 +168024,56 @@ choose.else:                                      ; preds = %entry
   ret i1 false
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val = load %_Z14FunctionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 8
   %target = extractvalue %_Z14FunctionSyntaxB6scalycB4v0_2 %variant.val, 2
   store %_Z12TargetSyntaxB6scalycB4v0_2 %target, ptr %arg.tmp, align 1
   %start = extractvalue %_Z14FunctionSyntaxB6scalycB4v0_2 %variant.val, 0
   %end = extractvalue %_Z14FunctionSyntaxB6scalycB4v0_2 %variant.val, 1
-  %call = call i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %start, i64 %end, i64 %4)
+  %call = call i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %arg.tmp, i64 %start, i64 %end, i64 %3)
   ret i1 %call
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z15ProcedureSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr2", align 8
   %target4 = extractvalue %_Z15ProcedureSyntaxB6scalycB4v0_2 %variant.val3, 2
   store %_Z12TargetSyntaxB6scalycB4v0_2 %target4, ptr %arg.tmp, align 1
   %start5 = extractvalue %_Z15ProcedureSyntaxB6scalycB4v0_2 %variant.val3, 0
   %end6 = extractvalue %_Z15ProcedureSyntaxB6scalycB4v0_2 %variant.val3, 1
-  %call7 = call i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %start5, i64 %end6, i64 %4)
+  %call7 = call i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %arg.tmp, i64 %start5, i64 %end6, i64 %3)
   ret i1 %call7
 
 choose.when8:                                     ; preds = %entry
-  %"variant.c_data().ptr9" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr9" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val10 = load %_Z14OperatorSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr9", align 8
   %target11 = extractvalue %_Z14OperatorSyntaxB6scalycB4v0_2 %variant.val10, 2
   store %_Z12TargetSyntaxB6scalycB4v0_2 %target11, ptr %arg.tmp, align 1
   %start12 = extractvalue %_Z14OperatorSyntaxB6scalycB4v0_2 %variant.val10, 0
   %end13 = extractvalue %_Z14OperatorSyntaxB6scalycB4v0_2 %variant.val10, 1
-  %call14 = call i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %start12, i64 %end13, i64 %4)
+  %call14 = call i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %arg.tmp, i64 %start12, i64 %end13, i64 %3)
   ret i1 %call14
 
 choose.when15:                                    ; preds = %entry
-  %"variant.c_data().ptr16" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr16" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val17 = load %_Z16DefinitionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr16", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp18, ptr align 1 %"variant.c_data().ptr16", i64 ptrtoint (ptr getelementptr (%_Z16DefinitionSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  %call19 = call i1 @_ZN5scopeB7scalylsB4v0_210definitionEPN4scaly6memory4PageER13StringBuilder6String16DefinitionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp18, i64 %4)
+  %call19 = call i1 @_ZN5scopeB7scalylsB4v0_210definitionER13StringBuilder6String16DefinitionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp18, i64 %3)
   ret i1 %call19
 
 choose.when20:                                    ; preds = %entry
-  %"variant.c_data().ptr21" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr21" = getelementptr inbounds nuw %_Z17DeclarationSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val22 = load %_Z13PrivateSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr21", align 8
   %export_ = extractvalue %_Z13PrivateSyntaxB6scalycB4v0_2 %variant.val22, 2
   store %_Z12ExportSyntaxB6scalycB4v0_2 %export_, ptr %arg.tmp23, align 1
-  %call24 = call i1 @_ZN5scopeB7scalylsB4v0_211export_declEPN4scaly6memory4PageER13StringBuilder6String12ExportSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp23, i64 %4)
+  %call24 = call i1 @_ZN5scopeB7scalylsB4v0_211export_declER13StringBuilder6String12ExportSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp23, i64 %3)
   ret i1 %call24
 }
 
-define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, i64 %6) {
+define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, i64 %3, i64 %4, i64 %5) {
 entry:
   %arg.tmp4 = alloca %_Z13RoutineSyntaxB6scalycB4v0_2, align 8
   %arg.tmp = alloca %_Z13RoutineSyntaxB6scalycB4v0_2, align 8
-  %call = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %2, i64 %4, i64 %5, i64 %6)
+  %call = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %1, i64 %3, i64 %4, i64 %5)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %if.then, label %if.end
 
@@ -168081,7 +168081,7 @@ if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %tag.ptr = getelementptr inbounds nuw %_Z12TargetSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds nuw %_Z12TargetSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 0, label %choose.when
@@ -168095,44 +168095,44 @@ choose.else:                                      ; preds = %if.end
   br label %choose.end
 
 choose.when:                                      ; preds = %if.end
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z12TargetSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z12TargetSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val = load %_Z11NamedSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 8
   %routine = extractvalue %_Z11NamedSyntaxB6scalycB4v0_2 %variant.val, 3
   store %_Z13RoutineSyntaxB6scalycB4v0_2 %routine, ptr %arg.tmp, align 1
-  call void @_ZN5scopeB7scalylsB4v0_27routineEPN4scaly6memory4PageER13StringBuilder6String13RoutineSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %6)
+  call void @_ZN5scopeB7scalylsB4v0_27routineER13StringBuilder6String13RoutineSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp, i64 %5)
   br label %choose.end
 
 choose.when1:                                     ; preds = %if.end
-  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z12TargetSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z12TargetSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z13RoutineSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr2", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp4, ptr align 1 %"variant.c_data().ptr2", i64 ptrtoint (ptr getelementptr (%_Z13RoutineSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5scopeB7scalylsB4v0_27routineEPN4scaly6memory4PageER13StringBuilder6String13RoutineSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp4, i64 %6)
+  call void @_ZN5scopeB7scalylsB4v0_27routineER13StringBuilder6String13RoutineSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp4, i64 %5)
   br label %choose.end
 }
 
-define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_210definitionEPN4scaly6memory4PageER13StringBuilder6String16DefinitionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_210definitionER13StringBuilder6String16DefinitionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %choose.union = alloca %_Z13ConceptSyntaxB6scalycB4v0_2, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z16DefinitionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %field.inplace = getelementptr inbounds nuw %_Z16DefinitionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  %call = call i64 @_ZN5scopeB7scalylsB4v0_211first_tokenE6Stringm(ptr %2, i64 %field.val)
-  %lt = icmp ult i64 %4, %call
+  %call = call i64 @_ZN5scopeB7scalylsB4v0_211first_tokenE6Stringm(ptr %1, i64 %field.val)
+  %lt = icmp ult i64 %3, %call
   br i1 %lt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  %load.struct = load %_Z16DefinitionSyntaxB6scalycB4v0_2, ptr %3, align 8
+  %load.struct = load %_Z16DefinitionSyntaxB6scalycB4v0_2, ptr %2, align 8
   %end = extractvalue %_Z16DefinitionSyntaxB6scalycB4v0_2 %load.struct, 1
-  %gt = icmp ugt i64 %4, %end
+  %gt = icmp ugt i64 %3, %end
   br i1 %gt, label %if.then1, label %if.end2
 
 if.then1:                                         ; preds = %if.end
   ret i1 false
 
 if.end2:                                          ; preds = %if.end
-  %load.struct3 = load %_Z16DefinitionSyntaxB6scalycB4v0_2, ptr %3, align 8
+  %load.struct3 = load %_Z16DefinitionSyntaxB6scalycB4v0_2, ptr %2, align 8
   %concept_ = extractvalue %_Z16DefinitionSyntaxB6scalycB4v0_2 %load.struct3, 6
   store %_Z13ConceptSyntaxB6scalycB4v0_2 %concept_, ptr %choose.union, align 1
   %tag.ptr = getelementptr inbounds nuw %_Z13ConceptSyntaxB6scalycB4v0_2, ptr %choose.union, i32 0, i32 0
@@ -168153,14 +168153,14 @@ choose.when:                                      ; preds = %if.end2
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z13ConceptSyntaxB6scalycB4v0_2, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z11ClassSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 8
   %body = extractvalue %_Z11ClassSyntaxB6scalycB4v0_2 %variant.val, 3
-  %call4 = call i1 @_ZN5scopeB7scalylsB4v0_24bodyEPN4scaly6memory4PageER13StringBuilder6String6OptionIR10BodySyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, ptr %body, i64 %4)
+  %call4 = call i1 @_ZN5scopeB7scalylsB4v0_24bodyER13StringBuilder6String6OptionIR10BodySyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %body, i64 %3)
   ret i1 %call4
 
 choose.when5:                                     ; preds = %if.end2
   %"variant.c_data().ptr6" = getelementptr inbounds nuw %_Z13ConceptSyntaxB6scalycB4v0_2, ptr %choose.union, i32 0, i32 1
   %variant.val7 = load %_Z11UnionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr6", align 8
   %body8 = extractvalue %_Z11UnionSyntaxB6scalycB4v0_2 %variant.val7, 3
-  %call9 = call i1 @_ZN5scopeB7scalylsB4v0_24bodyEPN4scaly6memory4PageER13StringBuilder6String6OptionIR10BodySyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, ptr %body8, i64 %4)
+  %call9 = call i1 @_ZN5scopeB7scalylsB4v0_24bodyER13StringBuilder6String6OptionIR10BodySyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %body8, i64 %3)
   ret i1 %call9
 
 choose.when10:                                    ; preds = %if.end2
@@ -168175,15 +168175,15 @@ if.then13:                                        ; preds = %choose.when10
 
 if.end14:                                         ; preds = %choose.when10
   %declarations15 = extractvalue %_Z15NamespaceSyntaxB6scalycB4v0_2 %variant.val12, 3
-  %call16 = call i1 @_ZN5scopeB7scalylsB4v0_212declarationsEPN4scaly6memory4PageER13StringBuilder6String6VectorI17DeclarationSyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, ptr %declarations15, i64 %4)
+  %call16 = call i1 @_ZN5scopeB7scalylsB4v0_212declarationsER13StringBuilder6String6VectorI17DeclarationSyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %declarations15, i64 %3)
   ret i1 %call16
 }
 
-define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_211export_declEPN4scaly6memory4PageER13StringBuilder6String12ExportSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_211export_declER13StringBuilder6String12ExportSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp18 = alloca %_Z16DefinitionSyntaxB6scalycB4v0_2, align 8
   %arg.tmp = alloca %_Z12TargetSyntaxB6scalycB4v0_2, align 8
-  %tag.ptr = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
@@ -168199,40 +168199,40 @@ choose.else:                                      ; preds = %entry
   ret i1 false
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val = load %_Z14FunctionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 8
   %target = extractvalue %_Z14FunctionSyntaxB6scalycB4v0_2 %variant.val, 2
   store %_Z12TargetSyntaxB6scalycB4v0_2 %target, ptr %arg.tmp, align 1
   %start = extractvalue %_Z14FunctionSyntaxB6scalycB4v0_2 %variant.val, 0
   %end = extractvalue %_Z14FunctionSyntaxB6scalycB4v0_2 %variant.val, 1
-  %call = call i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %start, i64 %end, i64 %4)
+  %call = call i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %arg.tmp, i64 %start, i64 %end, i64 %3)
   ret i1 %call
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z15ProcedureSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr2", align 8
   %target4 = extractvalue %_Z15ProcedureSyntaxB6scalycB4v0_2 %variant.val3, 2
   store %_Z12TargetSyntaxB6scalycB4v0_2 %target4, ptr %arg.tmp, align 1
   %start5 = extractvalue %_Z15ProcedureSyntaxB6scalycB4v0_2 %variant.val3, 0
   %end6 = extractvalue %_Z15ProcedureSyntaxB6scalycB4v0_2 %variant.val3, 1
-  %call7 = call i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %start5, i64 %end6, i64 %4)
+  %call7 = call i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %arg.tmp, i64 %start5, i64 %end6, i64 %3)
   ret i1 %call7
 
 choose.when8:                                     ; preds = %entry
-  %"variant.c_data().ptr9" = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr9" = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val10 = load %_Z14OperatorSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr9", align 8
   %target11 = extractvalue %_Z14OperatorSyntaxB6scalycB4v0_2 %variant.val10, 2
   store %_Z12TargetSyntaxB6scalycB4v0_2 %target11, ptr %arg.tmp, align 1
   %start12 = extractvalue %_Z14OperatorSyntaxB6scalycB4v0_2 %variant.val10, 0
   %end13 = extractvalue %_Z14OperatorSyntaxB6scalycB4v0_2 %variant.val10, 1
-  %call14 = call i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %start12, i64 %end13, i64 %4)
+  %call14 = call i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %arg.tmp, i64 %start12, i64 %end13, i64 %3)
   ret i1 %call14
 
 choose.when15:                                    ; preds = %entry
-  %"variant.c_data().ptr16" = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr16" = getelementptr inbounds nuw %_Z12ExportSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val17 = load %_Z16DefinitionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr16", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp18, ptr align 1 %"variant.c_data().ptr16", i64 ptrtoint (ptr getelementptr (%_Z16DefinitionSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  %call19 = call i1 @_ZN5scopeB7scalylsB4v0_210definitionEPN4scaly6memory4PageER13StringBuilder6String16DefinitionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp18, i64 %4)
+  %call19 = call i1 @_ZN5scopeB7scalylsB4v0_210definitionER13StringBuilder6String16DefinitionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp18, i64 %3)
   ret i1 %call19
 }
 
@@ -168363,19 +168363,19 @@ lor.end46:                                        ; preds = %lor.rhs45, %while.c
   br i1 %lor.result50, label %while.body41, label %while.exit42
 }
 
-define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_24bodyEPN4scaly6memory4PageER13StringBuilder6String6OptionIR10BodySyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_24bodyER13StringBuilder6String6OptionIR10BodySyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %i = alloca i64, align 8
   %deref.tmp5 = alloca %_Z6VectorI12MemberSyntaxB6scalycB4v0_2E, align 8
   %deref.tmp = alloca %_Z10BodySyntaxB6scalycB4v0_2, align 8
-  %eq = icmp eq ptr %3, null
+  %eq = icmp eq ptr %2, null
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret i1 false
 
 if.end:                                           ; preds = %entry
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %3, i64 ptrtoint (ptr getelementptr (%_Z10BodySyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %2, i64 ptrtoint (ptr getelementptr (%_Z10BodySyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z10BodySyntaxB6scalycB4v0_2, ptr %deref.tmp, align 8
   %members = extractvalue %_Z10BodySyntaxB6scalycB4v0_2 %grp.deref.val, 3
   %eq1 = icmp eq ptr %members, null
@@ -168408,7 +168408,7 @@ while.exit:                                       ; preds = %while.cond
   ret i1 false
 
 if.then9:                                         ; preds = %while.body
-  %call11 = call i1 @_ZN5scopeB7scalylsB4v0_26memberEPN4scaly6memory4PageER13StringBuilder6String12MemberSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %call, i64 %4)
+  %call11 = call i1 @_ZN5scopeB7scalylsB4v0_26memberER13StringBuilder6String12MemberSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %call, i64 %3)
   br i1 %call11, label %if.then12, label %if.end13
 
 if.end10:                                         ; preds = %if.end13, %while.body
@@ -168424,13 +168424,13 @@ if.end13:                                         ; preds = %if.then9
   br label %if.end10
 }
 
-define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_26memberEPN4scaly6memory4PageER13StringBuilder6String12MemberSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr i1 @_ZN5scopeB7scalylsB4v0_26memberER13StringBuilder6String12MemberSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp32 = alloca %_Z16DefinitionSyntaxB6scalycB4v0_2, align 8
   %arg.tmp28 = alloca %_Z12ActionSyntaxB6scalycB4v0_2, align 8
   %choose.union = alloca %_Z20ImplementationSyntaxB6scalycB4v0_2, align 8
   %arg.tmp = alloca %_Z12TargetSyntaxB6scalycB4v0_2, align 8
-  %tag.ptr = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 3, label %choose.when
@@ -168447,41 +168447,41 @@ choose.else:                                      ; preds = %entry
   ret i1 false
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val = load %_Z14FunctionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 8
   %target = extractvalue %_Z14FunctionSyntaxB6scalycB4v0_2 %variant.val, 2
   store %_Z12TargetSyntaxB6scalycB4v0_2 %target, ptr %arg.tmp, align 1
   %start = extractvalue %_Z14FunctionSyntaxB6scalycB4v0_2 %variant.val, 0
   %end = extractvalue %_Z14FunctionSyntaxB6scalycB4v0_2 %variant.val, 1
-  %call = call i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %start, i64 %end, i64 %4)
+  %call = call i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %arg.tmp, i64 %start, i64 %end, i64 %3)
   ret i1 %call
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z15ProcedureSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr2", align 8
   %target4 = extractvalue %_Z15ProcedureSyntaxB6scalycB4v0_2 %variant.val3, 2
   store %_Z12TargetSyntaxB6scalycB4v0_2 %target4, ptr %arg.tmp, align 1
   %start5 = extractvalue %_Z15ProcedureSyntaxB6scalycB4v0_2 %variant.val3, 0
   %end6 = extractvalue %_Z15ProcedureSyntaxB6scalycB4v0_2 %variant.val3, 1
-  %call7 = call i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %start5, i64 %end6, i64 %4)
+  %call7 = call i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %arg.tmp, i64 %start5, i64 %end6, i64 %3)
   ret i1 %call7
 
 choose.when8:                                     ; preds = %entry
-  %"variant.c_data().ptr9" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr9" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val10 = load %_Z14OperatorSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr9", align 8
   %target11 = extractvalue %_Z14OperatorSyntaxB6scalycB4v0_2 %variant.val10, 2
   store %_Z12TargetSyntaxB6scalycB4v0_2 %target11, ptr %arg.tmp, align 1
   %start12 = extractvalue %_Z14OperatorSyntaxB6scalycB4v0_2 %variant.val10, 0
   %end13 = extractvalue %_Z14OperatorSyntaxB6scalycB4v0_2 %variant.val10, 1
-  %call14 = call i1 @_ZN5scopeB7scalylsB4v0_26targetEPN4scaly6memory4PageER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %start12, i64 %end13, i64 %4)
+  %call14 = call i1 @_ZN5scopeB7scalylsB4v0_26targetER13StringBuilder6String12TargetSyntaxB6scalycB4v0_2mmm(ptr %0, ptr %1, ptr %arg.tmp, i64 %start12, i64 %end13, i64 %3)
   ret i1 %call14
 
 choose.when15:                                    ; preds = %entry
-  %"variant.c_data().ptr16" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr16" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val17 = load %_Z10InitSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr16", align 8
   %start18 = extractvalue %_Z10InitSyntaxB6scalycB4v0_2 %variant.val17, 0
   %end19 = extractvalue %_Z10InitSyntaxB6scalycB4v0_2 %variant.val17, 1
-  %call20 = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %2, i64 %start18, i64 %end19, i64 %4)
+  %call20 = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %1, i64 %start18, i64 %end19, i64 %3)
   %eq = icmp eq i1 %call20, false
   br i1 %eq, label %if.then, label %if.end
 
@@ -168490,7 +168490,7 @@ if.then:                                          ; preds = %choose.when15
 
 if.end:                                           ; preds = %choose.when15
   %parameters = extractvalue %_Z10InitSyntaxB6scalycB4v0_2 %variant.val17, 3
-  call void @_ZN5scopeB7scalylsB4v0_210parametersER13StringBuilder6String6OptionIR18ParameterSetSyntaxB6scalycB4v0_2E(ptr %1, ptr %2, ptr %parameters)
+  call void @_ZN5scopeB7scalylsB4v0_210parametersER13StringBuilder6String6OptionIR18ParameterSetSyntaxB6scalycB4v0_2E(ptr %0, ptr %1, ptr %parameters)
   %implementation = extractvalue %_Z10InitSyntaxB6scalycB4v0_2 %variant.val17, 4
   store %_Z20ImplementationSyntaxB6scalycB4v0_2 %implementation, ptr %choose.union, align 1
   %tag.ptr21 = getelementptr inbounds nuw %_Z20ImplementationSyntaxB6scalycB4v0_2, ptr %choose.union, i32 0, i32 0
@@ -168509,14 +168509,14 @@ choose.when25:                                    ; preds = %if.end
   %"variant.c_data().ptr26" = getelementptr inbounds nuw %_Z20ImplementationSyntaxB6scalycB4v0_2, ptr %choose.union, i32 0, i32 1
   %variant.val27 = load %_Z12ActionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr26", align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp28, ptr align 1 %"variant.c_data().ptr26", i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5scopeB7scalylsB4v0_26actionEPN4scaly6memory4PageER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp28, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_26actionER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp28, i64 %3)
   br label %choose.end23
 
 choose.when29:                                    ; preds = %entry
-  %"variant.c_data().ptr30" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr30" = getelementptr inbounds nuw %_Z12MemberSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val31 = load %_Z16DefinitionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr30", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp32, ptr align 1 %"variant.c_data().ptr30", i64 ptrtoint (ptr getelementptr (%_Z16DefinitionSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  %call33 = call i1 @_ZN5scopeB7scalylsB4v0_210definitionEPN4scaly6memory4PageER13StringBuilder6String16DefinitionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp32, i64 %4)
+  %call33 = call i1 @_ZN5scopeB7scalylsB4v0_210definitionER13StringBuilder6String16DefinitionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp32, i64 %3)
   ret i1 %call33
 }
 
@@ -168653,11 +168653,11 @@ if.end15:                                         ; preds = %if.then14, %if.then
   br label %if.end10
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_26actionEPN4scaly6memory4PageER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_26actionER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp4 = alloca %_Z11BlockSyntaxB6scalycB4v0_2, align 8
   %arg.tmp = alloca %_Z15OperationSyntaxB6scalycB4v0_2, align 8
-  %tag.ptr = getelementptr inbounds nuw %_Z12ActionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds nuw %_Z12ActionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 0, label %choose.when
@@ -168671,27 +168671,27 @@ choose.else:                                      ; preds = %entry
   br label %choose.end
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z12ActionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z12ActionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val = load %_Z15OperationSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z15OperationSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5scopeB7scalylsB4v0_29operationEPN4scaly6memory4PageER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_29operationER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp, i64 %3)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z12ActionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z12ActionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z11BlockSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr2", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp4, ptr align 1 %"variant.c_data().ptr2", i64 ptrtoint (ptr getelementptr (%_Z11BlockSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5scopeB7scalylsB4v0_25blockEPN4scaly6memory4PageER13StringBuilder6String11BlockSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp4, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_25blockER13StringBuilder6String11BlockSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp4, i64 %3)
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_27routineEPN4scaly6memory4PageER13StringBuilder6String13RoutineSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_27routineER13StringBuilder6String13RoutineSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp = alloca %_Z12ActionSyntaxB6scalycB4v0_2, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z13RoutineSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 4
+  %field.inplace = getelementptr inbounds nuw %_Z13RoutineSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 4
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  call void @_ZN5scopeB7scalylsB4v0_210parametersER13StringBuilder6String6OptionIR18ParameterSetSyntaxB6scalycB4v0_2E(ptr %1, ptr %2, ptr %deref.recv)
-  %load.struct = load %_Z13RoutineSyntaxB6scalycB4v0_2, ptr %3, align 8
+  call void @_ZN5scopeB7scalylsB4v0_210parametersER13StringBuilder6String6OptionIR18ParameterSetSyntaxB6scalycB4v0_2E(ptr %0, ptr %1, ptr %deref.recv)
+  %load.struct = load %_Z13RoutineSyntaxB6scalycB4v0_2, ptr %2, align 8
   %implementation = extractvalue %_Z13RoutineSyntaxB6scalycB4v0_2 %load.struct, 11
   %choose.union = alloca %_Z20ImplementationSyntaxB6scalycB4v0_2, align 8
   store %_Z20ImplementationSyntaxB6scalycB4v0_2 %implementation, ptr %choose.union, align 1
@@ -168711,7 +168711,7 @@ choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z20ImplementationSyntaxB6scalycB4v0_2, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z12ActionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5scopeB7scalylsB4v0_26actionEPN4scaly6memory4PageER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_26actionER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp, i64 %3)
   br label %choose.end
 }
 
@@ -169068,12 +169068,12 @@ choose.when29:                                    ; preds = %entry
   ret i64 %start32
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_215statement_innerEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_215statement_innerER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp9 = alloca %_Z16LetBindingSyntaxB6scalycB4v0_2, align 8
   %arg.tmp4 = alloca %_Z16LetBindingSyntaxB6scalycB4v0_2, align 8
   %arg.tmp = alloca %_Z15OperationSyntaxB6scalycB4v0_2, align 8
-  %tag.ptr = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
@@ -169092,55 +169092,55 @@ choose.else:                                      ; preds = %entry
   br label %choose.end
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val = load %_Z15OperationSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z15OperationSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5scopeB7scalylsB4v0_29operationEPN4scaly6memory4PageER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_29operationER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp, i64 %3)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z9LetSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr2", align 8
   %binding = extractvalue %_Z9LetSyntaxB6scalycB4v0_2 %variant.val3, 2
   store %_Z16LetBindingSyntaxB6scalycB4v0_2 %binding, ptr %arg.tmp4, align 1
-  call void @_ZN5scopeB7scalylsB4v0_216binding_operandsEPN4scaly6memory4PageER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp4, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_216binding_operandsER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp4, i64 %3)
   br label %choose.end
 
 choose.when5:                                     ; preds = %entry
-  %"variant.c_data().ptr6" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr6" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val7 = load %_Z9VarSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr6", align 8
   %binding8 = extractvalue %_Z9VarSyntaxB6scalycB4v0_2 %variant.val7, 2
   store %_Z16LetBindingSyntaxB6scalycB4v0_2 %binding8, ptr %arg.tmp9, align 1
-  call void @_ZN5scopeB7scalylsB4v0_216binding_operandsEPN4scaly6memory4PageER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp9, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_216binding_operandsER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp9, i64 %3)
   br label %choose.end
 
 choose.when10:                                    ; preds = %entry
-  %"variant.c_data().ptr11" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr11" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val12 = load %_Z13MutableSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr11", align 8
   %binding13 = extractvalue %_Z13MutableSyntaxB6scalycB4v0_2 %variant.val12, 2
   %operation = extractvalue %_Z13BindingSyntaxB6scalycB4v0_2 %binding13, 4
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %operation, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %operation, i64 %3)
   br label %choose.end
 
 choose.when14:                                    ; preds = %entry
-  %"variant.c_data().ptr15" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr15" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val16 = load %_Z12ReturnSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr15", align 8
   %result = extractvalue %_Z12ReturnSyntaxB6scalycB4v0_2 %variant.val16, 2
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %result, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %result, i64 %3)
   br label %choose.end
 
 choose.when17:                                    ; preds = %entry
-  %"variant.c_data().ptr18" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr18" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val19 = load %_Z11ThrowSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr18", align 8
   %result20 = extractvalue %_Z11ThrowSyntaxB6scalycB4v0_2 %variant.val19, 2
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %result20, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %result20, i64 %3)
   br label %choose.end
 
 choose.when21:                                    ; preds = %entry
-  %"variant.c_data().ptr22" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr22" = getelementptr inbounds nuw %_Z15StatementSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val23 = load %_Z11BreakSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr22", align 8
   %result24 = extractvalue %_Z11BreakSyntaxB6scalycB4v0_2 %variant.val23, 3
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %result24, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %result24, i64 %3)
   br label %choose.end
 }
 
@@ -169301,33 +169301,33 @@ lor.end11:                                        ; preds = %lor.rhs10, %lor.rhs
   br label %lor.end6
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_29operationEPN4scaly6memory4PageER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_29operationER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %deref.tmp = alloca %_Z13BecomesSyntaxB6scalycB4v0_2, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z15OperationSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 2
+  %field.inplace = getelementptr inbounds nuw %_Z15OperationSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 2
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %deref.recv, i64 %4)
-  %load.struct = load %_Z15OperationSyntaxB6scalycB4v0_2, ptr %3, align 8
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %deref.recv, i64 %3)
+  %load.struct = load %_Z15OperationSyntaxB6scalycB4v0_2, ptr %2, align 8
   %becomes = extractvalue %_Z15OperationSyntaxB6scalycB4v0_2 %load.struct, 3
   %ne = icmp ne ptr %becomes, null
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %load.struct1 = load %_Z15OperationSyntaxB6scalycB4v0_2, ptr %3, align 8
+  %load.struct1 = load %_Z15OperationSyntaxB6scalycB4v0_2, ptr %2, align 8
   %becomes2 = extractvalue %_Z15OperationSyntaxB6scalycB4v0_2 %load.struct1, 3
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %becomes2, i64 ptrtoint (ptr getelementptr (%_Z13BecomesSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z13BecomesSyntaxB6scalycB4v0_2, ptr %deref.tmp, align 8
   %source = extractvalue %_Z13BecomesSyntaxB6scalycB4v0_2 %grp.deref.val, 2
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %source, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %source, i64 %3)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_216binding_operandsEPN4scaly6memory4PageER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_216binding_operandsER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
-  %tag.ptr = getelementptr inbounds nuw %_Z16LetBindingSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds nuw %_Z16LetBindingSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 0, label %choose.when
@@ -169341,21 +169341,21 @@ choose.else:                                      ; preds = %entry
   br label %choose.end
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z16LetBindingSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z16LetBindingSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val = load %_Z13BindingSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 8
   %operation = extractvalue %_Z13BindingSyntaxB6scalycB4v0_2 %variant.val, 4
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %operation, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %operation, i64 %3)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z16LetBindingSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z16LetBindingSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z19DecompositionSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr2", align 8
   %operation4 = extractvalue %_Z19DecompositionSyntaxB6scalycB4v0_2 %variant.val3, 3
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %operation4, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %operation4, i64 %3)
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp = alloca %_Z16ExpressionSyntaxB6scalycB4v0_2, align 8
   %deref.tmp12 = alloca %_Z13OperandSyntaxB6scalycB4v0_2, align 8
@@ -169363,14 +169363,14 @@ entry:
   %deref.tmp5 = alloca %_Z13OperandSyntaxB6scalycB4v0_2, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorI13OperandSyntaxB6scalycB4v0_2E, align 8
-  %eq = icmp eq ptr %3, null
+  %eq = icmp eq ptr %2, null
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %3, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13OperandSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %2, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13OperandSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z6VectorI13OperandSyntaxB6scalycB4v0_2E, ptr %deref.tmp, align 8
   store i64 0, ptr %i, align 1
   br label %while.cond
@@ -169398,7 +169398,7 @@ if.then3:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp7, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z13OperandSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val8 = load %_Z13OperandSyntaxB6scalycB4v0_2, ptr %deref.tmp7, align 8
   %end = extractvalue %_Z13OperandSyntaxB6scalycB4v0_2 %grp.deref.val8, 1
-  %call9 = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %2, i64 %start, i64 %end, i64 %4)
+  %call9 = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %1, i64 %start, i64 %end, i64 %3)
   br i1 %call9, label %if.then10, label %if.end11
 
 if.end4:                                          ; preds = %if.end11, %while.body
@@ -169412,31 +169412,31 @@ if.then10:                                        ; preds = %if.then3
   %grp.deref.val13 = load %_Z13OperandSyntaxB6scalycB4v0_2, ptr %deref.tmp12, align 8
   %expression = extractvalue %_Z13OperandSyntaxB6scalycB4v0_2 %grp.deref.val13, 2
   store %_Z16ExpressionSyntaxB6scalycB4v0_2 %expression, ptr %arg.tmp, align 1
-  call void @_ZN5scopeB7scalylsB4v0_210expressionEPN4scaly6memory4PageER13StringBuilder6String16ExpressionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_210expressionER13StringBuilder6String16ExpressionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp, i64 %3)
   br label %if.end11
 
 if.end11:                                         ; preds = %if.then10, %if.then3
   br label %if.end4
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_23armEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_23armER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
-  %call = call i64 @_ZN5scopeB7scalylsB4v0_215statement_startE15StatementSyntaxB6scalycB4v0_2(ptr %3)
-  %call1 = call i64 @_ZN5scopeB7scalylsB4v0_213statement_endE15StatementSyntaxB6scalycB4v0_2(ptr %3)
-  %call2 = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %2, i64 %call, i64 %call1, i64 %4)
+  %call = call i64 @_ZN5scopeB7scalylsB4v0_215statement_startE15StatementSyntaxB6scalycB4v0_2(ptr %2)
+  %call1 = call i64 @_ZN5scopeB7scalylsB4v0_213statement_endE15StatementSyntaxB6scalycB4v0_2(ptr %2)
+  %call2 = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %1, i64 %call, i64 %call1, i64 %3)
   br i1 %call2, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_ZN5scopeB7scalylsB4v0_215statement_innerEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_215statement_innerER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_25blockEPN4scaly6memory4PageER13StringBuilder6String11BlockSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_25blockER13StringBuilder6String11BlockSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
-  %load.struct = load %_Z11BlockSyntaxB6scalycB4v0_2, ptr %3, align 8
+  %load.struct = load %_Z11BlockSyntaxB6scalycB4v0_2, ptr %2, align 8
   %statements = extractvalue %_Z11BlockSyntaxB6scalycB4v0_2 %load.struct, 3
   %eq = icmp eq ptr %statements, null
   br i1 %eq, label %if.then, label %if.end
@@ -169445,24 +169445,24 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %field.inplace = getelementptr inbounds nuw %_Z11BlockSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %field.inplace = getelementptr inbounds nuw %_Z11BlockSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  %field.inplace1 = getelementptr inbounds nuw %_Z11BlockSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %field.inplace1 = getelementptr inbounds nuw %_Z11BlockSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %field.val2 = load i64, ptr %field.inplace1, align 8
-  %call = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %2, i64 %field.val, i64 %field.val2, i64 %4)
+  %call = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %1, i64 %field.val, i64 %field.val2, i64 %3)
   br i1 %call, label %if.then3, label %if.end4
 
 if.then3:                                         ; preds = %if.end
-  %load.struct5 = load %_Z11BlockSyntaxB6scalycB4v0_2, ptr %3, align 8
+  %load.struct5 = load %_Z11BlockSyntaxB6scalycB4v0_2, ptr %2, align 8
   %statements6 = extractvalue %_Z11BlockSyntaxB6scalycB4v0_2 %load.struct5, 3
-  call void @_ZN5scopeB7scalylsB4v0_210statementsEPN4scaly6memory4PageER13StringBuilder6String6VectorI15StatementSyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %2, ptr %statements6, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_210statementsER13StringBuilder6String6VectorI15StatementSyntaxB6scalycB4v0_2Em(ptr %0, ptr %1, ptr %statements6, i64 %3)
   br label %if.end4
 
 if.end4:                                          ; preds = %if.then3, %if.end
   ret void
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_210expressionEPN4scaly6memory4PageER13StringBuilder6String16ExpressionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_210expressionER13StringBuilder6String16ExpressionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp134 = alloca %_Z12ActionSyntaxB6scalycB4v0_2, align 8
   %arg.tmp129 = alloca %_Z12ActionSyntaxB6scalycB4v0_2, align 8
@@ -169493,7 +169493,7 @@ entry:
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
-  store ptr %0, ptr %frame.parent, align 8
+  store ptr null, ptr %frame.parent, align 8
   %sret.result = alloca { ptr }, align 8
   %detail = alloca { ptr }, align 8
   %arg.tmp11 = alloca %_Z12ActionSyntaxB6scalycB4v0_2, align 8
@@ -169501,7 +169501,7 @@ entry:
   %deref.tmp = alloca %_Z10ElseSyntaxB6scalycB4v0_2, align 8
   %arg.tmp4 = alloca %_Z15StatementSyntaxB6scalycB4v0_2, align 8
   %arg.tmp = alloca %_Z11BlockSyntaxB6scalycB4v0_2, align 8
-  %tag.ptr = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 4, label %choose.when
@@ -169524,21 +169524,21 @@ choose.else:                                      ; preds = %entry
   br label %choose.end
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val = load %_Z11BlockSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z11BlockSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5scopeB7scalylsB4v0_25blockEPN4scaly6memory4PageER13StringBuilder6String11BlockSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_25blockER13StringBuilder6String11BlockSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp, i64 %3)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val3 = load %_Z8IfSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr2", align 8
   %condition = extractvalue %_Z8IfSyntaxB6scalycB4v0_2 %variant.val3, 2
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %condition, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %condition, i64 %3)
   %consequent = extractvalue %_Z8IfSyntaxB6scalycB4v0_2 %variant.val3, 3
   %statement = extractvalue %_Z10ThenSyntaxB6scalycB4v0_2 %consequent, 2
   store %_Z15StatementSyntaxB6scalycB4v0_2 %statement, ptr %arg.tmp4, align 1
-  call void @_ZN5scopeB7scalylsB4v0_23armEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp4, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_23armER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp4, i64 %3)
   %alternative = extractvalue %_Z8IfSyntaxB6scalycB4v0_2 %variant.val3, 4
   %ne = icmp ne ptr %alternative, null
   br i1 %ne, label %if.then, label %if.end
@@ -169549,20 +169549,20 @@ if.then:                                          ; preds = %choose.when1
   %grp.deref.val = load %_Z10ElseSyntaxB6scalycB4v0_2, ptr %deref.tmp, align 8
   %alternative6 = extractvalue %_Z10ElseSyntaxB6scalycB4v0_2 %grp.deref.val, 2
   store %_Z15StatementSyntaxB6scalycB4v0_2 %alternative6, ptr %arg.tmp7, align 1
-  call void @_ZN5scopeB7scalylsB4v0_23armEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp7, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_23armER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp7, i64 %3)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %choose.when1
   br label %choose.end
 
 choose.when8:                                     ; preds = %entry
-  %"variant.c_data().ptr9" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr9" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val10 = load %_Z9ForSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr9", align 8
   %operation = extractvalue %_Z9ForSyntaxB6scalycB4v0_2 %variant.val10, 4
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %operation, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %operation, i64 %3)
   %action = extractvalue %_Z9ForSyntaxB6scalycB4v0_2 %variant.val10, 6
   store %_Z12ActionSyntaxB6scalycB4v0_2 %action, ptr %arg.tmp11, align 1
-  %call = call i1 @_ZN5scopeB7scalylsB4v0_29in_actionE6String12ActionSyntaxB6scalycB4v0_2m(ptr %2, ptr %arg.tmp11, i64 %4)
+  %call = call i1 @_ZN5scopeB7scalylsB4v0_29in_actionE6String12ActionSyntaxB6scalycB4v0_2m(ptr %1, ptr %arg.tmp11, i64 %3)
   br i1 %call, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %choose.when8
@@ -169585,7 +169585,7 @@ if.then15:                                        ; preds = %if.then12
   %grp.deref.val22 = load %_Z20TypeAnnotationSyntaxB6scalycB4v0_2, ptr %deref.tmp21, align 8
   %type23 = extractvalue %_Z20TypeAnnotationSyntaxB6scalycB4v0_2 %grp.deref.val22, 2
   %end = extractvalue %_Z10TypeSyntaxB6scalycB4v0_2 %type23, 1
-  call void @_ZN5scopeB7scalylsB4v0_24textEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, i64 %start, i64 %end)
+  call void @_ZN5scopeB7scalylsB4v0_24textEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %1, i64 %start, i64 %end)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %detail, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   br label %if.end16
@@ -169593,14 +169593,14 @@ if.then15:                                        ; preds = %if.then12
 if.end16:                                         ; preds = %if.then15, %if.then12
   %variable = extractvalue %_Z9ForSyntaxB6scalycB4v0_2 %variant.val10, 2
   store { ptr } %variable, ptr %arg.tmp24, align 1
-  call void @_ZN5scopeB7scalylsB4v0_23addER13StringBuilder6String6String3i64(ptr %1, ptr %arg.tmp24, ptr %detail, i64 6)
+  call void @_ZN5scopeB7scalylsB4v0_23addER13StringBuilder6String6String3i64(ptr %0, ptr %arg.tmp24, ptr %detail, i64 6)
   %action25 = extractvalue %_Z9ForSyntaxB6scalycB4v0_2 %variant.val10, 6
   store %_Z12ActionSyntaxB6scalycB4v0_2 %action25, ptr %arg.tmp26, align 1
-  call void @_ZN5scopeB7scalylsB4v0_26actionEPN4scaly6memory4PageER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp26, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_26actionER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp26, i64 %3)
   br label %if.end13
 
 choose.when27:                                    ; preds = %entry
-  %"variant.c_data().ptr28" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr28" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val29 = load %_Z11WhileSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr28", align 8
   %condition30 = extractvalue %_Z11WhileSyntaxB6scalycB4v0_2 %variant.val29, 2
   store %_Z15ConditionSyntaxB6scalycB4v0_2 %condition30, ptr %choose.union, align 1
@@ -169614,7 +169614,7 @@ choose.when27:                                    ; preds = %entry
 choose.end33:                                     ; preds = %choose.else34, %if.end46, %choose.when35
   %action50 = extractvalue %_Z11WhileSyntaxB6scalycB4v0_2 %variant.val29, 4
   store %_Z12ActionSyntaxB6scalycB4v0_2 %action50, ptr %arg.tmp51, align 1
-  call void @_ZN5scopeB7scalylsB4v0_26actionEPN4scaly6memory4PageER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp51, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_26actionER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp51, i64 %3)
   br label %choose.end
 
 choose.else34:                                    ; preds = %choose.when27
@@ -169624,7 +169624,7 @@ choose.when35:                                    ; preds = %choose.when27
   %"variant.c_data().ptr36" = getelementptr inbounds nuw %_Z15ConditionSyntaxB6scalycB4v0_2, ptr %choose.union, i32 0, i32 1
   %variant.val37 = load %_Z15OperationSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr36", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp38, ptr align 1 %"variant.c_data().ptr36", i64 ptrtoint (ptr getelementptr (%_Z15OperationSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5scopeB7scalylsB4v0_29operationEPN4scaly6memory4PageER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp38, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_29operationER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp38, i64 %3)
   br label %choose.end33
 
 choose.when39:                                    ; preds = %choose.when27
@@ -169632,31 +169632,31 @@ choose.when39:                                    ; preds = %choose.when27
   %variant.val41 = load %_Z9LetSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr40", align 8
   %action42 = extractvalue %_Z11WhileSyntaxB6scalycB4v0_2 %variant.val29, 4
   store %_Z12ActionSyntaxB6scalycB4v0_2 %action42, ptr %arg.tmp43, align 1
-  %call44 = call i1 @_ZN5scopeB7scalylsB4v0_29in_actionE6String12ActionSyntaxB6scalycB4v0_2m(ptr %2, ptr %arg.tmp43, i64 %4)
+  %call44 = call i1 @_ZN5scopeB7scalylsB4v0_29in_actionE6String12ActionSyntaxB6scalycB4v0_2m(ptr %1, ptr %arg.tmp43, i64 %3)
   br i1 %call44, label %if.then45, label %if.else
 
 if.then45:                                        ; preds = %choose.when39
   %binding = extractvalue %_Z9LetSyntaxB6scalycB4v0_2 %variant.val41, 2
   store %_Z16LetBindingSyntaxB6scalycB4v0_2 %binding, ptr %arg.tmp47, align 1
-  call void @_ZN5scopeB7scalylsB4v0_213binding_namesER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2(ptr %1, ptr %2, ptr %arg.tmp47)
+  call void @_ZN5scopeB7scalylsB4v0_213binding_namesER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2(ptr %0, ptr %1, ptr %arg.tmp47)
   br label %if.end46
 
 if.else:                                          ; preds = %choose.when39
   %binding48 = extractvalue %_Z9LetSyntaxB6scalycB4v0_2 %variant.val41, 2
   store %_Z16LetBindingSyntaxB6scalycB4v0_2 %binding48, ptr %arg.tmp49, align 1
-  call void @_ZN5scopeB7scalylsB4v0_216binding_operandsEPN4scaly6memory4PageER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp49, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_216binding_operandsER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp49, i64 %3)
   br label %if.end46
 
 if.end46:                                         ; preds = %if.else, %if.then45
   br label %choose.end33
 
 choose.when52:                                    ; preds = %entry
-  %"variant.c_data().ptr53" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr53" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val54 = load %_Z12ChooseSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr53", align 8
   %condition55 = extractvalue %_Z12ChooseSyntaxB6scalycB4v0_2 %variant.val54, 2
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %condition55, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %condition55, i64 %3)
   %cases = extractvalue %_Z12ChooseSyntaxB6scalycB4v0_2 %variant.val54, 3
-  call void @_ZN5scopeB7scalylsB4v0_25casesEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI10WhenSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %cases, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_25casesER13StringBuilder6String6OptionIR6VectorI10WhenSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %cases, i64 %3)
   %alternative56 = extractvalue %_Z12ChooseSyntaxB6scalycB4v0_2 %variant.val54, 4
   %ne57 = icmp ne ptr %alternative56, null
   br i1 %ne57, label %if.then58, label %if.end59
@@ -169667,14 +169667,14 @@ if.then58:                                        ; preds = %choose.when52
   %grp.deref.val62 = load %_Z10ElseSyntaxB6scalycB4v0_2, ptr %deref.tmp61, align 8
   %alternative63 = extractvalue %_Z10ElseSyntaxB6scalycB4v0_2 %grp.deref.val62, 2
   store %_Z15StatementSyntaxB6scalycB4v0_2 %alternative63, ptr %arg.tmp64, align 1
-  call void @_ZN5scopeB7scalylsB4v0_23armEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp64, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_23armER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp64, i64 %3)
   br label %if.end59
 
 if.end59:                                         ; preds = %if.then58, %choose.when52
   br label %choose.end
 
 choose.when65:                                    ; preds = %entry
-  %"variant.c_data().ptr66" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr66" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val67 = load %_Z9TrySyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr66", align 8
   %condition68 = extractvalue %_Z9TrySyntaxB6scalycB4v0_2 %variant.val67, 3
   store %_Z15ConditionSyntaxB6scalycB4v0_2 %condition68, ptr %choose.union69, align 1
@@ -169687,7 +169687,7 @@ choose.when65:                                    ; preds = %entry
 
 choose.end72:                                     ; preds = %choose.else73, %choose.when78, %choose.when74
   %cases83 = extractvalue %_Z9TrySyntaxB6scalycB4v0_2 %variant.val67, 4
-  call void @_ZN5scopeB7scalylsB4v0_25casesEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI10WhenSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %cases83, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_25casesER13StringBuilder6String6OptionIR6VectorI10WhenSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %cases83, i64 %3)
   %dropper = extractvalue %_Z9TrySyntaxB6scalycB4v0_2 %variant.val67, 5
   %ne84 = icmp ne ptr %dropper, null
   br i1 %ne84, label %if.then85, label %if.end86
@@ -169699,7 +169699,7 @@ choose.when74:                                    ; preds = %choose.when65
   %"variant.c_data().ptr75" = getelementptr inbounds nuw %_Z15ConditionSyntaxB6scalycB4v0_2, ptr %choose.union69, i32 0, i32 1
   %variant.val76 = load %_Z15OperationSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr75", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp77, ptr align 1 %"variant.c_data().ptr75", i64 ptrtoint (ptr getelementptr (%_Z15OperationSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5scopeB7scalylsB4v0_29operationEPN4scaly6memory4PageER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp77, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_29operationER13StringBuilder6String15OperationSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp77, i64 %3)
   br label %choose.end72
 
 choose.when78:                                    ; preds = %choose.when65
@@ -169707,7 +169707,7 @@ choose.when78:                                    ; preds = %choose.when65
   %variant.val80 = load %_Z9LetSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr79", align 8
   %binding81 = extractvalue %_Z9LetSyntaxB6scalycB4v0_2 %variant.val80, 2
   store %_Z16LetBindingSyntaxB6scalycB4v0_2 %binding81, ptr %arg.tmp82, align 1
-  call void @_ZN5scopeB7scalylsB4v0_216binding_operandsEPN4scaly6memory4PageER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp82, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_216binding_operandsER13StringBuilder6String16LetBindingSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp82, i64 %3)
   br label %choose.end72
 
 if.then85:                                        ; preds = %choose.end72
@@ -169716,17 +169716,17 @@ if.then85:                                        ; preds = %choose.end72
   %grp.deref.val89 = load %_Z10ElseSyntaxB6scalycB4v0_2, ptr %deref.tmp88, align 8
   %alternative90 = extractvalue %_Z10ElseSyntaxB6scalycB4v0_2 %grp.deref.val89, 2
   store %_Z15StatementSyntaxB6scalycB4v0_2 %alternative90, ptr %arg.tmp91, align 1
-  call void @_ZN5scopeB7scalylsB4v0_23armEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp91, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_23armER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp91, i64 %3)
   br label %if.end86
 
 if.end86:                                         ; preds = %if.then85, %choose.end72
   br label %choose.end
 
 choose.when92:                                    ; preds = %entry
-  %"variant.c_data().ptr93" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr93" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val94 = load %_Z11MatchSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr93", align 8
   %scrutinee = extractvalue %_Z11MatchSyntaxB6scalycB4v0_2 %variant.val94, 2
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %scrutinee, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %scrutinee, i64 %3)
   %branches = extractvalue %_Z11MatchSyntaxB6scalycB4v0_2 %variant.val94, 3
   %ne95 = icmp ne ptr %branches, null
   br i1 %ne95, label %if.then96, label %if.end97
@@ -169764,7 +169764,7 @@ if.then105:                                       ; preds = %while.body
   %grp.deref.val108 = load %_Z12BranchSyntaxB6scalycB4v0_2, ptr %deref.tmp107, align 8
   %consequent109 = extractvalue %_Z12BranchSyntaxB6scalycB4v0_2 %grp.deref.val108, 3
   store %_Z15StatementSyntaxB6scalycB4v0_2 %consequent109, ptr %arg.tmp110, align 1
-  call void @_ZN5scopeB7scalylsB4v0_23armEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp110, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_23armER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp110, i64 %3)
   br label %if.end106
 
 if.end106:                                        ; preds = %if.then105, %while.body
@@ -169779,44 +169779,44 @@ if.then114:                                       ; preds = %if.end97
   %grp.deref.val118 = load %_Z10ElseSyntaxB6scalycB4v0_2, ptr %deref.tmp117, align 8
   %alternative119 = extractvalue %_Z10ElseSyntaxB6scalycB4v0_2 %grp.deref.val118, 2
   store %_Z15StatementSyntaxB6scalycB4v0_2 %alternative119, ptr %arg.tmp120, align 1
-  call void @_ZN5scopeB7scalylsB4v0_23armEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp120, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_23armER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp120, i64 %3)
   br label %if.end115
 
 if.end115:                                        ; preds = %if.then114, %if.end97
   br label %choose.end
 
 choose.when121:                                   ; preds = %entry
-  %"variant.c_data().ptr122" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr122" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val123 = load %_Z12LambdaSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr122", align 8
   %block = extractvalue %_Z12LambdaSyntaxB6scalycB4v0_2 %variant.val123, 3
   store %_Z12ActionSyntaxB6scalycB4v0_2 %block, ptr %arg.tmp124, align 1
-  %call125 = call i1 @_ZN5scopeB7scalylsB4v0_29in_actionE6String12ActionSyntaxB6scalycB4v0_2m(ptr %2, ptr %arg.tmp124, i64 %4)
+  %call125 = call i1 @_ZN5scopeB7scalylsB4v0_29in_actionE6String12ActionSyntaxB6scalycB4v0_2m(ptr %1, ptr %arg.tmp124, i64 %3)
   br i1 %call125, label %if.then126, label %if.end127
 
 if.then126:                                       ; preds = %choose.when121
   %input = extractvalue %_Z12LambdaSyntaxB6scalycB4v0_2 %variant.val123, 2
-  call void @_ZN5scopeB7scalylsB4v0_213lambda_inputsER13StringBuilder6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EE(ptr %1, ptr %input)
+  call void @_ZN5scopeB7scalylsB4v0_213lambda_inputsER13StringBuilder6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EE(ptr %0, ptr %input)
   %block128 = extractvalue %_Z12LambdaSyntaxB6scalycB4v0_2 %variant.val123, 3
   store %_Z12ActionSyntaxB6scalycB4v0_2 %block128, ptr %arg.tmp129, align 1
-  call void @_ZN5scopeB7scalylsB4v0_26actionEPN4scaly6memory4PageER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp129, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_26actionER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp129, i64 %3)
   br label %if.end127
 
 if.end127:                                        ; preds = %if.then126, %choose.when121
   br label %choose.end
 
 choose.when130:                                   ; preds = %entry
-  %"variant.c_data().ptr131" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr131" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val132 = load %_Z12RepeatSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr131", align 8
   %action133 = extractvalue %_Z12RepeatSyntaxB6scalycB4v0_2 %variant.val132, 3
   store %_Z12ActionSyntaxB6scalycB4v0_2 %action133, ptr %arg.tmp134, align 1
-  call void @_ZN5scopeB7scalylsB4v0_26actionEPN4scaly6memory4PageER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp134, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_26actionER13StringBuilder6String12ActionSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp134, i64 %3)
   br label %choose.end
 
 choose.when135:                                   ; preds = %entry
-  %"variant.c_data().ptr136" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %3, i32 0, i32 1
+  %"variant.c_data().ptr136" = getelementptr inbounds nuw %_Z16ExpressionSyntaxB6scalycB4v0_2, ptr %2, i32 0, i32 1
   %variant.val137 = load %_Z12ObjectSyntaxB6scalycB4v0_2, ptr %"variant.c_data().ptr136", align 8
   %components = extractvalue %_Z12ObjectSyntaxB6scalycB4v0_2 %variant.val137, 2
-  call void @_ZN5scopeB7scalylsB4v0_210componentsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI15ComponentSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %components, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_210componentsER13StringBuilder6String6OptionIR6VectorI15ComponentSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %components, i64 %3)
   br label %choose.end
 }
 
@@ -169828,19 +169828,19 @@ entry:
   ret i1 %le
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_25casesEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI10WhenSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_25casesER13StringBuilder6String6OptionIR6VectorI10WhenSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %arg.tmp13 = alloca %_Z15StatementSyntaxB6scalycB4v0_2, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
-  store ptr %0, ptr %frame.parent, align 8
+  store ptr null, ptr %frame.parent, align 8
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %deref.tmp5 = alloca %_Z10WhenSyntaxB6scalycB4v0_2, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorI10WhenSyntaxB6scalycB4v0_2E, align 8
-  %eq = icmp eq ptr %3, null
+  %eq = icmp eq ptr %2, null
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -169848,7 +169848,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %3, i64 ptrtoint (ptr getelementptr (%_Z6VectorI10WhenSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %2, i64 ptrtoint (ptr getelementptr (%_Z6VectorI10WhenSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z6VectorI10WhenSyntaxB6scalycB4v0_2E, ptr %deref.tmp, align 8
   store i64 0, ptr %i, align 1
   br label %while.cond
@@ -169875,7 +169875,7 @@ if.then3:                                         ; preds = %while.body
   %grp.deref.val6 = load %_Z10WhenSyntaxB6scalycB4v0_2, ptr %deref.tmp5, align 8
   %start = extractvalue %_Z10WhenSyntaxB6scalycB4v0_2 %grp.deref.val6, 0
   %end = extractvalue %_Z10WhenSyntaxB6scalycB4v0_2 %grp.deref.val6, 1
-  %call7 = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %2, i64 %start, i64 %end, i64 %4)
+  %call7 = call i1 @_ZN5scopeB7scalylsB4v0_25holdsE6Stringmmm(ptr %1, i64 %start, i64 %end, i64 %3)
   br i1 %call7, label %if.then8, label %if.end9
 
 if.end4:                                          ; preds = %if.end9, %while.body
@@ -169891,11 +169891,11 @@ if.then8:                                         ; preds = %if.then3
   %start10 = extractvalue %_Z10NameSyntaxB6scalycB4v0_2 %variant, 0
   %variant11 = extractvalue %_Z10WhenSyntaxB6scalycB4v0_2 %grp.deref.val6, 3
   %end12 = extractvalue %_Z10NameSyntaxB6scalycB4v0_2 %variant11, 1
-  call void @_ZN5scopeB7scalylsB4v0_24textEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, i64 %start10, i64 %end12)
-  call void @_ZN5scopeB7scalylsB4v0_23addER13StringBuilder6String6String3i64(ptr %1, ptr %arg.tmp, ptr %sret.result, i64 6)
+  call void @_ZN5scopeB7scalylsB4v0_24textEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %1, i64 %start10, i64 %end12)
+  call void @_ZN5scopeB7scalylsB4v0_23addER13StringBuilder6String6String3i64(ptr %0, ptr %arg.tmp, ptr %sret.result, i64 6)
   %statement = extractvalue %_Z10WhenSyntaxB6scalycB4v0_2 %grp.deref.val6, 4
   store %_Z15StatementSyntaxB6scalycB4v0_2 %statement, ptr %arg.tmp13, align 1
-  call void @_ZN5scopeB7scalylsB4v0_23armEPN4scaly6memory4PageER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %2, ptr %arg.tmp13, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_23armER13StringBuilder6String15StatementSyntaxB6scalycB4v0_2m(ptr %0, ptr %1, ptr %arg.tmp13, i64 %3)
   br label %if.end9
 
 if.end9:                                          ; preds = %if.then8, %if.then3
@@ -169971,20 +169971,20 @@ choose.when:                                      ; preds = %if.then3
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN5scopeB7scalylsB4v0_210componentsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI15ComponentSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
+define linkonce_odr void @_ZN5scopeB7scalylsB4v0_210componentsER13StringBuilder6String6OptionIR6VectorI15ComponentSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, i64 %3) {
 entry:
   %deref.tmp11 = alloca %_Z11ValueSyntaxB6scalycB4v0_2, align 8
   %deref.tmp5 = alloca %_Z15ComponentSyntaxB6scalycB4v0_2, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorI15ComponentSyntaxB6scalycB4v0_2E, align 8
-  %eq = icmp eq ptr %3, null
+  %eq = icmp eq ptr %2, null
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %3, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15ComponentSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %2, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15ComponentSyntaxB6scalycB4v0_2E, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z6VectorI15ComponentSyntaxB6scalycB4v0_2E, ptr %deref.tmp, align 8
   store i64 0, ptr %i, align 1
   br label %while.cond
@@ -170009,7 +170009,7 @@ if.then3:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp5, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15ComponentSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val6 = load %_Z15ComponentSyntaxB6scalycB4v0_2, ptr %deref.tmp5, align 8
   %operands = extractvalue %_Z15ComponentSyntaxB6scalycB4v0_2 %grp.deref.val6, 2
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %operands, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %operands, i64 %3)
   %value = extractvalue %_Z15ComponentSyntaxB6scalycB4v0_2 %grp.deref.val6, 4
   %ne7 = icmp ne ptr %value, null
   br i1 %ne7, label %if.then8, label %if.end9
@@ -170025,7 +170025,7 @@ if.then8:                                         ; preds = %if.then3
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp11, ptr align 1 %value10, i64 ptrtoint (ptr getelementptr (%_Z11ValueSyntaxB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val12 = load %_Z11ValueSyntaxB6scalycB4v0_2, ptr %deref.tmp11, align 8
   %value13 = extractvalue %_Z11ValueSyntaxB6scalycB4v0_2 %grp.deref.val12, 2
-  call void @_ZN5scopeB7scalylsB4v0_28operandsEPN4scaly6memory4PageER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %2, ptr %value13, i64 %4)
+  call void @_ZN5scopeB7scalylsB4v0_28operandsER13StringBuilder6String6OptionIR6VectorI13OperandSyntaxB6scalycB4v0_2EEm(ptr %0, ptr %1, ptr %value13, i64 %3)
   br label %if.end9
 
 if.end9:                                          ; preds = %if.then8, %if.then3
@@ -184785,7 +184785,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   call void @_ZN7symbolsB7scalylsB4v0_218inlay_hints_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %4, ptr %5)
   %sret.result1 = alloca { ptr }, align 8
-  call void @_ZN10placehintsB7scalylsB4v0_28fragmentEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %4, ptr %3, ptr %5)
+  call void @_ZN10placehintsB7scalylsB4v0_28fragmentEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result1, ptr %frame, ptr %4, ptr %3, ptr %5)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result1)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %if.end
@@ -186695,7 +186695,7 @@ if.then7:                                         ; preds = %if.end
   br i1 %eq, label %if.then10, label %if.end11
 
 if.end8:                                          ; preds = %if.end11, %if.end
-  call void @_ZN8codelensB7scalylsB4v0_216planned_fragmentEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result14, ptr %1, ptr %sret.result, ptr %3)
+  call void @_ZN8codelensB7scalylsB4v0_216planned_fragmentEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result14, ptr %frame, ptr %sret.result, ptr %3)
   %call15 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result14)
   %gt16 = icmp ugt i64 %call15, 0
   br i1 %gt16, label %if.then17, label %if.end18
@@ -187003,7 +187003,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   store i1 true, ptr %first, align 1
-  call void @_ZN8tasklensB7scalylsB4v0_28fragmentEPN4scaly6memory4PageE4PlanB6scalycB4v0_2b6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i1 %3, ptr %4, ptr %5, ptr %6, ptr %7)
+  call void @_ZN8tasklensB7scalylsB4v0_28fragmentEPN4scaly6memory4PageE4PlanB6scalycB4v0_2b6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, i1 %3, ptr %4, ptr %5, ptr %6, ptr %7)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call, 0
   br i1 %gt, label %if.then, label %if.end
@@ -187015,7 +187015,7 @@ if.then:                                          ; preds = %frame.forced
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %frame.forced
-  call void @_ZN8instlensB7scalylsB4v0_28fragmentEPN4scaly6memory4PageE4PlanB6scalycB4v0_2b6String6String(ptr noalias sret({ ptr }) %sret.result2, ptr %1, ptr %2, i1 %3, ptr %6, ptr %7)
+  call void @_ZN8instlensB7scalylsB4v0_28fragmentEPN4scaly6memory4PageE4PlanB6scalycB4v0_2b6String6String(ptr noalias sret({ ptr }) %sret.result2, ptr %frame, ptr %2, i1 %3, ptr %6, ptr %7)
   %call3 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result2)
   %gt4 = icmp ugt i64 %call3, 0
   br i1 %gt4, label %if.then5, label %if.end6
@@ -187026,7 +187026,7 @@ if.then5:                                         ; preds = %if.end
   br i1 %eq, label %if.then8, label %if.end9
 
 if.end6:                                          ; preds = %if.end9, %if.end
-  call void @_ZN9storelensB7scalylsB4v0_28fragmentEPN4scaly6memory4PageE4PlanB6scalycB4v0_26String6String(ptr noalias sret({ ptr }) %sret.result12, ptr %1, ptr %2, ptr %6, ptr %7)
+  call void @_ZN9storelensB7scalylsB4v0_28fragmentEPN4scaly6memory4PageE4PlanB6scalycB4v0_26String6String(ptr noalias sret({ ptr }) %sret.result12, ptr %frame, ptr %2, ptr %6, ptr %7)
   %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result12)
   %gt14 = icmp ugt i64 %call13, 0
   br i1 %gt14, label %if.then15, label %if.end16
@@ -191709,7 +191709,7 @@ while.body:                                       ; preds = %while.cond
   %uri4 = load ptr, ptr %uri, align 8
   call void @_ZN8docstoreB7scalylsB4v0_23getEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %frame, ptr %uri4)
   %uri5 = load ptr, ptr %uri, align 8
-  call void @_ZN6serverB7scalylsB4v0_211publish_forEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %uri5, ptr %sret.result3)
+  call void @_ZN6serverB7scalylsB4v0_211publish_forE6String6String(ptr %uri5, ptr %sret.result3)
   %call6 = call i1 @_ZN6workerB7scalylsB4v0_215stdin_has_inputEv()
   br i1 %call6, label %if.then, label %if.end
 
@@ -191729,11 +191729,16 @@ if.end:                                           ; preds = %while.body
   br label %while.cond
 }
 
-define linkonce_odr void @_ZN6serverB7scalylsB4v0_211publish_forEPN4scaly6memory4PageE6String6String(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN6serverB7scalylsB4v0_211publish_forE6String6String(ptr %0, ptr %1) {
 entry:
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN6workerB7scalylsB4v0_27analyzeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %0, ptr %1, ptr %2)
+  call void @_ZN6workerB7scalylsB4v0_27analyzeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %0, ptr %1)
   call void @_ZN6serverB7scalylsB4v0_219write_notificationsE6String(ptr %sret.result)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
