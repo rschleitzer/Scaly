@@ -27,10 +27,75 @@ internal static class ScalyPrograms
     /// injected, leave it here when they are made: the language server
     /// provider with the first .scaly document, a command when it runs.
     /// </summary>
-    public static VisualStudioExtensibility? Extensibility { get; set; }
+    public static VisualStudioExtensibility? Extensibility
+    {
+        get => extensibility;
+        set
+        {
+            extensibility = value;
+            if (value is not null)
+            {
+                WatchSettings(value);
+            }
+        }
+    }
+
+    private static VisualStudioExtensibility? extensibility;
 
     /// <summary>Why the last setting read fell back to the default, or null.</summary>
     public static string? SettingsError { get; set; }
+
+    /// <summary>
+    /// When the tool or SCALY_HOME setting last changed (UTC); MinValue before
+    /// any change. The Test Explorer discovers a file again only where its
+    /// container's stamp is newer, and a setting changes no file: the test
+    /// containers take this stamp too.
+    /// </summary>
+    public static DateTime SettingsChangedAt { get; private set; } = DateTime.MinValue;
+
+    /// <summary>Raised when the tool or SCALY_HOME setting changed.</summary>
+    public static event EventHandler? SettingsChanged;
+
+    private static int watching;
+    private static string? settingsSeen;
+    private static IDisposable? settingsSubscription;
+
+    // Subscribes once to the Scaly settings. The first call of the handler
+    // brings the current values; a later one with other values for the tool
+    // or the home is a change.
+    private static void WatchSettings(VisualStudioExtensibility source)
+    {
+        if (Interlocked.Exchange(ref watching, 1) == 1)
+        {
+            return;
+        }
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                settingsSubscription = await source.Settings().SubscribeAsync(
+                    new[] { ScalySettings.Category },
+                    CancellationToken.None,
+                    values =>
+                    {
+                        var seen = values.ValueOrDefault(ScalySettings.ToolPath, "") + "\n" + values.ValueOrDefault(ScalySettings.Home, "");
+                        var before = Interlocked.Exchange(ref settingsSeen, seen);
+                        if (before is not null && before != seen)
+                        {
+                            SettingsChangedAt = DateTime.UtcNow;
+                            SettingsChanged?.Invoke(null, EventArgs.Empty);
+                        }
+                    });
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                // Without the subscription a changed setting reaches the Test
+                // Explorer with the next change of a file, as before.
+                SettingsError = $"the Scaly settings could not be watched ({e.GetType().Name}: {e.Message})";
+                Interlocked.Exchange(ref watching, 0);
+            }
+        });
+    }
 
     public static async Task<string?> FindAsync(Setting.String setting, string name, CancellationToken cancellationToken)
     {
