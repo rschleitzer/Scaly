@@ -251,7 +251,7 @@ internal static class ScalyTests
                 trace.AddRange(errors);
                 var message = string.Join("\n", trace.Where(l => l.Trim().Length > 0));
                 results[running] = (TestOutcome.Failed, message.Length > 0 ? message : "the test ended the run");
-                foreach (var t in tests.Where(t => !results.ContainsKey(t.FullyQualifiedName)))
+                foreach (var t in tests.Where(t => ResultOf(results, t.FullyQualifiedName) is null))
                 {
                     results[t.FullyQualifiedName] = (TestOutcome.Skipped, $"not run: {running} ended the run before it");
                 }
@@ -262,7 +262,7 @@ internal static class ScalyTests
         foreach (var t in tests)
         {
             var r = new TestResult(t) { Duration = duration, StartTime = start, EndTime = DateTimeOffset.Now };
-            if (results.TryGetValue(t.FullyQualifiedName, out var res))
+            if (ResultOf(results, t.FullyQualifiedName) is { } res)
             {
                 r.Outcome = res.outcome;
                 if (res.outcome != TestOutcome.Passed) r.ErrorMessage = res.detail.Length > 0 ? res.detail : "failed";
@@ -276,6 +276,21 @@ internal static class ScalyTests
             handle.RecordEnd(t, r.Outcome);
             handle.RecordResult(r);
         }
+    }
+
+    // The result of a test by its name, or -- where the name came from the
+    // source fallback, which sees no namespace (`test_deep`) -- by the one
+    // result the tool names with namespaces in front (`Inner.test_deep`,
+    // `Outer.Inner.test_deep`). Without it every test in a namespace was red
+    // with "ok" as its message whenever the fallback ran (2026-11-08).
+    private static (TestOutcome outcome, string detail)? ResultOf(Dictionary<string, (TestOutcome outcome, string detail)> results, string name)
+    {
+        if (results.TryGetValue(name, out var exact))
+        {
+            return exact;
+        }
+        var qualified = results.Where(kv => kv.Key.EndsWith("." + name, StringComparison.Ordinal)).ToList();
+        return qualified.Count == 1 ? qualified[0].Value : null;
     }
 }
 
