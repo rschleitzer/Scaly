@@ -23130,6 +23130,108 @@ define Planner
             }
         }
 
+        ; report_unknown_qualifier#: the QUALIFIER of a written annotation
+        ; must name something (2026-11-08). plan_type# shortens `Nope.Rec` to
+        ; `Rec` wherever a `Rec` is seen, so a qualifier that names nothing
+        ; -- a typo, a namespace that does not hold it -- was dropped without
+        ; a word. Judged at the annotation sites only, beside
+        ; report_unknown_type# and for the same reason: plan_type# itself
+        ; runs on every Type-shaped expression. A qualifier is known when it
+        ; is a concept, a namespace path or a tail of one (search_ns_path#),
+        ; a module path, or a `use` alias; generic arguments are judged where
+        ; they are planned as annotations of their own.
+        procedure report_unknown_qualifier(mutable this: Planner, mt: Type)
+        {
+            if mt.name.length < 2
+                return
+            ; a tuple type: `()` and its labels, no qualifier
+            if mt.name[0].starts_with("(")
+                return
+            var qsb StringBuilder()
+            var i: size_t 0
+            while i + 1 < mt.name.length
+            {
+                if i > 0
+                    qsb.append("." as char)
+                qsb.append(mt.name[i])
+                i := i + 1
+            }
+            let qualifier qsb.to_string()
+            let last mt.name[mt.name.length - 1]
+            if this.qualified_name_known(qualifier, "`qualifier`.`last`")
+                return
+            let msg "unknown qualifier `qualifier` of the type `qualifier`.`last`: no type of that name stands in a namespace, module or use alias so named"
+            this.add_diagnostic(mt.span, String^this(msg))
+        }
+
+        ; qualified_name_known#: whether the written `qualifier.Name` names a
+        ; concept -- its namespace path, from the scope being planned
+        ; outwards, or that path behind the MODULE it is declared in (a front
+        ; cut off must be a module path: `p.shapes.A.Rec`, `scaly.memory.Page`),
+        ; or the qualifier is a `use` alias. A namespace that does not hold the
+        ; name (`Ns.Rec` with `Rec` in `A`) is no qualifier of it.
+        procedure qualified_name_known(mutable this: Planner, qualifier: String, written: String) returns bool
+        {
+            if this.lookup_use_alias_namespace(qualifier).get_length() > 0
+                return true
+            if this.lookup_concept_any(written) <> null
+                return true
+            let segs Planner.split_dotted(written)
+            var k: size_t 0
+            while k < segs.length
+            {
+                var front StringBuilder()
+                var tail StringBuilder()
+                var j: size_t 0
+                while j < segs.length
+                {
+                    if j < k
+                    {
+                        if j > 0
+                            front.append("." as char)
+                        front.append(segs[j])
+                    }
+                    else
+                    {
+                        if j > k
+                            tail.append("." as char)
+                        tail.append(segs[j])
+                    }
+                    j := j + 1
+                }
+                if k = 0 or this.module_path_known(front.to_string())
+                {
+                    if this.ns_path_in_scope(tail.to_string())
+                        return true
+                }
+                k := k + 1
+            }
+            false
+        }
+
+        ; ns_path_in_scope#: whether `candidate` is a namespace path from the
+        ; scope being planned outwards (search_ns_path#'s walk, no tails)
+        procedure ns_path_in_scope(mutable this: Planner, candidate: String) returns bool
+        {
+            var scope String(planning_ns_path)
+            repeat
+            {
+                var full String(candidate)
+                if scope.get_length() > 0
+                    full := "`scope`.`candidate`"
+                if ns_path_index.table.lookup(full) >= 0
+                    return true
+                if scope.get_length() = 0
+                    break
+                let dot scope.last_index_of(46)
+                if dot < 0
+                    scope := String("")
+                else
+                    scope := scope.substring(0, dot as size_t)
+            }
+            false
+        }
+
         function unknown_type_name(this: Planner, t: PlannedType) returns String
         {
             let tname t.name
@@ -24195,6 +24297,7 @@ define Planner
                 ; `generics` pointer still points into the frame. Doing it the
                 ; other way SIGSEGVs in encode_type via mangle_function.
                 this.report_unknown_type((*planned_type))
+                this.report_unknown_qualifier(model_type)
             }
 
             ; a parameter's attributes (R1's `mutable`) reach the plan, where the
@@ -24358,7 +24461,7 @@ define Planner
         ; plan_as: `x as TargetType` — explicit cast. Resolves the
         ; target type; the value operand is stitched in at the use site
         ; (typically during collapse, like PlannedIs).
-        procedure plan_as(mutable this: Planner, mutable a: scaly.compiler.Model.As) returns PlannedAs
+        procedure plan_as(mutable this: Planner, mutable a: scalyc.compiler.Model.As) returns PlannedAs
         {
             let target this.plan_type(a.target_type)
             PlannedAs(a.span, target, null)
@@ -24371,7 +24474,7 @@ define Planner
         ; `page.allocate(sizeof int, alignof int)` passing align=0.
         procedure plan_alignof(
             mutable this: Planner,
-            mutable a: scaly.compiler.Model.AlignOf
+            mutable a: scalyc.compiler.Model.AlignOf
         ) returns PlannedAlignOf
         {
             let planned this.plan_type(a.type)
@@ -29168,7 +29271,7 @@ define Planner
                         Planner.make_size_type()
                     )
                 }
-                when ao: scaly.compiler.Model.AlignOf
+                when ao: scalyc.compiler.Model.AlignOf
                 {
                     let pa this.plan_alignof(ao)
                     PlannedOperand(
@@ -29183,7 +29286,7 @@ define Planner
                     let pi this.plan_is(isx)
                     PlannedOperand(op.span, PlannedExpression.Is pi, null, Planner.make_bool_type())
                 }
-                when asx: scaly.compiler.Model.As
+                when asx: scalyc.compiler.Model.As
                 {
                     let pa this.plan_as(asx)
                     PlannedOperand(
@@ -52893,6 +52996,7 @@ define Planner
                 prop_type := this.plan_type(t)
                 ; Annotation position — see report_unknown_type#.
                 this.report_unknown_type(prop_type)
+                this.report_unknown_qualifier(t)
             }
 
             var initializer_ref: ref[Vector[PlannedOperand]]? null
@@ -55315,6 +55419,7 @@ define Planner
                 ; Annotation position — read back through the ref, never via a
                 ; local; see the note in plan_item#.
                 this.report_unknown_type((*return_type))
+                this.report_unknown_qualifier(rt)
             }
 
             var throws_type: ref[PlannedType]? null
@@ -57292,6 +57397,7 @@ define Planner
             ; an `unknown assignment target` at the USE, which names the wrong
             ; place.
             this.report_unknown_type(planned_type)
+            this.report_unknown_qualifier(g.type)
             let planned_value this.plan_operands(g.value)
             var value_holder Vector[PlannedOperand](planned_value)
             ; Module-level mutable globals (stack_head etc.) keep their bare

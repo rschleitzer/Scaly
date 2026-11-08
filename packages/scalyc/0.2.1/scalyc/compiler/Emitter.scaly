@@ -10728,7 +10728,7 @@ define Emitter
 
         ; Resolve the page a closure record is allocated on from its lifetime:
         ; Local → this function's local region; Call (`#`) → caller's `rp`.
-        procedure resolve_closure_page(mutable this, life: scaly.compiler.Model.Lifetime) returns LLVMValueRef
+        procedure resolve_closure_page(mutable this, life: scalyc.compiler.Model.Lifetime) returns LLVMValueRef
         {
             var on_caller: bool false
             choose life
