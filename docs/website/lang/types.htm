@@ -2187,6 +2187,15 @@ p.sum()                      ; 42
     </code
 ></pre
 ><p
+>The type arguments are written where a generic type is
+      constructed: they are not inferred from the values, and
+      <code
+>Pair(20, 22)</code
+> is an error that says so. A tuple type
+      is an argument like any other: <code
+>Array[(n: int, s: String)]()</code
+>.</p
+><p
 >The standard library's containers are generic the same way:
       <code
 >Vector[T]</code

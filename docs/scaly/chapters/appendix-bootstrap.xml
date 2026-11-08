@@ -21,8 +21,7 @@
     repository for the full seed-distribution checklist.</para>
 
   <para>Historically, the self-hosted compiler was bootstrapped from a
-    reference implementation written in C++ (which had itself replaced an
-    earlier TypeScript bootstrapper). That C++ stage-0 compiler was retired in
+    reference implementation written in C++. That C++ stage-0 compiler was retired in
     July 2026, once the seed became self-sufficient: its sources are frozen
     under <filename>retired/scalyc0/</filename> as a historical reference, it
     has no build, and it cannot parse the current language. Today's build
