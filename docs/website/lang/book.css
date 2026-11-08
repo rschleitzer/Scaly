@@ -135,6 +135,16 @@ code, pre, kbd { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Me
 .sidebar ol { list-style: none; margin: 0; padding: 0; }
 
 .sidebar .part-row { display: flex; align-items: center; }
+.sidebar li.division {
+  padding: 18px 10px 6px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sidebar .toc > li.division:first-child { padding-top: 2px; }
+.division-label { color: var(--muted); margin-right: 0.6em; }
 .sidebar .part-row a { flex: 1; }
 
 .sidebar a {
@@ -519,6 +529,15 @@ figure.example figcaption::before { content: 'Example: '; color: var(--accent); 
 
 ol.contents { list-style: none; padding: 0; }
 ol.contents > li { margin: 0 0 18px; }
+ol.contents > li.division {
+  margin: 36px 0 14px;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+ol.contents > li.division:first-child { margin-top: 0; }
 ol.contents > li > a { font-size: 1.15rem; font-weight: 600; color: var(--fg); }
 ol.contents > li > a:hover { color: var(--accent-strong); }
 ol.contents .num { display: inline-block; min-width: 2em; color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 0.9em; }

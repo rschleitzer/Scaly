@@ -22,15 +22,23 @@
 <book xmlns="http://docbook.org/ns/docbook" version="5.0">
   <title>The Scaly Programming Language</title>
 
-  &introduction;
-  &tutorial;
-  &lexical;
-  &types;
-  &grammar;
-  &definitions;
-  &expressions;
-  &controlflow;
-  &modules;
+  <part xml:id="first-steps">
+    <title>First Steps</title>
+    &introduction;
+    &tutorial;
+  </part>
+
+  <part xml:id="reference">
+    <title>Language Reference</title>
+    &lexical;
+    &types;
+    &grammar;
+    &definitions;
+    &expressions;
+    &controlflow;
+    &modules;
+  </part>
+
   &appendix-tools;
   &stdlib;
   &appendix-bootstrap;

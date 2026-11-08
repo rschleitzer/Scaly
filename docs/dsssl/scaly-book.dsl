@@ -47,11 +47,58 @@
         out
         (loop (cdr rest) (sosofo-append out (f (car rest)))))))
 
+;; A "part" below is what has a page of its own: a chapter or an appendix. What
+;; DocBook calls a part element -- "Part I", a group of chapters -- is a DIVISION
+;; here: it has no page, it is a heading in the contents, and its chapters
+;; are counted on through the book (Chapter 3 is the third chapter of the
+;; book, whichever division it stands in).
 (define (part? nd)
   (or (equal? (gi nd) "chapter") (equal? (gi nd) "appendix")))
 
+(define (division? nd) (equal? (gi nd) "part"))
+
+;; every part in reading order: the book's own and those of its divisions
 (define (parts-of book)
-  (node-list->items (node-list-filter part? (children book))))
+  (apply append
+         (map (lambda (n)
+                (cond ((part? n) (list n))
+                      ((division? n) (node-list->items (node-list-filter part? (children n))))
+                      (else '())))
+              (node-list->items (children book)))))
+
+;; the division a part stands in, or #f
+(define (division-of part)
+  (let ((p (parent part)))
+    (if (division? p) p #f)))
+
+(define (same-division? a b)
+  (if a (and b (node-list=? a b)) (not b)))
+
+(define (division-number d)
+  (list-ref '("I" "II" "III" "IV" "V" "VI" "VII" "VIII" "IX" "X") (- (element-number d) 1)))
+
+;; the heading before a part in the contents where a division begins -- and
+;; "Appendices" where the appendices follow a division
+(define (division-heading part prev)
+  (let ((d (division-of part))
+        (pd (if prev (division-of prev) #f)))
+    (cond ((same-division? d pd) (empty-sosofo))
+          (d (make element gi: "li" attributes: '(("class" "division"))
+               (make element gi: "span" attributes: '(("class" "division-label"))
+                 (literal (string-append "Part " (division-number d))))
+               (literal (title-text d))))
+          ((equal? (gi part) "appendix")
+           (make element gi: "li" attributes: '(("class" "division"))
+             (literal "Appendices")))
+          (else (empty-sosofo)))))
+
+;; f of every part, the division headings between them
+(define (with-divisions f parts)
+  (let loop ((rest parts) (prev #f) (out (empty-sosofo)))
+    (if (null? rest)
+        out
+        (loop (cdr rest) (car rest)
+              (sosofo-append out (division-heading (car rest) prev) (f (car rest)))))))
 
 (define (sections-of nd)
   (node-list->items (select-elements (children nd) "section")))
@@ -66,11 +113,11 @@
   (let ((t (title-node nd)))
     (if (node-list-empty? t) (data nd) (data t))))
 
-;; a chapter's number, an appendix's letter
+;; a chapter's number, an appendix's letter -- counted through the book
 (define (part-number part)
   (if (equal? (gi part) "chapter")
-      (number->string (child-number part))
-      (list-ref '("A" "B" "C" "D" "E" "F" "G" "H") (- (child-number part) 1))))
+      (number->string (element-number part))
+      (list-ref '("A" "B" "C" "D" "E" "F" "G" "H") (- (element-number part) 1))))
 
 (define (part-label part)
   (if (equal? (gi part) "chapter")
@@ -193,7 +240,7 @@
     (make element gi: "a" attributes: '(("class" "sidebar-title") ("href" "index.html"))
       (literal %book-title%))
     (make element gi: "ol" attributes: '(("class" "toc"))
-      (sosofo-map (lambda (p) (toc-part p current)) parts))))
+      (with-divisions (lambda (p) (toc-part p current)) parts))))
 
 (define (pager-link part rel)
   (if part
@@ -258,7 +305,7 @@ program to the grammar."))
             (literal "The PDF"))))
       (make element gi: "h2" attributes: '(("id" "contents")) (literal "Contents"))
       (make element gi: "ol" attributes: '(("class" "contents"))
-        (sosofo-map
+        (with-divisions
           (lambda (part)
             (make element gi: "li"
               (make element gi: "a" attributes: (list (list "href" (file-of part)))
