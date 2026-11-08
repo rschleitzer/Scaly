@@ -307,21 +307,29 @@ printf 'print("Hello, World!")\n' > "$WORK/check/hello.scaly"
 # ---------------------------------------------------------------------------
 # NixOS (and Guix) keep the C library in a store, and with it its loader: the
 # path a Linux program names for it (/lib/ld-linux-aarch64.so.1,
-# /lib64/ld-linux-x86-64.so.2) is not there, and the programs do not start.
-# Unless nix-ld puts it there, the programs are given the loader the
-# system's own programs use, by patchelf -- the one on PATH, else the one Nix
-# fetches -- and a garbage-collector root keeps that C library while the
-# installation lives (see step 8). Anything missing: nothing is changed, and
-# the probe below sends us to the seed as before.
+# /lib64/ld-linux-x86-64.so.2) is not there -- or, on NixOS since 24.05, it
+# holds stub-ld, a stand-in that only says such a program cannot run. Unless
+# nix-ld puts a working loader there, the programs do not start, and then
+# they are given the loader the system's own programs use, by patchelf -- the
+# one on PATH, else the one Nix fetches -- and a garbage-collector root keeps
+# that C library while the installation lives (see step 8). This runs only
+# after the programs failed to start, and only where that path is missing or
+# leads into the store. Anything missing: nothing is changed, and the probe
+# below sends us to the seed as before.
 LOADER_STORE=""
 fit_loader() {
-  [ "$OS" = Linux ] || return 0
+  [ "$OS" = Linux ] || return 1
   case "$(uname -m)" in
     x86_64)  want=/lib64/ld-linux-x86-64.so.2 ;;
     aarch64) want=/lib/ld-linux-aarch64.so.1 ;;
-    *) return 0 ;;
+    *) return 1 ;;
   esac
-  [ -e "$want" ] && return 0
+  if [ -e "$want" ]; then
+    case "$(readlink -f "$want" 2>/dev/null)" in
+      /nix/store/*|/gnu/store/*) ;;
+      *) return 1 ;;
+    esac
+  fi
   pe=""
   if have patchelf; then
     pe=patchelf
@@ -333,15 +341,28 @@ fit_loader() {
     fi
     [ -x "$out/bin/patchelf" ] && pe="$out/bin/patchelf"
   fi
-  [ -n "$pe" ] || { say "the programs name $want, which is not there, and there is no patchelf"; return 0; }
-  ref="$(readlink -f "$(command -v env)" 2>/dev/null)" || return 0
-  ld="$("$pe" --print-interpreter "$ref" 2>/dev/null)" || return 0
-  [ -n "$ld" ] && [ -e "$ld" ] || return 0
+  [ -n "$pe" ] || { say "the programs name $want, which does not load them here, and there is no patchelf"; return 1; }
+  ref="$(readlink -f "$(command -v env)" 2>/dev/null)" || return 1
+  ld="$("$pe" --print-interpreter "$ref" 2>/dev/null)" || return 1
+  [ -n "$ld" ] && [ -e "$ld" ] && [ "$ld" != "$want" ] || return 1
   for p in scalyc scaly scalyls; do
-    "$pe" --set-interpreter "$ld" "$NEW/libexec/$p" 2>/dev/null || return 0
+    "$pe" --set-interpreter "$ld" "$NEW/libexec/$p" 2>/dev/null || return 1
   done
   case "$ld" in /nix/store/*) LOADER_STORE="$(printf '%s\n' "$ld" | sed 's|^\(/nix/store/[^/]*\).*|\1|')" ;; esac
   say "the programs load the C library from $ld"
+}
+
+# probe: the ready-made compiler compiles hello; PROBE_WHY says how it failed
+PROBE_WHY=""
+probe() {
+  rc=0
+  SCALY_HOME="$NEW" "$NEW/libexec/scalyc" -S -o "$WORK/check/probe.ll" "$WORK/check/hello.scaly" \
+    > "$WORK/check/probe.out" 2>&1 || rc=$?
+  [ "$rc" = 0 ] && return 0
+  PROBE_WHY="exit $rc"
+  first="$(grep -v '^[[:space:]]*$' "$WORK/check/probe.out" 2>/dev/null | head -1 | cut -c1-200)"
+  [ -n "$first" ] && PROBE_WHY="$PROBE_WHY: $first"
+  return 1
 }
 
 READY=0
@@ -352,14 +373,13 @@ if [ "${SCALY_FROM_SEED:-0}" != "1" ]; then
   if fetch "$BASE_URL/downloads/$BIN_TARBALL" "$WORK/$BIN_TARBALL"; then
     verify "$WORK/$BIN_TARBALL"
     if tar -xzf "$WORK/$BIN_TARBALL" -C "$NEW" 2>/dev/null \
-       && fit_loader \
-       && SCALY_HOME="$NEW" "$NEW/libexec/scalyc" -S -o "$WORK/check/probe.ll" "$WORK/check/hello.scaly" >/dev/null 2>&1; then
+       && { probe || { fit_loader && probe; }; }; then
       READY=1
       say "installed the programs for $SYSTEM"
     else
       rm -rf "$NEW/libexec" "$NEW/lib"
-      SEED_REASON="The ready-made programs for $SYSTEM do not start on this machine"
-      say "the ready-made programs do not start on this system; building from the seed instead"
+      SEED_REASON="The ready-made programs for $SYSTEM do not start on this machine ($PROBE_WHY)"
+      say "the ready-made programs do not start on this system ($PROBE_WHY); building from the seed instead"
     fi
   else
     SEED_REASON="There are no ready-made programs for this system ($SYSTEM)"
