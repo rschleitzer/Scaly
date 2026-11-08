@@ -58256,8 +58256,35 @@ define Planner
                 return String("")
             let path concept_ns_paths[at as size_t]
             if path.equals(written) = false and path.ends_with(".`written`") = false
-                return String("")
+            {
+                ; or the qualifier begins with the MODULE the concept is
+                ; declared in: `p.shapes.A.Shape` (also `shapes.A.Shape`) is
+                ; the full path of `A.Shape` in module p.shapes -- what
+                ; the union is, not a tail cut to fit (2026-11-08)
+                if this.module_qualified_concept(at as size_t, path, written) = false
+                    return String("")
+            }
             String^this(path)
+        }
+
+        ; module_qualified_concept#: whether `written` names the concept at
+        ; `at` (namespace path `path`) by its module path and namespace path,
+        ; `<module>.A.Shape` -- its origin (the module and the defines it
+        ; stands in) and its name, or a dotted tail of that which still holds
+        ; the whole namespace path (qualified_concept_scope#)
+        function module_qualified_concept(this: Planner, at: size_t, path: String, written: String) returns bool
+        {
+            if written.ends_with(".`path`") = false
+                return false
+            if at >= concept_origin_paths.length or at >= concepts.length
+                return false
+            let origin concept_origin_paths[at]
+            if origin.get_length() = 0
+                return false
+            let named concepts[at].key
+            let by_name "`origin`.`named`"
+            let by_path "`origin`.`path`"
+            by_name.equals(written) or by_name.ends_with(".`written`") or by_path.equals(written) or by_path.ends_with(".`written`")
         }
 
         ; search_ns_path#: the concept a qualifier as WRITTEN here names by
