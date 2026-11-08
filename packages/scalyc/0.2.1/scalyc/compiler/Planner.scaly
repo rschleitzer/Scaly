@@ -1360,6 +1360,9 @@ define Planner
         store_mangled_masks: ref[Array[u64]]
         store_mangled_this: ref[Array[bool]]
         var store_acc: u64
+        ; set while referent_builds# asks a call: a callee counts when it
+        ; returns a REFERENCE to what residence builds on the caller page
+        var store_referent: bool
         ; the bindings and `set`s the store walk has passed in the routine it
         ; walks, for stored_value_builds# to follow a stored local
         store_scope: ref[Array[Statement]]
@@ -1788,6 +1791,7 @@ define Planner
             store_mangled_this := &Array[bool]^this()
             store_scope := &Array[Statement]^this()
             store_acc := 0
+            store_referent := false
             return_page_names := Array[String]^this()
             return_page_starts := Array[size_t]^this()
             return_page_ends := Array[size_t]^this()
@@ -59971,6 +59975,21 @@ define Planner
                 return false
             let head (*hp)
             let len Planner.ops_length_without_trailing_cast(ops)
+            ; `*r`: the DEREFERENCE copies what r refers to, parts and all --
+            ; built here where r's referent is (referent_builds#)
+            if len >= 2 and Planner.operand_is_deref_sign(head)
+            {
+                var rest Vector[Operand](len - 1)
+                var ri: size_t 1
+                while ri < len
+                {
+                    let rp ops.get ri
+                    if rp <> null
+                        rest.put(ri - 1, (*rp))
+                    ri := ri + 1
+                }
+                return this.referent_builds(f, owner, rest, depth + 1)
+            }
             ; a bare local: what the walk saw bound to it or set into it
             if len = 1
             {
@@ -60154,6 +60173,8 @@ define Planner
             let c this.rr_lookup_name(method)
             if c = 1
                 return true
+            if store_referent
+                return false
             if c = 3 or c = 5
                 return this.args_build(f, owner, args, depth)
             false
@@ -60203,6 +60224,11 @@ define Planner
         ; that is built here (3, 5). An unknown class (0) is not counted.
         procedure function_result_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, cf: Function, args: Operand, depth: size_t) returns bool
         {
+            ; asked for a dereference (referent_builds#): a REFERENCE whose
+            ; referent residence places on the caller page. A callee handing
+            ; back an argument's reference (3, 5) is not followed.
+            if store_referent
+                return this.returns_reference(cf) and this.return_residence_class(cf) = 1
             if this.returns_value_with_parts(cf) = false
                 return false
             let c this.return_residence_class(cf)
@@ -60228,6 +60254,138 @@ define Planner
             if rn = "pointer" or rn = "ref" or Planner.is_primitive_type_name(rn)
                 return false
             Planner.is_generic_type_param_name(rn) = false
+        }
+
+        ; does `cf` return a reference -- `pointer`, `ref`, or the NPO Option
+        ; of one (`ref[T]?`), through a type alias as returns_value_with_parts#?
+        function returns_reference(this: Planner, cf: Function) returns bool
+        {
+            if cf.returns_ = null
+                return false
+            var rt (*cf.returns_)
+            if has_type_aliases and this.model_type_has_alias(rt, 0)
+                rt := this.resolve_model_type_aliases(rt, 0)
+            if rt.name.length = 0
+                return false
+            if Planner.is_npo_option_type(rt)
+                return true
+            let rn Planner.join_dotted_name(rt.name)
+            rn = "pointer" or rn = "ref"
+        }
+
+        ; the operand is the prefix `*` of a dereference (an operator is an
+        ; identifier, so it is the one-name type `*` with nothing after it)
+        function operand_is_deref_sign(op: Operand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.name.length <> 1 or t.generics <> null
+                        return false
+                    let np t.name.get 0
+                    if np = null
+                        return false
+                    return (*np) = "*"
+                }
+                else
+                    return false
+        }
+
+        ; referent_builds#: is what `ops` REFERS to built on this routine's
+        ; page? Asked for a stored dereference `*r` (stored_value_builds#): a
+        ; local bound to or set with such a reference, a grouping of one, or a
+        ; call whose callee returns a reference to what residence places on
+        ; the caller page (class 1) -- `let made make(n)` with
+        ; `make(n) returns ref[Item]?  &Item#(...)`. Until 2026-11-08 the
+        ; dereference counted as nothing: a procedure that only stored
+        ; `*made` into a parameter got no page, `make` built on its frame, and
+        ; the caller read the parts after that frame was released -- rc 0,
+        ; garbage (tests/regress/store_deref_built_value.scaly).
+        procedure referent_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, ops: Vector[Operand], depth: size_t) returns bool
+        {
+            if ops.length = 0 or depth > 4
+                return false
+            let hp ops.get 0
+            if hp = null
+                return false
+            let head (*hp)
+            let len Planner.ops_length_without_trailing_cast(ops)
+            if len = 1
+            {
+                if head.member_access <> null
+                    return false
+                choose head.expression
+                    when t: scalyc.compiler.Model.Type
+                    {
+                        if t.name.length <> 1
+                            return false
+                        let np t.name.get 0
+                        if np = null
+                            return false
+                        return this.local_referent_builds(f, owner, (*np), depth)
+                    }
+                    when tv: Tuple
+                    {
+                        if tv.components.length <> 1
+                            return false
+                        let cp tv.components.get 0
+                        if cp = null
+                            return false
+                        return this.referent_builds(f, owner, (*cp).value, depth + 1)
+                    }
+                    else
+                        return false
+            }
+            let ap ops.get 1
+            if ap = null
+                return false
+            var argc: size_t 0
+            var is_tuple false
+            choose (*ap).expression
+                when tup: Tuple
+                {
+                    is_tuple := true
+                    argc := tup.components.length
+                }
+                else
+                    0
+            if is_tuple = false
+                return false
+            let saved store_referent
+            store_referent := true
+            let r this.call_result_builds(f, owner, head, (*ap), argc, depth)
+            store_referent := saved
+            r
+        }
+
+        ; a local whose binding or `set` the walk has passed holds a reference
+        ; to something built here (referent_builds#)
+        procedure local_referent_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, name: String, depth: size_t) returns bool
+        {
+            var i: size_t 0
+            while i < store_scope.length
+            {
+                let sp store_scope.get i
+                i := i + 1
+                if sp = null
+                    continue
+                choose (*sp)
+                    when bd: Binding
+                    {
+                        if bd.item.name <> null and (*bd.item.name) = name and this.referent_builds(f, owner, bd.operation, depth + 1)
+                            return true
+                    }
+                    when a: Action
+                    {
+                        if a.target.length = 1 and Planner.ops_root_name(a.target, false) = name and this.referent_builds(f, owner, a.source, depth + 1)
+                            return true
+                    }
+                    else
+                        0
+            }
+            false
         }
 
         ; one of a call's arguments built (stored_value_builds#)

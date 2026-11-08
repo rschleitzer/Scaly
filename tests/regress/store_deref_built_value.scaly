@@ -1,0 +1,96 @@
+; Regression (2026-11-08): a procedure that stores the DEREFERENCE of a
+; reference to a value built on its page -- `let made make(n)` with
+; `make(n) returns ref[Item]?  &Item#(...)`, then `into.put(at, *made)` --
+; got no caller page (R8): stored_value_builds# knew no `*`, and a callee
+; returning a reference counted as a handle, not as a part. `make` built on
+; the procedure's frame, the copy in `into` kept its String there, and the
+; caller read it after that frame was released: rc 0, garbage, a poison
+; abort. The dereference now asks where the REFERENT is built
+; (Planner.referent_builds#: a callee returning a reference that residence
+; places on the caller page). Each `keep_*` is one spelling, and `forward`
+; only hands its parameter on. Never silent, and not part of this gate: a
+; non-optional `ref[Item]` (it reads as its pointee without a star) and the
+; dereference of the call itself, `into.put(at, *make(2, ...))` -- the escape
+; checker refuses both stores, before and after (the second one still,
+; although R8 now gives the procedure its page). Found writing the
+; Modeler's handle_named_type#.
+; Expected: PASS
+
+define Item
+(
+    tag: int
+    name: String
+)
+
+function make(tag: int, name: String) returns ref[Item]?
+    &Item#(tag, String(name))
+
+procedure keep_bound(mutable into: Vector[Item], at: size_t) returns size_t
+{
+    let made make(1, String("bound"))
+    if made <> null
+        into.put(at, *made)
+    at + 1
+}
+
+procedure keep_grouped(mutable into: Vector[Item], at: size_t) returns size_t
+{
+    let r make(3, String("grouped"))
+    into.put(at, *(r))
+    at + 1
+}
+
+procedure keep_set(mutable into: Vector[Item], at: size_t) returns size_t
+{
+    var r: ref[Item]? null
+    r := make(4, String("set"))
+    if r <> null
+        into.put(at, *r)
+    at + 1
+}
+
+procedure forward(mutable into: Vector[Item]) returns size_t
+{
+    var at: size_t 0
+    at := keep_bound(into, at)
+    at := keep_grouped(into, at)
+    keep_set(into, at)
+}
+
+function churn() returns size_t
+{
+    var junk Array[String]()
+    var i: size_t 0
+    while i < 500
+    {
+        junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
+        i := i + 1
+    }
+    junk.length
+}
+
+procedure run() returns String
+{
+    var items Vector[Item](3)
+    forward(items)
+    churn()
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < items.length
+    {
+        let it items.at(i)
+        sb.append "`it.tag`:"
+        sb.append it.name
+        sb.append ";"
+        i := i + 1
+    }
+    sb.to_string()
+}
+
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+let got run()
+if got.equals("1:bound;3:grouped;4:set;")
+    print "PASS"
+else
+    print "FAIL `got`"
