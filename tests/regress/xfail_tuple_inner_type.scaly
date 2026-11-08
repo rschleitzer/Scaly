@@ -1,0 +1,8 @@
+; Regression (2026-11-08): an inner name after a TUPLE type -- `(int, bool).X`
+; -- names nothing: only a record has inner records. The grammar reads inner
+; names after any type's arguments (scaly.sgm InnerType), and the Modeler
+; writes this one as a type no record can be, so the planner reports it where
+; it is written instead of dropping the name (Modeler.handle_tuple_inner#).
+; xfail: unknown type
+let x: (int, bool).X 5
+print "`x`"

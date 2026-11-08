@@ -5161,6 +5161,19 @@ define Parser
             when success: Success
                 generics := GenericArgumentsSyntax(success.start, success.end, success.generics)
 
+        let inners_start lexer.position
+        var inners: ref[Vector[InnerTypeSyntax]]? null
+        choose parse_innertype_list()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                inners := success
+
         let optional_start lexer.position
         var optional: ref[OptionalSyntax]? null
         choose parse_optional()
@@ -5189,7 +5202,65 @@ define Parser
 
         let end lexer.position
 
-        TypeSyntax(start, end, name, generics, optional, lifetime)
+        TypeSyntax(start, end, name, generics, inners, optional, lifetime)
+    }
+
+    procedure parse_innertype_list(mutable this: Parser) returns ref[Vector[InnerTypeSyntax]]? throws ParserError
+    {
+        var acc List[InnerTypeSyntax]()
+        var parsing: bool true
+        while parsing
+        {
+            choose parse_innertype()
+                when err: Error
+                {
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            if acc.head = null
+                                throw err
+                            parsing := false
+                        }
+                }
+                when node: Success
+                    acc.add(node)
+        }
+        Vector[InnerTypeSyntax](acc)
+    }
+
+    procedure parse_innertype(mutable this: Parser) returns InnerTypeSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_punctuation(".")
+            throw ParserError.Different(DifferentSyntax())
+
+        let name lexer.parse_identifier(keywords)
+        if name.length() = 0
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+
+        let generics_start lexer.position
+        var generics: ref[GenericArgumentsSyntax]? null
+        choose parse_genericarguments()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                generics := GenericArgumentsSyntax(success.start, success.end, success.generics)
+
+        let end lexer.position
+
+        InnerTypeSyntax(start, end, name, generics)
     }
 
     procedure parse_typename(mutable this: Parser) returns TypeNameSyntax throws ParserError

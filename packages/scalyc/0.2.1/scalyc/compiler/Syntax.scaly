@@ -97,12 +97,21 @@ define TypeNameSyntax union (
     TupleType: TupleTypeSyntax
 )
 
+define InnerTypeSyntax
+(
+    start: size_t
+    end: size_t
+    name: String
+    generics: ref[GenericArgumentsSyntax]?
+)
+
 define TypeSyntax
 (
     start: size_t
     end: size_t
     name: TypeNameSyntax
     generics: ref[GenericArgumentsSyntax]?
+    inners: ref[Vector[InnerTypeSyntax]]?
     optional: ref[OptionalSyntax]?
     lifetime: ref[LifetimeSyntax]?
 )

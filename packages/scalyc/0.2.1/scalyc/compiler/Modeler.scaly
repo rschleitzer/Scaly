@@ -235,9 +235,32 @@ define Modeler
     {
         choose syntax.name
             when tuple: TupleTypeSyntax
+            {
+                ; a tuple type has no inner names: `(int, bool).X` names a type
+                ; no record can be (`(tuple)` is no identifier), and the
+                ; planner reports it as unknown where it is written
+                if syntax.inners <> null
+                    return handle_tuple_inner(syntax)
                 return handle_tuple_type(syntax, tuple)
+            }
             when name: NameSyntax
                 return handle_named_type(syntax, name)
+    }
+
+    function handle_tuple_inner(syntax: TypeSyntax) returns ref[Type]?
+    {
+        let inners (*syntax.inners)
+        var path Vector[String](1 + inners.length)
+        path.put(0, "(tuple)")
+        var k: size_t 0
+        while k < inners.length
+        {
+            let inner_ptr inners.get k
+            if inner_ptr <> null
+                path.put(1 + k, (*inner_ptr).name)
+            k := k + 1
+        }
+        handle_optional_type(syntax, path, null)
     }
 
     ; type_head_name: the identifier a type is written with -- a definition's
@@ -323,18 +346,24 @@ define Modeler
         handle_optional_type(syntax, path, gens_holder.get(0))
     }
 
+    ; handle_named_type: `Shell.Tally[int]` -- a name, its extensions, and the
+    ; type arguments written last. A record inside a generic record may also be
+    ; named through an INSTANCE of the outer one, `Shell[int].Tally`: the inner
+    ; names follow the outer's arguments (`syntax.inners`), and the type is
+    ; written again as the qualified one, every argument list in order, the
+    ; outer's first -- `Outer[A].Inner[B]` is `Outer.Inner[A, B]`, as the
+    ; construction `Outer[A].Inner[B](...)` is (Planner.outer_instance_operands#).
     function handle_named_type(syntax: TypeSyntax, name: NameSyntax) returns ref[Type]?
     {
-        ; Count extensions to determine path size
         var ext_count: size_t 0
         if name.extensions <> null
             ext_count := (*name.extensions).length
+        var inner_count: size_t 0
+        if syntax.inners <> null
+            inner_count := (*syntax.inners).length
 
-        ; Create path with correct size
-        var path Vector[String](1 + ext_count)
+        var path Vector[String](1 + ext_count + inner_count)
         path.put(0, name.name)
-
-        ; Add extensions
         if name.extensions <> null
         {
             let exts (*name.extensions)
@@ -343,43 +372,83 @@ define Modeler
             {
                 let ext_ptr exts.get i
                 if ext_ptr <> null
-                {
-                    let ext (*ext_ptr)
-                    path.put(1 + i, ext.name)
-                }
+                    path.put(1 + i, (*ext_ptr).name)
                 i := i + 1
             }
         }
 
-        var generics: ref[Vector[Type]]? null
-        if syntax.generics <> null
+        ; the argument lists, the outer's and then each inner name's
+        var lists Vector[ref[GenericArgumentsSyntax]?](1 + inner_count)
+        lists.put(0, syntax.generics)
+        if syntax.inners <> null
         {
-            let gen_args_syntax (*syntax.generics)
-            if gen_args_syntax.generics <> null
+            let inners (*syntax.inners)
+            var k: size_t 0
+            while k < inners.length
             {
-                let gen_syns (*gen_args_syntax.generics)
-                var gen_types Vector[Type](gen_syns.length)
-                var gi: size_t 0
-                while gi < gen_syns.length
+                let inner_ptr inners.get k
+                if inner_ptr <> null
                 {
-                    let ga_ptr gen_syns.get gi
-                    if ga_ptr <> null
-                    {
-                        let ga (*ga_ptr)
-                        let inner_type handle_type(ga.type)
-                        if inner_type <> null
-                            gen_types.put(gi, *inner_type)
-
-                    }
-                    gi := gi + 1
+                    path.put(1 + ext_count + k, (*inner_ptr).name)
+                    lists.put(1 + k, (*inner_ptr).generics)
                 }
-                var gens_holder Vector[Vector[Type]](1)
-                gens_holder.put(0, gen_types)
-                generics := gens_holder.get(0)
+                k := k + 1
             }
+        }
+        var gen_count: size_t 0
+        var li: size_t 0
+        while li < lists.length
+        {
+            gen_count := gen_count + generic_argument_count(lists[li])
+            li := li + 1
+        }
+
+        ; the types, in this routine: handle_type builds them on its page
+        var generics: ref[Vector[Type]]? null
+        if gen_count > 0
+        {
+            var gen_types Vector[Type](gen_count)
+            var at: size_t 0
+            li := 0
+            while li < lists.length
+            {
+                let arguments lists[li]
+                if arguments <> null and (*arguments).generics <> null
+                {
+                    let gen_syns (*(*arguments).generics)
+                    var gi: size_t 0
+                    while gi < gen_syns.length
+                    {
+                        let ga_ptr gen_syns.get gi
+                        if ga_ptr <> null
+                        {
+                            let inner_type handle_type((*ga_ptr).type)
+                            if inner_type <> null
+                                gen_types.put(at + gi, *inner_type)
+                        }
+                        gi := gi + 1
+                    }
+                    at := at + gen_syns.length
+                }
+                li := li + 1
+            }
+            var gens_holder Vector[Vector[Type]](1)
+            gens_holder.put(0, gen_types)
+            generics := gens_holder.get(0)
         }
 
         handle_optional_type(syntax, path, generics)
+    }
+
+    ; how many type arguments a written list holds (none without a list)
+    function generic_argument_count(arguments: ref[GenericArgumentsSyntax]?) returns size_t
+    {
+        if arguments = null
+            return 0
+        let list (*arguments).generics
+        if list = null
+            return 0
+        (*list).length
     }
 
     ; the type of syntax built from its path and generics, wrapped in an

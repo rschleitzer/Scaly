@@ -616,8 +616,14 @@
 <syntax id = Type                        multiple
     <content link = TypeName                                property = name
     <content link = GenericArguments               optional property = generics
+    <content link = InnerType             multiple optional property = inners
     <content link = Optional                       optional property = optional
     <content link = Lifetime                       optional property = lifetime
+
+<syntax id = InnerType                   multiple
+    <content link = dot
+    <content identifier                                     property = name
+    <content link = GenericArguments               optional property = generics
 
 <syntax id = TypeName                              abstract
     <content link = Name

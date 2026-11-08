@@ -1,0 +1,77 @@
+; Regression (2026-11-08): a record inside a generic record, named as a TYPE
+; through an instance of the outer one -- `Shell[int].Tally` -- did not parse
+; (a type took its argument list last only), so a type had to be written
+; `Shell.Tally[int]` while the value could be `Shell[int].Tally(5)`. The
+; grammar takes inner names after the arguments now (scaly.sgm InnerType), and
+; the Modeler writes the type again as the qualified one, the outer's
+; arguments first: `Outer[A].Inner[B]` is `Outer.Inner[A, B]`
+; (Modeler.handle_named_type#). Both spellings are one type.
+; Expected: PASS
+
+define Shell[T](item: T)
+{
+    define Tally(n: T)
+    {
+        function get(this) returns T
+            n
+    }
+
+    define Pair[U](a: T, b: U)
+    {
+        function second(this) returns U
+            b
+    }
+
+    define Mark union (Full: T, Empty)
+
+    define Box(v: T)
+    {
+        define Inner(w: T)
+        {
+            function get(this) returns T
+                w
+        }
+    }
+}
+
+; a field, a parameter and a result
+define Holder(t: Shell[int].Tally)
+
+function tally(t: Shell[int].Tally) returns int
+    t.get()
+
+function make(n: int) returns Shell[int].Tally
+    Shell[int].Tally(n)
+
+function second(p: Shell[int].Pair[bool]) returns bool
+    p.second()
+
+function inner(i: Shell[int].Box.Inner) returns int
+    i.get()
+
+function full(m: Shell[int].Mark) returns int
+    choose m
+        when f: Shell.Mark.Full
+            f
+        else
+            0
+
+function maybe(t: ref[Shell[int].Tally]?) returns int
+{
+    if t = null
+        return 0
+    t.get()
+}
+
+; a typed binding in either spelling, handed where the other is declared
+let a: Shell[int].Tally Shell.Tally[int](7)
+let b: Shell.Tally[int] Shell[int].Tally(8)
+let h Holder(b)
+let s: Shell[String].Tally Shell[String].Tally(String("abc"))
+var list Array[Shell[int].Tally]()
+list.add(a)
+let one: Shell[int].Tally a
+if tally(a) = 7 and tally(b) = 8 and h.t.get() = 8 and make(9).get() = 9 and s.get().length() = 3 and second(Shell[int].Pair[bool](1, true)) and inner(Shell[int].Box.Inner(4)) = 4 and full(Shell[int].Mark.Full(3)) = 3 and full(Shell[int].Mark.Empty) = 0 and maybe(&one) = 7 and maybe(null) = 0 and list[0].get() = 7
+    print("PASS")
+else
+    print("FAIL")
