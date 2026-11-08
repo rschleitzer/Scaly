@@ -1,0 +1,37 @@
+; Regression (2026-11-08): the DEBUG name of a record in a define carried
+; none of its defines -- `Rec` in `define A`, in `define B` and at file
+; level were three types named "Rec" in the debug information, and a
+; debugger that takes types by name (lldb) shows one layout for all three:
+; wrong values, no error. A nested name with an `I` in it (`IntrinsicInfo`)
+; was taken for a template and shown as its mangled name. Both read the
+; mangled name (Planner.ns_debug_prefix#, Emitter.mangled_type_args_follow#).
+; args: -g
+; expect-ir: name: "A.Rec"
+; expect-ir: name: "B.Rec"
+; expect-ir: name: "Rec"
+; expect-ir: name: "A.Box
+; expect-ir: name: "B.Box
+; expect-ir: name: "A.IntrinsicInfo"
+
+define Rec(z: int, w: int)
+
+define A
+{
+    define Rec(x: int)
+    define Box[T](item: T)
+    define IntrinsicInfo(k: int)
+}
+
+define B
+{
+    define Rec(tag: int, y: int, extra: int)
+    define Box[T](item: T, more: T)
+}
+
+let plain Rec(1, 2)
+let a A.Rec(3)
+let b B.Rec(4, 5, 6)
+let ab A.Box[int](7)
+let bb B.Box[int](8, 9)
+let info A.IntrinsicInfo(10)
+print "`plain.z + a.x + b.y + ab.item + bb.more + info.k`"

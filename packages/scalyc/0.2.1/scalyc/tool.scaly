@@ -274,13 +274,13 @@ define tool
     {
         let n sym.get_length()
         var i at
-        while i + 1 < n and sym.get(i) = 66 and sym.get(i + 1) >= 48 and sym.get(i + 1) <= 57
+        while i + 1 < n and sym.get(i) = ("B" as char) and sym.get(i + 1) >= ("0" as char) and sym.get(i + 1) <= ("9" as char)
         {
             var j i + 1
             var len: size_t 0
-            while j < n and sym.get(j) >= 48 and sym.get(j) <= 57
+            while j < n and sym.get(j) >= ("0" as char) and sym.get(j) <= ("9" as char)
             {
-                len := len * 10 + ((sym.get(j) - 48) as size_t)
+                len := len * 10 + ((sym.get(j) - ("0" as char)) as size_t)
                 j := j + 1
             }
             if j + len > n

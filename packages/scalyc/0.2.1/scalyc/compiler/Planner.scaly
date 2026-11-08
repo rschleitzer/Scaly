@@ -60851,17 +60851,17 @@ define Planner
             head := "_ZN`Planner.ns_prefix_in(mangled)``Planner.encode_name name`"
         let n mangled.get_length()
         var i head.get_length()
-        if mangled.starts_with(head) = false or i + 1 >= n or mangled.get(i) <> 66
+        if mangled.starts_with(head) = false or i + 1 >= n or mangled.get(i) <> ("B" as char)
             return ""
         ; one tag or two (name, line), each `B<length><text>`
         var end i
-        while end + 1 < n and mangled.get(end) = 66 and mangled.get(end + 1) >= 48 and mangled.get(end + 1) <= 57
+        while end + 1 < n and mangled.get(end) = ("B" as char) and mangled.get(end + 1) >= ("0" as char) and mangled.get(end + 1) <= ("9" as char)
         {
             var j end + 1
             var len: size_t 0
-            while j < n and mangled.get(j) >= 48 and mangled.get(j) <= 57
+            while j < n and mangled.get(j) >= ("0" as char) and mangled.get(j) <= ("9" as char)
             {
-                len := len * 10 + ((mangled.get(j) - 48) as size_t)
+                len := len * 10 + ((mangled.get(j) - ("0" as char)) as size_t)
                 j := j + 1
             }
             if j + len > n
@@ -60881,13 +60881,13 @@ define Planner
         let n mangled.get_length()
         var i: size_t 3
         var last: size_t 3
-        while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+        while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
         {
             last := i
             var len: size_t 0
-            while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+            while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
             {
-                len := len * 10 + ((mangled.get(i) - 48) as size_t)
+                len := len * 10 + ((mangled.get(i) - ("0" as char)) as size_t)
                 i := i + 1
             }
             i := i + len
@@ -60905,12 +60905,12 @@ define Planner
         let n mangled.get_length()
         var sb StringBuilder()
         var i: size_t 3
-        while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+        while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
         {
             var len: size_t 0
-            while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+            while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
             {
-                len := len * 10 + ((mangled.get(i) - 48) as size_t)
+                len := len * 10 + ((mangled.get(i) - ("0" as char)) as size_t)
                 i := i + 1
             }
             if i + len > n
@@ -60921,6 +60921,18 @@ define Planner
             i := i + len
         }
         sb.to_string()
+    }
+
+    ; ns_debug_prefix#: the enclosing defines of a NESTED type's mangled
+    ; name as a debugger shows them, `A.` of `_ZN1A3RecE`, `A.Inner.` of
+    ; `_ZN1A5Inner3BoxIiEE`; "" at file level (get_debug_name#)
+    function ns_debug_prefix(mangled: String) returns String
+    {
+        let path Planner.ns_path_in(mangled)
+        let dot path.last_index_of("." as u8)
+        if dot < 0
+            return String("")
+        path.substring(0, (dot as size_t) + 1)
     }
 
     ; ns_path_prefix#: the enclosing defines of a namespace path as a
@@ -61444,6 +61456,9 @@ define Planner
             sb.append pkg
             sb.append("." as char)
         }
+        ; and the defines it stands in, `A.Rec` of `_ZN1A3RecE`: `Rec` in
+        ; `define A` and in `define B` were one type to lldb as well
+        sb.append(Planner.ns_debug_prefix(type_value.mangled_name))
         sb.append type_value.name
         if type_value.generics <> null
         {
