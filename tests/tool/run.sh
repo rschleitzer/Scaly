@@ -806,9 +806,12 @@ printf 'package scaly 0.2.0\n\ndefine kit\n{\n    module parts\n}\n' > "$rr/pack
 printf 'define Link\n(\n    var sent: int\n)\n{\n    procedure dial(name: String, port: int) returns ref[Link]\n    {\n        let page Page.allocate_page()\n        if name.get_length() = 0\n            return &Link^page(0)\n        &Link^page(port)\n    }\n\n    procedure send(mutable this, n: int)\n    {\n        sent := sent + n\n    }\n\n    function total(this) returns int\n        sent\n}\n' > "$rr/packages/kit/0.1.0/kit/parts.scaly"
 printf 'package kit 0.1.0\n\ndefine Client\n(\n    name: String\n)\n{\n    procedure reach(this) returns int\n    {\n        let l Link.dial(name, 40)\n        l.send(2)\n        l.total()\n    }\n}\n\nlet c Client(String("somewhere"))\nprint("`c.reach()`")\n' > "$rr/main.scaly"
 # (through the tool, from an empty cache: the interface is there before the
-# program is checked -- tool.prepare_interfaces#; else the FIRST build is refused)
+# program is checked -- tool.prepare_interfaces#; else the FIRST build is refused).
+# Each turn links a program of its own: on Windows the image of the program
+# the first turn just ran may still be held, and the second link into the
+# same file failed with LNK1104 -- the cache, not the file, is what is tested.
 for turn in first second; do
-  out=$(cd "$rr" && SCALY_CACHE="$TMP/reach-cache" SCALY_HOME="$here" "$scaly_abs" build main.scaly -o "$TMP/reach-bin" 2>&1 && "$TMP/reach-bin"); rc=$?
+  out=$(cd "$rr" && SCALY_CACHE="$TMP/reach-cache" SCALY_HOME="$here" "$scaly_abs" build main.scaly -o "$TMP/reach-bin-$turn" 2>&1 && "$TMP/reach-bin-$turn"); rc=$?
   [ "$out" = "42" ] && ok || bad "reach: the $turn build: rc=$rc '$(echo "$out" | head -1 | cut -c1-160)'"
 done
 said=$(cat "$TMP/reach-cache"/kit-*.iface/interface/kit/parts.scaly 2>/dev/null | grep -c 'procedure dial(.*@ret_reach_0 true')
