@@ -2196,6 +2196,39 @@ p.sum()                      ; 42
 >Array[(n: int, s: String)]()</code
 >.</p
 ><p
+>A record declared inside a generic record is generic in the outer
+      record's parameters: <code
+>Tally</code
+> inside
+      <code
+>Shell[T]</code
+> holds a <code
+>T</code
+>, and each
+      instance of <code
+>Shell</code
+> has its own. It is named through an
+      instance of the outer record, or with the arguments at the end, the
+      outer record's first; both spellings are the same type, for a value and
+      for a type alike:</p
+><pre
+class="listing"
+><code
+>&#13;define Shell[T] ( item: T )
+{
+    define Tally ( n: T )
+    {
+        function get(this) returns T
+            n
+    }
+}
+
+let t: Shell[int].Tally Shell[int].Tally(5)
+let u: Shell.Tally[int] t
+print "`t.get() + u.get()`"    ; 10
+    </code
+></pre
+><p
 >The standard library's containers are generic the same way:
       <code
 >Vector[T]</code
