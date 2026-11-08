@@ -1,0 +1,12 @@
+; Regression (2026-11-08): `A.Rec` of another module, written where only the
+; module is `use`d (`use <root>.modq_shapes.*` reaches its file-level names,
+; not the members of `define A`), stayed a dotted placeholder, and an `int`
+; bound as that `Rec` compiled at rc 0. It is an unknown type now, with the
+; `use` that makes it writable (Planner.report_unknown_type#).
+; xfail: error: unknown type: A.Rec - defined in
+
+module modq_shapes
+use xfail_hidden_dotted_type.modq_shapes.*
+
+let t: A.Rec 5
+print("done")

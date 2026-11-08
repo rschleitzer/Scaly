@@ -23113,9 +23113,18 @@ define Planner
                 ; index use_vis_hint# reads — a hint here could only ever be
                 ; empty. A type hidden by visibility is a different diagnosis
                 ; and is not reported here.
+                ; A DOTTED name is the exception: `A.Rec` of another module
+                ; stays dotted where its last name is hidden, and the hint
+                ; names the `use` that makes it writable.
                 var tsb StringBuilder()
                 tsb.append "unknown type: "
                 tsb.append uk
+                let last_dot uk.last_index_of("." as u8)
+                if last_dot >= 0
+                {
+                    let from (last_dot as size_t) + 1
+                    tsb.append(this.use_vis_hint(uk.substring(from, uk.get_length() - from)))
+                }
                 let tmsg tsb.to_string()
                 this.add_diagnostic(t.loc, String^this(tmsg))
             }
@@ -23146,8 +23155,14 @@ define Planner
                 }
                 return ""
             }
-            if tname.contains(".")
-                return ""
+            ; A DOTTED name is judged too since 2026-11-08: plan_type#
+            ; shortens a written `A.Rec` to the type it finds, so a planned
+            ; name that is still dotted named nothing -- `let t: Nope.Rec 5`,
+            ; a return `Nope.Rec`, and `A.Rec` of another module not `use`d
+            ; bound the value as the opaque placeholder at rc 0 (an `int`
+            ; bound as a `Rec` without a word). The exemption had been
+            ; "namespace machinery owns those"; measured, no root of the tree
+            ; nor of dazzle holds such an annotation.
             if Planner.is_primitive_type_name(tname)
                 return ""
             if Planner.is_generic_type_param_name(tname)
