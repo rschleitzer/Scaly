@@ -1,0 +1,39 @@
+; Regression (2026-11-07): a comment sign that ENDS its line -- `;` alone on a
+; line, or after code -- swallowed the NEXT line: the lexer read one
+; character past the ';' before it skipped to the line feed, and where that
+; character was the line feed, the comment ran on through the following line.
+; `if flag` below it vanished and its block ran unconditionally, at rc 0
+; (lexer skip_whitespace#). Seen first as a debug `if` in the planner that
+; printed for every type.
+; Expected: PASS
+
+mutable count: int 0
+
+function guarded(flag: bool) returns int
+{
+    var hits 0
+    ; the next line is a comment sign alone
+    ;
+    if flag
+    {
+        hits := hits + 1
+    }
+    hits
+}
+
+procedure trailing(flag: bool) mutable count
+{
+    let start 1 ;
+    if flag
+        count := count + start
+}
+
+;
+if false
+    count := count + 100
+
+trailing(false)
+if guarded(false) = 0 and guarded(true) = 1 and count = 0
+    print("PASS")
+else
+    print("FAIL")

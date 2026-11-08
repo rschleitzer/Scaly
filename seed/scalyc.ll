@@ -1469,7 +1469,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 1779487591345217772
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 3433789272224803591
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -43792,7 +43792,6 @@ if.end36:                                         ; preds = %if.then30
   br i1 %ne, label %if.then40, label %if.else
 
 if.then40:                                        ; preds = %if.end36
-  call void @_ZN5lexer5LexerB6scalycB4v0_214read_characterEv(ptr %0)
   call void @_ZN5lexer5LexerB6scalycB4v0_226handle_single_line_commentEv(ptr %0)
   br label %if.end41
 
