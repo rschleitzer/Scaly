@@ -294,8 +294,8 @@
       (make element gi: "div" attributes: '(("class" "title-page"))
         (make element gi: "h1" (literal %book-title%))
         (make element gi: "p" attributes: '(("class" "lead"))
-          (literal "The reference of the language: what a program says and what it means, from a first
-program to the grammar."))
+          (literal "The language in three parts: a first program, how a program scales, and the reference
+of what a program says and what it means, down to the grammar."))
         (make element gi: "p" attributes: '(("class" "actions"))
           (make element gi: "a" attributes: (list (list "class" "button primary") (list "href" (file-of (car parts))))
             (literal "Start reading"))

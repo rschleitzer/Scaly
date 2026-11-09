@@ -242,21 +242,28 @@ distance_squared(origin, target)    ; origin and target unchanged
     <section xml:id="types-params-mutation">
       <title>Mutation via Procedures</title>
       <para>To modify data, use a <literal>procedure</literal> instead of a
-        function. A procedure's parameters may be mutated, and the caller sees
-        the change — no extra keyword is needed; the
-        <literal>procedure</literal> declaration itself is the signal:</para>
+        function, and mark each parameter it writes <literal>mutable</literal>
+        — the receiver <literal>this</literal> included. A field that may
+        change after its object is built is declared <literal>var</literal>;
+        every other field is fixed once the object exists. The caller sees the
+        change:</para>
       <programlisting>
-define Point ( x: int, y: int )
+define Point(var x: int, var y: int)
 
-procedure move(p: Point, dx: int)
+procedure move(mutable p: Point, dx: int)
     p.x := p.x + dx
 
 var pos Point(0, 0)
-move(pos, 5)          ; pos.x is now 5
+move(pos, 5)
+print "pos.x is now `pos.x`"
       </programlisting>
-      <para>The distinction between functions (pure, read-only) and procedures
-        (may mutate) is explicit in the code. Readers immediately know which
-        calls might have side effects.</para>
+      <para>The compiler checks the marks against the bodies: a procedure
+        that writes a parameter it does not mark, a function that writes
+        anything its parameters reach, and a store into a field that is not
+        <literal>var</literal> are errors. So the distinction between
+        functions (pure, read-only) and procedures (may mutate) is explicit in
+        the code, and a reader knows from a signature which arguments a call
+        may change.</para>
     </section>
   </section>
 

@@ -2,6 +2,7 @@
 <!DOCTYPE book SYSTEM "docbook.dtd" [
   <!ENTITY introduction SYSTEM "scaly/chapters/introduction.xml">
   <!ENTITY tutorial SYSTEM "scaly/chapters/tutorial.xml">
+  <!ENTITY scaling-why SYSTEM "scaly/chapters/scaling-why.xml">
   <!ENTITY lexical SYSTEM "scaly/chapters/lexical.xml">
   <!ENTITY types SYSTEM "scaly/chapters/types.xml">
   <!ENTITY grammar SYSTEM "scaly/chapters/grammar.xml">
@@ -26,6 +27,11 @@
     <title>First Steps</title>
     &introduction;
     &tutorial;
+  </part>
+
+  <part xml:id="scaling">
+    <title>Scaling</title>
+    &scaling-why;
   </part>
 
   <part xml:id="reference">

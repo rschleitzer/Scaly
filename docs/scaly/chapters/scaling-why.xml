@@ -1,0 +1,144 @@
+<chapter xml:id="scaling-why">
+  <title>Why Scaly Can Scale</title>
+
+  <section xml:id="scaling-why-overview">
+    <title>Two Rounds at Once</title>
+    <para>Two rounds of a loop may run at the same time when neither can see
+      what the other does: neither writes anything the other reads, and
+      neither does something whose order the world outside the program can
+      tell — printing a line, writing a file, answering a request. A
+      compiler that can prove this for a loop can hand its rounds to every
+      core of the machine, and the program cannot tell the difference except
+      by the clock.</para>
+    <para>Most languages give the compiler no way to prove it. Any call may
+      write through any pointer it was handed, change a global, or print; so
+      parallel code is written by hand, with threads, locks and a library,
+      and getting it right is the programmer's business. Scaly gives the
+      compiler three facts, and checks every one of them in every compile:
+      what a routine may write is part of its declaration, a
+      <code>function</code> writes nothing and does no input or output, and
+      memory belongs to regions rather than to one heap that every core
+      shares. A plain <code>for</code> loop is all a program writes; whether
+      its rounds run in parallel is the compiler's decision.</para>
+    <para>This part of the book shows what that gives a program, a chapter
+      for each way to scale: loops over every core, recursion that forks,
+      the lanes of one core, many connections at once, and more than one
+      machine. Each chapter is built around a program you can run. This
+      chapter is about the three facts.</para>
+  </section>
+
+  <section xml:id="scaling-why-functions">
+    <title>Functions Read, Procedures Write</title>
+    <para>A <code>function</code> reads its arguments and returns a value.
+      That is not a convention but a rule the compiler enforces: a function
+      writes nothing its parameters reach, reads no global that can change,
+      and performs no input or output — not even through the routines it
+      calls. A function that prints is refused:</para>
+    <programlisting role="fragment">function shout(word: String) returns String
+{
+    print word          ; error: function shout performs I/O
+    word
+}</programlisting>
+    <para>So a call of a function is a question with an answer and nothing
+      else, and two such calls can run side by side. Here the rounds of the
+      first loop each compute one square and put it into a slot of their
+      own; the second loop adds them up:</para>
+    <programlisting>function square(x: int) returns int
+    x * x
+
+let n 1000
+var squares Vector[int](n as size_t)
+for i in n
+    squares.put(i as size_t, square(i))
+
+var total 0
+for s in squares
+    total := total + s
+print "sum of squares below `n`: `total`"</programlisting>
+    <screen>$ scaly run squares.scaly
+sum of squares below 1000: 332833500
+$ scalyc --task-plan squares.scaly
+task-plan: 2 for-loops, 2 parallelizable
+task-plan: squares.scaly:6:1: parallel
+task-plan: squares.scaly:10:1: parallel
+$ SCALY_WORKERS=1 scaly run squares.scaly
+sum of squares below 1000: 332833500</screen>
+    <para><option>--task-plan</option> shows the compiler's decision for each
+      <code>for</code> of the file: both loops run in parallel. The first
+      writes to <code>squares</code>, which the loop did not make — but each
+      round only to the slot its own <code>i</code> names, so no two rounds
+      write the same place. The second is a sum, which the compiler knows how
+      to split and put together again; the next chapter says
+      which loops it takes and which it leaves alone. The last command runs
+      the program on one core; <xref linkend="scaling-why-same"/> says
+      why it prints the same.</para>
+  </section>
+
+  <section xml:id="scaling-why-mutable">
+    <title>A Procedure Says What It Writes</title>
+    <para>A <code>procedure</code> may change things, and its declaration
+      says which: each parameter it writes is marked <code>mutable</code>,
+      the receiver <code>this</code> included, and each global it writes is
+      named after its signature. The compiler checks the marks against the
+      body, so they cannot lie (<xref linkend="types-params-mutation"/>).
+      A loop that hands its own state to a procedure that writes it keeps its
+      order — here every round adds to the one <code>log</code>:</para>
+    <programlisting>procedure record(mutable log: Array[int], value: int)
+    log.add(value)
+
+var log Array[int]()
+for i in 5
+    record(log, i * i)
+print "`log.length` entries, the last one `log[4]`"</programlisting>
+    <screen>$ scaly run record.scaly
+5 entries, the last one 16
+$ scalyc --task-plan record.scaly
+task-plan: 1 for-loops, 0 parallelizable
+task-plan: record.scaly:5:1: blocked: transitively impure call record</screen>
+    <para>A loop that prints keeps its order for the same reason:
+      <code>print</code> is a procedure that reaches the world outside the
+      program, and the lines come out as the rounds were written.</para>
+    <programlisting>for i in 3
+    print "round `i`"</programlisting>
+    <screen>round 0
+round 1
+round 2</screen>
+    <para>None of this is an error. A loop the compiler cannot prove
+      independent runs one round after the other, as written, and the program
+      means the same either way; <option>--task-plan</option> is the only
+      place where the difference shows.</para>
+  </section>
+
+  <section xml:id="scaling-why-regions">
+    <title>Memory That Is Not Shared</title>
+    <para>The third fact is about memory. Scaly has no heap that every part
+      of a program allocates from and a collector cleans up; memory belongs
+      to regions — pages that belong to a call, or to an owner that lives
+      longer — and a region is released as a whole. The compiler works out
+      which region each value belongs to, and an escape checker refuses a
+      program in which a value would outlive its region
+      (<xref linkend="types-lifetimes"/>; <xref linkend="heritage-memory"/>
+      tells where the idea comes from).</para>
+    <para>For a loop on many cores that means there is nothing to take turns
+      at. A worker allocates from pages of its own, so the rounds do not
+      queue at one allocator, and there is no collector that must stop every
+      core to look at all of memory. What a round builds and drops is gone
+      with its page; what a round builds and the loop keeps —
+      the next chapter shows how — is handed to the region of
+      the loop.</para>
+  </section>
+
+  <section xml:id="scaling-why-same">
+    <title>The Same Program on One Core</title>
+    <para>Because a loop runs in parallel only where its rounds cannot see
+      each other, a program prints the same whether it runs on one core or
+      on all of them. The environment variable <envar>SCALY_WORKERS</envar>
+      caps how many cores a program uses; with
+      <userinput>SCALY_WORKERS=1</userinput> it runs every loop on one, as
+      the last command of <filename>squares.scaly</filename> did — which is
+      also how you measure what the other cores bring.</para>
+    <para>Every program of this part is checked that way: what it prints
+      with every core and with one is the output printed beside it.</para>
+  </section>
+
+</chapter>

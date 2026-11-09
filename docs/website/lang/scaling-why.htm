@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Why Scaly Can Scale - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="division"
+><span
+class="division-label"
+>Part I</span
+>First Steps</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-change"
+><span
+class="num"
+>1.2</span
+>A Language Still Changing</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with Visual Studio Code on macOS and Linux</a
+></li
+><li
+><a
+href="tutorial.htm#tut-windows"
+><span
+class="num"
+>2.3</span
+>Scaly on Windows</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.4</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.5</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part II</span
+>Scaling</li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="scaling-why.htm"
+aria-current="page"
+><span
+class="num"
+>3.</span
+>Why Scaly Can Scale</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-why.htm#scaling-why-overview"
+><span
+class="num"
+>3.1</span
+>Two Rounds at Once</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-functions"
+><span
+class="num"
+>3.2</span
+>Functions Read, Procedures Write</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-mutable"
+><span
+class="num"
+>3.3</span
+>A Procedure Says What It Writes</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-regions"
+><span
+class="num"
+>3.4</span
+>Memory That Is Not Shared</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-same"
+><span
+class="num"
+>3.5</span
+>The Same Program on One Core</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part III</span
+>Language Reference</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>4.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>4.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>4.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>4.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>4.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>4.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>4.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>5.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>5.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>5.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>5.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>5.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>5.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>5.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>5.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>5.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>5.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>5.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>5.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>5.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>5.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>5.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>6.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>7.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>7.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>7.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>8.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>8.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>8.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>8.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>8.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>8.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>8.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>8.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>8.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>8.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>8.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>9.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>9.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>9.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>9.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>9.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>9.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>9.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>9.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>10.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>10.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>10.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>10.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>10.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="division"
+>Appendices</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tools.htm"
+><span
+class="num"
+>A.</span
+>The Tools</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tools.htm#tools-install"
+><span
+class="num"
+>A.1</span
+>Installation</a
+></li
+><li
+><a
+href="tools.htm#tools-scaly"
+><span
+class="num"
+>A.2</span
+>scaly</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyc"
+><span
+class="num"
+>A.3</span
+>scalyc</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyls"
+><span
+class="num"
+>A.4</span
+>scalyls</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>B.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>B.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>B.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>C.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>D.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>D.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>D.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>D.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>D.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>D.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>D.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>D.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>D.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>D.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>D.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 3</p
+><h1
+id="scaling-why"
+>Why Scaly Can Scale</h1
+><section
+id="scaling-why-overview"
+><h2
+><a
+class="header"
+href="#scaling-why-overview"
+>Two Rounds at Once</a
+></h2
+><p
+>Two rounds of a loop may run at the same time when neither can see
+      what the other does: neither writes anything the other reads, and
+      neither does something whose order the world outside the program can
+      tell — printing a line, writing a file, answering a request. A
+      compiler that can prove this for a loop can hand its rounds to every
+      core of the machine, and the program cannot tell the difference except
+      by the clock.</p
+><p
+>Most languages give the compiler no way to prove it. Any call may
+      write through any pointer it was handed, change a global, or print; so
+      parallel code is written by hand, with threads, locks and a library,
+      and getting it right is the programmer's business. Scaly gives the
+      compiler three facts, and checks every one of them in every compile:
+      what a routine may write is part of its declaration, a
+      <code
+>function</code
+> writes nothing and does no input or output, and
+      memory belongs to regions rather than to one heap that every core
+      shares. A plain <code
+>for</code
+> loop is all a program writes; whether
+      its rounds run in parallel is the compiler's decision.</p
+><p
+>This part of the book shows what that gives a program, a chapter
+      for each way to scale: loops over every core, recursion that forks,
+      the lanes of one core, many connections at once, and more than one
+      machine. Each chapter is built around a program you can run. This
+      chapter is about the three facts.</p
+></section
+><section
+id="scaling-why-functions"
+><h2
+><a
+class="header"
+href="#scaling-why-functions"
+>Functions Read, Procedures Write</a
+></h2
+><p
+>A <code
+>function</code
+> reads its arguments and returns a value.
+      That is not a convention but a rule the compiler enforces: a function
+      writes nothing its parameters reach, reads no global that can change,
+      and performs no input or output — not even through the routines it
+      calls. A function that prints is refused:</p
+><pre
+class="listing fragment"
+><code
+>function shout(word: String) returns String
+{
+    print word          ; error: function shout performs I/O
+    word
+}</code
+></pre
+><p
+>So a call of a function is a question with an answer and nothing
+      else, and two such calls can run side by side. Here the rounds of the
+      first loop each compute one square and put it into a slot of their
+      own; the second loop adds them up:</p
+><pre
+class="listing"
+><code
+>function square(x: int) returns int
+    x * x
+
+let n 1000
+var squares Vector[int](n as size_t)
+for i in n
+    squares.put(i as size_t, square(i))
+
+var total 0
+for s in squares
+    total := total + s
+print "sum of squares below `n`: `total`"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run squares.scaly
+sum of squares below 1000: 332833500
+$ scalyc --task-plan squares.scaly
+task-plan: 2 for-loops, 2 parallelizable
+task-plan: squares.scaly:6:1: parallel
+task-plan: squares.scaly:10:1: parallel
+$ SCALY_WORKERS=1 scaly run squares.scaly
+sum of squares below 1000: 332833500</code
+></pre
+><p
+><code
+class="option"
+>--task-plan</code
+> shows the compiler's decision for each
+      <code
+>for</code
+> of the file: both loops run in parallel. The first
+      writes to <code
+>squares</code
+>, which the loop did not make — but each
+      round only to the slot its own <code
+>i</code
+> names, so no two rounds
+      write the same place. The second is a sum, which the compiler knows how
+      to split and put together again; the next chapter says
+      which loops it takes and which it leaves alone. The last command runs
+      the program on one core; <a
+href="#scaling-why-same"
+>The Same Program on One Core</a
+> says
+      why it prints the same.</p
+></section
+><section
+id="scaling-why-mutable"
+><h2
+><a
+class="header"
+href="#scaling-why-mutable"
+>A Procedure Says What It Writes</a
+></h2
+><p
+>A <code
+>procedure</code
+> may change things, and its declaration
+      says which: each parameter it writes is marked <code
+>mutable</code
+>,
+      the receiver <code
+>this</code
+> included, and each global it writes is
+      named after its signature. The compiler checks the marks against the
+      body, so they cannot lie (<a
+href="types.htm#types-params-mutation"
+>Mutation via Procedures</a
+>).
+      A loop that hands its own state to a procedure that writes it keeps its
+      order — here every round adds to the one <code
+>log</code
+>:</p
+><pre
+class="listing"
+><code
+>procedure record(mutable log: Array[int], value: int)
+    log.add(value)
+
+var log Array[int]()
+for i in 5
+    record(log, i * i)
+print "`log.length` entries, the last one `log[4]`"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run record.scaly
+5 entries, the last one 16
+$ scalyc --task-plan record.scaly
+task-plan: 1 for-loops, 0 parallelizable
+task-plan: record.scaly:5:1: blocked: transitively impure call record</code
+></pre
+><p
+>A loop that prints keeps its order for the same reason:
+      <code
+>print</code
+> is a procedure that reaches the world outside the
+      program, and the lines come out as the rounds were written.</p
+><pre
+class="listing"
+><code
+>for i in 3
+    print "round `i`"</code
+></pre
+><pre
+class="screen"
+><code
+>round 0
+round 1
+round 2</code
+></pre
+><p
+>None of this is an error. A loop the compiler cannot prove
+      independent runs one round after the other, as written, and the program
+      means the same either way; <code
+class="option"
+>--task-plan</code
+> is the only
+      place where the difference shows.</p
+></section
+><section
+id="scaling-why-regions"
+><h2
+><a
+class="header"
+href="#scaling-why-regions"
+>Memory That Is Not Shared</a
+></h2
+><p
+>The third fact is about memory. Scaly has no heap that every part
+      of a program allocates from and a collector cleans up; memory belongs
+      to regions — pages that belong to a call, or to an owner that lives
+      longer — and a region is released as a whole. The compiler works out
+      which region each value belongs to, and an escape checker refuses a
+      program in which a value would outlive its region
+      (<a
+href="types.htm#types-lifetimes"
+>Lifetimes and Memory Regions</a
+>; <a
+href="appendix-heritage.htm#heritage-memory"
+>Memory</a
+>
+      tells where the idea comes from).</p
+><p
+>For a loop on many cores that means there is nothing to take turns
+      at. A worker allocates from pages of its own, so the rounds do not
+      queue at one allocator, and there is no collector that must stop every
+      core to look at all of memory. What a round builds and drops is gone
+      with its page; what a round builds and the loop keeps —
+      the next chapter shows how — is handed to the region of
+      the loop.</p
+></section
+><section
+id="scaling-why-same"
+><h2
+><a
+class="header"
+href="#scaling-why-same"
+>The Same Program on One Core</a
+></h2
+><p
+>Because a loop runs in parallel only where its rounds cannot see
+      each other, a program prints the same whether it runs on one core or
+      on all of them. The environment variable <code
+class="envar"
+>SCALY_WORKERS</code
+>
+      caps how many cores a program uses; with
+      <code
+class="userinput"
+>SCALY_WORKERS=1</code
+> it runs every loop on one, as
+      the last command of <code
+class="filename"
+>squares.scaly</code
+> did — which is
+      also how you measure what the other cores bring.</p
+><p
+>Every program of this part is checked that way: what it prints
+      with every core and with one is the output printed beside it.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="tutorial.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Tutorial</span
+></a
+><a
+class="next"
+rel="next"
+href="lexical.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Lexical Structure</span
+></a
+></nav
+></main
+></div
+></body
+></html
+>
