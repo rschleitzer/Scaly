@@ -800,7 +800,7 @@ define TaskPlanner
                     if e_ptr = null
                         return false
                     let e e_ptr.unwrap()
-                    if TaskPlanner.same_access(e, vp.unwrap()) = false
+                    if this.same_value(e, vp.unwrap()) = false
                         return false
                     var op 8
                     if is_max
@@ -816,23 +816,207 @@ define TaskPlanner
             false
         }
 
-        ; the same variable, through the same member hops
-        function same_access(a: PlannedOperand, b: PlannedOperand) returns bool
+        ; the same value twice, as `if e > m  m := e` must hold it: two
+        ; operands that compute the same thing and have no effect, so that
+        ; evaluating it twice is evaluating it once -- variables, numbers,
+        ; arithmetic and comparisons, a cast, a grouping, an operator (the
+        ; `[]` of a container among them) and a call of a `function`, each
+        ; through the same field hops. A method hop, a procedure, a global
+        ; and every other shape answer no. Until 2026-11-09 only a variable
+        ; with field hops was recognised, and `if v[i] > m  m := v[i]` kept
+        ; its loop sequential (`writes loop-external m`).
+        function same_value(this: TaskPlanner, a: PlannedOperand, b: PlannedOperand) returns bool
         {
-            var an ""
-            var bn ""
-            choose a.expr
-                when v: Variable
-                    an := v.name
-                else
-                    return false
-            choose b.expr
-                when w: Variable
-                    bn := w.name
-                else
-                    return false
-            if an <> bn
+            if TaskPlanner.same_hops(a, b) = false
                 return false
+            choose a.expr
+                when va: Variable
+                {
+                    choose b.expr
+                        when vb: Variable
+                            return va.name = vb.name
+                        else
+                            return false
+                }
+                when ca: Constant
+                {
+                    choose b.expr
+                        when cb: Constant
+                            return TaskPlanner.same_constant(ca.value, cb.value)
+                        else
+                            return false
+                }
+                when ka: Call
+                {
+                    choose b.expr
+                        when kb: Call
+                        {
+                            if ka.mangled_name <> kb.mangled_name or ka.name <> kb.name
+                                return false
+                            if ka.is_indirect or kb.is_indirect
+                                return false
+                            if ka.is_intrinsic
+                            {
+                                if ka.name.starts_with(String("simd."))
+                                    return false
+                            }
+                            else
+                            {
+                                if ka.is_operator = false and this.calls_function(ka.mangled_name) = false
+                                    return false
+                            }
+                            return this.same_values(ka.args, kb.args)
+                        }
+                        else
+                            return false
+                }
+                when ta: Tuple
+                {
+                    choose b.expr
+                        when tb: Tuple
+                            return this.same_grouping(ta, tb)
+                        else
+                            return false
+                }
+                when xa: As
+                {
+                    choose b.expr
+                        when xb: As
+                        {
+                            if xa.target_type.mangled_name <> xb.target_type.mangled_name
+                                return false
+                            let av xa.value
+                            let bv xb.value
+                            if av = null
+                                return false
+                            if bv = null
+                                return false
+                            return this.same_value(av.unwrap(), bv.unwrap())
+                        }
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; two operand runs, pairwise the same value
+        function same_values(this: TaskPlanner, a: ref[Vector[PlannedOperand]]?, b: ref[Vector[PlannedOperand]]?) returns bool
+        {
+            if a = null
+                return b = null
+            if b = null
+                return false
+            if a.length <> b.length
+                return false
+            var i: size_t 0
+            while i < a.length
+            {
+                let x a.get i
+                let y b.get i
+                if x = null
+                    return false
+                if y = null
+                    return false
+                if this.same_value(x.unwrap(), y.unwrap()) = false
+                    return false
+                i := i + 1
+            }
+            true
+        }
+
+        ; a parenthesis around one value, on both sides (a construction
+        ; allocates and is not a grouping)
+        function same_grouping(this: TaskPlanner, a: PlannedTuple, b: PlannedTuple) returns bool
+        {
+            if a.is_region_alloc or b.is_region_alloc
+                return false
+            let ac a.components
+            let bc b.components
+            if ac = null
+                return false
+            if bc = null
+                return false
+            if ac.length <> 1 or bc.length <> 1
+                return false
+            let x ac.get 0
+            let y bc.get 0
+            if x = null
+                return false
+            if y = null
+                return false
+            let xc x.unwrap()
+            let yc y.unwrap()
+            if xc.name <> null or yc.name <> null
+                return false
+            this.same_values(xc.value, yc.value)
+        }
+
+        function same_constant(a: Constant, b: Constant) returns bool
+        {
+            choose a
+                when ia: Integer
+                {
+                    choose b
+                        when ib: Integer
+                            return ia.value = ib.value
+                        else
+                            return false
+                }
+                when ha: Hex
+                {
+                    choose b
+                        when hb: Hex
+                            return ha.value = hb.value
+                        else
+                            return false
+                }
+                when ba: Boolean
+                {
+                    choose b
+                        when bb: Boolean
+                            return ba.value = bb.value
+                        else
+                            return false
+                }
+                when fa: FloatingPoint
+                {
+                    choose b
+                        when fb: FloatingPoint
+                            return fa.value = fb.value
+                        else
+                            return false
+                }
+                when ch: Character
+                {
+                    choose b
+                        when cb: Character
+                            return ch.value = cb.value
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; is the callee a `function` (checked: no write, no global, no I/O)?
+        function calls_function(this: TaskPlanner, mangled: String) returns bool
+        {
+            if plan_functions = null
+                return false
+            for func in plan_functions
+            {
+                if func.mangled_name = mangled and TaskPlanner.keyword_is_trusted(func)
+                    return true
+            }
+            false
+        }
+
+        ; the same field hops after both operands (no method hop)
+        function same_hops(a: PlannedOperand, b: PlannedOperand) returns bool
+        {
             var al: size_t 0
             if a.member_access <> null
                 al := a.member_access.length

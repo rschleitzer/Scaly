@@ -1,0 +1,13 @@
+; The maximum of reduction_max_expression, compiled: `if v[i] > m  m :=
+; v[i]` runs through the parallel driver as a reduction, whose chunk hands
+; its partial back (`parfor.red.partial`). The previous compiler judged the
+; store a write of a loop-external variable and emitted no driver.
+; expect-ir: parfor.red.partial
+var v Vector[int](8)
+for i in 8
+    v.put(i as size_t, (i * 37) % 11)
+var m 0
+for i in 8
+    if v[i as size_t] > m
+        m := v[i as size_t]
+print "`m`"

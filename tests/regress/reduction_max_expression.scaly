@@ -1,0 +1,73 @@
+; A maximum or minimum whose value is an EXPRESSION -- `if v[i] > m  m :=
+; v[i]`, a field through a subscript, arithmetic, a `function` called twice
+; -- is a reduction like one over a bare name (TaskPlanner.same_value#;
+; until 2026-11-09 only a variable with field hops was recognised and these
+; loops ran in order). Both sides must be the same value without effect:
+; a different expression stays sequential and must still be right.
+; reduction_max_expression_ir pins that the first loop is reduced.
+; run-env: SCALY_POISON=1
+define P(x: int, y: int)
+
+function score(i: int) returns int
+{
+    var s 0
+    var k 0
+    while k < 20000
+    {
+        s := (s * 31 + k * i + 7) % 1000003
+        k := k + 1
+    }
+    s
+}
+
+let n 2000
+var v Vector[int](n as size_t)
+var ps Vector[P](n as size_t)
+for i in n
+{
+    v.put(i as size_t, score(i))
+    ps.put(i as size_t, P(i, score(i) % 1000))
+}
+
+var m1 0
+var m2 0
+var m3 1000003
+var m4 0
+var m5 0
+for i in n
+{
+    if v[i as size_t] > m1
+        m1 := v[i as size_t]
+    if ps[i as size_t].y > m2
+        m2 := ps[i as size_t].y
+    if score(i) + 1 < m3
+        m3 := score(i) + 1
+}
+for i in n - 1
+    if v[i as size_t] > m4
+        m4 := v[(i + 1) as size_t]
+for i in n
+    if (v[i as size_t]) > m5
+        m5 := (v[i as size_t])
+
+var w1 0
+var w2 0
+var w3 1000003
+var w4 0
+var j 0
+while j < n
+{
+    if v[j as size_t] > w1
+        w1 := v[j as size_t]
+    if ps[j as size_t].y > w2
+        w2 := ps[j as size_t].y
+    if score(j) + 1 < w3
+        w3 := score(j) + 1
+    if j < n - 1 and v[j as size_t] > w4
+        w4 := v[(j + 1) as size_t]
+    j := j + 1
+}
+if m1 = w1 and m2 = w2 and m3 = w3 and m4 = w4 and m5 = w1
+    print "PASS"
+else
+    print "FAIL `m1`/`w1` `m2`/`w2` `m3`/`w3` `m4`/`w4` `m5`"
