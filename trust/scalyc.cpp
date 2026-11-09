@@ -17058,6 +17058,8 @@ void TaskPlanner_check_global_read(TaskPlanner&, PlannedGlobalRef&) asm("_ZN11Ta
 void TaskPlanner_check_life(TaskPlanner&, Lifetime&) asm("_ZN11TaskPlannerB6scalycB4v0_210check_lifeE8LifetimeB6scalycB4v0_2");
 bool TaskPlanner_global_is_sanctioned(TaskPlanner&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_220global_is_sanctionedE6String");
 bool TaskPlanner_is_read_primitive(String&) asm("_ZN11TaskPlannerB6scalycB4v0_217is_read_primitiveE6String");
+bool WriteCensus_extern_is_io(String&) asm("_ZN11WriteCensusB6scalycB4v0_212extern_is_ioE6String");
+bool TaskPlanner_keyword_is_trusted(PlannedFunction&) asm("_ZN11TaskPlannerB6scalycB4v0_218keyword_is_trustedE15PlannedFunctionB6scalycB4v0_2");
 bool TaskPlanner_extern_is_benign(TaskPlanner&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_216extern_is_benignE6String");
 void TaskPlanner_memo_purity(TaskPlanner&, String&, bool) asm("_ZN11TaskPlannerB6scalycB4v0_211memo_purityE6Stringb");
 void TaskPlanner_pw_action(TaskPlanner&, PlannedAction&) asm("_ZN11TaskPlannerB6scalycB4v0_29pw_actionE13PlannedActionB6scalycB4v0_2");
@@ -17335,7 +17337,6 @@ void WriteCensus_interface_facts(scaly_frame*, WriteCensus&, Array<InterfaceFact
 bool WriteCensus_list_has(String&, Slice<uint8_t>&) asm("_ZN11WriteCensusB6scalycB4v0_28list_hasE6String5SliceIcE");
 void WriteCensus_wc_mark(WriteCensus&, const char*) asm("_ZN11WriteCensusB6scalycB4v0_27wc_markEP10const_char");
 void WriteCensus_note_io(WriteCensus&, uint64_t, String&) asm("_ZN11WriteCensusB6scalycB4v0_27note_ioEm6String");
-bool WriteCensus_extern_is_io(String&) asm("_ZN11WriteCensusB6scalycB4v0_212extern_is_ioE6String");
 bool WriteCensus_is_changeable(WriteCensus&, String&) asm("_ZN11WriteCensusB6scalycB4v0_213is_changeableE6String");
 void WriteCensus_note_read_site(WriteCensus&, uint64_t, String&, String&) asm("_ZN11WriteCensusB6scalycB4v0_214note_read_siteEm6String6String");
 void WriteCensus_note_global_read(WriteCensus&, uint64_t, String&) asm("_ZN11WriteCensusB6scalycB4v0_216note_global_readEm6String");
@@ -112169,6 +112170,34 @@ __attribute__((weak)) bool TaskPlanner_is_read_primitive(String& mangled)
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) bool TaskPlanner_keyword_is_trusted(PlannedFunction& func)
+{
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if ((((func).pure) == (false)))
+    {
+        return false;
+    }
+    bool c_extern = false;
+    {
+        auto&& scaly_t1 = (func).impl;
+        if (scaly_t1.tag == 1)
+        {
+            PlannedExternImpl e = scaly_payload<PlannedExternImpl>(scaly_t1);
+            c_extern = ((String_starts_with((func).mangled_name, scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{(uint8_t*)"\002_Z"})); scaly_t2; }))))) == (false));
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    if (c_extern)
+    {
+        return ((WriteCensus_extern_is_io((func).name)) == (false));
+    }
+    return true;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
 __attribute__((weak)) bool TaskPlanner_extern_is_benign(TaskPlanner& scaly_self, String& name)
 {
     TaskPlanner* this_ = &scaly_self;
@@ -112288,7 +112317,7 @@ __attribute__((weak)) bool TaskPlanner_effectively_pure(TaskPlanner& scaly_self,
         PlannedFunction* func = scaly_t1_at;
         if (String_equals(func->mangled_name, mangled))
         {
-            if ((func->pure ? true : TaskPlanner_is_read_primitive(mangled)))
+            if ((TaskPlanner_keyword_is_trusted(*(func)) ? true : TaskPlanner_is_read_primitive(mangled)))
             {
                 TaskPlanner_memo_purity(*(this_), mangled, true);
                 return true;
@@ -113732,7 +113761,7 @@ __attribute__((weak)) void TaskPlanner_callee_verdict(TaskPlanner& scaly_self, P
         PlannedFunction* func = scaly_t1_at;
         if (String_equals(func->mangled_name, (call).mangled_name))
         {
-            if ((func->pure ? true : TaskPlanner_is_read_primitive(func->mangled_name)))
+            if ((TaskPlanner_keyword_is_trusted(*(func)) ? true : TaskPlanner_is_read_primitive(func->mangled_name)))
             {
                 bool stub_fn = false;
                 {
@@ -168629,6 +168658,10 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         if ((opts).loop_census)
         {
             cli_print_loop_census((&((*task_planner))));
+        }
+        if ((((((((String_get_length((opts).output_file) == 0ULL) ? (((opts).emit_ir) == (false)) : false) ? (((opts).compile_only) == (false)) : false) ? (((opts).run_mode) == (false)) : false) ? (((opts).jit_program) == (false)) : false) ? (((opts).test_mode) == (false)) : false) ? (((opts).emit_interface) == (false)) : false))
+        {
+            return 0LL;
         }
     }
     if ((opts).verbose)
