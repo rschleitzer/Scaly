@@ -15845,6 +15845,11 @@ bool Planner_is_integer_comparison_operator(String&) asm("_ZN7PlannerB6scalycB4v
 bool Planner_arg_is_foldable_float(Planner&, Vector<PlannedOperand>&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_221arg_is_foldable_floatE6VectorI14PlannedOperandB6scalycB4v0_2Em");
 bool Planner_arg_is_foldable_char_string(Planner&, Vector<PlannedOperand>&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_227arg_is_foldable_char_stringE6VectorI14PlannedOperandB6scalycB4v0_2Em");
 bool Planner_arg_folds_to_char(Planner&, Vector<PlannedOperand>&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_217arg_folds_to_charE6VectorI14PlannedOperandB6scalycB4v0_2Em");
+bool Planner_type_is_byte_slice(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_218type_is_byte_sliceE11PlannedTypeB6scalycB4v0_2");
+bool Planner_arg_is_string_into_byte_slice(Planner&, PlannedType&, PlannedType&, Vector<PlannedOperand>&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_229arg_is_string_into_byte_sliceE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_26VectorI14PlannedOperandB6scalycB4v0_2Em");
+MethodMatch* Planner_lookup_method(scaly_frame*, Planner&, PlannedType&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_213lookup_methodEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E");
+void Planner_ensure_type_layout(Planner&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_218ensure_type_layoutE11PlannedTypeB6scalycB4v0_2");
+PlannedOperand Planner_string_view_operand(scaly_frame*, Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_219string_view_operandEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
 bool Planner_operand_is_null_constant(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_224operand_is_null_constantE14PlannedOperandB6scalycB4v0_2");
 bool Planner_npo_option_payload(PlannedType&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_218npo_option_payloadE11PlannedTypeB6scalycB4v0_2R11PlannedTypeB6scalycB4v0_2");
 bool Planner_narrow_null_subject(Planner&, PlannedOperand&, PlannedOperand*, bool*) asm("_ZN7PlannerB6scalycB4v0_219narrow_null_subjectE14PlannedOperandB6scalycB4v0_2R14PlannedOperandB6scalycB4v0_2Rb");
@@ -15962,7 +15967,6 @@ Vector<KeyValuePair<String, PlannedType>> Planner_match_type_pattern(scaly_frame
 PlannedFunction Planner_plan_function(scaly_frame*, Planner&, Function&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_213plan_functionEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
 PlannedFunction Planner_instantiate_generic_function(scaly_frame*, Planner&, Function&, Vector<KeyValuePair<String, PlannedType>>&) asm("_ZN7PlannerB6scalycB4v0_228instantiate_generic_functionEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26VectorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EE");
 PlannedType Planner_fresh_type_var(scaly_frame*, Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_214fresh_type_varEPN4scaly6memory4PageE6String");
-void Planner_ensure_type_layout(Planner&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_218ensure_type_layoutE11PlannedTypeB6scalycB4v0_2");
 PlannedType Planner_rehome_type(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_211rehome_typeEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 String* Planner_concept_origin_file(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_219concept_origin_fileE6String");
 PlannedStructure Planner_plan_structure(scaly_frame*, Planner&, Structure&, String&) asm("_ZN7PlannerB6scalycB4v0_214plan_structureEPN4scaly6memory4PageE9StructureB6scalycB4v0_26String");
@@ -16103,7 +16107,6 @@ PlannedOperand Planner_plan_simd_call(scaly_frame*, Planner&, int64_t, PlannedOp
 PlannedOperand Planner_rebind_trailing_chain(scaly_frame*, Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_221rebind_trailing_chainEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
 uint64_t Planner_operation_name(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_214operation_nameE14PlannedOperandB6scalycB4v0_2");
 Planner_CallArm Planner_call_arm_chain(scaly_frame*, Planner&, PlannedOperand&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&, Planner_CallArm&) asm("_ZN7PlannerB6scalycB4v0_214call_arm_chainEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_26String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2EN7Planner7CallArmB6scalycB4v0_2E");
-MethodMatch* Planner_lookup_method(scaly_frame*, Planner&, PlannedType&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_213lookup_methodEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E");
 Planner_CallArm Planner_call_arm_sibling(scaly_frame*, Planner&, PlannedOperand&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&, bool, Planner_CallArm&) asm("_ZN7PlannerB6scalycB4v0_216call_arm_siblingEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_26String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2EbN7Planner7CallArmB6scalycB4v0_2E");
 Planner_NamespaceArm Planner_call_arm_namespace(scaly_frame*, Planner&, PlannedOperand&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&, PlannedType&, Array<PlannedType>*) asm("_ZN7PlannerB6scalycB4v0_218call_arm_namespaceEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_26String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E11PlannedTypeB6scalycB4v0_2R5ArrayI11PlannedTypeB6scalycB4v0_2E");
 MethodMatch* Planner_call_arm_static(scaly_frame*, Planner&, PlannedOperand&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_215call_arm_staticEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_26String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E");
@@ -16458,7 +16461,7 @@ bool Planner_type_is_underefable_scalar(PlannedType&) asm("_ZN7PlannerB6scalycB4
 bool Planner_is_number_type(String&) asm("_ZN7PlannerB6scalycB4v0_214is_number_typeE6String");
 bool Planner_gate_char_like(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_214gate_char_likeE11PlannedTypeB6scalycB4v0_2");
 PlannedType Planner_gate_strip_indirection(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_222gate_strip_indirectionEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
-void Planner_report_string_into_slice(Planner&, Function&, String&, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_224report_string_into_sliceE8FunctionB6scalycB4v0_26String6VectorI14PlannedOperandB6scalycB4v0_2E");
+void Planner_report_string_into_slice(Planner&, Function&, String&, Vector<PlannedOperand>&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_224report_string_into_sliceE8FunctionB6scalycB4v0_26String6VectorI14PlannedOperandB6scalycB4v0_2E11PlannedTypeB6scalycB4v0_2");
 Vector<uint64_t> Planner_free_type_vars_with_dups(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_224free_type_vars_with_dupsEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 PlannedOperand* Planner_convert_tail_literal(scaly_frame*, Planner&, PlannedOperand&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_220convert_tail_literalEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 bool Planner_value_is_plain(Planner&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_214value_is_plainE11PlannedTypeB6scalycB4v0_2");
@@ -43427,6 +43430,69 @@ __attribute__((weak)) bool Planner_arg_is_foldable_char_string(Planner& scaly_se
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_type_is_byte_slice(PlannedType& t)
+{
+    if (((!(String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\005Slice"})))) ? true : (((t).generics) == (nullptr))))
+    {
+        return false;
+    }
+    Vector<PlannedType> gs = ((*((t).generics)));
+    if (((gs).length != 1ULL))
+    {
+        return false;
+    }
+    PlannedType* ip = Vector_get<PlannedType>(gs, 0ULL);
+    if (((ip) == (nullptr)))
+    {
+        return false;
+    }
+    return String_equals(scaly_lvalue(((*(ip))).name), scaly_lvalue(String{(uint8_t*)"\002u8"}));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_arg_is_string_into_byte_slice(Planner& scaly_self, PlannedType& planned_p, PlannedType& arg, Vector<PlannedOperand>& arg_ops, uint64_t j)
+{
+    Planner* this_ = &scaly_self;
+    if (((!(String_equals((arg).name, scaly_lvalue(String{(uint8_t*)"\006String"})))) ? true : ((Planner_type_is_byte_slice(planned_p)) == (false))))
+    {
+        return false;
+    }
+    if ((j >= (arg_ops).length))
+    {
+        return false;
+    }
+    PlannedOperand* op_ptr = Vector_get<PlannedOperand>(arg_ops, j);
+    if (((op_ptr) == (nullptr)))
+    {
+        return false;
+    }
+    return ((Planner_operand_is_string_constant(*(this_), scaly_lvalue(((*(op_ptr)))))) == (false));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) PlannedOperand Planner_string_view_operand(scaly_frame* scaly_rp, Planner& scaly_self, PlannedOperand& a)
+{
+    Planner* this_ = &scaly_self;
+    PlannedType recv_t = (a).result_type;
+    MethodMatch* m_ref = Planner_lookup_method(scaly_rp, *(this_), recv_t, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{(uint8_t*)"\010as_slice"})); scaly_t1; }))), scaly_lvalue((*({ Vector<PlannedType>* scaly_t2 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t2 = Vector<PlannedType>{}; Vector_init3<PlannedType>((*scaly_t2), 0ULL); scaly_t2; }))), scaly_lvalue((*({ Vector<PlannedOperand>* scaly_t3 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t3 = Vector<PlannedOperand>{}; (void)0; scaly_t3; }))));
+    if (((m_ref) == (nullptr)))
+    {
+        return a;
+    }
+    MethodMatch* m = ({ MethodMatch* scaly_t4 = (MethodMatch*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(MethodMatch), alignof(MethodMatch)); *scaly_t4 = ((*(m_ref))); scaly_t4; });
+    if (((((*m)).takes_this) == (false)))
+    {
+        return a;
+    }
+    Planner_ensure_type_layout(*(this_), ((*m)).return_type);
+    PlannedOperand receiver = a;
+    Vector<PlannedOperand>* view_args = ({ Vector<PlannedOperand>* scaly_t5 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t5 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t5), 1ULL); scaly_t5; });
+    Vector_put<PlannedOperand>((*view_args), 0ULL, receiver);
+    PlannedCall* view_call = ({ PlannedCall* scaly_t6 = (PlannedCall*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedCall), alignof(PlannedCall)); *scaly_t6 = PlannedCall{(a).loc, (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init2((*scaly_t7), scaly_lvalue(String{(uint8_t*)"\010as_slice"})); scaly_t7; })), ((*m)).mangled_name, false, false, ((*m)).can_throw, ((*m)).requires_page_param, (&((*view_args))), ((*m)).return_type, scaly_variant<Lifetime>(0, Unspecified{}), ((*m)).throws_type, false}; scaly_t6; });
+    return PlannedOperand{(a).loc, scaly_variant<PlannedExpression>(4, (*view_call)), (Vector<PlannedMemberAccess>*)(nullptr), ((*m)).return_type};
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
 __attribute__((weak)) bool Planner_operand_is_null_constant(Planner& scaly_self, PlannedOperand& op)
 {
     Planner* this_ = &scaly_self;
@@ -47699,6 +47765,11 @@ __attribute__((weak)) bool Planner_candidate_matches_char_fold_in(Planner& scaly
                     }
                 }
             }
+            if ((((ok) == (false)) ? Planner_arg_is_string_into_byte_slice(*(this_), planned_p, arg, arg_ops, j) : false))
+            {
+                ok = true;
+                any_fold = true;
+            }
             if ((((ok) == (false)) ? Planner_option_arg_into_plain_ref(planned_p, arg) : false))
             {
                 ok = true;
@@ -48122,6 +48193,10 @@ __attribute__((weak)) MethodMatch* Planner_check_function_match_in(scaly_frame* 
                         }
                     }
                 }
+            }
+            if (((((ok) == (false)) ? char_fold : false) ? Planner_arg_is_string_into_byte_slice(*(this_), planned_p, arg, arg_ops, j) : false))
+            {
+                ok = true;
             }
             if (((((ok) == (false)) ? char_fold : false) ? Planner_option_arg_into_plain_ref(planned_p, arg) : false))
             {
@@ -49669,6 +49744,14 @@ __attribute__((weak)) Vector<PlannedOperand> Planner_fold_string_args_to_char(sc
                                 Array_add<PlannedOperand>((*out), scaly_lvalue(Planner_materialize_string_operand_to_slice(scaly_rp, *(this_), (*a), (*pt))));
                                 folded = true;
                             }
+                        }
+                    }
+                    if (((((folded) == (false)) ? String_equals((((*a)).result_type).name, scaly_lvalue(String{(uint8_t*)"\006String"})) : false) ? Planner_type_is_byte_slice((*pt)) : false))
+                    {
+                        if (((Planner_operand_is_string_constant(*(this_), (*a))) == (false)))
+                        {
+                            Array_add<PlannedOperand>((*out), scaly_lvalue(Planner_string_view_operand(scaly_rp, *(this_), (*a))));
+                            folded = true;
                         }
                     }
                     if (((folded) == (false)))
@@ -54849,6 +54932,10 @@ __attribute__((weak)) PlannedType* Planner_check_operator_match(Planner& scaly_s
                     }
                 }
             }
+            if (((((ok) == (false)) ? char_fold : false) ? Planner_arg_is_string_into_byte_slice(*(this_), planned_p, arg, arg_ops, j) : false))
+            {
+                ok = true;
+            }
             if (((ok) == (false)))
             {
                 return (PlannedType*)(nullptr);
@@ -55335,6 +55422,10 @@ __attribute__((weak)) bool Planner_method_params_match(Planner& scaly_self, Func
                         }
                     }
                 }
+            }
+            if (((((ok) == (false)) ? char_fold : false) ? Planner_arg_is_string_into_byte_slice(*(this_), planned_p, arg, arg_ops, j) : false))
+            {
+                ok = true;
             }
             if (((((ok) == (false)) ? char_fold : false) ? Planner_lambda_arg_fits(*(this_), planned_p, arg_ops, j) : false))
             {
@@ -70868,10 +70959,23 @@ __attribute__((weak)) PlannedType Planner_gate_strip_indirection(scaly_frame* sc
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
-__attribute__((weak)) void Planner_report_string_into_slice(Planner& scaly_self, Function& f, String& method_name, Vector<PlannedOperand>& arg_ops)
+__attribute__((weak)) void Planner_report_string_into_slice(Planner& scaly_self, Function& f, String& method_name, Vector<PlannedOperand>& arg_ops, PlannedType& recv)
 {
     Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    bool over_bytes = false;
+    if ((((recv).generics) != (nullptr)))
+    {
+        Vector<PlannedType> rg = ((*((recv).generics)));
+        if (((rg).length == 1ULL))
+        {
+            PlannedType* r0 = Vector_get<PlannedType>(rg, 0ULL);
+            if ((((r0) != (nullptr)) ? String_equals(scaly_lvalue((((*(r0)))).name), scaly_lvalue(String{(uint8_t*)"\002u8"})) : false))
+            {
+                over_bytes = true;
+            }
+        }
+    }
     uint64_t param_start = 0ULL;
     if ((((f).input).length > 0ULL))
     {
@@ -70914,7 +71018,7 @@ __attribute__((weak)) void Planner_report_string_into_slice(Planner& scaly_self,
                     0LL;
                 }
             }
-            if (((((literal) == (false)) ? String_equals(scaly_lvalue(Planner_join_dotted_name(&scaly_local.f, (pt).name)), scaly_lvalue(String{(uint8_t*)"\005Slice"})) : false) ? String_equals((((*a)).result_type).name, scaly_lvalue(String{(uint8_t*)"\006String"})) : false))
+            if ((((((literal) == (false)) ? ((over_bytes) == (false)) : false) ? String_equals(scaly_lvalue(Planner_join_dotted_name(&scaly_local.f, (pt).name)), scaly_lvalue(String{(uint8_t*)"\005Slice"})) : false) ? String_equals((((*a)).result_type).name, scaly_lvalue(String{(uint8_t*)"\006String"})) : false))
             {
                 StringBuilder* sb = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
                 StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\011argument "}));
@@ -70938,7 +71042,7 @@ __attribute__((weak)) void Planner_report_method_arg_types(Planner& scaly_self, 
         Vector<PlannedType> tg_gens = ((*((lookup_st).generics)));
         if (((tg_gens).length > 0ULL))
         {
-            Planner_report_string_into_slice(*(this_), f, method_name, arg_ops);
+            Planner_report_string_into_slice(*(this_), f, method_name, arg_ops, lookup_st);
             return;
         }
     }
@@ -71068,6 +71172,10 @@ __attribute__((weak)) void Planner_report_arg_types_from(Planner& scaly_self, Fu
                                     }
                                 }
                             }
+                        }
+                        if ((((ok) == (false)) ? Planner_arg_is_string_into_byte_slice(*(this_), planned_p, arg, arg_ops, j) : false))
+                        {
+                            ok = true;
                         }
                         if (((ok) == (false)))
                         {
