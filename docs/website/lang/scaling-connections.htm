@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Many Connections - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="division"
+><span
+class="division-label"
+>Part I</span
+>First Steps</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-change"
+><span
+class="num"
+>1.2</span
+>A Language Still Changing</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with Visual Studio Code on macOS and Linux</a
+></li
+><li
+><a
+href="tutorial.htm#tut-windows"
+><span
+class="num"
+>2.3</span
+>Scaly on Windows</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.4</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.5</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part II</span
+>Scaling</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-why.htm"
+><span
+class="num"
+>3.</span
+>Why Scaly Can Scale</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-why.htm#scaling-why-overview"
+><span
+class="num"
+>3.1</span
+>Two Rounds at Once</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-functions"
+><span
+class="num"
+>3.2</span
+>Functions Read, Procedures Write</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-mutable"
+><span
+class="num"
+>3.3</span
+>A Procedure Says What It Writes</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-regions"
+><span
+class="num"
+>3.4</span
+>Memory That Is Not Shared</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-same"
+><span
+class="num"
+>3.5</span
+>The Same Program on One Core</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-loops.htm"
+><span
+class="num"
+>4.</span
+>Loops on All Cores</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-loops.htm#scaling-loops-overview"
+><span
+class="num"
+>4.1</span
+>A Plain for</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-round"
+><span
+class="num"
+>4.2</span
+>What a Round May Do</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-order"
+><span
+class="num"
+>4.3</span
+>What Keeps a Loop in Order</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-reductions"
+><span
+class="num"
+>4.4</span
+>Sums, Products and the Largest</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-kept"
+><span
+class="num"
+>4.5</span
+>Values a Round Keeps</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-when"
+><span
+class="num"
+>4.6</span
+>When the Cores Are Worth It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-forks.htm"
+><span
+class="num"
+>5.</span
+>Recursion That Forks</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-forks.htm#scaling-forks-overview"
+><span
+class="num"
+>5.1</span
+>Two Calls at Once</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-shape"
+><span
+class="num"
+>5.2</span
+>What Forks</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-when"
+><span
+class="num"
+>5.3</span
+>Forks Nobody Waits For</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-uneven"
+><span
+class="num"
+>5.4</span
+>An Uneven Tree</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-lanes.htm"
+><span
+class="num"
+>6.</span
+>Lanes</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-overview"
+><span
+class="num"
+>6.1</span
+>Four Numbers in One</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-masks"
+><span
+class="num"
+>6.2</span
+>Masks</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-memory"
+><span
+class="num"
+>6.3</span
+>Lanes from Memory</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-mandelbrot"
+><span
+class="num"
+>6.4</span
+>Mandelbrot, Eight Points at a Time</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-cores"
+><span
+class="num"
+>6.5</span
+>Lanes and Cores</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="scaling-connections.htm"
+aria-current="page"
+><span
+class="num"
+>7.</span
+>Many Connections</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-connections.htm#scaling-connections-overview"
+><span
+class="num"
+>7.1</span
+>Waiting Is Not Working</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-server"
+><span
+class="num"
+>7.2</span
+>A Server</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-colorless"
+><span
+class="num"
+>7.3</span
+>The Same Calls Everywhere</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-cores"
+><span
+class="num"
+>7.4</span
+>One Scheduler per Core</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-memory"
+><span
+class="num"
+>7.5</span
+>A Region per Connection</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part III</span
+>Language Reference</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>8.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>8.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>8.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>8.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>8.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>8.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>9.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>9.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>9.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>9.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>9.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>9.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>9.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>9.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>9.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>9.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>9.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>9.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>9.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>9.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>10.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>11.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>11.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>11.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>11.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>12.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>12.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>12.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>12.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>12.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>12.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>12.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>12.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>12.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>12.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>12.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>12.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>13.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>13.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>13.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>13.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>13.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>13.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>13.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>13.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>13.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>14.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>14.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>14.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>14.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>14.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="division"
+>Appendices</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tools.htm"
+><span
+class="num"
+>A.</span
+>The Tools</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tools.htm#tools-install"
+><span
+class="num"
+>A.1</span
+>Installation</a
+></li
+><li
+><a
+href="tools.htm#tools-scaly"
+><span
+class="num"
+>A.2</span
+>scaly</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyc"
+><span
+class="num"
+>A.3</span
+>scalyc</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyls"
+><span
+class="num"
+>A.4</span
+>scalyls</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>B.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>B.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>B.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>C.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>D.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>D.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>D.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>D.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>D.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>D.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>D.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>D.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>D.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>D.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>D.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 7</p
+><h1
+id="scaling-connections"
+>Many Connections</h1
+><section
+id="scaling-connections-overview"
+><h2
+><a
+class="header"
+href="#scaling-connections-overview"
+>Waiting Is Not Working</a
+></h2
+><p
+>The programs of the previous chapters keep every core busy with
+      arithmetic. A server is busy differently: most of the time its
+      connections wait — for the next request of a client, for a database,
+      for a file. Ten thousand open connections may need the processor for a
+      few hundred of them at any moment. What scales a server is how little a
+      waiting connection costs.</p
+><p
+>A thread per connection costs a stack of megabytes and a place in
+      the operating system's scheduler, and ten thousand of them are too
+      many. The usual way out is to write the server as callbacks or with
+      <code
+>async</code
+> and <code
+>await</code
+>, and every function that may
+      wait has to be written that way too: the waiting becomes part of each
+      function's type, and the program splits into two kinds of
+      code.</p
+><p
+>Scaly does neither. A connection is a task:
+      a small stack of its own (128 KB, of which only what is touched costs
+      memory) and a region of its own, run by a
+      scheduler that switches between tasks in user
+      space. When a task reads from a socket that has nothing to read, it is
+      parked, and the scheduler runs another; when data arrives, the task
+      continues where it stopped. The read is an ordinary call — the same
+      call that, in a program without a scheduler, simply blocks.</p
+></section
+><section
+id="scaling-connections-server"
+><h2
+><a
+class="header"
+href="#scaling-connections-server"
+>A Server</a
+></h2
+><p
+>The <code
+>http</code
+> package of the standard library is a server
+      built that way. A handler takes the request and the response, a
+      router maps paths to handlers, and <code
+>serve</code
+> runs it:</p
+><pre
+class="listing fragment"
+><code
+>package http 0.2.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+procedure hello(req: ref[Request], mutable res: ref[Response])
+{
+    let name req.param("name")
+    let text "hello, `name`"
+    res.send_text(text.as_slice())
+}
+
+var app Router.create(Page.allocate_page())
+app.get("/hello/{name}", &#38;hello)
+serve(app, 8080)</code
+></pre
+><p
+>Run, it answers <code
+class="userinput"
+>curl localhost:8080/hello/book</code
+>
+      with <code
+class="computeroutput"
+>hello, book</code
+>, and goes on serving
+      until it is stopped. The program the book
+      checks is one that stops by itself: a server that answers each
+      request after a pause, and a hundred clients in the same program that
+      ask at once. The handler sleeps with <code
+>Scheduler.sleep</code
+>,
+      which parks its task, not a thread; each client is a task too, on a
+      scheduler of the program's own, and counts how many clients are
+      waiting for an answer at the same moment:</p
+><pre
+class="listing"
+><code
+>package http 0.2.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+; waits ms milliseconds without holding a thread, then answers ms
+procedure delay(req: ref[Request], mutable res: ref[Response])
+{
+    let ms parse_int_prefix(req.param("ms"))
+    Scheduler.sleep(ms)
+    res.send_int(ms)
+}
+
+mutable port: int 0
+mutable waiting: int 0
+mutable most: int 0
+mutable answered: int 0
+
+; one client: a request, then the answer up to the end of the connection
+procedure client() mutable waiting, most, answered
+{
+    var s TcpStream.connect("127.0.0.1", port)
+    s.write("GET /delay/100 HTTP/1.1\r\nHost: here\r\nConnection: close\r\n\r\n")
+    waiting := waiting + 1
+    if waiting &#62; most
+        most := waiting
+    var buf u8[256]
+    let view Slice[u8](256, &#38;buf[0])
+    var got: size_t 0
+    repeat
+    {
+        let n s.read(view.slice_from(got))
+        if n &#60;= 0
+            break
+        got := got + (n as size_t)
+    }
+    waiting := waiting - 1
+    s.close()
+    if got &#62; 12 and buf[9] = 50 and buf[10] = 48 and buf[11] = 48
+        answered := answered + 1
+}
+
+var app Router.create(Page.allocate_page())
+app.get("/delay/{ms}", &#38;delay)
+var l TcpListener.listen(0)
+port := l.port()
+let server start(app, l)
+
+let clients Scheduler.create(Page.allocate_page())
+var k 0
+while k &#60; 100
+{
+    Scheduler.spawn(&#38;client)
+    k := k + 1
+}
+Scheduler.run()
+
+server.shutdown()
+server.wait()
+print "`answered` of 100 answered, at most `most` waiting at once"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run waits.scaly
+100 of 100 answered, at most 100 waiting at once
+$ SCALY_WORKERS=1 scaly run waits.scaly
+100 of 100 answered, at most 100 waiting at once</code
+></pre
+><p
+><code
+>TcpListener.listen(0)</code
+> takes a free port on the local
+      machine, and <code
+>start</code
+> serves it on threads of its own and
+      returns at once, where <code
+>serve</code
+> would not return;
+      <code
+>shutdown</code
+> and <code
+>wait</code
+> end it. The router and the
+      clients' scheduler each get a page to live on. <code
+>&#38;delay</code
+>
+      and <code
+>&#38;client</code
+> hand the procedures themselves to the
+      router and the scheduler.</p
+><p
+>All hundred clients waited at the same time, with all cores and
+      with one: a hundred requests that take a tenth of a second each were
+      answered, built with <code
+class="userinput"
+>scaly build --release</code
+>,
+      after 0.11 seconds. A thousand clients took 0.15 seconds: the server
+      held a thousand parked tasks, not a thousand threads.</p
+></section
+><section
+id="scaling-connections-colorless"
+><h2
+><a
+class="header"
+href="#scaling-connections-colorless"
+>The Same Calls Everywhere</a
+></h2
+><p
+>Look at <code
+>client</code
+> again: it connects, writes and reads
+      with the calls a program without any scheduler would use, and nothing
+      in its declaration says that it may wait. Whether a call blocks or
+      parks is decided when it runs, not written in the program:</p
+><ul
+><li
+><p
+>outside a scheduler, <code
+>read</code
+> blocks the
+        thread, as in any program;</p
+></li
+><li
+><p
+>inside a task, it parks the task and lets the
+        scheduler run the others until data arrives;</p
+></li
+><li
+><p
+>a call the operating system can only do blocking —
+        <code
+>connect</code
+>, which resolves a name and shakes hands, and
+        the reads of a file — goes to a pool of helper threads, and the task
+        parks until it is done.</p
+></li
+></ul
+><p
+>So there is one kind of function. A procedure that reads a
+      configuration file is called from a handler, from a test and from
+      <code
+>main</code
+> alike, and code written before anyone thought of a
+      server runs inside one unchanged. One limit is named: a socket is read
+      and written by one task at a time, not by a reader and a writer in
+      parallel.</p
+></section
+><section
+id="scaling-connections-cores"
+><h2
+><a
+class="header"
+href="#scaling-connections-cores"
+>One Scheduler per Core</a
+></h2
+><p
+>A scheduler runs on one thread, and one thread uses one core.
+      <code
+>serve</code
+> and <code
+>start</code
+> therefore run one scheduler
+      per core — as many as <code
+class="envar"
+>SCALY_WORKERS</code
+> allows — and the
+      connections are spread over them. On Linux each scheduler has a
+      listener of its own on the same port, and the kernel hands each new
+      connection to one of them; on macOS and Windows one scheduler accepts
+      and passes the connections round. A connection stays on the scheduler
+      that took it, so its task never moves between cores, and its memory
+      stays with one core's caches.</p
+><p
+>Each scheduler waits for its sockets with what the operating
+      system offers for many at once — <code
+>io_uring</code
+> or
+      <code
+>epoll</code
+> on Linux, <code
+>kqueue</code
+> on macOS, I/O
+      completion ports on Windows — and none of that shows in the program.
+      The checked program above ran its server on ten schedulers and on
+      one, and printed the same.</p
+></section
+><section
+id="scaling-connections-memory"
+><h2
+><a
+class="header"
+href="#scaling-connections-memory"
+>A Region per Connection</a
+></h2
+><p
+>Every task allocates from its own region
+      (<a
+href="scaling-why.htm#scaling-why-regions"
+>Memory That Is Not Shared</a
+>). For a server that settles
+      what else would be its hardest question: a request builds its
+      strings, its parsed headers and its answer in the region of the
+      handler's call, and all of it is released at once when the handler
+      returns — no collector walks the heap, no other connection notices.
+      A connection that ends gives back its stack and its region, and the
+      records of a finished task are reused for the next connection, so a
+      server does not grow with the number of connections it has
+      served.</p
+><p
+>Neither is shared between the schedulers, so they never take
+      turns at an allocator or a lock for memory. A connection costs what
+      it uses, its stack, and nothing per request that outlives the
+      request.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="scaling-lanes.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Lanes</span
+></a
+><a
+class="next"
+rel="next"
+href="lexical.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Lexical Structure</span
+></a
+></nav
+></main
+></div
+></body
+></html
+>
