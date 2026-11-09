@@ -613,13 +613,22 @@ void scaly_eio_tcp_served(int fd)
 }
 
 static __declspec(thread) unsigned int *scaly_served_until;
+/* how many descriptors of this thread have a bound, and the sweeper task
+ * asleep between two sweeps (scaly_eio_tcp_sweeper): when a lifted bound was
+ * the last, scaly_eio_tcp_idle_done hands the sweeper out to be woken -- else
+ * it slept out its second, and a server's wait waited for it */
+static __declspec(thread) int scaly_idle_bounds;
+static __declspec(thread) void *scaly_idle_sweeper;
 
 void scaly_eio_tcp_unserved(int fd)
 {
     if (scaly_served != NULL && fd >= 0 && fd < SCALY_SERVED_MAX)
         scaly_served[fd] = 0;
-    if (scaly_served_until != NULL && fd >= 0 && fd < SCALY_SERVED_MAX)
+    if (scaly_served_until != NULL && fd >= 0 && fd < SCALY_SERVED_MAX) {
+        if (scaly_served_until[fd] != 0)
+            scaly_idle_bounds--;
         scaly_served_until[fd] = 0;
+    }
 }
 
 int scaly_eio_tcp_wake_served(void)
@@ -665,6 +674,8 @@ int scaly_eio_tcp_idle(int fd, long long seconds)
             return 0;
     }
     if (seconds <= 0) {
+        if (scaly_served_until[fd] != 0)
+            scaly_idle_bounds--;
         scaly_served_until[fd] = 0;
         return 0;
     }
@@ -674,6 +685,8 @@ int scaly_eio_tcp_idle(int fd, long long seconds)
         scaly_idle_now = scaly_idle_clock();
     /* the clock is up to a second behind: one more keeps a bound from
      * ending early */
+    if (scaly_served_until[fd] == 0)
+        scaly_idle_bounds++;
     scaly_served_until[fd] = scaly_idle_now + (unsigned int)seconds + 1;
     if (fd >= scaly_idle_top)
         scaly_idle_top = fd + 1;
@@ -697,6 +710,7 @@ int scaly_eio_tcp_sweep(void)
                 shutdown(s, SD_RECEIVE);
                 CancelIoEx((HANDLE)s, NULL);
                 scaly_served_until[fd] = 0;
+                scaly_idle_bounds--;
             }
             else
                 left++;
@@ -705,6 +719,23 @@ int scaly_eio_tcp_sweep(void)
     if (left == 0)
         scaly_idle_sweeping = 0;
     return left > 0;
+}
+
+/* The sweeper task, asleep until its next sweep (null when it ends). */
+void scaly_eio_tcp_sweeper(void *task)
+{
+    scaly_idle_sweeper = task;
+}
+
+/* After a bound was lifted: the sleeping sweeper when no bound is left on
+ * this thread (handed out once), else null. */
+void *scaly_eio_tcp_idle_done(void)
+{
+    void *task = scaly_idle_sweeper;
+    if (scaly_idle_bounds != 0 || task == NULL)
+        return NULL;
+    scaly_idle_sweeper = NULL;
+    return task;
 }
 
 /* The end of the process asked for from outside -- the eio.c twins: Ctrl-C,

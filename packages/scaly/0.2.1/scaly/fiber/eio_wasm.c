@@ -162,6 +162,8 @@ int scaly_eio_tcp_wake_served(void) { return 0; }
 /* no connection to bound, so no sweeper to start and none left to sweep */
 int scaly_eio_tcp_idle(int fd, long long seconds) { (void)fd; (void)seconds; return 0; }
 int scaly_eio_tcp_sweep(void) { return 0; }
+void scaly_eio_tcp_sweeper(void *task) { (void)task; }
+void *scaly_eio_tcp_idle_done(void) { return 0; }
 int scaly_eio_accept(int fd) { (void)fd; return -1; }
 int scaly_eio_accept_nb(int fd) { (void)fd; return -1; }
 int scaly_eio_tcp_listen_twin(int fd) { (void)fd; return -1; }

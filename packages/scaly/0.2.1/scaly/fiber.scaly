@@ -418,6 +418,8 @@ procedure scaly_eio_tcp_unserved(fd: i32) extern
 procedure scaly_eio_tcp_wake_served() returns i32 extern
 procedure scaly_eio_tcp_idle(fd: i32, seconds: i64) returns i32 extern
 procedure scaly_eio_tcp_sweep() returns i32 extern
+procedure scaly_eio_tcp_sweeper(task: pointer[void]) extern
+procedure scaly_eio_tcp_idle_done() returns pointer[void] extern
 procedure scaly_eio_block_termination() extern
 procedure scaly_eio_wait_termination() returns i32 extern
 procedure scaly_eio_tcp_listen_host(host: pointer[const_char], port: i32) returns i32 extern
@@ -506,18 +508,6 @@ define CHAN_QUIET_MAX_MS i32 3200
 ; first Thread.spawn or the first channel wait, both on the main thread
 ; before any concurrency); `threads` starts at 1 for the main thread.
 shared deadlock_state: pointer[DeadlockState] null
-
-; The sweeper Io.idle starts on a thread: once a second, the reading of
-; every connection whose bound ran out ends -- until no bound is left.
-procedure io_idle_sweeper()
-{
-    repeat
-    {
-        Scheduler.sleep(1000)
-        if scaly_eio_tcp_sweep() = 0
-            return
-    }
-}
 
 procedure ensure_deadlock_state()
 {
@@ -643,6 +633,26 @@ mutable current_fiber: pointer[void] null
 ; design in stage 1, like current_fiber.
 mutable current_scheduler: pointer[void] null
 mutable current_task: pointer[void] null
+
+; The sweeper Io.idle starts on a thread: once a second, the reading of
+; every connection whose bound ran out ends -- until no bound is left. It
+; tells eio where it sleeps, so that lifting the last bound wakes it at once
+; (Io.wake_idle_sweeper): a scheduler ends only when its sweeper has, and
+; a server's wait waited out the sweeper's second (2026-11-09: 0.9 s after
+; one request, found writing the book's chapter on connections).
+procedure io_idle_sweeper()
+{
+    repeat
+    {
+        scaly_eio_tcp_sweeper(current_task)
+        Scheduler.sleep(1000)
+        if scaly_eio_tcp_sweep() = 0
+        {
+            scaly_eio_tcp_sweeper(null)
+            return
+        }
+    }
+}
 
 ; Wholesale-teardown counters. fiber_regions_freed ticks ONCE PER DISPOSED
 ; FIBER and is THE teardown proof (Fiber.freed_region_count) — use it in
@@ -1346,6 +1356,42 @@ define Scheduler
                 return
             }
             p := nx
+        }
+    }
+
+    ; Fire one sleeping task's timer now, as fire_timers does at its
+    ; deadline (Io's idle sweeper, woken when the last bound on its thread
+    ; is lifted). A task not on the list -- fired already, or not asleep --
+    ; is left as it is.
+    procedure wake_sleeper(t: ref[SchedTask])
+    {
+        let s current_scheduler as ref[Scheduler]
+        let want t as pointer[void]
+        var prev: ref[SchedTask]? null
+        var cur s.timers
+        repeat
+        {
+            let c cur
+            if c = null
+                return
+            let nx c.timer_next
+            if (c as pointer[void]) = want
+            {
+                if prev = null
+                    s.timers := nx
+                else
+                    prev.timer_next := nx
+                if nx = null
+                    s.timers_tail := prev
+                c.timer_next := null
+                Scheduler.enqueue(c)
+                s.timer_mark := s.enqueued
+                s.blocked := s.blocked - 1
+                s.sleeping := s.sleeping - 1
+                return
+            }
+            prev := c
+            cur := nx
         }
     }
 
@@ -2414,7 +2460,21 @@ define Io
         scaly_eio_tcp_served(fd)
 
     procedure unserved(fd: i32)
+    {
         scaly_eio_tcp_unserved(fd)
+        Io.wake_idle_sweeper()
+    }
+
+    ; A bound was lifted: if it was the thread's last, its sweeper wakes now
+    ; instead of sleeping out its second, sweeps nothing and ends.
+    procedure wake_idle_sweeper()
+    {
+        if current_scheduler = null
+            return
+        let t scaly_eio_tcp_idle_done() as ref[SchedTask]?
+        if t <> null
+            Scheduler.wake_sleeper(t)
+    }
 
     ; End the reading of every connection this thread serves: a read parked
     ; on one answers the end of the stream. How many there were.
@@ -2433,6 +2493,8 @@ define Io
             return
         if scaly_eio_tcp_idle(fd, seconds) <> 0
             Scheduler.spawn_detached(&io_idle_sweeper, null)
+        if seconds <= 0
+            Io.wake_idle_sweeper()
     }
 
     ; Keep the signals that ask the process to end (SIGINT, SIGTERM; on

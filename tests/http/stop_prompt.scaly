@@ -1,0 +1,55 @@
+; A server that served a request stops at once: shutdown and wait return
+; within half a second. Every connection gives its thread an idle bound,
+; and the first one starts the thread's sweeper, a task that sleeps a
+; second between two sweeps; the scheduler ends only when the sweeper has,
+; so wait waited out that second (0.9 s after one request, 2026-11-09 --
+; found writing the book's chapter on connections). Lifting the last bound
+; wakes the sweeper now (Io.wake_idle_sweeper).
+; Expected: answered stopped-promptly
+
+package scaly 0.2.0
+package http 0.2.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+procedure seven(req: ref[Request], mutable res: ref[Response])
+    res.send_int(7)
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var app Router.create(Page.allocate_page())
+    app.get("/seven", &seven)
+    var l TcpListener.listen(0)
+    let server start(app, l)
+
+    var s TcpStream.connect("127.0.0.1", l.port())
+    s.write("GET /seven HTTP/1.1\r\nHost: t\r\nConnection: close\r\n\r\n")
+    var buf u8[256]
+    let view Slice[u8](256, &buf[0])
+    var got: size_t 0
+    repeat
+    {
+        let n s.read(view.slice_from(got))
+        if n <= 0
+            break
+        got := got + (n as size_t)
+    }
+    s.close()
+    if got < 12 or buf[9] <> 50
+        return 1
+    Console.print "answered "
+
+    let before scaly_eio_now_ns()
+    server.shutdown()
+    server.wait()
+    let ms (scaly_eio_now_ns() - before) / 1000000
+    if ms >= 500
+    {
+        print "stopping took `ms` ms"
+        return 2
+    }
+    print "stopped-promptly"
+    0
+}
