@@ -499,7 +499,7 @@ define cli
         Console.println("  --plan         Run planner (type resolution)")
         Console.println "  --no-prelude   Skip auto-loading prelude module"
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
-        Console.println("  --task-plan    Report the parallelizability verdict of every for loop")
+        Console.println("  --task-plan    Report the parallelizability verdict of every for loop, and every recursive call pair that forks")
         Console.println("  --loop-census  Report which while loops are counted and could run in parallel")
         Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
         Console.println("  --write-report  Report every write through a parameter, off the Plan")
@@ -1196,7 +1196,25 @@ define cli
             ; --task-plan prog.scaly` answers the verdicts and stops (it went
             ; on to "-o <file> required for linking", rc 7, 2026-11-09)
             if opts.output_file.get_length() = 0 and opts.emit_ir = false and opts.compile_only = false and opts.run_mode = false and opts.jit_program = false and opts.test_mode = false and opts.emit_interface = false
+            {
+                ; the fork pairs of recursion are found by the emission:
+                ; emit the module in memory for them alone
+                if opts.task_plan
+                {
+                    var fork_config EmitterConfig()
+                    fork_config.emit_debug_info := opts.debug
+                    fork_config.target_triple := opts.target_triple
+                    fork_config.page_size := planner.page_size_constant()
+                    var fork_emitter Emitter.Emitter(fork_config)
+                    if fork_emitter.emit(plan, program_name) = false
+                    {
+                        Console.println "Emitter error"
+                        return 5
+                    }
+                    cli.print_fork_plan(&fork_emitter)
+                }
                 return 0
+            }
         }
 
         if opts.verbose
@@ -1400,6 +1418,8 @@ define cli
             emitter.set_debug_source(opts.input_file, source)
         let emit_result emitter.emit(plan, program_name)
         planner.phase_mark("E2-emitted")
+        if opts.task_plan and emit_result
+            cli.print_fork_plan(&emitter)
 
         if emit_result = false
         {
@@ -2316,6 +2336,18 @@ define cli
         let head_str head.to_string()
         Console.println(head_str.to_c_string())
         cli.print_located("task-plan: ", &tp.report_files, &tp.report_offsets, &tp.report_verdicts)
+    }
+
+    ; --task-plan, the recursion half: one located line per fork pair the
+    ; emission met (Emitter.note_fork#), after a head line -- nothing at all
+    ; where there is none, so a report about loops alone stays as it was
+    procedure print_fork_plan(e: ref[Emitter.Emitter])
+    {
+        if e.fork_files.length = 0
+            return
+        let head "fork-plan: `cli.format_size(e.fork_files.length)` fork pairs"
+        Console.println(head.to_c_string())
+        cli.print_located("fork-plan: ", &e.fork_files, &e.fork_offsets, &e.fork_texts)
     }
 
     ; --loop-census: the head line counts the `while` loops, the counted
