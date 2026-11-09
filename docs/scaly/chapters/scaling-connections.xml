@@ -40,8 +40,7 @@ use http.Router.Router
 procedure hello(req: ref[Request], mutable res: ref[Response])
 {
     let name req.param("name")
-    let text "hello, `name`"
-    res.send_text(text.as_slice())
+    res.send_text("hello, `name`")
 }
 
 var app Router.create(Page.allocate_page())

@@ -1489,6 +1489,40 @@ let x 0.1
                       ; The answer is 42, not 43, and x is 0.1
       </code
 ></pre
+><p
+>Inside the backticks a string is written with its quotes
+        escaped, since an unescaped one would end the string around it:
+        <code
+>"a `twice(\"ab\")` b"</code
+>.</p
+><p
+>A parameter that takes the bytes of a text is a
+        <code
+>Slice[u8]</code
+>, a view that owns nothing. A string is
+        handed to it as its view: a literal is that view from the start, and
+        a <code
+>String</code
+> — a variable, a field, a string built with
+        backticks — is passed as <code
+>s.as_slice()</code
+> would pass
+        it, for as long as the call lasts. A binding or a field of type
+        <code
+>Slice[u8]</code
+> takes the conversion written
+        out.</p
+><pre
+class="listing"
+><code
+>&#13;function vowels(text: Slice[u8]) returns int
+    ...
+let name String("Ada")
+vowels(name)                    ; the view of name
+vowels("hello, `name`")         ; the view of the string built here
+let v: Slice[u8] name.as_slice()
+      </code
+></pre
 ></section
 ><section
 id="lex-characters"
