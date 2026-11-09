@@ -3,6 +3,7 @@
   <!ENTITY introduction SYSTEM "scaly/chapters/introduction.xml">
   <!ENTITY tutorial SYSTEM "scaly/chapters/tutorial.xml">
   <!ENTITY scaling-why SYSTEM "scaly/chapters/scaling-why.xml">
+  <!ENTITY scaling-loops SYSTEM "scaly/chapters/scaling-loops.xml">
   <!ENTITY lexical SYSTEM "scaly/chapters/lexical.xml">
   <!ENTITY types SYSTEM "scaly/chapters/types.xml">
   <!ENTITY grammar SYSTEM "scaly/chapters/grammar.xml">
@@ -32,6 +33,7 @@
   <part xml:id="scaling">
     <title>Scaling</title>
     &scaling-why;
+    &scaling-loops;
   </part>
 
   <part xml:id="reference">

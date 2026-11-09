@@ -68,8 +68,8 @@ sum of squares below 1000: 332833500</screen>
       writes to <code>squares</code>, which the loop did not make — but each
       round only to the slot its own <code>i</code> names, so no two rounds
       write the same place. The second is a sum, which the compiler knows how
-      to split and put together again; the next chapter says
-      which loops it takes and which it leaves alone. The last command runs
+      to split and put together again; <xref linkend="scaling-loops"/>
+      says which loops it takes and which it leaves alone. The last command runs
       the program on one core; <xref linkend="scaling-why-same"/> says
       why it prints the same.</para>
   </section>
@@ -123,9 +123,9 @@ round 2</screen>
       at. A worker allocates from pages of its own, so the rounds do not
       queue at one allocator, and there is no collector that must stop every
       core to look at all of memory. What a round builds and drops is gone
-      with its page; what a round builds and the loop keeps —
-      the next chapter shows how — is handed to the region of
-      the loop.</para>
+      with its page; what a round builds and the loop keeps
+      (<xref linkend="scaling-loops-kept"/>) is handed to the region of
+      the code around the loop.</para>
   </section>
 
   <section xml:id="scaling-why-same">
