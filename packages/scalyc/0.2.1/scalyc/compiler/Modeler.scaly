@@ -770,7 +770,12 @@ define Modeler
         }
         if in_expr
         {
-            report_load_error(String("string interpolation: unterminated embedded expression (escape a literal backtick with a backslash)"))
+            ; the usual cause is a string literal inside the embedding: its
+            ; first quote ended the outer string (in "a `f("x")` b" the
+            ; lexer reads the string "a `f(" and stops there). The text as
+            ; the lexer cut it says which literal; there is no file and line
+            ; at this layer.
+            report_load_error("string interpolation: unterminated embedded expression in \"`raw`\" - a string inside an embedding writes its quotes escaped, \`f(\\\"x\\\")\`, and a literal backtick is \\\`")
             return Expression.Constant(handle_literal syntax)
         }
         if empty_expr

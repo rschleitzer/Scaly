@@ -1,0 +1,10 @@
+; A string literal inside an embedding with its quotes unescaped: the first
+; inner quote ends the outer string, and the embedding is unterminated
+; (rc 2). The message said only "escape a literal backtick" -- no word of
+; the quotes that were the cause, no place (2026-11-09, found writing the
+; book's chapter on connections: "hello, `req.param("name")`"). It names the
+; string as the lexer cut it and the escaped spelling now.
+; xfail: unterminated embedded expression in "a `twice(" - a string inside an embedding writes its quotes escaped
+function twice(s: String) returns String
+    "`s``s`"
+print "a `twice("ab")` b"
