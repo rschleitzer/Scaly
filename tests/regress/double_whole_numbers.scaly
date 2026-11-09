@@ -1,0 +1,12 @@
+; A whole double below 10^16 is written out in an interpolation: 10, not
+; 1e+01. eio.c's scaly_eio_format_double takes the shortest %g that reads
+; back, and %g switches to the exponent form as soon as the exponent reaches
+; the precision -- the shortest precision of 10.0 is one digit (2026-11-09,
+; found writing the book's chapter on lanes: `a.sum()` printed "1e+01" beside
+; "12"). A larger or a tiny value keeps the exponent.
+let ten 10.0
+let text "`ten` `1500.0` `500500.0` `1000000000000000.0` `10000000000000000.0` `1e21` `0.00001` `0.1` `-1000.0` `2.5` `0.0`"
+if text.equals("10 1500 500500 1000000000000000 1e+16 1e+21 1e-05 0.1 -1000 2.5 0")
+    print "PASS"
+else
+    print "FAIL `text`"

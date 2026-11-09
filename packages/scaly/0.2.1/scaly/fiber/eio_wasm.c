@@ -336,6 +336,24 @@ int scaly_eio_format_double(char* buf, unsigned long long cap, double value)
         if (strtod(buf, NULL) == value)
             break;
     }
+    /* a whole number below 10^16 is written out: 10, not 1e+01 -- %g takes
+       the exponent form as soon as the exponent reaches the precision, and
+       the shortest precision of 10 is one digit. A larger or a tiny value
+       keeps the exponent (1e+21, 1e-05), as a reader expects. */
+    {
+        int i;
+        for (i = 0; i < n; i++) {
+            if (buf[i] == 'e') {
+                long x = strtol(buf + i + 1, NULL, 10);
+                if (x >= precision && x < 16) {
+                    n = snprintf(buf, (size_t)cap, "%.*g", (int)x + 1, value);
+                    if (n < 0 || (unsigned long long)n >= cap)
+                        return 0;
+                }
+                break;
+            }
+        }
+    }
     return n;
 }
 
