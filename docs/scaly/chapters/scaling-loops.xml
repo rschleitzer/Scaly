@@ -189,9 +189,12 @@ task-plan: areas.scaly:6:1: parallel</screen>
       the body may use it only in its update: a round that also reads the
       running sum — to store it somewhere, say — sees a value that depends
       on which rounds ran before it, and the loop stays in order
-      (<code>reduction variable used outside its update</code>). The
-      compiler matches the fold as written, so the value to compare and to
-      take is bound to a name first, as <code>a</code> is here.</para>
+      (<code>reduction variable used outside its update</code>). In a
+      maximum, the value compared and the value taken must be the same
+      expression, written alike on both sides — a name such as
+      <code>a</code>, an element <code>v[i]</code>, a field, a call of a
+      function; a round that compares one value and takes another computes
+      no maximum, and its loop stays in order.</para>
     <para>Floating-point addition is not associative: added in another
       order, the same numbers give a slightly different sum. A parallel sum
       of floating-point numbers that depended on how the range was split
