@@ -2189,6 +2189,28 @@ define TaskPlanner
             mangled.starts_with("_ZN9Directory12is_directoryE")
         }
 
+        ; A C extern declared `function` is trusted only where it does not
+        ; reach the world outside the program: its keyword has no body to be
+        ; checked against, and the I/O census (WriteCensus.extern_is_io)
+        ; already counts `puts` as I/O -- trusted here, the `print` it stands
+        ; behind ran the prints of a parallel loop in any order (2026-11-09).
+        ; A stub of another package's `function` (an `_Z` symbol) keeps its
+        ; checked keyword.
+        function keyword_is_trusted(func: PlannedFunction) returns bool
+        {
+            if func.pure = false
+                return false
+            var c_extern false
+            choose func.impl
+                when e: Extern
+                    c_extern := func.mangled_name.starts_with(String("_Z")) = false
+                else
+                    0
+            if c_extern
+                return WriteCensus.WriteCensus.extern_is_io(func.name) = false
+            true
+        }
+
         function extern_is_benign(this: TaskPlanner, name: String) returns bool
         {
             if name.starts_with("scaly_atomic_")
@@ -2280,7 +2302,7 @@ define TaskPlanner
                     ; compiler checks it: no write, no global either way, no
                     ; I/O) -- trusted without walking its body; a read
                     ; primitive counts as one (is_read_primitive)
-                    if func.pure or TaskPlanner.is_read_primitive(mangled)
+                    if TaskPlanner.keyword_is_trusted(func) or TaskPlanner.is_read_primitive(mangled)
                     {
                         this.memo_purity(mangled, true)
                         return true
@@ -3394,7 +3416,7 @@ define TaskPlanner
                     ; keyword): it writes only its page, if it takes one --
                     ; and two iterations allocating on one page still race.
                     ; A read primitive is judged the same way.
-                    if func.pure or TaskPlanner.is_read_primitive(func.mangled_name)
+                    if TaskPlanner.keyword_is_trusted(func) or TaskPlanner.is_read_primitive(func.mangled_name)
                     {
                         var stub_fn false
                         choose func.impl

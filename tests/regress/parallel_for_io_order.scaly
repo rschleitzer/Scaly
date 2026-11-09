@@ -1,0 +1,42 @@
+; Regression (2026-11-09): a `for` whose body performs I/O through a C extern
+; declared `function` ran in parallel, its output in any order. The
+; TaskPlanner trusted the keyword of every `function` -- right for a body or
+; another package's stub, whose keyword the compiler checks, but a C extern
+; has no body to check it against. `print` is such a case: its body calls
+; `puts`, declared `function ... extern`, and a loop of prints with unequal
+; work printed "low low high high low ..." for eight lows and eight highs.
+; The I/O census (WriteCensus.extern_is_io) already counts these externs as
+; I/O; the TaskPlanner asks it now (TaskPlanner.keyword_is_trusted). Here the
+; letters of PASS come out of the four rounds of the loop, the first round
+; with the most work, so a parallel run prints them in another order.
+
+function putchar(c: i32) returns i32 extern
+
+function work(i: int) returns int
+{
+    var a 0
+    var k 0
+    while k < 30000000 * i
+    {
+        a := a + (i * k) % 7
+        k := k + 1
+    }
+    a
+}
+
+function letter(i: int) returns i32
+{
+    if i = 0
+        return 80
+    if i = 1
+        return 65
+    83
+}
+
+for i in 4
+{
+    if work(4 - i) = 0 - 1
+        print "never"
+    putchar(letter(i))
+}
+print ""
