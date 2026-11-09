@@ -1,0 +1,48 @@
+; A String VALUE handed to a `Slice[u8]` parameter is handed as its view,
+; `s.as_slice()` (the author, 2026-11-09; Planner.arg_is_string_into_byte_slice#,
+; string_view_operand#): a variable, a field, an interpolation -- the case
+; that found it, `res.send_text("hello, `name`")` in the book's chapter on
+; connections -- and a generic receiver over bytes (`Slice[u8].equals`), which
+; was xfail_string_into_slice_param: on 2026-09-29 that String record went
+; through AS the view and compared false at rc 0, then it was rc 4; now it is
+; the view. A literal keeps its own path (string_literal_slice_arg); a
+; `Slice[char]` parameter, a binding and a field still want the written
+; as_slice() (xfail_string_into_char_slice).
+; run-env: SCALY_POISON=1
+function count_a(bytes: Slice[u8]) returns int
+{
+    var n 0
+    var i: size_t 0
+    while i < bytes.length
+    {
+        if bytes[i] = 97
+            n := n + 1
+        i := i + 1
+    }
+    n
+}
+
+define Box(name: String)
+
+let who "Ada"
+let hi "a`who`a"
+let s String("banana")
+let b Box(String("abracadabra"))
+let v s.as_slice()
+var bad 0
+if count_a(s) <> 3
+    bad := bad + 1
+if count_a(hi) <> 3
+    bad := bad + 1
+if count_a(b.name) <> 5
+    bad := bad + 1
+if count_a("aaa `who`") <> 4
+    bad := bad + 1
+if v.equals(String("banana")) = false
+    bad := bad + 1
+if v.equals(String("bananas"))
+    bad := bad + 1
+if bad = 0
+    print "PASS"
+else
+    print "FAIL `bad`"

@@ -1,0 +1,8 @@
+; A String value is handed as its view to a `Slice[u8]` parameter only
+; (string_into_byte_slice): String.as_slice answers bytes, and a `Slice[char]`
+; parameter still refuses a String -- write the conversion.
+; xfail: no 'count_c' takes (String)
+function count_c(chars: Slice[char]) returns int
+    chars.length as int
+let s String("x")
+print "`count_c(s)`"

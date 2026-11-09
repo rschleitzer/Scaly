@@ -6699,6 +6699,72 @@ define Planner
             this.operand_is_string_constant((*op_ptr))
         }
 
+        ; type_is_byte_slice: a `Slice[u8]` -- the view String.as_slice
+        ; answers.
+        function type_is_byte_slice(t: PlannedType) returns bool
+        {
+            if t.name <> "Slice" or t.generics = null
+                return false
+            let gs (*t.generics)
+            if gs.length <> 1
+                return false
+            let ip gs.get 0
+            if ip = null
+                return false
+            (*ip).name = "u8"
+        }
+
+        ; A String VALUE handed to a `Slice[u8]` parameter is handed as its
+        ; view, `s.as_slice()` (the author, 2026-11-09): the String lives to
+        ; the end of the statement, as long as the call. A literal keeps its
+        ; own path (it materialises without a String), and only at a call
+        ; argument -- a binding or a field of Slice type still wants the
+        ; written as_slice(). Found writing the book's chapter on
+        ; connections: `res.send_text("hello, `name`")` was rc 4.
+        function arg_is_string_into_byte_slice(this: Planner, planned_p: PlannedType, arg: PlannedType, arg_ops: Vector[PlannedOperand], j: size_t) returns bool
+        {
+            if arg.name <> "String" or Planner.type_is_byte_slice(planned_p) = false
+                return false
+            if j >= arg_ops.length
+                return false
+            let op_ptr arg_ops.get j
+            if op_ptr = null
+                return false
+            this.operand_is_string_constant((*op_ptr)) = false
+        }
+
+        ; The view of a String operand: the call `a.as_slice()`, or the
+        ; operand as it was when String has no such method in reach.
+        procedure string_view_operand(mutable this: Planner, a: PlannedOperand) returns PlannedOperand
+        {
+            var recv_t a.result_type
+            let m_ref this.lookup_method(recv_t, String("as_slice"), Vector[PlannedType](0), Vector[PlannedOperand]())
+            if m_ref = null
+                return a
+            let m (*m_ref)
+            if m.takes_this = false
+                return a
+            this.ensure_type_layout(m.return_type)
+            var receiver a
+            var view_args Vector[PlannedOperand](1)
+            view_args.put(0, receiver)
+            let view_call PlannedCall(
+                a.loc,
+                String("as_slice"),
+                m.mangled_name,
+                false,
+                false,
+                m.can_throw,
+                m.requires_page_param,
+                &view_args,
+                m.return_type,
+                Lifetime.Unspecified(Unspecified()),
+                m.throws_type,
+                false
+            )
+            PlannedOperand(a.loc, PlannedExpression.Call view_call, null, m.return_type)
+        }
+
         ; operand_is_null_constant: is the operand the bare `null` literal?
         ; Used to EXCLUDE null comparisons from the equality desugar —
         ; `x <> null` is an NPO presence test, never a content compare.
@@ -10869,6 +10935,12 @@ define Planner
                                     ok := true
                                     any_fold := true
                                 }
+                    ; A String value into a Slice[u8] parameter: its view.
+                    if ok = false and this.arg_is_string_into_byte_slice(planned_p, arg, arg_ops, j)
+                    {
+                        ok := true
+                        any_fold := true
+                    }
                     ; Option-into-ref fallback (see check_function_match#).
                     if ok = false and Planner.option_arg_into_plain_ref(planned_p, arg)
                     {
@@ -11236,6 +11308,8 @@ define Planner
                                 if Planner.type_is_char_slice(planned_p)
                                     if this.arg_is_foldable_char_string(arg_ops, j)
                                         ok := true
+                    if ok = false and char_fold and this.arg_is_string_into_byte_slice(planned_p, arg, arg_ops, j)
+                        ok := true
                     ; Option-into-ref fallback: an Option around a reference
                     ; matches a `ref` parameter of the same pointee, and the
                     ; argument gate at the call (report_null_into_ref_arg#)
@@ -13137,6 +13211,14 @@ define Planner
                                         out.add(this.materialize_string_operand_to_slice(a, pt))
                                         folded := true
                                     }
+                            ; A String value into a Slice[u8] parameter: its
+                            ; view (arg_is_string_into_byte_slice#).
+                            if folded = false and a.result_type.name = "String" and Planner.type_is_byte_slice(pt)
+                                if this.operand_is_string_constant(a) = false
+                                {
+                                    out.add(this.string_view_operand(a))
+                                    folded := true
+                                }
                             ; Float literal into a float-family parameter:
                             ; retype the default-f64 literal to the matched
                             ; parameter's width so the call site emits the
@@ -19834,6 +19916,8 @@ define Planner
                                 if Planner.type_is_char_slice(planned_p)
                                     if this.arg_is_foldable_char_string(arg_ops, j)
                                         ok := true
+                    if ok = false and char_fold and this.arg_is_string_into_byte_slice(planned_p, arg, arg_ops, j)
+                        ok := true
                     if ok = false
                         return null
                 }
@@ -20366,6 +20450,8 @@ define Planner
                                 if Planner.type_is_char_slice(planned_p)
                                     if this.arg_is_foldable_char_string(arg_ops, j)
                                         ok := true
+                    if ok = false and char_fold and this.arg_is_string_into_byte_slice(planned_p, arg, arg_ops, j)
+                        ok := true
                     if ok = false and char_fold and this.lambda_arg_fits(planned_p, arg_ops, j)
                         ok := true
                     if ok = false
@@ -36487,8 +36573,22 @@ define Planner
         ; tests). It needs no T: the parameter's type is a Slice whatever T is,
         ; and a String converts to one only as a string LITERAL, which
         ; materializes and is left alone.
-        procedure report_string_into_slice(mutable this: Planner, f: Function, method_name: String, arg_ops: Vector[PlannedOperand])
+        procedure report_string_into_slice(mutable this: Planner, f: Function, method_name: String, arg_ops: Vector[PlannedOperand], recv: PlannedType)
         {
+            ; a receiver over bytes (Slice[u8], Array[u8]): its Slice[T] is a
+            ; Slice[u8], and a String is handed as its view there
+            ; (arg_is_string_into_byte_slice#)
+            var over_bytes false
+            if recv.generics <> null
+            {
+                let rg (*recv.generics)
+                if rg.length = 1
+                {
+                    let r0 rg.get 0
+                    if r0 <> null and (*r0).name = "u8"
+                        over_bytes := true
+                }
+            }
             var param_start: size_t 0
             if f.input.length > 0
             {
@@ -36517,7 +36617,7 @@ define Planner
                         }
                         else
                             0
-                    if literal = false and Planner.join_dotted_name(pt.name) = "Slice" and a.result_type.name = "String"
+                    if literal = false and over_bytes = false and Planner.join_dotted_name(pt.name) = "Slice" and a.result_type.name = "String"
                     {
                         var sb StringBuilder()
                         sb.append "argument "
@@ -36549,7 +36649,7 @@ define Planner
                 let tg_gens (*lookup_st.generics)
                 if tg_gens.length > 0
                 {
-                    this.report_string_into_slice(f, method_name, arg_ops)
+                    this.report_string_into_slice(f, method_name, arg_ops, lookup_st)
                     return
                 }
             }
@@ -36670,6 +36770,8 @@ define Planner
                                         if Planner.type_is_char_slice(planned_p)
                                             if this.arg_is_foldable_char_string(arg_ops, j)
                                                 ok := true
+                                if ok = false and this.arg_is_string_into_byte_slice(planned_p, arg, arg_ops, j)
+                                    ok := true
                                 if ok = false
                                 {
                                     reported := true
