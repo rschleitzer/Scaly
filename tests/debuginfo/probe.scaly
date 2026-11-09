@@ -14,8 +14,7 @@
 ;           that makes the tag ENUMERATION load-bearing: the payload union holds
 ;           a member only for variants that have a payload, so its member index
 ;           stops being the tag value and no reader can map one to the other.
-;   items   a Vector, for the lldb synthetic-children formatter.
-;   k/each  loop variables, at the end so the breakpoint lines stay put.
+;   items   a Vector, for the lldb synthetic-children formatter (k/each at the end).
 ;
 ; Expected stdout: 34
 package scaly 0.2.0
