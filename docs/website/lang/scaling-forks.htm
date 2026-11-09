@@ -348,14 +348,6 @@ class="num"
 >5.4</span
 >An Uneven Tree</a
 ></li
-><li
-><a
-href="scaling-forks.htm#scaling-forks-see"
-><span
-class="num"
->5.5</span
->Where It Shows</a
-></li
 ></ol
 ></li
 ><li
@@ -1193,8 +1185,8 @@ href="#scaling-forks-overview"
       is declared a <code
 >function</code
 >, the compiler knows it, and the
-      two calls may run on two cores. The classic example does nothing but call and
-      add:</p
+      two calls may run on two cores. The classic example does nothing but
+      call and add:</p
 ><pre
 class="listing"
 ><code
@@ -1212,11 +1204,21 @@ class="screen"
 ><code
 >$ scaly run fib.scaly
 fib(35) is 9227465
+$ scalyc --task-plan fib.scaly
+task-plan: 0 for-loops, 0 parallelizable
+fork-plan: 1 fork pairs
+fork-plan: fib.scaly:5:5: fib + fib
 $ SCALY_WORKERS=1 scaly run fib.scaly
 fib(35) is 9227465</code
 ></pre
 ><p
->Again there is no annotation. Built with
+>Again there is no annotation. <code
+class="option"
+>--task-plan</code
+>, which
+      reports the loops of a file, reports its recursion as well: below the
+      loops, one line for each pair of calls that may run on two cores.
+      Built with
       <code
 class="userinput"
 >scaly build --release</code
@@ -1275,6 +1277,10 @@ class="screen"
 ><code
 >$ scaly run multiples.scaly
 below 200000000, 44155845 numbers are multiples of 7 or 11
+$ scalyc --task-plan multiples.scaly
+task-plan: 0 for-loops, 0 parallelizable
+fork-plan: 1 fork pairs
+fork-plan: multiples.scaly:16:5: let left count_multiples, let right count_multiples
 $ SCALY_WORKERS=1 scaly run multiples.scaly
 below 200000000, 44155845 numbers are multiples of 7 or 11</code
 ></pre
@@ -1337,8 +1343,81 @@ href="scaling-loops.htm#scaling-loops-kept"
 ></li
 ></ul
 ><p
->A function outside these rules runs as written; nothing is
-      reported, and nothing is wrong.</p
+>A function outside these rules runs as written, and nothing is
+      wrong with it; <code
+class="option"
+>--task-plan</code
+> simply lists no pair for
+      it:</p
+><pre
+class="listing"
+><code
+>function both(n: int) returns bool
+{
+    if n &#60; 2
+        return n = 1
+    both(n - 1) and both(n - 2)
+}
+
+function three(n: int) returns int
+{
+    if n &#60; 2
+        return n
+    three(n - 1) + three(n - 2) + three(n - 3)
+}
+
+function even(n: int) returns int
+{
+    if n &#60; 2
+        return n
+    odd(n - 1) + odd(n - 2)
+}
+
+function odd(n: int) returns int
+{
+    if n &#60; 2
+        return n
+    even(n - 1) + 1
+}
+
+function name(n: int) returns String
+{
+    if n &#60; 1
+        return String("x")
+    let a name(n - 1)
+    let b name(n - 2)
+    a
+}
+
+print "`both(10)` `three(10)` `even(10)` `name(3)`"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run others.scaly
+false 68 31 x
+$ scalyc --task-plan others.scaly
+task-plan: 0 for-loops, 0 parallelizable
+fork-plan: 1 fork pairs
+fork-plan: others.scaly:12:5: three + three</code
+></pre
+><p
+><code
+>both</code
+> joins its calls with <code
+>and</code
+>,
+      <code
+>even</code
+> and <code
+>odd</code
+> call each other, and
+      <code
+>name</code
+> returns a string; of the three calls in
+      <code
+>three</code
+>, the first two form a pair.</p
 ></section
 ><section
 id="scaling-forks-when"
@@ -1394,7 +1473,12 @@ class="userinput"
 class="option"
 >-g</code
 >, whose debugger
-      expects one body per function.</p
+      expects one body per function. The last one the compiler knows when
+      it compiles, so <code
+class="userinput"
+>scalyc --task-plan -g</code
+> lists
+      no pair; the first two are decided when the program runs.</p
 ></section
 ><section
 id="scaling-forks-uneven"
@@ -1450,6 +1534,10 @@ class="screen"
 ><code
 >$ scaly run area.scaly
 the area under g from 0 to 3: 23048.968067792208
+$ scalyc --task-plan area.scaly
+task-plan: 0 for-loops, 0 parallelizable
+fork-plan: 1 fork pairs
+fork-plan: area.scaly:26:5: area + area
 $ SCALY_WORKERS=1 scaly run area.scaly
 the area under g from 0 to 3: 23048.968067792208</code
 ></pre
@@ -1467,27 +1555,6 @@ class="userinput"
       of an interval may be computed on two cores, but their sum is formed
       where it is written, left half plus right half, so the floating-point
       additions happen in the same order either way.</p
-></section
-><section
-id="scaling-forks-see"
-><h2
-><a
-class="header"
-href="#scaling-forks-see"
->Where It Shows</a
-></h2
-><p
->For loops, <code
-class="option"
->--task-plan</code
-> names the compiler's
-      decision. For recursion there is no such report yet: a function that
-      forks prints what it prints, and the only place the difference shows
-      is the clock — run once with <code
-class="userinput"
->SCALY_WORKERS=1</code
->
-      and once without, as every program of this chapter is checked.</p
 ></section
 ></article
 ><nav

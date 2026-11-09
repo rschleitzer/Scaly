@@ -240,8 +240,10 @@ sudo apt install llvm-21 llvm-21-dev lld-21 clang     ; Ubuntu and Debian</progr
       <varlistentry>
         <term><option>--task-plan</option>, <option>--loop-census</option></term>
         <listitem><para>Reports for the curious: which <code>for</code>
-          loops run on every core and why the others do not, and which
-          <code>while</code> loops could.</para></listitem>
+          loops run on every core and why the others do not, which pairs of
+          recursive calls may run on two (<xref linkend="scaling-loops"/>,
+          <xref linkend="scaling-forks"/>), and which <code>while</code>
+          loops could.</para></listitem>
       </varlistentry>
     </variablelist>
     <para><userinput>scalyc --help</userinput> lists the rest: the stages

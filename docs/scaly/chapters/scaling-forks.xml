@@ -7,8 +7,8 @@
       each half has the same independence a loop has: the two calls read
       their arguments and nothing the other one writes. When the function
       is declared a <code>function</code>, the compiler knows it, and the
-      two calls may run on two cores. The classic example does nothing but call and
-      add:</para>
+      two calls may run on two cores. The classic example does nothing but
+      call and add:</para>
     <programlisting>function fib(n: int) returns int
 {
     if n &lt; 2
@@ -19,9 +19,16 @@
 print "fib(35) is `fib(35)`"</programlisting>
     <screen>$ scaly run fib.scaly
 fib(35) is 9227465
+$ scalyc --task-plan fib.scaly
+task-plan: 0 for-loops, 0 parallelizable
+fork-plan: 1 fork pairs
+fork-plan: fib.scaly:5:5: fib + fib
 $ SCALY_WORKERS=1 scaly run fib.scaly
 fib(35) is 9227465</screen>
-    <para>Again there is no annotation. Built with
+    <para>Again there is no annotation. <option>--task-plan</option>, which
+      reports the loops of a file, reports its recursion as well: below the
+      loops, one line for each pair of calls that may run on two cores.
+      Built with
       <userinput>scaly build --release</userinput> and asked for
       <code>fib(42)</code>, the program took 0.83 seconds on one core and
       0.14 seconds on the ten of the laptop of the previous chapter. That
@@ -60,6 +67,10 @@ let n 200000000
 print "below `n`, `count_multiples(0, n)` numbers are multiples of 7 or 11"</programlisting>
     <screen>$ scaly run multiples.scaly
 below 200000000, 44155845 numbers are multiples of 7 or 11
+$ scalyc --task-plan multiples.scaly
+task-plan: 0 for-loops, 0 parallelizable
+fork-plan: 1 fork pairs
+fork-plan: multiples.scaly:16:5: let left count_multiples, let right count_multiples
 $ SCALY_WORKERS=1 scaly run multiples.scaly
 below 200000000, 44155845 numbers are multiples of 7 or 11</screen>
     <para>With <userinput>scaly run</userinput> on that laptop, one core
@@ -86,8 +97,57 @@ below 200000000, 44155845 numbers are multiples of 7 or 11</screen>
       <listitem><para>It is a free function, not a method, and it cannot
         throw.</para></listitem>
     </itemizedlist>
-    <para>A function outside these rules runs as written; nothing is
-      reported, and nothing is wrong.</para>
+    <para>A function outside these rules runs as written, and nothing is
+      wrong with it; <option>--task-plan</option> simply lists no pair for
+      it:</para>
+    <programlisting>function both(n: int) returns bool
+{
+    if n &lt; 2
+        return n = 1
+    both(n - 1) and both(n - 2)
+}
+
+function three(n: int) returns int
+{
+    if n &lt; 2
+        return n
+    three(n - 1) + three(n - 2) + three(n - 3)
+}
+
+function even(n: int) returns int
+{
+    if n &lt; 2
+        return n
+    odd(n - 1) + odd(n - 2)
+}
+
+function odd(n: int) returns int
+{
+    if n &lt; 2
+        return n
+    even(n - 1) + 1
+}
+
+function name(n: int) returns String
+{
+    if n &lt; 1
+        return String("x")
+    let a name(n - 1)
+    let b name(n - 2)
+    a
+}
+
+print "`both(10)` `three(10)` `even(10)` `name(3)`"</programlisting>
+    <screen>$ scaly run others.scaly
+false 68 31 x
+$ scalyc --task-plan others.scaly
+task-plan: 0 for-loops, 0 parallelizable
+fork-plan: 1 fork pairs
+fork-plan: others.scaly:12:5: three + three</screen>
+    <para><code>both</code> joins its calls with <code>and</code>,
+      <code>even</code> and <code>odd</code> call each other, and
+      <code>name</code> returns a string; of the three calls in
+      <code>three</code>, the first two form a pair.</para>
   </section>
 
   <section xml:id="scaling-forks-when">
@@ -120,7 +180,9 @@ below 200000000, 44155845 numbers are multiples of 7 or 11</screen>
       (<userinput>SCALY_WORKERS=1</userinput>), a call made inside a
       <code>try</code> — a fault on another core could not reach its
       handler —, and a build with <option>-g</option>, whose debugger
-      expects one body per function.</para>
+      expects one body per function. The last one the compiler knows when
+      it compiles, so <userinput>scalyc --task-plan -g</userinput> lists
+      no pair; the first two are decided when the program runs.</para>
   </section>
 
   <section xml:id="scaling-forks-uneven">
@@ -163,6 +225,10 @@ let total area(0.0, 3.0, simpson(0.0, 3.0), 0.0000000001, 60)
 print "the area under g from 0 to 3: `total`"</programlisting>
     <screen>$ scaly run area.scaly
 the area under g from 0 to 3: 23048.968067792208
+$ scalyc --task-plan area.scaly
+task-plan: 0 for-loops, 0 parallelizable
+fork-plan: 1 fork pairs
+fork-plan: area.scaly:26:5: area + area
 $ SCALY_WORKERS=1 scaly run area.scaly
 the area under g from 0 to 3: 23048.968067792208</screen>
     <para>Nobody has to tell the engine where the work is. A call that
@@ -174,15 +240,6 @@ the area under g from 0 to 3: 23048.968067792208</screen>
       of an interval may be computed on two cores, but their sum is formed
       where it is written, left half plus right half, so the floating-point
       additions happen in the same order either way.</para>
-  </section>
-
-  <section xml:id="scaling-forks-see">
-    <title>Where It Shows</title>
-    <para>For loops, <option>--task-plan</option> names the compiler's
-      decision. For recursion there is no such report yet: a function that
-      forks prints what it prints, and the only place the difference shows
-      is the clock — run once with <userinput>SCALY_WORKERS=1</userinput>
-      and once without, as every program of this chapter is checked.</para>
   </section>
 
 </chapter>
