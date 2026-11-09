@@ -17028,8 +17028,15 @@ String TaskPlanner_bare_variable_name(scaly_frame*, TaskPlanner&, PlannedOperand
 bool TaskPlanner_is_local(TaskPlanner&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_28is_localE6String");
 void TaskPlanner_cls_operand(TaskPlanner&, PlannedOperand&) asm("_ZN11TaskPlannerB6scalycB4v0_211cls_operandE14PlannedOperandB6scalycB4v0_2");
 bool TaskPlanner_try_reduction_action(TaskPlanner&, PlannedAction&) asm("_ZN11TaskPlannerB6scalycB4v0_220try_reduction_actionE13PlannedActionB6scalycB4v0_2");
-bool TaskPlanner_same_access(PlannedOperand&, PlannedOperand&) asm("_ZN11TaskPlannerB6scalycB4v0_211same_accessE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
+bool TaskPlanner_same_value(TaskPlanner&, PlannedOperand&, PlannedOperand&) asm("_ZN11TaskPlannerB6scalycB4v0_210same_valueE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
 bool TaskPlanner_try_reduction_if(TaskPlanner&, PlannedIf&) asm("_ZN11TaskPlannerB6scalycB4v0_216try_reduction_ifE9PlannedIfB6scalycB4v0_2");
+bool TaskPlanner_same_hops(PlannedOperand&, PlannedOperand&) asm("_ZN11TaskPlannerB6scalycB4v0_29same_hopsE14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
+bool TaskPlanner_same_constant(Constant&, Constant&) asm("_ZN11TaskPlannerB6scalycB4v0_213same_constantE8ConstantB6scalycB4v0_28ConstantB6scalycB4v0_2");
+bool TaskPlanner_calls_function(TaskPlanner&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_214calls_functionE6String");
+bool TaskPlanner_same_values(TaskPlanner&, Vector<PlannedOperand>*, Vector<PlannedOperand>*) asm("_ZN11TaskPlannerB6scalycB4v0_211same_valuesE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE");
+bool TaskPlanner_same_grouping(TaskPlanner&, PlannedTuple&, PlannedTuple&) asm("_ZN11TaskPlannerB6scalycB4v0_213same_groupingE12PlannedTupleB6scalycB4v0_212PlannedTupleB6scalycB4v0_2");
+PlannedComponent* Option_unwrap7(PlannedComponent*) asm("_ZN6OptionIR16PlannedComponentB6scalycB4v0_2E6unwrapEv");
+bool TaskPlanner_keyword_is_trusted(PlannedFunction&) asm("_ZN11TaskPlannerB6scalycB4v0_218keyword_is_trustedE15PlannedFunctionB6scalycB4v0_2");
 uint64_t TaskPlanner_count_in_action(TaskPlanner&, PlannedAction&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_215count_in_actionE13PlannedActionB6scalycB4v0_26String");
 uint64_t TaskPlanner_count_in_ops(TaskPlanner&, Vector<PlannedOperand>*, String&) asm("_ZN11TaskPlannerB6scalycB4v0_212count_in_opsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE6String");
 uint64_t TaskPlanner_count_in_op(TaskPlanner&, PlannedOperand&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_211count_in_opE14PlannedOperandB6scalycB4v0_26String");
@@ -17064,7 +17071,6 @@ void TaskPlanner_check_life(TaskPlanner&, Lifetime&) asm("_ZN11TaskPlannerB6scal
 bool TaskPlanner_global_is_sanctioned(TaskPlanner&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_220global_is_sanctionedE6String");
 bool TaskPlanner_is_read_primitive(String&) asm("_ZN11TaskPlannerB6scalycB4v0_217is_read_primitiveE6String");
 bool WriteCensus_extern_is_io(String&) asm("_ZN11WriteCensusB6scalycB4v0_212extern_is_ioE6String");
-bool TaskPlanner_keyword_is_trusted(PlannedFunction&) asm("_ZN11TaskPlannerB6scalycB4v0_218keyword_is_trustedE15PlannedFunctionB6scalycB4v0_2");
 bool TaskPlanner_extern_is_benign(TaskPlanner&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_216extern_is_benignE6String");
 void TaskPlanner_memo_purity(TaskPlanner&, String&, bool) asm("_ZN11TaskPlannerB6scalycB4v0_211memo_purityE6Stringb");
 void TaskPlanner_pw_action(TaskPlanner&, PlannedAction&) asm("_ZN11TaskPlannerB6scalycB4v0_29pw_actionE13PlannedActionB6scalycB4v0_2");
@@ -17080,10 +17086,10 @@ void TaskPlanner_pw_call(TaskPlanner&, PlannedCall&) asm("_ZN11TaskPlannerB6scal
 bool TaskPlanner_put_is_disjoint(TaskPlanner&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_215put_is_disjointE11PlannedCallB6scalycB4v0_2");
 void TaskPlanner_callee_verdict(TaskPlanner&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_214callee_verdictE11PlannedCallB6scalycB4v0_2");
 bool TaskPlanner_type_is_reference_shaped(PlannedType&) asm("_ZN11TaskPlannerB6scalycB4v0_224type_is_reference_shapedE11PlannedTypeB6scalycB4v0_2");
-PlannedType* Option_unwrap7(PlannedType*) asm("_ZN6OptionIR11PlannedTypeB6scalycB4v0_2E6unwrapEv");
+PlannedType* Option_unwrap8(PlannedType*) asm("_ZN6OptionIR11PlannedTypeB6scalycB4v0_2E6unwrapEv");
 uint64_t TaskPlanner_wm_all() asm("_ZN11TaskPlannerB6scalycB4v0_26wm_allEv");
 void TaskPlanner_memo_written(TaskPlanner&, String&, uint64_t) asm("_ZN11TaskPlannerB6scalycB4v0_212memo_writtenE6Stringm");
-Vector<PlannedItem>* Option_unwrap8(Vector<PlannedItem>*) asm("_ZN6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6unwrapEv");
+Vector<PlannedItem>* Option_unwrap9(Vector<PlannedItem>*) asm("_ZN6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6unwrapEv");
 void TaskPlanner_wr_add_name(TaskPlanner&, String&, uint64_t) asm("_ZN11TaskPlannerB6scalycB4v0_211wr_add_nameE6Stringm");
 void TaskPlanner_wr_action(TaskPlanner&, PlannedAction&) asm("_ZN11TaskPlannerB6scalycB4v0_29wr_actionE13PlannedActionB6scalycB4v0_2");
 uint64_t TaskPlanner_extern_written_mask(TaskPlanner&, String&) asm("_ZN11TaskPlannerB6scalycB4v0_219extern_written_maskE6String");
@@ -17098,8 +17104,8 @@ void TaskPlanner_wr_statement_ref(TaskPlanner&, PlannedStatement*) asm("_ZN11Tas
 void TaskPlanner_wr_call(TaskPlanner&, PlannedCall&) asm("_ZN11TaskPlannerB6scalycB4v0_27wr_callE11PlannedCallB6scalycB4v0_2");
 uint64_t TaskPlanner_declared_mask(TaskPlanner&, PlannedFunction&) asm("_ZN11TaskPlannerB6scalycB4v0_213declared_maskE15PlannedFunctionB6scalycB4v0_2");
 bool TaskPlanner_masked_args_local(TaskPlanner&, PlannedCall&, uint64_t) asm("_ZN11TaskPlannerB6scalycB4v0_217masked_args_localE11PlannedCallB6scalycB4v0_2m");
-PlannedItem* Option_unwrap9(PlannedItem*) asm("_ZN6OptionIR11PlannedItemB6scalycB4v0_2E6unwrapEv");
-PlannedAttribute* Option_unwrap10(PlannedAttribute*) asm("_ZN6OptionIR16PlannedAttributeB6scalycB4v0_2E6unwrapEv");
+PlannedItem* Option_unwrap10(PlannedItem*) asm("_ZN6OptionIR11PlannedItemB6scalycB4v0_2E6unwrapEv");
+PlannedAttribute* Option_unwrap11(PlannedAttribute*) asm("_ZN6OptionIR16PlannedAttributeB6scalycB4v0_2E6unwrapEv");
 bool TaskPlanner_is_page_type(PlannedType&) asm("_ZN11TaskPlannerB6scalycB4v0_212is_page_typeE11PlannedTypeB6scalycB4v0_2");
 bool TaskPlanner_arg_root_local(TaskPlanner&, PlannedOperand&) asm("_ZN11TaskPlannerB6scalycB4v0_214arg_root_localE14PlannedOperandB6scalycB4v0_2");
 void TaskPlanner_init(TaskPlanner&) asm("_ZN11TaskPlannerB6scalycB4v0_2C1Ev");
@@ -17132,7 +17138,7 @@ bool StackVectors_has(StackVectors&, uint64_t) asm("_ZN12StackVectorsB6scalycB4v
 bool StackVectors_is_sized_ctor(PlannedCall&) asm("_ZN12StackVectorsB6scalycB4v0_213is_sized_ctorE11PlannedCallB6scalycB4v0_2");
 bool StackVectors_is_element_access(PlannedCall&) asm("_ZN12StackVectorsB6scalycB4v0_217is_element_accessE11PlannedCallB6scalycB4v0_2");
 void StackVectors_find_action(StackVectors&, PlannedAction&, uint64_t) asm("_ZN12StackVectorsB6scalycB4v0_211find_actionE13PlannedActionB6scalycB4v0_2m");
-String* Option_unwrap11(String*) asm("_ZN6OptionIR6StringE6unwrapEv");
+String* Option_unwrap12(String*) asm("_ZN6OptionIR6StringE6unwrapEv");
 void StackVectors_use_action(StackVectors&, PlannedAction&) asm("_ZN12StackVectorsB6scalycB4v0_210use_actionE13PlannedActionB6scalycB4v0_2");
 void StackVectors_scan(StackVectors&, PlannedFunction&) asm("_ZN12StackVectorsB6scalycB4v0_24scanE15PlannedFunctionB6scalycB4v0_2");
 void StackVectors_find_ops(StackVectors&, Vector<PlannedOperand>*, uint64_t) asm("_ZN12StackVectorsB6scalycB4v0_28find_opsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EEm");
@@ -17184,9 +17190,9 @@ uint64_t PointerCensus_extern_declared_writes(PointerCensus&, String&) asm("_ZN1
 void PointerCensus_collect_externs_members(PointerCensus&, Vector<Member>&) asm("_ZN13PointerCensusB6scalycB4v0_223collect_externs_membersE6VectorI6MemberB6scalycB4v0_2E");
 bool PointerCensus_model_is_ref(Type&) asm("_ZN13PointerCensusB6scalycB4v0_212model_is_refE4TypeB6scalycB4v0_2");
 bool PointerCensus_fn_is_body(PlannedFunction&) asm("_ZN13PointerCensusB6scalycB4v0_210fn_is_bodyE15PlannedFunctionB6scalycB4v0_2");
-PlannedFunction* Option_unwrap12(PlannedFunction*) asm("_ZN6OptionIR15PlannedFunctionB6scalycB4v0_2E6unwrapEv");
-PlannedStructure* Option_unwrap13(PlannedStructure*) asm("_ZN6OptionIR16PlannedStructureB6scalycB4v0_2E6unwrapEv");
-PlannedInitializer* Option_unwrap14(PlannedInitializer*) asm("_ZN6OptionIR18PlannedInitializerB6scalycB4v0_2E6unwrapEv");
+PlannedFunction* Option_unwrap13(PlannedFunction*) asm("_ZN6OptionIR15PlannedFunctionB6scalycB4v0_2E6unwrapEv");
+PlannedStructure* Option_unwrap14(PlannedStructure*) asm("_ZN6OptionIR16PlannedStructureB6scalycB4v0_2E6unwrapEv");
+PlannedInitializer* Option_unwrap15(PlannedInitializer*) asm("_ZN6OptionIR18PlannedInitializerB6scalycB4v0_2E6unwrapEv");
 PlannedInitializer* PointerCensus_find_initializer(PointerCensus&, String&) asm("_ZN13PointerCensusB6scalycB4v0_216find_initializerE6String");
 PlannedFunction* PointerCensus_find_function(PointerCensus&, String&) asm("_ZN13PointerCensusB6scalycB4v0_213find_functionE6String");
 Vector<PlannedOperand>* PointerCensus_arith_args(PlannedOperand&) asm("_ZN13PointerCensusB6scalycB4v0_210arith_argsE14PlannedOperandB6scalycB4v0_2");
@@ -17214,10 +17220,10 @@ String PointerCensus_item_name(scaly_frame*, PlannedItem&) asm("_ZN13PointerCens
 String PointerCensus_neighbour_length(scaly_frame*, PointerCensus&, int64_t) asm("_ZN13PointerCensusB6scalycB4v0_216neighbour_lengthEPN4scaly6memory4PageEi");
 PlannedStructure* PointerCensus_find_structure(PointerCensus&, PlannedType&) asm("_ZN13PointerCensusB6scalycB4v0_214find_structureE11PlannedTypeB6scalycB4v0_2");
 bool PointerCensus_name_says_length(String&) asm("_ZN13PointerCensusB6scalycB4v0_216name_says_lengthE6String");
-PlannedProperty* Option_unwrap15(PlannedProperty*) asm("_ZN6OptionIR15PlannedPropertyB6scalycB4v0_2E6unwrapEv");
+PlannedProperty* Option_unwrap16(PlannedProperty*) asm("_ZN6OptionIR15PlannedPropertyB6scalycB4v0_2E6unwrapEv");
 String PointerCensus_sibling_length(scaly_frame*, PointerCensus&, PlannedType&) asm("_ZN13PointerCensusB6scalycB4v0_214sibling_lengthEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 bool PointerCensus_is_alloc_name(String&) asm("_ZN13PointerCensusB6scalycB4v0_213is_alloc_nameE6String");
-PlannedMemberAccess* Option_unwrap16(PlannedMemberAccess*) asm("_ZN6OptionIR19PlannedMemberAccessB6scalycB4v0_2E6unwrapEv");
+PlannedMemberAccess* Option_unwrap17(PlannedMemberAccess*) asm("_ZN6OptionIR19PlannedMemberAccessB6scalycB4v0_2E6unwrapEv");
 bool PointerCensus_operand_is_null(PlannedOperand&) asm("_ZN13PointerCensusB6scalycB4v0_215operand_is_nullE14PlannedOperandB6scalycB4v0_2");
 PlannedOperand* PointerCensus_arith_base(PlannedOperand&) asm("_ZN13PointerCensusB6scalycB4v0_210arith_baseE14PlannedOperandB6scalycB4v0_2");
 String PointerCensus_operand_kind(scaly_frame*, PointerCensus&, PlannedOperand&) asm("_ZN13PointerCensusB6scalycB4v0_212operand_kindEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
@@ -17997,7 +18003,7 @@ uint8_t* Emitter_print_module_to_string(Emitter&) asm("_ZN7EmitterB6scalycB4v0_2
 void Emitter_phase_mark(Emitter&, const char*) asm("_ZN7EmitterB6scalycB4v0_210phase_markEP10const_char");
 bool Emitter_verify_module(Emitter&) asm("_ZN7EmitterB6scalycB4v0_213verify_moduleEv");
 LLVMOpaqueValue* Emitter_emit_operands(Emitter&, Vector<PlannedOperand>*) asm("_ZN7EmitterB6scalycB4v0_213emit_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE");
-Vector<PlannedMemberAccess>* Option_unwrap17(Vector<PlannedMemberAccess>*) asm("_ZN6OptionIR6VectorI19PlannedMemberAccessB6scalycB4v0_2EE6unwrapEv");
+Vector<PlannedMemberAccess>* Option_unwrap18(Vector<PlannedMemberAccess>*) asm("_ZN6OptionIR6VectorI19PlannedMemberAccessB6scalycB4v0_2EE6unwrapEv");
 LLVMOpaqueValue* Emitter_emit_operand(Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_212emit_operandE14PlannedOperandB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_load_reference_levels_of(Emitter&, PlannedType&, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_224load_reference_levels_ofE11PlannedTypeB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_load_extra_reference_levels(Emitter&, PlannedExpression&, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_227load_extra_reference_levelsE17PlannedExpressionB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2");
@@ -18086,7 +18092,6 @@ LLVMOpaqueValue* Emitter_resident_sret_slot(Emitter&, LLVMOpaqueType*) asm("_ZN7
 void Emitter_report_lost_resident_page(Emitter&, LLVMOpaqueType*, String&) asm("_ZN7EmitterB6scalycB4v0_225report_lost_resident_pageEP14LLVMOpaqueTypeB6scalycB4v0_26String");
 LLVMOpaqueValue* Emitter_region_alloc_life(Emitter&, bool, Lifetime&, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_217region_alloc_lifeEb8LifetimeB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_region_alloc_tuple(Emitter&, PlannedTuple&, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_218region_alloc_tupleE12PlannedTupleB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2");
-PlannedComponent* Option_unwrap18(PlannedComponent*) asm("_ZN6OptionIR16PlannedComponentB6scalycB4v0_2E6unwrapEv");
 LLVMOpaqueValue* Emitter_emit_tuple(Emitter&, PlannedTuple&) asm("_ZN7EmitterB6scalycB4v0_210emit_tupleE12PlannedTupleB6scalycB4v0_2");
 Vector<Vector<PlannedOperand>>* Option_unwrap19(Vector<Vector<PlannedOperand>>*) asm("_ZN6OptionIR6VectorI6VectorI14PlannedOperandB6scalycB4v0_2EEE6unwrapEv");
 LLVMOpaqueValue** Option_unwrap20(LLVMOpaqueValue**) asm("_ZN6OptionIRP15LLVMOpaqueValueB6scalycB4v0_2E6unwrapEv");
@@ -110278,7 +110283,7 @@ __attribute__((weak)) bool TaskPlanner_try_reduction_if(TaskPlanner& scaly_self,
                 return false;
             }
             PlannedOperand* e = ((PlannedOperand*)(e_ptr));
-            if (((TaskPlanner_same_access(scaly_lvalue((*(e))), scaly_lvalue((*(((PlannedOperand*)(vp))))))) == (false)))
+            if (((TaskPlanner_same_value(*(this_), scaly_lvalue((*(e))), scaly_lvalue((*(((PlannedOperand*)(vp))))))) == (false)))
             {
                 return false;
             }
@@ -110304,38 +110309,338 @@ __attribute__((weak)) bool TaskPlanner_try_reduction_if(TaskPlanner& scaly_self,
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
-__attribute__((weak)) bool TaskPlanner_same_access(PlannedOperand& a, PlannedOperand& b)
+__attribute__((weak)) bool TaskPlanner_same_value(TaskPlanner& scaly_self, PlannedOperand& a, PlannedOperand& b)
 {
-    String an = String{nullptr};
-    String bn = String{nullptr};
+    TaskPlanner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((TaskPlanner_same_hops(a, b)) == (false)))
+    {
+        return false;
+    }
     {
         auto&& scaly_t1 = (a).expr;
         if (scaly_t1.tag == 2)
         {
-            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
-            an = (v).name;
+            PlannedVariable va = scaly_payload<PlannedVariable>(scaly_t1);
+            {
+                auto&& scaly_t2 = (b).expr;
+                if (scaly_t2.tag == 2)
+                {
+                    PlannedVariable vb = scaly_payload<PlannedVariable>(scaly_t2);
+                    return String_equals((va).name, (vb).name);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 0)
+        {
+            PlannedConstant ca = scaly_payload<PlannedConstant>(scaly_t1);
+            {
+                auto&& scaly_t3 = (b).expr;
+                if (scaly_t3.tag == 0)
+                {
+                    PlannedConstant cb = scaly_payload<PlannedConstant>(scaly_t3);
+                    return TaskPlanner_same_constant((ca).value, (cb).value);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 4)
+        {
+            PlannedCall ka = scaly_payload<PlannedCall>(scaly_t1);
+            {
+                auto&& scaly_t4 = (b).expr;
+                if (scaly_t4.tag == 4)
+                {
+                    PlannedCall kb = scaly_payload<PlannedCall>(scaly_t4);
+                    if (((!(String_equals((ka).mangled_name, (kb).mangled_name))) ? true : (!(String_equals((ka).name, (kb).name)))))
+                    {
+                        return false;
+                    }
+                    if (((ka).is_indirect ? true : (kb).is_indirect))
+                    {
+                        return false;
+                    }
+                    if ((ka).is_intrinsic)
+                    {
+                        if (String_starts_with((ka).name, scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(String{(uint8_t*)"\005simd."})); scaly_t5; })))))
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (((((ka).is_operator) == (false)) ? ((TaskPlanner_calls_function(*(this_), (ka).mangled_name)) == (false)) : false))
+                        {
+                            return false;
+                        }
+                    }
+                    return TaskPlanner_same_values(*(this_), (ka).args, (kb).args);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 5)
+        {
+            PlannedTuple ta = scaly_payload<PlannedTuple>(scaly_t1);
+            {
+                auto&& scaly_t6 = (b).expr;
+                if (scaly_t6.tag == 5)
+                {
+                    PlannedTuple tb = scaly_payload<PlannedTuple>(scaly_t6);
+                    return TaskPlanner_same_grouping(*(this_), ta, tb);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 19)
+        {
+            PlannedAs xa = scaly_payload<PlannedAs>(scaly_t1);
+            {
+                auto&& scaly_t7 = (b).expr;
+                if (scaly_t7.tag == 19)
+                {
+                    PlannedAs xb = scaly_payload<PlannedAs>(scaly_t7);
+                    if ((!(String_equals(((xa).target_type).mangled_name, ((xb).target_type).mangled_name))))
+                    {
+                        return false;
+                    }
+                    PlannedOperand* av = (xa).value;
+                    PlannedOperand* bv = (xb).value;
+                    if (((av) == (nullptr)))
+                    {
+                        return false;
+                    }
+                    if (((bv) == (nullptr)))
+                    {
+                        return false;
+                    }
+                    return TaskPlanner_same_value(*(this_), scaly_lvalue((*(((PlannedOperand*)(av))))), scaly_lvalue((*(((PlannedOperand*)(bv))))));
+                }
+                else
+                {
+                    return false;
+                }
+            }
         }
         else
         {
             return false;
         }
     }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) bool TaskPlanner_same_values(TaskPlanner& scaly_self, Vector<PlannedOperand>* a, Vector<PlannedOperand>* b)
+{
+    TaskPlanner* this_ = &scaly_self;
+    if (((a) == (nullptr)))
     {
-        auto&& scaly_t2 = (b).expr;
-        if (scaly_t2.tag == 2)
-        {
-            PlannedVariable w = scaly_payload<PlannedVariable>(scaly_t2);
-            bn = (w).name;
-        }
-        else
-        {
-            return false;
-        }
+        return ((b) == (nullptr));
     }
-    if ((!(String_equals(an, bn))))
+    if (((b) == (nullptr)))
     {
         return false;
     }
+    if ((a->length != b->length))
+    {
+        return false;
+    }
+    uint64_t i = 0ULL;
+    while ((i < a->length))
+    {
+        PlannedOperand* x = Vector_get<PlannedOperand>(*(a), i);
+        PlannedOperand* y = Vector_get<PlannedOperand>(*(b), i);
+        if (((x) == (nullptr)))
+        {
+            return false;
+        }
+        if (((y) == (nullptr)))
+        {
+            return false;
+        }
+        if (((TaskPlanner_same_value(*(this_), scaly_lvalue((*(((PlannedOperand*)(x))))), scaly_lvalue((*(((PlannedOperand*)(y))))))) == (false)))
+        {
+            return false;
+        }
+        i = (i + 1ULL);
+    }
+    return true;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) bool TaskPlanner_same_grouping(TaskPlanner& scaly_self, PlannedTuple& a, PlannedTuple& b)
+{
+    TaskPlanner* this_ = &scaly_self;
+    if (((a).is_region_alloc ? true : (b).is_region_alloc))
+    {
+        return false;
+    }
+    Vector<PlannedComponent>* ac = (a).components;
+    Vector<PlannedComponent>* bc = (b).components;
+    if (((ac) == (nullptr)))
+    {
+        return false;
+    }
+    if (((bc) == (nullptr)))
+    {
+        return false;
+    }
+    if (((ac->length != 1ULL) ? true : (bc->length != 1ULL)))
+    {
+        return false;
+    }
+    PlannedComponent* x = Vector_get<PlannedComponent>(*(ac), 0ULL);
+    PlannedComponent* y = Vector_get<PlannedComponent>(*(bc), 0ULL);
+    if (((x) == (nullptr)))
+    {
+        return false;
+    }
+    if (((y) == (nullptr)))
+    {
+        return false;
+    }
+    PlannedComponent* xc = ((PlannedComponent*)(x));
+    PlannedComponent* yc = ((PlannedComponent*)(y));
+    if ((((xc->name) != (nullptr)) ? true : ((yc->name) != (nullptr))))
+    {
+        return false;
+    }
+    return TaskPlanner_same_values(*(this_), xc->value, yc->value);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) bool TaskPlanner_same_constant(Constant& a, Constant& b)
+{
+    {
+        auto&& scaly_t1 = a;
+        if (scaly_t1.tag == 1)
+        {
+            IntegerConstant ia = scaly_payload<IntegerConstant>(scaly_t1);
+            {
+                auto&& scaly_t2 = b;
+                if (scaly_t2.tag == 1)
+                {
+                    IntegerConstant ib = scaly_payload<IntegerConstant>(scaly_t2);
+                    return ((ia).value == (ib).value);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 2)
+        {
+            HexConstant ha = scaly_payload<HexConstant>(scaly_t1);
+            {
+                auto&& scaly_t3 = b;
+                if (scaly_t3.tag == 2)
+                {
+                    HexConstant hb = scaly_payload<HexConstant>(scaly_t3);
+                    return ((ha).value == (hb).value);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 0)
+        {
+            BooleanConstant ba = scaly_payload<BooleanConstant>(scaly_t1);
+            {
+                auto&& scaly_t4 = b;
+                if (scaly_t4.tag == 0)
+                {
+                    BooleanConstant bb = scaly_payload<BooleanConstant>(scaly_t4);
+                    return (((ba).value) == ((bb).value));
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 3)
+        {
+            FloatingPointConstant fa = scaly_payload<FloatingPointConstant>(scaly_t1);
+            {
+                auto&& scaly_t5 = b;
+                if (scaly_t5.tag == 3)
+                {
+                    FloatingPointConstant fb = scaly_payload<FloatingPointConstant>(scaly_t5);
+                    return ((double)((fa).value) == (double)((fb).value));
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else if (scaly_t1.tag == 5)
+        {
+            CharacterConstant ch = scaly_payload<CharacterConstant>(scaly_t1);
+            {
+                auto&& scaly_t6 = b;
+                if (scaly_t6.tag == 5)
+                {
+                    CharacterConstant cb = scaly_payload<CharacterConstant>(scaly_t6);
+                    return String_equals((ch).value, (cb).value);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) bool TaskPlanner_calls_function(TaskPlanner& scaly_self, String& mangled)
+{
+    TaskPlanner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((this_->plan_functions) == (nullptr)))
+    {
+        return false;
+    }
+    for (auto scaly_t1 = Vector_get_iterator<PlannedFunction>(&scaly_local.f, *(this_->plan_functions));;)
+    {
+        PlannedFunction* scaly_t1_at = (PlannedFunction*)VectorIterator_next<PlannedFunction>(scaly_t1);
+        if (scaly_t1_at == nullptr)
+            break;
+        PlannedFunction* func = scaly_t1_at;
+        if ((String_equals(func->mangled_name, mangled) ? TaskPlanner_keyword_is_trusted(*(func)) : false))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/TaskPlanner.scaly
+__attribute__((weak)) bool TaskPlanner_same_hops(PlannedOperand& a, PlannedOperand& b)
+{
     uint64_t al = 0ULL;
     if ((((a).member_access) != (nullptr)))
     {
