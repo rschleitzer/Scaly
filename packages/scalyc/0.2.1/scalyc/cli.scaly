@@ -1192,6 +1192,11 @@ define cli
                 cli.print_task_plan(&task_planner)
             if opts.loop_census
                 cli.print_loop_census(&task_planner)
+            ; a report with nothing to write is the whole job: `scalyc
+            ; --task-plan prog.scaly` answers the verdicts and stops (it went
+            ; on to "-o <file> required for linking", rc 7, 2026-11-09)
+            if opts.output_file.get_length() = 0 and opts.emit_ir = false and opts.compile_only = false and opts.run_mode = false and opts.jit_program = false and opts.test_mode = false and opts.emit_interface = false
+                return 0
         }
 
         if opts.verbose
