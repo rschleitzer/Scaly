@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Lanes - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="division"
+><span
+class="division-label"
+>Part I</span
+>First Steps</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-change"
+><span
+class="num"
+>1.2</span
+>A Language Still Changing</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with Visual Studio Code on macOS and Linux</a
+></li
+><li
+><a
+href="tutorial.htm#tut-windows"
+><span
+class="num"
+>2.3</span
+>Scaly on Windows</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.4</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.5</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part II</span
+>Scaling</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-why.htm"
+><span
+class="num"
+>3.</span
+>Why Scaly Can Scale</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-why.htm#scaling-why-overview"
+><span
+class="num"
+>3.1</span
+>Two Rounds at Once</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-functions"
+><span
+class="num"
+>3.2</span
+>Functions Read, Procedures Write</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-mutable"
+><span
+class="num"
+>3.3</span
+>A Procedure Says What It Writes</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-regions"
+><span
+class="num"
+>3.4</span
+>Memory That Is Not Shared</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-same"
+><span
+class="num"
+>3.5</span
+>The Same Program on One Core</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-loops.htm"
+><span
+class="num"
+>4.</span
+>Loops on All Cores</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-loops.htm#scaling-loops-overview"
+><span
+class="num"
+>4.1</span
+>A Plain for</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-round"
+><span
+class="num"
+>4.2</span
+>What a Round May Do</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-order"
+><span
+class="num"
+>4.3</span
+>What Keeps a Loop in Order</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-reductions"
+><span
+class="num"
+>4.4</span
+>Sums, Products and the Largest</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-kept"
+><span
+class="num"
+>4.5</span
+>Values a Round Keeps</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-when"
+><span
+class="num"
+>4.6</span
+>When the Cores Are Worth It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-forks.htm"
+><span
+class="num"
+>5.</span
+>Recursion That Forks</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-forks.htm#scaling-forks-overview"
+><span
+class="num"
+>5.1</span
+>Two Calls at Once</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-shape"
+><span
+class="num"
+>5.2</span
+>What Forks</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-when"
+><span
+class="num"
+>5.3</span
+>Forks Nobody Waits For</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-uneven"
+><span
+class="num"
+>5.4</span
+>An Uneven Tree</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="scaling-lanes.htm"
+aria-current="page"
+><span
+class="num"
+>6.</span
+>Lanes</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-overview"
+><span
+class="num"
+>6.1</span
+>Four Numbers in One</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-masks"
+><span
+class="num"
+>6.2</span
+>Masks</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-memory"
+><span
+class="num"
+>6.3</span
+>Lanes from Memory</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-mandelbrot"
+><span
+class="num"
+>6.4</span
+>Mandelbrot, Eight Points at a Time</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-cores"
+><span
+class="num"
+>6.5</span
+>Lanes and Cores</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part III</span
+>Language Reference</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>7.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>7.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>7.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>7.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>7.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>7.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>8.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>8.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>8.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>8.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>8.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>8.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>8.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>8.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>8.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>8.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>8.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>8.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>8.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>8.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>8.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>9.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>10.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>10.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>10.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>10.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>11.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>11.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>11.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>11.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>11.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>11.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>11.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>11.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>11.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>11.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>11.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>11.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>12.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>12.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>12.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>12.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>12.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>12.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>12.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>12.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>12.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>13.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>13.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>13.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>13.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>13.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="division"
+>Appendices</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tools.htm"
+><span
+class="num"
+>A.</span
+>The Tools</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tools.htm#tools-install"
+><span
+class="num"
+>A.1</span
+>Installation</a
+></li
+><li
+><a
+href="tools.htm#tools-scaly"
+><span
+class="num"
+>A.2</span
+>scaly</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyc"
+><span
+class="num"
+>A.3</span
+>scalyc</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyls"
+><span
+class="num"
+>A.4</span
+>scalyls</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>B.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>B.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>B.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>C.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>D.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>D.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>D.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>D.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>D.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>D.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>D.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>D.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>D.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>D.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>D.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 6</p
+><h1
+id="scaling-lanes"
+>Lanes</h1
+><section
+id="scaling-lanes-overview"
+><h2
+><a
+class="header"
+href="#scaling-lanes-overview"
+>Four Numbers in One</a
+></h2
+><p
+>A core can do more than one thing per instruction. Its vector
+      registers hold several numbers side by side — two, four or more
+      doubles, sixteen or thirty-two bytes —, and one instruction adds or
+      multiplies all of them at once, each in its own lane.
+      The cores of the previous chapters multiply the work by the number of
+      cores; lanes multiply it once more, on each of them.</p
+><p
+>A compiler can sometimes find lanes in a loop by itself, but not
+      in a loop that stops early or that takes a different path for each
+      number. So Scaly lets a program say it: a vector type holds a fixed
+      number of values as one value, and its operators work lane by
+      lane.</p
+><pre
+class="listing"
+><code
+>let a f64x4(1.0, 2.0, 3.0, 4.0)
+let b f64x4.splat(0.5)
+let c f64x4.iota(10.0, 0.25)
+let d a * b + c
+print "`d[0]` `d[1]` `d[2]` `d[3]`"
+let e a.with(2, 9.0) * 2.0
+print "`e[0]` `e[1]` `e[2]` `e[3]`"</code
+></pre
+><pre
+class="screen"
+><code
+>10.5 11.25 12 12.75
+2 4 18 8</code
+></pre
+><p
+><code
+>f64x4(…)</code
+> gives each lane its value,
+      <code
+>splat</code
+> the same value to every lane, and
+      <code
+>iota(base, step)</code
+> counts up from <code
+>base</code
+>.
+      <code
+>a * b + c</code
+> is four multiplications and four additions,
+      done as one of each. A scalar on one side of an operator stands for
+      itself in every lane, as the <code
+>2.0</code
+> does. <code
+>d[i]</code
+>
+      reads a lane and stops the program with exit code 15 when there is no
+      lane <code
+>i</code
+>; <code
+>a.with(i, x)</code
+> is a copy of
+      <code
+>a</code
+> with one lane replaced. A vector is a value like a
+      <code
+>double</code
+>: it is copied, passed and returned in registers,
+      and it never lives on a page.</p
+><p
+>The types are named by their element and their number of lanes:
+      <code
+>f64x2</code
+>, <code
+>f64x4</code
+>, <code
+>f64x8</code
+>;
+      <code
+>f32x4</code
+>, <code
+>f32x8</code
+>, <code
+>f32x16</code
+>;
+      <code
+>i64x2</code
+>, <code
+>i64x4</code
+>, <code
+>i32x4</code
+>,
+      <code
+>i32x8</code
+>; <code
+>u8x16</code
+>, <code
+>u8x32</code
+>,
+      <code
+>u32x4</code
+>, <code
+>u32x8</code
+>. A vector wider than the
+      hardware is fine: on a core whose registers hold two doubles, an
+      <code
+>f64x4</code
+> is two registers, and its operations are two
+      instructions each.</p
+></section
+><section
+id="scaling-lanes-masks"
+><h2
+><a
+class="header"
+href="#scaling-lanes-masks"
+>Masks</a
+></h2
+><p
+>A comparison of two vectors compares lane by lane, and its
+      answer is a mask — <code
+>mask2</code
+> to
+      <code
+>mask32</code
+>, one flag per lane. A mask answers questions about
+      its lanes, combines with <code
+>and</code
+>, <code
+>or</code
+> and
+      <code
+>not</code
+> lane by lane, and chooses between two vectors with
+      <code
+>select</code
+>:</p
+><pre
+class="listing"
+><code
+>let a f64x4(1.0, 2.0, 3.0, 4.0)
+let big a &#62; 2.5
+print "`big.count()` lanes above 2.5, any: `big.any()`, all: `big.all()`"
+let clipped select(big, f64x4.splat(2.5), a)
+print "`clipped[0]` `clipped[1]` `clipped[2]` `clipped[3]`"
+print "sum `a.sum()`, largest `a.max_lane()`"</code
+></pre
+><pre
+class="screen"
+><code
+>2 lanes above 2.5, any: true, all: false
+1 2 2.5 2.5
+sum 10, largest 4</code
+></pre
+><p
+>Masks are how a vector program takes a different path per lane:
+      it computes both paths for all lanes and keeps, with
+      <code
+>select</code
+>, what each lane should have. And
+      <code
+>any</code
+> and <code
+>all</code
+> are how it leaves a loop: when
+      no lane has anything left to do. <code
+>sum</code
+>,
+      <code
+>product</code
+>, <code
+>min_lane</code
+> and
+      <code
+>max_lane</code
+> fold the lanes into one number; a sum of
+      floating-point lanes adds them in order, lane 0 first, so it gives
+      the digits of a plain loop over them.</p
+></section
+><section
+id="scaling-lanes-memory"
+><h2
+><a
+class="header"
+href="#scaling-lanes-memory"
+>Lanes from Memory</a
+></h2
+><p
+><code
+>f64x4.load(xs, i)</code
+> reads the elements
+      <code
+>xs[i]</code
+> to <code
+>xs[i + 3]</code
+> of a
+      <code
+>Slice</code
+>, <code
+>Vector</code
+> or <code
+>Array</code
+> as one
+      vector, and <code
+>v.store(ys, i)</code
+> writes them. Each checks once
+      that all four elements exist — a scalar loop checks every one.
+      A dot product four elements at a time, with a fused multiply-add per
+      step and the rest done one by one:</p
+><pre
+class="listing"
+><code
+>function dot(a: Vector[double], b: Vector[double]) returns double
+{
+    var acc f64x4.splat(0.0)
+    var i: size_t 0
+    while i + 4 &#60;= a.length
+    {
+        acc := f64x4.load(a, i).fma(f64x4.load(b, i), acc)
+        i := i + 4
+    }
+    var sum acc.sum()
+    while i &#60; a.length
+    {
+        sum := sum + a[i] * b[i]
+        i := i + 1
+    }
+    sum
+}
+
+let n 1001
+var a Vector[double](n as size_t)
+var b Vector[double](n as size_t)
+for i in n
+{
+    a.put(i as size_t, (i as double) * 0.5)
+    b.put(i as size_t, 2.0)
+}
+print "a · b = `dot(a, b)`"</code
+></pre
+><pre
+class="screen"
+><code
+>a · b = 500500</code
+></pre
+><p
+><code
+>v.fma(w, acc)</code
+> is <code
+>v * w + acc</code
+> with one
+      rounding instead of two; <code
+>sqrt</code
+>, <code
+>abs</code
+>,
+      <code
+>floor</code
+>, <code
+>min</code
+> and <code
+>max</code
+> work lane
+      by lane as well. The four lanes of <code
+>acc</code
+> are four running
+      sums, added up at the end. That is a different order of additions
+      than a loop over one element at a time, and for numbers that are not
+      whole it can change the last digits; the order is written in the
+      program, so the result is the same on every run and every
+      machine.</p
+></section
+><section
+id="scaling-lanes-mandelbrot"
+><h2
+><a
+class="header"
+href="#scaling-lanes-mandelbrot"
+>Mandelbrot, Eight Points at a Time</a
+></h2
+><p
+>The program of <a
+href="scaling-loops.htm#scaling-loops-overview"
+>A Plain for</a
+> counts one
+      point after the other, and each point leaves its loop when it escapes.
+      With lanes, a row is counted eight points at a time, as two
+      <code
+>f64x4</code
+> — two, because while one multiplication is still
+      in flight the core can already start the other. The eight points go
+      through their iterations together; every eight iterations the
+      program asks whether any lane is still inside, and stops when none is.
+      A point that escaped keeps iterating with the others; after fifty
+      iterations its value is so large that it has become infinite or not a
+      number, and the comparison with 4.0 sorts it out at the end:</p
+><pre
+class="listing"
+><code
+>function count8(x: int, y: int, n: int) returns int
+{
+    let step 2.0 / (n as double)
+    let ci f64x4.splat(step * (y as double) - 1.0)
+    let cr0 f64x4.iota(step * (x as double) - 1.5, step)
+    let cr1 cr0 + 4.0 * step
+    var zr0 cr0
+    var zi0 ci
+    var zr1 cr1
+    var zi1 ci
+    var s0 f64x4.splat(0.0)
+    var s1 s0
+    var block 0
+    while block &#60; 6
+    {
+        var k 0
+        while k &#60; 8
+        {
+            let r0 zr0 * zr0
+            let i0 zi0 * zi0
+            let ri0 zr0 * zi0
+            s0 := r0 + i0
+            zr0 := r0 - i0 + cr0
+            zi0 := ri0 + ri0 + ci
+            let r1 zr1 * zr1
+            let i1 zi1 * zi1
+            let ri1 zr1 * zi1
+            s1 := r1 + i1
+            zr1 := r1 - i1 + cr1
+            zi1 := ri1 + ri1 + ci
+            k := k + 1
+        }
+        if ((s0 &#60;= 4.0) or (s1 &#60;= 4.0)).any() = false
+            return 0
+        block := block + 1
+    }
+    var k 0
+    while k &#60; 2
+    {
+        let r0 zr0 * zr0
+        let i0 zi0 * zi0
+        let ri0 zr0 * zi0
+        s0 := r0 + i0
+        zr0 := r0 - i0 + cr0
+        zi0 := ri0 + ri0 + ci
+        let r1 zr1 * zr1
+        let i1 zi1 * zi1
+        let ri1 zr1 * zi1
+        s1 := r1 + i1
+        zr1 := r1 - i1 + cr1
+        zi1 := ri1 + ri1 + ci
+        k := k + 1
+    }
+    (s0 &#60;= 4.0).count() + (s1 &#60;= 4.0).count()
+}
+
+function row_count(y: int, n: int) returns int
+{
+    var count 0
+    var x 0
+    while x &#60; n
+    {
+        count := count + count8(x, y, n)
+        x := x + 8
+    }
+    count
+}
+
+let n 2000
+var counts Vector[int](n as size_t)
+for y in n
+    counts.put(y as size_t, row_count(y, n))
+
+var total 0
+for c in counts
+    total := total + c
+print "mandelbrot `n`: `total` points inside"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run mandelbrot.scaly
+mandelbrot 2000: 1588053 points inside
+$ scalyc --task-plan mandelbrot.scaly
+task-plan: 2 for-loops, 2 parallelizable
+task-plan: mandelbrot.scaly:71:1: parallel
+task-plan: mandelbrot.scaly:75:1: parallel
+$ SCALY_WORKERS=1 scaly run mandelbrot.scaly
+mandelbrot 2000: 1588053 points inside</code
+></pre
+><p
+>The count is the one of the scalar program. The row loop is the
+      same plain <code
+>for</code
+> as before, and it still runs on every
+      core: a vector is a value like a number, and <code
+>count8</code
+> is a
+      function like <code
+>row_count</code
+> was. Built with
+      <code
+class="userinput"
+>scaly build --release</code
+> and <code
+>n</code
+> at
+      8000, the scalar program took 4.1 seconds on one core and 0.54 on
+      all ten; this one takes 0.76 on one core and 0.11 on all ten — the
+      lanes bring five times, the cores another seven, together
+      thirty-seven.</p
+></section
+><section
+id="scaling-lanes-cores"
+><h2
+><a
+class="header"
+href="#scaling-lanes-cores"
+>Lanes and Cores</a
+></h2
+><p
+>Lanes and cores combine because they divide the work at
+      different places: the lanes inside one round, the cores across the
+      rounds. What the compiler checks for a <code
+>for</code
+> does not
+      change. One thing a round may not do with lanes is store a vector
+      into memory outside the round: the compiler proves that two rounds
+      write different <em
+>elements</em
+> only for
+      <code
+>put</code
+> at the loop's index, not for the four elements a
+      store writes.</p
+><pre
+class="listing"
+><code
+>let n 1000
+var xs Vector[double](n as size_t)
+for i in n
+    xs.put(i as size_t, i as double)
+
+var ys Vector[double](n as size_t)
+for k in n / 4
+{
+    let v f64x4.load(xs, (4 * k) as size_t)
+    (v * 2.0).store(ys, (4 * k) as size_t)
+}
+print "ys[999] = `ys[999]`"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run double.scaly
+ys[999] = 1998
+$ scalyc --task-plan double.scaly
+task-plan: 2 for-loops, 1 parallelizable
+task-plan: double.scaly:3:1: parallel
+task-plan: double.scaly:7:1: blocked: SIMD store</code
+></pre
+><p
+>Such a loop runs in order, on one core, with its lanes. A loop
+      whose rounds load and compute and hand back numbers — a sum, a
+      count, a slot of their own — runs on all cores with its lanes, as
+      the rows of the Mandelbrot set do.</p
+><p
+>Which instructions the lanes become depends on the processor the
+      program is compiled for, and without being told, the compiler
+      compiles for a generic one of the target's family: on x86-64 that
+      means no AVX, even where the machine has it.
+      <code
+class="userinput"
+>scaly build --release -mcpu=native</code
+> compiles
+      for the machine at hand (or <code
+class="option"
+>-mcpu=</code
+> with a
+      processor's name, for another one). On the laptop of these
+      measurements it changed nothing: its vector registers are as wide as
+      the generic ones.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="scaling-forks.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Recursion That Forks</span
+></a
+><a
+class="next"
+rel="next"
+href="lexical.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Lexical Structure</span
+></a
+></nav
+></main
+></div
+></body
+></html
+>

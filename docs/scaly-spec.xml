@@ -5,6 +5,7 @@
   <!ENTITY scaling-why SYSTEM "scaly/chapters/scaling-why.xml">
   <!ENTITY scaling-loops SYSTEM "scaly/chapters/scaling-loops.xml">
   <!ENTITY scaling-forks SYSTEM "scaly/chapters/scaling-forks.xml">
+  <!ENTITY scaling-lanes SYSTEM "scaly/chapters/scaling-lanes.xml">
   <!ENTITY lexical SYSTEM "scaly/chapters/lexical.xml">
   <!ENTITY types SYSTEM "scaly/chapters/types.xml">
   <!ENTITY grammar SYSTEM "scaly/chapters/grammar.xml">
@@ -36,6 +37,7 @@
     &scaling-why;
     &scaling-loops;
     &scaling-forks;
+    &scaling-lanes;
   </part>
 
   <part xml:id="reference">
