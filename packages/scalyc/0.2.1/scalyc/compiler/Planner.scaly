@@ -11946,7 +11946,9 @@ define Planner
                     s_can_throw,
                     null,
                     this.file,
-                    null
+                    null,
+                    false,
+                    0
                 ))
             }
             let rr_s_class this.return_residence_static(struct_name, fn_name)
@@ -17077,7 +17079,9 @@ define Planner
                                             mm3.can_throw,
                                             null,
                                             this.file,
-                                            null
+                                            null,
+                                            false,
+                                            0
                                         ))
                                     }
 
@@ -17601,7 +17605,9 @@ define Planner
                                         mm.can_throw,
                                         null,
                                         this.file,
-                                        null
+                                        null,
+                                        false,
+                                        0
                                     ))
                                 }
                             }
@@ -17922,7 +17928,9 @@ define Planner
                             s_can_throw,
                             null,
                             this.file,
-                            null
+                            null,
+                            false,
+                            0
                         ))
                     }
                 }
@@ -21785,7 +21793,9 @@ define Planner
                     false,
                     null,
                     this.file,
-                    null
+                    null,
+                    false,
+                    0
                 )
                 this.record_function(op_fn)
             }
@@ -26631,7 +26641,9 @@ define Planner
                 false,
                 null,
                 this.file,
-                null
+                null,
+                false,
+                0
             )
             this.record_function(synth_fn)
             LambdaMonoResult(mangled, caps_ref)
@@ -55724,7 +55736,9 @@ define Planner
                 can_throw,
                 null,
                 this.file,
-                &^this f.writes
+                &^this f.writes,
+                false,
+                0
             )
             this.record_function(result)
             let smask this.store_mask_of(Planner.store_key(f))
@@ -56392,7 +56406,9 @@ define Planner
                             false,
                             null,
                             this.file,
-                            null
+                            null,
+                            false,
+                            0
                         )
                         this.record_function(synth_fn)
                     }
@@ -57615,7 +57631,9 @@ define Planner
                     op_can_throw,
                     null,
                     this.file,
-                    null
+                    null,
+                    false,
+                    0
                 ))
             }
         }

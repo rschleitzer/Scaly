@@ -1,0 +1,43 @@
+; A round that builds its text with an interpolated string calls the
+; standard library's StringBuilder.append on a builder of its own -- a
+; procedure of another package, whose stub has no body to walk. Until
+; 2026-11-09 every such loop stayed sequential ("blocked: extern call
+; append"); the interface says append writes only its `mutable` receiver,
+; reads no global and does no I/O, so the round may run beside the others
+; (parallel_for_interpolation_ir pins that it does). The kept Strings must
+; all be right, and a loop appending to ONE builder outside it must keep
+; its order.
+; run-env: SCALY_POISON=1
+function work(i: int) returns int
+{
+    var s 0
+    var k 0
+    while k < 100000
+    {
+        s := s + (k % (i + 3))
+        k := k + 1
+    }
+    s
+}
+
+let n 300
+var texts Vector[String](n as size_t)
+for i in n
+    texts.put(i as size_t, "item `i`: `work(i)`")
+
+var outside StringBuilder()
+for i in 10
+    outside.append "`i + work(i) * 0`"
+
+var bad 0
+for i in n
+{
+    let t texts[i as size_t]
+    if t.equals("item `i`: `work(i)`") = false
+        bad := bad + 1
+}
+let order outside.to_string()
+if bad = 0 and order.equals("0123456789")
+    print "PASS"
+else
+    print "FAIL `bad` `order`"

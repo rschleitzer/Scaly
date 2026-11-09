@@ -1,0 +1,11 @@
+; The loop of parallel_for_interpolation, compiled: a body that builds a
+; String by interpolation and keeps it runs through the parallel driver,
+; whose kept-value wave adopts the chunks' pages (`parfor.adopt.head`).
+; The previous compiler judged StringBuilder.append, another package's
+; procedure, an unknown extern and emitted no driver at all.
+; expect-ir: parfor.adopt.head
+let n 8
+var texts Vector[String](n as size_t)
+for i in n
+    texts.put(i as size_t, "item `i`")
+print "`texts[7]`"

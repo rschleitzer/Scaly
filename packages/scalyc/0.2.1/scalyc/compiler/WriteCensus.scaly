@@ -211,6 +211,14 @@ define WriteCensus
         decl_read_keys: Array[String]
         decl_read_vals: Array[String]
         decl_io_keys: Array[String]
+        ; the keys under which a LINKED procedure says it writes no global,
+        ; reads none and reaches no I/O, and the keys under which any
+        ; declaration says otherwise or is read from its sources (whose I/O
+        ; is not written down): a stub is CONTAINED when its key is in the
+        ; first and not in the second (stub_contained#)
+        decl_contained_keys: Array[String]
+        decl_contained_masks: Array[u64]
+        decl_uncontained_keys: Array[String]
         ; what a LINKED declaration says its result reaches (`@ret_reach_N`,
         ; N the mask of its parameters), under the same keys; a declaration
         ; that says nothing reaches every parameter (WC_PARAMS), and so does
@@ -337,6 +345,9 @@ define WriteCensus
             decl_read_keys := Array[String]^this()
             decl_read_vals := Array[String]^this()
             decl_io_keys := Array[String]^this()
+            decl_contained_keys := Array[String]^this()
+            decl_contained_masks := Array[u64]^this()
+            decl_uncontained_keys := Array[String]^this()
             decl_reach_keys := Array[String]^this()
             decl_reach_vals := Array[u64]^this()
             ret_globals := Array[String]^this()
@@ -2665,6 +2676,19 @@ define WriteCensus
                                     linked_decl := true
                                 else
                                     0
+                            if f.pure = false
+                            {
+                                var ckey WriteCensus.purity_key(f.name, f.input.length)
+                                if owner.get_length() > 0
+                                    ckey := WriteCensus.owned_key(owner, f.name, f.input.length)
+                                if linked_decl and f.writes.length = 0 and f.read_globals.length = 0
+                                {
+                                    decl_contained_keys.add(String^this(ckey))
+                                    decl_contained_masks.add(marks)
+                                }
+                                else
+                                    decl_uncontained_keys.add(String^this(ckey))
+                            }
                             if linked_decl
                             {
                                 var key WriteCensus.purity_key(f.name, f.input.length)
@@ -3065,6 +3089,13 @@ define WriteCensus
                     continue
                 if f.mangled_name.starts_with(String("_Z")) = false
                     continue
+                if this.stub_contained(f)
+                {
+                    var c f
+                    c.contained := true
+                    c.contained_mask := this.stub_contained_mask(f)
+                    fns.put(i - 1, c)
+                }
                 var n_in: size_t 0
                 if f.input <> null
                     n_in := f.input.length
@@ -3622,6 +3653,45 @@ define WriteCensus
                 i := i + 1
             }
             false
+        }
+
+        ; does a stub's declaration say it writes no global, reads none that
+        ; can change and reaches no I/O? Only an interface says the last two
+        ; (they are computed); every declaration under the key must say so.
+        function stub_contained(this: WriteCensus, f: PlannedFunction) returns bool
+        {
+            let key this.stub_key(f)
+            var i: size_t 0
+            while i < decl_uncontained_keys.length
+            {
+                if decl_uncontained_keys[i] = key
+                    return false
+                i := i + 1
+            }
+            i := 0
+            while i < decl_contained_keys.length
+            {
+                if decl_contained_keys[i] = key
+                    return true
+                i := i + 1
+            }
+            false
+        }
+
+        ; the `mutable` positions of every declaration under a contained
+        ; stub's key (a parameter's `mutable` is in the model, not the plan)
+        function stub_contained_mask(this: WriteCensus, f: PlannedFunction) returns u64
+        {
+            let key this.stub_key(f)
+            var m: u64 0
+            var i: size_t 0
+            while i < decl_contained_keys.length
+            {
+                if decl_contained_keys[i] = key
+                    m := m | decl_contained_masks[i]
+                i := i + 1
+            }
+            m
         }
 
         ; the key a stub's declaration is filed under: its owner as the

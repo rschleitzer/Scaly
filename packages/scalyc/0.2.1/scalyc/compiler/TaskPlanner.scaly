@@ -2307,6 +2307,15 @@ define TaskPlanner
                         this.memo_purity(mangled, true)
                         return true
                     }
+                    ; a contained stub (another package's procedure whose
+                    ; interface says no global and no I/O) is judged like a
+                    ; body that touches neither: what it writes, its
+                    ; `mutable` arguments, callee_verdict asks of the caller
+                    if func.contained
+                    {
+                        this.memo_purity(mangled, true)
+                        return true
+                    }
                     choose func.impl
                         when action: Action
                         {
@@ -3433,6 +3442,20 @@ define TaskPlanner
                                 this.block_named("mutating call on loop-external state: ", call.name)
                             return
                         }
+                    }
+                    ; a contained stub writes exactly its `mutable` arguments:
+                    ; a round may call it on state of its own
+                    ; (WriteCensus.stub_contained#; `blocked: extern call
+                    ; append` for an interpolated string in a body until
+                    ; 2026-11-09)
+                    if func.contained
+                    {
+                        let cwm this.declared_mask(func) | (func.contained_mask as size_t)
+                        if cwm = 0
+                            return
+                        if this.masked_args_local(call, cwm) = false
+                            this.block_named("mutating call on loop-external state: ", call.name)
+                        return
                     }
                     choose func.impl
                         when action: Action
