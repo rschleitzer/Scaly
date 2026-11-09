@@ -31344,21 +31344,31 @@ __attribute__((weak)) Expression Modeler_handle_interpolated_string(scaly_frame*
     }
     if (in_expr)
     {
-        Modeler_report_load_error(scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{(uint8_t*)"\143string interpolation: unterminated embedded expression (escape a literal backtick with a backslash)"})); scaly_t1; }))));
+        Modeler_report_load_error(scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\073string interpolation: unterminated embedded expression in \042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((raw)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\144\042 - a string inside an embedding writes its quotes escaped, `f(\134\042x\134\042)`, and a literal backtick is \134`"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
         return scaly_variant<Expression>(0, Modeler_handle_literal(scaly_rp, syntax));
     }
     if (empty_expr)
     {
-        Modeler_report_load_error(scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{(uint8_t*)"\057string interpolation: empty embedded expression"})); scaly_t2; }))));
+        Modeler_report_load_error(scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue(String{(uint8_t*)"\057string interpolation: empty embedded expression"})); scaly_t3; }))));
         return scaly_variant<Expression>(0, Modeler_handle_literal(scaly_rp, syntax));
     }
     if (bad_escape)
     {
-        Modeler_report_load_error(scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue(String{(uint8_t*)"\150string interpolation: only quote, backslash and backtick escapes are valid inside an embedded expression"})); scaly_t3; }))));
+        Modeler_report_load_error(scaly_lvalue((*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), scaly_lvalue(String{(uint8_t*)"\150string interpolation: only quote, backslash and backtick escapes are valid inside an embedded expression"})); scaly_t4; }))));
         return scaly_variant<Expression>(0, Modeler_handle_literal(scaly_rp, syntax));
     }
-    StringBuilder* src = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
-    Array<uint64_t>* pairs = ({ Array<uint64_t>* scaly_t5 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t5 = Array<uint64_t>{}; (void)0; scaly_t5; });
+    StringBuilder* src = ({ StringBuilder* scaly_t5 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t5 = StringBuilder{}; StringBuilder_init((*scaly_t5)); scaly_t5; });
+    Array<uint64_t>* pairs = ({ Array<uint64_t>* scaly_t6 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t6 = Array<uint64_t>{}; (void)0; scaly_t6; });
     Array_add88<uint64_t>((*pairs), 1ULL);
     Array_add88<uint64_t>((*pairs), (syntax).start);
     StringBuilder_append2((*src), scaly_lvalue(String{(uint8_t*)"\002{\012"}));
@@ -31493,19 +31503,19 @@ __attribute__((weak)) Expression Modeler_handle_interpolated_string(scaly_frame*
     }
     StringBuilder_append2((*src), scaly_lvalue(String{(uint8_t*)"\025\047isb$\047.to_string()\012}\012"}));
     String src_str = StringBuilder_to_string(&scaly_local.f, (*src));
-    parser_Parser* p = ({ parser_Parser* scaly_t6 = (parser_Parser*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(parser_Parser), alignof(parser_Parser)); *scaly_t6 = parser_Parser{}; parser_Parser_init((*scaly_t6), src_str); scaly_t6; });
+    parser_Parser* p = ({ parser_Parser* scaly_t7 = (parser_Parser*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(parser_Parser), alignof(parser_Parser)); *scaly_t7 = parser_Parser{}; parser_Parser_init((*scaly_t7), src_str); scaly_t7; });
     lexer_Lexer_use_positions(((*p)).lexer, scaly_lvalue(Array_as_slice<uint64_t>((*pairs))));
     {
-        auto&& scaly_t7 = parser_Parser_parse_expression(scaly_rp, (*p));
-        if (scaly_t7.status != 0)
+        auto&& scaly_t8 = parser_Parser_parse_expression(scaly_rp, (*p));
+        if (scaly_t8.status != 0)
         {
-            parser_ParserError err = scaly_result_at<parser_ParserError>(scaly_t7, 0);
-            Modeler_report_load_error(scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), scaly_lvalue(String{(uint8_t*)"\066string interpolation: cannot parse embedded expression"})); scaly_t8; }))));
+            parser_ParserError err = scaly_result_at<parser_ParserError>(scaly_t8, 0);
+            Modeler_report_load_error(scaly_lvalue((*({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init2((*scaly_t9), scaly_lvalue(String{(uint8_t*)"\066string interpolation: cannot parse embedded expression"})); scaly_t9; }))));
             return scaly_variant<Expression>(0, Modeler_handle_literal(scaly_rp, syntax));
         }
-        else if (scaly_t7.status == 0)
+        else if (scaly_t8.status == 0)
         {
-            ExpressionSyntax node = scaly_result_at<ExpressionSyntax>(scaly_t7, 0);
+            ExpressionSyntax node = scaly_result_at<ExpressionSyntax>(scaly_t8, 0);
             return Modeler_handle_expression(scaly_rp, node);
         }
     }

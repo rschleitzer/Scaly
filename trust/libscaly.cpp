@@ -2484,6 +2484,8 @@ extern "C" void scaly_eio_tcp_unserved(int32_t);
 extern "C" int32_t scaly_eio_tcp_wake_served();
 extern "C" int32_t scaly_eio_tcp_idle(int32_t, int64_t);
 extern "C" int32_t scaly_eio_tcp_sweep();
+extern "C" void scaly_eio_tcp_sweeper(void*);
+extern "C" void* scaly_eio_tcp_idle_done();
 extern "C" void scaly_eio_block_termination();
 extern "C" int32_t scaly_eio_wait_termination();
 extern "C" int32_t scaly_eio_tcp_listen_host(const char*, int32_t);
@@ -2494,8 +2496,6 @@ extern "C" int32_t pthread_join(size_t, void**);
 extern "C" int32_t scaly_thread_spawn_sized(uint64_t*, void*, void*, uint64_t);
 extern "C" uint64_t scaly_stack_limit();
 extern "C" void* scaly_call_ptr(void*, void*);
-void Scheduler_sleep(int64_t) asm("_ZN9Scheduler5sleepE3i64");
-void io_idle_sweeper() asm("_Z15io_idle_sweeperv");
 void ensure_deadlock_state() asm("_Z21ensure_deadlock_statev");
 void deadlock_event() asm("_Z14deadlock_eventv");
 void TaskPool_drain_default() asm("_ZN8TaskPool13drain_defaultEv");
@@ -2509,6 +2509,8 @@ extern "C" void* mmap(void*, size_t, int32_t, int32_t, int32_t, int64_t);
 extern "C" int32_t munmap(void*, size_t);
 extern "C" int32_t mprotect(void*, size_t, int32_t);
 extern "C" int32_t getpagesize();
+void Scheduler_sleep(int64_t) asm("_ZN9Scheduler5sleepE3i64");
+void io_idle_sweeper() asm("_Z15io_idle_sweeperv");
 int64_t Fiber_freed_region_count() asm("_ZN5Fiber18freed_region_countEv");
 int64_t Fiber_freed_page_count() asm("_ZN5Fiber16freed_page_countEv");
 int64_t Fiber_freed_bucket_count() asm("_ZN5Fiber18freed_bucket_countEv");
@@ -2542,6 +2544,7 @@ void Scheduler_sleep_blocking(int64_t) asm("_ZN9Scheduler14sleep_blockingE3i64")
 void Scheduler_add_timer(SchedTask*) asm("_ZN9Scheduler9add_timerER9SchedTask");
 bool Scheduler_step() asm("_ZN9Scheduler4stepEv");
 bool Scheduler_poll_io_by(int64_t) asm("_ZN9Scheduler10poll_io_byE3i64");
+void Scheduler_wake_sleeper(SchedTask*) asm("_ZN9Scheduler12wake_sleeperER9SchedTask");
 void Scheduler_fire_timers(int64_t) asm("_ZN9Scheduler11fire_timersE3i64");
 void Scheduler_wake_handles(int32_t, int32_t) asm("_ZN9Scheduler12wake_handlesE3i323i32");
 void Scheduler_inject_task(Scheduler*, SchedTask*) asm("_ZN9Scheduler11inject_taskER9SchedulerR9SchedTask");
@@ -2586,6 +2589,7 @@ int32_t Io_listen_host(const char*, int32_t) asm("_ZN2Io11listen_hostEP10const_c
 int32_t Io_connect_host(const char*, int32_t) asm("_ZN2Io12connect_hostEP10const_char3i32");
 int64_t Io_tcp_write(int32_t, void*, uint64_t) asm("_ZN2Io9tcp_writeE3i32Pvm");
 void Io_served(int32_t) asm("_ZN2Io6servedE3i32");
+void Io_wake_idle_sweeper() asm("_ZN2Io17wake_idle_sweeperEv");
 void Io_unserved(int32_t) asm("_ZN2Io8unservedE3i32");
 int64_t Io_wake_served() asm("_ZN2Io11wake_servedEv");
 void Io_idle(int32_t, int64_t) asm("_ZN2Io4idleE3i323i64");
@@ -8002,19 +8006,6 @@ __attribute__((weak)) void StringBuilder_init5(StringBuilder& scaly_self, const 
 }
 
 // packages/scaly/0.2.1/scaly/fiber.scaly
-__attribute__((weak)) void io_idle_sweeper()
-{
-    for (;;)
-    {
-        Scheduler_sleep(1000LL);
-        if ((scaly_eio_tcp_sweep() == (int32_t)0ULL))
-        {
-            return;
-        }
-    }
-}
-
-// packages/scaly/0.2.1/scaly/fiber.scaly
 __attribute__((weak)) void ensure_deadlock_state()
 {
     if (((deadlock_state) != (nullptr)))
@@ -8062,6 +8053,21 @@ __attribute__((weak)) void* scaly_thread_start(void* raw)
     Fiber_drain_stack_pool();
     scaly_thread_release_buckets();
     return nullptr;
+}
+
+// packages/scaly/0.2.1/scaly/fiber.scaly
+__attribute__((weak)) void io_idle_sweeper()
+{
+    for (;;)
+    {
+        scaly_eio_tcp_sweeper(current_task);
+        Scheduler_sleep(1000LL);
+        if ((scaly_eio_tcp_sweep() == (int32_t)0ULL))
+        {
+            scaly_eio_tcp_sweeper(nullptr);
+            return;
+        }
+    }
 }
 
 // packages/scaly/0.2.1/scaly/fiber.scaly
@@ -8574,6 +8580,47 @@ __attribute__((weak)) void Scheduler_add_timer(SchedTask* t)
             return;
         }
         p = nx;
+    }
+}
+
+// packages/scaly/0.2.1/scaly/fiber.scaly
+__attribute__((weak)) void Scheduler_wake_sleeper(SchedTask* t)
+{
+    Scheduler* s = ((Scheduler*)(current_scheduler));
+    void* want = ((void*)(t));
+    SchedTask* prev = (SchedTask*)(nullptr);
+    SchedTask* cur = s->timers;
+    for (;;)
+    {
+        SchedTask* c = cur;
+        if (((c) == (nullptr)))
+        {
+            return;
+        }
+        SchedTask* nx = c->timer_next;
+        if ((((((void*)(c)))) == (want)))
+        {
+            if (((prev) == (nullptr)))
+            {
+                s->timers = nx;
+            }
+            else
+            {
+                prev->timer_next = nx;
+            }
+            if (((nx) == (nullptr)))
+            {
+                s->timers_tail = prev;
+            }
+            c->timer_next = (SchedTask*)(nullptr);
+            Scheduler_enqueue(c);
+            s->timer_mark = s->enqueued;
+            s->blocked = (s->blocked - 1LL);
+            s->sleeping = (s->sleeping - 1LL);
+            return;
+        }
+        prev = c;
+        cur = nx;
     }
 }
 
@@ -9552,6 +9599,21 @@ __attribute__((weak)) void Io_served(int32_t fd)
 __attribute__((weak)) void Io_unserved(int32_t fd)
 {
     scaly_eio_tcp_unserved(fd);
+    Io_wake_idle_sweeper();
+}
+
+// packages/scaly/0.2.1/scaly/fiber.scaly
+__attribute__((weak)) void Io_wake_idle_sweeper()
+{
+    if (((current_scheduler) == (nullptr)))
+    {
+        return;
+    }
+    SchedTask* t = ((SchedTask*)(scaly_eio_tcp_idle_done()));
+    if (((t) != (nullptr)))
+    {
+        Scheduler_wake_sleeper(t);
+    }
 }
 
 // packages/scaly/0.2.1/scaly/fiber.scaly
@@ -9570,6 +9632,10 @@ __attribute__((weak)) void Io_idle(int32_t fd, int64_t seconds)
     if ((scaly_eio_tcp_idle(fd, seconds) != (int32_t)0ULL))
     {
         Scheduler_spawn_detached(((void*)&io_idle_sweeper), nullptr);
+    }
+    if ((seconds <= 0LL))
+    {
+        Io_wake_idle_sweeper();
     }
 }
 
