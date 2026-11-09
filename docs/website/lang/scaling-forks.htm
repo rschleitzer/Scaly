@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>Recursion That Forks - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="division"
+><span
+class="division-label"
+>Part I</span
+>First Steps</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-change"
+><span
+class="num"
+>1.2</span
+>A Language Still Changing</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with Visual Studio Code on macOS and Linux</a
+></li
+><li
+><a
+href="tutorial.htm#tut-windows"
+><span
+class="num"
+>2.3</span
+>Scaly on Windows</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.4</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.5</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part II</span
+>Scaling</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-why.htm"
+><span
+class="num"
+>3.</span
+>Why Scaly Can Scale</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-why.htm#scaling-why-overview"
+><span
+class="num"
+>3.1</span
+>Two Rounds at Once</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-functions"
+><span
+class="num"
+>3.2</span
+>Functions Read, Procedures Write</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-mutable"
+><span
+class="num"
+>3.3</span
+>A Procedure Says What It Writes</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-regions"
+><span
+class="num"
+>3.4</span
+>Memory That Is Not Shared</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-same"
+><span
+class="num"
+>3.5</span
+>The Same Program on One Core</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-loops.htm"
+><span
+class="num"
+>4.</span
+>Loops on All Cores</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-loops.htm#scaling-loops-overview"
+><span
+class="num"
+>4.1</span
+>A Plain for</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-round"
+><span
+class="num"
+>4.2</span
+>What a Round May Do</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-order"
+><span
+class="num"
+>4.3</span
+>What Keeps a Loop in Order</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-reductions"
+><span
+class="num"
+>4.4</span
+>Sums, Products and the Largest</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-kept"
+><span
+class="num"
+>4.5</span
+>Values a Round Keeps</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-when"
+><span
+class="num"
+>4.6</span
+>When the Cores Are Worth It</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="scaling-forks.htm"
+aria-current="page"
+><span
+class="num"
+>5.</span
+>Recursion That Forks</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-forks.htm#scaling-forks-overview"
+><span
+class="num"
+>5.1</span
+>Two Calls at Once</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-shape"
+><span
+class="num"
+>5.2</span
+>What Forks</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-when"
+><span
+class="num"
+>5.3</span
+>Forks Nobody Waits For</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-uneven"
+><span
+class="num"
+>5.4</span
+>An Uneven Tree</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-see"
+><span
+class="num"
+>5.5</span
+>Where It Shows</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part III</span
+>Language Reference</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>6.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>6.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>6.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>6.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>6.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>6.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>6.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>7.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>7.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>7.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>7.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>7.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>7.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>7.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>7.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>7.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>7.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>7.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>7.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>7.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>7.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>7.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>8.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>9.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>9.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>9.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>10.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>10.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>10.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>10.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>10.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>10.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>10.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>10.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>10.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>10.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>10.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>10.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>11.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>11.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>11.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>11.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>11.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>11.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>11.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>11.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>11.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>12.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>12.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>12.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>12.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>12.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="division"
+>Appendices</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tools.htm"
+><span
+class="num"
+>A.</span
+>The Tools</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tools.htm#tools-install"
+><span
+class="num"
+>A.1</span
+>Installation</a
+></li
+><li
+><a
+href="tools.htm#tools-scaly"
+><span
+class="num"
+>A.2</span
+>scaly</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyc"
+><span
+class="num"
+>A.3</span
+>scalyc</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyls"
+><span
+class="num"
+>A.4</span
+>scalyls</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>B.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>B.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>B.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>C.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>D.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>D.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>D.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>D.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>D.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>D.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>D.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>D.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>D.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>D.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>D.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 5</p
+><h1
+id="scaling-forks"
+>Recursion That Forks</h1
+><section
+id="scaling-forks-overview"
+><h2
+><a
+class="header"
+href="#scaling-forks-overview"
+>Two Calls at Once</a
+></h2
+><p
+>A recursion that splits its problem in two and calls itself on
+      each half has the same independence a loop has: the two calls read
+      their arguments and nothing the other one writes. When the function
+      is declared a <code
+>function</code
+>, the compiler knows it, and the
+      two calls may run on two cores. The classic example does nothing but call and
+      add:</p
+><pre
+class="listing"
+><code
+>function fib(n: int) returns int
+{
+    if n &#60; 2
+        return n
+    fib(n - 1) + fib(n - 2)
+}
+
+print "fib(35) is `fib(35)`"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run fib.scaly
+fib(35) is 9227465
+$ SCALY_WORKERS=1 scaly run fib.scaly
+fib(35) is 9227465</code
+></pre
+><p
+>Again there is no annotation. Built with
+      <code
+class="userinput"
+>scaly build --release</code
+> and asked for
+      <code
+>fib(42)</code
+>, the program took 0.83 seconds on one core and
+      0.14 seconds on the ten of the laptop of the previous chapter. That
+      is six times as fast for a function that is the worst case for
+      forking, because each call does almost nothing besides calling
+      again.</p
+></section
+><section
+id="scaling-forks-shape"
+><h2
+><a
+class="header"
+href="#scaling-forks-shape"
+>What Forks</a
+></h2
+><p
+>The compiler looks for two shapes in a function that calls
+      itself: the two calls on both sides of one operator, as in
+      <code
+>fib</code
+>, and two bindings in a row, each a call, the second
+      one not using the first:</p
+><pre
+class="listing"
+><code
+>function count_multiples(lo: int, hi: int) returns int
+{
+    if hi - lo &#60; 4096
+    {
+        var count 0
+        var i lo
+        while i &#60; hi
+        {
+            if i % 7 = 0 or i % 11 = 0
+                count := count + 1
+            i := i + 1
+        }
+        return count
+    }
+    let mid (lo + hi) / 2
+    let left count_multiples(lo, mid)
+    let right count_multiples(mid, hi)
+    left + right
+}
+
+let n 200000000
+print "below `n`, `count_multiples(0, n)` numbers are multiples of 7 or 11"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run multiples.scaly
+below 200000000, 44155845 numbers are multiples of 7 or 11
+$ SCALY_WORKERS=1 scaly run multiples.scaly
+below 200000000, 44155845 numbers are multiples of 7 or 11</code
+></pre
+><p
+>With <code
+class="userinput"
+>scaly run</code
+> on that laptop, one core
+      took 0.33 seconds and all of them 0.09. The rules are narrow, and
+      each of them has a reason:</p
+><ul
+><li
+><p
+>The function is a <code
+>function</code
+>, so that the
+        two calls cannot see each other.</p
+></li
+><li
+><p
+>It calls <em
+>itself</em
+>, twice, in one
+        expression or in two <code
+>let</code
+> bindings that follow each
+        other directly. Two different functions side by side do not fork,
+        nor does a function that reaches itself through another one; of
+        three calls, <code
+>f(a) + f(b) + f(c)</code
+>, only the first two
+        form a pair.</p
+></li
+><li
+><p
+>The operator between the calls is not
+        <code
+>and</code
+> or <code
+>or</code
+>: their right side runs only
+        when the left side does not decide, so running it early would run
+        it where the program does not.</p
+></li
+><li
+><p
+>Its parameters are numbers or pointers, its result a
+        number. A function that takes or returns a string or a record runs
+        as written: the value a call on another core builds would have to be
+        handed over, which loops do (<a
+href="scaling-loops.htm#scaling-loops-kept"
+>Values a Round Keeps</a
+>)
+        and recursion does not yet.</p
+></li
+><li
+><p
+>It is a free function, not a method, and it cannot
+        throw.</p
+></li
+></ul
+><p
+>A function outside these rules runs as written; nothing is
+      reported, and nothing is wrong.</p
+></section
+><section
+id="scaling-forks-when"
+><h2
+><a
+class="header"
+href="#scaling-forks-when"
+>Forks Nobody Waits For</a
+></h2
+><p
+>A recursion has many more pairs of calls than a machine has
+      cores: <code
+>fib(35)</code
+> makes some thirty million calls. Handing
+      each pair to the pool would cost far more than the additions it
+      spares, and deciding at each pair whether it is worth it costs too
+      much as well — the frames entered in the first microseconds would
+      decide before any clock could tell. Scaly does neither.</p
+><p
+>At each pair near the top of the recursion, the running call
+      notes its first call as one another core <em
+>could</em
+>
+      take — a few writes into a list of its own thread, no lock —, runs the
+      second call itself, and then takes the first back and runs it, unless
+      someone took it meanwhile. While such a recursion runs, a clock beats
+      every tenth of a millisecond. On a beat, if a worker of the pool has
+      nothing to do, the oldest noted call of a thread is offered, and the
+      idle worker takes it: the oldest is the one nearest the top of the
+      recursion, the biggest piece of work still waiting. A call whose first
+      half was taken does not wait idly for it; it helps the core that took
+      it.</p
+><p
+>So a fork happens only where a core is free to take it, and the
+      noting costs a few writes per call. Below the twelfth level the
+      function runs as a plain copy without even those. What is left of the
+      cost shows where the calls do no work of their own: when the engine
+      was built, 200 000 separate runs of <code
+>fib(15)</code
+> took about
+      three times as long as the plain function. A recursion whose calls
+      compute something pays nothing measurable.</p
+><p
+>Three things keep a recursion on one core: a pool of one worker
+      (<code
+class="userinput"
+>SCALY_WORKERS=1</code
+>), a call made inside a
+      <code
+>try</code
+> — a fault on another core could not reach its
+      handler —, and a build with <code
+class="option"
+>-g</code
+>, whose debugger
+      expects one body per function.</p
+></section
+><section
+id="scaling-forks-uneven"
+><h2
+><a
+class="header"
+href="#scaling-forks-uneven"
+>An Uneven Tree</a
+></h2
+><p
+>A loop splits its range into parts of equal size; a recursion
+      splits where the problem does, and the halves may differ by orders
+      of magnitude. Adaptive integration is such a problem: it halves an
+      interval until two estimates of the area agree, so it goes deep where
+      the function bends and stops early where it is flat. Here the function
+      has forty narrow peaks on a slow ramp:</p
+><pre
+class="listing"
+><code
+>; forty narrow peaks on a slow ramp
+function g(x: double) returns double
+{
+    var y x * 0.1
+    var k 0
+    while k &#60; 40
+    {
+        let d x - ((k as double) * 0.0731 + 0.05)
+        y := y + 1.0 / (d * d + 0.00001 * ((k % 7 + 1) as double))
+        k := k + 1
+    }
+    y
+}
+
+function simpson(a: double, b: double) returns double
+    (b - a) / 6.0 * (g(a) + 4.0 * g((a + b) * 0.5) + g(b))
+
+function area(a: double, b: double, whole: double, eps: double, depth: int) returns double
+{
+    let m (a + b) * 0.5
+    let l simpson(a, m)
+    let r simpson(m, b)
+    let diff l + r - whole
+    if depth = 0 or (diff &#60; 15.0 * eps and diff &#62; 0.0 - 15.0 * eps)
+        return l + r + diff / 15.0
+    area(a, m, l, eps * 0.5, depth - 1) + area(m, b, r, eps * 0.5, depth - 1)
+}
+
+let total area(0.0, 3.0, simpson(0.0, 3.0), 0.0000000001, 60)
+print "the area under g from 0 to 3: `total`"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run area.scaly
+the area under g from 0 to 3: 23048.968067792208
+$ SCALY_WORKERS=1 scaly run area.scaly
+the area under g from 0 to 3: 23048.968067792208</code
+></pre
+><p
+>Nobody has to tell the engine where the work is. A call that
+      turns out to be big is still noted while it runs, so it is offered
+      on the next beat a core is free, however deep the recursion below it
+      goes. With <code
+class="userinput"
+>scaly run</code
+>, one core took 0.35
+      seconds and all of them 0.09.</p
+><p
+>The result has every digit of the sequential one. The two halves
+      of an interval may be computed on two cores, but their sum is formed
+      where it is written, left half plus right half, so the floating-point
+      additions happen in the same order either way.</p
+></section
+><section
+id="scaling-forks-see"
+><h2
+><a
+class="header"
+href="#scaling-forks-see"
+>Where It Shows</a
+></h2
+><p
+>For loops, <code
+class="option"
+>--task-plan</code
+> names the compiler's
+      decision. For recursion there is no such report yet: a function that
+      forks prints what it prints, and the only place the difference shows
+      is the clock — run once with <code
+class="userinput"
+>SCALY_WORKERS=1</code
+>
+      and once without, as every program of this chapter is checked.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="scaling-loops.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Loops on All Cores</span
+></a
+><a
+class="next"
+rel="next"
+href="lexical.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Lexical Structure</span
+></a
+></nav
+></main
+></div
+></body
+></html
+>
