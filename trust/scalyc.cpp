@@ -14817,6 +14817,7 @@ struct Emitter
     LLVMOpaqueValue* fj_depth;
     LLVMOpaqueValue* fj_ctx;
     LLVMOpaqueValue* fj_preset;
+    LLVMOpaqueValue* broken_join;
     StoreEffects store_effects;
     StackVectors stack_vectors;
     LLVMOpaqueValue* stack_vectors_fn;
@@ -15943,6 +15944,8 @@ bool Planner_is_integer_type(String&) asm("_ZN7PlannerB6scalycB4v0_215is_integer
 int64_t Planner_integer_type_bits(String&) asm("_ZN7PlannerB6scalycB4v0_217integer_type_bitsE6String");
 bool Planner_integer_operand_widens(Planner&, PlannedType&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_222integer_operand_widensE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
 PlannedOperand Planner_narrow_constant_integer_operand(scaly_frame*, Planner&, PlannedType&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_231narrow_constant_integer_operandEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
+bool Planner_operand_is_value_join(PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_221operand_is_value_joinE14PlannedOperandB6scalycB4v0_2");
+PlannedOperand Planner_settle_value_arms(scaly_frame*, Planner&, PlannedOperand&, PlannedType&, bool) asm("_ZN7PlannerB6scalycB4v0_217settle_value_armsEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_211PlannedTypeB6scalycB4v0_2b");
 PlannedOperand Planner_widen_integer_operand(scaly_frame*, Planner&, PlannedType&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_221widen_integer_operandEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
 uint64_t Planner_integer_constant_value(Planner&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_222integer_constant_valueE14PlannedOperandB6scalycB4v0_2");
 bool Planner_constant_type_is_untyped(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_224constant_type_is_untypedE11PlannedTypeB6scalycB4v0_2");
@@ -15956,6 +15959,7 @@ uint64_t Planner_integer_type_width(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_2
 bool Planner_constant_fits(bool, uint64_t, String&) asm("_ZN7PlannerB6scalycB4v0_213constant_fitsEbm6String");
 uint64_t Planner_fold_initializer(scaly_frame*, Planner&, Vector<PlannedOperand>&, PlannedType&, uint64_t*) asm("_ZN7PlannerB6scalycB4v0_216fold_initializerEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E11PlannedTypeB6scalycB4v0_2Rm");
 void Planner_prefold_array_rows(scaly_frame*, Planner&, Vector<PlannedOperand>&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_218prefold_array_rowsEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E11PlannedTypeB6scalycB4v0_2");
+bool Planner_types_equal(PlannedType&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_211types_equalE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 PlannedOperand Planner_retype_integer_operand(scaly_frame*, Planner&, PlannedOperand&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_222retype_integer_operandEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 PlannedOperand Planner_settle_constant(scaly_frame*, Planner&, PlannedOperand&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_215settle_constantEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 bool Planner_operand_retypes_to_integer(Planner&, PlannedOperand&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_226operand_retypes_to_integerE14PlannedOperandB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
@@ -16017,7 +16021,6 @@ void Planner_report_null_into_ref_field(Planner&, Structure&, Vector<PlannedType
 Vector<PlannedOperand> Planner_plan_operands(scaly_frame*, Planner&, Vector<Operand>&) asm("_ZN7PlannerB6scalycB4v0_213plan_operandsEPN4scaly6memory4PageE6VectorI7OperandB6scalycB4v0_2E");
 bool Planner_is_unit_type(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_212is_unit_typeE11PlannedTypeB6scalycB4v0_2");
 Vector<PlannedComponent>* Planner_fill_default_components(scaly_frame*, Planner&, String&, Span&, Vector<PlannedComponent>*, PlannedType&, Vector<PlannedType>&) asm("_ZN7PlannerB6scalycB4v0_223fill_default_componentsEPN4scaly6memory4PageE6String4SpanB6scalycB4v0_26OptionIR6VectorI16PlannedComponentB6scalycB4v0_2EE11PlannedTypeB6scalycB4v0_26VectorI11PlannedTypeB6scalycB4v0_2E");
-bool Planner_types_equal(PlannedType&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_211types_equalE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 bool Planner_region_value_matches_pointer(PlannedType&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_228region_value_matches_pointerE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 bool Planner_check_initializer_match(Planner&, Initializer&, Vector<PlannedType>&, bool) asm("_ZN7PlannerB6scalycB4v0_223check_initializer_matchE11InitializerB6scalycB4v0_26VectorI11PlannedTypeB6scalycB4v0_2Eb");
 void Planner_facts_module(scaly_frame*, Planner&, Module&, bool, Array<InterfaceFact>*) asm("_ZN7PlannerB6scalycB4v0_212facts_moduleEPN4scaly6memory4PageE6ModuleB6scalycB4v0_2bR5ArrayI13InterfaceFactB6scalycB4v0_2E");
@@ -16159,6 +16162,7 @@ bool Planner_option_arg_reaches_plain_ref(Planner&, PlannedType&, PlannedOperand
 void Planner_report_option_component(Planner&, String&, String&, PlannedType&, PlannedType&, Span&) asm("_ZN7PlannerB6scalycB4v0_223report_option_componentE6String6String11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_24SpanB6scalycB4v0_2");
 void Planner_report_component_mismatch(Planner&, String&, String&, PlannedType&, PlannedType&, Span&) asm("_ZN7PlannerB6scalycB4v0_225report_component_mismatchE6String6String11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_24SpanB6scalycB4v0_2");
 PlannedOperand Planner_retarget_bare_variant(scaly_frame*, Planner&, PlannedType&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_221retarget_bare_variantEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
+int64_t Planner_value_join_shape(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_216value_join_shapeE11PlannedTypeB6scalycB4v0_2");
 bool Planner_report_c_size_mixing(Planner&, PlannedType&, PlannedOperand&, Span&) asm("_ZN7PlannerB6scalycB4v0_220report_c_size_mixingE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_24SpanB6scalycB4v0_2");
 void Planner_report_integer_narrowing(Planner&, PlannedType&, PlannedOperand&, Span&, String&) asm("_ZN7PlannerB6scalycB4v0_224report_integer_narrowingE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_24SpanB6scalycB4v0_26String");
 Vector<PlannedOperand> Planner_fold_string_args_to_char(scaly_frame*, Planner&, Vector<PlannedOperand>&, Vector<PlannedType>&) asm("_ZN7PlannerB6scalycB4v0_224fold_string_args_to_charEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E6VectorI11PlannedTypeB6scalycB4v0_2E");
@@ -16859,6 +16863,9 @@ PlannedOperand* Planner_self_tail_operand(scaly_frame*, Planner&, PlannedOperand
 PlannedImplementation* Planner_self_tail_to_return(scaly_frame*, Planner&, PlannedImplementation&, String&) asm("_ZN7PlannerB6scalycB4v0_219self_tail_to_returnEPN4scaly6memory4PageE21PlannedImplementationB6scalycB4v0_26String");
 PlannedStatement* Planner_self_tail_statement(scaly_frame*, Planner&, PlannedStatement&, String&) asm("_ZN7PlannerB6scalycB4v0_219self_tail_statementEPN4scaly6memory4PageE16PlannedStatementB6scalycB4v0_26String");
 PlannedStatement* Planner_convert_tail_literal_statement(scaly_frame*, Planner&, PlannedStatement&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_230convert_tail_literal_statementEPN4scaly6memory4PageE16PlannedStatementB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
+bool Planner_collect_value_leaves_statement(Planner&, PlannedStatement&, Array<PlannedOperand>*) asm("_ZN7PlannerB6scalycB4v0_230collect_value_leaves_statementE16PlannedStatementB6scalycB4v0_2R5ArrayI14PlannedOperandB6scalycB4v0_2E");
+bool Planner_collect_value_leaves(Planner&, PlannedOperand&, Array<PlannedOperand>*) asm("_ZN7PlannerB6scalycB4v0_220collect_value_leavesE14PlannedOperandB6scalycB4v0_2R5ArrayI14PlannedOperandB6scalycB4v0_2E");
+void Planner_report_value_arms(Planner&, Array<PlannedOperand>*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_217report_value_armsER5ArrayI14PlannedOperandB6scalycB4v0_2E11PlannedTypeB6scalycB4v0_2");
 void Planner_check_tail_ref_escape_statement(Planner&, PlannedStatement&, Span&) asm("_ZN7PlannerB6scalycB4v0_231check_tail_ref_escape_statementE16PlannedStatementB6scalycB4v0_24SpanB6scalycB4v0_2");
 PlannedReturn Planner_plan_return(scaly_frame*, Planner&, Return&) asm("_ZN7PlannerB6scalycB4v0_211plan_returnEPN4scaly6memory4PageE6ReturnB6scalycB4v0_2");
 PlannedBreak Planner_plan_break(scaly_frame*, Planner&, Break&) asm("_ZN7PlannerB6scalycB4v0_210plan_breakEPN4scaly6memory4PageE5BreakB6scalycB4v0_2");
@@ -18050,6 +18057,7 @@ uint8_t* Emitter_current_function_label(Emitter&) asm("_ZN7EmitterB6scalycB4v0_2
 void Emitter_identity_probe(Emitter&, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_214identity_probeE11PlannedTypeB6scalycB4v0_2");
 LLVMOpaqueType* Emitter_map_return_type(Emitter&, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_215map_return_typeE11PlannedTypeB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_unit_fill(Emitter&, LLVMOpaqueValue*, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_29unit_fillEP15LLVMOpaqueValueB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
+void Emitter_refuse_broken_join(Emitter&, Vector<PlannedOperand>*, LLVMOpaqueValue*, const char*) asm("_ZN7EmitterB6scalycB4v0_218refuse_broken_joinE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EEP15LLVMOpaqueValueB6scalycB4v0_2P10const_char");
 bool Emitter_unit_operands(Vector<PlannedOperand>*) asm("_ZN7EmitterB6scalycB4v0_213unit_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE");
 bool Emitter_groups_own_type(PlannedTuple&) asm("_ZN7EmitterB6scalycB4v0_215groups_own_typeE12PlannedTupleB6scalycB4v0_2");
 LLVMOpaqueType* Emitter_map_type(Emitter&, PlannedType&) asm("_ZN7EmitterB6scalycB4v0_28map_typeE11PlannedTypeB6scalycB4v0_2");
@@ -42769,6 +42777,10 @@ __attribute__((weak)) PlannedOperand Planner_widen_integer_operand(scaly_frame* 
     Planner* this_ = &scaly_self;
     if (((Planner_integer_operand_widens(*(this_), target_type, op)) == (false)))
     {
+        if (((((op).member_access) == (nullptr)) ? Planner_operand_is_value_join(op) : false))
+        {
+            return Planner_settle_value_arms(scaly_rp, *(this_), op, target_type, true);
+        }
         return op;
     }
     PlannedAs* cast = ({ PlannedAs* scaly_t1 = (PlannedAs*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedAs), alignof(PlannedAs)); *scaly_t1 = PlannedAs{(op).loc, target_type, ({ PlannedOperand* scaly_t2 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t2 = op; scaly_t2; })}; scaly_t1; });
@@ -43148,6 +43160,10 @@ __attribute__((weak)) PlannedOperand Planner_settle_constant(scaly_frame* scaly_
         return op;
     }
     if (((Planner_constant_shape(*(this_), op)) == (false)))
+    {
+        return op;
+    }
+    if (((Planner_operand_is_integer_constant(*(this_), op) ? ((Planner_constant_type_is_untyped(target)) == (false)) : false) ? Planner_types_equal((op).result_type, target) : false))
     {
         return op;
     }
@@ -49955,6 +49971,18 @@ __attribute__((weak)) Vector<PlannedOperand> Planner_fold_string_args_to_char(sc
                                     Array_add<PlannedOperand>((*out), scaly_lvalue((*({ PlannedOperand* scaly_t9 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t9 = PlannedOperand{((*a)).loc, scaly_variant<PlannedExpression>(19, (*fcast)), (Vector<PlannedMemberAccess>*)(nullptr), (*pt)}; scaly_t9; }))));
                                     folded = true;
                                 }
+                            }
+                        }
+                    }
+                    if (((folded) == (false)))
+                    {
+                        if (((((((*a)).member_access) == (nullptr)) ? Planner_operand_is_value_join((*a)) : false) ? (Planner_value_join_shape((*pt)) > 0LL) : false))
+                        {
+                            PlannedOperand settled = Planner_settle_value_arms(scaly_rp, *(this_), (*a), (*pt), true);
+                            if ((Planner_value_join_shape((settled).result_type) == Planner_value_join_shape((*pt))))
+                            {
+                                Array_add<PlannedOperand>((*out), settled);
+                                folded = true;
                             }
                         }
                     }
@@ -63082,6 +63110,20 @@ __attribute__((weak)) PlannedComponent Planner_plan_component(scaly_frame* scaly
         Array_add<PlannedOperand>((*collapsed_arr), collapsed);
         value_holder = ({ Vector<PlannedOperand>* scaly_t11 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t11 = Vector<PlannedOperand>{}; Vector_init7<PlannedOperand>((*scaly_t11), (*collapsed_arr)); scaly_t11; });
     }
+    else
+    {
+        if (((planned_value).length == 1ULL))
+        {
+            PlannedOperand* lone_ptr = Vector_get<PlannedOperand>(planned_value, 0ULL);
+            if ((((lone_ptr) != (nullptr)) ? Planner_operand_is_value_join(scaly_lvalue(((*(lone_ptr))))) : false))
+            {
+                PlannedOperand settled = Planner_settle_value_arms(scaly_rp, *(this_), scaly_lvalue((*({ PlannedOperand* scaly_t12 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t12 = ((*(lone_ptr))); scaly_t12; }))), scaly_lvalue(((*({ PlannedOperand* scaly_t13 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t13 = ((*(lone_ptr))); scaly_t13; }))).result_type), false);
+                Array<PlannedOperand>* settled_arr = ({ Array<PlannedOperand>* scaly_t14 = (Array<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<PlannedOperand>), alignof(Array<PlannedOperand>)); *scaly_t14 = Array<PlannedOperand>{}; (void)0; scaly_t14; });
+                Array_add<PlannedOperand>((*settled_arr), settled);
+                value_holder = ({ Vector<PlannedOperand>* scaly_t15 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t15 = Vector<PlannedOperand>{}; Vector_init7<PlannedOperand>((*scaly_t15), (*settled_arr)); scaly_t15; });
+            }
+        }
+    }
     return PlannedComponent{(c).span, name_ref, (&((*value_holder))), (Vector<PlannedAttribute>*)(nullptr)};
 }
 
@@ -68496,10 +68538,18 @@ __attribute__((weak)) PlannedBinding Planner_plan_binding(scaly_frame* scaly_rp,
     {
         planned_item = (*({ PlannedItem* scaly_t47 = (PlannedItem*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedItem), alignof(PlannedItem)); *scaly_t47 = PlannedItem{(orig_item).loc, (orig_item).is_private, (orig_item).name, Vector_get<PlannedType>((*stack_array_holder), 0ULL), (orig_item).attributes}; scaly_t47; }));
     }
+    if ((((planned_item).item_type) != (nullptr)))
+    {
+        collapsed = Planner_settle_value_arms(scaly_rp, *(this_), collapsed, scaly_lvalue((*({ PlannedType* scaly_t48 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t48 = ((*((planned_item).item_type))); scaly_t48; }))), true);
+    }
+    else
+    {
+        collapsed = Planner_settle_value_arms(scaly_rp, *(this_), collapsed, (collapsed).result_type, false);
+    }
     PlannedType binding_type = (collapsed).result_type;
     if ((((planned_item).item_type) != (nullptr)))
     {
-        binding_type = (*({ PlannedType* scaly_t48 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t48 = ((*((planned_item).item_type))); scaly_t48; }));
+        binding_type = (*({ PlannedType* scaly_t49 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t49 = ((*((planned_item).item_type))); scaly_t49; }));
     }
     bool bt_is_charlike = false;
     if (String_equals((binding_type).name, scaly_lvalue(String{(uint8_t*)"\004char"})))
@@ -68518,8 +68568,8 @@ __attribute__((weak)) PlannedBinding Planner_plan_binding(scaly_frame* scaly_rp,
     {
         if (Planner_operand_is_string_constant(*(this_), collapsed))
         {
-            PlannedAs* bcast = ({ PlannedAs* scaly_t49 = (PlannedAs*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedAs), alignof(PlannedAs)); *scaly_t49 = PlannedAs{(collapsed).loc, binding_type, ({ PlannedOperand* scaly_t50 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t50 = collapsed; scaly_t50; })}; scaly_t49; });
-            collapsed = (*({ PlannedOperand* scaly_t51 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t51 = PlannedOperand{(collapsed).loc, scaly_variant<PlannedExpression>(19, (*bcast)), (Vector<PlannedMemberAccess>*)(nullptr), binding_type}; scaly_t51; }));
+            PlannedAs* bcast = ({ PlannedAs* scaly_t50 = (PlannedAs*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedAs), alignof(PlannedAs)); *scaly_t50 = PlannedAs{(collapsed).loc, binding_type, ({ PlannedOperand* scaly_t51 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t51 = collapsed; scaly_t51; })}; scaly_t50; });
+            collapsed = (*({ PlannedOperand* scaly_t52 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t52 = PlannedOperand{(collapsed).loc, scaly_variant<PlannedExpression>(19, (*bcast)), (Vector<PlannedMemberAccess>*)(nullptr), binding_type}; scaly_t52; }));
         }
     }
     if ((Planner_type_is_char_slice(binding_type) ? Planner_operand_is_string_constant(*(this_), collapsed) : false))
@@ -68560,25 +68610,25 @@ __attribute__((weak)) PlannedBinding Planner_plan_binding(scaly_frame* scaly_rp,
     }
     if ((((planned_item).name) != (nullptr)))
     {
-        String* n = ({ String* scaly_t52 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t52 = ((*((planned_item).name))); scaly_t52; });
+        String* n = ({ String* scaly_t53 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t53 = ((*((planned_item).name))); scaly_t53; });
         Planner_report_decomposition(*(this_), (*n), binding_type, (b).span);
         PlannedType scope_type = binding_type;
         if (((is_stack_array_decl) == (false)))
         {
             if (Planner_operand_holds_local_ref(*(this_), collapsed))
             {
-                PlannedType* stamped = ({ PlannedType* scaly_t53 = (PlannedType*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedType), alignof(PlannedType)); *scaly_t53 = Planner_stamp_getref_local_pointee(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), binding_type); scaly_t53; });
+                PlannedType* stamped = ({ PlannedType* scaly_t54 = (PlannedType*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedType), alignof(PlannedType)); *scaly_t54 = Planner_stamp_getref_local_pointee(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr}), binding_type); scaly_t54; });
                 scope_type = (*(stamped));
             }
         }
         Planner_define_local(*(this_), (*n), scope_type, String_equals((b).binding_type, scaly_lvalue(String{(uint8_t*)"\003var"})), false);
     }
-    Vector<PlannedOperand>* ops_holder = ({ Vector<PlannedOperand>* scaly_t54 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t54 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t54), 0ULL); scaly_t54; });
+    Vector<PlannedOperand>* ops_holder = ({ Vector<PlannedOperand>* scaly_t55 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t55 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t55), 0ULL); scaly_t55; });
     if ((((*rest_arr)).length > 0ULL))
     {
         if (((is_stack_array_decl) == (false)))
         {
-            ops_holder = ({ Vector<PlannedOperand>* scaly_t55 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t55 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t55), 1ULL); scaly_t55; });
+            ops_holder = ({ Vector<PlannedOperand>* scaly_t56 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t56 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t56), 1ULL); scaly_t56; });
             Vector_put<PlannedOperand>((*ops_holder), 0ULL, collapsed);
         }
     }
@@ -68590,10 +68640,10 @@ __attribute__((weak)) PlannedBinding Planner_plan_binding(scaly_frame* scaly_rp,
         if ((((collapsed).member_access) == (nullptr)))
         {
             {
-                auto&& scaly_t56 = (collapsed).expr;
-                if (scaly_t56.tag == 2)
+                auto&& scaly_t57 = (collapsed).expr;
+                if (scaly_t57.tag == 2)
                 {
-                    PlannedVariable src_var = scaly_payload<PlannedVariable>(scaly_t56);
+                    PlannedVariable src_var = scaly_payload<PlannedVariable>(scaly_t57);
                     if (Planner_result_type_is_value_struct(*(this_), (collapsed).result_type))
                     {
                         if (Planner_instantiated_type_needs_residency(*(this_), ((collapsed).result_type).name, (collapsed).result_type))
@@ -71872,6 +71922,7 @@ __attribute__((weak)) PlannedAction Planner_plan_action(scaly_frame* scaly_rp, P
             if (((this_->current_return_type) != (nullptr)))
             {
                 PlannedType* trt = ({ PlannedType* scaly_t5 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t5 = ((*(this_->current_return_type))); scaly_t5; });
+                planned_source_collapsed = Planner_settle_value_arms(scaly_rp, *(this_), planned_source_collapsed, (*trt), true);
                 bool trt_is_charlike = false;
                 if (String_equals(((*trt)).name, scaly_lvalue(String{(uint8_t*)"\004char"})))
                 {
@@ -71920,6 +71971,10 @@ __attribute__((weak)) PlannedAction Planner_plan_action(scaly_frame* scaly_rp, P
         {
             Planner_report_type_mismatch(*(this_), scaly_lvalue(((*(this_->current_return_type)))), planned_source_collapsed, (planned_source_collapsed).loc, scaly_lvalue(String{(uint8_t*)"\022the returned value"}));
         }
+    }
+    if ((((a).target).length > 0ULL))
+    {
+        planned_source_collapsed = Planner_settle_value_arms(scaly_rp, *(this_), planned_source_collapsed, (planned_target_collapsed).result_type, true);
     }
     if ((((a).target).length > 0ULL))
     {
@@ -89871,6 +89926,381 @@ __attribute__((weak)) PlannedStatement* Planner_convert_tail_literal_statement(s
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) int64_t Planner_value_join_shape(PlannedType& t)
+{
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if ((((t).generics) != (nullptr)))
+    {
+        return 0LL;
+    }
+    if ((String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\003f32"})) ? true : String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\005float"}))))
+    {
+        return 1032LL;
+    }
+    if ((String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\003f64"})) ? true : String_equals((t).name, scaly_lvalue(String{(uint8_t*)"\006double"}))))
+    {
+        return 1064LL;
+    }
+    String n = Planner_normalize_type_name(&scaly_local.f, (t).name);
+    if (((Planner_is_integer_type(n)) == (false)))
+    {
+        return 0LL;
+    }
+    if (String_equals(n, scaly_lvalue(String{(uint8_t*)"\006c_size"})))
+    {
+        return 65LL;
+    }
+    return Planner_integer_type_bits(n);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_operand_is_value_join(PlannedOperand& op)
+{
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 7)
+        {
+            PlannedBlock bl = scaly_payload<PlannedBlock>(scaly_t1);
+            return true;
+        }
+        else if (scaly_t1.tag == 8)
+        {
+            PlannedIf ifx = scaly_payload<PlannedIf>(scaly_t1);
+            return true;
+        }
+        else if (scaly_t1.tag == 9)
+        {
+            PlannedMatch mt = scaly_payload<PlannedMatch>(scaly_t1);
+            return true;
+        }
+        else if (scaly_t1.tag == 10)
+        {
+            PlannedChoose ch = scaly_payload<PlannedChoose>(scaly_t1);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_collect_value_leaves(Planner& scaly_self, PlannedOperand& op, Array<PlannedOperand>* leaves)
+{
+    Planner* this_ = &scaly_self;
+    if ((((op).member_access) != (nullptr)))
+    {
+        Array_add<PlannedOperand>(*(leaves), op);
+        return true;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 10)
+        {
+            PlannedChoose ch = scaly_payload<PlannedChoose>(scaly_t1);
+            if ((((ch).cases) != (nullptr)))
+            {
+                Vector<PlannedWhen> cases_in = ((*((ch).cases)));
+                uint64_t i = 0ULL;
+                while ((i < (cases_in).length))
+                {
+                    PlannedWhen* cp = Vector_get<PlannedWhen>(cases_in, i);
+                    if ((((cp) != (nullptr)) ? ((cp->consequent) != (nullptr)) : false))
+                    {
+                        if (((Planner_collect_value_leaves_statement(*(this_), scaly_lvalue(((*(cp->consequent)))), leaves)) == (false)))
+                        {
+                            return false;
+                        }
+                    }
+                    i = (i + 1ULL);
+                }
+            }
+            if ((((ch).alternative) != (nullptr)))
+            {
+                if (((Planner_collect_value_leaves_statement(*(this_), scaly_lvalue(((*((ch).alternative)))), leaves)) == (false)))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if (scaly_t1.tag == 8)
+        {
+            PlannedIf iff = scaly_payload<PlannedIf>(scaly_t1);
+            if (((((iff).consequent) == (nullptr)) ? true : (((iff).alternative) == (nullptr))))
+            {
+                return false;
+            }
+            if (((Planner_collect_value_leaves_statement(*(this_), scaly_lvalue(((*((iff).consequent)))), leaves)) == (false)))
+            {
+                return false;
+            }
+            return Planner_collect_value_leaves_statement(*(this_), scaly_lvalue(((*((iff).alternative)))), leaves);
+        }
+        else if (scaly_t1.tag == 9)
+        {
+            PlannedMatch mt = scaly_payload<PlannedMatch>(scaly_t1);
+            if ((((mt).alternative) == (nullptr)))
+            {
+                return false;
+            }
+            if ((((mt).branches) != (nullptr)))
+            {
+                Vector<PlannedBranch> brs_in = ((*((mt).branches)));
+                uint64_t i = 0ULL;
+                while ((i < (brs_in).length))
+                {
+                    PlannedBranch* bp = Vector_get<PlannedBranch>(brs_in, i);
+                    if ((((bp) != (nullptr)) ? ((bp->consequent) != (nullptr)) : false))
+                    {
+                        if (((Planner_collect_value_leaves_statement(*(this_), scaly_lvalue(((*(bp->consequent)))), leaves)) == (false)))
+                        {
+                            return false;
+                        }
+                    }
+                    i = (i + 1ULL);
+                }
+            }
+            return Planner_collect_value_leaves_statement(*(this_), scaly_lvalue(((*((mt).alternative)))), leaves);
+        }
+        else if (scaly_t1.tag == 7)
+        {
+            PlannedBlock blk = scaly_payload<PlannedBlock>(scaly_t1);
+            if ((((blk).statements) == (nullptr)))
+            {
+                return false;
+            }
+            Vector<PlannedStatement> stmts = ((*((blk).statements)));
+            if (((stmts).length == 0ULL))
+            {
+                return false;
+            }
+            PlannedStatement* last_ptr = Vector_get<PlannedStatement>(stmts, ((stmts).length - 1ULL));
+            if (((last_ptr) == (nullptr)))
+            {
+                return false;
+            }
+            return Planner_collect_value_leaves_statement(*(this_), scaly_lvalue(((*(last_ptr)))), leaves);
+        }
+        else
+        {
+            Array_add<PlannedOperand>(*(leaves), op);
+            return true;
+        }
+    }
+    return true;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_collect_value_leaves_statement(Planner& scaly_self, PlannedStatement& stmt, Array<PlannedOperand>* leaves)
+{
+    Planner* this_ = &scaly_self;
+    {
+        auto&& scaly_t1 = stmt;
+        if (scaly_t1.tag == 0)
+        {
+            PlannedAction a = scaly_payload<PlannedAction>(scaly_t1);
+            if (((((a).target) != (nullptr)) ? true : (((a).source) == (nullptr))))
+            {
+                return false;
+            }
+            Vector<PlannedOperand> src = ((*((a).source)));
+            if (((src).length != 1ULL))
+            {
+                return false;
+            }
+            PlannedOperand* s0_ptr = Vector_get<PlannedOperand>(src, 0ULL);
+            if (((s0_ptr) == (nullptr)))
+            {
+                return false;
+            }
+            return Planner_collect_value_leaves(*(this_), scaly_lvalue(((*(s0_ptr)))), leaves);
+        }
+        else if (scaly_t1.tag == 1)
+        {
+            PlannedBinding b = scaly_payload<PlannedBinding>(scaly_t1);
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+    return true;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) PlannedOperand Planner_settle_value_arms(scaly_frame* scaly_rp, Planner& scaly_self, PlannedOperand& op, PlannedType& target, bool has_target)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    if (((((op).member_access) != (nullptr)) ? true : ((Planner_operand_is_value_join(op)) == (false))))
+    {
+        return op;
+    }
+    if ((has_target ? Planner_is_unit_type(target) : false))
+    {
+        return op;
+    }
+    Array<PlannedOperand>* leaves = ({ Array<PlannedOperand>* scaly_t1 = (Array<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<PlannedOperand>), alignof(Array<PlannedOperand>)); *scaly_t1 = Array<PlannedOperand>{}; (void)0; scaly_t1; });
+    if (((Planner_collect_value_leaves(*(this_), op, &((*leaves)))) == (false)))
+    {
+        return op;
+    }
+    if ((((*leaves)).length == 0ULL))
+    {
+        return op;
+    }
+    uint64_t n_integer = 0ULL;
+    uint64_t n_float = 0ULL;
+    PlannedType wide = target;
+    bool have_wide = false;
+    uint64_t i = 0ULL;
+    while ((i < ((*leaves)).length))
+    {
+        PlannedOperand* l = Array_at<PlannedOperand>((*leaves), i);
+        int64_t shape = Planner_value_join_shape(l->result_type);
+        if ((shape == 0LL))
+        {
+            return op;
+        }
+        if (Planner_operand_is_float_constant(*(this_), scaly_lvalue((*(l)))))
+        {
+            n_float = (n_float + 1ULL);
+        }
+        else
+        {
+            if ((shape >= 1000LL))
+            {
+                n_float = (n_float + 1ULL);
+                if (((have_wide) == (false)))
+                {
+                    wide = l->result_type;
+                    have_wide = true;
+                }
+            }
+            else
+            {
+                if (Planner_constant_shape(*(this_), scaly_lvalue((*(l)))))
+                {
+                    n_integer = (n_integer + 1ULL);
+                }
+                else
+                {
+                    n_integer = (n_integer + 1ULL);
+                    if ((((have_wide) == (false)) ? true : (shape > Planner_value_join_shape(wide))))
+                    {
+                        wide = l->result_type;
+                        have_wide = true;
+                    }
+                }
+            }
+        }
+        i = (i + 1ULL);
+    }
+    PlannedType t = wide;
+    bool mixed = false;
+    if (((n_integer > 0ULL) ? (n_float > 0ULL) : false))
+    {
+        PlannedOperand* first = Array_at<PlannedOperand>((*leaves), 0ULL);
+        t = first->result_type;
+        mixed = true;
+    }
+    else
+    {
+        if (((have_wide) == (false)))
+        {
+            if (((has_target) == (false)))
+            {
+                return op;
+            }
+            int64_t ts = Planner_value_join_shape(target);
+            if ((ts == 0LL))
+            {
+                return op;
+            }
+            if (((n_float > 0ULL) ? (ts < 1000LL) : false))
+            {
+                return op;
+            }
+            if (((n_integer > 0ULL) ? (ts >= 1000LL) : false))
+            {
+                return op;
+            }
+            t = target;
+        }
+        else
+        {
+            if (((((n_float == 0ULL) ? has_target : false) ? (Planner_value_join_shape(target) > 0LL) : false) ? (Planner_value_join_shape(target) < 1000LL) : false))
+            {
+                bool all_reach = true;
+                uint64_t k = 0ULL;
+                while ((k < ((*leaves)).length))
+                {
+                    PlannedOperand* l = Array_at<PlannedOperand>((*leaves), k);
+                    if (((((Planner_constant_shape(*(this_), scaly_lvalue((*(l))))) == (false)) ? ((Planner_types_equal(l->result_type, target)) == (false)) : false) ? ((Planner_integer_operand_widens(*(this_), target, scaly_lvalue((*(l))))) == (false)) : false))
+                    {
+                        all_reach = false;
+                    }
+                    k = (k + 1ULL);
+                }
+                if (all_reach)
+                {
+                    t = target;
+                }
+            }
+        }
+    }
+    PlannedOperand result = op;
+    if (((mixed) == (false)))
+    {
+        PlannedOperand* conv = Planner_convert_tail_literal(scaly_rp, *(this_), op, t);
+        if (((conv) != (nullptr)))
+        {
+            result = (*({ PlannedOperand* scaly_t2 = (PlannedOperand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedOperand), alignof(PlannedOperand)); *scaly_t2 = ((*(conv))); scaly_t2; }));
+        }
+    }
+    Array<PlannedOperand>* after = ({ Array<PlannedOperand>* scaly_t3 = (Array<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<PlannedOperand>), alignof(Array<PlannedOperand>)); *scaly_t3 = Array<PlannedOperand>{}; (void)0; scaly_t3; });
+    if (Planner_collect_value_leaves(*(this_), result, &((*after))))
+    {
+        Planner_report_value_arms(*(this_), &((*after)), t);
+    }
+    if ((((mixed) == (false)) ? (Planner_value_join_shape((result).result_type) != Planner_value_join_shape(t)) : false))
+    {
+        return PlannedOperand{(result).loc, (result).expr, (Vector<PlannedMemberAccess>*)(nullptr), t};
+    }
+    return result;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) void Planner_report_value_arms(Planner& scaly_self, Array<PlannedOperand>* leaves, PlannedType& t)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    int64_t ts = Planner_value_join_shape(t);
+    uint64_t i = 0ULL;
+    while ((i < leaves->length))
+    {
+        PlannedOperand* l = Array_at<PlannedOperand>(*(leaves), i);
+        if (((Planner_value_join_shape(l->result_type) != ts) ? (((ts >= 1000LL) ? true : ((Planner_constant_shape(*(this_), scaly_lvalue((*(l))))) == (false)))) : false))
+        {
+            StringBuilder* sb = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
+            StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\033the arms of this value are "}));
+            StringBuilder_append2((*sb), scaly_lvalue(Planner_get_readable_name(&scaly_local.f, t)));
+            StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\005 and "}));
+            StringBuilder_append2((*sb), scaly_lvalue(Planner_get_readable_name(&scaly_local.f, l->result_type)));
+            StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\114: every arm answers one type, another width or kind is spelled with its cast"}));
+            String amsg = StringBuilder_to_string(&scaly_local.f, (*sb));
+            Planner_add_diagnostic(*(this_), l->loc, scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), amsg); scaly_t2; }))));
+            return;
+        }
+        i = (i + 1ULL);
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
 __attribute__((weak)) void Planner_check_tail_ref_escape(Planner& scaly_self, PlannedOperand& op, Span& loc)
 {
     Planner* this_ = &scaly_self;
@@ -90197,6 +90627,7 @@ __attribute__((weak)) PlannedReturn Planner_plan_return(scaly_frame* scaly_rp, P
     if (((this_->current_return_type) != (nullptr)))
     {
         PlannedType* rrt = ({ PlannedType* scaly_t10 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t10 = ((*(this_->current_return_type))); scaly_t10; });
+        planned_collapsed = Planner_settle_value_arms(scaly_rp, *(this_), planned_collapsed, (*rrt), true);
         bool rt_is_charlike = false;
         if (String_equals(((*rrt)).name, scaly_lvalue(String{(uint8_t*)"\004char"})))
         {
@@ -132194,6 +132625,68 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_unit_fill(Emitter& scaly_self, LL
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
+__attribute__((weak)) void Emitter_refuse_broken_join(Emitter& scaly_self, Vector<PlannedOperand>* ops, LLVMOpaqueValue* value, const char* what)
+{
+    Emitter* this_ = &scaly_self;
+    if (((ops) == (nullptr)))
+    {
+        return;
+    }
+    Vector<PlannedOperand> v = ((*(ops)));
+    if (((v).length != 1ULL))
+    {
+        return;
+    }
+    PlannedOperand* only = Vector_get<PlannedOperand>(v, 0ULL);
+    if (((only) == (nullptr)))
+    {
+        return;
+    }
+    if (((((((*(only)))).member_access) != (nullptr)) ? true : Planner_is_unit_type(scaly_lvalue((((*(only)))).result_type))))
+    {
+        return;
+    }
+    bool joins = false;
+    {
+        auto&& scaly_t1 = (((*(only)))).expr;
+        if (scaly_t1.tag == 8)
+        {
+            PlannedIf ifx = scaly_payload<PlannedIf>(scaly_t1);
+            joins = true;
+        }
+        else if (scaly_t1.tag == 9)
+        {
+            PlannedMatch mt = scaly_payload<PlannedMatch>(scaly_t1);
+            joins = true;
+        }
+        else if (scaly_t1.tag == 10)
+        {
+            PlannedChoose ch = scaly_payload<PlannedChoose>(scaly_t1);
+            joins = true;
+        }
+        else
+        {
+            joins = false;
+        }
+    }
+    if (((joins) == (false)))
+    {
+        return;
+    }
+    if ((((value) != (nullptr)) ? ((((this_->broken_join) == (nullptr)) ? true : ((value) != (this_->broken_join)))) : false))
+    {
+        return;
+    }
+    scaly_eputs(((const char*)"Emitter: the arms of "));
+    scaly_eputs(what);
+    scaly_eputs(((const char*)" do not all answer a value of one type in "));
+    uint8_t* join_fn = Emitter_current_function_label(*(this_));
+    scaly_eputs((const char*)(join_fn));
+    scaly_eputs(((const char*)"\012"));
+    exit((int32_t)14ULL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
 __attribute__((weak)) bool Emitter_unit_operands(Vector<PlannedOperand>* ops)
 {
     if (((ops) == (nullptr)))
@@ -145175,6 +145668,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_match(Emitter& scaly_self, P
     Vector<LLVMOpaqueBasicBlock*>* phi_blocks = ({ Vector<LLVMOpaqueBasicBlock*>* scaly_t2 = (Vector<LLVMOpaqueBasicBlock*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueBasicBlock*>), alignof(Vector<LLVMOpaqueBasicBlock*>)); *scaly_t2 = Vector<LLVMOpaqueBasicBlock*>{}; Vector_init3<LLVMOpaqueBasicBlock*>((*scaly_t2), max_count); scaly_t2; });
     uint64_t phi_count = 0ULL;
     LLVMOpaqueType* phi_ref_type = (LLVMOpaqueType*)(nullptr);
+    bool join_mismatch = false;
     Vector<LLVMOpaqueBasicBlock*>* undef_blocks = ({ Vector<LLVMOpaqueBasicBlock*>* scaly_t3 = (Vector<LLVMOpaqueBasicBlock*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueBasicBlock*>), alignof(Vector<LLVMOpaqueBasicBlock*>)); *scaly_t3 = Vector<LLVMOpaqueBasicBlock*>{}; Vector_init3<LLVMOpaqueBasicBlock*>((*scaly_t3), max_count); scaly_t3; });
     uint64_t undef_count = 0ULL;
     if ((branch_total == 0ULL))
@@ -145308,6 +145802,10 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_match(Emitter& scaly_self, P
                                     phi_count = (phi_count + 1ULL);
                                     added_phi = true;
                                 }
+                                else
+                                {
+                                    join_mismatch = true;
+                                }
                             }
                         }
                     }
@@ -145368,6 +145866,10 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_match(Emitter& scaly_self, P
                             phi_count = (phi_count + 1ULL);
                             added_alt = true;
                         }
+                        else
+                        {
+                            join_mismatch = true;
+                        }
                     }
                 }
             }
@@ -145404,6 +145906,10 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_match(Emitter& scaly_self, P
             }
             LLVMOpaqueValue* phi = LLVMBuildPhi(this_->builder, phi_ty, ((const char*)"match.value"));
             LLVMAddIncoming(phi, ((*phi_values)).data, ((*phi_blocks)).data, ((uint32_t)(phi_count)));
+            if (join_mismatch)
+            {
+                this_->broken_join = phi;
+            }
             return phi;
         }
     }
@@ -145805,6 +146311,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_choose(Emitter& scaly_self, 
     Vector<uint64_t>* seen_tags = ({ Vector<uint64_t>* scaly_t11 = (Vector<uint64_t>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<uint64_t>), alignof(Vector<uint64_t>)); *scaly_t11 = Vector<uint64_t>{}; Vector_init3<uint64_t>((*scaly_t11), ((choose_expr).cases->length + 1ULL)); scaly_t11; });
     uint64_t seen_count = 0ULL;
     LLVMOpaqueType* phi_ref_type = (LLVMOpaqueType*)(nullptr);
+    bool join_mismatch = false;
     LLVMOpaqueBasicBlock* first_case_block = (LLVMOpaqueBasicBlock*)(nullptr);
     bool has_duplicates = false;
     if ((((choose_expr).cases) != (nullptr)))
@@ -146001,6 +146508,10 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_choose(Emitter& scaly_self, 
                                         phi_count = (phi_count + 1ULL);
                                         added_phi = true;
                                     }
+                                    else
+                                    {
+                                        join_mismatch = true;
+                                    }
                                 }
                             }
                         }
@@ -146096,6 +146607,10 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_choose(Emitter& scaly_self, 
                             phi_count = (phi_count + 1ULL);
                             added_alt_phi = true;
                         }
+                        else
+                        {
+                            join_mismatch = true;
+                        }
                     }
                 }
             }
@@ -146132,6 +146647,10 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_choose(Emitter& scaly_self, 
             }
             LLVMOpaqueValue* phi = LLVMBuildPhi(this_->builder, phi_ty, ((const char*)"choose.value"));
             LLVMAddIncoming(phi, ((*phi_values)).data, ((*phi_blocks)).data, ((uint32_t)(phi_count)));
+            if (join_mismatch)
+            {
+                this_->broken_join = phi;
+            }
             return phi;
         }
     }
@@ -150101,6 +150620,10 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_action(Emitter& scaly_self, 
         return in_place_deref;
     }
     LLVMOpaqueValue* value = Emitter_emit_operands(*(this_), (action).source);
+    if (((((action).target) != (nullptr)) ? ((action).target->length > 0ULL) : false))
+    {
+        Emitter_refuse_broken_join(*(this_), (action).source, value, ((const char*)"an assigned value"));
+    }
     if (((value) == (nullptr)))
     {
         return (LLVMOpaqueValue*)(nullptr);
@@ -151094,6 +151617,7 @@ __attribute__((weak)) bool Emitter_emit_binding(Emitter& scaly_self, PlannedBind
                 {
                     value = LLVMConstNull(LLVMStructTypeInContext(this_->context, ((LLVMOpaqueType**)(nullptr)), (uint32_t)0ULL, (int32_t)0ULL));
                 }
+                Emitter_refuse_broken_join(*(this_), (binding).operation, value, ((const char*)"a binding\047s value"));
                 if (((value) == (nullptr)))
                 {
                     return false;
@@ -151440,6 +151964,7 @@ __attribute__((weak)) bool Emitter_emit_return_instruction(Emitter& scaly_self, 
         if (((ret).result->length > 0ULL))
         {
             ret_val = Emitter_emit_operands(*(this_), (ret).result);
+            Emitter_refuse_broken_join(*(this_), (ret).result, ret_val, ((const char*)"a returned value"));
         }
     }
     LLVMOpaqueType* func_ty = LLVMGlobalGetValueType(this_->current_function);
@@ -151873,6 +152398,7 @@ __attribute__((weak)) void Emitter_init(Emitter& scaly_self, Emitter_EmitterConf
     this_->fj_depth = (LLVMOpaqueValue*)(nullptr);
     this_->fj_ctx = (LLVMOpaqueValue*)(nullptr);
     this_->fj_preset = (LLVMOpaqueValue*)(nullptr);
+    this_->broken_join = (LLVMOpaqueValue*)(nullptr);
     this_->store_effects = (*({ StoreEffects* scaly_t43 = (StoreEffects*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(StoreEffects), alignof(StoreEffects)); *scaly_t43 = StoreEffects{}; StoreEffects_init((*scaly_t43)); scaly_t43; }));
     this_->stack_vectors = (*({ StackVectors* scaly_t44 = (StackVectors*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(StackVectors), alignof(StackVectors)); *scaly_t44 = StackVectors{}; StackVectors_init((*scaly_t44)); scaly_t44; }));
     this_->stack_vectors_fn = (LLVMOpaqueValue*)(nullptr);
