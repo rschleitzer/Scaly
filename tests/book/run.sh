@@ -25,17 +25,23 @@ python3 "$HERE/listings.py" "$TMP/listings" "${CHAPTERS[@]}"; lrc=$?
 pass=0; fail=0
 [ "$lrc" = 0 ] || fail=$((fail+1))
 
-# the screen's commands, with this tree's programs for scaly and scalyc
+# the screen's commands, with this tree's programs for scaly and scalyc; a
+# command ending in " &" runs in the background -- the nodes of a cluster
+# beside the one in front -- prints nothing in the book, and must have ended
+# with rc 0 and no output when the transcript ends (BG_SECONDS at most)
+BG_SECONDS=${BG_SECONDS:-60}
 run_transcript() {
   local dir=$1 transcript=$2 work=$3 cmd="" want="" rc=0
+  local bg_pids=() bg_cmds=() bg_logs=()
   mkdir -p "$work"
   check() {
     [ -n "$cmd" ] || return 0
-    local file got
+    local file got bg=0
     file=$(printf '%s\n' "$cmd" | tr ' ' '\n' | grep '\.scaly$' | head -1)
     [ -n "$file" ] && cp "$dir/prog.scaly" "$work/$file"
     # assignments in front (SCALY_WORKERS=1) stay, the program is this tree's
     local env="" run="$cmd"
+    if [[ "$run" == *" &" ]]; then bg=1; run=${run% &}; fi
     while [[ "$run" =~ ^([A-Z_]+=[^ ]*)\ (.*)$ ]]; do
       env+="${BASH_REMATCH[1]} "; run=${BASH_REMATCH[2]}
     done
@@ -44,6 +50,16 @@ run_transcript() {
       "scaly "*) run="\"$SCALY\" ${run#scaly }" ;;
     esac
     run="$env$run"
+    if [ "$bg" = 1 ]; then
+      local log="$work/bg-${#bg_pids[@]}.log"
+      (cd "$work" && exec bash -c "$run") < /dev/null > "$log" 2>&1 &
+      bg_pids+=($!); bg_cmds+=("$cmd"); bg_logs+=("$log")
+      if [ -n "$(printf '%s' "$want" | tr -d '[:space:]')" ]; then
+        echo "FAIL $(basename "$dir"): \$ $cmd -- a command in the background shows no output"
+        rc=1
+      fi
+      return 0
+    fi
     got=$(cd "$work" && bash -c "$run" < /dev/null 2>&1); local crc=$?
     if [ "$crc" != 0 ] || [ "$got" != "$(printf '%s' "$want" | sed '$ { /^$/ d; }')" ]; then
       echo "FAIL $(basename "$dir"): \$ $cmd (rc=$crc)"
@@ -60,6 +76,24 @@ run_transcript() {
     fi
   done < "$transcript"
   check
+  local k t
+  for k in "${!bg_pids[@]}"; do
+    t=0
+    while kill -0 "${bg_pids[$k]}" 2>/dev/null && [ $t -lt $((BG_SECONDS * 10)) ]; do
+      sleep 0.1; t=$((t + 1))
+    done
+    if kill -0 "${bg_pids[$k]}" 2>/dev/null; then
+      kill -9 "${bg_pids[$k]}" 2>/dev/null
+      echo "FAIL $(basename "$dir"): \$ ${bg_cmds[$k]} -- still running after ${BG_SECONDS} s"
+      rc=1
+    fi
+    wait "${bg_pids[$k]}"; local brc=$?
+    if [ "$brc" != 0 ] || [ -s "${bg_logs[$k]}" ]; then
+      echo "FAIL $(basename "$dir"): \$ ${bg_cmds[$k]} (rc=$brc)"
+      head -8 "${bg_logs[$k]}" | sed 's/^/    /'
+      rc=1
+    fi
+  done
   return $rc
 }
 
