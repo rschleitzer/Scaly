@@ -1561,7 +1561,8 @@ define GpuMsl
         ; A cast, as the processor's code converts: between integers by the
         ; SOURCE's signedness; an integer to floating point by its own; a
         ; bool is 0 or 1; floating point to an integer where the integer
-        ; holds the number cut off, a fault where it does not.
+        ; holds the number cut off, a fault where it does not. Nothing is
+        ; cast to a bool: the planner refuses that.
         procedure cast(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], a: PlannedAs, depth: size_t) returns String
         {
             if a.value = null
@@ -1592,8 +1593,6 @@ define GpuMsl
                 return "((`wt`)`v`)"
             if have = 1 and GpuMsl.is_int(want)
                 return "((`wt`)(`v` ? 1 : 0))"
-            if GpuMsl.is_int(have) and want = 1
-                return "(((ulong)`v` & (ulong)1u) != (ulong)0u)"
             if GpuMsl.is_int(have) and want = 4
             {
                 let t this.temp()

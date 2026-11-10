@@ -39,8 +39,7 @@ check "six kernels written (got $n)" '[ "$n" = "6" ]'
 check "every kernel says safe math and no contraction" '[ "$(printf "%s\n" "$out" | grep -c "^#pragma METAL fp math_mode(safe)$")" = "6" ] && [ "$(printf "%s\n" "$out" | grep -c "^#pragma METAL fp contract(off)$")" = "6" ]'
 check "a loop that is no kernel keeps its reason" 'printf "%s\n" "$out" | grep -q "fixture.scaly:91:1: no kernel: down is recursive$"'
 ref=$("$STAGE" --gpu-msl tests/gpu/refused.scaly 2>&1)
-check "a float read as a bool is refused" 'printf "%s\n" "$ref" | grep -q "refused.scaly:9:5: refused: a cast from float to bool$"'
-check "a binding that widens is refused" 'printf "%s\n" "$ref" | grep -q "refused.scaly:18:5: refused: a int where a long stands$"'
+check "a binding that widens is refused" 'printf "%s\n" "$ref" | grep -q "refused.scaly:9:5: refused: a int where a long stands$"'
 # the parentheses around a number are a grouping, built nowhere: `let base
 # (src[i] as f32) * scale` is a kernel's line (the planner gave them the
 # page of a stored value, and the line read as a construction)
@@ -54,7 +53,7 @@ check "with --gpu, an Apple target: the host"    '[ "$(ir --gpu --target arm64-a
 check "with --gpu, another target: no host"      '[ "$(ir --gpu --target x86_64-unknown-linux-gnu)" = "0" ]'
 "$STAGE" --target arm64-apple-macosx14.0 -S -o "$T/plain.ll" tests/gpu/refused.scaly >/dev/null 2>&1
 "$STAGE" --gpu --target arm64-apple-macosx14.0 -S -o "$T/gpu.ll" tests/gpu/refused.scaly >/dev/null 2>&1
-check "a program of refused kernels alone emits as without --gpu" 'cmp -s "$T/plain.ll" "$T/gpu.ll"'
+check "a program of a refused kernel alone emits as without --gpu" 'cmp -s "$T/plain.ll" "$T/gpu.ll"'
 jit=$("$STAGE" --gpu --jit tests/gpu/refused.scaly 2>&1); jrc=$?
 plain=$("$STAGE" --jit tests/gpu/refused.scaly 2>&1)
 check "--gpu --jit runs on the processor (rc $jrc)" '[ $jrc -eq 0 ] && [ "$jit" = "$plain" ]'

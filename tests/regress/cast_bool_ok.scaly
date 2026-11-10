@@ -1,0 +1,45 @@
+; The casts around a bool that have ONE meaning stay: a bool as a number is
+; 0 or 1, and a bool as a bool is itself. What Planner.report_bool_cast#
+; refuses is a number or an address AS a bool; the comparison is the spelling.
+;
+; Expected: PASS
+
+function count(b: bool) returns int
+    b as int
+
+function weight(b: bool) returns f64
+    b as f64
+
+function same(b: bool) returns bool
+    b as bool
+
+function is_set(x: int) returns bool
+    x <> 0
+
+function is_there(p: ref[int]?) returns bool
+    p <> null
+
+let yes 3 > 2
+let no 2 > 3
+if (count(yes) = 1) = false
+    exit 1
+if (count(no) = 0) = false
+    exit 2
+if (weight(yes) = 1.0) = false
+    exit 3
+if same(yes) = false
+    exit 4
+if same(no)
+    exit 5
+if is_set(2) = false
+    exit 6
+if is_set(0)
+    exit 7
+var n 5
+if is_there(&n) = false
+    exit 8
+if is_there(null)
+    exit 9
+
+print "PASS"
+exit 0

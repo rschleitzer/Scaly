@@ -1,0 +1,10 @@
+; A floating-point number is no truth value either: `x as bool` went through
+; the signed conversion to one bit, so `2.0 as bool` was false at rc 0
+; (2026-11-10). Planner.report_bool_cast#.
+; xfail: cast of a f64 to bool
+
+function truth(x: f64) returns bool
+    x as bool
+
+if truth(2.0) = false
+    print "PASS"

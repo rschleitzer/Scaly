@@ -1,17 +1,8 @@
-; Kernels by their shape whose source would not say exactly what the
-; processor computes: a floating-point number read as a bool, and a number
-; that gets wider where it is bound. The printer refuses them, and under
-; --gpu the card is never asked.
+; A kernel by its shape whose source the printer does not write: a number
+; that gets wider where it is bound to a typed name -- the one conversion
+; nobody wrote that reaches the printer. It refuses, and under --gpu the
+; card is never asked.
 ; cards: 0
-
-procedure float_as_bool(src: ref[Vector[f32]], mutable out: ref[Vector[i32]])
-{
-    for i in src.length
-    {
-        let b src[i] as bool
-        out.put(i, b as i32)
-    }
-}
 
 procedure widened_binding(src: ref[Vector[i32]], mutable out: ref[Vector[int]])
 {
@@ -23,16 +14,14 @@ procedure widened_binding(src: ref[Vector[i32]], mutable out: ref[Vector[int]])
 }
 
 let n: size_t 4
-var f Vector[f32](n)
 var a Vector[i32](n)
 var o Vector[int](n)
 var k: size_t 0
 while k < n
 {
-    f.put(k, (k as f32) * 2.0)
+    a.put(k, (k as i32) * 3 - 5)
     k := k + 1
 }
-float_as_bool(&f, &a)
 widened_binding(&a, &o)
 k := 0
 while k < n

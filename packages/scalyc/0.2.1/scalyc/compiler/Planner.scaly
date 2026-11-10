@@ -19109,6 +19109,7 @@ define Planner
                     if folded = false
                     {
                         this.report_view_cast(result.result_type, pas.target_type, pas.loc)
+                        this.report_bool_cast(result.result_type, pas.target_type, pas.loc)
                         var value_holder Vector[PlannedOperand](1)
                         value_holder.put(0, result)
                         let stitched PlannedAs(
@@ -36265,6 +36266,34 @@ define Planner
             sb.append "cast of a "
             sb.append from.name
             sb.append " value to a pointer: it would hand over the record, not its elements. Its data pointer is s.data"
+            this.add_diagnostic(loc, String^this(sb.to_string()))
+        }
+
+        ; report_bool_cast#: `x as bool` on a number or an address. A number
+        ; is no truth value, and the cast had no one meaning to give it: it
+        ; cut the integer down to its lowest bit (`2 as bool` was false), took
+        ; a floating-point number through the signed conversion to one bit
+        ; (`2.0 as bool` false as well) and an address by its lowest bit --
+        ; where a reader of C expects "is not zero". The comparison says which
+        ; is meant and costs nothing. NARROW ON PURPOSE, as
+        ; type_is_underefable_scalar#: only a primitive is judged, never a
+        ; type parameter or a record. `bool as int` and `bool as f64` (0 or 1)
+        ; stay: they have one meaning.
+        procedure report_bool_cast(mutable this: Planner, from: PlannedType, target: PlannedType, loc: Span)
+        {
+            if target.name <> "bool" or from.name = "bool"
+                return
+            if from.name = "void" or from.name = "()"
+                return
+            if Planner.is_primitive_type_name(from.name) = false or Planner.is_simd_type_name(from.name)
+                return
+            var sb StringBuilder()
+            sb.append "cast of a "
+            sb.append from.name
+            sb.append " to bool: a number is no truth value. Write the comparison that is meant (x <> 0"
+            if from.name = "pointer" or from.name = "ref"
+                sb.append ", p <> null"
+            sb.append ")"
             this.add_diagnostic(loc, String^this(sb.to_string()))
         }
 

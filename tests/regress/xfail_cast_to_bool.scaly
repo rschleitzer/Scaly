@@ -1,0 +1,10 @@
+; A number is no truth value: `x as bool` is refused, the comparison is what
+; is written. Until 2026-11-10 the cast cut an integer down to its lowest bit
+; -- `2 as bool` was false -- at rc 0. Planner.report_bool_cast#.
+; xfail: cast of a int to bool
+
+function truth(x: int) returns bool
+    x as bool
+
+if truth(2) = false
+    print "PASS"
