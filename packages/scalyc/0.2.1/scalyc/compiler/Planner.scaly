@@ -50662,6 +50662,11 @@ define Planner
                             0
                     if t_local = false
                         return null
+                    ; the parentheses around a number build nothing: no page
+                    ; to give them (they were marked, and a reader of the
+                    ; plan took `(v[i] as f32)` for a construction)
+                    if Planner.is_scalar_value_type_name(t.tuple_type.name)
+                        return null
                     if this.residency_stays_local(t.tuple_type, new_life)
                         return null
                     ; Recursively promote the tuple's component values (struct
@@ -50918,6 +50923,9 @@ define Planner
                 }
                 when t: PlannedTuple
                 {
+                    ; the parentheses around a number: nothing in them escapes
+                    if Planner.is_scalar_value_type_name(t.tuple_type.name)
+                        return null
                     var changed false
                     var new_comps: ref[Vector[PlannedComponent]]? t.components
                     if t.components <> null
