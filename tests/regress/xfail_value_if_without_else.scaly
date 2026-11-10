@@ -1,0 +1,13 @@
+; An `if` without `else` has no value where its condition is false: bound, it
+; is refused (Emitter.refuse_broken_join#). Before 2026-11-10 the binding was
+; dropped and `v` read 0 at rc 0.
+; xfail: do not all answer a value of one type
+
+function pick(c: int, k: i32) returns int
+{
+    let v: int if c > 3: k
+    v
+}
+
+if pick(5, 7 as i32) = 7
+    print "PASS"

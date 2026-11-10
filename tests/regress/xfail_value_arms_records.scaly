@@ -1,0 +1,14 @@
+; What the planner does not settle -- arms of two kinds of record here -- the
+; emitter refuses where the value is CONSUMED: it has no value to bind, and
+; before 2026-11-10 it dropped the binding and went on at rc 0
+; (Emitter.refuse_broken_join#).
+; xfail: do not all answer a value of one type
+
+function pick(c: int, s: String) returns int
+{
+    let v if c > 3: s else true
+    7
+}
+
+if pick(5, "a") = 7
+    print "PASS"

@@ -1,0 +1,14 @@
+; A value `if` whose wider arm does not fit the declared target narrows, and
+; a narrowing write takes its cast -- judged on the arms since 2026-11-10
+; (Planner.settle_value_arms#). Before, the emitter met an i32 arm beside an
+; i64 one, built no value and dropped the binding: `v` read 0 at rc 0.
+; xfail: the initializer narrows int into i32
+
+function f(c: i32, k: i32, big: int) returns i32
+{
+    let v: i32 if c > k: k else big
+    v + 100
+}
+
+if f(9, 7, 5) = 107
+    print "PASS"

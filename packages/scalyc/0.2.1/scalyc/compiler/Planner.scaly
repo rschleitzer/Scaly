@@ -6035,7 +6035,12 @@ define Planner
         procedure widen_integer_operand(mutable this: Planner, target_type: PlannedType, op: PlannedOperand) returns PlannedOperand
         {
             if this.integer_operand_widens(target_type, op) = false
+            {
+                ; a value `if`/`match`/block widens in its arms
+                if op.member_access = null and Planner.operand_is_value_join(op)
+                    return this.settle_value_arms(op, target_type, true)
                 return op
+            }
             let cast PlannedAs(op.loc, target_type, &^this op)
             PlannedOperand(op.loc, PlannedExpression.As cast, null, target_type)
         }
@@ -6335,6 +6340,13 @@ define Planner
             if Planner.type_is_integer_like(target) = false
                 return op
             if this.constant_shape(op) = false
+                return op
+            ; settled before: a bare constant that HAS the target's narrow
+            ; type is one this routine made (or the literal retype). Read a
+            ; second time, a negative value's bits are a magnitude that fits
+            ; nothing -- `returns i32 { -1 }` met it when a value's arms were
+            ; settled before the tail's leaves (settle_value_arms#).
+            if this.operand_is_integer_constant(op) and Planner.constant_type_is_untyped(target) = false and Planner.types_equal(op.result_type, target)
                 return op
             var neg false
             var mag: size_t 0
@@ -13254,6 +13266,20 @@ define Planner
                                             folded := true
                                         }
                                     }
+                            ; A value `if`/`match`/block: its arms take the
+                            ; parameter's type where they reach it -- constants,
+                            ; narrower integers (settle_value_arms#). One that
+                            ; does not fit afterwards goes on to the checks below.
+                            if folded = false
+                                if a.member_access = null and Planner.operand_is_value_join(a) and Planner.value_join_shape(pt) > 0
+                                {
+                                    let settled this.settle_value_arms(a, pt, true)
+                                    if Planner.value_join_shape(settled.result_type) = Planner.value_join_shape(pt)
+                                    {
+                                        out.add settled
+                                        folded := true
+                                    }
+                                }
                             ; Integer literal into a narrower integer
                             ; parameter: restamp the default-int (or
                             ; default-u64 hex) literal to the matched
@@ -28658,6 +28684,19 @@ define Planner
                 collapsed_arr.add collapsed
                 value_holder := Vector[PlannedOperand](collapsed_arr)
             }
+            else if planned_value.length = 1
+            {
+                ; a value `if`/`match`/block as a component (a call's
+                ; argument): its arms agree on one type (settle_value_arms#)
+                let lone_ptr planned_value.get 0
+                if lone_ptr <> null and Planner.operand_is_value_join((*lone_ptr))
+                {
+                    let settled this.settle_value_arms((*lone_ptr), (*lone_ptr).result_type, false)
+                    var settled_arr Array[PlannedOperand]()
+                    settled_arr.add settled
+                    value_holder := Vector[PlannedOperand](settled_arr)
+                }
+            }
             PlannedComponent(c.span, name_ref, &value_holder, null)
         }
 
@@ -33497,6 +33536,13 @@ define Planner
                     orig_item.attributes
                 )
 
+            ; A value `if`/`match`/block as the initializer: its arms agree on
+            ; one type first (settle_value_arms#).
+            if planned_item.item_type <> null
+                collapsed := this.settle_value_arms(collapsed, (*planned_item.item_type), true)
+            else
+                collapsed := this.settle_value_arms(collapsed, collapsed.result_type, false)
+
             ; Use the annotated type if present; otherwise infer from the
             ; initializer's result type so emit_variable can map_type the
             ; binding without waiting for constraint resolution. Mirrors
@@ -37427,6 +37473,7 @@ define Planner
                     if this.current_return_type <> null
                     {
                         let trt (*this.current_return_type)
+                        planned_source_collapsed := this.settle_value_arms(planned_source_collapsed, trt, true)
                         var trt_is_charlike: bool false
                         if trt.name = "char"
                             trt_is_charlike := true
@@ -37496,6 +37543,11 @@ define Planner
             if do_tail_check
                 if a.target.length = 0 and this.current_return_type <> null and tail_leaves_converted = false
                     this.report_type_mismatch((*this.current_return_type), planned_source_collapsed, planned_source_collapsed.loc, "the returned value")
+
+            ; A value `if`/`match`/block as the source: its arms agree on one
+            ; type first (settle_value_arms#).
+            if a.target.length > 0
+                planned_source_collapsed := this.settle_value_arms(planned_source_collapsed, planned_target_collapsed.result_type, true)
 
             ; Float literal assigned into a float-typed target (`set x: 2.5`
             ; with x float): retype the default-f64 literal to the target's
@@ -51750,6 +51802,291 @@ define Planner
             null
         }
 
+        ; value_join_shape#: what settle_value_arms# compares -- 0 for
+        ; anything but an integer or a floating-point type, else a number
+        ; that two types of one machine type share: an integer's width, 65
+        ; for `c_size` (the C side's pointer width, no other integer's), 1032
+        ; and 1064 for the floating-point types.
+        function value_join_shape(t: PlannedType) returns int
+        {
+            if t.generics <> null
+                return 0
+            if t.name = "f32" or t.name = "float"
+                return 1032
+            if t.name = "f64" or t.name = "double"
+                return 1064
+            let n Planner.normalize_type_name(t.name)
+            if Planner.is_integer_type(n) = false
+                return 0
+            if n = "c_size"
+                return 65
+            Planner.integer_type_bits(n)
+        }
+
+        function operand_is_value_join(op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when bl: Block
+                    return true
+                when ifx: If
+                    return true
+                when mt: Match
+                    return true
+                when ch: Choose
+                    return true
+                else
+                    return false
+            false
+        }
+
+        ; collect_value_leaves#: the operands a value `if`/`match`/`choose`/
+        ; block answers with, arm by arm, as convert_tail_literal# walks them.
+        ; An arm that leaves (return, break, continue, throw) answers nothing
+        ; and is passed over. False where an arm has a shape this does not
+        ; read -- an `if` or a `match` without its `else`, a binding, a store.
+        procedure collect_value_leaves(this: Planner, op: PlannedOperand, mutable leaves: ref[Array[PlannedOperand]]) returns bool
+        {
+            if op.member_access <> null
+            {
+                leaves.add op
+                return true
+            }
+            choose op.expr
+                when ch: PlannedChoose
+                {
+                    if ch.cases <> null
+                    {
+                        let cases_in (*ch.cases)
+                        var i: size_t 0
+                        while i < cases_in.length
+                        {
+                            let cp cases_in.get i
+                            if cp <> null and cp.consequent <> null
+                                if this.collect_value_leaves_statement((*cp.consequent), leaves) = false
+                                    return false
+                            i := i + 1
+                        }
+                    }
+                    if ch.alternative <> null
+                        if this.collect_value_leaves_statement((*ch.alternative), leaves) = false
+                            return false
+                    return true
+                }
+                when iff: PlannedIf
+                {
+                    if iff.consequent = null or iff.alternative = null
+                        return false
+                    if this.collect_value_leaves_statement((*iff.consequent), leaves) = false
+                        return false
+                    return this.collect_value_leaves_statement((*iff.alternative), leaves)
+                }
+                when mt: PlannedMatch
+                {
+                    if mt.alternative = null
+                        return false
+                    if mt.branches <> null
+                    {
+                        let brs_in (*mt.branches)
+                        var i: size_t 0
+                        while i < brs_in.length
+                        {
+                            let bp brs_in.get i
+                            if bp <> null and bp.consequent <> null
+                                if this.collect_value_leaves_statement((*bp.consequent), leaves) = false
+                                    return false
+                            i := i + 1
+                        }
+                    }
+                    return this.collect_value_leaves_statement((*mt.alternative), leaves)
+                }
+                when blk: PlannedBlock
+                {
+                    if blk.statements = null
+                        return false
+                    let stmts (*blk.statements)
+                    if stmts.length = 0
+                        return false
+                    let last_ptr stmts.get(stmts.length - 1)
+                    if last_ptr = null
+                        return false
+                    return this.collect_value_leaves_statement((*last_ptr), leaves)
+                }
+                else
+                {
+                    leaves.add op
+                    return true
+                }
+            true
+        }
+
+        ; The statement half of collect_value_leaves#.
+        procedure collect_value_leaves_statement(this: Planner, stmt: PlannedStatement, mutable leaves: ref[Array[PlannedOperand]]) returns bool
+        {
+            choose stmt
+                when a: PlannedAction
+                {
+                    if a.target <> null or a.source = null
+                        return false
+                    let src (*a.source)
+                    if src.length <> 1
+                        return false
+                    let s0_ptr src.get 0
+                    if s0_ptr = null
+                        return false
+                    return this.collect_value_leaves((*s0_ptr), leaves)
+                }
+                when b: PlannedBinding
+                    return false
+                else
+                    return true
+            true
+        }
+
+        ; settle_value_arms#: a value `if`/`match`/`choose`/block where its
+        ; value is CONSUMED -- a binding's initializer, the source of `:=`, a
+        ; tuple component (a call's argument), a returned value -- gets ONE
+        ; type for all its arms before the emitter joins them. Until
+        ; 2026-11-10 only the two return positions looked into the arms
+        ; (convert_tail_literal#); everywhere else `if c > k: k else 1` with
+        ; an i32 k had an i32 and an i64 arm, the emitter built no phi and
+        ; the consuming statement was DROPPED at rc 0.
+        ;
+        ; The rule, for arms that are all integers or all floating point (any
+        ; other arm: nothing happens here): a constant arm takes the type of
+        ; the others; a narrower integer widens by its own signedness into the
+        ; widest arm -- or into the declared target, where every arm is of it
+        ; or widens into it; arms that are all constants take the target.
+        ; There is no widening between f32 and f64 and none between integers
+        ; and floating point: such arms are rc 4 (report_value_arms#), and so
+        ; is an arm this cannot convert (a nested `try` of another width).
+        ; The operand's own type becomes the arms' -- the types of nested
+        ; joins and of the arms' actions stay as planned; the emitter reads
+        ; the values. `target` is the operand's own type where has_target is
+        ; false.
+        procedure settle_value_arms(mutable this: Planner, op: PlannedOperand, target: PlannedType, has_target: bool) returns PlannedOperand
+        {
+            if op.member_access <> null or Planner.operand_is_value_join(op) = false
+                return op
+            if has_target and Planner.is_unit_type(target)
+                return op
+            var leaves Array[PlannedOperand]()
+            if this.collect_value_leaves(op, leaves) = false
+                return op
+            if leaves.length = 0
+                return op
+            var n_integer: size_t 0
+            var n_float: size_t 0
+            var wide: PlannedType target
+            var have_wide false
+            var i: size_t 0
+            while i < leaves.length
+            {
+                let l leaves.at i
+                let shape Planner.value_join_shape(l.result_type)
+                if shape = 0
+                    return op
+                if this.operand_is_float_constant(l)
+                    n_float := n_float + 1
+                else if shape >= 1000
+                {
+                    n_float := n_float + 1
+                    if have_wide = false
+                    {
+                        wide := l.result_type
+                        have_wide := true
+                    }
+                }
+                else if this.constant_shape(l)
+                    n_integer := n_integer + 1
+                else
+                {
+                    n_integer := n_integer + 1
+                    if have_wide = false or shape > Planner.value_join_shape(wide)
+                    {
+                        wide := l.result_type
+                        have_wide := true
+                    }
+                }
+                i := i + 1
+            }
+            var t: PlannedType wide
+            var mixed false
+            if n_integer > 0 and n_float > 0
+            {
+                let first leaves.at 0
+                t := first.result_type
+                mixed := true
+            }
+            else if have_wide = false
+            {
+                ; constants only: the target's type, where it is one of theirs
+                if has_target = false
+                    return op
+                let ts Planner.value_join_shape(target)
+                if ts = 0
+                    return op
+                if n_float > 0 and ts < 1000
+                    return op
+                if n_integer > 0 and ts >= 1000
+                    return op
+                t := target
+            }
+            else if n_float = 0 and has_target and Planner.value_join_shape(target) > 0 and Planner.value_join_shape(target) < 1000
+            {
+                var all_reach true
+                var k: size_t 0
+                while k < leaves.length
+                {
+                    let l leaves.at k
+                    if this.constant_shape(l) = false and Planner.types_equal(l.result_type, target) = false and this.integer_operand_widens(target, l) = false
+                        all_reach := false
+                    k := k + 1
+                }
+                if all_reach
+                    t := target
+            }
+            var result: PlannedOperand op
+            if mixed = false
+            {
+                let conv this.convert_tail_literal(op, t)
+                if conv <> null
+                    result := (*conv)
+            }
+            var after Array[PlannedOperand]()
+            if this.collect_value_leaves(result, after)
+                this.report_value_arms(after, t)
+            if mixed = false and Planner.value_join_shape(result.result_type) <> Planner.value_join_shape(t)
+                return PlannedOperand(result.loc, result.expr, null, t)
+            result
+        }
+
+        ; report_value_arms#: the net under settle_value_arms# -- an arm whose
+        ; machine type is still not the value's. A constant that did not fit
+        ; has been reported by settle_constant#.
+        procedure report_value_arms(mutable this: Planner, leaves: ref[Array[PlannedOperand]], t: PlannedType)
+        {
+            let ts Planner.value_join_shape(t)
+            var i: size_t 0
+            while i < leaves.length
+            {
+                let l leaves.at i
+                if Planner.value_join_shape(l.result_type) <> ts and (ts >= 1000 or this.constant_shape(l) = false)
+                {
+                    var sb StringBuilder()
+                    ; NO backticks in these literals -- see report_type_mismatch#.
+                    sb.append "the arms of this value are "
+                    sb.append(Planner.get_readable_name(t))
+                    sb.append " and "
+                    sb.append(Planner.get_readable_name(l.result_type))
+                    sb.append ": every arm answers one type, another width or kind is spelled with its cast"
+                    let amsg sb.to_string()
+                    this.add_diagnostic(l.loc, String^this(amsg))
+                    return
+                }
+                i := i + 1
+            }
+        }
+
         ; Hole-1 (2026-07-02f): diagnostic-only mirror of plan_return#'s
         ; reference-escape check for IMPLICIT tail returns. Recurses over
         ; return-position subexpressions exactly like promote_tail_operand#
@@ -52063,6 +52400,7 @@ define Planner
             if this.current_return_type <> null
             {
                 let rrt (*this.current_return_type)
+                planned_collapsed := this.settle_value_arms(planned_collapsed, rrt, true)
                 var rt_is_charlike: bool false
                 if rrt.name = "char"
                     rt_is_charlike := true

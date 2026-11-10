@@ -472,6 +472,10 @@ define Emitter
         ; a value emit_binding takes instead of evaluating its initializer
         ; (the left binding of a fork-join `let` pair)
         var fj_preset: LLVMValueRef
+        ; the last `match`/`choose` value one of whose arms answered no value
+        ; of the others' type and went into the phi as undef
+        ; (refuse_broken_join#)
+        var broken_join: LLVMValueRef
         ; the aliasing rule's payoff: which parameters may be `noalias`
         ; (StoreEffects.scaly, analyzed once per plan in emit#)
         store_effects: StoreEffects
@@ -570,6 +574,7 @@ define Emitter
             fj_depth := null
             fj_ctx := null
             fj_preset := null
+            broken_join := null
             store_effects := StoreEffects^this()
             stack_vectors := StackVectors^this()
             stack_vectors_fn := null
@@ -3732,6 +3737,52 @@ define Emitter
 
         ; unit_operands#: whether the operation `ops` answers `()` -- its last
         ; operand's type, as emit_operands# answers its last operand
+        ; refuse_broken_join#: the net under Planner.settle_value_arms#. A
+        ; value `if`/`match`/`choose` that is CONSUMED -- bound, stored,
+        ; returned -- and whose arms do not all answer a value of one LLVM
+        ; type has no value: emit_if# builds no phi (an `if` without `else`
+        ; alike), emit_match# and emit_choose# fill the other arms with
+        ; undef. Until 2026-11-10 the consuming statement was dropped, or
+        ; read the undef, at rc 0. The planner settles integer and
+        ; floating-point arms and reports those it cannot, with the line;
+        ; whatever else arrives here -- arms of two records, an arm without
+        ; a value -- stops the compile and names the function. A call
+        ; argument is not judged.
+        procedure refuse_broken_join(mutable this, ops: ref[Vector[PlannedOperand]]?, value: LLVMValueRef, what: pointer[const_char])
+        {
+            if ops = null
+                return
+            let v (*ops)
+            if v.length <> 1
+                return
+            let only v.get 0
+            if only = null
+                return
+            if (*only).member_access <> null or Planner.is_unit_type((*only).result_type)
+                return
+            var joins false
+            choose (*only).expr
+                when ifx: If
+                    joins := true
+                when mt: Match
+                    joins := true
+                when ch: Choose
+                    joins := true
+                else
+                    joins := false
+            if joins = false
+                return
+            if value <> null and (broken_join = null or value <> broken_join)
+                return
+            scaly_eputs "Emitter: the arms of "
+            scaly_eputs what
+            scaly_eputs " do not all answer a value of one type in "
+            let join_fn current_function_label()
+            scaly_eputs join_fn
+            scaly_eputs "\n"
+            exit 14
+        }
+
         function unit_operands(ops: ref[Vector[PlannedOperand]]?) returns bool
         {
             if ops = null
@@ -17184,6 +17235,8 @@ define Emitter
             var phi_blocks Vector[LLVMBasicBlockRef](max_count)
             var phi_count: size_t 0
             var phi_ref_type: LLVMTypeRef null
+            ; an arm answered a value of ANOTHER type (refuse_broken_join#)
+            var join_mismatch: bool false
             var undef_blocks Vector[LLVMBasicBlockRef](max_count)
             var undef_count: size_t 0
 
@@ -17317,6 +17370,8 @@ define Emitter
                                             phi_count := phi_count + 1
                                             added_phi := true
                                         }
+                                        else
+                                            join_mismatch := true
                                     }
                                 }
                             }
@@ -17372,6 +17427,8 @@ define Emitter
                                     phi_count := phi_count + 1
                                     added_alt := true
                                 }
+                                else
+                                    join_mismatch := true
                             }
                         }
                     }
@@ -17416,6 +17473,8 @@ define Emitter
                     }
                     let phi LLVMBuildPhi(builder, phi_ty, "match.value")
                     LLVMAddIncoming(phi, phi_values.data, phi_blocks.data, phi_count as u32)
+                    if join_mismatch
+                        broken_join := phi
                     return phi
                 }
             }
@@ -17967,6 +18026,8 @@ define Emitter
             ; with type"). Mirrors stage-0 emitChoose's per-arm
             ; `CaseValue->getType() == phiTy` gate.
             var phi_ref_type: LLVMTypeRef null
+            ; an arm answered a value of ANOTHER type (refuse_broken_join#)
+            var join_mismatch: bool false
 
             ; First emitted case_block — used to redirect the default block
             ; when the planner couldn't resolve variant indices (all cases
@@ -18260,6 +18321,8 @@ define Emitter
                                                 phi_count := phi_count + 1
                                                 added_phi := true
                                             }
+                                            else
+                                                join_mismatch := true
                                         }
                                     }
                                 }
@@ -18367,6 +18430,8 @@ define Emitter
                                     phi_count := phi_count + 1
                                     added_alt_phi := true
                                 }
+                                else
+                                    join_mismatch := true
                             }
                         }
                     }
@@ -18422,6 +18487,8 @@ define Emitter
                     }
                     let phi LLVMBuildPhi(builder, phi_ty, "choose.value")
                     LLVMAddIncoming(phi, phi_values.data, phi_blocks.data, phi_count as u32)
+                    if join_mismatch
+                        broken_join := phi
                     return phi
                 }
             }
@@ -22771,6 +22838,8 @@ define Emitter
 
             ; Emit source operands
             var value emit_operands action.source
+            if action.target <> null and action.target.length > 0
+                this.refuse_broken_join(action.source, value, "an assigned value")
             if value = null
                 return null
 
@@ -23965,6 +24034,7 @@ define Emitter
                     value := emit_operands(binding.operation)
                     if value = null and Emitter.unit_operands(binding.operation)
                         value := LLVMConstNull(LLVMStructTypeInContext(context, null as pointer[LLVMTypeRef], 0, 0))
+                    this.refuse_broken_join(binding.operation, value, "a binding's value")
                     if value = null
                         return false
 
@@ -24386,7 +24456,10 @@ define Emitter
             if ret.result <> null
             {
                 if ret.result.length > 0
+                {
                     ret_val := emit_operands(ret.result)
+                    this.refuse_broken_join(ret.result, ret_val, "a returned value")
+                }
 
             }
 

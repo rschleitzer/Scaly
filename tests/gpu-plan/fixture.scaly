@@ -116,7 +116,7 @@ for i in n
 var q Vector[i32](n as size_t)
 for i in n
 {
-    let v: i32 if a[i as size_t] > LIMIT: capped(k) else (1 as i32)
+    let v: i32 if a[i as size_t] > LIMIT: capped(k) else 1
     q.put(i as size_t, v + (a.length as i32))
 }
 

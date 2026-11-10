@@ -1,0 +1,13 @@
+; The arms of a value answer ONE type: an integer arm beside a floating-point
+; one is not widened into it, the conversion is written. Before 2026-11-10
+; the binding was dropped at rc 0 (Planner.report_value_arms#).
+; xfail: the arms of this value are i32 and f32
+
+function f(c: i32, k: i32, x: f32) returns int
+{
+    let v if c > k: k else x
+    7
+}
+
+if f(9, 7, 1.0) = 7
+    print "PASS"

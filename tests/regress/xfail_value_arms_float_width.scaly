@@ -1,0 +1,13 @@
+; An f32 arm beside an f64 one: no widening between the floating-point
+; widths, in an arm as little as anywhere else (Planner.report_value_arms#).
+; Before 2026-11-10 the binding was dropped at rc 0.
+; xfail: the arms of this value are f64 and f32
+
+function f(c: i32, y: f64, x: f32) returns f64
+{
+    let v: f64 if c > 3: y else x
+    v
+}
+
+if f(9, 7.0, 1.0) = 7.0
+    print "PASS"

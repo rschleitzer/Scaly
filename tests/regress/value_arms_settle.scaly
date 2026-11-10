@@ -1,0 +1,162 @@
+; A value `if`, `match` or `choose` has ONE type, whatever its arms are
+; written as: a constant arm takes the type of the others (or the declared
+; target's where every arm is a constant), a narrower integer widens into the
+; widest arm or into the target by its own signedness. Until 2026-11-10 only
+; the two return positions looked into the arms; in a binding, an assignment
+; and an argument the emitter met arms of two LLVM types, built no value and
+; DROPPED the consuming statement at rc 0 -- `let v: int if c > k: k else 1`
+; with an i32 k answered 0. Planner.settle_value_arms#.
+; Expected: PASS
+
+define Shape union(Line: i32, Dot: u16, None)
+
+define Tally(var n: int)
+{
+    procedure add(mutable this, by: int) returns int
+    {
+        n := n + by
+        n
+    }
+}
+
+function bound(c: i32, k: i32) returns int
+{
+    let v: int if c > k: k else 1
+    v + 100
+}
+
+function assigned(c: i32, k: i32) returns i32
+{
+    var v: i32 0
+    v := if c > k: k else 1
+    v + 100
+}
+
+function plus(a: i32) returns i32
+    a + 100
+
+function handed(c: i32, k: i32) returns i32
+    plus(if c > k: k else 1)
+
+function wide_plus(a: int) returns int
+    a + 100
+
+function handed_wide(c: i32, k: i32, m: i32) returns int
+    wide_plus(if c > k: k else m)
+
+function assigned_wide(c: i32, k: i32, m: i32) returns int
+{
+    var v: int 0
+    v := if c > k: k else m
+    v + 100
+}
+
+function floating(c: i32, x: f32) returns f32
+{
+    let v: f32 if c > 3: x else 1.5
+    v + 100.0
+}
+
+function matched(c: i32, k: i32) returns i32
+{
+    let v: i32 match c
+        case 9: k
+        else 1
+    v + 100
+}
+
+function untyped(c: i32, k: i32) returns i32
+{
+    let v if c > k: k else 1
+    v + 100
+}
+
+function nested(c: i32, k: i32, m: u8) returns int
+{
+    let v if c > k
+    {
+        let d k + 1
+        if d > 7: d else 2
+    }
+    else
+    {
+        if c = 1: m else 3
+    }
+    (v as int) + 100
+}
+
+function leaving(c: i32, k: i32) returns int
+{
+    let v: int if c > k: k else return 0 - 5
+    v + 100
+}
+
+function chosen(s: Shape, k: int) returns int
+{
+    let v choose s
+        when l: Shape.Line: l
+        when d: Shape.Dot: d
+        else 1
+    let w: int choose s
+        when l: Shape.Line: l
+        when d: Shape.Dot: d
+        else k
+    (v as int) + w
+}
+
+function widths(c: i32, k: u32, n: size_t, i: int) returns int
+{
+    let a if c > 3: k else 4000000000
+    let b if c > 3: n else i
+    let d: u8 if c > 3: 200 else 1
+    let e: int if c > 3: k else 0 - 1
+    (a as int) + (b as int) + (d as int) + e
+}
+
+function three(a: i32, b: u8, x: f32) returns int
+    (a as int) + (b as int) + (x as int)
+
+function arguments(c: i32, k: i32, m: i32) returns int
+{
+    var t Tally(100)
+    t.add(if c > k: k else m) + three(if c > k: 1 else 2, if c > k: 200 else 3, if c > k: 1.5 else 2.5)
+}
+
+; the tail of a body is settled twice, once as a value's arms and once as
+; the tail's leaves: a negative constant must stay what the first made it
+function negative_tail(c: int) returns i32
+{
+    if c < 1
+        return 5
+    -1
+}
+
+function negative_arms(c: int) returns i32
+    if c < 1: -2 else -3
+
+procedure check(name: String, got: int, want: int) returns int
+{
+    if got = want
+        return 0
+    print "FAIL `name`: `got` where `want` is expected"
+    1
+}
+
+var bad 0
+bad := bad + check("bound", bound(9, 7), 107) + check("bound constant", bound(1, 7), 101)
+bad := bad + check("assigned", assigned(9, 7) as int, 107) + check("assigned constant", assigned(1, 7) as int, 101)
+bad := bad + check("handed", handed(9, 7) as int, 107) + check("handed constant", handed(1, 7) as int, 101)
+bad := bad + check("handed wide", handed_wide(9, 7, 0 - 1), 107) + check("handed wide negative", handed_wide(1, 7, 0 - 1), 99)
+bad := bad + check("assigned wide", assigned_wide(9, 7, 0 - 1), 107) + check("assigned wide negative", assigned_wide(1, 7, 0 - 1), 99)
+bad := bad + check("floating", floating(9, 7.0) as int, 107) + check("floating constant", (floating(1, 7.0) * 2.0) as int, 203)
+bad := bad + check("matched", matched(9, 7) as int, 107) + check("matched constant", matched(1, 7) as int, 101)
+bad := bad + check("untyped", untyped(9, 7) as int, 107) + check("untyped constant", untyped(1, 7) as int, 101)
+bad := bad + check("nested then", nested(9, 7, 200), 108) + check("nested u8", nested(1, 7, 200), 300) + check("nested constant", nested(2, 7, 200), 103)
+bad := bad + check("leaving", leaving(9, 7), 107) + check("leaving return", leaving(1, 7), 0 - 5)
+bad := bad + check("chosen i32", chosen(Shape.Line(0 - 7), 3), 0 - 14) + check("chosen u16", chosen(Shape.Dot(65535), 3), 131070) + check("chosen else", chosen(Shape.None, 3), 4)
+bad := bad + check("widths", widths(9, 4000000001, 5, 6), 8000000207) + check("widths constants", widths(1, 4000000001, 5, 6), 4000000006)
+bad := bad + check("arguments", arguments(9, 7, 0 - 1), 309) + check("arguments else", arguments(1, 7, 0 - 1), 106)
+bad := bad + check("negative tail", negative_tail(3) as int, 0 - 1) + check("negative tail return", negative_tail(0) as int, 5)
+bad := bad + check("negative arms", negative_arms(0) as int, 0 - 2) + check("negative arms else", negative_arms(3) as int, 0 - 3)
+if bad = 0
+    print "PASS"
