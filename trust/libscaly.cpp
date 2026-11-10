@@ -2742,13 +2742,15 @@ int32_t Cluster_local_port(int32_t) asm("_ZN7Cluster10local_portE3i32");
 NodePeer* Cluster_setup(scaly_frame*, int32_t) asm("_ZN7Cluster5setupEPN4scaly6memory4PageE3i32");
 NodePeer* Cluster_accept(scaly_frame*, int32_t) asm("_ZN7Cluster6acceptEPN4scaly6memory4PageE3i32");
 NodePeer* Cluster_connect(scaly_frame*, const char*, int32_t) asm("_ZN7Cluster7connectEPN4scaly6memory4PageEP10const_char3i32");
+NodePeer* Cluster_connect2(scaly_frame*, const char*, int32_t, int64_t) asm("_ZN7Cluster7connectEPN4scaly6memory4PageEP10const_char3i32i");
+void Cluster_close(NodePeer*) asm("_ZN7Cluster5closeEP8NodePeer");
+void Cluster_disconnect(NodePeer*) asm("_ZN7Cluster10disconnectER8NodePeer");
 Channel* Cluster_channel(NodePeer*, uint64_t) asm("_ZN7Cluster7channelEP8NodePeer3u64");
 void Cluster_deliver_down(Channel*, int64_t) asm("_ZN7Cluster12deliver_downEP7Channel3i64");
 Channel* Cluster_monitor(NodePeer*) asm("_ZN7Cluster7monitorEP8NodePeer");
 void Cluster_send(NodePeer*, uint64_t, void*) asm("_ZN7Cluster4sendEP8NodePeer3u64Pv");
 void Cluster_send_control(NodePeer*, uint64_t, bool) asm("_ZN7Cluster12send_controlEP8NodePeer3u64b");
 void Cluster_teardown(NodePeer*, int64_t) asm("_ZN7Cluster8teardownEP8NodePeer3i64");
-void Cluster_close(NodePeer*) asm("_ZN7Cluster5closeEP8NodePeer");
 void Cluster_dispose_peer(NodePeer*) asm("_ZN7Cluster12dispose_peerER8NodePeer");
 void Cluster_dispose_message(ReceivedRegion*) asm("_ZN7Cluster15dispose_messageER14ReceivedRegion");
 void Cluster_poll_in(int32_t, int32_t) asm("_ZN7Cluster7poll_inE3i323i32");
@@ -12146,6 +12148,42 @@ __attribute__((weak)) NodePeer* Cluster_connect(scaly_frame* scaly_rp, const cha
         return (NodePeer*)(nullptr);
     }
     return Cluster_setup(scaly_rp, fd);
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) NodePeer* Cluster_connect2(scaly_frame* scaly_rp, const char* host, int32_t port, int64_t ms)
+{
+    int64_t deadline = (scaly_eio_now_ns() + (ms * 1000000LL));
+    for (;;)
+    {
+        int32_t fd = Io_connect_host(host, port);
+        if ((fd >= (int32_t)0ULL))
+        {
+            return Cluster_setup(scaly_rp, fd);
+        }
+        if ((scaly_eio_now_ns() >= deadline))
+        {
+            return (NodePeer*)(nullptr);
+        }
+        poll(((pollfd*)(nullptr)), (size_t)0ULL, (int32_t)20ULL);
+    }
+}
+
+// packages/scaly/0.2.1/scaly/cluster.scaly
+__attribute__((weak)) void Cluster_disconnect(NodePeer* p)
+{
+    Cluster_close(p);
+    Thread_join(p->reader);
+    Channel** chs = p->chans;
+    uint64_t i = 0ULL;
+    while ((i < p->chan_count))
+    {
+        Channel_dispose(((Channel*)((*(((chs) + (int64_t)(i)))))));
+        i = (i + 1ULL);
+    }
+    Page* pp = Page_get((void*)(p));
+    Page_deallocate_extensions(*(pp));
+    Page_release_page(pp);
 }
 
 // packages/scaly/0.2.1/scaly/cluster.scaly

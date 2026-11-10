@@ -52964,7 +52964,7 @@ __attribute__((weak)) Planner_CallArm Planner_call_arm_chain(scaly_frame* scaly_
                                     }
                                 }
                             }
-                            if (((Planner_has_recorded_function(*(this_), ((*mm3)).mangled_name)) == (false)))
+                            if ((((Planner_has_recorded_function(*(this_), ((*mm3)).mangled_name)) == (false)) ? ((((*mm3)).is_intrinsic) == (false)) : false))
                             {
                                 Array<PlannedItem>* items_arr2 = ({ Array<PlannedItem>* scaly_t10 = (Array<PlannedItem>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<PlannedItem>), alignof(Array<PlannedItem>)); *scaly_t10 = Array<PlannedItem>{}; (void)0; scaly_t10; });
                                 Array_add<PlannedItem>((*items_arr2), scaly_lvalue((*({ PlannedItem* scaly_t11 = (PlannedItem*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedItem), alignof(PlannedItem)); *scaly_t11 = PlannedItem{(result).loc, false, (String*)(nullptr), ({ PlannedType* scaly_t12 = (PlannedType*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(PlannedType), alignof(PlannedType)); *scaly_t12 = recv_type; scaly_t12; }), (Vector<PlannedAttribute>*)(nullptr)}; scaly_t11; }))));
@@ -55744,7 +55744,7 @@ __attribute__((weak)) MethodMatch* Planner_resolve_fix_graph(scaly_frame* scaly_
     Array<PlannedType>* params_arr = ({ Array<PlannedType>* scaly_t8 = (Array<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Array<PlannedType>), alignof(Array<PlannedType>)); *scaly_t8 = Array<PlannedType>{}; (void)0; scaly_t8; });
     Array_add<PlannedType>((*params_arr), (*root_t));
     Vector<PlannedType>* params_holder = ({ Vector<PlannedType>* scaly_t9 = (Vector<PlannedType>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedType>), alignof(Vector<PlannedType>)); *scaly_t9 = Vector<PlannedType>{}; Vector_init7<PlannedType>((*scaly_t9), (*params_arr)); scaly_t9; });
-    return (MethodMatch*)&((*({ MethodMatch* scaly_t12 = (MethodMatch*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(MethodMatch), alignof(MethodMatch)); *scaly_t12 = MethodMatch{(PlannedFunction*)(nullptr), mangled, Planner_make_void_type(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr})), (&((*params_holder))), false, false, (PlannedType*)(nullptr), false, true, false, (uint64_t)(0LL), (uint64_t)(0LL)}; scaly_t12; })));
+    return (MethodMatch*)&((*({ MethodMatch* scaly_t12 = (MethodMatch*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(MethodMatch), alignof(MethodMatch)); *scaly_t12 = MethodMatch{(PlannedFunction*)(nullptr), mangled, Planner_make_void_type(&scaly_lvalue(scaly_frame{scaly_rt_page_get((void*)this_), nullptr})), (&((*params_holder))), false, false, (PlannedType*)(nullptr), unbound, true, false, (uint64_t)(0LL), (uint64_t)(0LL)}; scaly_t12; })));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
