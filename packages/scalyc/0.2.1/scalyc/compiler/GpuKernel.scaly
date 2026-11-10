@@ -555,14 +555,10 @@ define GpuKernel
             op.member_access.length > 0
         }
 
-        ; `(a)`: a tuple of one unnamed component, built nowhere. Around a
-        ; number it is a grouping whatever its page says: the planner's
-        ; promotion of what a routine stores marks the parentheses of a
-        ; scalar too (`let x (v[i] as f32) * s`), and the emitter, which
-        ; asks the TYPE, builds nothing for them.
+        ; `(a)`: a tuple of one unnamed component, built nowhere.
         function is_grouping(tp: PlannedTuple) returns bool
         {
-            if tp.is_region_alloc and GpuKernel.scalar_kind(tp.tuple_type) = 0
+            if tp.is_region_alloc
                 return false
             if tp.components = null
                 return false
@@ -932,6 +928,10 @@ define GpuKernel
             if kind = 4
                 k_float := true
             let r a.value
+            ; `0.5 as f32`: the constant is written as a double and is the
+            ; f32 the cast makes of it -- nothing is computed in double
+            if kind = 4 and GpuKernel.is_float_constant((*r))
+                return
             if GpuKernel.kind_is_wide(kind)
             {
                 if narrowed = false
@@ -940,6 +940,25 @@ define GpuKernel
                 return
             }
             this.k_operand((*r), true)
+        }
+
+        ; A floating-point constant as it is written, nothing read off it.
+        function is_float_constant(op: PlannedOperand) returns bool
+        {
+            if GpuKernel.has_members(op)
+                return false
+            choose op.expr
+                when c: Constant
+                {
+                    choose c.value
+                        when f: FloatingPoint
+                            return true
+                        else
+                            0
+                }
+                else
+                    0
+            false
         }
 
         procedure k_call(mutable this: GpuKernel, call: PlannedCall)

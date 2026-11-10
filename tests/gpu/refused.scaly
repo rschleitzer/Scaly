@@ -1,34 +1,42 @@
-; Kernels by their shape whose source would not compute what the processor
-; computes: the conversions the processor's code does through the signed
-; ones. The printer refuses them, and under --gpu the card is never asked.
+; Kernels by their shape whose source would not say exactly what the
+; processor computes: a floating-point number read as a bool, and a number
+; that gets wider where it is bound. The printer refuses them, and under
+; --gpu the card is never asked.
 ; cards: 0
 
-procedure unsigned_to_float(src: ref[Vector[u32]], mutable out: ref[Vector[f32]])
+procedure float_as_bool(src: ref[Vector[f32]], mutable out: ref[Vector[i32]])
 {
     for i in src.length
-        out.put(i, src[i] as f32)
+    {
+        let b src[i] as bool
+        out.put(i, b as i32)
+    }
 }
 
-procedure float_to_unsigned(src: ref[Vector[f32]], mutable out: ref[Vector[u32]])
+procedure widened_binding(src: ref[Vector[i32]], mutable out: ref[Vector[int]])
 {
     for i in src.length
-        out.put(i, src[i] as u32)
+    {
+        let w: int src[i]
+        out.put(i, w)
+    }
 }
 
 let n: size_t 4
-var u Vector[u32](n)
 var f Vector[f32](n)
+var a Vector[i32](n)
+var o Vector[int](n)
 var k: size_t 0
 while k < n
 {
-    u.put(k, (k as u32) * 1500000000)
+    f.put(k, (k as f32) * 2.0)
     k := k + 1
 }
-unsigned_to_float(&u, &f)
-float_to_unsigned(&f, &u)
+float_as_bool(&f, &a)
+widened_binding(&a, &o)
 k := 0
 while k < n
 {
-    print "`f[k] as f64` `u[k] as size_t`"
+    print "`a[k]` `o[k]`"
     k := k + 1
 }

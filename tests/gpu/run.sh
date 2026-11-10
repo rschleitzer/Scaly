@@ -39,10 +39,11 @@ check "six kernels written (got $n)" '[ "$n" = "6" ]'
 check "every kernel says safe math and no contraction" '[ "$(printf "%s\n" "$out" | grep -c "^#pragma METAL fp math_mode(safe)$")" = "6" ] && [ "$(printf "%s\n" "$out" | grep -c "^#pragma METAL fp contract(off)$")" = "6" ]'
 check "a loop that is no kernel keeps its reason" 'printf "%s\n" "$out" | grep -q "fixture.scaly:91:1: no kernel: down is recursive$"'
 ref=$("$STAGE" --gpu-msl tests/gpu/refused.scaly 2>&1)
-check "unsigned to float is refused" 'printf "%s\n" "$ref" | grep -q "refused.scaly:8:5: refused: a cast from uint to float$"'
-check "float to unsigned is refused" 'printf "%s\n" "$ref" | grep -q "refused.scaly:14:5: refused: a cast from float to uint$"'
-# the parentheses around a number are a grouping whatever page the planner
-# gives them: `let base (src[i] as f32) * scale` is a kernel's line
+check "a float read as a bool is refused" 'printf "%s\n" "$ref" | grep -q "refused.scaly:9:5: refused: a cast from float to bool$"'
+check "a binding that widens is refused" 'printf "%s\n" "$ref" | grep -q "refused.scaly:18:5: refused: a int where a long stands$"'
+# the parentheses around a number are a grouping, built nowhere: `let base
+# (src[i] as f32) * scale` is a kernel's line (the planner gave them the
+# page of a stored value, and the line read as a construction)
 check "a parenthesised cast at the head of a binding is a kernel" '"$STAGE" --gpu-msl tests/gpu/shapes.scaly 2>&1 | grep -q "shapes.scaly:48:5: kernel$"'
 check "--gpu-plan is not touched" '! "$STAGE" --gpu-plan tests/gpu-plan/fixture.scaly 2>&1 | grep -q "^gpu-msl:"'
 

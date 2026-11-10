@@ -1499,6 +1499,23 @@ define GpuMsl
             ""
         }
 
+        procedure float_constant_of(mutable this: GpuMsl, op: PlannedOperand) returns String
+        {
+            choose op.expr
+                when c: Constant
+                {
+                    choose c.value
+                        when f: FloatingPoint
+                            return this.float_literal(f.value)
+                        else
+                            0
+                }
+                else
+                    0
+            this.refuse("a constant that is no floating-point number")
+            ""
+        }
+
         ; A floating-point constant: the f32 nearest to what is written, in
         ; the shortest text that reads back as exactly that number.
         procedure float_literal(mutable this: GpuMsl, d: double) returns String
@@ -1542,10 +1559,9 @@ define GpuMsl
         }
 
         ; A cast, as the processor's code converts: between integers by the
-        ; SOURCE's signedness; a signed integer to floating point; floating
-        ; point to a signed integer where it holds the number, a fault where
-        ; it does not. The conversions the processor's code does through the
-        ; signed ones although an unsigned number is meant are not said.
+        ; SOURCE's signedness; an integer to floating point by its own; a
+        ; bool is 0 or 1; floating point to an integer where the integer
+        ; holds the number cut off, a fault where it does not.
         procedure cast(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], a: PlannedAs, depth: size_t) returns String
         {
             if a.value = null
@@ -1560,6 +1576,9 @@ define GpuMsl
                 return ""
             }
             let r a.value
+            ; `0.5 as f32`: the f32 the cast makes of the constant
+            if want = 4 and GpuKernel.GpuKernel.is_float_constant((*r))
+                return this.float_constant_of((*r))
             let v this.operand(out, gk, (*r), depth)
             if m_refused
                 return ""
@@ -1575,24 +1594,50 @@ define GpuMsl
                 return "((`wt`)(`v` ? 1 : 0))"
             if GpuMsl.is_int(have) and want = 1
                 return "(((ulong)`v` & (ulong)1u) != (ulong)0u)"
-            if GpuMsl.is_int(have) and GpuMsl.is_signed(have) and want = 4
+            if GpuMsl.is_int(have) and want = 4
             {
                 let t this.temp()
                 out.append "`ind`const float `t` = (float)`v`;\n"
                 return t
             }
-            if have = 4 and want = 2
+            if have = 1 and want = 4
             {
                 let t this.temp()
-                out.append "`ind`int `t` = 0;\n"
-                out.append "`ind`if (`v` >= -2147483648.0f && `v` < 2147483648.0f) `t` = (int)`v`; else F = 1u;\n"
+                out.append "`ind`const float `t` = `v` ? 1.0f : 0.0f;\n"
                 return t
             }
-            if have = 4 and want = 5
+            if have = 4 and GpuMsl.is_int(want)
             {
+                ; the bounds are f32s: below the first and from the second
+                ; on the integer does not hold the number cut off
+                var low "-2147483648.0f"
+                var high "2147483648.0f"
+                var keeps_low false
+                if want = 2
+                    keeps_low := true
+                if want = 3
+                {
+                    low := "-1.0f"
+                    high := "4294967296.0f"
+                }
+                if want = 5
+                {
+                    low := "-9223372036854775808.0f"
+                    high := "9223372036854775808.0f"
+                    keeps_low := true
+                }
+                if want = 6
+                {
+                    low := "-1.0f"
+                    high := "18446744073709551616.0f"
+                }
                 let t this.temp()
-                out.append "`ind`long `t` = ((long)0);\n"
-                out.append "`ind`if (`v` >= -9223372036854775808.0f && `v` < 9223372036854775808.0f) `t` = (long)`v`; else F = 1u;\n"
+                let none GpuMsl.zero(want)
+                out.append "`ind``wt` `t` = `none`;\n"
+                if keeps_low
+                    out.append "`ind`if (`v` >= `low` && `v` < `high`) `t` = (`wt`)`v`; else F = 1u;\n"
+                else
+                    out.append "`ind`if (`v` > `low` && `v` < `high`) `t` = (`wt`)`v`; else F = 1u;\n"
                 return t
             }
             let msg "a cast from `GpuMsl.type_name(have)` to `wt`"

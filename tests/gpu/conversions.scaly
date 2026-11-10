@@ -1,0 +1,107 @@
+; Between integers and floating point, by the integer's signedness: an
+; unsigned number into f32 (rounded to the nearest, ties to even), a bool as
+; 0 or 1, f32 into an unsigned integer cut off toward zero -- and a fault
+; where the integer does not hold the number, as into a signed one. A
+; constant written `0.5 as f32` is that f32.
+; cards: 3
+; declines: 2
+
+procedure into_float(u: ref[Vector[u32]], w: ref[Vector[u64]], mutable a: ref[Vector[f32]], mutable b: ref[Vector[f32]], mutable c: ref[Vector[f32]])
+{
+    for i in u.length
+    {
+        a.put(i, u[i] as f32)
+        b.put(i, w[i] as f32)
+        let odd (u[i] & 1) = 1
+        c.put(i, (odd as f32) + (0.5 as f32))
+    }
+}
+
+procedure out_of_float(f: ref[Vector[f32]], mutable a: ref[Vector[u32]], mutable b: ref[Vector[u64]], mutable c: ref[Vector[i32]], mutable d: ref[Vector[int]])
+{
+    for i in f.length
+    {
+        a.put(i, f[i] as u32)
+        b.put(i, (f[i] * 4294967296.0) as u64)
+        c.put(i, (f[i] - 2147483648.0) as i32)
+        d.put(i, (f[i] * 0.0 - f[i]) as int)
+    }
+}
+
+procedure beyond_u32(f: ref[Vector[f32]], mutable a: ref[Vector[u32]])
+{
+    for i in f.length
+        a.put(i, (f[i] + 4294967040.0) as u32)
+}
+
+procedure below_zero(f: ref[Vector[f32]], mutable a: ref[Vector[u64]])
+{
+    for i in f.length
+        a.put(i, (0.0 - f[i]) as u64)
+}
+
+procedure within(f: ref[Vector[f32]], mutable a: ref[Vector[u32]])
+{
+    for i in f.length
+        a.put(i, (f[i] * 0.0 - 0.75) as u32)
+}
+
+let n: size_t 8
+var u Vector[u32](n)
+var w Vector[u64](n)
+u.put(0, 0)
+u.put(1, 1)
+u.put(2, 16777217)
+u.put(3, 16777219)
+u.put(4, 2147483648)
+u.put(5, 3000000000)
+u.put(6, 4294967167)
+u.put(7, 4294967295)
+w.put(0, 9007199254740993)
+w.put(1, 0x8000000000000000)
+w.put(2, 0x8000008000000000)
+w.put(3, 0x8000018000000000)
+w.put(4, 0xFFFFFFFFFFFFFFFF)
+w.put(5, 0xFFFFFF7FFFFFFFFF)
+w.put(6, 3000000000)
+w.put(7, 1)
+var fa Vector[f32](n)
+var fb Vector[f32](n)
+var fc Vector[f32](n)
+into_float(&u, &w, &fa, &fb, &fc)
+var k: size_t 0
+while k < n
+{
+    print "`fa[k] as f64` `fb[k] as f64` `fc[k] as f64`"
+    k := k + 1
+}
+
+var f Vector[f32](n)
+f.put(0, 0.0)
+f.put(1, 0.99)
+f.put(2, 1.0)
+f.put(3, 16777216.0)
+f.put(4, 2147483648.0)
+f.put(5, 3000000000.0)
+f.put(6, 4294967040.0)
+f.put(7, 123456.789)
+var ua Vector[u32](n)
+var ub Vector[u64](n)
+var ic Vector[i32](n)
+var id Vector[int](n)
+out_of_float(&f, &ua, &ub, &ic, &id)
+k := 0
+while k < n
+{
+    print "`ua[k] as size_t` `ub[k] as size_t` `ic[k]` `id[k]`"
+    k := k + 1
+}
+
+; a fraction below zero is cut off to zero: no fault
+within(&f, &ua)
+print "`ua[0] as size_t` `ua[7] as size_t`"
+
+; one round beyond the integer: the card gives the run back
+beyond_u32(&f, &ua)
+below_zero(&f, &ub)
+print "done"
