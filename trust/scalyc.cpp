@@ -16177,6 +16177,7 @@ bool Planner_is_walker_header_name(Planner&, String&) asm("_ZN7PlannerB6scalycB4
 bool Planner_check_message_type(scaly_frame*, Planner&, PlannedType&, Span&, Array<String>*) asm("_ZN7PlannerB6scalycB4v0_218check_message_typeEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_24SpanB6scalycB4v0_2R5ArrayI6StringE");
 bool Planner_check_message_pointee(scaly_frame*, Planner&, PlannedType&, Span&, Array<String>*) asm("_ZN7PlannerB6scalycB4v0_221check_message_pointeeEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_24SpanB6scalycB4v0_2R5ArrayI6StringE");
 bool Planner_is_runtime_opaque_struct(String&) asm("_ZN7PlannerB6scalycB4v0_224is_runtime_opaque_structE6String");
+bool Planner_is_concept_parameter_name(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_225is_concept_parameter_nameE6String");
 MethodMatch* Planner_resolve_fix_graph(scaly_frame*, Planner&, Vector<PlannedType>&, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_217resolve_fix_graphEPN4scaly6memory4PageE6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E");
 MethodMatch* Planner_lookup_method_by_package(scaly_frame*, Planner&, PlannedType&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_224lookup_method_by_packageEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E");
 MethodMatch* Planner_lookup_method_in(scaly_frame*, Planner&, PlannedType&, String&, Vector<PlannedType>&, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_216lookup_method_inEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26String6VectorI11PlannedTypeB6scalycB4v0_2E6VectorI14PlannedOperandB6scalycB4v0_2E");
@@ -16219,7 +16220,6 @@ Vector<KeyValuePair<uint64_t, PlannedType>>* Planner_solve_constraints(scaly_fra
 bool Planner_solve_and_apply(Planner&) asm("_ZN7PlannerB6scalycB4v0_215solve_and_applyEv");
 PlannedType Planner_apply_substitution(scaly_frame*, PlannedType&, Vector<KeyValuePair<uint64_t, PlannedType>>*) asm("_ZN7PlannerB6scalycB4v0_218apply_substitutionEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26OptionIR6VectorI12KeyValuePairIm11PlannedTypeB6scalycB4v0_2EEE");
 PlannedType Planner_apply_current_substitution(scaly_frame*, Planner&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_226apply_current_substitutionEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
-bool Planner_is_concept_parameter_name(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_225is_concept_parameter_nameE6String");
 String Planner_unknown_type_name(scaly_frame*, Planner&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_217unknown_type_nameEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 void Planner_report_unknown_type(Planner&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_219report_unknown_typeE11PlannedTypeB6scalycB4v0_2");
 bool Planner_qualified_name_known(Planner&, String&, String&) asm("_ZN7PlannerB6scalycB4v0_220qualified_name_knownE6String6String");
@@ -16407,6 +16407,7 @@ Vector<Function> Planner_lazy_candidates(scaly_frame*, Planner&, String&) asm("_
 bool Planner_is_lazy_method_name(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_219is_lazy_method_nameE6String");
 bool Planner_model_operand_is_operator(Planner&, Operand&) asm("_ZN7PlannerB6scalycB4v0_225model_operand_is_operatorE7OperandB6scalycB4v0_2");
 Vector<Function> Planner_lazy_method_candidates(scaly_frame*, Planner&, String&, String&) asm("_ZN7PlannerB6scalycB4v0_222lazy_method_candidatesEPN4scaly6memory4PageE6String6String");
+void Planner_report_remote_message_name(Planner&, Tuple&, Span&) asm("_ZN7PlannerB6scalycB4v0_226report_remote_message_nameE5TupleB6scalycB4v0_24SpanB6scalycB4v0_2");
 Vector<PlannedOperand> Planner_strip_leading_eq(scaly_frame*, Vector<PlannedOperand>&) asm("_ZN7PlannerB6scalycB4v0_216strip_leading_eqEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E");
 void StringBuilder_append6(StringBuilder&, int64_t) asm("_ZN13StringBuilder6appendEi");
 void Planner_report_decomposition(Planner&, String&, PlannedType&, Span&) asm("_ZN7PlannerB6scalycB4v0_220report_decompositionE6String11PlannedTypeB6scalycB4v0_24SpanB6scalycB4v0_2");
@@ -16804,6 +16805,9 @@ PlannedImplementation Planner_plan_implementation(scaly_frame*, Planner&, Implem
 void Planner_report_entry_caller_page(Planner&, Function&) asm("_ZN7PlannerB6scalycB4v0_224report_entry_caller_pageE8FunctionB6scalycB4v0_2");
 void Planner_report_mutable_in_function(Planner&, Function&) asm("_ZN7PlannerB6scalycB4v0_226report_mutable_in_functionE8FunctionB6scalycB4v0_2");
 void Planner_report_declared_caller_page(Planner&, Vector<Item>&) asm("_ZN7PlannerB6scalycB4v0_227report_declared_caller_pageE6VectorI4ItemB6scalycB4v0_2E");
+uint64_t Planner_lazy_aside(Planner&) asm("_ZN7PlannerB6scalycB4v0_210lazy_asideEv");
+PlannedFunction Planner_plan_function_planned(scaly_frame*, Planner&, Function&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_221plan_function_plannedEPN4scaly6memory4PageE8FunctionB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
+void Planner_lazy_back(Planner&, uint64_t) asm("_ZN7PlannerB6scalycB4v0_29lazy_backEm");
 bool Planner_is_ref_or_pointer_type(Type&) asm("_ZN7PlannerB6scalycB4v0_222is_ref_or_pointer_typeE4TypeB6scalycB4v0_2");
 String Planner_mangle_function_in(scaly_frame*, String&, Vector<PlannedItem>*, PlannedType*, bool, String&) asm("_ZN7PlannerB6scalycB4v0_218mangle_function_inEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6OptionIR11PlannedTypeB6scalycB4v0_2Eb6String");
 bool Planner_init_block_checkable(Planner&, PlannedBlock&) asm("_ZN7PlannerB6scalycB4v0_220init_block_checkableE12PlannedBlockB6scalycB4v0_2");
@@ -16816,7 +16820,9 @@ bool Planner_init_if_assigns(Planner&, PlannedIf&, String&) asm("_ZN7PlannerB6sc
 bool Planner_init_choose_assigns(Planner&, PlannedChoose&, String&) asm("_ZN7PlannerB6scalycB4v0_219init_choose_assignsE13PlannedChooseB6scalycB4v0_26String");
 bool Planner_init_action_assigns(Planner&, PlannedAction&, String&) asm("_ZN7PlannerB6scalycB4v0_219init_action_assignsE13PlannedActionB6scalycB4v0_26String");
 bool Planner_init_stmt_assigns(Planner&, PlannedStatement&, String&) asm("_ZN7PlannerB6scalycB4v0_217init_stmt_assignsE16PlannedStatementB6scalycB4v0_26String");
+PlannedInitializer Planner_plan_initializer_planned(scaly_frame*, Planner&, Initializer&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_224plan_initializer_plannedEPN4scaly6memory4PageE11InitializerB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
 PlannedInitializer Planner_plan_initializer(scaly_frame*, Planner&, Initializer&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_216plan_initializerEPN4scaly6memory4PageE11InitializerB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
+PlannedOperator Planner_plan_operator_planned(scaly_frame*, Planner&, Operator&, PlannedType*) asm("_ZN7PlannerB6scalycB4v0_221plan_operator_plannedEPN4scaly6memory4PageE8OperatorB6scalycB4v0_26OptionIR11PlannedTypeB6scalycB4v0_2E");
 String Planner_mangle_operator_paged(scaly_frame*, String&, Vector<PlannedItem>*, PlannedType*, bool) asm("_ZN7PlannerB6scalycB4v0_221mangle_operator_pagedEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemB6scalycB4v0_2EE6OptionIR11PlannedTypeB6scalycB4v0_2Eb");
 PlannedVariant Planner_plan_variant(scaly_frame*, Planner&, Variant&, int64_t) asm("_ZN7PlannerB6scalycB4v0_212plan_variantEPN4scaly6memory4PageE7VariantB6scalycB4v0_2i");
 PlannedStructure Planner_plan_structure_in(scaly_frame*, Planner&, Structure&, String&) asm("_ZN7PlannerB6scalycB4v0_217plan_structure_inEPN4scaly6memory4PageE9StructureB6scalycB4v0_26String");
@@ -55721,7 +55727,11 @@ __attribute__((weak)) MethodMatch* Planner_resolve_fix_graph(scaly_frame* scaly_
         return (MethodMatch*)(nullptr);
     }
     Array<String>* seen = ({ Array<String>* scaly_t6 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t6 = Array<String>{}; (void)0; scaly_t6; });
-    bool closure_ok = Planner_check_message_type(scaly_rp, *(this_), pointee, loc, &((*seen)));
+    bool unbound = ((this_->planning_template ? true : Planner_is_generic_type_param_name((pointee).name)) ? true : Planner_is_concept_parameter_name(*(this_), (pointee).name));
+    if (((unbound) == (false)))
+    {
+        Planner_check_message_type(scaly_rp, *(this_), pointee, loc, &((*seen)));
+    }
     StringBuilder* wsb = ({ StringBuilder* scaly_t7 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t7 = StringBuilder{}; StringBuilder_init((*scaly_t7)); scaly_t7; });
     StringBuilder_append2((*wsb), scaly_lvalue(String{(uint8_t*)"\014_scaly_walk_"}));
     String wkey = (pointee).mangled_name;
@@ -67259,6 +67269,41 @@ __attribute__((weak)) Vector<Function> Planner_lazy_candidates(scaly_frame* scal
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) void Planner_report_remote_message_name(Planner& scaly_self, Tuple& args, Span& span)
+{
+    Planner* this_ = &scaly_self;
+    if ((((args).components).length != 1ULL))
+    {
+        return;
+    }
+    Vector<Operand> ops = (Vector8<Component>((args).components, 0LL)).value;
+    bool built = false;
+    if (((ops).length > 0ULL))
+    {
+        Operand last = Vector8<Operand>(ops, ((ops).length - 1ULL));
+        if ((((last).member_access) == (nullptr)))
+        {
+            {
+                auto&& scaly_t1 = (last).expression;
+                if (scaly_t1.tag == 2)
+                {
+                    Tuple t = scaly_payload<Tuple>(scaly_t1);
+                    built = true;
+                }
+                else
+                {
+                    built = false;
+                }
+            }
+        }
+    }
+    if (((built) == (false)))
+    {
+        Planner_add_diagnostic(*(this_), span, scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{(uint8_t*)"\264\001send builds the message on a page of its own: write the construction or the call that makes it as the argument, not a name -- the parts of a value built elsewhere would stay behind"})); scaly_t2; }))));
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
 __attribute__((weak)) PlannedOperand Planner_put_in_lazy_call(scaly_frame* scaly_rp, Planner& scaly_self, String& name, Tuple& args, Span& span, Vector<String>& method)
 {
     Planner* this_ = &scaly_self;
@@ -67354,9 +67399,14 @@ __attribute__((weak)) PlannedOperand Planner_put_in_lazy_call(scaly_frame* scaly
     }))); scaly_t15; }))));
         return (*none);
     }
-    uint64_t pi = 0ULL;
-    while ((pi < (this_->lazy_putins).length))
+    if (((is_method ? String_equals(name, scaly_lvalue(String{(uint8_t*)"\004send"})) : false) ? String_equals(scaly_lvalue(Vector3(method, ((method).length - 1ULL))), scaly_lvalue(String{(uint8_t*)"\006Remote"})) : false))
     {
+        Planner_report_remote_message_name(*(this_), args, span);
+    }
+    uint64_t pi = (this_->lazy_putins).length;
+    while (((pi > 0ULL) ? (String_get_length(scaly_lvalue(Array5(this_->lazy_putins, (pi - 1ULL)))) > 0ULL) : false))
+    {
+        pi = (pi - 1ULL);
         if (String_equals(scaly_lvalue(Array5(this_->lazy_putins, pi)), name))
         {
             Planner_add_diagnostic(*(this_), span, scaly_lvalue((*({ String* scaly_t18 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t18 = String{}; String_init2((*scaly_t18), scaly_lvalue(({
@@ -67371,7 +67421,6 @@ __attribute__((weak)) PlannedOperand Planner_put_in_lazy_call(scaly_frame* scaly
     }))); scaly_t18; }))));
             return (*none);
         }
-        pi = (pi + 1ULL);
     }
     Array<PlannedOperand>* planned = ({ Array<PlannedOperand>* scaly_t21 = (Array<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<PlannedOperand>), alignof(Array<PlannedOperand>)); *scaly_t21 = Array<PlannedOperand>{}; (void)0; scaly_t21; });
     uint64_t shadows_before = (this_->lazy_shadows).length;
@@ -67520,9 +67569,10 @@ __attribute__((weak)) void Planner_check_lazy_shadow(Planner& scaly_self, String
 {
     Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    uint64_t sk = 0ULL;
-    while ((sk < (this_->lazy_shadows).length))
+    uint64_t sk = (this_->lazy_shadows).length;
+    while (((sk > 0ULL) ? (String_get_length(scaly_lvalue(Array5(this_->lazy_shadows, (sk - 1ULL)))) > 0ULL) : false))
     {
+        sk = (sk - 1ULL);
         if (String_equals(scaly_lvalue(Array5(this_->lazy_shadows, sk)), name))
         {
             Planner_add_diagnostic(*(this_), loc, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(({
@@ -67538,7 +67588,6 @@ __attribute__((weak)) void Planner_check_lazy_shadow(Planner& scaly_self, String
     }))); scaly_t1; }))));
             return;
         }
-        sk = (sk + 1ULL);
     }
 }
 
@@ -89880,7 +89929,7 @@ __attribute__((weak)) PlannedReturn Planner_plan_return(scaly_frame* scaly_rp, P
 {
     Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
-    if (((this_->lazy_putins).length > 0ULL))
+    if ((((this_->lazy_putins).length > 0ULL) ? (String_get_length(scaly_lvalue(Array5(this_->lazy_putins, ((this_->lazy_putins).length - 1ULL)))) > 0ULL) : false))
     {
         Planner_add_diagnostic(*(this_), (r).span, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{(uint8_t*)"\155a function with a lazy parameter answers its body\047s last value: a return would leave the routine it is put in"})); scaly_t1; }))));
     }
@@ -93716,6 +93765,36 @@ __attribute__((weak)) void Planner_report_declared_caller_page(Planner& scaly_se
 __attribute__((weak)) PlannedFunction Planner_plan_function(scaly_frame* scaly_rp, Planner& scaly_self, Function& f, PlannedType* parent)
 {
     Planner* this_ = &scaly_self;
+    uint64_t saved_frame = Planner_lazy_aside(*(this_));
+    PlannedFunction planned = Planner_plan_function_planned(scaly_rp, *(this_), f, parent);
+    Planner_lazy_back(*(this_), saved_frame);
+    return planned;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) uint64_t Planner_lazy_aside(Planner& scaly_self)
+{
+    Planner* this_ = &scaly_self;
+    uint64_t frame = this_->lazy_frame;
+    Array_add<String>(this_->lazy_putins, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{nullptr})); scaly_t1; }))));
+    Array_add<String>(this_->lazy_shadows, scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{nullptr})); scaly_t2; }))));
+    this_->lazy_frame = (this_->lazy_args).length;
+    return frame;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) void Planner_lazy_back(Planner& scaly_self, uint64_t frame)
+{
+    Planner* this_ = &scaly_self;
+    (this_->lazy_putins).length = ((this_->lazy_putins).length - 1ULL);
+    (this_->lazy_shadows).length = ((this_->lazy_shadows).length - 1ULL);
+    this_->lazy_frame = frame;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) PlannedFunction Planner_plan_function_planned(scaly_frame* scaly_rp, Planner& scaly_self, Function& f, PlannedType* parent)
+{
+    Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     Planner_push_scope(*(this_));
     Planner_report_declared_caller_page(*(this_), (f).input);
@@ -94597,6 +94676,16 @@ __attribute__((weak)) bool Planner_init_choose_assigns(Planner& scaly_self, Plan
 __attribute__((weak)) PlannedInitializer Planner_plan_initializer(scaly_frame* scaly_rp, Planner& scaly_self, Initializer& ini, PlannedType* parent)
 {
     Planner* this_ = &scaly_self;
+    uint64_t saved_frame = Planner_lazy_aside(*(this_));
+    PlannedInitializer planned = Planner_plan_initializer_planned(scaly_rp, *(this_), ini, parent);
+    Planner_lazy_back(*(this_), saved_frame);
+    return planned;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) PlannedInitializer Planner_plan_initializer_planned(scaly_frame* scaly_rp, Planner& scaly_self, Initializer& ini, PlannedType* parent)
+{
+    Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
     Planner_push_scope(*(this_));
     Planner_report_declared_caller_page(*(this_), (ini).input);
@@ -94754,6 +94843,16 @@ __attribute__((weak)) PlannedInitializer Planner_plan_initializer(scaly_frame* s
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
 __attribute__((weak)) PlannedOperator Planner_plan_operator(scaly_frame* scaly_rp, Planner& scaly_self, Operator& op, PlannedType* parent)
+{
+    Planner* this_ = &scaly_self;
+    uint64_t saved_frame = Planner_lazy_aside(*(this_));
+    PlannedOperator planned = Planner_plan_operator_planned(scaly_rp, *(this_), op, parent);
+    Planner_lazy_back(*(this_), saved_frame);
+    return planned;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) PlannedOperator Planner_plan_operator_planned(scaly_frame* scaly_rp, Planner& scaly_self, Operator& op, PlannedType* parent)
 {
     Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
