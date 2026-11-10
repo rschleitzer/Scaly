@@ -1,0 +1,28 @@
+; A kernel inside the rounds of an enclosing parallel loop: every round
+; fills a Vector of its own on the card. The rounds may run on the
+; program's workers, several at once.
+; cards: 64
+
+let rows: size_t 64
+let cols: size_t 2048
+var sums Vector[int](rows)
+for r in rows
+{
+    var tmp Vector[i32](cols)
+    for i in cols
+        tmp.put(i, ((i as i32) * 31 + (r as i32) * 17) % 1000)
+    var total 0
+    var j: size_t 0
+    while j < cols
+    {
+        total := total + (tmp[j] as int)
+        j := j + 1
+    }
+    sums.put(r, total)
+}
+var k: size_t 0
+while k < rows
+{
+    print "`sums[k]`"
+    k := k + 1
+}

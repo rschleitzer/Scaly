@@ -1,0 +1,109 @@
+; Integers on the card: arithmetic that wraps, shifts, division and
+; remainder, comparisons by the left side's signedness, 64-bit numbers,
+; constants of the program, loops with break and continue, an `if` with a
+; value, `and`/`or` that leave their right side alone.
+; cards: 2
+
+define MASK: u32 0xFF
+define BIG: u64 0x123456789ABCDEF0
+define HALF: f32 0.5
+define ON: bool true
+
+function mix(a: i32, b: u32, c: int) returns int
+{
+    let x a * 3 - 7
+    let y b >> 3
+    let z (b << 5) & MASK
+    let w c / 3 + c % 5
+    var acc: int w
+    var j: i32 0
+    repeat
+    {
+        if j >= 4
+            break
+        j := j + 1
+        if j = 2
+            continue
+        acc := acc + (x as int) * (j as int)
+    }
+    acc + (y as int) + (z as int)
+}
+
+function fl(x: f32, n: i32) returns f32
+{
+    var r x
+    for j in n
+    {
+        r := r / 3.0 + HALF
+        if r > 100.0
+            r := 0.0 - r
+    }
+    let q abs r
+    if q <> q: 0.0 else -q
+}
+
+function tr(x: f32) returns i32
+    x as i32
+
+function sel(a: i32, b: i32, f: bool) returns i32
+{
+    let both a > 0 and b > 0
+    let any a > 0 or f
+    if both and not any: a else if any: b xor a else a | b
+}
+
+function more(a: i32, b: u32, c: int) returns int
+{
+    let n -a
+    let m abs a
+    let lt b < 2147483648
+    let w (c * 6364136223846793005) >> 33
+    let u ((b as u64) << 40) >> 7
+    var r (n as int) + (m as int) + w + (u as int)
+    if lt
+        r := r xor 21845
+    if lt = false and a > 0
+        r := 0 - r
+    r
+}
+
+procedure run(n: int, a: ref[Vector[i32]], u: ref[Vector[u32]], f: ref[Vector[f32]], mutable o1: ref[Vector[int]], mutable o2: ref[Vector[f32]], mutable o3: ref[Vector[i32]], mutable o4: ref[Vector[u64]], mutable o5: ref[Vector[int]], flag: bool, big: int)
+{
+    for i in n
+    {
+        let ai a[i]
+        let ui u[i]
+        o1.put(i, mix(ai, ui, big + i))
+        o2.put(i, fl(f[i], ai & 7))
+        o5.put(i, more(ai, ui, big - i * 977))
+        let t tr(f[i] * 1000.0)
+        let s sel(ai, t, flag and ON)
+        if s = 137
+            continue
+        o3.put(i, s >> (ui & 15) + (ai as i32) / (t | 1))
+        o4.put(i, (ui as u64) * BIG + (i as u64))
+    }
+}
+
+let n 64
+var a Vector[i32](n as size_t)
+var u Vector[u32](n as size_t)
+var f Vector[f32](n as size_t)
+var o1 Vector[int](n as size_t)
+var o2 Vector[f32](n as size_t)
+var o3 Vector[i32](n as size_t)
+var o4 Vector[u64](n as size_t)
+var o5 Vector[int](n as size_t)
+for i in n
+{
+    a.put(i as size_t, (i as i32) * 37 - 200)
+    u.put(i as size_t, (i as u32) * 2654435761)
+    f.put(i as size_t, (i as f32) * 1.37 - 9.5)
+}
+run(n, &a, &u, &f, &o1, &o2, &o3, &o4, &o5, true, 1000000007)
+var i 0
+while i < n
+{
+    print "`o1[i as size_t]` `o2[i as size_t] as f64` `o3[i as size_t]` `o4[i as size_t] as size_t` `o5[i as size_t]`"
+    i := i + 1
+}

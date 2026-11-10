@@ -1,0 +1,64 @@
+; Floating point on the card rounds as on the processor: no fused
+; multiply-add, no reordering, an exact division. 4096 triples in [-2, 2),
+; five expressions each a kernel of its own; every result is printed in the
+; shortest text that reads back as exactly that number.
+; cards: 5
+
+function next(state: u32) returns u32
+    state * 1664525 + 1013904223
+
+function unit(state: u32) returns f32
+    (((state >> 8) as i32) as f32) / 4194304.0 - 2.0
+
+function steps(cr: f32, ci: f32) returns f32
+{
+    var zr: f32 0.0
+    var zi: f32 0.0
+    for j in 50
+    {
+        let t zr * zr - zi * zi + cr
+        zi := zr * 2.0 * zi + ci
+        zr := t
+    }
+    zr + zi
+}
+
+let n: size_t 4096
+var x Vector[f32](n)
+var y Vector[f32](n)
+var z Vector[f32](n)
+var s: u32 2463534242
+var k: size_t 0
+while k < n
+{
+    s := next(s)
+    x.put(k, unit(s))
+    s := next(s)
+    y.put(k, unit(s))
+    s := next(s)
+    z.put(k, unit(s))
+    k := k + 1
+}
+
+var r1 Vector[f32](n)
+var r2 Vector[f32](n)
+var r3 Vector[f32](n)
+var r4 Vector[f32](n)
+var r5 Vector[f32](n)
+for i in n
+    r1.put(i, x[i] * y[i] + z[i])
+for i in n
+    r2.put(i, x[i] / y[i])
+for i in n
+    r3.put(i, x[i] * y[i] - z[i] * x[i])
+for i in n
+    r4.put(i, (x[i] + y[i]) + z[i])
+for i in n
+    r5.put(i, steps(x[i], y[i]))
+
+k := 0
+while k < n
+{
+    print "`r1[k] as f64` `r2[k] as f64` `r3[k] as f64` `r4[k] as f64` `r5[k] as f64`"
+    k := k + 1
+}

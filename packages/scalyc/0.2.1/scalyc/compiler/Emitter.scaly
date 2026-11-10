@@ -13,6 +13,8 @@ use scaly.os.File
 use scalyc.compiler.Modeler
 use scalyc.compiler.ConceptIndex.ConceptIndex
 use scalyc.compiler.TaskPlanner.TaskPlanner
+use scalyc.compiler.GpuKernel
+use scalyc.compiler.GpuMsl
 use scalyc.compiler.StoreEffects.StoreEffects
 use scalyc.compiler.StackVectors.StackVectors
 use scalyc.compiler.StackVectors.SV_MAX_BYTES
@@ -83,6 +85,7 @@ define Emitter
         skip_tests: bool            ; --no-tests: omit test/test_* functions
         page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
         portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
+        gpu: bool                   ; --gpu: a parallel loop that is a kernel goes to the graphics card first
         library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
         keep_main_frame: bool       ; the REPL: main's frame page is the session's, never released
         release: bool               ; `scaly build --release`: one module of the whole program, internal definitions hidden
@@ -105,6 +108,7 @@ define Emitter
             skip_tests := false
             page_size := 0
             portable_simd := false
+            gpu := false
             library_linkage := false
             keep_main_frame := false
             release := false
@@ -18544,13 +18548,290 @@ define Emitter
             ; adaptive driver (deferred fork + per-site HotSpot promotion);
             ; everything else runs sequentially. No syntax involved.
             if promote_for(for_expr)
+            {
+                if config.gpu
+                    return emit_gpu_for for_expr
                 return emit_parallel_for for_expr
+            }
 
             ; Check if iterator-based or integer range loop
             if for_expr.is_iterator_loop
                 return emit_for_iterator for_expr
 
             emit_for_integer_range for_expr
+        }
+
+        ; ------------------------------------------------------------------
+        ; --gpu: a parallel `for` that is a KERNEL (GpuKernel) and whose body
+        ; GpuMsl can say exactly is handed to the graphics card first. The
+        ; kernel's source is a constant of the program; what it takes is
+        ; computed here, where the loop stands: the count of rounds, the
+        ; scalars of the environment as 32-bit words, each buffer's address
+        ; and length. The host (scaly_gpu_run, the standard library's
+        ; gpu_darwin.c) answers whether the card ran every round. Where it
+        ; did not -- no card, SCALY_GPU=off, a kernel the card does not take,
+        ; a round that met what the processor would stop at -- the loop runs
+        ; on the processor, emitted exactly as without --gpu.
+        ; Only where the program is linked with the host: an Apple target.
+        ; ------------------------------------------------------------------
+        procedure emit_gpu_for(mutable this, mutable for_expr: PlannedFor) returns LLVMValueRef
+        {
+            if current_plan = null or for_expr.is_iterator_loop or for_expr.expr = null
+                return emit_parallel_for for_expr
+            if for_expr.expr.length <> 1 or this.target_has_metal() = false
+                return emit_parallel_for for_expr
+            ; the count is computed twice where the card declines: here and
+            ; by the processor's loop
+            if GpuMsl.GpuMsl.is_plain_count((*for_expr.expr)[0]) = false
+                return emit_parallel_for for_expr
+            let plan_ref current_plan
+            let plan (*plan_ref)
+            var gk GpuKernel.GpuKernel()
+            gk.plan_functions := plan.functions
+            gk.plan_globals := plan.globals
+            gk.classify_loop(for_expr)
+            if gk.k_blocked
+                return emit_parallel_for for_expr
+            var msl GpuMsl.GpuMsl()
+            let source msl.kernel_source(&gk, for_expr)
+            if msl.m_refused
+                return emit_parallel_for for_expr
+            let n_in gk.k_buffer_ops.length
+            let n_out gk.k_output_ops.length
+            ; the host binds 29 buffers beside its own two
+            if n_in + n_out > 29
+                return emit_parallel_for for_expr
+
+            let i32_ty LLVMInt32TypeInContext(context)
+            let i64_ty LLVMInt64TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+
+            var count emit_operands for_expr.expr
+            if count = null
+                return null
+            var ok true
+            let count_ty LLVMTypeOf(count)
+            if LLVMGetTypeKind(count_ty) <> LLVMTypeKind.Integer()
+                ok := false
+            if ok and LLVMGetIntTypeWidth(count_ty) > 64
+                ok := false
+            ; the processor's loop compares its counter signed
+            if ok and LLVMGetIntTypeWidth(count_ty) < 64
+                count := LLVMBuildSExt(builder, count, i64_ty, "gpu.count")
+
+            ; the scalars, in the order and the words the kernel reads them
+            var words_len msl.m_uniform_words
+            if words_len = 0
+                words_len := 1
+            let words_ty LLVMArrayType2(i32_ty, words_len)
+            let words entry_alloca(words_ty, "gpu.words")
+            var word: size_t 0
+            var ui: size_t 0
+            while ok and ui < gk.k_uniform_ops.length
+            {
+                var uop gk.k_uniform_ops[ui]
+                let kind gk.k_uniform_kinds[ui]
+                let v emit_operand uop
+                if this.gpu_store_scalar(v, kind, words_ty, words, word) = false
+                    ok := false
+                if kind = 5 or kind = 6
+                    word := word + 2
+                else
+                    word := word + 1
+                ui := ui + 1
+            }
+
+            ; the buffers: the inputs, then the outputs; per buffer its
+            ; address, and its element count and the bytes of one element
+            let bufs_ty LLVMArrayType2(ptr_ty, n_in + n_out)
+            let bufs entry_alloca(bufs_ty, "gpu.buffers")
+            let sizes_ty LLVMArrayType2(i64_ty, (n_in + n_out) * 2)
+            let sizes entry_alloca(sizes_ty, "gpu.sizes")
+            var bi: size_t 0
+            while ok and bi < n_in
+            {
+                var bop gk.k_buffer_ops[bi]
+                if this.gpu_bind_buffer(bop, gk.k_buffer_kinds[bi], bufs_ty, bufs, sizes_ty, sizes, bi) = false
+                    ok := false
+                bi := bi + 1
+            }
+            bi := 0
+            while ok and bi < n_out
+            {
+                var oop gk.k_output_ops[bi]
+                if this.gpu_bind_buffer(oop, gk.k_output_kinds[bi], bufs_ty, bufs, sizes_ty, sizes, n_in + bi) = false
+                    ok := false
+                bi := bi + 1
+            }
+            ; a value of a shape this routine does not know: the processor
+            ; (what is emitted so far computes values nobody reads)
+            if ok = false
+                return emit_parallel_for for_expr
+
+            var ptys Vector[LLVMTypeRef](8)
+            ptys.put(0, ptr_ty)
+            ptys.put(1, i64_ty)
+            ptys.put(2, ptr_ty)
+            ptys.put(3, i64_ty)
+            ptys.put(4, ptr_ty)
+            ptys.put(5, ptr_ty)
+            ptys.put(6, i64_ty)
+            ptys.put(7, i64_ty)
+            let run_ty LLVMFunctionType(i32_ty, ptys.data, 8, 0)
+            let run_fn this.get_parfor_runtime_fn("scaly_gpu_run", run_ty)
+            var args Vector[LLVMValueRef](8)
+            args.put(0, LLVMBuildGlobalStringPtr(builder, source.to_c_string(), ".gpu.kernel"))
+            args.put(1, count)
+            args.put(2, words)
+            args.put(3, LLVMConstInt(i64_ty, msl.m_uniform_words, 0))
+            args.put(4, bufs)
+            args.put(5, sizes)
+            args.put(6, LLVMConstInt(i64_ty, n_in, 0))
+            args.put(7, LLVMConstInt(i64_ty, n_out, 0))
+            let ran LLVMBuildCall2(builder, run_ty, run_fn, args.data, 8, "gpu.ran")
+            let on_card LLVMBuildICmp(builder, LLVMIntPredicate.NE(), ran, LLVMConstInt(i32_ty, 0, 0), "gpu.on")
+            let cpu_block create_block("gpu.cpu")
+            let done_block create_block("gpu.done")
+            LLVMBuildCondBr(builder, on_card, done_block, cpu_block)
+
+            LLVMPositionBuilderAtEnd(builder, cpu_block)
+            emit_parallel_for for_expr
+            if LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder) = null
+                LLVMBuildBr(builder, done_block)
+            LLVMPositionBuilderAtEnd(builder, done_block)
+            null
+        }
+
+        ; Is the program linked with Metal's host: is the emission triple
+        ; Apple's?
+        procedure target_has_metal(mutable this) returns bool
+        {
+            var name String(config.target_triple)
+            if name.get_length() = 0
+                name := this.host_triple()
+            name.contains(String("-apple-"))
+        }
+
+        procedure gpu_store_slot(mutable this, mutable value: LLVMValueRef, mutable array_ty: LLVMTypeRef, mutable array: LLVMValueRef, index: size_t)
+        {
+            let i64_ty LLVMInt64TypeInContext(context)
+            var idx Vector[LLVMValueRef](2)
+            idx.put(0, LLVMConstInt(i64_ty, 0, 0))
+            idx.put(1, LLVMConstInt(i64_ty, index, 0))
+            let at LLVMBuildInBoundsGEP2(builder, array_ty, array, idx.data, 2, "gpu.at")
+            LLVMBuildStore(builder, value, at)
+        }
+
+        ; A scalar of the environment into its words, as GpuMsl reads it
+        ; back: a bool as 0 or 1, 32 bits as they are, 64 as low then high.
+        ; False where the value is not of the type its kind says.
+        procedure gpu_store_scalar(mutable this, mutable v: LLVMValueRef, kind: int, mutable words_ty: LLVMTypeRef, mutable words: LLVMValueRef, word: size_t) returns bool
+        {
+            if v = null
+                return false
+            let i32_ty LLVMInt32TypeInContext(context)
+            let ty LLVMTypeOf(v)
+            let tk LLVMGetTypeKind(ty)
+            if kind = 1
+            {
+                if tk <> LLVMTypeKind.Integer() or LLVMGetIntTypeWidth(ty) > 8
+                    return false
+                gpu_store_slot(LLVMBuildZExt(builder, v, i32_ty, "gpu.bool"), words_ty, words, word)
+                return true
+            }
+            if kind = 2 or kind = 3
+            {
+                if tk <> LLVMTypeKind.Integer() or LLVMGetIntTypeWidth(ty) <> 32
+                    return false
+                gpu_store_slot(v, words_ty, words, word)
+                return true
+            }
+            if kind = 4
+            {
+                if tk <> LLVMTypeKind.Float()
+                    return false
+                gpu_store_slot(LLVMBuildBitCast(builder, v, i32_ty, "gpu.bits"), words_ty, words, word)
+                return true
+            }
+            if kind = 5 or kind = 6
+            {
+                if tk <> LLVMTypeKind.Integer() or LLVMGetIntTypeWidth(ty) <> 64
+                    return false
+                gpu_store_slot(LLVMBuildTrunc(builder, v, i32_ty, "gpu.lo"), words_ty, words, word)
+                let high LLVMBuildLShr(builder, v, LLVMConstInt(ty, 32, 0), "gpu.high")
+                gpu_store_slot(LLVMBuildTrunc(builder, high, i32_ty, "gpu.hi"), words_ty, words, word + 1)
+                return true
+            }
+            false
+        }
+
+        ; A buffer for the host: where its elements are, how many, and the
+        ; bytes of one. The operand is a Vector, a Slice or an Array as the
+        ; body names it -- the record itself, or its address (a reference, a
+        ; record handed over by address, a record on a page). A Vector and a
+        ; Slice are (length, data), an Array (length, capacity, buffer).
+        ; False where the value is of neither shape.
+        procedure gpu_bind_buffer(mutable this, mutable op: PlannedOperand, kind: int, mutable bufs_ty: LLVMTypeRef, mutable bufs: LLVMValueRef, mutable sizes_ty: LLVMTypeRef, mutable sizes: LLVMValueRef, slot: size_t) returns bool
+        {
+            let v emit_operand op
+            if v = null
+                return false
+            let i64_ty LLVMInt64TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var fields Vector[LLVMTypeRef](3)
+            var n_fields: u32 2
+            var data_index: u32 1
+            fields.put(0, i64_ty)
+            fields.put(1, ptr_ty)
+            if GpuKernel.GpuKernel.is_array_buffer(op.result_type)
+            {
+                fields.put(1, i64_ty)
+                fields.put(2, ptr_ty)
+                n_fields := 3
+                data_index := 2
+            }
+            let record_ty LLVMStructTypeInContext(context, fields.data, n_fields, 0)
+            var length: LLVMValueRef null
+            var data: LLVMValueRef null
+            let vk LLVMGetTypeKind(LLVMTypeOf(v))
+            if vk = LLVMTypeKind.Struct()
+            {
+                if LLVMCountStructElementTypes(LLVMTypeOf(v)) <> n_fields
+                    return false
+                length := LLVMBuildExtractValue(builder, v, 0, "gpu.length")
+                data := LLVMBuildExtractValue(builder, v, data_index, "gpu.data")
+            }
+            else if vk = LLVMTypeKind.Pointer()
+            {
+                var at v
+                if LLVMIsAAllocaInst(v) <> null
+                {
+                    ; a slot: of the record, or of its address
+                    let slot_kind LLVMGetTypeKind(LLVMGetAllocatedType(v))
+                    if slot_kind = LLVMTypeKind.Pointer()
+                        at := LLVMBuildLoad2(builder, ptr_ty, v, "gpu.record")
+                    else if slot_kind <> LLVMTypeKind.Struct()
+                        return false
+                }
+                let length_at LLVMBuildStructGEP2(builder, record_ty, at, 0, "gpu.length.at")
+                length := LLVMBuildLoad2(builder, i64_ty, length_at, "gpu.length")
+                let data_at LLVMBuildStructGEP2(builder, record_ty, at, data_index, "gpu.data.at")
+                data := LLVMBuildLoad2(builder, ptr_ty, data_at, "gpu.data")
+            }
+            else
+                return false
+            let lt LLVMTypeOf(length)
+            if LLVMGetTypeKind(lt) <> LLVMTypeKind.Integer() or LLVMGetIntTypeWidth(lt) <> 64
+                return false
+            if LLVMGetTypeKind(LLVMTypeOf(data)) <> LLVMTypeKind.Pointer()
+                return false
+            var stride: size_t 4
+            if kind = 5 or kind = 6
+                stride := 8
+            gpu_store_slot(data, bufs_ty, bufs, slot)
+            gpu_store_slot(length, sizes_ty, sizes, slot * 2)
+            gpu_store_slot(LLVMConstInt(i64_ty, stride, 0), sizes_ty, sizes, slot * 2 + 1)
+            true
         }
 
         ; Milestone 4.4: should this loop site dispatch through the engine?

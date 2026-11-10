@@ -1,0 +1,154 @@
+; What a kernel takes and gives, in every shape the program can hold it: a
+; Vector of the routine, one behind a reference, a Slice, an Array, a length,
+; scalars of each kind, a name that changes between two runs of the loop,
+; an index read out of another buffer -- and an output whose rounds do not
+; all write.
+; cards: 11
+; no-rounds: 1
+
+define SCALE: i32 3
+
+procedure through_ref(src: ref[Vector[i32]], mutable out: ref[Vector[i32]])
+{
+    for i in src.length
+        out.put(i, src[i] * SCALE + (src.length as i32))
+}
+
+procedure through_slice(src: Slice[i32], mutable out: ref[Vector[i32]], k: i32)
+{
+    for i in src.length
+        out.put(i, src[i] + k)
+}
+
+procedure from_array(src: ref[Array[i32]], mutable out: ref[Vector[i32]])
+{
+    for i in out.length
+        out.put(i, src[i] - 1)
+}
+
+procedure gather(src: ref[Vector[i32]], idx: ref[Vector[u32]], mutable out: ref[Vector[i32]])
+{
+    for i in out.length
+        out.put(i, src[idx[i] as size_t])
+}
+
+procedure some(src: ref[Vector[i32]], mutable out: ref[Vector[i32]])
+{
+    for i in src.length
+    {
+        if src[i] % 3 = 0
+            continue
+        if src[i] > 50
+            out.put(i, src[i])
+    }
+}
+
+procedure scalars(src: ref[Vector[i32]], mutable out: ref[Vector[f32]], scale: f32, bias: u32, wide: int, far: u64, on: bool)
+{
+    for i in src.length
+    {
+        let base (src[i] as f32) * scale
+        let lift ((bias >> 4) as i32) + ((wide >> 40) as i32) + ((far >> 60) as i32)
+        let v if on: base + (lift as f32) else base
+        out.put(i, v)
+    }
+}
+
+procedure show(what: String, v: ref[Vector[i32]])
+{
+    var sb StringBuilder()
+    sb.append what
+    var i: size_t 0
+    while i < v.length
+    {
+        sb.append " "
+        sb.append(v[i] as int)
+        i := i + 1
+    }
+    print(sb.to_string())
+}
+
+let n: size_t 24
+var a Vector[i32](n)
+var k: size_t 0
+while k < n
+{
+    a.put(k, (k as i32) * 7 - 20)
+    k := k + 1
+}
+
+var b Vector[i32](n)
+through_ref(&a, &b)
+show("ref", &b)
+
+; the same kernel three times: compiled once, run with another scalar each
+var round: i32 0
+while round < 3
+{
+    through_slice(a.as_slice(), &b, round * 100)
+    show("slice", &b)
+    round := round + 1
+}
+
+var list Array[i32]()
+k := 0
+while k < n
+{
+    list.add((k as i32) * (k as i32))
+    k := k + 1
+}
+from_array(&list, &b)
+show("array", &b)
+
+var idx Vector[u32](n)
+k := 0
+while k < n
+{
+    idx.put(k, ((k * 5 + 3) % n) as u32)
+    k := k + 1
+}
+gather(&a, &idx, &b)
+show("gather", &b)
+
+; a round that writes nothing leaves what the output holds
+k := 0
+while k < n
+{
+    b.put(k, 0 - 1)
+    k := k + 1
+}
+some(&a, &b)
+show("some", &b)
+
+var fs Vector[f32](n)
+scalars(&a, &fs, 0.25, 4000000000, 5000000000000, 0xF000000000000000, true)
+var line StringBuilder()
+k := 0
+while k < n
+{
+    line.append " "
+    line.append(fs[k] as f64)
+    k := k + 1
+}
+print(line.to_string())
+
+; a loop of the program itself, over names that change
+var c Vector[i32](n)
+var t: i32 0
+while t < 2
+{
+    for i in n
+        c.put(i, a[i] + t * 1000)
+    show("main", &c)
+    t := t + 1
+}
+
+; no round: the card is not asked, nothing is written
+var empty Vector[i32](0)
+var nothing Vector[i32](0)
+through_ref(&empty, &nothing)
+print "`nothing.length`"
+
+; the same Array into another output: the kernel compiled before runs again
+from_array(&list, &c)
+show("array again", &c)

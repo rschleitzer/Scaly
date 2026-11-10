@@ -1,0 +1,39 @@
+; What has no result on the processor has none on the card: a division by
+; zero, a shift by the width or more, a floating-point number no integer
+; holds. A round that meets one stops the card's run; the results are thrown
+; away and the processor's loop computes what it always did.
+; cards: 1
+; declines: 3
+
+let n: size_t 8
+var a Vector[i32](n)
+var d Vector[i32](n)
+var f Vector[f32](n)
+var k: size_t 0
+while k < n
+{
+    a.put(k, (k as i32) * 1000 + 17)
+    d.put(k, (k as i32) - 3)
+    f.put(k, (k as f32) * 0.75)
+    k := k + 1
+}
+
+var q Vector[i32](n)
+var s Vector[i32](n)
+var t Vector[i32](n)
+var fine Vector[i32](n)
+for i in n
+    q.put(i, a[i] / d[i])
+for i in n
+    s.put(i, a[i] << (d[i] + 30))
+for i in n
+    t.put(i, (f[i] * 1000000000.0) as i32)
+for i in n
+    fine.put(i, a[i] / (d[i] | 1))
+
+k := 0
+while k < n
+{
+    print "`fine[k]`"
+    k := k + 1
+}

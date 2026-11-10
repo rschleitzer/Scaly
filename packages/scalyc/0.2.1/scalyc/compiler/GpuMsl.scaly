@@ -1,0 +1,1985 @@
+; GpuMsl.scaly - a kernel of GpuKernel's, written in the Metal Shading Language.
+;
+; GpuKernel says which parallel `for` a graphics card could run and what it
+; takes, gives and calls. This pass walks the same planned body again and
+; writes it as the source of one Metal compute kernel:
+;   - the round's number is the thread's position in the grid;
+;   - the scalars of the environment arrive as 32-bit words in one buffer
+;     (a 64-bit one as two words, low then high), followed by the element
+;     count of every input buffer, which the host appends;
+;   - the inputs and the outputs are buffers of their own; a put writes at
+;     the thread's position and nowhere else;
+;   - a called function is a function of the source, callees first.
+;
+; The source computes what the processor computes, bit for bit, or it is
+; not written at all:
+;   - every value has the type the plan gives it; an integer is widened or
+;     reinterpreted only where the processor's code does the same, and
+;     signed arithmetic is done unsigned, where it wraps as it does there;
+;   - every operation stands in a statement of its own, in the order the
+;     processor runs them;
+;   - what the processor would stop at -- an index out of bounds, a
+;     division by zero, a shift by more than the width, a floating-point
+;     number no integer holds -- sets the fault flag F. The host then throws
+;     the results away and the processor's loop runs and stops as it always
+;     did. Every loop of the source ends where the flag is set.
+; Whatever this pass does not know how to say exactly is REFUSED, with the
+; first reason kept: the loop then stays on the processor alone.
+;
+; The names of the source are generated: u<i> a scalar of the environment,
+; n<i> the length of input i, b<i> an input, o<i> an output, v<n> a name
+; the program binds, t<n> a value on its way, p<i> a parameter, f<i> a
+; function.
+;
+; Consumers: `--gpu-msl` prints the source per loop; the emitter hands it
+; to the host under `--gpu`.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.GpuKernel
+use scalyc.compiler.TaskPlanner.TaskPlanner
+
+define GpuMsl
+{
+    define GpuMsl
+    (
+        ; One slot per `for` loop, in the TaskPlanner's walk order: file,
+        ; byte offset, and the kernel's source or why there is none.
+        report_files: Array[String]
+        report_offsets: Array[size_t]
+        report_texts: Array[String]
+
+        ; The first thing the kernel being written could not say.
+        var m_refused: bool
+        var m_reason: String
+
+        ; How many t<n> and v<n> the routine being written has.
+        var m_temps: size_t
+        var m_made: size_t
+
+        ; The names bound where the walk stands, innermost last: the
+        ; program's name, the source's, its kind (GpuKernel.scalar_kind) and
+        ; whether it can change (1) or not (0).
+        m_names: Array[String]
+        m_cnames: Array[String]
+        m_kinds: Array[int]
+        m_mutables: Array[int]
+
+        ; how many loops of the source enclose the walk
+        var m_depth: size_t
+        ; a called function is being written, and what it answers
+        var m_in_function: bool
+        var m_return_kind: int
+        ; the 32-bit words the kernel's scalars take
+        var m_uniform_words: size_t
+        ; the kind of the value an expression just answered
+        var m_atom_kind: int
+        ; where the value of a statement in value position goes ("" for
+        ; nowhere: a function's own result is returned)
+        var m_sink: String
+        var m_sink_kind: int
+    )
+    {
+        init()
+        {
+            report_files := Array[String]^this()
+            report_offsets := Array[size_t]^this()
+            report_texts := Array[String]^this()
+            m_refused := false
+            m_reason := String^this("")
+            m_temps := 0
+            m_made := 0
+            m_names := Array[String]^this()
+            m_cnames := Array[String]^this()
+            m_kinds := Array[int]^this()
+            m_mutables := Array[int]^this()
+            m_depth := 0
+            m_in_function := false
+            m_return_kind := 0
+            m_uniform_words := 0
+            m_atom_kind := 0
+            m_sink := String^this("")
+            m_sink_kind := 0
+        }
+
+        ; ================================================================
+        ; Entry point of the report: per loop the TaskPlanner recorded, the
+        ; kernel's source, or why it has none.
+        ; ================================================================
+        procedure analyze(mutable this: GpuMsl, mutable gk: ref[GpuKernel.GpuKernel], plan: Plan, tp: ref[TaskPlanner])
+        {
+            gk.plan_functions := plan.functions
+            gk.plan_globals := plan.globals
+            var i: size_t 0
+            while i < tp.report_fors.length
+            {
+                let fr_ptr tp.report_fors.get i
+                let file_ptr tp.report_files.get i
+                let off_ptr tp.report_offsets.get i
+                let verdict_ptr tp.report_verdicts.get i
+                if fr_ptr <> null and file_ptr <> null and off_ptr <> null and verdict_ptr <> null
+                {
+                    let file_copy String^this((*file_ptr))
+                    report_files.add file_copy
+                    report_offsets.add((*off_ptr))
+                    if (*verdict_ptr) = "parallel"
+                    {
+                        gk.classify_loop(fr_ptr.unwrap())
+                        if gk.k_blocked
+                        {
+                            let why gk.k_reason
+                            this.add_text("no kernel: `why`")
+                        }
+                        else
+                        {
+                            let source this.kernel_source(gk, fr_ptr.unwrap())
+                            if m_refused
+                                this.add_text("refused: `m_reason`")
+                            else
+                                this.add_text("kernel\n`source`")
+                        }
+                    }
+                    else
+                    {
+                        let why (*verdict_ptr)
+                        this.add_text("no kernel: `why`")
+                    }
+                }
+                i := i + 1
+            }
+        }
+
+        procedure add_text(mutable this: GpuMsl, text: String)
+        {
+            let text_copy String^this(text)
+            report_texts.add text_copy
+        }
+
+        ; ================================================================
+        ; The source of the loop gk just classified and did not block. ""
+        ; where it is refused: m_refused and m_reason say so.
+        ; ================================================================
+        procedure kernel_source(mutable this: GpuMsl, gk: ref[GpuKernel.GpuKernel], fr: PlannedFor) returns String
+        {
+            m_refused := false
+            m_reason := String^this("")
+            m_temps := 0
+            m_made := 0
+            m_names.length := 0
+            m_cnames.length := 0
+            m_kinds.length := 0
+            m_mutables.length := 0
+            m_depth := 0
+            m_in_function := false
+            m_return_kind := 0
+            m_uniform_words := 0
+            m_atom_kind := 0
+            m_sink := String^this("")
+            m_sink_kind := 0
+
+            var out StringBuilder()
+            out.append "#include <metal_stdlib>\nusing namespace metal;\n#pragma METAL fp math_mode(safe)\n#pragma METAL fp contract(off)\n"
+
+            ; the functions, a callee before its caller
+            var fi: size_t 0
+            while fi < gk.k_functions.length
+            {
+                let sym_ptr gk.k_functions.get fi
+                if sym_ptr <> null
+                    this.function_source(&out, gk, (*sym_ptr), fi)
+                fi := fi + 1
+            }
+            if m_refused
+                return ""
+
+            ; the kernel's head: the words, the fault flag, inputs, outputs
+            let n_in gk.k_buffers.length
+            out.append "kernel void k(constant uint* U [[buffer(0)]], device atomic_uint* FLT [[buffer(1)]]"
+            var bi: size_t 0
+            while bi < n_in
+            {
+                let kind GpuMsl.int_at(&gk.k_buffer_kinds, bi as int)
+                if GpuKernel.GpuKernel.kind_is_integer(kind) = false and kind <> 4
+                {
+                    this.refuse("a buffer of no number of a card's")
+                    return ""
+                }
+                let slot bi + 2
+                out.append ", const device `GpuMsl.type_name(kind)`* b`bi` [[buffer(`slot`)]]"
+                bi := bi + 1
+            }
+            var oi: size_t 0
+            while oi < gk.k_outputs.length
+            {
+                let kind GpuMsl.int_at(&gk.k_output_kinds, oi as int)
+                if GpuKernel.GpuKernel.kind_is_integer(kind) = false and kind <> 4
+                {
+                    this.refuse("an output of no number of a card's")
+                    return ""
+                }
+                let slot oi + 2 + n_in
+                out.append ", device `GpuMsl.type_name(kind)`* o`oi` [[buffer(`slot`)]]"
+                oi := oi + 1
+            }
+            out.append ", uint gid [[thread_position_in_grid]])\n{\n    uint F = 0u;\n"
+
+            ; the scalars of the environment, out of their words
+            var word: size_t 0
+            var ui: size_t 0
+            while ui < gk.k_uniforms.length
+            {
+                let kind GpuMsl.int_at(&gk.k_uniform_kinds, ui as int)
+                let after word + 1
+                if kind = 1
+                    out.append "    const bool u`ui` = U[`word`] != 0u;\n"
+                else if kind = 2
+                    out.append "    const int u`ui` = as_type<int>(U[`word`]);\n"
+                else if kind = 3
+                    out.append "    const uint u`ui` = U[`word`];\n"
+                else if kind = 4
+                    out.append "    const float u`ui` = as_type<float>(U[`word`]);\n"
+                else if kind = 5
+                    out.append "    const long u`ui` = (long)((ulong)U[`word`] | ((ulong)U[`after`] << 32));\n"
+                else if kind = 6
+                    out.append "    const ulong u`ui` = (ulong)U[`word`] | ((ulong)U[`after`] << 32);\n"
+                else
+                {
+                    this.refuse("a scalar of no kind a card has")
+                    return ""
+                }
+                if kind = 5 or kind = 6
+                    word := word + 2
+                else
+                    word := word + 1
+                ui := ui + 1
+            }
+            m_uniform_words := word
+
+            ; the lengths of the inputs, which the host appends
+            bi := 0
+            while bi < n_in
+            {
+                let lo word + 2 * bi
+                let hi lo + 1
+                out.append "    const ulong n`bi` = (ulong)U[`lo`] | ((ulong)U[`hi`] << 32);\n"
+                bi := bi + 1
+            }
+
+            ; the round's number
+            if fr.expr = null or fr.expr.length <> 1
+            {
+                this.refuse("a count of rounds that is no single value")
+                return ""
+            }
+            let ck GpuMsl.planned_kind((*fr.expr)[0])
+            if GpuKernel.GpuKernel.kind_is_integer(ck) = false
+            {
+                this.refuse("a count of rounds that is no integer")
+                return ""
+            }
+            let ct GpuMsl.type_name(ck)
+            out.append "    const `ct` v0 = (`ct`)gid;\n"
+            this.declare(fr.identifier, "v0", ck, 0)
+            m_made := 1
+            m_temps := 0
+
+            out.append "    do\n    {\n"
+            this.body(&out, gk, fr.body, 2, false)
+            out.append "    } while (false);\n    if (F != 0u) atomic_store_explicit(FLT, 1u, memory_order_relaxed);\n}\n"
+            this.end_scope(0)
+            if m_refused
+                return ""
+            out.to_string()
+        }
+
+        ; ================================================================
+        ; Verdict bookkeeping
+        ; ================================================================
+
+        ; Record the first thing that cannot be said. Later calls are no-ops.
+        procedure refuse(mutable this: GpuMsl, why: String)
+        {
+            if m_refused
+                return
+            m_refused := true
+            m_reason := String^this(why)
+        }
+
+        procedure refuse_named(mutable this: GpuMsl, prefix: String, name: String)
+        {
+            if m_refused
+                return
+            let msg "`prefix``name`"
+            this.refuse(msg)
+        }
+
+        ; ================================================================
+        ; Kinds (GpuKernel.scalar_kind): 1 bool, 2 i32, 3 u32, 4 f32, 5 a
+        ; signed and 6 an unsigned 64-bit integer.
+        ; ================================================================
+
+        function type_name(kind: int) returns String
+        {
+            if kind = 1
+                return "bool"
+            if kind = 2
+                return "int"
+            if kind = 3
+                return "uint"
+            if kind = 4
+                return "float"
+            if kind = 5
+                return "long"
+            if kind = 6
+                return "ulong"
+            "void"
+        }
+
+        ; The bits of an integer kind, 0 for any other.
+        function width(kind: int) returns int
+        {
+            if kind = 2 or kind = 3
+                return 32
+            if kind = 5 or kind = 6
+                return 64
+            0
+        }
+
+        function is_int(kind: int) returns bool
+        {
+            if kind = 2 or kind = 3 or kind = 5 or kind = 6
+                return true
+            false
+        }
+
+        function is_signed(kind: int) returns bool
+        {
+            if kind = 2 or kind = 5
+                return true
+            false
+        }
+
+        function int_kind(bits: int, signed: bool) returns int
+        {
+            if bits = 32
+            {
+                if signed
+                    return 2
+                return 3
+            }
+            if signed
+                return 5
+            6
+        }
+
+        function unsigned_of(kind: int) returns int
+        {
+            if kind = 2
+                return 3
+            if kind = 5
+                return 6
+            kind
+        }
+
+        function signed_of(kind: int) returns int
+        {
+            if kind = 3
+                return 2
+            if kind = 6
+                return 5
+            kind
+        }
+
+        function zero(kind: int) returns String
+        {
+            if kind = 1
+                return "false"
+            if kind = 2
+                return "0"
+            if kind = 3
+                return "0u"
+            if kind = 4
+                return "0.0f"
+            if kind = 5
+                return "((long)0)"
+            "((ulong)0u)"
+        }
+
+        ; A small number as an integer of that kind.
+        function small(kind: int, n: int) returns String
+        {
+            if kind = 2
+                return "`n`"
+            if kind = 3
+                return "`n`u"
+            if kind = 5
+                return "((long)`n`)"
+            "((ulong)`n`u)"
+        }
+
+        ; The least value of a signed kind.
+        function least(kind: int) returns String
+        {
+            if kind = 2
+                return "as_type<int>(0x80000000u)"
+            "((long)((ulong)1u << 63))"
+        }
+
+        ; The kind the plan gives an operand: its last member's where it
+        ; reads one (the length of a buffer), else its own.
+        function planned_kind(op: PlannedOperand) returns int
+        {
+            if op.member_access <> null and op.member_access.length > 0
+            {
+                let ma_ptr op.member_access.get(op.member_access.length - 1)
+                if ma_ptr = null
+                    return 0
+                let ma ma_ptr.unwrap()
+                return GpuKernel.GpuKernel.scalar_kind(ma.result_type)
+            }
+            GpuKernel.GpuKernel.scalar_kind(op.result_type)
+        }
+
+        ; A count of rounds the processor can compute twice without a
+        ; difference: a constant or a name, a field read off it, under casts
+        ; and groupings. The emitter computes it for the card and, where the
+        ; card declines, the processor's loop computes it again.
+        function is_plain_count(op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when c: Constant
+                    return GpuKernel.GpuKernel.has_members(op) = false
+                when g: GlobalRef
+                    return GpuKernel.GpuKernel.has_members(op) = false
+                when v: Variable
+                {
+                    if op.member_access = null
+                        return true
+                    var i: size_t 0
+                    while i < op.member_access.length
+                    {
+                        let ma_ptr op.member_access.get i
+                        if ma_ptr = null or ma_ptr.is_method
+                            return false
+                        i := i + 1
+                    }
+                    return true
+                }
+                when as_expr: As
+                {
+                    if GpuKernel.GpuKernel.has_members(op) or as_expr.value = null
+                        return false
+                    let r as_expr.value
+                    return GpuMsl.is_plain_count((*r))
+                }
+                when tp: Tuple
+                {
+                    if GpuKernel.GpuKernel.has_members(op) or GpuKernel.GpuKernel.is_grouping(tp) = false
+                        return false
+                    let c_ptr tp.components.get 0
+                    if c_ptr = null
+                        return false
+                    let comp c_ptr.unwrap()
+                    return GpuMsl.is_plain_count((*comp.value)[0])
+                }
+                else
+                    0
+            false
+        }
+
+        function int_at(kinds: ref[Array[int]], index: int) returns int
+        {
+            if index < 0
+                return 0
+            let p kinds.get(index as size_t)
+            if p = null
+                return 0
+            (*p)
+        }
+
+        function indent_of(depth: size_t) returns String
+        {
+            var sb StringBuilder()
+            var i: size_t 0
+            while i < depth
+            {
+                sb.append "    "
+                i := i + 1
+            }
+            sb.to_string()
+        }
+
+        ; An integer of the plan as a constant of that kind: its low bits.
+        function integer_literal(value: size_t, kind: int) returns String
+        {
+            let lo: size_t value & 0xFFFFFFFF
+            let hi: size_t value >> 32
+            if kind = 2
+            {
+                if lo < 0x80000000
+                    return "`lo`"
+                return "as_type<int>(`lo`u)"
+            }
+            if kind = 3
+                return "`lo`u"
+            if kind = 5
+            {
+                if value < 0x80000000
+                    return "((long)`value`)"
+                return "((long)(((ulong)`hi`u << 32) | (ulong)`lo`u))"
+            }
+            if value < 0x100000000
+                return "((ulong)`value`u)"
+            "(((ulong)`hi`u << 32) | (ulong)`lo`u)"
+        }
+
+        ; An integer as wide as the operation it enters: widened by its OWN
+        ; signedness, as the processor's code widens it.
+        function widened(atom: String, kind: int, bits: int) returns String
+        {
+            if GpuMsl.width(kind) = bits
+                return String(atom)
+            let t GpuMsl.type_name(GpuMsl.int_kind(bits, GpuMsl.is_signed(kind)))
+            "((`t`)`atom`)"
+        }
+
+        ; The source's spelling of an operator that wraps: "" for any other.
+        function wrapping_text(nm: String) returns String
+        {
+            match nm
+                case "+"
+                    return "+"
+                case "-"
+                    return "-"
+                case "*"
+                    return "*"
+                case "&"
+                    return "&"
+                case "|"
+                    return "|"
+                case "xor" case "^"
+                    return "^"
+            ""
+        }
+
+        ; The source's spelling of a comparison: "" for any other operator.
+        function comparison_text(nm: String) returns String
+        {
+            match nm
+                case "="
+                    return "=="
+                case "<>"
+                    return "!="
+                case "<"
+                    return "<"
+                case "<="
+                    return "<="
+                case ">"
+                    return ">"
+                case ">="
+                    return ">="
+            ""
+        }
+
+        ; ================================================================
+        ; Names
+        ; ================================================================
+
+        procedure temp(mutable this: GpuMsl) returns String
+        {
+            let n m_temps
+            m_temps := m_temps + 1
+            "t`n`"
+        }
+
+        procedure fresh_local(mutable this: GpuMsl) returns String
+        {
+            let n m_made
+            m_made := m_made + 1
+            "v`n`"
+        }
+
+        procedure declare(mutable this: GpuMsl, name: String, cname: String, kind: int, changes: int)
+        {
+            let name_copy String^this(name)
+            m_names.add name_copy
+            let cname_copy String^this(cname)
+            m_cnames.add cname_copy
+            m_kinds.add kind
+            m_mutables.add changes
+        }
+
+        procedure end_scope(mutable this: GpuMsl, mark: size_t)
+        {
+            if m_names.length <= mark
+                return
+            m_names.length := mark
+            m_cnames.length := mark
+            m_kinds.length := mark
+            m_mutables.length := mark
+        }
+
+        ; Where name is bound, innermost first; -1 when it comes from
+        ; outside the routine being written.
+        function lookup(this: GpuMsl, name: String) returns int
+        {
+            var i m_names.length
+            while i > 0
+            {
+                i := i - 1
+                let p m_names.get i
+                if p <> null and (*p) = name
+                    return i as int
+            }
+            0 - 1
+        }
+
+        function cname_at(this: GpuMsl, index: int) returns String
+        {
+            let p m_cnames.get(index as size_t)
+            if p = null
+                return ""
+            String((*p))
+        }
+
+        ; A value of one kind where another is wanted: itself, or an integer
+        ; of the same width read as the other. Anything else would be a
+        ; conversion nobody wrote.
+        procedure fit(mutable this: GpuMsl, atom: String, have: int, want: int) returns String
+        {
+            if m_refused
+                return ""
+            if have = want
+                return String(atom)
+            if GpuMsl.is_int(have) and GpuMsl.is_int(want) and GpuMsl.width(have) = GpuMsl.width(want)
+                return "((`GpuMsl.type_name(want)`)`atom`)"
+            let msg "a `GpuMsl.type_name(have)` where a `GpuMsl.type_name(want)` stands"
+            this.refuse(msg)
+            ""
+        }
+
+        ; ================================================================
+        ; Functions
+        ; ================================================================
+
+        ; Where the function of that symbol is in the plan, with a body;
+        ; -1 where it is not.
+        function function_index(gk: ref[GpuKernel.GpuKernel], mangled: String) returns int
+        {
+            let fns: ref[Vector[PlannedFunction]]? gk.plan_functions
+            if fns = null
+                return 0 - 1
+            var i: size_t 0
+            while i < fns.length
+            {
+                let f_ptr fns.get i
+                if f_ptr <> null and f_ptr.mangled_name = mangled
+                {
+                    choose f_ptr.impl
+                        when action: Action
+                            return i as int
+                        else
+                            0
+                }
+                i := i + 1
+            }
+            0 - 1
+        }
+
+        procedure function_source(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], mangled: String, fi: size_t)
+        {
+            if m_refused
+                return
+            let idx GpuMsl.function_index(gk, mangled)
+            let fns: ref[Vector[PlannedFunction]]? gk.plan_functions
+            if idx < 0 or fns = null
+            {
+                this.refuse("calls a function whose body is not here")
+                return
+            }
+            let f_ptr fns.get(idx as size_t)
+            if f_ptr = null
+                return
+            this.function_text(out, gk, f_ptr.unwrap(), fi)
+        }
+
+        procedure function_text(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], func: PlannedFunction, fi: size_t)
+        {
+            if func.return_type = null
+            {
+                this.refuse_named(func.name, " answers nothing")
+                return
+            }
+            let rt func.return_type
+            let rk GpuKernel.GpuKernel.scalar_kind((*rt))
+            if rk < 1 or rk > 6
+            {
+                this.refuse_named(func.name, " answers no number of a card's")
+                return
+            }
+            m_in_function := true
+            m_return_kind := rk
+            m_depth := 0
+            m_temps := 0
+            m_made := 0
+            out.append "static `GpuMsl.type_name(rk)` f`fi`("
+            if func.input <> null
+            {
+                var pi: size_t 0
+                while pi < func.input.length
+                {
+                    let p_ptr func.input.get pi
+                    if p_ptr <> null
+                    {
+                        let p p_ptr.unwrap()
+                        if p.name = null or p.item_type = null
+                        {
+                            this.refuse("a parameter without a name or a type")
+                            return
+                        }
+                        let pt p.item_type
+                        let pk GpuKernel.GpuKernel.scalar_kind((*pt))
+                        if pk < 1 or pk > 6
+                        {
+                            this.refuse("a parameter that is no number of a card's")
+                            return
+                        }
+                        let pname (*p.name)
+                        let cname "p`pi`"
+                        out.append "`GpuMsl.type_name(pk)` `cname`, "
+                        this.declare(pname, cname, pk, 0)
+                    }
+                    pi := pi + 1
+                }
+            }
+            out.append "uint& F)\n{\n"
+            choose func.impl
+                when action: Action
+                    this.body(out, gk, action, 1, true)
+                else
+                    0
+            ; a body that returns on every path never comes here
+            out.append "    return `GpuMsl.zero(rk)`;\n}\n"
+            this.end_scope(0)
+            m_in_function := false
+            m_return_kind := 0
+        }
+
+        ; ================================================================
+        ; Statements. `tail` says the statement's value is the value of what
+        ; it ends: a function's result, or a statement in value position.
+        ; ================================================================
+
+        ; The statements of a body: a block's own, without braces of its own.
+        procedure body(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], act: PlannedAction, depth: size_t, tail: bool)
+        {
+            if m_refused
+                return
+            this.action(out, gk, act, depth, tail)
+        }
+
+        procedure statements(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], ss: ref[Vector[PlannedStatement]]?, depth: size_t, tail: bool)
+        {
+            if ss = null
+                return
+            let n ss.length
+            ; the block's bindings end with it
+            let mark m_names.length
+            var i: size_t 0
+            while i < n
+            {
+                if m_refused
+                    return
+                let s_ptr ss.get i
+                if s_ptr <> null
+                    this.statement(out, gk, s_ptr.unwrap(), depth, tail and i + 1 = n)
+                i := i + 1
+            }
+            this.end_scope(mark)
+        }
+
+        procedure statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], stmt: PlannedStatement, depth: size_t, tail: bool)
+        {
+            if m_refused
+                return
+            let ind GpuMsl.indent_of(depth)
+            choose stmt
+                when action: Action
+                    this.action(out, gk, action, depth, tail)
+                when binding: Binding
+                    this.binding(out, gk, binding, depth)
+                when ret: Return
+                    this.return_statement(out, gk, ret, depth)
+                when throw_stmt: Throw
+                    this.refuse("a throw")
+                when brk: Break
+                {
+                    if m_depth = 0
+                    {
+                        this.refuse("a break outside a loop of the kernel")
+                        return
+                    }
+                    out.append "`ind`break;\n"
+                }
+                when cont: Continue
+                {
+                    if m_in_function and m_depth = 0
+                    {
+                        this.refuse("a continue outside a loop of the function")
+                        return
+                    }
+                    out.append "`ind`continue;\n"
+                }
+        }
+
+        ; An action: an assignment when it has a target, else a statement or
+        ; a value -- which goes where `tail` says it is wanted.
+        procedure action(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], act: PlannedAction, depth: size_t, tail: bool)
+        {
+            if m_refused
+                return
+            let ind GpuMsl.indent_of(depth)
+            var has_target false
+            if act.target <> null and act.target.length > 0
+                has_target := true
+            if act.source = null or act.source.length = 0
+            {
+                if has_target
+                    this.refuse("an assignment without a value")
+                return
+            }
+            if act.source.length <> 1
+            {
+                this.refuse("an operation of several operands")
+                return
+            }
+            let op (*act.source)[0]
+            if has_target
+            {
+                if act.target.length <> 1
+                {
+                    this.refuse("a compound assignment target")
+                    return
+                }
+                this.assignment(out, gk, (*act.target)[0], op, depth)
+                return
+            }
+            if GpuKernel.GpuKernel.has_members(op) = false
+            {
+                ; control flow keeps its shape: its arms carry the tail
+                choose op.expr
+                    when blk: Block
+                    {
+                        this.statements(out, gk, blk.statements, depth, tail)
+                        return
+                    }
+                    when iff: If
+                    {
+                        this.if_statement(out, gk, iff, depth, tail)
+                        return
+                    }
+                    when wh: While
+                    {
+                        this.while_statement(out, gk, wh, depth)
+                        return
+                    }
+                    when rp: Repeat
+                    {
+                        this.repeat_statement(out, gk, rp, depth)
+                        return
+                    }
+                    when fr: For
+                    {
+                        this.for_statement(out, gk, fr, depth)
+                        return
+                    }
+                    when call: Call
+                    {
+                        if call.is_intrinsic = false and call.is_indirect = false and call.name = "put"
+                        {
+                            this.put_statement(out, gk, call, depth)
+                            return
+                        }
+                    }
+                    else
+                        0
+            }
+            let value this.operand(out, gk, op, depth)
+            if m_refused
+                return
+            if tail
+            {
+                let have m_atom_kind
+                if m_sink.get_length() > 0
+                {
+                    let fitted this.fit(value, have, m_sink_kind)
+                    out.append "`ind``m_sink` = `fitted`;\n"
+                }
+                else if m_in_function
+                {
+                    let fitted this.fit(value, have, m_return_kind)
+                    out.append "`ind`return `fitted`;\n"
+                }
+            }
+        }
+
+        ; `name := value` into a name of the round that can change.
+        procedure assignment(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], top: PlannedOperand, op: PlannedOperand, depth: size_t)
+        {
+            if GpuKernel.GpuKernel.has_members(top)
+            {
+                this.refuse("writes a member")
+                return
+            }
+            let ind GpuMsl.indent_of(depth)
+            choose top.expr
+                when v: Variable
+                {
+                    let li this.lookup(v.name)
+                    if li < 0
+                    {
+                        this.refuse_named("writes a name from outside: ", v.name)
+                        return
+                    }
+                    if GpuMsl.int_at(&m_mutables, li) = 0
+                    {
+                        this.refuse_named("writes a name that does not change: ", v.name)
+                        return
+                    }
+                    let value this.operand(out, gk, op, depth)
+                    if m_refused
+                        return
+                    let fitted this.fit(value, m_atom_kind, GpuMsl.int_at(&m_kinds, li))
+                    let cname this.cname_at(li)
+                    out.append "`ind``cname` = `fitted`;\n"
+                }
+                else
+                    this.refuse("an indirect write")
+        }
+
+        ; `let x …` / `var x …`: the value first, then the name.
+        procedure binding(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], b: PlannedBinding, depth: size_t)
+        {
+            if b.binding_item.name = null
+            {
+                this.refuse("a binding without a name")
+                return
+            }
+            let name (*b.binding_item.name)
+            if b.operation = null or b.operation.length <> 1
+            {
+                this.refuse_named("a binding without a single value: ", name)
+                return
+            }
+            let ind GpuMsl.indent_of(depth)
+            let value this.operand(out, gk, (*b.operation)[0], depth)
+            if m_refused
+                return
+            let have m_atom_kind
+            var want have
+            if b.binding_item.item_type <> null
+            {
+                let it b.binding_item.item_type
+                want := GpuKernel.GpuKernel.scalar_kind((*it))
+            }
+            if want < 1 or want > 6
+            {
+                this.refuse_named("a name that is no number of a card's: ", name)
+                return
+            }
+            let fitted this.fit(value, have, want)
+            if m_refused
+                return
+            let cname this.fresh_local()
+            let t GpuMsl.type_name(want)
+            var changes 0
+            if b.binding_type = "var" or b.binding_type = "mutable"
+                changes := 1
+            if changes = 1
+                out.append "`ind``t` `cname` = `fitted`;\n"
+            else
+                out.append "`ind`const `t` `cname` = `fitted`;\n"
+            this.declare(name, cname, want, changes)
+        }
+
+        procedure return_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], ret: PlannedReturn, depth: size_t)
+        {
+            if m_in_function = false
+            {
+                this.refuse("a return")
+                return
+            }
+            if ret.result = null or ret.result.length <> 1
+            {
+                this.refuse("a return without a single value")
+                return
+            }
+            let ind GpuMsl.indent_of(depth)
+            let value this.operand(out, gk, (*ret.result)[0], depth)
+            if m_refused
+                return
+            let fitted this.fit(value, m_atom_kind, m_return_kind)
+            out.append "`ind`return `fitted`;\n"
+        }
+
+        procedure if_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], iff: PlannedIf, depth: size_t, tail: bool)
+        {
+            if iff.prop <> null
+            {
+                this.refuse("tests for null")
+                return
+            }
+            if iff.condition = null or iff.condition.length <> 1
+            {
+                this.refuse("a condition that is no single value")
+                return
+            }
+            let ind GpuMsl.indent_of(depth)
+            let c this.operand(out, gk, (*iff.condition)[0], depth)
+            if m_refused
+                return
+            if m_atom_kind <> 1
+            {
+                this.refuse("a condition that is no bool")
+                return
+            }
+            out.append "`ind`if (`c`)\n"
+            this.arm(out, gk, iff.consequent, depth, tail)
+            if iff.alternative <> null
+            {
+                out.append "`ind`else\n"
+                this.arm(out, gk, iff.alternative, depth, tail)
+            }
+        }
+
+        procedure arm(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], stmt: ref[PlannedStatement]?, depth: size_t, tail: bool)
+        {
+            let ind GpuMsl.indent_of(depth)
+            out.append "`ind`{\n"
+            if stmt <> null
+            {
+                let s stmt
+                let mark m_names.length
+                this.statement(out, gk, (*s), depth + 1, tail)
+                this.end_scope(mark)
+            }
+            out.append "`ind`}\n"
+        }
+
+        ; Every loop of the source ends where the fault flag is set: the
+        ; values after a fault are not the processor's, and a loop over them
+        ; need not end.
+        procedure while_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], wh: PlannedWhile, depth: size_t)
+        {
+            if wh.cond.binding_item.name <> null
+            {
+                this.refuse("a while that binds a name")
+                return
+            }
+            if wh.cond.operation = null or wh.cond.operation.length <> 1
+            {
+                this.refuse("a condition that is no single value")
+                return
+            }
+            let ind GpuMsl.indent_of(depth)
+            out.append "`ind`while (F == 0u)\n`ind`{\n"
+            let mark m_names.length
+            ; the condition is computed again each round, inside the loop
+            let c this.operand(out, gk, (*wh.cond.operation)[0], depth + 1)
+            if m_refused
+                return
+            if m_atom_kind <> 1
+            {
+                this.refuse("a condition that is no bool")
+                return
+            }
+            out.append "`ind`    if (!`c`) break;\n"
+            m_depth := m_depth + 1
+            this.body(out, gk, wh.body, depth + 1, false)
+            m_depth := m_depth - 1
+            this.end_scope(mark)
+            out.append "`ind`}\n"
+        }
+
+        procedure repeat_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], rp: PlannedRepeat, depth: size_t)
+        {
+            let ind GpuMsl.indent_of(depth)
+            out.append "`ind`while (F == 0u)\n`ind`{\n"
+            let mark m_names.length
+            m_depth := m_depth + 1
+            this.body(out, gk, rp.body, depth + 1, false)
+            m_depth := m_depth - 1
+            this.end_scope(mark)
+            out.append "`ind`}\n"
+        }
+
+        ; `for j in n` inside the body: 0 up to n, the counter of n's type,
+        ; compared signed -- n is computed once, before the loop.
+        procedure for_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], fr: PlannedFor, depth: size_t)
+        {
+            if fr.is_iterator_loop
+            {
+                this.refuse("iterates a collection")
+                return
+            }
+            if fr.expr = null or fr.expr.length <> 1
+            {
+                this.refuse("a count that is no single value")
+                return
+            }
+            let ind GpuMsl.indent_of(depth)
+            let limit this.operand(out, gk, (*fr.expr)[0], depth)
+            if m_refused
+                return
+            let ck m_atom_kind
+            if GpuMsl.is_int(ck) = false
+            {
+                this.refuse("a count that is no integer")
+                return
+            }
+            let cname this.fresh_local()
+            let t GpuMsl.type_name(ck)
+            let st GpuMsl.type_name(GpuMsl.signed_of(ck))
+            let start GpuMsl.zero(ck)
+            out.append "`ind`for (`t` `cname` = `start`; F == 0u && (`st`)`cname` < (`st`)`limit`; `cname`++)\n`ind`{\n"
+            let mark m_names.length
+            this.declare(fr.identifier, cname, ck, 0)
+            m_depth := m_depth + 1
+            this.body(out, gk, fr.body, depth + 1, false)
+            m_depth := m_depth - 1
+            this.end_scope(mark)
+            out.append "`ind`}\n"
+        }
+
+        ; out.put(i, v): the round's result, at the thread's position. The
+        ; index is the round's number (GpuKernel.is_own_counter) and is not
+        ; computed again.
+        procedure put_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t)
+        {
+            if call.args = null or call.args.length <> 3
+            {
+                this.refuse("a put")
+                return
+            }
+            let name GpuKernel.GpuKernel.receiver_name(call)
+            let k GpuKernel.GpuKernel.index_of(&gk.k_outputs, name)
+            if k < 0
+            {
+                this.refuse_named("a put into what the kernel does not give: ", name)
+                return
+            }
+            let ek GpuMsl.int_at(&gk.k_output_kinds, k)
+            let ind GpuMsl.indent_of(depth)
+            let value this.operand(out, gk, (*call.args)[2], depth)
+            if m_refused
+                return
+            let fitted this.fit(value, m_atom_kind, ek)
+            out.append "`ind`o`k`[gid] = `fitted`;\n"
+        }
+
+        ; ================================================================
+        ; Values. An expression answers an ATOM -- a name or a constant of
+        ; the source -- after writing the statements that compute it, and
+        ; leaves its kind in m_atom_kind.
+        ; ================================================================
+
+        ; An operand where its value is used: of the kind the plan gives it.
+        procedure operand(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], op: PlannedOperand, depth: size_t) returns String
+        {
+            if m_refused
+                return ""
+            let atom this.expression(out, gk, op, depth)
+            if m_refused
+                return ""
+            let have m_atom_kind
+            let want GpuMsl.planned_kind(op)
+            if have < 1 or have > 6 or want < 1 or want > 6
+            {
+                this.refuse("a value that is no number of a card's")
+                return ""
+            }
+            let fitted this.fit(atom, have, want)
+            m_atom_kind := want
+            fitted
+        }
+
+        procedure expression(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], op: PlannedOperand, depth: size_t) returns String
+        {
+            m_atom_kind := 0
+            choose op.expr
+                when v: Variable
+                    return this.variable(out, gk, v.name, op, depth)
+                when c: Constant
+                {
+                    if GpuKernel.GpuKernel.has_members(op)
+                    {
+                        this.refuse("reads a member of a constant")
+                        return ""
+                    }
+                    return this.constant(c, GpuKernel.GpuKernel.scalar_kind(op.result_type))
+                }
+                when g: GlobalRef
+                    return this.global_value(gk, g, op)
+                when call: Call
+                {
+                    if GpuKernel.GpuKernel.has_members(op)
+                    {
+                        this.refuse_named("reads a member of what it gets from ", call.name)
+                        return ""
+                    }
+                    return this.call_value(out, gk, call, depth)
+                }
+                when as_expr: As
+                {
+                    if GpuKernel.GpuKernel.has_members(op)
+                    {
+                        this.refuse("reads a member of a cast")
+                        return ""
+                    }
+                    return this.cast(out, gk, as_expr, depth)
+                }
+                when tp: Tuple
+                {
+                    if GpuKernel.GpuKernel.has_members(op) or GpuKernel.GpuKernel.is_grouping(tp) = false
+                    {
+                        this.refuse("builds a tuple")
+                        return ""
+                    }
+                    let c_ptr tp.components.get 0
+                    if c_ptr = null
+                        return ""
+                    let comp c_ptr.unwrap()
+                    return this.operand(out, gk, (*comp.value)[0], depth)
+                }
+                when blk: Block
+                    return this.value_statement(out, gk, op, depth)
+                when iff: If
+                    return this.value_statement(out, gk, op, depth)
+                else
+                    this.refuse("an expression a kernel does not say")
+            ""
+        }
+
+        ; A block or an `if` in value position: its value goes to a name of
+        ; its own, which its last statements write.
+        procedure value_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], op: PlannedOperand, depth: size_t) returns String
+        {
+            if GpuKernel.GpuKernel.has_members(op)
+            {
+                this.refuse("reads a member of a statement's value")
+                return ""
+            }
+            let kind GpuKernel.GpuKernel.scalar_kind(op.result_type)
+            if kind < 1 or kind > 6
+            {
+                this.refuse("a statement whose value is no number of a card's")
+                return ""
+            }
+            let ind GpuMsl.indent_of(depth)
+            let t this.temp()
+            out.append "`ind``GpuMsl.type_name(kind)` `t` = `GpuMsl.zero(kind)`;\n"
+            let saved_sink String(m_sink)
+            let saved_kind m_sink_kind
+            m_sink := String^this(t)
+            m_sink_kind := kind
+            choose op.expr
+                when blk: Block
+                    this.statements(out, gk, blk.statements, depth, true)
+                when iff: If
+                    this.if_statement(out, gk, iff, depth, true)
+                else
+                    0
+            m_sink := String^this(saved_sink)
+            m_sink_kind := saved_kind
+            m_atom_kind := kind
+            t
+        }
+
+        ; A name: one the routine binds, or a scalar of the environment. One
+        ; that can change is read into a value at once -- what follows may
+        ; write it before the value is used.
+        procedure variable(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], name: String, op: PlannedOperand, depth: size_t) returns String
+        {
+            let li this.lookup(name)
+            if li >= 0
+            {
+                if GpuKernel.GpuKernel.has_members(op)
+                {
+                    this.refuse_named("reads a member of ", name)
+                    return ""
+                }
+                let kind GpuMsl.int_at(&m_kinds, li)
+                let cname this.cname_at(li)
+                m_atom_kind := kind
+                if GpuMsl.int_at(&m_mutables, li) = 1
+                {
+                    let ind GpuMsl.indent_of(depth)
+                    let t this.temp()
+                    out.append "`ind`const `GpuMsl.type_name(kind)` `t` = `cname`;\n"
+                    return t
+                }
+                return cname
+            }
+            this.external(gk, name, op)
+        }
+
+        ; A name from outside the loop: one of the kernel's scalars, by its
+        ; place in GpuKernel's list -- itself, or the length of a buffer.
+        procedure external(mutable this: GpuMsl, gk: ref[GpuKernel.GpuKernel], name: String, op: PlannedOperand) returns String
+        {
+            if m_in_function
+            {
+                this.refuse_named("a function reads ", name)
+                return ""
+            }
+            var idx 0 - 1
+            if GpuKernel.GpuKernel.has_members(op)
+            {
+                var is_length false
+                if op.member_access.length = 1
+                {
+                    let ma_ptr op.member_access.get 0
+                    if ma_ptr <> null
+                    {
+                        let ma ma_ptr.unwrap()
+                        if ma.name = "length" and ma.is_method = false
+                            is_length := true
+                    }
+                }
+                if is_length = false
+                {
+                    this.refuse_named("reads a member of ", name)
+                    return ""
+                }
+                let lname "`name`.length"
+                idx := GpuKernel.GpuKernel.index_of(&gk.k_uniforms, lname)
+            }
+            else
+                idx := GpuKernel.GpuKernel.index_of(&gk.k_uniforms, name)
+            if idx < 0
+            {
+                this.refuse_named("a name the kernel does not take: ", name)
+                return ""
+            }
+            m_atom_kind := GpuMsl.int_at(&gk.k_uniform_kinds, idx)
+            "u`idx`"
+        }
+
+        ; A global: a constant of the program is one of the source, written
+        ; where it is read; anything else is a name from outside.
+        procedure global_value(mutable this: GpuMsl, gk: ref[GpuKernel.GpuKernel], g: PlannedGlobalRef, op: PlannedOperand) returns String
+        {
+            let gls: ref[Vector[PlannedGlobal]]? gk.plan_globals
+            if gls <> null
+            {
+                var i: size_t 0
+                while i < gls.length
+                {
+                    let gl_ptr gls.get i
+                    if gl_ptr <> null and gl_ptr.mangled_name = g.mangled_name
+                    {
+                        let gl gl_ptr.unwrap()
+                        if gl.is_mutable
+                        {
+                            this.refuse_named("reads the mutable global ", g.name)
+                            return ""
+                        }
+                        let gkind GpuKernel.GpuKernel.scalar_kind(g.global_type)
+                        if GpuKernel.GpuKernel.has_members(op) = false and gkind > 0
+                            return this.kernel_constant(gl, gkind)
+                    }
+                    i := i + 1
+                }
+            }
+            this.external(gk, g.name, op)
+        }
+
+        ; The value of a constant of the program, as the processor's code
+        ; holds it: an integer written in another width than the global's is
+        ; taken unsigned into it.
+        procedure kernel_constant(mutable this: GpuMsl, gl: PlannedGlobal, gkind: int) returns String
+        {
+            if gl.value = null or gl.value.length <> 1
+            {
+                this.refuse_named("a constant without a single value: ", gl.name)
+                return ""
+            }
+            let vop (*gl.value)[0]
+            if GpuKernel.GpuKernel.has_members(vop)
+            {
+                this.refuse_named("a constant read off a member: ", gl.name)
+                return ""
+            }
+            choose vop.expr
+                when c: Constant
+                {
+                    choose c.value
+                        when b: Boolean
+                        {
+                            if gkind = 1
+                            {
+                                m_atom_kind := 1
+                                if b.value
+                                    return "true"
+                                return "false"
+                            }
+                        }
+                        when i: Integer
+                            return this.global_integer(i.value, GpuKernel.GpuKernel.scalar_kind(vop.result_type), gkind, gl.name)
+                        when h: Hex
+                            return this.global_integer(h.value, GpuKernel.GpuKernel.scalar_kind(vop.result_type), gkind, gl.name)
+                        when f: FloatingPoint
+                        {
+                            if gkind = 4
+                                return this.float_literal(f.value)
+                        }
+                        else
+                            0
+                }
+                else
+                    0
+            this.refuse_named("a constant that is no plain number: ", gl.name)
+            ""
+        }
+
+        procedure global_integer(mutable this: GpuMsl, value: size_t, own: int, gkind: int, name: String) returns String
+        {
+            if GpuMsl.is_int(own) = false or GpuMsl.is_int(gkind) = false
+            {
+                this.refuse_named("a constant that is no plain number: ", name)
+                return ""
+            }
+            var v: size_t value
+            if GpuMsl.width(own) = 32 and GpuMsl.width(gkind) = 64
+                v := v & 0xFFFFFFFF
+            m_atom_kind := gkind
+            GpuMsl.integer_literal(v, gkind)
+        }
+
+        ; A constant where it stands, of the kind the plan gives it.
+        procedure constant(mutable this: GpuMsl, c: PlannedConstant, want: int) returns String
+        {
+            choose c.value
+                when b: Boolean
+                {
+                    if want = 1
+                    {
+                        m_atom_kind := 1
+                        if b.value
+                            return "true"
+                        return "false"
+                    }
+                }
+                when i: Integer
+                {
+                    if GpuMsl.is_int(want)
+                    {
+                        m_atom_kind := want
+                        return GpuMsl.integer_literal(i.value, want)
+                    }
+                }
+                when h: Hex
+                {
+                    if GpuMsl.is_int(want)
+                    {
+                        m_atom_kind := want
+                        return GpuMsl.integer_literal(h.value, want)
+                    }
+                }
+                when f: FloatingPoint
+                {
+                    if want = 4
+                        return this.float_literal(f.value)
+                }
+                else
+                    0
+            this.refuse("a constant of another kind than its place")
+            ""
+        }
+
+        ; A floating-point constant: the f32 nearest to what is written, in
+        ; the shortest text that reads back as exactly that number.
+        procedure float_literal(mutable this: GpuMsl, d: double) returns String
+        {
+            let x (d as f32) as f64
+            if (x = x) = false
+            {
+                this.refuse("a constant that is no number")
+                return ""
+            }
+            if x > 3.4028235e38 or x < 0.0 - 3.4028235e38
+            {
+                this.refuse("a constant beyond what an f32 holds")
+                return ""
+            }
+            let text "`x`"
+            var plain true
+            var negative false
+            let n text.get_length()
+            var i: size_t 0
+            while i < n
+            {
+                let ch text.get(i)
+                if ch = ("." as char) or ch = ("e" as char)
+                    plain := false
+                if i = 0 and ch = ("-" as char)
+                    negative := true
+                i := i + 1
+            }
+            m_atom_kind := 4
+            var sb StringBuilder()
+            if negative
+                sb.append "("
+            sb.append text
+            if plain
+                sb.append ".0"
+            sb.append "f"
+            if negative
+                sb.append ")"
+            sb.to_string()
+        }
+
+        ; A cast, as the processor's code converts: between integers by the
+        ; SOURCE's signedness; a signed integer to floating point; floating
+        ; point to a signed integer where it holds the number, a fault where
+        ; it does not. The conversions the processor's code does through the
+        ; signed ones although an unsigned number is meant are not said.
+        procedure cast(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], a: PlannedAs, depth: size_t) returns String
+        {
+            if a.value = null
+            {
+                this.refuse("a cast of nothing")
+                return ""
+            }
+            let want GpuKernel.GpuKernel.scalar_kind(a.target_type)
+            if want < 1 or want > 6
+            {
+                this.refuse_named("casts to ", a.target_type.name)
+                return ""
+            }
+            let r a.value
+            let v this.operand(out, gk, (*r), depth)
+            if m_refused
+                return ""
+            let have m_atom_kind
+            let ind GpuMsl.indent_of(depth)
+            let wt GpuMsl.type_name(want)
+            m_atom_kind := want
+            if have = want
+                return v
+            if GpuMsl.is_int(have) and GpuMsl.is_int(want)
+                return "((`wt`)`v`)"
+            if have = 1 and GpuMsl.is_int(want)
+                return "((`wt`)(`v` ? 1 : 0))"
+            if GpuMsl.is_int(have) and want = 1
+                return "(((ulong)`v` & (ulong)1u) != (ulong)0u)"
+            if GpuMsl.is_int(have) and GpuMsl.is_signed(have) and want = 4
+            {
+                let t this.temp()
+                out.append "`ind`const float `t` = (float)`v`;\n"
+                return t
+            }
+            if have = 4 and want = 2
+            {
+                let t this.temp()
+                out.append "`ind`int `t` = 0;\n"
+                out.append "`ind`if (`v` >= -2147483648.0f && `v` < 2147483648.0f) `t` = (int)`v`; else F = 1u;\n"
+                return t
+            }
+            if have = 4 and want = 5
+            {
+                let t this.temp()
+                out.append "`ind`long `t` = ((long)0);\n"
+                out.append "`ind`if (`v` >= -9223372036854775808.0f && `v` < 9223372036854775808.0f) `t` = (long)`v`; else F = 1u;\n"
+                return t
+            }
+            let msg "a cast from `GpuMsl.type_name(have)` to `wt`"
+            this.refuse(msg)
+            ""
+        }
+
+        ; ================================================================
+        ; Calls
+        ; ================================================================
+
+        procedure call_value(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t) returns String
+        {
+            if call.is_indirect
+            {
+                this.refuse("an indirect call")
+                return ""
+            }
+            if call.is_intrinsic and call.is_operator
+            {
+                if call.args <> null and call.args.length = 1
+                    return this.unary(out, gk, call, depth)
+                if call.args <> null and call.args.length = 2
+                    return this.binary(out, gk, call, depth)
+                this.refuse_named("an operator of no one or two values: ", call.name)
+                return ""
+            }
+            if call.is_intrinsic
+            {
+                this.refuse_named("uses the intrinsic ", call.name)
+                return ""
+            }
+            if call.name = "[]"
+                return this.subscript(out, gk, call, depth)
+            if call.name = "put"
+            {
+                this.refuse("a put as a value")
+                return ""
+            }
+            if call.is_operator
+            {
+                this.refuse_named("uses a record's operator ", call.name)
+                return ""
+            }
+            this.function_call(out, gk, call, depth)
+        }
+
+        ; xs[i]: an element of an input, or a fault where there is none.
+        procedure subscript(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t) returns String
+        {
+            if call.args = null or call.args.length <> 2
+            {
+                this.refuse("a subscript")
+                return ""
+            }
+            let name GpuKernel.GpuKernel.receiver_name(call)
+            let k GpuKernel.GpuKernel.index_of(&gk.k_buffers, name)
+            if k < 0
+            {
+                this.refuse_named("a subscript of what the kernel does not take: ", name)
+                return ""
+            }
+            let ek GpuMsl.int_at(&gk.k_buffer_kinds, k)
+            let idx this.operand(out, gk, (*call.args)[1], depth)
+            if m_refused
+                return ""
+            if GpuMsl.is_int(m_atom_kind) = false
+            {
+                this.refuse("an index that is no integer")
+                return ""
+            }
+            let ind GpuMsl.indent_of(depth)
+            let t this.temp()
+            let at this.temp()
+            out.append "`ind``GpuMsl.type_name(ek)` `t` = `GpuMsl.zero(ek)`;\n"
+            out.append "`ind`const ulong `at` = (ulong)`idx`;\n"
+            out.append "`ind`if (`at` >= n`k`) F = 1u; else `t` = b`k`[`at`];\n"
+            m_atom_kind := ek
+            t
+        }
+
+        procedure function_call(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t) returns String
+        {
+            let fi GpuKernel.GpuKernel.index_of(&gk.k_functions, call.mangled_name)
+            let idx GpuMsl.function_index(gk, call.mangled_name)
+            let fns: ref[Vector[PlannedFunction]]? gk.plan_functions
+            if fi < 0 or idx < 0 or fns = null
+            {
+                this.refuse_named("calls a function the kernel does not hold: ", call.name)
+                return ""
+            }
+            let f_ptr fns.get(idx as size_t)
+            if f_ptr = null
+                return ""
+            let func f_ptr.unwrap()
+            if func.return_type = null
+            {
+                this.refuse_named(call.name, " answers nothing")
+                return ""
+            }
+            let rt func.return_type
+            let rk GpuKernel.GpuKernel.scalar_kind((*rt))
+            var n_params: size_t 0
+            if func.input <> null
+                n_params := func.input.length
+            var n_args: size_t 0
+            if call.args <> null
+                n_args := call.args.length
+            if n_params <> n_args
+            {
+                this.refuse_named("another count of arguments than parameters: ", call.name)
+                return ""
+            }
+            var args StringBuilder()
+            var ai: size_t 0
+            while ai < n_args
+            {
+                let a this.operand(out, gk, (*call.args)[ai], depth)
+                if m_refused
+                    return ""
+                let have m_atom_kind
+                let p_ptr func.input.get ai
+                if p_ptr = null
+                    return ""
+                let p p_ptr.unwrap()
+                if p.item_type = null
+                {
+                    this.refuse("a parameter without a type")
+                    return ""
+                }
+                let pt p.item_type
+                let fitted this.fit(a, have, GpuKernel.GpuKernel.scalar_kind((*pt)))
+                if m_refused
+                    return ""
+                args.append fitted
+                args.append ", "
+                ai := ai + 1
+            }
+            let ind GpuMsl.indent_of(depth)
+            let t this.temp()
+            let arg_text args.to_string()
+            out.append "`ind`const `GpuMsl.type_name(rk)` `t` = f`fi`(`arg_text`F);\n"
+            m_atom_kind := rk
+            t
+        }
+
+        ; ================================================================
+        ; Operators of the language on numbers
+        ; ================================================================
+
+        procedure unary(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t) returns String
+        {
+            let a this.operand(out, gk, (*call.args)[0], depth)
+            if m_refused
+                return ""
+            let k m_atom_kind
+            let nm call.name
+            let ind GpuMsl.indent_of(depth)
+            let tn GpuMsl.type_name(k)
+            let un GpuMsl.type_name(GpuMsl.unsigned_of(k))
+            let sn GpuMsl.type_name(GpuMsl.signed_of(k))
+            if nm = "+" and k <> 1
+                return a
+            if nm = "-" and k = 4
+            {
+                let t this.temp()
+                out.append "`ind`const float `t` = -`a`;\n"
+                return t
+            }
+            if nm = "-" and GpuMsl.is_int(k)
+            {
+                let t this.temp()
+                out.append "`ind`const `tn` `t` = (`tn`)((`un`)0 - (`un`)`a`);\n"
+                return t
+            }
+            if nm = "abs" and k = 4
+            {
+                let t this.temp()
+                out.append "`ind`const float `t` = (`a` < 0.0f) ? -`a` : `a`;\n"
+                return t
+            }
+            if nm = "abs" and GpuMsl.is_int(k)
+            {
+                ; the processor's code asks the sign of an unsigned one too
+                let t this.temp()
+                out.append "`ind`const `tn` `t` = ((`sn`)`a` < 0) ? (`tn`)((`un`)0 - (`un`)`a`) : `a`;\n"
+                return t
+            }
+            if nm = "!" or nm = "not" or nm = "~"
+            {
+                if k = 1
+                {
+                    let t this.temp()
+                    out.append "`ind`const bool `t` = !`a`;\n"
+                    return t
+                }
+                if GpuMsl.is_int(k)
+                {
+                    let t this.temp()
+                    out.append "`ind`const `tn` `t` = (`tn`)(~`a`);\n"
+                    return t
+                }
+            }
+            let msg "the operator `nm` on a `tn`"
+            this.refuse(msg)
+            ""
+        }
+
+        procedure binary(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t) returns String
+        {
+            let l this.operand(out, gk, (*call.args)[0], depth)
+            if m_refused
+                return ""
+            let lk m_atom_kind
+            let r this.operand(out, gk, (*call.args)[1], depth)
+            if m_refused
+                return ""
+            let rk m_atom_kind
+            let nm call.name
+            if lk = 4 and rk = 4
+                return this.float_binary(out, nm, l, r, depth)
+            if lk = 1 and rk = 1
+                return this.bool_binary(out, nm, l, r, depth)
+            if GpuMsl.is_int(lk) and GpuMsl.is_int(rk)
+            {
+                if nm = "<<" or nm = ">>"
+                    return this.shift(out, nm, l, lk, r, rk, depth)
+                return this.integer_binary(out, nm, l, lk, r, rk, depth)
+            }
+            let msg "the operator `nm` on a `GpuMsl.type_name(lk)` and a `GpuMsl.type_name(rk)`"
+            this.refuse(msg)
+            ""
+        }
+
+        procedure float_binary(mutable this: GpuMsl, mutable out: ref[StringBuilder], nm: String, l: String, r: String, depth: size_t) returns String
+        {
+            let ind GpuMsl.indent_of(depth)
+            if nm = "+" or nm = "-" or nm = "*" or nm = "/"
+            {
+                let t this.temp()
+                out.append "`ind`const float `t` = `l` `nm` `r`;\n"
+                m_atom_kind := 4
+                return t
+            }
+            let cmp GpuMsl.comparison_text(nm)
+            if cmp.get_length() = 0
+            {
+                this.refuse_named("a floating-point operator: ", nm)
+                return ""
+            }
+            let t this.temp()
+            ; `<>` is false where either is no number, as on the processor
+            if nm = "<>"
+                out.append "`ind`const bool `t` = (`l` < `r` || `l` > `r`);\n"
+            else
+                out.append "`ind`const bool `t` = `l` `cmp` `r`;\n"
+            m_atom_kind := 1
+            t
+        }
+
+        ; Both sides are computed, as the processor's code computes them:
+        ; the `and` that leaves its right side alone arrives as an `if`.
+        procedure bool_binary(mutable this: GpuMsl, mutable out: ref[StringBuilder], nm: String, l: String, r: String, depth: size_t) returns String
+        {
+            let ind GpuMsl.indent_of(depth)
+            let t this.temp()
+            m_atom_kind := 1
+            if nm = "&&" or nm = "and" or nm = "&"
+            {
+                out.append "`ind`const bool `t` = `l` && `r`;\n"
+                return t
+            }
+            if nm = "||" or nm = "or" or nm = "|"
+            {
+                out.append "`ind`const bool `t` = `l` || `r`;\n"
+                return t
+            }
+            if nm = "xor" or nm = "^" or nm = "<>"
+            {
+                out.append "`ind`const bool `t` = `l` != `r`;\n"
+                return t
+            }
+            if nm = "="
+            {
+                out.append "`ind`const bool `t` = `l` == `r`;\n"
+                return t
+            }
+            this.refuse_named("an operator on bools: ", nm)
+            ""
+        }
+
+        ; A shift: as wide as its LEFT side; the count is taken unsigned
+        ; into that width. A count of the width or more has no result on the
+        ; processor: a fault.
+        procedure shift(mutable this: GpuMsl, mutable out: ref[StringBuilder], nm: String, l: String, lk: int, r: String, rk: int, depth: size_t) returns String
+        {
+            let ind GpuMsl.indent_of(depth)
+            let ulk GpuMsl.unsigned_of(lk)
+            let lt GpuMsl.type_name(lk)
+            let ult GpuMsl.type_name(ulk)
+            let urt GpuMsl.type_name(GpuMsl.unsigned_of(rk))
+            let bits GpuMsl.width(lk)
+            let full GpuMsl.small(ulk, bits)
+            let mask GpuMsl.small(ulk, bits - 1)
+            let c this.temp()
+            let t this.temp()
+            out.append "`ind`const `ult` `c` = (`ult`)(`urt`)`r`;\n"
+            out.append "`ind`if (`c` >= `full`) F = 1u;\n"
+            if nm = "<<"
+                out.append "`ind`const `lt` `t` = (`lt`)((`ult`)`l` << (`c` & `mask`));\n"
+            else if GpuMsl.is_signed(lk)
+                out.append "`ind`const `lt` `t` = (`lt`)((`lt`)`l` >> (`c` & `mask`));\n"
+            else
+                out.append "`ind`const `lt` `t` = (`lt`)((`ult`)`l` >> (`c` & `mask`));\n"
+            m_atom_kind := lk
+            t
+        }
+
+        ; Integers: as wide as the wider side, each widened by its own
+        ; signedness; the LEFT side's signedness says which division, which
+        ; remainder and which ordering.
+        procedure integer_binary(mutable this: GpuMsl, mutable out: ref[StringBuilder], nm: String, l: String, lk: int, r: String, rk: int, depth: size_t) returns String
+        {
+            let ind GpuMsl.indent_of(depth)
+            var bits GpuMsl.width(lk)
+            if GpuMsl.width(rk) > bits
+                bits := GpuMsl.width(rk)
+            let signed GpuMsl.is_signed(lk)
+            let xk GpuMsl.int_kind(bits, signed)
+            let xt GpuMsl.type_name(xk)
+            let ut GpuMsl.type_name(GpuMsl.int_kind(bits, false))
+            let wl GpuMsl.widened(l, lk, bits)
+            let wr GpuMsl.widened(r, rk, bits)
+
+            ; what wraps on the processor is computed unsigned here
+            let wrap GpuMsl.wrapping_text(nm)
+            if wrap.get_length() > 0
+            {
+                let t this.temp()
+                out.append "`ind`const `xt` `t` = (`xt`)((`ut`)`wl` `wrap` (`ut`)`wr`);\n"
+                m_atom_kind := xk
+                return t
+            }
+
+            var divides false
+            var remainder false
+            if nm = "/" or nm = "div"
+                divides := true
+            if nm = "%" or nm = "mod"
+            {
+                divides := true
+                remainder := true
+            }
+            if divides
+            {
+                let a this.temp()
+                let b this.temp()
+                let t this.temp()
+                let nothing GpuMsl.zero(xk)
+                out.append "`ind`const `xt` `a` = (`xt`)`wl`;\n"
+                out.append "`ind`const `xt` `b` = (`xt`)`wr`;\n"
+                out.append "`ind``xt` `t` = `nothing`;\n"
+                if signed
+                {
+                    let low GpuMsl.least(xk)
+                    out.append "`ind`if (`b` == `nothing` || (`a` == `low` && `b` == (`xt`)(-1))) F = 1u;\n"
+                }
+                else
+                    out.append "`ind`if (`b` == `nothing`) F = 1u;\n"
+                if remainder
+                    out.append "`ind`else `t` = (`xt`)(`a` % `b`);\n"
+                else
+                    out.append "`ind`else `t` = (`xt`)(`a` / `b`);\n"
+                m_atom_kind := xk
+                return t
+            }
+
+            let cmp GpuMsl.comparison_text(nm)
+            if cmp.get_length() > 0
+            {
+                let t this.temp()
+                out.append "`ind`const bool `t` = (`xt`)`wl` `cmp` (`xt`)`wr`;\n"
+                m_atom_kind := 1
+                return t
+            }
+            this.refuse_named("an operator on integers: ", nm)
+            ""
+        }
+    }
+}

@@ -34,6 +34,7 @@ use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
 use scalyc.compiler.TaskPlanner
 use scalyc.compiler.GpuKernel
+use scalyc.compiler.GpuMsl
 use scalyc.compiler.PointerCensus
 use scalyc.compiler.WriteCensus
 use scalyc.compiler.Interface.Interface
@@ -72,6 +73,7 @@ define Options
     task_plan: bool         ; --task-plan: stage-3 parallelizability report
     loop_census: bool       ; --loop-census: counted `while` loops the engine could reach
     gpu_plan: bool          ; --gpu-plan: which parallel loops a graphics card could run
+    gpu_msl: bool           ; --gpu-msl: the Metal kernel of every parallel loop a graphics card could run
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     write_report: bool      ; --write-report: writes through parameters, off the Plan
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
@@ -93,6 +95,7 @@ define Options
     target_cpu: String              ; -mcpu=<name>|native: the CPU codegen tunes for (empty = generic)
     opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
     portable_simd: bool             ; --portable-simd: no target form for a SIMD operation (the seed)
+    gpu: bool                       ; --gpu: a parallel loop that is a kernel is handed to the graphics card first
     emit_cpp: bool                  ; --emit-cpp: the plan written as C++ (compiler/CppEmitter.scaly, ROADMAP-trust)
     library: bool                   ; a package object for the build cache (tool.package_objects)
     tool_build: bool                ; `scaly build`: link against the cached package objects
@@ -130,6 +133,7 @@ define Options
         task_plan := false
         loop_census := false
         gpu_plan := false
+        gpu_msl := false
         pointer_report := false
         write_report := false
         host_report := false
@@ -151,6 +155,7 @@ define Options
         target_cpu := String()
         opt_level := 0
         portable_simd := false
+        gpu := false
         emit_cpp := false
         library := false
         tool_build := false
@@ -261,6 +266,10 @@ define cli
                 else if arg = "--gpu-plan"
                 {
                     opts.gpu_plan := true
+                }
+                else if arg = "--gpu-msl"
+                {
+                    opts.gpu_msl := true
                 }
                 else if arg = "--pointer-report"
                 {
@@ -398,6 +407,10 @@ define cli
                     ; target.
                     opts.portable_simd := true
                 }
+                else if arg = "--gpu"
+                {
+                    opts.gpu := true
+                }
                 else if arg.starts_with("-mcpu=")
                 {
                     ; The CPU the object code is generated and optimized for
@@ -509,6 +522,7 @@ define cli
         Console.println("  --task-plan    Report the parallelizability verdict of every for loop, and every recursive call pair that forks")
         Console.println("  --loop-census  Report which while loops are counted and could run in parallel")
         Console.println("  --gpu-plan     Report which parallel for loops a graphics card could run, and for which backends")
+        Console.println("  --gpu-msl      Print the Metal kernel of every parallel for loop a graphics card could run")
         Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
         Console.println("  --write-report  Report every write through a parameter, off the Plan")
         Console.println("  --purity-check  Report every function that writes what its parameters reach")
@@ -519,6 +533,7 @@ define cli
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
         Console.println "  -mcpu=<cpu>    Generate code for <cpu>, or native for this machine (default generic)"
         Console.println "  --portable-simd  SIMD operations in their target-neutral form (the seed)"
+        Console.println "  --gpu          Hand every parallel for loop a graphics card could run to it first (macOS; not with --jit or --run)"
     }
 
     ; The directory for the compiler's own scratch object. POSIX has /tmp;
@@ -1191,11 +1206,11 @@ define cli
         ; through the adaptive engine; a blocked one runs sequentially.
         ; --loop-census rides the same walk and prints its own lines, so
         ; the --task-plan output the suites parse stays as it is.
-        if opts.task_plan or opts.loop_census or opts.gpu_plan
+        if opts.task_plan or opts.loop_census or opts.gpu_plan or opts.gpu_msl
         {
             var task_planner TaskPlanner.TaskPlanner()
             task_planner.census_while := opts.loop_census
-            task_planner.keep_fors := opts.gpu_plan
+            task_planner.keep_fors := opts.gpu_plan or opts.gpu_msl
             task_planner.analyze(plan, opts.input_file)
             if opts.task_plan
                 cli.print_task_plan(&task_planner)
@@ -1207,6 +1222,14 @@ define cli
                 var gpu_kernel GpuKernel.GpuKernel()
                 gpu_kernel.analyze(plan, &task_planner)
                 cli.print_gpu_plan(&gpu_kernel)
+            }
+            ; --gpu-msl writes each kernel among them as Metal source
+            if opts.gpu_msl
+            {
+                var msl_kernel GpuKernel.GpuKernel()
+                var msl GpuMsl.GpuMsl()
+                msl.analyze(&msl_kernel, plan, &task_planner)
+                cli.print_located("gpu-msl: ", &msl.report_files, &msl.report_offsets, &msl.report_texts)
             }
             ; a report with nothing to write is the whole job: `scalyc
             ; --task-plan prog.scaly` answers the verdicts and stops (it went
@@ -1410,6 +1433,9 @@ define cli
         config.target_cpu := opts.target_cpu
         config.opt_level := opts.opt_level
         config.portable_simd := opts.portable_simd
+        ; the card's host is linked into a program, not into this compiler:
+        ; code that runs in this process keeps its loops on the processor
+        config.gpu := opts.gpu and opts.run_mode = false and opts.jit_program = false and opts.test_mode = false
         config.page_size := planner.page_size_constant()
         config.library_linkage := opts.library
         config.code_parts := opts.code_parts

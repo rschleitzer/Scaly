@@ -28,7 +28,9 @@
 ; planned body again, knowing that every shape in it passed here. Whatever
 ; this pass does not know blocks, with the first blocker as the reason.
 ;
-; Consumers: `--gpu-plan` prints the verdict per loop.
+; Consumers: `--gpu-plan` prints the verdict per loop; GpuMsl prints a
+; classified loop as a Metal kernel (`--gpu-msl`, and the emitter under
+; `--gpu`).
 ;
 ; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 
@@ -81,6 +83,15 @@ define GpuKernel
         k_buffer_types: Array[String]
         k_outputs: Array[String]
         k_output_types: Array[String]
+        ; Beside each name the operand it was first met as (an emitter
+        ; evaluates it again where the loop stands) and its kind: a
+        ; uniform's own, a buffer's elements'.
+        k_uniform_ops: Array[PlannedOperand]
+        k_uniform_kinds: Array[int]
+        k_buffer_ops: Array[PlannedOperand]
+        k_buffer_kinds: Array[int]
+        k_output_ops: Array[PlannedOperand]
+        k_output_kinds: Array[int]
         ; The functions it calls, a callee before its caller: symbols and
         ; names. fn_stack holds the ones being walked.
         k_functions: Array[String]
@@ -114,6 +125,12 @@ define GpuKernel
             k_buffer_types := Array[String]^this()
             k_outputs := Array[String]^this()
             k_output_types := Array[String]^this()
+            k_uniform_ops := Array[PlannedOperand]^this()
+            k_uniform_kinds := Array[int]^this()
+            k_buffer_ops := Array[PlannedOperand]^this()
+            k_buffer_kinds := Array[int]^this()
+            k_output_ops := Array[PlannedOperand]^this()
+            k_output_kinds := Array[int]^this()
             k_functions := Array[String]^this()
             k_function_names := Array[String]^this()
             fn_stack := Array[String]^this()
@@ -184,6 +201,12 @@ define GpuKernel
             k_buffer_types.length := 0
             k_outputs.length := 0
             k_output_types.length := 0
+            k_uniform_ops.length := 0
+            k_uniform_kinds.length := 0
+            k_buffer_ops.length := 0
+            k_buffer_kinds.length := 0
+            k_output_ops.length := 0
+            k_output_kinds.length := 0
             k_functions.length := 0
             k_function_names.length := 0
             fn_stack.length := 0
@@ -485,16 +508,44 @@ define GpuKernel
             0 - 1
         }
 
-        ; Record name in a list of the kernel's with its type, once.
-        procedure note_name(mutable this: GpuKernel, mutable names: ref[Array[String]], mutable types: ref[Array[String]], name: String, t: PlannedType)
+        ; Record name in a list of the kernel's with its type, once. True
+        ; where it is new: its operand and kind are then recorded beside it.
+        procedure note_name(mutable this: GpuKernel, mutable names: ref[Array[String]], mutable types: ref[Array[String]], name: String, t: PlannedType) returns bool
         {
             if GpuKernel.index_of(names, name) >= 0
-                return
+                return false
             let name_copy String^this(name)
             names.add name_copy
             let text GpuKernel.type_text(t)
             let text_copy String^this(text)
             types.add text_copy
+            true
+        }
+
+        ; A buffer whose record is an Array (length, capacity, buffer), not
+        ; a Vector or a Slice (length, data) -- also behind one reference.
+        function is_array_buffer(t: PlannedType) returns bool
+        {
+            if t.name = "Array"
+                return true
+            if t.name <> "ref" and t.name <> "pointer"
+                return false
+            if t.generics = null or t.generics.length <> 1
+                return false
+            let g_ptr t.generics.get 0
+            if g_ptr = null
+                return false
+            let g g_ptr.unwrap()
+            g.name = "Array"
+        }
+
+        ; Is t a reference to a buffer's record (a pointer where it is
+        ; emitted), not the record itself?
+        function is_buffer_reference(t: PlannedType) returns bool
+        {
+            if t.name = "ref" or t.name = "pointer"
+                return true
+            false
         }
 
         function has_members(op: PlannedOperand) returns bool
@@ -504,10 +555,14 @@ define GpuKernel
             op.member_access.length > 0
         }
 
-        ; `(a)`: a tuple of one unnamed component, built nowhere.
+        ; `(a)`: a tuple of one unnamed component, built nowhere. Around a
+        ; number it is a grouping whatever its page says: the planner's
+        ; promotion of what a routine stores marks the parentheses of a
+        ; scalar too (`let x (v[i] as f32) * s`), and the emitter, which
+        ; asks the TYPE, builds nothing for them.
         function is_grouping(tp: PlannedTuple) returns bool
         {
-            if tp.is_region_alloc
+            if tp.is_region_alloc and GpuKernel.scalar_kind(tp.tuple_type) = 0
                 return false
             if tp.components = null
                 return false
@@ -819,7 +874,11 @@ define GpuKernel
                         if ma.name = "length" and ma.is_method = false
                         {
                             let lname "`name`.length"
-                            this.note_name(&k_uniforms, &k_uniform_types, lname, ma.result_type)
+                            if this.note_name(&k_uniforms, &k_uniform_types, lname, ma.result_type)
+                            {
+                                k_uniform_ops.add op
+                                k_uniform_kinds.add(GpuKernel.scalar_kind(ma.result_type))
+                            }
                             if narrowed = false
                                 this.note_wide(lname)
                             return
@@ -845,7 +904,11 @@ define GpuKernel
                 k_float := true
             if GpuKernel.kind_is_wide(kind) and narrowed = false
                 this.note_wide(name)
-            this.note_name(&k_uniforms, &k_uniform_types, name, t)
+            if this.note_name(&k_uniforms, &k_uniform_types, name, t)
+            {
+                k_uniform_ops.add op
+                k_uniform_kinds.add kind
+            }
         }
 
         ; A cast: to a 32-bit type it narrows its operand; to a 64-bit
@@ -1039,7 +1102,12 @@ define GpuKernel
                 k_float := true
             if GpuKernel.kind_is_wide(kind)
                 this.note_wide("an element of `name`")
-            this.note_name(&k_buffers, &k_buffer_types, name, GpuKernel.receiver_type(call))
+            if this.note_name(&k_buffers, &k_buffer_types, name, GpuKernel.receiver_type(call))
+            {
+                let recv_ptr call.args.get 0
+                k_buffer_ops.add(recv_ptr.unwrap())
+                k_buffer_kinds.add kind
+            }
         }
 
         ; out.put(i, v): the round's result, at exactly the loop's counter.
@@ -1070,7 +1138,12 @@ define GpuKernel
                 k_float := true
             if GpuKernel.kind_is_wide(kind)
                 this.note_wide("an element of `name`")
-            this.note_name(&k_outputs, &k_output_types, name, GpuKernel.receiver_type(call))
+            if this.note_name(&k_outputs, &k_output_types, name, GpuKernel.receiver_type(call))
+            {
+                let recv_ptr call.args.get 0
+                k_output_ops.add(recv_ptr.unwrap())
+                k_output_kinds.add kind
+            }
         }
 
         ; The classified loop's counter, under groupings and casts between

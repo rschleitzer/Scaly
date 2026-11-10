@@ -1,0 +1,17 @@
+; An index beyond its buffer: the card's run stops, and the processor's loop
+; traps where it always did.
+; expect-rc: 15
+; declines: 1
+
+let n: size_t 8
+var a Vector[i32](n)
+var o Vector[i32](n)
+var k: size_t 0
+while k < n
+{
+    a.put(k, k as i32)
+    k := k + 1
+}
+for i in n
+    o.put(i, a[i + 1])
+print "not reached"
