@@ -1,0 +1,70 @@
+; What a returned integer may be without a cast: its own type, a narrower
+; one (it widens by its own signedness), a constant that fits, a value its
+; `as` narrowed -- as the bare tail, after `return` and in the arms of a
+; value `if`/`match`. The check that refuses the rest
+; (Planner.report_return_narrowing#, 2026-11-10) must leave these alone.
+; Expected: PASS
+
+define LIMIT: int 40
+define Box[T](v: T)
+{
+    function get(this) returns T
+        v
+}
+define IntFn delegate(int) returns i32
+function widen(k: i32) returns int
+    k
+function cast(big: int) returns i32
+    big as i32
+function cast_back(big: int) returns i32
+{
+    return big as i32
+}
+function constant() returns i32
+    LIMIT + 2
+function negative(c: int) returns i32
+{
+    if c < 1
+        return -1
+    -2
+}
+function arms(c: int, k: i32) returns i32
+{
+    if c > 3: k else 7
+}
+function matched(c: int, k: i16) returns i32
+{
+    match c
+        case 1: k
+        case 2: 9
+        else 0 - 4
+}
+function same(a: size_t) returns int
+    a as int
+function sized(a: int) returns size_t
+    a as size_t
+function byte(c: char) returns u8
+    c as u8
+function apply(f: IntFn, x: int) returns i32
+    f(x)
+procedure check(name: String, got: int, want: int) returns int
+{
+    if got = want
+        return 0
+    print "FAIL `name`: `got`"
+    1
+}
+var bad 0
+bad := bad + check("widen", widen(5), 5)
+bad := bad + check("cast", cast(4294967303) as int, 7)
+bad := bad + check("cast_back", cast_back(4294967303) as int, 7)
+bad := bad + check("constant", constant() as int, 42)
+bad := bad + check("negative", negative(0) as int, -1)
+bad := bad + check("negative2", negative(5) as int, -2)
+bad := bad + check("arms", arms(5, 3) as int, 3)
+bad := bad + check("matched", matched(3, 3) as int, -4)
+bad := bad + check("box", Box[int](6).get(), 6)
+let g: IntFn \x: (x * 2) as i32
+bad := bad + check("apply", apply(g, 4) as int, 8)
+if bad = 0
+    print "PASS"

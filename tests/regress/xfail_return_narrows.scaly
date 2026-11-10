@@ -1,0 +1,13 @@
+; `return` of a wider integer than the routine declares takes its cast, as a
+; binding, an assignment and an argument always did. Until 2026-11-10 the
+; return positions never asked: f(4294967303) answered 7 at rc 0.
+; Planner.report_return_narrowing#.
+; xfail: the returned value narrows int into i32
+
+function f(big: int) returns i32
+{
+    return big
+}
+
+if (f(4294967303) as int) = 7
+    print "PASS"

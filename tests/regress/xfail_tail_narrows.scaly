@@ -1,0 +1,11 @@
+; The bare tail of a body is a return like the written one: a wider integer
+; than the routine declares takes its cast. Until 2026-11-10 it answered the
+; low bits at rc 0. Planner.report_return_narrowing#.
+; xfail: the returned value narrows size_t into u16
+
+function f(v: Vector[int]) returns u16
+    v.length
+
+let v Vector[int](70000)
+if (f(v) as int) = 4464
+    print "PASS"

@@ -17,7 +17,7 @@ define Pair[T] ( first: T, second: T )
     function sum(this) returns T
         first + second
 
-    function scaled(this, by: int) returns T
+    function scaled(this, by: T) returns T
         (first + second) * by
 }
 

@@ -1,0 +1,13 @@
+; The arms of a returned value `if` settle on the wider one
+; (Planner.settle_value_arms#), and the arm that made the value wide is the
+; one named: it narrows into the routine's result. Until 2026-11-10 the
+; implicit return of such a value answered the low bits at rc 0.
+; xfail: the returned value narrows int into i32
+
+function f(c: int, k: i32, big: int) returns i32
+{
+    if c > k: k else big
+}
+
+if (f(1, 2, 4294967303) as int) = 7
+    print "PASS"
