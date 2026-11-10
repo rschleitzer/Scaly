@@ -17101,7 +17101,9 @@ define Planner
                                     ; the s78 record at the s75 site
                                     ; (line ~2794). Skipped if already
                                     ; recorded.
-                                    if this.has_recorded_function(mm3.mangled_name) = false
+                                    ; an intrinsic (a template's placeholder walker,
+                                    ; resolve_fix_graph#) is no routine to declare
+                                    if this.has_recorded_function(mm3.mangled_name) = false and mm3.is_intrinsic = false
                                     {
                                         var items_arr2 Array[PlannedItem]()
                                         items_arr2.add(PlannedItem(
@@ -20752,6 +20754,9 @@ define Planner
             var params_arr Array[PlannedType]()
             params_arr.add root_t
             var params_holder Vector[PlannedType](params_arr)
+            ; in a template the walker is a placeholder no emitter may declare
+            ; (`_scaly_walk_T` stood in the seed and broke the C++ of trust/):
+            ; the template's body is a stub, its instances name their walkers
             MethodMatch^this(
                 null,
                 mangled,
@@ -20760,7 +20765,7 @@ define Planner
                 false,
                 false,
                 null,
-                false,
+                unbound,
                 true,
                 false,
                 0, 0
