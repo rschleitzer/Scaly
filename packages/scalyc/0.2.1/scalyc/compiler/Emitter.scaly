@@ -15025,7 +15025,12 @@ define Emitter
                 return LLVMBuildUIToFP(builder, v, dst, "simd.itof")
             }
             if s_float and d_float = false
+            {
+                ; by the target lanes' signedness, as a scalar cast
+                if Emitter.simd_unsigned(to)
+                    return LLVMBuildFPToUI(builder, v, dst, "simd.ftoi")
                 return LLVMBuildFPToSI(builder, v, dst, "simd.ftoi")
+            }
             var sgn: i32 0
             if s_signed
                 sgn := 1
@@ -22444,20 +22449,31 @@ define Emitter
                     return src_value
                 }
 
-                ; Integer to float: sitofp
-                if dst_kind = float_kind
+                ; Integer to float: by the SOURCE's signedness, as the
+                ; widening above. It was sitofp for every source, so
+                ; `(3000000000 as u32) as f32` answered -1294967296, a u8 of
+                ; 200 was -56, and `true as f64` was -1 (2026-11-10). A bool
+                ; is 0 or 1.
+                if dst_kind = float_kind or dst_kind = double_kind
+                {
+                    if LLVMGetIntTypeWidth(src_type) = 1 or (is_signed_type as_inner.result_type) = false
+                        return LLVMBuildUIToFP(builder, src_value, dst_type, "as.uitofp")
                     return LLVMBuildSIToFP(builder, src_value, dst_type, "as.sitofp")
-
-                if dst_kind = double_kind
-                    return LLVMBuildSIToFP(builder, src_value, dst_type, "as.sitofp")
+                }
 
             }
 
-            ; Float to integer: fptosi
+            ; Float to integer: by the TARGET's signedness. It was fptosi at
+            ; the target's width for every target, which has no result for
+            ; the upper half of an unsigned one (`3000000000.0 as u32`).
             if src_kind = float_kind
             {
                 if dst_kind = int_kind
+                {
+                    if LLVMGetIntTypeWidth(dst_type) > 1 and (is_signed_type as_expr.target_type) = false
+                        return LLVMBuildFPToUI(builder, src_value, dst_type, "as.fptoui")
                     return LLVMBuildFPToSI(builder, src_value, dst_type, "as.fptosi")
+                }
                 ; Float to double: fpext
                 if dst_kind = double_kind
                     return LLVMBuildFPExt(builder, src_value, dst_type, "as.fpext")
@@ -22467,7 +22483,11 @@ define Emitter
             if src_kind = double_kind
             {
                 if dst_kind = int_kind
+                {
+                    if LLVMGetIntTypeWidth(dst_type) > 1 and (is_signed_type as_expr.target_type) = false
+                        return LLVMBuildFPToUI(builder, src_value, dst_type, "as.fptoui")
                     return LLVMBuildFPToSI(builder, src_value, dst_type, "as.fptosi")
+                }
                 ; Double to float: fptrunc
                 if dst_kind = float_kind
                     return LLVMBuildFPTrunc(builder, src_value, dst_type, "as.fptrunc")
