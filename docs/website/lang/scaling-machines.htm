@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>More Than One Machine - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="division"
+><span
+class="division-label"
+>Part I</span
+>First Steps</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-change"
+><span
+class="num"
+>1.2</span
+>A Language Still Changing</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with Visual Studio Code on macOS and Linux</a
+></li
+><li
+><a
+href="tutorial.htm#tut-windows"
+><span
+class="num"
+>2.3</span
+>Scaly on Windows</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.4</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.5</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part II</span
+>Scaling</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-why.htm"
+><span
+class="num"
+>3.</span
+>Why Scaly Can Scale</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-why.htm#scaling-why-overview"
+><span
+class="num"
+>3.1</span
+>Two Rounds at Once</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-functions"
+><span
+class="num"
+>3.2</span
+>Functions Read, Procedures Write</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-mutable"
+><span
+class="num"
+>3.3</span
+>A Procedure Says What It Writes</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-regions"
+><span
+class="num"
+>3.4</span
+>Memory That Is Not Shared</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-same"
+><span
+class="num"
+>3.5</span
+>The Same Program on One Core</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-loops.htm"
+><span
+class="num"
+>4.</span
+>Loops on All Cores</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-loops.htm#scaling-loops-overview"
+><span
+class="num"
+>4.1</span
+>A Plain for</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-round"
+><span
+class="num"
+>4.2</span
+>What a Round May Do</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-order"
+><span
+class="num"
+>4.3</span
+>What Keeps a Loop in Order</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-reductions"
+><span
+class="num"
+>4.4</span
+>Sums, Products and the Largest</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-kept"
+><span
+class="num"
+>4.5</span
+>Values a Round Keeps</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-when"
+><span
+class="num"
+>4.6</span
+>When the Cores Are Worth It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-forks.htm"
+><span
+class="num"
+>5.</span
+>Recursion That Forks</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-forks.htm#scaling-forks-overview"
+><span
+class="num"
+>5.1</span
+>Two Calls at Once</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-shape"
+><span
+class="num"
+>5.2</span
+>What Forks</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-when"
+><span
+class="num"
+>5.3</span
+>Forks Nobody Waits For</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-uneven"
+><span
+class="num"
+>5.4</span
+>An Uneven Tree</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-lanes.htm"
+><span
+class="num"
+>6.</span
+>Lanes</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-overview"
+><span
+class="num"
+>6.1</span
+>Four Numbers in One</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-masks"
+><span
+class="num"
+>6.2</span
+>Masks</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-memory"
+><span
+class="num"
+>6.3</span
+>Lanes from Memory</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-mandelbrot"
+><span
+class="num"
+>6.4</span
+>Mandelbrot, Eight Points at a Time</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-cores"
+><span
+class="num"
+>6.5</span
+>Lanes and Cores</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-connections.htm"
+><span
+class="num"
+>7.</span
+>Many Connections</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-connections.htm#scaling-connections-overview"
+><span
+class="num"
+>7.1</span
+>Waiting Is Not Working</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-server"
+><span
+class="num"
+>7.2</span
+>A Server</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-colorless"
+><span
+class="num"
+>7.3</span
+>The Same Calls Everywhere</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-cores"
+><span
+class="num"
+>7.4</span
+>One Scheduler per Core</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-memory"
+><span
+class="num"
+>7.5</span
+>A Region per Connection</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="scaling-machines.htm"
+aria-current="page"
+><span
+class="num"
+>8.</span
+>More Than One Machine</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-machines.htm#scaling-machines-overview"
+><span
+class="num"
+>8.1</span
+>Where Memory Ends</a
+></li
+><li
+><a
+href="scaling-machines.htm#scaling-machines-nodes"
+><span
+class="num"
+>8.2</span
+>Nodes and Channels</a
+></li
+><li
+><a
+href="scaling-machines.htm#scaling-machines-messages"
+><span
+class="num"
+>8.3</span
+>A Message Is a Region</a
+></li
+><li
+><a
+href="scaling-machines.htm#scaling-machines-build"
+><span
+class="num"
+>8.4</span
+>One Program, One Build</a
+></li
+><li
+><a
+href="scaling-machines.htm#scaling-machines-failure"
+><span
+class="num"
+>8.5</span
+>When a Node Fails</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part III</span
+>Language Reference</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>9.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>9.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>9.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>9.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>9.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>9.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>9.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>10.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>10.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>10.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>10.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>10.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>10.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>10.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>10.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>10.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>10.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>10.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>10.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>10.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>10.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>10.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>11.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>12.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>12.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>12.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>12.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>13.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>13.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>13.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>13.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>13.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>13.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>13.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>13.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>13.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>13.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>13.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>13.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>14.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>14.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>14.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>14.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>14.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>14.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>14.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>14.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>14.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>15.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>15.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>15.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>15.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>15.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="division"
+>Appendices</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tools.htm"
+><span
+class="num"
+>A.</span
+>The Tools</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tools.htm#tools-install"
+><span
+class="num"
+>A.1</span
+>Installation</a
+></li
+><li
+><a
+href="tools.htm#tools-scaly"
+><span
+class="num"
+>A.2</span
+>scaly</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyc"
+><span
+class="num"
+>A.3</span
+>scalyc</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyls"
+><span
+class="num"
+>A.4</span
+>scalyls</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>B.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>B.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>B.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>C.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>D.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>D.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>D.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>D.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>D.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>D.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>D.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>D.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>D.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>D.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>D.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 8</p
+><h1
+id="scaling-machines"
+>More Than One Machine</h1
+><section
+id="scaling-machines-overview"
+><h2
+><a
+class="header"
+href="#scaling-machines-overview"
+>Where Memory Ends</a
+></h2
+><p
+>Everything so far scaled inside one machine: the cores of the
+      earlier chapters share its memory, and the compiler hands them work
+      on its own. Past the machine's edge memory is no longer shared, a
+      message takes a fraction of a millisecond instead of a few
+      nanoseconds, and the other side may stop answering. Scaly does not
+      hide that edge. Within a machine a <code
+>for</code
+> decides by itself
+      where its rounds run; across machines the program says what goes
+      where, and what it sends is a message.</p
+><p
+>A message is a region (<a
+href="scaling-why.htm#scaling-why-regions"
+>Memory That Is Not Shared</a
+>):
+      a value built on pages of its own, with everything it points to. A
+      send ships those pages as they are, and the receiving side fixes
+      every pointer in them to where the pages landed — with code the
+      compiler generates for each message type. There is no serialization
+      code to write and no schema to keep in step with the program.</p
+></section
+><section
+id="scaling-machines-nodes"
+><h2
+><a
+class="header"
+href="#scaling-machines-nodes"
+>Nodes and Channels</a
+></h2
+><p
+>The program of this chapter counts the primes below three
+      million on three worker nodes. One program plays both roles: started
+      without an argument it coordinates, with one it works. The
+      coordinator listens on a port, hands each worker that connects a
+      share of the range, and prints what comes back:</p
+><pre
+class="listing"
+><code
+>define Share
+(
+    from: int
+    to: int
+)
+
+define Count
+(
+    primes: int
+    range: String
+)
+
+function is_prime(n: int) returns bool
+{
+    if n &#60; 2
+        return false
+    var d 2
+    while d * d &#60;= n
+    {
+        if n % d = 0
+            return false
+        d := d + 1
+    }
+    true
+}
+
+function count_primes(from: int, to: int) returns int
+{
+    var count 0
+    for k in to - from
+        if is_prime(from + k)
+            count := count + 1
+    count
+}
+
+procedure work()
+{
+    let peer Cluster.connect("localhost", 7700, 5000)
+    if peer = null
+        return
+    var shares Remote[Share](peer, 1)
+    let counts Remote[Count](peer, 2)
+    let share shares.receive()
+    if share &#60;&#62; null
+    {
+        let n count_primes(share.from, share.to)
+        counts.send(Count(n, "`share.from` to `share.to`"))
+    }
+    Cluster.disconnect(peer)
+}
+
+procedure coordinate(workers: int, limit: int)
+{
+    let listener Cluster.listen(7700)
+    var peers Array[ref[NodePeer]]()
+    var w 0
+    while w &#60; workers
+    {
+        let peer Cluster.accept(listener)
+        if peer &#60;&#62; null
+        {
+            let shares Remote[Share](peer, 1)
+            shares.send(Share(limit * w / workers, limit * (w + 1) / workers))
+            peers.add(peer)
+            w := w + 1
+        }
+    }
+    var total 0
+    for peer in peers
+    {
+        var counts Remote[Count](peer, 2)
+        let c counts.receive()
+        if c &#60;&#62; null
+        {
+            print "`c.primes` primes from `c.range`"
+            total := total + c.primes
+        }
+        Cluster.disconnect(peer)
+    }
+    print "`total` primes below `limit`"
+}
+
+if os.arguments().length &#62; 0
+    work()
+else
+    coordinate(3, 3000000)</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly build primes.scaly -o primes
+$ ./primes work &#38;
+$ ./primes work &#38;
+$ ./primes work &#38;
+$ ./primes
+78498 primes from 0 to 1000000
+70435 primes from 1000000 to 2000000
+67883 primes from 2000000 to 3000000
+216816 primes below 3000000</code
+></pre
+><p
+>Here the four nodes are four processes on one machine; on four
+      machines the workers name the coordinator's host instead of
+      <code
+>localhost</code
+>, and nothing else changes.
+      <code
+>Cluster.connect</code
+> keeps trying for as long as its last
+      argument says, in milliseconds, because a worker may start before
+      the coordinator listens; <code
+>Cluster.accept</code
+> waits for the
+      next node to connect. Either answers the connection to the other
+      node, or <code
+>null</code
+>.</p
+><p
+>A <code
+>Remote[T]</code
+> is a channel to that node for messages
+      of one type, named by a number both sides agree on: here 1 for the
+      shares and 2 for the counts. <code
+>send</code
+> hands a message over
+      and returns at once; <code
+>receive</code
+> waits for the next one and
+      answers it, or <code
+>null</code
+> when the other node has said goodbye
+      or is gone. <code
+>Cluster.disconnect</code
+> says goodbye. The
+      coordinator first sends every share and only then collects, so the
+      three workers count at the same time — and each of them counts its
+      share with the plain <code
+>for</code
+> of
+      <a
+href="scaling-loops.htm"
+>Loops on All Cores</a
+>, on all the cores of its
+      machine.</p
+></section
+><section
+id="scaling-machines-messages"
+><h2
+><a
+class="header"
+href="#scaling-machines-messages"
+>A Message Is a Region</a
+></h2
+><p
+><code
+>counts.send(Count(n, "…"))</code
+> builds the
+      <code
+>Count</code
+> — the record and the string in it — on a page of
+      its own, and the send ships that page and releases it. What is sent
+      is gone from the sender; nothing on the other side can point back
+      into it. The receiving node's pages hold the same bytes at other
+      addresses, the generated code fixes the pointers, and
+      <code
+>receive</code
+> hands the message to the routine that asked: it
+      belongs to that routine's region from then on and goes when that
+      region goes, like any value the routine built itself.</p
+><p
+>Because the send builds the message, its argument is the
+      construction, or a call that makes the message. A value built
+      before would have its string on another page, which the send would
+      not ship, so a name is refused:</p
+><pre
+class="listing fragment"
+><code
+>let c Count(n, "`share.from` to `share.to`")
+counts.send(c)      ; error: send builds the message on a page of its own</code
+></pre
+><p
+>A message may hold records, unions, strings and the containers
+      of the standard library — <code
+>Vector</code
+>, <code
+>Array</code
+>,
+      <code
+>List</code
+>, <code
+>HashMap</code
+> — nested as deep as the
+      program likes. What only makes sense in one process cannot be sent,
+      and the compiler says so: a delegate, an open file, a fixed-size
+      array.</p
+></section
+><section
+id="scaling-machines-build"
+><h2
+><a
+class="header"
+href="#scaling-machines-build"
+>One Program, One Build</a
+></h2
+><p
+>Pages shipped as they are only make sense to a program that
+      lays out its records the same way. So the nodes of a cluster run one
+      build of one program — which is why the transcript builds once and
+      starts the result four times. Two nodes check it before anything
+      else: each sends a stamp of its build when it connects, and a node
+      whose stamp differs is refused, with both stamps in the error. A
+      new version of the program is a new cluster.</p
+></section
+><section
+id="scaling-machines-failure"
+><h2
+><a
+class="header"
+href="#scaling-machines-failure"
+>When a Node Fails</a
+></h2
+><p
+>A node that crashes, loses its network or stops answering looks
+      the same from the other side as one that said goodbye: its channels
+      close, and a <code
+>receive</code
+> waiting on one of them answers
+      <code
+>null</code
+>. That is why the coordinator asks <code
+>if c
+      &#60;&#62; null</code
+>: with a worker killed in the middle of its share
+      it prints the counts of the others and finishes. A silent node is
+      noticed by its silence — the nodes exchange a heartbeat every half
+      second when nothing else flows, and one silent for two and a half
+      seconds is taken for gone. That is a suspicion, not a proof; a node
+      that was only slow finds its connection closed.</p
+><p
+>A send never waits for an answer and is never retried: a
+      message arrives at most once, the messages of one channel in the
+      order they were sent, and a message sent to a node that is gone is
+      dropped. Whether a lost share is sent to another worker is the
+      program's decision, not the runtime's. The tests of the cluster
+      runtime include such a program: a small transformer trained on
+      several nodes, each computing the gradients of its part of a batch,
+      one node summing them in a fixed order and sending the sum back.
+      Its loss is the same to the last bit as on one node, and with one
+      worker killed mid-run the others finish the training.</p
+><p
+>One limit is named: the nodes trust each other. A connection is
+      neither authenticated nor encrypted, and a node checks the framing
+      of what it receives, not the meaning — run a cluster only inside a
+      network you trust.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="scaling-connections.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Many Connections</span
+></a
+><a
+class="next"
+rel="next"
+href="lexical.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>Lexical Structure</span
+></a
+></nav
+></main
+></div
+></body
+></html
+>

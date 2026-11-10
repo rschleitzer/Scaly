@@ -1,0 +1,209 @@
+<chapter xml:id="scaling-machines">
+  <title>More Than One Machine</title>
+
+  <section xml:id="scaling-machines-overview">
+    <title>Where Memory Ends</title>
+    <para>Everything so far scaled inside one machine: the cores of the
+      earlier chapters share its memory, and the compiler hands them work
+      on its own. Past the machine's edge memory is no longer shared, a
+      message takes a fraction of a millisecond instead of a few
+      nanoseconds, and the other side may stop answering. Scaly does not
+      hide that edge. Within a machine a <code>for</code> decides by itself
+      where its rounds run; across machines the program says what goes
+      where, and what it sends is a message.</para>
+    <para>A message is a region (<xref linkend="scaling-why-regions"/>):
+      a value built on pages of its own, with everything it points to. A
+      send ships those pages as they are, and the receiving side fixes
+      every pointer in them to where the pages landed — with code the
+      compiler generates for each message type. There is no serialization
+      code to write and no schema to keep in step with the program.</para>
+  </section>
+
+  <section xml:id="scaling-machines-nodes">
+    <title>Nodes and Channels</title>
+    <para>The program of this chapter counts the primes below three
+      million on three worker nodes. One program plays both roles: started
+      without an argument it coordinates, with one it works. The
+      coordinator listens on a port, hands each worker that connects a
+      share of the range, and prints what comes back:</para>
+    <programlisting>define Share
+(
+    from: int
+    to: int
+)
+
+define Count
+(
+    primes: int
+    range: String
+)
+
+function is_prime(n: int) returns bool
+{
+    if n &lt; 2
+        return false
+    var d 2
+    while d * d &lt;= n
+    {
+        if n % d = 0
+            return false
+        d := d + 1
+    }
+    true
+}
+
+function count_primes(from: int, to: int) returns int
+{
+    var count 0
+    for k in to - from
+        if is_prime(from + k)
+            count := count + 1
+    count
+}
+
+procedure work()
+{
+    let peer Cluster.connect("localhost", 7700, 5000)
+    if peer = null
+        return
+    var shares Remote[Share](peer, 1)
+    let counts Remote[Count](peer, 2)
+    let share shares.receive()
+    if share &lt;&gt; null
+    {
+        let n count_primes(share.from, share.to)
+        counts.send(Count(n, "`share.from` to `share.to`"))
+    }
+    Cluster.disconnect(peer)
+}
+
+procedure coordinate(workers: int, limit: int)
+{
+    let listener Cluster.listen(7700)
+    var peers Array[ref[NodePeer]]()
+    var w 0
+    while w &lt; workers
+    {
+        let peer Cluster.accept(listener)
+        if peer &lt;&gt; null
+        {
+            let shares Remote[Share](peer, 1)
+            shares.send(Share(limit * w / workers, limit * (w + 1) / workers))
+            peers.add(peer)
+            w := w + 1
+        }
+    }
+    var total 0
+    for peer in peers
+    {
+        var counts Remote[Count](peer, 2)
+        let c counts.receive()
+        if c &lt;&gt; null
+        {
+            print "`c.primes` primes from `c.range`"
+            total := total + c.primes
+        }
+        Cluster.disconnect(peer)
+    }
+    print "`total` primes below `limit`"
+}
+
+if os.arguments().length &gt; 0
+    work()
+else
+    coordinate(3, 3000000)</programlisting>
+    <screen>$ scaly build primes.scaly -o primes
+$ ./primes work &amp;
+$ ./primes work &amp;
+$ ./primes work &amp;
+$ ./primes
+78498 primes from 0 to 1000000
+70435 primes from 1000000 to 2000000
+67883 primes from 2000000 to 3000000
+216816 primes below 3000000</screen>
+    <para>Here the four nodes are four processes on one machine; on four
+      machines the workers name the coordinator's host instead of
+      <code>localhost</code>, and nothing else changes.
+      <code>Cluster.connect</code> keeps trying for as long as its last
+      argument says, in milliseconds, because a worker may start before
+      the coordinator listens; <code>Cluster.accept</code> waits for the
+      next node to connect. Either answers the connection to the other
+      node, or <code>null</code>.</para>
+    <para>A <code>Remote[T]</code> is a channel to that node for messages
+      of one type, named by a number both sides agree on: here 1 for the
+      shares and 2 for the counts. <code>send</code> hands a message over
+      and returns at once; <code>receive</code> waits for the next one and
+      answers it, or <code>null</code> when the other node has said goodbye
+      or is gone. <code>Cluster.disconnect</code> says goodbye. The
+      coordinator first sends every share and only then collects, so the
+      three workers count at the same time — and each of them counts its
+      share with the plain <code>for</code> of
+      <xref linkend="scaling-loops"/>, on all the cores of its
+      machine.</para>
+  </section>
+
+  <section xml:id="scaling-machines-messages">
+    <title>A Message Is a Region</title>
+    <para><code>counts.send(Count(n, "…"))</code> builds the
+      <code>Count</code> — the record and the string in it — on a page of
+      its own, and the send ships that page and releases it. What is sent
+      is gone from the sender; nothing on the other side can point back
+      into it. The receiving node's pages hold the same bytes at other
+      addresses, the generated code fixes the pointers, and
+      <code>receive</code> hands the message to the routine that asked: it
+      belongs to that routine's region from then on and goes when that
+      region goes, like any value the routine built itself.</para>
+    <para>Because the send builds the message, its argument is the
+      construction, or a call that makes the message. A value built
+      before would have its string on another page, which the send would
+      not ship, so a name is refused:</para>
+    <programlisting role="fragment">let c Count(n, "`share.from` to `share.to`")
+counts.send(c)      ; error: send builds the message on a page of its own</programlisting>
+    <para>A message may hold records, unions, strings and the containers
+      of the standard library — <code>Vector</code>, <code>Array</code>,
+      <code>List</code>, <code>HashMap</code> — nested as deep as the
+      program likes. What only makes sense in one process cannot be sent,
+      and the compiler says so: a delegate, an open file, a fixed-size
+      array.</para>
+  </section>
+
+  <section xml:id="scaling-machines-build">
+    <title>One Program, One Build</title>
+    <para>Pages shipped as they are only make sense to a program that
+      lays out its records the same way. So the nodes of a cluster run one
+      build of one program — which is why the transcript builds once and
+      starts the result four times. Two nodes check it before anything
+      else: each sends a stamp of its build when it connects, and a node
+      whose stamp differs is refused, with both stamps in the error. A
+      new version of the program is a new cluster.</para>
+  </section>
+
+  <section xml:id="scaling-machines-failure">
+    <title>When a Node Fails</title>
+    <para>A node that crashes, loses its network or stops answering looks
+      the same from the other side as one that said goodbye: its channels
+      close, and a <code>receive</code> waiting on one of them answers
+      <code>null</code>. That is why the coordinator asks <code>if c
+      &lt;&gt; null</code>: with a worker killed in the middle of its share
+      it prints the counts of the others and finishes. A silent node is
+      noticed by its silence — the nodes exchange a heartbeat every half
+      second when nothing else flows, and one silent for two and a half
+      seconds is taken for gone. That is a suspicion, not a proof; a node
+      that was only slow finds its connection closed.</para>
+    <para>A send never waits for an answer and is never retried: a
+      message arrives at most once, the messages of one channel in the
+      order they were sent, and a message sent to a node that is gone is
+      dropped. Whether a lost share is sent to another worker is the
+      program's decision, not the runtime's. The tests of the cluster
+      runtime include such a program: a small transformer trained on
+      several nodes, each computing the gradients of its part of a batch,
+      one node summing them in a fixed order and sending the sum back.
+      Its loss is the same to the last bit as on one node, and with one
+      worker killed mid-run the others finish the training.</para>
+    <para>One limit is named: the nodes trust each other. A connection is
+      neither authenticated nor encrypted, and a node checks the framing
+      of what it receives, not the meaning — run a cluster only inside a
+      network you trust.</para>
+  </section>
+
+</chapter>
