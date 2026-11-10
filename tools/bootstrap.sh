@@ -83,7 +83,8 @@ if [ "$SCALY_COFF" != 1 ] && [ -f seed/scalyc.ll ] && [ -x /tmp/scalyc_seed_root
   tools/eio.sh /tmp/eio.o
   tools/ctime.sh /tmp/ctime.o
   tools/panic.sh /tmp/panic.o
-  rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
+  GPU_O=$(tools/gpu.sh /tmp/gpu.o)
+  rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o $GPU_O
 elif [ -f seed/scalyc.ll ] && SCALYC_SEED_NO_SCALYLS=1 SCALYC_SEED_NO_TOOL=1 tools/build-from-seed.sh /tmp/scalyc_seed_root > /tmp/scalyc_seed_root.log 2>&1; then
   echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root"
   ROOT=/tmp/scalyc_seed_root
@@ -127,7 +128,8 @@ if [ "$STAGE1_ONLY" = 1 ]; then
     tools/eio.sh /tmp/eio.o
     tools/ctime.sh /tmp/ctime.o
     tools/panic.sh /tmp/panic.o
-    rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
+    GPU_O=$(tools/gpu.sh /tmp/gpu.o)
+    rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o $GPU_O
   fi
   echo "bootstrap: OK -> /tmp/scalyc_stage1 (stage 1 only; /tmp/scalyc_stage2 removed — pass the binary to the suites)"
   exit 0
@@ -154,7 +156,8 @@ tools/fcontext.sh /tmp/fcontext.o
 tools/eio.sh /tmp/eio.o
 tools/ctime.sh /tmp/ctime.o
 tools/panic.sh /tmp/panic.o
-rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
+GPU_O=$(tools/gpu.sh /tmp/gpu.o)
+rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o $GPU_O
 wait $sc1_pid || { echo "bootstrap: FAIL — stage1 could not compile the scalyc package"; exit 1; }
 fi
 

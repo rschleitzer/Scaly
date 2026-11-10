@@ -47,8 +47,9 @@ tools/fcontext.sh "$REPO/lib/fcontext.o"
 tools/eio.sh "$REPO/lib/eio.o"
 tools/ctime.sh "$REPO/lib/ctime.o"
 tools/panic.sh "$REPO/lib/panic.o"
+GPU_O=$(tools/gpu.sh "$REPO/lib/gpu.o")
 rm -f "$REPO/lib/libscaly.a"
-ar rcs "$REPO/lib/libscaly.a" "$REPO/lib/libscaly.o" "$REPO/lib/fcontext.o" "$REPO/lib/eio.o" "$REPO/lib/ctime.o" "$REPO/lib/panic.o"
+ar rcs "$REPO/lib/libscaly.a" "$REPO/lib/libscaly.o" "$REPO/lib/fcontext.o" "$REPO/lib/eio.o" "$REPO/lib/ctime.o" "$REPO/lib/panic.o" $GPU_O
 
 WRAPPER="$BINDIR/scalyc"
 TMP=$(mktemp)
@@ -70,7 +71,8 @@ if [ ! -f "\$SCALY_HOME/lib/libscaly.a" ]; then
         && "\$SCALY_HOME/tools/eio.sh" "\$SCALY_HOME/lib/eio.o" >/dev/null 2>&1 \\
         && "\$SCALY_HOME/tools/ctime.sh" "\$SCALY_HOME/lib/ctime.o" >/dev/null 2>&1 \\
         && "\$SCALY_HOME/tools/panic.sh" "\$SCALY_HOME/lib/panic.o" >/dev/null 2>&1 \\
-        && ar rcs "\$SCALY_HOME/lib/libscaly.a" "\$SCALY_HOME/lib/libscaly.o" "\$SCALY_HOME/lib/fcontext.o" "\$SCALY_HOME/lib/eio.o" "\$SCALY_HOME/lib/ctime.o" "\$SCALY_HOME/lib/panic.o"
+        && GPU_O=\$("\$SCALY_HOME/tools/gpu.sh" "\$SCALY_HOME/lib/gpu.o" 2>/dev/null) \\
+        && ar rcs "\$SCALY_HOME/lib/libscaly.a" "\$SCALY_HOME/lib/libscaly.o" "\$SCALY_HOME/lib/fcontext.o" "\$SCALY_HOME/lib/eio.o" "\$SCALY_HOME/lib/ctime.o" "\$SCALY_HOME/lib/panic.o" \$GPU_O
 fi
 
 exec "\$SCALY_HOME/scalyc/build/scalyc" "\$@"

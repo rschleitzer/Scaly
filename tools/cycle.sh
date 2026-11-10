@@ -58,7 +58,8 @@ rebuild_runtime() {
   tools/eio.sh /tmp/eio.o
   tools/ctime.sh /tmp/ctime.o
   tools/panic.sh /tmp/panic.o
-  rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
+  GPU_O=$(tools/gpu.sh /tmp/gpu.o)
+  rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o $GPU_O
 }
 
 # The self-hosted ROOT needs the archive two-step to build stage1 (it emits

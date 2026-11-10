@@ -375,7 +375,8 @@ cp "$WORK/fcontext.o" /tmp/fcontext.o
 cp "$WORK/eio.o" /tmp/eio.o
 cp "$WORK/ctime.o" /tmp/ctime.o
 cp "$WORK/panic.o" /tmp/panic.o
-rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
+GPU_O=$(tools/gpu.sh /tmp/gpu.o)
+rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o $GPU_O
 echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
 
 if [ -n "$tool_pid" ]; then
