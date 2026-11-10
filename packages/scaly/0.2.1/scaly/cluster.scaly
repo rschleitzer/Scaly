@@ -57,6 +57,7 @@ use scaly.memory.Region.ReceivedRegion
 use scaly.fiber.Channel
 use scaly.fiber.Thread
 use scaly.fiber.Io
+use scaly.fiber.Scheduler
 
 ; The program's build stamp — defined by the Emitter in every program
 ; module (rule 10); a library archive only declares it.
@@ -193,6 +194,42 @@ define Cluster
         if fd < 0
             return null
         Cluster.setup(fd)
+    }
+
+    ; connect, trying again while the other node is not listening yet,
+    ; for up to ms milliseconds (memo rule 6: the wait is written where
+    ; it is waited). A refused handshake does not retry.
+    procedure connect(mutable host: pointer[const_char], port: i32, ms: int) returns ref[NodePeer]?
+    {
+        let deadline scaly_eio_now_ns() + ms * 1000000
+        repeat
+        {
+            let fd Io.connect_host(host, port)
+            if fd >= 0
+                return Cluster.setup(fd)
+            if scaly_eio_now_ns() >= deadline
+                return null
+            poll(null as pointer[pollfd], 0, 20)
+        }
+    }
+
+    ; Say goodbye and free the peer: close, wait for the reader, release
+    ; the record and the channels that came from it. After it nothing
+    ; receives from this peer any more.
+    procedure disconnect(mutable p: ref[NodePeer])
+    {
+        Cluster.close(p)
+        Thread.join(p.reader)
+        let chs p.chans
+        var i: size_t 0
+        while i < p.chan_count
+        {
+            Channel.dispose(chs[i] as ref[Channel])
+            i := i + 1
+        }
+        let pp Page.get(p)
+        pp.deallocate_extensions()
+        Page.release_page(pp)
     }
 
     ; Both directions run the same handshake: send our preamble
@@ -639,5 +676,58 @@ define Cluster
         Cluster.wacquire(p)
         close(p.fd)
         Cluster.wrelease(p)
+    }
+}
+
+; A channel to and from a peer that carries messages of ONE type, by
+; number -- the surface over Cluster.send / Channel.receive / fix_graph:
+;
+;   let peer Cluster.connect("localhost", 7700, 5000)
+;   let counts Remote[Count](peer, 2)
+;   counts.send(Count(n, "..."))       ; built on a page that leaves
+;   let c counts.receive()             ; ref[Count]?, null = the peer is gone
+;   Cluster.disconnect(peer)
+;
+; A message is a region: send builds it on a page of its own and ships
+; that page, which it serializes and releases (rule 4). A received
+; message joins the region of the routine that received it -- its pages
+; become exclusive pages of the caller's page --, so it lives as long as
+; a value that routine built, and goes with it.
+define Remote[T]
+(
+    peer: ref[NodePeer]
+    id: u64
+)
+{
+    ; The construction (or the call that makes the message) written as the
+    ; argument is put in here and built on a page of its own, which the
+    ; send serializes and releases (rule 4); a name is refused, its parts
+    ; would stay where they were built (Planner.put_in_lazy_call#).
+    procedure send(this, message: lazy T)
+    {
+        let out Page.allocate_page()
+        let m &^out message
+        Cluster.send(peer, id, m as pointer[void])
+    }
+
+    procedure receive(mutable this) returns ref[T]?
+    {
+        if current_scheduler = null
+            Scheduler.create(Page.allocate_page())
+        var p peer
+        let ch Cluster.channel(p, id)
+        let raw Channel.receive(ch)
+        if raw = null
+            return null
+        let rr raw as ref[ReceivedRegion]
+        let root rr.root as pointer[T]
+        rr.fix_graph(root)
+        let mark &# 0
+        let host Page.get(mark)
+        host.exclusive_pages.add(rr.region)
+        let hp Page.get(rr)
+        hp.deallocate_extensions()
+        Page.release_page(hp)
+        root as ref[T]
     }
 }

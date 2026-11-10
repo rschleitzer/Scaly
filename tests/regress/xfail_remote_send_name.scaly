@@ -1,0 +1,25 @@
+; Remote[T].send builds its message on a page of its own -- the argument is
+; put in as `&^out message` -- and ships that page. A NAME is copied there as
+; the record alone, its String stayed on the sender's frame, and the
+; receiver stopped with exit 18 at the first of its parts (2026-11-10). The
+; argument must be the construction or the call that makes the message
+; (Planner.report_remote_message_name#).
+; xfail: send builds the message on a page of its own
+define Count
+(
+    primes: int
+    range: String
+)
+
+procedure work()
+{
+    let peer Cluster.connect("localhost", 7709, 10)
+    if peer = null
+        return
+    let counts Remote[Count](peer, 2)
+    let c Count(1, String("1 to 2"))
+    counts.send(c)
+    Cluster.disconnect(peer)
+}
+
+work()
