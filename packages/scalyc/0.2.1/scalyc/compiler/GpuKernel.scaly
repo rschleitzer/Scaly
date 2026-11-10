@@ -1,0 +1,1371 @@
+; GpuKernel.scaly - which `for` loops could run on a graphics card.
+;
+; A loop the TaskPlanner calls parallel runs its rounds in any order, each
+; writing a slot of its own. A graphics card runs such a loop when its body
+; is a KERNEL: code a shading language can say, over data a card can hold.
+; This pass decides that per loop and collects what an emitter needs:
+;   - the body computes with bool, i32, u32 and f32 only; i64 and u64 are
+;     taken by a backend that has them (Metal), double by none;
+;   - it reads scalars of its environment (the kernel's UNIFORMS) and
+;     elements of a Vector, Slice or Array of such numbers (its BUFFERS);
+;   - it writes with `put` at exactly the loop's counter into a Vector of
+;     such numbers (its OUTPUTS) and nowhere else;
+;   - the functions it calls take and answer such scalars, are not
+;     recursive, allocate nothing and are kernels themselves -- they are
+;     listed callees first, the order a shading language wants them in;
+;   - nothing in it allocates, builds a record or a String, or leaves the
+;     loop early.
+; The loop's own counter and a scalar of the environment are exempt from
+; the 64-bit rule where they are narrowed on the spot: as the operand of a
+; cast to a 32-bit type or as an index. The count of rounds itself is
+; computed by the processor and checked there to fit 32 bits.
+;
+; Floating point goes to a backend that rounds exactly as the processor
+; does (Metal, told to); one that does not promise that (WebGPU) takes a
+; loop with floating-point numbers only where the program allows it.
+;
+; The kernel is a VIEW of the plan, not a copy: an emitter walks the same
+; planned body again, knowing that every shape in it passed here. Whatever
+; this pass does not know blocks, with the first blocker as the reason.
+;
+; Consumers: `--gpu-plan` prints the verdict per loop.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.TaskPlanner.TaskPlanner
+
+define GpuKernel
+{
+    define GpuKernel
+    (
+        ; One slot per `for` loop, in the TaskPlanner's walk order: file,
+        ; byte offset, verdict text.
+        report_files: Array[String]
+        report_offsets: Array[size_t]
+        report_verdicts: Array[String]
+        var loops_total: size_t
+        var loops_parallel: size_t
+        var kernels: size_t
+
+        var plan_functions: ref[Vector[PlannedFunction]]?
+        var plan_globals: ref[Vector[PlannedGlobal]]?
+
+        ; The verdict of the loop being classified. k_reason is the first
+        ; blocker; k_wide_reason the first use of a 64-bit integer, which
+        ; keeps the kernel from a backend without them; k_float says that
+        ; floating-point numbers are computed.
+        var k_blocked: bool
+        var k_reason: String
+        var k_wide: bool
+        var k_wide_reason: String
+        var k_float: bool
+
+        ; The names bound where the walk stands, innermost last, and what
+        ; each is: 0 a local or a parameter, 1 the counter of a loop inside
+        ; the body, 2 the classified loop's own counter. k_base is where the
+        ; routine being walked begins: a called function sees its own names.
+        k_locals: Array[String]
+        k_kinds: Array[int]
+        var k_base: size_t
+        ; how many loops inside the body enclose the walk
+        var k_depth: size_t
+        ; the called function the walk is in ("" in the body itself)
+        var k_in_function: String
+
+        ; What the kernel takes and gives: names and type names.
+        k_uniforms: Array[String]
+        k_uniform_types: Array[String]
+        k_buffers: Array[String]
+        k_buffer_types: Array[String]
+        k_outputs: Array[String]
+        k_output_types: Array[String]
+        ; The functions it calls, a callee before its caller: symbols and
+        ; names. fn_stack holds the ones being walked.
+        k_functions: Array[String]
+        k_function_names: Array[String]
+        fn_stack: Array[String]
+    )
+    {
+        init()
+        {
+            report_files := Array[String]^this()
+            report_offsets := Array[size_t]^this()
+            report_verdicts := Array[String]^this()
+            loops_total := 0
+            loops_parallel := 0
+            kernels := 0
+            plan_functions := null
+            plan_globals := null
+            k_blocked := false
+            k_reason := String^this("")
+            k_wide := false
+            k_wide_reason := String^this("")
+            k_float := false
+            k_locals := Array[String]^this()
+            k_kinds := Array[int]^this()
+            k_base := 0
+            k_depth := 0
+            k_in_function := String^this("")
+            k_uniforms := Array[String]^this()
+            k_uniform_types := Array[String]^this()
+            k_buffers := Array[String]^this()
+            k_buffer_types := Array[String]^this()
+            k_outputs := Array[String]^this()
+            k_output_types := Array[String]^this()
+            k_functions := Array[String]^this()
+            k_function_names := Array[String]^this()
+            fn_stack := Array[String]^this()
+        }
+
+        ; ================================================================
+        ; Entry point: one verdict per loop the TaskPlanner recorded (it
+        ; was asked to keep them, keep_fors). A loop it blocked is no
+        ; kernel for the reason it gave.
+        ; ================================================================
+        procedure analyze(mutable this: GpuKernel, plan: Plan, tp: ref[TaskPlanner])
+        {
+            plan_functions := plan.functions
+            plan_globals := plan.globals
+            var i: size_t 0
+            while i < tp.report_fors.length
+            {
+                let fr_ptr tp.report_fors.get i
+                let file_ptr tp.report_files.get i
+                let off_ptr tp.report_offsets.get i
+                let verdict_ptr tp.report_verdicts.get i
+                if fr_ptr <> null and file_ptr <> null and off_ptr <> null and verdict_ptr <> null
+                {
+                    loops_total := loops_total + 1
+                    let file_copy String^this((*file_ptr))
+                    report_files.add file_copy
+                    report_offsets.add((*off_ptr))
+                    if (*verdict_ptr) = "parallel"
+                    {
+                        loops_parallel := loops_parallel + 1
+                        this.classify_loop(fr_ptr.unwrap())
+                        if k_blocked = false
+                            kernels := kernels + 1
+                        let text this.verdict()
+                        let text_copy String^this(text)
+                        report_verdicts.add text_copy
+                    }
+                    else
+                    {
+                        let why (*verdict_ptr)
+                        let text "no kernel: `why`"
+                        let text_copy String^this(text)
+                        report_verdicts.add text_copy
+                    }
+                }
+                i := i + 1
+            }
+        }
+
+        ; Classify one loop the TaskPlanner calls parallel. Afterwards
+        ; k_blocked/k_reason, k_wide and k_float carry the verdict and the
+        ; k_ lists what the kernel takes, gives and calls.
+        procedure classify_loop(mutable this: GpuKernel, fr: PlannedFor)
+        {
+            k_blocked := false
+            k_reason := String^this("")
+            k_wide := false
+            k_wide_reason := String^this("")
+            k_float := false
+            k_locals.length := 0
+            k_kinds.length := 0
+            k_base := 0
+            k_depth := 0
+            k_in_function := String^this("")
+            k_uniforms.length := 0
+            k_uniform_types.length := 0
+            k_buffers.length := 0
+            k_buffer_types.length := 0
+            k_outputs.length := 0
+            k_output_types.length := 0
+            k_functions.length := 0
+            k_function_names.length := 0
+            fn_stack.length := 0
+            if fr.is_iterator_loop
+            {
+                this.block("iterates a collection")
+                return
+            }
+            ; The count of rounds is the processor's to compute: fr.expr is
+            ; not part of the kernel.
+            this.add_local(fr.identifier, 2)
+            this.k_action(fr.body)
+            if k_blocked
+                return
+            if k_outputs.length = 0
+            {
+                this.block("writes no result")
+                return
+            }
+            var i: size_t 0
+            while i < k_outputs.length
+            {
+                let o_ptr k_outputs.get i
+                if o_ptr <> null and GpuKernel.index_of(&k_buffers, (*o_ptr)) >= 0
+                    this.block_named("reads and writes ", (*o_ptr))
+                i := i + 1
+            }
+        }
+
+        ; The verdict of the loop just classified, as the report prints it.
+        function verdict(this: GpuKernel) returns String
+        {
+            if k_blocked
+                return "no kernel: `k_reason`"
+            var sb StringBuilder()
+            if k_wide or k_float
+                sb.append "kernel (metal): "
+            else
+                sb.append "kernel (metal, webgpu): "
+            sb.append "out "
+            GpuKernel.append_names(&sb, &k_outputs)
+            if k_uniforms.length + k_buffers.length > 0
+            {
+                sb.append "; in "
+                GpuKernel.append_names(&sb, &k_uniforms)
+                if k_uniforms.length > 0 and k_buffers.length > 0
+                    sb.append ", "
+                GpuKernel.append_names(&sb, &k_buffers)
+            }
+            if k_function_names.length > 0
+            {
+                sb.append "; calls "
+                GpuKernel.append_names(&sb, &k_function_names)
+            }
+            if k_wide
+            {
+                sb.append "; not webgpu: "
+                sb.append k_wide_reason
+            }
+            if k_wide = false and k_float
+                sb.append "; not webgpu: floating point, and the loop is not relaxed"
+            sb.to_string()
+        }
+
+        procedure append_names(mutable sb: ref[StringBuilder], names: ref[Array[String]])
+        {
+            var i: size_t 0
+            while i < names.length
+            {
+                let n_ptr names.get i
+                if n_ptr <> null
+                {
+                    if i > 0
+                        sb.append ", "
+                    sb.append((*n_ptr))
+                }
+                i := i + 1
+            }
+        }
+
+        ; Does the kernel go to a backend without 64-bit integers and
+        ; without exact floating point, as it stands?
+        function portable(this: GpuKernel) returns bool
+        {
+            if k_blocked or k_wide or k_float
+                return false
+            true
+        }
+
+        ; ================================================================
+        ; Verdict bookkeeping
+        ; ================================================================
+
+        ; Record the first blocker. Later calls are no-ops.
+        procedure block(mutable this: GpuKernel, reason: String)
+        {
+            if k_blocked
+                return
+            k_blocked := true
+            if k_in_function.get_length() > 0
+            {
+                let msg "in `k_in_function`: `reason`"
+                k_reason := String^this(msg)
+                return
+            }
+            k_reason := String^this(reason)
+        }
+
+        procedure block_named(mutable this: GpuKernel, prefix: String, name: String)
+        {
+            if k_blocked
+                return
+            let msg "`prefix``name`"
+            this.block(msg)
+        }
+
+        ; Record the first use of a 64-bit integer.
+        procedure note_wide(mutable this: GpuKernel, what: String)
+        {
+            if k_wide
+                return
+            k_wide := true
+            if k_in_function.get_length() > 0
+            {
+                let msg "in `k_in_function`: `what` is a 64-bit integer"
+                k_wide_reason := String^this(msg)
+                return
+            }
+            let msg "`what` is a 64-bit integer"
+            k_wide_reason := String^this(msg)
+        }
+
+        ; ================================================================
+        ; Types
+        ; ================================================================
+
+        ; What a card makes of a type: 0 nothing, 1 bool, 2 i32, 3 u32,
+        ; 4 f32, 5 a signed and 6 an unsigned 64-bit integer, 7 a double.
+        function scalar_kind(t: PlannedType) returns int
+        {
+            if t.generics <> null and t.generics.length > 0
+                return 0
+            if t.array_size.get_length() > 0
+                return 0
+            let nm t.name
+            match nm
+                case "bool"
+                    return 1
+                case "i32"
+                    return 2
+                case "u32"
+                    return 3
+                case "float" case "f32"
+                    return 4
+                case "int" case "i64"
+                    return 5
+                case "uint" case "u64" case "size_t"
+                    return 6
+                case "double" case "f64"
+                    return 7
+            0
+        }
+
+        function kind_is_integer(kind: int) returns bool
+        {
+            if kind = 2 or kind = 3 or kind = 5 or kind = 6
+                return true
+            false
+        }
+
+        function kind_is_wide(kind: int) returns bool
+        {
+            if kind = 5 or kind = 6
+                return true
+            false
+        }
+
+        ; A type as a reason names it: `Vector[double]`.
+        function type_text(t: PlannedType) returns String
+        {
+            if t.generics <> null and t.generics.length > 0
+            {
+                let g_ptr t.generics.get 0
+                if g_ptr <> null
+                {
+                    let inner GpuKernel.type_text(g_ptr.unwrap())
+                    return "`t.name`[`inner`]"
+                }
+            }
+            String(t.name)
+        }
+
+        ; The element kind of a Vector, Slice or Array (also behind one
+        ; reference); -1 for any other type.
+        function buffer_kind(t: PlannedType) returns int
+        {
+            if t.generics = null or t.generics.length <> 1
+                return 0 - 1
+            let g_ptr t.generics.get 0
+            if g_ptr = null
+                return 0 - 1
+            let nm t.name
+            match nm
+                case "ref" case "pointer"
+                    return GpuKernel.buffer_kind_direct(g_ptr.unwrap())
+                case "Vector" case "Slice" case "Array"
+                    return GpuKernel.scalar_kind(g_ptr.unwrap())
+            0 - 1
+        }
+
+        function buffer_kind_direct(t: PlannedType) returns int
+        {
+            if t.generics = null or t.generics.length <> 1
+                return 0 - 1
+            let g_ptr t.generics.get 0
+            if g_ptr = null
+                return 0 - 1
+            let nm t.name
+            match nm
+                case "Vector" case "Slice" case "Array"
+                    return GpuKernel.scalar_kind(g_ptr.unwrap())
+            0 - 1
+        }
+
+        ; A value the kernel computes with: its type must be a card's.
+        procedure check_value_type(mutable this: GpuKernel, t: PlannedType, what: String)
+        {
+            if k_blocked
+                return
+            let kind GpuKernel.scalar_kind(t)
+            if kind = 0
+            {
+                let msg "`what` is a `GpuKernel.type_text(t)`"
+                this.block(msg)
+                return
+            }
+            if kind = 7
+            {
+                let msg "`what` is a double"
+                this.block(msg)
+                return
+            }
+            if kind = 4
+                k_float := true
+            if GpuKernel.kind_is_wide(kind)
+                this.note_wide(what)
+        }
+
+        ; ================================================================
+        ; Names
+        ; ================================================================
+
+        procedure add_local(mutable this: GpuKernel, name: String, kind: int)
+        {
+            let copy String^this(name)
+            k_locals.add copy
+            k_kinds.add kind
+        }
+
+        procedure drop_locals(mutable this: GpuKernel, mark: size_t)
+        {
+            k_locals.length := mark
+            k_kinds.length := mark
+        }
+
+        ; Where name is bound in the routine being walked, innermost first;
+        ; -1 when it comes from outside.
+        function local_index(this: GpuKernel, name: String) returns int
+        {
+            var i k_locals.length
+            while i > k_base
+            {
+                i := i - 1
+                let p k_locals.get i
+                if p <> null and (*p) = name
+                    return i as int
+            }
+            0 - 1
+        }
+
+        function kind_at(this: GpuKernel, index: int) returns int
+        {
+            let p k_kinds.get(index as size_t)
+            if p = null
+                return 0
+            (*p)
+        }
+
+        function index_of(names: ref[Array[String]], name: String) returns int
+        {
+            var i: size_t 0
+            while i < names.length
+            {
+                let p names.get i
+                if p <> null and (*p) = name
+                    return i as int
+                i := i + 1
+            }
+            0 - 1
+        }
+
+        ; Record name in a list of the kernel's with its type, once.
+        procedure note_name(mutable this: GpuKernel, mutable names: ref[Array[String]], mutable types: ref[Array[String]], name: String, t: PlannedType)
+        {
+            if GpuKernel.index_of(names, name) >= 0
+                return
+            let name_copy String^this(name)
+            names.add name_copy
+            let text GpuKernel.type_text(t)
+            let text_copy String^this(text)
+            types.add text_copy
+        }
+
+        function has_members(op: PlannedOperand) returns bool
+        {
+            if op.member_access = null
+                return false
+            op.member_access.length > 0
+        }
+
+        ; `(a)`: a tuple of one unnamed component, built nowhere.
+        function is_grouping(tp: PlannedTuple) returns bool
+        {
+            if tp.is_region_alloc
+                return false
+            if tp.components = null
+                return false
+            if tp.components.length <> 1
+                return false
+            let c_ptr tp.components.get 0
+            if c_ptr = null
+                return false
+            let c c_ptr.unwrap()
+            if c.name <> null
+                return false
+            if c.value = null
+                return false
+            c.value.length = 1
+        }
+
+        ; Capitalized on its last segment, or `init`: a construction.
+        function is_construction_name(name: String) returns bool
+        {
+            if name = "init"
+                return true
+            let n name.get_length()
+            var start: size_t 0
+            var i: size_t 0
+            while i < n
+            {
+                if name.get(i) = ("." as char)
+                    start := i + 1
+                i := i + 1
+            }
+            if start >= n
+                return false
+            let c name.get(start)
+            if c >= ("A" as char) and c <= ("Z" as char)
+                return true
+            false
+        }
+
+        ; ================================================================
+        ; The walk. `narrowed` says the operand's value is narrowed where
+        ; it stands -- the operand of a cast to a 32-bit type, or an index
+        ; -- so a counter or a scalar of the environment may be 64 bits
+        ; wide there without the kernel computing in 64 bits.
+        ; ================================================================
+
+        procedure k_operands(mutable this: GpuKernel, ops: ref[Vector[PlannedOperand]]?, narrowed: bool)
+        {
+            if k_blocked
+                return
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                if k_blocked
+                    return
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.k_operand(op_ptr.unwrap(), narrowed)
+                i := i + 1
+            }
+        }
+
+        procedure k_operand(mutable this: GpuKernel, op: PlannedOperand, narrowed: bool)
+        {
+            if k_blocked
+                return
+            choose op.expr
+                when v: Variable
+                    this.k_variable(v, op, narrowed)
+                when c: Constant
+                    this.k_constant(c, op, narrowed)
+                when g: GlobalRef
+                    this.k_global(g, op, narrowed)
+                when call: Call
+                {
+                    if GpuKernel.has_members(op)
+                    {
+                        this.block_named("reads a member of what it gets from ", call.name)
+                        return
+                    }
+                    this.k_call(call)
+                }
+                when as_expr: As
+                {
+                    if GpuKernel.has_members(op)
+                    {
+                        this.block("reads a member of a cast")
+                        return
+                    }
+                    this.k_cast(as_expr, narrowed)
+                }
+                when tp: Tuple
+                {
+                    if GpuKernel.has_members(op) or GpuKernel.is_grouping(tp) = false
+                    {
+                        this.block_named("builds a ", GpuKernel.type_text(tp.tuple_type))
+                        return
+                    }
+                    let c_ptr tp.components.get 0
+                    if c_ptr <> null
+                    {
+                        let c c_ptr.unwrap()
+                        this.k_operands(c.value, narrowed)
+                    }
+                }
+                when blk: Block
+                {
+                    let mark k_locals.length
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.k_statement(s_ptr.unwrap())
+                            i := i + 1
+                        }
+                    }
+                    this.drop_locals(mark)
+                }
+                when iff: If
+                {
+                    if iff.prop <> null
+                    {
+                        this.block("tests for null")
+                        return
+                    }
+                    this.k_operands(iff.condition, false)
+                    this.k_statement_ref(iff.consequent)
+                    this.k_statement_ref(iff.alternative)
+                }
+                when wh: While
+                {
+                    if wh.cond.binding_item.name <> null
+                    {
+                        this.block("a while that binds a name")
+                        return
+                    }
+                    this.k_operands(wh.cond.operation, false)
+                    if wh.loop_label.get_length() > 0
+                    {
+                        this.block("a labelled loop")
+                        return
+                    }
+                    k_depth := k_depth + 1
+                    this.k_action(wh.body)
+                    k_depth := k_depth - 1
+                }
+                when rp: Repeat
+                {
+                    if rp.loop_label.get_length() > 0
+                    {
+                        this.block("a labelled loop")
+                        return
+                    }
+                    k_depth := k_depth + 1
+                    this.k_action(rp.body)
+                    k_depth := k_depth - 1
+                }
+                when fr: For
+                {
+                    if fr.is_iterator_loop
+                    {
+                        this.block("iterates a collection")
+                        return
+                    }
+                    if fr.loop_label.get_length() > 0
+                    {
+                        this.block("a labelled loop")
+                        return
+                    }
+                    ; the count of an inner loop is narrowed by the loop
+                    this.k_operands(fr.expr, true)
+                    let mark k_locals.length
+                    this.add_local(fr.identifier, 1)
+                    k_depth := k_depth + 1
+                    this.k_action(fr.body)
+                    k_depth := k_depth - 1
+                    this.drop_locals(mark)
+                }
+                when mt: Match
+                    this.block("a match")
+                when ch: Choose
+                    this.block("a choose")
+                when tr: Try
+                    this.block("a try")
+                when lm: Lambda
+                    this.block("a lambda")
+                when cl: Closure
+                    this.block("a closure")
+                when fref: FunctionRef
+                    this.block("a function as a value")
+                when bx: Box
+                    this.block("boxes a value")
+                when is_expr: Is
+                    this.block("an is test")
+                when vc: VariantConstruction
+                    this.block("builds a union")
+                when mx: Matrix
+                    this.block("builds an array")
+                when so: SizeOf
+                    this.block("a sizeof")
+                when ao: AlignOf
+                    this.block("an alignof")
+                else
+                    this.block("a type as a value")
+        }
+
+        procedure k_constant(mutable this: GpuKernel, c: PlannedConstant, op: PlannedOperand, narrowed: bool)
+        {
+            choose c.value
+                when b: Boolean
+                    0
+                when i: Integer
+                    this.k_integer_constant(op.result_type, narrowed)
+                when h: Hex
+                    this.k_integer_constant(op.result_type, narrowed)
+                when f: FloatingPoint
+                    this.check_value_type(op.result_type, "a constant")
+                when n: Null
+                    this.block("a null")
+                else
+                    this.block("a text constant")
+        }
+
+        ; An integer constant under a cast, or as the count of an inner
+        ; loop, is as wide as what it is narrowed to.
+        procedure k_integer_constant(mutable this: GpuKernel, t: PlannedType, narrowed: bool)
+        {
+            if narrowed and GpuKernel.kind_is_wide(GpuKernel.scalar_kind(t))
+                return
+            this.check_value_type(t, "a constant")
+        }
+
+        procedure k_variable(mutable this: GpuKernel, v: PlannedVariable, op: PlannedOperand, narrowed: bool)
+        {
+            let li this.local_index(v.name)
+            if li >= 0
+            {
+                if GpuKernel.has_members(op)
+                {
+                    this.block_named("reads a member of ", v.name)
+                    return
+                }
+                ; a local was judged where it was bound; a counter is 64
+                ; bits wide by the language and judged where it is used
+                if this.kind_at(li) > 0 and narrowed = false and GpuKernel.kind_is_wide(GpuKernel.scalar_kind(v.variable_type))
+                    this.note_wide("the counter `v.name`, used outside a cast,")
+                return
+            }
+            this.k_external(v.name, v.variable_type, op, narrowed)
+        }
+
+        procedure k_global(mutable this: GpuKernel, g: PlannedGlobalRef, op: PlannedOperand, narrowed: bool)
+        {
+            if plan_globals <> null
+            {
+                var i: size_t 0
+                while i < plan_globals.length
+                {
+                    let gl_ptr plan_globals.get i
+                    if gl_ptr <> null
+                    {
+                        let gl gl_ptr.unwrap()
+                        if gl.mangled_name = g.mangled_name
+                        {
+                            if gl.is_mutable
+                            {
+                                this.block_named("reads the mutable global ", g.name)
+                                return
+                            }
+                            ; a constant of the program is one of the kernel,
+                            ; in a called function too
+                            if GpuKernel.has_members(op) = false and GpuKernel.scalar_kind(g.global_type) > 0
+                            {
+                                if narrowed and GpuKernel.kind_is_wide(GpuKernel.scalar_kind(g.global_type))
+                                    return
+                                this.check_value_type(g.global_type, g.name)
+                                return
+                            }
+                        }
+                    }
+                    i := i + 1
+                }
+            }
+            this.k_external(g.name, g.global_type, op, narrowed)
+        }
+
+        ; A name from outside the loop: a scalar is a uniform, the length
+        ; of a Vector one too; the Vector itself is only indexed (k_subscript,
+        ; k_put), never handed on.
+        procedure k_external(mutable this: GpuKernel, name: String, t: PlannedType, op: PlannedOperand, narrowed: bool)
+        {
+            if k_in_function.get_length() > 0
+            {
+                this.block_named("reads ", name)
+                return
+            }
+            if GpuKernel.has_members(op)
+            {
+                if op.member_access.length = 1 and GpuKernel.buffer_kind(t) >= 0
+                {
+                    let ma_ptr op.member_access.get 0
+                    if ma_ptr <> null
+                    {
+                        let ma ma_ptr.unwrap()
+                        if ma.name = "length" and ma.is_method = false
+                        {
+                            let lname "`name`.length"
+                            this.note_name(&k_uniforms, &k_uniform_types, lname, ma.result_type)
+                            if narrowed = false
+                                this.note_wide(lname)
+                            return
+                        }
+                    }
+                }
+                this.block_named("reads a member of ", name)
+                return
+            }
+            let kind GpuKernel.scalar_kind(t)
+            if kind = 0
+            {
+                let msg "uses `name`, a `GpuKernel.type_text(t)`, as a whole"
+                this.block(msg)
+                return
+            }
+            if kind = 7
+            {
+                this.block_named("computes in double: ", name)
+                return
+            }
+            if kind = 4
+                k_float := true
+            if GpuKernel.kind_is_wide(kind) and narrowed = false
+                this.note_wide(name)
+            this.note_name(&k_uniforms, &k_uniform_types, name, t)
+        }
+
+        ; A cast: to a 32-bit type it narrows its operand; to a 64-bit
+        ; integer it passes on being narrowed (an index written
+        ; `i as size_t`) and otherwise computes in 64 bits.
+        procedure k_cast(mutable this: GpuKernel, a: PlannedAs, narrowed: bool)
+        {
+            if a.value = null
+                return
+            let kind GpuKernel.scalar_kind(a.target_type)
+            if kind = 0
+            {
+                this.block_named("casts to ", GpuKernel.type_text(a.target_type))
+                return
+            }
+            if kind = 7
+            {
+                this.block("casts to double")
+                return
+            }
+            if kind = 4
+                k_float := true
+            let r a.value
+            if GpuKernel.kind_is_wide(kind)
+            {
+                if narrowed = false
+                    this.note_wide("a cast to `a.target_type.name`")
+                this.k_operand((*r), narrowed)
+                return
+            }
+            this.k_operand((*r), true)
+        }
+
+        procedure k_call(mutable this: GpuKernel, call: PlannedCall)
+        {
+            if k_blocked
+                return
+            if call.is_indirect
+            {
+                this.block("an indirect call")
+                return
+            }
+            if call.is_intrinsic and call.is_operator
+            {
+                this.k_operator(call)
+                return
+            }
+            if call.is_intrinsic
+            {
+                this.block_named("uses the intrinsic ", call.name)
+                return
+            }
+            if call.name = "[]"
+            {
+                this.k_subscript(call)
+                return
+            }
+            if call.name = "put"
+            {
+                this.k_put(call)
+                return
+            }
+            if call.is_operator
+            {
+                this.block_named("uses a record's operator ", call.name)
+                return
+            }
+            if GpuKernel.is_construction_name(call.name)
+            {
+                this.block_named("constructs ", call.name)
+                return
+            }
+            this.k_function(call)
+        }
+
+        ; An operator of the language on numbers.
+        procedure k_operator(mutable this: GpuKernel, call: PlannedCall)
+        {
+            if call.args = null
+                return
+            let n call.args.length
+            if n = 1 and (call.name = "*" or call.name = "&")
+            {
+                this.block("takes or follows an address")
+                return
+            }
+            var i: size_t 0
+            while i < n
+            {
+                let a_ptr call.args.get i
+                if a_ptr <> null
+                    this.k_operand(a_ptr.unwrap(), false)
+                i := i + 1
+            }
+            if k_blocked
+                return
+            if GpuKernel.scalar_kind(call.result_type) = 4 and (call.name = "%" or call.name = "mod")
+            {
+                this.block("a floating-point remainder")
+                return
+            }
+            this.check_value_type(call.result_type, "the result of `call.name`")
+        }
+
+        ; The receiver of a subscript or a put: a Vector, Slice or Array of
+        ; the environment, by its bare name. Answers its name's operand
+        ; kind, -1 after blocking.
+        procedure buffer_receiver(mutable this: GpuKernel, call: PlannedCall, what: String) returns int
+        {
+            let recv_ptr call.args.get 0
+            if recv_ptr = null
+            {
+                this.block(what)
+                return 0 - 1
+            }
+            let recv recv_ptr.unwrap()
+            if GpuKernel.has_members(recv)
+            {
+                this.block_named(what, " of a member")
+                return 0 - 1
+            }
+            choose recv.expr
+                when v: Variable
+                {
+                    if this.local_index(v.name) >= 0 or k_in_function.get_length() > 0
+                    {
+                        this.block_named(what, " of a local")
+                        return 0 - 1
+                    }
+                    let kind GpuKernel.buffer_kind(v.variable_type)
+                    if kind < 0
+                    {
+                        let msg "`what` of `v.name`, a `GpuKernel.type_text(v.variable_type)`"
+                        this.block(msg)
+                        return 0 - 1
+                    }
+                    if kind = 0 or kind = 1 or kind = 7
+                    {
+                        let msg "`v.name` is a `GpuKernel.type_text(v.variable_type)`"
+                        this.block(msg)
+                        return 0 - 1
+                    }
+                    return kind
+                }
+                else
+                    0
+            this.block_named(what, " of a computed value")
+            0 - 1
+        }
+
+        function receiver_name(call: PlannedCall) returns String
+        {
+            let recv_ptr call.args.get 0
+            if recv_ptr <> null
+            {
+                let recv recv_ptr.unwrap()
+                choose recv.expr
+                    when v: Variable
+                        return String(v.name)
+                    else
+                        0
+            }
+            ""
+        }
+
+        function receiver_type(call: PlannedCall) returns PlannedType
+        {
+            let recv_ptr call.args.get 0
+            let recv recv_ptr.unwrap()
+            recv.result_type
+        }
+
+        ; xs[i]: an element of a buffer.
+        procedure k_subscript(mutable this: GpuKernel, call: PlannedCall)
+        {
+            if call.args = null or call.args.length <> 2
+            {
+                this.block("a subscript")
+                return
+            }
+            let kind this.buffer_receiver(call, "a subscript")
+            if kind < 0
+                return
+            let idx_ptr call.args.get 1
+            if idx_ptr <> null
+                this.k_operand(idx_ptr.unwrap(), true)
+            if k_blocked
+                return
+            let name GpuKernel.receiver_name(call)
+            if kind = 4
+                k_float := true
+            if GpuKernel.kind_is_wide(kind)
+                this.note_wide("an element of `name`")
+            this.note_name(&k_buffers, &k_buffer_types, name, GpuKernel.receiver_type(call))
+        }
+
+        ; out.put(i, v): the round's result, at exactly the loop's counter.
+        procedure k_put(mutable this: GpuKernel, call: PlannedCall)
+        {
+            if call.args = null or call.args.length <> 3
+            {
+                this.block("a put")
+                return
+            }
+            let kind this.buffer_receiver(call, "a put")
+            if kind < 0
+                return
+            let idx_ptr call.args.get 1
+            let val_ptr call.args.get 2
+            if idx_ptr = null or val_ptr = null
+                return
+            if this.is_own_counter(idx_ptr.unwrap()) = false
+            {
+                this.block("a put at another index than the loop's counter")
+                return
+            }
+            this.k_operand(val_ptr.unwrap(), false)
+            if k_blocked
+                return
+            let name GpuKernel.receiver_name(call)
+            if kind = 4
+                k_float := true
+            if GpuKernel.kind_is_wide(kind)
+                this.note_wide("an element of `name`")
+            this.note_name(&k_outputs, &k_output_types, name, GpuKernel.receiver_type(call))
+        }
+
+        ; The classified loop's counter, under groupings and casts between
+        ; integers: the one index two rounds cannot share.
+        function is_own_counter(this: GpuKernel, op: PlannedOperand) returns bool
+        {
+            if GpuKernel.has_members(op)
+                return false
+            choose op.expr
+                when v: Variable
+                {
+                    let li this.local_index(v.name)
+                    if li < 0
+                        return false
+                    return this.kind_at(li) = 2
+                }
+                when as_expr: As
+                {
+                    if as_expr.value = null
+                        return false
+                    if GpuKernel.kind_is_integer(GpuKernel.scalar_kind(as_expr.target_type)) = false
+                        return false
+                    let r as_expr.value
+                    return this.is_own_counter((*r))
+                }
+                when tp: Tuple
+                {
+                    if GpuKernel.is_grouping(tp) = false
+                        return false
+                    let c_ptr tp.components.get 0
+                    if c_ptr = null
+                        return false
+                    let c c_ptr.unwrap()
+                    let in_ptr c.value.get 0
+                    if in_ptr = null
+                        return false
+                    return this.is_own_counter(in_ptr.unwrap())
+                }
+                else
+                    0
+            false
+        }
+
+        ; A function the body calls: a kernel function itself, walked once,
+        ; listed after everything it calls.
+        procedure k_function(mutable this: GpuKernel, call: PlannedCall)
+        {
+            ; the arguments are the caller's values
+            if call.args <> null
+            {
+                var ai: size_t 0
+                while ai < call.args.length
+                {
+                    let a_ptr call.args.get ai
+                    if a_ptr <> null
+                        this.k_operand(a_ptr.unwrap(), false)
+                    ai := ai + 1
+                }
+            }
+            if k_blocked
+                return
+            if GpuKernel.index_of(&k_functions, call.mangled_name) >= 0
+                return
+            if GpuKernel.index_of(&fn_stack, call.mangled_name) >= 0
+            {
+                ; the function's own name says where
+                k_in_function := String^this("")
+                this.block_named(call.name, " is recursive")
+                return
+            }
+            if call.requires_page_param or call.can_throw
+            {
+                this.block_named(call.name, " allocates or throws")
+                return
+            }
+            if plan_functions = null
+            {
+                this.block_named("calls ", call.name)
+                return
+            }
+            var i: size_t 0
+            while i < plan_functions.length
+            {
+                let f_ptr plan_functions.get i
+                if f_ptr <> null and f_ptr.mangled_name = call.mangled_name
+                {
+                    var has_body false
+                    choose f_ptr.impl
+                        when action: Action
+                            has_body := true
+                        else
+                            0
+                    if has_body
+                    {
+                        this.k_function_body(f_ptr.unwrap())
+                        return
+                    }
+                }
+                i := i + 1
+            }
+            this.block_named("calls a function whose body is not here: ", call.name)
+        }
+
+        procedure k_function_body(mutable this: GpuKernel, func: PlannedFunction)
+        {
+            let saved_base k_base
+            let saved_depth k_depth
+            let saved_in String(k_in_function)
+            k_base := k_locals.length
+            k_depth := 0
+            k_in_function := String^this(func.name)
+            let stack_copy String^this(func.mangled_name)
+            fn_stack.add stack_copy
+
+            if func.page_parameter <> null or func.can_throw
+                this.block("allocates or throws")
+            if func.return_type = null
+                this.block("answers nothing")
+            if func.return_type <> null
+            {
+                let rt func.return_type
+                this.check_value_type((*rt), "the result")
+            }
+            if func.input <> null
+            {
+                var pi: size_t 0
+                while pi < func.input.length
+                {
+                    let p_ptr func.input.get pi
+                    if p_ptr <> null and k_blocked = false
+                    {
+                        let p p_ptr.unwrap()
+                        if p.name = null or p.item_type = null
+                            this.block("a parameter without a name or a type")
+                        else
+                        {
+                            let pt p.item_type
+                            let pname (*p.name)
+                            this.check_value_type((*pt), "the parameter `pname`")
+                            this.add_local(pname, 0)
+                        }
+                    }
+                    pi := pi + 1
+                }
+            }
+            choose func.impl
+                when action: Action
+                    this.k_action(action)
+                else
+                    0
+
+            this.drop_locals(k_base)
+            fn_stack.length := fn_stack.length - 1
+            k_base := saved_base
+            k_depth := saved_depth
+            k_in_function := String^this(saved_in)
+            if k_blocked
+                return
+            let sym_copy String^this(func.mangled_name)
+            k_functions.add sym_copy
+            let name_copy String^this(func.name)
+            k_function_names.add name_copy
+        }
+
+        ; ================================================================
+        ; Statements
+        ; ================================================================
+
+        procedure k_statement_ref(mutable this: GpuKernel, stmt: ref[PlannedStatement]?)
+        {
+            if k_blocked
+                return
+            if stmt <> null
+            {
+                let s stmt
+                let mark k_locals.length
+                this.k_statement((*s))
+                this.drop_locals(mark)
+            }
+        }
+
+        ; An action: a value computed, or `target := source` into a local
+        ; of the round.
+        procedure k_action(mutable this: GpuKernel, act: PlannedAction)
+        {
+            if k_blocked
+                return
+            this.k_operands(act.source, false)
+            if k_blocked
+                return
+            if act.target = null
+                return
+            if act.target.length <> 1
+            {
+                this.block("a compound assignment target")
+                return
+            }
+            let t_ptr act.target.get 0
+            if t_ptr = null
+                return
+            let top t_ptr.unwrap()
+            if GpuKernel.has_members(top)
+            {
+                this.block("writes a member")
+                return
+            }
+            choose top.expr
+                when v: Variable
+                {
+                    let li this.local_index(v.name)
+                    if li < 0
+                    {
+                        this.block_named("reduces into ", v.name)
+                        return
+                    }
+                    if this.kind_at(li) > 0
+                        this.block_named("writes the counter ", v.name)
+                }
+                when g: GlobalRef
+                    this.block_named("writes the global ", g.name)
+                else
+                    this.block("an indirect write")
+        }
+
+        procedure k_statement(mutable this: GpuKernel, stmt: PlannedStatement)
+        {
+            if k_blocked
+                return
+            choose stmt
+                when action: Action
+                    this.k_action(action)
+                when binding: Binding
+                    this.k_binding(binding)
+                when ret: Return
+                {
+                    if k_in_function.get_length() = 0
+                    {
+                        this.block("a return")
+                        return
+                    }
+                    this.k_operands(ret.result, false)
+                }
+                when throw_stmt: Throw
+                    this.block("a throw")
+                when brk: Break
+                {
+                    if k_depth = 0
+                    {
+                        this.block("a break of the loop itself")
+                        return
+                    }
+                    if brk.loop_label.get_length() > 0
+                    {
+                        this.block("a labelled break")
+                        return
+                    }
+                    if brk.result <> null and brk.result.length > 0
+                        this.block("a break with a value")
+                }
+                when cont: Continue
+                {
+                    if cont.loop_label.get_length() > 0
+                        this.block("a labelled continue")
+                }
+        }
+
+        ; `let x …` / `var x …`: a scalar of the round.
+        procedure k_binding(mutable this: GpuKernel, binding: PlannedBinding)
+        {
+            if binding.binding_item.name = null
+            {
+                this.block("a binding without a name")
+                return
+            }
+            let name (*binding.binding_item.name)
+            if binding.operation = null or binding.operation.length <> 1
+            {
+                this.block_named("a binding without a value: ", name)
+                return
+            }
+            this.k_operands(binding.operation, false)
+            if k_blocked
+                return
+            if binding.binding_item.item_type <> null
+            {
+                let it binding.binding_item.item_type
+                this.check_value_type((*it), name)
+            }
+            else
+            {
+                let op_ptr binding.operation.get 0
+                if op_ptr <> null
+                    this.check_value_type(op_ptr.result_type, name)
+            }
+            this.add_local(name, 0)
+        }
+    }
+}

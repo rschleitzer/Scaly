@@ -1,0 +1,144 @@
+; One loop per verdict of --gpu-plan.
+
+function triple(a: i32, k: i32) returns i32
+{
+    var s: i32 a
+    var j: i32 0
+    while j < 3
+    {
+        s := s + k
+        j := j + 1
+    }
+    s
+}
+
+define LIMIT: i32 9
+
+define Pair(x: i32, y: i32)
+
+function wide(a: int) returns int
+    a * 3
+
+function capped(a: i32) returns i32
+{
+    if a > LIMIT
+        return LIMIT
+    a
+}
+
+function half(a: f32) returns f32
+    a * 0.5
+
+function twice(a: double) returns double
+    a * 2.0
+
+function down(a: i32) returns i32
+{
+    if a <= 0
+        return 0
+    down(a - 1) + 1
+}
+
+function toupper(c: i32) returns i32 extern
+
+function text_of(a: i32) returns String
+    "`a as int`"
+
+procedure fill(xs: Slice[i32], mutable out: ref[Vector[i32]], k: i32)
+{
+    for i in xs.length
+        out.put(i, xs[i] + k)
+}
+
+let n 1000
+let k: i32 7
+let big 5
+let scale: f32 0.5
+let wide_scale 0.25
+
+; both backends: i32 only, the counter cast away
+var a Vector[i32](n as size_t)
+for i in n
+    a.put(i as size_t, triple(i as i32, k))
+
+; both backends: an inner counted loop and a buffer read
+var b Vector[i32](n as size_t)
+for i in n
+{
+    var s: i32 0
+    for j in 4
+        s := s + a[i as size_t] * (j as i32)
+    b.put(i as size_t, s)
+}
+
+; metal only: a 64-bit integer
+var c Vector[int](n as size_t)
+for i in n
+    c.put(i as size_t, wide(i) + big)
+
+; metal only: floating point, not relaxed
+var d Vector[f32](n as size_t)
+for i in n
+    d.put(i as size_t, half(i as f32) * scale)
+
+; no kernel: a double
+var e Vector[double](n as size_t)
+for i in n
+    e.put(i as size_t, twice(i as double) * wide_scale)
+
+; no kernel: recursion
+var f Vector[i32](n as size_t)
+for i in n
+    f.put(i as size_t, down((i as i32) & 7))
+
+; no kernel: a C function
+var g Vector[i32](n as size_t)
+for i in n
+    g.put(i as size_t, toupper(i as i32))
+
+; no kernel: a String
+var h Vector[size_t](n as size_t)
+for i in n
+{
+    let s text_of(i as i32)
+    h.put(i as size_t, s.length())
+}
+
+; no kernel: a record
+var r Vector[i32](n as size_t)
+for i in n
+{
+    let p Pair(i as i32, k)
+    r.put(i as size_t, p.x + p.y)
+}
+
+; both backends: a constant of the program, a length, an if with a value
+var q Vector[i32](n as size_t)
+for i in n
+{
+    let v: i32 if a[i as size_t] > LIMIT: capped(k) else (1 as i32)
+    q.put(i as size_t, v + (a.length as i32))
+}
+
+; no kernel: a reduction into an outer name
+var total: i32 0
+for i in n
+    total := total + a[i as size_t]
+
+; no kernel: a put beside the counter
+var m Vector[i32](n as size_t)
+for i in n
+    m.put((n - 1 - i) as size_t, a[i as size_t])
+
+; no kernel: reads what it writes
+for i in n
+    m.put(i as size_t, m[i as size_t] + 1)
+
+; no kernel: the loop is not parallel
+for i in 3
+    print "round"
+
+; both backends: in a routine, a Slice read and a Vector behind a reference
+fill(a.as_slice(), &b, k)
+
+print "`a[1] as int` `b[1] as int` `c[1]` `total as int` `m[1] as int`"

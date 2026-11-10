@@ -33,6 +33,7 @@ use scalyc.repl
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
 use scalyc.compiler.TaskPlanner
+use scalyc.compiler.GpuKernel
 use scalyc.compiler.PointerCensus
 use scalyc.compiler.WriteCensus
 use scalyc.compiler.Interface.Interface
@@ -70,6 +71,7 @@ define Options
     no_use_vis: bool        ; --no-use-vis: disable strict use visibility
     task_plan: bool         ; --task-plan: stage-3 parallelizability report
     loop_census: bool       ; --loop-census: counted `while` loops the engine could reach
+    gpu_plan: bool          ; --gpu-plan: which parallel loops a graphics card could run
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     write_report: bool      ; --write-report: writes through parameters, off the Plan
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
@@ -127,6 +129,7 @@ define Options
         no_use_vis := false
         task_plan := false
         loop_census := false
+        gpu_plan := false
         pointer_report := false
         write_report := false
         host_report := false
@@ -254,6 +257,10 @@ define cli
                 else if arg = "--loop-census"
                 {
                     opts.loop_census := true
+                }
+                else if arg = "--gpu-plan"
+                {
+                    opts.gpu_plan := true
                 }
                 else if arg = "--pointer-report"
                 {
@@ -501,6 +508,7 @@ define cli
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
         Console.println("  --task-plan    Report the parallelizability verdict of every for loop, and every recursive call pair that forks")
         Console.println("  --loop-census  Report which while loops are counted and could run in parallel")
+        Console.println("  --gpu-plan     Report which parallel for loops a graphics card could run, and for which backends")
         Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
         Console.println("  --write-report  Report every write through a parameter, off the Plan")
         Console.println("  --purity-check  Report every function that writes what its parameters reach")
@@ -1183,15 +1191,23 @@ define cli
         ; through the adaptive engine; a blocked one runs sequentially.
         ; --loop-census rides the same walk and prints its own lines, so
         ; the --task-plan output the suites parse stays as it is.
-        if opts.task_plan or opts.loop_census
+        if opts.task_plan or opts.loop_census or opts.gpu_plan
         {
             var task_planner TaskPlanner.TaskPlanner()
             task_planner.census_while := opts.loop_census
+            task_planner.keep_fors := opts.gpu_plan
             task_planner.analyze(plan, opts.input_file)
             if opts.task_plan
                 cli.print_task_plan(&task_planner)
             if opts.loop_census
                 cli.print_loop_census(&task_planner)
+            ; --gpu-plan asks each loop the walk met whether it is a kernel
+            if opts.gpu_plan
+            {
+                var gpu_kernel GpuKernel.GpuKernel()
+                gpu_kernel.analyze(plan, &task_planner)
+                cli.print_gpu_plan(&gpu_kernel)
+            }
             ; a report with nothing to write is the whole job: `scalyc
             ; --task-plan prog.scaly` answers the verdicts and stops (it went
             ; on to "-o <file> required for linking", rc 7, 2026-11-09)
@@ -2358,6 +2374,15 @@ define cli
         let head "loop-census: `cli.format_size(tp.whiles_total)` while-loops, `cli.format_size(tp.whiles_counted)` counted, `cli.format_size(tp.whiles_parallel)` parallelizable"
         Console.println(head.to_c_string())
         cli.print_located("loop-census: ", &tp.while_files, &tp.while_offsets, &tp.while_verdicts)
+    }
+
+    ; --gpu-plan: the head line counts the loops, the parallel ones and the
+    ; kernels among them, then one located line per `for` (GpuKernel.analyze).
+    procedure print_gpu_plan(gk: ref[GpuKernel.GpuKernel])
+    {
+        let head "gpu-plan: `cli.format_size(gk.loops_total)` for-loops, `cli.format_size(gk.loops_parallel)` parallel, `cli.format_size(gk.kernels)` kernels"
+        Console.println(head.to_c_string())
+        cli.print_located("gpu-plan: ", &gk.report_files, &gk.report_offsets, &gk.report_verdicts)
     }
 
     ; --host-report: the head line counts the candidates and the LOCAL

@@ -120,6 +120,10 @@ define TaskPlanner
         ; Off unless the cli asks: the Emitter and the codeLens never see
         ; a `while` verdict.
         var census_while: bool
+        ; The loops themselves, one per slot of the report (--gpu-plan asks
+        ; each again whether it is a kernel). Off unless the cli asks.
+        var keep_fors: bool
+        report_fors: Array[PlannedFor]
         while_files: Array[String]
         while_offsets: Array[size_t]
         while_verdicts: Array[String]
@@ -197,6 +201,8 @@ define TaskPlanner
             wr_masks := Array[size_t]^this()
             wr_base := 0
             census_while := false
+            keep_fors := false
+            report_fors := Array[PlannedFor]^this()
             while_files := Array[String]^this()
             while_offsets := Array[size_t]^this()
             while_verdicts := Array[String]^this()
@@ -484,6 +490,8 @@ define TaskPlanner
         {
             this.classify_body(fr)
             loops_total := loops_total + 1
+            if keep_fors
+                report_fors.add fr
             ; Report strings must live on the TaskPlanner's own page —
             ; a default-local copy dangles by print time (the use-vis
             ; report's `String^this` + bound-local-add idiom).

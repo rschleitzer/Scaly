@@ -14,6 +14,7 @@ define compiler
     module Interface     ; --emit-interface: a package's generated interface (facts from Planner + WriteCensus)
     module Planner
     module TaskPlanner  ; Stage-3 Plan analysis pass (parallelizability), runs after Planner
+    module GpuKernel    ; --gpu-plan: which parallel loops a graphics card could run (reads the TaskPlanner's verdicts)
     module StoreEffects ; which record types a routine overwrites whole -> noalias parameters (the aliasing rule)
     module StackVectors ; which local Vectors may live on the machine stack instead of the frame page
     module PointerCensus ; --pointer-report: raw-pointer census off the Plan (reads Planner statics)
