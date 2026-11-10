@@ -441,6 +441,8 @@ struct Planner;
 struct Planner;
 struct TaskPlanner;
 struct TaskPlanner;
+struct GpuKernel;
+struct GpuKernel;
 struct StoreEffects;
 struct StoreEffects;
 struct StackVectors;
@@ -13340,6 +13342,87 @@ template <> struct Vector<Vector<KeyValuePair<String, LocalBinding>>>
 };
 #endif
 
+#ifndef SCALY_TYPE_VectorIterator_LPlannedFor_R
+#define SCALY_TYPE_VectorIterator_LPlannedFor_R
+template <> struct VectorIterator<PlannedFor>
+{
+    Vector<PlannedFor>* vector;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Slice_LPlannedFor_R
+#define SCALY_TYPE_Slice_LPlannedFor_R
+template <> struct Slice<PlannedFor>
+{
+    uint64_t length;
+    PlannedFor* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_SliceIterator_LPlannedFor_R
+#define SCALY_TYPE_SliceIterator_LPlannedFor_R
+template <> struct SliceIterator<PlannedFor>
+{
+    Slice<PlannedFor> slice;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Node_LPlannedFor_R
+#define SCALY_TYPE_Node_LPlannedFor_R
+template <> struct Node<PlannedFor>
+{
+    PlannedFor element;
+    Node<PlannedFor>* next;
+};
+#endif
+
+#ifndef SCALY_TYPE_ListIterator_LPlannedFor_R
+#define SCALY_TYPE_ListIterator_LPlannedFor_R
+template <> struct ListIterator<PlannedFor>
+{
+    Node<PlannedFor>* current;
+};
+#endif
+
+#ifndef SCALY_TYPE_List_LPlannedFor_R
+#define SCALY_TYPE_List_LPlannedFor_R
+template <> struct List<PlannedFor>
+{
+    Node<PlannedFor>* head;
+    Node<PlannedFor>* tail;
+};
+#endif
+
+#ifndef SCALY_TYPE_Vector_LPlannedFor_R
+#define SCALY_TYPE_Vector_LPlannedFor_R
+template <> struct Vector<PlannedFor>
+{
+    uint64_t length;
+    PlannedFor* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_ArrayIterator_LPlannedFor_R
+#define SCALY_TYPE_ArrayIterator_LPlannedFor_R
+template <> struct ArrayIterator<PlannedFor>
+{
+    Array<PlannedFor>* array;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Array_LPlannedFor_R
+#define SCALY_TYPE_Array_LPlannedFor_R
+template <> struct Array<PlannedFor>
+{
+    uint64_t length;
+    uint64_t capacity;
+    PlannedFor* buffer;
+};
+#endif
+
 #ifndef SCALY_TYPE__Z11TaskPlannerB6scalycB4v0_2
 #define SCALY_TYPE__Z11TaskPlannerB6scalycB4v0_2
 struct TaskPlanner
@@ -13370,6 +13453,8 @@ struct TaskPlanner
     Array<uint64_t> wr_masks;
     uint64_t wr_base;
     bool census_while;
+    bool keep_fors;
+    Array<PlannedFor> report_fors;
     Array<String> while_files;
     Array<uint64_t> while_offsets;
     Array<String> while_verdicts;
@@ -13388,6 +13473,40 @@ struct TaskPlanner
     Array<uint64_t> red_counts;
     String cls_own_label;
     Array<String> cls_inner_labels;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z9GpuKernelB6scalycB4v0_2
+#define SCALY_TYPE__Z9GpuKernelB6scalycB4v0_2
+struct GpuKernel
+{
+    Array<String> report_files;
+    Array<uint64_t> report_offsets;
+    Array<String> report_verdicts;
+    uint64_t loops_total;
+    uint64_t loops_parallel;
+    uint64_t kernels;
+    Vector<PlannedFunction>* plan_functions;
+    Vector<PlannedGlobal>* plan_globals;
+    bool k_blocked;
+    String k_reason;
+    bool k_wide;
+    String k_wide_reason;
+    bool k_float;
+    Array<String> k_locals;
+    Array<int64_t> k_kinds;
+    uint64_t k_base;
+    uint64_t k_depth;
+    String k_in_function;
+    Array<String> k_uniforms;
+    Array<String> k_uniform_types;
+    Array<String> k_buffers;
+    Array<String> k_buffer_types;
+    Array<String> k_outputs;
+    Array<String> k_output_types;
+    Array<String> k_functions;
+    Array<String> k_function_names;
+    Array<String> fn_stack;
 };
 #endif
 
@@ -14867,6 +14986,7 @@ struct Options
     bool no_use_vis;
     bool task_plan;
     bool loop_census;
+    bool gpu_plan;
     bool pointer_report;
     bool write_report;
     bool host_report;
@@ -17123,6 +17243,57 @@ PlannedAttribute* Option_unwrap11(PlannedAttribute*) asm("_ZN6OptionIR16PlannedA
 bool TaskPlanner_is_page_type(PlannedType&) asm("_ZN11TaskPlannerB6scalycB4v0_212is_page_typeE11PlannedTypeB6scalycB4v0_2");
 bool TaskPlanner_arg_root_local(TaskPlanner&, PlannedOperand&) asm("_ZN11TaskPlannerB6scalycB4v0_214arg_root_localE14PlannedOperandB6scalycB4v0_2");
 void TaskPlanner_init(TaskPlanner&) asm("_ZN11TaskPlannerB6scalycB4v0_2C1Ev");
+PlannedFor* Option_unwrap12(PlannedFor*) asm("_ZN6OptionIR10PlannedForB6scalycB4v0_2E6unwrapEv");
+void GpuKernel_classify_loop(GpuKernel&, PlannedFor&) asm("_ZN9GpuKernelB6scalycB4v0_213classify_loopE10PlannedForB6scalycB4v0_2");
+String GpuKernel_verdict(scaly_frame*, GpuKernel&) asm("_ZN9GpuKernelB6scalycB4v0_27verdictEPN4scaly6memory4PageE");
+void GpuKernel_analyze(GpuKernel&, Plan&, TaskPlanner*) asm("_ZN9GpuKernelB6scalycB4v0_27analyzeE4PlanB6scalycB4v0_2R11TaskPlannerB6scalycB4v0_2");
+void GpuKernel_block(GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_25blockE6String");
+void GpuKernel_add_local(GpuKernel&, String&, int64_t) asm("_ZN9GpuKernelB6scalycB4v0_29add_localE6Stringi");
+void GpuKernel_k_action(GpuKernel&, PlannedAction&) asm("_ZN9GpuKernelB6scalycB4v0_28k_actionE13PlannedActionB6scalycB4v0_2");
+int64_t GpuKernel_index_of(Array<String>*, String&) asm("_ZN9GpuKernelB6scalycB4v0_28index_ofER5ArrayI6StringE6String");
+void GpuKernel_block_named(GpuKernel&, String&, String&) asm("_ZN9GpuKernelB6scalycB4v0_211block_namedE6String6String");
+void GpuKernel_append_names(StringBuilder*, Array<String>*) asm("_ZN9GpuKernelB6scalycB4v0_212append_namesER13StringBuilderR5ArrayI6StringE");
+bool GpuKernel_portable(GpuKernel&) asm("_ZN9GpuKernelB6scalycB4v0_28portableEv");
+void GpuKernel_note_wide(GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_29note_wideE6String");
+int64_t GpuKernel_scalar_kind(PlannedType&) asm("_ZN9GpuKernelB6scalycB4v0_211scalar_kindE11PlannedTypeB6scalycB4v0_2");
+bool GpuKernel_kind_is_integer(int64_t) asm("_ZN9GpuKernelB6scalycB4v0_215kind_is_integerEi");
+bool GpuKernel_kind_is_wide(int64_t) asm("_ZN9GpuKernelB6scalycB4v0_212kind_is_wideEi");
+String GpuKernel_type_text(scaly_frame*, PlannedType&) asm("_ZN9GpuKernelB6scalycB4v0_29type_textEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
+int64_t GpuKernel_buffer_kind_direct(PlannedType&) asm("_ZN9GpuKernelB6scalycB4v0_218buffer_kind_directE11PlannedTypeB6scalycB4v0_2");
+int64_t GpuKernel_buffer_kind(PlannedType&) asm("_ZN9GpuKernelB6scalycB4v0_211buffer_kindE11PlannedTypeB6scalycB4v0_2");
+void GpuKernel_check_value_type(GpuKernel&, PlannedType&, String&) asm("_ZN9GpuKernelB6scalycB4v0_216check_value_typeE11PlannedTypeB6scalycB4v0_26String");
+void GpuKernel_drop_locals(GpuKernel&, uint64_t) asm("_ZN9GpuKernelB6scalycB4v0_211drop_localsEm");
+int64_t GpuKernel_local_index(GpuKernel&, String&) asm("_ZN9GpuKernelB6scalycB4v0_211local_indexE6String");
+int64_t GpuKernel_kind_at(GpuKernel&, int64_t) asm("_ZN9GpuKernelB6scalycB4v0_27kind_atEi");
+void GpuKernel_note_name(scaly_frame*, GpuKernel&, Array<String>*, Array<String>*, String&, PlannedType&) asm("_ZN9GpuKernelB6scalycB4v0_29note_nameEPN4scaly6memory4PageER5ArrayI6StringER5ArrayI6StringE6String11PlannedTypeB6scalycB4v0_2");
+bool GpuKernel_has_members(PlannedOperand&) asm("_ZN9GpuKernelB6scalycB4v0_211has_membersE14PlannedOperandB6scalycB4v0_2");
+bool GpuKernel_is_grouping(PlannedTuple&) asm("_ZN9GpuKernelB6scalycB4v0_211is_groupingE12PlannedTupleB6scalycB4v0_2");
+bool GpuKernel_is_construction_name(String&) asm("_ZN9GpuKernelB6scalycB4v0_220is_construction_nameE6String");
+void GpuKernel_k_operand(GpuKernel&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_29k_operandE14PlannedOperandB6scalycB4v0_2b");
+void GpuKernel_k_operands(GpuKernel&, Vector<PlannedOperand>*, bool) asm("_ZN9GpuKernelB6scalycB4v0_210k_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EEb");
+void GpuKernel_k_variable(GpuKernel&, PlannedVariable&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_210k_variableE15PlannedVariableB6scalycB4v0_214PlannedOperandB6scalycB4v0_2b");
+void GpuKernel_k_constant(GpuKernel&, PlannedConstant&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_210k_constantE15PlannedConstantB6scalycB4v0_214PlannedOperandB6scalycB4v0_2b");
+void GpuKernel_k_global(GpuKernel&, PlannedGlobalRef&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_28k_globalE16PlannedGlobalRefB6scalycB4v0_214PlannedOperandB6scalycB4v0_2b");
+void GpuKernel_k_call(GpuKernel&, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_26k_callE11PlannedCallB6scalycB4v0_2");
+void GpuKernel_k_cast(GpuKernel&, PlannedAs&, bool) asm("_ZN9GpuKernelB6scalycB4v0_26k_castE9PlannedAsB6scalycB4v0_2b");
+void GpuKernel_k_statement(GpuKernel&, PlannedStatement&) asm("_ZN9GpuKernelB6scalycB4v0_211k_statementE16PlannedStatementB6scalycB4v0_2");
+void GpuKernel_k_statement_ref(GpuKernel&, PlannedStatement*) asm("_ZN9GpuKernelB6scalycB4v0_215k_statement_refE6OptionIR16PlannedStatementB6scalycB4v0_2E");
+void GpuKernel_k_integer_constant(GpuKernel&, PlannedType&, bool) asm("_ZN9GpuKernelB6scalycB4v0_218k_integer_constantE11PlannedTypeB6scalycB4v0_2b");
+void GpuKernel_k_external(GpuKernel&, String&, PlannedType&, PlannedOperand&, bool) asm("_ZN9GpuKernelB6scalycB4v0_210k_externalE6String11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_2b");
+PlannedGlobal* Option_unwrap13(PlannedGlobal*) asm("_ZN6OptionIR13PlannedGlobalB6scalycB4v0_2E6unwrapEv");
+PlannedMemberAccess* Option_unwrap14(PlannedMemberAccess*) asm("_ZN6OptionIR19PlannedMemberAccessB6scalycB4v0_2E6unwrapEv");
+void GpuKernel_k_operator(GpuKernel&, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_210k_operatorE11PlannedCallB6scalycB4v0_2");
+void GpuKernel_k_subscript(GpuKernel&, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_211k_subscriptE11PlannedCallB6scalycB4v0_2");
+void GpuKernel_k_put(GpuKernel&, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_25k_putE11PlannedCallB6scalycB4v0_2");
+void GpuKernel_k_function(GpuKernel&, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_210k_functionE11PlannedCallB6scalycB4v0_2");
+int64_t GpuKernel_buffer_receiver(GpuKernel&, PlannedCall&, String&) asm("_ZN9GpuKernelB6scalycB4v0_215buffer_receiverE11PlannedCallB6scalycB4v0_26String");
+String GpuKernel_receiver_name(scaly_frame*, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_213receiver_nameEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_2");
+PlannedType GpuKernel_receiver_type(scaly_frame*, PlannedCall&) asm("_ZN9GpuKernelB6scalycB4v0_213receiver_typeEPN4scaly6memory4PageE11PlannedCallB6scalycB4v0_2");
+bool GpuKernel_is_own_counter(GpuKernel&, PlannedOperand&) asm("_ZN9GpuKernelB6scalycB4v0_214is_own_counterE14PlannedOperandB6scalycB4v0_2");
+PlannedFunction* Option_unwrap15(PlannedFunction*) asm("_ZN6OptionIR15PlannedFunctionB6scalycB4v0_2E6unwrapEv");
+void GpuKernel_k_function_body(GpuKernel&, PlannedFunction&) asm("_ZN9GpuKernelB6scalycB4v0_215k_function_bodyE15PlannedFunctionB6scalycB4v0_2");
+void GpuKernel_k_binding(GpuKernel&, PlannedBinding&) asm("_ZN9GpuKernelB6scalycB4v0_29k_bindingE14PlannedBindingB6scalycB4v0_2");
+void GpuKernel_init(GpuKernel&) asm("_ZN9GpuKernelB6scalycB4v0_2C1Ev");
 bool StoreEffects_is_scalar_name(String&) asm("_ZN12StoreEffectsB6scalycB4v0_214is_scalar_nameE6String");
 bool StoreEffects_is_address(PlannedType&) asm("_ZN12StoreEffectsB6scalycB4v0_210is_addressE11PlannedTypeB6scalycB4v0_2");
 String StoreEffects_key_of(scaly_frame*, PlannedType&) asm("_ZN12StoreEffectsB6scalycB4v0_26key_ofEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
@@ -17152,7 +17323,7 @@ bool StackVectors_has(StackVectors&, uint64_t) asm("_ZN12StackVectorsB6scalycB4v
 bool StackVectors_is_sized_ctor(PlannedCall&) asm("_ZN12StackVectorsB6scalycB4v0_213is_sized_ctorE11PlannedCallB6scalycB4v0_2");
 bool StackVectors_is_element_access(PlannedCall&) asm("_ZN12StackVectorsB6scalycB4v0_217is_element_accessE11PlannedCallB6scalycB4v0_2");
 void StackVectors_find_action(StackVectors&, PlannedAction&, uint64_t) asm("_ZN12StackVectorsB6scalycB4v0_211find_actionE13PlannedActionB6scalycB4v0_2m");
-String* Option_unwrap12(String*) asm("_ZN6OptionIR6StringE6unwrapEv");
+String* Option_unwrap16(String*) asm("_ZN6OptionIR6StringE6unwrapEv");
 void StackVectors_use_action(StackVectors&, PlannedAction&) asm("_ZN12StackVectorsB6scalycB4v0_210use_actionE13PlannedActionB6scalycB4v0_2");
 void StackVectors_scan(StackVectors&, PlannedFunction&) asm("_ZN12StackVectorsB6scalycB4v0_24scanE15PlannedFunctionB6scalycB4v0_2");
 void StackVectors_find_ops(StackVectors&, Vector<PlannedOperand>*, uint64_t) asm("_ZN12StackVectorsB6scalycB4v0_28find_opsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EEm");
@@ -17204,9 +17375,8 @@ uint64_t PointerCensus_extern_declared_writes(PointerCensus&, String&) asm("_ZN1
 void PointerCensus_collect_externs_members(PointerCensus&, Vector<Member>&) asm("_ZN13PointerCensusB6scalycB4v0_223collect_externs_membersE6VectorI6MemberB6scalycB4v0_2E");
 bool PointerCensus_model_is_ref(Type&) asm("_ZN13PointerCensusB6scalycB4v0_212model_is_refE4TypeB6scalycB4v0_2");
 bool PointerCensus_fn_is_body(PlannedFunction&) asm("_ZN13PointerCensusB6scalycB4v0_210fn_is_bodyE15PlannedFunctionB6scalycB4v0_2");
-PlannedFunction* Option_unwrap13(PlannedFunction*) asm("_ZN6OptionIR15PlannedFunctionB6scalycB4v0_2E6unwrapEv");
-PlannedStructure* Option_unwrap14(PlannedStructure*) asm("_ZN6OptionIR16PlannedStructureB6scalycB4v0_2E6unwrapEv");
-PlannedInitializer* Option_unwrap15(PlannedInitializer*) asm("_ZN6OptionIR18PlannedInitializerB6scalycB4v0_2E6unwrapEv");
+PlannedStructure* Option_unwrap17(PlannedStructure*) asm("_ZN6OptionIR16PlannedStructureB6scalycB4v0_2E6unwrapEv");
+PlannedInitializer* Option_unwrap18(PlannedInitializer*) asm("_ZN6OptionIR18PlannedInitializerB6scalycB4v0_2E6unwrapEv");
 PlannedInitializer* PointerCensus_find_initializer(PointerCensus&, String&) asm("_ZN13PointerCensusB6scalycB4v0_216find_initializerE6String");
 PlannedFunction* PointerCensus_find_function(PointerCensus&, String&) asm("_ZN13PointerCensusB6scalycB4v0_213find_functionE6String");
 Vector<PlannedOperand>* PointerCensus_arith_args(PlannedOperand&) asm("_ZN13PointerCensusB6scalycB4v0_210arith_argsE14PlannedOperandB6scalycB4v0_2");
@@ -17234,10 +17404,9 @@ String PointerCensus_item_name(scaly_frame*, PlannedItem&) asm("_ZN13PointerCens
 String PointerCensus_neighbour_length(scaly_frame*, PointerCensus&, int64_t) asm("_ZN13PointerCensusB6scalycB4v0_216neighbour_lengthEPN4scaly6memory4PageEi");
 PlannedStructure* PointerCensus_find_structure(PointerCensus&, PlannedType&) asm("_ZN13PointerCensusB6scalycB4v0_214find_structureE11PlannedTypeB6scalycB4v0_2");
 bool PointerCensus_name_says_length(String&) asm("_ZN13PointerCensusB6scalycB4v0_216name_says_lengthE6String");
-PlannedProperty* Option_unwrap16(PlannedProperty*) asm("_ZN6OptionIR15PlannedPropertyB6scalycB4v0_2E6unwrapEv");
+PlannedProperty* Option_unwrap19(PlannedProperty*) asm("_ZN6OptionIR15PlannedPropertyB6scalycB4v0_2E6unwrapEv");
 String PointerCensus_sibling_length(scaly_frame*, PointerCensus&, PlannedType&) asm("_ZN13PointerCensusB6scalycB4v0_214sibling_lengthEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 bool PointerCensus_is_alloc_name(String&) asm("_ZN13PointerCensusB6scalycB4v0_213is_alloc_nameE6String");
-PlannedMemberAccess* Option_unwrap17(PlannedMemberAccess*) asm("_ZN6OptionIR19PlannedMemberAccessB6scalycB4v0_2E6unwrapEv");
 bool PointerCensus_operand_is_null(PlannedOperand&) asm("_ZN13PointerCensusB6scalycB4v0_215operand_is_nullE14PlannedOperandB6scalycB4v0_2");
 PlannedOperand* PointerCensus_arith_base(PlannedOperand&) asm("_ZN13PointerCensusB6scalycB4v0_210arith_baseE14PlannedOperandB6scalycB4v0_2");
 String PointerCensus_operand_kind(scaly_frame*, PointerCensus&, PlannedOperand&) asm("_ZN13PointerCensusB6scalycB4v0_212operand_kindEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
@@ -18019,7 +18188,7 @@ uint8_t* Emitter_print_module_to_string(Emitter&) asm("_ZN7EmitterB6scalycB4v0_2
 void Emitter_phase_mark(Emitter&, const char*) asm("_ZN7EmitterB6scalycB4v0_210phase_markEP10const_char");
 bool Emitter_verify_module(Emitter&) asm("_ZN7EmitterB6scalycB4v0_213verify_moduleEv");
 LLVMOpaqueValue* Emitter_emit_operands(Emitter&, Vector<PlannedOperand>*) asm("_ZN7EmitterB6scalycB4v0_213emit_operandsE6OptionIR6VectorI14PlannedOperandB6scalycB4v0_2EE");
-Vector<PlannedMemberAccess>* Option_unwrap18(Vector<PlannedMemberAccess>*) asm("_ZN6OptionIR6VectorI19PlannedMemberAccessB6scalycB4v0_2EE6unwrapEv");
+Vector<PlannedMemberAccess>* Option_unwrap20(Vector<PlannedMemberAccess>*) asm("_ZN6OptionIR6VectorI19PlannedMemberAccessB6scalycB4v0_2EE6unwrapEv");
 LLVMOpaqueValue* Emitter_emit_operand(Emitter&, PlannedOperand&) asm("_ZN7EmitterB6scalycB4v0_212emit_operandE14PlannedOperandB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_load_reference_levels_of(Emitter&, PlannedType&, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_224load_reference_levels_ofE11PlannedTypeB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_load_extra_reference_levels(Emitter&, PlannedExpression&, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_227load_extra_reference_levelsE17PlannedExpressionB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2");
@@ -18109,8 +18278,8 @@ void Emitter_report_lost_resident_page(Emitter&, LLVMOpaqueType*, String&) asm("
 LLVMOpaqueValue* Emitter_region_alloc_life(Emitter&, bool, Lifetime&, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_217region_alloc_lifeEb8LifetimeB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_region_alloc_tuple(Emitter&, PlannedTuple&, LLVMOpaqueType*) asm("_ZN7EmitterB6scalycB4v0_218region_alloc_tupleE12PlannedTupleB6scalycB4v0_2P14LLVMOpaqueTypeB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_tuple(Emitter&, PlannedTuple&) asm("_ZN7EmitterB6scalycB4v0_210emit_tupleE12PlannedTupleB6scalycB4v0_2");
-Vector<Vector<PlannedOperand>>* Option_unwrap19(Vector<Vector<PlannedOperand>>*) asm("_ZN6OptionIR6VectorI6VectorI14PlannedOperandB6scalycB4v0_2EEE6unwrapEv");
-LLVMOpaqueValue** Option_unwrap20(LLVMOpaqueValue**) asm("_ZN6OptionIRP15LLVMOpaqueValueB6scalycB4v0_2E6unwrapEv");
+Vector<Vector<PlannedOperand>>* Option_unwrap21(Vector<Vector<PlannedOperand>>*) asm("_ZN6OptionIR6VectorI6VectorI14PlannedOperandB6scalycB4v0_2EEE6unwrapEv");
+LLVMOpaqueValue** Option_unwrap22(LLVMOpaqueValue**) asm("_ZN6OptionIRP15LLVMOpaqueValueB6scalycB4v0_2E6unwrapEv");
 LLVMOpaqueValue* Emitter_emit_matrix(Emitter&, PlannedMatrix&) asm("_ZN7EmitterB6scalycB4v0_211emit_matrixE13PlannedMatrixB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_block_statements(Emitter&, PlannedBlock&) asm("_ZN7EmitterB6scalycB4v0_221emit_block_statementsE12PlannedBlockB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_block(Emitter&, PlannedBlock&) asm("_ZN7EmitterB6scalycB4v0_210emit_blockE12PlannedBlockB6scalycB4v0_2");
@@ -18529,6 +18698,7 @@ void cli_print_located(String&, Array<String>*, Array<uint64_t>*, Array<String>*
 int64_t cli_emit_interface(String&, String&, bool, bool, bool, String&, Planner*, Program*, WriteCensus*) asm("_ZN3cliB6scalycB4v0_214emit_interfaceE6String6Stringbbb6StringR7PlannerB6scalycB4v0_2R7ProgramB6scalycB4v0_2R11WriteCensusB6scalycB4v0_2");
 void cli_print_task_plan(TaskPlanner*) asm("_ZN3cliB6scalycB4v0_215print_task_planER11TaskPlannerB6scalycB4v0_2");
 void cli_print_loop_census(TaskPlanner*) asm("_ZN3cliB6scalycB4v0_217print_loop_censusER11TaskPlannerB6scalycB4v0_2");
+void cli_print_gpu_plan(GpuKernel*) asm("_ZN3cliB6scalycB4v0_214print_gpu_planER9GpuKernelB6scalycB4v0_2");
 void cli_print_fork_plan(Emitter*) asm("_ZN3cliB6scalycB4v0_215print_fork_planER7EmitterB6scalycB4v0_2");
 bool cli_is_test_function(PlannedFunction&, Array<String>*, String&) asm("_ZN3cliB6scalycB4v0_216is_test_functionE15PlannedFunctionB6scalycB4v0_2R5ArrayI6StringE6String");
 String cli_label_of_test(scaly_frame*, String&) asm("_ZN3cliB6scalycB4v0_213label_of_testEPN4scaly6memory4PageE6String");
@@ -110060,6 +110230,10 @@ __attribute__((weak)) void TaskPlanner_classify_for(TaskPlanner& scaly_self, Pla
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
     TaskPlanner_classify_body(*(this_), fr);
     this_->loops_total = (this_->loops_total + 1ULL);
+    if (this_->keep_fors)
+    {
+        Array_add<PlannedFor>(this_->report_fors, fr);
+    }
     String* file_copy = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), this_->current_file); scaly_t1; });
     Array_add<String>(this_->report_files, (*file_copy));
     Array_add88<uint64_t>(this_->report_offsets, ((fr).loc).start);
@@ -114613,9 +114787,11 @@ __attribute__((weak)) void TaskPlanner_init(TaskPlanner& scaly_self)
     this_->wr_masks = (*({ Array<uint64_t>* scaly_t16 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t16 = Array<uint64_t>{}; (void)0; scaly_t16; }));
     this_->wr_base = 0ULL;
     this_->census_while = false;
-    this_->while_files = (*({ Array<String>* scaly_t17 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t17 = Array<String>{}; (void)0; scaly_t17; }));
-    this_->while_offsets = (*({ Array<uint64_t>* scaly_t18 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t18 = Array<uint64_t>{}; (void)0; scaly_t18; }));
-    this_->while_verdicts = (*({ Array<String>* scaly_t19 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t19 = Array<String>{}; (void)0; scaly_t19; }));
+    this_->keep_fors = false;
+    this_->report_fors = (*({ Array<PlannedFor>* scaly_t17 = (Array<PlannedFor>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<PlannedFor>), alignof(Array<PlannedFor>)); *scaly_t17 = Array<PlannedFor>{}; (void)0; scaly_t17; }));
+    this_->while_files = (*({ Array<String>* scaly_t18 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t18 = Array<String>{}; (void)0; scaly_t18; }));
+    this_->while_offsets = (*({ Array<uint64_t>* scaly_t19 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t19 = Array<uint64_t>{}; (void)0; scaly_t19; }));
+    this_->while_verdicts = (*({ Array<String>* scaly_t20 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t20 = Array<String>{}; (void)0; scaly_t20; }));
     this_->whiles_total = 0ULL;
     this_->whiles_counted = 0ULL;
     this_->whiles_parallel = 0ULL;
@@ -114626,11 +114802,1839 @@ __attribute__((weak)) void TaskPlanner_init(TaskPlanner& scaly_self)
     this_->cls_continue_skips = false;
     this_->cls_keeps = false;
     this_->cls_takes_address = false;
-    this_->red_names = (*({ Array<String>* scaly_t20 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t20 = Array<String>{}; (void)0; scaly_t20; }));
-    this_->red_ops = (*({ Array<int64_t>* scaly_t21 = (Array<int64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<int64_t>), alignof(Array<int64_t>)); *scaly_t21 = Array<int64_t>{}; (void)0; scaly_t21; }));
-    this_->red_counts = (*({ Array<uint64_t>* scaly_t22 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t22 = Array<uint64_t>{}; (void)0; scaly_t22; }));
-    this_->cls_own_label = (*({ String* scaly_t23 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t23 = String{}; String_init2((*scaly_t23), scaly_lvalue(String{nullptr})); scaly_t23; }));
-    this_->cls_inner_labels = (*({ Array<String>* scaly_t24 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t24 = Array<String>{}; (void)0; scaly_t24; }));
+    this_->red_names = (*({ Array<String>* scaly_t21 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t21 = Array<String>{}; (void)0; scaly_t21; }));
+    this_->red_ops = (*({ Array<int64_t>* scaly_t22 = (Array<int64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<int64_t>), alignof(Array<int64_t>)); *scaly_t22 = Array<int64_t>{}; (void)0; scaly_t22; }));
+    this_->red_counts = (*({ Array<uint64_t>* scaly_t23 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t23 = Array<uint64_t>{}; (void)0; scaly_t23; }));
+    this_->cls_own_label = (*({ String* scaly_t24 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t24 = String{}; String_init2((*scaly_t24), scaly_lvalue(String{nullptr})); scaly_t24; }));
+    this_->cls_inner_labels = (*({ Array<String>* scaly_t25 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t25 = Array<String>{}; (void)0; scaly_t25; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_analyze(GpuKernel& scaly_self, Plan& plan, TaskPlanner* tp)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    this_->plan_functions = (plan).functions;
+    this_->plan_globals = (plan).globals;
+    uint64_t i = 0ULL;
+    while ((i < (tp->report_fors).length))
+    {
+        PlannedFor* fr_ptr = Array_get<PlannedFor>(tp->report_fors, i);
+        String* file_ptr = Array_get<String>(tp->report_files, i);
+        uint64_t* off_ptr = Array_get<uint64_t>(tp->report_offsets, i);
+        String* verdict_ptr = Array_get<String>(tp->report_verdicts, i);
+        if ((((((fr_ptr) != (nullptr)) ? ((file_ptr) != (nullptr)) : false) ? ((off_ptr) != (nullptr)) : false) ? ((verdict_ptr) != (nullptr)) : false))
+        {
+            this_->loops_total = (this_->loops_total + 1ULL);
+            String* file_copy = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = ((*(file_ptr))); scaly_t2; })))); scaly_t1; });
+            Array_add<String>(this_->report_files, (*file_copy));
+            Array_add88<uint64_t>(this_->report_offsets, ((*(off_ptr))));
+            if (String_equals(scaly_lvalue(((*(verdict_ptr)))), scaly_lvalue(String{(uint8_t*)"\010parallel"})))
+            {
+                this_->loops_parallel = (this_->loops_parallel + 1ULL);
+                GpuKernel_classify_loop(*(this_), scaly_lvalue((*(((PlannedFor*)(fr_ptr))))));
+                if (((this_->k_blocked) == (false)))
+                {
+                    this_->kernels = (this_->kernels + 1ULL);
+                }
+                String text = GpuKernel_verdict(&scaly_local.f, *(this_));
+                String* text_copy = ({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), text); scaly_t3; });
+                Array_add<String>(this_->report_verdicts, (*text_copy));
+            }
+            else
+            {
+                String why = ((*(verdict_ptr)));
+                String text = ({
+        String scaly_t4{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t5 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t5 = StringBuilder{}; StringBuilder_init((*scaly_t5)); scaly_t5; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\013no kernel: "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((why)));
+            scaly_t4 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t4;
+    });
+                String* text_copy = ({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), text); scaly_t6; });
+                Array_add<String>(this_->report_verdicts, (*text_copy));
+            }
+        }
+        i = (i + 1ULL);
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_classify_loop(GpuKernel& scaly_self, PlannedFor& fr)
+{
+    GpuKernel* this_ = &scaly_self;
+    this_->k_blocked = false;
+    this_->k_reason = (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{nullptr})); scaly_t1; }));
+    this_->k_wide = false;
+    this_->k_wide_reason = (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{nullptr})); scaly_t2; }));
+    this_->k_float = false;
+    (this_->k_locals).length = 0ULL;
+    (this_->k_kinds).length = 0ULL;
+    this_->k_base = 0ULL;
+    this_->k_depth = 0ULL;
+    this_->k_in_function = (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue(String{nullptr})); scaly_t3; }));
+    (this_->k_uniforms).length = 0ULL;
+    (this_->k_uniform_types).length = 0ULL;
+    (this_->k_buffers).length = 0ULL;
+    (this_->k_buffer_types).length = 0ULL;
+    (this_->k_outputs).length = 0ULL;
+    (this_->k_output_types).length = 0ULL;
+    (this_->k_functions).length = 0ULL;
+    (this_->k_function_names).length = 0ULL;
+    (this_->fn_stack).length = 0ULL;
+    if ((fr).is_iterator_loop)
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\025iterates a collection"}));
+        return;
+    }
+    GpuKernel_add_local(*(this_), (fr).identifier, 2LL);
+    GpuKernel_k_action(*(this_), (fr).body);
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    if (((this_->k_outputs).length == 0ULL))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\020writes no result"}));
+        return;
+    }
+    uint64_t i = 0ULL;
+    while ((i < (this_->k_outputs).length))
+    {
+        String* o_ptr = Array_get<String>(this_->k_outputs, i);
+        if ((((o_ptr) != (nullptr)) ? (GpuKernel_index_of((&(this_->k_buffers)), scaly_lvalue(((*(o_ptr))))) >= 0LL) : false))
+        {
+            GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\021reads and writes "}), scaly_lvalue(((*(o_ptr)))));
+        }
+        i = (i + 1ULL);
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) String GpuKernel_verdict(scaly_frame* scaly_rp, GpuKernel& scaly_self)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    if (this_->k_blocked)
+    {
+        return ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\013no kernel: "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((this_->k_reason)));
+            scaly_t1 = StringBuilder_to_string(scaly_rp, (*isb$));
+        }
+        scaly_t1;
+    });
+    }
+    StringBuilder* sb = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
+    if ((this_->k_wide ? true : this_->k_float))
+    {
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\020kernel (metal): "}));
+    }
+    else
+    {
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\030kernel (metal, webgpu): "}));
+    }
+    StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\004out "}));
+    GpuKernel_append_names((&((*sb))), (&(this_->k_outputs)));
+    if ((((this_->k_uniforms).length + (this_->k_buffers).length) > 0ULL))
+    {
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\005; in "}));
+        GpuKernel_append_names((&((*sb))), (&(this_->k_uniforms)));
+        if ((((this_->k_uniforms).length > 0ULL) ? ((this_->k_buffers).length > 0ULL) : false))
+        {
+            StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\002, "}));
+        }
+        GpuKernel_append_names((&((*sb))), (&(this_->k_buffers)));
+    }
+    if (((this_->k_function_names).length > 0ULL))
+    {
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\010; calls "}));
+        GpuKernel_append_names((&((*sb))), (&(this_->k_function_names)));
+    }
+    if (this_->k_wide)
+    {
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\016; not webgpu: "}));
+        StringBuilder_append2((*sb), this_->k_wide_reason);
+    }
+    if ((((this_->k_wide) == (false)) ? this_->k_float : false))
+    {
+        StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\071; not webgpu: floating point, and the loop is not relaxed"}));
+    }
+    return StringBuilder_to_string(scaly_rp, (*sb));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_append_names(StringBuilder* sb, Array<String>* names)
+{
+    uint64_t i = 0ULL;
+    while ((i < names->length))
+    {
+        String* n_ptr = Array_get<String>(*(names), i);
+        if (((n_ptr) != (nullptr)))
+        {
+            if ((i > 0ULL))
+            {
+                StringBuilder_append2(*(sb), scaly_lvalue(String{(uint8_t*)"\002, "}));
+            }
+            StringBuilder_append2(*(sb), scaly_lvalue(((*(n_ptr)))));
+        }
+        i = (i + 1ULL);
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) bool GpuKernel_portable(GpuKernel& scaly_self)
+{
+    GpuKernel* this_ = &scaly_self;
+    if (((this_->k_blocked ? true : this_->k_wide) ? true : this_->k_float))
+    {
+        return false;
+    }
+    return true;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_block(GpuKernel& scaly_self, String& reason)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    this_->k_blocked = true;
+    if ((String_get_length(this_->k_in_function) > 0ULL))
+    {
+        String msg = ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\003in "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((this_->k_in_function)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002: "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((reason)));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    });
+        this_->k_reason = (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), msg); scaly_t3; }));
+        return;
+    }
+    this_->k_reason = (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), reason); scaly_t4; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_block_named(GpuKernel& scaly_self, String& prefix, String& name)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    String msg = ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue((prefix)));
+            StringBuilder_append2((*isb$), scaly_lvalue((name)));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    });
+    GpuKernel_block(*(this_), msg);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_note_wide(GpuKernel& scaly_self, String& what)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (this_->k_wide)
+    {
+        return;
+    }
+    this_->k_wide = true;
+    if ((String_get_length(this_->k_in_function) > 0ULL))
+    {
+        String msg = ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\003in "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((this_->k_in_function)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\002: "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((what)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\024 is a 64-bit integer"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    });
+        this_->k_wide_reason = (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), msg); scaly_t3; }));
+        return;
+    }
+    String msg = ({
+        String scaly_t4{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t5 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t5 = StringBuilder{}; StringBuilder_init((*scaly_t5)); scaly_t5; });
+            StringBuilder_append2((*isb$), scaly_lvalue((what)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\024 is a 64-bit integer"}));
+            scaly_t4 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t4;
+    });
+    this_->k_wide_reason = (*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init2((*scaly_t6), msg); scaly_t6; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) int64_t GpuKernel_scalar_kind(PlannedType& t)
+{
+    if (((((t).generics) != (nullptr)) ? ((t).generics->length > 0ULL) : false))
+    {
+        return 0LL;
+    }
+    if ((String_get_length((t).array_size) > 0ULL))
+    {
+        return 0LL;
+    }
+    String nm = (t).name;
+    {
+        auto&& scaly_t1 = true;
+        if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\004bool"})))
+        {
+            return 1LL;
+        }
+        else if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\003i32"})))
+        {
+            return 2LL;
+        }
+        else if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\003u32"})))
+        {
+            return 3LL;
+        }
+        else if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\005float"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\003f32"})))
+        {
+            return 4LL;
+        }
+        else if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\003int"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\003i64"})))
+        {
+            return 5LL;
+        }
+        else if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\004uint"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\003u64"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\006size_t"})))
+        {
+            return 6LL;
+        }
+        else if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\006double"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\003f64"})))
+        {
+            return 7LL;
+        }
+    }
+    return 0LL;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) bool GpuKernel_kind_is_integer(int64_t kind)
+{
+    if (((((kind == 2LL) ? true : (kind == 3LL)) ? true : (kind == 5LL)) ? true : (kind == 6LL)))
+    {
+        return true;
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) bool GpuKernel_kind_is_wide(int64_t kind)
+{
+    if (((kind == 5LL) ? true : (kind == 6LL)))
+    {
+        return true;
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) String GpuKernel_type_text(scaly_frame* scaly_rp, PlannedType& t)
+{
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    if (((((t).generics) != (nullptr)) ? ((t).generics->length > 0ULL) : false))
+    {
+        PlannedType* g_ptr = Vector_get<PlannedType>(*((t).generics), 0ULL);
+        if (((g_ptr) != (nullptr)))
+        {
+            String inner = GpuKernel_type_text(&scaly_local.f, scaly_lvalue((*(((PlannedType*)(g_ptr))))));
+            return ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(((t).name)));
+            StringBuilder_append((*isb$), ((uint8_t)'['));
+            StringBuilder_append2((*isb$), scaly_lvalue((inner)));
+            StringBuilder_append((*isb$), ((uint8_t)']'));
+            scaly_t1 = StringBuilder_to_string(scaly_rp, (*isb$));
+        }
+        scaly_t1;
+    });
+        }
+    }
+    return (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), (t).name); scaly_t4; }));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) int64_t GpuKernel_buffer_kind(PlannedType& t)
+{
+    if (((((t).generics) == (nullptr)) ? true : ((t).generics->length != 1ULL)))
+    {
+        return (0LL - 1LL);
+    }
+    PlannedType* g_ptr = Vector_get<PlannedType>(*((t).generics), 0ULL);
+    if (((g_ptr) == (nullptr)))
+    {
+        return (0LL - 1LL);
+    }
+    String nm = (t).name;
+    {
+        auto&& scaly_t1 = true;
+        if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\003ref"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\007pointer"})))
+        {
+            return GpuKernel_buffer_kind_direct(scaly_lvalue((*(((PlannedType*)(g_ptr))))));
+        }
+        else if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\006Vector"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\005Slice"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\005Array"})))
+        {
+            return GpuKernel_scalar_kind(scaly_lvalue((*(((PlannedType*)(g_ptr))))));
+        }
+    }
+    return (0LL - 1LL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) int64_t GpuKernel_buffer_kind_direct(PlannedType& t)
+{
+    if (((((t).generics) == (nullptr)) ? true : ((t).generics->length != 1ULL)))
+    {
+        return (0LL - 1LL);
+    }
+    PlannedType* g_ptr = Vector_get<PlannedType>(*((t).generics), 0ULL);
+    if (((g_ptr) == (nullptr)))
+    {
+        return (0LL - 1LL);
+    }
+    String nm = (t).name;
+    {
+        auto&& scaly_t1 = true;
+        if (scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\006Vector"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\005Slice"})) || scaly_t1 == String_equals(nm, scaly_lvalue(String{(uint8_t*)"\005Array"})))
+        {
+            return GpuKernel_scalar_kind(scaly_lvalue((*(((PlannedType*)(g_ptr))))));
+        }
+    }
+    return (0LL - 1LL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_check_value_type(GpuKernel& scaly_self, PlannedType& t, String& what)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    int64_t kind = GpuKernel_scalar_kind(t);
+    if ((kind == 0LL))
+    {
+        String msg = ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue((what)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\006 is a "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((GpuKernel_type_text(&scaly_local.f, t))));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    });
+        GpuKernel_block(*(this_), msg);
+        return;
+    }
+    if ((kind == 7LL))
+    {
+        String msg = ({
+        String scaly_t3{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
+            StringBuilder_append2((*isb$), scaly_lvalue((what)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\014 is a double"}));
+            scaly_t3 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t3;
+    });
+        GpuKernel_block(*(this_), msg);
+        return;
+    }
+    if ((kind == 4LL))
+    {
+        this_->k_float = true;
+    }
+    if (GpuKernel_kind_is_wide(kind))
+    {
+        GpuKernel_note_wide(*(this_), what);
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_add_local(GpuKernel& scaly_self, String& name, int64_t kind)
+{
+    GpuKernel* this_ = &scaly_self;
+    String* copy = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), name); scaly_t1; });
+    Array_add<String>(this_->k_locals, (*copy));
+    Array_add88<int64_t>(this_->k_kinds, kind);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_drop_locals(GpuKernel& scaly_self, uint64_t mark)
+{
+    GpuKernel* this_ = &scaly_self;
+    (this_->k_locals).length = mark;
+    (this_->k_kinds).length = mark;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) int64_t GpuKernel_local_index(GpuKernel& scaly_self, String& name)
+{
+    GpuKernel* this_ = &scaly_self;
+    uint64_t i = (this_->k_locals).length;
+    while ((i > this_->k_base))
+    {
+        i = (i - 1ULL);
+        String* p = Array_get<String>(this_->k_locals, i);
+        if ((((p) != (nullptr)) ? String_equals(scaly_lvalue(((*(p)))), name) : false))
+        {
+            return ((int64_t)(i));
+        }
+    }
+    return (0LL - 1LL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) int64_t GpuKernel_kind_at(GpuKernel& scaly_self, int64_t index)
+{
+    GpuKernel* this_ = &scaly_self;
+    int64_t* p = Array_get<int64_t>(this_->k_kinds, ((uint64_t)(index)));
+    if (((p) == (nullptr)))
+    {
+        return 0LL;
+    }
+    return ((*(p)));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) int64_t GpuKernel_index_of(Array<String>* names, String& name)
+{
+    uint64_t i = 0ULL;
+    while ((i < names->length))
+    {
+        String* p = Array_get<String>(*(names), i);
+        if ((((p) != (nullptr)) ? String_equals(scaly_lvalue(((*(p)))), name) : false))
+        {
+            return ((int64_t)(i));
+        }
+        i = (i + 1ULL);
+    }
+    return (0LL - 1LL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_note_name(scaly_frame* scaly_rp, GpuKernel& scaly_self, Array<String>* names, Array<String>* types, String& name, PlannedType& t)
+{
+    GpuKernel* this_ = &scaly_self;
+    if ((GpuKernel_index_of(names, name) >= 0LL))
+    {
+        return;
+    }
+    String* name_copy = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), name); scaly_t1; });
+    Array_add<String>(*(names), (*name_copy));
+    String text = GpuKernel_type_text(scaly_rp, t);
+    String* text_copy = ({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), text); scaly_t2; });
+    Array_add<String>(*(types), (*text_copy));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) bool GpuKernel_has_members(PlannedOperand& op)
+{
+    if ((((op).member_access) == (nullptr)))
+    {
+        return false;
+    }
+    return ((op).member_access->length > 0ULL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) bool GpuKernel_is_grouping(PlannedTuple& tp)
+{
+    if ((tp).is_region_alloc)
+    {
+        return false;
+    }
+    if ((((tp).components) == (nullptr)))
+    {
+        return false;
+    }
+    if (((tp).components->length != 1ULL))
+    {
+        return false;
+    }
+    PlannedComponent* c_ptr = Vector_get<PlannedComponent>(*((tp).components), 0ULL);
+    if (((c_ptr) == (nullptr)))
+    {
+        return false;
+    }
+    PlannedComponent* c = ((PlannedComponent*)(c_ptr));
+    if (((c->name) != (nullptr)))
+    {
+        return false;
+    }
+    if (((c->value) == (nullptr)))
+    {
+        return false;
+    }
+    return (c->value->length == 1ULL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) bool GpuKernel_is_construction_name(String& name)
+{
+    if (String_equals(name, scaly_lvalue(String{(uint8_t*)"\004init"})))
+    {
+        return true;
+    }
+    uint64_t n = String_get_length(name);
+    uint64_t start = 0ULL;
+    uint64_t i = 0ULL;
+    while ((i < n))
+    {
+        if ((String_get(name, i) == (((uint8_t)'.'))))
+        {
+            start = (i + 1ULL);
+        }
+        i = (i + 1ULL);
+    }
+    if ((start >= n))
+    {
+        return false;
+    }
+    uint8_t c = String_get(name, start);
+    if (((c >= (((uint8_t)'A'))) ? (c <= (((uint8_t)'Z'))) : false))
+    {
+        return true;
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_operands(GpuKernel& scaly_self, Vector<PlannedOperand>* ops, bool narrowed)
+{
+    GpuKernel* this_ = &scaly_self;
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    if (((ops) == (nullptr)))
+    {
+        return;
+    }
+    uint64_t i = 0ULL;
+    while ((i < ops->length))
+    {
+        if (this_->k_blocked)
+        {
+            return;
+        }
+        PlannedOperand* op_ptr = Vector_get<PlannedOperand>(*(ops), i);
+        if (((op_ptr) != (nullptr)))
+        {
+            GpuKernel_k_operand(*(this_), scaly_lvalue((*(((PlannedOperand*)(op_ptr))))), narrowed);
+        }
+        i = (i + 1ULL);
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_operand(GpuKernel& scaly_self, PlannedOperand& op, bool narrowed)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            GpuKernel_k_variable(*(this_), v, op, narrowed);
+        }
+        else if (scaly_t1.tag == 0)
+        {
+            PlannedConstant c = scaly_payload<PlannedConstant>(scaly_t1);
+            GpuKernel_k_constant(*(this_), c, op, narrowed);
+        }
+        else if (scaly_t1.tag == 3)
+        {
+            PlannedGlobalRef g = scaly_payload<PlannedGlobalRef>(scaly_t1);
+            GpuKernel_k_global(*(this_), g, op, narrowed);
+        }
+        else if (scaly_t1.tag == 4)
+        {
+            PlannedCall call = scaly_payload<PlannedCall>(scaly_t1);
+            if (GpuKernel_has_members(op))
+            {
+                GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\044reads a member of what it gets from "}), (call).name);
+                return;
+            }
+            GpuKernel_k_call(*(this_), call);
+        }
+        else if (scaly_t1.tag == 19)
+        {
+            PlannedAs as_expr = scaly_payload<PlannedAs>(scaly_t1);
+            if (GpuKernel_has_members(op))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\030reads a member of a cast"}));
+                return;
+            }
+            GpuKernel_k_cast(*(this_), as_expr, narrowed);
+        }
+        else if (scaly_t1.tag == 5)
+        {
+            PlannedTuple tp = scaly_payload<PlannedTuple>(scaly_t1);
+            if ((GpuKernel_has_members(op) ? true : ((GpuKernel_is_grouping(tp)) == (false))))
+            {
+                GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\011builds a "}), scaly_lvalue(GpuKernel_type_text(&scaly_local.f, (tp).tuple_type)));
+                return;
+            }
+            PlannedComponent* c_ptr = Vector_get<PlannedComponent>(*((tp).components), 0ULL);
+            if (((c_ptr) != (nullptr)))
+            {
+                PlannedComponent* c = ((PlannedComponent*)(c_ptr));
+                GpuKernel_k_operands(*(this_), c->value, narrowed);
+            }
+        }
+        else if (scaly_t1.tag == 7)
+        {
+            PlannedBlock blk = scaly_payload<PlannedBlock>(scaly_t1);
+            uint64_t mark = (this_->k_locals).length;
+            if ((((blk).statements) != (nullptr)))
+            {
+                uint64_t i = 0ULL;
+                while ((i < (blk).statements->length))
+                {
+                    PlannedStatement* s_ptr = Vector_get<PlannedStatement>(*((blk).statements), i);
+                    if (((s_ptr) != (nullptr)))
+                    {
+                        GpuKernel_k_statement(*(this_), scaly_lvalue((*(((PlannedStatement*)(s_ptr))))));
+                    }
+                    i = (i + 1ULL);
+                }
+            }
+            GpuKernel_drop_locals(*(this_), mark);
+        }
+        else if (scaly_t1.tag == 8)
+        {
+            PlannedIf iff = scaly_payload<PlannedIf>(scaly_t1);
+            if ((((iff).prop) != (nullptr)))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\016tests for null"}));
+                return;
+            }
+            GpuKernel_k_operands(*(this_), (iff).condition, false);
+            GpuKernel_k_statement_ref(*(this_), (iff).consequent);
+            GpuKernel_k_statement_ref(*(this_), (iff).alternative);
+        }
+        else if (scaly_t1.tag == 12)
+        {
+            PlannedWhile wh = scaly_payload<PlannedWhile>(scaly_t1);
+            if ((((((wh).cond).binding_item).name) != (nullptr)))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\031a while that binds a name"}));
+                return;
+            }
+            GpuKernel_k_operands(*(this_), ((wh).cond).operation, false);
+            if ((String_get_length((wh).loop_label) > 0ULL))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017a labelled loop"}));
+                return;
+            }
+            this_->k_depth = (this_->k_depth + 1ULL);
+            GpuKernel_k_action(*(this_), (wh).body);
+            this_->k_depth = (this_->k_depth - 1ULL);
+        }
+        else if (scaly_t1.tag == 13)
+        {
+            PlannedRepeat rp = scaly_payload<PlannedRepeat>(scaly_t1);
+            if ((String_get_length((rp).loop_label) > 0ULL))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017a labelled loop"}));
+                return;
+            }
+            this_->k_depth = (this_->k_depth + 1ULL);
+            GpuKernel_k_action(*(this_), (rp).body);
+            this_->k_depth = (this_->k_depth - 1ULL);
+        }
+        else if (scaly_t1.tag == 11)
+        {
+            PlannedFor fr = scaly_payload<PlannedFor>(scaly_t1);
+            if ((fr).is_iterator_loop)
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\025iterates a collection"}));
+                return;
+            }
+            if ((String_get_length((fr).loop_label) > 0ULL))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017a labelled loop"}));
+                return;
+            }
+            GpuKernel_k_operands(*(this_), (fr).expr, true);
+            uint64_t mark = (this_->k_locals).length;
+            GpuKernel_add_local(*(this_), (fr).identifier, 1LL);
+            this_->k_depth = (this_->k_depth + 1ULL);
+            GpuKernel_k_action(*(this_), (fr).body);
+            this_->k_depth = (this_->k_depth - 1ULL);
+            GpuKernel_drop_locals(*(this_), mark);
+        }
+        else if (scaly_t1.tag == 9)
+        {
+            PlannedMatch mt = scaly_payload<PlannedMatch>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\007a match"}));
+        }
+        else if (scaly_t1.tag == 10)
+        {
+            PlannedChoose ch = scaly_payload<PlannedChoose>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\010a choose"}));
+        }
+        else if (scaly_t1.tag == 15)
+        {
+            PlannedTry tr = scaly_payload<PlannedTry>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\005a try"}));
+        }
+        else if (scaly_t1.tag == 14)
+        {
+            PlannedLambda lm = scaly_payload<PlannedLambda>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\010a lambda"}));
+        }
+        else if (scaly_t1.tag == 22)
+        {
+            PlannedClosure cl = scaly_payload<PlannedClosure>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\011a closure"}));
+        }
+        else if (scaly_t1.tag == 21)
+        {
+            PlannedFunctionRef fref = scaly_payload<PlannedFunctionRef>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\025a function as a value"}));
+        }
+        else if (scaly_t1.tag == 23)
+        {
+            PlannedBox bx = scaly_payload<PlannedBox>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\015boxes a value"}));
+        }
+        else if (scaly_t1.tag == 18)
+        {
+            PlannedIs is_expr = scaly_payload<PlannedIs>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\012an is test"}));
+        }
+        else if (scaly_t1.tag == 20)
+        {
+            PlannedVariantConstruction vc = scaly_payload<PlannedVariantConstruction>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\016builds a union"}));
+        }
+        else if (scaly_t1.tag == 6)
+        {
+            PlannedMatrix mx = scaly_payload<PlannedMatrix>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017builds an array"}));
+        }
+        else if (scaly_t1.tag == 16)
+        {
+            PlannedSizeOf so = scaly_payload<PlannedSizeOf>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\010a sizeof"}));
+        }
+        else if (scaly_t1.tag == 17)
+        {
+            PlannedAlignOf ao = scaly_payload<PlannedAlignOf>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\012an alignof"}));
+        }
+        else
+        {
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\021a type as a value"}));
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_constant(GpuKernel& scaly_self, PlannedConstant& c, PlannedOperand& op, bool narrowed)
+{
+    GpuKernel* this_ = &scaly_self;
+    {
+        auto&& scaly_t1 = (c).value;
+        if (scaly_t1.tag == 0)
+        {
+            BooleanConstant b = scaly_payload<BooleanConstant>(scaly_t1);
+            0LL;
+        }
+        else if (scaly_t1.tag == 1)
+        {
+            IntegerConstant i = scaly_payload<IntegerConstant>(scaly_t1);
+            GpuKernel_k_integer_constant(*(this_), (op).result_type, narrowed);
+        }
+        else if (scaly_t1.tag == 2)
+        {
+            HexConstant h = scaly_payload<HexConstant>(scaly_t1);
+            GpuKernel_k_integer_constant(*(this_), (op).result_type, narrowed);
+        }
+        else if (scaly_t1.tag == 3)
+        {
+            FloatingPointConstant f = scaly_payload<FloatingPointConstant>(scaly_t1);
+            GpuKernel_check_value_type(*(this_), (op).result_type, scaly_lvalue(String{(uint8_t*)"\012a constant"}));
+        }
+        else if (scaly_t1.tag == 7)
+        {
+            NullConstant n = scaly_payload<NullConstant>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\006a null"}));
+        }
+        else
+        {
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017a text constant"}));
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_integer_constant(GpuKernel& scaly_self, PlannedType& t, bool narrowed)
+{
+    GpuKernel* this_ = &scaly_self;
+    if ((narrowed ? GpuKernel_kind_is_wide(GpuKernel_scalar_kind(t)) : false))
+    {
+        return;
+    }
+    GpuKernel_check_value_type(*(this_), t, scaly_lvalue(String{(uint8_t*)"\012a constant"}));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_variable(GpuKernel& scaly_self, PlannedVariable& v, PlannedOperand& op, bool narrowed)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    int64_t li = GpuKernel_local_index(*(this_), (v).name);
+    if ((li >= 0LL))
+    {
+        if (GpuKernel_has_members(op))
+        {
+            GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\022reads a member of "}), (v).name);
+            return;
+        }
+        if ((((GpuKernel_kind_at(*(this_), li) > 0LL) ? ((narrowed) == (false)) : false) ? GpuKernel_kind_is_wide(GpuKernel_scalar_kind((v).variable_type)) : false))
+        {
+            GpuKernel_note_wide(*(this_), scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\014the counter "}));
+            StringBuilder_append2((*isb$), scaly_lvalue(((v).name)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\026, used outside a cast,"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+        }
+        return;
+    }
+    GpuKernel_k_external(*(this_), (v).name, (v).variable_type, op, narrowed);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_global(GpuKernel& scaly_self, PlannedGlobalRef& g, PlannedOperand& op, bool narrowed)
+{
+    GpuKernel* this_ = &scaly_self;
+    if (((this_->plan_globals) != (nullptr)))
+    {
+        uint64_t i = 0ULL;
+        while ((i < this_->plan_globals->length))
+        {
+            PlannedGlobal* gl_ptr = Vector_get<PlannedGlobal>(*(this_->plan_globals), i);
+            if (((gl_ptr) != (nullptr)))
+            {
+                PlannedGlobal* gl = ((PlannedGlobal*)(gl_ptr));
+                if (String_equals(gl->mangled_name, (g).mangled_name))
+                {
+                    if (gl->is_mutable)
+                    {
+                        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\031reads the mutable global "}), (g).name);
+                        return;
+                    }
+                    if ((((GpuKernel_has_members(op)) == (false)) ? (GpuKernel_scalar_kind((g).global_type) > 0LL) : false))
+                    {
+                        if ((narrowed ? GpuKernel_kind_is_wide(GpuKernel_scalar_kind((g).global_type)) : false))
+                        {
+                            return;
+                        }
+                        GpuKernel_check_value_type(*(this_), (g).global_type, (g).name);
+                        return;
+                    }
+                }
+            }
+            i = (i + 1ULL);
+        }
+    }
+    GpuKernel_k_external(*(this_), (g).name, (g).global_type, op, narrowed);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_external(GpuKernel& scaly_self, String& name, PlannedType& t, PlannedOperand& op, bool narrowed)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if ((String_get_length(this_->k_in_function) > 0ULL))
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\006reads "}), name);
+        return;
+    }
+    if (GpuKernel_has_members(op))
+    {
+        if ((((op).member_access->length == 1ULL) ? (GpuKernel_buffer_kind(t) >= 0LL) : false))
+        {
+            PlannedMemberAccess* ma_ptr = Vector_get<PlannedMemberAccess>(*((op).member_access), 0ULL);
+            if (((ma_ptr) != (nullptr)))
+            {
+                PlannedMemberAccess* ma = ((PlannedMemberAccess*)(ma_ptr));
+                if ((String_equals(ma->name, scaly_lvalue(String{(uint8_t*)"\006length"})) ? ((ma->is_method) == (false)) : false))
+                {
+                    String lname = ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue((name)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\007.length"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    });
+                    GpuKernel_note_name(&scaly_local.f, *(this_), (&(this_->k_uniforms)), (&(this_->k_uniform_types)), lname, ma->result_type);
+                    if (((narrowed) == (false)))
+                    {
+                        GpuKernel_note_wide(*(this_), lname);
+                    }
+                    return;
+                }
+            }
+        }
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\022reads a member of "}), name);
+        return;
+    }
+    int64_t kind = GpuKernel_scalar_kind(t);
+    if ((kind == 0LL))
+    {
+        String msg = ({
+        String scaly_t3{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005uses "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((name)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004, a "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((GpuKernel_type_text(&scaly_local.f, t))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\014, as a whole"}));
+            scaly_t3 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t3;
+    });
+        GpuKernel_block(*(this_), msg);
+        return;
+    }
+    if ((kind == 7LL))
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\024computes in double: "}), name);
+        return;
+    }
+    if ((kind == 4LL))
+    {
+        this_->k_float = true;
+    }
+    if ((GpuKernel_kind_is_wide(kind) ? ((narrowed) == (false)) : false))
+    {
+        GpuKernel_note_wide(*(this_), name);
+    }
+    GpuKernel_note_name(&scaly_local.f, *(this_), (&(this_->k_uniforms)), (&(this_->k_uniform_types)), name, t);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_cast(GpuKernel& scaly_self, PlannedAs& a, bool narrowed)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if ((((a).value) == (nullptr)))
+    {
+        return;
+    }
+    int64_t kind = GpuKernel_scalar_kind((a).target_type);
+    if ((kind == 0LL))
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\011casts to "}), scaly_lvalue(GpuKernel_type_text(&scaly_local.f, (a).target_type)));
+        return;
+    }
+    if ((kind == 7LL))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017casts to double"}));
+        return;
+    }
+    if ((kind == 4LL))
+    {
+        this_->k_float = true;
+    }
+    PlannedOperand* r = (a).value;
+    if (GpuKernel_kind_is_wide(kind))
+    {
+        if (((narrowed) == (false)))
+        {
+            GpuKernel_note_wide(*(this_), scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012a cast to "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((((a).target_type).name)));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+        }
+        GpuKernel_k_operand(*(this_), scaly_lvalue(((*(r)))), narrowed);
+        return;
+    }
+    GpuKernel_k_operand(*(this_), scaly_lvalue(((*(r)))), true);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_call(GpuKernel& scaly_self, PlannedCall& call)
+{
+    GpuKernel* this_ = &scaly_self;
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    if ((call).is_indirect)
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\020an indirect call"}));
+        return;
+    }
+    if (((call).is_intrinsic ? (call).is_operator : false))
+    {
+        GpuKernel_k_operator(*(this_), call);
+        return;
+    }
+    if ((call).is_intrinsic)
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\023uses the intrinsic "}), (call).name);
+        return;
+    }
+    if (String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\002[]"})))
+    {
+        GpuKernel_k_subscript(*(this_), call);
+        return;
+    }
+    if (String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\003put"})))
+    {
+        GpuKernel_k_put(*(this_), call);
+        return;
+    }
+    if ((call).is_operator)
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\031uses a record\047s operator "}), (call).name);
+        return;
+    }
+    if (GpuKernel_is_construction_name((call).name))
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\013constructs "}), (call).name);
+        return;
+    }
+    GpuKernel_k_function(*(this_), call);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_operator(GpuKernel& scaly_self, PlannedCall& call)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if ((((call).args) == (nullptr)))
+    {
+        return;
+    }
+    uint64_t n = (call).args->length;
+    if (((n == 1ULL) ? ((String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001*"})) ? true : String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001&"})))) : false))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\033takes or follows an address"}));
+        return;
+    }
+    uint64_t i = 0ULL;
+    while ((i < n))
+    {
+        PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((call).args), i);
+        if (((a_ptr) != (nullptr)))
+        {
+            GpuKernel_k_operand(*(this_), scaly_lvalue((*(((PlannedOperand*)(a_ptr))))), false);
+        }
+        i = (i + 1ULL);
+    }
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    if (((GpuKernel_scalar_kind((call).result_type) == 4LL) ? ((String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001%"})) ? true : String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\003mod"})))) : false))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\032a floating-point remainder"}));
+        return;
+    }
+    GpuKernel_check_value_type(*(this_), (call).result_type, scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\016the result of "}));
+            StringBuilder_append2((*isb$), scaly_lvalue(((call).name)));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) int64_t GpuKernel_buffer_receiver(GpuKernel& scaly_self, PlannedCall& call, String& what)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    PlannedOperand* recv_ptr = Vector_get<PlannedOperand>(*((call).args), 0ULL);
+    if (((recv_ptr) == (nullptr)))
+    {
+        GpuKernel_block(*(this_), what);
+        return (0LL - 1LL);
+    }
+    PlannedOperand* recv = ((PlannedOperand*)(recv_ptr));
+    if (GpuKernel_has_members(scaly_lvalue((*(recv)))))
+    {
+        GpuKernel_block_named(*(this_), what, scaly_lvalue(String{(uint8_t*)"\014 of a member"}));
+        return (0LL - 1LL);
+    }
+    {
+        auto&& scaly_t1 = recv->expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            if (((GpuKernel_local_index(*(this_), (v).name) >= 0LL) ? true : (String_get_length(this_->k_in_function) > 0ULL)))
+            {
+                GpuKernel_block_named(*(this_), what, scaly_lvalue(String{(uint8_t*)"\013 of a local"}));
+                return (0LL - 1LL);
+            }
+            int64_t kind = GpuKernel_buffer_kind((v).variable_type);
+            if ((kind < 0LL))
+            {
+                String msg = ({
+        String scaly_t2{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
+            StringBuilder_append2((*isb$), scaly_lvalue((what)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004 of "}));
+            StringBuilder_append2((*isb$), scaly_lvalue(((v).name)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004, a "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((GpuKernel_type_text(&scaly_local.f, (v).variable_type))));
+            scaly_t2 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t2;
+    });
+                GpuKernel_block(*(this_), msg);
+                return (0LL - 1LL);
+            }
+            if ((((kind == 0LL) ? true : (kind == 1LL)) ? true : (kind == 7LL)))
+            {
+                String msg = ({
+        String scaly_t4{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t5 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t5 = StringBuilder{}; StringBuilder_init((*scaly_t5)); scaly_t5; });
+            StringBuilder_append2((*isb$), scaly_lvalue(((v).name)));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\006 is a "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((GpuKernel_type_text(&scaly_local.f, (v).variable_type))));
+            scaly_t4 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t4;
+    });
+                GpuKernel_block(*(this_), msg);
+                return (0LL - 1LL);
+            }
+            return kind;
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    GpuKernel_block_named(*(this_), what, scaly_lvalue(String{(uint8_t*)"\024 of a computed value"}));
+    return (0LL - 1LL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) String GpuKernel_receiver_name(scaly_frame* scaly_rp, PlannedCall& call)
+{
+    PlannedOperand* recv_ptr = Vector_get<PlannedOperand>(*((call).args), 0ULL);
+    if (((recv_ptr) != (nullptr)))
+    {
+        PlannedOperand* recv = ((PlannedOperand*)(recv_ptr));
+        {
+            auto&& scaly_t1 = recv->expr;
+            if (scaly_t1.tag == 2)
+            {
+                PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+                return (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), (v).name); scaly_t2; }));
+            }
+            else
+            {
+                0LL;
+            }
+        }
+    }
+    return String{nullptr};
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) PlannedType GpuKernel_receiver_type(scaly_frame* scaly_rp, PlannedCall& call)
+{
+    PlannedOperand* recv_ptr = Vector_get<PlannedOperand>(*((call).args), 0ULL);
+    PlannedOperand* recv = ((PlannedOperand*)(recv_ptr));
+    return recv->result_type;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_subscript(GpuKernel& scaly_self, PlannedCall& call)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((((call).args) == (nullptr)) ? true : ((call).args->length != 2ULL)))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\013a subscript"}));
+        return;
+    }
+    int64_t kind = GpuKernel_buffer_receiver(*(this_), call, scaly_lvalue(String{(uint8_t*)"\013a subscript"}));
+    if ((kind < 0LL))
+    {
+        return;
+    }
+    PlannedOperand* idx_ptr = Vector_get<PlannedOperand>(*((call).args), 1ULL);
+    if (((idx_ptr) != (nullptr)))
+    {
+        GpuKernel_k_operand(*(this_), scaly_lvalue((*(((PlannedOperand*)(idx_ptr))))), true);
+    }
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    String name = GpuKernel_receiver_name(&scaly_local.f, call);
+    if ((kind == 4LL))
+    {
+        this_->k_float = true;
+    }
+    if (GpuKernel_kind_is_wide(kind))
+    {
+        GpuKernel_note_wide(*(this_), scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\016an element of "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((name)));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+    }
+    GpuKernel_note_name(&scaly_local.f, *(this_), (&(this_->k_buffers)), (&(this_->k_buffer_types)), name, scaly_lvalue(GpuKernel_receiver_type(&scaly_local.f, call)));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_put(GpuKernel& scaly_self, PlannedCall& call)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((((call).args) == (nullptr)) ? true : ((call).args->length != 3ULL)))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\005a put"}));
+        return;
+    }
+    int64_t kind = GpuKernel_buffer_receiver(*(this_), call, scaly_lvalue(String{(uint8_t*)"\005a put"}));
+    if ((kind < 0LL))
+    {
+        return;
+    }
+    PlannedOperand* idx_ptr = Vector_get<PlannedOperand>(*((call).args), 1ULL);
+    PlannedOperand* val_ptr = Vector_get<PlannedOperand>(*((call).args), 2ULL);
+    if ((((idx_ptr) == (nullptr)) ? true : ((val_ptr) == (nullptr))))
+    {
+        return;
+    }
+    if (((GpuKernel_is_own_counter(*(this_), scaly_lvalue((*(((PlannedOperand*)(idx_ptr))))))) == (false)))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\056a put at another index than the loop\047s counter"}));
+        return;
+    }
+    GpuKernel_k_operand(*(this_), scaly_lvalue((*(((PlannedOperand*)(val_ptr))))), false);
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    String name = GpuKernel_receiver_name(&scaly_local.f, call);
+    if ((kind == 4LL))
+    {
+        this_->k_float = true;
+    }
+    if (GpuKernel_kind_is_wide(kind))
+    {
+        GpuKernel_note_wide(*(this_), scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\016an element of "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((name)));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+    }
+    GpuKernel_note_name(&scaly_local.f, *(this_), (&(this_->k_outputs)), (&(this_->k_output_types)), name, scaly_lvalue(GpuKernel_receiver_type(&scaly_local.f, call)));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) bool GpuKernel_is_own_counter(GpuKernel& scaly_self, PlannedOperand& op)
+{
+    GpuKernel* this_ = &scaly_self;
+    if (GpuKernel_has_members(op))
+    {
+        return false;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            int64_t li = GpuKernel_local_index(*(this_), (v).name);
+            if ((li < 0LL))
+            {
+                return false;
+            }
+            return (GpuKernel_kind_at(*(this_), li) == 2LL);
+        }
+        else if (scaly_t1.tag == 19)
+        {
+            PlannedAs as_expr = scaly_payload<PlannedAs>(scaly_t1);
+            if ((((as_expr).value) == (nullptr)))
+            {
+                return false;
+            }
+            if (((GpuKernel_kind_is_integer(GpuKernel_scalar_kind((as_expr).target_type))) == (false)))
+            {
+                return false;
+            }
+            PlannedOperand* r = (as_expr).value;
+            return GpuKernel_is_own_counter(*(this_), scaly_lvalue(((*(r)))));
+        }
+        else if (scaly_t1.tag == 5)
+        {
+            PlannedTuple tp = scaly_payload<PlannedTuple>(scaly_t1);
+            if (((GpuKernel_is_grouping(tp)) == (false)))
+            {
+                return false;
+            }
+            PlannedComponent* c_ptr = Vector_get<PlannedComponent>(*((tp).components), 0ULL);
+            if (((c_ptr) == (nullptr)))
+            {
+                return false;
+            }
+            PlannedComponent* c = ((PlannedComponent*)(c_ptr));
+            PlannedOperand* in_ptr = Vector_get<PlannedOperand>(*(c->value), 0ULL);
+            if (((in_ptr) == (nullptr)))
+            {
+                return false;
+            }
+            return GpuKernel_is_own_counter(*(this_), scaly_lvalue((*(((PlannedOperand*)(in_ptr))))));
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    return false;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_function(GpuKernel& scaly_self, PlannedCall& call)
+{
+    GpuKernel* this_ = &scaly_self;
+    if ((((call).args) != (nullptr)))
+    {
+        uint64_t ai = 0ULL;
+        while ((ai < (call).args->length))
+        {
+            PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((call).args), ai);
+            if (((a_ptr) != (nullptr)))
+            {
+                GpuKernel_k_operand(*(this_), scaly_lvalue((*(((PlannedOperand*)(a_ptr))))), false);
+            }
+            ai = (ai + 1ULL);
+        }
+    }
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    if ((GpuKernel_index_of((&(this_->k_functions)), (call).mangled_name) >= 0LL))
+    {
+        return;
+    }
+    if ((GpuKernel_index_of((&(this_->fn_stack)), (call).mangled_name) >= 0LL))
+    {
+        this_->k_in_function = (*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), scaly_lvalue(String{nullptr})); scaly_t1; }));
+        GpuKernel_block_named(*(this_), (call).name, scaly_lvalue(String{(uint8_t*)"\015 is recursive"}));
+        return;
+    }
+    if (((call).requires_page_param ? true : (call).can_throw))
+    {
+        GpuKernel_block_named(*(this_), (call).name, scaly_lvalue(String{(uint8_t*)"\024 allocates or throws"}));
+        return;
+    }
+    if (((this_->plan_functions) == (nullptr)))
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\006calls "}), (call).name);
+        return;
+    }
+    uint64_t i = 0ULL;
+    while ((i < this_->plan_functions->length))
+    {
+        PlannedFunction* f_ptr = Vector_get<PlannedFunction>(*(this_->plan_functions), i);
+        if ((((f_ptr) != (nullptr)) ? String_equals(f_ptr->mangled_name, (call).mangled_name) : false))
+        {
+            bool has_body = false;
+            {
+                auto&& scaly_t2 = f_ptr->impl;
+                if (scaly_t2.tag == 0)
+                {
+                    PlannedAction action = scaly_payload<PlannedAction>(scaly_t2);
+                    has_body = true;
+                }
+                else
+                {
+                    0LL;
+                }
+            }
+            if (has_body)
+            {
+                GpuKernel_k_function_body(*(this_), scaly_lvalue((*(((PlannedFunction*)(f_ptr))))));
+                return;
+            }
+        }
+        i = (i + 1ULL);
+    }
+    GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\051calls a function whose body is not here: "}), (call).name);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_function_body(GpuKernel& scaly_self, PlannedFunction& func)
+{
+    GpuKernel* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    uint64_t saved_base = this_->k_base;
+    uint64_t saved_depth = this_->k_depth;
+    String* saved_in = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), this_->k_in_function); scaly_t1; });
+    this_->k_base = (this_->k_locals).length;
+    this_->k_depth = 0ULL;
+    this_->k_in_function = (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), (func).name); scaly_t2; }));
+    String* stack_copy = ({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), (func).mangled_name); scaly_t3; });
+    Array_add<String>(this_->fn_stack, (*stack_copy));
+    if (((((func).page_parameter) != (nullptr)) ? true : (func).can_throw))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\023allocates or throws"}));
+    }
+    if ((((func).return_type) == (nullptr)))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017answers nothing"}));
+    }
+    if ((((func).return_type) != (nullptr)))
+    {
+        PlannedType* rt = (func).return_type;
+        GpuKernel_check_value_type(*(this_), scaly_lvalue(((*(rt)))), scaly_lvalue(String{(uint8_t*)"\012the result"}));
+    }
+    if ((((func).input) != (nullptr)))
+    {
+        uint64_t pi = 0ULL;
+        while ((pi < (func).input->length))
+        {
+            PlannedItem* p_ptr = Vector_get<PlannedItem>(*((func).input), pi);
+            if ((((p_ptr) != (nullptr)) ? ((this_->k_blocked) == (false)) : false))
+            {
+                PlannedItem* p = ((PlannedItem*)(p_ptr));
+                if ((((p->name) == (nullptr)) ? true : ((p->item_type) == (nullptr))))
+                {
+                    GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\044a parameter without a name or a type"}));
+                }
+                else
+                {
+                    PlannedType* pt = p->item_type;
+                    String pname = ((*(p->name)));
+                    GpuKernel_check_value_type(*(this_), scaly_lvalue(((*(pt)))), scaly_lvalue(({
+        String scaly_t4{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t5 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t5 = StringBuilder{}; StringBuilder_init((*scaly_t5)); scaly_t5; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\016the parameter "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((pname)));
+            scaly_t4 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t4;
+    })));
+                    GpuKernel_add_local(*(this_), pname, 0LL);
+                }
+            }
+            pi = (pi + 1ULL);
+        }
+    }
+    {
+        auto&& scaly_t6 = (func).impl;
+        if (scaly_t6.tag == 0)
+        {
+            PlannedAction action = scaly_payload<PlannedAction>(scaly_t6);
+            GpuKernel_k_action(*(this_), action);
+        }
+        else
+        {
+            0LL;
+        }
+    }
+    GpuKernel_drop_locals(*(this_), this_->k_base);
+    (this_->fn_stack).length = ((this_->fn_stack).length - 1ULL);
+    this_->k_base = saved_base;
+    this_->k_depth = saved_depth;
+    this_->k_in_function = (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init2((*scaly_t7), (*saved_in)); scaly_t7; }));
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    String* sym_copy = ({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), (func).mangled_name); scaly_t8; });
+    Array_add<String>(this_->k_functions, (*sym_copy));
+    String* name_copy = ({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init2((*scaly_t9), (func).name); scaly_t9; });
+    Array_add<String>(this_->k_function_names, (*name_copy));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_statement_ref(GpuKernel& scaly_self, PlannedStatement* stmt)
+{
+    GpuKernel* this_ = &scaly_self;
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    if (((stmt) != (nullptr)))
+    {
+        PlannedStatement* s = stmt;
+        uint64_t mark = (this_->k_locals).length;
+        GpuKernel_k_statement(*(this_), scaly_lvalue(((*(s)))));
+        GpuKernel_drop_locals(*(this_), mark);
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_action(GpuKernel& scaly_self, PlannedAction& act)
+{
+    GpuKernel* this_ = &scaly_self;
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    GpuKernel_k_operands(*(this_), (act).source, false);
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    if ((((act).target) == (nullptr)))
+    {
+        return;
+    }
+    if (((act).target->length != 1ULL))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\034a compound assignment target"}));
+        return;
+    }
+    PlannedOperand* t_ptr = Vector_get<PlannedOperand>(*((act).target), 0ULL);
+    if (((t_ptr) == (nullptr)))
+    {
+        return;
+    }
+    PlannedOperand* top = ((PlannedOperand*)(t_ptr));
+    if (GpuKernel_has_members(scaly_lvalue((*(top)))))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\017writes a member"}));
+        return;
+    }
+    {
+        auto&& scaly_t1 = top->expr;
+        if (scaly_t1.tag == 2)
+        {
+            PlannedVariable v = scaly_payload<PlannedVariable>(scaly_t1);
+            int64_t li = GpuKernel_local_index(*(this_), (v).name);
+            if ((li < 0LL))
+            {
+                GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\015reduces into "}), (v).name);
+                return;
+            }
+            if ((GpuKernel_kind_at(*(this_), li) > 0LL))
+            {
+                GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\023writes the counter "}), (v).name);
+            }
+        }
+        else if (scaly_t1.tag == 3)
+        {
+            PlannedGlobalRef g = scaly_payload<PlannedGlobalRef>(scaly_t1);
+            GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\022writes the global "}), (g).name);
+        }
+        else
+        {
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\021an indirect write"}));
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_statement(GpuKernel& scaly_self, PlannedStatement& stmt)
+{
+    GpuKernel* this_ = &scaly_self;
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    {
+        auto&& scaly_t1 = stmt;
+        if (scaly_t1.tag == 0)
+        {
+            PlannedAction action = scaly_payload<PlannedAction>(scaly_t1);
+            GpuKernel_k_action(*(this_), action);
+        }
+        else if (scaly_t1.tag == 1)
+        {
+            PlannedBinding binding = scaly_payload<PlannedBinding>(scaly_t1);
+            GpuKernel_k_binding(*(this_), binding);
+        }
+        else if (scaly_t1.tag == 4)
+        {
+            PlannedReturn ret = scaly_payload<PlannedReturn>(scaly_t1);
+            if ((String_get_length(this_->k_in_function) == 0ULL))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\010a return"}));
+                return;
+            }
+            GpuKernel_k_operands(*(this_), (ret).result, false);
+        }
+        else if (scaly_t1.tag == 5)
+        {
+            PlannedThrow throw_stmt = scaly_payload<PlannedThrow>(scaly_t1);
+            GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\007a throw"}));
+        }
+        else if (scaly_t1.tag == 2)
+        {
+            PlannedBreak brk = scaly_payload<PlannedBreak>(scaly_t1);
+            if ((this_->k_depth == 0ULL))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\032a break of the loop itself"}));
+                return;
+            }
+            if ((String_get_length((brk).loop_label) > 0ULL))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\020a labelled break"}));
+                return;
+            }
+            if (((((brk).result) != (nullptr)) ? ((brk).result->length > 0ULL) : false))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\024a break with a value"}));
+            }
+        }
+        else if (scaly_t1.tag == 3)
+        {
+            PlannedContinue cont = scaly_payload<PlannedContinue>(scaly_t1);
+            if ((String_get_length((cont).loop_label) > 0ULL))
+            {
+                GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\023a labelled continue"}));
+            }
+        }
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_k_binding(GpuKernel& scaly_self, PlannedBinding& binding)
+{
+    GpuKernel* this_ = &scaly_self;
+    if (((((binding).binding_item).name) == (nullptr)))
+    {
+        GpuKernel_block(*(this_), scaly_lvalue(String{(uint8_t*)"\030a binding without a name"}));
+        return;
+    }
+    String name = ((*(((binding).binding_item).name)));
+    if (((((binding).operation) == (nullptr)) ? true : ((binding).operation->length != 1ULL)))
+    {
+        GpuKernel_block_named(*(this_), scaly_lvalue(String{(uint8_t*)"\033a binding without a value: "}), name);
+        return;
+    }
+    GpuKernel_k_operands(*(this_), (binding).operation, false);
+    if (this_->k_blocked)
+    {
+        return;
+    }
+    if (((((binding).binding_item).item_type) != (nullptr)))
+    {
+        PlannedType* it = ((binding).binding_item).item_type;
+        GpuKernel_check_value_type(*(this_), scaly_lvalue(((*(it)))), name);
+    }
+    else
+    {
+        PlannedOperand* op_ptr = Vector_get<PlannedOperand>(*((binding).operation), 0ULL);
+        if (((op_ptr) != (nullptr)))
+        {
+            GpuKernel_check_value_type(*(this_), op_ptr->result_type, name);
+        }
+    }
+    GpuKernel_add_local(*(this_), name, 0LL);
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/GpuKernel.scaly
+__attribute__((weak)) void GpuKernel_init(GpuKernel& scaly_self)
+{
+    GpuKernel* this_ = &scaly_self;
+    this_->report_files = (*({ Array<String>* scaly_t1 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t1 = Array<String>{}; (void)0; scaly_t1; }));
+    this_->report_offsets = (*({ Array<uint64_t>* scaly_t2 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t2 = Array<uint64_t>{}; (void)0; scaly_t2; }));
+    this_->report_verdicts = (*({ Array<String>* scaly_t3 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t3 = Array<String>{}; (void)0; scaly_t3; }));
+    this_->loops_total = 0ULL;
+    this_->loops_parallel = 0ULL;
+    this_->kernels = 0ULL;
+    this_->plan_functions = (Vector<PlannedFunction>*)(nullptr);
+    this_->plan_globals = (Vector<PlannedGlobal>*)(nullptr);
+    this_->k_blocked = false;
+    this_->k_reason = (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init2((*scaly_t4), scaly_lvalue(String{nullptr})); scaly_t4; }));
+    this_->k_wide = false;
+    this_->k_wide_reason = (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(String{nullptr})); scaly_t5; }));
+    this_->k_float = false;
+    this_->k_locals = (*({ Array<String>* scaly_t6 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t6 = Array<String>{}; (void)0; scaly_t6; }));
+    this_->k_kinds = (*({ Array<int64_t>* scaly_t7 = (Array<int64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<int64_t>), alignof(Array<int64_t>)); *scaly_t7 = Array<int64_t>{}; (void)0; scaly_t7; }));
+    this_->k_base = 0ULL;
+    this_->k_depth = 0ULL;
+    this_->k_in_function = (*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init2((*scaly_t8), scaly_lvalue(String{nullptr})); scaly_t8; }));
+    this_->k_uniforms = (*({ Array<String>* scaly_t9 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t9 = Array<String>{}; (void)0; scaly_t9; }));
+    this_->k_uniform_types = (*({ Array<String>* scaly_t10 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t10 = Array<String>{}; (void)0; scaly_t10; }));
+    this_->k_buffers = (*({ Array<String>* scaly_t11 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t11 = Array<String>{}; (void)0; scaly_t11; }));
+    this_->k_buffer_types = (*({ Array<String>* scaly_t12 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t12 = Array<String>{}; (void)0; scaly_t12; }));
+    this_->k_outputs = (*({ Array<String>* scaly_t13 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t13 = Array<String>{}; (void)0; scaly_t13; }));
+    this_->k_output_types = (*({ Array<String>* scaly_t14 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t14 = Array<String>{}; (void)0; scaly_t14; }));
+    this_->k_functions = (*({ Array<String>* scaly_t15 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t15 = Array<String>{}; (void)0; scaly_t15; }));
+    this_->k_function_names = (*({ Array<String>* scaly_t16 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t16 = Array<String>{}; (void)0; scaly_t16; }));
+    this_->fn_stack = (*({ Array<String>* scaly_t17 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t17 = Array<String>{}; (void)0; scaly_t17; }));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/StoreEffects.scaly
@@ -167986,6 +169990,7 @@ __attribute__((weak)) void Options_init(Options& scaly_self)
     this_->no_use_vis = false;
     this_->task_plan = false;
     this_->loop_census = false;
+    this_->gpu_plan = false;
     this_->pointer_report = false;
     this_->write_report = false;
     this_->host_report = false;
@@ -168127,195 +170132,201 @@ __attribute__((weak)) Options cli_parse_args(scaly_frame* scaly_rp, int64_t argc
                                                                     }
                                                                     else
                                                                     {
-                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\020--pointer-report"})))
+                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\012--gpu-plan"})))
                                                                         {
-                                                                            ((*opts)).pointer_report = true;
+                                                                            ((*opts)).gpu_plan = true;
                                                                         }
                                                                         else
                                                                         {
-                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\016--write-report"})))
+                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\020--pointer-report"})))
                                                                             {
-                                                                                ((*opts)).write_report = true;
+                                                                                ((*opts)).pointer_report = true;
                                                                             }
                                                                             else
                                                                             {
-                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\015--host-report"})))
+                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\016--write-report"})))
                                                                                 {
-                                                                                    ((*opts)).host_report = true;
+                                                                                    ((*opts)).write_report = true;
                                                                                 }
                                                                                 else
                                                                                 {
-                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\016--purity-check"})))
+                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\015--host-report"})))
                                                                                     {
-                                                                                        ((*opts)).purity_check = true;
+                                                                                        ((*opts)).host_report = true;
                                                                                     }
                                                                                     else
                                                                                     {
-                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\020--emit-interface"})))
+                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\016--purity-check"})))
                                                                                         {
-                                                                                            ((*opts)).emit_interface = true;
+                                                                                            ((*opts)).purity_check = true;
                                                                                         }
                                                                                         else
                                                                                         {
-                                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\016--emit-surface"})))
+                                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\020--emit-interface"})))
                                                                                             {
                                                                                                 ((*opts)).emit_interface = true;
-                                                                                                ((*opts)).emit_surface = true;
                                                                                             }
                                                                                             else
                                                                                             {
-                                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\003-O0"})))
+                                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\016--emit-surface"})))
                                                                                                 {
-                                                                                                    ((*opts)).opt_level = 0LL;
+                                                                                                    ((*opts)).emit_interface = true;
+                                                                                                    ((*opts)).emit_surface = true;
                                                                                                 }
                                                                                                 else
                                                                                                 {
-                                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\003-O1"})))
+                                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\003-O0"})))
                                                                                                     {
-                                                                                                        ((*opts)).opt_level = 1LL;
+                                                                                                        ((*opts)).opt_level = 0LL;
                                                                                                     }
                                                                                                     else
                                                                                                     {
-                                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\003-O2"})))
+                                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\003-O1"})))
                                                                                                         {
-                                                                                                            ((*opts)).opt_level = 2LL;
+                                                                                                            ((*opts)).opt_level = 1LL;
                                                                                                         }
                                                                                                         else
                                                                                                         {
-                                                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\003-O3"})))
+                                                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\003-O2"})))
                                                                                                             {
-                                                                                                                ((*opts)).opt_level = 3LL;
+                                                                                                                ((*opts)).opt_level = 2LL;
                                                                                                             }
                                                                                                             else
                                                                                                             {
-                                                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\011--release"})))
+                                                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\003-O3"})))
                                                                                                                 {
-                                                                                                                    ((*opts)).opt_level = 2LL;
-                                                                                                                    ((*opts)).release = true;
+                                                                                                                    ((*opts)).opt_level = 3LL;
                                                                                                                 }
                                                                                                                 else
                                                                                                                 {
-                                                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\013--pgo-train"})))
+                                                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\011--release"})))
                                                                                                                     {
                                                                                                                         ((*opts)).opt_level = 2LL;
                                                                                                                         ((*opts)).release = true;
-                                                                                                                        ((*opts)).pgo_train = true;
                                                                                                                     }
                                                                                                                     else
                                                                                                                     {
-                                                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\010--export"})))
+                                                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\013--pgo-train"})))
                                                                                                                         {
-                                                                                                                            ((*opts)).export_symbols = true;
+                                                                                                                            ((*opts)).opt_level = 2LL;
+                                                                                                                            ((*opts)).release = true;
+                                                                                                                            ((*opts)).pgo_train = true;
                                                                                                                         }
                                                                                                                         else
                                                                                                                         {
-                                                                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\005--pgo"})))
+                                                                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\010--export"})))
                                                                                                                             {
-                                                                                                                                i = (i + 1LL);
-                                                                                                                                if ((i < argc))
-                                                                                                                                {
-                                                                                                                                    ((*opts)).opt_level = 2LL;
-                                                                                                                                    ((*opts)).release = true;
-                                                                                                                                    ((*opts)).pgo_profile = (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init4((*scaly_t3), (const char*)((*(((argv) + (int64_t)(i)))))); scaly_t3; }));
-                                                                                                                                }
-                                                                                                                                else
-                                                                                                                                {
-                                                                                                                                    ((*opts)).error_message = String{(uint8_t*)"\120--pgo requires a profile (.profdata, or the .profraw a --pgo-train binary wrote)"};
-                                                                                                                                }
+                                                                                                                                ((*opts)).export_symbols = true;
                                                                                                                             }
                                                                                                                             else
                                                                                                                             {
-                                                                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\005--jit"})))
+                                                                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\005--pgo"})))
                                                                                                                                 {
-                                                                                                                                    ((*opts)).jit_program = true;
-                                                                                                                                }
-                                                                                                                                else
-                                                                                                                                {
-                                                                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\002-o"})))
+                                                                                                                                    i = (i + 1LL);
+                                                                                                                                    if ((i < argc))
                                                                                                                                     {
-                                                                                                                                        i = (i + 1LL);
-                                                                                                                                        if ((i < argc))
-                                                                                                                                        {
-                                                                                                                                            uint8_t* out_ptr = (*(((argv) + (int64_t)(i))));
-                                                                                                                                            ((*opts)).output_file = (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init4((*scaly_t4), (const char*)(out_ptr)); scaly_t4; }));
-                                                                                                                                        }
-                                                                                                                                        else
-                                                                                                                                        {
-                                                                                                                                            ((*opts)).error_message = String{(uint8_t*)"\026-o requires a filename"};
-                                                                                                                                        }
+                                                                                                                                        ((*opts)).opt_level = 2LL;
+                                                                                                                                        ((*opts)).release = true;
+                                                                                                                                        ((*opts)).pgo_profile = (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init4((*scaly_t3), (const char*)((*(((argv) + (int64_t)(i)))))); scaly_t3; }));
                                                                                                                                     }
                                                                                                                                     else
                                                                                                                                     {
-                                                                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\005--run"})))
+                                                                                                                                        ((*opts)).error_message = String{(uint8_t*)"\120--pgo requires a profile (.profdata, or the .profraw a --pgo-train binary wrote)"};
+                                                                                                                                    }
+                                                                                                                                }
+                                                                                                                                else
+                                                                                                                                {
+                                                                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\005--jit"})))
+                                                                                                                                    {
+                                                                                                                                        ((*opts)).jit_program = true;
+                                                                                                                                    }
+                                                                                                                                    else
+                                                                                                                                    {
+                                                                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\002-o"})))
                                                                                                                                         {
                                                                                                                                             i = (i + 1LL);
                                                                                                                                             if ((i < argc))
                                                                                                                                             {
-                                                                                                                                                uint8_t* fn_ptr = (*(((argv) + (int64_t)(i))));
-                                                                                                                                                ((*opts)).run_function = (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init4((*scaly_t5), (const char*)(fn_ptr)); scaly_t5; }));
-                                                                                                                                                ((*opts)).run_mode = true;
+                                                                                                                                                uint8_t* out_ptr = (*(((argv) + (int64_t)(i))));
+                                                                                                                                                ((*opts)).output_file = (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init4((*scaly_t4), (const char*)(out_ptr)); scaly_t4; }));
                                                                                                                                             }
                                                                                                                                             else
                                                                                                                                             {
-                                                                                                                                                ((*opts)).error_message = String{(uint8_t*)"\036--run requires a function name"};
+                                                                                                                                                ((*opts)).error_message = String{(uint8_t*)"\026-o requires a filename"};
                                                                                                                                             }
                                                                                                                                         }
                                                                                                                                         else
                                                                                                                                         {
-                                                                                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\010--target"})))
+                                                                                                                                            if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\005--run"})))
                                                                                                                                             {
                                                                                                                                                 i = (i + 1LL);
                                                                                                                                                 if ((i < argc))
                                                                                                                                                 {
-                                                                                                                                                    uint8_t* triple_ptr = (*(((argv) + (int64_t)(i))));
-                                                                                                                                                    ((*opts)).target_triple = (*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init4((*scaly_t6), (const char*)(triple_ptr)); scaly_t6; }));
+                                                                                                                                                    uint8_t* fn_ptr = (*(((argv) + (int64_t)(i))));
+                                                                                                                                                    ((*opts)).run_function = (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init4((*scaly_t5), (const char*)(fn_ptr)); scaly_t5; }));
+                                                                                                                                                    ((*opts)).run_mode = true;
                                                                                                                                                 }
                                                                                                                                                 else
                                                                                                                                                 {
-                                                                                                                                                    ((*opts)).error_message = String{(uint8_t*)"\032--target requires a triple"};
+                                                                                                                                                    ((*opts)).error_message = String{(uint8_t*)"\036--run requires a function name"};
                                                                                                                                                 }
                                                                                                                                             }
                                                                                                                                             else
                                                                                                                                             {
-                                                                                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\012--emit-cpp"})))
+                                                                                                                                                if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\010--target"})))
                                                                                                                                                 {
-                                                                                                                                                    ((*opts)).emit_cpp = true;
-                                                                                                                                                }
-                                                                                                                                                else
-                                                                                                                                                {
-                                                                                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\017--portable-simd"})))
+                                                                                                                                                    i = (i + 1LL);
+                                                                                                                                                    if ((i < argc))
                                                                                                                                                     {
-                                                                                                                                                        ((*opts)).portable_simd = true;
+                                                                                                                                                        uint8_t* triple_ptr = (*(((argv) + (int64_t)(i))));
+                                                                                                                                                        ((*opts)).target_triple = (*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init4((*scaly_t6), (const char*)(triple_ptr)); scaly_t6; }));
                                                                                                                                                     }
                                                                                                                                                     else
                                                                                                                                                     {
-                                                                                                                                                        if (String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\006-mcpu="})))
+                                                                                                                                                        ((*opts)).error_message = String{(uint8_t*)"\032--target requires a triple"};
+                                                                                                                                                    }
+                                                                                                                                                }
+                                                                                                                                                else
+                                                                                                                                                {
+                                                                                                                                                    if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\012--emit-cpp"})))
+                                                                                                                                                    {
+                                                                                                                                                        ((*opts)).emit_cpp = true;
+                                                                                                                                                    }
+                                                                                                                                                    else
+                                                                                                                                                    {
+                                                                                                                                                        if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\017--portable-simd"})))
                                                                                                                                                         {
-                                                                                                                                                            String cpu = String_substring(scaly_rp, (*arg), 6ULL, (String_get_length((*arg)) - 6ULL));
-                                                                                                                                                            if ((String_get_length(cpu) == 0ULL))
-                                                                                                                                                            {
-                                                                                                                                                                ((*opts)).error_message = String{(uint8_t*)"\045-mcpu= requires a CPU name, or native"};
-                                                                                                                                                            }
-                                                                                                                                                            else
-                                                                                                                                                            {
-                                                                                                                                                                ((*opts)).target_cpu = cpu;
-                                                                                                                                                            }
+                                                                                                                                                            ((*opts)).portable_simd = true;
                                                                                                                                                         }
                                                                                                                                                         else
                                                                                                                                                         {
-                                                                                                                                                            if (((String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\002-L"}))) & ((String_get_length((*arg)) > 2ULL))))
+                                                                                                                                                            if (String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\006-mcpu="})))
                                                                                                                                                             {
-                                                                                                                                                                Array_add<String>(((*opts)).library_paths, scaly_lvalue((*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init4((*scaly_t7), (const char*)(((arg_ptr) + (int64_t)(2LL)))); scaly_t7; }))));
-                                                                                                                                                            }
-                                                                                                                                                            else
-                                                                                                                                                            {
-                                                                                                                                                                if (((String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\002-l"}))) & ((String_get_length((*arg)) > 2ULL))))
+                                                                                                                                                                String cpu = String_substring(scaly_rp, (*arg), 6ULL, (String_get_length((*arg)) - 6ULL));
+                                                                                                                                                                if ((String_get_length(cpu) == 0ULL))
                                                                                                                                                                 {
-                                                                                                                                                                    Array_add<String>(((*opts)).libraries, scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init4((*scaly_t8), (const char*)(((arg_ptr) + (int64_t)(2LL)))); scaly_t8; }))));
+                                                                                                                                                                    ((*opts)).error_message = String{(uint8_t*)"\045-mcpu= requires a CPU name, or native"};
                                                                                                                                                                 }
                                                                                                                                                                 else
                                                                                                                                                                 {
-                                                                                                                                                                    ((*opts)).error_message = ({
+                                                                                                                                                                    ((*opts)).target_cpu = cpu;
+                                                                                                                                                                }
+                                                                                                                                                            }
+                                                                                                                                                            else
+                                                                                                                                                            {
+                                                                                                                                                                if (((String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\002-L"}))) & ((String_get_length((*arg)) > 2ULL))))
+                                                                                                                                                                {
+                                                                                                                                                                    Array_add<String>(((*opts)).library_paths, scaly_lvalue((*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init4((*scaly_t7), (const char*)(((arg_ptr) + (int64_t)(2LL)))); scaly_t7; }))));
+                                                                                                                                                                }
+                                                                                                                                                                else
+                                                                                                                                                                {
+                                                                                                                                                                    if (((String_starts_with((*arg), scaly_lvalue(String{(uint8_t*)"\002-l"}))) & ((String_get_length((*arg)) > 2ULL))))
+                                                                                                                                                                    {
+                                                                                                                                                                        Array_add<String>(((*opts)).libraries, scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init4((*scaly_t8), (const char*)(((arg_ptr) + (int64_t)(2LL)))); scaly_t8; }))));
+                                                                                                                                                                    }
+                                                                                                                                                                    else
+                                                                                                                                                                    {
+                                                                                                                                                                        ((*opts)).error_message = ({
         String scaly_t9{};
         {
             StringBuilder* isb$ = ({ StringBuilder* scaly_t10 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t10 = StringBuilder{}; StringBuilder_init((*scaly_t10)); scaly_t10; });
@@ -168325,6 +170336,7 @@ __attribute__((weak)) Options cli_parse_args(scaly_frame* scaly_rp, int64_t argc
         }
         scaly_t9;
     });
+                                                                                                                                                                    }
                                                                                                                                                                 }
                                                                                                                                                             }
                                                                                                                                                         }
@@ -168439,6 +170451,7 @@ __attribute__((weak)) void cli_print_usage()
     Console_println(((const char*)"  --no-tests     Omit test/test_* functions (seed build)"));
     Console_println(((const char*)"  --task-plan    Report the parallelizability verdict of every for loop, and every recursive call pair that forks"));
     Console_println(((const char*)"  --loop-census  Report which while loops are counted and could run in parallel"));
+    Console_println(((const char*)"  --gpu-plan     Report which parallel for loops a graphics card could run, and for which backends"));
     Console_println(((const char*)"  --pointer-report  Report every raw-pointer site, classified off the Plan"));
     Console_println(((const char*)"  --write-report  Report every write through a parameter, off the Plan"));
     Console_println(((const char*)"  --purity-check  Report every function that writes what its parameters reach"));
@@ -169368,10 +171381,11 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
             }
         }
     }
-    if (((opts).task_plan ? true : (opts).loop_census))
+    if ((((opts).task_plan ? true : (opts).loop_census) ? true : (opts).gpu_plan))
     {
         TaskPlanner* task_planner = ({ TaskPlanner* scaly_t14 = (TaskPlanner*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(TaskPlanner), alignof(TaskPlanner)); *scaly_t14 = TaskPlanner{}; TaskPlanner_init((*scaly_t14)); scaly_t14; });
         ((*task_planner)).census_while = (opts).loop_census;
+        ((*task_planner)).keep_fors = (opts).gpu_plan;
         TaskPlanner_analyze((*task_planner), *(plan), (opts).input_file);
         if ((opts).task_plan)
         {
@@ -169381,15 +171395,21 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         {
             cli_print_loop_census((&((*task_planner))));
         }
+        if ((opts).gpu_plan)
+        {
+            GpuKernel* gpu_kernel = ({ GpuKernel* scaly_t15 = (GpuKernel*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(GpuKernel), alignof(GpuKernel)); *scaly_t15 = GpuKernel{}; GpuKernel_init((*scaly_t15)); scaly_t15; });
+            GpuKernel_analyze((*gpu_kernel), *(plan), (&((*task_planner))));
+            cli_print_gpu_plan((&((*gpu_kernel))));
+        }
         if ((((((((String_get_length((opts).output_file) == 0ULL) ? (((opts).emit_ir) == (false)) : false) ? (((opts).compile_only) == (false)) : false) ? (((opts).run_mode) == (false)) : false) ? (((opts).jit_program) == (false)) : false) ? (((opts).test_mode) == (false)) : false) ? (((opts).emit_interface) == (false)) : false))
         {
             if ((opts).task_plan)
             {
-                Emitter_EmitterConfig fork_config = ({ Emitter_EmitterConfig scaly_t15{}; Emitter_EmitterConfig_init(scaly_t15); scaly_t15; });
+                Emitter_EmitterConfig fork_config = ({ Emitter_EmitterConfig scaly_t16{}; Emitter_EmitterConfig_init(scaly_t16); scaly_t16; });
                 (fork_config).emit_debug_info = (opts).debug;
                 (fork_config).target_triple = (opts).target_triple;
                 (fork_config).page_size = Planner_page_size_constant((*planner));
-                Emitter* fork_emitter = ({ Emitter* scaly_t16 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t16 = Emitter{}; Emitter_init((*scaly_t16), fork_config); scaly_t16; });
+                Emitter* fork_emitter = ({ Emitter* scaly_t17 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t17 = Emitter{}; Emitter_init((*scaly_t17), fork_config); scaly_t17; });
                 if (((Emitter_emit((*fork_emitter), *(plan), program_name)) == (false)))
                 {
                     Console_println(((const char*)"Emitter error"));
@@ -169411,9 +171431,9 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
     }
     if ((opts).test_mode)
     {
-        Array<String>* test_names = ({ Array<String>* scaly_t17 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t17 = Array<String>{}; (void)0; scaly_t17; });
-        Array<String>* test_labels = ({ Array<String>* scaly_t18 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t18 = Array<String>{}; (void)0; scaly_t18; });
-        Array<String>* package_dirs = ({ Array<String>* scaly_t19 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t19 = Array<String>{}; (void)0; scaly_t19; });
+        Array<String>* test_names = ({ Array<String>* scaly_t18 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t18 = Array<String>{}; (void)0; scaly_t18; });
+        Array<String>* test_labels = ({ Array<String>* scaly_t19 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t19 = Array<String>{}; (void)0; scaly_t19; });
+        Array<String>* package_dirs = ({ Array<String>* scaly_t20 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t20 = Array<String>{}; (void)0; scaly_t20; });
         uint64_t pdi = 0ULL;
         while ((pdi < ((model).packages).length))
         {
@@ -169430,30 +171450,30 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         }
         if (((plan->functions) != (nullptr)))
         {
-            for (auto scaly_t20 = Vector_get_iterator<PlannedFunction>(&scaly_local.f, *(plan->functions));;)
+            for (auto scaly_t21 = Vector_get_iterator<PlannedFunction>(&scaly_local.f, *(plan->functions));;)
             {
-                PlannedFunction* scaly_t20_at = (PlannedFunction*)VectorIterator_next<PlannedFunction>(scaly_t20);
-                if (scaly_t20_at == nullptr)
+                PlannedFunction* scaly_t21_at = (PlannedFunction*)VectorIterator_next<PlannedFunction>(scaly_t21);
+                if (scaly_t21_at == nullptr)
                     break;
-                PlannedFunction* f = scaly_t20_at;
+                PlannedFunction* f = scaly_t21_at;
                 if ((cli_is_test_function(*(f), (&((*package_dirs))), (opts).test_filter) ? ((cli_contains_string((&((*test_names))), f->mangled_name)) == (false)) : false))
                 {
-                    Array_add<String>((*test_names), scaly_lvalue((*({ String* scaly_t21 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t21 = String{}; String_init2((*scaly_t21), f->mangled_name); scaly_t21; }))));
+                    Array_add<String>((*test_names), scaly_lvalue((*({ String* scaly_t22 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t22 = String{}; String_init2((*scaly_t22), f->mangled_name); scaly_t22; }))));
                     Array_add<String>((*test_labels), scaly_lvalue(cli_label_of_test(&scaly_local.f, f->mangled_name)));
                     if ((opts).test_list)
                     {
                         String entry = ({
-        String scaly_t22{};
+        String scaly_t23{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t23 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t23 = StringBuilder{}; StringBuilder_init((*scaly_t23)); scaly_t23; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t24 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t24 = StringBuilder{}; StringBuilder_init((*scaly_t24)); scaly_t24; });
             StringBuilder_append2((*isb$), scaly_lvalue((cli_label_of_test(&scaly_local.f, f->mangled_name))));
             StringBuilder_append((*isb$), ((uint8_t)'\011'));
             StringBuilder_append2((*isb$), scaly_lvalue((f->file)));
             StringBuilder_append((*isb$), ((uint8_t)'\011'));
             StringBuilder_append6((*isb$), (cli_test_line(f->file, (f->loc).start)));
-            scaly_t22 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t23 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t22;
+        scaly_t23;
     });
                         Console_println(String_to_c_string(&scaly_local.f, entry));
                     }
@@ -169469,11 +171489,11 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
             Console_println(((const char*)"no tests: a test is a function or procedure named test or test_<name>, taking nothing and answering an int (0 for passed)"));
             return 0LL;
         }
-        Emitter_EmitterConfig test_config = ({ Emitter_EmitterConfig scaly_t24{}; Emitter_EmitterConfig_init(scaly_t24); scaly_t24; });
+        Emitter_EmitterConfig test_config = ({ Emitter_EmitterConfig scaly_t25{}; Emitter_EmitterConfig_init(scaly_t25); scaly_t25; });
         (test_config).emit_debug_info = false;
-        Emitter* test_emitter = ({ Emitter* scaly_t25 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t25 = Emitter{}; Emitter_init((*scaly_t25), test_config); scaly_t25; });
-        Array<String>* test_dep_objs = ({ Array<String>* scaly_t26 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t26 = Array<String>{}; (void)0; scaly_t26; });
-        Array<String>* test_dep_syms = ({ Array<String>* scaly_t27 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t27 = Array<String>{}; (void)0; scaly_t27; });
+        Emitter* test_emitter = ({ Emitter* scaly_t26 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t26 = Emitter{}; Emitter_init((*scaly_t26), test_config); scaly_t26; });
+        Array<String>* test_dep_objs = ({ Array<String>* scaly_t27 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t27 = Array<String>{}; (void)0; scaly_t27; });
+        Array<String>* test_dep_syms = ({ Array<String>* scaly_t28 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t28 = Array<String>{}; (void)0; scaly_t28; });
         if (((cli_compile_jit_dependencies((&(model)), (opts).input_file, (&((*test_dep_objs))), (&((*test_dep_syms))))) == (false)))
         {
             return 4LL;
@@ -169483,29 +171503,29 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         if ((failed == 0LL))
         {
             String summary = ({
-        String scaly_t28{};
+        String scaly_t29{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t29 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t29 = StringBuilder{}; StringBuilder_init((*scaly_t29)); scaly_t29; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t30 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t30 = StringBuilder{}; StringBuilder_init((*scaly_t30)); scaly_t30; });
             StringBuilder_append6((*isb$), (total));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\007 passed"}));
-            scaly_t28 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t29 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t28;
+        scaly_t29;
     });
             Console_println(String_to_c_string(&scaly_local.f, summary));
             return 0LL;
         }
         String summary = ({
-        String scaly_t30{};
+        String scaly_t31{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t31 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t31 = StringBuilder{}; StringBuilder_init((*scaly_t31)); scaly_t31; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t32 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t32 = StringBuilder{}; StringBuilder_init((*scaly_t32)); scaly_t32; });
             StringBuilder_append6((*isb$), (((int64_t)(failed))));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004 of "}));
             StringBuilder_append6((*isb$), (total));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\007 failed"}));
-            scaly_t30 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t31 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t30;
+        scaly_t31;
     });
         Console_println(String_to_c_string(&scaly_local.f, summary));
         return 1LL;
@@ -169515,12 +171535,12 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         String target_mangled = String{nullptr};
         if (((plan->functions) != (nullptr)))
         {
-            for (auto scaly_t32 = Vector_get_iterator<PlannedFunction>(&scaly_local.f, *(plan->functions));;)
+            for (auto scaly_t33 = Vector_get_iterator<PlannedFunction>(&scaly_local.f, *(plan->functions));;)
             {
-                PlannedFunction* scaly_t32_at = (PlannedFunction*)VectorIterator_next<PlannedFunction>(scaly_t32);
-                if (scaly_t32_at == nullptr)
+                PlannedFunction* scaly_t33_at = (PlannedFunction*)VectorIterator_next<PlannedFunction>(scaly_t33);
+                if (scaly_t33_at == nullptr)
                     break;
-                PlannedFunction* f = scaly_t32_at;
+                PlannedFunction* f = scaly_t33_at;
                 if (String_equals(f->name, (opts).run_function))
                 {
                     if ((String_get_length(target_mangled) == 0ULL))
@@ -169535,11 +171555,11 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
             Console_println(((const char*)"Error: --run function not found"));
             return 10LL;
         }
-        Emitter_EmitterConfig jit_config = ({ Emitter_EmitterConfig scaly_t33{}; Emitter_EmitterConfig_init(scaly_t33); scaly_t33; });
+        Emitter_EmitterConfig jit_config = ({ Emitter_EmitterConfig scaly_t34{}; Emitter_EmitterConfig_init(scaly_t34); scaly_t34; });
         (jit_config).emit_debug_info = false;
-        Emitter* jit_emitter = ({ Emitter* scaly_t34 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t34 = Emitter{}; Emitter_init((*scaly_t34), jit_config); scaly_t34; });
-        Array<String>* run_dep_objs = ({ Array<String>* scaly_t35 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t35 = Array<String>{}; (void)0; scaly_t35; });
-        Array<String>* run_dep_syms = ({ Array<String>* scaly_t36 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t36 = Array<String>{}; (void)0; scaly_t36; });
+        Emitter* jit_emitter = ({ Emitter* scaly_t35 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t35 = Emitter{}; Emitter_init((*scaly_t35), jit_config); scaly_t35; });
+        Array<String>* run_dep_objs = ({ Array<String>* scaly_t36 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t36 = Array<String>{}; (void)0; scaly_t36; });
+        Array<String>* run_dep_syms = ({ Array<String>* scaly_t37 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t37 = Array<String>{}; (void)0; scaly_t37; });
         if (((cli_compile_jit_dependencies((&(model)), (opts).input_file, (&((*run_dep_objs))), (&((*run_dep_syms))))) == (false)))
         {
             return 4LL;
@@ -169549,11 +171569,11 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
     }
     if ((opts).jit_program)
     {
-        Emitter_EmitterConfig prog_config = ({ Emitter_EmitterConfig scaly_t37{}; Emitter_EmitterConfig_init(scaly_t37); scaly_t37; });
+        Emitter_EmitterConfig prog_config = ({ Emitter_EmitterConfig scaly_t38{}; Emitter_EmitterConfig_init(scaly_t38); scaly_t38; });
         (prog_config).emit_debug_info = false;
-        Emitter* prog_emitter = ({ Emitter* scaly_t38 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t38 = Emitter{}; Emitter_init((*scaly_t38), prog_config); scaly_t38; });
-        Array<String>* prog_dep_objs = ({ Array<String>* scaly_t39 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t39 = Array<String>{}; (void)0; scaly_t39; });
-        Array<String>* prog_dep_syms = ({ Array<String>* scaly_t40 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t40 = Array<String>{}; (void)0; scaly_t40; });
+        Emitter* prog_emitter = ({ Emitter* scaly_t39 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t39 = Emitter{}; Emitter_init((*scaly_t39), prog_config); scaly_t39; });
+        Array<String>* prog_dep_objs = ({ Array<String>* scaly_t40 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t40 = Array<String>{}; (void)0; scaly_t40; });
+        Array<String>* prog_dep_syms = ({ Array<String>* scaly_t41 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t41 = Array<String>{}; (void)0; scaly_t41; });
         if (((cli_compile_jit_dependencies((&(model)), (opts).input_file, (&((*prog_dep_objs))), (&((*prog_dep_syms))))) == (false)))
         {
             return 4LL;
@@ -169572,7 +171592,7 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
             Console_println(((const char*)"Error: --emit-cpp requires -o <file>"));
             return 6LL;
         }
-        CppEmitter* cpp = ({ CppEmitter* scaly_t41 = (CppEmitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(CppEmitter), alignof(CppEmitter)); *scaly_t41 = CppEmitter{}; CppEmitter_init((*scaly_t41)); scaly_t41; });
+        CppEmitter* cpp = ({ CppEmitter* scaly_t42 = (CppEmitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(CppEmitter), alignof(CppEmitter)); *scaly_t42 = CppEmitter{}; CppEmitter_init((*scaly_t42)); scaly_t42; });
         ((*cpp)).skip_tests = (opts).no_tests;
         ((*cpp)).no_prelude = ((opts).no_prelude ? ((String_ends_with((opts).input_file, scaly_lvalue(String{(uint8_t*)"\014/scaly.scaly"}))) == (false)) : false);
         if (String_ends_with((opts).input_file, scaly_lvalue(String{(uint8_t*)"\014/scaly.scaly"})))
@@ -169581,19 +171601,19 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
             if ((slash > 0LL))
             {
                 ((*cpp)).types_header = ({
-        String scaly_t42{};
+        String scaly_t43{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t43 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t43 = StringBuilder{}; StringBuilder_init((*scaly_t43)); scaly_t43; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t44 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t44 = StringBuilder{}; StringBuilder_init((*scaly_t44)); scaly_t44; });
             StringBuilder_append2((*isb$), scaly_lvalue((String_substring(&scaly_local.f, (opts).output_file, 0ULL, ((uint64_t)(slash))))));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\016/scaly_types.h"}));
-            scaly_t42 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t43 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t42;
+        scaly_t43;
     });
             }
             else
             {
-                ((*cpp)).types_header = (*({ String* scaly_t44 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t44 = String{}; String_init2((*scaly_t44), scaly_lvalue(String{(uint8_t*)"\015scaly_types.h"})); scaly_t44; }));
+                ((*cpp)).types_header = (*({ String* scaly_t45 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t45 = String{}; String_init2((*scaly_t45), scaly_lvalue(String{(uint8_t*)"\015scaly_types.h"})); scaly_t45; }));
             }
         }
         if (((CppEmitter_emit(&scaly_local.f, (*cpp), *(plan), (opts).output_file)) == (false)))
@@ -169602,7 +171622,7 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         }
         return 0LL;
     }
-    Emitter_EmitterConfig config = ({ Emitter_EmitterConfig scaly_t45{}; Emitter_EmitterConfig_init(scaly_t45); scaly_t45; });
+    Emitter_EmitterConfig config = ({ Emitter_EmitterConfig scaly_t46{}; Emitter_EmitterConfig_init(scaly_t46); scaly_t46; });
     (config).emit_debug_info = (opts).debug;
     (config).skip_tests = (opts).no_tests;
     (config).target_triple = (opts).target_triple;
@@ -169628,7 +171648,7 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
             }
         }
     }
-    Emitter* emitter = ({ Emitter* scaly_t46 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t46 = Emitter{}; Emitter_init((*scaly_t46), config); scaly_t46; });
+    Emitter* emitter = ({ Emitter* scaly_t47 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t47 = Emitter{}; Emitter_init((*scaly_t47), config); scaly_t47; });
     if ((opts).debug)
     {
         Emitter_set_debug_source((*emitter), (opts).input_file, source);
@@ -169673,26 +171693,26 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         if ((String_get_length((opts).defs_file) > 0ULL))
         {
             String defs = ({
-        String scaly_t47{};
+        String scaly_t48{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t48 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t48 = StringBuilder{}; StringBuilder_init((*scaly_t48)); scaly_t48; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t49 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t49 = StringBuilder{}; StringBuilder_init((*scaly_t49)); scaly_t49; });
             StringBuilder_append2((*isb$), scaly_lvalue((Planner_generic_function_names(&scaly_local.f, (*planner)))));
             StringBuilder_append2((*isb$), scaly_lvalue((Emitter_defined_symbols(&scaly_local.f, (*emitter)))));
-            scaly_t47 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t48 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t47;
+        scaly_t48;
     });
             if (((File_write_from_string((opts).defs_file, defs)) == (false)))
             {
                 Console_println(((const char*)scaly_rt_cstr(&scaly_lvalue(({
-        String scaly_t49{};
+        String scaly_t50{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t50 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t50 = StringBuilder{}; StringBuilder_init((*scaly_t50)); scaly_t50; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t51 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t51 = StringBuilder{}; StringBuilder_init((*scaly_t51)); scaly_t51; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\027Error: Could not write "}));
             StringBuilder_append2((*isb$), scaly_lvalue(((opts).defs_file)));
-            scaly_t49 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t50 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t49;
+        scaly_t50;
     })))));
                 return 8LL;
             }
@@ -169718,38 +171738,38 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         Console_println(((const char*)"Error: -o <file> required for linking"));
         return 7LL;
     }
-    Array<String>* package_objects = ({ Array<String>* scaly_t51 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t51 = Array<String>{}; (void)0; scaly_t51; });
-    Array<String>* package_bitcode = ({ Array<String>* scaly_t52 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t52 = Array<String>{}; (void)0; scaly_t52; });
-    StringBuilder* library_link_flags = ({ StringBuilder* scaly_t53 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t53 = StringBuilder{}; StringBuilder_init((*scaly_t53)); scaly_t53; });
-    String* program_obj = ({ String* scaly_t54 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t54 = String{}; String_init3((*scaly_t54)); scaly_t54; });
+    Array<String>* package_objects = ({ Array<String>* scaly_t52 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t52 = Array<String>{}; (void)0; scaly_t52; });
+    Array<String>* package_bitcode = ({ Array<String>* scaly_t53 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t53 = Array<String>{}; (void)0; scaly_t53; });
+    StringBuilder* library_link_flags = ({ StringBuilder* scaly_t54 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t54 = StringBuilder{}; StringBuilder_init((*scaly_t54)); scaly_t54; });
+    String* program_obj = ({ String* scaly_t55 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t55 = String{}; String_init3((*scaly_t55)); scaly_t55; });
     bool program_cached = false;
     if ((opts).tool_build)
     {
-        Array<String>* pkg_names = ({ Array<String>* scaly_t55 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t55 = Array<String>{}; (void)0; scaly_t55; });
-        Array<String>* pkg_roots = ({ Array<String>* scaly_t56 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t56 = Array<String>{}; (void)0; scaly_t56; });
+        Array<String>* pkg_names = ({ Array<String>* scaly_t56 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t56 = Array<String>{}; (void)0; scaly_t56; });
+        Array<String>* pkg_roots = ({ Array<String>* scaly_t57 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t57 = Array<String>{}; (void)0; scaly_t57; });
         uint64_t pi = 0ULL;
         while ((pi < ((model).packages).length))
         {
             Module* pkp = Vector_get<Module>((model).packages, pi);
             if (((pkp) != (nullptr)))
             {
-                Array_add<String>((*pkg_names), scaly_lvalue((*({ String* scaly_t57 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t57 = String{}; String_init2((*scaly_t57), pkp->name); scaly_t57; }))));
-                Array_add<String>((*pkg_roots), scaly_lvalue((*({ String* scaly_t58 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t58 = String{}; String_init2((*scaly_t58), pkp->file); scaly_t58; }))));
+                Array_add<String>((*pkg_names), scaly_lvalue((*({ String* scaly_t58 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t58 = String{}; String_init2((*scaly_t58), pkp->name); scaly_t58; }))));
+                Array_add<String>((*pkg_roots), scaly_lvalue((*({ String* scaly_t59 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t59 = String{}; String_init2((*scaly_t59), pkp->file); scaly_t59; }))));
             }
             pi = (pi + 1ULL);
         }
-        if (((cli_contains_string((&((*pkg_names))), scaly_lvalue((*({ String* scaly_t59 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t59 = String{}; String_init2((*scaly_t59), scaly_lvalue(String{(uint8_t*)"\005scaly"})); scaly_t59; }))))) == (false)))
+        if (((cli_contains_string((&((*pkg_names))), scaly_lvalue((*({ String* scaly_t60 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t60 = String{}; String_init2((*scaly_t60), scaly_lvalue(String{(uint8_t*)"\005scaly"})); scaly_t60; }))))) == (false)))
         {
-            Array_add<String>((*pkg_names), scaly_lvalue((*({ String* scaly_t60 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t60 = String{}; String_init2((*scaly_t60), scaly_lvalue(String{(uint8_t*)"\005scaly"})); scaly_t60; }))));
+            Array_add<String>((*pkg_names), scaly_lvalue((*({ String* scaly_t61 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t61 = String{}; String_init2((*scaly_t61), scaly_lvalue(String{(uint8_t*)"\005scaly"})); scaly_t61; }))));
             Array_add<String>((*pkg_roots), scaly_lvalue(({
-        String scaly_t61{};
+        String scaly_t62{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t62 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t62 = StringBuilder{}; StringBuilder_init((*scaly_t62)); scaly_t62; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t63 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t63 = StringBuilder{}; StringBuilder_init((*scaly_t63)); scaly_t63; });
             StringBuilder_append2((*isb$), scaly_lvalue((Modeler_stdlib_directory(&scaly_local.f))));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\014/scaly.scaly"}));
-            scaly_t61 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t62 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t61;
+        scaly_t62;
     })));
         }
         if (((tool_package_objects(&scaly_local.f, (&((*pkg_names))), (&((*pkg_roots))), (opts).input_file, (opts).target_triple, (opts).target_cpu, (opts).release, (&((*package_objects))), (&((*package_bitcode))), (&((*library_link_flags))))) == (false)))
@@ -169774,15 +171794,15 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
             if (((Emitter_link_bitcode((*emitter), scaly_lvalue((*(bc))))) == (false)))
             {
                 Console_println(((const char*)scaly_rt_cstr(&scaly_lvalue(({
-        String scaly_t63{};
+        String scaly_t64{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t64 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t64 = StringBuilder{}; StringBuilder_init((*scaly_t64)); scaly_t64; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t65 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t65 = StringBuilder{}; StringBuilder_init((*scaly_t65)); scaly_t65; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\007Error: "}));
             StringBuilder_append2((*isb$), scaly_lvalue((*((bc)))));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\036 did not link into the program"}));
-            scaly_t63 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t64 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t63;
+        scaly_t64;
     })))));
                 return 9LL;
             }
@@ -169790,7 +171810,7 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
     }
     bool coff = Emitter_target_is_coff_format((*emitter));
     bool wasm = Emitter_target_is_wasm_format((*emitter));
-    StringBuilder* tb = ({ StringBuilder* scaly_t65 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t65 = StringBuilder{}; StringBuilder_init((*scaly_t65)); scaly_t65; });
+    StringBuilder* tb = ({ StringBuilder* scaly_t66 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t66 = StringBuilder{}; StringBuilder_init((*scaly_t66)); scaly_t66; });
     if (coff)
     {
         StringBuilder_append2((*tb), scaly_lvalue(cli_windows_scratch_dir(&scaly_local.f)));
@@ -169806,25 +171826,25 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
     bool kept = false;
     if (program_cached)
     {
-        tmp_obj = (*({ String* scaly_t66 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t66 = String{}; String_init2((*scaly_t66), (*program_obj)); scaly_t66; }));
+        tmp_obj = (*({ String* scaly_t67 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t67 = String{}; String_init2((*scaly_t67), (*program_obj)); scaly_t67; }));
         kept = true;
     }
     else
     {
-        String* write_to = ({ String* scaly_t67 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t67 = String{}; String_init2((*scaly_t67), tmp_obj); scaly_t67; });
+        String* write_to = ({ String* scaly_t68 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t68 = String{}; String_init2((*scaly_t68), tmp_obj); scaly_t68; });
         if ((String_get_length((*program_obj)) > 0ULL))
         {
             (*write_to) = ({
-        String scaly_t68{};
+        String scaly_t69{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t69 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t69 = StringBuilder{}; StringBuilder_init((*scaly_t69)); scaly_t69; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t70 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t70 = StringBuilder{}; StringBuilder_init((*scaly_t70)); scaly_t70; });
             StringBuilder_append2((*isb$), scaly_lvalue(((*program_obj))));
             StringBuilder_append((*isb$), ((uint8_t)'.'));
             StringBuilder_append6((*isb$), (((int64_t)(getpid()))));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004.tmp"}));
-            scaly_t68 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t69 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t68;
+        scaly_t69;
     });
         }
         bool obj_ok = Emitter_write_object_to_file((*emitter), (*write_to));
@@ -169837,23 +171857,23 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         {
             if (tool_publish((*write_to), (*program_obj)))
             {
-                tmp_obj = (*({ String* scaly_t70 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t70 = String{}; String_init2((*scaly_t70), (*program_obj)); scaly_t70; }));
+                tmp_obj = (*({ String* scaly_t71 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t71 = String{}; String_init2((*scaly_t71), (*program_obj)); scaly_t71; }));
                 kept = true;
             }
             else
             {
-                tmp_obj = (*({ String* scaly_t71 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t71 = String{}; String_init2((*scaly_t71), (*write_to)); scaly_t71; }));
+                tmp_obj = (*({ String* scaly_t72 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t72 = String{}; String_init2((*scaly_t72), (*write_to)); scaly_t72; }));
             }
         }
     }
-    String* msvc_head = ({ String* scaly_t72 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t72 = String{}; String_init3((*scaly_t72)); scaly_t72; });
+    String* msvc_head = ({ String* scaly_t73 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t73 = String{}; String_init3((*scaly_t73)); scaly_t73; });
     bool instrumented = ((opts).pgo_train ? (opts).tool_build : false);
     if (((coff ? ((instrumented) == (false)) : false) ? ((cli_compiler_named()) == (false)) : false))
     {
         (*msvc_head) = cli_msvc_link_head(&scaly_local.f, scaly_lvalue(tool_target_triple(&scaly_local.f, (opts).target_triple)));
     }
     bool msvc = (String_get_length((*msvc_head)) > 0ULL);
-    StringBuilder* cmd_builder = ({ StringBuilder* scaly_t73 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t73 = StringBuilder{}; StringBuilder_init((*scaly_t73)); scaly_t73; });
+    StringBuilder* cmd_builder = ({ StringBuilder* scaly_t74 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t74 = StringBuilder{}; StringBuilder_init((*scaly_t74)); scaly_t74; });
     if (msvc)
     {
         StringBuilder_append2((*cmd_builder), scaly_lvalue(String{(uint8_t*)"\001\042"}));
@@ -169879,7 +171899,7 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
                 if ((system(((const char*)"where clang >nul 2>nul")) != (int32_t)0ULL))
                 {
                     Console_println(((const char*)"Error: no linker - a built program is linked by the Visual Studio Build Tools (the C++ tools and a Windows SDK), and they are not installed."));
-                    if (String_contains(scaly_lvalue(tool_target_triple(&scaly_local.f, (opts).target_triple)), scaly_lvalue((*({ String* scaly_t74 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t74 = String{}; String_init2((*scaly_t74), scaly_lvalue(String{(uint8_t*)"\007aarch64"})); scaly_t74; })))))
+                    if (String_contains(scaly_lvalue(tool_target_triple(&scaly_local.f, (opts).target_triple)), scaly_lvalue((*({ String* scaly_t75 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t75 = String{}; String_init2((*scaly_t75), scaly_lvalue(String{(uint8_t*)"\007aarch64"})); scaly_t75; })))))
                     {
                         Console_println(((const char*)"       Install them with:  winget install --id Microsoft.VisualStudio.BuildTools -e --source winget --override \042--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.ARM64\042"));
                     }
@@ -170026,29 +172046,29 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
             if (msvc)
             {
                 StringBuilder_append2((*cmd_builder), scaly_lvalue(({
-        String scaly_t75{};
+        String scaly_t76{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t76 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t76 = StringBuilder{}; StringBuilder_init((*scaly_t76)); scaly_t76; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t77 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t77 = StringBuilder{}; StringBuilder_init((*scaly_t77)); scaly_t77; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012 \042-natvis:"}));
             StringBuilder_append2((*isb$), scaly_lvalue((natvis)));
             StringBuilder_append((*isb$), ((uint8_t)'\042'));
-            scaly_t75 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t76 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t75;
+        scaly_t76;
     })));
             }
             else
             {
                 StringBuilder_append2((*cmd_builder), scaly_lvalue(({
-        String scaly_t77{};
+        String scaly_t78{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t78 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t78 = StringBuilder{}; StringBuilder_init((*scaly_t78)); scaly_t78; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t79 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t79 = StringBuilder{}; StringBuilder_init((*scaly_t79)); scaly_t79; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\023 -Xlinker \042-natvis:"}));
             StringBuilder_append2((*isb$), scaly_lvalue((natvis)));
             StringBuilder_append((*isb$), ((uint8_t)'\042'));
-            scaly_t77 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t78 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t77;
+        scaly_t78;
     })));
             }
         }
@@ -170081,15 +172101,15 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
         if ((link_rc == (int32_t)0ULL))
         {
             String dsym_str = ({
-        String scaly_t79{};
+        String scaly_t80{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t80 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t80 = StringBuilder{}; StringBuilder_init((*scaly_t80)); scaly_t80; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t81 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t81 = StringBuilder{}; StringBuilder_init((*scaly_t81)); scaly_t81; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012dsymutil \042"}));
             StringBuilder_append2((*isb$), scaly_lvalue(((opts).output_file)));
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\015\042 2>/dev/null"}));
-            scaly_t79 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t80 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t79;
+        scaly_t80;
     });
             int32_t dsym_rc = system(String_c_data(dsym_str));
         }
@@ -170645,6 +172665,29 @@ __attribute__((weak)) void cli_print_loop_census(TaskPlanner* tp)
     });
     Console_println(String_to_c_string(&scaly_local.f, head));
     cli_print_located(scaly_lvalue(String{(uint8_t*)"\015loop-census: "}), (&(tp->while_files)), (&(tp->while_offsets)), (&(tp->while_verdicts)));
+}
+
+// packages/scalyc/0.2.1/scalyc/cli.scaly
+__attribute__((weak)) void cli_print_gpu_plan(GpuKernel* gk)
+{
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    String head = ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012gpu-plan: "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((cli_format_size(&scaly_local.f, gk->loops_total))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\014 for-loops, "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((cli_format_size(&scaly_local.f, gk->loops_parallel))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\013 parallel, "}));
+            StringBuilder_append2((*isb$), scaly_lvalue((cli_format_size(&scaly_local.f, gk->kernels))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010 kernels"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    });
+    Console_println(String_to_c_string(&scaly_local.f, head));
+    cli_print_located(scaly_lvalue(String{(uint8_t*)"\012gpu-plan: "}), (&(gk->report_files)), (&(gk->report_offsets)), (&(gk->report_verdicts)));
 }
 
 // packages/scalyc/0.2.1/scalyc/cli.scaly
