@@ -1,0 +1,37 @@
+; A routine planned while a lazy argument is planned -- an interpolation's
+; append instantiating `Slice.get`, a generic operator's body -- is planned
+; outside the put-in (Planner.plan_function#, lazy_aside#): it saw the
+; put-in's names and its ban on `return`, and `pick(true, "n is `n`")` was
+; rc 4 at lines of Slice.scaly (2026-11-10, found writing the book's chapter
+; on more than one machine: `counts.send(Count(n, "`a` to `b`"))`). The
+; put-in's own checks still hold (xfail_lazy_function_return,
+; xfail_lazy_argument_shadow).
+; run-env: SCALY_POISON=1
+function size(s: String) returns int
+    s.get_length() as int
+
+function pick(c: bool, a: lazy String) returns int
+    if c: size(a) else 0
+
+define Box[T]
+(
+    tag: int
+)
+{
+    function measure(this, value: lazy T) returns int
+        size(value)
+}
+
+let n 5
+var bad 0
+if pick(true, "n is `n`") <> 6
+    bad := bad + 1
+if pick(false, "n is `n`") <> 0
+    bad := bad + 1
+let b Box[String](0)
+if b.measure("`n` and `n + 1`") <> 7
+    bad := bad + 1
+if bad = 0
+    print "PASS"
+else
+    print "FAIL `bad`"

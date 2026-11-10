@@ -20734,8 +20734,12 @@ define Planner
                 return null
             }
 
+            ; a generic body planned as its template (`Remote[T].receive`)
+            ; has no message type yet: each instantiation checks its own
             var seen Array[String]()
-            let closure_ok this.check_message_type(pointee, loc, seen)
+            let unbound this.planning_template or Planner.is_generic_type_param_name(pointee.name) or this.is_concept_parameter_name(pointee.name)
+            if unbound = false
+                this.check_message_type(pointee, loc, seen)
 
             var wsb StringBuilder()
             wsb.append "_scaly_walk_"
@@ -32393,6 +32397,36 @@ define Planner
             Vector[Function](found)
         }
 
+        ; report_remote_message_name#: `Remote[T].send` (scaly/cluster.scaly)
+        ; builds its message on a page of its own -- the argument is put in
+        ; as `&^out message` -- and ships that page. A construction or a
+        ; call is built there with all its parts; a NAME (or a field, a
+        ; literal) is copied there as the record alone, its parts stay where
+        ; they were built, and the receiver stopped with exit 18 at the
+        ; first of them (2026-11-10). So the argument must end in an
+        ; argument list.
+        procedure report_remote_message_name(mutable this: Planner, args: Tuple, span: Span)
+        {
+            if args.components.length <> 1
+                return
+            let ops args.components[0].value
+            var built false
+            if ops.length > 0
+            {
+                let last ops[ops.length - 1]
+                if last.member_access = null
+                {
+                    choose last.expression
+                        when t: Tuple
+                            built := true
+                        else
+                            built := false
+                }
+            }
+            if built = false
+                this.add_diagnostic(span, String^this("send builds the message on a page of its own: write the construction or the call that makes it as the argument, not a name -- the parts of a value built elsewhere would stay behind"))
+        }
+
         ; put_in_lazy_call#: a call of a function with a lazy parameter
         ; (ROADMAP-operation.md, Short circuit: it holds for every routine):
         ; the function's body, put in where the call stands, as a block --
@@ -32455,15 +32489,18 @@ define Planner
                 this.add_diagnostic(span, String^this("wrong number of arguments for `name`: got `args.components.length`, expected `f.input.length - first`"))
                 return none
             }
-            var pi: size_t 0
-            while pi < lazy_putins.length
+            if is_method and name.equals("send") and method[method.length - 1].equals("Remote")
+                this.report_remote_message_name(args, span)
+            ; back to the barrier of the routine being planned (plan_function#)
+            var pi lazy_putins.length
+            while pi > 0 and lazy_putins[pi - 1].get_length() > 0
             {
+                pi := pi - 1
                 if lazy_putins[pi].equals(name)
                 {
                     this.add_diagnostic(span, String^this("`name` takes a lazy parameter and calls itself: a body put in where it is called cannot put itself in"))
                     return none
                 }
-                pi := pi + 1
             }
             ; the ordinary arguments, once, in the order written -- each
             ; evaluated after the parameters before it are bound, so it may
@@ -32600,15 +32637,16 @@ define Planner
         ; put-in's own binding
         procedure check_lazy_shadow(mutable this: Planner, name: String, loc: Span)
         {
-            var sk: size_t 0
-            while sk < lazy_shadows.length
+            ; back to the barrier of the routine being planned (plan_function#)
+            var sk lazy_shadows.length
+            while sk > 0 and lazy_shadows[sk - 1].get_length() > 0
             {
+                sk := sk - 1
                 if lazy_shadows[sk].equals(name)
                 {
                     this.add_diagnostic(loc, String^this("this argument of a function with a lazy parameter names `name`, which the function binds where the argument is evaluated: rename one of them"))
                     return
                 }
-                sk := sk + 1
             }
         }
 
@@ -51918,7 +51956,7 @@ define Planner
 
         procedure plan_return(mutable this: Planner, mutable r: Return) returns PlannedReturn
         {
-            if lazy_putins.length > 0
+            if lazy_putins.length > 0 and lazy_putins[lazy_putins.length - 1].get_length() > 0
                 this.add_diagnostic(r.span, String^this("a function with a lazy parameter answers its body's last value: a return would leave the routine it is put in"))
             ; GAP B: `return \x: …` where the function's return type is a delegate
             ; yields an ESCAPING closure — env on the caller page (`#`) so it
@@ -55348,7 +55386,42 @@ define Planner
             }
         }
 
+        ; plan_function#: a routine's body is planned outside any put-in --
+        ; one met while a lazy argument is planned (an interpolation's
+        ; `append` instantiating `Slice.get`) saw the put-in's names and its
+        ; ban on `return` (2026-11-10: `pick(true, "n is `n`")` was rc 4 in
+        ; Slice.scaly). An empty name in lazy_putins and lazy_shadows is the
+        ; barrier the checks stop at; lazy_frame hides the arguments.
         procedure plan_function(
+            mutable this: Planner,
+            mutable f: Function,
+            parent: ref[PlannedType]?
+        ) returns PlannedFunction
+        {
+            let saved_frame this.lazy_aside()
+            let planned this.plan_function_planned(f, parent)
+            this.lazy_back(saved_frame)
+            planned
+        }
+
+        ; lazy_aside# / lazy_back#: the barrier of plan_function#
+        procedure lazy_aside(mutable this: Planner) returns size_t
+        {
+            let frame lazy_frame
+            lazy_putins.add(String^this(""))
+            lazy_shadows.add(String^this(""))
+            lazy_frame := lazy_args.length
+            frame
+        }
+
+        procedure lazy_back(mutable this: Planner, frame: size_t)
+        {
+            lazy_putins.length := lazy_putins.length - 1
+            lazy_shadows.length := lazy_shadows.length - 1
+            lazy_frame := frame
+        }
+
+        procedure plan_function_planned(
             mutable this: Planner,
             mutable f: Function,
             parent: ref[PlannedType]?
@@ -56281,7 +56354,20 @@ define Planner
         ; — page_parameter on the wrapper is left null to avoid the
         ; emit_function_decl page-prepend; the page slot is just a
         ; regular input item.
+        ; outside any put-in, as plan_function#
         procedure plan_initializer(
+            mutable this: Planner,
+            mutable ini: Initializer,
+            parent: ref[PlannedType]?
+        ) returns PlannedInitializer
+        {
+            let saved_frame this.lazy_aside()
+            let planned this.plan_initializer_planned(ini, parent)
+            this.lazy_back(saved_frame)
+            planned
+        }
+
+        procedure plan_initializer_planned(
             mutable this: Planner,
             mutable ini: Initializer,
             parent: ref[PlannedType]?
@@ -56525,7 +56611,20 @@ define Planner
         ; plan_operator: Model.Operator → Plan.PlannedOperator.
         ; Structurally identical to plan_function modulo the two missing
         ; fields (no `pure`, no `lifetime`).
+        ; outside any put-in, as plan_function#
         procedure plan_operator(
+            mutable this: Planner,
+            mutable op: Operator,
+            parent: ref[PlannedType]?
+        ) returns PlannedOperator
+        {
+            let saved_frame this.lazy_aside()
+            let planned this.plan_operator_planned(op, parent)
+            this.lazy_back(saved_frame)
+            planned
+        }
+
+        procedure plan_operator_planned(
             mutable this: Planner,
             mutable op: Operator,
             parent: ref[PlannedType]?

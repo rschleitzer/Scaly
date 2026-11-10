@@ -1,0 +1,45 @@
+; `fix_graph` in the body of a generic concept's method (`Remote[T].receive`
+; in scaly/cluster.scaly): the TEMPLATE has no message type, its root points
+; at `T`, and the closure check said "cannot resolve the layout of type 'T'"
+; (rc 4, 2026-11-10). Each instantiation checks its own type
+; (Planner.resolve_fix_graph#); this one round-trips a record with a String
+; through a serialized region.
+; run-env: SCALY_POISON=1
+use scaly.memory.Region
+use scaly.memory.Region.ReceivedRegion
+
+define Ping
+(
+    value: int
+    text: String
+)
+
+define Courier[T]
+(
+    tag: int
+)
+{
+    procedure carry(this, region: ref[Page], mutable message: pointer[T]) returns int
+    {
+        let host Page.allocate_page()
+        let frame Region.serialize(region, message as pointer[void], host)
+        Page.release_page(region)
+        let rr Region.deserialize(frame, host)
+        let root rr.root as pointer[T]
+        rr.fix_graph(root)
+        let n root.value + (root.text.get_length() as int)
+        rr.release()
+        host.deallocate_extensions()
+        Page.release_page(host)
+        n
+    }
+}
+
+let n 41
+let out Page.allocate_page()
+let m &^out Ping(n, "ping `n`")
+let c Courier[Ping](0)
+if c.carry(out, m as pointer[Ping]) = 48
+    print "PASS"
+else
+    print "FAIL"
