@@ -16576,6 +16576,10 @@ bool Planner_ref_pointee_may_be_null(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_
 PlannedType Planner_null_set_target(scaly_frame*, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_215null_set_targetEPN4scaly6memory4PageE14PlannedOperandB6scalycB4v0_2");
 bool Planner_set_target_stores_through(Planner&, PlannedType&, PlannedType&, bool) asm("_ZN7PlannerB6scalycB4v0_225set_target_stores_throughE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2b");
 void Planner_report_unassignable_ref_target(Planner&, PlannedOperand&, Span&) asm("_ZN7PlannerB6scalycB4v0_230report_unassignable_ref_targetE14PlannedOperandB6scalycB4v0_24SpanB6scalycB4v0_2");
+bool Planner_integer_write_narrows(Planner&, PlannedType&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_221integer_write_narrowsE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
+bool Planner_collect_value_leaves(Planner&, PlannedOperand&, Array<PlannedOperand>*) asm("_ZN7PlannerB6scalycB4v0_220collect_value_leavesE14PlannedOperandB6scalycB4v0_2R5ArrayI14PlannedOperandB6scalycB4v0_2E");
+bool Planner_operand_is_cast_value(PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_221operand_is_cast_valueE14PlannedOperandB6scalycB4v0_2");
+void Planner_report_return_narrowing(Planner&, PlannedType&, PlannedOperand&) asm("_ZN7PlannerB6scalycB4v0_223report_return_narrowingE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_2");
 bool Planner_report_unit_call_value(Planner&, PlannedType&, PlannedOperand&, Span&, String&) asm("_ZN7PlannerB6scalycB4v0_222report_unit_call_valueE11PlannedTypeB6scalycB4v0_214PlannedOperandB6scalycB4v0_24SpanB6scalycB4v0_26String");
 bool Planner_c_size_mixes(PlannedType&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_212c_size_mixesE11PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 bool Planner_planned_type_is_npo_borrow(PlannedType&) asm("_ZN7PlannerB6scalycB4v0_226planned_type_is_npo_borrowE11PlannedTypeB6scalycB4v0_2");
@@ -16864,7 +16868,6 @@ PlannedImplementation* Planner_self_tail_to_return(scaly_frame*, Planner&, Plann
 PlannedStatement* Planner_self_tail_statement(scaly_frame*, Planner&, PlannedStatement&, String&) asm("_ZN7PlannerB6scalycB4v0_219self_tail_statementEPN4scaly6memory4PageE16PlannedStatementB6scalycB4v0_26String");
 PlannedStatement* Planner_convert_tail_literal_statement(scaly_frame*, Planner&, PlannedStatement&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_230convert_tail_literal_statementEPN4scaly6memory4PageE16PlannedStatementB6scalycB4v0_211PlannedTypeB6scalycB4v0_2");
 bool Planner_collect_value_leaves_statement(Planner&, PlannedStatement&, Array<PlannedOperand>*) asm("_ZN7PlannerB6scalycB4v0_230collect_value_leaves_statementE16PlannedStatementB6scalycB4v0_2R5ArrayI14PlannedOperandB6scalycB4v0_2E");
-bool Planner_collect_value_leaves(Planner&, PlannedOperand&, Array<PlannedOperand>*) asm("_ZN7PlannerB6scalycB4v0_220collect_value_leavesE14PlannedOperandB6scalycB4v0_2R5ArrayI14PlannedOperandB6scalycB4v0_2E");
 void Planner_report_value_arms(Planner&, Array<PlannedOperand>*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_217report_value_armsER5ArrayI14PlannedOperandB6scalycB4v0_2E11PlannedTypeB6scalycB4v0_2");
 void Planner_check_tail_ref_escape_statement(Planner&, PlannedStatement&, Span&) asm("_ZN7PlannerB6scalycB4v0_231check_tail_ref_escape_statementE16PlannedStatementB6scalycB4v0_24SpanB6scalycB4v0_2");
 PlannedReturn Planner_plan_return(scaly_frame*, Planner&, Return&) asm("_ZN7PlannerB6scalycB4v0_211plan_returnEPN4scaly6memory4PageE6ReturnB6scalycB4v0_2");
@@ -70451,29 +70454,7 @@ __attribute__((weak)) void Planner_report_integer_narrowing(Planner& scaly_self,
 {
     Planner* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
-    if (Planner_type_conformance_unjudgeable(*(this_), target_type, source))
-    {
-        return;
-    }
-    String tn = Planner_normalize_type_name(&scaly_local.f, (target_type).name);
-    String sn = Planner_normalize_type_name(&scaly_local.f, ((source).result_type).name);
-    if (((Planner_is_integer_type(tn)) == (false)))
-    {
-        return;
-    }
-    if (((Planner_is_integer_type(sn)) == (false)))
-    {
-        return;
-    }
-    if ((Planner_integer_type_bits(sn) <= Planner_integer_type_bits(tn)))
-    {
-        return;
-    }
-    if (Planner_operand_retypes_to_integer(*(this_), source, target_type))
-    {
-        return;
-    }
-    if (Planner_operand_is_constant_integer_expression(*(this_), source))
+    if (((Planner_integer_write_narrows(*(this_), target_type, source)) == (false)))
     {
         return;
     }
@@ -70490,6 +70471,98 @@ __attribute__((weak)) void Planner_report_integer_narrowing(Planner& scaly_self,
     StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\001)"}));
     String nmsg = StringBuilder_to_string(&scaly_local.f, (*sb));
     Planner_add_diagnostic(*(this_), loc, scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), nmsg); scaly_t2; }))));
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_integer_write_narrows(Planner& scaly_self, PlannedType& target_type, PlannedOperand& source)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (Planner_type_conformance_unjudgeable(*(this_), target_type, source))
+    {
+        return false;
+    }
+    String tn = Planner_normalize_type_name(&scaly_local.f, (target_type).name);
+    String sn = Planner_normalize_type_name(&scaly_local.f, ((source).result_type).name);
+    if (((Planner_is_integer_type(tn)) == (false)))
+    {
+        return false;
+    }
+    if (((Planner_is_integer_type(sn)) == (false)))
+    {
+        return false;
+    }
+    if ((Planner_integer_type_bits(sn) <= Planner_integer_type_bits(tn)))
+    {
+        return false;
+    }
+    if (Planner_operand_retypes_to_integer(*(this_), source, target_type))
+    {
+        return false;
+    }
+    if (Planner_operand_is_constant_integer_expression(*(this_), source))
+    {
+        return false;
+    }
+    return true;
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) void Planner_report_return_narrowing(Planner& scaly_self, PlannedType& rt, PlannedOperand& op)
+{
+    Planner* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((Planner_is_integer_type(scaly_lvalue(Planner_normalize_type_name(&scaly_local.f, (rt).name)))) == (false)))
+    {
+        return;
+    }
+    Array<PlannedOperand>* leaves = ({ Array<PlannedOperand>* scaly_t1 = (Array<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<PlannedOperand>), alignof(Array<PlannedOperand>)); *scaly_t1 = Array<PlannedOperand>{}; (void)0; scaly_t1; });
+    if (((Planner_collect_value_leaves(*(this_), op, &((*leaves)))) == (false)))
+    {
+        return;
+    }
+    bool casts = false;
+    for (;;)
+    {
+        uint64_t i = 0ULL;
+        while ((i < ((*leaves)).length))
+        {
+            PlannedOperand* l = Array_at<PlannedOperand>((*leaves), i);
+            if ((((Planner_operand_is_cast_value(scaly_lvalue((*(l))))) == (casts)) ? Planner_integer_write_narrows(*(this_), rt, scaly_lvalue((*(l)))) : false))
+            {
+                Planner_report_integer_narrowing(*(this_), rt, scaly_lvalue((*(l))), l->loc, scaly_lvalue(String{(uint8_t*)"\022the returned value"}));
+                return;
+            }
+            i = (i + 1ULL);
+        }
+        if (casts)
+        {
+            return;
+        }
+        casts = true;
+    }
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
+__attribute__((weak)) bool Planner_operand_is_cast_value(PlannedOperand& op)
+{
+    if ((((op).member_access) != (nullptr)))
+    {
+        return false;
+    }
+    {
+        auto&& scaly_t1 = (op).expr;
+        if (scaly_t1.tag == 19)
+        {
+            PlannedAs a = scaly_payload<PlannedAs>(scaly_t1);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return false;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -71964,6 +72037,10 @@ __attribute__((weak)) PlannedAction Planner_plan_action(scaly_frame* scaly_rp, P
     if (((do_tail_check ? (((a).target).length == 0ULL) : false) ? ((this_->current_return_type) != (nullptr)) : false))
     {
         planned_source_collapsed = Planner_widen_integer_operand(scaly_rp, *(this_), scaly_lvalue((*({ PlannedType* scaly_t11 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t11 = ((*(this_->current_return_type))); scaly_t11; }))), planned_source_collapsed);
+    }
+    if (((do_tail_check ? (((a).target).length == 0ULL) : false) ? ((this_->current_return_type) != (nullptr)) : false))
+    {
+        Planner_report_return_narrowing(*(this_), scaly_lvalue(((*(this_->current_return_type)))), planned_source_collapsed);
     }
     if (do_tail_check)
     {
@@ -90667,6 +90744,10 @@ __attribute__((weak)) PlannedReturn Planner_plan_return(scaly_frame* scaly_rp, P
     if (((this_->current_return_type) != (nullptr)))
     {
         planned_collapsed = Planner_widen_integer_operand(scaly_rp, *(this_), scaly_lvalue((*({ PlannedType* scaly_t16 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t16 = ((*(this_->current_return_type))); scaly_t16; }))), planned_collapsed);
+    }
+    if (((this_->current_return_type) != (nullptr)))
+    {
+        Planner_report_return_narrowing(*(this_), scaly_lvalue(((*(this_->current_return_type)))), planned_collapsed);
     }
     if ((((this_->current_return_type) != (nullptr)) ? ((ret_leaves_converted) == (false)) : false))
     {
