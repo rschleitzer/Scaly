@@ -38,6 +38,7 @@ docs/scaly-spec.rtf
 /web/repl/gpu-host.mjs
 /web/repl/gpu-worker.mjs
 /web/repl/stdlib.json
+/web/repl/playground.json
 /web/repl/tour-steps.htm
 /web/repl/*.br
 /web/repl/*.gz

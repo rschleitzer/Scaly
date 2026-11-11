@@ -12,7 +12,7 @@ set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 B=s3://scaly.io/play
 DISTRIBUTION=E3INKQI1B221G9
-for f in scaly.wasm.br stdlib.json.br tour-steps.htm; do
+for f in scaly.wasm.br stdlib.json.br playground.json.br tour-steps.htm; do
   if [ ! -f "$HERE/$f" ]; then
     echo "web/repl/deploy.sh: no $f -- run web/repl/build.sh first" >&2
     exit 3
@@ -23,5 +23,7 @@ for f in index.html tour.html tour-steps.htm; do up "$f" "$f" 'text/html; charse
 for f in worker.mjs side.mjs load.mjs wasi.mjs; do up "$f" "$f" 'text/javascript; charset=utf-8'; done
 up scaly.wasm.br scaly.wasm application/wasm br
 up stdlib.json.br stdlib.json application/json br
+up playground.json.br playground.json application/json br
+for f in gpu.mjs gpu-host.mjs gpu-worker.mjs; do up "$f" "$f" 'text/javascript; charset=utf-8'; done
 aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" --paths '/play/*' --query Invalidation.Id --output text
 echo "web/repl/deploy.sh: https://scaly.io/play/tour.html"

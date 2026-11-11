@@ -12,11 +12,17 @@
 #                 run with `scaly run --gpu`
 #   stdlib.json   the standard library's files, which the REPL compiles every
 #                 entry against: path under /scaly (SCALY_HOME) -> base64
+#   playground.json  what the compiler in a page needs to BUILD a program for
+#                 wasm32-wasip1-threads (web/mandelbrot's editor): the
+#                 standard library compiled for it, as the compiler's own
+#                 cache holds it, its C files compiled, and the C library --
+#                 made by running that compiler (tools/wasm/precache.mjs),
+#                 which also builds and runs a program with it
 #   tour-steps.htm  the tour's steps, set from the tutorial's "A Tour of
 #                 Scaly" by the DSSSL engine (docs/dsssl/scaly-tour.dsl; the
 #                 engine ./mkp builds, scalyc/build/dazzle, or DAZZLE)
-# and both of these compressed beside them (compress.mjs; scaly.wasm.br is
-# 6.4 MB), which serve.mjs sends where the browser accepts it. Needs a
+# and these compressed beside them (compress.mjs; scaly.wasm.br is 6.4 MB),
+# which serve.mjs sends where the browser accepts it. Needs a
 # wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*) for its llvm-strip.
 # Then serve it cross-origin isolated:
 #
@@ -46,7 +52,8 @@ cp "$STDLIB/web/wasi.mjs" "$STDLIB/web/gpu.mjs" "$STDLIB/web/gpu-host.mjs" "$STD
 # a node that STARTS (tools/node.sh): one that is merely there can abort in the loader
 NODE=$(tools/node.sh) || { echo "web/repl/build.sh: no node that starts" >&2; exit 3; }
 "$NODE" "$HERE/stdlib.mjs" "$TREE" "$STDLIB" > "$OUT/stdlib.json"
-"$NODE" "$HERE/compress.mjs" "$OUT/scaly.wasm" "$OUT/stdlib.json"
+"$NODE" --no-warnings --stack-size=65500 "$TREE/tools/wasm/precache.mjs" "$L/scaly.wasm" "$TREE" "$OUT/playground.json"
+"$NODE" "$HERE/compress.mjs" "$OUT/scaly.wasm" "$OUT/stdlib.json" "$OUT/playground.json"
 DAZZLE="${DAZZLE:-$TREE/scalyc/build/dazzle}"
 if [ ! -x "$DAZZLE" ]; then
   echo "web/repl/build.sh: no DSSSL engine at $DAZZLE for the tour -- run ./mkp with the dazzle checkout beside this one" >&2
@@ -56,4 +63,4 @@ fi
 (cd "$TREE/docs" && rm -f tour-steps.htm && SP_ENCODING=utf-8 "$DAZZLE" -t sgml -d dsssl/scaly-tour.dsl scaly-spec.xml)
 mv "$TREE/docs/tour-steps.htm" "$OUT/tour-steps.htm"
 size() { du -sh "$1" | cut -f1; }
-echo "web/repl/build.sh: $OUT -- the compiler $(size "$OUT/scaly.wasm") ($(size "$OUT/scaly.wasm.br") brotli), the standard library $(size "$OUT/stdlib.json") ($(size "$OUT/stdlib.json.br"))"
+echo "web/repl/build.sh: $OUT -- the compiler $(size "$OUT/scaly.wasm") ($(size "$OUT/scaly.wasm.br") brotli), the standard library $(size "$OUT/stdlib.json") ($(size "$OUT/stdlib.json.br")), for a build $(size "$OUT/playground.json") ($(size "$OUT/playground.json.br"))"

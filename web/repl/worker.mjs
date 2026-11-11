@@ -29,6 +29,11 @@
 // `.<width>x<height>.rgba` and holds four bytes per point -- red, green,
 // blue, opacity, row by row, what a canvas takes (`File.write_bytes` of a
 // Vector[u32]'s `as_bytes()`).
+//
+// `env` adds to the environment (SCALY_CACHE, where a page keeps the build
+// cache it carries: `scaly build` in a page, web/mandelbrot), and `collect`
+// names files whose bytes come back with `exit` (`collected`, path -> bytes;
+// a file that is not there is left out) -- the program `scaly build` made.
 import { MemoryFiles, Wasi } from './wasi.mjs';
 import { SideModules } from './side.mjs';
 import { GpuHost } from './gpu-host.mjs';
@@ -36,7 +41,7 @@ import { GpuHost } from './gpu-host.mjs';
 const encoder = new TextEncoder();
 
 onmessage = async ({ data }) => {
-  const { module, files: tree, stdin, args = ['scaly'], gpu: mode = null } = data;
+  const { module, files: tree, stdin, args = ['scaly'], gpu: mode = null, env = {}, collect = [] } = data;
   let gpu = null;
   if (mode) {
     gpu = await GpuHost.open(new URL('./gpu-worker.mjs', import.meta.url), { mode }).catch(() => null);
@@ -45,9 +50,9 @@ onmessage = async ({ data }) => {
   const state = stdin ? new Int32Array(stdin, 0, 2) : null;
   const bytes = stdin ? new Uint8Array(stdin, 8) : null;
   const files = new MemoryFiles(tree);
-  for (const dir of ['/tmp', '/work', '/home']) files.dirs.add(dir);
+  for (const dir of ['/tmp', '/work', '/home', '/cache']) files.dirs.add(dir);
   const wasi = new Wasi({
-    args, env: { SCALY_HOME: '/scaly', HOME: '/home' }, cwd: '/work', files,
+    args, env: { SCALY_HOME: '/scaly', HOME: '/home', ...env }, cwd: '/work', files,
     stdin_more() {
       if (!state) return new Uint8Array();
       postMessage({ type: 'wants' });
@@ -80,8 +85,13 @@ onmessage = async ({ data }) => {
       if (bytes && bytes.length === Number(size[1]) * Number(size[2]) * 4)
         pictures.push({ name: path.slice(6), width: Number(size[1]), height: Number(size[2]), bytes: bytes.slice() });
     }
-    postMessage({ type: 'exit', status, report: gpu ? gpu.report() : null, pictures },
-                pictures.map(p => p.bytes.buffer));
+    const collected = {};
+    for (const path of collect) {
+      const bytes = files.read(path);
+      if (bytes) collected[path] = bytes.slice();
+    }
+    postMessage({ type: 'exit', status, report: gpu ? gpu.report() : null, pictures, collected },
+                [...pictures.map(p => p.bytes.buffer), ...Object.values(collected).map(b => b.buffer)]);
   } catch (e) {
     postMessage({ type: 'crash', text: String(e) });
   }
