@@ -1,5 +1,6 @@
-/* The Metal host of a kernel: one parallel `for` of a program, compiled with
- * --gpu, handed to the graphics card of this machine.
+/* The host of a kernel: one parallel `for` of a program, compiled with
+ * --gpu, handed to the graphics card of this machine -- through Metal, or,
+ * where the program says so, through WebGPU (wgpu-native).
  *
  * Containment: this is C because it touches symbols of ONE system (Metal and
  * the Objective-C runtime), rule (a) of the standard library's shims. It is
@@ -9,13 +10,16 @@
  *
  * The contract with the compiler:
  *
- *   int scaly_gpu_run(source, count, uniforms, uniform_words,
+ *   int scaly_gpu_run(source, wgsl, count, uniforms, uniform_words,
  *                     buffers, sizes, n_inputs, n_outputs,
  *                     where, per1k, done, workers)
  *   int scaly_gpu_forced(void)
  *
  * `source` is the kernel's text in the Metal Shading Language, a constant of
- * the program (with `where` the key of the loop's site here). `count` is
+ * the program (with `where` the key of the loop's site here). `wgsl` is the
+ * same kernel in WGSL, or null: the compiler writes it only for a loop that
+ * a card under WebGPU may run -- no 64-bit integer in it, and floating point
+ * only where the loop is `relaxed`. `count` is
  * the number of rounds. `uniforms` are `uniform_words` 32-bit words; the host
  * appends two words (low, high) per input buffer, its element count. `buffers`
  * holds the inputs, then the outputs; `sizes[2*i]` is the element count of
@@ -49,6 +53,16 @@
  * SCALY_GPU_TRACE=1 writes one line per run or refusal to standard error,
  * SCALY_GPU_REPORT=1 one line per loop when the program ends: how often it
  * went where, and what the card's runs cost.
+ *
+ * WHICH CARD. Metal, unless SCALY_GPU_BACKEND=webgpu: then a loop goes to
+ * the card through wgpu-native where it has a WGSL kernel, and stays on the
+ * processor where it has none. wgpu-native is opened at the first such
+ * kernel (SCALY_WGPU names the library; else Homebrew's place, else the
+ * loader's); a machine without it runs every loop on the processor. Its
+ * interface is declared HERE, as version 29 lays its structures out -- no
+ * header of it is needed to build this file, and tests/gpu/wgpu_abi.c holds
+ * the declarations against the header where there is one. Under WebGPU a
+ * card's floating point is not the processor's: this is the `relaxed` way.
  */
 #include <dlfcn.h>
 #include <pthread.h>
@@ -66,6 +80,7 @@ static pthread_mutex_t gpu_sites_lock = PTHREAD_MUTEX_INITIALIZER;  /* the sites
 static pthread_once_t gpu_once = PTHREAD_ONCE_INIT;
 static int gpu_state;                 /* 0 untried, 1 ready, 2 unavailable */
 static int gpu_mode;                  /* 0 the gate decides, 1 on, 2 off */
+static int gpu_backend;               /* 0 Metal, 1 WebGPU */
 static int gpu_trace;
 static void *gpu_msg;                 /* objc_msgSend */
 static SEL (*gpu_sel)(const char *);
@@ -81,6 +96,7 @@ struct gpu_site
 {
     const char *source;               /* the key: the address of the kernel's text */
     const char *where;
+    int webgpu;                       /* the text is WGSL, the card wgpu-native's */
     id state;                         /* the compiled kernel */
     int compiled;                     /* 0 not tried, 1 compiled, 2 does not compile */
     int stopped;                      /* a round stopped: not taken at the gate again */
@@ -136,6 +152,9 @@ static void gpu_read_environment(void)
         gpu_mode = 2;
     else if (mode && strcmp(mode, "on") == 0)
         gpu_mode = 1;
+    const char *backend = getenv("SCALY_GPU_BACKEND");
+    if (backend && strcmp(backend, "webgpu") == 0)
+        gpu_backend = 1;
     const char *report = getenv("SCALY_GPU_REPORT");
     if (report && *report && strcmp(report, "0") != 0)
         atexit(gpu_report);
@@ -284,25 +303,24 @@ static id gpu_buffer(const void *bytes, unsigned long length)
 
 #define GPU_MAX_BUFFERS 29            /* 31 bindings, two are the host's */
 
-static int gpu_run_locked(struct gpu_site *site, long long count,
-                          const unsigned int *uniforms, unsigned long long uniform_words,
-                          void **buffers, const unsigned long long *sizes,
-                          unsigned long long n_inputs, unsigned long long n_outputs)
+/* What no card is asked to run, whichever it is: null where the loop may go. */
+static const char *gpu_refusal(long long count, void **buffers, const unsigned long long *sizes,
+                               unsigned long long n_inputs, unsigned long long n_outputs)
 {
     unsigned long long n = n_inputs + n_outputs;
     unsigned long long i, j;
     if (count <= 0)
-        return gpu_no("no round");
+        return "no round";
     if (count >= 0x7fffffffLL)
-        return gpu_no("more rounds than a kernel counts");
+        return "more rounds than a kernel counts";
     if (n > GPU_MAX_BUFFERS)
-        return gpu_no("more buffers than a kernel binds");
+        return "more buffers than a kernel binds";
     for (i = 0; i < n; i++)
     {
         if (sizes[2 * i + 1] == 0 || sizes[2 * i] > 0x7fffffffffffULL / sizes[2 * i + 1])
-            return gpu_no("a buffer without a size");
+            return "a buffer without a size";
         if (i >= n_inputs && sizes[2 * i] < (unsigned long long)count)
-            return gpu_no("an output shorter than the rounds");
+            return "an output shorter than the rounds";
     }
     /* What a round writes, no other round and no input may hold: the card
      * reads its inputs as they were before the loop. */
@@ -318,9 +336,61 @@ static int gpu_run_locked(struct gpu_site *site, long long count,
             unsigned long long other_n = j < n_inputs ? sizes[2 * j] : (unsigned long long)count;
             const char *other_hi = other_lo + other_n * sizes[2 * j + 1];
             if (lo < other_hi && other_lo < hi)
-                return gpu_no("an output overlaps another buffer");
+                return "an output overlaps another buffer";
         }
     }
+    return 0;
+}
+
+/* A run is over: what it says the card costs at this site, or that it was
+ * given back. */
+static void gpu_account(struct gpu_site *site, int ran, int stopped, long long count,
+                        double t_begin, double t_in, double t_run, double t_out)
+{
+    pthread_mutex_lock(&gpu_sites_lock);
+    if (ran)
+    {
+        /* a part for the call, the rest by the round; halfway between this
+         * run and the ones before */
+        double all = t_out - t_begin;
+        if (all < gpu_least_ns)
+            gpu_least_ns = all;
+        double fixed = gpu_least_ns;
+        double round = (all - fixed) / (double)count;
+        if (site->measured)
+        {
+            fixed = (fixed + site->fixed_ns) / 2;
+            round = (round + site->round_ns) / 2;
+        }
+        site->fixed_ns = fixed;
+        site->round_ns = round;
+        site->measured = 1;
+        site->cards++;
+        site->card_rounds += (unsigned long long)count;
+        site->card_ns += all;
+        site->in_ns += t_in - t_begin;
+        site->run_ns += t_run - t_in;
+        site->out_ns += t_out - t_run;
+    }
+    else
+    {
+        site->stops++;
+        if (stopped)
+            site->stopped = 1;
+    }
+    pthread_mutex_unlock(&gpu_sites_lock);
+}
+
+static int gpu_run_locked(struct gpu_site *site, long long count,
+                          const unsigned int *uniforms, unsigned long long uniform_words,
+                          void **buffers, const unsigned long long *sizes,
+                          unsigned long long n_inputs, unsigned long long n_outputs)
+{
+    unsigned long long n = n_inputs + n_outputs;
+    unsigned long long i;
+    const char *refusal = gpu_refusal(count, buffers, sizes, n_inputs, n_outputs);
+    if (refusal)
+        return gpu_no(refusal);
     id pipeline = gpu_pipeline_of(site);
     if (!pipeline)
         return gpu_no("no kernel");
@@ -413,38 +483,393 @@ static int gpu_run_locked(struct gpu_site *site, long long count,
     for (i = 0; i < made; i++)
         if (held[i])
             SENDV0(held[i], "release");
-    pthread_mutex_lock(&gpu_sites_lock);
-    if (ran)
+    gpu_account(site, ran, stopped, count, t_begin, t_in, t_run, t_out);
+    if (!ran)
+        return gpu_no(why);
+    if (gpu_trace)
+        fprintf(stderr, "gpu: card (%lld rounds)\n", count);
+    return 1;
+}
+
+/* ---- WebGPU, through wgpu-native ------------------------------------------
+ *
+ * The structures below are wgpu-native 29's, written out here with names of
+ * our own: what the functions take, in the layout they take it in. */
+typedef struct { const char *data; size_t length; } wg_text;
+typedef struct wg_chain { struct wg_chain *next; unsigned int kind; } wg_chain;
+typedef struct { void *next; unsigned int mode; void *callback; void *user1; void *user2; } wg_callback;
+typedef struct { void *next; void *callback; void *user1; void *user2; } wg_error_callback;
+typedef struct { void *next; wg_text label; } wg_named;
+typedef struct
+{
+    void *next; wg_text label; size_t feature_count; const void *features; const void *limits;
+    wg_named queue; wg_callback lost; wg_error_callback error;
+} wg_device_descriptor;
+typedef struct { wg_chain chain; wg_text code; } wg_wgsl;
+typedef struct { void *next; void *module; wg_text entry; size_t constant_count; const void *constants; } wg_stage;
+typedef struct { void *next; wg_text label; void *layout; wg_stage compute; } wg_pipeline_descriptor;
+typedef struct { void *next; wg_text label; unsigned long long usage; unsigned long long size; unsigned int mapped; } wg_buffer_descriptor;
+typedef struct { void *next; unsigned int binding; void *buffer; unsigned long long offset; unsigned long long size; void *sampler; void *view; } wg_entry;
+typedef struct { void *next; wg_text label; void *layout; size_t count; const wg_entry *entries; } wg_group_descriptor;
+#define WG_SPONTANEOUS 3u             /* a callback may fire inside the call */
+#define WG_WGSL 2u                    /* the chained structure is WGSL source */
+#define WG_MAP_READ 1ULL
+#define WG_COPY_SRC 4ULL
+#define WG_COPY_DST 8ULL
+#define WG_STORAGE 128ULL
+#define WG_OK 1
+
+static struct
+{
+    void *(*create_instance)(const void *);
+    unsigned long long (*request_adapter)(void *, const void *, wg_callback);
+    int (*adapter_limits)(void *, void *);
+    unsigned long long (*request_device)(void *, const wg_device_descriptor *, wg_callback);
+    void *(*device_queue)(void *);
+    void *(*create_module)(void *, const wg_named *);
+    void *(*create_pipeline)(void *, const wg_pipeline_descriptor *);
+    void *(*pipeline_layout)(void *, unsigned int);
+    void *(*create_buffer)(void *, const wg_buffer_descriptor *);
+    void (*write_buffer)(void *, void *, unsigned long long, const void *, size_t);
+    void *(*create_group)(void *, const wg_group_descriptor *);
+    void *(*create_encoder)(void *, const void *);
+    void *(*begin_pass)(void *, const void *);
+    void (*pass_pipeline)(void *, void *);
+    void (*pass_group)(void *, unsigned int, void *, size_t, const unsigned int *);
+    void (*pass_dispatch)(void *, unsigned int, unsigned int, unsigned int);
+    void (*pass_end)(void *);
+    void (*copy_buffer)(void *, void *, unsigned long long, void *, unsigned long long, unsigned long long);
+    void *(*finish)(void *, const void *);
+    void (*submit)(void *, size_t, void *const *);
+    unsigned long long (*map_buffer)(void *, unsigned long long, size_t, size_t, wg_callback);
+    const void *(*mapped_range)(void *, size_t, size_t);
+    void (*unmap)(void *);
+    unsigned int (*poll)(void *, unsigned int, const void *);
+    void (*release_buffer)(void *);
+    void (*release_group)(void *);
+    void (*release_layout)(void *);
+    void (*release_encoder)(void *);
+    void (*release_pass)(void *);
+    void (*release_commands)(void *);
+    void (*release_module)(void *);
+} wg;
+static int wg_state;                  /* 0 untried, 1 ready, 2 unavailable */
+static void *wg_device;
+static void *wg_queue;
+static int wg_failed;                 /* the device reported an error since it was cleared */
+
+static void wg_on_adapter(int status, void *adapter, wg_text message, void *user1, void *user2)
+{
+    (void)message; (void)user2;
+    if (status == WG_OK)
+        *(void **)user1 = adapter;
+}
+
+static void wg_on_device(int status, void *device, wg_text message, void *user1, void *user2)
+{
+    (void)message; (void)user2;
+    if (status == WG_OK)
+        *(void **)user1 = device;
+}
+
+static void wg_on_map(int status, wg_text message, void *user1, void *user2)
+{
+    (void)message; (void)user2;
+    *(int *)user1 = status == WG_OK ? 1 : -1;
+}
+
+/* An error nobody caught would end the program inside wgpu-native. Here it
+ * ends the run: the loop goes back to the processor. */
+static void wg_on_error(void *const *device, int kind, wg_text message, void *user1, void *user2)
+{
+    (void)device; (void)kind; (void)user1; (void)user2;
+    wg_failed = 1;
+    if (gpu_trace)
+        fprintf(stderr, "gpu: webgpu: %.*s\n", (int)message.length, message.data ? message.data : "");
+}
+
+/* under the device's lock */
+static void wg_start(void)
+{
+    wg_state = 2;
+    static const char *const places[] = {
+        "/opt/homebrew/opt/wgpu-native/lib/libwgpu_native.dylib",
+        "/usr/local/opt/wgpu-native/lib/libwgpu_native.dylib",
+        "libwgpu_native.dylib",
+        "libwgpu_native.so",
+    };
+    void *lib = 0;
+    const char *named = getenv("SCALY_WGPU");
+    if (named && *named)
+        lib = dlopen(named, RTLD_LAZY);
+    for (size_t i = 0; !lib && i < sizeof places / sizeof places[0]; i++)
+        lib = dlopen(places[i], RTLD_LAZY);
+    if (!lib)
+        return;
+    int all = 1;
+#define WG_SYM(field, name) all = all && (*(void **)&wg.field = dlsym(lib, name)) != 0
+    WG_SYM(create_instance, "wgpuCreateInstance");
+    WG_SYM(request_adapter, "wgpuInstanceRequestAdapter");
+    WG_SYM(adapter_limits, "wgpuAdapterGetLimits");
+    WG_SYM(request_device, "wgpuAdapterRequestDevice");
+    WG_SYM(device_queue, "wgpuDeviceGetQueue");
+    WG_SYM(create_module, "wgpuDeviceCreateShaderModule");
+    WG_SYM(create_pipeline, "wgpuDeviceCreateComputePipeline");
+    WG_SYM(pipeline_layout, "wgpuComputePipelineGetBindGroupLayout");
+    WG_SYM(create_buffer, "wgpuDeviceCreateBuffer");
+    WG_SYM(write_buffer, "wgpuQueueWriteBuffer");
+    WG_SYM(create_group, "wgpuDeviceCreateBindGroup");
+    WG_SYM(create_encoder, "wgpuDeviceCreateCommandEncoder");
+    WG_SYM(begin_pass, "wgpuCommandEncoderBeginComputePass");
+    WG_SYM(pass_pipeline, "wgpuComputePassEncoderSetPipeline");
+    WG_SYM(pass_group, "wgpuComputePassEncoderSetBindGroup");
+    WG_SYM(pass_dispatch, "wgpuComputePassEncoderDispatchWorkgroups");
+    WG_SYM(pass_end, "wgpuComputePassEncoderEnd");
+    WG_SYM(copy_buffer, "wgpuCommandEncoderCopyBufferToBuffer");
+    WG_SYM(finish, "wgpuCommandEncoderFinish");
+    WG_SYM(submit, "wgpuQueueSubmit");
+    WG_SYM(map_buffer, "wgpuBufferMapAsync");
+    WG_SYM(mapped_range, "wgpuBufferGetConstMappedRange");
+    WG_SYM(unmap, "wgpuBufferUnmap");
+    WG_SYM(poll, "wgpuDevicePoll");
+    WG_SYM(release_buffer, "wgpuBufferRelease");
+    WG_SYM(release_group, "wgpuBindGroupRelease");
+    WG_SYM(release_layout, "wgpuBindGroupLayoutRelease");
+    WG_SYM(release_encoder, "wgpuCommandEncoderRelease");
+    WG_SYM(release_pass, "wgpuComputePassEncoderRelease");
+    WG_SYM(release_commands, "wgpuCommandBufferRelease");
+    WG_SYM(release_module, "wgpuShaderModuleRelease");
+#undef WG_SYM
+    if (!all)
+        return;
+    void *instance = wg.create_instance(0);
+    if (!instance)
+        return;
+    void *adapter = 0;
+    wg_callback found = { 0, WG_SPONTANEOUS, (void *)wg_on_adapter, &adapter, 0 };
+    wg.request_adapter(instance, 0, found);
+    if (!adapter)
+        return;
+    /* every limit the card has: a kernel binds up to 31 buffers, and the
+     * default allows eight. The block is larger than the structure. */
+    static unsigned long long limits[64];
+    wg_device_descriptor wanted;
+    memset(&wanted, 0, sizeof wanted);
+    if (wg.adapter_limits(adapter, limits) == WG_OK)
+        wanted.limits = limits;
+    wanted.error.callback = (void *)wg_on_error;
+    wg_callback made = { 0, WG_SPONTANEOUS, (void *)wg_on_device, &wg_device, 0 };
+    wg.request_device(adapter, &wanted, made);
+    if (!wg_device)
+        return;
+    wg_queue = wg.device_queue(wg_device);
+    if (!wg_queue)
+        return;
+    wg_state = 1;
+}
+
+/* under the device's lock: the compiled kernel of this site */
+static void *wg_pipeline_of(struct gpu_site *site)
+{
+    if (site->compiled)
+        return site->state;
+    double began = gpu_now();
+    wg_failed = 0;
+    wg_wgsl text;
+    memset(&text, 0, sizeof text);
+    text.chain.kind = WG_WGSL;
+    text.code.data = site->source;
+    text.code.length = strlen(site->source);
+    wg_named described = { &text, { 0, 0 } };
+    void *module = wg.create_module(wg_device, &described);
+    void *pipeline = 0;
+    if (module && !wg_failed)
     {
-        /* what this run says the card costs here: a part for the call, the
-         * rest by the round; halfway between this run and the ones before */
-        double all = t_out - t_begin;
-        if (all < gpu_least_ns)
-            gpu_least_ns = all;
-        double fixed = gpu_least_ns;
-        double round = (all - fixed) / (double)count;
-        if (site->measured)
+        wg_pipeline_descriptor pd;
+        memset(&pd, 0, sizeof pd);
+        pd.compute.module = module;
+        pd.compute.entry.data = "k";
+        pd.compute.entry.length = 1;
+        pipeline = wg.create_pipeline(wg_device, &pd);
+    }
+    if (module)
+        wg.release_module(module);
+    if (wg_failed)
+        pipeline = 0;
+    site->state = pipeline;
+    site->compile_ns = gpu_now() - began;
+    site->compiled = pipeline ? 1 : 2;
+    return pipeline;
+}
+
+static int wg_run_locked(struct gpu_site *site, long long count,
+                         const unsigned int *uniforms, unsigned long long uniform_words,
+                         void **buffers, const unsigned long long *sizes,
+                         unsigned long long n_inputs, unsigned long long n_outputs)
+{
+    unsigned long long n = n_inputs + n_outputs;
+    unsigned long long i;
+    const char *refusal = gpu_refusal(count, buffers, sizes, n_inputs, n_outputs);
+    if (refusal)
+        return gpu_no(refusal);
+    for (i = 0; i < n; i++)
+    {
+        /* its numbers are 32 bits wide, and a length is one word */
+        if (sizes[2 * i + 1] != 4)
+            return gpu_no("an element webgpu does not have");
+        if (sizes[2 * i] >= 0x40000000ULL)
+            return gpu_no("a buffer longer than webgpu takes");
+    }
+    /* whole groups of 64 rounds, in rows of at most 65535 groups */
+    unsigned long long groups = ((unsigned long long)count + 63) / 64;
+    unsigned int across = groups > 65535 ? 65535u : (unsigned int)groups;
+    unsigned int rows = (unsigned int)((groups + across - 1) / across);
+    void *pipeline = wg_pipeline_of(site);
+    if (!pipeline)
+        return gpu_no("no kernel");
+    double t_begin = gpu_now(), t_in = t_begin, t_run = t_begin, t_out = t_begin;
+
+    unsigned long long words = uniform_words + 2 * n_inputs + 2;
+    unsigned int *u = (unsigned int *)malloc((size_t)words * sizeof(unsigned int));
+    if (!u)
+        return gpu_no("no memory");
+    if (uniform_words)
+        memcpy(u, uniforms, (size_t)uniform_words * sizeof(unsigned int));
+    for (i = 0; i < n_inputs; i++)
+    {
+        u[uniform_words + 2 * i] = (unsigned int)sizes[2 * i];
+        u[uniform_words + 2 * i + 1] = 0;
+    }
+    u[words - 2] = (unsigned int)count;
+    u[words - 1] = across * 64u;
+
+    wg_failed = 0;
+    void *held[GPU_MAX_BUFFERS + 2];
+    unsigned long long bytes[GPU_MAX_BUFFERS + 2];
+    unsigned long long made = 0;
+    unsigned int fault = 0;
+    unsigned long long back = 4;       /* what comes back: the fault word, then the outputs */
+    wg_buffer_descriptor bd;
+    memset(&bd, 0, sizeof bd);
+    bd.usage = WG_STORAGE | WG_COPY_DST | WG_COPY_SRC;
+    bytes[0] = words * 4;
+    bytes[1] = 4;
+    for (i = 0; i < n; i++)
+    {
+        unsigned long long elements = i < n_inputs ? sizes[2 * i] : (unsigned long long)count;
+        bytes[2 + i] = elements ? elements * 4 : 4;
+        if (i >= n_inputs)
+            back += (unsigned long long)count * 4;
+    }
+    int ok = 1;
+    for (i = 0; i < n + 2; i++)
+    {
+        bd.size = bytes[i];
+        held[made] = wg.create_buffer(wg_device, &bd);
+        ok = ok && held[made] != 0;
+        made++;
+    }
+    void *reader = 0, *group = 0, *layout = 0, *encoder = 0, *pass = 0, *commands = 0;
+    int ran = 0;
+    int stopped = 0;
+    const char *why = "no buffer";
+    if (ok && !wg_failed)
+    {
+        wg.write_buffer(wg_queue, held[0], 0, u, (size_t)bytes[0]);
+        wg.write_buffer(wg_queue, held[1], 0, &fault, 4);
+        for (i = 0; i < n; i++)
         {
-            fixed = (fixed + site->fixed_ns) / 2;
-            round = (round + site->round_ns) / 2;
+            /* an input whole, an output as far as the rounds reach -- with
+             * what it holds now, which a round that writes nothing leaves */
+            unsigned long long elements = i < n_inputs ? sizes[2 * i] : (unsigned long long)count;
+            if (elements)
+                wg.write_buffer(wg_queue, held[2 + i], 0, buffers[i], (size_t)(elements * 4));
         }
-        site->fixed_ns = fixed;
-        site->round_ns = round;
-        site->measured = 1;
-        site->cards++;
-        site->card_rounds += (unsigned long long)count;
-        site->card_ns += all;
-        site->in_ns += t_in - t_begin;
-        site->run_ns += t_run - t_in;
-        site->out_ns += t_out - t_run;
+        wg_buffer_descriptor rd;
+        memset(&rd, 0, sizeof rd);
+        rd.usage = WG_MAP_READ | WG_COPY_DST;
+        rd.size = back;
+        reader = wg.create_buffer(wg_device, &rd);
+        wg_entry entries[GPU_MAX_BUFFERS + 2];
+        memset(entries, 0, sizeof entries);
+        for (i = 0; i < n + 2; i++)
+        {
+            entries[i].binding = (unsigned int)i;
+            entries[i].buffer = held[i];
+            entries[i].size = bytes[i];
+        }
+        layout = wg.pipeline_layout(pipeline, 0);
+        wg_group_descriptor gd;
+        memset(&gd, 0, sizeof gd);
+        gd.layout = layout;
+        gd.count = (size_t)(n + 2);
+        gd.entries = entries;
+        group = layout ? wg.create_group(wg_device, &gd) : 0;
+        encoder = wg.create_encoder(wg_device, 0);
+        pass = encoder ? wg.begin_pass(encoder, 0) : 0;
+        why = "no command buffer";
+        t_in = gpu_now();
+        if (reader && group && pass && !wg_failed)
+        {
+            wg.pass_pipeline(pass, pipeline);
+            wg.pass_group(pass, 0, group, 0, 0);
+            wg.pass_dispatch(pass, across, rows, 1);
+            wg.pass_end(pass);
+            wg.copy_buffer(encoder, held[1], 0, reader, 0, 4);
+            unsigned long long at = 4;
+            for (i = n_inputs; i < n; i++)
+            {
+                wg.copy_buffer(encoder, held[2 + i], 0, reader, at, (unsigned long long)count * 4);
+                at += (unsigned long long)count * 4;
+            }
+            commands = wg.finish(encoder, 0);
+            why = "the card did not finish";
+            if (commands && !wg_failed)
+            {
+                wg.submit(wg_queue, 1, (void *const *)&commands);
+                int mapped = 0;
+                wg_callback waiting = { 0, WG_SPONTANEOUS, (void *)wg_on_map, &mapped, 0 };
+                wg.map_buffer(reader, WG_MAP_READ, 0, (size_t)back, waiting);
+                while (!mapped && !wg_failed)
+                    wg.poll(wg_device, 1, 0);
+                t_run = gpu_now();
+                if (mapped == 1 && !wg_failed)
+                {
+                    const unsigned int *result = (const unsigned int *)wg.mapped_range(reader, 0, (size_t)back);
+                    why = "no result";
+                    if (result)
+                    {
+                        why = "a round stopped";
+                        stopped = result[0] != 0;
+                        if (!stopped)
+                        {
+                            /* all or nothing: every output is here */
+                            const char *from = (const char *)(result + 1);
+                            for (i = n_inputs; i < n; i++)
+                            {
+                                memcpy(buffers[i], from, (size_t)((unsigned long long)count * 4));
+                                from += (unsigned long long)count * 4;
+                            }
+                            ran = 1;
+                        }
+                    }
+                    wg.unmap(reader);
+                }
+            }
+        }
     }
-    else
-    {
-        site->stops++;
-        if (stopped)
-            site->stopped = 1;
-    }
-    pthread_mutex_unlock(&gpu_sites_lock);
+    free(u);
+    t_out = gpu_now();
+    if (commands) wg.release_commands(commands);
+    if (pass) wg.release_pass(pass);
+    if (encoder) wg.release_encoder(encoder);
+    if (group) wg.release_group(group);
+    if (layout) wg.release_layout(layout);
+    if (reader) wg.release_buffer(reader);
+    for (i = 0; i < made; i++)
+        if (held[i])
+            wg.release_buffer(held[i]);
+    gpu_account(site, ran, stopped, count, t_begin, t_in, t_run, t_out);
     if (!ran)
         return gpu_no(why);
     if (gpu_trace)
@@ -471,6 +896,18 @@ static void *gpu_call_run(void *arg)
 {
     struct gpu_call *c = (struct gpu_call *)arg;
     pthread_mutex_lock(&gpu_lock);
+    if (c->site->webgpu)
+    {
+        if (wg_state == 0)
+            wg_start();
+        if (wg_state == 1)
+            c->ran = wg_run_locked(c->site, c->count, c->uniforms, c->uniform_words,
+                                   c->buffers, c->sizes, c->n_inputs, c->n_outputs);
+        else
+            gpu_no("no card under webgpu");
+        pthread_mutex_unlock(&gpu_lock);
+        return 0;
+    }
     if (gpu_state == 0)
         gpu_start();
     if (gpu_state == 1)
@@ -508,7 +945,7 @@ static int gpu_pays(const struct gpu_site *site, long long count, long long per1
     return gpu_ns * GPU_MARGIN < cpu_ns;
 }
 
-int scaly_gpu_run(const char *source, long long count,
+int scaly_gpu_run(const char *source, const char *wgsl, long long count,
                   const unsigned int *uniforms, unsigned long long uniform_words,
                   void **buffers, const unsigned long long *sizes,
                   unsigned long long n_inputs, unsigned long long n_outputs,
@@ -520,8 +957,15 @@ int scaly_gpu_run(const char *source, long long count,
      * the gate. Otherwise: at the gate. */
     if (gpu_mode == 2 || (gpu_mode == 1) == at_gate)
         return 0;
+    /* through WebGPU only what has a kernel written for it */
+    if (gpu_backend == 1)
+        source = wgsl;
+    if (!source)
+        return 0;
     pthread_mutex_lock(&gpu_sites_lock);
     struct gpu_site *site = gpu_site_of(source, where);
+    if (site)
+        site->webgpu = gpu_backend == 1;
     int take = site != 0;
     if (take && at_gate && !gpu_pays(site, count, per1k, done, workers))
     {
