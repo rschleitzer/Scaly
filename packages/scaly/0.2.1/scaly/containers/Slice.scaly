@@ -96,6 +96,14 @@ define Slice[T](var length: size_t, var data: pointer[T])
     function is_empty(this) returns bool
         length = 0
 
+    ; The same memory as bytes, to be READ: what a file or a socket takes
+    ; of a sequence of numbers (`File.write_bytes(path, values.as_bytes())`)
+    ; -- `sizeof T` bytes per element, in the machine's byte order. It is
+    ; a view (no allocation), and nothing is to be written through it: an
+    ; element is written as its own type.
+    function as_bytes(this) returns Slice[u8]
+        Slice[u8](length * sizeof T, data as pointer[u8])
+
     ; Create sub-slice (no allocation)
     function subslice(this, start: size_t, end: size_t) returns Slice[T]
     {

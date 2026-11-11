@@ -180,4 +180,8 @@ define Vector[T]
 
     function as_slice(this: Vector[T]) returns Slice[T]
         Slice[T](length, data)
+
+    ; The elements' memory as bytes, to be read (Slice.as_bytes).
+    function as_bytes(this: Vector[T]) returns Slice[u8]
+        Slice[u8](length * sizeof T, data as pointer[u8])
 }

@@ -155,14 +155,31 @@ define File
         true
     }
 
-    ; The task path of write_from_string: pack a {path, buffer, length}
+    ; Bytes into a file as they are: a picture, a table of numbers
+    ; (`values.as_bytes()`). Colorless like write_from_string.
+    procedure write_bytes(path: String, bytes: Slice[u8]) returns bool
+    {
+        if Io.in_task()
+            return File.write_offloaded(path, bytes.data, bytes.length)
+        var file fopen(path.to_c_string(), "wb")
+        if file = null
+            return false
+
+        fwrite(bytes.data, 1, bytes.length as c_size, file)
+        fclose file
+        true
+    }
+
+    ; The task path of write_from_string.
+    procedure write_from_string_offloaded(path: String, contents: String) returns bool
+        File.write_offloaded(path, contents.get_buffer(), contents.get_length())
+
+    ; The task path of a write: pack a {path, buffer, length}
     ; request cell on its own heap page (path and buffer point into the
     ; requester's region — alive while parked), offload, free the cell.
-    procedure write_from_string_offloaded(path: String, contents: String) returns bool
+    procedure write_offloaded(path: String, buf: pointer[u8], len: size_t) returns bool
     {
         let pc path.to_c_string()
-        let buf contents.get_buffer()
-        let len contents.get_length()
         let p Page.allocate_page_traced("File.write_cell")
         let cell p.allocate(24, 8) as pointer[size_t]
         *cell := pc as size_t
