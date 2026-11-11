@@ -29,7 +29,12 @@
 #    programs IN the page (compiler.html), as the tour runs a step --
 #    `scaly run --gpu main.scaly`, the program a side module of the compiler
 #    -- and each must write what it writes natively, with the card and
-#    without, the card having run its loops where it is on. One of them
+#    without, the card having run its loops where it is on. Then the
+#    showcase's editor (web/mandelbrot, index.html?selftest=build): the page
+#    BUILDS the showcase's program for wasm32-wasip1-threads with that
+#    compiler (playground.json, tools/wasm/precache.mjs) and runs it on all
+#    cores -- its picture must be the prebuilt program's --, and a version
+#    that does not compile must show the compiler's message. One of them
 #    (canvas.scaly) writes a picture, which the page's worker must hand
 #    back: the same but for a hundredth of its points at most -- its loop is
 #    `relaxed`.
@@ -373,6 +378,35 @@ for f in fails:
     print('  FAIL ' + f)
 print('gpu-web: compiler %s — %d programs compiled in the page and run with --gpu; the card ran %d loops'
       % ('FAIL' if fails else 'PASS', len(by), cards))
+sys.exit(1 if fails else 0)
+PY
+[ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
+
+# the showcase's editor: a build in the page
+if ! web/mandelbrot/build.sh "$T/repl/mandelbrot" "$STAGE" > "$T/show2.build" 2>&1; then
+  echo "gpu-web: FAIL — the showcase does not build ($(tail -1 "$T/show2.build" | cut -c1-160))"; exit 1
+fi
+page "$T/repl" "mandelbrot/index.html?selftest=build" 300
+python3 - "$T/result" <<'PY' || failed=1
+import json, os, sys
+result = sys.argv[1]
+try:
+    b = json.load(open(result))['built']
+except Exception:
+    print('  FAIL the page did not answer (%s)' % (open(result).read()[:200] if os.path.exists(result) else 'nothing'))
+    sys.exit(1)
+fails = []
+if not b or not b.get('ok'):
+    fails.append('the page did not build the program: %s %s' % (b and b.get('buildstatus'), b and b.get('diagnostics', '')[:200]))
+elif not b.get('same'):
+    fails.append('built in the page, on all cores: not the prebuilt program\'s picture (%s)' % b.get('status'))
+if b and b.get('broken_ok') is not False:
+    fails.append('a version that does not compile was built')
+elif b and 'unknown identifier' not in b.get('broken_said', ''):
+    fails.append('a version that does not compile: no message (%r)' % b.get('broken_said', '')[:200])
+for f in fails:
+    print('  FAIL ' + f)
+print('gpu-web: editor %s — %s' % ('FAIL' if fails else 'PASS', b and b.get('buildstatus')))
 sys.exit(1 if fails else 0)
 PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }

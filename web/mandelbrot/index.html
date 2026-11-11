@@ -70,13 +70,24 @@
   #chart .dot { fill: var(--accent); }
   #chart .cardline { stroke: var(--card); stroke-width: 2; stroke-dasharray: 6 3; }
   #chart .cardtext { fill: var(--card); }
-  details summary { cursor: pointer; font-weight: 600; font-size: 15px; }
-  details pre { background: var(--code); padding: 10px; border-radius: 6px; overflow: auto; max-height: 28em; margin: 8px 0 0; }
+  .code { display: flex; flex-direction: column; gap: 8px; }
+  #editor { width: 100%; min-height: 22em; padding: 10px; border: 1px solid var(--line); border-radius: 6px;
+            background: var(--code); color: var(--ink); font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+            tab-size: 4; white-space: pre; overflow: auto; resize: vertical; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+  .toolbar button { text-align: center; }
+  #buildstatus { font-size: 14px; color: var(--muted); }
+  #buildstatus.bad { color: var(--bad); }
+  #diagnostics { margin: 0; padding: 10px; background: var(--code); border-radius: 6px; overflow: auto;
+                 white-space: pre-wrap; color: var(--bad); max-height: 16em; }
+  #output { margin: 0; padding: 8px 10px; background: var(--code); border-radius: 6px; white-space: pre-wrap;
+            font-size: 13px; max-height: 8em; overflow: auto; }
+  .yours { color: var(--card); font-weight: 600; }
   .note { font-size: 13px; color: var(--muted); }
   [hidden] { display: none !important; }
   @media (min-width: 1000px) {
     main { grid-template-columns: minmax(0, 3fr) minmax(340px, 2fr); }
-    .about { grid-column: 1 / -1; }
+    .about, .code { grid-column: 1 / -1; }
   }
 </style>
 </head>
@@ -124,6 +135,7 @@
     </div>
     <button class="primary" id="race" disabled>Race them: 1, 2, 4 … cores, and the card</button>
     <div id="status">Loading…</div>
+    <pre id="output" hidden aria-label="What the program wrote"></pre>
     <div>
       <h2>Runs of this picture</h2>
       <table>
@@ -152,10 +164,23 @@
       sends the loop to the card where that pays — a small picture with few iterations may stay on the cores.
       The times are those of the loop alone, measured by the program; the first run on the card includes
       compiling its kernel, and the first on the cores starting their threads.</p>
-    <details>
-      <summary>The program</summary>
-      <pre id="source">Loading…</pre>
-    </details>
+  </section>
+
+  <section class="code">
+    <h2>The program <span id="which">— the original</span></h2>
+    <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="The program">Loading…</textarea>
+    <div class="toolbar">
+      <button class="primary" id="build">Build my version</button>
+      <button id="original">Back to the original</button>
+      <span id="buildstatus"></span>
+    </div>
+    <pre id="diagnostics" hidden></pre>
+    <p class="note">Change it and build it: the Scaly compiler, built for WebAssembly, compiles your version here in
+      the page — for threads and for the card, as the original was. The first build loads the compiler (about
+      8 MB); after that a build takes a fraction of a second. The buttons above then run your version. It gets the
+      same arguments — width, height, iterations, and the centre and width of the picture in billionths — and
+      shows the picture it writes to a file whose name ends in <code>.&lt;width&gt;x&lt;height&gt;.rgba</code>;
+      what it prints appears under the buttons.</p>
   </section>
 </main>
 
@@ -168,6 +193,9 @@ const cpus = navigator.hardwareConcurrency || 1;
 const HOME = { cx: -0.5, cy: 0, span: 3 };
 let view = { ...HOME };
 let runner = null, busy = false, hasCard = false;
+let version = 0;          // 0: the original program; n: the reader's n-th build
+let original = '';        // its source
+let compiler = null;      // the compiler for the page, once loaded: { module, files }
 const runs = [];          // the runs of the current picture
 const selftest = new URLSearchParams(location.search).has('selftest');
 
@@ -220,9 +248,8 @@ async function runOnce(label, workers, gpu) {
   return { label, workers, gpu, ms, wall: performance.now() - t0, ...answer };
 }
 
-function show(picture) {
-  const { w, h } = settings();
-  if (!picture || picture.length !== w * h * 4) return;
+function show(picture, w, h) {
+  if (!picture || !w || !h || picture.length !== w * h * 4) return;
   canvas.width = w;
   canvas.height = h;
   canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(picture.buffer, picture.byteOffset, w * h * 4), w, h), 0, 0);
@@ -298,14 +325,14 @@ function chart() {
 
 function setBusy(on) {
   busy = on;
-  for (const id of ['one', 'all', 'race']) $(id).disabled = on;
+  for (const id of ['one', 'all', 'race', 'build', 'original']) $(id).disabled = on;
   for (const id of ['card', 'auto']) $(id).disabled = on || !hasCard;
 }
 
 async function go(list) {
   if (busy) return;
   setBusy(true);
-  const k = key();
+  const k = key() + ' ' + version;
   if (runs.key !== k) { runs.length = 0; runs.key = k; }
   try {
     for (const [label, workers, gpu] of list) {
@@ -314,9 +341,13 @@ async function go(list) {
       if (r.status !== '0') { status(`${label}: the program ended with ${r.status} ${r.stderr || ''}`, true); break; }
       r.differ = differing(r.picture);
       if (r.gpu === 'auto') r.label = r.cards > 0 ? 'Scaly chose the card' : `Scaly chose ${cpus} cores`;
+      if (version > 0) r.label += ' (yours)';
       if (r.differ === null && r.workers === 1 && r.gpu === 'off') r.differ = 0;   // the picture the others are held against
       runs.push(r);
-      show(r.picture);
+      show(r.picture, r.width, r.height);
+      const printed = r.stdout.replace(/^ms [0-9.]+\n?/m, '').trim();
+      $('output').hidden = printed === '';
+      $('output').textContent = printed;
       table();
       chart();
     }
@@ -367,12 +398,137 @@ async function selfTest() {
   let hash = 2166136261;
   const one = runs.find(r => r.workers === 1 && r.gpu === 'off');
   for (const b of one?.picture ?? []) hash = Math.imul(hash ^ b, 16777619) >>> 0;
-  const report = { cpus, card: hasCard, args: args(), hash,
+  // ?selftest=build: the original's source built in the page, and run on all
+  // cores -- its picture must be the one the original drew there
+  let built = null;
+  if (new URLSearchParams(location.search).get('selftest') === 'build') {
+    const before = runs.find(r => r.workers === cpus && r.gpu === 'off');
+    while (!original) await new Promise(r => setTimeout(r, 50));
+    $('editor').value = original;
+    const t0 = performance.now();
+    const ok = await buildMine([ALL]);
+    const mine = runs.find(r => r.workers === cpus && r.gpu === 'off');
+    built = { ok, ms: Math.round(performance.now() - t0), status: mine?.status ?? null, label: mine?.label ?? null,
+              diagnostics: $('diagnostics').hidden ? '' : $('diagnostics').textContent, buildstatus: $('buildstatus').textContent,
+              same: !!(mine && before && mine.picture && before.picture && mine.picture.length === before.picture.length &&
+                       mine.picture.every((b, i) => b === before.picture[i])) };
+    // and a version that does not build: the compiler's message is shown
+    $('editor').value = original + '\nprint "`no_such_name`"\n';
+    built.broken_ok = await buildMine([]);
+    built.broken_said = $('diagnostics').hidden ? '' : $('diagnostics').textContent;
+  }
+  const report = { cpus, card: hasCard, args: args(), hash, built,
                    runs: runs.map(({ label, workers, gpu, ms, status, cards, differ }) => ({ label, workers, gpu, ms, status, cards, differ })) };
   await fetch('/result', { method: 'POST', body: JSON.stringify(report) });
 }
 
-fetch('mandelbrot.scaly').then(r => r.text()).then(t => { $('source').textContent = t; }).catch(() => { });
+// --- the reader's version -------------------------------------------------
+
+function buildStatus(text, bad = false) {
+  $('buildstatus').textContent = text;
+  $('buildstatus').className = bad ? 'bad' : '';
+}
+
+// The compiler for the page and what it needs to BUILD a program (web/repl:
+// scaly.wasm, the standard library's sources, and playground.json -- the
+// standard library compiled for threads, the C library), from the directory
+// above this page, loaded once.
+async function loadBuilder() {
+  if (compiler) return compiler;
+  const { loadCompiler } = await import('../load.mjs');
+  const loaded = await loadCompiler(text => buildStatus(text), { base: '../' });
+  buildStatus('Loading what a build needs…');
+  const listing = await (await fetch('../playground.json')).json();
+  for (const [path, b64] of Object.entries(listing))
+    loaded.files[path] = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  compiler = loaded;
+  return compiler;
+}
+
+// `scaly build --target wasm32-wasip1-threads --gpu` in a worker of the page's
+// REPL (../worker.mjs): the bytes of the program, or null and the messages
+function buildInPage(text) {
+  return new Promise(resolve => {
+    const worker = new Worker('../worker.mjs', { type: 'module' });
+    const said = [];
+    const decoder = new TextDecoder();
+    worker.onmessage = ({ data }) => {
+      if (data.type === 'out' || data.type === 'err') said.push(decoder.decode(data.bytes));
+      else if (data.type === 'exit') {
+        worker.terminate();
+        resolve({ status: data.status, bytes: data.collected?.['/work/main.wasm'] ?? null, said: said.join('') });
+      } else if (data.type === 'crash') {
+        worker.terminate();
+        resolve({ status: 'crash', bytes: null, said: said.join('') + data.text });
+      }
+    };
+    worker.onerror = e => { worker.terminate(); resolve({ status: 'crash', bytes: null, said: e.message }); };
+    worker.postMessage({
+      module: compiler.module, files: { ...compiler.files, '/work/main.scaly': text },
+      args: ['scaly', 'build', '--target', 'wasm32-wasip1-threads', '--gpu', 'main.scaly', '-o', 'main.wasm'],
+      env: { SCALY_CACHE: '/cache' }, collect: ['/work/main.wasm'],
+    });
+  });
+}
+
+// the module to run, into the runner: the reader's, or the original's
+function load(bytes) {
+  return new Promise(resolve => {
+    runner.onmessage = ({ data }) => { if (data.type === 'loaded') resolve(data); };
+    runner.postMessage({ type: 'load', bytes }, [bytes.buffer]);
+  });
+}
+
+async function buildMine(then = [ALL]) {
+  if (busy) return false;
+  setBusy(true);
+  $('diagnostics').hidden = true;
+  try {
+    await loadBuilder();
+    buildStatus('Building…');
+    const t0 = performance.now();
+    const built = await buildInPage($('editor').value);
+    if (built.status !== 0 || !built.bytes) {
+      buildStatus('It did not build.', true);
+      $('diagnostics').textContent = built.said.trim() || `the compiler ended with ${built.status}`;
+      $('diagnostics').hidden = false;
+      return false;
+    }
+    const loaded = await load(built.bytes);
+    version++;
+    $('which').innerHTML = '— <span class="yours">your version</span>';
+    buildStatus(`Built in ${Math.round(performance.now() - t0)} ms${loaded.threads ? '' : ' (without threads)'}.`);
+  } catch (e) {
+    buildStatus(`Could not build: ${e.message || e}`, true);
+    return false;
+  } finally {
+    setBusy(false);
+  }
+  await go(then);
+  return true;
+}
+
+$('build').onclick = () => buildMine();
+$('original').onclick = async () => {
+  if (busy) return;
+  $('editor').value = original;
+  const bytes = new Uint8Array(await (await fetch('mandelbrot.wasm')).arrayBuffer());
+  await load(bytes);
+  version = 0;
+  $('which').textContent = '— the original';
+  $('diagnostics').hidden = true;
+  buildStatus('');
+  go([ALL]);
+};
+$('editor').onkeydown = e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); buildMine(); }
+  else if (e.key === 'Tab' && !e.shiftKey) {
+    e.preventDefault();
+    $('editor').setRangeText('    ', $('editor').selectionStart, $('editor').selectionEnd, 'end');
+  }
+};
+
+fetch('mandelbrot.scaly').then(r => r.text()).then(t => { original = t; $('editor').value = t; }).catch(() => { });
 describe();
 if (!crossOriginIsolated) {
   status('This page needs a cross-origin isolated server (COOP and COEP): it shares memory between its threads.', true);

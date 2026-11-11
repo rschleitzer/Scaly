@@ -6,7 +6,12 @@
 // that a kernel is compiled once.
 //
 //   { type: 'hello' }                    -> { type: 'ready', card }
+//   { type: 'load', bytes }              -> { type: 'loaded', threads }
 //   { type: 'run', args, env, gpu }      -> { type: 'done', status, stdout, stderr, picture, cards }
+//
+// `load` puts another module in the place of mandelbrot.wasm: the reader's
+// own version, built in the page (index.html). `threads` says whether it
+// was built for them.
 //
 // `gpu` is the card's mode for the run: 'off', 'on' or 'auto'. `picture`
 // holds the bytes the program wrote (mandelbrot.<w>x<h>.rgba), `cards` how
@@ -28,6 +33,11 @@ async function prepare() {
 }
 
 self.onmessage = async ({ data }) => {
+  if (data.type === 'load') {
+    program = { bytes: data.bytes, module: await WebAssembly.compile(data.bytes) };
+    self.postMessage({ type: 'loaded', threads: threadMemory(program.bytes) !== null });
+    return;
+  }
   await prepare();
   if (data.type === 'hello') {
     self.postMessage({ type: 'ready', card: card !== null, threads: threadMemory(program.bytes) !== null });
@@ -47,10 +57,20 @@ self.onmessage = async ({ data }) => {
   } catch (e) {
     status = 'ended: ' + (e && e.message || e);
   }
-  const [w, h] = data.args;
-  const bytes = files.read(`/mandelbrot.${w}x${h}.rgba`);
-  const picture = bytes ? bytes.slice() : null;
+  // the picture: the first file the program wrote whose name says its size
+  // (mandelbrot.<w>x<h>.rgba) and that holds four bytes per point
+  let picture = null, width = 0, height = 0;
+  for (const path of files.written) {
+    const size = /\.(\d+)x(\d+)\.rgba$/.exec(path);
+    const bytes = size && files.read(path);
+    if (bytes && bytes.length === Number(size[1]) * Number(size[2]) * 4) {
+      picture = bytes.slice();
+      width = Number(size[1]);
+      height = Number(size[2]);
+      break;
+    }
+  }
   const cards = card ? card.report().reduce((sum, site) => sum + site.card, 0) - before : 0;
-  self.postMessage({ type: 'done', status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), picture, cards },
+  self.postMessage({ type: 'done', status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), picture, width, height, cards },
                    picture ? [picture.buffer] : []);
 };

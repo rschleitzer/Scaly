@@ -4,6 +4,8 @@
 # in web/mandelbrot/site/. The page needs COOP and COEP (its threads share
 # memory), which the distribution's behavior for /play/* adds
 # (web/repl/deploy.sh says how). docs/deploy.sh leaves play/ out of its sync.
+# The editor builds with the compiler of /play/ (web/repl/deploy.sh): that
+# goes up first, built from the same tree.
 set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SITE="$HERE/site"
