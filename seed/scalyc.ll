@@ -1502,7 +1502,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI13ReplStatementB6scalycB4v0_2E = type { ptr, i64 }
 
 @_Z19modeler_error_countB6scalycB4v0_2 = thread_local global i64 0
-@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 4475778496491951567
+@_Z19scaly_package_stampB6scalycB4v0_2 = global i64 -5759853548216127339
 @"17CONCEPT_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_INDEX_CAP" = internal constant i64 65536
 @"18FUNCTION_ENTRY_CAP" = internal constant i64 262144
@@ -8335,7 +8335,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.str.6801 = private unnamed_addr constant [10 x i8] c"gpu.words\00", align 1
 @.str.6802 = private unnamed_addr constant [12 x i8] c"gpu.buffers\00", align 1
 @.str.6803 = private unnamed_addr constant [10 x i8] c"gpu.sizes\00", align 1
-@.sconst.6804 = private constant [8 x i8] c"\06malloc\00"
+@.sconst.6804 = private constant [17 x i8] c"\0Fscaly_gpu_parts\00"
 @.str.6805 = private unnamed_addr constant [14 x i8] c"gpu.parts.row\00", align 1
 @.str.6806 = private unnamed_addr constant [16 x i8] c"gpu.parts.bytes\00", align 1
 @.str.6807 = private unnamed_addr constant [10 x i8] c"gpu.parts\00", align 1
@@ -8357,7 +8357,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.str.6823 = private unnamed_addr constant [11 x i8] c"gpu.part.v\00", align 1
 @.str.6824 = private unnamed_addr constant [13 x i8] c"gpu.fold.cur\00", align 1
 @.str.6825 = private unnamed_addr constant [14 x i8] c"gpu.fold.next\00", align 1
-@.sconst.6826 = private constant [6 x i8] c"\04free\00"
+@.sconst.6826 = private constant [22 x i8] c"\14scaly_gpu_parts_free\00"
 @.str.6827 = private unnamed_addr constant [13 x i8] c"gpu.fold.and\00", align 1
 @.str.6828 = private unnamed_addr constant [12 x i8] c"gpu.fold.or\00", align 1
 @.str.6829 = private unnamed_addr constant [13 x i8] c"gpu.fold.xor\00", align 1
@@ -10710,7 +10710,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.str.9177 = private unnamed_addr constant [64 x i8] c"  --target <t>   Cross-emit object for triple <t> (use with -c)\00", align 1
 @.str.9178 = private unnamed_addr constant [87 x i8] c"  -mcpu=<cpu>    Generate code for <cpu>, or native for this machine (default generic)\00", align 1
 @.str.9179 = private unnamed_addr constant [75 x i8] c"  --portable-simd  SIMD operations in their target-neutral form (the seed)\00", align 1
-@.str.9180 = private unnamed_addr constant [160 x i8] c"  --gpu          Let the program run a parallel for loop on the graphics card where that pays (macOS; not with --jit or --run; SCALY_GPU=on|off decides for it)\00", align 1
+@.str.9180 = private unnamed_addr constant [205 x i8] c"  --gpu          Let the program run a parallel for loop on the graphics card where that pays (macOS, and wasm32 in a page that hands it its card; not with --jit or --run; SCALY_GPU=on|off decides for it)\00", align 1
 @.str.9181 = private unnamed_addr constant [4 x i8] c"TMP\00", align 1
 @.str.9182 = private unnamed_addr constant [5 x i8] c"TEMP\00", align 1
 @.sconst.9183 = private constant [3 x i8] c"\01.\00"
@@ -568070,62 +568070,78 @@ if.end7:                                          ; preds = %if.end
   ret ptr %call9
 }
 
-define linkonce_odr i1 @_ZN7EmitterB6scalycB4v0_216target_has_metalEv(ptr %0) {
+define linkonce_odr i64 @_ZN7EmitterB6scalycB4v0_28gpu_hostEv(ptr %0) {
 entry:
-  %arg.tmp11 = alloca { ptr }, align 8
+  %arg.tmp14 = alloca { ptr }, align 8
   %name = alloca ptr, align 8
   %arg.tmp = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
+  %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %target_is_wasm = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 7
+  br i1 %target_is_wasm, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i64 2
+
+if.end:                                           ; preds = %entry
   %frame.page = load ptr, ptr %frame, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-frame.force:                                      ; preds = %entry
+frame.force:                                      ; preds = %if.end
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
   br label %frame.forced
 
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+frame.forced:                                     ; preds = %frame.force, %if.end
+  %forced_page1 = phi ptr [ %frame.page, %if.end ], [ %forced_page, %frame.force ]
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %load.struct = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %config = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct, 0
+  %load.struct2 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %config = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct2, 0
   %target_triple = extractvalue %_ZN7Emitter13EmitterConfigB6scalycB4v0_2E %config, 3
   store { ptr } %target_triple, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
   store ptr %struct.region, ptr %name, align 1
-  %name2 = load ptr, ptr %name, align 8
-  %call = call i64 @_ZN6String10get_lengthEv(ptr %name2)
+  %name3 = load ptr, ptr %name, align 8
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %name3)
   %eq = icmp eq i64 %call, 0
-  br i1 %eq, label %if.then, label %if.end
+  br i1 %eq, label %if.then4, label %if.end5
 
-if.then:                                          ; preds = %frame.forced
+if.then4:                                         ; preds = %frame.forced
   call void @_ZN7EmitterB6scalycB4v0_211host_tripleEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp, ptr %frame, ptr %0)
   %set.dest = load ptr, ptr %name, align 8
   %set.thru = load { ptr }, ptr %arg.tmp, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end
+  br label %if.end5
 
-if.end:                                           ; preds = %if.then, %frame.forced
-  %name3 = load ptr, ptr %name, align 8
-  %frame.page4 = load ptr, ptr %frame, align 8
-  %frame.has_page5 = icmp ne ptr %frame.page4, null
-  br i1 %frame.has_page5, label %frame.forced7, label %frame.force6
+if.end5:                                          ; preds = %if.then4, %frame.forced
+  %name6 = load ptr, ptr %name, align 8
+  %frame.page7 = load ptr, ptr %frame, align 8
+  %frame.has_page8 = icmp ne ptr %frame.page7, null
+  br i1 %frame.has_page8, label %frame.forced10, label %frame.force9
 
-frame.force6:                                     ; preds = %if.end
-  %forced_page8 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced7
+frame.force9:                                     ; preds = %if.end5
+  %forced_page11 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced10
 
-frame.forced7:                                    ; preds = %frame.force6, %if.end
-  %forced_page9 = phi ptr [ %frame.page4, %if.end ], [ %forced_page8, %frame.force6 ]
-  %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.6833 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1E6String(ptr %struct.region10, ptr %arg.tmp11)
-  %call12 = call i1 @_ZN6String8containsE6String(ptr %name3, ptr %struct.region10)
+frame.forced10:                                   ; preds = %frame.force9, %if.end5
+  %forced_page12 = phi ptr [ %frame.page7, %if.end5 ], [ %forced_page11, %frame.force9 ]
+  %struct.region13 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page12, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  store { ptr } { ptr @.sconst.6833 }, ptr %arg.tmp14, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region13, ptr %arg.tmp14)
+  %call15 = call i1 @_ZN6String8containsE6String(ptr %name6, ptr %struct.region13)
+  br i1 %call15, label %if.then16, label %if.end17
+
+if.then16:                                        ; preds = %frame.forced10
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 %call12
+  ret i64 1
+
+if.end17:                                         ; preds = %frame.forced10
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i64 0
 }
 
 define linkonce_odr void @_ZN7EmitterB6scalycB4v0_213gpu_site_textEPN4scaly6memory4PageE10PlannedForB6scalycB4v0_2(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
@@ -568926,12 +568942,14 @@ frame.forced368:                                  ; preds = %frame.force367, %wh
 define linkonce_odr ptr @_ZN7EmitterB6scalycB4v0_212emit_gpu_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1) {
 entry:
   %k_args = alloca ptr, align 8
+  %k_tys = alloca ptr, align 8
   %arg.tmp = alloca { ptr }, align 8
-  %sret.result299 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result276 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
-  %sret.result253 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result330 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result307 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result284 = alloca %_Z14PlannedOperandB6scalycB4v0_2, align 8
+  %sret.result263 = alloca { ptr }, align 8
   %wgsl_printer = alloca ptr, align 8
-  %offer = alloca ptr, align 8
+  %wgsl_source = alloca ptr, align 8
   %count = alloca ptr, align 8
   %stride = alloca i64, align 8
   %sret.result97 = alloca { ptr }, align 8
@@ -568959,12 +568977,13 @@ if.then:                                          ; preds = %lor.rhs, %lor.rhs1,
   ret ptr %call
 
 if.end:                                           ; preds = %lor.rhs
-  %load.struct8 = load %_Z10PlannedForB6scalycB4v0_2, ptr %1, align 8
-  %expr9 = extractvalue %_Z10PlannedForB6scalycB4v0_2 %load.struct8, 2
-  %deref = load %_Z6VectorI14PlannedOperandB6scalycB4v0_2E, ptr %expr9, align 8
+  %call5 = call i64 @_ZN7EmitterB6scalycB4v0_28gpu_hostEv(ptr %0)
+  %load.struct9 = load %_Z10PlannedForB6scalycB4v0_2, ptr %1, align 8
+  %expr10 = extractvalue %_Z10PlannedForB6scalycB4v0_2 %load.struct9, 2
+  %deref = load %_Z6VectorI14PlannedOperandB6scalycB4v0_2E, ptr %expr10, align 8
   %length = extractvalue %_Z6VectorI14PlannedOperandB6scalycB4v0_2E %deref, 0
   %ne = icmp ne i64 %length, 1
-  br i1 %ne, label %if.then5, label %lor.rhs7
+  br i1 %ne, label %if.then6, label %lor.rhs8
 
 lor.rhs:                                          ; preds = %lor.rhs1
   %load.struct3 = load %_Z10PlannedForB6scalycB4v0_2, ptr %1, align 8
@@ -568977,12 +568996,12 @@ lor.rhs1:                                         ; preds = %entry
   %is_iterator_loop = extractvalue %_Z10PlannedForB6scalycB4v0_2 %load.struct2, 4
   br i1 %is_iterator_loop, label %if.then, label %lor.rhs
 
-if.then5:                                         ; preds = %lor.rhs7, %if.end
+if.then6:                                         ; preds = %lor.rhs8, %if.end
   %call12 = call ptr @_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr %call12
 
-if.end6:                                          ; preds = %lor.rhs7
+if.end7:                                          ; preds = %lor.rhs8
   %load.struct13 = load %_Z10PlannedForB6scalycB4v0_2, ptr %1, align 8
   %expr14 = extractvalue %_Z10PlannedForB6scalycB4v0_2 %load.struct13, 2
   call void @_ZN6VectorI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result, ptr %expr14, i64 0)
@@ -568990,17 +569009,16 @@ if.end6:                                          ; preds = %lor.rhs7
   %eq16 = icmp eq i1 %call15, false
   br i1 %eq16, label %if.then17, label %if.end18
 
-lor.rhs7:                                         ; preds = %if.end
-  %call10 = call i1 @_ZN7EmitterB6scalycB4v0_216target_has_metalEv(ptr %0)
-  %eq11 = icmp eq i1 %call10, false
-  br i1 %eq11, label %if.then5, label %if.end6
+lor.rhs8:                                         ; preds = %if.end
+  %eq11 = icmp eq i64 %call5, 0
+  br i1 %eq11, label %if.then6, label %if.end7
 
-if.then17:                                        ; preds = %if.end6
+if.then17:                                        ; preds = %if.end7
   %call19 = call ptr @_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr %call19
 
-if.end18:                                         ; preds = %if.end6
+if.end18:                                         ; preds = %if.end7
   %load.struct20 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %current_plan21 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct20, 19
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %current_plan21, i64 ptrtoint (ptr getelementptr (%_Z4PlanB6scalycB4v0_2, ptr null, i32 1) to i64), i1 false)
@@ -569348,415 +569366,470 @@ frame.force192:                                   ; preds = %if.end186
 
 frame.forced193:                                  ; preds = %frame.force192, %if.end186
   %forced_page195 = phi ptr [ %frame.page190, %if.end186 ], [ %forced_page194, %frame.force192 ]
-  %struct.region196 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page195, i64 ptrtoint (ptr getelementptr (%_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_ZN7Emitter8GpuOfferB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN7Emitter8GpuOfferB6scalycB4v0_2C1Ev(ptr %struct.region196)
-  store ptr %struct.region196, ptr %offer, align 1
-  %ptr.load197 = load ptr, ptr %offer, align 8
-  %active = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load197, i32 0, i32 0
+  %struct.region196 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page195, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1Ev(ptr %struct.region196)
+  store ptr %struct.region196, ptr %wgsl_source, align 1
+  %gk197 = load ptr, ptr %gk, align 8
+  %call198 = call i1 @_ZN9GpuKernelB6scalycB4v0_28portableEv(ptr %gk197)
+  br i1 %call198, label %if.then199, label %if.end200
+
+if.then199:                                       ; preds = %frame.forced193
+  %frame.page201 = load ptr, ptr %frame, align 8
+  %frame.has_page202 = icmp ne ptr %frame.page201, null
+  br i1 %frame.has_page202, label %frame.forced204, label %frame.force203
+
+if.end200:                                        ; preds = %if.end215, %frame.forced193
+  %eq219 = icmp eq i64 %call5, 2
+  br i1 %eq219, label %land.rhs218, label %if.end217
+
+frame.force203:                                   ; preds = %if.then199
+  %forced_page205 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced204
+
+frame.forced204:                                  ; preds = %frame.force203, %if.then199
+  %forced_page206 = phi ptr [ %frame.page201, %if.then199 ], [ %forced_page205, %frame.force203 ]
+  %struct.region207 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page206, i64 ptrtoint (ptr getelementptr (%_Z6GpuMslB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6GpuMslB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6GpuMslB6scalycB4v0_2C1Ev(ptr %struct.region207)
+  store ptr %struct.region207, ptr %wgsl_printer, align 1
+  %wgsl_printer208 = load ptr, ptr %wgsl_printer, align 8
+  %addr.heap209 = load ptr, ptr %gk, align 8
+  call void @_ZN6GpuMslB6scalycB4v0_218kernel_source_wgslEPN4scaly6memory4PageER9GpuKernelB6scalycB4v0_210PlannedForB6scalycB4v0_2(ptr noalias sret({ ptr }) %sret.result97, ptr %frame, ptr %wgsl_printer208, ptr %addr.heap209, ptr %1)
+  %wgsl_printer210 = load ptr, ptr %wgsl_printer, align 8
+  %load.struct211 = load %_Z6GpuMslB6scalycB4v0_2, ptr %wgsl_printer210, align 8
+  %m_refused212 = extractvalue %_Z6GpuMslB6scalycB4v0_2 %load.struct211, 3
+  %eq213 = icmp eq i1 %m_refused212, false
+  br i1 %eq213, label %if.then214, label %if.end215
+
+if.then214:                                       ; preds = %frame.forced204
+  %set.dest = load ptr, ptr %wgsl_source, align 8
+  %set.thru = load { ptr }, ptr %sret.result97, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result97, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end215
+
+if.end215:                                        ; preds = %if.then214, %frame.forced204
+  br label %if.end200
+
+if.then216:                                       ; preds = %land.rhs218
+  %call223 = call ptr @_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret ptr %call223
+
+if.end217:                                        ; preds = %land.rhs218, %if.end200
+  %frame.page224 = load ptr, ptr %frame, align 8
+  %frame.has_page225 = icmp ne ptr %frame.page224, null
+  br i1 %frame.has_page225, label %frame.forced227, label %frame.force226
+
+land.rhs218:                                      ; preds = %if.end200
+  %wgsl_source220 = load ptr, ptr %wgsl_source, align 8
+  %call221 = call i64 @_ZN6String10get_lengthEv(ptr %wgsl_source220)
+  %eq222 = icmp eq i64 %call221, 0
+  br i1 %eq222, label %if.then216, label %if.end217
+
+frame.force226:                                   ; preds = %if.end217
+  %forced_page228 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced227
+
+frame.forced227:                                  ; preds = %frame.force226, %if.end217
+  %forced_page229 = phi ptr [ %frame.page224, %if.end217 ], [ %forced_page228, %frame.force226 ]
+  %struct.region230 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page229, i64 ptrtoint (ptr getelementptr (%_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_ZN7Emitter8GpuOfferB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN7Emitter8GpuOfferB6scalycB4v0_2C1Ev(ptr %struct.region230)
+  store ptr %struct.region230, ptr %wgsl_printer, align 1
+  %ptr.load231 = load ptr, ptr %wgsl_printer, align 8
+  %active = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load231, i32 0, i32 0
   store i1 true, ptr %active, align 1
-  %load.struct198 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder199 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct198, 12
-  %call200 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result43)
-  %call201 = call ptr @LLVMBuildGlobalStringPtr(ptr %builder199, ptr %call200, ptr @.str.6782)
-  %ptr.load202 = load ptr, ptr %offer, align 8
-  %source = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load202, i32 0, i32 1
-  store ptr %call201, ptr %source, align 8
-  %load.struct203 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %context204 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct203, 1
-  %call205 = call ptr @LLVMPointerTypeInContext(ptr %context204, i32 0)
-  %call206 = call ptr @LLVMConstNull(ptr %call205)
-  %ptr.load207 = load ptr, ptr %offer, align 8
-  %wgsl = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load207, i32 0, i32 2
-  store ptr %call206, ptr %wgsl, align 8
-  %gk208 = load ptr, ptr %gk, align 8
-  %call209 = call i1 @_ZN9GpuKernelB6scalycB4v0_28portableEv(ptr %gk208)
-  br i1 %call209, label %if.then210, label %if.end211
+  %load.struct232 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %context233 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct232, 1
+  %call234 = call ptr @LLVMPointerTypeInContext(ptr %context233, i32 0)
+  %call235 = call ptr @LLVMConstNull(ptr %call234)
+  %ptr.load236 = load ptr, ptr %wgsl_printer, align 8
+  %source = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load236, i32 0, i32 1
+  store ptr %call235, ptr %source, align 8
+  %eq237 = icmp eq i64 %call5, 1
+  br i1 %eq237, label %if.then238, label %if.end239
 
-if.then210:                                       ; preds = %frame.forced193
-  %frame.page212 = load ptr, ptr %frame, align 8
-  %frame.has_page213 = icmp ne ptr %frame.page212, null
-  br i1 %frame.has_page213, label %frame.forced215, label %frame.force214
+if.then238:                                       ; preds = %frame.forced227
+  %load.struct240 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder241 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct240, 12
+  %call242 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result43)
+  %call243 = call ptr @LLVMBuildGlobalStringPtr(ptr %builder241, ptr %call242, ptr @.str.6782)
+  %ptr.load244 = load ptr, ptr %wgsl_printer, align 8
+  %source245 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load244, i32 0, i32 1
+  store ptr %call243, ptr %source245, align 8
+  br label %if.end239
 
-if.end211:                                        ; preds = %if.end226, %frame.forced193
-  call void @_ZN7EmitterB6scalycB4v0_213gpu_site_textEPN4scaly6memory4PageE10PlannedForB6scalycB4v0_2(ptr noalias sret({ ptr }) %sret.result97, ptr %frame, ptr %0, ptr %1)
-  %load.struct233 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder234 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct233, 12
-  %call235 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result97)
-  %call236 = call ptr @LLVMBuildGlobalStringPtr(ptr %builder234, ptr %call235, ptr @.str.6784)
-  %ptr.load237 = load ptr, ptr %offer, align 8
-  %site = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load237, i32 0, i32 3
-  store ptr %call236, ptr %site, align 8
-  %count238 = load ptr, ptr %count, align 8
-  %ptr.load239 = load ptr, ptr %offer, align 8
-  %count240 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load239, i32 0, i32 4
-  store ptr %count238, ptr %count240, align 8
-  %msl241 = load ptr, ptr %msl, align 8
-  %load.struct242 = load %_Z6GpuMslB6scalycB4v0_2, ptr %msl241, align 8
-  %m_uniform_words = extractvalue %_Z6GpuMslB6scalycB4v0_2 %load.struct242, 14
-  %ptr.load243 = load ptr, ptr %offer, align 8
-  %words = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load243, i32 0, i32 6
+if.end239:                                        ; preds = %if.then238, %frame.forced227
+  %load.struct246 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %context247 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct246, 1
+  %call248 = call ptr @LLVMPointerTypeInContext(ptr %context247, i32 0)
+  %call249 = call ptr @LLVMConstNull(ptr %call248)
+  %ptr.load250 = load ptr, ptr %wgsl_printer, align 8
+  %wgsl = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load250, i32 0, i32 2
+  store ptr %call249, ptr %wgsl, align 8
+  %wgsl_source251 = load ptr, ptr %wgsl_source, align 8
+  %call252 = call i64 @_ZN6String10get_lengthEv(ptr %wgsl_source251)
+  %gt253 = icmp ugt i64 %call252, 0
+  br i1 %gt253, label %if.then254, label %if.end255
+
+if.then254:                                       ; preds = %if.end239
+  %load.struct256 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder257 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct256, 12
+  %wgsl_source258 = load ptr, ptr %wgsl_source, align 8
+  %call259 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %wgsl_source258)
+  %call260 = call ptr @LLVMBuildGlobalStringPtr(ptr %builder257, ptr %call259, ptr @.str.6783)
+  %ptr.load261 = load ptr, ptr %wgsl_printer, align 8
+  %wgsl262 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load261, i32 0, i32 2
+  store ptr %call260, ptr %wgsl262, align 8
+  br label %if.end255
+
+if.end255:                                        ; preds = %if.then254, %if.end239
+  call void @_ZN7EmitterB6scalycB4v0_213gpu_site_textEPN4scaly6memory4PageE10PlannedForB6scalycB4v0_2(ptr noalias sret({ ptr }) %sret.result263, ptr %frame, ptr %0, ptr %1)
+  %load.struct264 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder265 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct264, 12
+  %call266 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result263)
+  %call267 = call ptr @LLVMBuildGlobalStringPtr(ptr %builder265, ptr %call266, ptr @.str.6784)
+  %ptr.load268 = load ptr, ptr %wgsl_printer, align 8
+  %site = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load268, i32 0, i32 3
+  store ptr %call267, ptr %site, align 8
+  %count269 = load ptr, ptr %count, align 8
+  %ptr.load270 = load ptr, ptr %wgsl_printer, align 8
+  %count271 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load270, i32 0, i32 4
+  store ptr %count269, ptr %count271, align 8
+  %msl272 = load ptr, ptr %msl, align 8
+  %load.struct273 = load %_Z6GpuMslB6scalycB4v0_2, ptr %msl272, align 8
+  %m_uniform_words = extractvalue %_Z6GpuMslB6scalycB4v0_2 %load.struct273, 14
+  %ptr.load274 = load ptr, ptr %wgsl_printer, align 8
+  %words = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load274, i32 0, i32 6
   store i64 %m_uniform_words, ptr %words, align 8
   store i64 0, ptr %stride, align 1
-  br label %while.cond244
+  br label %while.cond275
 
-frame.force214:                                   ; preds = %if.then210
-  %forced_page216 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced215
-
-frame.forced215:                                  ; preds = %frame.force214, %if.then210
-  %forced_page217 = phi ptr [ %frame.page212, %if.then210 ], [ %forced_page216, %frame.force214 ]
-  %struct.region218 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page217, i64 ptrtoint (ptr getelementptr (%_Z6GpuMslB6scalycB4v0_2, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6GpuMslB6scalycB4v0_2 }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6GpuMslB6scalycB4v0_2C1Ev(ptr %struct.region218)
-  store ptr %struct.region218, ptr %wgsl_printer, align 1
-  %wgsl_printer219 = load ptr, ptr %wgsl_printer, align 8
-  %addr.heap220 = load ptr, ptr %gk, align 8
-  call void @_ZN6GpuMslB6scalycB4v0_218kernel_source_wgslEPN4scaly6memory4PageER9GpuKernelB6scalycB4v0_210PlannedForB6scalycB4v0_2(ptr noalias sret({ ptr }) %sret.result97, ptr %frame, ptr %wgsl_printer219, ptr %addr.heap220, ptr %1)
-  %wgsl_printer221 = load ptr, ptr %wgsl_printer, align 8
-  %load.struct222 = load %_Z6GpuMslB6scalycB4v0_2, ptr %wgsl_printer221, align 8
-  %m_refused223 = extractvalue %_Z6GpuMslB6scalycB4v0_2 %load.struct222, 3
-  %eq224 = icmp eq i1 %m_refused223, false
-  br i1 %eq224, label %if.then225, label %if.end226
-
-if.then225:                                       ; preds = %frame.forced215
-  %load.struct227 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder228 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct227, 12
-  %call229 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %sret.result97)
-  %call230 = call ptr @LLVMBuildGlobalStringPtr(ptr %builder228, ptr %call229, ptr @.str.6783)
-  %ptr.load231 = load ptr, ptr %offer, align 8
-  %wgsl232 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load231, i32 0, i32 2
-  store ptr %call230, ptr %wgsl232, align 8
-  br label %if.end226
-
-if.end226:                                        ; preds = %if.then225, %frame.forced215
-  br label %if.end211
-
-while.cond244:                                    ; preds = %while.body245, %if.end211
+while.cond275:                                    ; preds = %while.body276, %if.end255
   %oi = load i64, ptr %stride, align 8
-  %gk247 = load ptr, ptr %gk, align 8
-  %load.struct248 = load %_Z9GpuKernelB6scalycB4v0_2, ptr %gk247, align 8
-  %k_uniform_ops = extractvalue %_Z9GpuKernelB6scalycB4v0_2 %load.struct248, 29
-  %length249 = extractvalue %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E %k_uniform_ops, 0
-  %lt250 = icmp ult i64 %oi, %length249
-  br i1 %lt250, label %while.body245, label %while.exit246
+  %gk278 = load ptr, ptr %gk, align 8
+  %load.struct279 = load %_Z9GpuKernelB6scalycB4v0_2, ptr %gk278, align 8
+  %k_uniform_ops = extractvalue %_Z9GpuKernelB6scalycB4v0_2 %load.struct279, 29
+  %length280 = extractvalue %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E %k_uniform_ops, 0
+  %lt281 = icmp ult i64 %oi, %length280
+  br i1 %lt281, label %while.body276, label %while.exit277
 
-while.body245:                                    ; preds = %while.cond244
-  %base.deref251 = load ptr, ptr %offer, align 8
-  %field.inplace252 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref251, i32 0, i32 7
-  %base.deref254 = load ptr, ptr %gk, align 8
-  %field.inplace255 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref254, i32 0, i32 29
-  %oi256 = load i64, ptr %stride, align 8
-  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result253, ptr %field.inplace255, i64 %oi256)
-  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %field.inplace252, ptr %sret.result253)
-  %base.deref257 = load ptr, ptr %offer, align 8
-  %field.inplace258 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref257, i32 0, i32 8
-  %base.deref259 = load ptr, ptr %gk, align 8
-  %field.inplace260 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref259, i32 0, i32 30
-  %oi261 = load i64, ptr %stride, align 8
-  %call262 = call i64 @_ZN5ArrayIiEixEm(ptr %field.inplace260, i64 %oi261)
-  call void @_ZN5ArrayIiE3addEi(ptr %field.inplace258, i64 %call262)
-  %oi263 = load i64, ptr %stride, align 8
-  %add264 = add i64 %oi263, 1
-  store i64 %add264, ptr %stride, align 1
-  br label %while.cond244
+while.body276:                                    ; preds = %while.cond275
+  %base.deref282 = load ptr, ptr %wgsl_printer, align 8
+  %field.inplace283 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref282, i32 0, i32 7
+  %base.deref285 = load ptr, ptr %gk, align 8
+  %field.inplace286 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref285, i32 0, i32 29
+  %oi287 = load i64, ptr %stride, align 8
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result284, ptr %field.inplace286, i64 %oi287)
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %field.inplace283, ptr %sret.result284)
+  %base.deref288 = load ptr, ptr %wgsl_printer, align 8
+  %field.inplace289 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref288, i32 0, i32 8
+  %base.deref290 = load ptr, ptr %gk, align 8
+  %field.inplace291 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref290, i32 0, i32 30
+  %oi292 = load i64, ptr %stride, align 8
+  %call293 = call i64 @_ZN5ArrayIiEixEm(ptr %field.inplace291, i64 %oi292)
+  call void @_ZN5ArrayIiE3addEi(ptr %field.inplace289, i64 %call293)
+  %oi294 = load i64, ptr %stride, align 8
+  %add295 = add i64 %oi294, 1
+  store i64 %add295, ptr %stride, align 1
+  br label %while.cond275
 
-while.exit246:                                    ; preds = %while.cond244
+while.exit277:                                    ; preds = %while.cond275
   store i64 0, ptr %stride, align 1
-  br label %while.cond265
+  br label %while.cond296
 
-while.cond265:                                    ; preds = %while.body266, %while.exit246
-  %oi268 = load i64, ptr %stride, align 8
-  %gk269 = load ptr, ptr %gk, align 8
-  %load.struct270 = load %_Z9GpuKernelB6scalycB4v0_2, ptr %gk269, align 8
-  %k_buffer_ops271 = extractvalue %_Z9GpuKernelB6scalycB4v0_2 %load.struct270, 31
-  %length272 = extractvalue %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E %k_buffer_ops271, 0
-  %lt273 = icmp ult i64 %oi268, %length272
-  br i1 %lt273, label %while.body266, label %while.exit267
+while.cond296:                                    ; preds = %while.body297, %while.exit277
+  %oi299 = load i64, ptr %stride, align 8
+  %gk300 = load ptr, ptr %gk, align 8
+  %load.struct301 = load %_Z9GpuKernelB6scalycB4v0_2, ptr %gk300, align 8
+  %k_buffer_ops302 = extractvalue %_Z9GpuKernelB6scalycB4v0_2 %load.struct301, 31
+  %length303 = extractvalue %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E %k_buffer_ops302, 0
+  %lt304 = icmp ult i64 %oi299, %length303
+  br i1 %lt304, label %while.body297, label %while.exit298
 
-while.body266:                                    ; preds = %while.cond265
-  %base.deref274 = load ptr, ptr %offer, align 8
-  %field.inplace275 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref274, i32 0, i32 9
-  %base.deref277 = load ptr, ptr %gk, align 8
-  %field.inplace278 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref277, i32 0, i32 31
-  %oi279 = load i64, ptr %stride, align 8
-  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result276, ptr %field.inplace278, i64 %oi279)
-  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %field.inplace275, ptr %sret.result276)
-  %base.deref280 = load ptr, ptr %offer, align 8
-  %field.inplace281 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref280, i32 0, i32 10
-  %base.deref282 = load ptr, ptr %gk, align 8
-  %field.inplace283 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref282, i32 0, i32 32
-  %oi284 = load i64, ptr %stride, align 8
-  %call285 = call i64 @_ZN5ArrayIiEixEm(ptr %field.inplace283, i64 %oi284)
-  call void @_ZN5ArrayIiE3addEi(ptr %field.inplace281, i64 %call285)
-  %oi286 = load i64, ptr %stride, align 8
-  %add287 = add i64 %oi286, 1
-  store i64 %add287, ptr %stride, align 1
-  br label %while.cond265
+while.body297:                                    ; preds = %while.cond296
+  %base.deref305 = load ptr, ptr %wgsl_printer, align 8
+  %field.inplace306 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref305, i32 0, i32 9
+  %base.deref308 = load ptr, ptr %gk, align 8
+  %field.inplace309 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref308, i32 0, i32 31
+  %oi310 = load i64, ptr %stride, align 8
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result307, ptr %field.inplace309, i64 %oi310)
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %field.inplace306, ptr %sret.result307)
+  %base.deref311 = load ptr, ptr %wgsl_printer, align 8
+  %field.inplace312 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref311, i32 0, i32 10
+  %base.deref313 = load ptr, ptr %gk, align 8
+  %field.inplace314 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref313, i32 0, i32 32
+  %oi315 = load i64, ptr %stride, align 8
+  %call316 = call i64 @_ZN5ArrayIiEixEm(ptr %field.inplace314, i64 %oi315)
+  call void @_ZN5ArrayIiE3addEi(ptr %field.inplace312, i64 %call316)
+  %oi317 = load i64, ptr %stride, align 8
+  %add318 = add i64 %oi317, 1
+  store i64 %add318, ptr %stride, align 1
+  br label %while.cond296
 
-while.exit267:                                    ; preds = %while.cond265
+while.exit298:                                    ; preds = %while.cond296
   store i64 0, ptr %stride, align 1
-  br label %while.cond288
+  br label %while.cond319
 
-while.cond288:                                    ; preds = %while.body289, %while.exit267
-  %oi291 = load i64, ptr %stride, align 8
-  %gk292 = load ptr, ptr %gk, align 8
-  %load.struct293 = load %_Z9GpuKernelB6scalycB4v0_2, ptr %gk292, align 8
-  %k_output_ops294 = extractvalue %_Z9GpuKernelB6scalycB4v0_2 %load.struct293, 33
-  %length295 = extractvalue %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E %k_output_ops294, 0
-  %lt296 = icmp ult i64 %oi291, %length295
-  br i1 %lt296, label %while.body289, label %while.exit290
-
-while.body289:                                    ; preds = %while.cond288
-  %base.deref297 = load ptr, ptr %offer, align 8
-  %field.inplace298 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref297, i32 0, i32 11
-  %base.deref300 = load ptr, ptr %gk, align 8
-  %field.inplace301 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref300, i32 0, i32 33
-  %oi302 = load i64, ptr %stride, align 8
-  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result299, ptr %field.inplace301, i64 %oi302)
-  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %field.inplace298, ptr %sret.result299)
-  %base.deref303 = load ptr, ptr %offer, align 8
-  %field.inplace304 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref303, i32 0, i32 12
-  %base.deref305 = load ptr, ptr %gk, align 8
-  %field.inplace306 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref305, i32 0, i32 34
-  %oi307 = load i64, ptr %stride, align 8
-  %call308 = call i64 @_ZN5ArrayIiEixEm(ptr %field.inplace306, i64 %oi307)
-  call void @_ZN5ArrayIiE3addEi(ptr %field.inplace304, i64 %call308)
-  %oi309 = load i64, ptr %stride, align 8
-  %add310 = add i64 %oi309, 1
-  store i64 %add310, ptr %stride, align 1
-  br label %while.cond288
-
-while.exit290:                                    ; preds = %while.cond288
-  store i64 0, ptr %stride, align 1
-  br label %while.cond311
-
-while.cond311:                                    ; preds = %while.body312, %while.exit290
-  %oi314 = load i64, ptr %stride, align 8
-  %red_slots315 = load ptr, ptr %red_slots, align 8
-  %load.struct316 = load %_Z5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %red_slots315, align 8
-  %length317 = extractvalue %_Z5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct316, 0
-  %lt318 = icmp ult i64 %oi314, %length317
-  br i1 %lt318, label %while.body312, label %while.exit313
-
-while.body312:                                    ; preds = %while.cond311
-  %base.deref319 = load ptr, ptr %offer, align 8
-  %field.inplace320 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref319, i32 0, i32 13
-  %red_slots321 = load ptr, ptr %red_slots, align 8
+while.cond319:                                    ; preds = %while.body320, %while.exit298
   %oi322 = load i64, ptr %stride, align 8
-  %call323 = call ptr @_ZN5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2EixEm(ptr %red_slots321, i64 %oi322)
-  call void @_ZN5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E3addEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %field.inplace320, ptr %call323)
-  %base.deref324 = load ptr, ptr %offer, align 8
-  %field.inplace325 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref324, i32 0, i32 14
-  %red_ops326 = load ptr, ptr %red_ops, align 8
-  %oi327 = load i64, ptr %stride, align 8
-  %call328 = call i64 @_ZN5ArrayIiEixEm(ptr %red_ops326, i64 %oi327)
-  call void @_ZN5ArrayIiE3addEi(ptr %field.inplace325, i64 %call328)
-  %base.deref329 = load ptr, ptr %offer, align 8
-  %field.inplace330 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref329, i32 0, i32 15
-  %red_strides331 = load ptr, ptr %red_strides, align 8
-  %oi332 = load i64, ptr %stride, align 8
-  %call333 = call i64 @_ZN5ArrayImEixEm(ptr %red_strides331, i64 %oi332)
-  call void @_ZN5ArrayImE3addEm(ptr %field.inplace330, i64 %call333)
-  %oi334 = load i64, ptr %stride, align 8
-  %add335 = add i64 %oi334, 1
-  store i64 %add335, ptr %stride, align 1
-  br label %while.cond311
+  %gk323 = load ptr, ptr %gk, align 8
+  %load.struct324 = load %_Z9GpuKernelB6scalycB4v0_2, ptr %gk323, align 8
+  %k_output_ops325 = extractvalue %_Z9GpuKernelB6scalycB4v0_2 %load.struct324, 33
+  %length326 = extractvalue %_Z5ArrayI14PlannedOperandB6scalycB4v0_2E %k_output_ops325, 0
+  %lt327 = icmp ult i64 %oi322, %length326
+  br i1 %lt327, label %while.body320, label %while.exit321
 
-while.exit313:                                    ; preds = %while.cond311
-  %call336 = call ptr @LLVMFunctionType(ptr %call161, ptr null, i32 0, i32 0)
+while.body320:                                    ; preds = %while.cond319
+  %base.deref328 = load ptr, ptr %wgsl_printer, align 8
+  %field.inplace329 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref328, i32 0, i32 11
+  %base.deref331 = load ptr, ptr %gk, align 8
+  %field.inplace332 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref331, i32 0, i32 33
+  %oi333 = load i64, ptr %stride, align 8
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2EixEm(ptr noalias sret(%_Z14PlannedOperandB6scalycB4v0_2) %sret.result330, ptr %field.inplace332, i64 %oi333)
+  call void @_ZN5ArrayI14PlannedOperandB6scalycB4v0_2E3addE14PlannedOperandB6scalycB4v0_2(ptr %field.inplace329, ptr %sret.result330)
+  %base.deref334 = load ptr, ptr %wgsl_printer, align 8
+  %field.inplace335 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref334, i32 0, i32 12
+  %base.deref336 = load ptr, ptr %gk, align 8
+  %field.inplace337 = getelementptr inbounds nuw %_Z9GpuKernelB6scalycB4v0_2, ptr %base.deref336, i32 0, i32 34
+  %oi338 = load i64, ptr %stride, align 8
+  %call339 = call i64 @_ZN5ArrayIiEixEm(ptr %field.inplace337, i64 %oi338)
+  call void @_ZN5ArrayIiE3addEi(ptr %field.inplace335, i64 %call339)
+  %oi340 = load i64, ptr %stride, align 8
+  %add341 = add i64 %oi340, 1
+  store i64 %add341, ptr %stride, align 1
+  br label %while.cond319
+
+while.exit321:                                    ; preds = %while.cond319
+  store i64 0, ptr %stride, align 1
+  br label %while.cond342
+
+while.cond342:                                    ; preds = %while.body343, %while.exit321
+  %oi345 = load i64, ptr %stride, align 8
+  %red_slots346 = load ptr, ptr %red_slots, align 8
+  %load.struct347 = load %_Z5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %red_slots346, align 8
+  %length348 = extractvalue %_Z5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct347, 0
+  %lt349 = icmp ult i64 %oi345, %length348
+  br i1 %lt349, label %while.body343, label %while.exit344
+
+while.body343:                                    ; preds = %while.cond342
+  %base.deref350 = load ptr, ptr %wgsl_printer, align 8
+  %field.inplace351 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref350, i32 0, i32 13
+  %red_slots352 = load ptr, ptr %red_slots, align 8
+  %oi353 = load i64, ptr %stride, align 8
+  %call354 = call ptr @_ZN5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2EixEm(ptr %red_slots352, i64 %oi353)
+  call void @_ZN5ArrayIP15LLVMOpaqueValueB6scalycB4v0_2E3addEP15LLVMOpaqueValueB6scalycB4v0_2(ptr %field.inplace351, ptr %call354)
+  %base.deref355 = load ptr, ptr %wgsl_printer, align 8
+  %field.inplace356 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref355, i32 0, i32 14
+  %red_ops357 = load ptr, ptr %red_ops, align 8
+  %oi358 = load i64, ptr %stride, align 8
+  %call359 = call i64 @_ZN5ArrayIiEixEm(ptr %red_ops357, i64 %oi358)
+  call void @_ZN5ArrayIiE3addEi(ptr %field.inplace356, i64 %call359)
+  %base.deref360 = load ptr, ptr %wgsl_printer, align 8
+  %field.inplace361 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %base.deref360, i32 0, i32 15
+  %red_strides362 = load ptr, ptr %red_strides, align 8
+  %oi363 = load i64, ptr %stride, align 8
+  %call364 = call i64 @_ZN5ArrayImEixEm(ptr %red_strides362, i64 %oi363)
+  call void @_ZN5ArrayImE3addEm(ptr %field.inplace361, i64 %call364)
+  %oi365 = load i64, ptr %stride, align 8
+  %add366 = add i64 %oi365, 1
+  store i64 %add366, ptr %stride, align 1
+  br label %while.cond342
+
+while.exit344:                                    ; preds = %while.cond342
+  %call367 = call ptr @LLVMFunctionType(ptr %call161, ptr null, i32 0, i32 0)
   store { ptr } { ptr @.sconst.6785 }, ptr %arg.tmp, align 1
-  %call337 = call ptr @_ZN7EmitterB6scalycB4v0_221get_parfor_runtime_fnE6StringP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %0, ptr %arg.tmp, ptr %call336)
-  %load.struct338 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder339 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct338, 12
-  %call340 = call ptr @LLVMBuildCall2(ptr %builder339, ptr %call336, ptr %call337, ptr null, i32 0, ptr @.str.6786)
-  %load.struct341 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder342 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct341, 12
-  %call343 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22NEEv()
-  %call344 = call ptr @LLVMConstInt(ptr %call161, i64 0, i32 0)
-  %call345 = call ptr @LLVMBuildICmp(ptr %builder342, i32 %call343, ptr %call340, ptr %call344, ptr @.str.6787)
-  store { ptr } { ptr @.sconst.6788 }, ptr %arg.tmp, align 1
-  %call346 = call ptr @_ZN7EmitterB6scalycB4v0_212create_blockE6String(ptr %0, ptr %arg.tmp)
-  store { ptr } { ptr @.sconst.6789 }, ptr %arg.tmp, align 1
-  %call347 = call ptr @_ZN7EmitterB6scalycB4v0_212create_blockE6String(ptr %0, ptr %arg.tmp)
-  store { ptr } { ptr @.sconst.6790 }, ptr %arg.tmp, align 1
-  %call348 = call ptr @_ZN7EmitterB6scalycB4v0_212create_blockE6String(ptr %0, ptr %arg.tmp)
-  %ptr.load349 = load ptr, ptr %offer, align 8
-  %done_block = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load349, i32 0, i32 5
-  store ptr %call348, ptr %done_block, align 8
-  %call350 = call ptr @_ZN7EmitterB6scalycB4v0_212entry_allocaEP14LLVMOpaqueTypeB6scalycB4v0_2P10const_char(ptr %0, ptr %call164, ptr @.str.6791)
-  %ptr.load351 = load ptr, ptr %offer, align 8
-  %kept_at = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load351, i32 0, i32 16
-  store ptr %call350, ptr %kept_at, align 8
-  %call352 = call ptr @_ZN7EmitterB6scalycB4v0_212entry_allocaEP14LLVMOpaqueTypeB6scalycB4v0_2P10const_char(ptr %0, ptr %call164, ptr @.str.6792)
-  %ptr.load353 = load ptr, ptr %offer, align 8
-  %kept_left = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load353, i32 0, i32 17
-  store ptr %call352, ptr %kept_left, align 8
-  %offer354 = load ptr, ptr %offer, align 8
-  %load.struct355 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer354, align 8
-  %kept_at356 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct355, 16
-  %offer357 = load ptr, ptr %offer, align 8
-  %load.struct358 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer357, align 8
-  %kept_left359 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct358, 17
-  %offer360 = load ptr, ptr %offer, align 8
-  %load.struct361 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer360, align 8
-  %source362 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct361, 1
-  %offer363 = load ptr, ptr %offer, align 8
-  %load.struct364 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer363, align 8
-  %wgsl365 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct364, 2
-  %offer366 = load ptr, ptr %offer, align 8
-  %load.struct367 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer366, align 8
-  %site368 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct367, 3
+  %call368 = call ptr @_ZN7EmitterB6scalycB4v0_221get_parfor_runtime_fnE6StringP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %0, ptr %arg.tmp, ptr %call367)
   %load.struct369 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder370 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct369, 12
-  %call371 = call ptr @LLVMConstInt(ptr %call164, i64 0, i32 0)
-  %call372 = call ptr @LLVMBuildStore(ptr %builder370, ptr %call371, ptr %kept_at356)
-  %load.struct373 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder374 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct373, 12
-  %call375 = call ptr @LLVMBuildCondBr(ptr %builder374, ptr %call345, ptr %call346, ptr %call347)
-  %load.struct376 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder377 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct376, 12
-  call void @LLVMPositionBuilderAtEnd(ptr %builder377, ptr %call346)
-  %call378 = call ptr @LLVMConstInt(ptr %call164, i64 0, i32 0)
-  %offer379 = load ptr, ptr %offer, align 8
-  %call380 = call ptr @LLVMConstInt(ptr %call164, i64 1, i32 0)
-  %call381 = call ptr @_ZN7EmitterB6scalycB4v0_214emit_gpu_offerEN7Emitter8GpuOfferB6scalycB4v0_2EP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %offer379, ptr %call378, ptr %call378, ptr %call380)
-  %eq382 = icmp eq ptr %call381, null
-  br i1 %eq382, label %if.then383, label %if.else
-
-if.then383:                                       ; preds = %while.exit313
-  %ptr.load385 = load ptr, ptr %offer, align 8
-  %active386 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load385, i32 0, i32 0
-  store i1 false, ptr %active386, align 1
-  %load.struct387 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder388 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct387, 12
-  %call389 = call ptr @LLVMBuildBr(ptr %builder388, ptr %call347)
-  br label %if.end384
-
-if.else:                                          ; preds = %while.exit313
-  %load.struct390 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder391 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct390, 12
-  %call392 = call ptr @LLVMBuildCondBr(ptr %builder391, ptr %call381, ptr %call348, ptr %call347)
-  br label %if.end384
-
-if.end384:                                        ; preds = %if.else, %if.then383
-  %if.value = phi ptr [ %call389, %if.then383 ], [ %call392, %if.else ]
-  %load.struct393 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder394 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct393, 12
-  call void @LLVMPositionBuilderAtEnd(ptr %builder394, ptr %call347)
-  %field.inplace395 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 75
-  %offer396 = load ptr, ptr %offer, align 8
-  call void @_ZN7Emitter8GpuOfferB6scalycB4v0_24takeEN7Emitter8GpuOfferB6scalycB4v0_2E(ptr %field.inplace395, ptr %offer396)
-  %call397 = call ptr @_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
-  %load.struct398 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder399 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct398, 12
-  %call400 = call ptr @LLVMGetInsertBlock(ptr %builder399)
-  %call401 = call ptr @LLVMGetBasicBlockTerminator(ptr %call400)
-  %eq402 = icmp eq ptr %call401, null
-  br i1 %eq402, label %if.then403, label %if.end404
-
-if.then403:                                       ; preds = %if.end384
-  store { ptr } { ptr @.sconst.6793 }, ptr %arg.tmp, align 1
-  %call405 = call ptr @_ZN7EmitterB6scalycB4v0_212create_blockE6String(ptr %0, ptr %arg.tmp)
+  %call371 = call ptr @LLVMBuildCall2(ptr %builder370, ptr %call367, ptr %call368, ptr null, i32 0, ptr @.str.6786)
+  %load.struct372 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder373 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct372, 12
+  %call374 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22NEEv()
+  %call375 = call ptr @LLVMConstInt(ptr %call161, i64 0, i32 0)
+  %call376 = call ptr @LLVMBuildICmp(ptr %builder373, i32 %call374, ptr %call371, ptr %call375, ptr @.str.6787)
+  store { ptr } { ptr @.sconst.6788 }, ptr %arg.tmp, align 1
+  %call377 = call ptr @_ZN7EmitterB6scalycB4v0_212create_blockE6String(ptr %0, ptr %arg.tmp)
+  store { ptr } { ptr @.sconst.6789 }, ptr %arg.tmp, align 1
+  %call378 = call ptr @_ZN7EmitterB6scalycB4v0_212create_blockE6String(ptr %0, ptr %arg.tmp)
+  store { ptr } { ptr @.sconst.6790 }, ptr %arg.tmp, align 1
+  %call379 = call ptr @_ZN7EmitterB6scalycB4v0_212create_blockE6String(ptr %0, ptr %arg.tmp)
+  %ptr.load380 = load ptr, ptr %wgsl_printer, align 8
+  %done_block = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load380, i32 0, i32 5
+  store ptr %call379, ptr %done_block, align 8
+  %call381 = call ptr @_ZN7EmitterB6scalycB4v0_212entry_allocaEP14LLVMOpaqueTypeB6scalycB4v0_2P10const_char(ptr %0, ptr %call164, ptr @.str.6791)
+  %ptr.load382 = load ptr, ptr %wgsl_printer, align 8
+  %kept_at = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load382, i32 0, i32 16
+  store ptr %call381, ptr %kept_at, align 8
+  %call383 = call ptr @_ZN7EmitterB6scalycB4v0_212entry_allocaEP14LLVMOpaqueTypeB6scalycB4v0_2P10const_char(ptr %0, ptr %call164, ptr @.str.6792)
+  %ptr.load384 = load ptr, ptr %wgsl_printer, align 8
+  %kept_left = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load384, i32 0, i32 17
+  store ptr %call383, ptr %kept_left, align 8
+  %offer = load ptr, ptr %wgsl_printer, align 8
+  %load.struct385 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer, align 8
+  %kept_at386 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct385, 16
+  %offer387 = load ptr, ptr %wgsl_printer, align 8
+  %load.struct388 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer387, align 8
+  %kept_left389 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct388, 17
+  %offer390 = load ptr, ptr %wgsl_printer, align 8
+  %load.struct391 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer390, align 8
+  %source392 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct391, 1
+  %offer393 = load ptr, ptr %wgsl_printer, align 8
+  %load.struct394 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer393, align 8
+  %wgsl395 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct394, 2
+  %offer396 = load ptr, ptr %wgsl_printer, align 8
+  %load.struct397 = load %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %offer396, align 8
+  %site398 = extractvalue %_ZN7Emitter8GpuOfferB6scalycB4v0_2E %load.struct397, 3
+  %load.struct399 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder400 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct399, 12
+  %call401 = call ptr @LLVMConstInt(ptr %call164, i64 0, i32 0)
+  %call402 = call ptr @LLVMBuildStore(ptr %builder400, ptr %call401, ptr %kept_at386)
+  %load.struct403 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder404 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct403, 12
+  %call405 = call ptr @LLVMBuildCondBr(ptr %builder404, ptr %call376, ptr %call377, ptr %call378)
   %load.struct406 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder407 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct406, 12
-  %call408 = call ptr @LLVMBuildLoad2(ptr %builder407, ptr %call164, ptr %kept_at356, ptr @.str.6794)
-  %load.struct409 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder410 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct409, 12
-  %call411 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22NEEv()
-  %call412 = call ptr @LLVMConstInt(ptr %call164, i64 0, i32 0)
-  %call413 = call ptr @LLVMBuildICmp(ptr %builder410, i32 %call411, ptr %call408, ptr %call412, ptr @.str.6795)
-  %load.struct414 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder415 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct414, 12
-  %call416 = call ptr @LLVMBuildCondBr(ptr %builder415, ptr %call413, ptr %call405, ptr %call348)
+  call void @LLVMPositionBuilderAtEnd(ptr %builder407, ptr %call377)
+  %call408 = call ptr @LLVMConstInt(ptr %call164, i64 0, i32 0)
+  %offer409 = load ptr, ptr %wgsl_printer, align 8
+  %call410 = call ptr @LLVMConstInt(ptr %call164, i64 1, i32 0)
+  %call411 = call ptr @_ZN7EmitterB6scalycB4v0_214emit_gpu_offerEN7Emitter8GpuOfferB6scalycB4v0_2EP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2(ptr %0, ptr %offer409, ptr %call408, ptr %call408, ptr %call410)
+  %eq412 = icmp eq ptr %call411, null
+  br i1 %eq412, label %if.then413, label %if.else
+
+if.then413:                                       ; preds = %while.exit344
+  %ptr.load415 = load ptr, ptr %wgsl_printer, align 8
+  %active416 = getelementptr inbounds nuw %_ZN7Emitter8GpuOfferB6scalycB4v0_2E, ptr %ptr.load415, i32 0, i32 0
+  store i1 false, ptr %active416, align 1
   %load.struct417 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
   %builder418 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct417, 12
-  call void @LLVMPositionBuilderAtEnd(ptr %builder418, ptr %call405)
-  %call419 = call ptr @LLVMFunctionType(ptr %call164, ptr null, i32 0, i32 0)
-  store { ptr } { ptr @.sconst.6796 }, ptr %arg.tmp, align 1
-  %call420 = call ptr @_ZN7EmitterB6scalycB4v0_221get_parfor_runtime_fnE6StringP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %0, ptr %arg.tmp, ptr %call419)
-  %load.struct421 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder422 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct421, 12
-  %call423 = call ptr @LLVMBuildCall2(ptr %builder422, ptr %call419, ptr %call420, ptr null, i32 0, ptr @.str.6797)
-  %load.struct424 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder425 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct424, 12
-  %call426 = call ptr @LLVMBuildSub(ptr %builder425, ptr %call423, ptr %call408, ptr @.str.6798)
-  %load.struct427 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %context428 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct427, 1
-  %call429 = call ptr @LLVMPointerTypeInContext(ptr %context428, i32 0)
-  %frame.page430 = load ptr, ptr %frame, align 8
-  %frame.has_page431 = icmp ne ptr %frame.page430, null
-  br i1 %frame.has_page431, label %frame.forced433, label %frame.force432
+  %call419 = call ptr @LLVMBuildBr(ptr %builder418, ptr %call378)
+  br label %if.end414
 
-if.end404:                                        ; preds = %frame.forced451, %if.end384
-  %load.struct472 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder473 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct472, 12
-  call void @LLVMPositionBuilderAtEnd(ptr %builder473, ptr %call348)
+if.else:                                          ; preds = %while.exit344
+  %load.struct420 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder421 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct420, 12
+  %call422 = call ptr @LLVMBuildCondBr(ptr %builder421, ptr %call411, ptr %call379, ptr %call378)
+  br label %if.end414
+
+if.end414:                                        ; preds = %if.else, %if.then413
+  %if.value = phi ptr [ %call419, %if.then413 ], [ %call422, %if.else ]
+  %load.struct423 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder424 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct423, 12
+  call void @LLVMPositionBuilderAtEnd(ptr %builder424, ptr %call378)
+  %field.inplace425 = getelementptr inbounds nuw %_Z7EmitterB6scalycB4v0_2, ptr %0, i32 0, i32 75
+  %offer426 = load ptr, ptr %wgsl_printer, align 8
+  call void @_ZN7Emitter8GpuOfferB6scalycB4v0_24takeEN7Emitter8GpuOfferB6scalycB4v0_2E(ptr %field.inplace425, ptr %offer426)
+  %call427 = call ptr @_ZN7EmitterB6scalycB4v0_217emit_parallel_forE10PlannedForB6scalycB4v0_2(ptr %0, ptr %1)
+  %load.struct428 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder429 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct428, 12
+  %call430 = call ptr @LLVMGetInsertBlock(ptr %builder429)
+  %call431 = call ptr @LLVMGetBasicBlockTerminator(ptr %call430)
+  %eq432 = icmp eq ptr %call431, null
+  br i1 %eq432, label %if.then433, label %if.end434
+
+if.then433:                                       ; preds = %if.end414
+  store { ptr } { ptr @.sconst.6793 }, ptr %arg.tmp, align 1
+  %call435 = call ptr @_ZN7EmitterB6scalycB4v0_212create_blockE6String(ptr %0, ptr %arg.tmp)
+  %load.struct436 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder437 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct436, 12
+  %call438 = call ptr @LLVMBuildLoad2(ptr %builder437, ptr %call164, ptr %kept_at386, ptr @.str.6794)
+  %load.struct439 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder440 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct439, 12
+  %call441 = call i32 @_ZN16LLVMIntPredicateB6scalycB4v0_22NEEv()
+  %call442 = call ptr @LLVMConstInt(ptr %call164, i64 0, i32 0)
+  %call443 = call ptr @LLVMBuildICmp(ptr %builder440, i32 %call441, ptr %call438, ptr %call442, ptr @.str.6795)
+  %load.struct444 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder445 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct444, 12
+  %call446 = call ptr @LLVMBuildCondBr(ptr %builder445, ptr %call443, ptr %call435, ptr %call379)
+  %load.struct447 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder448 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct447, 12
+  call void @LLVMPositionBuilderAtEnd(ptr %builder448, ptr %call435)
+  %call449 = call ptr @LLVMFunctionType(ptr %call164, ptr null, i32 0, i32 0)
+  store { ptr } { ptr @.sconst.6796 }, ptr %arg.tmp, align 1
+  %call450 = call ptr @_ZN7EmitterB6scalycB4v0_221get_parfor_runtime_fnE6StringP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %0, ptr %arg.tmp, ptr %call449)
+  %load.struct451 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder452 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct451, 12
+  %call453 = call ptr @LLVMBuildCall2(ptr %builder452, ptr %call449, ptr %call450, ptr null, i32 0, ptr @.str.6797)
+  %load.struct454 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder455 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct454, 12
+  %call456 = call ptr @LLVMBuildSub(ptr %builder455, ptr %call453, ptr %call438, ptr @.str.6798)
+  %load.struct457 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %context458 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct457, 1
+  %call459 = call ptr @LLVMPointerTypeInContext(ptr %context458, i32 0)
+  %frame.page460 = load ptr, ptr %frame, align 8
+  %frame.has_page461 = icmp ne ptr %frame.page460, null
+  br i1 %frame.has_page461, label %frame.forced463, label %frame.force462
+
+if.end434:                                        ; preds = %frame.forced482, %if.end414
+  %load.struct503 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder504 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct503, 12
+  call void @LLVMPositionBuilderAtEnd(ptr %builder504, ptr %call379)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret ptr null
 
-frame.force432:                                   ; preds = %if.then403
-  %forced_page434 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced433
+frame.force462:                                   ; preds = %if.then433
+  %forced_page464 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced463
 
-frame.forced433:                                  ; preds = %frame.force432, %if.then403
-  %forced_page435 = phi ptr [ %frame.page430, %if.then403 ], [ %forced_page434, %frame.force432 ]
-  %struct.region436 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page435, i64 ptrtoint (ptr getelementptr (%_Z6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2EC1Em(ptr %struct.region436, i64 5)
-  store ptr %struct.region436, ptr %wgsl_printer, align 1
-  %k_tys = load ptr, ptr %wgsl_printer, align 8
-  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys, i64 0, ptr %call429)
-  %k_tys437 = load ptr, ptr %wgsl_printer, align 8
-  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys437, i64 1, ptr %call429)
-  %k_tys438 = load ptr, ptr %wgsl_printer, align 8
-  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys438, i64 2, ptr %call429)
-  %k_tys439 = load ptr, ptr %wgsl_printer, align 8
-  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys439, i64 3, ptr %call164)
-  %k_tys440 = load ptr, ptr %wgsl_printer, align 8
-  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys440, i64 4, ptr %call164)
-  %load.struct441 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %context442 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct441, 1
-  %call443 = call ptr @LLVMVoidTypeInContext(ptr %context442)
-  %k_tys444 = load ptr, ptr %wgsl_printer, align 8
-  %load.struct445 = load %_Z6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E, ptr %k_tys444, align 8
-  %data = extractvalue %_Z6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E %load.struct445, 1
-  %call446 = call ptr @LLVMFunctionType(ptr %call443, ptr %data, i32 5, i32 0)
+frame.forced463:                                  ; preds = %frame.force462, %if.then433
+  %forced_page465 = phi ptr [ %frame.page460, %if.then433 ], [ %forced_page464, %frame.force462 ]
+  %struct.region466 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page465, i64 ptrtoint (ptr getelementptr (%_Z6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2EC1Em(ptr %struct.region466, i64 5)
+  store ptr %struct.region466, ptr %k_tys, align 1
+  %k_tys467 = load ptr, ptr %k_tys, align 8
+  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys467, i64 0, ptr %call459)
+  %k_tys468 = load ptr, ptr %k_tys, align 8
+  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys468, i64 1, ptr %call459)
+  %k_tys469 = load ptr, ptr %k_tys, align 8
+  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys469, i64 2, ptr %call459)
+  %k_tys470 = load ptr, ptr %k_tys, align 8
+  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys470, i64 3, ptr %call164)
+  %k_tys471 = load ptr, ptr %k_tys, align 8
+  call void @_ZN6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E3putEmP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %k_tys471, i64 4, ptr %call164)
+  %load.struct472 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %context473 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct472, 1
+  %call474 = call ptr @LLVMVoidTypeInContext(ptr %context473)
+  %k_tys475 = load ptr, ptr %k_tys, align 8
+  %load.struct476 = load %_Z6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E, ptr %k_tys475, align 8
+  %data = extractvalue %_Z6VectorIP14LLVMOpaqueTypeB6scalycB4v0_2E %load.struct476, 1
+  %call477 = call ptr @LLVMFunctionType(ptr %call474, ptr %data, i32 5, i32 0)
   store { ptr } { ptr @.sconst.6799 }, ptr %arg.tmp, align 1
-  %call447 = call ptr @_ZN7EmitterB6scalycB4v0_221get_parfor_runtime_fnE6StringP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %0, ptr %arg.tmp, ptr %call446)
-  %frame.page448 = load ptr, ptr %frame, align 8
-  %frame.has_page449 = icmp ne ptr %frame.page448, null
-  br i1 %frame.has_page449, label %frame.forced451, label %frame.force450
+  %call478 = call ptr @_ZN7EmitterB6scalycB4v0_221get_parfor_runtime_fnE6StringP14LLVMOpaqueTypeB6scalycB4v0_2(ptr %0, ptr %arg.tmp, ptr %call477)
+  %frame.page479 = load ptr, ptr %frame, align 8
+  %frame.has_page480 = icmp ne ptr %frame.page479, null
+  br i1 %frame.has_page480, label %frame.forced482, label %frame.force481
 
-frame.force450:                                   ; preds = %frame.forced433
-  %forced_page452 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced451
+frame.force481:                                   ; preds = %frame.forced463
+  %forced_page483 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced482
 
-frame.forced451:                                  ; preds = %frame.force450, %frame.forced433
-  %forced_page453 = phi ptr [ %frame.page448, %frame.forced433 ], [ %forced_page452, %frame.force450 ]
-  %struct.region454 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page453, i64 ptrtoint (ptr getelementptr (%_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2EC1Em(ptr %struct.region454, i64 5)
-  store ptr %struct.region454, ptr %k_args, align 1
-  %k_args455 = load ptr, ptr %k_args, align 8
-  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args455, i64 0, ptr %source362)
-  %k_args456 = load ptr, ptr %k_args, align 8
-  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args456, i64 1, ptr %wgsl365)
-  %k_args457 = load ptr, ptr %k_args, align 8
-  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args457, i64 2, ptr %site368)
-  %k_args458 = load ptr, ptr %k_args, align 8
-  %load.struct459 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder460 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct459, 12
-  %call461 = call ptr @LLVMBuildLoad2(ptr %builder460, ptr %call164, ptr %kept_left359, ptr @.str.6800)
-  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args458, i64 3, ptr %call461)
-  %k_args462 = load ptr, ptr %k_args, align 8
-  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args462, i64 4, ptr %call426)
-  %load.struct463 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder464 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct463, 12
-  %k_args465 = load ptr, ptr %k_args, align 8
-  %load.struct466 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %k_args465, align 8
-  %data467 = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct466, 1
-  %call468 = call ptr @LLVMBuildCall2(ptr %builder464, ptr %call446, ptr %call447, ptr %data467, i32 5, ptr @.scaly.empty.cstr)
-  %load.struct469 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
-  %builder470 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct469, 12
-  %call471 = call ptr @LLVMBuildBr(ptr %builder470, ptr %call348)
-  br label %if.end404
+frame.forced482:                                  ; preds = %frame.force481, %frame.forced463
+  %forced_page484 = phi ptr [ %frame.page479, %frame.forced463 ], [ %forced_page483, %frame.force481 ]
+  %struct.region485 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page484, i64 ptrtoint (ptr getelementptr (%_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2EC1Em(ptr %struct.region485, i64 5)
+  store ptr %struct.region485, ptr %k_args, align 1
+  %k_args486 = load ptr, ptr %k_args, align 8
+  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args486, i64 0, ptr %source392)
+  %k_args487 = load ptr, ptr %k_args, align 8
+  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args487, i64 1, ptr %wgsl395)
+  %k_args488 = load ptr, ptr %k_args, align 8
+  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args488, i64 2, ptr %site398)
+  %k_args489 = load ptr, ptr %k_args, align 8
+  %load.struct490 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder491 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct490, 12
+  %call492 = call ptr @LLVMBuildLoad2(ptr %builder491, ptr %call164, ptr %kept_left389, ptr @.str.6800)
+  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args489, i64 3, ptr %call492)
+  %k_args493 = load ptr, ptr %k_args, align 8
+  call void @_ZN6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E3putEmP15LLVMOpaqueValueB6scalycB4v0_2(ptr %k_args493, i64 4, ptr %call456)
+  %load.struct494 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder495 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct494, 12
+  %k_args496 = load ptr, ptr %k_args, align 8
+  %load.struct497 = load %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E, ptr %k_args496, align 8
+  %data498 = extractvalue %_Z6VectorIP15LLVMOpaqueValueB6scalycB4v0_2E %load.struct497, 1
+  %call499 = call ptr @LLVMBuildCall2(ptr %builder495, ptr %call477, ptr %call478, ptr %data498, i32 5, ptr @.scaly.empty.cstr)
+  %load.struct500 = load %_Z7EmitterB6scalycB4v0_2, ptr %0, align 8
+  %builder501 = extractvalue %_Z7EmitterB6scalycB4v0_2 %load.struct500, 12
+  %call502 = call ptr @LLVMBuildBr(ptr %builder501, ptr %call379)
+  br label %if.end434
 }
 
 define linkonce_odr i1 @_ZN7EmitterB6scalycB4v0_216gpu_store_scalarEP15LLVMOpaqueValueB6scalycB4v0_2iP14LLVMOpaqueTypeB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2m(ptr %0, ptr %1, i64 %2, ptr %3, ptr %4, i64 %5) {

@@ -18558,7 +18558,7 @@ LLVMOpaqueValue* Emitter_choose_deref_subject(Emitter&, PlannedChoose&) asm("_ZN
 LLVMOpaqueValue* Emitter_emit_choose(Emitter&, PlannedChoose&) asm("_ZN7EmitterB6scalycB4v0_211emit_chooseE13PlannedChooseB6scalycB4v0_2");
 bool Emitter_block_dominates(Emitter&, LLVMOpaqueBasicBlock*, LLVMOpaqueBasicBlock*) asm("_ZN7EmitterB6scalycB4v0_215block_dominatesEP20LLVMOpaqueBasicBlockB6scalycB4v0_2P20LLVMOpaqueBasicBlockB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_for(Emitter&, PlannedFor&) asm("_ZN7EmitterB6scalycB4v0_28emit_forE10PlannedForB6scalycB4v0_2");
-bool Emitter_target_has_metal(Emitter&) asm("_ZN7EmitterB6scalycB4v0_216target_has_metalEv");
+int64_t Emitter_gpu_host(Emitter&) asm("_ZN7EmitterB6scalycB4v0_28gpu_hostEv");
 String Emitter_gpu_site_text(scaly_frame*, Emitter&, PlannedFor&) asm("_ZN7EmitterB6scalycB4v0_213gpu_site_textEPN4scaly6memory4PageE10PlannedForB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_gpu_offer(Emitter&, Emitter_GpuOffer&, LLVMOpaqueValue*, LLVMOpaqueValue*, LLVMOpaqueValue*) asm("_ZN7EmitterB6scalycB4v0_214emit_gpu_offerEN7Emitter8GpuOfferB6scalycB4v0_2EP15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2P15LLVMOpaqueValueB6scalycB4v0_2");
 LLVMOpaqueValue* Emitter_emit_gpu_for(Emitter&, PlannedFor&) asm("_ZN7EmitterB6scalycB4v0_212emit_gpu_forE10PlannedForB6scalycB4v0_2");
@@ -154318,7 +154318,8 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_gpu_for(Emitter& scaly_self,
     {
         return Emitter_emit_parallel_for(*(this_), for_expr);
     }
-    if ((((for_expr).expr->length != 1ULL) ? true : ((Emitter_target_has_metal(*(this_))) == (false))))
+    int64_t host = Emitter_gpu_host(*(this_));
+    if ((((for_expr).expr->length != 1ULL) ? true : (host == 0LL)))
     {
         return Emitter_emit_parallel_for(*(this_), for_expr);
     }
@@ -154399,18 +154400,31 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_gpu_for(Emitter& scaly_self,
     {
         count = LLVMBuildSExt(this_->builder, count, i64_ty, ((const char*)"gpu.count"));
     }
-    Emitter_GpuOffer* offer = ({ Emitter_GpuOffer* scaly_t6 = (Emitter_GpuOffer*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter_GpuOffer), alignof(Emitter_GpuOffer)); *scaly_t6 = Emitter_GpuOffer{}; Emitter_GpuOffer_init((*scaly_t6)); scaly_t6; });
-    ((*offer)).active = true;
-    ((*offer)).source = LLVMBuildGlobalStringPtr(this_->builder, String_to_c_string(&scaly_local.f, source), ((const char*)".gpu.kernel"));
-    ((*offer)).wgsl = LLVMConstNull(LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL));
+    String* wgsl_source = ({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init3((*scaly_t6)); scaly_t6; });
     if (GpuKernel_portable((*gk)))
     {
         GpuMsl* wgsl_printer = ({ GpuMsl* scaly_t7 = (GpuMsl*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(GpuMsl), alignof(GpuMsl)); *scaly_t7 = GpuMsl{}; GpuMsl_init((*scaly_t7)); scaly_t7; });
-        String wgsl_source = GpuMsl_kernel_source_wgsl(&scaly_local.f, (*wgsl_printer), (&((*gk))), for_expr);
+        String printed = GpuMsl_kernel_source_wgsl(&scaly_local.f, (*wgsl_printer), (&((*gk))), for_expr);
         if (((((*wgsl_printer)).m_refused) == (false)))
         {
-            ((*offer)).wgsl = LLVMBuildGlobalStringPtr(this_->builder, String_to_c_string(&scaly_local.f, wgsl_source), ((const char*)".gpu.wgsl"));
+            (*wgsl_source) = printed;
         }
+    }
+    if (((host == 2LL) ? (String_get_length((*wgsl_source)) == 0ULL) : false))
+    {
+        return Emitter_emit_parallel_for(*(this_), for_expr);
+    }
+    Emitter_GpuOffer* offer = ({ Emitter_GpuOffer* scaly_t8 = (Emitter_GpuOffer*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter_GpuOffer), alignof(Emitter_GpuOffer)); *scaly_t8 = Emitter_GpuOffer{}; Emitter_GpuOffer_init((*scaly_t8)); scaly_t8; });
+    ((*offer)).active = true;
+    ((*offer)).source = LLVMConstNull(LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL));
+    if ((host == 1LL))
+    {
+        ((*offer)).source = LLVMBuildGlobalStringPtr(this_->builder, String_to_c_string(&scaly_local.f, source), ((const char*)".gpu.kernel"));
+    }
+    ((*offer)).wgsl = LLVMConstNull(LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL));
+    if ((String_get_length((*wgsl_source)) > 0ULL))
+    {
+        ((*offer)).wgsl = LLVMBuildGlobalStringPtr(this_->builder, String_to_c_string(&scaly_local.f, (*wgsl_source)), ((const char*)".gpu.wgsl"));
     }
     String site = Emitter_gpu_site_text(&scaly_local.f, *(this_), for_expr);
     ((*offer)).site = LLVMBuildGlobalStringPtr(this_->builder, String_to_c_string(&scaly_local.f, site), ((const char*)".gpu.site"));
@@ -154489,7 +154503,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_gpu_for(Emitter& scaly_self,
         LLVMOpaqueValue* now = LLVMBuildCall2(this_->builder, now_ty, now_fn, ((LLVMOpaqueValue**)(nullptr)), (uint32_t)0ULL, ((const char*)"gpu.kept.now"));
         LLVMOpaqueValue* took = LLVMBuildSub(this_->builder, now, at, ((const char*)"gpu.kept.took"));
         LLVMOpaqueType* ptr_ty = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
-        Vector<LLVMOpaqueType*>* k_tys = ({ Vector<LLVMOpaqueType*>* scaly_t8 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t8 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t8), 5ULL); scaly_t8; });
+        Vector<LLVMOpaqueType*>* k_tys = ({ Vector<LLVMOpaqueType*>* scaly_t9 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t9 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t9), 5ULL); scaly_t9; });
         Vector_put62<LLVMOpaqueType*>((*k_tys), 0ULL, ptr_ty);
         Vector_put62<LLVMOpaqueType*>((*k_tys), 1ULL, ptr_ty);
         Vector_put62<LLVMOpaqueType*>((*k_tys), 2ULL, ptr_ty);
@@ -154497,7 +154511,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_gpu_for(Emitter& scaly_self,
         Vector_put62<LLVMOpaqueType*>((*k_tys), 4ULL, i64_ty);
         LLVMOpaqueType* kept_ty = LLVMFunctionType(LLVMVoidTypeInContext(this_->context), ((*k_tys)).data, (uint32_t)5ULL, (int32_t)0ULL);
         LLVMOpaqueValue* kept_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\016scaly_gpu_kept"}), kept_ty);
-        Vector<LLVMOpaqueValue*>* k_args = ({ Vector<LLVMOpaqueValue*>* scaly_t9 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t9 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t9), 5ULL); scaly_t9; });
+        Vector<LLVMOpaqueValue*>* k_args = ({ Vector<LLVMOpaqueValue*>* scaly_t10 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t10 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t10), 5ULL); scaly_t10; });
         Vector_put62<LLVMOpaqueValue*>((*k_args), 0ULL, source_text);
         Vector_put62<LLVMOpaqueValue*>((*k_args), 1ULL, wgsl_text);
         Vector_put62<LLVMOpaqueValue*>((*k_args), 2ULL, site_text);
@@ -154626,7 +154640,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_gpu_offer(Emitter& scaly_sel
         Vector<LLVMOpaqueType*>* f_tys = ({ Vector<LLVMOpaqueType*>* scaly_t2 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t2 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t2), 1ULL); scaly_t2; });
         Vector_put62<LLVMOpaqueType*>((*f_tys), 0ULL, ptr_ty);
         free_ty = LLVMFunctionType(LLVMVoidTypeInContext(this_->context), ((*f_tys)).data, (uint32_t)1ULL, (int32_t)0ULL);
-        LLVMOpaqueValue* malloc_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\006malloc"}), malloc_ty);
+        LLVMOpaqueValue* malloc_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\017scaly_gpu_parts"}), malloc_ty);
         LLVMOpaqueValue* row = LLVMBuildMul(this_->builder, (offer).count, LLVMConstInt(i64_ty, 8ULL, (int32_t)0ULL), ((const char*)"gpu.parts.row"));
         LLVMOpaqueValue* all = LLVMBuildMul(this_->builder, row, LLVMConstInt(i64_ty, n_red, (int32_t)0ULL), ((const char*)"gpu.parts.bytes"));
         Vector<LLVMOpaqueValue*>* m_args = ({ Vector<LLVMOpaqueValue*>* scaly_t3 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t3 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t3), 1ULL); scaly_t3; });
@@ -154713,7 +154727,7 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_gpu_offer(Emitter& scaly_sel
     LLVMBuildStore(this_->builder, LLVMBuildAdd(this_->builder, fi, LLVMConstInt(i64_ty, 1ULL, (int32_t)0ULL), ((const char*)"gpu.fold.next")), at_slot);
     LLVMBuildBr(this_->builder, fold_head);
     LLVMPositionBuilderAtEnd(this_->builder, fold_done);
-    LLVMOpaqueValue* free_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\004free"}), free_ty);
+    LLVMOpaqueValue* free_fn = Emitter_get_parfor_runtime_fn(*(this_), scaly_lvalue(String{(uint8_t*)"\024scaly_gpu_parts_free"}), free_ty);
     Vector<LLVMOpaqueValue*>* fr_args = ({ Vector<LLVMOpaqueValue*>* scaly_t9 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t9 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t9), 1ULL); scaly_t9; });
     Vector_put62<LLVMOpaqueValue*>((*fr_args), 0ULL, parts);
     LLVMBuildCall2(this_->builder, free_ty, free_fn, ((*fr_args)).data, (uint32_t)1ULL, ((const char*)""));
@@ -154762,16 +154776,24 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_gpu_fold(Emitter& scaly_self, int
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
-__attribute__((weak)) bool Emitter_target_has_metal(Emitter& scaly_self)
+__attribute__((weak)) int64_t Emitter_gpu_host(Emitter& scaly_self)
 {
     Emitter* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (this_->target_is_wasm)
+    {
+        return 2LL;
+    }
     String* name = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init2((*scaly_t1), (this_->config).target_triple); scaly_t1; });
     if ((String_get_length((*name)) == 0ULL))
     {
         (*name) = Emitter_host_triple(&scaly_local.f, *(this_));
     }
-    return String_contains((*name), scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init2((*scaly_t3), scaly_lvalue(String{(uint8_t*)"\007-apple-"})); scaly_t3; }))));
+    if (String_contains((*name), scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{(uint8_t*)"\007-apple-"})); scaly_t2; })))))
+    {
+        return 1LL;
+    }
+    return 0LL;
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Emitter.scaly
@@ -179274,7 +179296,7 @@ __attribute__((weak)) void cli_print_usage()
     Console_println(((const char*)"  --target <t>   Cross-emit object for triple <t> (use with -c)"));
     Console_println(((const char*)"  -mcpu=<cpu>    Generate code for <cpu>, or native for this machine (default generic)"));
     Console_println(((const char*)"  --portable-simd  SIMD operations in their target-neutral form (the seed)"));
-    Console_println(((const char*)"  --gpu          Let the program run a parallel for loop on the graphics card where that pays (macOS; not with --jit or --run; SCALY_GPU=on|off decides for it)"));
+    Console_println(((const char*)"  --gpu          Let the program run a parallel for loop on the graphics card where that pays (macOS, and wasm32 in a page that hands it its card; not with --jit or --run; SCALY_GPU=on|off decides for it)"));
 }
 
 // packages/scalyc/0.2.1/scalyc/cli.scaly
