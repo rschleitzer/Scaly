@@ -1663,6 +1663,22 @@ define cli
             }
         }
 
+        ; The compiler built for WebAssembly (the page's) starts no process: a
+        ; program for a wasm target is linked IN THIS PROCESS by lld's wasm
+        ; linker (wasm_link#), with the line the wasi-sdk's clang would hand it.
+        if wasm and scalyc_has_jit() = 0
+        {
+            let wasm_rc cli.wasm_link(&opts, tmp_obj, &package_objects)
+            if kept = false
+                unlink(tmp_obj.c_data())
+            if wasm_rc <> 0
+            {
+                Console.println "Error: Linker failed"
+                return 9
+            }
+            return 0
+        }
+
         ; ★A COFF program is linked by the Build Tools' link.exe, called
         ; directly (msvc_link_head above), unless a compiler is named or the
         ; link is the instrumented one, whose profile runtime only clang knows.
@@ -1983,6 +1999,86 @@ define cli
         }
 
         0
+    }
+
+    ; A program for a wasm target, linked in this process by lld's wasm linker
+    ; -- the compiler built for WebAssembly, which starts no process, in a
+    ; page. The line is the one the wasi-sdk's clang hands wasm-ld for the
+    ; link the tool makes natively (the flags of run# above): the start code,
+    ; the program's object, the packages' (dependents first), the C library
+    ; and the compiler's builtins. Those four come from
+    ; $SCALY_HOME/wasi/<target>/ (crt1-command.o, libc.a, libsetjmp.a,
+    ; libwasi-emulated-mman.a, libclang_rt.builtins.a, and libpthread.a for
+    ; the threads profile), where the page puts them (web/repl/build.sh).
+    ; wasm-ld's exit code.
+    procedure wasm_link(opts: ref[Options], object: String, package_objects: ref[Array[String]]) returns i32
+    {
+        var triple String(opts.target_triple)
+        if triple.get_length() = 0
+            triple := String("wasm32-wasip1")
+        let threads triple.ends_with("-threads")
+        var home String("/scaly")
+        let given getenv("SCALY_HOME")
+        if given <> null
+            home := String(given)
+        let libs "`home`/wasi/`triple`"
+        var args Array[String]()
+        args.add(String("wasm-ld"))
+        args.add(String("-m"))
+        args.add(String("wasm32"))
+        args.add("-L`libs`")
+        args.add("`libs`/crt1-command.o")
+        args.add(String(object))
+        var ei: size_t 0
+        while ei < opts.extra_objects.length
+        {
+            args.add(String(opts.extra_objects.at ei))
+            ei := ei + 1
+        }
+        var oi package_objects.length
+        while oi > 0
+        {
+            oi := oi - 1
+            args.add(String(package_objects.at oi))
+        }
+        var li: size_t 0
+        while li < opts.library_paths.length
+        {
+            args.add("-L`opts.library_paths.at li`")
+            li := li + 1
+        }
+        var bi: size_t 0
+        while bi < opts.libraries.length
+        {
+            args.add("-l`opts.libraries.at bi`")
+            bi := bi + 1
+        }
+        args.add(String("-lsetjmp"))
+        args.add(String("-lwasi-emulated-mman"))
+        args.add(String("--stack-first"))
+        args.add(String("-z"))
+        args.add(String("stack-size=8388608"))
+        if threads
+        {
+            args.add(String("--import-memory"))
+            args.add(String("--export-memory"))
+            args.add(String("--max-memory=4294967296"))
+            args.add(String("--wrap=close"))
+            args.add(String("--shared-memory"))
+            args.add(String("-lpthread"))
+        }
+        args.add(String("-lc"))
+        args.add("`libs`/libclang_rt.builtins.a")
+        args.add(String("-o"))
+        args.add(String(opts.output_file))
+        var argv Vector[pointer[const_char]](args.length)
+        var a: size_t 0
+        while a < args.length
+        {
+            argv.put(a, args.at(a).to_c_string())
+            a := a + 1
+        }
+        scalyc_wasm_link(args.length as i32, argv.data)
     }
 
     ; Extract program name from file path

@@ -167,6 +167,14 @@ define tool
 
     function triple_arch(triple: String) returns String
     {
+        ; the two wasm profiles take different objects (eio_wasm.c's
+        ; threads, the atomics): their ready-made ones lie apart
+        if triple.starts_with("wasm32")
+        {
+            if triple.ends_with("-threads")
+                return String("wasm32-threads")
+            return String("wasm32")
+        }
         if triple.starts_with("arm64") or triple.starts_with("aarch64")
             return String("arm64")
         if triple.starts_with("x86_64") or triple.starts_with("amd64")
@@ -702,7 +710,9 @@ define tool
         {
             o.opt_level := 2
             o.library := true
-            o.code_parts := true
+            ; in parts only where a part's worker can be started: the
+            ; compiler built for WebAssembly starts no process
+            o.code_parts := scalyc_has_jit() <> 0
         }
         var root_for_deps String(root)
         var home tool.interface_wanted(name, version, dir, &files, root_for_deps, selection)
