@@ -18328,6 +18328,23 @@ define Planner
                                     "",
                                     null
                                 )
+                                ; A union declared in a GENERIC record is the
+                                ; instance's (`Slot` in `Shell[T]` is
+                                ; `Slot[T]`, outer_arguments#), as a record
+                                ; there is. Built from its bare name it was the
+                                ; TEMPLATE's union, a payload one pointer wide:
+                                ; `Slot.Full(item)` stored a wider T past it.
+                                if outer_generics_any
+                                {
+                                    var u_name Vector[String]^this(1)
+                                    u_name.put(0, String^this(prefix))
+                                    let with_outer this.outer_arguments(Type(result.loc, u_name, null, variant_life))
+                                    if with_outer <> null
+                                    {
+                                        var filled: Type *with_outer
+                                        ctor_union_type := this.plan_type(filled)
+                                    }
+                                }
                                 ctor_variant_name := suffix
                                 ctor_variant_tag := tag as size_t
                             }

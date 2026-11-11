@@ -1,0 +1,47 @@
+; A union declared inside a GENERIC record, constructed by its variant
+; (`Slot.Full(item)` in a routine of `Shell[T]`). The construction took the
+; union by its bare name -- the TEMPLATE's, whose payload is one pointer wide
+; -- while the routine's result was the instance's: a T wider than a pointer
+; was stored past the union on the frame (SIGSEGV, rc 139), and on a target
+; of 32-bit pointers an `int` was already too wide (the first run of this
+; tree's wasm suite on this machine found it, in `nested_generic_record`).
+; The union is the instance's now (Planner.outer_arguments#, as a record
+; declared there is).
+; Expected: PASS
+
+define Wide(a: int, b: int, c: int)
+
+define Shell[T](item: T)
+{
+    define Slot union (Full: T, Empty)
+
+    function slot(this) returns Slot
+        Slot.Full(item)
+
+    function none(this) returns Slot
+        Slot.Empty()
+
+    function full(this) returns T
+        choose this.slot()
+            when f: Slot.Full
+                f
+            else
+                item
+
+    function empty(this) returns bool
+        choose this.none()
+            when f: Slot.Full
+                false
+            else
+                true
+}
+
+let w Shell[Wide](Wide(1, 2, 3))
+let got w.full()
+let n Shell[i32](7)
+let h Shell[u8](200)
+let s Shell[String](String("abc"))
+if got.a = 1 and got.b = 2 and got.c = 3 and n.full() = 7 and (h.full() as int) = 200 and s.full().length() = 3 and w.empty() and n.empty()
+    print("PASS")
+else
+    print("FAIL")
