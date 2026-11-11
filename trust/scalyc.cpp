@@ -19021,6 +19021,7 @@ template <class T> static T* Slice_get(Slice<T>&, uint64_t);
 template <class T> static T* Slice_at(Slice<T>&, uint64_t);
 template <class T> static void Slice_put(Slice<T>&, uint64_t, T&);
 template <class T> static bool Slice_is_empty(Slice<T>&);
+template <class T> static Slice<uint8_t> Slice_as_bytes(Slice<T>&);
 template <class T> static Slice<T> Slice_subslice(Slice<T>&, uint64_t, uint64_t);
 template <class T> static Slice<T> Slice_slice_from(scaly_frame*, Slice<T>&, uint64_t);
 template <class T> static Slice<T> Slice_slice_to(scaly_frame*, Slice<T>&, uint64_t);
@@ -19032,6 +19033,7 @@ template <class T> static void SliceIterator_init(SliceIterator<T>&, Slice<T>&);
 template <class T> static SliceIterator<T> Slice_get_iterator(scaly_frame*, Slice<T>&);
 template <class T> static void Slice_init(Slice<T>&);
 template <class T> static Slice<T> Vector_as_slice(Vector<T>&);
+template <class T> static Slice<uint8_t> Vector_as_bytes(Vector<T>&);
 template <class T> static void Vector_init(Vector<T>&);
 template <class T> static void Vector_init3(Vector<T>&, uint64_t);
 template <class T> static void Vector_init5(Vector<T>&, Vector<T>&);
@@ -19287,6 +19289,13 @@ template <class T> static bool Slice_is_empty(Slice<T>& scaly_self)
 }
 
 // packages/scaly/0.2.1/scaly/containers/Slice.scaly
+template <class T> static Slice<uint8_t> Slice_as_bytes(Slice<T>& scaly_self)
+{
+    Slice<T>* this_ = &scaly_self;
+    return Slice<uint8_t>{(this_->length * ((uint64_t)sizeof(T))), ((uint8_t*)(this_->data))};
+}
+
+// packages/scaly/0.2.1/scaly/containers/Slice.scaly
 template <class T> static Slice<T> Slice_subslice(Slice<T>& scaly_self, uint64_t start, uint64_t end)
 {
     Slice<T>* this_ = &scaly_self;
@@ -19399,6 +19408,13 @@ template <class T> static Slice<T> Vector_as_slice(Vector<T>& scaly_self)
 {
     Vector<T>* this_ = &scaly_self;
     return Slice<T>{this_->length, this_->data};
+}
+
+// packages/scaly/0.2.1/scaly/containers/Vector.scaly
+template <class T> static Slice<uint8_t> Vector_as_bytes(Vector<T>& scaly_self)
+{
+    Vector<T>* this_ = &scaly_self;
+    return Slice<uint8_t>{(this_->length * ((uint64_t)sizeof(T))), ((uint8_t*)(this_->data))};
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
@@ -120670,6 +120686,43 @@ __attribute__((weak)) bool GpuMsl_is_plain_count(PlannedOperand& op)
             }
             PlannedComponent* comp = ((PlannedComponent*)(c_ptr));
             return GpuMsl_is_plain_count(scaly_lvalue(Vector8<PlannedOperand>(scaly_lvalue(((*(comp->value)))), 0LL)));
+        }
+        else if (scaly_t1.tag == 4)
+        {
+            PlannedCall call = scaly_payload<PlannedCall>(scaly_t1);
+            if ((GpuKernel_has_members(op) ? true : (call).is_indirect))
+            {
+                return false;
+            }
+            if (((((call).is_operator) == (false)) ? (((call).is_intrinsic) == (false)) : false))
+            {
+                return false;
+            }
+            if (((((call).args) == (nullptr)) ? true : ((call).args->length != 2ULL)))
+            {
+                return false;
+            }
+            if ((((!(String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001*"})))) ? (!(String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001+"})))) : false) ? (!(String_equals((call).name, scaly_lvalue(String{(uint8_t*)"\001-"})))) : false))
+            {
+                return false;
+            }
+            PlannedOperand* a_ptr = Vector_get<PlannedOperand>(*((call).args), 0ULL);
+            PlannedOperand* b_ptr = Vector_get<PlannedOperand>(*((call).args), 1ULL);
+            if ((((a_ptr) == (nullptr)) ? true : ((b_ptr) == (nullptr))))
+            {
+                return false;
+            }
+            PlannedOperand* a = ((PlannedOperand*)(a_ptr));
+            PlannedOperand* b = ((PlannedOperand*)(b_ptr));
+            if (((GpuKernel_kind_is_integer(GpuKernel_scalar_kind(a->result_type))) == (false)))
+            {
+                return false;
+            }
+            if (((GpuKernel_kind_is_integer(GpuKernel_scalar_kind(b->result_type))) == (false)))
+            {
+                return false;
+            }
+            return (GpuMsl_is_plain_count(scaly_lvalue((*(a)))) ? GpuMsl_is_plain_count(scaly_lvalue((*(b)))) : false);
         }
         else
         {

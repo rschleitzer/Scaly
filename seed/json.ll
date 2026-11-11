@@ -271,6 +271,23 @@ entry:
   ret i1 %eq
 }
 
+define linkonce_odr void @_ZN5SliceI2u8E8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceI2u8E, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z5SliceI2u8E, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI2u8E %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5SliceI2u8E8subsliceEmm(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1, i64 %2, i64 %3) {
 entry:
   %tuple = alloca %_Z5SliceI2u8E, align 8
@@ -1973,6 +1990,11 @@ stub.entry:
   ret i1 false
 }
 
+define linkonce_odr void @_ZN5SliceI1TE8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1) {
+stub.entry:
+  ret void
+}
+
 define linkonce_odr void @_ZN5SliceI1TE8subsliceEmm(ptr noalias sret(%_Z5SliceI1TE) %0, ptr %1, i64 %2, i64 %3) {
 stub.entry:
   ret void
@@ -2375,6 +2397,23 @@ entry:
   %length = extractvalue %_Z5SliceIcE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
+}
+
+define linkonce_odr void @_ZN5SliceIcE8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceIcE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceIcE %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z5SliceIcE, ptr %1, align 8
+  %data = extractvalue %_Z5SliceIcE %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
 }
 
 define linkonce_odr void @_ZN5SliceIcE8subsliceEmm(ptr noalias sret(%_Z5SliceIcE) %0, ptr %1, i64 %2, i64 %3) {
@@ -4161,6 +4200,23 @@ entry:
   ret i1 %eq
 }
 
+define linkonce_odr void @_ZN5SliceI10JsonMemberB4jsonB4v0_2E8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceI10JsonMemberB4jsonB4v0_2E, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_2E %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z5SliceI10JsonMemberB4jsonB4v0_2E, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI10JsonMemberB4jsonB4v0_2E %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5SliceI10JsonMemberB4jsonB4v0_2E8subsliceEmm(ptr noalias sret(%_Z5SliceI10JsonMemberB4jsonB4v0_2E) %0, ptr %1, i64 %2, i64 %3) {
 entry:
   %tuple = alloca %_Z5SliceI10JsonMemberB4jsonB4v0_2E, align 8
@@ -4443,6 +4499,23 @@ entry:
   %length = extractvalue %_Z5SliceI9JsonValueB4jsonB4v0_2E %load.struct, 0
   %eq = icmp eq i64 %length, 0
   ret i1 %eq
+}
+
+define linkonce_odr void @_ZN5SliceI9JsonValueB4jsonB4v0_2E8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceI9JsonValueB4jsonB4v0_2E, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI9JsonValueB4jsonB4v0_2E %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z5SliceI9JsonValueB4jsonB4v0_2E, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI9JsonValueB4jsonB4v0_2E %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
 }
 
 define linkonce_odr void @_ZN5SliceI9JsonValueB4jsonB4v0_2E8subsliceEmm(ptr noalias sret(%_Z5SliceI9JsonValueB4jsonB4v0_2E) %0, ptr %1, i64 %2, i64 %3) {
@@ -5572,6 +5645,23 @@ entry:
   %tuple = alloca %_Z5SliceI2u8E, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
   store i64 %length, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI2u8E8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr noalias %1) {
+entry:
+  %load.struct = load %_Z6VectorI2u8E, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI2u8E %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z6VectorI2u8E, ptr %1, align 8
+  %data = extractvalue %_Z6VectorI2u8E %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
   store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
@@ -7061,6 +7151,23 @@ entry:
   store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI10JsonMemberB4jsonB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI10JsonMemberB4jsonB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI10JsonMemberB4jsonB4v0_2E8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr noalias %1) {
+entry:
+  %load.struct = load %_Z6VectorI10JsonMemberB4jsonB4v0_2E, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI10JsonMemberB4jsonB4v0_2E %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (%_Z10JsonMemberB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z6VectorI10JsonMemberB4jsonB4v0_2E, ptr %1, align 8
+  %data = extractvalue %_Z6VectorI10JsonMemberB4jsonB4v0_2E %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -8559,6 +8666,23 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_2E8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr noalias %1) {
+entry:
+  %load.struct = load %_Z6VectorI9JsonValueB4jsonB4v0_2E, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_2E %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (%_Z9JsonValueB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z6VectorI9JsonValueB4jsonB4v0_2E, ptr %1, align 8
+  %data = extractvalue %_Z6VectorI9JsonValueB4jsonB4v0_2E %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN6VectorI9JsonValueB4jsonB4v0_2EC1Ev(ptr noalias %0) {
 entry:
   %length = getelementptr inbounds nuw %_Z6VectorI9JsonValueB4jsonB4v0_2E, ptr %0, i32 0, i32 0
@@ -9640,6 +9764,23 @@ entry:
   ret i1 %eq
 }
 
+define linkonce_odr void @_ZN5SliceImE8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceImE, ptr %1, align 8
+  %length = extractvalue %_Z5SliceImE %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z5SliceImE, ptr %1, align 8
+  %data = extractvalue %_Z5SliceImE %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5SliceImE8subsliceEmm(ptr noalias sret(%_Z5SliceImE) %0, ptr %1, i64 %2, i64 %3) {
 entry:
   %tuple = alloca %_Z5SliceImE, align 8
@@ -9870,6 +10011,23 @@ entry:
   store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceImE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceImE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorImE8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr noalias %1) {
+entry:
+  %load.struct = load %_Z6VectorImE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorImE %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z6VectorImE, ptr %1, align 8
+  %data = extractvalue %_Z6VectorImE %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -12490,6 +12648,23 @@ entry:
   ret i1 %eq
 }
 
+define linkonce_odr void @_ZN5SliceI14JsonWriteFrameB4jsonB4v0_2E8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN5SliceI14JsonWriteFrameB4jsonB4v0_2E8subsliceEmm(ptr noalias sret(%_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E) %0, ptr %1, i64 %2, i64 %3) {
 entry:
   %tuple = alloca %_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E, align 8
@@ -12720,6 +12895,23 @@ entry:
   store ptr %data, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI14JsonWriteFrameB4jsonB4v0_2E, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorI14JsonWriteFrameB4jsonB4v0_2E8as_bytesEv(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr noalias %1) {
+entry:
+  %load.struct = load %_Z6VectorI14JsonWriteFrameB4jsonB4v0_2E, ptr %1, align 8
+  %length = extractvalue %_Z6VectorI14JsonWriteFrameB4jsonB4v0_2E %load.struct, 0
+  %mul = mul i64 %length, ptrtoint (ptr getelementptr (%_Z14JsonWriteFrameB4jsonB4v0_2, ptr null, i32 1) to i64)
+  %load.struct1 = load %_Z6VectorI14JsonWriteFrameB4jsonB4v0_2E, ptr %1, align 8
+  %data = extractvalue %_Z6VectorI14JsonWriteFrameB4jsonB4v0_2E %load.struct1, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %mul, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field2, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 

@@ -2685,6 +2685,8 @@ void* file_access_worker(void*) asm("_Z18file_access_workerPv");
 void* file_write_worker(void*) asm("_Z17file_write_workerPv");
 String File_read_to_string_offloaded(scaly_frame*, String&) asm("_ZN4File24read_to_string_offloadedEPN4scaly6memory4PageE6String");
 bool File_write_from_string_offloaded(String&, String&) asm("_ZN4File27write_from_string_offloadedE6String6String");
+bool File_write_offloaded(String&, uint8_t*, uint64_t) asm("_ZN4File15write_offloadedE6StringP2u8m");
+bool File_write_bytes(String&, Slice<uint8_t>&) asm("_ZN4File11write_bytesE6String5SliceI2u8E");
 void* dir_access_worker(void*) asm("_Z17dir_access_workerPv");
 void* dir_isdir_worker(void*) asm("_Z16dir_isdir_workerPv");
 void* dir_create_worker(void*) asm("_Z17dir_create_workerPv");
@@ -2949,6 +2951,7 @@ template <class T> static T* Slice_get(Slice<T>&, uint64_t);
 template <class T> static T* Slice_at(Slice<T>&, uint64_t);
 template <class T> static void Slice_put(Slice<T>&, uint64_t, T);
 template <class T> static bool Slice_is_empty(Slice<T>&);
+template <class T> static Slice<uint8_t> Slice_as_bytes(Slice<T>&);
 template <class T> static Slice<T> Slice_subslice(Slice<T>&, uint64_t, uint64_t);
 template <class T> static Slice<T> Slice_slice_from(scaly_frame*, Slice<T>&, uint64_t);
 template <class T> static Slice<T> Slice_slice_to(scaly_frame*, Slice<T>&, uint64_t);
@@ -2960,6 +2963,7 @@ template <class T> static void SliceIterator_init(SliceIterator<T>&, Slice<T>&);
 template <class T> static SliceIterator<T> Slice_get_iterator(scaly_frame*, Slice<T>&);
 template <class T> static void Slice_init(Slice<T>&);
 template <class T> static Slice<T> Vector_as_slice(Vector<T>&);
+template <class T> static Slice<uint8_t> Vector_as_bytes(Vector<T>&);
 template <class T> static void Vector_init(Vector<T>&);
 template <class T> static void Vector_init3(Vector<T>&, uint64_t);
 template <class T> static void Vector_init5(Vector<T>&, Vector<T>&);
@@ -5182,6 +5186,13 @@ template <class T> static bool Slice_is_empty(Slice<T>& scaly_self)
 }
 
 // packages/scaly/0.2.1/scaly/containers/Slice.scaly
+template <class T> static Slice<uint8_t> Slice_as_bytes(Slice<T>& scaly_self)
+{
+    Slice<T>* this_ = &scaly_self;
+    return Slice<uint8_t>{(this_->length * ((uint64_t)sizeof(T))), ((uint8_t*)(this_->data))};
+}
+
+// packages/scaly/0.2.1/scaly/containers/Slice.scaly
 template <class T> static Slice<T> Slice_subslice(Slice<T>& scaly_self, uint64_t start, uint64_t end)
 {
     Slice<T>* this_ = &scaly_self;
@@ -5294,6 +5305,13 @@ template <class T> static Slice<T> Vector_as_slice(Vector<T>& scaly_self)
 {
     Vector<T>* this_ = &scaly_self;
     return Slice<T>{this_->length, this_->data};
+}
+
+// packages/scaly/0.2.1/scaly/containers/Vector.scaly
+template <class T> static Slice<uint8_t> Vector_as_bytes(Vector<T>& scaly_self)
+{
+    Vector<T>* this_ = &scaly_self;
+    return Slice<uint8_t>{(this_->length * ((uint64_t)sizeof(T))), ((uint8_t*)(this_->data))};
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
@@ -11272,12 +11290,34 @@ __attribute__((weak)) bool File_write_from_string(String& path, String& contents
 }
 
 // packages/scaly/0.2.1/scaly/os/File.scaly
+__attribute__((weak)) bool File_write_bytes(String& path, Slice<uint8_t>& bytes)
+{
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (Io_in_task())
+    {
+        return File_write_offloaded(path, (bytes).data, (bytes).length);
+    }
+    OpaqueFile* file = fopen(String_to_c_string(&scaly_local.f, path), ((const char*)"wb"));
+    if (((file) == (nullptr)))
+    {
+        return false;
+    }
+    fwrite((void*)((bytes).data), (size_t)1ULL, ((size_t)((bytes).length)), file);
+    fclose(file);
+    return true;
+}
+
+// packages/scaly/0.2.1/scaly/os/File.scaly
 __attribute__((weak)) bool File_write_from_string_offloaded(String& path, String& contents)
+{
+    return File_write_offloaded(path, String_get_buffer(contents), String_get_length(contents));
+}
+
+// packages/scaly/0.2.1/scaly/os/File.scaly
+__attribute__((weak)) bool File_write_offloaded(String& path, uint8_t* buf, uint64_t len)
 {
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
     const char* pc = String_to_c_string(&scaly_local.f, path);
-    uint8_t* buf = String_get_buffer(contents);
-    uint64_t len = String_get_length(contents);
     Page* p = Page_allocate_page_traced(((const char*)"File.write_cell"));
     uint64_t* cell = ((uint64_t*)(Page_allocate(*(p), 24ULL, 8ULL)));
     (*(cell)) = ((uint64_t)(pc));
