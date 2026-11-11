@@ -95,8 +95,9 @@ export class GpuHost {
   imports(memory) {
     return {
       forced: () => this.mode === 'on' && !this.lost ? 1 : 0,
-      run: request => this.run(memory(), request),
-      kept: (wgsl, where, rounds, ns) => this.kept(memory(), wgsl, where, rounds, ns),
+      // addresses unsigned: past 2 GB a wasm i32 arrives negative
+      run: request => this.run(memory(), request >>> 0),
+      kept: (wgsl, where, rounds, ns) => this.kept(memory(), wgsl >>> 0, where >>> 0, rounds, ns),
     };
   }
 
@@ -252,7 +253,7 @@ function text_at(memory, at) {
   const mem = new Uint8Array(memory.buffer);
   let end = at;
   while (mem[end] !== 0) end++;
-  return decoder.decode(mem.subarray(at, end));
+  return decoder.decode(mem.slice(at, end));   // a copy: a shared memory is not decoded
 }
 
 // `count` 32-bit words at an address, as an array of its own (wherever the

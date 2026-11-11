@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Scaly programs on the page's cores</title>
+<pre id="out">running</pre>
+<script type="module">
+// Part 4 of tests/gpu/web/run.sh: the runs of cores.json, one after the
+// other, each a program built for wasm32-wasip1-threads in a worker of its
+// own (cores-worker.mjs) and its threads in the page's -- this page is their
+// coordinator (threads.mjs) -- on as many cores as the run says. One line
+// per run; the script decides what they must say.
+import { Threads } from './threads.mjs';
+
+const lines = [];
+const cpus = navigator.hardwareConcurrency || 1;
+try {
+  const runs = await (await fetch('cores.json')).json();
+  for (const run of runs) {
+    const workers = run.workers === 'all' ? cpus : run.workers;
+    const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
+    const thread_out = [];
+    let ended = null, resolve;
+    const done = new Promise(r => { resolve = r; });
+    const threads = await Threads.create({
+      out: b => thread_out.push(b), err: b => thread_out.push(b),
+      exit: status => { ended = String(status); resolve(null); },
+      env,
+    });
+    const worker = new Worker('cores-worker.mjs', { type: 'module' });
+    worker.onmessage = ({ data }) => {
+      if (threads.handle(data)) return;
+      if (data.type === 'exit') resolve(data);
+    };
+    worker.onerror = e => resolve({ status: 'the worker failed: ' + e.message });
+    worker.postMessage({ wasm: run.wasm, env, gpu: run.gpu ?? null });
+    const answer = (await done) ?? { status: ended, stdout: '' };
+    worker.terminate();
+    const started = threads.started;
+    threads.end();
+    lines.push('RUN ' + JSON.stringify({ ...run, workers, cpus, started, ...answer,
+                                         thread_out: thread_out.map(b => new TextDecoder().decode(b)).join('') }));
+  }
+  lines.push('cores: ' + runs.length);
+} catch (e) {
+  lines.push('FAILED page ' + JSON.stringify(String(e && e.stack || e)));
+}
+document.getElementById('out').textContent = lines.join('\n');
+await fetch('/result', { method: 'POST', body: lines.join('\n') });
+</script>

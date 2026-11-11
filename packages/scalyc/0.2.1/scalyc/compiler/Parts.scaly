@@ -326,7 +326,15 @@ define Parts
     procedure wasm_target_machine(mutable target: LLVMTargetRef, mutable triple: pointer[const_char], level: int, reloc: i32) returns LLVMTargetMachineRef
     {
         Parts.enable_wasm_sjlj()
-        let tm LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], "+exception-handling" as pointer[const_char], level as i32, reloc, 0)
+        ; wasm32-wasip1-threads: a shared memory, so real atomics and the
+        ; memory's bulk operations (which a shared memory's data needs), as
+        ; clang compiles the C library for it -- the linker takes a shared
+        ; memory only where every object was. Without them LLVM lowers an
+        ; atomic to a plain access and a thread-local to a global.
+        var features "+exception-handling"
+        if String(triple).ends_with("-threads")
+            features := "+exception-handling,+atomics,+bulk-memory"
+        let tm LLVMCreateTargetMachine(target, triple, "generic" as pointer[const_char], features.to_c_string(), level as i32, reloc, 0)
         if tm <> null
             scalyc_target_machine_wasm_eh(tm)
         tm

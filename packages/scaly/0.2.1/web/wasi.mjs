@@ -188,8 +188,11 @@ export class Wasi {
   // Uint8Array; without them the output is kept (stdout_text(), stderr_text()).
   // gpu: the graphics card of a program built with --gpu (a GpuHost of
   // gpu-host.mjs); without one every loop of it runs on the processor.
+  // threads: the threads of a program built for wasm32-wasip1-threads (a
+  // ThreadHost of threads.mjs): its memory and the start of a thread; a
+  // module that asks for them is then instantiated with imports(module).
   constructor({ args = ['program'], env = {}, cwd = '/', files = new MemoryFiles(), stdin = new Uint8Array(),
-                stdin_more = null, stdout = null, stderr = null, gpu = null } = {}) {
+                stdin_more = null, stdout = null, stderr = null, gpu = null, threads = null } = {}) {
     this.args = args.map(a => encoder.encode(a + '\0'));
     this.env = Object.entries({ ...env, PWD: cwd }).map(([k, v]) => encoder.encode(k + '=' + v + '\0'));
     this.files = files;
@@ -203,6 +206,21 @@ export class Wasi {
     this.fds = [{ kind: 'stdin' }, { kind: 'out', n: 0 }, { kind: 'out', n: 1 }, { kind: 'dir', path: '/' }];
     this.memory = null;
     this.gpu = gpu;
+    this.threads = threads;
+  }
+
+  // a thread of the program (thread.mjs): the instance's
+  // `wasi_thread_start`; null where it returned, the exit code where it ended
+  // the program
+  thread_start(instance, tid, arg) {
+    this.memory = instance.exports.memory;
+    try {
+      instance.exports.wasi_thread_start(tid, arg);
+      return null;
+    } catch (e) {
+      if (e instanceof WasiExit) return e.code;
+      throw e;
+    }
   }
 
   // run the instance's `_start`; the exit code
@@ -236,7 +254,9 @@ export class Wasi {
 
   view() { return new DataView(this.memory.buffer); }
   mem() { return new Uint8Array(this.memory.buffer); }
-  string_at(ptr, len) { return decoder.decode(this.mem().subarray(ptr, ptr + len)); }
+  // a copy first: a shared memory's bytes (a program with threads) are not
+  // taken by decode
+  string_at(ptr, len) { return decoder.decode(this.mem().slice(ptr, ptr + len)); }
 
   // a path handed to a call, against the directory descriptor it names
   resolve(dirfd, ptr, len) {
@@ -271,7 +291,7 @@ export class Wasi {
     v.setBigUint64(ptr + 32, BigInt(size), true);
   }
 
-  imports() {
+  imports(module = null) {
     const w = this;
     const wasi = {
       args_sizes_get: (count_ptr, size_ptr) => w.put_sizes(w.args, count_ptr, size_ptr),
@@ -531,10 +551,27 @@ export class Wasi {
         return ERRNO.SUCCESS;
       },
 
-      // every subscription is ready at once: a descriptor never blocks here,
-      // and a clock is taken as elapsed (a page cannot sleep)
+      // every subscription is ready at once: a descriptor never blocks here.
+      // Where every one is a clock (a sleep), the time passes first -- where
+      // this thread may wait (a worker, node); a page's main thread may not,
+      // and there a clock is taken as elapsed. A thread that cannot sleep
+      // spins: the fork-join ticker of a program with threads ended its quiet
+      // ticks at once and was started again and again, each time with a new
+      // stack, until the memory passed 2 GB.
       poll_oneoff(in_ptr, out_ptr, nsubscriptions, nevents_ptr) {
         const v = w.view();
+        let soonest = Infinity;
+        for (let i = 0; i < nsubscriptions; i++) {
+          const s = in_ptr + 48 * i;
+          if (v.getUint8(s + 8) !== 0) { soonest = 0; break; }
+          let ns = Number(v.getBigUint64(s + 24, true));
+          if (v.getUint16(s + 40, true) & 1) {        // an absolute time on that clock
+            const now = v.getUint32(s + 16, true) === 0 ? Date.now() * 1e6 : performance.now() * 1e6;
+            ns -= now;
+          }
+          soonest = Math.min(soonest, Math.max(0, ns));
+        }
+        if (soonest > 0 && soonest !== Infinity) sleep_ms(soonest / 1e6);
         w.stdin_ready(false);
         for (let i = 0; i < nsubscriptions; i++) {
           const s = in_ptr + 48 * i, e = out_ptr + 32 * i;
@@ -552,21 +589,42 @@ export class Wasi {
       proc_exit(code) { throw new WasiExit(code); },
       sched_yield: () => ERRNO.SUCCESS,
       random_get(ptr, len) {
-        crypto.getRandomValues(w.mem().subarray(ptr, ptr + len));
+        // into a copy first: a shared memory's bytes are not taken here either
+        const bytes = new Uint8Array(len);
+        crypto.getRandomValues(bytes);
+        w.mem().set(bytes, ptr);
         return ERRNO.SUCCESS;
       },
     };
     // a call the runtime does not make: answered "not supported", never a
     // missing import that would refuse the module
+    // Every number WASI hands over is unsigned, an address among them, and
+    // arrives here as wasm's i32: an address past 2 GB came as a negative
+    // number (a program with threads, whose memory grows with every stack).
+    // Read as unsigned, but the exit code, which is the program's own.
+    const unsigned = f => (...a) => f(...a.map(x => typeof x === 'number' ? x >>> 0 : x));
     return {
       wasi_snapshot_preview1: new Proxy(wasi, {
-        get: (target, name) => target[name] ?? (() => ERRNO.NOSYS),
+        get: (target, name) => {
+          const f = target[name];
+          if (!f) return () => ERRNO.NOSYS;
+          return name === 'proc_exit' ? f : unsigned(f);
+        },
       }),
       // what a program built with --gpu asks of its host (scaly/gpu/gpu_wasm.c);
       // any other program does not import the module
       scaly_gpu: w.gpu ? w.gpu.imports(() => w.memory) : NO_CARD,
+      ...(w.threads ? w.threads.imports(module) : {}),
     };
   }
+}
+
+// Sleep where this thread may wait (a worker, node's threads): Atomics.wait
+// on a word nobody wakes. A page's main thread may not, and returns at once.
+const nap = typeof SharedArrayBuffer === 'undefined' ? null : new Int32Array(new SharedArrayBuffer(4));
+function sleep_ms(ms) {
+  if (!nap) return;
+  try { Atomics.wait(nap, 0, 0, ms); } catch { }
 }
 
 // The host of a kernel where there is no card: every loop stays on the

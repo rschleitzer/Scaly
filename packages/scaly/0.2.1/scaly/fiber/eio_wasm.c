@@ -18,6 +18,17 @@
  *
  * Every function of eio.c is here, so whatever the standard library names
  * links; shim rules (a)-(c) are eio.c's.
+ *
+ * THE OTHER PROFILE: wasm32-wasip1-threads (wasi-threads: a shared memory, a
+ * thread a new instance of the module in a worker of the host). Compiled for
+ * it -- clang defines __wasm_atomics__ there -- this file answers three of
+ * the questions differently, in the section `threads` at its end: the CPUs
+ * are the host's (SCALY_CPUS, which the host sets; SCALY_WORKERS caps them as
+ * everywhere), a thread starts (wasi-libc's pthreads), and a pipe is one in
+ * this program's memory -- WASI has none, and the task pool's workers wait on
+ * one. Its close goes through __wrap_close (the link wraps `close` for this
+ * target). Everything else is the one-thread profile's: a thread does no
+ * file I/O, and a parallel loop's body performs none.
  */
 #include <dirent.h>
 #include <errno.h>
@@ -94,8 +105,18 @@ static int scaly_wasm_would_block(int fd, short events)
     return poll(&p, 1, -1) >= 0 || errno == EINTR;
 }
 
+#ifdef __wasm_atomics__
+static int scaly_wasm_is_pipe(int fd);
+static long long scaly_wasm_pipe_read(int fd, void* buf, unsigned long long count);
+static long long scaly_wasm_pipe_write(int fd, const void* buf, unsigned long long count);
+#endif
+
 long long scaly_eio_read(int fd, void* buf, unsigned long long count)
 {
+#ifdef __wasm_atomics__
+    if (scaly_wasm_is_pipe(fd))
+        return scaly_wasm_pipe_read(fd, buf, count);
+#endif
     long long r;
     do
         r = read(fd, buf, (size_t)count);
@@ -111,6 +132,10 @@ int scaly_eio_errno(void)
 
 long long scaly_eio_write(int fd, const void* buf, unsigned long long count)
 {
+#ifdef __wasm_atomics__
+    if (scaly_wasm_is_pipe(fd))
+        return scaly_wasm_pipe_write(fd, buf, count);
+#endif
     long long r;
     do
         r = write(fd, buf, (size_t)count);
@@ -182,8 +207,11 @@ int scaly_guard_install(int (*classify)(void*)) { (void)classify; return -1; }
 /* ---- the processor and the clocks ------------------------------------------ */
 
 /* One CPU: the profile has no threads, so every parallel `for` runs inline
- * and no task pool starts a worker. SCALY_WORKERS is not asked. */
+ * and no task pool starts a worker. SCALY_WORKERS is not asked. (With
+ * threads: the section `threads`.) */
+#ifndef __wasm_atomics__
 int scaly_eio_ncpu(void) { return 1; }
+#endif
 
 void scaly_eio_sleep_us(unsigned int us)
 {
@@ -290,12 +318,15 @@ unsigned long long scaly_macos_version(char* buf, unsigned long long cap)
 }
 
 /* no threads in this profile: a spawn fails as pthread_create does where it
- * cannot start one, and the caller reports it (Thread.spawn's trap) */
+ * cannot start one, and the caller reports it (Thread.spawn's trap). (With
+ * threads: the section `threads`.) */
+#ifndef __wasm_atomics__
 int scaly_thread_spawn_sized(unsigned long long* thread, void* start, void* arg, unsigned long long stack_size)
 {
     (void)thread; (void)start; (void)arg; (void)stack_size;
     return -1;
 }
+#endif
 
 /* the out-of-memory fault injection, as eio.c */
 static long long scaly_alloc_fail_left = -1;
@@ -409,3 +440,188 @@ const char* scaly_argument(unsigned long long index)
 {
     return index < scaly_argument_count() ? scaly_argv_[index] : 0;
 }
+
+/* ---- threads (wasm32-wasip1-threads) --------------------------------------- */
+#ifdef __wasm_atomics__
+#include <pthread.h>
+
+/* The CPUs the host gives this program: SCALY_CPUS, which a host that runs
+ * threads sets (a page from navigator.hardwareConcurrency, node from its
+ * os.availableParallelism) -- WASI has no question for it. SCALY_WORKERS caps
+ * it, as eio.c's does. Without either: one, and every loop runs inline. */
+int scaly_eio_ncpu(void)
+{
+    const char* names[2] = { "SCALY_WORKERS", "SCALY_CPUS" };
+    for (int i = 0; i < 2; i++) {
+        const char* w = getenv(names[i]);
+        if (w != NULL && *w != '\0') {
+            long k = strtol(w, NULL, 10);
+            if (k >= 1)
+                return (int)k;
+        }
+    }
+    return 1;
+}
+
+/* A thread is wasi-libc's pthread: the host starts it as a new instance of
+ * this module over the same memory (wasi.thread-spawn). Its stack is taken
+ * from the heap -- 8 MB unless the caller asks for a size, the main thread's
+ * stack (the link's stack-size). Rule (a). */
+int scaly_thread_spawn_sized(unsigned long long* thread, void* start, void* arg, unsigned long long stack_size)
+{
+    pthread_attr_t attr;
+    pthread_t t;
+    if (pthread_attr_init(&attr) != 0)
+        return -1;
+    pthread_attr_setstacksize(&attr, (size_t)(stack_size ? stack_size : 8u << 20));
+    int rc = pthread_create(&t, &attr, (void* (*)(void*))start, arg);
+    pthread_attr_destroy(&attr);
+    if (rc != 0)
+        return -1;
+    *thread = (unsigned long long)(unsigned long)t;
+    return 0;
+}
+
+/* A pipe in this program's memory: what the task pool and a task group wait
+ * on (fiber.scaly), which WASI does not have. Its two descriptors are
+ * numbers no WASI descriptor reaches; read and write go through
+ * scaly_eio_read/_write, close through __wrap_close. As POSIX's: a read
+ * blocks until there is a byte and answers 0 once the writing end is closed
+ * and nothing is left; a write blocks while the buffer is full. Rule (a). */
+#define SCALY_PIPES 1024
+#define SCALY_PIPE_FD 0x30000000
+#define SCALY_PIPE_BYTES 4096
+
+struct scaly_wasm_pipe
+{
+    int used, closed_read, closed_write;
+    unsigned head, count;
+    pthread_mutex_t lock;
+    pthread_cond_t changed;
+    unsigned char bytes[SCALY_PIPE_BYTES];
+};
+
+static struct scaly_wasm_pipe* scaly_wasm_pipes[SCALY_PIPES];
+static pthread_mutex_t scaly_wasm_pipes_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static int scaly_wasm_is_pipe(int fd)
+{
+    return fd >= SCALY_PIPE_FD && fd < SCALY_PIPE_FD + 2 * SCALY_PIPES;
+}
+
+static struct scaly_wasm_pipe* scaly_wasm_pipe_of(int fd)
+{
+    return scaly_wasm_pipes[(fd - SCALY_PIPE_FD) / 2];
+}
+
+int pipe(int fds[2])
+{
+    pthread_mutex_lock(&scaly_wasm_pipes_lock);
+    int i = 0;
+    while (i < SCALY_PIPES && scaly_wasm_pipes[i] && scaly_wasm_pipes[i]->used)
+        i++;
+    if (i == SCALY_PIPES) {
+        pthread_mutex_unlock(&scaly_wasm_pipes_lock);
+        errno = EMFILE;
+        return -1;
+    }
+    struct scaly_wasm_pipe* p = scaly_wasm_pipes[i];
+    if (!p) {
+        p = (struct scaly_wasm_pipe*)malloc(sizeof *p);
+        if (!p) {
+            pthread_mutex_unlock(&scaly_wasm_pipes_lock);
+            errno = ENOMEM;
+            return -1;
+        }
+        pthread_mutex_init(&p->lock, NULL);
+        pthread_cond_init(&p->changed, NULL);
+        scaly_wasm_pipes[i] = p;
+    }
+    p->used = 1;
+    p->closed_read = 0;
+    p->closed_write = 0;
+    p->head = 0;
+    p->count = 0;
+    pthread_mutex_unlock(&scaly_wasm_pipes_lock);
+    fds[0] = SCALY_PIPE_FD + 2 * i;
+    fds[1] = SCALY_PIPE_FD + 2 * i + 1;
+    return 0;
+}
+
+static long long scaly_wasm_pipe_read(int fd, void* buf, unsigned long long count)
+{
+    struct scaly_wasm_pipe* p = scaly_wasm_pipe_of(fd);
+    if (!p || !p->used || (fd & 1) != 0) {
+        errno = EBADF;
+        return -1;
+    }
+    if (count == 0)
+        return 0;
+    pthread_mutex_lock(&p->lock);
+    while (p->count == 0 && !p->closed_write)
+        pthread_cond_wait(&p->changed, &p->lock);
+    unsigned long long n = 0;
+    while (n < count && p->count > 0) {
+        ((unsigned char*)buf)[n++] = p->bytes[p->head];
+        p->head = (p->head + 1) % SCALY_PIPE_BYTES;
+        p->count--;
+    }
+    pthread_cond_broadcast(&p->changed);
+    pthread_mutex_unlock(&p->lock);
+    return (long long)n;
+}
+
+static long long scaly_wasm_pipe_write(int fd, const void* buf, unsigned long long count)
+{
+    struct scaly_wasm_pipe* p = scaly_wasm_pipe_of(fd);
+    if (!p || !p->used || (fd & 1) != 1) {
+        errno = EBADF;
+        return -1;
+    }
+    unsigned long long n = 0;
+    pthread_mutex_lock(&p->lock);
+    while (n < count) {
+        while (p->count == SCALY_PIPE_BYTES && !p->closed_read)
+            pthread_cond_wait(&p->changed, &p->lock);
+        if (p->closed_read) {
+            pthread_mutex_unlock(&p->lock);
+            errno = EPIPE;
+            return n ? (long long)n : -1;
+        }
+        p->bytes[(p->head + p->count) % SCALY_PIPE_BYTES] = ((const unsigned char*)buf)[n++];
+        p->count++;
+        pthread_cond_broadcast(&p->changed);
+    }
+    pthread_mutex_unlock(&p->lock);
+    return (long long)n;
+}
+
+/* close: a pipe's end here, any other descriptor WASI's. The link wraps
+ * `close` for this target (-Wl,--wrap=close, cli.scaly), so every caller of
+ * it -- the standard library's and wasi-libc's own -- comes through here. */
+int __real_close(int fd);
+int __wrap_close(int fd)
+{
+    if (!scaly_wasm_is_pipe(fd))
+        return __real_close(fd);
+    struct scaly_wasm_pipe* p = scaly_wasm_pipe_of(fd);
+    if (!p || !p->used) {
+        errno = EBADF;
+        return -1;
+    }
+    pthread_mutex_lock(&p->lock);
+    if (fd & 1)
+        p->closed_write = 1;
+    else
+        p->closed_read = 1;
+    int both = p->closed_read && p->closed_write;
+    pthread_cond_broadcast(&p->changed);
+    pthread_mutex_unlock(&p->lock);
+    if (both) {
+        pthread_mutex_lock(&scaly_wasm_pipes_lock);
+        p->used = 0;
+        pthread_mutex_unlock(&scaly_wasm_pipes_lock);
+    }
+    return 0;
+}
+#endif

@@ -34,6 +34,15 @@
 #    back: the same but for a hundredth of its points at most -- its loop is
 #    `relaxed`.
 #
+# 4. THE CORES OF THE PAGE. Programs built for wasm32-wasip1-threads run in
+#    a page (cores.html) on one core and on all the browser gives: the page
+#    is the coordinator of their threads (web/threads.mjs, web/thread.mjs),
+#    the program runs in a worker, each thread in one of its own. Each run
+#    must write what the native program writes, a run on more than one core
+#    must have started threads (but where the card took its loops), and one
+#    run has the card beside the cores.
+#    The times are printed, not judged.
+#
 # NOT in the bar: it needs a Chrome with WebGPU, wgpu-native and node (part 2
 # a wasi-sdk too, part 3 libLLVM built for wasm, tools/wasm/build-llvm.sh),
 # and is SKIPPED by name without one of them. Run it after a change to the
@@ -185,6 +194,63 @@ for f in fails:
     print('  FAIL ' + f)
 print('gpu-web: programs %s — %d programs in a page, three runs each; the card ran %d loops forced, %d by the gate'
       % ('FAIL' if fails else 'PASS', len(by), cards['on'], cards['auto']))
+sys.exit(1 if fails else 0)
+PY
+[ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
+
+# --- 4. the cores of the page ---------------------------------------------
+mkdir -p "$T/cores"
+TT=wasm32-wasip1-threads
+for entry in "gate:tests/gpu/web/gate.scaly:" "canvas:tests/gpu/web/canvas.scaly:" \
+             "reduce:tests/fiber/parallel_reduce_fp.scaly:" "gate_gpu:tests/gpu/web/gate.scaly:--gpu"; do
+  IFS=: read -r name src flag <<< "$entry"
+  # shellcheck disable=SC2086
+  if ! SCALY_CC="$T/cc" SCALY_CACHE="$T/cache" "$TOOL" build --target $TT $flag "$src" -o "$T/cores/$name.wasm" > "$T/cores/$name.build" 2>&1; then
+    echo "  FAIL $name: no build for $TT ($(grep -m1 -i error "$T/cores/$name.build" | cut -c1-120))"; failed=1
+  fi
+done
+cp "$T/page/gate.native" "$T/cores/gate.native"; cp "$T/page/gate.native" "$T/cores/gate_gpu.native"
+cp "$T/page/canvas.native" "$T/cores/canvas.native"
+sed -n 's/^; Expected: //p' tests/fiber/parallel_reduce_fp.scaly > "$T/cores/reduce.native"
+cat > "$T/cores/cores.json" <<'JSON'
+[{"name": "gate", "wasm": "gate.wasm", "workers": 1},
+ {"name": "gate", "wasm": "gate.wasm", "workers": "all"},
+ {"name": "canvas", "wasm": "canvas.wasm", "workers": "all"},
+ {"name": "reduce", "wasm": "reduce.wasm", "workers": "all"},
+ {"name": "gate_gpu", "wasm": "gate_gpu.wasm", "workers": "all", "gpu": "auto"}]
+JSON
+cp tests/gpu/web/cores.html tests/gpu/web/cores-worker.mjs "$WEB/wasi.mjs" "$WEB/threads.mjs" "$WEB/thread.mjs" \
+   "$WEB/gpu.mjs" "$WEB/gpu-host.mjs" "$WEB/gpu-worker.mjs" "$T/cores/"
+page "$T/cores" cores.html 300
+python3 - "$T/result" "$T/cores" <<'PY' || failed=1
+import json, os, sys
+result, cores = sys.argv[1], sys.argv[2]
+lines = open(result).read().splitlines() if os.path.exists(result) else []
+fails = [l[:300] for l in lines if l.startswith('FAILED')]
+runs = [json.loads(l[4:]) for l in lines if l.startswith('RUN ')]
+if len(runs) != 5:
+    fails.append('the page answered for %d of 5 runs (%s)' % (len(runs), lines[-1][:200] if lines else 'nothing'))
+times = {}
+for r in runs:
+    native = open(os.path.join(cores, r['name'] + '.native')).read()
+    what = '%s on %d of %d cores%s' % (r['name'], r['workers'], r['cpus'], ' and the card' if r.get('gpu') else '')
+    if r['status'] != '0' or r['stdout'] != native:
+        fails.append('%s: %s, wrote %r (%s%s)' % (what, r['status'], r['stdout'][-120:], r.get('stderr', '')[-150:], r['thread_out'][-150:]))
+    if not r.get('threaded'):
+        fails.append('%s: the module asks for no threads' % what)
+    # with the card beside them the cores may never be asked: the card takes the loop at its gate
+    if r['workers'] > 1 and r['cpus'] > 1 and r['started'] < 1 and not r.get('gpu'):
+        fails.append('%s: no thread started' % what)
+    if r.get('gpu') and r.get('cards', 0) < 1:
+        fails.append('%s: the card took no loop' % what)
+    times[(r['name'], r['workers'] > 1, bool(r.get('gpu')))] = r.get('ms', 0)
+for f in fails:
+    print('  FAIL ' + f)
+one, many, card = times.get(('gate', False, False)), times.get(('gate', True, False)), times.get(('gate_gpu', True, True))
+cpus = runs[0]['cpus'] if runs else 0
+print('gpu-web: cores %s — %d runs in a page; gate.scaly %s ms on one core, %s ms on %d%s'
+      % ('FAIL' if fails else 'PASS', len(runs), round(one or 0), round(many or 0), cpus,
+         ', %s ms with the card beside them' % round(card) if card else ''))
 sys.exit(1 if fails else 0)
 PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }

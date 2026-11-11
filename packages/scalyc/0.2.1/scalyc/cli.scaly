@@ -1920,6 +1920,14 @@ define cli
         ; overflow traps instead of overwriting it.
         if wasm
             cmd_builder.append " -lsetjmp -lwasi-emulated-mman -Wl,--stack-first,-z,stack-size=8388608"
+        ; wasm32-wasip1-threads: a thread is a new instance of the module over
+        ; the SAME memory, so the memory is the host's (imported; exported
+        ; too, the one name a host reads it by), shared (clang's driver says
+        ; so for this target) and up to 4 GB; and `close` goes through the
+        ; standard library's (eio_wasm.c), which knows the pipes it keeps in
+        ; this memory.
+        if wasm and opts.target_triple.ends_with("-threads")
+            cmd_builder.append " -Wl,--import-memory,--export-memory,--max-memory=4294967296,--wrap=close"
 
         ; `scaly build --target <triple>`: the link is for that target too.
         ; Until 2026-10-01 only the objects were -- the program and the

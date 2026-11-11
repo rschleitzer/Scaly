@@ -21,7 +21,17 @@
 #      for a graphics card, and without one writes what it writes without the
 #      switch (the card itself is tests/gpu/web/run.sh's, in a browser)
 #
-# All three run once per host.
+# All three run once per host. Then, on the page's host alone (node's WASI
+# has no threads):
+#
+#   4. THE THREADS PROFILE, wasm32-wasip1-threads: the fiber suite's fixtures
+#      of parallel loops, the task pool, threads and fork-join (THREADED
+#      below), built for it and run on four threads each -- stdout and exit
+#      code as their markers say --, and then the whole regression corpus
+#      again. Not among them: parallel_read (a thread of a page has no files:
+#      packages/scaly/<version>/web/thread.mjs says why) and
+#      parallel_spike_no_fork (its verdict rests on windows of a few
+#      microseconds, and a clock read through the host costs about that).
 #
 # Needs a wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*) and node; SKIPPED by name
 # without either.
@@ -112,5 +122,33 @@ for host in node page; do
   echo "wasm ($host): --gpu without a card $pass PASS, $fail FAIL ${failures[*]}"
   [ $fail -eq 0 ] || failed=1
 done
+
+# 4. the threads profile, on the page's host
+THREADED="forkjoin_after_pool forkjoin_emit forkjoin_runtime parallel_alias parallel_defer parallel_for
+  parallel_hotspot parallel_kept_value parallel_local_scratch parallel_reduce parallel_reduce_fp
+  parfor_fault_cancels parfor_fault_caught parfor_fault_fatal shared_global taskgroup_dispose taskpool
+  taskpool_default thread_alloc thread_churn thread_deep_stack thread_hello thread_reclaim trace_balance"
+TT=wasm32-wasip1-threads
+RUN="$NODE --no-warnings $PAGE"
+pass=0; fail=0; failures=()
+for n in $THREADED; do
+  src=tests/fiber/$n.scaly
+  if ! "$TOOL" build --target $TT "$src" -o "$WORK/t_$n.wasm" > "$WORK/t_$n.build" 2>&1; then
+    fail=$((fail+1)); failures+=("$n(build: $(grep -m1 -i 'error' "$WORK/t_$n.build" | cut -c1-120))"); continue
+  fi
+  want=$(sed -n 's/^; Expected: //p' "$src")
+  want_rc=$(sed -n 's/^; ExpectedExit: //p' "$src" | head -1)
+  # shellcheck disable=SC2086
+  out=$(SCALY_WORKERS=4 $RUN "$WORK/t_$n.wasm" 2>"$WORK/t_$n.err"); rc=$?
+  if [ "$rc" = "${want_rc:-0}" ] && [ "$out" = "$want" ]; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$n(rc=$rc: $(printf '%s' "$out" | tail -c 100 | tr '\n' ' ')$(tail -c 120 "$WORK/t_$n.err" | tr '\n' ' '))")
+  fi
+done
+echo "wasm (threads): fixtures $pass PASS, $fail FAIL ${failures[*]}"
+[ $fail -eq 0 ] || failed=1
+SCALY_WORKERS=4 REGRESS_TARGET=$TT REGRESS_RUN="$RUN" REGRESS_SKIP=tests/wasm/skip REGRESS_NAME="wasm (threads): regress" \
+  "$PY" tests/regress/run.py "$STAGE" "$TOOL" "" "$WORK" "$JOBS" || failed=1
 
 [ $failed -eq 0 ]
