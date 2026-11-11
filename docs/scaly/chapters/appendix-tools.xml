@@ -84,9 +84,14 @@ sudo apt install llvm-21 llvm-21-dev lld-21 clang     ; Ubuntu and Debian</progr
       does one of these:</para>
     <variablelist>
       <varlistentry>
-        <term><userinput>scaly run <replaceable>file</replaceable> [<replaceable>arguments</replaceable>]</userinput></term>
+        <term><userinput>scaly run [--gpu] <replaceable>file</replaceable> [<replaceable>arguments</replaceable>]</userinput></term>
         <listitem><para>Compiles the program in memory and runs it at once,
-          handing it the arguments. Nothing is left on disk.</para></listitem>
+          handing it the arguments. Nothing is left on disk.
+          <option>--gpu</option> lets its loops go to the graphics card
+          where the tool has one to give: in a web page
+          (<xref linkend="scaling-gpu"/>). Anywhere else the program runs
+          as without the word; a card there is for a program that is
+          built.</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><userinput>scaly build <replaceable>file</replaceable> [-o <replaceable>out</replaceable>]</userinput></term>
@@ -95,7 +100,9 @@ sudo apt install llvm-21 llvm-21-dev lld-21 clang     ; Ubuntu and Debian</progr
           processor at hand, <option>--pgo-train</option> and
           <option>--pgo</option> build with a profile
           (<xref linkend="tut-production"/>); <option>-g</option> adds debug
-          information, <option>--target</option> builds for another system
+          information, <option>--gpu</option> lets a loop run on the
+          graphics card where that pays (<xref linkend="scaling-gpu"/>),
+          <option>--target</option> builds for another system
           (<literal>wasm32-wasip1</literal>, for WebAssembly),
           <option>-L</option> and <option>-l</option> link C
           libraries, and <option>--export</option> keeps every definition

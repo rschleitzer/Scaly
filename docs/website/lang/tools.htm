@@ -1622,7 +1622,7 @@ href="tutorial.htm#tut-repl"
 ><dt
 ><code
 class="userinput"
->scaly run <var
+>scaly run [--gpu] <var
 >file</var
 > [<var
 >arguments</var
@@ -1631,7 +1631,18 @@ class="userinput"
 ><dd
 ><p
 >Compiles the program in memory and runs it at once,
-          handing it the arguments. Nothing is left on disk.</p
+          handing it the arguments. Nothing is left on disk.
+          <code
+class="option"
+>--gpu</code
+> lets its loops go to the graphics card
+          where the tool has one to give: in a web page
+          (<a
+href="scaling-gpu.htm"
+>The Graphics Card</a
+>). Anywhere else the program runs
+          as without the word; a card there is for a program that is
+          built.</p
 ></dd
 ><dt
 ><code
@@ -1668,6 +1679,14 @@ class="option"
 >-g</code
 > adds debug
           information, <code
+class="option"
+>--gpu</code
+> lets a loop run on the
+          graphics card where that pays (<a
+href="scaling-gpu.htm"
+>The Graphics Card</a
+>),
+          <code
 class="option"
 >--target</code
 > builds for another system
