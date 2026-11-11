@@ -77,6 +77,10 @@ struct TcpListener;
 struct TcpServer;
 struct TcpListener;
 struct TcpServer;
+struct Drawing;
+struct Drawing;
+struct Chart;
+struct Chart;
 struct NodeDown;
 struct NodePeer;
 struct TapeNode;
@@ -1875,6 +1879,108 @@ struct TcpServer
 };
 #endif
 
+#ifndef SCALY_TYPE__Z7Drawing
+#define SCALY_TYPE__Z7Drawing
+struct Drawing
+{
+    int64_t width;
+    int64_t height;
+    StringBuilder parts;
+};
+#endif
+
+#ifndef SCALY_TYPE_VectorIterator_Ldouble_R
+#define SCALY_TYPE_VectorIterator_Ldouble_R
+template <> struct VectorIterator<double>
+{
+    Vector<double>* vector;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Slice_Ldouble_R
+#define SCALY_TYPE_Slice_Ldouble_R
+template <> struct Slice<double>
+{
+    uint64_t length;
+    double* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_SliceIterator_Ldouble_R
+#define SCALY_TYPE_SliceIterator_Ldouble_R
+template <> struct SliceIterator<double>
+{
+    Slice<double> slice;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Node_Ldouble_R
+#define SCALY_TYPE_Node_Ldouble_R
+template <> struct Node<double>
+{
+    double element;
+    Node<double>* next;
+};
+#endif
+
+#ifndef SCALY_TYPE_ListIterator_Ldouble_R
+#define SCALY_TYPE_ListIterator_Ldouble_R
+template <> struct ListIterator<double>
+{
+    Node<double>* current;
+};
+#endif
+
+#ifndef SCALY_TYPE_List_Ldouble_R
+#define SCALY_TYPE_List_Ldouble_R
+template <> struct List<double>
+{
+    Node<double>* head;
+    Node<double>* tail;
+};
+#endif
+
+#ifndef SCALY_TYPE_Vector_Ldouble_R
+#define SCALY_TYPE_Vector_Ldouble_R
+template <> struct Vector<double>
+{
+    uint64_t length;
+    double* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_ArrayIterator_Ldouble_R
+#define SCALY_TYPE_ArrayIterator_Ldouble_R
+template <> struct ArrayIterator<double>
+{
+    Array<double>* array;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Array_Ldouble_R
+#define SCALY_TYPE_Array_Ldouble_R
+template <> struct Array<double>
+{
+    uint64_t length;
+    uint64_t capacity;
+    double* buffer;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z5Chart
+#define SCALY_TYPE__Z5Chart
+struct Chart
+{
+    String title;
+    Array<double> values;
+    Array<uint64_t> starts;
+    Array<String> names;
+};
+#endif
+
 #ifndef SCALY_TYPE__Z8NodeDown
 #define SCALY_TYPE__Z8NodeDown
 struct NodeDown
@@ -2732,6 +2838,23 @@ bool TcpServer_stopping(TcpServer&) asm("_ZN9TcpServer8stoppingEv");
 void TcpServer_shutdown(TcpServer&) asm("_ZN9TcpServer8shutdownEv");
 void TcpServer_stop(TcpServer&) asm("_ZN9TcpServer4stopEv");
 void TcpServer_wait(TcpServer&) asm("_ZN9TcpServer4waitEv");
+String svg_text(scaly_frame*, String&) asm("_Z8svg_textPN4scaly6memory4PageE6String");
+void Drawing_line(Drawing&, int64_t, int64_t, int64_t, int64_t, String&) asm("_ZN7Drawing4lineEiiii6String");
+void Drawing_circle(Drawing&, int64_t, int64_t, int64_t, String&) asm("_ZN7Drawing6circleEiii6String");
+void Drawing_rect(Drawing&, int64_t, int64_t, int64_t, int64_t, String&) asm("_ZN7Drawing4rectEiiii6String");
+void Drawing_text(Drawing&, int64_t, int64_t, String&, String&) asm("_ZN7Drawing4textEii6String6String");
+String Drawing_svg(scaly_frame*, Drawing&) asm("_ZN7Drawing3svgEPN4scaly6memory4PageE");
+bool Drawing_show(Drawing&) asm("_ZN7Drawing4showEv");
+void Drawing_init(Drawing&, int64_t, int64_t) asm("_ZN7DrawingC1Eii");
+void Chart_add(Chart&, double) asm("_ZN5Chart3addE3f64");
+void Chart_add2(Chart&, int64_t) asm("_ZN5Chart3addEi");
+void Chart_series(Chart&, String&) asm("_ZN5Chart6seriesE6String");
+uint64_t Chart_end_of(Chart&, uint64_t) asm("_ZN5Chart6end_ofEm");
+String Chart_number(scaly_frame*, double) asm("_ZN5Chart6numberEPN4scaly6memory4PageE3f64");
+String Chart_colour(scaly_frame*, uint64_t) asm("_ZN5Chart6colourEPN4scaly6memory4PageEm");
+Drawing Chart_drawing(scaly_frame*, Chart&) asm("_ZN5Chart7drawingEPN4scaly6memory4PageE");
+bool Chart_show(Chart&) asm("_ZN5Chart4showEv");
+void Chart_init(Chart&, String&) asm("_ZN5ChartC1E6String");
 extern "C" uint64_t scaly_build_stamp();
 void Cluster_reader_loop(NodePeer*) asm("_ZN7Cluster11reader_loopEP8NodePeer");
 void* node_reader_entry(void*) asm("_Z17node_reader_entryPv");
@@ -2918,6 +3041,7 @@ static const int64_t SEEK_CUR = 1LL;
 static const int64_t SEEK_END = 2LL;
 static const int64_t F_OK = 0LL;
 thread_local int64_t* tcp_current_serve asm("tcp_current_serve") = (int64_t*)(nullptr);
+thread_local int64_t drawings_shown asm("drawings_shown") = 0LL;
 static const uint64_t NODE_WIRE_MAGIC = 4922239063177642835ULL;
 static const uint64_t NODE_PROTO_VERSION = (uint64_t)(1LL);
 static const uint64_t NODE_FRAME_DATA = (uint64_t)(1LL);
@@ -3062,19 +3186,21 @@ void Array_init24(Array<uint8_t>&, uint64_t) asm("_ZN5ArrayIcEC1Em");
 void Vector_init59(Vector<uint8_t>&, Array<uint8_t>&) asm("_ZN6VectorIcEC1E5ArrayIcE");
 void Vector_init60(Vector<uint8_t>&, List<uint8_t>&) asm("_ZN6VectorIcEC1E4ListIcE");
 void Array_add44(Array<uint64_t>&, uint64_t) asm("_ZN5ArrayImE3addEm");
-void Vector_init77(Vector<float>&, uint64_t) asm("_ZN6VectorIfEC1Em");
-void Vector_init78(Vector<float>&, Vector<float>&) asm("_ZN6VectorIfEC1E6VectorIfE");
-void Array_add47(Array<float>&, float) asm("_ZN5ArrayIfE3addEf");
-void Array_add48(Array<float>&, Vector<float>&) asm("_ZN5ArrayIfE3addE6VectorIfE");
-void Array_add49(Array<float>&, Slice<float>&) asm("_ZN5ArrayIfE3addE5SliceIfE");
-void Array_add_run16(Array<float>&, uint64_t, float*) asm("_ZN5ArrayIfE7add_runEmPf");
-Slice<float> Array_extend16(Array<float>&, uint64_t) asm("_ZN5ArrayIfE6extendEm");
-void Array_grow_to16(Array<float>&, uint64_t) asm("_ZN5ArrayIfE7grow_toEm");
-void Array_reallocate16(Array<float>&) asm("_ZN5ArrayIfE10reallocateEv");
-void Array_append16(Array<float>&, Slice<float>&) asm("_ZN5ArrayIfE6appendE5SliceIfE");
-void Array_init32(Array<float>&, uint64_t) asm("_ZN5ArrayIfEC1Em");
-void Vector_init79(Vector<float>&, Array<float>&) asm("_ZN6VectorIfEC1E5ArrayIfE");
-void Vector_init80(Vector<float>&, List<float>&) asm("_ZN6VectorIfEC1E4ListIfE");
+void Array_add47(Array<double>&, double) asm("_ZN5ArrayI3f64E3addE3f64");
+template <class T1> static T1 Array2(Array<T1>&, uint64_t);
+void Vector_init82(Vector<float>&, uint64_t) asm("_ZN6VectorIfEC1Em");
+void Vector_init83(Vector<float>&, Vector<float>&) asm("_ZN6VectorIfEC1E6VectorIfE");
+void Array_add50(Array<float>&, float) asm("_ZN5ArrayIfE3addEf");
+void Array_add51(Array<float>&, Vector<float>&) asm("_ZN5ArrayIfE3addE6VectorIfE");
+void Array_add52(Array<float>&, Slice<float>&) asm("_ZN5ArrayIfE3addE5SliceIfE");
+void Array_add_run17(Array<float>&, uint64_t, float*) asm("_ZN5ArrayIfE7add_runEmPf");
+Slice<float> Array_extend17(Array<float>&, uint64_t) asm("_ZN5ArrayIfE6extendEm");
+void Array_grow_to17(Array<float>&, uint64_t) asm("_ZN5ArrayIfE7grow_toEm");
+void Array_reallocate17(Array<float>&) asm("_ZN5ArrayIfE10reallocateEv");
+void Array_append17(Array<float>&, Slice<float>&) asm("_ZN5ArrayIfE6appendE5SliceIfE");
+void Array_init34(Array<float>&, uint64_t) asm("_ZN5ArrayIfEC1Em");
+void Vector_init84(Vector<float>&, Array<float>&) asm("_ZN6VectorIfEC1E5ArrayIfE");
+void Vector_init85(Vector<float>&, List<float>&) asm("_ZN6VectorIfEC1E4ListIfE");
 
 
 // packages/scaly/0.2.1/scaly/memory/PageList.scaly
@@ -12116,6 +12242,418 @@ __attribute__((weak)) void TcpServer_wait(TcpServer& scaly_self)
     Page_release_page(Page_get((void*)(this_->cell)));
 }
 
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) String svg_text(scaly_frame* scaly_rp, String& text)
+{
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    StringBuilder* sb = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
+    uint64_t i = 0ULL;
+    while ((i < String_get_length(text)))
+    {
+        uint8_t c = String_get(text, i);
+        {
+            auto&& scaly_t2 = c;
+            if (scaly_t2 == (uint8_t)38ULL)
+            {
+                StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\005&amp;"}));
+            }
+            else if (scaly_t2 == (uint8_t)60ULL)
+            {
+                StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\004&lt;"}));
+            }
+            else if (scaly_t2 == (uint8_t)34ULL)
+            {
+                StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\006&quot;"}));
+            }
+            else
+            {
+                StringBuilder_append((*sb), ((uint8_t)(c)));
+            }
+        }
+        i = (i + 1ULL);
+    }
+    return StringBuilder_to_string(scaly_rp, (*sb));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Drawing_line(Drawing& scaly_self, int64_t x1, int64_t y1, int64_t x2, int64_t y2, String& colour)
+{
+    Drawing* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    StringBuilder_append2(this_->parts, scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012<line x1=\042"}));
+            StringBuilder_append8((*isb$), (x1));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\006\042 y1=\042"}));
+            StringBuilder_append8((*isb$), (y1));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\006\042 x2=\042"}));
+            StringBuilder_append8((*isb$), (x2));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\006\042 y2=\042"}));
+            StringBuilder_append8((*isb$), (y2));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012\042 stroke=\042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, colour))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\054\042 stroke-width=\0422\042 stroke-linecap=\042round\042/>\012"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Drawing_circle(Drawing& scaly_self, int64_t x, int64_t y, int64_t radius, String& colour)
+{
+    Drawing* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    StringBuilder_append2(this_->parts, scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\014<circle cx=\042"}));
+            StringBuilder_append8((*isb$), (x));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\006\042 cy=\042"}));
+            StringBuilder_append8((*isb$), (y));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005\042 r=\042"}));
+            StringBuilder_append8((*isb$), (radius));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010\042 fill=\042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, colour))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004\042/>\012"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Drawing_rect(Drawing& scaly_self, int64_t x, int64_t y, int64_t width, int64_t height, String& colour)
+{
+    Drawing* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    StringBuilder_append2(this_->parts, scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\011<rect x=\042"}));
+            StringBuilder_append8((*isb$), (x));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005\042 y=\042"}));
+            StringBuilder_append8((*isb$), (y));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\011\042 width=\042"}));
+            StringBuilder_append8((*isb$), (width));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012\042 height=\042"}));
+            StringBuilder_append8((*isb$), (height));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010\042 fill=\042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, colour))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004\042/>\012"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Drawing_text(Drawing& scaly_self, int64_t x, int64_t y, String& words, String& colour)
+{
+    Drawing* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    StringBuilder_append2(this_->parts, scaly_lvalue(({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\011<text x=\042"}));
+            StringBuilder_append8((*isb$), (x));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\005\042 y=\042"}));
+            StringBuilder_append8((*isb$), (y));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010\042 fill=\042"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, colour))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\065\042 font-family=\042system-ui, sans-serif\042 font-size=\04216\042>"}));
+            StringBuilder_append2((*isb$), scaly_lvalue((svg_text(&scaly_local.f, words))));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010</text>\012"}));
+            scaly_t1 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t1;
+    })));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) String Drawing_svg(scaly_frame* scaly_rp, Drawing& scaly_self)
+{
+    Drawing* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    StringBuilder* sb = ({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; });
+    StringBuilder_append2((*sb), scaly_lvalue(({
+        String scaly_t2{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\057<svg xmlns=\042http://www.w3.org/2000/svg\042 width=\042"}));
+            StringBuilder_append8((*isb$), (this_->width));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\012\042 height=\042"}));
+            StringBuilder_append8((*isb$), (this_->height));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\017\042 viewBox=\0420 0 "}));
+            StringBuilder_append8((*isb$), (this_->width));
+            StringBuilder_append((*isb$), ((uint8_t)' '));
+            StringBuilder_append8((*isb$), (this_->height));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\003\042>\012"}));
+            scaly_t2 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t2;
+    })));
+    StringBuilder_append2((*sb), scaly_lvalue(StringBuilder_to_string(&scaly_local.f, this_->parts)));
+    StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\007</svg>\012"}));
+    return StringBuilder_to_string(scaly_rp, (*sb));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) bool Drawing_show(Drawing& scaly_self)
+{
+    Drawing* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    drawings_shown = (drawings_shown + 1LL);
+    return File_write_from_string(scaly_lvalue(({
+        String scaly_t3{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t4 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t4 = StringBuilder{}; StringBuilder_init((*scaly_t4)); scaly_t4; });
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\010drawing-"}));
+            StringBuilder_append8((*isb$), (drawings_shown));
+            StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\004.svg"}));
+            scaly_t3 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+        }
+        scaly_t3;
+    })), scaly_lvalue(Drawing_svg(&scaly_local.f, *(this_))));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Drawing_init(Drawing& scaly_self, int64_t width, int64_t height)
+{
+    Drawing* this_ = &scaly_self;
+    this_->width = width;
+    this_->height = height;
+    this_->parts = (*({ StringBuilder* scaly_t1 = (StringBuilder*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t1 = StringBuilder{}; StringBuilder_init((*scaly_t1)); scaly_t1; }));
+}
+
+// packages/scaly/0.2.1/scaly/containers/Array.scaly
+__attribute__((weak)) void Array_add47(Array<double>& scaly_self, double item)
+{
+    Array<double>* this_ = &scaly_self;
+    if (((((this_->buffer) == (nullptr))) ? true : ((this_->length == this_->capacity))))
+    {
+        Array_reallocate<double>(*(this_));
+    }
+    double* location = ((this_->buffer) + (int64_t)(this_->length));
+    (*(location)) = item;
+    this_->length = (this_->length + 1ULL);
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_add(Chart& scaly_self, double value)
+{
+    Chart* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    if (((this_->starts).length == 0ULL))
+    {
+        Array_add44(this_->starts, 0ULL);
+        Array_add7<String>(this_->names, scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init((*scaly_t1)); scaly_t1; }))));
+    }
+    Array_add47(this_->values, value);
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_add2(Chart& scaly_self, int64_t value)
+{
+    Chart* this_ = &scaly_self;
+    Chart_add(*(this_), ((double)(value)));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_series(Chart& scaly_self, String& name)
+{
+    Chart* this_ = &scaly_self;
+    if ((((this_->starts).length == 1ULL) ? ((this_->values).length == 0ULL) : false))
+    {
+        Array_put3<String>(this_->names, 0ULL, name);
+        return;
+    }
+    Array_add44(this_->starts, (this_->values).length);
+    Array_add7<String>(this_->names, name);
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+template <class T1> static T1 Array2(Array<T1>& scaly_self, uint64_t i)
+{
+    Array<T1>* this_ = &scaly_self;
+    if ((i >= this_->length))
+    {
+        scaly_panic_oob(((const char*)"Array[]"), i, this_->length);
+    }
+    return (*(((this_->buffer) + (int64_t)(i))));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) Drawing Chart_drawing(scaly_frame* scaly_rp, Chart& scaly_self)
+{
+    Chart* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    int64_t w = 480LL;
+    int64_t h = 300LL;
+    int64_t left = 56LL;
+    int64_t top = 36LL;
+    int64_t right = 16LL;
+    int64_t bottom = 28LL;
+    Drawing* sheet = ({ Drawing* scaly_t1 = (Drawing*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Drawing), alignof(Drawing)); *scaly_t1 = Drawing{}; Drawing_init((*scaly_t1), w, h); scaly_t1; });
+    Drawing_rect((*sheet), 0LL, 0LL, w, h, scaly_lvalue(String{(uint8_t*)"\005white"}));
+    Drawing_text((*sheet), left, 22LL, this_->title, scaly_lvalue(String{(uint8_t*)"\007#1d1d1f"}));
+    double low = ((double)0);
+    double high = ((double)0);
+    uint64_t longest = 0ULL;
+    uint64_t i = 0ULL;
+    while ((i < (this_->values).length))
+    {
+        double v = Array2<double>(this_->values, i);
+        if (((i == 0ULL) ? true : ((double)(v) < (double)(low))))
+        {
+            low = v;
+        }
+        if (((i == 0ULL) ? true : ((double)(v) > (double)(high))))
+        {
+            high = v;
+        }
+        i = (i + 1ULL);
+    }
+    if (((double)(high) == (double)(low)))
+    {
+        high = ((double)((double)(low) + (double)(((double)1))));
+    }
+    uint64_t s = 0ULL;
+    while ((s < (this_->starts).length))
+    {
+        uint64_t n = (Chart_end_of(*(this_), s) - Array2<uint64_t>(this_->starts, s));
+        if ((n > longest))
+        {
+            longest = n;
+        }
+        s = (s + 1ULL);
+    }
+    int64_t pw = ((w - left) - right);
+    int64_t ph = ((h - top) - bottom);
+    Drawing_line((*sheet), left, top, left, (top + ph), scaly_lvalue(String{(uint8_t*)"\007#9a9aa2"}));
+    Drawing_line((*sheet), left, (top + ph), (left + pw), (top + ph), scaly_lvalue(String{(uint8_t*)"\007#9a9aa2"}));
+    Drawing_text((*sheet), 4LL, (top + 6LL), scaly_lvalue(Chart_number(&scaly_local.f, high)), scaly_lvalue(String{(uint8_t*)"\007#6b6b70"}));
+    Drawing_text((*sheet), 4LL, (top + ph), scaly_lvalue(Chart_number(&scaly_local.f, low)), scaly_lvalue(String{(uint8_t*)"\007#6b6b70"}));
+    s = 0ULL;
+    while ((s < (this_->starts).length))
+    {
+        String colour = Chart_colour(&scaly_local.f, s);
+        uint64_t from = Array2<uint64_t>(this_->starts, s);
+        uint64_t to = Chart_end_of(*(this_), s);
+        uint64_t k = from;
+        int64_t px = 0LL;
+        int64_t py = 0LL;
+        while ((k < to))
+        {
+            int64_t x = left;
+            if ((longest > 1ULL))
+            {
+                x = (left + (((int64_t)((((double)((double)(((double)((double)((((double)(((k - from)))))) * (double)((((double)(pw))))))) / (double)((((double)(((longest - 1ULL)))))))))))));
+            }
+            int64_t y = ((top + ph) - (((int64_t)((((double)((double)((((double)((double)((((double)((double)(Array2<double>(this_->values, k)) - (double)(low))))) / (double)((((double)((double)(high) - (double)(low))))))))) * (double)((((double)(ph)))))))))));
+            if ((k > from))
+            {
+                Drawing_line((*sheet), px, py, x, y, colour);
+            }
+            if (((to - from) < 40ULL))
+            {
+                Drawing_circle((*sheet), x, y, 3LL, colour);
+            }
+            px = x;
+            py = y;
+            k = (k + 1ULL);
+        }
+        if ((String_get_length(scaly_lvalue(Array2<String>(this_->names, s))) > 0ULL))
+        {
+            Drawing_text((*sheet), ((left + pw) - 140LL), ((top + 16LL) + ((((int64_t)(s))) * 18LL)), scaly_lvalue(Array2<String>(this_->names, s)), colour);
+        }
+        s = (s + 1ULL);
+    }
+    return (*sheet);
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) bool Chart_show(Chart& scaly_self)
+{
+    Chart* this_ = &scaly_self;
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
+    return Drawing_show(scaly_lvalue(Chart_drawing(&scaly_local.f, *(this_))));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) String Chart_colour(scaly_frame* scaly_rp, uint64_t s)
+{
+    {
+        auto&& scaly_t1 = (s % 5ULL);
+        if (scaly_t1 == 0ULL)
+        {
+            return (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init7((*scaly_t2), scaly_lvalue(String{(uint8_t*)"\007#2a5db0"})); scaly_t2; }));
+        }
+        else if (scaly_t1 == 1ULL)
+        {
+            return (*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init7((*scaly_t3), scaly_lvalue(String{(uint8_t*)"\007#b0532a"})); scaly_t3; }));
+        }
+        else if (scaly_t1 == 2ULL)
+        {
+            return (*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init7((*scaly_t4), scaly_lvalue(String{(uint8_t*)"\007#1f7a3a"})); scaly_t4; }));
+        }
+        else if (scaly_t1 == 3ULL)
+        {
+            return (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init7((*scaly_t5), scaly_lvalue(String{(uint8_t*)"\007#8a3ab0"})); scaly_t5; }));
+        }
+    }
+    return (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init7((*scaly_t7), scaly_lvalue(String{(uint8_t*)"\007#b09a2a"})); scaly_t7; }));
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) uint64_t Chart_end_of(Chart& scaly_self, uint64_t s)
+{
+    Chart* this_ = &scaly_self;
+    if (((s + 1ULL) < (this_->starts).length))
+    {
+        return Array2<uint64_t>(this_->starts, (s + 1ULL));
+    }
+    return (this_->values).length;
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) String Chart_number(scaly_frame* scaly_rp, double v)
+{
+    scaly_frame_guard scaly_local{{nullptr, scaly_rp}};
+    if (((double)(v) == (double)((((double)((((int64_t)(v)))))))))
+    {
+        return ({
+        String scaly_t1{};
+        {
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t2 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t2 = StringBuilder{}; StringBuilder_init((*scaly_t2)); scaly_t2; });
+            StringBuilder_append8((*isb$), (((int64_t)(v))));
+            scaly_t1 = StringBuilder_to_string(scaly_rp, (*isb$));
+        }
+        scaly_t1;
+    });
+    }
+    {
+        StringBuilder* isb$ = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
+        StringBuilder_append6((*isb$), (v));
+        return StringBuilder_to_string(scaly_rp, (*isb$));
+    }
+}
+
+// packages/scaly/0.2.1/scaly/draw.scaly
+__attribute__((weak)) void Chart_init(Chart& scaly_self, String& title)
+{
+    Chart* this_ = &scaly_self;
+    this_->title = title;
+    this_->values = (*({ Array<double>* scaly_t1 = (Array<double>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<double>), alignof(Array<double>)); *scaly_t1 = Array<double>{}; (void)0; scaly_t1; }));
+    this_->starts = (*({ Array<uint64_t>* scaly_t2 = (Array<uint64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<uint64_t>), alignof(Array<uint64_t>)); *scaly_t2 = Array<uint64_t>{}; (void)0; scaly_t2; }));
+    this_->names = (*({ Array<String>* scaly_t3 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t3 = Array<String>{}; (void)0; scaly_t3; }));
+}
+
 // packages/scaly/0.2.1/scaly/cluster.scaly
 __attribute__((weak)) void* node_reader_entry(void* arg)
 {
@@ -12656,7 +13194,7 @@ __attribute__((weak)) void Cluster_reader_loop(NodePeer* p)
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
-__attribute__((weak)) void Vector_init77(Vector<float>& scaly_self, uint64_t len)
+__attribute__((weak)) void Vector_init82(Vector<float>& scaly_self, uint64_t len)
 {
     Vector<float>* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
@@ -12673,7 +13211,7 @@ __attribute__((weak)) void Vector_init77(Vector<float>& scaly_self, uint64_t len
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
-__attribute__((weak)) void Vector_init78(Vector<float>& scaly_self, Vector<float>& other)
+__attribute__((weak)) void Vector_init83(Vector<float>& scaly_self, Vector<float>& other)
 {
     Vector<float>* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
@@ -12690,12 +13228,12 @@ __attribute__((weak)) void Vector_init78(Vector<float>& scaly_self, Vector<float
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add47(Array<float>& scaly_self, float item)
+__attribute__((weak)) void Array_add50(Array<float>& scaly_self, float item)
 {
     Array<float>* this_ = &scaly_self;
     if (((((this_->buffer) == (nullptr))) ? true : ((this_->length == this_->capacity))))
     {
-        Array_reallocate16(*(this_));
+        Array_reallocate17(*(this_));
     }
     float* location = ((this_->buffer) + (int64_t)(this_->length));
     (*(location)) = item;
@@ -12703,21 +13241,21 @@ __attribute__((weak)) void Array_add47(Array<float>& scaly_self, float item)
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add48(Array<float>& scaly_self, Vector<float>& items)
+__attribute__((weak)) void Array_add51(Array<float>& scaly_self, Vector<float>& items)
 {
     Array<float>* this_ = &scaly_self;
-    Array_add_run16(*(this_), (items).length, (items).data);
+    Array_add_run17(*(this_), (items).length, (items).data);
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add49(Array<float>& scaly_self, Slice<float>& items)
+__attribute__((weak)) void Array_add52(Array<float>& scaly_self, Slice<float>& items)
 {
     Array<float>* this_ = &scaly_self;
-    Array_add_run16(*(this_), (items).length, (items).data);
+    Array_add_run17(*(this_), (items).length, (items).data);
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_add_run16(Array<float>& scaly_self, uint64_t n, float* items_data)
+__attribute__((weak)) void Array_add_run17(Array<float>& scaly_self, uint64_t n, float* items_data)
 {
     Array<float>* this_ = &scaly_self;
     uint64_t new_length = (this_->length + n);
@@ -12727,7 +13265,7 @@ __attribute__((weak)) void Array_add_run16(Array<float>& scaly_self, uint64_t n,
     }
     if (((((this_->buffer) == (nullptr))) ? true : ((new_length > this_->capacity))))
     {
-        Array_grow_to16(*(this_), new_length);
+        Array_grow_to17(*(this_), new_length);
     }
     if ((n > 0ULL))
     {
@@ -12737,7 +13275,7 @@ __attribute__((weak)) void Array_add_run16(Array<float>& scaly_self, uint64_t n,
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) Slice<float> Array_extend16(Array<float>& scaly_self, uint64_t n)
+__attribute__((weak)) Slice<float> Array_extend17(Array<float>& scaly_self, uint64_t n)
 {
     Array<float>* this_ = &scaly_self;
     uint64_t at = this_->length;
@@ -12748,18 +13286,18 @@ __attribute__((weak)) Slice<float> Array_extend16(Array<float>& scaly_self, uint
     }
     if (((((this_->buffer) == (nullptr))) ? true : ((new_length > this_->capacity))))
     {
-        Array_grow_to16(*(this_), new_length);
+        Array_grow_to17(*(this_), new_length);
     }
     this_->length = new_length;
     return Slice<float>{n, ((this_->buffer) + (int64_t)(at))};
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_grow_to16(Array<float>& scaly_self, uint64_t new_length)
+__attribute__((weak)) void Array_grow_to17(Array<float>& scaly_self, uint64_t new_length)
 {
     Array<float>* this_ = &scaly_self;
     uint64_t size = ((uint64_t)sizeof(float));
-    Array_reallocate16(*(this_));
+    Array_reallocate17(*(this_));
     if ((new_length > this_->capacity))
     {
         Page* own_page = Page_get((void*)(this_));
@@ -12787,7 +13325,7 @@ __attribute__((weak)) void Array_grow_to16(Array<float>& scaly_self, uint64_t ne
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_reallocate16(Array<float>& scaly_self)
+__attribute__((weak)) void Array_reallocate17(Array<float>& scaly_self)
 {
     Array<float>* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
@@ -12842,14 +13380,14 @@ __attribute__((weak)) void Array_reallocate16(Array<float>& scaly_self)
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_append16(Array<float>& scaly_self, Slice<float>& items)
+__attribute__((weak)) void Array_append17(Array<float>& scaly_self, Slice<float>& items)
 {
     Array<float>* this_ = &scaly_self;
-    Array_add_run16(*(this_), (items).length, (items).data);
+    Array_add_run17(*(this_), (items).length, (items).data);
 }
 
 // packages/scaly/0.2.1/scaly/containers/Array.scaly
-__attribute__((weak)) void Array_init32(Array<float>& scaly_self, uint64_t size)
+__attribute__((weak)) void Array_init34(Array<float>& scaly_self, uint64_t size)
 {
     Array<float>* this_ = &scaly_self;
     this_->length = 0ULL;
@@ -12871,7 +13409,7 @@ __attribute__((weak)) void Array_init32(Array<float>& scaly_self, uint64_t size)
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
-__attribute__((weak)) void Vector_init79(Vector<float>& scaly_self, Array<float>& array)
+__attribute__((weak)) void Vector_init84(Vector<float>& scaly_self, Array<float>& array)
 {
     Vector<float>* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
@@ -12888,7 +13426,7 @@ __attribute__((weak)) void Vector_init79(Vector<float>& scaly_self, Array<float>
 }
 
 // packages/scaly/0.2.1/scaly/containers/Vector.scaly
-__attribute__((weak)) void Vector_init80(Vector<float>& scaly_self, List<float>& list)
+__attribute__((weak)) void Vector_init85(Vector<float>& scaly_self, List<float>& list)
 {
     Vector<float>* this_ = &scaly_self;
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
@@ -13173,8 +13711,8 @@ __attribute__((weak)) int64_t Tape_add_node(scaly_frame* scaly_rp, Tape& scaly_s
     Tape* this_ = &scaly_self;
     Page* own_page = Page_get((void*)(this_));
     TapeNode node = ({ TapeNode scaly_t1{}; TapeNode_init(scaly_t1, kind, in_a, in_b, in_c, r, n); scaly_t1; });
-    Vector<float>* v = ({ Vector<float>* scaly_t2 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t2 = Vector<float>{}; Vector_init77((*scaly_t2), ((uint64_t)(((r * n))))); scaly_t2; });
-    Vector<float>* g = ({ Vector<float>* scaly_t3 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t3 = Vector<float>{}; Vector_init77((*scaly_t3), ((uint64_t)(((r * n))))); scaly_t3; });
+    Vector<float>* v = ({ Vector<float>* scaly_t2 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t2 = Vector<float>{}; Vector_init82((*scaly_t2), ((uint64_t)(((r * n))))); scaly_t2; });
+    Vector<float>* g = ({ Vector<float>* scaly_t3 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t3 = Vector<float>{}; Vector_init82((*scaly_t3), ((uint64_t)(((r * n))))); scaly_t3; });
     (node).value = (*v);
     (node).grad = (*g);
     int64_t id = ((int64_t)(Array_get_length<TapeNode>(this_->nodes)));
@@ -13322,7 +13860,7 @@ __attribute__((weak)) int64_t Tape_wsum(scaly_frame* scaly_rp, Tape& scaly_self,
     Tape* this_ = &scaly_self;
     int64_t id = Tape_add_node(scaly_rp, *(this_), 6LL, x, (0LL - 1LL), (0LL - 1LL), 1LL, 1LL);
     Page* own_page = Page_get((void*)(this_));
-    Vector<float>* ws = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init78((*scaly_t1), w); scaly_t1; });
+    Vector<float>* ws = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init83((*scaly_t1), w); scaly_t1; });
     TapeNode* node = Array_at<TapeNode>(this_->nodes, id);
     node->aux = (*ws);
     Tape_run_node(*(this_), id);
@@ -13384,7 +13922,7 @@ __attribute__((weak)) int64_t Tape_attention_windowed(scaly_frame* scaly_rp, Tap
     int64_t d = nq->cols;
     int64_t id = Tape_add_node(scaly_rp, *(this_), 8LL, q, k, v, t, d);
     Page* own_page = Page_get((void*)(this_));
-    Vector<float>* scratch = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init77((*scaly_t1), ((uint64_t)(((((2LL * hs) * t) * win))))); scaly_t1; });
+    Vector<float>* scratch = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init82((*scaly_t1), ((uint64_t)(((((2LL * hs) * t) * win))))); scaly_t1; });
     TapeNode* node = Array_at<TapeNode>(this_->nodes, id);
     node->aux = (*scratch);
     node->heads = hs;
@@ -13461,7 +13999,7 @@ __attribute__((weak)) void Tape_adam_step(Tape& scaly_self, int64_t id, float lr
     int64_t auxlen = ((int64_t)((node->aux).length));
     if ((auxlen < (total * 2LL)))
     {
-        Vector<float>* mv = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init77((*scaly_t1), ((uint64_t)(((total * 2LL))))); scaly_t1; });
+        Vector<float>* mv = ({ Vector<float>* scaly_t1 = (Vector<float>*)scaly_rt_allocate((void*)(own_page), sizeof(Vector<float>), alignof(Vector<float>)); *scaly_t1 = Vector<float>{}; Vector_init82((*scaly_t1), ((uint64_t)(((total * 2LL))))); scaly_t1; });
         node->aux = (*mv);
     }
     float* vp = (node->value).data;

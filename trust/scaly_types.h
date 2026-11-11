@@ -52,6 +52,10 @@ struct TcpListener;
 struct TcpServer;
 struct TcpListener;
 struct TcpServer;
+struct Drawing;
+struct Drawing;
+struct Chart;
+struct Chart;
 struct NodeDown;
 struct NodePeer;
 struct TapeNode;
@@ -1847,6 +1851,108 @@ template <> struct Array<uint64_t>
 struct TcpServer
 {
     int64_t* cell;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z7Drawing
+#define SCALY_TYPE__Z7Drawing
+struct Drawing
+{
+    int64_t width;
+    int64_t height;
+    StringBuilder parts;
+};
+#endif
+
+#ifndef SCALY_TYPE_VectorIterator_Ldouble_R
+#define SCALY_TYPE_VectorIterator_Ldouble_R
+template <> struct VectorIterator<double>
+{
+    Vector<double>* vector;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Slice_Ldouble_R
+#define SCALY_TYPE_Slice_Ldouble_R
+template <> struct Slice<double>
+{
+    uint64_t length;
+    double* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_SliceIterator_Ldouble_R
+#define SCALY_TYPE_SliceIterator_Ldouble_R
+template <> struct SliceIterator<double>
+{
+    Slice<double> slice;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Node_Ldouble_R
+#define SCALY_TYPE_Node_Ldouble_R
+template <> struct Node<double>
+{
+    double element;
+    Node<double>* next;
+};
+#endif
+
+#ifndef SCALY_TYPE_ListIterator_Ldouble_R
+#define SCALY_TYPE_ListIterator_Ldouble_R
+template <> struct ListIterator<double>
+{
+    Node<double>* current;
+};
+#endif
+
+#ifndef SCALY_TYPE_List_Ldouble_R
+#define SCALY_TYPE_List_Ldouble_R
+template <> struct List<double>
+{
+    Node<double>* head;
+    Node<double>* tail;
+};
+#endif
+
+#ifndef SCALY_TYPE_Vector_Ldouble_R
+#define SCALY_TYPE_Vector_Ldouble_R
+template <> struct Vector<double>
+{
+    uint64_t length;
+    double* data;
+};
+#endif
+
+#ifndef SCALY_TYPE_ArrayIterator_Ldouble_R
+#define SCALY_TYPE_ArrayIterator_Ldouble_R
+template <> struct ArrayIterator<double>
+{
+    Array<double>* array;
+    uint64_t position;
+};
+#endif
+
+#ifndef SCALY_TYPE_Array_Ldouble_R
+#define SCALY_TYPE_Array_Ldouble_R
+template <> struct Array<double>
+{
+    uint64_t length;
+    uint64_t capacity;
+    double* buffer;
+};
+#endif
+
+#ifndef SCALY_TYPE__Z5Chart
+#define SCALY_TYPE__Z5Chart
+struct Chart
+{
+    String title;
+    Array<double> values;
+    Array<uint64_t> starts;
+    Array<String> names;
 };
 #endif
 
