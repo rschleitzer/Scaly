@@ -1,0 +1,96 @@
+; The Mandelbrot set for the showcase page (web/mandelbrot/index.html): ONE
+; program, which the page runs on one core, on all of them and on the
+; graphics card -- what changes is not the program but what its host gives
+; it. The work is one `for` over the points of the picture: its rounds are
+; independent, so the runtime may hand them to other cores, and its body is
+; arithmetic on 32-bit numbers, so it may go to a card. `relaxed` lets a card
+; under WebGPU take it, whose floating point is rounded less strictly than
+; the processor's: a point on the very edge of the set may come out the other
+; way there.
+;
+;   mandelbrot <width> <height> <turns> <cx> <cy> <span>
+;
+; cx and cy, the picture's centre, and span, its width in the plane, are
+; whole numbers of billionths. The picture goes into the file
+; mandelbrot.<width>x<height>.rgba, four bytes per point -- red, green, blue,
+; opacity, what a canvas takes --, and the program writes how long the loop
+; took.
+
+; A whole number from an argument, a minus sign in front allowed.
+function whole(text: Slice[u8]) returns int
+{
+    var n 0
+    var sign 1
+    var i: size_t 0
+    if text.length > 0 and text[0] = 45
+    {
+        sign := 0 - 1
+        i := 1
+    }
+    while i < text.length
+    {
+        let digit text[i] as int
+        if digit >= 48 and digit <= 57
+            n := n * 10 + (digit - 48)
+        i := i + 1
+    }
+    n * sign
+}
+
+; The colour of one point: black inside the set, outside a palette over how
+; soon the point escaped.
+function colour(x: i32, y: i32, w: i32, h: i32, turns: i32, x0: f32, y0: f32, step: f32) returns u32
+{
+    let cr x0 + (x as f32) * step
+    let ci y0 + (y as f32) * step
+    var zr: f32 0.0
+    var zi: f32 0.0
+    var k: i32 0
+    while k < turns and zr * zr + zi * zi <= 4.0
+    {
+        let t zr * zr - zi * zi + cr
+        zi := zr * 2.0 * zi + ci
+        zr := t
+        k := k + 1
+    }
+    if k = turns
+        return 0xFF000000
+    ; the palette runs through once in the first 64 iterations and
+    ; again every 64 after: a picture with many iterations keeps its colours
+    let t ((k % 64) as f32) / 64.0
+    let u 1.0 - t
+    let r (9.0 * u * t * t * t * 255.0) as u32
+    let g (15.0 * u * u * t * t * 255.0) as u32
+    let b (8.5 * u * u * u * t * 255.0) as u32
+    0xFF000000 | (b << 16) | (g << 8) | r
+}
+
+let args os.arguments()
+var w: i32 600
+var h: i32 400
+var turns: i32 200
+var cx -0.5
+var cy 0.0
+var span 3.0
+if args.length >= 6
+{
+    w := whole(args[0]) as i32
+    h := whole(args[1]) as i32
+    turns := whole(args[2]) as i32
+    cx := (whole(args[3]) as f64) / 1000000000.0
+    cy := (whole(args[4]) as f64) / 1000000000.0
+    span := (whole(args[5]) as f64) / 1000000000.0
+}
+let step span / (w as f64)
+let x0 (cx - span / 2.0) as f32
+let y0 (cy - step * (h as f64) / 2.0) as f32
+let st step as f32
+
+var picture Vector[u32]((w * h) as size_t)
+let begun scaly_eio_now_ns()
+relaxed for p in w * h
+    picture.put(p as size_t, colour(p % w, p / w, w, h, turns, x0, y0, st))
+let took scaly_eio_now_ns() - begun
+if File.write_bytes("mandelbrot.`w`x`h`.rgba", picture.as_bytes()) = false
+    print "no picture written"
+print "ms `(took as f64) / 1000000.0`"

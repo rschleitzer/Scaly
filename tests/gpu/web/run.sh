@@ -43,6 +43,12 @@
 #    run has the card beside the cores.
 #    The times are printed, not judged.
 #
+# 5. THE SHOWCASE (web/mandelbrot): built by its build.sh, its page's
+#    self-test (index.html?selftest) runs the program on one core, on all,
+#    on the card and as the runtime decides. The one-core picture must be
+#    the native program's byte for byte, all cores' the same, the card's
+#    other in at most one point in a hundred (`relaxed`).
+#
 # NOT in the bar: it needs a Chrome with WebGPU, wgpu-native and node (part 2
 # a wasi-sdk too, part 3 libLLVM built for wasm, tools/wasm/build-llvm.sh),
 # and is SKIPPED by name without one of them. Run it after a change to the
@@ -251,6 +257,50 @@ cpus = runs[0]['cpus'] if runs else 0
 print('gpu-web: cores %s — %d runs in a page; gate.scaly %s ms on one core, %s ms on %d%s'
       % ('FAIL' if fails else 'PASS', len(runs), round(one or 0), round(many or 0), cpus,
          ', %s ms with the card beside them' % round(card) if card else ''))
+sys.exit(1 if fails else 0)
+PY
+[ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
+
+# --- 5. the showcase ------------------------------------------------------
+if ! web/mandelbrot/build.sh "$T/show" "$STAGE" > "$T/show.build" 2>&1; then
+  echo "gpu-web: FAIL — the showcase does not build ($(tail -1 "$T/show.build" | cut -c1-160))"; exit 1
+fi
+"$STAGE" --gpu -o "$T/bin/showcase" web/mandelbrot/mandelbrot.scaly > "$T/bin/showcase.build" 2>&1 ||
+  { echo "gpu-web: FAIL — the showcase's program does not build natively"; exit 1; }
+(cd "$T/cwd" && SCALY_GPU=off SCALY_WORKERS=1 "$T/bin/showcase" 600 400 250 -500000000 0 3000000000 > /dev/null 2>&1)
+page "$T/show" "index.html?selftest" 300
+python3 - "$T/result" "$T/cwd/mandelbrot.600x400.rgba" <<'PY' || failed=1
+import json, os, sys
+result, native = sys.argv[1], sys.argv[2]
+fails = []
+try:
+    r = json.load(open(result))
+except Exception as e:
+    print('  FAIL the page did not answer (%s)' % (open(result).read()[:200] if os.path.exists(result) else 'nothing'))
+    sys.exit(1)
+h = 2166136261
+for b in open(native, 'rb').read():
+    h = ((h ^ b) * 16777619) & 0xffffffff
+if r['args'] != ['600', '400', '250', '-500000000', '0', '3000000000']:
+    fails.append('the self-test ran %s, not what was compared natively' % r['args'])
+if r['hash'] != h:
+    fails.append('one core: the picture is not the native program\'s')
+by = {x['label']: x for x in r['runs']}
+for x in r['runs']:
+    if x['status'] != '0':
+        fails.append('%s: ended with %s' % (x['label'], x['status']))
+    limit = 0 if x['gpu'] == 'off' else 2400
+    if x['differ'] is None or x['differ'] > limit:
+        fails.append('%s: %s of 240000 points other than on one core' % (x['label'], x['differ']))
+    if x['gpu'] == 'on' and x['cards'] < 1:
+        fails.append('%s: the card took no loop' % x['label'])
+want = 4 if r['card'] else 2
+if len(r['runs']) != want:
+    fails.append('%d runs, not %d' % (len(r['runs']), want))
+for f in fails:
+    print('  FAIL ' + f)
+print('gpu-web: showcase %s — %s' % ('FAIL' if fails else 'PASS',
+      ', '.join('%s %.0f ms' % (x['label'], x['ms'] or 0) for x in r['runs'])))
 sys.exit(1 if fails else 0)
 PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }

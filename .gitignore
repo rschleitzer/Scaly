@@ -41,3 +41,6 @@ docs/scaly-spec.rtf
 /web/repl/tour-steps.htm
 /web/repl/*.br
 /web/repl/*.gz
+
+# the Mandelbrot showcase, built (web/mandelbrot/build.sh)
+/web/mandelbrot/site/
