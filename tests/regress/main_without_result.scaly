@@ -1,0 +1,17 @@
+; A `procedure main` that declares no result ends the program with 0. It was
+; emitted as `void main`, and the exit code was whatever the result register
+; held: 10 for this program, 240 for another, 0 by accident under an
+; unoptimised runtime archive. The early `return` takes the same way out.
+; expect-rc: 0
+; expect-out: seen 3
+
+procedure main(argc: int, argv: pointer[pointer[const_char]])
+{
+    var seen 0
+    for i in 10
+        seen := seen + i % 2
+    print "seen `seen - 2`"
+    if seen > 4
+        return
+    print "not reached"
+}

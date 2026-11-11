@@ -516,6 +516,9 @@ define Emitter
         ; --gpu: the offer of the loop emit_gpu_for# is about to hand to
         ; emit_parallel_for#, which takes it before it emits anything.
         gpu_pending: GpuOffer
+        ; The program's own `main` where it declares no result: the system
+        ; calls it as `int main`, so it is declared i32 and ends with 0.
+        var zero_main: LLVMValueRef
         ; Stage 7.2: symbols of region swizzle walkers already generated in
         ; this module. The registry (not a body-count query) also breaks
         ; type-level recursion: a walker's shell registers BEFORE its body
@@ -668,6 +671,7 @@ define Emitter
             parfor_checker := TaskPlanner^this()
             parfor_file := String()
             gpu_pending := GpuOffer^this()
+            zero_main := null
             current_receiver_concept := String()
         }
 
@@ -5981,6 +5985,17 @@ define Emitter
                 param_types_ptr := param_types.data
             }
 
+            ; The program's own `main` without a result: what it leaves in the
+            ; result register is the program's exit code, so it answers 0.
+            var main_without_result false
+            if func.name = "main" and func.mangled_name.starts_with("_ZN") = false and use_sret = false
+            {
+                if LLVMGetTypeKind(llvm_return_type) = LLVMTypeKind.Void()
+                {
+                    llvm_return_type := LLVMInt32TypeInContext(context)
+                    main_without_result := true
+                }
+            }
             let func_type LLVMFunctionType(llvm_return_type, param_types_ptr, param_count as u32, 0)
 
             ; Use unmangled "main" for linker compatibility (C entry point) —
@@ -6031,6 +6046,8 @@ define Emitter
                 llvm_func := LLVMAddFunction(llvm_module, func_cstr, func_type)
             if llvm_func = null
                 llvm_func := LLVMAddFunction(llvm_module, func_cstr, func_type)
+            if main_without_result
+                zero_main := llvm_func
             ; for an extern and for a definition alike: the panic helpers are
             ; DEFINED in the stdlib, and a whole-program build sees that body.
             ; An extern is known by its C name, a definition by its MANGLED one
@@ -8011,7 +8028,9 @@ define Emitter
                         }
                         else
                         {
-                            if LLVMGetTypeKind(llvm_rt) = LLVMGetTypeKind(void_ty)
+                            if zero_main <> null and llvm_func = zero_main
+                                LLVMBuildRet(builder, LLVMConstInt(llvm_rt, 0, 0))
+                            else if LLVMGetTypeKind(llvm_rt) = LLVMGetTypeKind(void_ty)
                                 LLVMBuildRetVoid builder
                             else
                             {
@@ -25068,7 +25087,9 @@ define Emitter
                 LLVMBuildRetVoid builder
                 return true
             }
-            if LLVMGetTypeKind(llvm_rt) = LLVMGetTypeKind(void_ty)
+            if zero_main <> null and current_function = zero_main
+                LLVMBuildRet(builder, LLVMConstInt(llvm_rt, 0, 0))
+            else if LLVMGetTypeKind(llvm_rt) = LLVMGetTypeKind(void_ty)
                 LLVMBuildRetVoid builder
             else
             {
