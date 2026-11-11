@@ -3753,6 +3753,21 @@ define TaskPool
     }
 }
 
+; The guarded run of a task (task_worker): the catch point's body answers
+; an i64 (scaly_catch_run, panic.c), a task an address -- one register on a
+; 64-bit target, two different function types on wasm32, where a call
+; through a table checks the type and trapped ("null function or function
+; signature mismatch"). So the catch point calls this, and this calls the
+; task by its own type. `cell` holds the task's function and its argument.
+procedure task_guarded_body(cell: pointer[void]) returns i64
+{
+    let c cell as pointer[size_t]
+    let fn (*c) as pointer[void]
+    let arg (*(((c as size_t) + 8) as pointer[size_t])) as pointer[void]
+    let res scaly_call_ptr(fn, arg)
+    0
+}
+
 ; A pool worker (milestone 3.2): consume one pipe byte (blocks between
 ; items; 0 = shutdown), take the item it vouches for (own deque first,
 ; then steal), run it, count it done. The task's allocations root on
@@ -3794,7 +3809,11 @@ procedure task_worker(arg: pointer[void]) returns pointer[void]
                     ; (a jump may not cross stacks) and record it for the wait to
                     ; raise again on the submitting thread.
                     var caught: i32 0
-                    let res Region.run_guarded(w.fn, w.arg, &caught)
+                    var cell u8[16]
+                    let cp cell as pointer[size_t]
+                    *cp := w.fn as size_t
+                    *(((cp as size_t) + 8) as pointer[size_t]) := w.arg as size_t
+                    let res Region.run_guarded(&task_guarded_body, cell as pointer[void], &caught)
                     if caught <> 0
                         TaskGroup.record_fault(g)
                 }
