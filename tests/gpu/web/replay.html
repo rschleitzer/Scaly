@@ -1,0 +1,72 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Scaly kernels under the page's WebGPU</title>
+<pre id="out">running</pre>
+<script type="module">
+// Every run tests/gpu/web/run.sh wrote down natively (SCALY_GPU_DUMP), run
+// again on this page's card: the kernel's text as the compiler printed it,
+// the same words, the same inputs, the outputs as they were before. Whole
+// numbers must come out bit for bit as the native card's; floating point,
+// which is here only for loops written `relaxed`, within a tolerance.
+import { Card } from './gpu.mjs';
+
+const lines = [];
+const say = text => lines.push(text);
+let failed = 0;
+
+function typed(wgsl, name, words) {
+  const kind = (wgsl.match(new RegExp('\\b' + name + ': array<(\\w+)>')) || [])[1];
+  const data = new Uint32Array(words);
+  if (kind === 'f32') return new Float32Array(data.buffer);
+  if (kind === 'i32') return new Int32Array(data.buffer);
+  return data;
+}
+
+function differs(have, want) {
+  if (have instanceof Float32Array) {
+    for (let i = 0; i < want.length; i++) {
+      const d = Math.abs(have[i] - want[i]);
+      if (!(d <= 0.00001 * (Math.abs(want[i]) + 1)) && !(Number.isNaN(have[i]) && Number.isNaN(want[i]))) return i;
+    }
+    return -1;
+  }
+  for (let i = 0; i < want.length; i++) if (have[i] !== want[i]) return i;
+  return -1;
+}
+
+try {
+  const runs = await (await fetch('runs.json')).json();
+  const card = await Card.open();
+  if (!card) {
+    say('SKIP: this page has no WebGPU');
+  } else {
+    let same = 0, exact = 0, loose = 0;
+    for (const name of runs) {
+      const run = await (await fetch(name)).json();
+      const inputs = run.inputs.map((w, i) => typed(run.wgsl, 'b' + i, w));
+      const outputs = run.before.map((w, i) => typed(run.wgsl, 'o' + i, w));
+      const wanted = run.outputs.map((w, i) => typed(run.wgsl, 'o' + i, w));
+      const answer = await card.run({ wgsl: run.wgsl, count: run.count, words: new Uint32Array(run.words), inputs, outputs });
+      let bad = '';
+      if (run.stopped) {
+        if (!answer.stopped) bad = 'the native card stopped at a round, this one answered: ' + (answer.why || 'ran');
+      } else if (!answer.ran) {
+        bad = 'did not run: ' + answer.why + (card.said.length ? ' -- ' + card.said[card.said.length - 1] : '');
+      } else {
+        outputs.forEach((o, i) => {
+          const at = differs(o, wanted[i]);
+          if (at >= 0 && !bad) bad = 'output ' + i + ' differs at ' + at + ': ' + o[at] + ' against ' + wanted[i][at];
+          if (o instanceof Float32Array) loose++; else exact++;
+        });
+      }
+      if (bad) { failed++; say('FAIL ' + name + ' (' + run.where + '): ' + bad); } else same++;
+    }
+    say('replay: ' + same + ' runs as the native card ran them, ' + failed + ' not; ' + exact + ' outputs bit for bit, ' + loose + ' within the tolerance');
+  }
+} catch (e) {
+  failed++;
+  say('FAIL: ' + (e && e.stack || e));
+}
+document.getElementById('out').textContent = lines.join('\n');
+await fetch('/result', { method: 'POST', body: lines.join('\n') + '\n' });
+</script>
