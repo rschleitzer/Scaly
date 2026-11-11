@@ -1,0 +1,53 @@
+; A function, a method and a lambda handed to a `delegate` parameter of a
+; routine that also takes a `lazy` one. Such a routine is put in where it is
+; called, and its ordinary arguments are bound to names there; a function's
+; name bound that way stood for a closure nobody had built -- the emission
+; broke with "Operand is null" in the indirect call. The closure a plain
+; call hands over is built for the put-in too.
+
+define IndexFn delegate(int) returns int
+
+function square(i: int) returns int
+    i * i
+
+define Scale(factor: int)
+{
+    function times(this: Scale, i: int) returns int
+        i * factor
+}
+
+procedure fill(mutable out: ref[Vector[int]], f: IndexFn, wanted: lazy bool)
+{
+    if wanted
+    {
+        var i 0
+        while i < out.length as int
+        {
+            out.put(i as size_t, f(i))
+            i := i + 1
+        }
+    }
+}
+
+function total(v: ref[Vector[int]]) returns int
+{
+    var sum 0
+    for x in v
+        sum := sum + x
+    sum
+}
+
+var v Vector[int](10)
+fill(&v, square, true)
+let squares total(&v)
+let by Scale(3)
+fill(&v, by.times, squares > 0)
+let tripled total(&v)
+let offset 7
+fill(&v, \i: i + offset, true)
+let shifted total(&v)
+fill(&v, square, false)
+if squares = 285 and tripled = 135 and shifted = 115 and total(&v) = 115
+    print "PASS"
+else
+    print "FAIL `squares` `tripled` `shifted`"

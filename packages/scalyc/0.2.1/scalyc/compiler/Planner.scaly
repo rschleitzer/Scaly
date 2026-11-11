@@ -32559,7 +32559,22 @@ define Planner
                 let it f.input[k]
                 if Planner.attributes_have(it.attributes, "lazy") = false
                 {
-                    planned.add(this.collapse_operand_sequence(this.plan_operands(args.components[k - first].value)))
+                    var arg this.collapse_operand_sequence(this.plan_operands(args.components[k - first].value))
+                    ; a function, a method or a lambda where the parameter is
+                    ; a delegate: the closure a call would hand over, built
+                    ; here, in the caller's scope. Bound as it was planned,
+                    ; the name stood for a closure record nobody had built.
+                    if it.type <> null
+                    {
+                        let dt this.plan_type((*it.type))
+                        if this.is_delegate_type(dt.name)
+                        {
+                            let clo_op this.closure_for_lambda_arg(arg, dt)
+                            if clo_op <> null
+                                arg := (*clo_op)
+                        }
+                    }
+                    planned.add(arg)
                     if it.name <> null
                         lazy_shadows.add(String^this((*it.name)))
                 }
