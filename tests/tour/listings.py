@@ -1,8 +1,10 @@
-"""python3 listings.py <chapter.xml> <section-id> <out-dir> -- every
+"""python3 listings.py <chapter.xml> <section-id> <out-dir> [empty] -- every
 <programlisting> of the section, but those marked role="fragment", as
 <out-dir>/<nn>-<subsection-id>.scaly, numbered in document order
 (tests/tour/run.sh). The tour page's steps come out of the same section by
-the DSSSL engine (docs/dsssl/scaly-tour.dsl); this reads only the listings."""
+the DSSSL engine (docs/dsssl/scaly-tour.dsl); this reads only the listings.
+A section without a listing is an error, unless the fourth argument is
+`empty` (a step of prose alone)."""
 import html
 import os
 import re
@@ -31,5 +33,5 @@ for m in re.finditer(r'xml:id="([^"]+)"|<programlisting( role="([^"]*)")?>(.*?)<
     n += 1
     with open(os.path.join(out, f'{n:02d}-{current}.scaly'), 'w', encoding='utf-8') as f:
         f.write(html.unescape(m.group(4)) + '\n')
-if n == 0:
+if n == 0 and sys.argv[4:5] != ['empty']:
     sys.exit(f'listings.py: no listing in {section}')

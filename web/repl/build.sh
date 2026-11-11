@@ -25,6 +25,8 @@
 #                 playground's first chapter
 #   playground-steps.htm  the playground's own chapters, set from
 #                 docs/scaly-playground.xml (docs/dsssl/scaly-playground.dsl)
+#   playground-steps.de.htm  the playground in German, the tour translated
+#                 as its first chapter (docs/scaly-playground.de.xml)
 #   lizard.svg    Scaly's lizard (docs/website/scaly-lizard.svg)
 # and these compressed beside them (compress.mjs; scaly.wasm.br is 6.4 MB),
 # which serve.mjs sends where the browser accepts it. Needs a
@@ -68,8 +70,10 @@ fi
 # in docs/, as docs/html.sh runs it (the catalog there), the file moved out
 (cd "$TREE/docs" && rm -f tour-steps.htm && SP_ENCODING=utf-8 "$DAZZLE" -t sgml -d dsssl/scaly-tour.dsl scaly-spec.xml)
 mv "$TREE/docs/tour-steps.htm" "$OUT/tour-steps.htm"
-(cd "$TREE/docs" && rm -f playground-steps.htm && SP_ENCODING=utf-8 "$DAZZLE" -t sgml -d dsssl/scaly-playground.dsl scaly-playground.xml)
-mv "$TREE/docs/playground-steps.htm" "$OUT/playground-steps.htm"
+for doc in scaly-playground.xml scaly-playground.de.xml; do
+  (cd "$TREE/docs" && rm -f playground-steps*.htm && SP_ENCODING=utf-8 "$DAZZLE" -t sgml -d dsssl/scaly-playground.dsl "$doc")
+  mv "$TREE"/docs/playground-steps*.htm "$OUT/"
+done
 cp "$TREE/docs/website/scaly-lizard.svg" "$OUT/lizard.svg"
 size() { du -sh "$1" | cut -f1; }
 echo "web/repl/build.sh: $OUT -- the compiler $(size "$OUT/scaly.wasm") ($(size "$OUT/scaly.wasm.br") brotli), the standard library $(size "$OUT/stdlib.json") ($(size "$OUT/stdlib.json.br")), for a build $(size "$OUT/playground.json") ($(size "$OUT/playground.json.br"))"

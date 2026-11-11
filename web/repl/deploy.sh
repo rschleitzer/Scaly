@@ -12,14 +12,14 @@ set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 B=s3://scaly.io/play
 DISTRIBUTION=E3INKQI1B221G9
-for f in scaly.wasm.br stdlib.json.br playground.json.br tour-steps.htm playground-steps.htm lizard.svg; do
+for f in scaly.wasm.br stdlib.json.br playground.json.br tour-steps.htm playground-steps.htm playground-steps.de.htm lizard.svg; do
   if [ ! -f "$HERE/$f" ]; then
     echo "web/repl/deploy.sh: no $f -- run web/repl/build.sh first" >&2
     exit 3
   fi
 done
 up() { aws s3 cp --only-show-errors "$HERE/$1" "$B/$2" --cache-control no-cache --content-type "$3" ${4:+--content-encoding "$4"}; }
-for f in index.html playground.html tour.html tour-steps.htm playground-steps.htm; do up "$f" "$f" 'text/html; charset=utf-8'; done
+for f in index.html playground.html tour.html tour-steps.htm playground-steps.htm playground-steps.de.htm; do up "$f" "$f" 'text/html; charset=utf-8'; done
 up lizard.svg lizard.svg image/svg+xml
 for f in worker.mjs runner.mjs side.mjs load.mjs wasi.mjs threads.mjs thread.mjs; do up "$f" "$f" 'text/javascript; charset=utf-8'; done
 up scaly.wasm.br scaly.wasm application/wasm br

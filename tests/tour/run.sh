@@ -12,7 +12,10 @@
 # Then the Scaly Playground's own chapters (docs/scaly-playground.xml, its
 # chapters under docs/playground/), whose programs may also draw instead of
 # printing: each runs in a scratch directory (a drawing is a file), and must
-# end with rc 0 and print or draw.
+# end with rc 0 and print or draw. And the playground in German
+# (docs/scaly-playground.de.xml, docs/playground/de/: the tour translated,
+# then the chapters): every section must have the id of its English twin
+# and as many programs (parity.py), and its programs run alike.
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
@@ -27,10 +30,15 @@ trap 'rm -rf "$TMP"' EXIT
 export SCALY_CACHE="$TMP/cache"
 
 python3 "$HERE/listings.py" docs/scaly/chapters/tutorial.xml tut-tour "$TMP/steps" || exit 1
-for chapter in docs/playground/*.xml; do
+for chapter in docs/playground/*.xml docs/playground/de/*.xml; do
+  case "$chapter" in */de/*) prefix=de- ;; *) prefix= ;; esac
   for section in $(sed -n 's/^  <section xml:id="\([^"]*\)">.*/\1/p' "$chapter"); do
-    python3 "$HERE/listings.py" "$chapter" "$section" "$TMP/steps/pg-$section" || exit 1
+    python3 "$HERE/listings.py" "$chapter" "$section" "$TMP/steps/pg-$prefix$section" empty || exit 1
   done
+done
+python3 "$HERE/parity.py" 'docs/scaly/chapters/tutorial.xml#tut-tour' docs/playground/de/tour.xml || exit 1
+for chapter in docs/playground/*.xml; do
+  python3 "$HERE/parity.py" "$chapter" "docs/playground/de/$(basename "$chapter")" || exit 1
 done
 pass=0; fail=0
 for f in "$TMP"/steps/*.scaly "$TMP"/steps/pg-*/*.scaly; do

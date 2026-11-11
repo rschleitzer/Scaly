@@ -1,0 +1,227 @@
+<chapter xml:id="pg-tour">
+  <title>Eine Rundreise durch Scaly</title>
+
+  <section xml:id="tut-tour">
+    <title>Eine Rundreise durch Scaly</title>
+    <para>Diese Rundreise führt mit kleinen, vollständigen Programmen schnell
+      durch die Sprache. Wenn hier etwas nicht ganz erklärt wird, keine Sorge —
+      die Spezifikation behandelt alles ausführlich, und jeder Teil der
+      Rundreise verweist auf ihr passendes Kapitel (sie ist auf Englisch).
+      Jedes Programm gibt aus, was es berechnet; <code>print</code> schreibt
+      eine Zeile:</para>
+    <programlisting>print "Hallo von Scaly"</programlisting>
+    <para>Jedes Programm steht hier in einem Editor. Ändere es, lass es mit
+      <emphasis>Ausführen</emphasis> noch einmal laufen, probier aus, was
+      passiert, wenn du etwas kaputt machst; <emphasis>Zurücksetzen</emphasis>
+      holt das Original zurück. Installieren musst du nichts: der Compiler
+      läuft in diesem Browser-Tab.</para>
+  </section>
+
+  <section xml:id="tut-values">
+    <title>Werte und Bindungen</title>
+    <para>Mit <code>let</code> bindest du einen Wert an einen Namen. Es gibt
+      kein Gleichheitszeichen — auf den Namen folgt direkt sein Wert. Für eine
+      Bindung, die du noch ändern willst, nimm <code>var</code>, und
+      <code>:=</code> ändert sie. Ein Semikolon beginnt einen Kommentar, und
+      Backticks in einer Zeichenkette setzen einen Wert in den Text
+      ein.</para>
+    <programlisting>let answer 42        ; eine Bindung, die bleibt
+var count 0          ; eine, die sich ändern darf
+count := count + 1   ; die Zuweisung ist :=
+print "die Antwort ist `answer`, gezählt ist `count`"</programlisting>
+    <para>Das Gleichheitszeichen <code>=</code> ist dem Vergleich vorbehalten,
+      so wird es nie mit der Zuweisung verwechselt. Alle Regeln dazu:
+      <link xlink:href="https://scaly.io/lang/lexical.htm">Lexical
+      Structure</link>.</para>
+  </section>
+
+  <section xml:id="tut-operators">
+    <title>Operatoren und Operationen</title>
+    <para>Operatoren sind gewöhnliche Namen, keine Schlüsselwörter, die fest in
+      die Grammatik eingebaut sind. Eine Operation wird von links nach rechts
+      gelesen; stehen mehrere Operatoren hintereinander, binden sie so stark,
+      wie die Standardbibliothek es ihnen gibt — Multiplikation stärker als
+      Addition, ein Vergleich schwächer als beide:</para>
+    <programlisting>; 3 + 4 * 5 ist 3 + 20, also 23 — nicht 35
+let result 3 + 4 * 5
+if result = 23
+    print "23, wie erwartet"
+else
+    print "unerwartet"</programlisting>
+    <para>Klammern gruppieren ausdrücklich, und ein Operator dort, wo ein Wert
+      erwartet wird, wirkt als Präfix (<code>-x</code>, <code>not done</code>,
+      <code>a - -2</code>). Ein Aufruf nimmt seine Argumente, bevor sich die
+      Operatoren um ihn herum verbinden, und ein Aufruf ohne Klammern nimmt
+      genau ein Argument: <code>print "hi"</code> ist
+      <code>print("hi")</code>, aber ein Argument, das selbst ein Aufruf ist,
+      braucht seine Klammern: <code>print(describe(x))</code>. Das ganze
+      Modell, mit Tupeln und Funktionen als Werten:
+      <link xlink:href="https://scaly.io/lang/expressions.htm">Expressions</link>.</para>
+  </section>
+
+  <section xml:id="tut-control-flow">
+    <title>Verzweigen und Wiederholen</title>
+    <para><code>if</code> wählt zwischen Zweigen. Ein Zweig aus einer einzigen
+      Anweisung braucht keine geschweiften Klammern, die Bedingung keine
+      runden:</para>
+    <programlisting>let n 7
+if n &lt; 0
+    print "negativ"
+else if n = 0
+    print "null"
+else
+    print "positiv"</programlisting>
+    <para><code>while</code> wiederholt, solange seine Bedingung gilt. Ein Rumpf
+      aus mehreren Anweisungen steht in geschweiften Klammern:</para>
+    <programlisting>var sum 0
+var i 1
+while i &lt;= 10
+{
+    sum := sum + i
+    i := i + 1
+}
+print "die Summe ist `sum`"</programlisting>
+    <para><code>for</code> zählt durch. <code>for i in 4</code> lässt
+      <code>i</code> von 0 bis 4 laufen — aber ohne die 4:</para>
+    <programlisting>var total 0
+for i in 4
+    total := total + i
+print "0 + 1 + 2 + 3 ist `total`"</programlisting>
+  </section>
+
+  <section xml:id="tut-functions">
+    <title>Funktionen</title>
+    <para>Eine Funktion nennt die Typen ihrer Parameter und ihres Ergebnisses.
+      Der Wert des letzten Ausdrucks ist das Ergebnis — dafür braucht es kein
+      <code>return</code>. Ein Rumpf aus einem einzigen Ausdruck braucht keine
+      geschweiften Klammern:</para>
+    <programlisting>function add(a: int, b: int) returns int
+    a + b
+
+print "3 + 4 ist `add(3, 4)`"</programlisting>
+    <para>Eine Funktion darf sich selbst aufrufen. Hier die klassische
+      Fakultät:</para>
+    <programlisting>function factorial(n: int) returns int
+    if n &lt;= 1
+        1
+    else
+        n * factorial(n - 1)
+
+print "5! ist `factorial(5)`"</programlisting>
+    <para>Funktionen sind rein: sie lesen ihre Argumente und geben einen Wert
+      zurück, und sonst bewirken sie nichts. Wer etwas verändern will, nimmt
+      eine Prozedur.</para>
+  </section>
+
+  <section xml:id="tut-procedures">
+    <title>Prozeduren verändern</title>
+    <para>Eine <code>procedure</code> ist wie eine Funktion, darf aber ihre
+      Eingaben verändern und nach außen wirken. Sie sagt, welche Eingaben sie
+      verändert: ein Parameter, in den sie schreibt, ist
+      <code>mutable</code> markiert, der Empfänger <code>this</code>
+      eingeschlossen, und ein Feld, das sich nach dem Bau des Objekts noch
+      ändern darf, ist mit <code>var</code> deklariert. So weiß jeder Leser,
+      welche Aufrufe etwas verändern können, und der Compiler prüft es. Die
+      Einzelheiten: <link xlink:href="https://scaly.io/lang/types.htm#types-params-mutation">Mutation
+      via Procedures</link>.</para>
+    <programlisting>define Counter(var value: int)
+{
+    procedure increment(mutable this)
+        value := value + 1
+
+    function get(this) returns int
+        value
+}
+
+var c Counter(0)
+c.increment()
+c.increment()
+print "der Zähler steht bei `c.get()`"</programlisting>
+  </section>
+
+  <section xml:id="tut-structs">
+    <title>Strukturen und Methoden</title>
+    <para>Eine Struktur definierst du, indem du ihre Felder aufzählst. Eine
+      Struktur mit öffentlichen Feldern bekommt einen Konstruktor, der sie der
+      Reihe nach nimmt. Methoden sind Funktionen oder Prozeduren, deren erster
+      Parameter <code>this</code> ist:</para>
+    <programlisting>define Point(x: int, y: int)
+{
+    function distance_squared(this) returns int
+        this.x * this.x + this.y * this.y
+}
+
+let p Point(3, 4)
+print "der Abstand im Quadrat ist `p.distance_squared()`"</programlisting>
+    <para>Konstruktoren, auch ausdrückliche <code>init</code>-Formen mit
+      eigener Signatur:
+      <link xlink:href="https://scaly.io/lang/types.htm#types-constructors">Constructors</link>.</para>
+  </section>
+
+  <section xml:id="tut-unions">
+    <title>Unions, Options und choose</title>
+    <para>Eine <code>union</code> enthält eine von mehreren Varianten, und jede
+      Variante kann etwas mit sich tragen. Die häufigste Union ist
+      <code>Option</code>: ein Wert, der auch fehlen kann:</para>
+    <programlisting role="fragment">define Option union(Some: int, None)
+
+let present Option.Some(42)
+let absent  Option.None</programlisting>
+    <para>Auf eine Union antwortest du mit <code>choose</code>. Jede
+      <code>when</code>-Klausel nennt einen Namen, dann die Variante, dann das
+      Ergebnis; der Name steht für das, was die Variante mit sich trägt. Eine
+      <code>else</code>-Klausel nimmt die übrigen Varianten:</para>
+    <programlisting>define Option union(Some: int, None)
+
+function or_zero(o: Option) returns int
+    choose o
+        when v: Some
+            v
+        else
+            0
+
+print "`or_zero(Option.Some(7))` und `or_zero(Option.None)`"</programlisting>
+    <para>Wie eine Union im Speicher liegt, die Kurzform <code>T?</code> und
+      der ganze Mustervergleich:
+      <link xlink:href="https://scaly.io/lang/types.htm#types-unions">Union
+      Types</link>.</para>
+  </section>
+
+  <section xml:id="tut-modules">
+    <title>Module und Importe</title>
+    <para>Mit <code>module</code> verteilst du ein Programm auf mehrere
+      Dateien: die Anweisung <code>module shapes</code> lädt die Datei
+      <filename>shapes.scaly</filename> daneben. Ein Typ, der dort definiert
+      ist, bleibt verborgen, bis die Datei, die ihn braucht, ihn mit
+      <code>use</code> importiert:</para>
+    <programlisting role="fragment">; shapes.scaly
+define Box(width: int, height: int)
+{
+    function area(this) returns int
+        width * height
+}
+
+; myprog.scaly
+module shapes
+use myprog.shapes.Box        ; oder: use myprog.shapes.*
+
+let b Box(3, 4)
+if b.area() = 12
+    print "die Fläche ist 12"</programlisting>
+    <para>Ein vergessener Import fällt schon beim Übersetzen auf, und die
+      Fehlermeldung nennt genau die <code>use</code>-Zeile, die fehlt. Die
+      Standardbibliothek braucht keinen Import — sie ist immer
+      sichtbar.</para>
+    <para>Code, den mehrere Programme teilen, ist ein
+      <emphasis>Paket</emphasis>, und ein Paket, das jemand anderes
+      geschrieben hat, ist eine Zeile entfernt:</para>
+    <programlisting role="fragment">package json 0.1.3 "github.com/someone/json"</programlisting>
+    <para><command>scaly</command> holt es aus diesem Git-Repository, wenn das
+      Programm zum ersten Mal ausgeführt, getestet oder gebaut wird; und
+      <userinput>scaly install</userinput> baut die Programme, die ein solches
+      Paket anbietet, und legt sie auf deinen <envar>PATH</envar>. Pakete und
+      ihre Quellen, Sichtbarkeit und Importe mit Stern:
+      <link xlink:href="https://scaly.io/lang/modules.htm">Modules and
+      Packages</link>.</para>
+  </section>
+</chapter>

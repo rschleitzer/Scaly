@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book SYSTEM "docbook.dtd" [
+  <!ENTITY tour SYSTEM "playground/de/tour.xml">
+  <!ENTITY drawing SYSTEM "playground/de/drawing.xml">
+  <!ENTITY scaling SYSTEM "playground/de/scaling.xml">
+]>
+<!-- The Scaly Playground in German (web/repl/playground.html, chosen by the
+     browser's language or the reader). NOT part of the specification. Its
+     first chapter is the book's tour (scaly/chapters/tutorial.xml, tut-tour)
+     translated (the book itself stays as it is), the others are the
+     chapters of scaly-playground.xml translated. A program keeps its names
+     as the English one has them; its comments and its text are German.
+     Every section has the id of its English twin and as many programs:
+     tests/tour/run.sh checks both and runs every program. Set into
+     playground-steps.de.htm by dsssl/scaly-playground.dsl. -->
+<book xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0" xml:lang="de">
+  <title>Der Scaly Playground</title>
+&tour;
+&drawing;
+&scaling;
+</book>

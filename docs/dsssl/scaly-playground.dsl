@@ -11,7 +11,10 @@
 ;;   dazzle -t sgml -d dsssl/scaly-playground.dsl scaly-playground.xml
 ;;
 ;; (web/repl/build.sh). Each chapter's sections become steps as the tour's
-;; do, each step marked with its chapter's title (data-chapter).
+;; do, each step marked with its chapter's title (data-chapter) and id
+;; (data-chapter-id). The same chapters in German (scaly-playground.de.xml,
+;; xml:lang="de", the book's tour translated as their first chapter) write
+;; playground-steps.de.htm.
 ;; writes playground-steps.htm, as scaly-tour.dsl writes tour-steps.htm: one section element of class "step" per program of
 ;; the section, with its title, its prose -- every paragraph and fragment
 ;; since the program before, and after the last program of a subsection what
@@ -60,15 +63,17 @@
 (define (section-title sec)
   (data (select-elements (children sec) "title")))
 
+(define (chapter-of nd)
+  (if (equal? (gi nd) "chapter") nd (chapter-of (parent nd))))
+
 (define (chapter-title nd)
-  (if (equal? (gi nd) "chapter")
-      (data (select-elements (children nd) "title"))
-      (chapter-title (parent nd))))
+  (data (select-elements (children (chapter-of nd)) "title")))
 
 (define (make-step sec step)
   (make element gi: "section"
         attributes: (list (list "class" "step") (list "data-section" (id sec))
-                          (list "data-chapter" (chapter-title sec)))
+                          (list "data-chapter" (chapter-title sec))
+                          (list "data-chapter-id" (id (chapter-of sec))))
     (make element gi: "h2" (literal (section-title sec)))
     (make element gi: "div" attributes: '(("class" "prose"))
       (let loop ((nodes (car step)) (out (empty-sosofo)))
@@ -92,12 +97,15 @@
         out
         (loop (cdr steps) (sosofo-append out (make-step sec (car steps)))))))
 
-(root
-  (make entity system-id: "playground-steps.htm"
-    (make element gi: "div" attributes: '(("class" "tour"))
-      (process-children))))
-
-(element book (process-node-list (select-elements (children (current-node)) "chapter")))
+;; the book in English writes playground-steps.htm, one in another language
+;; (xml:lang="de") playground-steps.LANG.htm
+(element book
+  (let ((lang (attribute-string "xml:lang")))
+    (make entity system-id: (if (and lang (not (equal? lang "en")))
+                                (string-append "playground-steps." lang ".htm")
+                                "playground-steps.htm")
+      (make element gi: "div" attributes: '(("class" "tour"))
+        (process-node-list (select-elements (children (current-node)) "chapter"))))))
 (element chapter (process-node-list (select-elements (children (current-node)) "section")))
 (element section (steps-of (current-node)))
 (element para (make element gi: "p" (process-children)))
@@ -105,6 +113,9 @@
   (make element gi: "pre" attributes: '(("class" "fragment")) (process-children)))
 (element code (make element gi: "code" (process-children)))
 (element filename (make element gi: "code" (process-children)))
+(element command (make element gi: "code" (process-children)))
+(element userinput (make element gi: "code" (process-children)))
+(element envar (make element gi: "code" (process-children)))
 (element emphasis (make element gi: "em" (process-children)))
 (element link
   (make element gi: "a" attributes: (list (list "href" (attribute-string "xlink:href")))

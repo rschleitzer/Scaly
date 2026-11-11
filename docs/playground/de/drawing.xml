@@ -1,0 +1,68 @@
+<chapter xml:id="pg-drawing">
+  <title>Zeichnen</title>
+
+  <section xml:id="pg-sheet">
+    <title>Ein Blatt zum Zeichnen</title>
+    <para>Eine <code>Drawing</code> ist ein Blatt Papier: du sagst, wie breit
+      und wie hoch es ist, in Punkten, und zeichnest dann darauf. Der Punkt
+      (0, 0) ist die linke obere Ecke; x wächst nach rechts und y nach unten.
+      Was du später zeichnest, liegt über dem, was du vorher gezeichnet
+      hast.</para>
+    <para><code>show()</code> legt das Blatt neben das Programm. Eine Farbe ist
+      ein Name wie <code>"gold"</code> (auf Englisch), oder
+      <code>"#2a5db0"</code> für einen genauen Farbton.</para>
+    <programlisting>var sheet Drawing(400, 300)
+sheet.rect(0, 0, 400, 300, "midnightblue")     ; der Himmel
+sheet.circle(300, 80, 40, "gold")              ; die Sonne
+sheet.rect(0, 220, 400, 80, "forestgreen")     ; die Wiese
+sheet.line(60, 220, 120, 120, "white")         ; ein Berg
+sheet.line(120, 120, 180, 220, "white")
+sheet.text(20, 40, "Hallo von Scaly", "white")
+sheet.show()</programlisting>
+    <para>Schieb die Sonne woandershin, mach sie größer, mal die Wiese in einer
+      anderen Farbe an — und lass es noch einmal laufen.</para>
+  </section>
+
+  <section xml:id="pg-loop-drawing">
+    <title>Zeichnen in einer Schleife</title>
+    <para>Eine Schleife zeichnet viele Dinge auf einmal. Hier zählt
+      <code>i</code> von 0 bis 9, und jede Runde zeichnet einen Kreis, ein
+      Stück weiter rechts und ein wenig größer. <code>`i`</code> in einem Text
+      setzt die Zahl ein.</para>
+    <programlisting>var sheet Drawing(500, 200)
+sheet.rect(0, 0, 500, 200, "white")
+for i in 10
+{
+    let x 30 + i * 48
+    sheet.circle(x, 100, 6 + i * 2, "#2a5db0")
+    sheet.text(x - 5, 180, "`i`", "black")
+}
+sheet.show()</programlisting>
+    <para>Probier <code>for i in 20</code>, oder mal jeden zweiten Kreis rot:
+      <code>if i % 2 = 0</code> wählt die geraden aus.</para>
+  </section>
+
+  <section xml:id="pg-chart">
+    <title>Ein Diagramm aus Zahlen</title>
+    <para>Ein <code>Chart</code> zeichnet Zahlen als Linie: <code>add</code>
+      fügt einen Wert nach dem anderen an, und <code>show()</code> zeichnet sie
+      mit ihren Achsen. <code>series</code> beginnt eine weitere Linie, so
+      lassen sich zwei Zahlenreihen vergleichen.</para>
+    <programlisting>var chart Chart("Wie schnell Zahlen wachsen")
+chart.series("verdoppeln")
+var d 1
+for i in 10
+{
+    chart.add(d)
+    d := d * 2
+}
+chart.series("Quadrate")
+for i in 10
+    chart.add(i * i)
+chart.show()</programlisting>
+    <para>Eine Weile laufen die beiden Linien dicht beieinander — bei 2 und bei
+      4 treffen sie sich, bei 3 liegen die Quadrate sogar vorn —, und dann
+      lässt das Verdoppeln die Quadrate weit hinter sich. Mach die Schleifen
+      länger: wie weit?</para>
+  </section>
+</chapter>

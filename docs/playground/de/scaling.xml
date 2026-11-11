@@ -1,0 +1,50 @@
+<chapter xml:id="pg-scaling">
+  <title>Viele Kerne, und die Grafikkarte</title>
+
+  <section xml:id="pg-mandelbrot">
+    <title>Ein Bild, das Arbeit macht</title>
+    <para>Manche Bilder machen viel Rechenarbeit. Dieses fragt jeden Punkt des
+      Bildes, wie schnell er davonläuft, wenn man eine kleine Rechnung immer
+      wieder auf ihn anwendet — das ist die Mandelbrot-Menge. Die Arbeit ist
+      ein einziges <code>for</code> über die Punkte, und die Runden dieser
+      Schleife hängen nicht voneinander ab.</para>
+    <para>Darum sagt nichts im Programm, wie es läuft, und unter dem Programm
+      kannst du wählen: auf einem Kern deines Computers, auf allen, oder auf
+      der Grafikkarte. Das Bild ist dasselbe, die Zeit nicht.
+      <code>relaxed</code> erlaubt der Karte, ein wenig weniger streng zu
+      rechnen.</para>
+    <programlisting role="gpu">function colour(x: i32, y: i32, w: i32, h: i32) returns u32
+{
+    let cr (x as f32) * 3.0 / (w as f32) - 2.1
+    let ci (y as f32) * 2.0 / (h as f32) - 1.0
+    var zr: f32 0.0
+    var zi: f32 0.0
+    var k: i32 0
+    while k &lt; 200 and zr * zr + zi * zi &lt;= 4.0
+    {
+        let t zr * zr - zi * zi + cr
+        zi := zr * 2.0 * zi + ci
+        zr := t
+        k := k + 1
+    }
+    if k = 200
+        return 0xFF000000
+    let shade ((k % 32) * 8) as u32
+    0xFF000000 | ((255 - shade) &lt;&lt; 16) | ((shade / 2) &lt;&lt; 8) | shade
+}
+
+let w: i32 600
+let h: i32 400
+var picture Vector[u32]((w * h) as size_t)
+relaxed for p in w * h
+    picture.put(p as size_t, colour(p % w, p / w, w, h))
+File.write_bytes("mandelbrot.`w`x`h`.rgba", picture.as_bytes())
+print "`w * h` Punkte"</programlisting>
+    <para>Die Farbe eines Punktes ist eine Zahl aus vier Bytes — Rot, Grün,
+      Blau und wie deckend sie ist —, und das Bild kommt in eine Datei, deren
+      Name seine Größe nennt; der Playground zeigt eine solche Datei. Im
+      <link xlink:href="https://scaly.io/play/mandelbrot/">Mandelbrot-Showcase</link>
+      kannst du hineinzoomen und die Kerne gegen die Karte antreten
+      lassen.</para>
+  </section>
+</chapter>

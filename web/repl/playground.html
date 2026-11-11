@@ -94,24 +94,28 @@
 <header>
   <h1><img src="lizard.svg" alt="">Scaly Playground</h1>
   <span class="steps">
-    <button id="prev" aria-label="Previous step">‹</button>
-    <select id="toc" aria-label="Steps of the playground"></select>
-    <button id="fwd" aria-label="Next step">›</button>
+    <button id="prev" aria-label="Previous step" data-t-label="previous">‹</button>
+    <select id="toc" aria-label="Steps of the playground" data-t-label="toc"></select>
+    <button id="fwd" aria-label="Next step" data-t-label="forward">›</button>
   </span>
   <span class="spacer"></span>
   <nav>
     <a href="https://scaly.io/scaly/">Scaly</a>
-    <a href="index.html">The REPL</a>
-    <a href="https://scaly.io/lang/">The specification</a>
+    <a href="index.html" data-t="repl">The REPL</a>
+    <a href="https://scaly.io/lang/" data-t="spec">The specification</a>
   </nav>
+  <select id="lang" aria-label="Language">
+    <option value="en">English</option>
+    <option value="de">Deutsch</option>
+  </select>
 </header>
 <main id="main">
   <section class="lesson">
     <div class="chapter" id="chapter"></div>
     <h2 id="title">Scaly Playground</h2>
-    <div class="prose" id="prose"><p>Loading the playground…</p></div>
+    <div class="prose" id="prose"><p data-t="loading">Loading the playground…</p></div>
     <div class="nav">
-      <button id="back">‹ Back</button>
+      <button id="back" data-t="back">‹ Back</button>
       <span class="count" id="count"></span>
       <button id="next">Next ›</button>
     </div>
@@ -119,21 +123,21 @@
   <section class="work">
     <div class="toolbar">
       <button class="primary" id="run" disabled>Run</button>
-      <button id="reset">Reset</button>
-      <select id="where" aria-label="Where the loops run" hidden>
-        <option value="one">On one core</option>
-        <option value="all">On all cores</option>
-        <option value="card">On the graphics card</option>
-        <option value="auto" selected>Where it pays</option>
+      <button id="reset" data-t="reset">Reset</button>
+      <select id="where" aria-label="Where the loops run" data-t-label="where" hidden>
+        <option value="one" data-t="one">On one core</option>
+        <option value="all" data-t="all">On all cores</option>
+        <option value="card" data-t="card">On the graphics card</option>
+        <option value="auto" data-t="auto" selected>Where it pays</option>
       </select>
       <span id="status">Loading…</span>
     </div>
     <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
-              aria-label="The program"></textarea>
-    <div class="hint">Change the program and run it again — Ctrl+Enter or ⌘+Enter runs it.
+              aria-label="The program" data-t-label="program"></textarea>
+    <div class="hint" data-t="hint">Change the program and run it again — Ctrl+Enter or ⌘+Enter runs it.
       The compiler and the program run in this browser tab.</div>
     <div class="results">
-      <div class="runs" id="runs" aria-label="The runs of this program"></div>
+      <div class="runs" id="runs" aria-label="The runs of this program" data-t-label="runs"></div>
       <div id="drawings"></div>
       <div id="pictures"></div>
       <pre id="output" aria-live="polite"></pre>
@@ -145,6 +149,77 @@
 import { loadCompiler } from './load.mjs';
 
 const $ = id => document.getElementById(id);
+
+// --- the language -------------------------------------------------------
+// English or German: what the reader chose (?lang=, or the switch, kept in
+// this browser), else the first of the browser's languages the playground
+// has -- navigator.languages, the order the reader's system and browser
+// prefer. The steps in German are the tour of the book translated, then
+// the playground's chapters (playground-steps.de.htm,
+// docs/scaly-playground.de.xml); the book itself is in English.
+const LANGS = ['en', 'de'];
+const TEXT = {
+  en: {
+    repl: 'The REPL', spec: 'The specification', loading: 'Loading the playground…',
+    back: '‹ Back', next: 'Next ›', toRepl: 'The REPL ›', run: 'Run', stop: 'Stop', reset: 'Reset',
+    one: 'On one core', all: 'On all cores', card: 'On the graphics card', auto: 'Where it pays',
+    hint: 'Change the program and run it again — Ctrl+Enter or ⌘+Enter runs it. The compiler and the program run in this browser tab.',
+    previous: 'Previous step', forward: 'Next step', toc: 'Steps of the playground', where: 'Where the loops run',
+    program: 'The program', runs: 'The runs of this program', language: 'Language',
+    tour: 'A Tour of Scaly', ready: 'Ready.', compilerFailed: m => `Could not load the compiler: ${m}`,
+    preparing: 'Loading what a build for the cores needs…', building: 'Building…', running: 'Running…',
+    compilingRunning: 'Compiling and running…', notBuilt: 'It did not build.', compilerEnded: s => `the compiler ended with ${s}\n`,
+    ended: s => `The program ended with ${s}.`, endedNote: s => `\n[the program ended with status ${s}]\n`,
+    done: ms => `Done in ${ms} ms.`, runFailed: 'The run failed.', stopped: '\n[stopped]\n',
+    stoppedBy: t => `\n[stopped: ${t}]\n`, workerFailed: m => `\n[the worker failed: ${m}]\n`,
+    oneCore: 'One core', cores: n => `${n} cores`, theCard: 'The card', noCard: 'No card',
+    builtIn: ms => `built in ${ms} ms; `, noCardGiven: 'this browser gives the page no graphics card, the cores ran it',
+    cardRan: n => `the card ran ${n} ${n === 1 ? 'loop' : 'loops'}`,
+    upTo: n => `the loops ran on up to ${n} cores`, onOne: 'the loops ran on one core',
+    points: (w, h) => `${w} × ${h} points`,
+  },
+  de: {
+    repl: 'Die REPL', spec: 'Die Spezifikation', loading: 'Der Playground lädt…',
+    back: '‹ Zurück', next: 'Weiter ›', toRepl: 'Zur REPL ›', run: 'Ausführen', stop: 'Anhalten', reset: 'Zurücksetzen',
+    one: 'Auf einem Kern', all: 'Auf allen Kernen', card: 'Auf der Grafikkarte', auto: 'Wo es sich lohnt',
+    hint: 'Ändere das Programm und lass es noch einmal laufen — Strg+Enter oder ⌘+Enter führt es aus. Der Compiler und das Programm laufen in diesem Browser-Tab.',
+    previous: 'Voriger Schritt', forward: 'Nächster Schritt', toc: 'Die Schritte des Playgrounds', where: 'Wo die Schleifen laufen',
+    program: 'Das Programm', runs: 'Die Läufe dieses Programms', language: 'Sprache',
+    tour: 'Eine Rundreise durch Scaly', ready: 'Bereit.', compilerFailed: m => `Der Compiler ließ sich nicht laden: ${m}`,
+    preparing: 'Lade, was ein Bau für die Kerne braucht…', building: 'Baue…', running: 'Läuft…',
+    compilingRunning: 'Übersetze und führe aus…', notBuilt: 'Es ließ sich nicht bauen.', compilerEnded: s => `der Compiler endete mit ${s}\n`,
+    ended: s => `Das Programm endete mit ${s}.`, endedNote: s => `\n[das Programm endete mit Status ${s}]\n`,
+    done: ms => `Fertig in ${ms} ms.`, runFailed: 'Der Lauf ist fehlgeschlagen.', stopped: '\n[angehalten]\n',
+    stoppedBy: t => `\n[angehalten: ${t}]\n`, workerFailed: m => `\n[der Worker ist fehlgeschlagen: ${m}]\n`,
+    oneCore: 'Ein Kern', cores: n => `${n} Kerne`, theCard: 'Die Karte', noCard: 'Keine Karte',
+    builtIn: ms => `gebaut in ${ms} ms; `, noCardGiven: 'dieser Browser gibt der Seite keine Grafikkarte, die Kerne haben gerechnet',
+    cardRan: n => `die Karte hat ${n} ${n === 1 ? 'Schleife' : 'Schleifen'} gerechnet`,
+    upTo: n => `die Schleifen liefen auf bis zu ${n} Kernen`, onOne: 'die Schleifen liefen auf einem Kern',
+    points: (w, h) => `${w} × ${h} Punkte`,
+  },
+};
+function storedLang() {
+  try { return localStorage.getItem('scaly-playground:lang'); } catch { return null; }
+}
+function chooseLang() {
+  const asked = new URLSearchParams(location.search).get('lang') ?? storedLang();
+  if (LANGS.includes(asked)) return asked;
+  for (const tag of navigator.languages ?? [navigator.language ?? 'en']) {
+    const primary = String(tag).toLowerCase().split('-')[0];
+    if (LANGS.includes(primary)) return primary;
+  }
+  return 'en';
+}
+let lang = chooseLang();
+const t = key => TEXT[lang][key];
+function translatePage() {
+  document.documentElement.lang = lang;
+  $('lang').value = lang;
+  $('lang').setAttribute('aria-label', t('language'));
+  for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
+  for (const e of document.querySelectorAll('[data-t-label]')) e.setAttribute('aria-label', t(e.dataset.tLabel));
+  runButton.textContent = worker ? t('stop') : t('run');
+}
 const editor = $('editor'), output = $('output'), runButton = $('run');
 let steps = [], at = 0, compiler = null, worker = null;
 // a step whose program may run on the graphics card (its listing is marked
@@ -166,7 +241,8 @@ function append(text, cls = '') {
 }
 
 // a step's program as the reader left it, kept in this browser where it allows
-const key = i => `scaly-tour:${steps[i].section}:${steps[i].ordinal}`;
+// (in German under a key of its own: its programs say other things)
+const key = i => `scaly-tour${lang === 'en' ? '' : '-' + lang}:${steps[i].section}:${steps[i].ordinal}`;
 function edited(i) {
   try { return localStorage.getItem(key(i)); } catch { return null; }
 }
@@ -187,7 +263,7 @@ function show(i, push = true) {
   $('count').textContent = `${at + 1} / ${steps.length}`;
   $('back').disabled = $('prev').disabled = at === 0;
   $('fwd').disabled = at === steps.length - 1;
-  $('next').textContent = at === steps.length - 1 ? 'The REPL ›' : 'Next ›';
+  $('next').textContent = at === steps.length - 1 ? t('toRepl') : t('next');
   $('toc').value = String(at);
   $('main').classList.toggle('prose-only', step.program === null);
   editor.value = step.program === null ? '' : (edited(at) ?? step.program);
@@ -207,8 +283,8 @@ function show(i, push = true) {
 function stop() {
   worker?.terminate();
   worker = null;
-  runButton.textContent = 'Run';
-  if (compiler) status('Ready.', 'ok');
+  runButton.textContent = t('run');
+  if (compiler) status(t('ready'), 'ok');
 }
 
 // A picture the program wrote (a file `<name>.<width>x<height>.rgba`, which
@@ -225,7 +301,7 @@ function showPictures(pictures) {
     canvas.height = p.height;
     canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(p.bytes.buffer), p.width, p.height), 0, 0);
     const caption = document.createElement('figcaption');
-    caption.textContent = `${p.name} — ${p.width} × ${p.height} points`;
+    caption.textContent = `${p.name} — ${t('points')(p.width, p.height)}`;
     figure.append(canvas, caption);
     box.appendChild(figure);
   }
@@ -289,7 +365,7 @@ let runner = null, runnerCard = false, building = null, threadsLib = null;
 
 async function prepareCores() {
   if (!building) building = (async () => {
-    status('Loading what a build for the cores needs…');
+    status(t('preparing'));
     const listing = await (await fetch('playground.json')).json();
     for (const [path, b64] of Object.entries(listing))
       compiler.files[path] = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
@@ -330,16 +406,16 @@ async function runOnCores() {
   output.textContent = '';
   $('pictures').textContent = '';
   showDrawings([]);
-  runButton.textContent = 'Stop';
+  runButton.textContent = t('stop');
   try {
     await prepareCores();
-    status('Building…');
+    status(t('building'));
     const t0 = performance.now();
     const built = await buildForCores(editor.value);
     worker = null;
     if (built.status !== 0 || !built.bytes) {
-      append(built.said || `the compiler ended with ${built.status}\n`, 'err');
-      status('It did not build.', 'bad');
+      append(built.said || t('compilerEnded')(built.status), 'err');
+      status(t('notBuilt'), 'bad');
       return;
     }
     const compiled = performance.now() - t0;
@@ -347,7 +423,7 @@ async function runOnCores() {
       runner.onmessage = ({ data }) => { if (data.type === 'loaded') resolve(); };
       runner.postMessage({ type: 'load', bytes: built.bytes }, [built.bytes.buffer]);
     });
-    status('Running…');
+    status(t('running'));
     const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
     let resolve;
     const done = new Promise(r => { resolve = r; });
@@ -364,27 +440,27 @@ async function runOnCores() {
     if (r.stderr) append(r.stderr, 'err');
     showPictures(r.pictures);
     showDrawings(r.drawings);
-    if (r.status !== '0') { status(`The program ended with ${r.status}.`, 'bad'); return; }
-    const where = choice === 'one' ? 'One core' : choice === 'all' ? `${cpus} cores`
-      : choice === 'card' ? (runnerCard ? 'The card' : 'No card') : 'Where it pays';
-    let what = `built in ${Math.round(compiled)} ms; `;
-    if ((choice === 'card' || choice === 'auto') && !runnerCard) what += 'this browser gives the page no graphics card, the cores ran it';
-    else if (r.cards > 0) what += `the card ran ${r.cards} ${r.cards === 1 ? 'loop' : 'loops'}`;
-    else what += workers > 1 ? `the loops ran on up to ${workers} cores` : 'the loops ran on one core';
+    if (r.status !== '0') { status(t('ended')(r.status), 'bad'); return; }
+    const where = choice === 'one' ? t('oneCore') : choice === 'all' ? t('cores')(cpus)
+      : choice === 'card' ? (runnerCard ? t('theCard') : t('noCard')) : t('auto');
+    let what = t('builtIn')(Math.round(compiled));
+    if ((choice === 'card' || choice === 'auto') && !runnerCard) what += t('noCardGiven');
+    else if (r.cards > 0) what += t('cardRan')(r.cards);
+    else what += workers > 1 ? t('upTo')(workers) : t('onOne');
     const list = runs.get(step) ?? [];
     list.push({ where, cards: r.cards, ran: r.ms, what });
     runs.set(step, list.slice(-6));
     showRuns();
-    status(`Done in ${Math.round(r.ms)} ms.`, 'ok');
+    status(t('done')(Math.round(r.ms)), 'ok');
   } finally {
     worker = null;
-    runButton.textContent = 'Run';
+    runButton.textContent = t('run');
   }
 }
 
 function run() {
   if (!compiler) return;
-  if (worker) { stop(); append('\n[stopped]\n', 'note'); return; }
+  if (worker) { stop(); append(t('stopped'), 'note'); return; }
   if (steps[at].gpu) { runOnCores(); return; }
   output.textContent = '';
   const stdin = new SharedArrayBuffer(16);
@@ -395,8 +471,8 @@ function run() {
   showDrawings([]);
   const files = { ...compiler.files, '/work/main.scaly': editor.value };
   worker = new Worker('worker.mjs', { type: 'module' });
-  runButton.textContent = 'Stop';
-  status('Compiling and running…');
+  runButton.textContent = t('stop');
+  status(t('compilingRunning'));
   worker.onmessage = ({ data }) => {
     switch (data.type) {
       case 'out':
@@ -412,20 +488,20 @@ function run() {
         showPictures(data.pictures);
         showDrawings(data.drawings);
         stop();
-        if (data.status !== 0) append(`\n[the program ended with status ${data.status}]\n`, 'note');
-        status(`Done in ${ms} ms.`, data.status === 0 ? 'ok' : 'bad');
+        if (data.status !== 0) append(t('endedNote')(data.status), 'note');
+        status(t('done')(ms), data.status === 0 ? 'ok' : 'bad');
         break;
       }
       case 'crash':
         stop();
-        append(`\n[stopped: ${data.text}]\n`, 'err');
-        status('The run failed.', 'bad');
+        append(t('stoppedBy')(data.text), 'err');
+        status(t('runFailed'), 'bad');
         break;
     }
   };
   worker.onerror = e => {
     stop();
-    append(`\n[the worker failed: ${e.message}]\n`, 'err');
+    append(t('workerFailed')(e.message), 'err');
   };
   worker.postMessage({ module: compiler.module, files, stdin, args: ['scaly', 'run', 'main.scaly'] });
 }
@@ -460,11 +536,16 @@ addEventListener('hashchange', () => {
 
 // the steps, set by the DSSSL engine: the book's tour first, as the
 // tutorial has it (tour-steps.htm, docs/dsssl/scaly-tour.dsl), then the
-// playground's own chapters (playground-steps.htm, docs/scaly-playground.xml)
+// playground's own chapters (playground-steps.htm, docs/scaly-playground.xml);
+// in German all of them from one file, the tour translated
+// (playground-steps.de.htm, docs/scaly-playground.de.xml)
 async function loadSteps() {
   const seen = {};
   steps = [];
-  for (const [file, chapter] of [['tour-steps.htm', 'A Tour of Scaly'], ['playground-steps.htm', null]]) {
+  $('toc').textContent = '';
+  const files = lang === 'en' ? [['tour-steps.htm', 'A Tour of Scaly'], ['playground-steps.htm', null]]
+                              : [[`playground-steps.${lang}.htm`, null]];
+  for (const [file, chapter] of files) {
     const response = await fetch(file);
     if (!response.ok) continue;
     const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
@@ -475,6 +556,9 @@ async function loadSteps() {
       steps.push({
         section, ordinal: seen[section],
         chapter: chapter ?? s.dataset.chapter ?? '',
+        // the book's tour, in English or translated: not the playground's own
+        tour: chapter !== null || s.dataset.chapterId === 'pg-tour',
+        chapterId: chapter !== null ? 'pg-tour' : s.dataset.chapterId ?? '',
         title: s.querySelector('h2').textContent,
         prose: s.querySelector('.prose').innerHTML,
         program: program ? program.textContent : null,
@@ -498,13 +582,23 @@ async function loadSteps() {
   show(n >= 1 ? n - 1 : 0, false);
 }
 
+translatePage();
+$('lang').onchange = async () => {
+  lang = $('lang').value;
+  try { localStorage.setItem('scaly-playground:lang', lang); } catch {}
+  const url = new URL(location.href);
+  if (url.searchParams.has('lang')) { url.searchParams.set('lang', lang); history.replaceState(null, '', url); }
+  translatePage();
+  runs.clear();
+  await loadSteps();
+};
 await loadSteps();
 try {
   compiler = await loadCompiler(text => status(text));
   runButton.disabled = false;
-  status('Ready.', 'ok');
+  status(t('ready'), 'ok');
 } catch (e) {
-  status(`Could not load the compiler: ${e.message}`, 'bad');
+  status(t('compilerFailed')(e.message), 'bad');
 }
 
 // ?selftest (tests/gpu/web/run.sh): every step of the playground's own
@@ -514,7 +608,7 @@ if (new URLSearchParams(location.search).has('selftest') && compiler) {
   const report = [];
   const idle = async () => { while (worker !== null || /…$/.test($('status').textContent)) await new Promise(r => setTimeout(r, 50)); };
   for (let i = 0; i < steps.length; i++) {
-    if (steps[i].chapter === 'A Tour of Scaly' || steps[i].program === null) continue;
+    if (steps[i].tour || steps[i].program === null) continue;
     show(i, false);
     const modes = steps[i].gpu ? ['one', 'all'] : [null];
     const seen = [];
@@ -525,9 +619,9 @@ if (new URLSearchParams(location.search).has('selftest') && compiler) {
                   output: output.textContent.trim().slice(0, 200), drawings: $('drawings').children.length,
                   pictures: lastPictures.map(p => ({ name: p.name, width: p.width, height: p.height, bytes: Array.from(p.bytes.slice(0, 0)).length, hash: Array.from(p.bytes).reduce((h, b) => Math.imul(h ^ b, 16777619) >>> 0, 2166136261) })) });
     }
-    report.push({ title: steps[i].title, chapter: steps[i].chapter, gpu: steps[i].gpu, runs: seen });
+    report.push({ title: steps[i].title, chapter: steps[i].chapterId, gpu: steps[i].gpu, runs: seen });
   }
-  await fetch('/result', { method: 'POST', body: JSON.stringify({ steps: steps.length, report }) });
+  await fetch('/result', { method: 'POST', body: JSON.stringify({ lang, steps: steps.length, report }) });
 }
 </script>
 </body>
