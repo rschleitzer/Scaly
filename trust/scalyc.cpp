@@ -179294,7 +179294,7 @@ __attribute__((weak)) Options cli_parse_args(scaly_frame* scaly_rp, int64_t argc
 __attribute__((weak)) void cli_print_tool_usage()
 {
     Console_println(((const char*)"Usage: scaly                            the REPL"));
-    Console_println(((const char*)"       scaly run <file> [arguments]     compile and run a program"));
+    Console_println(((const char*)"       scaly run [--gpu] <file> [arguments]   compile and run a program"));
     Console_println(((const char*)"       scaly build <file> [-o <out>] [--release]   build an executable"));
     Console_println(((const char*)"             --pgo-train          ... instrumented: its run writes default.profraw ($LLVM_PROFILE_FILE)"));
     Console_println(((const char*)"             --pgo <profile>      ... optimised with that profile"));
@@ -180474,6 +180474,7 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
     {
         Emitter_EmitterConfig prog_config = ({ Emitter_EmitterConfig scaly_t42{}; Emitter_EmitterConfig_init(scaly_t42); scaly_t42; });
         (prog_config).emit_debug_info = false;
+        (prog_config).gpu = ((opts).gpu ? (scalyc_has_jit() == (int32_t)0ULL) : false);
         Emitter* prog_emitter = ({ Emitter* scaly_t43 = (Emitter*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Emitter), alignof(Emitter)); *scaly_t43 = Emitter{}; Emitter_init((*scaly_t43), prog_config); scaly_t43; });
         Array<String>* prog_dep_objs = ({ Array<String>* scaly_t44 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t44 = Array<String>{}; (void)0; scaly_t44; });
         Array<String>* prog_dep_syms = ({ Array<String>* scaly_t45 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t45 = Array<String>{}; (void)0; scaly_t45; });
@@ -182146,22 +182147,30 @@ __attribute__((weak)) int64_t cli_tool_main(int64_t argc, uint8_t** argv)
     String* command = ({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init4((*scaly_t1), (const char*)((*(((argv) + (int64_t)(1LL)))))); scaly_t1; });
     if (String_equals((*command), scaly_lvalue(String{(uint8_t*)"\003run"})))
     {
-        if ((argc < 3LL))
+        int64_t file_at = 2LL;
+        bool run_gpu = false;
+        if (((argc >= 3LL) ? String_equals(scaly_lvalue((*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init4((*scaly_t2), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t2; }))), scaly_lvalue(String{(uint8_t*)"\005--gpu"})) : false))
         {
-            Console_println(((const char*)"Usage: scaly run <file> [arguments]"));
+            run_gpu = true;
+            file_at = 3LL;
+        }
+        if ((argc < (file_at + 1LL)))
+        {
+            Console_println(((const char*)"Usage: scaly run [--gpu] <file> [arguments]"));
             return 1LL;
         }
-        Array<String>* run_seen = ({ Array<String>* scaly_t2 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t2 = Array<String>{}; (void)0; scaly_t2; });
-        if (((tool_fetch_declared(scaly_lvalue((*({ String* scaly_t3 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t3 = String{}; String_init4((*scaly_t3), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t3; }))), (&((*run_seen))))) == (false)))
+        Array<String>* run_seen = ({ Array<String>* scaly_t3 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t3 = Array<String>{}; (void)0; scaly_t3; });
+        if (((tool_fetch_declared(scaly_lvalue((*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init4((*scaly_t4), (const char*)((*(((argv) + (int64_t)(file_at)))))); scaly_t4; }))), (&((*run_seen))))) == (false)))
         {
             return 1LL;
         }
-        tool_prepare_interfaces(scaly_lvalue((*({ String* scaly_t4 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t4 = String{}; String_init4((*scaly_t4), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t4; }))));
-        Options* run_opts = ({ Options* scaly_t5 = (Options*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Options), alignof(Options)); *scaly_t5 = Options{}; Options_init((*scaly_t5)); scaly_t5; });
-        ((*run_opts)).input_file = (*({ String* scaly_t6 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t6 = String{}; String_init4((*scaly_t6), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t6; }));
+        tool_prepare_interfaces(scaly_lvalue((*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init4((*scaly_t5), (const char*)((*(((argv) + (int64_t)(file_at)))))); scaly_t5; }))));
+        Options* run_opts = ({ Options* scaly_t6 = (Options*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Options), alignof(Options)); *scaly_t6 = Options{}; Options_init((*scaly_t6)); scaly_t6; });
+        ((*run_opts)).input_file = (*({ String* scaly_t7 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t7 = String{}; String_init4((*scaly_t7), (const char*)((*(((argv) + (int64_t)(file_at)))))); scaly_t7; }));
         ((*run_opts)).jit_program = true;
-        ((*run_opts)).program_argc = (argc - 2LL);
-        ((*run_opts)).program_argv = ((argv) + (int64_t)(2LL));
+        ((*run_opts)).gpu = run_gpu;
+        ((*run_opts)).program_argc = (argc - file_at);
+        ((*run_opts)).program_argv = ((argv) + (int64_t)(file_at));
         return cli_run((*run_opts));
     }
     if (String_equals((*command), scaly_lvalue(String{(uint8_t*)"\004test"})))
@@ -182171,19 +182180,19 @@ __attribute__((weak)) int64_t cli_tool_main(int64_t argc, uint8_t** argv)
             Console_println(((const char*)"Usage: scaly test <file> [--list] [filter]"));
             return 1LL;
         }
-        Array<String>* test_seen = ({ Array<String>* scaly_t7 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t7 = Array<String>{}; (void)0; scaly_t7; });
-        if (((tool_fetch_declared(scaly_lvalue((*({ String* scaly_t8 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t8 = String{}; String_init4((*scaly_t8), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t8; }))), (&((*test_seen))))) == (false)))
+        Array<String>* test_seen = ({ Array<String>* scaly_t8 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t8 = Array<String>{}; (void)0; scaly_t8; });
+        if (((tool_fetch_declared(scaly_lvalue((*({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init4((*scaly_t9), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t9; }))), (&((*test_seen))))) == (false)))
         {
             return 1LL;
         }
-        tool_prepare_interfaces(scaly_lvalue((*({ String* scaly_t9 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t9 = String{}; String_init4((*scaly_t9), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t9; }))));
-        Options* test_opts = ({ Options* scaly_t10 = (Options*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Options), alignof(Options)); *scaly_t10 = Options{}; Options_init((*scaly_t10)); scaly_t10; });
-        ((*test_opts)).input_file = (*({ String* scaly_t11 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t11 = String{}; String_init4((*scaly_t11), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t11; }));
+        tool_prepare_interfaces(scaly_lvalue((*({ String* scaly_t10 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t10 = String{}; String_init4((*scaly_t10), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t10; }))));
+        Options* test_opts = ({ Options* scaly_t11 = (Options*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Options), alignof(Options)); *scaly_t11 = Options{}; Options_init((*scaly_t11)); scaly_t11; });
+        ((*test_opts)).input_file = (*({ String* scaly_t12 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t12 = String{}; String_init4((*scaly_t12), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t12; }));
         ((*test_opts)).test_mode = true;
         int64_t ta = 3LL;
         while ((ta < argc))
         {
-            String* targ = ({ String* scaly_t12 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t12 = String{}; String_init4((*scaly_t12), (const char*)((*(((argv) + (int64_t)(ta)))))); scaly_t12; });
+            String* targ = ({ String* scaly_t13 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t13 = String{}; String_init4((*scaly_t13), (const char*)((*(((argv) + (int64_t)(ta)))))); scaly_t13; });
             if (String_equals((*targ), scaly_lvalue(String{(uint8_t*)"\006--list"})))
             {
                 ((*test_opts)).test_list = true;
@@ -182200,14 +182209,14 @@ __attribute__((weak)) int64_t cli_tool_main(int64_t argc, uint8_t** argv)
     {
         Options build_opts = cli_parse_args(&scaly_local.f, (argc - 1LL), ((argv) + (int64_t)(1LL)));
         (build_opts).tool_build = true;
-        Array<String>* build_seen = ({ Array<String>* scaly_t13 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t13 = Array<String>{}; (void)0; scaly_t13; });
-        if ((Options_has_input(build_opts) ? ((tool_fetch_declared(scaly_lvalue((*({ String* scaly_t14 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t14 = String{}; String_init2((*scaly_t14), (build_opts).input_file); scaly_t14; }))), (&((*build_seen))))) == (false)) : false))
+        Array<String>* build_seen = ({ Array<String>* scaly_t14 = (Array<String>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Array<String>), alignof(Array<String>)); *scaly_t14 = Array<String>{}; (void)0; scaly_t14; });
+        if ((Options_has_input(build_opts) ? ((tool_fetch_declared(scaly_lvalue((*({ String* scaly_t15 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t15 = String{}; String_init2((*scaly_t15), (build_opts).input_file); scaly_t15; }))), (&((*build_seen))))) == (false)) : false))
         {
             return 1LL;
         }
         if (Options_has_input(build_opts))
         {
-            tool_prepare_packages(scaly_lvalue((*({ String* scaly_t15 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t15 = String{}; String_init2((*scaly_t15), (build_opts).input_file); scaly_t15; }))), true, (build_opts).target_triple, (build_opts).target_cpu, (build_opts).release);
+            tool_prepare_packages(scaly_lvalue((*({ String* scaly_t16 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t16 = String{}; String_init2((*scaly_t16), (build_opts).input_file); scaly_t16; }))), true, (build_opts).target_triple, (build_opts).target_cpu, (build_opts).release);
         }
         if (((String_get_length((build_opts).output_file) == 0ULL) ? Options_has_input(build_opts) : false))
         {
@@ -182222,7 +182231,7 @@ __attribute__((weak)) int64_t cli_tool_main(int64_t argc, uint8_t** argv)
         int64_t na = 2LL;
         while ((na < argc))
         {
-            String* arg = ({ String* scaly_t16 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t16 = String{}; String_init4((*scaly_t16), (const char*)((*(((argv) + (int64_t)(na)))))); scaly_t16; });
+            String* arg = ({ String* scaly_t17 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t17 = String{}; String_init4((*scaly_t17), (const char*)((*(((argv) + (int64_t)(na)))))); scaly_t17; });
             if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\005--lib"})))
             {
                 new_lib = true;
@@ -182263,7 +182272,7 @@ __attribute__((weak)) int64_t cli_tool_main(int64_t argc, uint8_t** argv)
             Console_println(((const char*)"Usage: scaly next <package> <version>"));
             return 1LL;
         }
-        return tool_next_version(scaly_lvalue((*({ String* scaly_t17 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t17 = String{}; String_init4((*scaly_t17), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t17; }))), scaly_lvalue((*({ String* scaly_t18 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t18 = String{}; String_init4((*scaly_t18), (const char*)((*(((argv) + (int64_t)(3LL)))))); scaly_t18; }))));
+        return tool_next_version(scaly_lvalue((*({ String* scaly_t18 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t18 = String{}; String_init4((*scaly_t18), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t18; }))), scaly_lvalue((*({ String* scaly_t19 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t19 = String{}; String_init4((*scaly_t19), (const char*)((*(((argv) + (int64_t)(3LL)))))); scaly_t19; }))));
     }
     if (String_equals((*command), scaly_lvalue(String{(uint8_t*)"\007publish"})))
     {
@@ -182273,7 +182282,7 @@ __attribute__((weak)) int64_t cli_tool_main(int64_t argc, uint8_t** argv)
         int64_t pa = 2LL;
         while ((pa < argc))
         {
-            String* arg = ({ String* scaly_t19 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t19 = String{}; String_init4((*scaly_t19), (const char*)((*(((argv) + (int64_t)(pa)))))); scaly_t19; });
+            String* arg = ({ String* scaly_t20 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t20 = String{}; String_init4((*scaly_t20), (const char*)((*(((argv) + (int64_t)(pa)))))); scaly_t20; });
             pa = (pa + 1LL);
             if (String_equals((*arg), scaly_lvalue(String{(uint8_t*)"\007--check"})))
             {
@@ -182303,7 +182312,7 @@ __attribute__((weak)) int64_t cli_tool_main(int64_t argc, uint8_t** argv)
             Console_println(((const char*)"Usage: scaly uninstall <program>"));
             return 1LL;
         }
-        return tool_uninstall(scaly_lvalue((*({ String* scaly_t20 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t20 = String{}; String_init4((*scaly_t20), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t20; }))));
+        return tool_uninstall(scaly_lvalue((*({ String* scaly_t21 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t21 = String{}; String_init4((*scaly_t21), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t21; }))));
     }
     if (String_equals((*command), scaly_lvalue(String{(uint8_t*)"\007install"})))
     {
@@ -182315,9 +182324,9 @@ __attribute__((weak)) int64_t cli_tool_main(int64_t argc, uint8_t** argv)
         String install_only = String{nullptr};
         if ((argc == 6LL))
         {
-            install_only = (*({ String* scaly_t21 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t21 = String{}; String_init4((*scaly_t21), (const char*)((*(((argv) + (int64_t)(5LL)))))); scaly_t21; }));
+            install_only = (*({ String* scaly_t22 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t22 = String{}; String_init4((*scaly_t22), (const char*)((*(((argv) + (int64_t)(5LL)))))); scaly_t22; }));
         }
-        return tool_install(scaly_lvalue((*({ String* scaly_t22 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t22 = String{}; String_init4((*scaly_t22), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t22; }))), scaly_lvalue((*({ String* scaly_t23 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t23 = String{}; String_init4((*scaly_t23), (const char*)((*(((argv) + (int64_t)(3LL)))))); scaly_t23; }))), scaly_lvalue((*({ String* scaly_t24 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t24 = String{}; String_init4((*scaly_t24), (const char*)((*(((argv) + (int64_t)(4LL)))))); scaly_t24; }))), install_only);
+        return tool_install(scaly_lvalue((*({ String* scaly_t23 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t23 = String{}; String_init4((*scaly_t23), (const char*)((*(((argv) + (int64_t)(2LL)))))); scaly_t23; }))), scaly_lvalue((*({ String* scaly_t24 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t24 = String{}; String_init4((*scaly_t24), (const char*)((*(((argv) + (int64_t)(3LL)))))); scaly_t24; }))), scaly_lvalue((*({ String* scaly_t25 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t25 = String{}; String_init4((*scaly_t25), (const char*)((*(((argv) + (int64_t)(4LL)))))); scaly_t25; }))), install_only);
     }
     if (((String_equals((*command), scaly_lvalue(String{(uint8_t*)"\002-h"})) ? true : String_equals((*command), scaly_lvalue(String{(uint8_t*)"\006--help"}))) ? true : String_equals((*command), scaly_lvalue(String{(uint8_t*)"\004help"}))))
     {
@@ -182325,14 +182334,14 @@ __attribute__((weak)) int64_t cli_tool_main(int64_t argc, uint8_t** argv)
         return 0LL;
     }
     Console_println(((const char*)scaly_rt_cstr(&scaly_lvalue(({
-        String scaly_t25{};
+        String scaly_t26{};
         {
-            StringBuilder* isb$ = ({ StringBuilder* scaly_t26 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t26 = StringBuilder{}; StringBuilder_init((*scaly_t26)); scaly_t26; });
+            StringBuilder* isb$ = ({ StringBuilder* scaly_t27 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t27 = StringBuilder{}; StringBuilder_init((*scaly_t27)); scaly_t27; });
             StringBuilder_append2((*isb$), scaly_lvalue(String{(uint8_t*)"\027scaly: unknown command "}));
             StringBuilder_append2((*isb$), scaly_lvalue(((*command))));
-            scaly_t25 = StringBuilder_to_string(&scaly_local.f, (*isb$));
+            scaly_t26 = StringBuilder_to_string(&scaly_local.f, (*isb$));
         }
-        scaly_t25;
+        scaly_t26;
     })))));
     cli_print_tool_usage();
     return 1LL;
