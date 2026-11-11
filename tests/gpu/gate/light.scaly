@@ -1,0 +1,40 @@
+; The gate, loops that do not pay. A small loop run three thousand times
+; never comes to the processor's gate, so the card is never asked. A loop
+; of some milliseconds comes there, and the card's host keeps it on the
+; processor: compiling a kernel and calling the card costs more.
+; cards: 0
+; kept-min: 1
+
+procedure small(mutable r: ref[Vector[i32]], bias: i32)
+{
+    for i in 8
+        r.put(i, (i as i32) * 3 + bias)
+}
+
+function spin(seed: i32) returns i32
+{
+    var acc seed
+    for k in 400
+        acc := acc * 31 + (k as i32)
+    acc
+}
+
+var r Vector[i32](8)
+var e: i32 0
+while e < 3000
+{
+    small(&r, e)
+    e := e + 1
+}
+let n: size_t 40000
+var out Vector[i32](n)
+for i in n
+    out.put(i, spin(i as i32))
+var sum: i32 0
+var j: size_t 0
+while j < n
+{
+    sum := sum + out[j]
+    j := j + 1
+}
+print "`r[7]` `sum`"

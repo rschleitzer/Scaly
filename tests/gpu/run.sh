@@ -12,8 +12,15 @@
 #   (3) on a machine with a card: every program here built with --gpu prints
 #       the same with the card as with SCALY_GPU=off, the card demonstrably
 #       ran (its trace), a round the processor would stop at stops the card's
-#       run, and a program the processor traps in traps the same way.
-# (3) is SKIPPED by name where there is no Metal device.
+#       run, and a program the processor traps in traps the same way. The
+#       card is FORCED there (SCALY_GPU=on): these loops are small.
+#   (4) left alone, the processor's driver asks the card where it is about
+#       to hand rounds to its other cores, and the host takes the loop where
+#       the card pays (tests/gpu/gate/): a heavy loop goes to the card, a
+#       light one stays, a small one is never asked, and the report says so.
+#       These verdicts follow MEASURED time; the fixtures leave a factor of
+#       ten on either side.
+# (3) and (4) are SKIPPED by name where there is no Metal device.
 #
 # A fixture's head says what its trace must hold:
 #   ; cards: N       runs the card finished
@@ -51,6 +58,12 @@ ir() { "$STAGE" "$@" -S -o "$T/ir.ll" tests/gpu/shapes.scaly >/dev/null 2>&1 && 
 check "without --gpu no call of the host"        '[ "$(ir --target arm64-apple-macosx14.0)" = "0" ]'
 check "with --gpu, an Apple target: the host"    '[ "$(ir --gpu --target arm64-apple-macosx14.0)" != "0" ]'
 check "with --gpu, another target: no host"      '[ "$(ir --gpu --target x86_64-unknown-linux-gnu)" = "0" ]'
+# the card is asked at the loop's head only where the host says so, and at
+# the two gates of the processor's driver, with what it measured
+ir --gpu --target arm64-apple-macosx14.0 >/dev/null
+check "the head asks the host whether the card is forced" 'grep -q "call i32 @scaly_gpu_forced()" "$T/ir.ll"'
+check "a gate hands over what a round cost"               'grep -q "call i32 @scaly_gpu_run(.*i64 %parfor.p1k, i64 %parfor.i.cur, i64 %parfor.ncpu.chk" "$T/ir.ll"'
+check "the head gate hands over the site's cost"          'grep -q "call i32 @scaly_gpu_run(.*i64 %parfor.sitep, i64 0, i64 %parfor.ncpu.chk" "$T/ir.ll"'
 "$STAGE" --target arm64-apple-macosx14.0 -S -o "$T/plain.ll" tests/gpu/refused.scaly >/dev/null 2>&1
 "$STAGE" --gpu --target arm64-apple-macosx14.0 -S -o "$T/gpu.ll" tests/gpu/refused.scaly >/dev/null 2>&1
 check "a program of a refused kernel alone emits as without --gpu" 'cmp -s "$T/plain.ll" "$T/gpu.ll"'
@@ -64,7 +77,7 @@ check "--gpu --jit of kernels runs on the processor (rc $jrc)" '[ $jrc -eq 0 ] &
 # ---- (3) the card against the processor -----------------------------------
 have_card=0
 if [ "$(uname -s)" = "Darwin" ] && "$STAGE" --gpu -o "$T/probe" tests/gpu/nested.scaly >/dev/null 2>&1; then
-    SCALY_GPU_TRACE=1 "$T/probe" >/dev/null 2>"$T/probe.trace"
+    SCALY_GPU=on SCALY_GPU_TRACE=1 "$T/probe" >/dev/null 2>"$T/probe.trace"
     grep -q '^gpu: card ' "$T/probe.trace" && have_card=1
 fi
 if [ $have_card -eq 0 ]; then
@@ -81,7 +94,8 @@ else
             continue
         fi
         SCALY_GPU=off "$T/$name" >"$T/$name.cpu" 2>"$T/$name.cpu.err"; cpu_rc=$?
-        SCALY_GPU_TRACE=1 SCALY_POISON=1 "$T/$name" >"$T/$name.gpu" 2>"$T/$name.trace"; gpu_rc=$?
+        # SCALY_GPU=on: the card is tried at every loop's head, however small
+        SCALY_GPU=on SCALY_GPU_TRACE=1 SCALY_POISON=1 "$T/$name" >"$T/$name.gpu" 2>"$T/$name.trace"; gpu_rc=$?
         check "$name: exit code $want_rc on the processor (got $cpu_rc)" '[ $cpu_rc -eq $want_rc ]'
         check "$name: exit code $want_rc with the card (got $gpu_rc)" '[ $gpu_rc -eq $want_rc ]'
         check "$name: the card's output is the processor's" 'cmp -s "$T/$name.cpu" "$T/$name.gpu"'
@@ -98,6 +112,47 @@ else
     SCALY_GPU=off SCALY_GPU_TRACE=1 "$T/exact_float" >/dev/null 2>"$T/off.trace"
     check "SCALY_GPU=off keeps every loop on the processor" '! grep -q "^gpu: card " "$T/off.trace"'
     check "exact_float prints 4096 lines" '[ "$(wc -l < "$T/exact_float.gpu" | tr -d " ")" = "4096" ]'
+
+    # ---- (4) the gate: nobody says where to run ---------------------------
+    # The same programs' small loops, left to themselves, never ask the card.
+    SCALY_GPU_TRACE=1 "$T/shapes" >"$T/shapes.auto" 2>"$T/shapes.auto.trace"
+    check "small loops left alone: no word from the host" '[ ! -s "$T/shapes.auto.trace" ]'
+    check "small loops left alone: the same output" 'cmp -s "$T/shapes.cpu" "$T/shapes.auto"'
+    for src in tests/gpu/gate/*.scaly; do
+        name=gate_$(basename "$src" .scaly)
+        min_cards=$(sed -n 's/^; cards-min: //p' "$src")
+        exact_cards=$(sed -n 's/^; cards: //p' "$src")
+        min_kept=$(sed -n 's/^; kept-min: //p' "$src"); min_kept=${min_kept:-0}
+        if ! "$STAGE" --gpu -O2 -o "$T/$name" "$src" >"$T/$name.build" 2>&1; then
+            check "$name builds with --gpu" false
+            continue
+        fi
+        SCALY_GPU=off "$T/$name" >"$T/$name.cpu" 2>"$T/$name.cpu.err"; cpu_rc=$?
+        SCALY_GPU_TRACE=1 SCALY_GPU_REPORT=1 "$T/$name" >"$T/$name.gpu" 2>"$T/$name.trace"; gpu_rc=$?
+        check "$name: runs (rc $cpu_rc, $gpu_rc)" '[ $cpu_rc -eq 0 ] && [ $gpu_rc -eq 0 ]'
+        check "$name: left to the gate, the processor's output" 'cmp -s "$T/$name.cpu" "$T/$name.gpu"'
+        cards=$(grep -c '^gpu: card ' "$T/$name.trace")
+        kept=$(grep -c '^gpu: processor (the card would not pay)$' "$T/$name.trace")
+        if [ -n "$min_cards" ]; then
+            check "$name: the card takes at least $min_cards runs (got $cards)" '[ "$cards" -ge "$min_cards" ]'
+        fi
+        if [ -n "$exact_cards" ]; then
+            check "$name: $exact_cards runs on the card (got $cards)" '[ "$cards" = "$exact_cards" ]'
+        fi
+        check "$name: at least $min_kept runs kept on the processor (got $kept)" '[ "$kept" -ge "$min_kept" ]'
+    done
+    # the report: one line per loop that came to the host, with its place
+    check "the report names the loop the card took"      'grep -q "^gpu: tests/gpu/gate/heavy.scaly:34: 1 on the card, 0 on the processor; the card .* ms for 3000 rounds" "$T/gate_heavy.trace"'
+    check "the report names the loop the processor kept" 'grep -q "^gpu: tests/gpu/gate/light.scaly:31: 0 on the card, [1-9][0-9]* on the processor$" "$T/gate_light.trace"'
+    check "a loop that never came to the gate is not in it" '! grep -q "light.scaly:10:" "$T/gate_light.trace"'
+    # one worker: the card is weighed against one core, and pays the sooner
+    SCALY_WORKERS=1 SCALY_GPU_TRACE=1 "$T/gate_heavy" >"$T/gate_heavy.one" 2>"$T/gate_heavy.one.trace"
+    check "one worker: the card takes the heavy loop"    'grep -q "^gpu: card " "$T/gate_heavy.one.trace" && cmp -s "$T/gate_heavy.cpu" "$T/gate_heavy.one"'
+    # off and on outrank the gate
+    SCALY_GPU=off SCALY_GPU_TRACE=1 "$T/gate_heavy" >/dev/null 2>"$T/gate_heavy.off.trace"
+    check "SCALY_GPU=off: the heavy loop on the processor" '[ ! -s "$T/gate_heavy.off.trace" ]'
+    SCALY_GPU=on SCALY_GPU_TRACE=1 "$T/gate_light" >"$T/gate_light.on" 2>"$T/gate_light.on.trace"
+    check "SCALY_GPU=on: every loop on the card, 3001 runs" '[ "$(grep -c "^gpu: card " "$T/gate_light.on.trace")" = "3001" ] && cmp -s "$T/gate_light.cpu" "$T/gate_light.on"'
 fi
 
 if [ $skip -eq 1 ]; then

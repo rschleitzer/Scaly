@@ -70,6 +70,83 @@ define Emitter
         col: i32
     )
 
+    ; --gpu: what a loop hands the card's host -- the kernel's text, where the
+    ; loop stands, the count of rounds, the block to go on at once the card
+    ; ran, and the operands GpuKernel listed. emit_gpu_for# fills one and
+    ; leaves it in the Emitter; emit_parallel_for# takes it for its gates.
+    define GpuOffer
+    (
+        var active: bool
+        var source: LLVMValueRef
+        var site: LLVMValueRef
+        var count: LLVMValueRef
+        var done_block: LLVMBasicBlockRef
+        var words: size_t
+        uniform_ops: Array[PlannedOperand]
+        uniform_kinds: Array[int]
+        buffer_ops: Array[PlannedOperand]
+        buffer_kinds: Array[int]
+        output_ops: Array[PlannedOperand]
+        output_kinds: Array[int]
+    )
+    {
+        init()
+        {
+            active := false
+            source := null
+            site := null
+            count := null
+            done_block := null
+            words := 0
+            uniform_ops := Array[PlannedOperand]^this()
+            uniform_kinds := Array[int]^this()
+            buffer_ops := Array[PlannedOperand]^this()
+            buffer_kinds := Array[int]^this()
+            output_ops := Array[PlannedOperand]^this()
+            output_kinds := Array[int]^this()
+        }
+
+        ; Everything of `from`, which is no offer afterwards: a loop inside
+        ; the one it was made for leaves its own in the same place.
+        procedure take(mutable this: GpuOffer, mutable from: GpuOffer)
+        {
+            active := from.active
+            from.active := false
+            source := from.source
+            site := from.site
+            count := from.count
+            done_block := from.done_block
+            words := from.words
+            uniform_ops.length := 0
+            uniform_kinds.length := 0
+            buffer_ops.length := 0
+            buffer_kinds.length := 0
+            output_ops.length := 0
+            output_kinds.length := 0
+            var i: size_t 0
+            while i < from.uniform_ops.length
+            {
+                uniform_ops.add(from.uniform_ops[i])
+                uniform_kinds.add(from.uniform_kinds[i])
+                i := i + 1
+            }
+            i := 0
+            while i < from.buffer_ops.length
+            {
+                buffer_ops.add(from.buffer_ops[i])
+                buffer_kinds.add(from.buffer_kinds[i])
+                i := i + 1
+            }
+            i := 0
+            while i < from.output_ops.length
+            {
+                output_ops.add(from.output_ops[i])
+                output_kinds.add(from.output_kinds[i])
+                i := i + 1
+            }
+        }
+    }
+
     ; ============================================================================
     ; Emitter Configuration
     ; ============================================================================
@@ -436,6 +513,9 @@ define Emitter
         ; classifier's foundation-containment rule keys on it.
         parfor_checker: TaskPlanner
         var parfor_file: String
+        ; --gpu: the offer of the loop emit_gpu_for# is about to hand to
+        ; emit_parallel_for#, which takes it before it emits anything.
+        gpu_pending: GpuOffer
         ; Stage 7.2: symbols of region swizzle walkers already generated in
         ; this module. The registry (not a body-count query) also breaks
         ; type-level recursion: a walker's shell registers BEFORE its body
@@ -587,6 +667,7 @@ define Emitter
             weight_stack := Array[String]^this()
             parfor_checker := TaskPlanner^this()
             parfor_file := String()
+            gpu_pending := GpuOffer^this()
             current_receiver_concept := String()
         }
 
@@ -18568,15 +18649,21 @@ define Emitter
 
         ; ------------------------------------------------------------------
         ; --gpu: a parallel `for` that is a KERNEL (GpuKernel) and whose body
-        ; GpuMsl can say exactly is handed to the graphics card first. The
-        ; kernel's source is a constant of the program; what it takes is
-        ; computed here, where the loop stands: the count of rounds, the
+        ; GpuMsl can say exactly may run on the graphics card. The kernel's
+        ; source is a constant of the program; what it takes is computed
+        ; where the card is asked (emit_gpu_offer#): the count of rounds, the
         ; scalars of the environment as 32-bit words, each buffer's address
         ; and length. The host (scaly_gpu_run, the standard library's
-        ; gpu_darwin.c) answers whether the card ran every round. Where it
-        ; did not -- no card, SCALY_GPU=off, a kernel the card does not take,
-        ; a round that met what the processor would stop at -- the loop runs
-        ; on the processor, emitted exactly as without --gpu.
+        ; gpu_darwin.c) answers whether the card ran every round.
+        ; The card is asked at three places. At the loop's head, where the
+        ; host says it is to be tried there (SCALY_GPU=on). And at the two
+        ; gates of the processor's driver (emit_parallel_for#), where it has
+        ; measured a round and is about to hand the rest to the other cores:
+        ; there the host weighs the card's time against the processor's.
+        ; Where the card did not run -- no card, SCALY_GPU=off, a kernel the
+        ; card does not take, a round that met what the processor would stop
+        ; at, too little work -- the loop goes on on the processor, emitted
+        ; as without --gpu.
         ; Only where the program is linked with the host: an Apple target.
         ; ------------------------------------------------------------------
         procedure emit_gpu_for(mutable this, mutable for_expr: PlannedFor) returns LLVMValueRef
@@ -18601,41 +18688,138 @@ define Emitter
             let source msl.kernel_source(&gk, for_expr)
             if msl.m_refused
                 return emit_parallel_for for_expr
-            let n_in gk.k_buffer_ops.length
-            let n_out gk.k_output_ops.length
             ; the host binds 29 buffers beside its own two
-            if n_in + n_out > 29
+            if gk.k_buffer_ops.length + gk.k_output_ops.length > 29
                 return emit_parallel_for for_expr
 
             let i32_ty LLVMInt32TypeInContext(context)
             let i64_ty LLVMInt64TypeInContext(context)
-            let ptr_ty LLVMPointerTypeInContext(context, 0)
 
             var count emit_operands for_expr.expr
             if count = null
                 return null
-            var ok true
             let count_ty LLVMTypeOf(count)
-            if LLVMGetTypeKind(count_ty) <> LLVMTypeKind.Integer()
-                ok := false
-            if ok and LLVMGetIntTypeWidth(count_ty) > 64
-                ok := false
+            if LLVMGetTypeKind(count_ty) <> LLVMTypeKind.Integer() or LLVMGetIntTypeWidth(count_ty) > 64
+                return emit_parallel_for for_expr
             ; the processor's loop compares its counter signed
-            if ok and LLVMGetIntTypeWidth(count_ty) < 64
+            if LLVMGetIntTypeWidth(count_ty) < 64
                 count := LLVMBuildSExt(builder, count, i64_ty, "gpu.count")
 
+            var offer GpuOffer()
+            offer.active := true
+            offer.source := LLVMBuildGlobalStringPtr(builder, source.to_c_string(), ".gpu.kernel")
+            let site this.gpu_site_text(for_expr)
+            offer.site := LLVMBuildGlobalStringPtr(builder, site.to_c_string(), ".gpu.site")
+            offer.count := count
+            offer.words := msl.m_uniform_words
+            var oi: size_t 0
+            while oi < gk.k_uniform_ops.length
+            {
+                offer.uniform_ops.add(gk.k_uniform_ops[oi])
+                offer.uniform_kinds.add(gk.k_uniform_kinds[oi])
+                oi := oi + 1
+            }
+            oi := 0
+            while oi < gk.k_buffer_ops.length
+            {
+                offer.buffer_ops.add(gk.k_buffer_ops[oi])
+                offer.buffer_kinds.add(gk.k_buffer_kinds[oi])
+                oi := oi + 1
+            }
+            oi := 0
+            while oi < gk.k_output_ops.length
+            {
+                offer.output_ops.add(gk.k_output_ops[oi])
+                offer.output_kinds.add(gk.k_output_kinds[oi])
+                oi := oi + 1
+            }
+
+            ; at the head: only where the host says the card is tried there
+            let forced_ty LLVMFunctionType(i32_ty, null as pointer[LLVMTypeRef], 0, 0)
+            let forced_fn this.get_parfor_runtime_fn("scaly_gpu_forced", forced_ty)
+            let forced LLVMBuildCall2(builder, forced_ty, forced_fn, null as pointer[LLVMValueRef], 0, "gpu.forced")
+            let is_forced LLVMBuildICmp(builder, LLVMIntPredicate.NE(), forced, LLVMConstInt(i32_ty, 0, 0), "gpu.head")
+            let try_block create_block("gpu.try")
+            let cpu_block create_block("gpu.cpu")
+            let done_block create_block("gpu.done")
+            offer.done_block := done_block
+            LLVMBuildCondBr(builder, is_forced, try_block, cpu_block)
+
+            LLVMPositionBuilderAtEnd(builder, try_block)
+            let c0 LLVMConstInt(i64_ty, 0, 0)
+            let ran this.emit_gpu_offer(offer, c0, c0, LLVMConstInt(i64_ty, 1, 0))
+            if ran = null
+            {
+                ; a value of a shape emit_gpu_offer# does not know: the
+                ; processor, here and at the gates (what is emitted so far
+                ; computes values nobody reads)
+                offer.active := false
+                LLVMBuildBr(builder, cpu_block)
+            }
+            else
+                LLVMBuildCondBr(builder, ran, done_block, cpu_block)
+
+            LLVMPositionBuilderAtEnd(builder, cpu_block)
+            gpu_pending.take(offer)
+            emit_parallel_for for_expr
+            if LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder) = null
+                LLVMBuildBr(builder, done_block)
+            LLVMPositionBuilderAtEnd(builder, done_block)
+            null
+        }
+
+        ; Where a loop stands, for the host's report: file and line.
+        procedure gpu_site_text(mutable this, for_expr: PlannedFor) returns String
+        {
+            ; the program's own statements carry no file of their own
+            var file String(parfor_file)
+            if file.get_length() = 0 and current_plan <> null
+            {
+                let plan_ref current_plan
+                file := String((*plan_ref).main_module.file)
+            }
+            let text File.read_to_string(file)
+            var line: size_t 1
+            var off: size_t 0
+            var stop for_expr.loc.start
+            if stop > text.get_length()
+                stop := text.get_length()
+            while off < stop
+            {
+                if text.get(off) = ("\n" as char)
+                    line := line + 1
+                off := off + 1
+            }
+            "`file`:`line`"
+        }
+
+        ; Ask the card, where the builder stands: the operands of the offer
+        ; into their words and slots, then the host. `per1k` is what the
+        ; processor measured for a round (nanoseconds times 1024; 0 at the
+        ; loop's head), `done` the rounds it has run, `workers` its cores.
+        ; Answers whether the card ran every round, as an i1 -- or null
+        ; where a value is of a shape this routine does not know.
+        procedure emit_gpu_offer(mutable this, mutable offer: GpuOffer, mutable per1k: LLVMValueRef, mutable done: LLVMValueRef, mutable workers: LLVMValueRef) returns LLVMValueRef
+        {
+            let i32_ty LLVMInt32TypeInContext(context)
+            let i64_ty LLVMInt64TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            let n_in offer.buffer_ops.length
+            let n_out offer.output_ops.length
+            var ok true
+
             ; the scalars, in the order and the words the kernel reads them
-            var words_len msl.m_uniform_words
+            var words_len offer.words
             if words_len = 0
                 words_len := 1
             let words_ty LLVMArrayType2(i32_ty, words_len)
             let words entry_alloca(words_ty, "gpu.words")
             var word: size_t 0
             var ui: size_t 0
-            while ok and ui < gk.k_uniform_ops.length
+            while ok and ui < offer.uniform_ops.length
             {
-                var uop gk.k_uniform_ops[ui]
-                let kind gk.k_uniform_kinds[ui]
+                var uop offer.uniform_ops[ui]
+                let kind offer.uniform_kinds[ui]
                 let v emit_operand uop
                 if this.gpu_store_scalar(v, kind, words_ty, words, word) = false
                     ok := false
@@ -18655,25 +18839,23 @@ define Emitter
             var bi: size_t 0
             while ok and bi < n_in
             {
-                var bop gk.k_buffer_ops[bi]
-                if this.gpu_bind_buffer(bop, gk.k_buffer_kinds[bi], bufs_ty, bufs, sizes_ty, sizes, bi) = false
+                var bop offer.buffer_ops[bi]
+                if this.gpu_bind_buffer(bop, offer.buffer_kinds[bi], bufs_ty, bufs, sizes_ty, sizes, bi) = false
                     ok := false
                 bi := bi + 1
             }
             bi := 0
             while ok and bi < n_out
             {
-                var oop gk.k_output_ops[bi]
-                if this.gpu_bind_buffer(oop, gk.k_output_kinds[bi], bufs_ty, bufs, sizes_ty, sizes, n_in + bi) = false
+                var oop offer.output_ops[bi]
+                if this.gpu_bind_buffer(oop, offer.output_kinds[bi], bufs_ty, bufs, sizes_ty, sizes, n_in + bi) = false
                     ok := false
                 bi := bi + 1
             }
-            ; a value of a shape this routine does not know: the processor
-            ; (what is emitted so far computes values nobody reads)
             if ok = false
-                return emit_parallel_for for_expr
+                return null
 
-            var ptys Vector[LLVMTypeRef](8)
+            var ptys Vector[LLVMTypeRef](12)
             ptys.put(0, ptr_ty)
             ptys.put(1, i64_ty)
             ptys.put(2, ptr_ty)
@@ -18682,29 +18864,27 @@ define Emitter
             ptys.put(5, ptr_ty)
             ptys.put(6, i64_ty)
             ptys.put(7, i64_ty)
-            let run_ty LLVMFunctionType(i32_ty, ptys.data, 8, 0)
+            ptys.put(8, ptr_ty)
+            ptys.put(9, i64_ty)
+            ptys.put(10, i64_ty)
+            ptys.put(11, i64_ty)
+            let run_ty LLVMFunctionType(i32_ty, ptys.data, 12, 0)
             let run_fn this.get_parfor_runtime_fn("scaly_gpu_run", run_ty)
-            var args Vector[LLVMValueRef](8)
-            args.put(0, LLVMBuildGlobalStringPtr(builder, source.to_c_string(), ".gpu.kernel"))
-            args.put(1, count)
+            var args Vector[LLVMValueRef](12)
+            args.put(0, offer.source)
+            args.put(1, offer.count)
             args.put(2, words)
-            args.put(3, LLVMConstInt(i64_ty, msl.m_uniform_words, 0))
+            args.put(3, LLVMConstInt(i64_ty, offer.words, 0))
             args.put(4, bufs)
             args.put(5, sizes)
             args.put(6, LLVMConstInt(i64_ty, n_in, 0))
             args.put(7, LLVMConstInt(i64_ty, n_out, 0))
-            let ran LLVMBuildCall2(builder, run_ty, run_fn, args.data, 8, "gpu.ran")
-            let on_card LLVMBuildICmp(builder, LLVMIntPredicate.NE(), ran, LLVMConstInt(i32_ty, 0, 0), "gpu.on")
-            let cpu_block create_block("gpu.cpu")
-            let done_block create_block("gpu.done")
-            LLVMBuildCondBr(builder, on_card, done_block, cpu_block)
-
-            LLVMPositionBuilderAtEnd(builder, cpu_block)
-            emit_parallel_for for_expr
-            if LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder) = null
-                LLVMBuildBr(builder, done_block)
-            LLVMPositionBuilderAtEnd(builder, done_block)
-            null
+            args.put(8, offer.site)
+            args.put(9, per1k)
+            args.put(10, done)
+            args.put(11, workers)
+            let ran LLVMBuildCall2(builder, run_ty, run_fn, args.data, 12, "gpu.ran")
+            LLVMBuildICmp(builder, LLVMIntPredicate.NE(), ran, LLVMConstInt(i32_ty, 0, 0), "gpu.on")
         }
 
         ; Is the program linked with Metal's host: is the emission triple
@@ -19937,6 +20117,10 @@ define Emitter
 
         procedure emit_parallel_for(mutable this, mutable for_expr: PlannedFor) returns LLVMValueRef
         {
+            ; --gpu: this loop's offer to the card, taken before a loop
+            ; inside the body can leave its own in the same place.
+            var offer GpuOffer()
+            offer.take(gpu_pending)
             ; A KEEPING wave (the classifier admitted a non-scalar `put` into a
             ; loop-external vector): its chunks run on heap pages the submitter
             ; adopts after the barrier (root_pages.scaly, region adoption).
@@ -20717,6 +20901,18 @@ define Emitter
 
                 LLVMPositionBuilderAtEnd(builder, rg_prom_fork)
                 let hs_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu.chk")
+                ; --gpu: the whole range is about to leave for the other
+                ; cores, at the cost this site published. The card first.
+                if offer.active
+                {
+                    let hg_ran this.emit_gpu_offer(offer, eg_p, c0, hs_ncpu)
+                    if hg_ran <> null
+                    {
+                        let hg_cpu create_block("pfor.gate.headfork.cpu")
+                        LLVMBuildCondBr(builder, hg_ran, offer.done_block, hg_cpu)
+                        LLVMPositionBuilderAtEnd(builder, hg_cpu)
+                    }
+                }
                 var hs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), hs_ncpu, c1, "parfor.oneworker")
                 if n_fp > 0
                 {
@@ -20882,6 +21078,29 @@ define Emitter
                 ; to the fork it replaces.
                 LLVMPositionBuilderAtEnd(builder, rc_fork)
                 let rs_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu.chk")
+                ; --gpu: the rounds from i on are about to leave for the
+                ; other cores, a round measured. The card first -- it runs
+                ; the rounds before i again, and they come out the same.
+                ; Where it ran, the site is promoted as by a fork: the next
+                ; execution asks at its head, without the rounds in place.
+                if offer.active
+                {
+                    let cg_ran this.emit_gpu_offer(offer, rc_p1k, il_i, rs_ncpu)
+                    if cg_ran <> null
+                    {
+                        let cg_card create_block("pfor.fork.card")
+                        let cg_cpu create_block("pfor.fork.cpu")
+                        LLVMBuildCondBr(builder, cg_ran, cg_card, cg_cpu)
+                        LLVMPositionBuilderAtEnd(builder, cg_card)
+                        let cg_q LLVMBuildLoad2(builder, i64_ty, quiet_slot, "parfor.quietv")
+                        let cg_isq LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cg_q, c0, "parfor.isquiet")
+                        let cg_cur LLVMBuildLoad2(builder, i64_ty, site_p1k, "parfor.sitecur")
+                        let cg_pub LLVMBuildSelect(builder, cg_isq, cg_cur, rc_p1k, "parfor.publish")
+                        LLVMBuildStore(builder, cg_pub, site_p1k)
+                        LLVMBuildBr(builder, offer.done_block)
+                        LLVMPositionBuilderAtEnd(builder, cg_cpu)
+                    }
+                }
                 var rs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), rs_ncpu, c1, "parfor.oneworker")
                 if n_fp > 0
                 {
