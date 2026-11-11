@@ -96,6 +96,12 @@ define Emitter
         red_slots: Array[LLVMValueRef]
         red_ops: Array[int]
         red_strides: Array[size_t]
+        ; Two slots of the function for the host's measure of the
+        ; PROCESSOR: when a gate kept the loop (0: none did), and how many
+        ; rounds were left to it. emit_gpu_for# reports them when the loop
+        ; is through.
+        var kept_at: LLVMValueRef
+        var kept_left: LLVMValueRef
     )
     {
         init()
@@ -116,6 +122,8 @@ define Emitter
             red_slots := Array[LLVMValueRef]^this()
             red_ops := Array[int]^this()
             red_strides := Array[size_t]^this()
+            kept_at := null
+            kept_left := null
         }
 
         ; Everything of `from`, which is no offer afterwards: a loop inside
@@ -130,6 +138,8 @@ define Emitter
             count := from.count
             done_block := from.done_block
             words := from.words
+            kept_at := from.kept_at
+            kept_left := from.kept_left
             uniform_ops.length := 0
             uniform_kinds.length := 0
             buffer_ops.length := 0
@@ -18835,6 +18845,14 @@ define Emitter
             let cpu_block create_block("gpu.cpu")
             let done_block create_block("gpu.done")
             offer.done_block := done_block
+            offer.kept_at := entry_alloca(i64_ty, "gpu.kept.at")
+            offer.kept_left := entry_alloca(i64_ty, "gpu.kept.left")
+            let kept_at offer.kept_at
+            let kept_left offer.kept_left
+            let source_text offer.source
+            let wgsl_text offer.wgsl
+            let site_text offer.site
+            LLVMBuildStore(builder, LLVMConstInt(i64_ty, 0, 0), kept_at)
             LLVMBuildCondBr(builder, is_forced, try_block, cpu_block)
 
             LLVMPositionBuilderAtEnd(builder, try_block)
@@ -18855,7 +18873,38 @@ define Emitter
             gpu_pending.take(offer)
             emit_parallel_for for_expr
             if LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder) = null
+            {
+                ; The loop ran on the processor. Where a gate had asked the
+                ; card and kept the loop, the host learns what the rounds
+                ; left at that moment took: its measure of the processor at
+                ; this loop, against which it weighs the card the next time.
+                let told_block create_block("gpu.kept")
+                let at LLVMBuildLoad2(builder, i64_ty, kept_at, "gpu.kept.since")
+                let was_kept LLVMBuildICmp(builder, LLVMIntPredicate.NE(), at, LLVMConstInt(i64_ty, 0, 0), "gpu.kept.was")
+                LLVMBuildCondBr(builder, was_kept, told_block, done_block)
+                LLVMPositionBuilderAtEnd(builder, told_block)
+                let now_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
+                let now_fn get_parfor_runtime_fn("scaly_eio_now_ns", now_ty)
+                let now LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "gpu.kept.now")
+                let took LLVMBuildSub(builder, now, at, "gpu.kept.took")
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                var k_tys Vector[LLVMTypeRef](5)
+                k_tys.put(0, ptr_ty)
+                k_tys.put(1, ptr_ty)
+                k_tys.put(2, ptr_ty)
+                k_tys.put(3, i64_ty)
+                k_tys.put(4, i64_ty)
+                let kept_ty LLVMFunctionType(LLVMVoidTypeInContext(context), k_tys.data, 5, 0)
+                let kept_fn this.get_parfor_runtime_fn("scaly_gpu_kept", kept_ty)
+                var k_args Vector[LLVMValueRef](5)
+                k_args.put(0, source_text)
+                k_args.put(1, wgsl_text)
+                k_args.put(2, site_text)
+                k_args.put(3, LLVMBuildLoad2(builder, i64_ty, kept_left, "gpu.kept.rounds"))
+                k_args.put(4, took)
+                LLVMBuildCall2(builder, kept_ty, kept_fn, k_args.data, 5, "")
                 LLVMBuildBr(builder, done_block)
+            }
             LLVMPositionBuilderAtEnd(builder, done_block)
             null
         }
@@ -21116,6 +21165,9 @@ define Emitter
                         let hg_cpu create_block("pfor.gate.headfork.cpu")
                         LLVMBuildCondBr(builder, hg_ran, offer.done_block, hg_cpu)
                         LLVMPositionBuilderAtEnd(builder, hg_cpu)
+                        ; kept: every round is the processor's, from now
+                        LLVMBuildStore(builder, LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "gpu.kept.t"), offer.kept_at)
+                        LLVMBuildStore(builder, n64, offer.kept_left)
                     }
                 }
                 var hs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), hs_ncpu, c1, "parfor.oneworker")
@@ -21304,6 +21356,9 @@ define Emitter
                         LLVMBuildStore(builder, cg_pub, site_p1k)
                         LLVMBuildBr(builder, offer.done_block)
                         LLVMPositionBuilderAtEnd(builder, cg_cpu)
+                        ; kept: the rounds from i on are the processor's, from now
+                        LLVMBuildStore(builder, LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "gpu.kept.t"), offer.kept_at)
+                        LLVMBuildStore(builder, LLVMBuildSub(builder, n64, il_i, "gpu.kept.n"), offer.kept_left)
                     }
                 }
                 var rs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), rs_ncpu, c1, "parfor.oneworker")
