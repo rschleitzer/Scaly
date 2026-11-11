@@ -1,0 +1,299 @@
+<chapter xml:id="scaling-gpu">
+  <title>The Graphics Card</title>
+
+  <section xml:id="scaling-gpu-overview">
+    <title>Thousands of Small Cores</title>
+    <para>A graphics card is a machine of its own beside the processor:
+      thousands of small cores that run one routine for every element of a
+      large range at once, with memory of their own or, on many laptops, the
+      processor's memory shared. What it runs well is exactly what the
+      compiler already recognises in a <code>for</code>
+      (<xref linkend="scaling-loops"/>): rounds that read what they are
+      given, compute, and put one result into a slot of their own.</para>
+    <para>So a program does not say "run this on the graphics card". It
+      writes the loop. Here is the program of
+      <xref linkend="scaling-loops-overview"/> once more, with one change:
+      it computes in <code>f32</code> and <code>i32</code>, the numbers
+      every card has, where the original computed in <code>double</code>
+      and <code>int</code>.</para>
+    <programlisting>function row_count(y: i32, n: i32) returns i32
+{
+    let ci (2.0 * (y as f32) / (n as f32)) - 1.0
+    var count: i32 0
+    var x: i32 0
+    while x &lt; n
+    {
+        let cr (2.0 * (x as f32) / (n as f32)) - 1.5
+        var zr: f32 0.0
+        var zi: f32 0.0
+        var i: i32 0
+        var inside true
+        while i &lt; 50 and inside
+        {
+            let tr zr * zr - zi * zi + cr
+            zi := 2.0 * zr * zi + ci
+            zr := tr
+            if zr * zr + zi * zi &gt; 4.0
+                inside := false
+            i := i + 1
+        }
+        if inside
+            count := count + 1
+        x := x + 1
+    }
+    count
+}
+
+let n: i32 2000
+var counts Vector[i32](n as size_t)
+for y in n
+    counts.put(y as size_t, row_count(y, n))
+
+var total 0
+for c in counts
+    total := total + c
+print "mandelbrot `n`: `total` points inside"</programlisting>
+    <screen>$ scaly run mandelbrot.scaly
+mandelbrot 2000: 1588044 points inside
+$ scalyc --gpu-plan mandelbrot.scaly
+gpu-plan: 2 for-loops, 2 parallel, 1 kernels
+gpu-plan: mandelbrot.scaly:31:1: kernel (metal): out counts; in n; calls row_count; not webgpu: floating point, and the loop is not relaxed
+gpu-plan: mandelbrot.scaly:35:1: no kernel: iterates a collection
+$ scaly build --gpu mandelbrot.scaly -o mandelbrot
+$ ./mandelbrot
+mandelbrot 2000: 1588044 points inside
+$ SCALY_GPU=on ./mandelbrot
+mandelbrot 2000: 1588044 points inside
+$ SCALY_GPU=off ./mandelbrot
+mandelbrot 2000: 1588044 points inside</screen>
+    <para><option>--gpu-plan</option> says for every parallel
+      <code>for</code> whether a card could run it: the loop over the rows
+      is a <firstterm>kernel</firstterm> — a routine a card runs once
+      per round —, with the vector it writes, the values it reads from
+      around it, and the functions it calls. A program built with
+      <option>--gpu</option> carries each of its kernels along, and decides
+      while it runs, loop by loop, whether the card or the processor's
+      cores compute it (<xref linkend="scaling-gpu-where"/>).
+      <envar>SCALY_GPU</envar> takes the decision away from it:
+      <userinput>on</userinput> sends every kernel to the card,
+      <userinput>off</userinput> none.</para>
+    <para>All three runs print the same count, and that is a promise, not
+      luck: a loop goes to the card only if the program cannot tell where
+      it ran (<xref linkend="scaling-gpu-exact"/>). The count is not the
+      1588053 of the chapter on loops — an <code>f32</code> rounds
+      earlier than a <code>double</code>, and on the edge of the set that
+      moves nine points to the other side —, but it is the count of
+      <emphasis>this</emphasis> program wherever it runs.</para>
+    <para>Built with <userinput>scaly build --release --gpu</userinput> and
+      <code>n</code> at 8000, the program took 4.0 seconds on one core,
+      0.52 on all ten, and 0.06 where the card counted the rows — 0.02
+      of them for the rows themselves.</para>
+    <para>The card is reached through Metal, on a Mac. On another system
+      <option>--gpu</option> builds the program without its kernels, and
+      it runs on the processor's cores as it always did.</para>
+  </section>
+
+  <section xml:id="scaling-gpu-kernel">
+    <title>What a Card Can Run</title>
+    <para>A card has no pages, no strings and no stack to speak of. It has
+      numbers, arrays of numbers, and one routine. A parallel
+      <code>for</code> is a kernel when its rounds get by with that:</para>
+    <itemizedlist>
+      <listitem><para>they compute with <code>bool</code>,
+        <code>i32</code>, <code>u32</code> and <code>f32</code>
+        — and with 64-bit integers on a card that has them
+        (<xref linkend="scaling-gpu-numbers"/>);</para></listitem>
+      <listitem><para>they read numbers bound outside the loop, and
+        elements of a <code>Vector</code>, <code>Slice</code> or
+        <code>Array</code> of such numbers, at any index;</para></listitem>
+      <listitem><para>they write with <code>put</code>, at exactly the
+        loop's counter, into a <code>Vector</code> of such numbers, and
+        nothing else;</para></listitem>
+      <listitem><para>the functions they call take and answer such numbers,
+        do not call themselves, and are made of the same
+        stuff;</para></listitem>
+      <listitem><para>nothing in them builds a record or a string, and
+        nothing leaves the loop early.</para></listitem>
+    </itemizedlist>
+    <para>Inside a round almost everything else is allowed: bindings,
+      <code>if</code>, <code>while</code> and <code>for</code>, a
+      <code>break</code> out of an inner loop. A loop that is no kernel is
+      not an error. It runs on the cores, and
+      <option>--gpu-plan</option> names what kept it from the card:</para>
+    <programlisting>function scaled(v: i32, k: i32) returns i32
+    v * k + 1
+
+function caption(i: int) returns String
+    "row `i`"
+
+let n 1000
+let k: i32 3
+var src Vector[i32](n as size_t)
+for i in n
+    src.put(i as size_t, (i as i32) % 17)
+
+var out Vector[i32](n as size_t)
+for i in n
+    out.put(i as size_t, scaled(src[i as size_t], k))
+
+var wide Vector[int](n as size_t)
+for i in n
+    wide.put(i as size_t, i * i)
+
+var halves Vector[double](n as size_t)
+for i in n
+    halves.put(i as size_t, (i as double) * 0.5)
+
+var names Vector[String](n as size_t)
+for i in n
+    names.put(i as size_t, caption(i))
+
+var sum: i32 0
+for i in n
+    sum := sum + out[i as size_t]
+print "`out[999]` `wide[999]` `halves[999]` `names[999]` `sum`"</programlisting>
+    <screen>$ scaly run kernels.scaly
+40 998001 499.5 row 999 24937
+$ scalyc --gpu-plan kernels.scaly
+gpu-plan: 6 for-loops, 6 parallel, 3 kernels
+gpu-plan: kernels.scaly:10:1: kernel (metal, webgpu): out src
+gpu-plan: kernels.scaly:14:1: kernel (metal, webgpu): out out; in k, src; calls scaled
+gpu-plan: kernels.scaly:18:1: kernel (metal): out wide; not webgpu: the counter i, used outside a cast, is a 64-bit integer
+gpu-plan: kernels.scaly:22:1: no kernel: halves is a Vector[double]
+gpu-plan: kernels.scaly:26:1: no kernel: names is a Vector[String]
+gpu-plan: kernels.scaly:30:1: no kernel: reduces into sum</screen>
+    <para>All six loops run on all cores; three of them could run on a
+      card. The first two compute in 32 bits — the counter
+      <code>i</code> is an <code>int</code>, but it is cast or used as an
+      index on the spot, and the number of rounds fits into 32 bits. The
+      third squares the counter itself, in 64 bits. The fourth wants
+      <code>double</code>, which no card of today's backends has; the
+      fifth builds a string in every round. The last is a sum: the cores
+      add it up (<xref linkend="scaling-loops-reductions"/>), a card does
+      not yet.</para>
+  </section>
+
+  <section xml:id="scaling-gpu-exact">
+    <title>The Same Numbers</title>
+    <para>A loop that prints one result on the processor and another on
+      the card would make every run a question of where it happened to
+      run. So the rule is the one that already holds between one core and
+      ten: the program cannot tell. For whole numbers every card keeps it
+      by itself. Floating point takes care on both sides, and the compiler
+      takes it: it writes the kernel one operation at a time, in the order
+      the processor computes them, and tells the card to round every one
+      of them as the processor does — no multiplication fused with the
+      addition after it, no sum reordered, no faster and coarser division
+      or square root. What comes back is equal to the processor's result
+      bit for bit, not merely close to it.</para>
+    <para>The other half of the promise is what happens when a round goes
+      wrong. On the processor an index outside its vector stops the
+      program with exit code 15, and a division by zero stops it too. A
+      card cannot stop a program. Its round raises a flag instead and
+      computes nothing; when the card is done and the flag is up, all of
+      its results are thrown away, and the loop runs on the processor
+      — which stops in the round it always stopped in, with the exit
+      code it always had. Nothing a card computed is ever kept from a loop
+      the processor would not have finished.</para>
+    <para>The card works on copies. It gets the vectors a loop reads as
+      they are when the loop begins, and the vectors it writes come back
+      whole when it is done. For a loop the compiler calls parallel that is
+      no different from what its rounds see on the cores: no round reads
+      what another one writes.</para>
+  </section>
+
+  <section xml:id="scaling-gpu-where">
+    <title>Where a Loop Runs</title>
+    <para>A card is fast and far away. Handing it a loop means copying the
+      loop's vectors over, waking the card, waiting for it, and copying
+      the results back: a few tenths of a millisecond on the laptop of
+      these measurements, whether the loop has eight rounds or eight
+      million. And the first time a loop goes there its kernel has to be
+      translated for the card, which takes some hundredths of a second.
+      For the 8000 rows above that is nothing. For a small loop it is
+      everything.</para>
+    <para>So the program decides, and it decides the way it already
+      decides between one core and all of them
+      (<xref linkend="scaling-loops-when"/>): it starts every loop on
+      one core, measures the first rounds, and only a loop with enough
+      work left is handed on. At that moment it knows what a round costs.
+      It compares what the cores would need for the rounds that are left
+      with what the card needs for the whole loop — as measured the
+      last time this loop ran there, or, the first time, the price of a
+      translation and one call — and the card gets the loop if it wins
+      by a clear margin. A loop that ran on the card is asked at its very
+      first round the next time.</para>
+    <para><envar>SCALY_GPU_REPORT</envar> makes a program say at its end
+      where each loop went. The program of this chapter with its 2000
+      rows, and then with 8000:</para>
+    <screen role="sample">$ SCALY_GPU_REPORT=1 ./mandelbrot
+gpu: mandelbrot.scaly:31: 0 on the card, 1 on the processor
+mandelbrot 2000: 1588044 points inside
+$ SCALY_GPU_REPORT=1 ./mandelbrot8000
+gpu: mandelbrot.scaly:31: 1 on the card, 0 on the processor; the card 21.983 ms for 8000 rounds (0.030 in, 21.946 running, 0.007 out), its kernel compiled in 1.148 ms
+mandelbrot 8000: 25402925 points inside</screen>
+    <para>Two thousand rows are three hundredths of a second on ten cores:
+      less than a translation costs, so they stay where they are. Eight
+      thousand rows are half a second, and the card takes them. The line
+      of a loop that went to the card says what it spent there — copying
+      in, running, copying out — and what the translation of its kernel
+      took; here the system had kept it from an earlier run. The times in
+      such a line differ from run to run and from machine to machine,
+      which is why they stand on standard error and not in what the
+      program prints. A loop that never had enough work to be handed on
+      is not in the report at all: nobody asked about it.</para>
+    <para>How much there is to lose shows a loop of eight rounds that a
+      program runs three thousand times. Left alone, it never leaves its
+      core. Forced to the card with <userinput>SCALY_GPU=on</userinput>
+      it took 0.57 seconds for what the core does in a blink — three
+      thousand journeys of two tenths of a millisecond each.
+      <userinput>on</userinput> is for finding out what the card does
+      with a loop, <userinput>off</userinput> for finding out what it
+      costs to do without; a program that is to be fast sets
+      neither.</para>
+  </section>
+
+  <section xml:id="scaling-gpu-numbers">
+    <title>The Numbers a Card Computes</title>
+    <para>Which loops a card can take depends on which numbers it has, and
+      cards differ. Two rules cover them:</para>
+    <itemizedlist>
+      <listitem><para><emphasis>A card computes in 32 bits.</emphasis> No
+        card reached today has 64-bit floating-point numbers, and the
+        cards a browser reaches (WebGPU) have no 64-bit integers either.
+        A loop that computes with <code>double</code> stays on the
+        processor, where its cores and lanes still scale it; one that
+        computes with <code>int</code>, which is 64 bits, goes only to
+        cards that have them. A <code>double</code> is never quietly
+        computed as an <code>f32</code>: the digits would change with the
+        place. A program that wants the card everywhere computes in
+        <code>f32</code> and <code>i32</code>; the loop's own counter does
+        not count, as long as the range it counts fits into
+        32 bits.</para></listitem>
+      <listitem><para><emphasis>Floating point is exact or
+        relaxed.</emphasis> Unless the program says otherwise, a loop with
+        floating-point numbers may only go where every operation is
+        rounded exactly as on the processor. Metal can be told to; WebGPU
+        cannot — its specification lets a card reorder a sum, fuse a
+        multiplication with an addition, and be off by a few last bits in
+        a division. A loop written <code>relaxed</code> may go to such a
+        card as well: its results stay within the tolerances the card's
+        specification promises, which is what most graphics and machine
+        learning want.</para></listitem>
+    </itemizedlist>
+    <programlisting role="fragment">relaxed for y in n
+    counts.put(y as size_t, row_count(y, n))</programlisting>
+    <para><code>relaxed</code> stands before a loop or before a block, and
+      holds for everything the loop's rounds compute, including the
+      functions they call. It allows, it does not require: on the
+      processor a relaxed loop computes exactly as before, so it prints the
+      same with <userinput>SCALY_GPU=off</userinput> on every run. Where a
+      card of the looser kind computed it, a point on the edge of the
+      Mandelbrot set may come out the other way — one whose iteration
+      ends within a rounding error of 4.0. That is what the last words of
+      the report at the head of this chapter say: the rows are a kernel
+      for Metal as they stand, and would be one for WebGPU if the loop
+      were relaxed.</para>
+  </section>
+
+</chapter>

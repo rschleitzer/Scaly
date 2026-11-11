@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html
+lang="en"
+><head
+><meta
+charset="utf-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1"><title
+>The Graphics Card - The Scaly Programming Language</title
+><meta
+name="color-scheme"
+content="light dark"><link
+rel="preconnect"
+href="https://fonts.googleapis.com"><link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin=""><link
+rel="stylesheet"
+href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&#38;family=JetBrains+Mono:wght@400;500&#38;display=swap"><link
+rel="stylesheet"
+href="book.css"><link
+rel="icon"
+href="../favicon.svg"
+type="image/svg+xml"><link
+rel="icon"
+href="../favicon.ico"
+sizes="16x16 32x32"><link
+rel="apple-touch-icon"
+href="../apple-touch-icon.png"><script
+src="theme.js"
+></script
+><script
+src="words.js"
+defer="defer"
+></script
+><script
+src="searchindex.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="runnable.js"
+defer="defer"
+></script
+><script
+src="book.js"
+defer="defer"
+></script
+></head
+><body
+><nav
+class="sidebar"
+id="sidebar"
+aria-label="Contents"
+><a
+class="sidebar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><ol
+class="toc"
+><li
+class="division"
+><span
+class="division-label"
+>Part I</span
+>First Steps</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="introduction.htm"
+><span
+class="num"
+>1.</span
+>Introduction</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="introduction.htm#intro-overview"
+><span
+class="num"
+>1.1</span
+>Overview</a
+></li
+><li
+><a
+href="introduction.htm#intro-change"
+><span
+class="num"
+>1.2</span
+>A Language Still Changing</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tutorial.htm"
+><span
+class="num"
+>2.</span
+>Tutorial</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tutorial.htm#tut-getting-started"
+><span
+class="num"
+>2.1</span
+>Getting Started</a
+></li
+><li
+><a
+href="tutorial.htm#tut-vscode"
+><span
+class="num"
+>2.2</span
+>Using Scaly with Visual Studio Code on macOS and Linux</a
+></li
+><li
+><a
+href="tutorial.htm#tut-windows"
+><span
+class="num"
+>2.3</span
+>Scaly on Windows</a
+></li
+><li
+><a
+href="tutorial.htm#tut-tour"
+><span
+class="num"
+>2.4</span
+>A Tour of Scaly</a
+></li
+><li
+><a
+href="tutorial.htm#tut-together"
+><span
+class="num"
+>2.5</span
+>Putting It Together</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part II</span
+>Scaling</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-why.htm"
+><span
+class="num"
+>3.</span
+>Why Scaly Can Scale</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-why.htm#scaling-why-overview"
+><span
+class="num"
+>3.1</span
+>Two Rounds at Once</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-functions"
+><span
+class="num"
+>3.2</span
+>Functions Read, Procedures Write</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-mutable"
+><span
+class="num"
+>3.3</span
+>A Procedure Says What It Writes</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-regions"
+><span
+class="num"
+>3.4</span
+>Memory That Is Not Shared</a
+></li
+><li
+><a
+href="scaling-why.htm#scaling-why-same"
+><span
+class="num"
+>3.5</span
+>The Same Program on One Core</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-loops.htm"
+><span
+class="num"
+>4.</span
+>Loops on All Cores</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-loops.htm#scaling-loops-overview"
+><span
+class="num"
+>4.1</span
+>A Plain for</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-round"
+><span
+class="num"
+>4.2</span
+>What a Round May Do</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-order"
+><span
+class="num"
+>4.3</span
+>What Keeps a Loop in Order</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-reductions"
+><span
+class="num"
+>4.4</span
+>Sums, Products and the Largest</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-kept"
+><span
+class="num"
+>4.5</span
+>Values a Round Keeps</a
+></li
+><li
+><a
+href="scaling-loops.htm#scaling-loops-when"
+><span
+class="num"
+>4.6</span
+>When the Cores Are Worth It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-forks.htm"
+><span
+class="num"
+>5.</span
+>Recursion That Forks</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-forks.htm#scaling-forks-overview"
+><span
+class="num"
+>5.1</span
+>Two Calls at Once</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-shape"
+><span
+class="num"
+>5.2</span
+>What Forks</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-when"
+><span
+class="num"
+>5.3</span
+>Forks Nobody Waits For</a
+></li
+><li
+><a
+href="scaling-forks.htm#scaling-forks-uneven"
+><span
+class="num"
+>5.4</span
+>An Uneven Tree</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-lanes.htm"
+><span
+class="num"
+>6.</span
+>Lanes</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-overview"
+><span
+class="num"
+>6.1</span
+>Four Numbers in One</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-masks"
+><span
+class="num"
+>6.2</span
+>Masks</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-memory"
+><span
+class="num"
+>6.3</span
+>Lanes from Memory</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-mandelbrot"
+><span
+class="num"
+>6.4</span
+>Mandelbrot, Eight Points at a Time</a
+></li
+><li
+><a
+href="scaling-lanes.htm#scaling-lanes-cores"
+><span
+class="num"
+>6.5</span
+>Lanes and Cores</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-connections.htm"
+><span
+class="num"
+>7.</span
+>Many Connections</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-connections.htm#scaling-connections-overview"
+><span
+class="num"
+>7.1</span
+>Waiting Is Not Working</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-server"
+><span
+class="num"
+>7.2</span
+>A Server</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-colorless"
+><span
+class="num"
+>7.3</span
+>The Same Calls Everywhere</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-cores"
+><span
+class="num"
+>7.4</span
+>One Scheduler per Core</a
+></li
+><li
+><a
+href="scaling-connections.htm#scaling-connections-memory"
+><span
+class="num"
+>7.5</span
+>A Region per Connection</a
+></li
+></ol
+></li
+><li
+class="part current open"
+><div
+class="part-row"
+><a
+href="scaling-gpu.htm"
+aria-current="page"
+><span
+class="num"
+>8.</span
+>The Graphics Card</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-gpu.htm#scaling-gpu-overview"
+><span
+class="num"
+>8.1</span
+>Thousands of Small Cores</a
+></li
+><li
+><a
+href="scaling-gpu.htm#scaling-gpu-kernel"
+><span
+class="num"
+>8.2</span
+>What a Card Can Run</a
+></li
+><li
+><a
+href="scaling-gpu.htm#scaling-gpu-exact"
+><span
+class="num"
+>8.3</span
+>The Same Numbers</a
+></li
+><li
+><a
+href="scaling-gpu.htm#scaling-gpu-where"
+><span
+class="num"
+>8.4</span
+>Where a Loop Runs</a
+></li
+><li
+><a
+href="scaling-gpu.htm#scaling-gpu-numbers"
+><span
+class="num"
+>8.5</span
+>The Numbers a Card Computes</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="scaling-machines.htm"
+><span
+class="num"
+>9.</span
+>More Than One Machine</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="scaling-machines.htm#scaling-machines-overview"
+><span
+class="num"
+>9.1</span
+>Where Memory Ends</a
+></li
+><li
+><a
+href="scaling-machines.htm#scaling-machines-nodes"
+><span
+class="num"
+>9.2</span
+>Nodes and Channels</a
+></li
+><li
+><a
+href="scaling-machines.htm#scaling-machines-messages"
+><span
+class="num"
+>9.3</span
+>A Message Is a Region</a
+></li
+><li
+><a
+href="scaling-machines.htm#scaling-machines-build"
+><span
+class="num"
+>9.4</span
+>One Program, One Build</a
+></li
+><li
+><a
+href="scaling-machines.htm#scaling-machines-failure"
+><span
+class="num"
+>9.5</span
+>When a Node Fails</a
+></li
+></ol
+></li
+><li
+class="division"
+><span
+class="division-label"
+>Part III</span
+>Language Reference</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="lexical.htm"
+><span
+class="num"
+>10.</span
+>Lexical Structure</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="lexical.htm#lex-overview"
+><span
+class="num"
+>10.1</span
+>Overview</a
+></li
+><li
+><a
+href="lexical.htm#lex-whitespace"
+><span
+class="num"
+>10.2</span
+>Whitespace and Line Breaks</a
+></li
+><li
+><a
+href="lexical.htm#lex-comments"
+><span
+class="num"
+>10.3</span
+>Comments</a
+></li
+><li
+><a
+href="lexical.htm#lex-literals"
+><span
+class="num"
+>10.4</span
+>Literals</a
+></li
+><li
+><a
+href="lexical.htm#lex-operators"
+><span
+class="num"
+>10.5</span
+>Operators and Special Symbols</a
+></li
+><li
+><a
+href="lexical.htm#lex-identifiers"
+><span
+class="num"
+>10.6</span
+>Identifiers</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="types.htm"
+><span
+class="num"
+>11.</span
+>Type System</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="types.htm#types-overview"
+><span
+class="num"
+>11.1</span
+>Overview</a
+></li
+><li
+><a
+href="types.htm#types-intrinsic"
+><span
+class="num"
+>11.2</span
+>Intrinsic Types (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-aliases"
+><span
+class="num"
+>11.3</span
+>Type Aliases (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-prelude"
+><span
+class="num"
+>11.4</span
+>Backend Preludes (Future Direction)</a
+></li
+><li
+><a
+href="types.htm#types-literals"
+><span
+class="num"
+>11.5</span
+>Literal Type Inference</a
+></li
+><li
+><a
+href="types.htm#types-tuples"
+><span
+class="num"
+>11.6</span
+>Tuples and the Empty Tuple</a
+></li
+><li
+><a
+href="types.htm#types-references"
+><span
+class="num"
+>11.7</span
+>References</a
+></li
+><li
+><a
+href="types.htm#types-parameters"
+><span
+class="num"
+>11.8</span
+>Parameter Passing</a
+></li
+><li
+><a
+href="types.htm#types-constructors"
+><span
+class="num"
+>11.9</span
+>Constructors</a
+></li
+><li
+><a
+href="types.htm#types-closures"
+><span
+class="num"
+>11.10</span
+>Lambdas and Closures</a
+></li
+><li
+><a
+href="types.htm#types-errors"
+><span
+class="num"
+>11.11</span
+>Error Handling</a
+></li
+><li
+><a
+href="types.htm#types-unions"
+><span
+class="num"
+>11.12</span
+>Union Types</a
+></li
+><li
+><a
+href="types.htm#types-generics"
+><span
+class="num"
+>11.13</span
+>Generics</a
+></li
+><li
+><a
+href="types.htm#types-lifetimes"
+><span
+class="num"
+>11.14</span
+>Lifetimes and Memory Regions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="grammar.htm"
+><span
+class="num"
+>12.</span
+>Grammar</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="definitions.htm"
+><span
+class="num"
+>13.</span
+>Definitions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="definitions.htm#def-overview"
+><span
+class="num"
+>13.1</span
+>Overview</a
+></li
+><li
+><a
+href="definitions.htm#def-functions-operators"
+><span
+class="num"
+>13.2</span
+>Functions, Procedures, and Operators</a
+></li
+><li
+><a
+href="definitions.htm#category-DEFINITIONS"
+><span
+class="num"
+>13.3</span
+>Definitions</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="expressions.htm"
+><span
+class="num"
+>14.</span
+>Expressions</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="expressions.htm#expr-overview"
+><span
+class="num"
+>14.1</span
+>Overview</a
+></li
+><li
+><a
+href="expressions.htm#category-LITERALS"
+><span
+class="num"
+>14.2</span
+>Literals</a
+></li
+><li
+><a
+href="expressions.htm#category-OPERATIONS"
+><span
+class="num"
+>14.3</span
+>Operations</a
+></li
+><li
+><a
+href="expressions.htm#category-TUPLES"
+><span
+class="num"
+>14.4</span
+>Tuples and Function Values</a
+></li
+><li
+><a
+href="expressions.htm#category-COMPARISON-OPERATORS"
+><span
+class="num"
+>14.5</span
+>Comparison Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BOOLEAN-OPERATORS"
+><span
+class="num"
+>14.6</span
+>Boolean Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-BITWISE-OPERATORS"
+><span
+class="num"
+>14.7</span
+>Bitwise Operators</a
+></li
+><li
+><a
+href="expressions.htm#category-LAMBDAS"
+><span
+class="num"
+>14.8</span
+>Lambdas</a
+></li
+><li
+><a
+href="expressions.htm#category-CHOOSE-EXPRESSIONS"
+><span
+class="num"
+>14.9</span
+>Choose Expressions</a
+></li
+><li
+><a
+href="expressions.htm#category-OPTIONAL-TYPES"
+><span
+class="num"
+>14.10</span
+>Optional Types</a
+></li
+><li
+><a
+href="expressions.htm#category-VARIANT-CONSTRUCTION"
+><span
+class="num"
+>14.11</span
+>Variant Construction</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="controlflow.htm"
+><span
+class="num"
+>15.</span
+>Control Flow</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="controlflow.htm#cf-overview"
+><span
+class="num"
+>15.1</span
+>Overview</a
+></li
+><li
+><a
+href="controlflow.htm#category-IF-EXPRESSIONS"
+><span
+class="num"
+>15.2</span
+>If Expressions</a
+></li
+><li
+><a
+href="controlflow.htm#category-WHILE-LOOPS"
+><span
+class="num"
+>15.3</span
+>While Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-FOR-LOOPS"
+><span
+class="num"
+>15.4</span
+>For Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-BREAK-CONTINUE"
+><span
+class="num"
+>15.5</span
+>Break and Continue</a
+></li
+><li
+><a
+href="controlflow.htm#category-REPEAT-LOOPS"
+><span
+class="num"
+>15.6</span
+>Repeat Loops</a
+></li
+><li
+><a
+href="controlflow.htm#category-VAR-SET"
+><span
+class="num"
+>15.7</span
+>Mutable Variables</a
+></li
+><li
+><a
+href="controlflow.htm#cf-match"
+><span
+class="num"
+>15.8</span
+>Match</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="modules.htm"
+><span
+class="num"
+>16.</span
+>Modules and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="modules.htm#mod-overview"
+><span
+class="num"
+>16.1</span
+>Overview</a
+></li
+><li
+><a
+href="modules.htm#mod-module"
+><span
+class="num"
+>16.2</span
+>Modules</a
+></li
+><li
+><a
+href="modules.htm#mod-package"
+><span
+class="num"
+>16.3</span
+>Packages</a
+></li
+><li
+><a
+href="modules.htm#mod-use"
+><span
+class="num"
+>16.4</span
+>Imports and Visibility</a
+></li
+></ol
+></li
+><li
+class="division"
+>Appendices</li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="tools.htm"
+><span
+class="num"
+>A.</span
+>The Tools</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="tools.htm#tools-install"
+><span
+class="num"
+>A.1</span
+>Installation</a
+></li
+><li
+><a
+href="tools.htm#tools-scaly"
+><span
+class="num"
+>A.2</span
+>scaly</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyc"
+><span
+class="num"
+>A.3</span
+>scalyc</a
+></li
+><li
+><a
+href="tools.htm#tools-scalyls"
+><span
+class="num"
+>A.4</span
+>scalyls</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="stdlib.htm"
+><span
+class="num"
+>B.</span
+>Standard Library and Packages</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="stdlib.htm#stdlib-overview"
+><span
+class="num"
+>B.1</span
+>The Standard Library</a
+></li
+><li
+><a
+href="stdlib.htm#stdlib-packages"
+><span
+class="num"
+>B.2</span
+>Packages Beside It</a
+></li
+></ol
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-bootstrap.htm"
+><span
+class="num"
+>C.</span
+>Bootstrap History and the Seed</a
+></div
+></li
+><li
+class="part"
+><div
+class="part-row"
+><a
+href="appendix-heritage.htm"
+><span
+class="num"
+>D.</span
+>On the Shoulders of Giants</a
+><button
+class="fold"
+type="button"
+aria-label="Show the sections"
+></button
+></div
+><ol
+class="sections"
+><li
+><a
+href="appendix-heritage.htm#heritage-lexical"
+><span
+class="num"
+>D.1</span
+>The Text of a Program</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-bindings"
+><span
+class="num"
+>D.2</span
+>Names and Values</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-control"
+><span
+class="num"
+>D.3</span
+>Control Flow</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-types"
+><span
+class="num"
+>D.4</span
+>Types and Definitions</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-memory"
+><span
+class="num"
+>D.5</span
+>Memory</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-scaling"
+><span
+class="num"
+>D.6</span
+>Self-Scaling</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-modules"
+><span
+class="num"
+>D.7</span
+>Modules and Packages</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-cql"
+><span
+class="num"
+>D.8</span
+>An Unexpected Ancestor</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-own"
+><span
+class="num"
+>D.9</span
+>And What Is Scaly's Own?</a
+></li
+><li
+><a
+href="appendix-heritage.htm#heritage-implementation"
+><span
+class="num"
+>D.10</span
+>The Implementation</a
+></li
+></ol
+></li
+></ol
+></nav
+><div
+class="scrim"
+id="scrim"
+></div
+><div
+class="page"
+><header
+class="topbar"
+><div
+class="topbar-tools"
+><button
+id="toggle-sidebar"
+class="icon"
+type="button"
+aria-label="Contents"
+title="Contents"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M3 6h18M3 12h18M3 18h18"
+></path
+></svg
+></button
+><button
+id="toggle-theme"
+class="icon"
+type="button"
+aria-label="Theme"
+title="Theme"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"
+></path
+></svg
+></button
+><button
+id="toggle-search"
+class="icon"
+type="button"
+aria-label="Search (S)"
+title="Search (S)"
+><svg
+viewBox="0 0 24 24"
+width="20"
+height="20"
+aria-hidden="true"
+><path
+d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.7 4.7 1.4-1.4-4.7-4.7A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"
+></path
+></svg
+></button
+></div
+><a
+class="topbar-title"
+href="index.html"
+>The Scaly Programming Language</a
+><nav
+class="topbar-links"
+aria-label="Elsewhere"
+><a
+href="../play/tour.html"
+>Tour</a
+><a
+href="scaly-spec.pdf"
+>PDF</a
+><a
+href="https://github.com/rschleitzer/Scaly"
+>GitHub</a
+><a
+href="../"
+>scaly.io</a
+></nav
+></header
+><div
+class="search"
+id="search"
+hidden="hidden"
+><input
+type="search"
+id="search-input"
+placeholder="Search the book"
+aria-label="Search the book"
+autocomplete="off"
+spellcheck="false"><p
+class="search-summary"
+id="search-summary"
+></p
+><ol
+class="search-results"
+id="search-results"
+></ol
+></div
+><main
+class="content"
+id="content"
+><article
+><p
+class="part-label"
+>Chapter 8</p
+><h1
+id="scaling-gpu"
+>The Graphics Card</h1
+><section
+id="scaling-gpu-overview"
+><h2
+><a
+class="header"
+href="#scaling-gpu-overview"
+>Thousands of Small Cores</a
+></h2
+><p
+>A graphics card is a machine of its own beside the processor:
+      thousands of small cores that run one routine for every element of a
+      large range at once, with memory of their own or, on many laptops, the
+      processor's memory shared. What it runs well is exactly what the
+      compiler already recognises in a <code
+>for</code
+>
+      (<a
+href="scaling-loops.htm"
+>Loops on All Cores</a
+>): rounds that read what they are
+      given, compute, and put one result into a slot of their own.</p
+><p
+>So a program does not say "run this on the graphics card". It
+      writes the loop. Here is the program of
+      <a
+href="scaling-loops.htm#scaling-loops-overview"
+>A Plain for</a
+> once more, with one change:
+      it computes in <code
+>f32</code
+> and <code
+>i32</code
+>, the numbers
+      every card has, where the original computed in <code
+>double</code
+>
+      and <code
+>int</code
+>.</p
+><pre
+class="listing"
+><code
+>function row_count(y: i32, n: i32) returns i32
+{
+    let ci (2.0 * (y as f32) / (n as f32)) - 1.0
+    var count: i32 0
+    var x: i32 0
+    while x &#60; n
+    {
+        let cr (2.0 * (x as f32) / (n as f32)) - 1.5
+        var zr: f32 0.0
+        var zi: f32 0.0
+        var i: i32 0
+        var inside true
+        while i &#60; 50 and inside
+        {
+            let tr zr * zr - zi * zi + cr
+            zi := 2.0 * zr * zi + ci
+            zr := tr
+            if zr * zr + zi * zi &#62; 4.0
+                inside := false
+            i := i + 1
+        }
+        if inside
+            count := count + 1
+        x := x + 1
+    }
+    count
+}
+
+let n: i32 2000
+var counts Vector[i32](n as size_t)
+for y in n
+    counts.put(y as size_t, row_count(y, n))
+
+var total 0
+for c in counts
+    total := total + c
+print "mandelbrot `n`: `total` points inside"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run mandelbrot.scaly
+mandelbrot 2000: 1588044 points inside
+$ scalyc --gpu-plan mandelbrot.scaly
+gpu-plan: 2 for-loops, 2 parallel, 1 kernels
+gpu-plan: mandelbrot.scaly:31:1: kernel (metal): out counts; in n; calls row_count; not webgpu: floating point, and the loop is not relaxed
+gpu-plan: mandelbrot.scaly:35:1: no kernel: iterates a collection
+$ scaly build --gpu mandelbrot.scaly -o mandelbrot
+$ ./mandelbrot
+mandelbrot 2000: 1588044 points inside
+$ SCALY_GPU=on ./mandelbrot
+mandelbrot 2000: 1588044 points inside
+$ SCALY_GPU=off ./mandelbrot
+mandelbrot 2000: 1588044 points inside</code
+></pre
+><p
+><code
+class="option"
+>--gpu-plan</code
+> says for every parallel
+      <code
+>for</code
+> whether a card could run it: the loop over the rows
+      is a kernel — a routine a card runs once
+      per round —, with the vector it writes, the values it reads from
+      around it, and the functions it calls. A program built with
+      <code
+class="option"
+>--gpu</code
+> carries each of its kernels along, and decides
+      while it runs, loop by loop, whether the card or the processor's
+      cores compute it (<a
+href="#scaling-gpu-where"
+>Where a Loop Runs</a
+>).
+      <code
+class="envar"
+>SCALY_GPU</code
+> takes the decision away from it:
+      <code
+class="userinput"
+>on</code
+> sends every kernel to the card,
+      <code
+class="userinput"
+>off</code
+> none.</p
+><p
+>All three runs print the same count, and that is a promise, not
+      luck: a loop goes to the card only if the program cannot tell where
+      it ran (<a
+href="#scaling-gpu-exact"
+>The Same Numbers</a
+>). The count is not the
+      1588053 of the chapter on loops — an <code
+>f32</code
+> rounds
+      earlier than a <code
+>double</code
+>, and on the edge of the set that
+      moves nine points to the other side —, but it is the count of
+      <em
+>this</em
+> program wherever it runs.</p
+><p
+>Built with <code
+class="userinput"
+>scaly build --release --gpu</code
+> and
+      <code
+>n</code
+> at 8000, the program took 4.0 seconds on one core,
+      0.52 on all ten, and 0.06 where the card counted the rows — 0.02
+      of them for the rows themselves.</p
+><p
+>The card is reached through Metal, on a Mac. On another system
+      <code
+class="option"
+>--gpu</code
+> builds the program without its kernels, and
+      it runs on the processor's cores as it always did.</p
+></section
+><section
+id="scaling-gpu-kernel"
+><h2
+><a
+class="header"
+href="#scaling-gpu-kernel"
+>What a Card Can Run</a
+></h2
+><p
+>A card has no pages, no strings and no stack to speak of. It has
+      numbers, arrays of numbers, and one routine. A parallel
+      <code
+>for</code
+> is a kernel when its rounds get by with that:</p
+><ul
+><li
+><p
+>they compute with <code
+>bool</code
+>,
+        <code
+>i32</code
+>, <code
+>u32</code
+> and <code
+>f32</code
+>
+        — and with 64-bit integers on a card that has them
+        (<a
+href="#scaling-gpu-numbers"
+>The Numbers a Card Computes</a
+>);</p
+></li
+><li
+><p
+>they read numbers bound outside the loop, and
+        elements of a <code
+>Vector</code
+>, <code
+>Slice</code
+> or
+        <code
+>Array</code
+> of such numbers, at any index;</p
+></li
+><li
+><p
+>they write with <code
+>put</code
+>, at exactly the
+        loop's counter, into a <code
+>Vector</code
+> of such numbers, and
+        nothing else;</p
+></li
+><li
+><p
+>the functions they call take and answer such numbers,
+        do not call themselves, and are made of the same
+        stuff;</p
+></li
+><li
+><p
+>nothing in them builds a record or a string, and
+        nothing leaves the loop early.</p
+></li
+></ul
+><p
+>Inside a round almost everything else is allowed: bindings,
+      <code
+>if</code
+>, <code
+>while</code
+> and <code
+>for</code
+>, a
+      <code
+>break</code
+> out of an inner loop. A loop that is no kernel is
+      not an error. It runs on the cores, and
+      <code
+class="option"
+>--gpu-plan</code
+> names what kept it from the card:</p
+><pre
+class="listing"
+><code
+>function scaled(v: i32, k: i32) returns i32
+    v * k + 1
+
+function caption(i: int) returns String
+    "row `i`"
+
+let n 1000
+let k: i32 3
+var src Vector[i32](n as size_t)
+for i in n
+    src.put(i as size_t, (i as i32) % 17)
+
+var out Vector[i32](n as size_t)
+for i in n
+    out.put(i as size_t, scaled(src[i as size_t], k))
+
+var wide Vector[int](n as size_t)
+for i in n
+    wide.put(i as size_t, i * i)
+
+var halves Vector[double](n as size_t)
+for i in n
+    halves.put(i as size_t, (i as double) * 0.5)
+
+var names Vector[String](n as size_t)
+for i in n
+    names.put(i as size_t, caption(i))
+
+var sum: i32 0
+for i in n
+    sum := sum + out[i as size_t]
+print "`out[999]` `wide[999]` `halves[999]` `names[999]` `sum`"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run kernels.scaly
+40 998001 499.5 row 999 24937
+$ scalyc --gpu-plan kernels.scaly
+gpu-plan: 6 for-loops, 6 parallel, 3 kernels
+gpu-plan: kernels.scaly:10:1: kernel (metal, webgpu): out src
+gpu-plan: kernels.scaly:14:1: kernel (metal, webgpu): out out; in k, src; calls scaled
+gpu-plan: kernels.scaly:18:1: kernel (metal): out wide; not webgpu: the counter i, used outside a cast, is a 64-bit integer
+gpu-plan: kernels.scaly:22:1: no kernel: halves is a Vector[double]
+gpu-plan: kernels.scaly:26:1: no kernel: names is a Vector[String]
+gpu-plan: kernels.scaly:30:1: no kernel: reduces into sum</code
+></pre
+><p
+>All six loops run on all cores; three of them could run on a
+      card. The first two compute in 32 bits — the counter
+      <code
+>i</code
+> is an <code
+>int</code
+>, but it is cast or used as an
+      index on the spot, and the number of rounds fits into 32 bits. The
+      third squares the counter itself, in 64 bits. The fourth wants
+      <code
+>double</code
+>, which no card of today's backends has; the
+      fifth builds a string in every round. The last is a sum: the cores
+      add it up (<a
+href="scaling-loops.htm#scaling-loops-reductions"
+>Sums, Products and the Largest</a
+>), a card does
+      not yet.</p
+></section
+><section
+id="scaling-gpu-exact"
+><h2
+><a
+class="header"
+href="#scaling-gpu-exact"
+>The Same Numbers</a
+></h2
+><p
+>A loop that prints one result on the processor and another on
+      the card would make every run a question of where it happened to
+      run. So the rule is the one that already holds between one core and
+      ten: the program cannot tell. For whole numbers every card keeps it
+      by itself. Floating point takes care on both sides, and the compiler
+      takes it: it writes the kernel one operation at a time, in the order
+      the processor computes them, and tells the card to round every one
+      of them as the processor does — no multiplication fused with the
+      addition after it, no sum reordered, no faster and coarser division
+      or square root. What comes back is equal to the processor's result
+      bit for bit, not merely close to it.</p
+><p
+>The other half of the promise is what happens when a round goes
+      wrong. On the processor an index outside its vector stops the
+      program with exit code 15, and a division by zero stops it too. A
+      card cannot stop a program. Its round raises a flag instead and
+      computes nothing; when the card is done and the flag is up, all of
+      its results are thrown away, and the loop runs on the processor
+      — which stops in the round it always stopped in, with the exit
+      code it always had. Nothing a card computed is ever kept from a loop
+      the processor would not have finished.</p
+><p
+>The card works on copies. It gets the vectors a loop reads as
+      they are when the loop begins, and the vectors it writes come back
+      whole when it is done. For a loop the compiler calls parallel that is
+      no different from what its rounds see on the cores: no round reads
+      what another one writes.</p
+></section
+><section
+id="scaling-gpu-where"
+><h2
+><a
+class="header"
+href="#scaling-gpu-where"
+>Where a Loop Runs</a
+></h2
+><p
+>A card is fast and far away. Handing it a loop means copying the
+      loop's vectors over, waking the card, waiting for it, and copying
+      the results back: a few tenths of a millisecond on the laptop of
+      these measurements, whether the loop has eight rounds or eight
+      million. And the first time a loop goes there its kernel has to be
+      translated for the card, which takes some hundredths of a second.
+      For the 8000 rows above that is nothing. For a small loop it is
+      everything.</p
+><p
+>So the program decides, and it decides the way it already
+      decides between one core and all of them
+      (<a
+href="scaling-loops.htm#scaling-loops-when"
+>When the Cores Are Worth It</a
+>): it starts every loop on
+      one core, measures the first rounds, and only a loop with enough
+      work left is handed on. At that moment it knows what a round costs.
+      It compares what the cores would need for the rounds that are left
+      with what the card needs for the whole loop — as measured the
+      last time this loop ran there, or, the first time, the price of a
+      translation and one call — and the card gets the loop if it wins
+      by a clear margin. A loop that ran on the card is asked at its very
+      first round the next time.</p
+><p
+><code
+class="envar"
+>SCALY_GPU_REPORT</code
+> makes a program say at its end
+      where each loop went. The program of this chapter with its 2000
+      rows, and then with 8000:</p
+><pre
+class="screen"
+><code
+>$ SCALY_GPU_REPORT=1 ./mandelbrot
+gpu: mandelbrot.scaly:31: 0 on the card, 1 on the processor
+mandelbrot 2000: 1588044 points inside
+$ SCALY_GPU_REPORT=1 ./mandelbrot8000
+gpu: mandelbrot.scaly:31: 1 on the card, 0 on the processor; the card 21.983 ms for 8000 rounds (0.030 in, 21.946 running, 0.007 out), its kernel compiled in 1.148 ms
+mandelbrot 8000: 25402925 points inside</code
+></pre
+><p
+>Two thousand rows are three hundredths of a second on ten cores:
+      less than a translation costs, so they stay where they are. Eight
+      thousand rows are half a second, and the card takes them. The line
+      of a loop that went to the card says what it spent there — copying
+      in, running, copying out — and what the translation of its kernel
+      took; here the system had kept it from an earlier run. The times in
+      such a line differ from run to run and from machine to machine,
+      which is why they stand on standard error and not in what the
+      program prints. A loop that never had enough work to be handed on
+      is not in the report at all: nobody asked about it.</p
+><p
+>How much there is to lose shows a loop of eight rounds that a
+      program runs three thousand times. Left alone, it never leaves its
+      core. Forced to the card with <code
+class="userinput"
+>SCALY_GPU=on</code
+>
+      it took 0.57 seconds for what the core does in a blink — three
+      thousand journeys of two tenths of a millisecond each.
+      <code
+class="userinput"
+>on</code
+> is for finding out what the card does
+      with a loop, <code
+class="userinput"
+>off</code
+> for finding out what it
+      costs to do without; a program that is to be fast sets
+      neither.</p
+></section
+><section
+id="scaling-gpu-numbers"
+><h2
+><a
+class="header"
+href="#scaling-gpu-numbers"
+>The Numbers a Card Computes</a
+></h2
+><p
+>Which loops a card can take depends on which numbers it has, and
+      cards differ. Two rules cover them:</p
+><ul
+><li
+><p
+><em
+>A card computes in 32 bits.</em
+> No
+        card reached today has 64-bit floating-point numbers, and the
+        cards a browser reaches (WebGPU) have no 64-bit integers either.
+        A loop that computes with <code
+>double</code
+> stays on the
+        processor, where its cores and lanes still scale it; one that
+        computes with <code
+>int</code
+>, which is 64 bits, goes only to
+        cards that have them. A <code
+>double</code
+> is never quietly
+        computed as an <code
+>f32</code
+>: the digits would change with the
+        place. A program that wants the card everywhere computes in
+        <code
+>f32</code
+> and <code
+>i32</code
+>; the loop's own counter does
+        not count, as long as the range it counts fits into
+        32 bits.</p
+></li
+><li
+><p
+><em
+>Floating point is exact or
+        relaxed.</em
+> Unless the program says otherwise, a loop with
+        floating-point numbers may only go where every operation is
+        rounded exactly as on the processor. Metal can be told to; WebGPU
+        cannot — its specification lets a card reorder a sum, fuse a
+        multiplication with an addition, and be off by a few last bits in
+        a division. A loop written <code
+>relaxed</code
+> may go to such a
+        card as well: its results stay within the tolerances the card's
+        specification promises, which is what most graphics and machine
+        learning want.</p
+></li
+></ul
+><pre
+class="listing fragment"
+><code
+>relaxed for y in n
+    counts.put(y as size_t, row_count(y, n))</code
+></pre
+><p
+><code
+>relaxed</code
+> stands before a loop or before a block, and
+      holds for everything the loop's rounds compute, including the
+      functions they call. It allows, it does not require: on the
+      processor a relaxed loop computes exactly as before, so it prints the
+      same with <code
+class="userinput"
+>SCALY_GPU=off</code
+> on every run. Where a
+      card of the looser kind computed it, a point on the edge of the
+      Mandelbrot set may come out the other way — one whose iteration
+      ends within a rounding error of 4.0. That is what the last words of
+      the report at the head of this chapter say: the rows are a kernel
+      for Metal as they stand, and would be one for WebGPU if the loop
+      were relaxed.</p
+></section
+></article
+><nav
+class="pager"
+aria-label="Chapters"
+><a
+class="prev"
+rel="prev"
+href="scaling-connections.htm"
+><span
+class="pager-label"
+>Previous</span
+><span
+class="pager-title"
+>Many Connections</span
+></a
+><a
+class="next"
+rel="next"
+href="scaling-machines.htm"
+><span
+class="pager-label"
+>Next</span
+><span
+class="pager-title"
+>More Than One Machine</span
+></a
+></nav
+></main
+></div
+></body
+></html
+>
