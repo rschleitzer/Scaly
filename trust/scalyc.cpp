@@ -16373,6 +16373,7 @@ void Planner_check_lazy_shadow(Planner&, String&, Span&) asm("_ZN7PlannerB6scaly
 Concept* Planner_concept_in_scope_of(Planner&, String&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_219concept_in_scope_ofE6String11PlannedTypeB6scalycB4v0_2");
 void Planner_report_generic_without_arguments(Planner&, Concept&, PlannedType&, PlannedType&, Span&) asm("_ZN7PlannerB6scalycB4v0_232report_generic_without_argumentsE7ConceptB6scalycB4v0_211PlannedTypeB6scalycB4v0_211PlannedTypeB6scalycB4v0_24SpanB6scalycB4v0_2");
 String Planner_qualified_concept_scope(scaly_frame*, Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_223qualified_concept_scopeEPN4scaly6memory4PageE6String");
+Type* Planner_outer_arguments(scaly_frame*, Planner&, Type&) asm("_ZN7PlannerB6scalycB4v0_215outer_argumentsEPN4scaly6memory4PageE4TypeB6scalycB4v0_2");
 PlannedOperand Planner_collapse_construction_in(scaly_frame*, Planner&, Vector<PlannedOperand>&, PlannedOperand&, PlannedOperand&, String&, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_224collapse_construction_inEPN4scaly6memory4PageE6VectorI14PlannedOperandB6scalycB4v0_2E14PlannedOperandB6scalycB4v0_214PlannedOperandB6scalycB4v0_26String11PlannedTypeB6scalycB4v0_2");
 String Planner_pointee_mangled(scaly_frame*, PlannedType&) asm("_ZN7PlannerB6scalycB4v0_215pointee_mangledEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_2");
 void Planner_ensure_layout_by_name(Planner&, String&) asm("_ZN7PlannerB6scalycB4v0_221ensure_layout_by_nameE6String");
@@ -16471,7 +16472,6 @@ bool Planner_model_type_has_alias(Planner&, Type&, int64_t) asm("_ZN7PlannerB6sc
 Type Planner_resolve_model_type_aliases(scaly_frame*, Planner&, Type&, int64_t) asm("_ZN7PlannerB6scalycB4v0_226resolve_model_type_aliasesEPN4scaly6memory4PageE4TypeB6scalycB4v0_2i");
 PlannedType Planner_tuple_type(scaly_frame*, Vector<PlannedType>&, bool, Vector<String>&) asm("_ZN7PlannerB6scalycB4v0_210tuple_typeEPN4scaly6memory4PageE6VectorI11PlannedTypeB6scalycB4v0_2Eb6VectorI6StringE");
 PlannedType Planner_plan_tuple_type(scaly_frame*, Planner&, Type&) asm("_ZN7PlannerB6scalycB4v0_215plan_tuple_typeEPN4scaly6memory4PageE4TypeB6scalycB4v0_2");
-Type* Planner_outer_arguments(scaly_frame*, Planner&, Type&) asm("_ZN7PlannerB6scalycB4v0_215outer_argumentsEPN4scaly6memory4PageE4TypeB6scalycB4v0_2");
 PlannedType Planner_resolve_type_base(scaly_frame*, Type&) asm("_ZN7PlannerB6scalycB4v0_217resolve_type_baseEPN4scaly6memory4PageE4TypeB6scalycB4v0_2");
 PlannedType Planner_apply_name_substitution(scaly_frame*, PlannedType&, Vector<KeyValuePair<String, PlannedType>>*) asm("_ZN7PlannerB6scalycB4v0_223apply_name_substitutionEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_26OptionIR6VectorI12KeyValuePairI6String11PlannedTypeB6scalycB4v0_2EEE");
 Vector<PlannedType>* Planner_named_arguments(scaly_frame*, Planner&, PlannedType&, Type&) asm("_ZN7PlannerB6scalycB4v0_215named_argumentsEPN4scaly6memory4PageE11PlannedTypeB6scalycB4v0_24TypeB6scalycB4v0_2");
@@ -54289,6 +54289,17 @@ __attribute__((weak)) Planner_ApplicationTarget Planner_application_target(scaly
                             }
                         }
                         ctor_union_type = (*({ PlannedType* scaly_t13 = (PlannedType*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(PlannedType), alignof(PlannedType)); *scaly_t13 = PlannedType{(result).loc, prefix, Planner_type_symbol(scaly_rp, *(this_), prefix, (Vector<PlannedType>*)(nullptr)), (Vector<PlannedType>*)(nullptr), variant_life, (Vector<String>*)(nullptr), String{nullptr}, (TypeVariable*)(nullptr)}; scaly_t13; }));
+                        if (this_->outer_generics_any)
+                        {
+                            Vector<String>* u_name = ({ Vector<String>* scaly_t14 = (Vector<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<String>), alignof(Vector<String>)); *scaly_t14 = Vector<String>{}; Vector_init3<String>((*scaly_t14), 1ULL); scaly_t14; });
+                            Vector_put<String>((*u_name), 0ULL, scaly_lvalue((*({ String* scaly_t15 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t15 = String{}; String_init2((*scaly_t15), prefix); scaly_t15; }))));
+                            Type* with_outer = Planner_outer_arguments(scaly_rp, *(this_), scaly_lvalue((*({ Type* scaly_t16 = (Type*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Type), alignof(Type)); *scaly_t16 = Type{(result).loc, (*u_name), (Vector<Type>*)(nullptr), variant_life}; scaly_t16; }))));
+                            if (((with_outer) != (nullptr)))
+                            {
+                                Type filled = (*(with_outer));
+                                ctor_union_type = Planner_plan_type(scaly_rp, *(this_), filled);
+                            }
+                        }
                         ctor_variant_name = suffix;
                         ctor_variant_tag = ((uint64_t)(tag));
                     }
