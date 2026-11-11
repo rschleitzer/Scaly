@@ -14876,6 +14876,7 @@ struct Emitter
     TaskPlanner parfor_checker;
     String parfor_file;
     Emitter_GpuOffer gpu_pending;
+    LLVMOpaqueValue* zero_main;
     Array<String>* region_walkers;
     String current_receiver_concept;
     int64_t fj_mode;
@@ -140159,6 +140160,15 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_function_decl(Emitter& scaly
         }
         param_types_ptr = ((*param_types)).data;
     }
+    bool main_without_result = false;
+    if (((String_equals((func).name, scaly_lvalue(String{(uint8_t*)"\004main"})) ? ((String_starts_with((func).mangled_name, scaly_lvalue(String{(uint8_t*)"\003_ZN"}))) == (false)) : false) ? ((use_sret) == (false)) : false))
+    {
+        if (((int64_t)LLVMGetTypeKind(llvm_return_type) == LLVMTypeKind_Void()))
+        {
+            llvm_return_type = LLVMInt32TypeInContext(this_->context);
+            main_without_result = true;
+        }
+    }
     LLVMOpaqueType* func_type = LLVMFunctionType(llvm_return_type, param_types_ptr, ((uint32_t)(param_count)), (int32_t)0ULL);
     const char* func_cstr = String_c_data((func).mangled_name);
     bool is_entry_main = false;
@@ -140191,6 +140201,10 @@ __attribute__((weak)) LLVMOpaqueValue* Emitter_emit_function_decl(Emitter& scaly
     if (((llvm_func) == (nullptr)))
     {
         llvm_func = LLVMAddFunction(this_->llvm_module, func_cstr, func_type);
+    }
+    if (main_without_result)
+    {
+        this_->zero_main = llvm_func;
     }
     if (is_extern)
     {
@@ -142268,96 +142282,103 @@ __attribute__((weak)) bool Emitter_emit_function_body_into(Emitter& scaly_self, 
                 }
                 else
                 {
-                    if ((LLVMGetTypeKind(llvm_rt) == LLVMGetTypeKind(void_ty)))
+                    if ((((this_->zero_main) != (nullptr)) ? ((llvm_func) == (this_->zero_main)) : false))
                     {
-                        LLVMBuildRetVoid(this_->builder);
+                        LLVMBuildRet(this_->builder, LLVMConstInt(llvm_rt, 0ULL, (int32_t)0ULL));
                     }
                     else
                     {
-                        if (((result) != (nullptr)))
+                        if ((LLVMGetTypeKind(llvm_rt) == LLVMGetTypeKind(void_ty)))
                         {
-                            LLVMOpaqueValue* ret_val = result;
-                            if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Struct()))
-                            {
-                                if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(result)) == LLVMTypeKind_Pointer()))
-                                {
-                                    ret_val = LLVMBuildLoad2(this_->builder, llvm_rt, result, ((const char*)"ret.load"));
-                                }
-                            }
-                            if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Pointer()))
-                            {
-                                if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(ret_val)) == LLVMTypeKind_Struct()))
-                                {
-                                    LLVMOpaqueType* result_ty = LLVMTypeOf(ret_val);
-                                    LLVMOpaqueValue* rp_frame = Emitter_lookup_variable(*(this_), scaly_lvalue(String{(uint8_t*)"\003_rp"}));
-                                    LLVMOpaqueValue* rp_val = (LLVMOpaqueValue*)(nullptr);
-                                    if (((rp_frame) != (nullptr)))
-                                    {
-                                        rp_val = Emitter_force_frame(*(this_), rp_frame);
-                                    }
-                                    if (((rp_val) != (nullptr)))
-                                    {
-                                        LLVMOpaqueValue* alloc_func = Emitter_lookup_function_cache(*(this_), scaly_lvalue(String{(uint8_t*)"\024_ZN4Page8allocateEmm"}));
-                                        if (((alloc_func) == (nullptr)))
-                                        {
-                                            alloc_func = LLVMGetNamedFunction(this_->llvm_module, ((const char*)"_ZN4Page8allocateEmm"));
-                                        }
-                                        if (((alloc_func) == (nullptr)))
-                                        {
-                                            Vector<LLVMOpaqueType*>* alloc_param_types_d = ({ Vector<LLVMOpaqueType*>* scaly_t4 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t4 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t4), 3ULL); scaly_t4; });
-                                            Vector_put62<LLVMOpaqueType*>((*alloc_param_types_d), 0ULL, LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL));
-                                            Vector_put62<LLVMOpaqueType*>((*alloc_param_types_d), 1ULL, LLVMInt64TypeInContext(this_->context));
-                                            Vector_put62<LLVMOpaqueType*>((*alloc_param_types_d), 2ULL, LLVMInt64TypeInContext(this_->context));
-                                            LLVMOpaqueType* alloc_ret_ty_d = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
-                                            LLVMOpaqueType* alloc_decl_ty = LLVMFunctionType(alloc_ret_ty_d, ((*alloc_param_types_d)).data, (uint32_t)3ULL, (int32_t)0ULL);
-                                            alloc_func = LLVMAddFunction(this_->llvm_module, ((const char*)"_ZN4Page8allocateEmm"), alloc_decl_ty);
-                                            LLVMSetLinkage(alloc_func, LLVMLinkage_External());
-                                            Emitter_cache_function(*(this_), scaly_lvalue(String{(uint8_t*)"\024_ZN4Page8allocateEmm"}), alloc_func);
-                                        }
-                                        LLVMOpaqueValue* size_const = LLVMSizeOf(result_ty);
-                                        LLVMOpaqueValue* align_const = LLVMAlignOf(result_ty);
-                                        Vector<LLVMOpaqueValue*>* alloc_args = ({ Vector<LLVMOpaqueValue*>* scaly_t5 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t5 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t5), 3ULL); scaly_t5; });
-                                        Vector_put62<LLVMOpaqueValue*>((*alloc_args), 0ULL, rp_val);
-                                        Vector_put62<LLVMOpaqueValue*>((*alloc_args), 1ULL, size_const);
-                                        Vector_put62<LLVMOpaqueValue*>((*alloc_args), 2ULL, align_const);
-                                        Vector<LLVMOpaqueType*>* alloc_param_types_c = ({ Vector<LLVMOpaqueType*>* scaly_t6 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t6 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t6), 3ULL); scaly_t6; });
-                                        Vector_put62<LLVMOpaqueType*>((*alloc_param_types_c), 0ULL, LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL));
-                                        Vector_put62<LLVMOpaqueType*>((*alloc_param_types_c), 1ULL, LLVMInt64TypeInContext(this_->context));
-                                        Vector_put62<LLVMOpaqueType*>((*alloc_param_types_c), 2ULL, LLVMInt64TypeInContext(this_->context));
-                                        LLVMOpaqueType* alloc_ret_ty_c = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
-                                        LLVMOpaqueType* alloc_call_ty = LLVMFunctionType(alloc_ret_ty_c, ((*alloc_param_types_c)).data, (uint32_t)3ULL, (int32_t)0ULL);
-                                        LLVMOpaqueValue* heap_ptr = LLVMBuildCall2(this_->builder, alloc_call_ty, alloc_func, ((*alloc_args)).data, (uint32_t)3ULL, ((const char*)"ret.region"));
-                                        LLVMBuildStore(this_->builder, ret_val, heap_ptr);
-                                        ret_val = heap_ptr;
-                                    }
-                                }
-                            }
-                            LLVMOpaqueValue* ret_final = ret_val;
-                            if (((LLVMTypeOf(ret_val)) != (llvm_rt)))
-                            {
-                                if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(ret_val)) == LLVMTypeKind_Integer()))
-                                {
-                                    if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Integer()))
-                                    {
-                                        if ((LLVMGetIntTypeWidth(LLVMTypeOf(ret_val)) > LLVMGetIntTypeWidth(llvm_rt)))
-                                        {
-                                            ret_final = LLVMBuildTrunc(this_->builder, ret_val, llvm_rt, ((const char*)"ret.trunc"));
-                                        }
-                                    }
-                                }
-                            }
-                            if (((LLVMTypeOf(ret_final)) != (llvm_rt)))
-                            {
-                                LLVMBuildRet(this_->builder, LLVMConstNull(llvm_rt));
-                            }
-                            else
-                            {
-                                LLVMBuildRet(this_->builder, ret_final);
-                            }
+                            LLVMBuildRetVoid(this_->builder);
                         }
                         else
                         {
-                            LLVMBuildRet(this_->builder, LLVMConstNull(llvm_rt));
+                            if (((result) != (nullptr)))
+                            {
+                                LLVMOpaqueValue* ret_val = result;
+                                if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Struct()))
+                                {
+                                    if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(result)) == LLVMTypeKind_Pointer()))
+                                    {
+                                        ret_val = LLVMBuildLoad2(this_->builder, llvm_rt, result, ((const char*)"ret.load"));
+                                    }
+                                }
+                                if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Pointer()))
+                                {
+                                    if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(ret_val)) == LLVMTypeKind_Struct()))
+                                    {
+                                        LLVMOpaqueType* result_ty = LLVMTypeOf(ret_val);
+                                        LLVMOpaqueValue* rp_frame = Emitter_lookup_variable(*(this_), scaly_lvalue(String{(uint8_t*)"\003_rp"}));
+                                        LLVMOpaqueValue* rp_val = (LLVMOpaqueValue*)(nullptr);
+                                        if (((rp_frame) != (nullptr)))
+                                        {
+                                            rp_val = Emitter_force_frame(*(this_), rp_frame);
+                                        }
+                                        if (((rp_val) != (nullptr)))
+                                        {
+                                            LLVMOpaqueValue* alloc_func = Emitter_lookup_function_cache(*(this_), scaly_lvalue(String{(uint8_t*)"\024_ZN4Page8allocateEmm"}));
+                                            if (((alloc_func) == (nullptr)))
+                                            {
+                                                alloc_func = LLVMGetNamedFunction(this_->llvm_module, ((const char*)"_ZN4Page8allocateEmm"));
+                                            }
+                                            if (((alloc_func) == (nullptr)))
+                                            {
+                                                Vector<LLVMOpaqueType*>* alloc_param_types_d = ({ Vector<LLVMOpaqueType*>* scaly_t4 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t4 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t4), 3ULL); scaly_t4; });
+                                                Vector_put62<LLVMOpaqueType*>((*alloc_param_types_d), 0ULL, LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL));
+                                                Vector_put62<LLVMOpaqueType*>((*alloc_param_types_d), 1ULL, LLVMInt64TypeInContext(this_->context));
+                                                Vector_put62<LLVMOpaqueType*>((*alloc_param_types_d), 2ULL, LLVMInt64TypeInContext(this_->context));
+                                                LLVMOpaqueType* alloc_ret_ty_d = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
+                                                LLVMOpaqueType* alloc_decl_ty = LLVMFunctionType(alloc_ret_ty_d, ((*alloc_param_types_d)).data, (uint32_t)3ULL, (int32_t)0ULL);
+                                                alloc_func = LLVMAddFunction(this_->llvm_module, ((const char*)"_ZN4Page8allocateEmm"), alloc_decl_ty);
+                                                LLVMSetLinkage(alloc_func, LLVMLinkage_External());
+                                                Emitter_cache_function(*(this_), scaly_lvalue(String{(uint8_t*)"\024_ZN4Page8allocateEmm"}), alloc_func);
+                                            }
+                                            LLVMOpaqueValue* size_const = LLVMSizeOf(result_ty);
+                                            LLVMOpaqueValue* align_const = LLVMAlignOf(result_ty);
+                                            Vector<LLVMOpaqueValue*>* alloc_args = ({ Vector<LLVMOpaqueValue*>* scaly_t5 = (Vector<LLVMOpaqueValue*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueValue*>), alignof(Vector<LLVMOpaqueValue*>)); *scaly_t5 = Vector<LLVMOpaqueValue*>{}; Vector_init3<LLVMOpaqueValue*>((*scaly_t5), 3ULL); scaly_t5; });
+                                            Vector_put62<LLVMOpaqueValue*>((*alloc_args), 0ULL, rp_val);
+                                            Vector_put62<LLVMOpaqueValue*>((*alloc_args), 1ULL, size_const);
+                                            Vector_put62<LLVMOpaqueValue*>((*alloc_args), 2ULL, align_const);
+                                            Vector<LLVMOpaqueType*>* alloc_param_types_c = ({ Vector<LLVMOpaqueType*>* scaly_t6 = (Vector<LLVMOpaqueType*>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<LLVMOpaqueType*>), alignof(Vector<LLVMOpaqueType*>)); *scaly_t6 = Vector<LLVMOpaqueType*>{}; Vector_init3<LLVMOpaqueType*>((*scaly_t6), 3ULL); scaly_t6; });
+                                            Vector_put62<LLVMOpaqueType*>((*alloc_param_types_c), 0ULL, LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL));
+                                            Vector_put62<LLVMOpaqueType*>((*alloc_param_types_c), 1ULL, LLVMInt64TypeInContext(this_->context));
+                                            Vector_put62<LLVMOpaqueType*>((*alloc_param_types_c), 2ULL, LLVMInt64TypeInContext(this_->context));
+                                            LLVMOpaqueType* alloc_ret_ty_c = LLVMPointerTypeInContext(this_->context, (uint32_t)0ULL);
+                                            LLVMOpaqueType* alloc_call_ty = LLVMFunctionType(alloc_ret_ty_c, ((*alloc_param_types_c)).data, (uint32_t)3ULL, (int32_t)0ULL);
+                                            LLVMOpaqueValue* heap_ptr = LLVMBuildCall2(this_->builder, alloc_call_ty, alloc_func, ((*alloc_args)).data, (uint32_t)3ULL, ((const char*)"ret.region"));
+                                            LLVMBuildStore(this_->builder, ret_val, heap_ptr);
+                                            ret_val = heap_ptr;
+                                        }
+                                    }
+                                }
+                                LLVMOpaqueValue* ret_final = ret_val;
+                                if (((LLVMTypeOf(ret_val)) != (llvm_rt)))
+                                {
+                                    if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(ret_val)) == LLVMTypeKind_Integer()))
+                                    {
+                                        if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Integer()))
+                                        {
+                                            if ((LLVMGetIntTypeWidth(LLVMTypeOf(ret_val)) > LLVMGetIntTypeWidth(llvm_rt)))
+                                            {
+                                                ret_final = LLVMBuildTrunc(this_->builder, ret_val, llvm_rt, ((const char*)"ret.trunc"));
+                                            }
+                                        }
+                                    }
+                                }
+                                if (((LLVMTypeOf(ret_final)) != (llvm_rt)))
+                                {
+                                    LLVMBuildRet(this_->builder, LLVMConstNull(llvm_rt));
+                                }
+                                else
+                                {
+                                    LLVMBuildRet(this_->builder, ret_final);
+                                }
+                            }
+                            else
+                            {
+                                LLVMBuildRet(this_->builder, LLVMConstNull(llvm_rt));
+                            }
                         }
                     }
                 }
@@ -158065,44 +158086,51 @@ __attribute__((weak)) bool Emitter_emit_return_instruction(Emitter& scaly_self, 
         LLVMBuildRetVoid(this_->builder);
         return true;
     }
-    if ((LLVMGetTypeKind(llvm_rt) == LLVMGetTypeKind(void_ty)))
+    if ((((this_->zero_main) != (nullptr)) ? ((this_->current_function) == (this_->zero_main)) : false))
     {
-        LLVMBuildRetVoid(this_->builder);
+        LLVMBuildRet(this_->builder, LLVMConstInt(llvm_rt, 0ULL, (int32_t)0ULL));
     }
     else
     {
-        if (((ret_val) != (nullptr)))
+        if ((LLVMGetTypeKind(llvm_rt) == LLVMGetTypeKind(void_ty)))
         {
-            LLVMOpaqueValue* final_val = ret_val;
-            if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Struct()))
-            {
-                if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(ret_val)) == LLVMTypeKind_Pointer()))
-                {
-                    final_val = LLVMBuildLoad2(this_->builder, llvm_rt, ret_val, ((const char*)"ret.load"));
-                }
-            }
-            if (((LLVMTypeOf(final_val)) != (llvm_rt)))
-            {
-                if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(final_val)) == LLVMTypeKind_Integer()))
-                {
-                    if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Integer()))
-                    {
-                        if ((LLVMGetIntTypeWidth(LLVMTypeOf(final_val)) > LLVMGetIntTypeWidth(llvm_rt)))
-                        {
-                            final_val = LLVMBuildTrunc(this_->builder, final_val, llvm_rt, ((const char*)"ret.trunc"));
-                        }
-                    }
-                }
-            }
-            if (((LLVMTypeOf(final_val)) != (llvm_rt)))
-            {
-                return true;
-            }
-            LLVMBuildRet(this_->builder, final_val);
+            LLVMBuildRetVoid(this_->builder);
         }
         else
         {
-            LLVMBuildRet(this_->builder, LLVMConstNull(llvm_rt));
+            if (((ret_val) != (nullptr)))
+            {
+                LLVMOpaqueValue* final_val = ret_val;
+                if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Struct()))
+                {
+                    if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(ret_val)) == LLVMTypeKind_Pointer()))
+                    {
+                        final_val = LLVMBuildLoad2(this_->builder, llvm_rt, ret_val, ((const char*)"ret.load"));
+                    }
+                }
+                if (((LLVMTypeOf(final_val)) != (llvm_rt)))
+                {
+                    if (((int64_t)LLVMGetTypeKind(LLVMTypeOf(final_val)) == LLVMTypeKind_Integer()))
+                    {
+                        if (((int64_t)LLVMGetTypeKind(llvm_rt) == LLVMTypeKind_Integer()))
+                        {
+                            if ((LLVMGetIntTypeWidth(LLVMTypeOf(final_val)) > LLVMGetIntTypeWidth(llvm_rt)))
+                            {
+                                final_val = LLVMBuildTrunc(this_->builder, final_val, llvm_rt, ((const char*)"ret.trunc"));
+                            }
+                        }
+                    }
+                }
+                if (((LLVMTypeOf(final_val)) != (llvm_rt)))
+                {
+                    return true;
+                }
+                LLVMBuildRet(this_->builder, final_val);
+            }
+            else
+            {
+                LLVMBuildRet(this_->builder, LLVMConstNull(llvm_rt));
+            }
         }
     }
     return true;
@@ -158452,6 +158480,7 @@ __attribute__((weak)) void Emitter_init(Emitter& scaly_self, Emitter_EmitterConf
     this_->parfor_checker = (*({ TaskPlanner* scaly_t48 = (TaskPlanner*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(TaskPlanner), alignof(TaskPlanner)); *scaly_t48 = TaskPlanner{}; TaskPlanner_init((*scaly_t48)); scaly_t48; }));
     this_->parfor_file = (*({ String* scaly_t49 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t49 = String{}; String_init3((*scaly_t49)); scaly_t49; }));
     this_->gpu_pending = (*({ Emitter_GpuOffer* scaly_t50 = (Emitter_GpuOffer*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Emitter_GpuOffer), alignof(Emitter_GpuOffer)); *scaly_t50 = Emitter_GpuOffer{}; Emitter_GpuOffer_init((*scaly_t50)); scaly_t50; }));
+    this_->zero_main = (LLVMOpaqueValue*)(nullptr);
     this_->current_receiver_concept = (*({ String* scaly_t51 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t51 = String{}; String_init3((*scaly_t51)); scaly_t51; }));
 }
 
