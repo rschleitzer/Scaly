@@ -75,6 +75,12 @@
  * header of it is needed to build this file, and tests/gpu/wgpu_abi.c holds
  * the declarations against the header where there is one. Under WebGPU a
  * card's floating point is not the processor's: this is the `relaxed` way.
+ *
+ * SCALY_GPU_DUMP=<directory> writes every run through WebGPU down, one file
+ * per run: the kernel's text, the count, the words, what the inputs held and
+ * what the outputs held before and after (or that a round stopped). That is
+ * what another implementation of WebGPU -- a browser's -- is given to run
+ * the same kernel on the same numbers (tests/gpu/web/).
  */
 #include <dlfcn.h>
 #include <pthread.h>
@@ -93,6 +99,8 @@ static pthread_once_t gpu_once = PTHREAD_ONCE_INIT;
 static int gpu_state;                 /* 0 untried, 1 ready, 2 unavailable */
 static int gpu_mode;                  /* 0 the gate decides, 1 on, 2 off */
 static int gpu_backend;               /* 0 Metal, 1 WebGPU */
+static const char *gpu_dump;          /* where runs through WebGPU are written down, or null */
+static unsigned long long gpu_dumped;
 static int gpu_trace;
 static void *gpu_msg;                 /* objc_msgSend */
 static SEL (*gpu_sel)(const char *);
@@ -176,6 +184,9 @@ static void gpu_read_environment(void)
     const char *backend = getenv("SCALY_GPU_BACKEND");
     if (backend && strcmp(backend, "webgpu") == 0)
         gpu_backend = 1;
+    const char *dump = getenv("SCALY_GPU_DUMP");
+    if (dump && *dump)
+        gpu_dump = dump;
     const char *report = getenv("SCALY_GPU_REPORT");
     if (report && *report && strcmp(report, "0") != 0)
         atexit(gpu_report);
@@ -520,6 +531,79 @@ static int gpu_run_locked(struct gpu_site *site, long long count,
     return 1;
 }
 
+/* ---- a run written down (SCALY_GPU_DUMP) ---------------------------------- */
+
+static void gpu_dump_words(FILE *f, const void *data, unsigned long long words)
+{
+    const unsigned int *w = (const unsigned int *)data;
+    fputc('[', f);
+    for (unsigned long long i = 0; i < words; i++)
+        fprintf(f, i ? ",%u" : "%u", w[i]);
+    fputc(']', f);
+}
+
+static void gpu_dump_text(FILE *f, const char *text)
+{
+    fputc('"', f);
+    for (; *text; text++)
+    {
+        if (*text == '"' || *text == '\\')
+            fprintf(f, "\\%c", *text);
+        else if (*text == '\n')
+            fputs("\\n", f);
+        else if ((unsigned char)*text < 0x20)
+            fprintf(f, "\\u%04x", *text);
+        else
+            fputc(*text, f);
+    }
+    fputc('"', f);
+}
+
+/* One run as JSON: every buffer as its 32-bit words. `before` holds the
+ * outputs' words as they were handed in, one after the other. */
+static void gpu_dump_run(const struct gpu_site *site, long long count,
+                         const unsigned int *uniforms, unsigned long long uniform_words,
+                         void **buffers, const unsigned long long *sizes,
+                         unsigned long long n_inputs, unsigned long long n_outputs,
+                         const unsigned int *before, int stopped)
+{
+    char name[1024];
+    snprintf(name, sizeof name, "%s/%04llu.json", gpu_dump, gpu_dumped++);
+    FILE *f = fopen(name, "w");
+    if (!f)
+        return;
+    unsigned long long i;
+    fputs("{\"where\":", f);
+    gpu_dump_text(f, site->where);
+    fprintf(f, ",\"count\":%lld,\"stopped\":%s,\"words\":", count, stopped ? "true" : "false");
+    gpu_dump_words(f, uniforms, uniform_words);
+    fputs(",\"inputs\":[", f);
+    for (i = 0; i < n_inputs; i++)
+    {
+        if (i)
+            fputc(',', f);
+        gpu_dump_words(f, buffers[i], sizes[2 * i]);
+    }
+    fputs("],\"before\":[", f);
+    for (i = 0; i < n_outputs; i++)
+    {
+        if (i)
+            fputc(',', f);
+        gpu_dump_words(f, before + i * (unsigned long long)count, (unsigned long long)count);
+    }
+    fputs("],\"outputs\":[", f);
+    for (i = 0; i < n_outputs; i++)
+    {
+        if (i)
+            fputc(',', f);
+        gpu_dump_words(f, buffers[n_inputs + i], (unsigned long long)count);
+    }
+    fputs("],\"wgsl\":", f);
+    gpu_dump_text(f, site->source);
+    fputs("}\n", f);
+    fclose(f);
+}
+
 /* ---- WebGPU, through wgpu-native ------------------------------------------
  *
  * The structures below are wgpu-native 29's, written out here with names of
@@ -774,6 +858,14 @@ static int wg_run_locked(struct gpu_site *site, long long count,
     u[words - 2] = (unsigned int)count;
     u[words - 1] = across * 64u;
 
+    /* what the outputs hold now, for a run that is written down */
+    unsigned int *before = 0;
+    if (gpu_dump && n_outputs)
+    {
+        before = (unsigned int *)malloc((size_t)(n_outputs * (unsigned long long)count) * 4);
+        for (i = 0; before && i < n_outputs; i++)
+            memcpy(before + i * (unsigned long long)count, buffers[n_inputs + i], (size_t)count * 4);
+    }
     wg_failed = 0;
     void *held[GPU_MAX_BUFFERS + 2];
     unsigned long long bytes[GPU_MAX_BUFFERS + 2];
@@ -889,6 +981,9 @@ static int wg_run_locked(struct gpu_site *site, long long count,
             }
         }
     }
+    if (gpu_dump && (ran || stopped) && (before || !n_outputs))
+        gpu_dump_run(site, count, uniforms, uniform_words, buffers, sizes, n_inputs, n_outputs, before, stopped);
+    free(before);
     free(u);
     t_out = gpu_now();
     if (commands) wg.release_commands(commands);
