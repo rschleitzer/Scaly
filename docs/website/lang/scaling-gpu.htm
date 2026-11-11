@@ -1999,6 +1999,26 @@ class="option"
 >--gpu-wgsl</code
 > print
       the kernels as the compiler writes them.</p
+><p
+>A browser is the other place with such a card. Built with
+      <code
+class="userinput"
+>scaly build --target wasm32-wasip1 --gpu</code
+>, a
+      program carries its kernels for WebGPU alone and asks the page it
+      runs in for the card; a page that has none to give — or the
+      command line — answers no, and every loop stays on the
+      processor. The standard library brings the page's side along
+      (<code
+class="filename"
+>web/gpu-host.mjs</code
+> beside the WASI host): the
+      program runs in a worker, the card belongs to a second one, and the
+      loop waits for its rounds exactly as it does natively. The decision
+      is the same too, taken where the processor has measured a round. A
+      loop of whole numbers that keeps the one core a page's program has
+      busy for 0.44 seconds came back from the card in 3 milliseconds,
+      with the same numbers.</p
 ></section
 ></article
 ><nav
