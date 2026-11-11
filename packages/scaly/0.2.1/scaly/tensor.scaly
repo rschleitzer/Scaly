@@ -49,7 +49,10 @@ function powf(x: float, y: float) returns float extern
 ; back to the naive triple loop otherwise. Backward variants ACCUMULATE
 ; (read-add through put) — a node's grad receives contributions from
 ; every consumer, and disjoint tiles keep each slot single-writer per
-; call. ---
+; call. A tile's column loop asks `j + 3 < n`, not `j < n`: the same
+; rounds where n % 4 = 0, and what tells the compiler that the tile's
+; last column stays in its row -- without it the loops over the tiles
+; run on one core. ---
 
 ; C = A * B (A m x kk, B kk x n, C m x n). m % 4 = 0, n % 4 = 0.
 procedure mm_tiled(a: Vector[float], b: Vector[float], mutable c: ref[Vector[float]], m: int, kk: int, n: int)
@@ -60,7 +63,7 @@ procedure mm_tiled(a: Vector[float], b: Vector[float], mutable c: ref[Vector[flo
     for it in mt
     {
         var j 0
-        while j < n
+        while j + 3 < n
         {
             var a00: float 0.0
             var a01: float 0.0
@@ -139,7 +142,7 @@ procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], mutable ga: ref[Vecto
     for it in mt
     {
         var xt 0
-        while xt < kk
+        while xt + 3 < kk
         {
             var a00: float 0.0
             var a01: float 0.0
@@ -218,7 +221,7 @@ procedure mm_tiled_dB(a: Vector[float], gc: Vector[float], mutable gb: ref[Vecto
     for xt in kt
     {
         var j 0
-        while j < n
+        while j + 3 < n
         {
             var a00: float 0.0
             var a01: float 0.0
@@ -1380,6 +1383,12 @@ define Tape
         ; out row i of every head. A query attends only within its own
         ; window [ws, i]; the probability column is the LOCAL key offset
         ; jw = j - ws in [0, w), so the aux stride is w (= t single-win).
+        ; The indices are written the way the compiler can follow them:
+        ; p at (h * t + i) * w + jw with jw counted below w -- the window
+        ; ends at i, which is before w columns are through --, out at
+        ; (i * hs + h) * dh + c, the same slot as i * d + h * dh + c where
+        ; d = hs * dh, as this node demands. Written the other way the
+        ; rows run on one core.
         for i in t
         {
             let ws (i / w) * w
@@ -1388,9 +1397,12 @@ define Tape
             {
                 ; scaled scores for the causal window ws <= j <= i
                 var mx: float 0.0
-                var j ws
-                while j <= i
+                var jw 0
+                while jw < w
                 {
+                    let j ws + jw
+                    if j > i
+                        break
                     var acc: float 0.0
                     var c 0
                     while c < dh
@@ -1399,30 +1411,34 @@ define Tape
                         c := c + 1
                     }
                     let sc acc * scale
-                    px.put((h * t * w + i * w + (j - ws)) as size_t, sc)
-                    if j = ws
+                    px.put(((h * t + i) * w + jw) as size_t, sc)
+                    if jw = 0
                         mx := sc
                     if sc > mx
                         mx := sc
-                    j := j + 1
+                    jw := jw + 1
                 }
                 ; softmax over the window, in place
                 var sum: float 0.0
-                var j2 ws
-                while j2 <= i
+                var jw2 0
+                while jw2 < w
                 {
-                    let e expf(pp[h * t * w + i * w + (j2 - ws)] - mx)
-                    px.put((h * t * w + i * w + (j2 - ws)) as size_t, e)
+                    if ws + jw2 > i
+                        break
+                    let e expf(pp[(h * t + i) * w + jw2] - mx)
+                    px.put(((h * t + i) * w + jw2) as size_t, e)
                     sum := sum + e
-                    j2 := j2 + 1
+                    jw2 := jw2 + 1
                 }
                 let inv 1.0 / sum
-                var j3 ws
-                while j3 <= i
+                var jw3 0
+                while jw3 < w
                 {
-                    let scaled pp[h * t * w + i * w + (j3 - ws)] * inv
-                    px.put((h * t * w + i * w + (j3 - ws)) as size_t, scaled)
-                    j3 := j3 + 1
+                    if ws + jw3 > i
+                        break
+                    let scaled pp[(h * t + i) * w + jw3] * inv
+                    px.put(((h * t + i) * w + jw3) as size_t, scaled)
+                    jw3 := jw3 + 1
                 }
                 ; out_i = sum_j p_ij * v_j over the head slice
                 var c2 0
@@ -1432,10 +1448,10 @@ define Tape
                     var j4 ws
                     while j4 <= i
                     {
-                        acc2 := acc2 + pp[h * t * w + i * w + (j4 - ws)] * vp[j4 * d + h * dh + c2]
+                        acc2 := acc2 + pp[(h * t + i) * w + (j4 - ws)] * vp[j4 * d + h * dh + c2]
                         j4 := j4 + 1
                     }
-                    out.put((i * d + h * dh + c2) as size_t, acc2)
+                    out.put(((i * hs + h) * dh + c2) as size_t, acc2)
                     c2 := c2 + 1
                 }
                 h := h + 1

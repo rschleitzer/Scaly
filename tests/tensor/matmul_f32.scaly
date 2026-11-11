@@ -14,7 +14,7 @@ procedure mm_f32(a: Vector[float], b: Vector[float], mutable c: Vector[float], m
     for it in mt
     {
         var j 0
-        while j < n
+        while j + 3 < n
         {
             var acc00: float 0.0
             var acc01: float 0.0
