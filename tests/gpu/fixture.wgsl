@@ -94,7 +94,35 @@ fn k(@builtin(global_invocation_id) id: vec3<u32>)
     if (F != 0u) { atomicStore(&FLT[0], 1u); }
 }
 
-gpu-wgsl: tests/gpu-plan/fixture.scaly:69:5: no kernel: reduces into s
+gpu-wgsl: tests/gpu-plan/fixture.scaly:69:5: kernel
+@group(0) @binding(0) var<storage, read> U: array<u32>;
+@group(0) @binding(1) var<storage, read_write> FLT: array<atomic<u32>>;
+@group(0) @binding(2) var<storage, read> b0: array<i32>;
+@group(0) @binding(3) var<storage, read_write> o0: array<i32>;
+@compute @workgroup_size(64)
+fn k(@builtin(global_invocation_id) id: vec3<u32>)
+{
+    let gid: u32 = id.x + id.y * U[5];
+    if (gid >= U[4]) { return; }
+    var F: u32 = 0u;
+    let u0: u32 = U[0];
+    let u0_h: u32 = U[1];
+    let n0: u32 = U[2];
+    let v0: u32 = gid;
+    var r0: i32 = 0;
+    for (var once: u32 = 0u; once < 1u; once++)
+    {
+        let t0: i32 = r0;
+        var t1: i32 = 0;
+        if ((u0_h != 0u) || (u0 >= n0)) { F = 1u; } else { t1 = b0[u0]; }
+        let t3: i32 = i32(u32(t1) * u32(i32(v0)));
+        let t4: i32 = i32(u32(t0) + u32(t3));
+        r0 = t4;
+    }
+    o0[gid] = r0;
+    if (F != 0u) { atomicStore(&FLT[0], 1u); }
+}
+
 gpu-wgsl: tests/gpu-plan/fixture.scaly:76:1: no kernel for webgpu: kernel (metal): out c; in big; calls wide; not webgpu: the counter i, used outside a cast, is a 64-bit integer
 gpu-wgsl: tests/gpu-plan/fixture.scaly:81:1: no kernel for webgpu: kernel (metal): out d; in scale; calls half; not webgpu: floating point, and the loop is not relaxed
 gpu-wgsl: tests/gpu-plan/fixture.scaly:86:1: no kernel: e is a Vector[double]
@@ -150,7 +178,32 @@ fn k(@builtin(global_invocation_id) id: vec3<u32>)
     if (F != 0u) { atomicStore(&FLT[0], 1u); }
 }
 
-gpu-wgsl: tests/gpu-plan/fixture.scaly:125:1: no kernel: reduces into total
+gpu-wgsl: tests/gpu-plan/fixture.scaly:125:1: kernel
+@group(0) @binding(0) var<storage, read> U: array<u32>;
+@group(0) @binding(1) var<storage, read_write> FLT: array<atomic<u32>>;
+@group(0) @binding(2) var<storage, read> b0: array<i32>;
+@group(0) @binding(3) var<storage, read_write> o0: array<i32>;
+@compute @workgroup_size(64)
+fn k(@builtin(global_invocation_id) id: vec3<u32>)
+{
+    let gid: u32 = id.x + id.y * U[3];
+    if (gid >= U[2]) { return; }
+    var F: u32 = 0u;
+    let n0: u32 = U[0];
+    let v0: u32 = gid;
+    var r0: i32 = 0;
+    for (var once: u32 = 0u; once < 1u; once++)
+    {
+        let t0: i32 = r0;
+        var t1: i32 = 0;
+        if ((0u != 0u) || (v0 >= n0)) { F = 1u; } else { t1 = b0[v0]; }
+        let t3: i32 = i32(u32(t0) + u32(t1));
+        r0 = t3;
+    }
+    o0[gid] = r0;
+    if (F != 0u) { atomicStore(&FLT[0], 1u); }
+}
+
 gpu-wgsl: tests/gpu-plan/fixture.scaly:130:1: no kernel: a put at another index than the loop's counter
 gpu-wgsl: tests/gpu-plan/fixture.scaly:134:1: no kernel: reads and writes m
 gpu-wgsl: tests/gpu-plan/fixture.scaly:138:1: no kernel: blocked: transitively impure call print

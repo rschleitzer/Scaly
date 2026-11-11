@@ -87,7 +87,32 @@ kernel void k(constant uint* U [[buffer(0)]], device atomic_uint* FLT [[buffer(1
     if (F != 0u) atomic_store_explicit(FLT, 1u, memory_order_relaxed);
 }
 
-gpu-msl: tests/gpu-plan/fixture.scaly:69:5: no kernel: reduces into s
+gpu-msl: tests/gpu-plan/fixture.scaly:69:5: kernel
+#include <metal_stdlib>
+using namespace metal;
+#pragma METAL fp math_mode(safe)
+#pragma METAL fp contract(off)
+kernel void k(constant uint* U [[buffer(0)]], device atomic_uint* FLT [[buffer(1)]], const device int* b0 [[buffer(2)]], device int* o0 [[buffer(3)]], uint gid [[thread_position_in_grid]])
+{
+    uint F = 0u;
+    const long u0 = (long)((ulong)U[0] | ((ulong)U[1] << 32));
+    const ulong n0 = (ulong)U[2] | ((ulong)U[3] << 32);
+    const long v0 = (long)gid;
+    int r0 = 0;
+    do
+    {
+        const int t0 = r0;
+        int t1 = 0;
+        const ulong t2 = (ulong)((ulong)u0);
+        if (t2 >= n0) F = 1u; else t1 = b0[t2];
+        const int t3 = (int)((uint)t1 * (uint)((int)v0));
+        const int t4 = (int)((uint)t0 + (uint)t3);
+        r0 = t4;
+    } while (false);
+    o0[gid] = r0;
+    if (F != 0u) atomic_store_explicit(FLT, 1u, memory_order_relaxed);
+}
+
 gpu-msl: tests/gpu-plan/fixture.scaly:76:1: kernel
 #include <metal_stdlib>
 using namespace metal;
@@ -189,7 +214,30 @@ kernel void k(constant uint* U [[buffer(0)]], device atomic_uint* FLT [[buffer(1
     if (F != 0u) atomic_store_explicit(FLT, 1u, memory_order_relaxed);
 }
 
-gpu-msl: tests/gpu-plan/fixture.scaly:125:1: no kernel: reduces into total
+gpu-msl: tests/gpu-plan/fixture.scaly:125:1: kernel
+#include <metal_stdlib>
+using namespace metal;
+#pragma METAL fp math_mode(safe)
+#pragma METAL fp contract(off)
+kernel void k(constant uint* U [[buffer(0)]], device atomic_uint* FLT [[buffer(1)]], const device int* b0 [[buffer(2)]], device int* o0 [[buffer(3)]], uint gid [[thread_position_in_grid]])
+{
+    uint F = 0u;
+    const ulong n0 = (ulong)U[0] | ((ulong)U[1] << 32);
+    const long v0 = (long)gid;
+    int r0 = 0;
+    do
+    {
+        const int t0 = r0;
+        int t1 = 0;
+        const ulong t2 = (ulong)((ulong)v0);
+        if (t2 >= n0) F = 1u; else t1 = b0[t2];
+        const int t3 = (int)((uint)t0 + (uint)t1);
+        r0 = t3;
+    } while (false);
+    o0[gid] = r0;
+    if (F != 0u) atomic_store_explicit(FLT, 1u, memory_order_relaxed);
+}
+
 gpu-msl: tests/gpu-plan/fixture.scaly:130:1: no kernel: a put at another index than the loop's counter
 gpu-msl: tests/gpu-plan/fixture.scaly:134:1: no kernel: reads and writes m
 gpu-msl: tests/gpu-plan/fixture.scaly:138:1: no kernel: blocked: transitively impure call print

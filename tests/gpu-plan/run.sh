@@ -23,7 +23,7 @@ check "report rc=0 (got $rc)" '[ $rc -eq 0 ]'
 got=$(printf '%s\n' "$out" | grep '^gpu-plan:')
 check "report matches fixture.expected" 'diff <(printf "%s\n" "$got") tests/gpu-plan/fixture.expected >/dev/null'
 check "nothing but the report is printed" '[ "$out" = "$got" ]'
-check "head counts loops, parallel ones and kernels" 'printf "%s\n" "$got" | head -1 | grep -q "^gpu-plan: 16 for-loops, 14 parallel, 6 kernels$"'
+check "head counts loops, parallel ones and kernels" 'printf "%s\n" "$got" | head -1 | grep -q "^gpu-plan: 16 for-loops, 14 parallel, 8 kernels$"'
 
 # The kernels: both backends where the body computes in 32 bits.
 check "i32 body, counter cast away: both backends"   'line 61 | grep -q "kernel (metal, webgpu): out a; in k; calls triple$"'
@@ -39,16 +39,17 @@ check "double"                                       'line 86 | grep -q "no kern
 check "recursion"                                    'line 91 | grep -q "no kernel: down is recursive$"'
 check "a String"                                     'line 101 | grep -q "no kernel: text_of allocates or throws$"'
 check "a record"                                     'line 109 | grep -q "no kernel: builds a Pair$"'
-check "a reduction into an outer name"               'line 125 | grep -q "no kernel: reduces into total$"'
+# A reduction is a kernel: the card gives each round's part, the processor folds.
+check "a reduction into an outer name"               'line 125 | grep -q "kernel (metal, webgpu): reduces total; in a$"'
 check "a put beside the counter"                     'line 130 | grep -q "no kernel: a put at another index"'
 check "reads what it writes"                         'line 134 | grep -q "no kernel: reads and writes m$"'
 # A loop the task plan blocks is no kernel, with the task plan's reason.
 check "a C function: blocked"                        'line 96 | grep -q "no kernel: blocked: extern call toupper$"'
 check "a printing loop: blocked"                     'line 138 | grep -q "no kernel: blocked: "'
 # An inner loop is a loop of its own and never a kernel beside its outer one.
-check "the inner loop is reported for itself"        'line 69 | grep -q "no kernel: reduces into s$"'
+check "the inner loop is reported for itself"        'line 69 | grep -q "kernel (metal, webgpu): reduces s; in i, a$"'
 n=$(printf '%s\n' "$got" | grep -c ': kernel (')
-check "six kernels listed (got $n)" '[ "$n" = "6" ]'
+check "eight kernels listed (got $n)" '[ "$n" = "8" ]'
 
 # The task plan's report, which checked transcripts print, is not touched.
 tp=$("$STAGE" --task-plan "$FIX" 2>&1)

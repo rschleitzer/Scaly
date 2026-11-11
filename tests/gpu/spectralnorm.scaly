@@ -1,0 +1,61 @@
+; spectral-norm in f32: the largest singular value of the matrix
+; A(i, j) = 1 / ((i + j)(i + j + 1) / 2 + i + 1), by power iteration. Each
+; product of the matrix with a vector is a loop over the rows, and a row is
+; a sum over the columns -- a reduction inside the round, in the round's own
+; order. The two sums at the end are reductions of the loop itself: the
+; card gives each round's part, the processor folds them. Every digit of
+; the result is the processor's.
+; cards: 41
+
+function eval_a(i: i32, j: i32) returns f32
+    1.0 / ((((i + j) * (i + j + 1)) / 2 + i + 1) as f32)
+
+procedure mul_av(v: ref[Vector[f32]], mutable out: ref[Vector[f32]], n: i32)
+{
+    for i in n
+    {
+        var sum: f32 0.0
+        for j in n
+            sum := sum + eval_a(i, j) * v[j as size_t]
+        out.put(i as size_t, sum)
+    }
+}
+
+procedure mul_atv(v: ref[Vector[f32]], mutable out: ref[Vector[f32]], n: i32)
+{
+    for i in n
+    {
+        var sum: f32 0.0
+        for j in n
+            sum := sum + eval_a(j, i) * v[j as size_t]
+        out.put(i as size_t, sum)
+    }
+}
+
+let n: i32 600
+var u Vector[f32](n as size_t)
+var v Vector[f32](n as size_t)
+var tmp Vector[f32](n as size_t)
+var k: size_t 0
+while k < (n as size_t)
+{
+    u.put(k, 1.0)
+    k := k + 1
+}
+var step 0
+while step < 10
+{
+    mul_av(&u, &tmp, n)
+    mul_atv(&tmp, &v, n)
+    mul_av(&v, &tmp, n)
+    mul_atv(&tmp, &u, n)
+    step := step + 1
+}
+var vbv: f32 0.0
+var vv: f32 0.0
+for i in n
+{
+    vbv := vbv + u[i as size_t] * v[i as size_t]
+    vv := vv + v[i as size_t] * v[i as size_t]
+}
+print "spectral-norm `n`: `vbv as f64` / `vv as f64` = `(vbv / vv) as f64`"

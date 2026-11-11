@@ -47,8 +47,9 @@ out=$("$STAGE" --gpu-msl tests/gpu-plan/fixture.scaly 2>&1); rc=$?
 check "--gpu-msl rc=0 (got $rc)" '[ $rc -eq 0 ]'
 check "the kernels' source matches fixture.msl" 'diff <(printf "%s\n" "$out") tests/gpu/fixture.msl >/dev/null'
 n=$(printf '%s\n' "$out" | grep -c '^gpu-msl: .*: kernel$')
-check "six kernels written (got $n)" '[ "$n" = "6" ]'
-check "every kernel says safe math and no contraction" '[ "$(printf "%s\n" "$out" | grep -c "^#pragma METAL fp math_mode(safe)$")" = "6" ] && [ "$(printf "%s\n" "$out" | grep -c "^#pragma METAL fp contract(off)$")" = "6" ]'
+check "eight kernels written (got $n)" '[ "$n" = "8" ]'
+check "every kernel says safe math and no contraction" '[ "$(printf "%s\n" "$out" | grep -c "^#pragma METAL fp math_mode(safe)$")" = "8" ] && [ "$(printf "%s\n" "$out" | grep -c "^#pragma METAL fp contract(off)$")" = "8" ]'
+check "a reduction is a name of the round and one more output" 'printf "%s\n" "$out" | grep -q "^    o0\[gid\] = r0;$"'
 check "a loop that is no kernel keeps its reason" 'printf "%s\n" "$out" | grep -q "fixture.scaly:91:1: no kernel: down is recursive$"'
 ref=$("$STAGE" --gpu-msl tests/gpu/refused.scaly 2>&1)
 check "a binding that widens is refused" 'printf "%s\n" "$ref" | grep -q "refused.scaly:9:5: refused: a int where a long stands$"'
@@ -62,7 +63,7 @@ check "--gpu-plan is not touched" '! "$STAGE" --gpu-plan tests/gpu-plan/fixture.
 wout=$( { "$STAGE" --gpu-wgsl tests/gpu-plan/fixture.scaly; "$STAGE" --gpu-wgsl tests/gpu-plan/relaxed.scaly; } 2>&1)
 check "the kernels' WGSL matches fixture.wgsl" 'diff <(printf "%s\n" "$wout") tests/gpu/fixture.wgsl >/dev/null'
 n=$(printf '%s\n' "$wout" | grep -c '^gpu-wgsl: .*: kernel$')
-check "seven kernels written in WGSL (got $n)" '[ "$n" = "7" ]'
+check "nine kernels written in WGSL (got $n)" '[ "$n" = "9" ]'
 check "floating point that is not relaxed is no kernel for webgpu" 'printf "%s\n" "$wout" | grep -q "relaxed.scaly:15:1: no kernel for webgpu: .*the loop is not relaxed$"'
 check "a 64-bit integer is no kernel for webgpu" 'printf "%s\n" "$wout" | grep -q "relaxed.scaly:25:5: no kernel for webgpu: .*64-bit integer$"'
 check "WGSL names no 64-bit type" '! printf "%s\n" "$wout" | grep -q "i64\|u64\|long"'

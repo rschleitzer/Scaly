@@ -1,8 +1,8 @@
-gpu-plan: 16 for-loops, 14 parallel, 6 kernels
+gpu-plan: 16 for-loops, 14 parallel, 8 kernels
 gpu-plan: tests/gpu-plan/fixture.scaly:49:5: kernel (metal, webgpu): out out; in k, xs
 gpu-plan: tests/gpu-plan/fixture.scaly:61:1: kernel (metal, webgpu): out a; in k; calls triple
 gpu-plan: tests/gpu-plan/fixture.scaly:66:1: kernel (metal, webgpu): out b; in a
-gpu-plan: tests/gpu-plan/fixture.scaly:69:5: no kernel: reduces into s
+gpu-plan: tests/gpu-plan/fixture.scaly:69:5: kernel (metal, webgpu): reduces s; in i, a
 gpu-plan: tests/gpu-plan/fixture.scaly:76:1: kernel (metal): out c; in big; calls wide; not webgpu: the counter i, used outside a cast, is a 64-bit integer
 gpu-plan: tests/gpu-plan/fixture.scaly:81:1: kernel (metal): out d; in scale; calls half; not webgpu: floating point, and the loop is not relaxed
 gpu-plan: tests/gpu-plan/fixture.scaly:86:1: no kernel: e is a Vector[double]
@@ -11,7 +11,7 @@ gpu-plan: tests/gpu-plan/fixture.scaly:96:1: no kernel: blocked: extern call tou
 gpu-plan: tests/gpu-plan/fixture.scaly:101:1: no kernel: text_of allocates or throws
 gpu-plan: tests/gpu-plan/fixture.scaly:109:1: no kernel: builds a Pair
 gpu-plan: tests/gpu-plan/fixture.scaly:117:1: kernel (metal, webgpu): out q; in k, a.length, a; calls capped
-gpu-plan: tests/gpu-plan/fixture.scaly:125:1: no kernel: reduces into total
+gpu-plan: tests/gpu-plan/fixture.scaly:125:1: kernel (metal, webgpu): reduces total; in a
 gpu-plan: tests/gpu-plan/fixture.scaly:130:1: no kernel: a put at another index than the loop's counter
 gpu-plan: tests/gpu-plan/fixture.scaly:134:1: no kernel: reads and writes m
 gpu-plan: tests/gpu-plan/fixture.scaly:138:1: no kernel: blocked: transitively impure call print

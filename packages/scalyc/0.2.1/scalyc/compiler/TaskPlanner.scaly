@@ -124,6 +124,11 @@ define TaskPlanner
         ; each again whether it is a kernel). Off unless the cli asks.
         var keep_fors: bool
         report_fors: Array[PlannedFor]
+        ; ... and the reductions of each: where loop i's begin in the two
+        ; lists behind (they end where the next loop's begin)
+        report_red_from: Array[size_t]
+        report_red_names: Array[String]
+        report_red_ops: Array[int]
         while_files: Array[String]
         while_offsets: Array[size_t]
         while_verdicts: Array[String]
@@ -241,6 +246,9 @@ define TaskPlanner
             census_while := false
             keep_fors := false
             report_fors := Array[PlannedFor]^this()
+            report_red_from := Array[size_t]^this()
+            report_red_names := Array[String]^this()
+            report_red_ops := Array[int]^this()
             while_files := Array[String]^this()
             while_offsets := Array[size_t]^this()
             while_verdicts := Array[String]^this()
@@ -550,7 +558,21 @@ define TaskPlanner
             this.classify_body(fr)
             loops_total := loops_total + 1
             if keep_fors
+            {
                 report_fors.add fr
+                report_red_from.add(report_red_names.length)
+                if cls_blocked = false
+                {
+                    var rk: size_t 0
+                    while rk < red_names.length
+                    {
+                        let rn_copy String^this(red_names[rk])
+                        report_red_names.add rn_copy
+                        report_red_ops.add(red_ops[rk])
+                        rk := rk + 1
+                    }
+                }
+            }
             ; Report strings must live on the TaskPlanner's own page —
             ; a default-local copy dangles by print time (the use-vis
             ; report's `String^this` + bound-local-add idiom).

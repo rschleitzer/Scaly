@@ -1,0 +1,33 @@
+; The gate, a loop that comes back. One run of it is a few milliseconds of
+; work -- less than compiling a kernel costs, so the first runs stay on the
+; processor. But it runs four hundred times, and what it has brought to the
+; gate adds up: once that outweighs a compilation the card is tried, twice
+; (a kernel's first run pays what no later one does), and from its second
+; run on the loop is measured and goes where it is faster. The sum it
+; folds has the processor's bits wherever each run went.
+; cards-min: 2
+
+function spin(seed: i32) returns f32
+{
+    var acc: f32 (seed as f32) * 0.001
+    for k in 200
+        acc := acc * 0.99 + (k as f32) * 0.01
+    acc
+}
+
+function once(n: i32, shift: i32) returns f32
+{
+    var sum: f32 0.0
+    for i in n
+        sum := sum + spin(i + shift)
+    sum
+}
+
+var total: f64 0.0
+var e: i32 0
+while e < 400
+{
+    total := total + (once(10000, e) as f64)
+    e := e + 1
+}
+print "`total`"

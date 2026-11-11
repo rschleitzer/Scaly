@@ -1,0 +1,75 @@
+; Reductions on the card. A card does not fold: it computes each round's
+; part of a sum, a product or a largest, and the processor folds the parts
+; in the rounds' order -- so a floating-point sum has the bits it has on
+; the processor, not those of some tree. Whole numbers in every operation
+; the language folds, floating-point sums and a product, an update under a
+; condition, two reductions and a put in one loop.
+; cards: 8
+
+function term(i: i32) returns f32
+    1.0 / ((i as f32) * 0.75 + 1.0)
+
+function mixed(i: i32) returns i32
+    (i * 7919) xor (i << 5)
+
+let n: i32 5000
+var xs Vector[f32](n as size_t)
+var ks Vector[i32](n as size_t)
+for i in n
+{
+    xs.put(i as size_t, term(i) * 3.0 - 0.001)
+    ks.put(i as size_t, mixed(i))
+}
+
+; a floating-point sum: thousands of numbers of very different size
+var fsum: f32 0.0
+for i in n
+    fsum := fsum + xs[i as size_t] * xs[i as size_t]
+
+; a product that stays near one
+var fprod: f32 1.0
+for i in n
+    fprod := fprod * (1.0 + xs[i as size_t] * 0.0001)
+
+; whole numbers: a sum that wraps, bits, the largest and the smallest
+var isum: i32 0
+var bits: u32 0
+for i in n
+{
+    isum := isum + ks[i as size_t] * 3
+    bits := bits xor ((ks[i as size_t] as u32) >> 3)
+}
+var largest: i32 -2147483647
+for i in n
+{
+    if ks[i as size_t] > largest
+        largest := ks[i as size_t]
+}
+var smallest: i32 2147483647
+for i in n
+{
+    if ks[i as size_t] < smallest
+        smallest := ks[i as size_t]
+}
+
+; an update under a condition, a difference, and a put beside them
+var even: i32 0
+var odd: i32 0
+var squares Vector[i32](n as size_t)
+for i in n
+{
+    squares.put(i as size_t, (i * i) % 1000)
+    if ks[i as size_t] % 2 = 0
+        even := even + 1
+    else
+        odd := odd - ks[i as size_t]
+}
+
+; 64 bits: a sum the wide way
+var wide 0
+for i in n
+    wide := wide + (ks[i as size_t] as int) * 1000003
+
+print "`fsum as f64` `fprod as f64`"
+print "`isum` `bits` `largest` `smallest`"
+print "`even` `odd` `squares[4999]` `wide`"

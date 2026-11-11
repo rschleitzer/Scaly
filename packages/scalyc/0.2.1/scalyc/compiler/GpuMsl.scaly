@@ -9,7 +9,10 @@
 ;     count of every input buffer, which the host appends;
 ;   - the inputs and the outputs are buffers of their own; a put writes at
 ;     the thread's position and nowhere else;
-;   - a called function is a function of the source, callees first.
+;   - a called function is a function of the source, callees first;
+;   - a reduction's variable is a name of the round, r<i>, started at the
+;     operation's identity; what the round leaves in it goes to one more
+;     output, at the thread's position. The processor folds those.
 ;
 ; The source computes what the processor computes, bit for bit, or it is
 ; not written at all:
@@ -152,6 +155,7 @@ define GpuMsl
                     report_offsets.add((*off_ptr))
                     if (*verdict_ptr) = "parallel"
                     {
+                        gk.take_reductions(tp, i)
                         gk.classify_loop(fr_ptr.unwrap())
                         if gk.k_blocked
                         {
@@ -266,6 +270,21 @@ define GpuMsl
                 out.append "@group(0) @binding(`slot`) var<storage, read_write> o`oi`: array<`this.ty(kind)`>;\n"
                 oi := oi + 1
             }
+            let n_out gk.k_outputs.length
+            var ri: size_t 0
+            while ri < gk.k_red_names.length
+            {
+                let kind GpuMsl.int_at(&gk.k_red_kinds, ri as int)
+                if kind < 2 or kind > 4
+                {
+                    this.refuse("a reduction of no number webgpu has")
+                    return ""
+                }
+                let at n_out + ri
+                let slot at + 2 + n_in
+                out.append "@group(0) @binding(`slot`) var<storage, read_write> o`at`: array<`this.ty(kind)`>;\n"
+                ri := ri + 1
+            }
 
             ; the words the scalars take, before the head can name what
             ; follows them
@@ -344,15 +363,100 @@ define GpuMsl
                 this.set_high("0u")
             m_made := 1
             m_temps := 0
+            this.begin_reductions(&out, gk)
+            if m_refused
+                return ""
 
             ; once around: a `continue` of the body ends the round
             out.append "    for (var once: u32 = 0u; once < 1u; once++)\n    {\n"
             this.body(&out, gk, fr.body, 2, false)
-            out.append "    }\n    if (F != 0u) { atomicStore(&FLT[0], 1u); }\n}\n"
+            out.append "    }\n"
+            this.end_reductions(&out, gk)
+            out.append "    if (F != 0u) { atomicStore(&FLT[0], 1u); }\n}\n"
             this.end_scope(0)
             if m_refused
                 return ""
             out.to_string()
+        }
+
+        ; A reduction's variable in the kernel: a name of the round that
+        ; can change, started where the processor starts a part of the fold
+        ; -- at the operation's identity (GpuKernel's list; the operations
+        ; are the TaskPlanner's: 1 add, 3 and, 5 or, 6 xor, 7 the largest
+        ; and 8 the smallest signed, 9 and 10 unsigned, 20 a floating-point
+        ; sum, 21 a product).
+        procedure begin_reductions(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel])
+        {
+            var ri: size_t 0
+            while ri < gk.k_red_names.length
+            {
+                let kind GpuMsl.int_at(&gk.k_red_kinds, ri as int)
+                let op GpuMsl.int_at(&gk.k_red_ops, ri as int)
+                if this.refuse_pair(kind, gk.k_red_names[ri])
+                    return
+                let start this.identity_of(op, kind)
+                if m_refused
+                    return
+                let cname "r`ri`"
+                out.append(this.declare_name("    ", kind, cname, start))
+                this.declare(gk.k_red_names[ri], cname, kind, 1)
+                ri := ri + 1
+            }
+        }
+
+        ; ... and what the round left in each goes to its output.
+        procedure end_reductions(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel])
+        {
+            let n_out gk.k_outputs.length
+            var ri: size_t 0
+            while ri < gk.k_red_names.length
+            {
+                let at n_out + ri
+                out.append "    o`at`[gid] = r`ri`;\n"
+                ri := ri + 1
+            }
+        }
+
+        ; The value a part of a fold starts at: the one that leaves every
+        ; other unchanged under the operation.
+        procedure identity_of(mutable this: GpuMsl, op: int, kind: int) returns String
+        {
+            if op = 20 and kind = 4
+                return "(-0.0f)"
+            if op = 21 and kind = 4
+                return "1.0f"
+            if GpuMsl.is_int(kind) = false or op >= 20
+            {
+                this.refuse("a reduction of another kind than its operation")
+                return ""
+            }
+            if op = 1 or op = 5 or op = 6 or op = 9
+                return this.zero_of(kind)
+            if op = 3 or op = 10
+            {
+                ; every bit set
+                if kind = 2
+                    return "-1"
+                if kind = 3
+                    return "4294967295u"
+                if kind = 5
+                    return "((long)-1)"
+                return "(~((ulong)0u))"
+            }
+            if op = 7
+            {
+                if m_wgsl
+                    return "(-2147483647 - 1)"
+                return GpuMsl.least(kind)
+            }
+            if op = 8
+            {
+                if kind = 2
+                    return "2147483647"
+                return "((long)(((ulong)1u << 63) - (ulong)1u))"
+            }
+            this.refuse("a reduction this pass does not know")
+            ""
         }
 
         procedure kernel_source(mutable this: GpuMsl, gk: ref[GpuKernel.GpuKernel], fr: PlannedFor) returns String
@@ -402,6 +506,22 @@ define GpuMsl
                 let slot oi + 2 + n_in
                 out.append ", device `GpuMsl.type_name(kind)`* o`oi` [[buffer(`slot`)]]"
                 oi := oi + 1
+            }
+            ; one more output per reduction: each round's part of it
+            let n_out gk.k_outputs.length
+            var ri: size_t 0
+            while ri < gk.k_red_names.length
+            {
+                let kind GpuMsl.int_at(&gk.k_red_kinds, ri as int)
+                if GpuKernel.GpuKernel.kind_is_integer(kind) = false and kind <> 4
+                {
+                    this.refuse("a reduction of no number of a card's")
+                    return ""
+                }
+                let at n_out + ri
+                let slot at + 2 + n_in
+                out.append ", device `GpuMsl.type_name(kind)`* o`at` [[buffer(`slot`)]]"
+                ri := ri + 1
             }
             out.append ", uint gid [[thread_position_in_grid]])\n{\n    uint F = 0u;\n"
 
@@ -464,10 +584,15 @@ define GpuMsl
             this.declare(fr.identifier, "v0", ck, 0)
             m_made := 1
             m_temps := 0
+            this.begin_reductions(&out, gk)
+            if m_refused
+                return ""
 
             out.append "    do\n    {\n"
             this.body(&out, gk, fr.body, 2, false)
-            out.append "    } while (false);\n    if (F != 0u) atomic_store_explicit(FLT, 1u, memory_order_relaxed);\n}\n"
+            out.append "    } while (false);\n"
+            this.end_reductions(&out, gk)
+            out.append "    if (F != 0u) atomic_store_explicit(FLT, 1u, memory_order_relaxed);\n}\n"
             this.end_scope(0)
             if m_refused
                 return ""

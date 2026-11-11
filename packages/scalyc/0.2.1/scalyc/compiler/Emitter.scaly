@@ -91,6 +91,11 @@ define Emitter
         buffer_kinds: Array[int]
         output_ops: Array[PlannedOperand]
         output_kinds: Array[int]
+        ; the loop's reductions: the variable's slot, the TaskPlanner's
+        ; operation, and the bytes of one number
+        red_slots: Array[LLVMValueRef]
+        red_ops: Array[int]
+        red_strides: Array[size_t]
     )
     {
         init()
@@ -108,6 +113,9 @@ define Emitter
             buffer_kinds := Array[int]^this()
             output_ops := Array[PlannedOperand]^this()
             output_kinds := Array[int]^this()
+            red_slots := Array[LLVMValueRef]^this()
+            red_ops := Array[int]^this()
+            red_strides := Array[size_t]^this()
         }
 
         ; Everything of `from`, which is no offer afterwards: a loop inside
@@ -128,6 +136,9 @@ define Emitter
             buffer_kinds.length := 0
             output_ops.length := 0
             output_kinds.length := 0
+            red_slots.length := 0
+            red_ops.length := 0
+            red_strides.length := 0
             var i: size_t 0
             while i < from.uniform_ops.length
             {
@@ -147,6 +158,14 @@ define Emitter
             {
                 output_ops.add(from.output_ops[i])
                 output_kinds.add(from.output_kinds[i])
+                i := i + 1
+            }
+            i := 0
+            while i < from.red_slots.length
+            {
+                red_slots.add(from.red_slots[i])
+                red_ops.add(from.red_ops[i])
+                red_strides.add(from.red_strides[i])
                 i := i + 1
             }
         }
@@ -18705,6 +18724,8 @@ define Emitter
             var gk GpuKernel.GpuKernel()
             gk.plan_functions := plan.functions
             gk.plan_globals := plan.globals
+            ; the reductions promote_for# just found for THIS loop
+            gk.set_reductions(&parfor_checker.red_names, &parfor_checker.red_ops, 0, parfor_checker.red_names.length)
             gk.classify_loop(for_expr)
             if gk.k_blocked
                 return emit_parallel_for for_expr
@@ -18713,8 +18734,37 @@ define Emitter
             if msl.m_refused
                 return emit_parallel_for for_expr
             ; the host binds 29 buffers beside its own two
-            if gk.k_buffer_ops.length + gk.k_output_ops.length > 29
+            if gk.k_buffer_ops.length + gk.k_output_ops.length + gk.k_red_names.length > 29
                 return emit_parallel_for for_expr
+            ; a reduction's variable is a slot of this function holding the
+            ; kind of number the kernel folds (emit_parallel_for# asks the
+            ; same and runs the loop in order otherwise)
+            var red_slots Array[LLVMValueRef]()
+            var red_ops Array[int]()
+            var red_strides Array[size_t]()
+            var rk: size_t 0
+            while rk < gk.k_red_names.length
+            {
+                let rv lookup_variable(gk.k_red_names[rk])
+                if rv = null or LLVMIsAAllocaInst(rv) = null
+                    return emit_parallel_for for_expr
+                let slot_ty LLVMGetAllocatedType(rv)
+                let slot_kind LLVMGetTypeKind(slot_ty)
+                let kind gk.k_red_kinds[rk]
+                var stride: size_t 0
+                if slot_kind = LLVMTypeKind.Float() and kind = 4
+                    stride := 4
+                if slot_kind = LLVMTypeKind.Integer() and (kind = 2 or kind = 3) and LLVMGetIntTypeWidth(slot_ty) = 32
+                    stride := 4
+                if slot_kind = LLVMTypeKind.Integer() and (kind = 5 or kind = 6) and LLVMGetIntTypeWidth(slot_ty) = 64
+                    stride := 8
+                if stride = 0
+                    return emit_parallel_for for_expr
+                red_slots.add rv
+                red_ops.add(gk.k_red_ops[rk])
+                red_strides.add stride
+                rk := rk + 1
+            }
 
             let i32_ty LLVMInt32TypeInContext(context)
             let i64_ty LLVMInt64TypeInContext(context)
@@ -18765,6 +18815,14 @@ define Emitter
             {
                 offer.output_ops.add(gk.k_output_ops[oi])
                 offer.output_kinds.add(gk.k_output_kinds[oi])
+                oi := oi + 1
+            }
+            oi := 0
+            while oi < red_slots.length
+            {
+                offer.red_slots.add(red_slots[oi])
+                offer.red_ops.add(red_ops[oi])
+                offer.red_strides.add(red_strides[oi])
                 oi := oi + 1
             }
 
@@ -18839,7 +18897,9 @@ define Emitter
             let i64_ty LLVMInt64TypeInContext(context)
             let ptr_ty LLVMPointerTypeInContext(context, 0)
             let n_in offer.buffer_ops.length
-            let n_out offer.output_ops.length
+            let n_put offer.output_ops.length
+            let n_red offer.red_slots.length
+            let n_out n_put + n_red
             var ok true
 
             ; the scalars, in the order and the words the kernel reads them
@@ -18879,7 +18939,7 @@ define Emitter
                 bi := bi + 1
             }
             bi := 0
-            while ok and bi < n_out
+            while ok and bi < n_put
             {
                 var oop offer.output_ops[bi]
                 if this.gpu_bind_buffer(oop, offer.output_kinds[bi], bufs_ty, bufs, sizes_ty, sizes, n_in + bi) = false
@@ -18888,6 +18948,44 @@ define Emitter
             }
             if ok = false
                 return null
+
+            ; REDUCTIONS. The card does not fold: per reduction it fills a
+            ; buffer with each round's part, one number per round, and the
+            ; fold is done here, by the processor, in the rounds' order --
+            ; what it does with the parts of its own rounds, bit for bit.
+            ; The rounds before `done` are in the variable already (they ran
+            ; in place), so the fold begins there. The buffers are one block
+            ; of eight bytes per round and reduction, taken for the call.
+            var parts: LLVMValueRef null
+            var malloc_ty: LLVMTypeRef null
+            var free_ty: LLVMTypeRef null
+            if n_red > 0
+            {
+                var m_tys Vector[LLVMTypeRef](1)
+                m_tys.put(0, i64_ty)
+                malloc_ty := LLVMFunctionType(ptr_ty, m_tys.data, 1, 0)
+                var f_tys Vector[LLVMTypeRef](1)
+                f_tys.put(0, ptr_ty)
+                free_ty := LLVMFunctionType(LLVMVoidTypeInContext(context), f_tys.data, 1, 0)
+                let malloc_fn this.get_parfor_runtime_fn("malloc", malloc_ty)
+                let row LLVMBuildMul(builder, offer.count, LLVMConstInt(i64_ty, 8, 0), "gpu.parts.row")
+                let all LLVMBuildMul(builder, row, LLVMConstInt(i64_ty, n_red, 0), "gpu.parts.bytes")
+                var m_args Vector[LLVMValueRef](1)
+                m_args.put(0, all)
+                parts := LLVMBuildCall2(builder, malloc_ty, malloc_fn, m_args.data, 1, "gpu.parts")
+                var rk: size_t 0
+                while rk < n_red
+                {
+                    let from LLVMBuildMul(builder, row, LLVMConstInt(i64_ty, rk, 0), "gpu.part.from")
+                    var at Vector[LLVMValueRef](1)
+                    at.put(0, from)
+                    let data LLVMBuildInBoundsGEP2(builder, LLVMInt8TypeInContext(context), parts, at.data, 1, "gpu.part")
+                    gpu_store_slot(data, bufs_ty, bufs, n_in + n_put + rk)
+                    gpu_store_slot(offer.count, sizes_ty, sizes, (n_in + n_put + rk) * 2)
+                    gpu_store_slot(LLVMConstInt(i64_ty, offer.red_strides[rk], 0), sizes_ty, sizes, (n_in + n_put + rk) * 2 + 1)
+                    rk := rk + 1
+                }
+            }
 
             var ptys Vector[LLVMTypeRef](13)
             ptys.put(0, ptr_ty)
@@ -18920,7 +19018,78 @@ define Emitter
             args.put(11, done)
             args.put(12, workers)
             let ran LLVMBuildCall2(builder, run_ty, run_fn, args.data, 13, "gpu.ran")
-            LLVMBuildICmp(builder, LLVMIntPredicate.NE(), ran, LLVMConstInt(i32_ty, 0, 0), "gpu.on")
+            let on_card LLVMBuildICmp(builder, LLVMIntPredicate.NE(), ran, LLVMConstInt(i32_ty, 0, 0), "gpu.on")
+            if n_red = 0
+                return on_card
+
+            let fold_head create_block("gpu.fold.head")
+            let fold_body create_block("gpu.fold.body")
+            let fold_done create_block("gpu.fold.done")
+            let at_slot entry_alloca(i64_ty, "gpu.fold.i")
+            LLVMBuildStore(builder, done, at_slot)
+            LLVMBuildCondBr(builder, on_card, fold_head, fold_done)
+
+            LLVMPositionBuilderAtEnd(builder, fold_head)
+            let fi LLVMBuildLoad2(builder, i64_ty, at_slot, "gpu.fold.at")
+            let more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), fi, offer.count, "gpu.fold.more")
+            LLVMBuildCondBr(builder, more, fold_body, fold_done)
+
+            LLVMPositionBuilderAtEnd(builder, fold_body)
+            let row8 LLVMBuildMul(builder, offer.count, LLVMConstInt(i64_ty, 8, 0), "gpu.parts.row")
+            var fk: size_t 0
+            while fk < n_red
+            {
+                let slot offer.red_slots[fk]
+                let num_ty LLVMGetAllocatedType(slot)
+                let from LLVMBuildMul(builder, row8, LLVMConstInt(i64_ty, fk, 0), "gpu.part.from")
+                var b_at Vector[LLVMValueRef](1)
+                b_at.put(0, from)
+                let base LLVMBuildInBoundsGEP2(builder, LLVMInt8TypeInContext(context), parts, b_at.data, 1, "gpu.part")
+                var e_at Vector[LLVMValueRef](1)
+                e_at.put(0, fi)
+                let part_at LLVMBuildInBoundsGEP2(builder, num_ty, base, e_at.data, 1, "gpu.part.at")
+                let part LLVMBuildLoad2(builder, num_ty, part_at, "gpu.part.v")
+                let cur LLVMBuildLoad2(builder, num_ty, slot, "gpu.fold.cur")
+                LLVMBuildStore(builder, this.gpu_fold(offer.red_ops[fk], cur, part), slot)
+                fk := fk + 1
+            }
+            LLVMBuildStore(builder, LLVMBuildAdd(builder, fi, LLVMConstInt(i64_ty, 1, 0), "gpu.fold.next"), at_slot)
+            LLVMBuildBr(builder, fold_head)
+
+            LLVMPositionBuilderAtEnd(builder, fold_done)
+            let free_fn this.get_parfor_runtime_fn("free", free_ty)
+            var fr_args Vector[LLVMValueRef](1)
+            fr_args.put(0, parts)
+            LLVMBuildCall2(builder, free_ty, free_fn, fr_args.data, 1, "")
+            on_card
+        }
+
+        ; One round's part folded into a reduction's variable, by the
+        ; TaskPlanner's operation: what a chunk's partial is combined with
+        ; on the processor (emit_parallel_for#).
+        procedure gpu_fold(mutable this, op: int, mutable cur: LLVMValueRef, mutable part: LLVMValueRef) returns LLVMValueRef
+        {
+            if op >= 20
+                return this.fp_combine(op, cur, part)
+            if op = 3
+                return LLVMBuildAnd(builder, cur, part, "gpu.fold.and")
+            if op = 5
+                return LLVMBuildOr(builder, cur, part, "gpu.fold.or")
+            if op = 6
+                return LLVMBuildXor(builder, cur, part, "gpu.fold.xor")
+            if op >= 7 and op <= 10
+            {
+                var pred LLVMIntPredicate.SGT()
+                if op = 8
+                    pred := LLVMIntPredicate.SLT()
+                if op = 9
+                    pred := LLVMIntPredicate.UGT()
+                if op = 10
+                    pred := LLVMIntPredicate.ULT()
+                let keeps LLVMBuildICmp(builder, pred, cur, part, "gpu.fold.keeps")
+                return LLVMBuildSelect(builder, keeps, cur, part, "gpu.fold.pick")
+            }
+            LLVMBuildAdd(builder, cur, part, "gpu.fold.add")
         }
 
         ; Is the program linked with Metal's host: is the emission triple

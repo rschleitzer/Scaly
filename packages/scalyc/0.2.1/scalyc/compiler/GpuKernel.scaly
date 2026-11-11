@@ -9,7 +9,12 @@
 ;   - it reads scalars of its environment (the kernel's UNIFORMS) and
 ;     elements of a Vector, Slice or Array of such numbers (its BUFFERS);
 ;   - it writes with `put` at exactly the loop's counter into a Vector of
-;     such numbers (its OUTPUTS) and nowhere else;
+;     such numbers (its OUTPUTS), and into the variables the TaskPlanner
+;     calls its REDUCTIONS -- a sum, a product, a largest. A card does not
+;     fold: a round's part of a reduction is a number of the round, started
+;     at the operation's identity as on the processor, and the kernel gives
+;     one such number per round; the processor folds them in the rounds'
+;     order, which is its own order, bit for bit;
 ;   - the functions it calls take and answer such scalars, are not
 ;     recursive, allocate nothing and are kernels themselves -- they are
 ;     listed callees first, the order a shading language wants them in;
@@ -66,6 +71,13 @@ define GpuKernel
         ; the loop stands in `relaxed`: its floating point may go where it
         ; is rounded less strictly
         var k_relaxed: bool
+        ; The loop's reductions, handed in before it is classified
+        ; (set_reductions#): the variable, the TaskPlanner's operation, and
+        ; the kind of number it is (0 until its update is met).
+        k_red_names: Array[String]
+        k_red_ops: Array[int]
+        k_red_kinds: Array[int]
+        var k_red_ready: bool
 
         ; The names bound where the walk stands, innermost last, and what
         ; each is: 0 a local or a parameter, 1 the counter of a loop inside
@@ -118,6 +130,10 @@ define GpuKernel
             k_wide_reason := String^this("")
             k_float := false
             k_relaxed := false
+            k_red_names := Array[String]^this()
+            k_red_ops := Array[int]^this()
+            k_red_kinds := Array[int]^this()
+            k_red_ready := false
             k_locals := Array[String]^this()
             k_kinds := Array[int]^this()
             k_base := 0
@@ -165,6 +181,7 @@ define GpuKernel
                     if (*verdict_ptr) = "parallel"
                     {
                         loops_parallel := loops_parallel + 1
+                        this.take_reductions(tp, i)
                         this.classify_loop(fr_ptr.unwrap())
                         if k_blocked = false
                             kernels := kernels + 1
@@ -184,6 +201,41 @@ define GpuKernel
             }
         }
 
+        ; The reductions of the loop classified NEXT: names[from .. to) and
+        ; their operations, as the TaskPlanner found them for that loop. A
+        ; loop classified without this call has none.
+        procedure set_reductions(mutable this: GpuKernel, names: ref[Array[String]], ops: ref[Array[int]], from: size_t, to: size_t)
+        {
+            k_red_names.length := 0
+            k_red_ops.length := 0
+            k_red_kinds.length := 0
+            var i from
+            while i < to and i < names.length and i < ops.length
+            {
+                let n_copy String^this(names[i])
+                k_red_names.add n_copy
+                k_red_ops.add(ops[i])
+                k_red_kinds.add 0
+                i := i + 1
+            }
+            k_red_ready := true
+        }
+
+        ; The reductions of loop i of a report the TaskPlanner kept.
+        procedure take_reductions(mutable this: GpuKernel, tp: ref[TaskPlanner], i: size_t)
+        {
+            if i >= tp.report_red_from.length
+            {
+                this.set_reductions(&tp.report_red_names, &tp.report_red_ops, 0, 0)
+                return
+            }
+            let from tp.report_red_from[i]
+            var to tp.report_red_names.length
+            if i + 1 < tp.report_red_from.length
+                to := tp.report_red_from[i + 1]
+            this.set_reductions(&tp.report_red_names, &tp.report_red_ops, from, to)
+        }
+
         ; Classify one loop the TaskPlanner calls parallel. Afterwards
         ; k_blocked/k_reason, k_wide and k_float carry the verdict and the
         ; k_ lists what the kernel takes, gives and calls.
@@ -195,6 +247,13 @@ define GpuKernel
             k_wide_reason := String^this("")
             k_float := false
             k_relaxed := fr.is_relaxed
+            if k_red_ready = false
+            {
+                k_red_names.length := 0
+                k_red_ops.length := 0
+                k_red_kinds.length := 0
+            }
+            k_red_ready := false
             k_locals.length := 0
             k_kinds.length := 0
             k_base := 0
@@ -223,10 +282,17 @@ define GpuKernel
             ; The count of rounds is the processor's to compute: fr.expr is
             ; not part of the kernel.
             this.add_local(fr.identifier, 2)
+            ; a reduction's variable is a number of the round in the kernel
+            var ri: size_t 0
+            while ri < k_red_names.length
+            {
+                this.add_local(k_red_names[ri], 0)
+                ri := ri + 1
+            }
             this.k_action(fr.body)
             if k_blocked
                 return
-            if k_outputs.length = 0
+            if k_outputs.length = 0 and k_red_names.length = 0
             {
                 this.block("writes no result")
                 return
@@ -251,8 +317,18 @@ define GpuKernel
                 sb.append "kernel (metal): "
             else
                 sb.append "kernel (metal, webgpu): "
-            sb.append "out "
-            GpuKernel.append_names(&sb, &k_outputs)
+            if k_outputs.length > 0
+            {
+                sb.append "out "
+                GpuKernel.append_names(&sb, &k_outputs)
+            }
+            if k_red_names.length > 0
+            {
+                if k_outputs.length > 0
+                    sb.append "; "
+                sb.append "reduces "
+                GpuKernel.append_names(&sb, &k_red_names)
+            }
             if k_uniforms.length + k_buffers.length > 0
             {
                 sb.append "; in "
@@ -1390,6 +1466,21 @@ define GpuKernel
                     }
                     if this.kind_at(li) > 0
                         this.block_named("writes the counter ", v.name)
+                    ; the update of a reduction: what kind of number it folds
+                    if k_in_function.get_length() = 0
+                    {
+                        let ri GpuKernel.index_of(&k_red_names, v.name)
+                        if ri >= 0 and (li as size_t) <= k_red_names.length
+                        {
+                            this.check_value_type(top.result_type, v.name)
+                            let rkind GpuKernel.scalar_kind(top.result_type)
+                            k_red_kinds.put(ri as size_t, rkind)
+                            if GpuKernel.kind_is_wide(rkind)
+                                this.note_wide(v.name)
+                            if rkind = 4
+                                k_float := true
+                        }
+                    }
                 }
                 when g: GlobalRef
                     this.block_named("writes the global ", g.name)
