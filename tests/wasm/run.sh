@@ -38,9 +38,8 @@ fi
 if [ -z "$wasi" ] || [ ! -x "$wasi/bin/clang" ]; then
   echo "wasm: SKIP (no wasi-sdk: set WASI_SDK)"; exit 0
 fi
-if ! command -v node >/dev/null 2>&1; then
-  echo "wasm: SKIP (no node to run a WASI module)"; exit 0
-fi
+# a node that STARTS (tools/node.sh): one that is merely there fails every run
+NODE=$(tools/node.sh) || { echo "wasm: SKIP (no node that starts, to run a WASI module)"; exit 0; }
 [ -x "$TOOL" ] || { echo "wasm: FAIL — no tool beside $STAGE ($TOOL)"; exit 1; }
 
 WORK=$(mktemp -d)
@@ -56,8 +55,8 @@ PY=$(command -v python3 || command -v python) || { echo "wasm: no python3" >&2; 
 failed=0
 for host in node page; do
   case $host in
-    node) RUN="node --no-warnings tests/wasm/run.mjs" ;;
-    page) RUN="node --no-warnings $PAGE" ;;
+    node) RUN="$NODE --no-warnings tests/wasm/run.mjs" ;;
+    page) RUN="$NODE --no-warnings $PAGE" ;;
   esac
 
   # 1. the profile; built first and alone, which also fills the cache with the

@@ -21,12 +21,7 @@ cd "$(dirname "$0")/../../.." || exit 1
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
 CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 [ -x "$CHROME" ] || { echo "gpu-web: SKIP (no Chrome: set CHROME)"; exit 0; }
-NODE=""
-for cand in node /opt/homebrew/opt/node@22/bin/node; do
-  # asked in a shell of its own: a node that aborts says so through its parent
-  if bash -c '"$0" -e 0; exit $?' "$cand" >/dev/null 2>&1; then NODE=$cand; break; fi
-done
-[ -n "$NODE" ] || { echo "gpu-web: SKIP (no node that starts)"; exit 0; }
+NODE=$(tools/node.sh) || { echo "gpu-web: SKIP (no node that starts)"; exit 0; }
 
 T=$(mktemp -d "${TMPDIR:-/tmp}/scaly_gpu_web.XXXXXX") || exit 1
 trap 'rm -rf "${T:?}"' EXIT
