@@ -57,6 +57,17 @@ check "--task-plan agrees on the parallel loops" 'printf "%s\n" "$tp" | head -1 
 both=$("$STAGE" --task-plan --gpu-plan "$FIX" 2>&1)
 check "both reports together" '[ "$(printf "%s\n" "$both" | grep -c "^task-plan:")" = "17" ] && [ "$(printf "%s\n" "$both" | grep -c "^gpu-plan:")" = "17" ]'
 
+# `relaxed`: floating point may go to webgpu; nothing else changes.
+got=$("$STAGE" --gpu-plan tests/gpu-plan/relaxed.scaly 2>&1 | grep '^gpu-plan:')
+line() { printf '%s\n' "$got" | grep "relaxed.scaly:$1:"; }
+check "relaxed: six loops, six kernels"             'printf "%s\n" "$got" | head -1 | grep -q "^gpu-plan: 6 for-loops, 6 parallel, 6 kernels$"'
+check "floating point, not relaxed: metal only"     'line 15 | grep -q "kernel (metal): .*not webgpu: floating point, and the loop is not relaxed$"'
+check "relaxed before the loop: both backends"      'line 17 | grep -q "kernel (metal, webgpu): out b; calls half$"'
+check "relaxed before a block: its loops, both"     'line 21 | grep -q "kernel (metal, webgpu): out c; calls half$"'
+check "whole numbers in the block: as without"      'line 23 | grep -q "kernel (metal, webgpu): out d$"'
+check "a 64-bit integer stays metal's, relaxed or not" 'line 25 | grep -q "kernel (metal): .*not webgpu: .*64-bit integer$"'
+check "after the block the word no longer holds"    'line 28 | grep -q "kernel (metal): .*the loop is not relaxed$"'
+
 echo "gpu-plan: $pass PASS, $fail FAIL"
 for f in "${failures[@]}"; do echo "  FAIL: $f"; done
 [ $fail -eq 0 ]

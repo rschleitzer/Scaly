@@ -27334,6 +27334,7 @@ define Planner
                 get_iter_name,
                 next_name,
                 f.loop_label,
+                this.lookup_local_binding(" relaxed") <> null,
                 element_is_scalar
             )
         }
@@ -32345,7 +32346,7 @@ define Planner
             var stmts Vector[Statement]^this(2)
             stmts.put(0, Statement.Binding(Binding(span, "const", Item(span, false, name_h.get(0), null, Vector[Attribute](0)), recv)))
             stmts.put(1, Statement.Action(Action(call, Vector[Operand](0))))
-            this.plan_operand(Operand(span, Expression.Block(Block(span, stmts)), null))
+            this.plan_operand(Operand(span, Expression.Block(Block(span, stmts, false)), null))
         }
 
         ; lazy_method_call#: the receiver path and the concept of a METHOD
@@ -53489,6 +53490,11 @@ define Planner
         procedure plan_block(mutable this: Planner, mutable b: Block) returns PlannedBlock
         {
             this.push_scope()
+            ; `relaxed`: a binding no program can name says so to every
+            ; `for` planned in this scope (plan_for#). In the scope and not
+            ; in a field: the record stands at its page's limit.
+            if b.is_relaxed
+                this.define_local(" relaxed", Planner.make_void_type(), false, false)
             let planned_stmts this.plan_statements(b.statements)
             this.pop_scope()
 
@@ -71812,7 +71818,7 @@ define Planner
         ; plan_block: a block with one Action statement.
         var stmts_vec Vector[Statement](1)
         stmts_vec.put(0, stmt_action)
-        let model_block Block(Span(0, 0), stmts_vec)
+        let model_block Block(Span(0, 0), stmts_vec, false)
         let pl_block p3.plan_block(model_block)
         if pl_block.statements = null
             return 267

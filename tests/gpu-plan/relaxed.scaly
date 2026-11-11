@@ -1,0 +1,30 @@
+; `relaxed` before a loop or a block: floating point may go to a backend
+; that rounds less strictly than the processor (webgpu). It changes nothing
+; for whole numbers, and nothing for a 64-bit integer, which that backend
+; does not have. tests/gpu-plan/run.sh pins each line.
+
+function half(x: f32) returns f32
+    x * 0.5
+
+let n 1000
+var a Vector[f32](n as size_t)
+var b Vector[f32](n as size_t)
+var c Vector[f32](n as size_t)
+var d Vector[i32](n as size_t)
+var e Vector[int](n as size_t)
+for i in n
+    a.put(i as size_t, half(i as f32))
+relaxed for i in n
+    b.put(i as size_t, half(i as f32))
+relaxed
+{
+    for i in n
+        c.put(i as size_t, half(i as f32) + 1.0)
+    for i in n
+        d.put(i as size_t, (i as i32) * 2)
+    for i in n
+        e.put(i as size_t, i * i)
+}
+for i in n
+    c.put(i as size_t, half(i as f32))
+print "`a[9] as f64` `b[9] as f64` `c[9] as f64` `d[9]` `e[9]`"

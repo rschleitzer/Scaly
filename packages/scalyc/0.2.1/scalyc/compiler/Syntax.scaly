@@ -172,6 +172,13 @@ define ActionSyntax union (
     Block: BlockSyntax
 )
 
+define RelaxedSyntax
+(
+    start: size_t
+    end: size_t
+    action: ActionSyntax
+)
+
 define RepeatSyntax
 (
     start: size_t
@@ -558,6 +565,7 @@ define ExpressionSyntax union (
     Choose: ChooseSyntax
     Try: TrySyntax
     Repeat: RepeatSyntax
+    Relaxed: RelaxedSyntax
     SizeOf: SizeOfSyntax
     AlignOf: AlignOfSyntax
     Is: IsSyntax

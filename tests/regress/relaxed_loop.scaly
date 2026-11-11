@@ -1,0 +1,40 @@
+; `relaxed` before a loop or before a block allows its loops to run where
+; floating point is rounded less strictly than on the processor. It allows,
+; it does not require: on the processor a relaxed loop computes exactly what
+; the same loop computes without the word. A value, a nested loop and a
+; reduction inside it are what they are outside it.
+
+function half(x: f32) returns f32
+    x * 0.5
+
+function filled(n: int) returns int
+{
+    var plain Vector[f32](n as size_t)
+    var loose Vector[f32](n as size_t)
+    var grid Vector[i32]((n * 4) as size_t)
+    for i in n
+        plain.put(i as size_t, half(i as f32) / 3.0)
+    relaxed for i in n
+        loose.put(i as size_t, half(i as f32) / 3.0)
+    var sum 0
+    relaxed
+    {
+        for i in n
+            for j in 4
+                grid.put((i * 4 + j) as size_t, (i as i32) + (j as i32))
+        for i in n
+            sum := sum + (grid[(i * 4 + 3) as size_t] as int)
+    }
+    var differ 0
+    for i in n
+    {
+        if plain[i as size_t] <> loose[i as size_t]
+            differ := differ + 1
+    }
+    sum + differ
+}
+
+if filled(100) = 5250
+    print "PASS"
+else
+    print "FAIL `filled(100)`"

@@ -650,7 +650,17 @@ define Modeler
     procedure handle_block(mutable syntax: BlockSyntax) returns Block mutable modeler_error_count
     {
         let statements handle_statements(syntax.statements)
-        Block(Span(syntax.start, syntax.end), statements)
+        Block(Span(syntax.start, syntax.end), statements, false)
+    }
+
+    ; `relaxed <action>`: the action as the one statement of a block that
+    ; says so. Nothing else changes: on the processor it computes as before.
+    procedure handle_relaxed(mutable syntax: RelaxedSyntax) returns Block mutable modeler_error_count
+    {
+        let action handle_action(syntax.action)
+        var statements Vector[Statement](1)
+        statements.put(0, Statement.Action(action))
+        Block(Span(syntax.start, syntax.end), statements, true)
     }
 
     ; ============================================================================
@@ -1026,6 +1036,8 @@ define Modeler
                 Expression.Lambda(handle_lambda(lam_syntax))
             when rep_syntax: RepeatSyntax
                 Expression.Repeat(handle_repeat(rep_syntax))
+            when rel_syntax: RelaxedSyntax
+                Expression.Block(handle_relaxed(rel_syntax))
             when life_syntax: LifetimeSyntax
             {
                 ; Lifetime operand (`#`/`$`/`^name` written next to a
@@ -1885,7 +1897,8 @@ define Modeler
                                 when t: TrySyntax true
                                     when r: RepeatSyntax true
                                         when b: BlockSyntax true
-                                            else false
+                                            when x: RelaxedSyntax true
+                                                else false
     }
 
     ; ============================================================================

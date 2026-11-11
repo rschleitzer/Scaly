@@ -1,0 +1,6 @@
+; `relaxed` is a word of the language: it stands before a loop or a block
+; and cannot name a binding.
+; xfail: expected LetBinding
+
+let relaxed 5
+print "`relaxed`"

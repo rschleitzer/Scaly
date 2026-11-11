@@ -319,6 +319,7 @@
     <content link = Choose
     <content link = Try
     <content link = Repeat
+    <content link = Relaxed
     <content link = SizeOf
     <content link = AlignOf
     <content link = Is
@@ -579,6 +580,11 @@
     <content colon                                 optional
     <content link = Action                                  property = action
 
+<syntax id = Relaxed
+    <content link = relaxed
+    <content colon                                 optional
+    <content link = Action                                  property = action
+
 <syntax id = Action                       multiple abstract
     <content link = Operation
     <content link = Block
@@ -700,6 +706,7 @@
 <keyword id = private
 <keyword id = procedure
 <keyword id = reads
+<keyword id = relaxed
 <keyword id = repeat
 <keyword id = return
 <keyword id = returns

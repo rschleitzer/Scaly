@@ -86,6 +86,7 @@ define Parser
         keywords_builder.add("private")
         keywords_builder.add("procedure")
         keywords_builder.add("reads")
+        keywords_builder.add("relaxed")
         keywords_builder.add("repeat")
         keywords_builder.add("return")
         keywords_builder.add("returns")
@@ -2774,6 +2775,16 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Repeat(node)
+        choose parse_relaxed()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return ExpressionSyntax.Relaxed(node)
         choose parse_sizeof()
             when err: Error
             {
@@ -4850,6 +4861,34 @@ define Parser
         let end lexer.position
 
         RepeatSyntax(start, end, name, action)
+    }
+
+    procedure parse_relaxed(mutable this: Parser) returns RelaxedSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("relaxed")
+            throw ParserError.Different(DifferentSyntax())
+
+        lexer.parse_colon()
+
+        let action_start lexer.position
+        var action: ActionSyntax
+        choose parse_action()
+            when err: Error
+            {
+                choose err
+                    when d: Different
+                        throw ParserError.Invalid(InvalidSyntax(action_start, lexer.position, "expected Action"))
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                action := success
+
+        let end lexer.position
+
+        RelaxedSyntax(start, end, action)
     }
 
     procedure parse_action_list(mutable this: Parser) returns ref[Vector[ActionSyntax]]? throws ParserError

@@ -82,6 +82,8 @@ define grammar
             return true
         if word = "reads"
             return true
+        if word = "relaxed"
+            return true
         if word = "repeat"
             return true
         if word = "return"
@@ -184,6 +186,6 @@ define grammar
     ; the word operators and the value words. Separated by single spaces.
     function completion_words() returns String
     {
-        String("alignof as atomic break case choose continue define delegate else extern for function if in init instruction intrinsic io is label lazy let linked loop match module mutable operator private procedure reads repeat return returns sizeof throw throws try union use var when while package pending shared and not or xor false null true this")
+        String("alignof as atomic break case choose continue define delegate else extern for function if in init instruction intrinsic io is label lazy let linked loop match module mutable operator private procedure reads relaxed repeat return returns sizeof throw throws try union use var when while package pending shared and not or xor false null true this")
     }
 }
