@@ -1021,12 +1021,15 @@ define GpuKernel
                 this.block("takes or follows an address")
                 return
             }
+            ; a shift is as wide as its left side: its count is narrowed on
+            ; the spot, and a literal one keeps the 64 bits it was written in
+            let is_shift n = 2 and (call.name = "<<" or call.name = ">>")
             var i: size_t 0
             while i < n
             {
                 let a_ptr call.args.get i
                 if a_ptr <> null
-                    this.k_operand(a_ptr.unwrap(), false)
+                    this.k_operand(a_ptr.unwrap(), is_shift and i = 1)
                 i := i + 1
             }
             if k_blocked

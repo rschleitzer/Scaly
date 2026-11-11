@@ -1,0 +1,103 @@
+; Floating point under WebGPU, for loops written `relaxed`. Such a card may
+; round less strictly than the processor -- fuse a multiplication with an
+; addition, be off in the last bits of a division --, so its results are
+; not printed here but compared: every one must lie within a tolerance of
+; what the same loop gives without the word, which runs where rounding is
+; the processor's. And a count that hangs on such numbers, the points of a
+; small Mandelbrot picture, must come out within a thousandth.
+; cards-min: 2
+
+function next(state: u32) returns u32
+    state * 1664525 + 1013904223
+
+function unit(state: u32) returns f32
+    (((state >> 8) as i32) as f32) / 4194304.0 - 2.0
+
+function blend(x: f32, y: f32, z: f32) returns f32
+    (x * y + z) / (y * y + 1.0) - x * 0.25
+
+function row_count(y: i32, n: i32) returns i32
+{
+    let ci (2.0 * (y as f32) / (n as f32)) - 1.0
+    var count: i32 0
+    for x in n
+    {
+        let cr (2.0 * (x as f32) / (n as f32)) - 1.5
+        var zr: f32 0.0
+        var zi: f32 0.0
+        var inside: i32 1
+        for k in 40
+        {
+            let t zr * zr - zi * zi + cr
+            zi := 2.0 * zr * zi + ci
+            zr := t
+            if zr * zr + zi * zi > 4.0
+                inside := 0
+        }
+        count := count + inside
+    }
+    count
+}
+
+let n: size_t 4096
+var x Vector[f32](n)
+var y Vector[f32](n)
+var z Vector[f32](n)
+var s: u32 2463534242
+var k: size_t 0
+while k < n
+{
+    s := next(s)
+    x.put(k, unit(s))
+    s := next(s)
+    y.put(k, unit(s))
+    s := next(s)
+    z.put(k, unit(s))
+    k := k + 1
+}
+
+var exact Vector[f32](n)
+var loose Vector[f32](n)
+for i in n
+    exact.put(i, blend(x[i], y[i], z[i]))
+relaxed for i in n
+    loose.put(i, blend(x[i], y[i], z[i]))
+
+var off 0
+k := 0
+while k < n
+{
+    let e exact[k] as f64
+    let l loose[k] as f64
+    var d e - l
+    if d < 0.0
+        d := 0.0 - d
+    var size e
+    if size < 0.0
+        size := 0.0 - size
+    if d > 0.00001 * (size + 1.0)
+        off := off + 1
+    k := k + 1
+}
+
+let rows: i32 600
+var inside_exact Vector[i32](rows as size_t)
+var inside_loose Vector[i32](rows as size_t)
+for r in rows
+    inside_exact.put(r as size_t, row_count(r, rows))
+relaxed for r in rows
+    inside_loose.put(r as size_t, row_count(r, rows))
+var total_exact 0
+var total_loose 0
+k := 0
+while k < (rows as size_t)
+{
+    total_exact := total_exact + (inside_exact[k] as int)
+    total_loose := total_loose + (inside_loose[k] as int)
+    k := k + 1
+}
+var apart total_exact - total_loose
+if apart < 0
+    apart := 0 - apart
+let near apart * 1000 <= total_exact
+print "`off` beyond the tolerance, the counts within a thousandth: `near`"

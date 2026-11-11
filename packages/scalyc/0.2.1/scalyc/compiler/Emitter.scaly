@@ -78,6 +78,9 @@ define Emitter
     (
         var active: bool
         var source: LLVMValueRef
+        ; the same kernel in WGSL, or a null pointer: written only for a
+        ; loop a card under WebGPU may run
+        var wgsl: LLVMValueRef
         var site: LLVMValueRef
         var count: LLVMValueRef
         var done_block: LLVMBasicBlockRef
@@ -94,6 +97,7 @@ define Emitter
         {
             active := false
             source := null
+            wgsl := null
             site := null
             count := null
             done_block := null
@@ -113,6 +117,7 @@ define Emitter
             active := from.active
             from.active := false
             source := from.source
+            wgsl := from.wgsl
             site := from.site
             count := from.count
             done_block := from.done_block
@@ -18727,6 +18732,16 @@ define Emitter
             var offer GpuOffer()
             offer.active := true
             offer.source := LLVMBuildGlobalStringPtr(builder, source.to_c_string(), ".gpu.kernel")
+            ; WGSL beside it where the kernel has no 64-bit integer and its
+            ; floating point is relaxed: the host takes the one its card reads
+            offer.wgsl := LLVMConstNull(LLVMPointerTypeInContext(context, 0))
+            if gk.portable()
+            {
+                var wgsl_printer GpuMsl.GpuMsl()
+                let wgsl_source wgsl_printer.kernel_source_wgsl(&gk, for_expr)
+                if wgsl_printer.m_refused = false
+                    offer.wgsl := LLVMBuildGlobalStringPtr(builder, wgsl_source.to_c_string(), ".gpu.wgsl")
+            }
             let site this.gpu_site_text(for_expr)
             offer.site := LLVMBuildGlobalStringPtr(builder, site.to_c_string(), ".gpu.site")
             offer.count := count
@@ -18874,35 +18889,37 @@ define Emitter
             if ok = false
                 return null
 
-            var ptys Vector[LLVMTypeRef](12)
+            var ptys Vector[LLVMTypeRef](13)
             ptys.put(0, ptr_ty)
-            ptys.put(1, i64_ty)
-            ptys.put(2, ptr_ty)
-            ptys.put(3, i64_ty)
-            ptys.put(4, ptr_ty)
+            ptys.put(1, ptr_ty)
+            ptys.put(2, i64_ty)
+            ptys.put(3, ptr_ty)
+            ptys.put(4, i64_ty)
             ptys.put(5, ptr_ty)
-            ptys.put(6, i64_ty)
+            ptys.put(6, ptr_ty)
             ptys.put(7, i64_ty)
-            ptys.put(8, ptr_ty)
-            ptys.put(9, i64_ty)
+            ptys.put(8, i64_ty)
+            ptys.put(9, ptr_ty)
             ptys.put(10, i64_ty)
             ptys.put(11, i64_ty)
-            let run_ty LLVMFunctionType(i32_ty, ptys.data, 12, 0)
+            ptys.put(12, i64_ty)
+            let run_ty LLVMFunctionType(i32_ty, ptys.data, 13, 0)
             let run_fn this.get_parfor_runtime_fn("scaly_gpu_run", run_ty)
-            var args Vector[LLVMValueRef](12)
+            var args Vector[LLVMValueRef](13)
             args.put(0, offer.source)
-            args.put(1, offer.count)
-            args.put(2, words)
-            args.put(3, LLVMConstInt(i64_ty, offer.words, 0))
-            args.put(4, bufs)
-            args.put(5, sizes)
-            args.put(6, LLVMConstInt(i64_ty, n_in, 0))
-            args.put(7, LLVMConstInt(i64_ty, n_out, 0))
-            args.put(8, offer.site)
-            args.put(9, per1k)
-            args.put(10, done)
-            args.put(11, workers)
-            let ran LLVMBuildCall2(builder, run_ty, run_fn, args.data, 12, "gpu.ran")
+            args.put(1, offer.wgsl)
+            args.put(2, offer.count)
+            args.put(3, words)
+            args.put(4, LLVMConstInt(i64_ty, offer.words, 0))
+            args.put(5, bufs)
+            args.put(6, sizes)
+            args.put(7, LLVMConstInt(i64_ty, n_in, 0))
+            args.put(8, LLVMConstInt(i64_ty, n_out, 0))
+            args.put(9, offer.site)
+            args.put(10, per1k)
+            args.put(11, done)
+            args.put(12, workers)
+            let ran LLVMBuildCall2(builder, run_ty, run_fn, args.data, 13, "gpu.ran")
             LLVMBuildICmp(builder, LLVMIntPredicate.NE(), ran, LLVMConstInt(i32_ty, 0, 0), "gpu.on")
         }
 

@@ -31,8 +31,22 @@
 ; the program binds, t<n> a value on its way, p<i> a parameter, f<i> a
 ; function.
 ;
-; Consumers: `--gpu-msl` prints the source per loop; the emitter hands it
-; to the host under `--gpu`.
+; THE SECOND DIALECT. The same walk writes the kernel in WGSL, the shading
+; language of WebGPU (m_wgsl; `kernel_source_wgsl#`). What differs is said
+; in one place each: how a value is declared (`declare_value#`,
+; `declare_name#`), converted (`conv#`), reinterpreted (`bits#`), chosen
+; (`pick#`), and how the fault flag is named (`fault_set#`, `fault_free#`,
+; `fault_arg#`) -- a function of WGSL gets it as a pointer. WGSL has no
+; 64-bit integer. A kernel GpuKernel calls portable holds 64-bit values
+; only where they are narrowed on the spot: the counters, scalars of the
+; environment and literals, under a cast or as an index. Such a value is
+; TWO words here, its low one as the atom and its high one in
+; m_atom_high; every other use of a 64-bit value is refused. WGSL does not
+; promise the processor's rounding: the emitter hands a kernel with
+; floating point there only for a loop written `relaxed`.
+;
+; Consumers: `--gpu-msl` and `--gpu-wgsl` print the source per loop; the
+; emitter hands both to the host under `--gpu`.
 ;
 ; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 
@@ -80,6 +94,14 @@ define GpuMsl
         ; nowhere: a function's own result is returned)
         var m_sink: String
         var m_sink_kind: int
+        ; the dialect: WGSL, not Metal's -- of the kernel being written,
+        ; and of the report `analyze#` writes
+        var m_wgsl: bool
+        var report_wgsl: bool
+        ; WGSL: the high word of the 64-bit value an expression just
+        ; answered ("" for any other kind), and per bound name its own
+        var m_atom_high: String
+        m_highs: Array[String]
     )
     {
         init()
@@ -102,6 +124,10 @@ define GpuMsl
             m_atom_kind := 0
             m_sink := String^this("")
             m_sink_kind := 0
+            m_wgsl := false
+            report_wgsl := false
+            m_atom_high := String^this("")
+            m_highs := Array[String]^this()
         }
 
         ; ================================================================
@@ -132,9 +158,15 @@ define GpuMsl
                             let why gk.k_reason
                             this.add_text("no kernel: `why`")
                         }
+                        else if report_wgsl and gk.portable() = false
+                            this.add_text("no kernel for webgpu: `gk.verdict()`")
                         else
                         {
-                            let source this.kernel_source(gk, fr_ptr.unwrap())
+                            var source String("")
+                            if report_wgsl
+                                source := this.kernel_source_wgsl(gk, fr_ptr.unwrap())
+                            else
+                                source := this.kernel_source(gk, fr_ptr.unwrap())
                             if m_refused
                                 this.add_text("refused: `m_reason`")
                             else
@@ -161,8 +193,9 @@ define GpuMsl
         ; The source of the loop gk just classified and did not block. ""
         ; where it is refused: m_refused and m_reason say so.
         ; ================================================================
-        procedure kernel_source(mutable this: GpuMsl, gk: ref[GpuKernel.GpuKernel], fr: PlannedFor) returns String
+        procedure begin_kernel(mutable this: GpuMsl, wgsl: bool)
         {
+            m_wgsl := wgsl
             m_refused := false
             m_reason := String^this("")
             m_temps := 0
@@ -171,13 +204,160 @@ define GpuMsl
             m_cnames.length := 0
             m_kinds.length := 0
             m_mutables.length := 0
+            m_highs.length := 0
             m_depth := 0
             m_in_function := false
             m_return_kind := 0
             m_uniform_words := 0
             m_atom_kind := 0
+            m_atom_high := String^this("")
             m_sink := String^this("")
             m_sink_kind := 0
+        }
+
+        ; The same loop in WGSL. Bindings: 0 the words, 1 the fault word,
+        ; 2.. the inputs, then the outputs, all in group 0. Behind the words
+        ; of the scalars and of the inputs' lengths the host appends two
+        ; more: the count of rounds, and how many rounds one row of the
+        ; dispatch holds -- a card under WebGPU runs whole groups of 64, in
+        ; rows of at most 65535 groups, so a round finds its number from its
+        ; place and does nothing beyond the count.
+        procedure kernel_source_wgsl(mutable this: GpuMsl, gk: ref[GpuKernel.GpuKernel], fr: PlannedFor) returns String
+        {
+            this.begin_kernel(true)
+            var out StringBuilder()
+
+            var fi: size_t 0
+            while fi < gk.k_functions.length
+            {
+                let sym_ptr gk.k_functions.get fi
+                if sym_ptr <> null
+                    this.function_source(&out, gk, (*sym_ptr), fi)
+                fi := fi + 1
+            }
+            if m_refused
+                return ""
+
+            let n_in gk.k_buffers.length
+            out.append "@group(0) @binding(0) var<storage, read> U: array<u32>;\n@group(0) @binding(1) var<storage, read_write> FLT: array<atomic<u32>>;\n"
+            var bi: size_t 0
+            while bi < n_in
+            {
+                let kind GpuMsl.int_at(&gk.k_buffer_kinds, bi as int)
+                if kind < 2 or kind > 4
+                {
+                    this.refuse("a buffer of no number webgpu has")
+                    return ""
+                }
+                let slot bi + 2
+                out.append "@group(0) @binding(`slot`) var<storage, read> b`bi`: array<`this.ty(kind)`>;\n"
+                bi := bi + 1
+            }
+            var oi: size_t 0
+            while oi < gk.k_outputs.length
+            {
+                let kind GpuMsl.int_at(&gk.k_output_kinds, oi as int)
+                if kind < 2 or kind > 4
+                {
+                    this.refuse("an output of no number webgpu has")
+                    return ""
+                }
+                let slot oi + 2 + n_in
+                out.append "@group(0) @binding(`slot`) var<storage, read_write> o`oi`: array<`this.ty(kind)`>;\n"
+                oi := oi + 1
+            }
+
+            ; the words the scalars take, before the head can name what
+            ; follows them
+            var words: size_t 0
+            var ui: size_t 0
+            while ui < gk.k_uniforms.length
+            {
+                let kind GpuMsl.int_at(&gk.k_uniform_kinds, ui as int)
+                if kind = 5 or kind = 6
+                    words := words + 2
+                else
+                    words := words + 1
+                ui := ui + 1
+            }
+            m_uniform_words := words
+            let count_at words + 2 * n_in
+            let row_at count_at + 1
+            out.append "@compute @workgroup_size(64)\nfn k(@builtin(global_invocation_id) id: vec3<u32>)\n{\n"
+            out.append "    let gid: u32 = id.x + id.y * U[`row_at`];\n    if (gid >= U[`count_at`]) { return; }\n    var F: u32 = 0u;\n"
+
+            var word: size_t 0
+            ui := 0
+            while ui < gk.k_uniforms.length
+            {
+                let kind GpuMsl.int_at(&gk.k_uniform_kinds, ui as int)
+                let after word + 1
+                if kind = 1
+                    out.append "    let u`ui`: bool = U[`word`] != 0u;\n"
+                else if kind = 2
+                    out.append "    let u`ui`: i32 = bitcast<i32>(U[`word`]);\n"
+                else if kind = 3
+                    out.append "    let u`ui`: u32 = U[`word`];\n"
+                else if kind = 4
+                    out.append "    let u`ui`: f32 = bitcast<f32>(U[`word`]);\n"
+                else if kind = 5 or kind = 6
+                    out.append "    let u`ui`: u32 = U[`word`];\n    let u`ui`_h: u32 = U[`after`];\n"
+                else
+                {
+                    this.refuse("a scalar of no kind a card has")
+                    return ""
+                }
+                if kind = 5 or kind = 6
+                    word := word + 2
+                else
+                    word := word + 1
+                ui := ui + 1
+            }
+
+            ; the lengths of the inputs: the host hands webgpu no buffer of
+            ; 2^32 elements or more
+            bi := 0
+            while bi < n_in
+            {
+                let lo word + 2 * bi
+                out.append "    let n`bi`: u32 = U[`lo`];\n"
+                bi := bi + 1
+            }
+
+            if fr.expr = null or fr.expr.length <> 1
+            {
+                this.refuse("a count of rounds that is no single value")
+                return ""
+            }
+            let ck GpuMsl.planned_kind((*fr.expr)[0])
+            if GpuKernel.GpuKernel.kind_is_integer(ck) = false
+            {
+                this.refuse("a count of rounds that is no integer")
+                return ""
+            }
+            if ck = 2
+                out.append "    let v0: i32 = bitcast<i32>(gid);\n"
+            else
+                out.append "    let v0: u32 = gid;\n"
+            this.declare(fr.identifier, "v0", ck, 0)
+            if ck = 5 or ck = 6
+                this.set_high("0u")
+            m_made := 1
+            m_temps := 0
+
+            ; once around: a `continue` of the body ends the round
+            out.append "    for (var once: u32 = 0u; once < 1u; once++)\n    {\n"
+            this.body(&out, gk, fr.body, 2, false)
+            out.append "    }\n    if (F != 0u) { atomicStore(&FLT[0], 1u); }\n}\n"
+            this.end_scope(0)
+            if m_refused
+                return ""
+            out.to_string()
+        }
+
+        procedure kernel_source(mutable this: GpuMsl, gk: ref[GpuKernel.GpuKernel], fr: PlannedFor) returns String
+        {
+            this.begin_kernel(false)
 
             var out StringBuilder()
             out.append "#include <metal_stdlib>\nusing namespace metal;\n#pragma METAL fp math_mode(safe)\n#pragma METAL fp contract(off)\n"
@@ -335,6 +515,117 @@ define GpuMsl
             if kind = 6
                 return "ulong"
             "void"
+        }
+
+        ; The type of a kind in the dialect being written. WGSL has no
+        ; 64-bit integer: such a value is two words, each a u32.
+        function ty(this: GpuMsl, kind: int) returns String
+        {
+            if m_wgsl = false
+                return GpuMsl.type_name(kind)
+            if kind = 1
+                return "bool"
+            if kind = 2
+                return "i32"
+            if kind = 4
+                return "f32"
+            "u32"
+        }
+
+        ; A value that does not change: a line of its own.
+        function declare_value(this: GpuMsl, ind: String, kind: int, name: String, value: String) returns String
+        {
+            if m_wgsl
+                return "`ind`let `name`: `this.ty(kind)` = `value`;\n"
+            "`ind`const `this.ty(kind)` `name` = `value`;\n"
+        }
+
+        ; A name that can change.
+        function declare_name(this: GpuMsl, ind: String, kind: int, name: String, value: String) returns String
+        {
+            if m_wgsl
+                return "`ind`var `name`: `this.ty(kind)` = `value`;\n"
+            "`ind``this.ty(kind)` `name` = `value`;\n"
+        }
+
+        ; A value converted to a kind, as the language converts it.
+        function conv(this: GpuMsl, kind: int, atom: String) returns String
+        {
+            if m_wgsl
+                return "`this.ty(kind)`(`atom`)"
+            "((`this.ty(kind)`)`atom`)"
+        }
+
+        ; The bits of a value read as another kind of the same width.
+        function bits(this: GpuMsl, kind: int, atom: String) returns String
+        {
+            if m_wgsl
+                return "bitcast<`this.ty(kind)`>(`atom`)"
+            "as_type<`this.ty(kind)`>(`atom`)"
+        }
+
+        ; One of two values by a bool.
+        function pick(this: GpuMsl, cond: String, yes: String, no: String) returns String
+        {
+            if m_wgsl
+                return "select(`no`, `yes`, `cond`)"
+            "(`cond`) ? `yes` : `no`"
+        }
+
+        ; The fault flag: a function of WGSL has it as a pointer.
+        function fault_name(this: GpuMsl) returns String
+        {
+            if m_wgsl and m_in_function
+                return "(*F)"
+            "F"
+        }
+
+        function fault_arg(this: GpuMsl) returns String
+        {
+            if m_wgsl and m_in_function = false
+                return "&F"
+            "F"
+        }
+
+        ; `if (cond) F = 1;`, and with a statement where there is no fault
+        function fault_where(this: GpuMsl, ind: String, cond: String, otherwise: String) returns String
+        {
+            let f this.fault_name()
+            if m_wgsl
+            {
+                if otherwise.get_length() = 0
+                    return "`ind`if (`cond`) { `f` = 1u; }\n"
+                return "`ind`if (`cond`) { `f` = 1u; } else { `otherwise`; }\n"
+            }
+            if otherwise.get_length() = 0
+                return "`ind`if (`cond`) F = 1u;\n"
+            "`ind`if (`cond`) F = 1u; else `otherwise`;\n"
+        }
+
+        ; WGSL: the high word of the name declared last.
+        procedure set_high(mutable this: GpuMsl, high: String)
+        {
+            if m_highs.length = 0
+                return
+            let h_copy String^this(high)
+            m_highs.put(m_highs.length - 1, h_copy)
+        }
+
+        ; WGSL: is the kind a 64-bit integer, which it has only as two words?
+        function is_pair(this: GpuMsl, kind: int) returns bool
+        {
+            if m_wgsl = false
+                return false
+            kind = 5 or kind = 6
+        }
+
+        ; WGSL: a 64-bit value where only a number of 32 bits can stand.
+        procedure refuse_pair(mutable this: GpuMsl, kind: int, what: String) returns bool
+        {
+            if this.is_pair(kind) = false
+                return false
+            this.refuse_named("a 64-bit integer, which webgpu does not have: ", what)
+            true
         }
 
         ; The bits of an integer kind, 0 for any other.
@@ -535,6 +826,39 @@ define GpuMsl
             "(((ulong)`hi`u << 32) | (ulong)`lo`u)"
         }
 
+        ; An integer constant in the dialect being written. WGSL: a 64-bit
+        ; one is its low word, the high word in m_atom_high.
+        procedure integer_text(mutable this: GpuMsl, value: size_t, kind: int) returns String
+        {
+            if m_wgsl = false
+                return GpuMsl.integer_literal(value, kind)
+            let lo: size_t value & 0xFFFFFFFF
+            let hi: size_t value >> 32
+            if kind = 2
+            {
+                if lo < 0x80000000
+                    return "`lo`"
+                return "bitcast<i32>(`lo`u)"
+            }
+            if kind = 5 or kind = 6
+                m_atom_high := String^this("`hi`u")
+            "`lo`u"
+        }
+
+        ; The zero of a kind in the dialect being written.
+        function zero_of(this: GpuMsl, kind: int) returns String
+        {
+            if m_wgsl = false
+                return GpuMsl.zero(kind)
+            if kind = 1
+                return "false"
+            if kind = 2
+                return "0"
+            if kind = 4
+                return "0.0f"
+            "0u"
+        }
+
         ; An integer as wide as the operation it enters: widened by its OWN
         ; signedness, as the processor's code widens it.
         function widened(atom: String, kind: int, bits: int) returns String
@@ -609,6 +933,8 @@ define GpuMsl
             m_cnames.add cname_copy
             m_kinds.add kind
             m_mutables.add changes
+            let none String^this("")
+            m_highs.add none
         }
 
         procedure end_scope(mutable this: GpuMsl, mark: size_t)
@@ -619,6 +945,7 @@ define GpuMsl
             m_cnames.length := mark
             m_kinds.length := mark
             m_mutables.length := mark
+            m_highs.length := mark
         }
 
         ; Where name is bound, innermost first; -1 when it comes from
@@ -654,7 +981,12 @@ define GpuMsl
             if have = want
                 return String(atom)
             if GpuMsl.is_int(have) and GpuMsl.is_int(want) and GpuMsl.width(have) = GpuMsl.width(want)
-                return "((`GpuMsl.type_name(want)`)`atom`)"
+            {
+                ; WGSL: the two words of a 64-bit value are what they are
+                if this.is_pair(have)
+                    return String(atom)
+                return this.conv(want, atom)
+            }
             let msg "a `GpuMsl.type_name(have)` where a `GpuMsl.type_name(want)` stands"
             this.refuse(msg)
             ""
@@ -724,7 +1056,12 @@ define GpuMsl
             m_depth := 0
             m_temps := 0
             m_made := 0
-            out.append "static `GpuMsl.type_name(rk)` f`fi`("
+            if this.refuse_pair(rk, func.name)
+                return
+            if m_wgsl
+                out.append "fn f`fi`("
+            else
+                out.append "static `GpuMsl.type_name(rk)` f`fi`("
             if func.input <> null
             {
                 var pi: size_t 0
@@ -748,13 +1085,21 @@ define GpuMsl
                         }
                         let pname (*p.name)
                         let cname "p`pi`"
-                        out.append "`GpuMsl.type_name(pk)` `cname`, "
+                        if this.refuse_pair(pk, pname)
+                            return
+                        if m_wgsl
+                            out.append "`cname`: `this.ty(pk)`, "
+                        else
+                            out.append "`GpuMsl.type_name(pk)` `cname`, "
                         this.declare(pname, cname, pk, 0)
                     }
                     pi := pi + 1
                 }
             }
-            out.append "uint& F)\n{\n"
+            if m_wgsl
+                out.append "F: ptr<function, u32>) -> `this.ty(rk)`\n{\n"
+            else
+                out.append "uint& F)\n{\n"
             choose func.impl
                 when action: Action
                     this.body(out, gk, action, 1, true)
@@ -992,15 +1337,16 @@ define GpuMsl
             let fitted this.fit(value, have, want)
             if m_refused
                 return
+            if this.refuse_pair(want, name)
+                return
             let cname this.fresh_local()
-            let t GpuMsl.type_name(want)
             var changes 0
             if b.binding_type = "var" or b.binding_type = "mutable"
                 changes := 1
             if changes = 1
-                out.append "`ind``t` `cname` = `fitted`;\n"
+                out.append(this.declare_name(ind, want, cname, fitted))
             else
-                out.append "`ind`const `t` `cname` = `fitted`;\n"
+                out.append(this.declare_value(ind, want, cname, fitted))
             this.declare(name, cname, want, changes)
         }
 
@@ -1084,7 +1430,7 @@ define GpuMsl
                 return
             }
             let ind GpuMsl.indent_of(depth)
-            out.append "`ind`while (F == 0u)\n`ind`{\n"
+            out.append "`ind`while (`this.fault_name()` == 0u)\n`ind`{\n"
             let mark m_names.length
             ; the condition is computed again each round, inside the loop
             let c this.operand(out, gk, (*wh.cond.operation)[0], depth + 1)
@@ -1095,7 +1441,10 @@ define GpuMsl
                 this.refuse("a condition that is no bool")
                 return
             }
-            out.append "`ind`    if (!`c`) break;\n"
+            if m_wgsl
+                out.append "`ind`    if (!`c`) { break; }\n"
+            else
+                out.append "`ind`    if (!`c`) break;\n"
             m_depth := m_depth + 1
             this.body(out, gk, wh.body, depth + 1, false)
             m_depth := m_depth - 1
@@ -1106,7 +1455,7 @@ define GpuMsl
         procedure repeat_statement(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], rp: PlannedRepeat, depth: size_t)
         {
             let ind GpuMsl.indent_of(depth)
-            out.append "`ind`while (F == 0u)\n`ind`{\n"
+            out.append "`ind`while (`this.fault_name()` == 0u)\n`ind`{\n"
             let mark m_names.length
             m_depth := m_depth + 1
             this.body(out, gk, rp.body, depth + 1, false)
@@ -1139,13 +1488,33 @@ define GpuMsl
                 this.refuse("a count that is no integer")
                 return
             }
+            let limit_high String(m_atom_high)
             let cname this.fresh_local()
             let t GpuMsl.type_name(ck)
             let st GpuMsl.type_name(GpuMsl.signed_of(ck))
             let start GpuMsl.zero(ck)
-            out.append "`ind`for (`t` `cname` = `start`; F == 0u && (`st`)`cname` < (`st`)`limit`; `cname`++)\n`ind`{\n"
+            let f this.fault_name()
+            if this.is_pair(ck)
+            {
+                ; the counter is one word: a count of 2^32 rounds or more is
+                ; given back, one below zero (a signed count) is no round
+                if ck = 5
+                    out.append "`ind`if ((`limit_high` != 0u) && ((`limit_high` & 2147483648u) == 0u)) { `f` = 1u; }\n"
+                else
+                    out.append "`ind`if (`limit_high` != 0u) { `f` = 1u; }\n"
+                out.append "`ind`for (var `cname`: u32 = 0u; (`f` == 0u) && (`limit_high` == 0u) && (`cname` < `limit`); `cname`++)\n`ind`{\n"
+            }
+            else if m_wgsl
+            {
+                let sk GpuMsl.signed_of(ck)
+                out.append "`ind`for (var `cname`: `this.ty(ck)` = `this.zero_of(ck)`; (`f` == 0u) && (`this.conv(sk, cname)` < `this.conv(sk, limit)`); `cname`++)\n`ind`{\n"
+            }
+            else
+                out.append "`ind`for (`t` `cname` = `start`; F == 0u && (`st`)`cname` < (`st`)`limit`; `cname`++)\n`ind`{\n"
             let mark m_names.length
             this.declare(fr.identifier, cname, ck, 0)
+            if this.is_pair(ck)
+                this.set_high("0u")
             m_depth := m_depth + 1
             this.body(out, gk, fr.body, depth + 1, false)
             m_depth := m_depth - 1
@@ -1208,6 +1577,7 @@ define GpuMsl
         procedure expression(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], op: PlannedOperand, depth: size_t) returns String
         {
             m_atom_kind := 0
+            m_atom_high := String^this("")
             choose op.expr
                 when v: Variable
                     return this.variable(out, gk, v.name, op, depth)
@@ -1277,9 +1647,11 @@ define GpuMsl
                 this.refuse("a statement whose value is no number of a card's")
                 return ""
             }
+            if this.refuse_pair(kind, "a statement's value")
+                return ""
             let ind GpuMsl.indent_of(depth)
             let t this.temp()
-            out.append "`ind``GpuMsl.type_name(kind)` `t` = `GpuMsl.zero(kind)`;\n"
+            out.append(this.declare_name(ind, kind, t, this.zero_of(kind)))
             let saved_sink String(m_sink)
             let saved_kind m_sink_kind
             m_sink := String^this(t)
@@ -1313,11 +1685,17 @@ define GpuMsl
                 let kind GpuMsl.int_at(&m_kinds, li)
                 let cname this.cname_at(li)
                 m_atom_kind := kind
+                if this.is_pair(kind)
+                {
+                    let h_ptr m_highs.get(li as size_t)
+                    if h_ptr <> null
+                        m_atom_high := String^this((*h_ptr))
+                }
                 if GpuMsl.int_at(&m_mutables, li) = 1
                 {
                     let ind GpuMsl.indent_of(depth)
                     let t this.temp()
-                    out.append "`ind`const `GpuMsl.type_name(kind)` `t` = `cname`;\n"
+                    out.append(this.declare_value(ind, kind, t, cname))
                     return t
                 }
                 return cname
@@ -1364,6 +1742,8 @@ define GpuMsl
                 return ""
             }
             m_atom_kind := GpuMsl.int_at(&gk.k_uniform_kinds, idx)
+            if this.is_pair(m_atom_kind)
+                m_atom_high := String^this("u`idx`_h")
             "u`idx`"
         }
 
@@ -1455,7 +1835,7 @@ define GpuMsl
             if GpuMsl.width(own) = 32 and GpuMsl.width(gkind) = 64
                 v := v & 0xFFFFFFFF
             m_atom_kind := gkind
-            GpuMsl.integer_literal(v, gkind)
+            this.integer_text(v, gkind)
         }
 
         ; A constant where it stands, of the kind the plan gives it.
@@ -1477,7 +1857,7 @@ define GpuMsl
                     if GpuMsl.is_int(want)
                     {
                         m_atom_kind := want
-                        return GpuMsl.integer_literal(i.value, want)
+                        return this.integer_text(i.value, want)
                     }
                 }
                 when h: Hex
@@ -1485,7 +1865,7 @@ define GpuMsl
                     if GpuMsl.is_int(want)
                     {
                         m_atom_kind := want
-                        return GpuMsl.integer_literal(h.value, want)
+                        return this.integer_text(h.value, want)
                     }
                 }
                 when f: FloatingPoint
@@ -1587,6 +1967,11 @@ define GpuMsl
             let ind GpuMsl.indent_of(depth)
             let wt GpuMsl.type_name(want)
             m_atom_kind := want
+            if m_wgsl
+            {
+                let have_high String(m_atom_high)
+                return this.cast_wgsl(out, v, have, have_high, want, depth)
+            }
             if have = want
                 return v
             if GpuMsl.is_int(have) and GpuMsl.is_int(want)
@@ -1640,6 +2025,82 @@ define GpuMsl
                 return t
             }
             let msg "a cast from `GpuMsl.type_name(have)` to `wt`"
+            this.refuse(msg)
+            ""
+        }
+
+        ; The same cast in WGSL. A 64-bit value is two words: cut down to
+        ; 32 bits it is its low one; made from 32 bits its high one is the
+        ; sign's or zero; and it is a floating-point number only where its
+        ; high word is zero -- anything else is given back to the processor.
+        procedure cast_wgsl(mutable this: GpuMsl, mutable out: ref[StringBuilder], v: String, have: int, have_high: String, want: int, depth: size_t) returns String
+        {
+            let ind GpuMsl.indent_of(depth)
+            let f this.fault_name()
+            let from_pair this.is_pair(have)
+            let to_pair this.is_pair(want)
+            m_atom_high := String^this("")
+            if have = want
+            {
+                if from_pair
+                    m_atom_high := String^this(have_high)
+                return String(v)
+            }
+            if GpuMsl.is_int(have) and GpuMsl.is_int(want)
+            {
+                if from_pair and to_pair
+                {
+                    m_atom_high := String^this(have_high)
+                    return String(v)
+                }
+                if to_pair
+                {
+                    if have = 2
+                    {
+                        m_atom_high := String^this("select(0u, 4294967295u, `v` < 0)")
+                        return "u32(`v`)"
+                    }
+                    m_atom_high := String^this("0u")
+                    return String(v)
+                }
+                return this.conv(want, v)
+            }
+            if have = 1 and GpuMsl.is_int(want)
+            {
+                if to_pair
+                {
+                    m_atom_high := String^this("0u")
+                    return "u32(`v`)"
+                }
+                return this.conv(want, v)
+            }
+            if GpuMsl.is_int(have) and want = 4
+            {
+                if from_pair and have_high <> "0u"
+                    out.append "`ind`if (`have_high` != 0u) { `f` = 1u; }\n"
+                let t this.temp()
+                out.append(this.declare_value(ind, 4, t, "f32(`v`)"))
+                return t
+            }
+            if have = 1 and want = 4
+            {
+                let t this.temp()
+                out.append(this.declare_value(ind, 4, t, "select(0.0f, 1.0f, `v`)"))
+                return t
+            }
+            if have = 4 and GpuMsl.is_int(want)
+            {
+                if this.refuse_pair(want, "a floating-point number cast to one")
+                    return ""
+                let t this.temp()
+                out.append(this.declare_name(ind, want, t, this.zero_of(want)))
+                if want = 2
+                    out.append "`ind`if ((`v` >= -2147483648.0f) && (`v` < 2147483648.0f)) { `t` = i32(`v`); } else { `f` = 1u; }\n"
+                else
+                    out.append "`ind`if ((`v` > -1.0f) && (`v` < 4294967296.0f)) { `t` = u32(`v`); } else { `f` = 1u; }\n"
+                return t
+            }
+            let msg "a cast from `GpuMsl.type_name(have)` to `GpuMsl.type_name(want)`"
             this.refuse(msg)
             ""
         }
@@ -1708,13 +2169,30 @@ define GpuMsl
                 this.refuse("an index that is no integer")
                 return ""
             }
+            let idx_kind m_atom_kind
+            let idx_high String(m_atom_high)
             let ind GpuMsl.indent_of(depth)
             let t this.temp()
             let at this.temp()
-            out.append "`ind``GpuMsl.type_name(ek)` `t` = `GpuMsl.zero(ek)`;\n"
-            out.append "`ind`const ulong `at` = (ulong)`idx`;\n"
-            out.append "`ind`if (`at` >= n`k`) F = 1u; else `t` = b`k`[`at`];\n"
+            if m_wgsl
+            {
+                out.append(this.declare_name(ind, ek, t, this.zero_of(ek)))
+                if this.is_pair(idx_kind)
+                    out.append(this.fault_where(ind, "(`idx_high` != 0u) || (`idx` >= n`k`)", "`t` = b`k`[`idx`]"))
+                else
+                {
+                    out.append(this.declare_value(ind, 3, at, this.conv(3, idx)))
+                    out.append(this.fault_where(ind, "`at` >= n`k`", "`t` = b`k`[`at`]"))
+                }
+            }
+            else
+            {
+                out.append "`ind``GpuMsl.type_name(ek)` `t` = `GpuMsl.zero(ek)`;\n"
+                out.append "`ind`const ulong `at` = (ulong)`idx`;\n"
+                out.append "`ind`if (`at` >= n`k`) F = 1u; else `t` = b`k`[`at`];\n"
+            }
             m_atom_kind := ek
+            m_atom_high := String^this("")
             t
         }
 
@@ -1771,6 +2249,8 @@ define GpuMsl
                 let fitted this.fit(a, have, GpuKernel.GpuKernel.scalar_kind((*pt)))
                 if m_refused
                     return ""
+                if this.refuse_pair(have, call.name)
+                    return ""
                 args.append fitted
                 args.append ", "
                 ai := ai + 1
@@ -1778,8 +2258,9 @@ define GpuMsl
             let ind GpuMsl.indent_of(depth)
             let t this.temp()
             let arg_text args.to_string()
-            out.append "`ind`const `GpuMsl.type_name(rk)` `t` = f`fi`(`arg_text`F);\n"
+            out.append(this.declare_value(ind, rk, t, "f`fi`(`arg_text``this.fault_arg()`)"))
             m_atom_kind := rk
+            m_atom_high := String^this("")
             t
         }
 
@@ -1798,6 +2279,10 @@ define GpuMsl
             let tn GpuMsl.type_name(k)
             let un GpuMsl.type_name(GpuMsl.unsigned_of(k))
             let sn GpuMsl.type_name(GpuMsl.signed_of(k))
+            if this.refuse_pair(k, nm)
+                return ""
+            if m_wgsl
+                return this.unary_wgsl(out, nm, a, k, depth)
             if nm = "+" and k <> 1
                 return a
             if nm = "-" and k = 4
@@ -1845,6 +2330,53 @@ define GpuMsl
             ""
         }
 
+        procedure unary_wgsl(mutable this: GpuMsl, mutable out: ref[StringBuilder], nm: String, a: String, k: int, depth: size_t) returns String
+        {
+            let ind GpuMsl.indent_of(depth)
+            let uk GpuMsl.unsigned_of(k)
+            let nothing this.conv(uk, "0")
+            let negated this.conv(k, "`nothing` - `this.conv(uk, a)`")
+            if nm = "+" and k <> 1
+                return String(a)
+            let t this.temp()
+            if nm = "-" and k = 4
+            {
+                out.append(this.declare_value(ind, 4, t, "-`a`"))
+                return t
+            }
+            if nm = "-" and GpuMsl.is_int(k)
+            {
+                out.append(this.declare_value(ind, k, t, negated))
+                return t
+            }
+            if nm = "abs" and k = 4
+            {
+                out.append(this.declare_value(ind, 4, t, "select(`a`, -`a`, `a` < 0.0f)"))
+                return t
+            }
+            if nm = "abs" and GpuMsl.is_int(k)
+            {
+                out.append(this.declare_value(ind, k, t, "select(`a`, `negated`, `this.conv(GpuMsl.signed_of(k), a)` < 0)"))
+                return t
+            }
+            if nm = "!" or nm = "not" or nm = "~"
+            {
+                if k = 1
+                {
+                    out.append(this.declare_value(ind, 1, t, "!`a`"))
+                    return t
+                }
+                if GpuMsl.is_int(k)
+                {
+                    out.append(this.declare_value(ind, k, t, this.conv(k, "~`a`")))
+                    return t
+                }
+            }
+            let msg "the operator `nm` on a `GpuMsl.type_name(k)`"
+            this.refuse(msg)
+            ""
+        }
+
         procedure binary(mutable this: GpuMsl, mutable out: ref[StringBuilder], gk: ref[GpuKernel.GpuKernel], call: PlannedCall, depth: size_t) returns String
         {
             let l this.operand(out, gk, (*call.args)[0], depth)
@@ -1855,7 +2387,18 @@ define GpuMsl
             if m_refused
                 return ""
             let rk m_atom_kind
+            let r_high String(m_atom_high)
             let nm call.name
+            m_atom_high := String^this("")
+            if m_wgsl and GpuMsl.is_int(lk) and GpuMsl.is_int(rk)
+            {
+                ; a shift takes its count as it comes, a 64-bit literal too
+                if nm = "<<" or nm = ">>"
+                    return this.shift_wgsl(out, nm, l, lk, r, rk, r_high, depth)
+                if this.refuse_pair(lk, nm) or this.refuse_pair(rk, nm)
+                    return ""
+                return this.integer_binary_wgsl(out, nm, l, lk, r, rk, depth)
+            }
             if lk = 4 and rk = 4
                 return this.float_binary(out, nm, l, r, depth)
             if lk = 1 and rk = 1
@@ -1877,7 +2420,7 @@ define GpuMsl
             if nm = "+" or nm = "-" or nm = "*" or nm = "/"
             {
                 let t this.temp()
-                out.append "`ind`const float `t` = `l` `nm` `r`;\n"
+                out.append(this.declare_value(ind, 4, t, "`l` `nm` `r`"))
                 m_atom_kind := 4
                 return t
             }
@@ -1890,9 +2433,9 @@ define GpuMsl
             let t this.temp()
             ; `<>` is false where either is no number, as on the processor
             if nm = "<>"
-                out.append "`ind`const bool `t` = (`l` < `r` || `l` > `r`);\n"
+                out.append(this.declare_value(ind, 1, t, "(`l` < `r` || `l` > `r`)"))
             else
-                out.append "`ind`const bool `t` = `l` `cmp` `r`;\n"
+                out.append(this.declare_value(ind, 1, t, "`l` `cmp` `r`"))
             m_atom_kind := 1
             t
         }
@@ -1906,25 +2449,102 @@ define GpuMsl
             m_atom_kind := 1
             if nm = "&&" or nm = "and" or nm = "&"
             {
-                out.append "`ind`const bool `t` = `l` && `r`;\n"
+                out.append(this.declare_value(ind, 1, t, "`l` && `r`"))
                 return t
             }
             if nm = "||" or nm = "or" or nm = "|"
             {
-                out.append "`ind`const bool `t` = `l` || `r`;\n"
+                out.append(this.declare_value(ind, 1, t, "`l` || `r`"))
                 return t
             }
             if nm = "xor" or nm = "^" or nm = "<>"
             {
-                out.append "`ind`const bool `t` = `l` != `r`;\n"
+                out.append(this.declare_value(ind, 1, t, "`l` != `r`"))
                 return t
             }
             if nm = "="
             {
-                out.append "`ind`const bool `t` = `l` == `r`;\n"
+                out.append(this.declare_value(ind, 1, t, "`l` == `r`"))
                 return t
             }
             this.refuse_named("an operator on bools: ", nm)
+            ""
+        }
+
+        procedure shift_wgsl(mutable this: GpuMsl, mutable out: ref[StringBuilder], nm: String, l: String, lk: int, r: String, rk: int, r_high: String, depth: size_t) returns String
+        {
+            if this.refuse_pair(lk, nm)
+                return ""
+            let ind GpuMsl.indent_of(depth)
+            let c this.temp()
+            let t this.temp()
+            if this.is_pair(rk)
+            {
+                out.append(this.declare_value(ind, 3, c, r))
+                out.append(this.fault_where(ind, "(`r_high` != 0u) || (`c` >= 32u)", ""))
+            }
+            else
+            {
+                out.append(this.declare_value(ind, 3, c, this.conv(3, r)))
+                out.append(this.fault_where(ind, "`c` >= 32u", ""))
+            }
+            if nm = "<<"
+                out.append(this.declare_value(ind, lk, t, this.conv(lk, "`this.conv(3, l)` << (`c` & 31u)")))
+            else
+                out.append(this.declare_value(ind, lk, t, "`l` >> (`c` & 31u)"))
+            m_atom_kind := lk
+            t
+        }
+
+        procedure integer_binary_wgsl(mutable this: GpuMsl, mutable out: ref[StringBuilder], nm: String, l: String, lk: int, r: String, rk: int, depth: size_t) returns String
+        {
+            let ind GpuMsl.indent_of(depth)
+            let signed GpuMsl.is_signed(lk)
+            let xk GpuMsl.int_kind(32, signed)
+            let wrap GpuMsl.wrapping_text(nm)
+            if wrap.get_length() > 0
+            {
+                let t this.temp()
+                out.append(this.declare_value(ind, xk, t, this.conv(xk, "`this.conv(3, l)` `wrap` `this.conv(3, r)`")))
+                m_atom_kind := xk
+                return t
+            }
+            var divides false
+            var remainder false
+            if nm = "/" or nm = "div"
+                divides := true
+            if nm = "%" or nm = "mod"
+            {
+                divides := true
+                remainder := true
+            }
+            if divides
+            {
+                let a this.temp()
+                let b this.temp()
+                let t this.temp()
+                out.append(this.declare_value(ind, xk, a, this.conv(xk, l)))
+                out.append(this.declare_value(ind, xk, b, this.conv(xk, r)))
+                out.append(this.declare_name(ind, xk, t, this.zero_of(xk)))
+                var stops "`b` == 0u"
+                if signed
+                    stops := "(`b` == 0) || ((`a` == (-2147483647 - 1)) && (`b` == -1))"
+                if remainder
+                    out.append(this.fault_where(ind, stops, "`t` = `a` % `b`"))
+                else
+                    out.append(this.fault_where(ind, stops, "`t` = `a` / `b`"))
+                m_atom_kind := xk
+                return t
+            }
+            let cmp GpuMsl.comparison_text(nm)
+            if cmp.get_length() > 0
+            {
+                let t this.temp()
+                out.append(this.declare_value(ind, 1, t, "`this.conv(xk, l)` `cmp` `this.conv(xk, r)`"))
+                m_atom_kind := 1
+                return t
+            }
+            this.refuse_named("an operator on integers: ", nm)
             ""
         }
 

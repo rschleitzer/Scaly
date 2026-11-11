@@ -1,0 +1,85 @@
+; Whole numbers under WebGPU: 32 bits, and exactly the processor's. Wrapping
+; arithmetic, shifts with their count, division and remainder by the left
+; side's signedness, casts between the kinds and to and from bool, the
+; counter and a 64-bit scalar of the environment where they are narrowed on
+; the spot, an index of 64 bits, loops with break and continue, a value
+; `if`, `and`/`or`. The card must print what the processor prints.
+; cards: 2
+
+define MASK: u32 0xFF
+define ON: bool true
+
+function mix(a: i32, b: u32, c: i32) returns i32
+{
+    let x a * 3 - 7
+    let y b >> 3
+    let z (b << 5) & MASK
+    let w c / 3 + c % 5
+    var acc: i32 w
+    var j: i32 0
+    repeat
+    {
+        if j >= 4
+            break
+        j := j + 1
+        if j = 2
+            continue
+        acc := acc + x * j
+    }
+    acc + (y as i32) + (z as i32)
+}
+
+function sel(a: i32, b: i32, f: bool) returns i32
+{
+    let both a > 0 and b > 0
+    let any a > 0 or f
+    if both and not any: a else if any: b xor a else a | b
+}
+
+function more(a: i32, b: u32) returns u32
+{
+    let n -a
+    let m abs a
+    let lt b < 2147483648
+    let s (a >> 3) + ((n as u32) >> 29) as i32
+    var r (n as u32) + (m as u32) * 2654435761 + (s as u32)
+    if lt
+        r := r xor 21845
+    if lt = false and a > 0
+        r := ~r
+    r / 7 + r % 11 + (lt as u32)
+}
+
+procedure run(n: int, a: ref[Vector[i32]], u: ref[Vector[u32]], mutable o1: ref[Vector[i32]], mutable o2: ref[Vector[u32]], mutable o3: ref[Vector[i32]], flag: bool, big: int, at: size_t)
+{
+    for i in n
+    {
+        let ai a[i]
+        let ui u[i]
+        var sum: i32 0
+        for k in 5
+            sum := sum + a[at] * (k as i32)
+        o1.put(i, mix(ai, ui, (big as i32) + (i as i32)) + sum)
+        o2.put(i, more(ai, ui))
+        o3.put(i, sel(ai, (i as i32) - 300, flag and ON))
+    }
+}
+
+let n 2000
+var a Vector[i32](n as size_t)
+var u Vector[u32](n as size_t)
+for i in n
+{
+    a.put(i as size_t, ((i as i32) * 7919 - 5000000) xor ((i as i32) << 9))
+    u.put(i as size_t, (i as u32) * 2654435761 + 12345)
+}
+var o1 Vector[i32](n as size_t)
+var o2 Vector[u32](n as size_t)
+var o3 Vector[i32](n as size_t)
+run(n, &a, &u, &o1, &o2, &o3, true, 123456789012, 7)
+var k: size_t 0
+while k < (n as size_t)
+{
+    print "`o1[k]` `o2[k]` `o3[k]`"
+    k := k + 1
+}

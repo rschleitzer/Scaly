@@ -20,7 +20,12 @@
 #       light one stays, a small one is never asked, and the report says so.
 #       These verdicts follow MEASURED time; the fixtures leave a factor of
 #       ten on either side.
-# (3) and (4) are SKIPPED by name where there is no Metal device.
+#   (5) the same through the other card, WebGPU (wgpu-native): the kernel in
+#       WGSL (pinned as text beside Metal's), every program of (3) again, and
+#       programs of its own (tests/gpu/webgpu/) -- whole numbers bit for bit,
+#       floating point of a `relaxed` loop within a tolerance.
+# (3) and (4) are SKIPPED by name where there is no Metal device, (5) where
+# there is no wgpu-native.
 #
 # A fixture's head says what its trace must hold:
 #   ; cards: N       runs the card finished
@@ -52,6 +57,15 @@ check "a binding that widens is refused" 'printf "%s\n" "$ref" | grep -q "refuse
 # page of a stored value, and the line read as a construction)
 check "a parenthesised cast at the head of a binding is a kernel" '"$STAGE" --gpu-msl tests/gpu/shapes.scaly 2>&1 | grep -q "shapes.scaly:48:5: kernel$"'
 check "--gpu-plan is not touched" '! "$STAGE" --gpu-plan tests/gpu-plan/fixture.scaly 2>&1 | grep -q "^gpu-msl:"'
+# the same kernels in WGSL, for the loops a card under WebGPU may run: no
+# 64-bit integer, and floating point only where the loop is relaxed
+wout=$( { "$STAGE" --gpu-wgsl tests/gpu-plan/fixture.scaly; "$STAGE" --gpu-wgsl tests/gpu-plan/relaxed.scaly; } 2>&1)
+check "the kernels' WGSL matches fixture.wgsl" 'diff <(printf "%s\n" "$wout") tests/gpu/fixture.wgsl >/dev/null'
+n=$(printf '%s\n' "$wout" | grep -c '^gpu-wgsl: .*: kernel$')
+check "seven kernels written in WGSL (got $n)" '[ "$n" = "7" ]'
+check "floating point that is not relaxed is no kernel for webgpu" 'printf "%s\n" "$wout" | grep -q "relaxed.scaly:15:1: no kernel for webgpu: .*the loop is not relaxed$"'
+check "a 64-bit integer is no kernel for webgpu" 'printf "%s\n" "$wout" | grep -q "relaxed.scaly:25:5: no kernel for webgpu: .*64-bit integer$"'
+check "WGSL names no 64-bit type" '! printf "%s\n" "$wout" | grep -q "i64\|u64\|long"'
 
 # ---- (2) where the emitter asks the card ----------------------------------
 ir() { "$STAGE" "$@" -S -o "$T/ir.ll" tests/gpu/shapes.scaly >/dev/null 2>&1 && grep -c 'scaly_gpu_run' "$T/ir.ll"; }
@@ -153,10 +167,71 @@ else
     check "SCALY_GPU=off: the heavy loop on the processor" '[ ! -s "$T/gate_heavy.off.trace" ]'
     SCALY_GPU=on SCALY_GPU_TRACE=1 "$T/gate_light" >"$T/gate_light.on" 2>"$T/gate_light.on.trace"
     check "SCALY_GPU=on: every loop on the card, 3001 runs" '[ "$(grep -c "^gpu: card " "$T/gate_light.on.trace")" = "3001" ] && cmp -s "$T/gate_light.cpu" "$T/gate_light.on"'
+
+    # ---- (5) the other card: WebGPU, through wgpu-native -------------------
+    WGPU=""
+    if command -v brew > /dev/null 2>&1 && p=$(brew --prefix wgpu-native 2> /dev/null) && [ -e "$p/lib/libwgpu_native.dylib" ]; then
+        WGPU="$p"
+    fi
+    SCALY_GPU=on SCALY_GPU_BACKEND=webgpu SCALY_GPU_TRACE=1 "$T/shapes" >/dev/null 2>"$T/wgpu.probe"
+    if ! grep -q '^gpu: card ' "$T/wgpu.probe"; then
+        skip_wgpu=1
+    else
+        # the host declares the library's structures itself: against its header
+        if [ -n "$WGPU" ] && [ -e "$WGPU/include/webgpu.h" ]; then
+            host=$(ls "$PWD"/packages/scaly/*/scaly/gpu/gpu_darwin.c | tail -1)
+            check "the host's declarations are the header's" '${CLANG:-clang} -fsyntax-only -Wno-unused-function -I"$WGPU/include" -DSCALY_GPU_HOST="\"$host\"" tests/gpu/wgpu_abi.c 2>"$T/abi.err"'
+        fi
+        # every program of (3) again: what has a WGSL kernel runs on this
+        # card, the rest on the processor, and the output is the processor's
+        wcards=0
+        for src in tests/gpu/*.scaly; do
+            name=$(basename "$src" .scaly)
+            want_rc=$(sed -n 's/^; expect-rc: //p' "$src"); want_rc=${want_rc:-0}
+            SCALY_GPU=on SCALY_GPU_BACKEND=webgpu SCALY_GPU_TRACE=1 "$T/$name" >"$T/$name.wgpu" 2>"$T/$name.wtrace"; wrc=$?
+            check "$name under webgpu: exit code $want_rc (got $wrc)" '[ $wrc -eq $want_rc ]'
+            check "$name under webgpu: the processor's output" 'cmp -s "$T/$name.cpu" "$T/$name.wgpu"'
+            check "$name under webgpu: no kernel the card refuses" '! grep -q "^gpu: webgpu: \|(no kernel)$" "$T/$name.wtrace"'
+            wcards=$((wcards + $(grep -c '^gpu: card ' "$T/$name.wtrace")))
+        done
+        check "those programs ran on this card too (got $wcards runs)" '[ "$wcards" -ge 20 ]'
+        # its own programs: whole numbers bit for bit, relaxed floating
+        # point within its tolerance
+        for src in tests/gpu/webgpu/*.scaly; do
+            name=wgpu_$(basename "$src" .scaly)
+            min_cards=$(sed -n 's/^; cards-min: //p' "$src")
+            exact_cards=$(sed -n 's/^; cards: //p' "$src")
+            if ! "$STAGE" --gpu -o "$T/$name" "$src" >"$T/$name.build" 2>&1; then
+                check "$name builds with --gpu" false
+                continue
+            fi
+            SCALY_GPU=off "$T/$name" >"$T/$name.cpu" 2>/dev/null; cpu_rc=$?
+            SCALY_GPU=on SCALY_GPU_TRACE=1 "$T/$name" >"$T/$name.metal" 2>/dev/null; metal_rc=$?
+            SCALY_GPU=on SCALY_GPU_BACKEND=webgpu SCALY_GPU_TRACE=1 "$T/$name" >"$T/$name.wgpu" 2>"$T/$name.wtrace"; wrc=$?
+            check "$name: runs (rc $cpu_rc, $metal_rc, $wrc)" '[ $cpu_rc -eq 0 ] && [ $metal_rc -eq 0 ] && [ $wrc -eq 0 ]'
+            check "$name: Metal prints what the processor prints" 'cmp -s "$T/$name.cpu" "$T/$name.metal"'
+            check "$name: WebGPU prints what the processor prints" 'cmp -s "$T/$name.cpu" "$T/$name.wgpu"'
+            cards=$(grep -c '^gpu: card ' "$T/$name.wtrace")
+            if [ -n "$min_cards" ]; then
+                check "$name: at least $min_cards runs under webgpu (got $cards)" '[ "$cards" -ge "$min_cards" ]'
+            fi
+            if [ -n "$exact_cards" ]; then
+                check "$name: $exact_cards runs under webgpu (got $cards)" '[ "$cards" = "$exact_cards" ]'
+            fi
+            check "$name: no kernel the card refuses" '! grep -q "^gpu: webgpu: \|(no kernel)$" "$T/$name.wtrace"'
+        done
+        check "relaxed: nothing beyond the tolerance" '[ "$(cat "$T/wgpu_relaxed.wgpu")" = "0 beyond the tolerance, the counts within a thousandth: true" ]'
+        # left to the gate, the heavy loop is not relaxed: it has no kernel
+        # for this card and stays on the processor
+        SCALY_GPU_BACKEND=webgpu SCALY_GPU_TRACE=1 "$T/gate_heavy" >"$T/gate_heavy.wgpu" 2>"$T/gate_heavy.wtrace"
+        check "a loop that is not relaxed stays off this card" '[ ! -s "$T/gate_heavy.wtrace" ] && cmp -s "$T/gate_heavy.cpu" "$T/gate_heavy.wgpu"'
+    fi
 fi
 
 if [ $skip -eq 1 ]; then
     echo "gpu: $pass PASS, $fail FAIL, the card's runs SKIPPED (no Metal device)"
+elif [ "${skip_wgpu:-0}" -eq 1 ]; then
+    echo "gpu: $pass PASS, $fail FAIL, WebGPU's runs SKIPPED (no wgpu-native: brew install wgpu-native)"
 else
     echo "gpu: $pass PASS, $fail FAIL"
 fi

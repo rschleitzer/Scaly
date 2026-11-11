@@ -74,6 +74,7 @@ define Options
     loop_census: bool       ; --loop-census: counted `while` loops the engine could reach
     gpu_plan: bool          ; --gpu-plan: which parallel loops a graphics card could run
     gpu_msl: bool           ; --gpu-msl: the Metal kernel of every parallel loop a graphics card could run
+    gpu_wgsl: bool          ; --gpu-wgsl: the same in WGSL, for the loops webgpu can take
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     write_report: bool      ; --write-report: writes through parameters, off the Plan
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
@@ -134,6 +135,7 @@ define Options
         loop_census := false
         gpu_plan := false
         gpu_msl := false
+        gpu_wgsl := false
         pointer_report := false
         write_report := false
         host_report := false
@@ -270,6 +272,10 @@ define cli
                 else if arg = "--gpu-msl"
                 {
                     opts.gpu_msl := true
+                }
+                else if arg = "--gpu-wgsl"
+                {
+                    opts.gpu_wgsl := true
                 }
                 else if arg = "--pointer-report"
                 {
@@ -523,6 +529,7 @@ define cli
         Console.println("  --loop-census  Report which while loops are counted and could run in parallel")
         Console.println("  --gpu-plan     Report which parallel for loops a graphics card could run, and for which backends")
         Console.println("  --gpu-msl      Print the Metal kernel of every parallel for loop a graphics card could run")
+        Console.println("  --gpu-wgsl     Print the WGSL kernel of every parallel for loop a card under WebGPU could run")
         Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
         Console.println("  --write-report  Report every write through a parameter, off the Plan")
         Console.println("  --purity-check  Report every function that writes what its parameters reach")
@@ -1206,11 +1213,11 @@ define cli
         ; through the adaptive engine; a blocked one runs sequentially.
         ; --loop-census rides the same walk and prints its own lines, so
         ; the --task-plan output the suites parse stays as it is.
-        if opts.task_plan or opts.loop_census or opts.gpu_plan or opts.gpu_msl
+        if opts.task_plan or opts.loop_census or opts.gpu_plan or opts.gpu_msl or opts.gpu_wgsl
         {
             var task_planner TaskPlanner.TaskPlanner()
             task_planner.census_while := opts.loop_census
-            task_planner.keep_fors := opts.gpu_plan or opts.gpu_msl
+            task_planner.keep_fors := opts.gpu_plan or opts.gpu_msl or opts.gpu_wgsl
             task_planner.analyze(plan, opts.input_file)
             if opts.task_plan
                 cli.print_task_plan(&task_planner)
@@ -1230,6 +1237,15 @@ define cli
                 var msl GpuMsl.GpuMsl()
                 msl.analyze(&msl_kernel, plan, &task_planner)
                 cli.print_located("gpu-msl: ", &msl.report_files, &msl.report_offsets, &msl.report_texts)
+            }
+            ; --gpu-wgsl: the same in WGSL, for the loops webgpu can take
+            if opts.gpu_wgsl
+            {
+                var wgsl_kernel GpuKernel.GpuKernel()
+                var wgsl GpuMsl.GpuMsl()
+                wgsl.report_wgsl := true
+                wgsl.analyze(&wgsl_kernel, plan, &task_planner)
+                cli.print_located("gpu-wgsl: ", &wgsl.report_files, &wgsl.report_offsets, &wgsl.report_texts)
             }
             ; a report with nothing to write is the whole job: `scalyc
             ; --task-plan prog.scaly` answers the verdicts and stops (it went
