@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Scaly programs on the page's card</title>
+<pre id="out">running</pre>
+<script type="module">
+// Every program tests/gpu/web/run.sh built for wasm32 with --gpu, each in a
+// worker of its own (program-worker.mjs) over the page's card: off, tried
+// at every loop's head, left to the gate. One line per program and mode --
+// the script decides what they must say -- and the host's report behind.
+const lines = [];
+try {
+  const programs = await (await fetch('programs.json')).json();
+  let card = true;
+  for (const name of programs) {
+    const worker = new Worker('./program-worker.mjs', { type: 'module' });
+    const answer = await new Promise(resolve => {
+      worker.onmessage = event => resolve(event.data);
+      worker.onerror = event => resolve({ card: true, failed: event.message || 'the worker did not start' });
+      worker.postMessage({ wasm: name + '.wasm' });
+    });
+    worker.terminate();
+    if (!answer.card) { card = false; break; }
+    if (answer.failed) { lines.push('FAILED ' + name + ' ' + JSON.stringify(answer.failed)); continue; }
+    for (const run of answer.runs)
+      lines.push('RUN ' + JSON.stringify({ name, mode: run.mode, status: run.status, cards: run.cards, stdout: run.stdout, said: run.said }));
+    for (const site of answer.report)
+      lines.push('SITE ' + name + ' ' + JSON.stringify(site));
+  }
+  lines.push(card ? 'programs: ' + programs.length : 'SKIP');
+} catch (e) {
+  lines.push('FAILED page ' + JSON.stringify(String(e && e.stack || e)));
+}
+document.getElementById('out').textContent = lines.join('\n');
+await fetch('/result', { method: 'POST', body: lines.join('\n') });
+</script>

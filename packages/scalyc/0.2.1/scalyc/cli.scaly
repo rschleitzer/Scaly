@@ -540,7 +540,7 @@ define cli
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
         Console.println "  -mcpu=<cpu>    Generate code for <cpu>, or native for this machine (default generic)"
         Console.println "  --portable-simd  SIMD operations in their target-neutral form (the seed)"
-        Console.println "  --gpu          Let the program run a parallel for loop on the graphics card where that pays (macOS; not with --jit or --run; SCALY_GPU=on|off decides for it)"
+        Console.println "  --gpu          Let the program run a parallel for loop on the graphics card where that pays (macOS, and wasm32 in a page that hands it its card; not with --jit or --run; SCALY_GPU=on|off decides for it)"
     }
 
     ; The directory for the compiler's own scratch object. POSIX has /tmp;

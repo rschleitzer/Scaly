@@ -15,6 +15,7 @@
  *                     where, per1k, done, workers)
  *   int scaly_gpu_forced(void)
  *   void scaly_gpu_kept(source, wgsl, where, rounds, ns)
+ *   void *scaly_gpu_parts(bytes), void scaly_gpu_parts_free(parts)
  *
  * `source` is the kernel's text in the Metal Shading Language, a constant of
  * the program (with `where` the key of the loop's site here). `wgsl` is the
@@ -1047,6 +1048,20 @@ static void *gpu_call_run(void *arg)
         gpu_no("no card");
     pthread_mutex_unlock(&gpu_lock);
     return 0;
+}
+
+/* The block a loop's reductions are handed back in -- eight bytes per round
+ * and reduction --, and its release: a pair, because what takes memory must
+ * give it back on the same side, and with a count 64 bits wide on every
+ * target (a C `malloc` takes the width of its target's addresses). */
+void *scaly_gpu_parts(long long bytes)
+{
+    return bytes > 0 ? malloc((size_t)bytes) : 0;
+}
+
+void scaly_gpu_parts_free(void *parts)
+{
+    free(parts);
 }
 
 /* Is the card to be tried at every loop's head (SCALY_GPU=on)? */

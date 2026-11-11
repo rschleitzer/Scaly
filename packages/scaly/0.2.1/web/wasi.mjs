@@ -186,8 +186,10 @@ export class Wasi {
   // program that reads its input as it comes (the REPL in a worker, which
   // waits there for the next line). stdout/stderr: called with each written
   // Uint8Array; without them the output is kept (stdout_text(), stderr_text()).
+  // gpu: the graphics card of a program built with --gpu (a GpuHost of
+  // gpu-host.mjs); without one every loop of it runs on the processor.
   constructor({ args = ['program'], env = {}, cwd = '/', files = new MemoryFiles(), stdin = new Uint8Array(),
-                stdin_more = null, stdout = null, stderr = null } = {}) {
+                stdin_more = null, stdout = null, stderr = null, gpu = null } = {}) {
     this.args = args.map(a => encoder.encode(a + '\0'));
     this.env = Object.entries({ ...env, PWD: cwd }).map(([k, v]) => encoder.encode(k + '=' + v + '\0'));
     this.files = files;
@@ -200,6 +202,7 @@ export class Wasi {
     // fd 0-2 the streams, fd 3 the one preopened directory: the root
     this.fds = [{ kind: 'stdin' }, { kind: 'out', n: 0 }, { kind: 'out', n: 1 }, { kind: 'dir', path: '/' }];
     this.memory = null;
+    this.gpu = gpu;
   }
 
   // run the instance's `_start`; the exit code
@@ -559,9 +562,16 @@ export class Wasi {
       wasi_snapshot_preview1: new Proxy(wasi, {
         get: (target, name) => target[name] ?? (() => ERRNO.NOSYS),
       }),
+      // what a program built with --gpu asks of its host (scaly/gpu/gpu_wasm.c);
+      // any other program does not import the module
+      scaly_gpu: w.gpu ? w.gpu.imports(() => w.memory) : NO_CARD,
     };
   }
 }
+
+// The host of a kernel where there is no card: every loop stays on the
+// processor.
+export const NO_CARD = { forced: () => 0, run: () => 0, kept: () => { } };
 
 // write a chunk at an open file's position (its end when appending), growing it
 function write_at(f, chunk) {

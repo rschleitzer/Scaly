@@ -14,5 +14,7 @@ import process, { argv, cwd, env, exit } from 'node:process';
 for (const stream of [process.stdout, process.stderr]) stream._handle?.setBlocking?.(true);
 const wasi = new WASI({ version: 'preview1', args: argv.slice(2), env: { ...env, PWD: cwd() }, preopens: { '/': '/' }, returnOnExit: true });
 const module = await WebAssembly.compile(await readFile(argv[2]));
-const instance = await WebAssembly.instantiate(module, wasi.getImportObject());
+// no card here: a program built with --gpu keeps every loop on the processor
+const scaly_gpu = { forced: () => 0, run: () => 0, kept: () => { } };
+const instance = await WebAssembly.instantiate(module, { ...wasi.getImportObject(), scaly_gpu });
 exit(wasi.start(instance));

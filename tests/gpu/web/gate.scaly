@@ -1,0 +1,36 @@
+; The gate in a page: a loop of whole numbers that pays, run four times.
+; Nobody forces the card. The first time the processor runs a few rounds,
+; measures them, and is about to go on with the rest -- there the page's host
+; gives the loop to the card; from the second time on it has the card's own
+; measure. Whole numbers: the card must print what the processor prints.
+
+function churn(seed: u32, turns: i32) returns u32
+{
+    var x seed * 2654435761 + 1
+    for k in turns
+    {
+        x := x xor (x << 13)
+        x := x xor (x >> 17)
+        x := x xor (x << 5)
+    }
+    x
+}
+
+let n: i32 4000
+var out Vector[u32](n as size_t)
+var pass 0
+while pass < 4
+{
+    let turns: i32 20000 + (pass as i32)
+    for i in n
+        out.put(i as size_t, churn(i as u32, turns))
+    var mixed: u32 0
+    var j: size_t 0
+    while j < (n as size_t)
+    {
+        mixed := (mixed xor out[j]) * 31 + 7
+        j := j + 1
+    }
+    print "`pass` `mixed as int`"
+    pass := pass + 1
+}

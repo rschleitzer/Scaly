@@ -17,8 +17,11 @@
 #      links libLLVM (`; link: llvm`), and the fixtures tests/wasm/skip names
 #      (a 64-bit host's layout written down as numbers, an untyped function
 #      pointer to a function that answers a pointer).
+#   3. two programs of tests/gpu built with --gpu: the module asks its host
+#      for a graphics card, and without one writes what it writes without the
+#      switch (the card itself is tests/gpu/web/run.sh's, in a browser)
 #
-# Both steps run once per host.
+# All three run once per host.
 #
 # Needs a wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*) and node; SKIPPED by name
 # without either.
@@ -82,6 +85,32 @@ for host in node page; do
   # 2. the regression corpus
   REGRESS_TARGET=$T REGRESS_RUN="$RUN" REGRESS_SKIP=tests/wasm/skip REGRESS_NAME="wasm ($host): regress" \
     "$PY" tests/regress/run.py "$STAGE" "$TOOL" "" "$WORK" "$JOBS" || failed=1
+
+  # 3. a program built with --gpu asks its host for a graphics card (the
+  # import module scaly_gpu; one built without asks for nothing), and under
+  # a host without a card -- both of these -- it writes what it writes
+  # without the switch. The card itself: tests/gpu/web/run.sh, in a browser.
+  pass=0; fail=0; failures=()
+  for src in tests/gpu/webgpu/integers32.scaly tests/gpu/reductions.scaly; do
+    n=$(basename "$src" .scaly)
+    if [ ! -f "$WORK/$n.gpu.wasm" ]; then
+      "$TOOL" build --target $T "$src" -o "$WORK/$n.plain.wasm" > "$WORK/$n.build" 2>&1 &&
+        "$TOOL" build --target $T --gpu "$src" -o "$WORK/$n.gpu.wasm" >> "$WORK/$n.build" 2>&1 ||
+        { fail=$((fail+1)); failures+=("$n(build: $(grep -m1 -i 'error' "$WORK/$n.build" | cut -c1-120))"); continue; }
+    fi
+    asks() { "$NODE" -e 'const m = new WebAssembly.Module(require("fs").readFileSync(process.argv[1])); process.exit(WebAssembly.Module.imports(m).some(i => i.module === "scaly_gpu") ? 0 : 1)' "$1"; }
+    # shellcheck disable=SC2086
+    plain=$($RUN "$WORK/$n.plain.wasm" 2>&1); prc=$?
+    # shellcheck disable=SC2086
+    card=$($RUN "$WORK/$n.gpu.wasm" 2>&1); crc=$?
+    if [ "$prc" = 0 ] && [ "$crc" = 0 ] && [ -n "$plain" ] && [ "$plain" = "$card" ] && asks "$WORK/$n.gpu.wasm" && ! asks "$WORK/$n.plain.wasm"; then
+      pass=$((pass+1))
+    else
+      fail=$((fail+1)); failures+=("$n(rc=$prc/$crc: $(printf '%s' "$card" | tail -c 120 | tr '\n' ' '))")
+    fi
+  done
+  echo "wasm ($host): --gpu without a card $pass PASS, $fail FAIL ${failures[*]}"
+  [ $fail -eq 0 ] || failed=1
 done
 
 [ $failed -eq 0 ]
