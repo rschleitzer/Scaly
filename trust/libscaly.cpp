@@ -12866,7 +12866,7 @@ __attribute__((weak)) void mm_tiled(Vector<float>& a, Vector<float>& b, Vector<f
     {
         int64_t it = scaly_t1;
         int64_t j = 0LL;
-        while ((j < n))
+        while (((j + 3LL) < n))
         {
             float a00 = ((float)0);
             float a01 = ((float)0);
@@ -12945,7 +12945,7 @@ __attribute__((weak)) void mm_tiled_dA(Vector<float>& gc, Vector<float>& b, Vect
     {
         int64_t it = scaly_t1;
         int64_t xt = 0LL;
-        while ((xt < kk))
+        while (((xt + 3LL) < kk))
         {
             float a00 = ((float)0);
             float a01 = ((float)0);
@@ -13024,7 +13024,7 @@ __attribute__((weak)) void mm_tiled_dB(Vector<float>& a, Vector<float>& gc, Vect
     {
         int64_t xt = scaly_t1;
         int64_t j = 0LL;
-        while ((j < n))
+        while (((j + 3LL) < n))
         {
             float a00 = ((float)0);
             float a01 = ((float)0);
@@ -14254,9 +14254,14 @@ __attribute__((weak)) void Tape_fwd_attention(Tape& scaly_self, int64_t id)
         while ((h < hs))
         {
             float mx = ((float)0);
-            int64_t j = ws;
-            while ((j <= i))
+            int64_t jw = 0LL;
+            while ((jw < w))
             {
+                int64_t j = (ws + jw);
+                if ((j > i))
+                {
+                    break;
+                }
                 float acc = ((float)0);
                 int64_t c = 0LL;
                 while ((c < dh))
@@ -14265,8 +14270,8 @@ __attribute__((weak)) void Tape_fwd_attention(Tape& scaly_self, int64_t id)
                     c = (c + 1LL);
                 }
                 float sc = ((float)((float)(acc) * (float)(scale)));
-                Vector_put<float>(px, ((uint64_t)((((((h * t) * w) + (i * w)) + ((j - ws)))))), sc);
-                if ((j == ws))
+                Vector_put<float>(px, ((uint64_t)(((((((h * t) + i)) * w) + jw)))), sc);
+                if ((jw == 0LL))
                 {
                     mx = sc;
                 }
@@ -14274,24 +14279,32 @@ __attribute__((weak)) void Tape_fwd_attention(Tape& scaly_self, int64_t id)
                 {
                     mx = sc;
                 }
-                j = (j + 1LL);
+                jw = (jw + 1LL);
             }
             float sum = ((float)0);
-            int64_t j2 = ws;
-            while ((j2 <= i))
+            int64_t jw2 = 0LL;
+            while ((jw2 < w))
             {
-                float e = expf(((float)((float)((*(((pp) + (int64_t)(((((h * t) * w) + (i * w)) + ((j2 - ws)))))))) - (float)(mx))));
-                Vector_put<float>(px, ((uint64_t)((((((h * t) * w) + (i * w)) + ((j2 - ws)))))), e);
+                if (((ws + jw2) > i))
+                {
+                    break;
+                }
+                float e = expf(((float)((float)((*(((pp) + (int64_t)((((((h * t) + i)) * w) + jw2)))))) - (float)(mx))));
+                Vector_put<float>(px, ((uint64_t)(((((((h * t) + i)) * w) + jw2)))), e);
                 sum = ((float)((float)(sum) + (float)(e)));
-                j2 = (j2 + 1LL);
+                jw2 = (jw2 + 1LL);
             }
             float inv = ((float)((float)(((float)1)) / (float)(sum)));
-            int64_t j3 = ws;
-            while ((j3 <= i))
+            int64_t jw3 = 0LL;
+            while ((jw3 < w))
             {
-                float scaled = ((float)((float)((*(((pp) + (int64_t)(((((h * t) * w) + (i * w)) + ((j3 - ws)))))))) * (float)(inv)));
-                Vector_put<float>(px, ((uint64_t)((((((h * t) * w) + (i * w)) + ((j3 - ws)))))), scaled);
-                j3 = (j3 + 1LL);
+                if (((ws + jw3) > i))
+                {
+                    break;
+                }
+                float scaled = ((float)((float)((*(((pp) + (int64_t)((((((h * t) + i)) * w) + jw3)))))) * (float)(inv)));
+                Vector_put<float>(px, ((uint64_t)(((((((h * t) + i)) * w) + jw3)))), scaled);
+                jw3 = (jw3 + 1LL);
             }
             int64_t c2 = 0LL;
             while ((c2 < dh))
@@ -14300,10 +14313,10 @@ __attribute__((weak)) void Tape_fwd_attention(Tape& scaly_self, int64_t id)
                 int64_t j4 = ws;
                 while ((j4 <= i))
                 {
-                    acc2 = ((float)((float)(acc2) + (float)(((float)((float)((*(((pp) + (int64_t)(((((h * t) * w) + (i * w)) + ((j4 - ws)))))))) * (float)((*(((vp) + (int64_t)((((j4 * d) + (h * dh)) + c2)))))))))));
+                    acc2 = ((float)((float)(acc2) + (float)(((float)((float)((*(((pp) + (int64_t)((((((h * t) + i)) * w) + ((j4 - ws)))))))) * (float)((*(((vp) + (int64_t)((((j4 * d) + (h * dh)) + c2)))))))))));
                     j4 = (j4 + 1LL);
                 }
-                Vector_put<float>(out, ((uint64_t)(((((i * d) + (h * dh)) + c2)))), acc2);
+                Vector_put<float>(out, ((uint64_t)(((((((i * hs) + h)) * dh) + c2)))), acc2);
                 c2 = (c2 + 1LL);
             }
             h = (h + 1LL);

@@ -41096,7 +41096,7 @@ pfor.check.decide:                                ; preds = %pfor.check.meas
 pfor.check.notyet:                                ; preds = %pfor.check.decide
   %parfor.heavy = icmp sge i64 %parfor.p1k, 51200000000
   %parfor.decisive = and i1 %parfor.dofork, %parfor.heavy
-  br i1 %parfor.decisive, label %parfor.quiet219, label %parfor.notyet2
+  br i1 %parfor.decisive, label %parfor.quiet220, label %parfor.notyet2
 
 pfor.check.arm:                                   ; preds = %parfor.notyet2
   store i64 1, ptr %parfor.armed, align 8
@@ -41106,10 +41106,10 @@ pfor.check.arm:                                   ; preds = %parfor.notyet2
   store i64 %parfor.nc.dbl3, ptr %parfor.nextcheck, align 8
   br label %pfor.inl.body
 
-pfor.fork:                                        ; preds = %parfor.quiet219, %pfor.check.decide
-  %parfor.ncpu.chk220 = call i64 @_ZN8TaskPool4ncpuEv()
-  %parfor.oneworker221 = icmp sle i64 %parfor.ncpu.chk220, 1
-  br i1 %parfor.oneworker221, label %parfor.single, label %parfor.fork.go
+pfor.fork:                                        ; preds = %parfor.quiet220, %pfor.check.decide
+  %parfor.ncpu.chk221 = call i64 @_ZN8TaskPool4ncpuEv()
+  %parfor.oneworker222 = icmp sle i64 %parfor.ncpu.chk221, 1
+  br i1 %parfor.oneworker222, label %parfor.single, label %parfor.fork.go
 
 pfor.gate.prom:                                   ; preds = %entry
   %parfor.gate.c0 = sdiv i64 134217728, %parfor.sitep
@@ -41152,7 +41152,8 @@ pfor.gate.headfork.go:                            ; preds = %pfor.gate.headfork
 
 while.cond:                                       ; preds = %while.exit7, %pfor.inl.body
   %j4 = load i64, ptr %j, align 8
-  %lt = icmp slt i64 %j4, %5
+  %add = add i64 %j4, 3
+  %lt = icmp slt i64 %add, %5
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -41185,260 +41186,260 @@ while.cond5:                                      ; preds = %while.body6, %while
 
 while.body6:                                      ; preds = %while.cond5
   %mul = mul i64 %parfor.i.body, 4
-  %add = add i64 %mul, 0
-  %mul10 = mul i64 %add, %4
-  %x11 = load i64, ptr %x, align 8
-  %add12 = add i64 %mul10, %x11
-  %ptr.add = getelementptr inbounds float, ptr %data, i64 %add12
+  %add10 = add i64 %mul, 0
+  %mul11 = mul i64 %add10, %4
+  %x12 = load i64, ptr %x, align 8
+  %add13 = add i64 %mul11, %x12
+  %ptr.add = getelementptr inbounds float, ptr %data, i64 %add13
   %deref = load float, ptr %ptr.add, align 4
-  %mul13 = mul i64 %parfor.i.body, 4
-  %add14 = add i64 %mul13, 1
-  %mul15 = mul i64 %add14, %4
-  %x16 = load i64, ptr %x, align 8
-  %add17 = add i64 %mul15, %x16
-  %ptr.add18 = getelementptr inbounds float, ptr %data, i64 %add17
-  %deref19 = load float, ptr %ptr.add18, align 4
-  %mul20 = mul i64 %parfor.i.body, 4
-  %add21 = add i64 %mul20, 2
-  %mul22 = mul i64 %add21, %4
-  %x23 = load i64, ptr %x, align 8
-  %add24 = add i64 %mul22, %x23
-  %ptr.add25 = getelementptr inbounds float, ptr %data, i64 %add24
-  %deref26 = load float, ptr %ptr.add25, align 4
-  %mul27 = mul i64 %parfor.i.body, 4
-  %add28 = add i64 %mul27, 3
-  %mul29 = mul i64 %add28, %4
-  %x30 = load i64, ptr %x, align 8
-  %add31 = add i64 %mul29, %x30
-  %ptr.add32 = getelementptr inbounds float, ptr %data, i64 %add31
-  %deref33 = load float, ptr %ptr.add32, align 4
-  %x34 = load i64, ptr %x, align 8
-  %mul35 = mul i64 %x34, %5
-  %j36 = load i64, ptr %j, align 8
-  %add37 = add i64 %mul35, %j36
-  %ptr.add38 = getelementptr inbounds float, ptr %data2, i64 %add37
-  %deref39 = load float, ptr %ptr.add38, align 4
-  %x40 = load i64, ptr %x, align 8
-  %mul41 = mul i64 %x40, %5
-  %j42 = load i64, ptr %j, align 8
-  %add43 = add i64 %mul41, %j42
-  %add44 = add i64 %add43, 1
-  %ptr.add45 = getelementptr inbounds float, ptr %data2, i64 %add44
-  %deref46 = load float, ptr %ptr.add45, align 4
-  %x47 = load i64, ptr %x, align 8
-  %mul48 = mul i64 %x47, %5
-  %j49 = load i64, ptr %j, align 8
-  %add50 = add i64 %mul48, %j49
-  %add51 = add i64 %add50, 2
-  %ptr.add52 = getelementptr inbounds float, ptr %data2, i64 %add51
-  %deref53 = load float, ptr %ptr.add52, align 4
-  %x54 = load i64, ptr %x, align 8
-  %mul55 = mul i64 %x54, %5
-  %j56 = load i64, ptr %j, align 8
-  %add57 = add i64 %mul55, %j56
-  %add58 = add i64 %add57, 3
-  %ptr.add59 = getelementptr inbounds float, ptr %data2, i64 %add58
-  %deref60 = load float, ptr %ptr.add59, align 4
-  %a0061 = load float, ptr %a00, align 4
-  %fmul = fmul float %deref, %deref39
-  %fadd = fadd float %a0061, %fmul
+  %mul14 = mul i64 %parfor.i.body, 4
+  %add15 = add i64 %mul14, 1
+  %mul16 = mul i64 %add15, %4
+  %x17 = load i64, ptr %x, align 8
+  %add18 = add i64 %mul16, %x17
+  %ptr.add19 = getelementptr inbounds float, ptr %data, i64 %add18
+  %deref20 = load float, ptr %ptr.add19, align 4
+  %mul21 = mul i64 %parfor.i.body, 4
+  %add22 = add i64 %mul21, 2
+  %mul23 = mul i64 %add22, %4
+  %x24 = load i64, ptr %x, align 8
+  %add25 = add i64 %mul23, %x24
+  %ptr.add26 = getelementptr inbounds float, ptr %data, i64 %add25
+  %deref27 = load float, ptr %ptr.add26, align 4
+  %mul28 = mul i64 %parfor.i.body, 4
+  %add29 = add i64 %mul28, 3
+  %mul30 = mul i64 %add29, %4
+  %x31 = load i64, ptr %x, align 8
+  %add32 = add i64 %mul30, %x31
+  %ptr.add33 = getelementptr inbounds float, ptr %data, i64 %add32
+  %deref34 = load float, ptr %ptr.add33, align 4
+  %x35 = load i64, ptr %x, align 8
+  %mul36 = mul i64 %x35, %5
+  %j37 = load i64, ptr %j, align 8
+  %add38 = add i64 %mul36, %j37
+  %ptr.add39 = getelementptr inbounds float, ptr %data2, i64 %add38
+  %deref40 = load float, ptr %ptr.add39, align 4
+  %x41 = load i64, ptr %x, align 8
+  %mul42 = mul i64 %x41, %5
+  %j43 = load i64, ptr %j, align 8
+  %add44 = add i64 %mul42, %j43
+  %add45 = add i64 %add44, 1
+  %ptr.add46 = getelementptr inbounds float, ptr %data2, i64 %add45
+  %deref47 = load float, ptr %ptr.add46, align 4
+  %x48 = load i64, ptr %x, align 8
+  %mul49 = mul i64 %x48, %5
+  %j50 = load i64, ptr %j, align 8
+  %add51 = add i64 %mul49, %j50
+  %add52 = add i64 %add51, 2
+  %ptr.add53 = getelementptr inbounds float, ptr %data2, i64 %add52
+  %deref54 = load float, ptr %ptr.add53, align 4
+  %x55 = load i64, ptr %x, align 8
+  %mul56 = mul i64 %x55, %5
+  %j57 = load i64, ptr %j, align 8
+  %add58 = add i64 %mul56, %j57
+  %add59 = add i64 %add58, 3
+  %ptr.add60 = getelementptr inbounds float, ptr %data2, i64 %add59
+  %deref61 = load float, ptr %ptr.add60, align 4
+  %a0062 = load float, ptr %a00, align 4
+  %fmul = fmul float %deref, %deref40
+  %fadd = fadd float %a0062, %fmul
   store float %fadd, ptr %a00, align 1
-  %a0162 = load float, ptr %a01, align 4
-  %fmul63 = fmul float %deref, %deref46
-  %fadd64 = fadd float %a0162, %fmul63
-  store float %fadd64, ptr %a01, align 1
-  %a0265 = load float, ptr %a02, align 4
-  %fmul66 = fmul float %deref, %deref53
-  %fadd67 = fadd float %a0265, %fmul66
-  store float %fadd67, ptr %a02, align 1
-  %a0368 = load float, ptr %a03, align 4
-  %fmul69 = fmul float %deref, %deref60
-  %fadd70 = fadd float %a0368, %fmul69
-  store float %fadd70, ptr %a03, align 1
-  %a1071 = load float, ptr %a10, align 4
-  %fmul72 = fmul float %deref19, %deref39
-  %fadd73 = fadd float %a1071, %fmul72
-  store float %fadd73, ptr %a10, align 1
-  %a1174 = load float, ptr %a11, align 4
-  %fmul75 = fmul float %deref19, %deref46
-  %fadd76 = fadd float %a1174, %fmul75
-  store float %fadd76, ptr %a11, align 1
-  %a1277 = load float, ptr %a12, align 4
-  %fmul78 = fmul float %deref19, %deref53
-  %fadd79 = fadd float %a1277, %fmul78
-  store float %fadd79, ptr %a12, align 1
-  %a1380 = load float, ptr %a13, align 4
-  %fmul81 = fmul float %deref19, %deref60
-  %fadd82 = fadd float %a1380, %fmul81
-  store float %fadd82, ptr %a13, align 1
-  %a2083 = load float, ptr %a20, align 4
-  %fmul84 = fmul float %deref26, %deref39
-  %fadd85 = fadd float %a2083, %fmul84
-  store float %fadd85, ptr %a20, align 1
-  %a2186 = load float, ptr %a21, align 4
-  %fmul87 = fmul float %deref26, %deref46
-  %fadd88 = fadd float %a2186, %fmul87
-  store float %fadd88, ptr %a21, align 1
-  %a2289 = load float, ptr %a22, align 4
-  %fmul90 = fmul float %deref26, %deref53
-  %fadd91 = fadd float %a2289, %fmul90
-  store float %fadd91, ptr %a22, align 1
-  %a2392 = load float, ptr %a23, align 4
-  %fmul93 = fmul float %deref26, %deref60
-  %fadd94 = fadd float %a2392, %fmul93
-  store float %fadd94, ptr %a23, align 1
-  %a3095 = load float, ptr %a30, align 4
-  %fmul96 = fmul float %deref33, %deref39
-  %fadd97 = fadd float %a3095, %fmul96
-  store float %fadd97, ptr %a30, align 1
-  %a3198 = load float, ptr %a31, align 4
-  %fmul99 = fmul float %deref33, %deref46
-  %fadd100 = fadd float %a3198, %fmul99
-  store float %fadd100, ptr %a31, align 1
-  %a32101 = load float, ptr %a32, align 4
-  %fmul102 = fmul float %deref33, %deref53
-  %fadd103 = fadd float %a32101, %fmul102
-  store float %fadd103, ptr %a32, align 1
-  %a33104 = load float, ptr %a33, align 4
-  %fmul105 = fmul float %deref33, %deref60
-  %fadd106 = fadd float %a33104, %fmul105
-  store float %fadd106, ptr %a33, align 1
-  %x107 = load i64, ptr %x, align 8
-  %add108 = add i64 %x107, 1
-  store i64 %add108, ptr %x, align 1
+  %a0163 = load float, ptr %a01, align 4
+  %fmul64 = fmul float %deref, %deref47
+  %fadd65 = fadd float %a0163, %fmul64
+  store float %fadd65, ptr %a01, align 1
+  %a0266 = load float, ptr %a02, align 4
+  %fmul67 = fmul float %deref, %deref54
+  %fadd68 = fadd float %a0266, %fmul67
+  store float %fadd68, ptr %a02, align 1
+  %a0369 = load float, ptr %a03, align 4
+  %fmul70 = fmul float %deref, %deref61
+  %fadd71 = fadd float %a0369, %fmul70
+  store float %fadd71, ptr %a03, align 1
+  %a1072 = load float, ptr %a10, align 4
+  %fmul73 = fmul float %deref20, %deref40
+  %fadd74 = fadd float %a1072, %fmul73
+  store float %fadd74, ptr %a10, align 1
+  %a1175 = load float, ptr %a11, align 4
+  %fmul76 = fmul float %deref20, %deref47
+  %fadd77 = fadd float %a1175, %fmul76
+  store float %fadd77, ptr %a11, align 1
+  %a1278 = load float, ptr %a12, align 4
+  %fmul79 = fmul float %deref20, %deref54
+  %fadd80 = fadd float %a1278, %fmul79
+  store float %fadd80, ptr %a12, align 1
+  %a1381 = load float, ptr %a13, align 4
+  %fmul82 = fmul float %deref20, %deref61
+  %fadd83 = fadd float %a1381, %fmul82
+  store float %fadd83, ptr %a13, align 1
+  %a2084 = load float, ptr %a20, align 4
+  %fmul85 = fmul float %deref27, %deref40
+  %fadd86 = fadd float %a2084, %fmul85
+  store float %fadd86, ptr %a20, align 1
+  %a2187 = load float, ptr %a21, align 4
+  %fmul88 = fmul float %deref27, %deref47
+  %fadd89 = fadd float %a2187, %fmul88
+  store float %fadd89, ptr %a21, align 1
+  %a2290 = load float, ptr %a22, align 4
+  %fmul91 = fmul float %deref27, %deref54
+  %fadd92 = fadd float %a2290, %fmul91
+  store float %fadd92, ptr %a22, align 1
+  %a2393 = load float, ptr %a23, align 4
+  %fmul94 = fmul float %deref27, %deref61
+  %fadd95 = fadd float %a2393, %fmul94
+  store float %fadd95, ptr %a23, align 1
+  %a3096 = load float, ptr %a30, align 4
+  %fmul97 = fmul float %deref34, %deref40
+  %fadd98 = fadd float %a3096, %fmul97
+  store float %fadd98, ptr %a30, align 1
+  %a3199 = load float, ptr %a31, align 4
+  %fmul100 = fmul float %deref34, %deref47
+  %fadd101 = fadd float %a3199, %fmul100
+  store float %fadd101, ptr %a31, align 1
+  %a32102 = load float, ptr %a32, align 4
+  %fmul103 = fmul float %deref34, %deref54
+  %fadd104 = fadd float %a32102, %fmul103
+  store float %fadd104, ptr %a32, align 1
+  %a33105 = load float, ptr %a33, align 4
+  %fmul106 = fmul float %deref34, %deref61
+  %fadd107 = fadd float %a33105, %fmul106
+  store float %fadd107, ptr %a33, align 1
+  %x108 = load i64, ptr %x, align 8
+  %add109 = add i64 %x108, 1
+  store i64 %add109, ptr %x, align 1
   br label %while.cond5
 
 while.exit7:                                      ; preds = %while.cond5
-  %mul109 = mul i64 %parfor.i.body, 4
-  %add110 = add i64 %mul109, 0
-  %mul111 = mul i64 %add110, %5
-  %j112 = load i64, ptr %j, align 8
-  %add113 = add i64 %mul111, %j112
-  %a00114 = load float, ptr %a00, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add113, float %a00114)
-  %mul115 = mul i64 %parfor.i.body, 4
-  %add116 = add i64 %mul115, 0
-  %mul117 = mul i64 %add116, %5
-  %j118 = load i64, ptr %j, align 8
-  %add119 = add i64 %mul117, %j118
-  %add120 = add i64 %add119, 1
-  %a01121 = load float, ptr %a01, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add120, float %a01121)
-  %mul122 = mul i64 %parfor.i.body, 4
-  %add123 = add i64 %mul122, 0
-  %mul124 = mul i64 %add123, %5
-  %j125 = load i64, ptr %j, align 8
-  %add126 = add i64 %mul124, %j125
-  %add127 = add i64 %add126, 2
-  %a02128 = load float, ptr %a02, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add127, float %a02128)
-  %mul129 = mul i64 %parfor.i.body, 4
-  %add130 = add i64 %mul129, 0
-  %mul131 = mul i64 %add130, %5
-  %j132 = load i64, ptr %j, align 8
-  %add133 = add i64 %mul131, %j132
-  %add134 = add i64 %add133, 3
-  %a03135 = load float, ptr %a03, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add134, float %a03135)
-  %mul136 = mul i64 %parfor.i.body, 4
-  %add137 = add i64 %mul136, 1
-  %mul138 = mul i64 %add137, %5
-  %j139 = load i64, ptr %j, align 8
-  %add140 = add i64 %mul138, %j139
-  %a10141 = load float, ptr %a10, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add140, float %a10141)
-  %mul142 = mul i64 %parfor.i.body, 4
-  %add143 = add i64 %mul142, 1
-  %mul144 = mul i64 %add143, %5
-  %j145 = load i64, ptr %j, align 8
-  %add146 = add i64 %mul144, %j145
-  %add147 = add i64 %add146, 1
-  %a11148 = load float, ptr %a11, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add147, float %a11148)
-  %mul149 = mul i64 %parfor.i.body, 4
-  %add150 = add i64 %mul149, 1
-  %mul151 = mul i64 %add150, %5
-  %j152 = load i64, ptr %j, align 8
-  %add153 = add i64 %mul151, %j152
-  %add154 = add i64 %add153, 2
-  %a12155 = load float, ptr %a12, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add154, float %a12155)
-  %mul156 = mul i64 %parfor.i.body, 4
-  %add157 = add i64 %mul156, 1
-  %mul158 = mul i64 %add157, %5
-  %j159 = load i64, ptr %j, align 8
-  %add160 = add i64 %mul158, %j159
-  %add161 = add i64 %add160, 3
-  %a13162 = load float, ptr %a13, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add161, float %a13162)
-  %mul163 = mul i64 %parfor.i.body, 4
-  %add164 = add i64 %mul163, 2
-  %mul165 = mul i64 %add164, %5
-  %j166 = load i64, ptr %j, align 8
-  %add167 = add i64 %mul165, %j166
-  %a20168 = load float, ptr %a20, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add167, float %a20168)
-  %mul169 = mul i64 %parfor.i.body, 4
-  %add170 = add i64 %mul169, 2
-  %mul171 = mul i64 %add170, %5
-  %j172 = load i64, ptr %j, align 8
-  %add173 = add i64 %mul171, %j172
-  %add174 = add i64 %add173, 1
-  %a21175 = load float, ptr %a21, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add174, float %a21175)
-  %mul176 = mul i64 %parfor.i.body, 4
-  %add177 = add i64 %mul176, 2
-  %mul178 = mul i64 %add177, %5
-  %j179 = load i64, ptr %j, align 8
-  %add180 = add i64 %mul178, %j179
-  %add181 = add i64 %add180, 2
-  %a22182 = load float, ptr %a22, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add181, float %a22182)
-  %mul183 = mul i64 %parfor.i.body, 4
-  %add184 = add i64 %mul183, 2
-  %mul185 = mul i64 %add184, %5
-  %j186 = load i64, ptr %j, align 8
-  %add187 = add i64 %mul185, %j186
-  %add188 = add i64 %add187, 3
-  %a23189 = load float, ptr %a23, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add188, float %a23189)
-  %mul190 = mul i64 %parfor.i.body, 4
-  %add191 = add i64 %mul190, 3
-  %mul192 = mul i64 %add191, %5
-  %j193 = load i64, ptr %j, align 8
-  %add194 = add i64 %mul192, %j193
-  %a30195 = load float, ptr %a30, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add194, float %a30195)
-  %mul196 = mul i64 %parfor.i.body, 4
-  %add197 = add i64 %mul196, 3
-  %mul198 = mul i64 %add197, %5
-  %j199 = load i64, ptr %j, align 8
-  %add200 = add i64 %mul198, %j199
-  %add201 = add i64 %add200, 1
-  %a31202 = load float, ptr %a31, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add201, float %a31202)
-  %mul203 = mul i64 %parfor.i.body, 4
-  %add204 = add i64 %mul203, 3
-  %mul205 = mul i64 %add204, %5
-  %j206 = load i64, ptr %j, align 8
-  %add207 = add i64 %mul205, %j206
-  %add208 = add i64 %add207, 2
-  %a32209 = load float, ptr %a32, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add208, float %a32209)
-  %mul210 = mul i64 %parfor.i.body, 4
-  %add211 = add i64 %mul210, 3
-  %mul212 = mul i64 %add211, %5
-  %j213 = load i64, ptr %j, align 8
-  %add214 = add i64 %mul212, %j213
-  %add215 = add i64 %add214, 3
-  %a33216 = load float, ptr %a33, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add215, float %a33216)
-  %j217 = load i64, ptr %j, align 8
-  %add218 = add i64 %j217, 4
-  store i64 %add218, ptr %j, align 1
+  %mul110 = mul i64 %parfor.i.body, 4
+  %add111 = add i64 %mul110, 0
+  %mul112 = mul i64 %add111, %5
+  %j113 = load i64, ptr %j, align 8
+  %add114 = add i64 %mul112, %j113
+  %a00115 = load float, ptr %a00, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add114, float %a00115)
+  %mul116 = mul i64 %parfor.i.body, 4
+  %add117 = add i64 %mul116, 0
+  %mul118 = mul i64 %add117, %5
+  %j119 = load i64, ptr %j, align 8
+  %add120 = add i64 %mul118, %j119
+  %add121 = add i64 %add120, 1
+  %a01122 = load float, ptr %a01, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add121, float %a01122)
+  %mul123 = mul i64 %parfor.i.body, 4
+  %add124 = add i64 %mul123, 0
+  %mul125 = mul i64 %add124, %5
+  %j126 = load i64, ptr %j, align 8
+  %add127 = add i64 %mul125, %j126
+  %add128 = add i64 %add127, 2
+  %a02129 = load float, ptr %a02, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add128, float %a02129)
+  %mul130 = mul i64 %parfor.i.body, 4
+  %add131 = add i64 %mul130, 0
+  %mul132 = mul i64 %add131, %5
+  %j133 = load i64, ptr %j, align 8
+  %add134 = add i64 %mul132, %j133
+  %add135 = add i64 %add134, 3
+  %a03136 = load float, ptr %a03, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add135, float %a03136)
+  %mul137 = mul i64 %parfor.i.body, 4
+  %add138 = add i64 %mul137, 1
+  %mul139 = mul i64 %add138, %5
+  %j140 = load i64, ptr %j, align 8
+  %add141 = add i64 %mul139, %j140
+  %a10142 = load float, ptr %a10, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add141, float %a10142)
+  %mul143 = mul i64 %parfor.i.body, 4
+  %add144 = add i64 %mul143, 1
+  %mul145 = mul i64 %add144, %5
+  %j146 = load i64, ptr %j, align 8
+  %add147 = add i64 %mul145, %j146
+  %add148 = add i64 %add147, 1
+  %a11149 = load float, ptr %a11, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add148, float %a11149)
+  %mul150 = mul i64 %parfor.i.body, 4
+  %add151 = add i64 %mul150, 1
+  %mul152 = mul i64 %add151, %5
+  %j153 = load i64, ptr %j, align 8
+  %add154 = add i64 %mul152, %j153
+  %add155 = add i64 %add154, 2
+  %a12156 = load float, ptr %a12, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add155, float %a12156)
+  %mul157 = mul i64 %parfor.i.body, 4
+  %add158 = add i64 %mul157, 1
+  %mul159 = mul i64 %add158, %5
+  %j160 = load i64, ptr %j, align 8
+  %add161 = add i64 %mul159, %j160
+  %add162 = add i64 %add161, 3
+  %a13163 = load float, ptr %a13, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add162, float %a13163)
+  %mul164 = mul i64 %parfor.i.body, 4
+  %add165 = add i64 %mul164, 2
+  %mul166 = mul i64 %add165, %5
+  %j167 = load i64, ptr %j, align 8
+  %add168 = add i64 %mul166, %j167
+  %a20169 = load float, ptr %a20, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add168, float %a20169)
+  %mul170 = mul i64 %parfor.i.body, 4
+  %add171 = add i64 %mul170, 2
+  %mul172 = mul i64 %add171, %5
+  %j173 = load i64, ptr %j, align 8
+  %add174 = add i64 %mul172, %j173
+  %add175 = add i64 %add174, 1
+  %a21176 = load float, ptr %a21, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add175, float %a21176)
+  %mul177 = mul i64 %parfor.i.body, 4
+  %add178 = add i64 %mul177, 2
+  %mul179 = mul i64 %add178, %5
+  %j180 = load i64, ptr %j, align 8
+  %add181 = add i64 %mul179, %j180
+  %add182 = add i64 %add181, 2
+  %a22183 = load float, ptr %a22, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add182, float %a22183)
+  %mul184 = mul i64 %parfor.i.body, 4
+  %add185 = add i64 %mul184, 2
+  %mul186 = mul i64 %add185, %5
+  %j187 = load i64, ptr %j, align 8
+  %add188 = add i64 %mul186, %j187
+  %add189 = add i64 %add188, 3
+  %a23190 = load float, ptr %a23, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add189, float %a23190)
+  %mul191 = mul i64 %parfor.i.body, 4
+  %add192 = add i64 %mul191, 3
+  %mul193 = mul i64 %add192, %5
+  %j194 = load i64, ptr %j, align 8
+  %add195 = add i64 %mul193, %j194
+  %a30196 = load float, ptr %a30, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add195, float %a30196)
+  %mul197 = mul i64 %parfor.i.body, 4
+  %add198 = add i64 %mul197, 3
+  %mul199 = mul i64 %add198, %5
+  %j200 = load i64, ptr %j, align 8
+  %add201 = add i64 %mul199, %j200
+  %add202 = add i64 %add201, 1
+  %a31203 = load float, ptr %a31, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add202, float %a31203)
+  %mul204 = mul i64 %parfor.i.body, 4
+  %add205 = add i64 %mul204, 3
+  %mul206 = mul i64 %add205, %5
+  %j207 = load i64, ptr %j, align 8
+  %add208 = add i64 %mul206, %j207
+  %add209 = add i64 %add208, 2
+  %a32210 = load float, ptr %a32, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add209, float %a32210)
+  %mul211 = mul i64 %parfor.i.body, 4
+  %add212 = add i64 %mul211, 3
+  %mul213 = mul i64 %add212, %5
+  %j214 = load i64, ptr %j, align 8
+  %add215 = add i64 %mul213, %j214
+  %add216 = add i64 %add215, 3
+  %a33217 = load float, ptr %a33, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add216, float %a33217)
+  %j218 = load i64, ptr %j, align 8
+  %add219 = add i64 %j218, 4
+  store i64 %add219, ptr %j, align 1
   br label %while.cond
 
-parfor.quiet219:                                  ; preds = %pfor.check.notyet
+parfor.quiet220:                                  ; preds = %pfor.check.notyet
   store i64 1, ptr %parfor.quiet, align 8
   br label %pfor.fork
 
@@ -41455,13 +41456,13 @@ parfor.fork.go:                                   ; preds = %pfor.fork
   %parfor.sitecur = load i64, ptr @parfor.site.p1k, align 8
   %parfor.publish = select i1 %parfor.isquiet, i64 %parfor.sitecur, i64 %parfor.p1k
   store i64 %parfor.publish, ptr @parfor.site.p1k, align 8
-  %parfor.group222 = call ptr @_ZN9TaskGroup6createEv()
-  %parfor.gpage223 = call ptr @_Z3getPv(ptr %parfor.group222)
+  %parfor.group223 = call ptr @_ZN9TaskGroup6createEv()
+  %parfor.gpage224 = call ptr @_Z3getPv(ptr %parfor.group223)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
   store i64 %sdiv, ptr %parfor.fork.n, align 8
   store i64 %parfor.p1k, ptr %parfor.fork.p1k, align 8
-  store ptr %parfor.group222, ptr %parfor.fork.grp, align 8
-  store ptr %parfor.gpage223, ptr %parfor.fork.gpage, align 8
+  store ptr %parfor.group223, ptr %parfor.fork.grp, align 8
+  store ptr %parfor.gpage224, ptr %parfor.fork.gpage, align 8
   br label %pfor.dispatch
 
 pfor.sub.cond:                                    ; preds = %pfor.sub.body, %pfor.dispatch
@@ -41480,14 +41481,14 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
   %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %5, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap224 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
-  store i64 %4, ptr %parfor.cell.cap224, align 8
-  %parfor.cell.cap225 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
-  store ptr %data, ptr %parfor.cell.cap225, align 8
-  %parfor.cell.cap226 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
-  store ptr %data2, ptr %parfor.cell.cap226, align 8
-  %parfor.cell.cap227 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
-  store ptr %2, ptr %parfor.cell.cap227, align 8
+  %parfor.cell.cap225 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
+  store i64 %4, ptr %parfor.cell.cap225, align 8
+  %parfor.cell.cap226 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
+  store ptr %data, ptr %parfor.cell.cap226, align 8
+  %parfor.cell.cap227 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
+  store ptr %data2, ptr %parfor.cell.cap227, align 8
+  %parfor.cell.cap228 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  store ptr %2, ptr %parfor.cell.cap228, align 8
   %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
   %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
   store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
@@ -41689,7 +41690,7 @@ pfor.check.decide:                                ; preds = %pfor.check.meas
 pfor.check.notyet:                                ; preds = %pfor.check.decide
   %parfor.heavy = icmp sge i64 %parfor.p1k, 51200000000
   %parfor.decisive = and i1 %parfor.dofork, %parfor.heavy
-  br i1 %parfor.decisive, label %parfor.quiet370, label %parfor.notyet2
+  br i1 %parfor.decisive, label %parfor.quiet371, label %parfor.notyet2
 
 pfor.check.arm:                                   ; preds = %parfor.notyet2
   store i64 1, ptr %parfor.armed, align 8
@@ -41699,10 +41700,10 @@ pfor.check.arm:                                   ; preds = %parfor.notyet2
   store i64 %parfor.nc.dbl3, ptr %parfor.nextcheck, align 8
   br label %pfor.inl.body
 
-pfor.fork:                                        ; preds = %parfor.quiet370, %pfor.check.decide
-  %parfor.ncpu.chk371 = call i64 @_ZN8TaskPool4ncpuEv()
-  %parfor.oneworker372 = icmp sle i64 %parfor.ncpu.chk371, 1
-  br i1 %parfor.oneworker372, label %parfor.single, label %parfor.fork.go
+pfor.fork:                                        ; preds = %parfor.quiet371, %pfor.check.decide
+  %parfor.ncpu.chk372 = call i64 @_ZN8TaskPool4ncpuEv()
+  %parfor.oneworker373 = icmp sle i64 %parfor.ncpu.chk372, 1
+  br i1 %parfor.oneworker373, label %parfor.single, label %parfor.fork.go
 
 pfor.gate.prom:                                   ; preds = %entry
   %parfor.gate.c0 = sdiv i64 134217728, %parfor.sitep
@@ -41745,7 +41746,8 @@ pfor.gate.headfork.go:                            ; preds = %pfor.gate.headfork
 
 while.cond:                                       ; preds = %while.exit9, %pfor.inl.body
   %xt6 = load i64, ptr %xt, align 8
-  %lt = icmp slt i64 %xt6, %4
+  %add = add i64 %xt6, 3
+  %lt = icmp slt i64 %add, %4
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -41778,409 +41780,409 @@ while.cond7:                                      ; preds = %while.body8, %while
 
 while.body8:                                      ; preds = %while.cond7
   %mul = mul i64 %parfor.i.body, 4
-  %add = add i64 %mul, 0
-  %mul12 = mul i64 %add, %5
-  %j13 = load i64, ptr %j, align 8
-  %add14 = add i64 %mul12, %j13
-  %ptr.add = getelementptr inbounds float, ptr %data, i64 %add14
+  %add12 = add i64 %mul, 0
+  %mul13 = mul i64 %add12, %5
+  %j14 = load i64, ptr %j, align 8
+  %add15 = add i64 %mul13, %j14
+  %ptr.add = getelementptr inbounds float, ptr %data, i64 %add15
   %deref = load float, ptr %ptr.add, align 4
-  %mul15 = mul i64 %parfor.i.body, 4
-  %add16 = add i64 %mul15, 1
-  %mul17 = mul i64 %add16, %5
-  %j18 = load i64, ptr %j, align 8
-  %add19 = add i64 %mul17, %j18
-  %ptr.add20 = getelementptr inbounds float, ptr %data, i64 %add19
-  %deref21 = load float, ptr %ptr.add20, align 4
-  %mul22 = mul i64 %parfor.i.body, 4
-  %add23 = add i64 %mul22, 2
-  %mul24 = mul i64 %add23, %5
-  %j25 = load i64, ptr %j, align 8
-  %add26 = add i64 %mul24, %j25
-  %ptr.add27 = getelementptr inbounds float, ptr %data, i64 %add26
-  %deref28 = load float, ptr %ptr.add27, align 4
-  %mul29 = mul i64 %parfor.i.body, 4
-  %add30 = add i64 %mul29, 3
-  %mul31 = mul i64 %add30, %5
-  %j32 = load i64, ptr %j, align 8
-  %add33 = add i64 %mul31, %j32
-  %ptr.add34 = getelementptr inbounds float, ptr %data, i64 %add33
-  %deref35 = load float, ptr %ptr.add34, align 4
-  %xt36 = load i64, ptr %xt, align 8
-  %add37 = add i64 %xt36, 0
-  %mul38 = mul i64 %add37, %5
-  %j39 = load i64, ptr %j, align 8
-  %add40 = add i64 %mul38, %j39
-  %ptr.add41 = getelementptr inbounds float, ptr %data2, i64 %add40
-  %deref42 = load float, ptr %ptr.add41, align 4
-  %xt43 = load i64, ptr %xt, align 8
-  %add44 = add i64 %xt43, 1
-  %mul45 = mul i64 %add44, %5
-  %j46 = load i64, ptr %j, align 8
-  %add47 = add i64 %mul45, %j46
-  %ptr.add48 = getelementptr inbounds float, ptr %data2, i64 %add47
-  %deref49 = load float, ptr %ptr.add48, align 4
-  %xt50 = load i64, ptr %xt, align 8
-  %add51 = add i64 %xt50, 2
-  %mul52 = mul i64 %add51, %5
-  %j53 = load i64, ptr %j, align 8
-  %add54 = add i64 %mul52, %j53
-  %ptr.add55 = getelementptr inbounds float, ptr %data2, i64 %add54
-  %deref56 = load float, ptr %ptr.add55, align 4
-  %xt57 = load i64, ptr %xt, align 8
-  %add58 = add i64 %xt57, 3
-  %mul59 = mul i64 %add58, %5
-  %j60 = load i64, ptr %j, align 8
-  %add61 = add i64 %mul59, %j60
-  %ptr.add62 = getelementptr inbounds float, ptr %data2, i64 %add61
-  %deref63 = load float, ptr %ptr.add62, align 4
-  %a0064 = load float, ptr %a00, align 4
-  %fmul = fmul float %deref, %deref42
-  %fadd = fadd float %a0064, %fmul
+  %mul16 = mul i64 %parfor.i.body, 4
+  %add17 = add i64 %mul16, 1
+  %mul18 = mul i64 %add17, %5
+  %j19 = load i64, ptr %j, align 8
+  %add20 = add i64 %mul18, %j19
+  %ptr.add21 = getelementptr inbounds float, ptr %data, i64 %add20
+  %deref22 = load float, ptr %ptr.add21, align 4
+  %mul23 = mul i64 %parfor.i.body, 4
+  %add24 = add i64 %mul23, 2
+  %mul25 = mul i64 %add24, %5
+  %j26 = load i64, ptr %j, align 8
+  %add27 = add i64 %mul25, %j26
+  %ptr.add28 = getelementptr inbounds float, ptr %data, i64 %add27
+  %deref29 = load float, ptr %ptr.add28, align 4
+  %mul30 = mul i64 %parfor.i.body, 4
+  %add31 = add i64 %mul30, 3
+  %mul32 = mul i64 %add31, %5
+  %j33 = load i64, ptr %j, align 8
+  %add34 = add i64 %mul32, %j33
+  %ptr.add35 = getelementptr inbounds float, ptr %data, i64 %add34
+  %deref36 = load float, ptr %ptr.add35, align 4
+  %xt37 = load i64, ptr %xt, align 8
+  %add38 = add i64 %xt37, 0
+  %mul39 = mul i64 %add38, %5
+  %j40 = load i64, ptr %j, align 8
+  %add41 = add i64 %mul39, %j40
+  %ptr.add42 = getelementptr inbounds float, ptr %data2, i64 %add41
+  %deref43 = load float, ptr %ptr.add42, align 4
+  %xt44 = load i64, ptr %xt, align 8
+  %add45 = add i64 %xt44, 1
+  %mul46 = mul i64 %add45, %5
+  %j47 = load i64, ptr %j, align 8
+  %add48 = add i64 %mul46, %j47
+  %ptr.add49 = getelementptr inbounds float, ptr %data2, i64 %add48
+  %deref50 = load float, ptr %ptr.add49, align 4
+  %xt51 = load i64, ptr %xt, align 8
+  %add52 = add i64 %xt51, 2
+  %mul53 = mul i64 %add52, %5
+  %j54 = load i64, ptr %j, align 8
+  %add55 = add i64 %mul53, %j54
+  %ptr.add56 = getelementptr inbounds float, ptr %data2, i64 %add55
+  %deref57 = load float, ptr %ptr.add56, align 4
+  %xt58 = load i64, ptr %xt, align 8
+  %add59 = add i64 %xt58, 3
+  %mul60 = mul i64 %add59, %5
+  %j61 = load i64, ptr %j, align 8
+  %add62 = add i64 %mul60, %j61
+  %ptr.add63 = getelementptr inbounds float, ptr %data2, i64 %add62
+  %deref64 = load float, ptr %ptr.add63, align 4
+  %a0065 = load float, ptr %a00, align 4
+  %fmul = fmul float %deref, %deref43
+  %fadd = fadd float %a0065, %fmul
   store float %fadd, ptr %a00, align 1
-  %a0165 = load float, ptr %a01, align 4
-  %fmul66 = fmul float %deref, %deref49
-  %fadd67 = fadd float %a0165, %fmul66
-  store float %fadd67, ptr %a01, align 1
-  %a0268 = load float, ptr %a02, align 4
-  %fmul69 = fmul float %deref, %deref56
-  %fadd70 = fadd float %a0268, %fmul69
-  store float %fadd70, ptr %a02, align 1
-  %a0371 = load float, ptr %a03, align 4
-  %fmul72 = fmul float %deref, %deref63
-  %fadd73 = fadd float %a0371, %fmul72
-  store float %fadd73, ptr %a03, align 1
-  %a1074 = load float, ptr %a10, align 4
-  %fmul75 = fmul float %deref21, %deref42
-  %fadd76 = fadd float %a1074, %fmul75
-  store float %fadd76, ptr %a10, align 1
-  %a1177 = load float, ptr %a11, align 4
-  %fmul78 = fmul float %deref21, %deref49
-  %fadd79 = fadd float %a1177, %fmul78
-  store float %fadd79, ptr %a11, align 1
-  %a1280 = load float, ptr %a12, align 4
-  %fmul81 = fmul float %deref21, %deref56
-  %fadd82 = fadd float %a1280, %fmul81
-  store float %fadd82, ptr %a12, align 1
-  %a1383 = load float, ptr %a13, align 4
-  %fmul84 = fmul float %deref21, %deref63
-  %fadd85 = fadd float %a1383, %fmul84
-  store float %fadd85, ptr %a13, align 1
-  %a2086 = load float, ptr %a20, align 4
-  %fmul87 = fmul float %deref28, %deref42
-  %fadd88 = fadd float %a2086, %fmul87
-  store float %fadd88, ptr %a20, align 1
-  %a2189 = load float, ptr %a21, align 4
-  %fmul90 = fmul float %deref28, %deref49
-  %fadd91 = fadd float %a2189, %fmul90
-  store float %fadd91, ptr %a21, align 1
-  %a2292 = load float, ptr %a22, align 4
-  %fmul93 = fmul float %deref28, %deref56
-  %fadd94 = fadd float %a2292, %fmul93
-  store float %fadd94, ptr %a22, align 1
-  %a2395 = load float, ptr %a23, align 4
-  %fmul96 = fmul float %deref28, %deref63
-  %fadd97 = fadd float %a2395, %fmul96
-  store float %fadd97, ptr %a23, align 1
-  %a3098 = load float, ptr %a30, align 4
-  %fmul99 = fmul float %deref35, %deref42
-  %fadd100 = fadd float %a3098, %fmul99
-  store float %fadd100, ptr %a30, align 1
-  %a31101 = load float, ptr %a31, align 4
-  %fmul102 = fmul float %deref35, %deref49
-  %fadd103 = fadd float %a31101, %fmul102
-  store float %fadd103, ptr %a31, align 1
-  %a32104 = load float, ptr %a32, align 4
-  %fmul105 = fmul float %deref35, %deref56
-  %fadd106 = fadd float %a32104, %fmul105
-  store float %fadd106, ptr %a32, align 1
-  %a33107 = load float, ptr %a33, align 4
-  %fmul108 = fmul float %deref35, %deref63
-  %fadd109 = fadd float %a33107, %fmul108
-  store float %fadd109, ptr %a33, align 1
-  %j110 = load i64, ptr %j, align 8
-  %add111 = add i64 %j110, 1
-  store i64 %add111, ptr %j, align 1
+  %a0166 = load float, ptr %a01, align 4
+  %fmul67 = fmul float %deref, %deref50
+  %fadd68 = fadd float %a0166, %fmul67
+  store float %fadd68, ptr %a01, align 1
+  %a0269 = load float, ptr %a02, align 4
+  %fmul70 = fmul float %deref, %deref57
+  %fadd71 = fadd float %a0269, %fmul70
+  store float %fadd71, ptr %a02, align 1
+  %a0372 = load float, ptr %a03, align 4
+  %fmul73 = fmul float %deref, %deref64
+  %fadd74 = fadd float %a0372, %fmul73
+  store float %fadd74, ptr %a03, align 1
+  %a1075 = load float, ptr %a10, align 4
+  %fmul76 = fmul float %deref22, %deref43
+  %fadd77 = fadd float %a1075, %fmul76
+  store float %fadd77, ptr %a10, align 1
+  %a1178 = load float, ptr %a11, align 4
+  %fmul79 = fmul float %deref22, %deref50
+  %fadd80 = fadd float %a1178, %fmul79
+  store float %fadd80, ptr %a11, align 1
+  %a1281 = load float, ptr %a12, align 4
+  %fmul82 = fmul float %deref22, %deref57
+  %fadd83 = fadd float %a1281, %fmul82
+  store float %fadd83, ptr %a12, align 1
+  %a1384 = load float, ptr %a13, align 4
+  %fmul85 = fmul float %deref22, %deref64
+  %fadd86 = fadd float %a1384, %fmul85
+  store float %fadd86, ptr %a13, align 1
+  %a2087 = load float, ptr %a20, align 4
+  %fmul88 = fmul float %deref29, %deref43
+  %fadd89 = fadd float %a2087, %fmul88
+  store float %fadd89, ptr %a20, align 1
+  %a2190 = load float, ptr %a21, align 4
+  %fmul91 = fmul float %deref29, %deref50
+  %fadd92 = fadd float %a2190, %fmul91
+  store float %fadd92, ptr %a21, align 1
+  %a2293 = load float, ptr %a22, align 4
+  %fmul94 = fmul float %deref29, %deref57
+  %fadd95 = fadd float %a2293, %fmul94
+  store float %fadd95, ptr %a22, align 1
+  %a2396 = load float, ptr %a23, align 4
+  %fmul97 = fmul float %deref29, %deref64
+  %fadd98 = fadd float %a2396, %fmul97
+  store float %fadd98, ptr %a23, align 1
+  %a3099 = load float, ptr %a30, align 4
+  %fmul100 = fmul float %deref36, %deref43
+  %fadd101 = fadd float %a3099, %fmul100
+  store float %fadd101, ptr %a30, align 1
+  %a31102 = load float, ptr %a31, align 4
+  %fmul103 = fmul float %deref36, %deref50
+  %fadd104 = fadd float %a31102, %fmul103
+  store float %fadd104, ptr %a31, align 1
+  %a32105 = load float, ptr %a32, align 4
+  %fmul106 = fmul float %deref36, %deref57
+  %fadd107 = fadd float %a32105, %fmul106
+  store float %fadd107, ptr %a32, align 1
+  %a33108 = load float, ptr %a33, align 4
+  %fmul109 = fmul float %deref36, %deref64
+  %fadd110 = fadd float %a33108, %fmul109
+  store float %fadd110, ptr %a33, align 1
+  %j111 = load i64, ptr %j, align 8
+  %add112 = add i64 %j111, 1
+  store i64 %add112, ptr %j, align 1
   br label %while.cond7
 
 while.exit9:                                      ; preds = %while.cond7
-  %mul112 = mul i64 %parfor.i.body, 4
-  %add113 = add i64 %mul112, 0
-  %mul114 = mul i64 %add113, %4
-  %xt115 = load i64, ptr %xt, align 8
-  %add116 = add i64 %mul114, %xt115
-  %add117 = add i64 %add116, 0
-  %mul118 = mul i64 %parfor.i.body, 4
-  %add119 = add i64 %mul118, 0
-  %mul120 = mul i64 %add119, %4
-  %xt121 = load i64, ptr %xt, align 8
-  %add122 = add i64 %mul120, %xt121
-  %add123 = add i64 %add122, 0
-  %ptr.add124 = getelementptr inbounds float, ptr %data4, i64 %add123
-  %deref125 = load float, ptr %ptr.add124, align 4
-  %a00126 = load float, ptr %a00, align 4
-  %fadd127 = fadd float %deref125, %a00126
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add117, float %fadd127)
-  %mul128 = mul i64 %parfor.i.body, 4
-  %add129 = add i64 %mul128, 0
-  %mul130 = mul i64 %add129, %4
-  %xt131 = load i64, ptr %xt, align 8
-  %add132 = add i64 %mul130, %xt131
-  %add133 = add i64 %add132, 1
-  %mul134 = mul i64 %parfor.i.body, 4
-  %add135 = add i64 %mul134, 0
-  %mul136 = mul i64 %add135, %4
-  %xt137 = load i64, ptr %xt, align 8
-  %add138 = add i64 %mul136, %xt137
-  %add139 = add i64 %add138, 1
-  %ptr.add140 = getelementptr inbounds float, ptr %data4, i64 %add139
-  %deref141 = load float, ptr %ptr.add140, align 4
-  %a01142 = load float, ptr %a01, align 4
-  %fadd143 = fadd float %deref141, %a01142
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add133, float %fadd143)
-  %mul144 = mul i64 %parfor.i.body, 4
-  %add145 = add i64 %mul144, 0
-  %mul146 = mul i64 %add145, %4
-  %xt147 = load i64, ptr %xt, align 8
-  %add148 = add i64 %mul146, %xt147
-  %add149 = add i64 %add148, 2
-  %mul150 = mul i64 %parfor.i.body, 4
-  %add151 = add i64 %mul150, 0
-  %mul152 = mul i64 %add151, %4
-  %xt153 = load i64, ptr %xt, align 8
-  %add154 = add i64 %mul152, %xt153
-  %add155 = add i64 %add154, 2
-  %ptr.add156 = getelementptr inbounds float, ptr %data4, i64 %add155
-  %deref157 = load float, ptr %ptr.add156, align 4
-  %a02158 = load float, ptr %a02, align 4
-  %fadd159 = fadd float %deref157, %a02158
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add149, float %fadd159)
-  %mul160 = mul i64 %parfor.i.body, 4
-  %add161 = add i64 %mul160, 0
-  %mul162 = mul i64 %add161, %4
-  %xt163 = load i64, ptr %xt, align 8
-  %add164 = add i64 %mul162, %xt163
-  %add165 = add i64 %add164, 3
-  %mul166 = mul i64 %parfor.i.body, 4
-  %add167 = add i64 %mul166, 0
-  %mul168 = mul i64 %add167, %4
-  %xt169 = load i64, ptr %xt, align 8
-  %add170 = add i64 %mul168, %xt169
-  %add171 = add i64 %add170, 3
-  %ptr.add172 = getelementptr inbounds float, ptr %data4, i64 %add171
-  %deref173 = load float, ptr %ptr.add172, align 4
-  %a03174 = load float, ptr %a03, align 4
-  %fadd175 = fadd float %deref173, %a03174
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add165, float %fadd175)
-  %mul176 = mul i64 %parfor.i.body, 4
-  %add177 = add i64 %mul176, 1
-  %mul178 = mul i64 %add177, %4
-  %xt179 = load i64, ptr %xt, align 8
-  %add180 = add i64 %mul178, %xt179
-  %add181 = add i64 %add180, 0
-  %mul182 = mul i64 %parfor.i.body, 4
-  %add183 = add i64 %mul182, 1
-  %mul184 = mul i64 %add183, %4
-  %xt185 = load i64, ptr %xt, align 8
-  %add186 = add i64 %mul184, %xt185
-  %add187 = add i64 %add186, 0
-  %ptr.add188 = getelementptr inbounds float, ptr %data4, i64 %add187
-  %deref189 = load float, ptr %ptr.add188, align 4
-  %a10190 = load float, ptr %a10, align 4
-  %fadd191 = fadd float %deref189, %a10190
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add181, float %fadd191)
-  %mul192 = mul i64 %parfor.i.body, 4
-  %add193 = add i64 %mul192, 1
-  %mul194 = mul i64 %add193, %4
-  %xt195 = load i64, ptr %xt, align 8
-  %add196 = add i64 %mul194, %xt195
-  %add197 = add i64 %add196, 1
-  %mul198 = mul i64 %parfor.i.body, 4
-  %add199 = add i64 %mul198, 1
-  %mul200 = mul i64 %add199, %4
-  %xt201 = load i64, ptr %xt, align 8
-  %add202 = add i64 %mul200, %xt201
-  %add203 = add i64 %add202, 1
-  %ptr.add204 = getelementptr inbounds float, ptr %data4, i64 %add203
-  %deref205 = load float, ptr %ptr.add204, align 4
-  %a11206 = load float, ptr %a11, align 4
-  %fadd207 = fadd float %deref205, %a11206
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add197, float %fadd207)
-  %mul208 = mul i64 %parfor.i.body, 4
-  %add209 = add i64 %mul208, 1
-  %mul210 = mul i64 %add209, %4
-  %xt211 = load i64, ptr %xt, align 8
-  %add212 = add i64 %mul210, %xt211
-  %add213 = add i64 %add212, 2
-  %mul214 = mul i64 %parfor.i.body, 4
-  %add215 = add i64 %mul214, 1
-  %mul216 = mul i64 %add215, %4
-  %xt217 = load i64, ptr %xt, align 8
-  %add218 = add i64 %mul216, %xt217
-  %add219 = add i64 %add218, 2
-  %ptr.add220 = getelementptr inbounds float, ptr %data4, i64 %add219
-  %deref221 = load float, ptr %ptr.add220, align 4
-  %a12222 = load float, ptr %a12, align 4
-  %fadd223 = fadd float %deref221, %a12222
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add213, float %fadd223)
-  %mul224 = mul i64 %parfor.i.body, 4
-  %add225 = add i64 %mul224, 1
-  %mul226 = mul i64 %add225, %4
-  %xt227 = load i64, ptr %xt, align 8
-  %add228 = add i64 %mul226, %xt227
-  %add229 = add i64 %add228, 3
-  %mul230 = mul i64 %parfor.i.body, 4
-  %add231 = add i64 %mul230, 1
-  %mul232 = mul i64 %add231, %4
-  %xt233 = load i64, ptr %xt, align 8
-  %add234 = add i64 %mul232, %xt233
-  %add235 = add i64 %add234, 3
-  %ptr.add236 = getelementptr inbounds float, ptr %data4, i64 %add235
-  %deref237 = load float, ptr %ptr.add236, align 4
-  %a13238 = load float, ptr %a13, align 4
-  %fadd239 = fadd float %deref237, %a13238
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add229, float %fadd239)
-  %mul240 = mul i64 %parfor.i.body, 4
-  %add241 = add i64 %mul240, 2
-  %mul242 = mul i64 %add241, %4
-  %xt243 = load i64, ptr %xt, align 8
-  %add244 = add i64 %mul242, %xt243
-  %add245 = add i64 %add244, 0
-  %mul246 = mul i64 %parfor.i.body, 4
-  %add247 = add i64 %mul246, 2
-  %mul248 = mul i64 %add247, %4
-  %xt249 = load i64, ptr %xt, align 8
-  %add250 = add i64 %mul248, %xt249
-  %add251 = add i64 %add250, 0
-  %ptr.add252 = getelementptr inbounds float, ptr %data4, i64 %add251
-  %deref253 = load float, ptr %ptr.add252, align 4
-  %a20254 = load float, ptr %a20, align 4
-  %fadd255 = fadd float %deref253, %a20254
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add245, float %fadd255)
-  %mul256 = mul i64 %parfor.i.body, 4
-  %add257 = add i64 %mul256, 2
-  %mul258 = mul i64 %add257, %4
-  %xt259 = load i64, ptr %xt, align 8
-  %add260 = add i64 %mul258, %xt259
-  %add261 = add i64 %add260, 1
-  %mul262 = mul i64 %parfor.i.body, 4
-  %add263 = add i64 %mul262, 2
-  %mul264 = mul i64 %add263, %4
-  %xt265 = load i64, ptr %xt, align 8
-  %add266 = add i64 %mul264, %xt265
-  %add267 = add i64 %add266, 1
-  %ptr.add268 = getelementptr inbounds float, ptr %data4, i64 %add267
-  %deref269 = load float, ptr %ptr.add268, align 4
-  %a21270 = load float, ptr %a21, align 4
-  %fadd271 = fadd float %deref269, %a21270
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add261, float %fadd271)
-  %mul272 = mul i64 %parfor.i.body, 4
-  %add273 = add i64 %mul272, 2
-  %mul274 = mul i64 %add273, %4
-  %xt275 = load i64, ptr %xt, align 8
-  %add276 = add i64 %mul274, %xt275
-  %add277 = add i64 %add276, 2
-  %mul278 = mul i64 %parfor.i.body, 4
-  %add279 = add i64 %mul278, 2
-  %mul280 = mul i64 %add279, %4
-  %xt281 = load i64, ptr %xt, align 8
-  %add282 = add i64 %mul280, %xt281
-  %add283 = add i64 %add282, 2
-  %ptr.add284 = getelementptr inbounds float, ptr %data4, i64 %add283
-  %deref285 = load float, ptr %ptr.add284, align 4
-  %a22286 = load float, ptr %a22, align 4
-  %fadd287 = fadd float %deref285, %a22286
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add277, float %fadd287)
-  %mul288 = mul i64 %parfor.i.body, 4
-  %add289 = add i64 %mul288, 2
-  %mul290 = mul i64 %add289, %4
-  %xt291 = load i64, ptr %xt, align 8
-  %add292 = add i64 %mul290, %xt291
-  %add293 = add i64 %add292, 3
-  %mul294 = mul i64 %parfor.i.body, 4
-  %add295 = add i64 %mul294, 2
-  %mul296 = mul i64 %add295, %4
-  %xt297 = load i64, ptr %xt, align 8
-  %add298 = add i64 %mul296, %xt297
-  %add299 = add i64 %add298, 3
-  %ptr.add300 = getelementptr inbounds float, ptr %data4, i64 %add299
-  %deref301 = load float, ptr %ptr.add300, align 4
-  %a23302 = load float, ptr %a23, align 4
-  %fadd303 = fadd float %deref301, %a23302
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add293, float %fadd303)
-  %mul304 = mul i64 %parfor.i.body, 4
-  %add305 = add i64 %mul304, 3
-  %mul306 = mul i64 %add305, %4
-  %xt307 = load i64, ptr %xt, align 8
-  %add308 = add i64 %mul306, %xt307
-  %add309 = add i64 %add308, 0
-  %mul310 = mul i64 %parfor.i.body, 4
-  %add311 = add i64 %mul310, 3
-  %mul312 = mul i64 %add311, %4
-  %xt313 = load i64, ptr %xt, align 8
-  %add314 = add i64 %mul312, %xt313
-  %add315 = add i64 %add314, 0
-  %ptr.add316 = getelementptr inbounds float, ptr %data4, i64 %add315
-  %deref317 = load float, ptr %ptr.add316, align 4
-  %a30318 = load float, ptr %a30, align 4
-  %fadd319 = fadd float %deref317, %a30318
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add309, float %fadd319)
-  %mul320 = mul i64 %parfor.i.body, 4
-  %add321 = add i64 %mul320, 3
-  %mul322 = mul i64 %add321, %4
-  %xt323 = load i64, ptr %xt, align 8
-  %add324 = add i64 %mul322, %xt323
-  %add325 = add i64 %add324, 1
-  %mul326 = mul i64 %parfor.i.body, 4
-  %add327 = add i64 %mul326, 3
-  %mul328 = mul i64 %add327, %4
-  %xt329 = load i64, ptr %xt, align 8
-  %add330 = add i64 %mul328, %xt329
-  %add331 = add i64 %add330, 1
-  %ptr.add332 = getelementptr inbounds float, ptr %data4, i64 %add331
-  %deref333 = load float, ptr %ptr.add332, align 4
-  %a31334 = load float, ptr %a31, align 4
-  %fadd335 = fadd float %deref333, %a31334
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add325, float %fadd335)
-  %mul336 = mul i64 %parfor.i.body, 4
-  %add337 = add i64 %mul336, 3
-  %mul338 = mul i64 %add337, %4
-  %xt339 = load i64, ptr %xt, align 8
-  %add340 = add i64 %mul338, %xt339
-  %add341 = add i64 %add340, 2
-  %mul342 = mul i64 %parfor.i.body, 4
-  %add343 = add i64 %mul342, 3
-  %mul344 = mul i64 %add343, %4
-  %xt345 = load i64, ptr %xt, align 8
-  %add346 = add i64 %mul344, %xt345
-  %add347 = add i64 %add346, 2
-  %ptr.add348 = getelementptr inbounds float, ptr %data4, i64 %add347
-  %deref349 = load float, ptr %ptr.add348, align 4
-  %a32350 = load float, ptr %a32, align 4
-  %fadd351 = fadd float %deref349, %a32350
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add341, float %fadd351)
-  %mul352 = mul i64 %parfor.i.body, 4
-  %add353 = add i64 %mul352, 3
-  %mul354 = mul i64 %add353, %4
-  %xt355 = load i64, ptr %xt, align 8
-  %add356 = add i64 %mul354, %xt355
-  %add357 = add i64 %add356, 3
-  %mul358 = mul i64 %parfor.i.body, 4
-  %add359 = add i64 %mul358, 3
-  %mul360 = mul i64 %add359, %4
-  %xt361 = load i64, ptr %xt, align 8
-  %add362 = add i64 %mul360, %xt361
-  %add363 = add i64 %add362, 3
-  %ptr.add364 = getelementptr inbounds float, ptr %data4, i64 %add363
-  %deref365 = load float, ptr %ptr.add364, align 4
-  %a33366 = load float, ptr %a33, align 4
-  %fadd367 = fadd float %deref365, %a33366
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add357, float %fadd367)
-  %xt368 = load i64, ptr %xt, align 8
-  %add369 = add i64 %xt368, 4
-  store i64 %add369, ptr %xt, align 1
+  %mul113 = mul i64 %parfor.i.body, 4
+  %add114 = add i64 %mul113, 0
+  %mul115 = mul i64 %add114, %4
+  %xt116 = load i64, ptr %xt, align 8
+  %add117 = add i64 %mul115, %xt116
+  %add118 = add i64 %add117, 0
+  %mul119 = mul i64 %parfor.i.body, 4
+  %add120 = add i64 %mul119, 0
+  %mul121 = mul i64 %add120, %4
+  %xt122 = load i64, ptr %xt, align 8
+  %add123 = add i64 %mul121, %xt122
+  %add124 = add i64 %add123, 0
+  %ptr.add125 = getelementptr inbounds float, ptr %data4, i64 %add124
+  %deref126 = load float, ptr %ptr.add125, align 4
+  %a00127 = load float, ptr %a00, align 4
+  %fadd128 = fadd float %deref126, %a00127
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add118, float %fadd128)
+  %mul129 = mul i64 %parfor.i.body, 4
+  %add130 = add i64 %mul129, 0
+  %mul131 = mul i64 %add130, %4
+  %xt132 = load i64, ptr %xt, align 8
+  %add133 = add i64 %mul131, %xt132
+  %add134 = add i64 %add133, 1
+  %mul135 = mul i64 %parfor.i.body, 4
+  %add136 = add i64 %mul135, 0
+  %mul137 = mul i64 %add136, %4
+  %xt138 = load i64, ptr %xt, align 8
+  %add139 = add i64 %mul137, %xt138
+  %add140 = add i64 %add139, 1
+  %ptr.add141 = getelementptr inbounds float, ptr %data4, i64 %add140
+  %deref142 = load float, ptr %ptr.add141, align 4
+  %a01143 = load float, ptr %a01, align 4
+  %fadd144 = fadd float %deref142, %a01143
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add134, float %fadd144)
+  %mul145 = mul i64 %parfor.i.body, 4
+  %add146 = add i64 %mul145, 0
+  %mul147 = mul i64 %add146, %4
+  %xt148 = load i64, ptr %xt, align 8
+  %add149 = add i64 %mul147, %xt148
+  %add150 = add i64 %add149, 2
+  %mul151 = mul i64 %parfor.i.body, 4
+  %add152 = add i64 %mul151, 0
+  %mul153 = mul i64 %add152, %4
+  %xt154 = load i64, ptr %xt, align 8
+  %add155 = add i64 %mul153, %xt154
+  %add156 = add i64 %add155, 2
+  %ptr.add157 = getelementptr inbounds float, ptr %data4, i64 %add156
+  %deref158 = load float, ptr %ptr.add157, align 4
+  %a02159 = load float, ptr %a02, align 4
+  %fadd160 = fadd float %deref158, %a02159
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add150, float %fadd160)
+  %mul161 = mul i64 %parfor.i.body, 4
+  %add162 = add i64 %mul161, 0
+  %mul163 = mul i64 %add162, %4
+  %xt164 = load i64, ptr %xt, align 8
+  %add165 = add i64 %mul163, %xt164
+  %add166 = add i64 %add165, 3
+  %mul167 = mul i64 %parfor.i.body, 4
+  %add168 = add i64 %mul167, 0
+  %mul169 = mul i64 %add168, %4
+  %xt170 = load i64, ptr %xt, align 8
+  %add171 = add i64 %mul169, %xt170
+  %add172 = add i64 %add171, 3
+  %ptr.add173 = getelementptr inbounds float, ptr %data4, i64 %add172
+  %deref174 = load float, ptr %ptr.add173, align 4
+  %a03175 = load float, ptr %a03, align 4
+  %fadd176 = fadd float %deref174, %a03175
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add166, float %fadd176)
+  %mul177 = mul i64 %parfor.i.body, 4
+  %add178 = add i64 %mul177, 1
+  %mul179 = mul i64 %add178, %4
+  %xt180 = load i64, ptr %xt, align 8
+  %add181 = add i64 %mul179, %xt180
+  %add182 = add i64 %add181, 0
+  %mul183 = mul i64 %parfor.i.body, 4
+  %add184 = add i64 %mul183, 1
+  %mul185 = mul i64 %add184, %4
+  %xt186 = load i64, ptr %xt, align 8
+  %add187 = add i64 %mul185, %xt186
+  %add188 = add i64 %add187, 0
+  %ptr.add189 = getelementptr inbounds float, ptr %data4, i64 %add188
+  %deref190 = load float, ptr %ptr.add189, align 4
+  %a10191 = load float, ptr %a10, align 4
+  %fadd192 = fadd float %deref190, %a10191
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add182, float %fadd192)
+  %mul193 = mul i64 %parfor.i.body, 4
+  %add194 = add i64 %mul193, 1
+  %mul195 = mul i64 %add194, %4
+  %xt196 = load i64, ptr %xt, align 8
+  %add197 = add i64 %mul195, %xt196
+  %add198 = add i64 %add197, 1
+  %mul199 = mul i64 %parfor.i.body, 4
+  %add200 = add i64 %mul199, 1
+  %mul201 = mul i64 %add200, %4
+  %xt202 = load i64, ptr %xt, align 8
+  %add203 = add i64 %mul201, %xt202
+  %add204 = add i64 %add203, 1
+  %ptr.add205 = getelementptr inbounds float, ptr %data4, i64 %add204
+  %deref206 = load float, ptr %ptr.add205, align 4
+  %a11207 = load float, ptr %a11, align 4
+  %fadd208 = fadd float %deref206, %a11207
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add198, float %fadd208)
+  %mul209 = mul i64 %parfor.i.body, 4
+  %add210 = add i64 %mul209, 1
+  %mul211 = mul i64 %add210, %4
+  %xt212 = load i64, ptr %xt, align 8
+  %add213 = add i64 %mul211, %xt212
+  %add214 = add i64 %add213, 2
+  %mul215 = mul i64 %parfor.i.body, 4
+  %add216 = add i64 %mul215, 1
+  %mul217 = mul i64 %add216, %4
+  %xt218 = load i64, ptr %xt, align 8
+  %add219 = add i64 %mul217, %xt218
+  %add220 = add i64 %add219, 2
+  %ptr.add221 = getelementptr inbounds float, ptr %data4, i64 %add220
+  %deref222 = load float, ptr %ptr.add221, align 4
+  %a12223 = load float, ptr %a12, align 4
+  %fadd224 = fadd float %deref222, %a12223
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add214, float %fadd224)
+  %mul225 = mul i64 %parfor.i.body, 4
+  %add226 = add i64 %mul225, 1
+  %mul227 = mul i64 %add226, %4
+  %xt228 = load i64, ptr %xt, align 8
+  %add229 = add i64 %mul227, %xt228
+  %add230 = add i64 %add229, 3
+  %mul231 = mul i64 %parfor.i.body, 4
+  %add232 = add i64 %mul231, 1
+  %mul233 = mul i64 %add232, %4
+  %xt234 = load i64, ptr %xt, align 8
+  %add235 = add i64 %mul233, %xt234
+  %add236 = add i64 %add235, 3
+  %ptr.add237 = getelementptr inbounds float, ptr %data4, i64 %add236
+  %deref238 = load float, ptr %ptr.add237, align 4
+  %a13239 = load float, ptr %a13, align 4
+  %fadd240 = fadd float %deref238, %a13239
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add230, float %fadd240)
+  %mul241 = mul i64 %parfor.i.body, 4
+  %add242 = add i64 %mul241, 2
+  %mul243 = mul i64 %add242, %4
+  %xt244 = load i64, ptr %xt, align 8
+  %add245 = add i64 %mul243, %xt244
+  %add246 = add i64 %add245, 0
+  %mul247 = mul i64 %parfor.i.body, 4
+  %add248 = add i64 %mul247, 2
+  %mul249 = mul i64 %add248, %4
+  %xt250 = load i64, ptr %xt, align 8
+  %add251 = add i64 %mul249, %xt250
+  %add252 = add i64 %add251, 0
+  %ptr.add253 = getelementptr inbounds float, ptr %data4, i64 %add252
+  %deref254 = load float, ptr %ptr.add253, align 4
+  %a20255 = load float, ptr %a20, align 4
+  %fadd256 = fadd float %deref254, %a20255
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add246, float %fadd256)
+  %mul257 = mul i64 %parfor.i.body, 4
+  %add258 = add i64 %mul257, 2
+  %mul259 = mul i64 %add258, %4
+  %xt260 = load i64, ptr %xt, align 8
+  %add261 = add i64 %mul259, %xt260
+  %add262 = add i64 %add261, 1
+  %mul263 = mul i64 %parfor.i.body, 4
+  %add264 = add i64 %mul263, 2
+  %mul265 = mul i64 %add264, %4
+  %xt266 = load i64, ptr %xt, align 8
+  %add267 = add i64 %mul265, %xt266
+  %add268 = add i64 %add267, 1
+  %ptr.add269 = getelementptr inbounds float, ptr %data4, i64 %add268
+  %deref270 = load float, ptr %ptr.add269, align 4
+  %a21271 = load float, ptr %a21, align 4
+  %fadd272 = fadd float %deref270, %a21271
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add262, float %fadd272)
+  %mul273 = mul i64 %parfor.i.body, 4
+  %add274 = add i64 %mul273, 2
+  %mul275 = mul i64 %add274, %4
+  %xt276 = load i64, ptr %xt, align 8
+  %add277 = add i64 %mul275, %xt276
+  %add278 = add i64 %add277, 2
+  %mul279 = mul i64 %parfor.i.body, 4
+  %add280 = add i64 %mul279, 2
+  %mul281 = mul i64 %add280, %4
+  %xt282 = load i64, ptr %xt, align 8
+  %add283 = add i64 %mul281, %xt282
+  %add284 = add i64 %add283, 2
+  %ptr.add285 = getelementptr inbounds float, ptr %data4, i64 %add284
+  %deref286 = load float, ptr %ptr.add285, align 4
+  %a22287 = load float, ptr %a22, align 4
+  %fadd288 = fadd float %deref286, %a22287
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add278, float %fadd288)
+  %mul289 = mul i64 %parfor.i.body, 4
+  %add290 = add i64 %mul289, 2
+  %mul291 = mul i64 %add290, %4
+  %xt292 = load i64, ptr %xt, align 8
+  %add293 = add i64 %mul291, %xt292
+  %add294 = add i64 %add293, 3
+  %mul295 = mul i64 %parfor.i.body, 4
+  %add296 = add i64 %mul295, 2
+  %mul297 = mul i64 %add296, %4
+  %xt298 = load i64, ptr %xt, align 8
+  %add299 = add i64 %mul297, %xt298
+  %add300 = add i64 %add299, 3
+  %ptr.add301 = getelementptr inbounds float, ptr %data4, i64 %add300
+  %deref302 = load float, ptr %ptr.add301, align 4
+  %a23303 = load float, ptr %a23, align 4
+  %fadd304 = fadd float %deref302, %a23303
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add294, float %fadd304)
+  %mul305 = mul i64 %parfor.i.body, 4
+  %add306 = add i64 %mul305, 3
+  %mul307 = mul i64 %add306, %4
+  %xt308 = load i64, ptr %xt, align 8
+  %add309 = add i64 %mul307, %xt308
+  %add310 = add i64 %add309, 0
+  %mul311 = mul i64 %parfor.i.body, 4
+  %add312 = add i64 %mul311, 3
+  %mul313 = mul i64 %add312, %4
+  %xt314 = load i64, ptr %xt, align 8
+  %add315 = add i64 %mul313, %xt314
+  %add316 = add i64 %add315, 0
+  %ptr.add317 = getelementptr inbounds float, ptr %data4, i64 %add316
+  %deref318 = load float, ptr %ptr.add317, align 4
+  %a30319 = load float, ptr %a30, align 4
+  %fadd320 = fadd float %deref318, %a30319
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add310, float %fadd320)
+  %mul321 = mul i64 %parfor.i.body, 4
+  %add322 = add i64 %mul321, 3
+  %mul323 = mul i64 %add322, %4
+  %xt324 = load i64, ptr %xt, align 8
+  %add325 = add i64 %mul323, %xt324
+  %add326 = add i64 %add325, 1
+  %mul327 = mul i64 %parfor.i.body, 4
+  %add328 = add i64 %mul327, 3
+  %mul329 = mul i64 %add328, %4
+  %xt330 = load i64, ptr %xt, align 8
+  %add331 = add i64 %mul329, %xt330
+  %add332 = add i64 %add331, 1
+  %ptr.add333 = getelementptr inbounds float, ptr %data4, i64 %add332
+  %deref334 = load float, ptr %ptr.add333, align 4
+  %a31335 = load float, ptr %a31, align 4
+  %fadd336 = fadd float %deref334, %a31335
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add326, float %fadd336)
+  %mul337 = mul i64 %parfor.i.body, 4
+  %add338 = add i64 %mul337, 3
+  %mul339 = mul i64 %add338, %4
+  %xt340 = load i64, ptr %xt, align 8
+  %add341 = add i64 %mul339, %xt340
+  %add342 = add i64 %add341, 2
+  %mul343 = mul i64 %parfor.i.body, 4
+  %add344 = add i64 %mul343, 3
+  %mul345 = mul i64 %add344, %4
+  %xt346 = load i64, ptr %xt, align 8
+  %add347 = add i64 %mul345, %xt346
+  %add348 = add i64 %add347, 2
+  %ptr.add349 = getelementptr inbounds float, ptr %data4, i64 %add348
+  %deref350 = load float, ptr %ptr.add349, align 4
+  %a32351 = load float, ptr %a32, align 4
+  %fadd352 = fadd float %deref350, %a32351
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add342, float %fadd352)
+  %mul353 = mul i64 %parfor.i.body, 4
+  %add354 = add i64 %mul353, 3
+  %mul355 = mul i64 %add354, %4
+  %xt356 = load i64, ptr %xt, align 8
+  %add357 = add i64 %mul355, %xt356
+  %add358 = add i64 %add357, 3
+  %mul359 = mul i64 %parfor.i.body, 4
+  %add360 = add i64 %mul359, 3
+  %mul361 = mul i64 %add360, %4
+  %xt362 = load i64, ptr %xt, align 8
+  %add363 = add i64 %mul361, %xt362
+  %add364 = add i64 %add363, 3
+  %ptr.add365 = getelementptr inbounds float, ptr %data4, i64 %add364
+  %deref366 = load float, ptr %ptr.add365, align 4
+  %a33367 = load float, ptr %a33, align 4
+  %fadd368 = fadd float %deref366, %a33367
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add358, float %fadd368)
+  %xt369 = load i64, ptr %xt, align 8
+  %add370 = add i64 %xt369, 4
+  store i64 %add370, ptr %xt, align 1
   br label %while.cond
 
-parfor.quiet370:                                  ; preds = %pfor.check.notyet
+parfor.quiet371:                                  ; preds = %pfor.check.notyet
   store i64 1, ptr %parfor.quiet, align 8
   br label %pfor.fork
 
@@ -42197,13 +42199,13 @@ parfor.fork.go:                                   ; preds = %pfor.fork
   %parfor.sitecur = load i64, ptr @parfor.site.p1k.268, align 8
   %parfor.publish = select i1 %parfor.isquiet, i64 %parfor.sitecur, i64 %parfor.p1k
   store i64 %parfor.publish, ptr @parfor.site.p1k.268, align 8
-  %parfor.group373 = call ptr @_ZN9TaskGroup6createEv()
-  %parfor.gpage374 = call ptr @_Z3getPv(ptr %parfor.group373)
+  %parfor.group374 = call ptr @_ZN9TaskGroup6createEv()
+  %parfor.gpage375 = call ptr @_Z3getPv(ptr %parfor.group374)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
   store i64 %sdiv, ptr %parfor.fork.n, align 8
   store i64 %parfor.p1k, ptr %parfor.fork.p1k, align 8
-  store ptr %parfor.group373, ptr %parfor.fork.grp, align 8
-  store ptr %parfor.gpage374, ptr %parfor.fork.gpage, align 8
+  store ptr %parfor.group374, ptr %parfor.fork.grp, align 8
+  store ptr %parfor.gpage375, ptr %parfor.fork.gpage, align 8
   br label %pfor.dispatch
 
 pfor.sub.cond:                                    ; preds = %pfor.sub.body, %pfor.dispatch
@@ -42222,16 +42224,16 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
   %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %4, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap375 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
-  store i64 %5, ptr %parfor.cell.cap375, align 8
-  %parfor.cell.cap376 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
-  store ptr %data, ptr %parfor.cell.cap376, align 8
-  %parfor.cell.cap377 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
-  store ptr %data2, ptr %parfor.cell.cap377, align 8
-  %parfor.cell.cap378 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
-  store ptr %2, ptr %parfor.cell.cap378, align 8
-  %parfor.cell.cap379 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
-  store ptr %data4, ptr %parfor.cell.cap379, align 8
+  %parfor.cell.cap376 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
+  store i64 %5, ptr %parfor.cell.cap376, align 8
+  %parfor.cell.cap377 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
+  store ptr %data, ptr %parfor.cell.cap377, align 8
+  %parfor.cell.cap378 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
+  store ptr %data2, ptr %parfor.cell.cap378, align 8
+  %parfor.cell.cap379 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  store ptr %2, ptr %parfor.cell.cap379, align 8
+  %parfor.cell.cap380 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
+  store ptr %data4, ptr %parfor.cell.cap380, align 8
   %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
   %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 8
   store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
@@ -42433,7 +42435,7 @@ pfor.check.decide:                                ; preds = %pfor.check.meas
 pfor.check.notyet:                                ; preds = %pfor.check.decide
   %parfor.heavy = icmp sge i64 %parfor.p1k, 51200000000
   %parfor.decisive = and i1 %parfor.dofork, %parfor.heavy
-  br i1 %parfor.decisive, label %parfor.quiet361, label %parfor.notyet2
+  br i1 %parfor.decisive, label %parfor.quiet362, label %parfor.notyet2
 
 pfor.check.arm:                                   ; preds = %parfor.notyet2
   store i64 1, ptr %parfor.armed, align 8
@@ -42443,10 +42445,10 @@ pfor.check.arm:                                   ; preds = %parfor.notyet2
   store i64 %parfor.nc.dbl3, ptr %parfor.nextcheck, align 8
   br label %pfor.inl.body
 
-pfor.fork:                                        ; preds = %parfor.quiet361, %pfor.check.decide
-  %parfor.ncpu.chk362 = call i64 @_ZN8TaskPool4ncpuEv()
-  %parfor.oneworker363 = icmp sle i64 %parfor.ncpu.chk362, 1
-  br i1 %parfor.oneworker363, label %parfor.single, label %parfor.fork.go
+pfor.fork:                                        ; preds = %parfor.quiet362, %pfor.check.decide
+  %parfor.ncpu.chk363 = call i64 @_ZN8TaskPool4ncpuEv()
+  %parfor.oneworker364 = icmp sle i64 %parfor.ncpu.chk363, 1
+  br i1 %parfor.oneworker364, label %parfor.single, label %parfor.fork.go
 
 pfor.gate.prom:                                   ; preds = %entry
   %parfor.gate.c0 = sdiv i64 134217728, %parfor.sitep
@@ -42489,7 +42491,8 @@ pfor.gate.headfork.go:                            ; preds = %pfor.gate.headfork
 
 while.cond:                                       ; preds = %while.exit9, %pfor.inl.body
   %j6 = load i64, ptr %j, align 8
-  %lt = icmp slt i64 %j6, %5
+  %add = add i64 %j6, 3
+  %lt = icmp slt i64 %add, %5
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -42524,398 +42527,398 @@ while.body8:                                      ; preds = %while.cond7
   %i12 = load i64, ptr %i, align 8
   %mul = mul i64 %i12, %4
   %mul13 = mul i64 %parfor.i.body, 4
-  %add = add i64 %mul, %mul13
-  %add14 = add i64 %add, 0
-  %ptr.add = getelementptr inbounds float, ptr %data, i64 %add14
+  %add14 = add i64 %mul, %mul13
+  %add15 = add i64 %add14, 0
+  %ptr.add = getelementptr inbounds float, ptr %data, i64 %add15
   %deref = load float, ptr %ptr.add, align 4
-  %i15 = load i64, ptr %i, align 8
-  %mul16 = mul i64 %i15, %4
-  %mul17 = mul i64 %parfor.i.body, 4
-  %add18 = add i64 %mul16, %mul17
-  %add19 = add i64 %add18, 1
-  %ptr.add20 = getelementptr inbounds float, ptr %data, i64 %add19
-  %deref21 = load float, ptr %ptr.add20, align 4
-  %i22 = load i64, ptr %i, align 8
-  %mul23 = mul i64 %i22, %4
-  %mul24 = mul i64 %parfor.i.body, 4
-  %add25 = add i64 %mul23, %mul24
-  %add26 = add i64 %add25, 2
-  %ptr.add27 = getelementptr inbounds float, ptr %data, i64 %add26
-  %deref28 = load float, ptr %ptr.add27, align 4
-  %i29 = load i64, ptr %i, align 8
-  %mul30 = mul i64 %i29, %4
-  %mul31 = mul i64 %parfor.i.body, 4
-  %add32 = add i64 %mul30, %mul31
-  %add33 = add i64 %add32, 3
-  %ptr.add34 = getelementptr inbounds float, ptr %data, i64 %add33
-  %deref35 = load float, ptr %ptr.add34, align 4
-  %i36 = load i64, ptr %i, align 8
-  %mul37 = mul i64 %i36, %5
-  %j38 = load i64, ptr %j, align 8
-  %add39 = add i64 %mul37, %j38
-  %ptr.add40 = getelementptr inbounds float, ptr %data2, i64 %add39
-  %deref41 = load float, ptr %ptr.add40, align 4
-  %i42 = load i64, ptr %i, align 8
-  %mul43 = mul i64 %i42, %5
-  %j44 = load i64, ptr %j, align 8
-  %add45 = add i64 %mul43, %j44
-  %add46 = add i64 %add45, 1
-  %ptr.add47 = getelementptr inbounds float, ptr %data2, i64 %add46
-  %deref48 = load float, ptr %ptr.add47, align 4
-  %i49 = load i64, ptr %i, align 8
-  %mul50 = mul i64 %i49, %5
-  %j51 = load i64, ptr %j, align 8
-  %add52 = add i64 %mul50, %j51
-  %add53 = add i64 %add52, 2
-  %ptr.add54 = getelementptr inbounds float, ptr %data2, i64 %add53
-  %deref55 = load float, ptr %ptr.add54, align 4
-  %i56 = load i64, ptr %i, align 8
-  %mul57 = mul i64 %i56, %5
-  %j58 = load i64, ptr %j, align 8
-  %add59 = add i64 %mul57, %j58
-  %add60 = add i64 %add59, 3
-  %ptr.add61 = getelementptr inbounds float, ptr %data2, i64 %add60
-  %deref62 = load float, ptr %ptr.add61, align 4
-  %a0063 = load float, ptr %a00, align 4
-  %fmul = fmul float %deref, %deref41
-  %fadd = fadd float %a0063, %fmul
+  %i16 = load i64, ptr %i, align 8
+  %mul17 = mul i64 %i16, %4
+  %mul18 = mul i64 %parfor.i.body, 4
+  %add19 = add i64 %mul17, %mul18
+  %add20 = add i64 %add19, 1
+  %ptr.add21 = getelementptr inbounds float, ptr %data, i64 %add20
+  %deref22 = load float, ptr %ptr.add21, align 4
+  %i23 = load i64, ptr %i, align 8
+  %mul24 = mul i64 %i23, %4
+  %mul25 = mul i64 %parfor.i.body, 4
+  %add26 = add i64 %mul24, %mul25
+  %add27 = add i64 %add26, 2
+  %ptr.add28 = getelementptr inbounds float, ptr %data, i64 %add27
+  %deref29 = load float, ptr %ptr.add28, align 4
+  %i30 = load i64, ptr %i, align 8
+  %mul31 = mul i64 %i30, %4
+  %mul32 = mul i64 %parfor.i.body, 4
+  %add33 = add i64 %mul31, %mul32
+  %add34 = add i64 %add33, 3
+  %ptr.add35 = getelementptr inbounds float, ptr %data, i64 %add34
+  %deref36 = load float, ptr %ptr.add35, align 4
+  %i37 = load i64, ptr %i, align 8
+  %mul38 = mul i64 %i37, %5
+  %j39 = load i64, ptr %j, align 8
+  %add40 = add i64 %mul38, %j39
+  %ptr.add41 = getelementptr inbounds float, ptr %data2, i64 %add40
+  %deref42 = load float, ptr %ptr.add41, align 4
+  %i43 = load i64, ptr %i, align 8
+  %mul44 = mul i64 %i43, %5
+  %j45 = load i64, ptr %j, align 8
+  %add46 = add i64 %mul44, %j45
+  %add47 = add i64 %add46, 1
+  %ptr.add48 = getelementptr inbounds float, ptr %data2, i64 %add47
+  %deref49 = load float, ptr %ptr.add48, align 4
+  %i50 = load i64, ptr %i, align 8
+  %mul51 = mul i64 %i50, %5
+  %j52 = load i64, ptr %j, align 8
+  %add53 = add i64 %mul51, %j52
+  %add54 = add i64 %add53, 2
+  %ptr.add55 = getelementptr inbounds float, ptr %data2, i64 %add54
+  %deref56 = load float, ptr %ptr.add55, align 4
+  %i57 = load i64, ptr %i, align 8
+  %mul58 = mul i64 %i57, %5
+  %j59 = load i64, ptr %j, align 8
+  %add60 = add i64 %mul58, %j59
+  %add61 = add i64 %add60, 3
+  %ptr.add62 = getelementptr inbounds float, ptr %data2, i64 %add61
+  %deref63 = load float, ptr %ptr.add62, align 4
+  %a0064 = load float, ptr %a00, align 4
+  %fmul = fmul float %deref, %deref42
+  %fadd = fadd float %a0064, %fmul
   store float %fadd, ptr %a00, align 1
-  %a0164 = load float, ptr %a01, align 4
-  %fmul65 = fmul float %deref, %deref48
-  %fadd66 = fadd float %a0164, %fmul65
-  store float %fadd66, ptr %a01, align 1
-  %a0267 = load float, ptr %a02, align 4
-  %fmul68 = fmul float %deref, %deref55
-  %fadd69 = fadd float %a0267, %fmul68
-  store float %fadd69, ptr %a02, align 1
-  %a0370 = load float, ptr %a03, align 4
-  %fmul71 = fmul float %deref, %deref62
-  %fadd72 = fadd float %a0370, %fmul71
-  store float %fadd72, ptr %a03, align 1
-  %a1073 = load float, ptr %a10, align 4
-  %fmul74 = fmul float %deref21, %deref41
-  %fadd75 = fadd float %a1073, %fmul74
-  store float %fadd75, ptr %a10, align 1
-  %a1176 = load float, ptr %a11, align 4
-  %fmul77 = fmul float %deref21, %deref48
-  %fadd78 = fadd float %a1176, %fmul77
-  store float %fadd78, ptr %a11, align 1
-  %a1279 = load float, ptr %a12, align 4
-  %fmul80 = fmul float %deref21, %deref55
-  %fadd81 = fadd float %a1279, %fmul80
-  store float %fadd81, ptr %a12, align 1
-  %a1382 = load float, ptr %a13, align 4
-  %fmul83 = fmul float %deref21, %deref62
-  %fadd84 = fadd float %a1382, %fmul83
-  store float %fadd84, ptr %a13, align 1
-  %a2085 = load float, ptr %a20, align 4
-  %fmul86 = fmul float %deref28, %deref41
-  %fadd87 = fadd float %a2085, %fmul86
-  store float %fadd87, ptr %a20, align 1
-  %a2188 = load float, ptr %a21, align 4
-  %fmul89 = fmul float %deref28, %deref48
-  %fadd90 = fadd float %a2188, %fmul89
-  store float %fadd90, ptr %a21, align 1
-  %a2291 = load float, ptr %a22, align 4
-  %fmul92 = fmul float %deref28, %deref55
-  %fadd93 = fadd float %a2291, %fmul92
-  store float %fadd93, ptr %a22, align 1
-  %a2394 = load float, ptr %a23, align 4
-  %fmul95 = fmul float %deref28, %deref62
-  %fadd96 = fadd float %a2394, %fmul95
-  store float %fadd96, ptr %a23, align 1
-  %a3097 = load float, ptr %a30, align 4
-  %fmul98 = fmul float %deref35, %deref41
-  %fadd99 = fadd float %a3097, %fmul98
-  store float %fadd99, ptr %a30, align 1
-  %a31100 = load float, ptr %a31, align 4
-  %fmul101 = fmul float %deref35, %deref48
-  %fadd102 = fadd float %a31100, %fmul101
-  store float %fadd102, ptr %a31, align 1
-  %a32103 = load float, ptr %a32, align 4
-  %fmul104 = fmul float %deref35, %deref55
-  %fadd105 = fadd float %a32103, %fmul104
-  store float %fadd105, ptr %a32, align 1
-  %a33106 = load float, ptr %a33, align 4
-  %fmul107 = fmul float %deref35, %deref62
-  %fadd108 = fadd float %a33106, %fmul107
-  store float %fadd108, ptr %a33, align 1
-  %i109 = load i64, ptr %i, align 8
-  %add110 = add i64 %i109, 1
-  store i64 %add110, ptr %i, align 1
+  %a0165 = load float, ptr %a01, align 4
+  %fmul66 = fmul float %deref, %deref49
+  %fadd67 = fadd float %a0165, %fmul66
+  store float %fadd67, ptr %a01, align 1
+  %a0268 = load float, ptr %a02, align 4
+  %fmul69 = fmul float %deref, %deref56
+  %fadd70 = fadd float %a0268, %fmul69
+  store float %fadd70, ptr %a02, align 1
+  %a0371 = load float, ptr %a03, align 4
+  %fmul72 = fmul float %deref, %deref63
+  %fadd73 = fadd float %a0371, %fmul72
+  store float %fadd73, ptr %a03, align 1
+  %a1074 = load float, ptr %a10, align 4
+  %fmul75 = fmul float %deref22, %deref42
+  %fadd76 = fadd float %a1074, %fmul75
+  store float %fadd76, ptr %a10, align 1
+  %a1177 = load float, ptr %a11, align 4
+  %fmul78 = fmul float %deref22, %deref49
+  %fadd79 = fadd float %a1177, %fmul78
+  store float %fadd79, ptr %a11, align 1
+  %a1280 = load float, ptr %a12, align 4
+  %fmul81 = fmul float %deref22, %deref56
+  %fadd82 = fadd float %a1280, %fmul81
+  store float %fadd82, ptr %a12, align 1
+  %a1383 = load float, ptr %a13, align 4
+  %fmul84 = fmul float %deref22, %deref63
+  %fadd85 = fadd float %a1383, %fmul84
+  store float %fadd85, ptr %a13, align 1
+  %a2086 = load float, ptr %a20, align 4
+  %fmul87 = fmul float %deref29, %deref42
+  %fadd88 = fadd float %a2086, %fmul87
+  store float %fadd88, ptr %a20, align 1
+  %a2189 = load float, ptr %a21, align 4
+  %fmul90 = fmul float %deref29, %deref49
+  %fadd91 = fadd float %a2189, %fmul90
+  store float %fadd91, ptr %a21, align 1
+  %a2292 = load float, ptr %a22, align 4
+  %fmul93 = fmul float %deref29, %deref56
+  %fadd94 = fadd float %a2292, %fmul93
+  store float %fadd94, ptr %a22, align 1
+  %a2395 = load float, ptr %a23, align 4
+  %fmul96 = fmul float %deref29, %deref63
+  %fadd97 = fadd float %a2395, %fmul96
+  store float %fadd97, ptr %a23, align 1
+  %a3098 = load float, ptr %a30, align 4
+  %fmul99 = fmul float %deref36, %deref42
+  %fadd100 = fadd float %a3098, %fmul99
+  store float %fadd100, ptr %a30, align 1
+  %a31101 = load float, ptr %a31, align 4
+  %fmul102 = fmul float %deref36, %deref49
+  %fadd103 = fadd float %a31101, %fmul102
+  store float %fadd103, ptr %a31, align 1
+  %a32104 = load float, ptr %a32, align 4
+  %fmul105 = fmul float %deref36, %deref56
+  %fadd106 = fadd float %a32104, %fmul105
+  store float %fadd106, ptr %a32, align 1
+  %a33107 = load float, ptr %a33, align 4
+  %fmul108 = fmul float %deref36, %deref63
+  %fadd109 = fadd float %a33107, %fmul108
+  store float %fadd109, ptr %a33, align 1
+  %i110 = load i64, ptr %i, align 8
+  %add111 = add i64 %i110, 1
+  store i64 %add111, ptr %i, align 1
   br label %while.cond7
 
 while.exit9:                                      ; preds = %while.cond7
-  %mul111 = mul i64 %parfor.i.body, 4
-  %add112 = add i64 %mul111, 0
-  %mul113 = mul i64 %add112, %5
-  %j114 = load i64, ptr %j, align 8
-  %add115 = add i64 %mul113, %j114
-  %mul116 = mul i64 %parfor.i.body, 4
-  %add117 = add i64 %mul116, 0
-  %mul118 = mul i64 %add117, %5
-  %j119 = load i64, ptr %j, align 8
-  %add120 = add i64 %mul118, %j119
-  %ptr.add121 = getelementptr inbounds float, ptr %data4, i64 %add120
-  %deref122 = load float, ptr %ptr.add121, align 4
-  %a00123 = load float, ptr %a00, align 4
-  %fadd124 = fadd float %deref122, %a00123
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add115, float %fadd124)
-  %mul125 = mul i64 %parfor.i.body, 4
-  %add126 = add i64 %mul125, 0
-  %mul127 = mul i64 %add126, %5
-  %j128 = load i64, ptr %j, align 8
-  %add129 = add i64 %mul127, %j128
-  %add130 = add i64 %add129, 1
-  %mul131 = mul i64 %parfor.i.body, 4
-  %add132 = add i64 %mul131, 0
-  %mul133 = mul i64 %add132, %5
-  %j134 = load i64, ptr %j, align 8
-  %add135 = add i64 %mul133, %j134
-  %add136 = add i64 %add135, 1
-  %ptr.add137 = getelementptr inbounds float, ptr %data4, i64 %add136
-  %deref138 = load float, ptr %ptr.add137, align 4
-  %a01139 = load float, ptr %a01, align 4
-  %fadd140 = fadd float %deref138, %a01139
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add130, float %fadd140)
-  %mul141 = mul i64 %parfor.i.body, 4
-  %add142 = add i64 %mul141, 0
-  %mul143 = mul i64 %add142, %5
-  %j144 = load i64, ptr %j, align 8
-  %add145 = add i64 %mul143, %j144
-  %add146 = add i64 %add145, 2
-  %mul147 = mul i64 %parfor.i.body, 4
-  %add148 = add i64 %mul147, 0
-  %mul149 = mul i64 %add148, %5
-  %j150 = load i64, ptr %j, align 8
-  %add151 = add i64 %mul149, %j150
-  %add152 = add i64 %add151, 2
-  %ptr.add153 = getelementptr inbounds float, ptr %data4, i64 %add152
-  %deref154 = load float, ptr %ptr.add153, align 4
-  %a02155 = load float, ptr %a02, align 4
-  %fadd156 = fadd float %deref154, %a02155
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add146, float %fadd156)
-  %mul157 = mul i64 %parfor.i.body, 4
-  %add158 = add i64 %mul157, 0
-  %mul159 = mul i64 %add158, %5
-  %j160 = load i64, ptr %j, align 8
-  %add161 = add i64 %mul159, %j160
-  %add162 = add i64 %add161, 3
-  %mul163 = mul i64 %parfor.i.body, 4
-  %add164 = add i64 %mul163, 0
-  %mul165 = mul i64 %add164, %5
-  %j166 = load i64, ptr %j, align 8
-  %add167 = add i64 %mul165, %j166
-  %add168 = add i64 %add167, 3
-  %ptr.add169 = getelementptr inbounds float, ptr %data4, i64 %add168
-  %deref170 = load float, ptr %ptr.add169, align 4
-  %a03171 = load float, ptr %a03, align 4
-  %fadd172 = fadd float %deref170, %a03171
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add162, float %fadd172)
-  %mul173 = mul i64 %parfor.i.body, 4
-  %add174 = add i64 %mul173, 1
-  %mul175 = mul i64 %add174, %5
-  %j176 = load i64, ptr %j, align 8
-  %add177 = add i64 %mul175, %j176
-  %mul178 = mul i64 %parfor.i.body, 4
-  %add179 = add i64 %mul178, 1
-  %mul180 = mul i64 %add179, %5
-  %j181 = load i64, ptr %j, align 8
-  %add182 = add i64 %mul180, %j181
-  %ptr.add183 = getelementptr inbounds float, ptr %data4, i64 %add182
-  %deref184 = load float, ptr %ptr.add183, align 4
-  %a10185 = load float, ptr %a10, align 4
-  %fadd186 = fadd float %deref184, %a10185
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add177, float %fadd186)
-  %mul187 = mul i64 %parfor.i.body, 4
-  %add188 = add i64 %mul187, 1
-  %mul189 = mul i64 %add188, %5
-  %j190 = load i64, ptr %j, align 8
-  %add191 = add i64 %mul189, %j190
-  %add192 = add i64 %add191, 1
-  %mul193 = mul i64 %parfor.i.body, 4
-  %add194 = add i64 %mul193, 1
-  %mul195 = mul i64 %add194, %5
-  %j196 = load i64, ptr %j, align 8
-  %add197 = add i64 %mul195, %j196
-  %add198 = add i64 %add197, 1
-  %ptr.add199 = getelementptr inbounds float, ptr %data4, i64 %add198
-  %deref200 = load float, ptr %ptr.add199, align 4
-  %a11201 = load float, ptr %a11, align 4
-  %fadd202 = fadd float %deref200, %a11201
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add192, float %fadd202)
-  %mul203 = mul i64 %parfor.i.body, 4
-  %add204 = add i64 %mul203, 1
-  %mul205 = mul i64 %add204, %5
-  %j206 = load i64, ptr %j, align 8
-  %add207 = add i64 %mul205, %j206
-  %add208 = add i64 %add207, 2
-  %mul209 = mul i64 %parfor.i.body, 4
-  %add210 = add i64 %mul209, 1
-  %mul211 = mul i64 %add210, %5
-  %j212 = load i64, ptr %j, align 8
-  %add213 = add i64 %mul211, %j212
-  %add214 = add i64 %add213, 2
-  %ptr.add215 = getelementptr inbounds float, ptr %data4, i64 %add214
-  %deref216 = load float, ptr %ptr.add215, align 4
-  %a12217 = load float, ptr %a12, align 4
-  %fadd218 = fadd float %deref216, %a12217
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add208, float %fadd218)
-  %mul219 = mul i64 %parfor.i.body, 4
-  %add220 = add i64 %mul219, 1
-  %mul221 = mul i64 %add220, %5
-  %j222 = load i64, ptr %j, align 8
-  %add223 = add i64 %mul221, %j222
-  %add224 = add i64 %add223, 3
-  %mul225 = mul i64 %parfor.i.body, 4
-  %add226 = add i64 %mul225, 1
-  %mul227 = mul i64 %add226, %5
-  %j228 = load i64, ptr %j, align 8
-  %add229 = add i64 %mul227, %j228
-  %add230 = add i64 %add229, 3
-  %ptr.add231 = getelementptr inbounds float, ptr %data4, i64 %add230
-  %deref232 = load float, ptr %ptr.add231, align 4
-  %a13233 = load float, ptr %a13, align 4
-  %fadd234 = fadd float %deref232, %a13233
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add224, float %fadd234)
-  %mul235 = mul i64 %parfor.i.body, 4
-  %add236 = add i64 %mul235, 2
-  %mul237 = mul i64 %add236, %5
-  %j238 = load i64, ptr %j, align 8
-  %add239 = add i64 %mul237, %j238
-  %mul240 = mul i64 %parfor.i.body, 4
-  %add241 = add i64 %mul240, 2
-  %mul242 = mul i64 %add241, %5
-  %j243 = load i64, ptr %j, align 8
-  %add244 = add i64 %mul242, %j243
-  %ptr.add245 = getelementptr inbounds float, ptr %data4, i64 %add244
-  %deref246 = load float, ptr %ptr.add245, align 4
-  %a20247 = load float, ptr %a20, align 4
-  %fadd248 = fadd float %deref246, %a20247
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add239, float %fadd248)
-  %mul249 = mul i64 %parfor.i.body, 4
-  %add250 = add i64 %mul249, 2
-  %mul251 = mul i64 %add250, %5
-  %j252 = load i64, ptr %j, align 8
-  %add253 = add i64 %mul251, %j252
-  %add254 = add i64 %add253, 1
-  %mul255 = mul i64 %parfor.i.body, 4
-  %add256 = add i64 %mul255, 2
-  %mul257 = mul i64 %add256, %5
-  %j258 = load i64, ptr %j, align 8
-  %add259 = add i64 %mul257, %j258
-  %add260 = add i64 %add259, 1
-  %ptr.add261 = getelementptr inbounds float, ptr %data4, i64 %add260
-  %deref262 = load float, ptr %ptr.add261, align 4
-  %a21263 = load float, ptr %a21, align 4
-  %fadd264 = fadd float %deref262, %a21263
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add254, float %fadd264)
-  %mul265 = mul i64 %parfor.i.body, 4
-  %add266 = add i64 %mul265, 2
-  %mul267 = mul i64 %add266, %5
-  %j268 = load i64, ptr %j, align 8
-  %add269 = add i64 %mul267, %j268
-  %add270 = add i64 %add269, 2
-  %mul271 = mul i64 %parfor.i.body, 4
-  %add272 = add i64 %mul271, 2
-  %mul273 = mul i64 %add272, %5
-  %j274 = load i64, ptr %j, align 8
-  %add275 = add i64 %mul273, %j274
-  %add276 = add i64 %add275, 2
-  %ptr.add277 = getelementptr inbounds float, ptr %data4, i64 %add276
-  %deref278 = load float, ptr %ptr.add277, align 4
-  %a22279 = load float, ptr %a22, align 4
-  %fadd280 = fadd float %deref278, %a22279
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add270, float %fadd280)
-  %mul281 = mul i64 %parfor.i.body, 4
-  %add282 = add i64 %mul281, 2
-  %mul283 = mul i64 %add282, %5
-  %j284 = load i64, ptr %j, align 8
-  %add285 = add i64 %mul283, %j284
-  %add286 = add i64 %add285, 3
-  %mul287 = mul i64 %parfor.i.body, 4
-  %add288 = add i64 %mul287, 2
-  %mul289 = mul i64 %add288, %5
-  %j290 = load i64, ptr %j, align 8
-  %add291 = add i64 %mul289, %j290
-  %add292 = add i64 %add291, 3
-  %ptr.add293 = getelementptr inbounds float, ptr %data4, i64 %add292
-  %deref294 = load float, ptr %ptr.add293, align 4
-  %a23295 = load float, ptr %a23, align 4
-  %fadd296 = fadd float %deref294, %a23295
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add286, float %fadd296)
-  %mul297 = mul i64 %parfor.i.body, 4
-  %add298 = add i64 %mul297, 3
-  %mul299 = mul i64 %add298, %5
-  %j300 = load i64, ptr %j, align 8
-  %add301 = add i64 %mul299, %j300
-  %mul302 = mul i64 %parfor.i.body, 4
-  %add303 = add i64 %mul302, 3
-  %mul304 = mul i64 %add303, %5
-  %j305 = load i64, ptr %j, align 8
-  %add306 = add i64 %mul304, %j305
-  %ptr.add307 = getelementptr inbounds float, ptr %data4, i64 %add306
-  %deref308 = load float, ptr %ptr.add307, align 4
-  %a30309 = load float, ptr %a30, align 4
-  %fadd310 = fadd float %deref308, %a30309
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add301, float %fadd310)
-  %mul311 = mul i64 %parfor.i.body, 4
-  %add312 = add i64 %mul311, 3
-  %mul313 = mul i64 %add312, %5
-  %j314 = load i64, ptr %j, align 8
-  %add315 = add i64 %mul313, %j314
-  %add316 = add i64 %add315, 1
-  %mul317 = mul i64 %parfor.i.body, 4
-  %add318 = add i64 %mul317, 3
-  %mul319 = mul i64 %add318, %5
-  %j320 = load i64, ptr %j, align 8
-  %add321 = add i64 %mul319, %j320
-  %add322 = add i64 %add321, 1
-  %ptr.add323 = getelementptr inbounds float, ptr %data4, i64 %add322
-  %deref324 = load float, ptr %ptr.add323, align 4
-  %a31325 = load float, ptr %a31, align 4
-  %fadd326 = fadd float %deref324, %a31325
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add316, float %fadd326)
-  %mul327 = mul i64 %parfor.i.body, 4
-  %add328 = add i64 %mul327, 3
-  %mul329 = mul i64 %add328, %5
-  %j330 = load i64, ptr %j, align 8
-  %add331 = add i64 %mul329, %j330
-  %add332 = add i64 %add331, 2
-  %mul333 = mul i64 %parfor.i.body, 4
-  %add334 = add i64 %mul333, 3
-  %mul335 = mul i64 %add334, %5
-  %j336 = load i64, ptr %j, align 8
-  %add337 = add i64 %mul335, %j336
-  %add338 = add i64 %add337, 2
-  %ptr.add339 = getelementptr inbounds float, ptr %data4, i64 %add338
-  %deref340 = load float, ptr %ptr.add339, align 4
-  %a32341 = load float, ptr %a32, align 4
-  %fadd342 = fadd float %deref340, %a32341
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add332, float %fadd342)
-  %mul343 = mul i64 %parfor.i.body, 4
-  %add344 = add i64 %mul343, 3
-  %mul345 = mul i64 %add344, %5
-  %j346 = load i64, ptr %j, align 8
-  %add347 = add i64 %mul345, %j346
-  %add348 = add i64 %add347, 3
-  %mul349 = mul i64 %parfor.i.body, 4
-  %add350 = add i64 %mul349, 3
-  %mul351 = mul i64 %add350, %5
-  %j352 = load i64, ptr %j, align 8
-  %add353 = add i64 %mul351, %j352
-  %add354 = add i64 %add353, 3
-  %ptr.add355 = getelementptr inbounds float, ptr %data4, i64 %add354
-  %deref356 = load float, ptr %ptr.add355, align 4
-  %a33357 = load float, ptr %a33, align 4
-  %fadd358 = fadd float %deref356, %a33357
-  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add348, float %fadd358)
-  %j359 = load i64, ptr %j, align 8
-  %add360 = add i64 %j359, 4
-  store i64 %add360, ptr %j, align 1
+  %mul112 = mul i64 %parfor.i.body, 4
+  %add113 = add i64 %mul112, 0
+  %mul114 = mul i64 %add113, %5
+  %j115 = load i64, ptr %j, align 8
+  %add116 = add i64 %mul114, %j115
+  %mul117 = mul i64 %parfor.i.body, 4
+  %add118 = add i64 %mul117, 0
+  %mul119 = mul i64 %add118, %5
+  %j120 = load i64, ptr %j, align 8
+  %add121 = add i64 %mul119, %j120
+  %ptr.add122 = getelementptr inbounds float, ptr %data4, i64 %add121
+  %deref123 = load float, ptr %ptr.add122, align 4
+  %a00124 = load float, ptr %a00, align 4
+  %fadd125 = fadd float %deref123, %a00124
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add116, float %fadd125)
+  %mul126 = mul i64 %parfor.i.body, 4
+  %add127 = add i64 %mul126, 0
+  %mul128 = mul i64 %add127, %5
+  %j129 = load i64, ptr %j, align 8
+  %add130 = add i64 %mul128, %j129
+  %add131 = add i64 %add130, 1
+  %mul132 = mul i64 %parfor.i.body, 4
+  %add133 = add i64 %mul132, 0
+  %mul134 = mul i64 %add133, %5
+  %j135 = load i64, ptr %j, align 8
+  %add136 = add i64 %mul134, %j135
+  %add137 = add i64 %add136, 1
+  %ptr.add138 = getelementptr inbounds float, ptr %data4, i64 %add137
+  %deref139 = load float, ptr %ptr.add138, align 4
+  %a01140 = load float, ptr %a01, align 4
+  %fadd141 = fadd float %deref139, %a01140
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add131, float %fadd141)
+  %mul142 = mul i64 %parfor.i.body, 4
+  %add143 = add i64 %mul142, 0
+  %mul144 = mul i64 %add143, %5
+  %j145 = load i64, ptr %j, align 8
+  %add146 = add i64 %mul144, %j145
+  %add147 = add i64 %add146, 2
+  %mul148 = mul i64 %parfor.i.body, 4
+  %add149 = add i64 %mul148, 0
+  %mul150 = mul i64 %add149, %5
+  %j151 = load i64, ptr %j, align 8
+  %add152 = add i64 %mul150, %j151
+  %add153 = add i64 %add152, 2
+  %ptr.add154 = getelementptr inbounds float, ptr %data4, i64 %add153
+  %deref155 = load float, ptr %ptr.add154, align 4
+  %a02156 = load float, ptr %a02, align 4
+  %fadd157 = fadd float %deref155, %a02156
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add147, float %fadd157)
+  %mul158 = mul i64 %parfor.i.body, 4
+  %add159 = add i64 %mul158, 0
+  %mul160 = mul i64 %add159, %5
+  %j161 = load i64, ptr %j, align 8
+  %add162 = add i64 %mul160, %j161
+  %add163 = add i64 %add162, 3
+  %mul164 = mul i64 %parfor.i.body, 4
+  %add165 = add i64 %mul164, 0
+  %mul166 = mul i64 %add165, %5
+  %j167 = load i64, ptr %j, align 8
+  %add168 = add i64 %mul166, %j167
+  %add169 = add i64 %add168, 3
+  %ptr.add170 = getelementptr inbounds float, ptr %data4, i64 %add169
+  %deref171 = load float, ptr %ptr.add170, align 4
+  %a03172 = load float, ptr %a03, align 4
+  %fadd173 = fadd float %deref171, %a03172
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add163, float %fadd173)
+  %mul174 = mul i64 %parfor.i.body, 4
+  %add175 = add i64 %mul174, 1
+  %mul176 = mul i64 %add175, %5
+  %j177 = load i64, ptr %j, align 8
+  %add178 = add i64 %mul176, %j177
+  %mul179 = mul i64 %parfor.i.body, 4
+  %add180 = add i64 %mul179, 1
+  %mul181 = mul i64 %add180, %5
+  %j182 = load i64, ptr %j, align 8
+  %add183 = add i64 %mul181, %j182
+  %ptr.add184 = getelementptr inbounds float, ptr %data4, i64 %add183
+  %deref185 = load float, ptr %ptr.add184, align 4
+  %a10186 = load float, ptr %a10, align 4
+  %fadd187 = fadd float %deref185, %a10186
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add178, float %fadd187)
+  %mul188 = mul i64 %parfor.i.body, 4
+  %add189 = add i64 %mul188, 1
+  %mul190 = mul i64 %add189, %5
+  %j191 = load i64, ptr %j, align 8
+  %add192 = add i64 %mul190, %j191
+  %add193 = add i64 %add192, 1
+  %mul194 = mul i64 %parfor.i.body, 4
+  %add195 = add i64 %mul194, 1
+  %mul196 = mul i64 %add195, %5
+  %j197 = load i64, ptr %j, align 8
+  %add198 = add i64 %mul196, %j197
+  %add199 = add i64 %add198, 1
+  %ptr.add200 = getelementptr inbounds float, ptr %data4, i64 %add199
+  %deref201 = load float, ptr %ptr.add200, align 4
+  %a11202 = load float, ptr %a11, align 4
+  %fadd203 = fadd float %deref201, %a11202
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add193, float %fadd203)
+  %mul204 = mul i64 %parfor.i.body, 4
+  %add205 = add i64 %mul204, 1
+  %mul206 = mul i64 %add205, %5
+  %j207 = load i64, ptr %j, align 8
+  %add208 = add i64 %mul206, %j207
+  %add209 = add i64 %add208, 2
+  %mul210 = mul i64 %parfor.i.body, 4
+  %add211 = add i64 %mul210, 1
+  %mul212 = mul i64 %add211, %5
+  %j213 = load i64, ptr %j, align 8
+  %add214 = add i64 %mul212, %j213
+  %add215 = add i64 %add214, 2
+  %ptr.add216 = getelementptr inbounds float, ptr %data4, i64 %add215
+  %deref217 = load float, ptr %ptr.add216, align 4
+  %a12218 = load float, ptr %a12, align 4
+  %fadd219 = fadd float %deref217, %a12218
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add209, float %fadd219)
+  %mul220 = mul i64 %parfor.i.body, 4
+  %add221 = add i64 %mul220, 1
+  %mul222 = mul i64 %add221, %5
+  %j223 = load i64, ptr %j, align 8
+  %add224 = add i64 %mul222, %j223
+  %add225 = add i64 %add224, 3
+  %mul226 = mul i64 %parfor.i.body, 4
+  %add227 = add i64 %mul226, 1
+  %mul228 = mul i64 %add227, %5
+  %j229 = load i64, ptr %j, align 8
+  %add230 = add i64 %mul228, %j229
+  %add231 = add i64 %add230, 3
+  %ptr.add232 = getelementptr inbounds float, ptr %data4, i64 %add231
+  %deref233 = load float, ptr %ptr.add232, align 4
+  %a13234 = load float, ptr %a13, align 4
+  %fadd235 = fadd float %deref233, %a13234
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add225, float %fadd235)
+  %mul236 = mul i64 %parfor.i.body, 4
+  %add237 = add i64 %mul236, 2
+  %mul238 = mul i64 %add237, %5
+  %j239 = load i64, ptr %j, align 8
+  %add240 = add i64 %mul238, %j239
+  %mul241 = mul i64 %parfor.i.body, 4
+  %add242 = add i64 %mul241, 2
+  %mul243 = mul i64 %add242, %5
+  %j244 = load i64, ptr %j, align 8
+  %add245 = add i64 %mul243, %j244
+  %ptr.add246 = getelementptr inbounds float, ptr %data4, i64 %add245
+  %deref247 = load float, ptr %ptr.add246, align 4
+  %a20248 = load float, ptr %a20, align 4
+  %fadd249 = fadd float %deref247, %a20248
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add240, float %fadd249)
+  %mul250 = mul i64 %parfor.i.body, 4
+  %add251 = add i64 %mul250, 2
+  %mul252 = mul i64 %add251, %5
+  %j253 = load i64, ptr %j, align 8
+  %add254 = add i64 %mul252, %j253
+  %add255 = add i64 %add254, 1
+  %mul256 = mul i64 %parfor.i.body, 4
+  %add257 = add i64 %mul256, 2
+  %mul258 = mul i64 %add257, %5
+  %j259 = load i64, ptr %j, align 8
+  %add260 = add i64 %mul258, %j259
+  %add261 = add i64 %add260, 1
+  %ptr.add262 = getelementptr inbounds float, ptr %data4, i64 %add261
+  %deref263 = load float, ptr %ptr.add262, align 4
+  %a21264 = load float, ptr %a21, align 4
+  %fadd265 = fadd float %deref263, %a21264
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add255, float %fadd265)
+  %mul266 = mul i64 %parfor.i.body, 4
+  %add267 = add i64 %mul266, 2
+  %mul268 = mul i64 %add267, %5
+  %j269 = load i64, ptr %j, align 8
+  %add270 = add i64 %mul268, %j269
+  %add271 = add i64 %add270, 2
+  %mul272 = mul i64 %parfor.i.body, 4
+  %add273 = add i64 %mul272, 2
+  %mul274 = mul i64 %add273, %5
+  %j275 = load i64, ptr %j, align 8
+  %add276 = add i64 %mul274, %j275
+  %add277 = add i64 %add276, 2
+  %ptr.add278 = getelementptr inbounds float, ptr %data4, i64 %add277
+  %deref279 = load float, ptr %ptr.add278, align 4
+  %a22280 = load float, ptr %a22, align 4
+  %fadd281 = fadd float %deref279, %a22280
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add271, float %fadd281)
+  %mul282 = mul i64 %parfor.i.body, 4
+  %add283 = add i64 %mul282, 2
+  %mul284 = mul i64 %add283, %5
+  %j285 = load i64, ptr %j, align 8
+  %add286 = add i64 %mul284, %j285
+  %add287 = add i64 %add286, 3
+  %mul288 = mul i64 %parfor.i.body, 4
+  %add289 = add i64 %mul288, 2
+  %mul290 = mul i64 %add289, %5
+  %j291 = load i64, ptr %j, align 8
+  %add292 = add i64 %mul290, %j291
+  %add293 = add i64 %add292, 3
+  %ptr.add294 = getelementptr inbounds float, ptr %data4, i64 %add293
+  %deref295 = load float, ptr %ptr.add294, align 4
+  %a23296 = load float, ptr %a23, align 4
+  %fadd297 = fadd float %deref295, %a23296
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add287, float %fadd297)
+  %mul298 = mul i64 %parfor.i.body, 4
+  %add299 = add i64 %mul298, 3
+  %mul300 = mul i64 %add299, %5
+  %j301 = load i64, ptr %j, align 8
+  %add302 = add i64 %mul300, %j301
+  %mul303 = mul i64 %parfor.i.body, 4
+  %add304 = add i64 %mul303, 3
+  %mul305 = mul i64 %add304, %5
+  %j306 = load i64, ptr %j, align 8
+  %add307 = add i64 %mul305, %j306
+  %ptr.add308 = getelementptr inbounds float, ptr %data4, i64 %add307
+  %deref309 = load float, ptr %ptr.add308, align 4
+  %a30310 = load float, ptr %a30, align 4
+  %fadd311 = fadd float %deref309, %a30310
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add302, float %fadd311)
+  %mul312 = mul i64 %parfor.i.body, 4
+  %add313 = add i64 %mul312, 3
+  %mul314 = mul i64 %add313, %5
+  %j315 = load i64, ptr %j, align 8
+  %add316 = add i64 %mul314, %j315
+  %add317 = add i64 %add316, 1
+  %mul318 = mul i64 %parfor.i.body, 4
+  %add319 = add i64 %mul318, 3
+  %mul320 = mul i64 %add319, %5
+  %j321 = load i64, ptr %j, align 8
+  %add322 = add i64 %mul320, %j321
+  %add323 = add i64 %add322, 1
+  %ptr.add324 = getelementptr inbounds float, ptr %data4, i64 %add323
+  %deref325 = load float, ptr %ptr.add324, align 4
+  %a31326 = load float, ptr %a31, align 4
+  %fadd327 = fadd float %deref325, %a31326
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add317, float %fadd327)
+  %mul328 = mul i64 %parfor.i.body, 4
+  %add329 = add i64 %mul328, 3
+  %mul330 = mul i64 %add329, %5
+  %j331 = load i64, ptr %j, align 8
+  %add332 = add i64 %mul330, %j331
+  %add333 = add i64 %add332, 2
+  %mul334 = mul i64 %parfor.i.body, 4
+  %add335 = add i64 %mul334, 3
+  %mul336 = mul i64 %add335, %5
+  %j337 = load i64, ptr %j, align 8
+  %add338 = add i64 %mul336, %j337
+  %add339 = add i64 %add338, 2
+  %ptr.add340 = getelementptr inbounds float, ptr %data4, i64 %add339
+  %deref341 = load float, ptr %ptr.add340, align 4
+  %a32342 = load float, ptr %a32, align 4
+  %fadd343 = fadd float %deref341, %a32342
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add333, float %fadd343)
+  %mul344 = mul i64 %parfor.i.body, 4
+  %add345 = add i64 %mul344, 3
+  %mul346 = mul i64 %add345, %5
+  %j347 = load i64, ptr %j, align 8
+  %add348 = add i64 %mul346, %j347
+  %add349 = add i64 %add348, 3
+  %mul350 = mul i64 %parfor.i.body, 4
+  %add351 = add i64 %mul350, 3
+  %mul352 = mul i64 %add351, %5
+  %j353 = load i64, ptr %j, align 8
+  %add354 = add i64 %mul352, %j353
+  %add355 = add i64 %add354, 3
+  %ptr.add356 = getelementptr inbounds float, ptr %data4, i64 %add355
+  %deref357 = load float, ptr %ptr.add356, align 4
+  %a33358 = load float, ptr %a33, align 4
+  %fadd359 = fadd float %deref357, %a33358
+  call void @_ZN6VectorIfE3putEmf(ptr %2, i64 %add349, float %fadd359)
+  %j360 = load i64, ptr %j, align 8
+  %add361 = add i64 %j360, 4
+  store i64 %add361, ptr %j, align 1
   br label %while.cond
 
-parfor.quiet361:                                  ; preds = %pfor.check.notyet
+parfor.quiet362:                                  ; preds = %pfor.check.notyet
   store i64 1, ptr %parfor.quiet, align 8
   br label %pfor.fork
 
@@ -42932,13 +42935,13 @@ parfor.fork.go:                                   ; preds = %pfor.fork
   %parfor.sitecur = load i64, ptr @parfor.site.p1k.273, align 8
   %parfor.publish = select i1 %parfor.isquiet, i64 %parfor.sitecur, i64 %parfor.p1k
   store i64 %parfor.publish, ptr @parfor.site.p1k.273, align 8
-  %parfor.group364 = call ptr @_ZN9TaskGroup6createEv()
-  %parfor.gpage365 = call ptr @_Z3getPv(ptr %parfor.group364)
+  %parfor.group365 = call ptr @_ZN9TaskGroup6createEv()
+  %parfor.gpage366 = call ptr @_Z3getPv(ptr %parfor.group365)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
   store i64 %sdiv, ptr %parfor.fork.n, align 8
   store i64 %parfor.p1k, ptr %parfor.fork.p1k, align 8
-  store ptr %parfor.group364, ptr %parfor.fork.grp, align 8
-  store ptr %parfor.gpage365, ptr %parfor.fork.gpage, align 8
+  store ptr %parfor.group365, ptr %parfor.fork.grp, align 8
+  store ptr %parfor.gpage366, ptr %parfor.fork.gpage, align 8
   br label %pfor.dispatch
 
 pfor.sub.cond:                                    ; preds = %pfor.sub.body, %pfor.dispatch
@@ -42957,18 +42960,18 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
   %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %5, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap366 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
-  store i64 %3, ptr %parfor.cell.cap366, align 8
-  %parfor.cell.cap367 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
-  store ptr %data, ptr %parfor.cell.cap367, align 8
-  %parfor.cell.cap368 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
-  store i64 %4, ptr %parfor.cell.cap368, align 8
-  %parfor.cell.cap369 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
-  store ptr %data2, ptr %parfor.cell.cap369, align 8
-  %parfor.cell.cap370 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
-  store ptr %2, ptr %parfor.cell.cap370, align 8
-  %parfor.cell.cap371 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 8
-  store ptr %data4, ptr %parfor.cell.cap371, align 8
+  %parfor.cell.cap367 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
+  store i64 %3, ptr %parfor.cell.cap367, align 8
+  %parfor.cell.cap368 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
+  store ptr %data, ptr %parfor.cell.cap368, align 8
+  %parfor.cell.cap369 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
+  store i64 %4, ptr %parfor.cell.cap369, align 8
+  %parfor.cell.cap370 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  store ptr %data2, ptr %parfor.cell.cap370, align 8
+  %parfor.cell.cap371 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
+  store ptr %2, ptr %parfor.cell.cap371, align 8
+  %parfor.cell.cap372 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 8
+  store ptr %data4, ptr %parfor.cell.cap372, align 8
   %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
   %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 9
   store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
@@ -48688,17 +48691,17 @@ while.exit27:                                     ; preds = %while.cond25
 define linkonce_odr void @_ZN4Tape13fwd_attentionEi(ptr %0, i64 %1) {
 entry:
   %parfor.c.slot = alloca i64, align 8
-  %arg.tmp164 = alloca %_Z6VectorIfE, align 8
+  %arg.tmp167 = alloca %_Z6VectorIfE, align 8
   %j4 = alloca i64, align 8
   %acc2 = alloca float, align 4
   %c2 = alloca i64, align 8
-  %arg.tmp119 = alloca %_Z6VectorIfE, align 8
-  %j3 = alloca i64, align 8
-  %arg.tmp89 = alloca %_Z6VectorIfE, align 8
+  %arg.tmp127 = alloca %_Z6VectorIfE, align 8
+  %jw3 = alloca i64, align 8
+  %arg.tmp96 = alloca %_Z6VectorIfE, align 8
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %c = alloca i64, align 8
   %acc = alloca float, align 4
-  %j = alloca i64, align 8
+  %jw = alloca i64, align 8
   %mx = alloca float, align 4
   %h = alloca i64, align 8
   %field.inplace = getelementptr inbounds nuw %_Z4Tape, ptr %0, i32 0, i32 0
@@ -48905,7 +48908,7 @@ pfor.check.decide:                                ; preds = %pfor.check.meas
 pfor.check.notyet:                                ; preds = %pfor.check.decide
   %parfor.heavy = icmp sge i64 %parfor.p1k, 51200000000
   %parfor.decisive = and i1 %parfor.dofork, %parfor.heavy
-  br i1 %parfor.decisive, label %parfor.quiet176, label %parfor.notyet2
+  br i1 %parfor.decisive, label %parfor.quiet179, label %parfor.notyet2
 
 pfor.check.arm:                                   ; preds = %parfor.notyet2
   store i64 1, ptr %parfor.armed, align 8
@@ -48915,10 +48918,10 @@ pfor.check.arm:                                   ; preds = %parfor.notyet2
   store i64 %parfor.nc.dbl3, ptr %parfor.nextcheck, align 8
   br label %pfor.inl.body
 
-pfor.fork:                                        ; preds = %parfor.quiet176, %pfor.check.decide
-  %parfor.ncpu.chk177 = call i64 @_ZN8TaskPool4ncpuEv()
-  %parfor.oneworker178 = icmp sle i64 %parfor.ncpu.chk177, 1
-  br i1 %parfor.oneworker178, label %parfor.single, label %parfor.fork.go
+pfor.fork:                                        ; preds = %parfor.quiet179, %pfor.check.decide
+  %parfor.ncpu.chk180 = call i64 @_ZN8TaskPool4ncpuEv()
+  %parfor.oneworker181 = icmp sle i64 %parfor.ncpu.chk180, 1
+  br i1 %parfor.oneworker181, label %parfor.single, label %parfor.fork.go
 
 pfor.gate.prom:                                   ; preds = %entry
   %parfor.gate.c0 = sdiv i64 134217728, %parfor.sitep
@@ -48959,247 +48962,262 @@ pfor.gate.headfork.go:                            ; preds = %pfor.gate.headfork
   store ptr %parfor.gpage, ptr %parfor.fork.gpage, align 8
   br label %pfor.dispatch
 
-while.cond:                                       ; preds = %while.exit132, %pfor.inl.body
+while.cond:                                       ; preds = %while.exit138, %pfor.inl.body
   %h31 = load i64, ptr %h, align 8
   %lt = icmp slt i64 %h31, %heads
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   store float 0.000000e+00, ptr %mx, align 1
-  store i64 %mul, ptr %j, align 1
+  store i64 0, ptr %jw, align 1
   br label %while.cond32
 
 while.exit:                                       ; preds = %while.cond
   br label %pfor.inl.inc
 
-while.cond32:                                     ; preds = %if.end70, %while.body
-  %j35 = load i64, ptr %j, align 8
-  %le = icmp sle i64 %j35, %parfor.i.body
-  br i1 %le, label %while.body33, label %while.exit34
+while.cond32:                                     ; preds = %if.end74, %while.body
+  %jw35 = load i64, ptr %jw, align 8
+  %lt36 = icmp slt i64 %jw35, %win
+  br i1 %lt36, label %while.body33, label %while.exit34
 
 while.body33:                                     ; preds = %while.cond32
+  %jw37 = load i64, ptr %jw, align 8
+  %add = add i64 %mul, %jw37
+  %gt = icmp sgt i64 %add, %parfor.i.body
+  br i1 %gt, label %if.then, label %if.end
+
+while.exit34:                                     ; preds = %if.then, %while.cond32
   store float 0.000000e+00, ptr %acc, align 1
   store i64 0, ptr %c, align 1
-  br label %while.cond36
+  br label %while.cond77
 
-while.exit34:                                     ; preds = %while.cond32
+if.then:                                          ; preds = %while.body33
+  br label %while.exit34
+
+if.end:                                           ; preds = %while.body33
   store float 0.000000e+00, ptr %acc, align 1
-  store i64 %mul, ptr %c, align 1
-  br label %while.cond73
+  store i64 0, ptr %c, align 1
+  br label %while.cond38
 
-while.cond36:                                     ; preds = %while.body37, %while.body33
-  %c39 = load i64, ptr %c, align 8
-  %lt40 = icmp slt i64 %c39, %sdiv
-  br i1 %lt40, label %while.body37, label %while.exit38
+while.cond38:                                     ; preds = %while.body39, %if.end
+  %c41 = load i64, ptr %c, align 8
+  %lt42 = icmp slt i64 %c41, %sdiv
+  br i1 %lt42, label %while.body39, label %while.exit40
 
-while.body37:                                     ; preds = %while.cond36
-  %acc41 = load float, ptr %acc, align 4
-  %mul42 = mul i64 %parfor.i.body, %cols
-  %h43 = load i64, ptr %h, align 8
-  %mul44 = mul i64 %h43, %sdiv
-  %add = add i64 %mul42, %mul44
-  %c45 = load i64, ptr %c, align 8
-  %add46 = add i64 %add, %c45
-  %ptr.add = getelementptr inbounds float, ptr %data, i64 %add46
+while.body39:                                     ; preds = %while.cond38
+  %acc43 = load float, ptr %acc, align 4
+  %mul44 = mul i64 %parfor.i.body, %cols
+  %h45 = load i64, ptr %h, align 8
+  %mul46 = mul i64 %h45, %sdiv
+  %add47 = add i64 %mul44, %mul46
+  %c48 = load i64, ptr %c, align 8
+  %add49 = add i64 %add47, %c48
+  %ptr.add = getelementptr inbounds float, ptr %data, i64 %add49
   %deref = load float, ptr %ptr.add, align 4
-  %j47 = load i64, ptr %j, align 8
-  %mul48 = mul i64 %j47, %cols
-  %h49 = load i64, ptr %h, align 8
-  %mul50 = mul i64 %h49, %sdiv
-  %add51 = add i64 %mul48, %mul50
-  %c52 = load i64, ptr %c, align 8
-  %add53 = add i64 %add51, %c52
-  %ptr.add54 = getelementptr inbounds float, ptr %data14, i64 %add53
-  %deref55 = load float, ptr %ptr.add54, align 4
-  %fmul = fmul float %deref, %deref55
-  %fadd = fadd float %acc41, %fmul
+  %mul50 = mul i64 %add, %cols
+  %h51 = load i64, ptr %h, align 8
+  %mul52 = mul i64 %h51, %sdiv
+  %add53 = add i64 %mul50, %mul52
+  %c54 = load i64, ptr %c, align 8
+  %add55 = add i64 %add53, %c54
+  %ptr.add56 = getelementptr inbounds float, ptr %data14, i64 %add55
+  %deref57 = load float, ptr %ptr.add56, align 4
+  %fmul = fmul float %deref, %deref57
+  %fadd = fadd float %acc43, %fmul
   store float %fadd, ptr %acc, align 1
-  %c56 = load i64, ptr %c, align 8
-  %add57 = add i64 %c56, 1
-  store i64 %add57, ptr %c, align 1
-  br label %while.cond36
+  %c58 = load i64, ptr %c, align 8
+  %add59 = add i64 %c58, 1
+  store i64 %add59, ptr %c, align 1
+  br label %while.cond38
 
-while.exit38:                                     ; preds = %while.cond36
-  %acc58 = load float, ptr %acc, align 4
-  %fmul59 = fmul float %acc58, %fdiv
+while.exit40:                                     ; preds = %while.cond38
+  %acc60 = load float, ptr %acc, align 4
+  %fmul61 = fmul float %acc60, %fdiv
   store %_Z6VectorIfE %aux, ptr %arg.tmp, align 1
-  %h60 = load i64, ptr %h, align 8
-  %mul61 = mul i64 %h60, %rows
-  %mul62 = mul i64 %mul61, %win
-  %mul63 = mul i64 %parfor.i.body, %win
-  %add64 = add i64 %mul62, %mul63
-  %j65 = load i64, ptr %j, align 8
-  %sub = sub i64 %j65, %mul
-  %add66 = add i64 %add64, %sub
-  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp, i64 %add66, float %fmul59)
-  %j67 = load i64, ptr %j, align 8
-  %eq = icmp eq i64 %j67, %mul
-  br i1 %eq, label %if.then, label %if.end
+  %h62 = load i64, ptr %h, align 8
+  %mul63 = mul i64 %h62, %rows
+  %add64 = add i64 %mul63, %parfor.i.body
+  %mul65 = mul i64 %add64, %win
+  %jw66 = load i64, ptr %jw, align 8
+  %add67 = add i64 %mul65, %jw66
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp, i64 %add67, float %fmul61)
+  %jw68 = load i64, ptr %jw, align 8
+  %eq = icmp eq i64 %jw68, 0
+  br i1 %eq, label %if.then69, label %if.end70
 
-if.then:                                          ; preds = %while.exit38
-  store float %fmul59, ptr %mx, align 1
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %while.exit38
-  %mx68 = load float, ptr %mx, align 4
-  %gt = fcmp ogt float %fmul59, %mx68
-  br i1 %gt, label %if.then69, label %if.end70
-
-if.then69:                                        ; preds = %if.end
-  store float %fmul59, ptr %mx, align 1
+if.then69:                                        ; preds = %while.exit40
+  store float %fmul61, ptr %mx, align 1
   br label %if.end70
 
-if.end70:                                         ; preds = %if.then69, %if.end
-  %j71 = load i64, ptr %j, align 8
-  %add72 = add i64 %j71, 1
-  store i64 %add72, ptr %j, align 1
+if.end70:                                         ; preds = %if.then69, %while.exit40
+  %mx71 = load float, ptr %mx, align 4
+  %gt72 = fcmp ogt float %fmul61, %mx71
+  br i1 %gt72, label %if.then73, label %if.end74
+
+if.then73:                                        ; preds = %if.end70
+  store float %fmul61, ptr %mx, align 1
+  br label %if.end74
+
+if.end74:                                         ; preds = %if.then73, %if.end70
+  %jw75 = load i64, ptr %jw, align 8
+  %add76 = add i64 %jw75, 1
+  store i64 %add76, ptr %jw, align 1
   br label %while.cond32
 
-while.cond73:                                     ; preds = %while.body74, %while.exit34
-  %j2 = load i64, ptr %c, align 8
-  %le76 = icmp sle i64 %j2, %parfor.i.body
-  br i1 %le76, label %while.body74, label %while.exit75
+while.cond77:                                     ; preds = %if.end85, %while.exit34
+  %jw2 = load i64, ptr %c, align 8
+  %lt80 = icmp slt i64 %jw2, %win
+  br i1 %lt80, label %while.body78, label %while.exit79
 
-while.body74:                                     ; preds = %while.cond73
-  %h77 = load i64, ptr %h, align 8
-  %mul78 = mul i64 %h77, %rows
-  %mul79 = mul i64 %mul78, %win
-  %mul80 = mul i64 %parfor.i.body, %win
-  %add81 = add i64 %mul79, %mul80
-  %j282 = load i64, ptr %c, align 8
-  %sub83 = sub i64 %j282, %mul
-  %add84 = add i64 %add81, %sub83
-  %ptr.add85 = getelementptr inbounds float, ptr %data21, i64 %add84
-  %deref86 = load float, ptr %ptr.add85, align 4
-  %mx87 = load float, ptr %mx, align 4
-  %fsub = fsub float %deref86, %mx87
-  %call88 = call float @expf(float %fsub)
-  store %_Z6VectorIfE %aux, ptr %arg.tmp89, align 1
-  %h90 = load i64, ptr %h, align 8
-  %mul91 = mul i64 %h90, %rows
-  %mul92 = mul i64 %mul91, %win
-  %mul93 = mul i64 %parfor.i.body, %win
-  %add94 = add i64 %mul92, %mul93
-  %j295 = load i64, ptr %c, align 8
-  %sub96 = sub i64 %j295, %mul
-  %add97 = add i64 %add94, %sub96
-  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp89, i64 %add97, float %call88)
+while.body78:                                     ; preds = %while.cond77
+  %jw281 = load i64, ptr %c, align 8
+  %add82 = add i64 %mul, %jw281
+  %gt83 = icmp sgt i64 %add82, %parfor.i.body
+  br i1 %gt83, label %if.then84, label %if.end85
+
+while.exit79:                                     ; preds = %if.then84, %while.cond77
+  %sum106 = load float, ptr %acc, align 4
+  %fdiv107 = fdiv float 1.000000e+00, %sum106
+  store i64 0, ptr %jw3, align 1
+  br label %while.cond108
+
+if.then84:                                        ; preds = %while.body78
+  br label %while.exit79
+
+if.end85:                                         ; preds = %while.body78
+  %h86 = load i64, ptr %h, align 8
+  %mul87 = mul i64 %h86, %rows
+  %add88 = add i64 %mul87, %parfor.i.body
+  %mul89 = mul i64 %add88, %win
+  %jw290 = load i64, ptr %c, align 8
+  %add91 = add i64 %mul89, %jw290
+  %ptr.add92 = getelementptr inbounds float, ptr %data21, i64 %add91
+  %deref93 = load float, ptr %ptr.add92, align 4
+  %mx94 = load float, ptr %mx, align 4
+  %fsub = fsub float %deref93, %mx94
+  %call95 = call float @expf(float %fsub)
+  store %_Z6VectorIfE %aux, ptr %arg.tmp96, align 1
+  %h97 = load i64, ptr %h, align 8
+  %mul98 = mul i64 %h97, %rows
+  %add99 = add i64 %mul98, %parfor.i.body
+  %mul100 = mul i64 %add99, %win
+  %jw2101 = load i64, ptr %c, align 8
+  %add102 = add i64 %mul100, %jw2101
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp96, i64 %add102, float %call95)
   %sum = load float, ptr %acc, align 4
-  %fadd98 = fadd float %sum, %call88
-  store float %fadd98, ptr %acc, align 1
-  %j299 = load i64, ptr %c, align 8
-  %add100 = add i64 %j299, 1
-  store i64 %add100, ptr %c, align 1
-  br label %while.cond73
+  %fadd103 = fadd float %sum, %call95
+  store float %fadd103, ptr %acc, align 1
+  %jw2104 = load i64, ptr %c, align 8
+  %add105 = add i64 %jw2104, 1
+  store i64 %add105, ptr %c, align 1
+  br label %while.cond77
 
-while.exit75:                                     ; preds = %while.cond73
-  %sum101 = load float, ptr %acc, align 4
-  %fdiv102 = fdiv float 1.000000e+00, %sum101
-  store i64 %mul, ptr %j3, align 1
-  br label %while.cond103
+while.cond108:                                    ; preds = %if.end117, %while.exit79
+  %jw3111 = load i64, ptr %jw3, align 8
+  %lt112 = icmp slt i64 %jw3111, %win
+  br i1 %lt112, label %while.body109, label %while.exit110
 
-while.cond103:                                    ; preds = %while.body104, %while.exit75
-  %j3106 = load i64, ptr %j3, align 8
-  %le107 = icmp sle i64 %j3106, %parfor.i.body
-  br i1 %le107, label %while.body104, label %while.exit105
+while.body109:                                    ; preds = %while.cond108
+  %jw3113 = load i64, ptr %jw3, align 8
+  %add114 = add i64 %mul, %jw3113
+  %gt115 = icmp sgt i64 %add114, %parfor.i.body
+  br i1 %gt115, label %if.then116, label %if.end117
 
-while.body104:                                    ; preds = %while.cond103
-  %h108 = load i64, ptr %h, align 8
-  %mul109 = mul i64 %h108, %rows
-  %mul110 = mul i64 %mul109, %win
-  %mul111 = mul i64 %parfor.i.body, %win
-  %add112 = add i64 %mul110, %mul111
-  %j3113 = load i64, ptr %j3, align 8
-  %sub114 = sub i64 %j3113, %mul
-  %add115 = add i64 %add112, %sub114
-  %ptr.add116 = getelementptr inbounds float, ptr %data21, i64 %add115
-  %deref117 = load float, ptr %ptr.add116, align 4
-  %fmul118 = fmul float %deref117, %fdiv102
-  store %_Z6VectorIfE %aux, ptr %arg.tmp119, align 1
-  %h120 = load i64, ptr %h, align 8
-  %mul121 = mul i64 %h120, %rows
-  %mul122 = mul i64 %mul121, %win
-  %mul123 = mul i64 %parfor.i.body, %win
-  %add124 = add i64 %mul122, %mul123
-  %j3125 = load i64, ptr %j3, align 8
-  %sub126 = sub i64 %j3125, %mul
-  %add127 = add i64 %add124, %sub126
-  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp119, i64 %add127, float %fmul118)
-  %j3128 = load i64, ptr %j3, align 8
-  %add129 = add i64 %j3128, 1
-  store i64 %add129, ptr %j3, align 1
-  br label %while.cond103
-
-while.exit105:                                    ; preds = %while.cond103
+while.exit110:                                    ; preds = %if.then116, %while.cond108
   store i64 0, ptr %c2, align 1
-  br label %while.cond130
+  br label %while.cond136
 
-while.cond130:                                    ; preds = %while.exit137, %while.exit105
-  %c2133 = load i64, ptr %c2, align 8
-  %lt134 = icmp slt i64 %c2133, %sdiv
-  br i1 %lt134, label %while.body131, label %while.exit132
+if.then116:                                       ; preds = %while.body109
+  br label %while.exit110
 
-while.body131:                                    ; preds = %while.cond130
+if.end117:                                        ; preds = %while.body109
+  %h118 = load i64, ptr %h, align 8
+  %mul119 = mul i64 %h118, %rows
+  %add120 = add i64 %mul119, %parfor.i.body
+  %mul121 = mul i64 %add120, %win
+  %jw3122 = load i64, ptr %jw3, align 8
+  %add123 = add i64 %mul121, %jw3122
+  %ptr.add124 = getelementptr inbounds float, ptr %data21, i64 %add123
+  %deref125 = load float, ptr %ptr.add124, align 4
+  %fmul126 = fmul float %deref125, %fdiv107
+  store %_Z6VectorIfE %aux, ptr %arg.tmp127, align 1
+  %h128 = load i64, ptr %h, align 8
+  %mul129 = mul i64 %h128, %rows
+  %add130 = add i64 %mul129, %parfor.i.body
+  %mul131 = mul i64 %add130, %win
+  %jw3132 = load i64, ptr %jw3, align 8
+  %add133 = add i64 %mul131, %jw3132
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp127, i64 %add133, float %fmul126)
+  %jw3134 = load i64, ptr %jw3, align 8
+  %add135 = add i64 %jw3134, 1
+  store i64 %add135, ptr %jw3, align 1
+  br label %while.cond108
+
+while.cond136:                                    ; preds = %while.exit143, %while.exit110
+  %c2139 = load i64, ptr %c2, align 8
+  %lt140 = icmp slt i64 %c2139, %sdiv
+  br i1 %lt140, label %while.body137, label %while.exit138
+
+while.body137:                                    ; preds = %while.cond136
   store float 0.000000e+00, ptr %acc2, align 1
   store i64 %mul, ptr %j4, align 1
-  br label %while.cond135
+  br label %while.cond141
 
-while.exit132:                                    ; preds = %while.cond130
-  %h174 = load i64, ptr %h, align 8
-  %add175 = add i64 %h174, 1
-  store i64 %add175, ptr %h, align 1
+while.exit138:                                    ; preds = %while.cond136
+  %h177 = load i64, ptr %h, align 8
+  %add178 = add i64 %h177, 1
+  store i64 %add178, ptr %h, align 1
   br label %while.cond
 
-while.cond135:                                    ; preds = %while.body136, %while.body131
-  %j4138 = load i64, ptr %j4, align 8
-  %le139 = icmp sle i64 %j4138, %parfor.i.body
-  br i1 %le139, label %while.body136, label %while.exit137
+while.cond141:                                    ; preds = %while.body142, %while.body137
+  %j4144 = load i64, ptr %j4, align 8
+  %le = icmp sle i64 %j4144, %parfor.i.body
+  br i1 %le, label %while.body142, label %while.exit143
 
-while.body136:                                    ; preds = %while.cond135
-  %acc2140 = load float, ptr %acc2, align 4
-  %h141 = load i64, ptr %h, align 8
-  %mul142 = mul i64 %h141, %rows
-  %mul143 = mul i64 %mul142, %win
-  %mul144 = mul i64 %parfor.i.body, %win
-  %add145 = add i64 %mul143, %mul144
-  %j4146 = load i64, ptr %j4, align 8
-  %sub147 = sub i64 %j4146, %mul
-  %add148 = add i64 %add145, %sub147
-  %ptr.add149 = getelementptr inbounds float, ptr %data21, i64 %add148
-  %deref150 = load float, ptr %ptr.add149, align 4
-  %j4151 = load i64, ptr %j4, align 8
-  %mul152 = mul i64 %j4151, %cols
-  %h153 = load i64, ptr %h, align 8
-  %mul154 = mul i64 %h153, %sdiv
-  %add155 = add i64 %mul152, %mul154
-  %c2156 = load i64, ptr %c2, align 8
-  %add157 = add i64 %add155, %c2156
-  %ptr.add158 = getelementptr inbounds float, ptr %data17, i64 %add157
-  %deref159 = load float, ptr %ptr.add158, align 4
-  %fmul160 = fmul float %deref150, %deref159
-  %fadd161 = fadd float %acc2140, %fmul160
-  store float %fadd161, ptr %acc2, align 1
-  %j4162 = load i64, ptr %j4, align 8
-  %add163 = add i64 %j4162, 1
-  store i64 %add163, ptr %j4, align 1
-  br label %while.cond135
+while.body142:                                    ; preds = %while.cond141
+  %acc2145 = load float, ptr %acc2, align 4
+  %h146 = load i64, ptr %h, align 8
+  %mul147 = mul i64 %h146, %rows
+  %add148 = add i64 %mul147, %parfor.i.body
+  %mul149 = mul i64 %add148, %win
+  %j4150 = load i64, ptr %j4, align 8
+  %sub = sub i64 %j4150, %mul
+  %add151 = add i64 %mul149, %sub
+  %ptr.add152 = getelementptr inbounds float, ptr %data21, i64 %add151
+  %deref153 = load float, ptr %ptr.add152, align 4
+  %j4154 = load i64, ptr %j4, align 8
+  %mul155 = mul i64 %j4154, %cols
+  %h156 = load i64, ptr %h, align 8
+  %mul157 = mul i64 %h156, %sdiv
+  %add158 = add i64 %mul155, %mul157
+  %c2159 = load i64, ptr %c2, align 8
+  %add160 = add i64 %add158, %c2159
+  %ptr.add161 = getelementptr inbounds float, ptr %data17, i64 %add160
+  %deref162 = load float, ptr %ptr.add161, align 4
+  %fmul163 = fmul float %deref153, %deref162
+  %fadd164 = fadd float %acc2145, %fmul163
+  store float %fadd164, ptr %acc2, align 1
+  %j4165 = load i64, ptr %j4, align 8
+  %add166 = add i64 %j4165, 1
+  store i64 %add166, ptr %j4, align 1
+  br label %while.cond141
 
-while.exit137:                                    ; preds = %while.cond135
-  store %_Z6VectorIfE %value23, ptr %arg.tmp164, align 1
-  %mul165 = mul i64 %parfor.i.body, %cols
-  %h166 = load i64, ptr %h, align 8
-  %mul167 = mul i64 %h166, %sdiv
-  %add168 = add i64 %mul165, %mul167
-  %c2169 = load i64, ptr %c2, align 8
-  %add170 = add i64 %add168, %c2169
-  %acc2171 = load float, ptr %acc2, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp164, i64 %add170, float %acc2171)
+while.exit143:                                    ; preds = %while.cond141
+  store %_Z6VectorIfE %value23, ptr %arg.tmp167, align 1
+  %mul168 = mul i64 %parfor.i.body, %heads
+  %h169 = load i64, ptr %h, align 8
+  %add170 = add i64 %mul168, %h169
+  %mul171 = mul i64 %add170, %sdiv
   %c2172 = load i64, ptr %c2, align 8
-  %add173 = add i64 %c2172, 1
-  store i64 %add173, ptr %c2, align 1
-  br label %while.cond130
+  %add173 = add i64 %mul171, %c2172
+  %acc2174 = load float, ptr %acc2, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp167, i64 %add173, float %acc2174)
+  %c2175 = load i64, ptr %c2, align 8
+  %add176 = add i64 %c2175, 1
+  store i64 %add176, ptr %c2, align 1
+  br label %while.cond136
 
-parfor.quiet176:                                  ; preds = %pfor.check.notyet
+parfor.quiet179:                                  ; preds = %pfor.check.notyet
   store i64 1, ptr %parfor.quiet, align 8
   br label %pfor.fork
 
@@ -49216,13 +49234,13 @@ parfor.fork.go:                                   ; preds = %pfor.fork
   %parfor.sitecur = load i64, ptr @parfor.site.p1k.354, align 8
   %parfor.publish = select i1 %parfor.isquiet, i64 %parfor.sitecur, i64 %parfor.p1k
   store i64 %parfor.publish, ptr @parfor.site.p1k.354, align 8
-  %parfor.group179 = call ptr @_ZN9TaskGroup6createEv()
-  %parfor.gpage180 = call ptr @_Z3getPv(ptr %parfor.group179)
+  %parfor.group182 = call ptr @_ZN9TaskGroup6createEv()
+  %parfor.gpage183 = call ptr @_Z3getPv(ptr %parfor.group182)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
   store i64 %rows, ptr %parfor.fork.n, align 8
   store i64 %parfor.p1k, ptr %parfor.fork.p1k, align 8
-  store ptr %parfor.group179, ptr %parfor.fork.grp, align 8
-  store ptr %parfor.gpage180, ptr %parfor.fork.gpage, align 8
+  store ptr %parfor.group182, ptr %parfor.fork.grp, align 8
+  store ptr %parfor.gpage183, ptr %parfor.fork.gpage, align 8
   br label %pfor.dispatch
 
 pfor.sub.cond:                                    ; preds = %pfor.sub.body, %pfor.dispatch
@@ -49241,28 +49259,28 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
   %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %win, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap181 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
-  store i64 %heads, ptr %parfor.cell.cap181, align 8
-  %parfor.cell.cap182 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
-  store i64 %sdiv, ptr %parfor.cell.cap182, align 8
-  %parfor.cell.cap183 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
-  store ptr %data, ptr %parfor.cell.cap183, align 8
-  %parfor.cell.cap184 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 6
-  store i64 %cols, ptr %parfor.cell.cap184, align 8
-  %parfor.cell.cap185 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 7
-  store ptr %data14, ptr %parfor.cell.cap185, align 8
-  %parfor.cell.cap186 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 8
-  store float %fdiv, ptr %parfor.cell.cap186, align 4
-  %parfor.cell.cap187 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 9
-  store %_Z6VectorIfE %aux, ptr %parfor.cell.cap187, align 8
-  %parfor.cell.cap188 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 10
-  store i64 %rows, ptr %parfor.cell.cap188, align 8
-  %parfor.cell.cap189 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 11
-  store ptr %data21, ptr %parfor.cell.cap189, align 8
-  %parfor.cell.cap190 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 12
-  store ptr %data17, ptr %parfor.cell.cap190, align 8
-  %parfor.cell.cap191 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 13
-  store %_Z6VectorIfE %value23, ptr %parfor.cell.cap191, align 8
+  %parfor.cell.cap184 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
+  store i64 %heads, ptr %parfor.cell.cap184, align 8
+  %parfor.cell.cap185 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
+  store i64 %sdiv, ptr %parfor.cell.cap185, align 8
+  %parfor.cell.cap186 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
+  store ptr %data, ptr %parfor.cell.cap186, align 8
+  %parfor.cell.cap187 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 6
+  store i64 %cols, ptr %parfor.cell.cap187, align 8
+  %parfor.cell.cap188 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 7
+  store ptr %data14, ptr %parfor.cell.cap188, align 8
+  %parfor.cell.cap189 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 8
+  store float %fdiv, ptr %parfor.cell.cap189, align 4
+  %parfor.cell.cap190 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 9
+  store %_Z6VectorIfE %aux, ptr %parfor.cell.cap190, align 8
+  %parfor.cell.cap191 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 10
+  store i64 %rows, ptr %parfor.cell.cap191, align 8
+  %parfor.cell.cap192 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 11
+  store ptr %data21, ptr %parfor.cell.cap192, align 8
+  %parfor.cell.cap193 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 12
+  store ptr %data17, ptr %parfor.cell.cap193, align 8
+  %parfor.cell.cap194 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 13
+  store %_Z6VectorIfE %value23, ptr %parfor.cell.cap194, align 8
   %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
   %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 14
   store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
@@ -53021,7 +53039,8 @@ parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
 
 while.cond:                                       ; preds = %while.exit8, %parfor.chunk.body
   %j5 = load i64, ptr %j, align 8
-  %lt = icmp slt i64 %j5, %n
+  %add = add i64 %j5, 3
+  %lt = icmp slt i64 %add, %n
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -53054,257 +53073,257 @@ while.cond6:                                      ; preds = %while.body7, %while
 
 while.body7:                                      ; preds = %while.cond6
   %mul = mul i64 %parfor.iv, 4
-  %add = add i64 %mul, 0
-  %mul11 = mul i64 %add, %kk
-  %x12 = load i64, ptr %x, align 8
-  %add13 = add i64 %mul11, %x12
-  %ptr.add = getelementptr inbounds float, ptr %ap, i64 %add13
+  %add11 = add i64 %mul, 0
+  %mul12 = mul i64 %add11, %kk
+  %x13 = load i64, ptr %x, align 8
+  %add14 = add i64 %mul12, %x13
+  %ptr.add = getelementptr inbounds float, ptr %ap, i64 %add14
   %deref = load float, ptr %ptr.add, align 4
-  %mul14 = mul i64 %parfor.iv, 4
-  %add15 = add i64 %mul14, 1
-  %mul16 = mul i64 %add15, %kk
-  %x17 = load i64, ptr %x, align 8
-  %add18 = add i64 %mul16, %x17
-  %ptr.add19 = getelementptr inbounds float, ptr %ap, i64 %add18
-  %deref20 = load float, ptr %ptr.add19, align 4
-  %mul21 = mul i64 %parfor.iv, 4
-  %add22 = add i64 %mul21, 2
-  %mul23 = mul i64 %add22, %kk
-  %x24 = load i64, ptr %x, align 8
-  %add25 = add i64 %mul23, %x24
-  %ptr.add26 = getelementptr inbounds float, ptr %ap, i64 %add25
-  %deref27 = load float, ptr %ptr.add26, align 4
-  %mul28 = mul i64 %parfor.iv, 4
-  %add29 = add i64 %mul28, 3
-  %mul30 = mul i64 %add29, %kk
-  %x31 = load i64, ptr %x, align 8
-  %add32 = add i64 %mul30, %x31
-  %ptr.add33 = getelementptr inbounds float, ptr %ap, i64 %add32
-  %deref34 = load float, ptr %ptr.add33, align 4
-  %x35 = load i64, ptr %x, align 8
-  %mul36 = mul i64 %x35, %n
-  %j37 = load i64, ptr %j, align 8
-  %add38 = add i64 %mul36, %j37
-  %ptr.add39 = getelementptr inbounds float, ptr %bp, i64 %add38
-  %deref40 = load float, ptr %ptr.add39, align 4
-  %x41 = load i64, ptr %x, align 8
-  %mul42 = mul i64 %x41, %n
-  %j43 = load i64, ptr %j, align 8
-  %add44 = add i64 %mul42, %j43
-  %add45 = add i64 %add44, 1
-  %ptr.add46 = getelementptr inbounds float, ptr %bp, i64 %add45
-  %deref47 = load float, ptr %ptr.add46, align 4
-  %x48 = load i64, ptr %x, align 8
-  %mul49 = mul i64 %x48, %n
-  %j50 = load i64, ptr %j, align 8
-  %add51 = add i64 %mul49, %j50
-  %add52 = add i64 %add51, 2
-  %ptr.add53 = getelementptr inbounds float, ptr %bp, i64 %add52
-  %deref54 = load float, ptr %ptr.add53, align 4
-  %x55 = load i64, ptr %x, align 8
-  %mul56 = mul i64 %x55, %n
-  %j57 = load i64, ptr %j, align 8
-  %add58 = add i64 %mul56, %j57
-  %add59 = add i64 %add58, 3
-  %ptr.add60 = getelementptr inbounds float, ptr %bp, i64 %add59
-  %deref61 = load float, ptr %ptr.add60, align 4
-  %a0062 = load float, ptr %a00, align 4
-  %fmul = fmul float %deref, %deref40
-  %fadd = fadd float %a0062, %fmul
+  %mul15 = mul i64 %parfor.iv, 4
+  %add16 = add i64 %mul15, 1
+  %mul17 = mul i64 %add16, %kk
+  %x18 = load i64, ptr %x, align 8
+  %add19 = add i64 %mul17, %x18
+  %ptr.add20 = getelementptr inbounds float, ptr %ap, i64 %add19
+  %deref21 = load float, ptr %ptr.add20, align 4
+  %mul22 = mul i64 %parfor.iv, 4
+  %add23 = add i64 %mul22, 2
+  %mul24 = mul i64 %add23, %kk
+  %x25 = load i64, ptr %x, align 8
+  %add26 = add i64 %mul24, %x25
+  %ptr.add27 = getelementptr inbounds float, ptr %ap, i64 %add26
+  %deref28 = load float, ptr %ptr.add27, align 4
+  %mul29 = mul i64 %parfor.iv, 4
+  %add30 = add i64 %mul29, 3
+  %mul31 = mul i64 %add30, %kk
+  %x32 = load i64, ptr %x, align 8
+  %add33 = add i64 %mul31, %x32
+  %ptr.add34 = getelementptr inbounds float, ptr %ap, i64 %add33
+  %deref35 = load float, ptr %ptr.add34, align 4
+  %x36 = load i64, ptr %x, align 8
+  %mul37 = mul i64 %x36, %n
+  %j38 = load i64, ptr %j, align 8
+  %add39 = add i64 %mul37, %j38
+  %ptr.add40 = getelementptr inbounds float, ptr %bp, i64 %add39
+  %deref41 = load float, ptr %ptr.add40, align 4
+  %x42 = load i64, ptr %x, align 8
+  %mul43 = mul i64 %x42, %n
+  %j44 = load i64, ptr %j, align 8
+  %add45 = add i64 %mul43, %j44
+  %add46 = add i64 %add45, 1
+  %ptr.add47 = getelementptr inbounds float, ptr %bp, i64 %add46
+  %deref48 = load float, ptr %ptr.add47, align 4
+  %x49 = load i64, ptr %x, align 8
+  %mul50 = mul i64 %x49, %n
+  %j51 = load i64, ptr %j, align 8
+  %add52 = add i64 %mul50, %j51
+  %add53 = add i64 %add52, 2
+  %ptr.add54 = getelementptr inbounds float, ptr %bp, i64 %add53
+  %deref55 = load float, ptr %ptr.add54, align 4
+  %x56 = load i64, ptr %x, align 8
+  %mul57 = mul i64 %x56, %n
+  %j58 = load i64, ptr %j, align 8
+  %add59 = add i64 %mul57, %j58
+  %add60 = add i64 %add59, 3
+  %ptr.add61 = getelementptr inbounds float, ptr %bp, i64 %add60
+  %deref62 = load float, ptr %ptr.add61, align 4
+  %a0063 = load float, ptr %a00, align 4
+  %fmul = fmul float %deref, %deref41
+  %fadd = fadd float %a0063, %fmul
   store float %fadd, ptr %a00, align 1
-  %a0163 = load float, ptr %a01, align 4
-  %fmul64 = fmul float %deref, %deref47
-  %fadd65 = fadd float %a0163, %fmul64
-  store float %fadd65, ptr %a01, align 1
-  %a0266 = load float, ptr %a02, align 4
-  %fmul67 = fmul float %deref, %deref54
-  %fadd68 = fadd float %a0266, %fmul67
-  store float %fadd68, ptr %a02, align 1
-  %a0369 = load float, ptr %a03, align 4
-  %fmul70 = fmul float %deref, %deref61
-  %fadd71 = fadd float %a0369, %fmul70
-  store float %fadd71, ptr %a03, align 1
-  %a1072 = load float, ptr %a10, align 4
-  %fmul73 = fmul float %deref20, %deref40
-  %fadd74 = fadd float %a1072, %fmul73
-  store float %fadd74, ptr %a10, align 1
-  %a1175 = load float, ptr %a11, align 4
-  %fmul76 = fmul float %deref20, %deref47
-  %fadd77 = fadd float %a1175, %fmul76
-  store float %fadd77, ptr %a11, align 1
-  %a1278 = load float, ptr %a12, align 4
-  %fmul79 = fmul float %deref20, %deref54
-  %fadd80 = fadd float %a1278, %fmul79
-  store float %fadd80, ptr %a12, align 1
-  %a1381 = load float, ptr %a13, align 4
-  %fmul82 = fmul float %deref20, %deref61
-  %fadd83 = fadd float %a1381, %fmul82
-  store float %fadd83, ptr %a13, align 1
-  %a2084 = load float, ptr %a20, align 4
-  %fmul85 = fmul float %deref27, %deref40
-  %fadd86 = fadd float %a2084, %fmul85
-  store float %fadd86, ptr %a20, align 1
-  %a2187 = load float, ptr %a21, align 4
-  %fmul88 = fmul float %deref27, %deref47
-  %fadd89 = fadd float %a2187, %fmul88
-  store float %fadd89, ptr %a21, align 1
-  %a2290 = load float, ptr %a22, align 4
-  %fmul91 = fmul float %deref27, %deref54
-  %fadd92 = fadd float %a2290, %fmul91
-  store float %fadd92, ptr %a22, align 1
-  %a2393 = load float, ptr %a23, align 4
-  %fmul94 = fmul float %deref27, %deref61
-  %fadd95 = fadd float %a2393, %fmul94
-  store float %fadd95, ptr %a23, align 1
-  %a3096 = load float, ptr %a30, align 4
-  %fmul97 = fmul float %deref34, %deref40
-  %fadd98 = fadd float %a3096, %fmul97
-  store float %fadd98, ptr %a30, align 1
-  %a3199 = load float, ptr %a31, align 4
-  %fmul100 = fmul float %deref34, %deref47
-  %fadd101 = fadd float %a3199, %fmul100
-  store float %fadd101, ptr %a31, align 1
-  %a32102 = load float, ptr %a32, align 4
-  %fmul103 = fmul float %deref34, %deref54
-  %fadd104 = fadd float %a32102, %fmul103
-  store float %fadd104, ptr %a32, align 1
-  %a33105 = load float, ptr %a33, align 4
-  %fmul106 = fmul float %deref34, %deref61
-  %fadd107 = fadd float %a33105, %fmul106
-  store float %fadd107, ptr %a33, align 1
-  %x108 = load i64, ptr %x, align 8
-  %add109 = add i64 %x108, 1
-  store i64 %add109, ptr %x, align 1
+  %a0164 = load float, ptr %a01, align 4
+  %fmul65 = fmul float %deref, %deref48
+  %fadd66 = fadd float %a0164, %fmul65
+  store float %fadd66, ptr %a01, align 1
+  %a0267 = load float, ptr %a02, align 4
+  %fmul68 = fmul float %deref, %deref55
+  %fadd69 = fadd float %a0267, %fmul68
+  store float %fadd69, ptr %a02, align 1
+  %a0370 = load float, ptr %a03, align 4
+  %fmul71 = fmul float %deref, %deref62
+  %fadd72 = fadd float %a0370, %fmul71
+  store float %fadd72, ptr %a03, align 1
+  %a1073 = load float, ptr %a10, align 4
+  %fmul74 = fmul float %deref21, %deref41
+  %fadd75 = fadd float %a1073, %fmul74
+  store float %fadd75, ptr %a10, align 1
+  %a1176 = load float, ptr %a11, align 4
+  %fmul77 = fmul float %deref21, %deref48
+  %fadd78 = fadd float %a1176, %fmul77
+  store float %fadd78, ptr %a11, align 1
+  %a1279 = load float, ptr %a12, align 4
+  %fmul80 = fmul float %deref21, %deref55
+  %fadd81 = fadd float %a1279, %fmul80
+  store float %fadd81, ptr %a12, align 1
+  %a1382 = load float, ptr %a13, align 4
+  %fmul83 = fmul float %deref21, %deref62
+  %fadd84 = fadd float %a1382, %fmul83
+  store float %fadd84, ptr %a13, align 1
+  %a2085 = load float, ptr %a20, align 4
+  %fmul86 = fmul float %deref28, %deref41
+  %fadd87 = fadd float %a2085, %fmul86
+  store float %fadd87, ptr %a20, align 1
+  %a2188 = load float, ptr %a21, align 4
+  %fmul89 = fmul float %deref28, %deref48
+  %fadd90 = fadd float %a2188, %fmul89
+  store float %fadd90, ptr %a21, align 1
+  %a2291 = load float, ptr %a22, align 4
+  %fmul92 = fmul float %deref28, %deref55
+  %fadd93 = fadd float %a2291, %fmul92
+  store float %fadd93, ptr %a22, align 1
+  %a2394 = load float, ptr %a23, align 4
+  %fmul95 = fmul float %deref28, %deref62
+  %fadd96 = fadd float %a2394, %fmul95
+  store float %fadd96, ptr %a23, align 1
+  %a3097 = load float, ptr %a30, align 4
+  %fmul98 = fmul float %deref35, %deref41
+  %fadd99 = fadd float %a3097, %fmul98
+  store float %fadd99, ptr %a30, align 1
+  %a31100 = load float, ptr %a31, align 4
+  %fmul101 = fmul float %deref35, %deref48
+  %fadd102 = fadd float %a31100, %fmul101
+  store float %fadd102, ptr %a31, align 1
+  %a32103 = load float, ptr %a32, align 4
+  %fmul104 = fmul float %deref35, %deref55
+  %fadd105 = fadd float %a32103, %fmul104
+  store float %fadd105, ptr %a32, align 1
+  %a33106 = load float, ptr %a33, align 4
+  %fmul107 = fmul float %deref35, %deref62
+  %fadd108 = fadd float %a33106, %fmul107
+  store float %fadd108, ptr %a33, align 1
+  %x109 = load i64, ptr %x, align 8
+  %add110 = add i64 %x109, 1
+  store i64 %add110, ptr %x, align 1
   br label %while.cond6
 
 while.exit8:                                      ; preds = %while.cond6
-  %mul110 = mul i64 %parfor.iv, 4
-  %add111 = add i64 %mul110, 0
-  %mul112 = mul i64 %add111, %n
-  %j113 = load i64, ptr %j, align 8
-  %add114 = add i64 %mul112, %j113
-  %a00115 = load float, ptr %a00, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add114, float %a00115)
-  %mul116 = mul i64 %parfor.iv, 4
-  %add117 = add i64 %mul116, 0
-  %mul118 = mul i64 %add117, %n
-  %j119 = load i64, ptr %j, align 8
-  %add120 = add i64 %mul118, %j119
-  %add121 = add i64 %add120, 1
-  %a01122 = load float, ptr %a01, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add121, float %a01122)
-  %mul123 = mul i64 %parfor.iv, 4
-  %add124 = add i64 %mul123, 0
-  %mul125 = mul i64 %add124, %n
-  %j126 = load i64, ptr %j, align 8
-  %add127 = add i64 %mul125, %j126
-  %add128 = add i64 %add127, 2
-  %a02129 = load float, ptr %a02, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add128, float %a02129)
-  %mul130 = mul i64 %parfor.iv, 4
-  %add131 = add i64 %mul130, 0
-  %mul132 = mul i64 %add131, %n
-  %j133 = load i64, ptr %j, align 8
-  %add134 = add i64 %mul132, %j133
-  %add135 = add i64 %add134, 3
-  %a03136 = load float, ptr %a03, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add135, float %a03136)
-  %mul137 = mul i64 %parfor.iv, 4
-  %add138 = add i64 %mul137, 1
-  %mul139 = mul i64 %add138, %n
-  %j140 = load i64, ptr %j, align 8
-  %add141 = add i64 %mul139, %j140
-  %a10142 = load float, ptr %a10, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add141, float %a10142)
-  %mul143 = mul i64 %parfor.iv, 4
-  %add144 = add i64 %mul143, 1
-  %mul145 = mul i64 %add144, %n
-  %j146 = load i64, ptr %j, align 8
-  %add147 = add i64 %mul145, %j146
-  %add148 = add i64 %add147, 1
-  %a11149 = load float, ptr %a11, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add148, float %a11149)
-  %mul150 = mul i64 %parfor.iv, 4
-  %add151 = add i64 %mul150, 1
-  %mul152 = mul i64 %add151, %n
-  %j153 = load i64, ptr %j, align 8
-  %add154 = add i64 %mul152, %j153
-  %add155 = add i64 %add154, 2
-  %a12156 = load float, ptr %a12, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add155, float %a12156)
-  %mul157 = mul i64 %parfor.iv, 4
-  %add158 = add i64 %mul157, 1
-  %mul159 = mul i64 %add158, %n
-  %j160 = load i64, ptr %j, align 8
-  %add161 = add i64 %mul159, %j160
-  %add162 = add i64 %add161, 3
-  %a13163 = load float, ptr %a13, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add162, float %a13163)
-  %mul164 = mul i64 %parfor.iv, 4
-  %add165 = add i64 %mul164, 2
-  %mul166 = mul i64 %add165, %n
-  %j167 = load i64, ptr %j, align 8
-  %add168 = add i64 %mul166, %j167
-  %a20169 = load float, ptr %a20, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add168, float %a20169)
-  %mul170 = mul i64 %parfor.iv, 4
-  %add171 = add i64 %mul170, 2
-  %mul172 = mul i64 %add171, %n
-  %j173 = load i64, ptr %j, align 8
-  %add174 = add i64 %mul172, %j173
-  %add175 = add i64 %add174, 1
-  %a21176 = load float, ptr %a21, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add175, float %a21176)
-  %mul177 = mul i64 %parfor.iv, 4
-  %add178 = add i64 %mul177, 2
-  %mul179 = mul i64 %add178, %n
-  %j180 = load i64, ptr %j, align 8
-  %add181 = add i64 %mul179, %j180
-  %add182 = add i64 %add181, 2
-  %a22183 = load float, ptr %a22, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add182, float %a22183)
-  %mul184 = mul i64 %parfor.iv, 4
-  %add185 = add i64 %mul184, 2
-  %mul186 = mul i64 %add185, %n
-  %j187 = load i64, ptr %j, align 8
-  %add188 = add i64 %mul186, %j187
-  %add189 = add i64 %add188, 3
-  %a23190 = load float, ptr %a23, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add189, float %a23190)
-  %mul191 = mul i64 %parfor.iv, 4
-  %add192 = add i64 %mul191, 3
-  %mul193 = mul i64 %add192, %n
-  %j194 = load i64, ptr %j, align 8
-  %add195 = add i64 %mul193, %j194
-  %a30196 = load float, ptr %a30, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add195, float %a30196)
-  %mul197 = mul i64 %parfor.iv, 4
-  %add198 = add i64 %mul197, 3
-  %mul199 = mul i64 %add198, %n
-  %j200 = load i64, ptr %j, align 8
-  %add201 = add i64 %mul199, %j200
-  %add202 = add i64 %add201, 1
-  %a31203 = load float, ptr %a31, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add202, float %a31203)
-  %mul204 = mul i64 %parfor.iv, 4
-  %add205 = add i64 %mul204, 3
-  %mul206 = mul i64 %add205, %n
-  %j207 = load i64, ptr %j, align 8
-  %add208 = add i64 %mul206, %j207
-  %add209 = add i64 %add208, 2
-  %a32210 = load float, ptr %a32, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add209, float %a32210)
-  %mul211 = mul i64 %parfor.iv, 4
-  %add212 = add i64 %mul211, 3
-  %mul213 = mul i64 %add212, %n
-  %j214 = load i64, ptr %j, align 8
-  %add215 = add i64 %mul213, %j214
-  %add216 = add i64 %add215, 3
-  %a33217 = load float, ptr %a33, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add216, float %a33217)
-  %j218 = load i64, ptr %j, align 8
-  %add219 = add i64 %j218, 4
-  store i64 %add219, ptr %j, align 1
+  %mul111 = mul i64 %parfor.iv, 4
+  %add112 = add i64 %mul111, 0
+  %mul113 = mul i64 %add112, %n
+  %j114 = load i64, ptr %j, align 8
+  %add115 = add i64 %mul113, %j114
+  %a00116 = load float, ptr %a00, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add115, float %a00116)
+  %mul117 = mul i64 %parfor.iv, 4
+  %add118 = add i64 %mul117, 0
+  %mul119 = mul i64 %add118, %n
+  %j120 = load i64, ptr %j, align 8
+  %add121 = add i64 %mul119, %j120
+  %add122 = add i64 %add121, 1
+  %a01123 = load float, ptr %a01, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add122, float %a01123)
+  %mul124 = mul i64 %parfor.iv, 4
+  %add125 = add i64 %mul124, 0
+  %mul126 = mul i64 %add125, %n
+  %j127 = load i64, ptr %j, align 8
+  %add128 = add i64 %mul126, %j127
+  %add129 = add i64 %add128, 2
+  %a02130 = load float, ptr %a02, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add129, float %a02130)
+  %mul131 = mul i64 %parfor.iv, 4
+  %add132 = add i64 %mul131, 0
+  %mul133 = mul i64 %add132, %n
+  %j134 = load i64, ptr %j, align 8
+  %add135 = add i64 %mul133, %j134
+  %add136 = add i64 %add135, 3
+  %a03137 = load float, ptr %a03, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add136, float %a03137)
+  %mul138 = mul i64 %parfor.iv, 4
+  %add139 = add i64 %mul138, 1
+  %mul140 = mul i64 %add139, %n
+  %j141 = load i64, ptr %j, align 8
+  %add142 = add i64 %mul140, %j141
+  %a10143 = load float, ptr %a10, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add142, float %a10143)
+  %mul144 = mul i64 %parfor.iv, 4
+  %add145 = add i64 %mul144, 1
+  %mul146 = mul i64 %add145, %n
+  %j147 = load i64, ptr %j, align 8
+  %add148 = add i64 %mul146, %j147
+  %add149 = add i64 %add148, 1
+  %a11150 = load float, ptr %a11, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add149, float %a11150)
+  %mul151 = mul i64 %parfor.iv, 4
+  %add152 = add i64 %mul151, 1
+  %mul153 = mul i64 %add152, %n
+  %j154 = load i64, ptr %j, align 8
+  %add155 = add i64 %mul153, %j154
+  %add156 = add i64 %add155, 2
+  %a12157 = load float, ptr %a12, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add156, float %a12157)
+  %mul158 = mul i64 %parfor.iv, 4
+  %add159 = add i64 %mul158, 1
+  %mul160 = mul i64 %add159, %n
+  %j161 = load i64, ptr %j, align 8
+  %add162 = add i64 %mul160, %j161
+  %add163 = add i64 %add162, 3
+  %a13164 = load float, ptr %a13, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add163, float %a13164)
+  %mul165 = mul i64 %parfor.iv, 4
+  %add166 = add i64 %mul165, 2
+  %mul167 = mul i64 %add166, %n
+  %j168 = load i64, ptr %j, align 8
+  %add169 = add i64 %mul167, %j168
+  %a20170 = load float, ptr %a20, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add169, float %a20170)
+  %mul171 = mul i64 %parfor.iv, 4
+  %add172 = add i64 %mul171, 2
+  %mul173 = mul i64 %add172, %n
+  %j174 = load i64, ptr %j, align 8
+  %add175 = add i64 %mul173, %j174
+  %add176 = add i64 %add175, 1
+  %a21177 = load float, ptr %a21, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add176, float %a21177)
+  %mul178 = mul i64 %parfor.iv, 4
+  %add179 = add i64 %mul178, 2
+  %mul180 = mul i64 %add179, %n
+  %j181 = load i64, ptr %j, align 8
+  %add182 = add i64 %mul180, %j181
+  %add183 = add i64 %add182, 2
+  %a22184 = load float, ptr %a22, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add183, float %a22184)
+  %mul185 = mul i64 %parfor.iv, 4
+  %add186 = add i64 %mul185, 2
+  %mul187 = mul i64 %add186, %n
+  %j188 = load i64, ptr %j, align 8
+  %add189 = add i64 %mul187, %j188
+  %add190 = add i64 %add189, 3
+  %a23191 = load float, ptr %a23, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add190, float %a23191)
+  %mul192 = mul i64 %parfor.iv, 4
+  %add193 = add i64 %mul192, 3
+  %mul194 = mul i64 %add193, %n
+  %j195 = load i64, ptr %j, align 8
+  %add196 = add i64 %mul194, %j195
+  %a30197 = load float, ptr %a30, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add196, float %a30197)
+  %mul198 = mul i64 %parfor.iv, 4
+  %add199 = add i64 %mul198, 3
+  %mul200 = mul i64 %add199, %n
+  %j201 = load i64, ptr %j, align 8
+  %add202 = add i64 %mul200, %j201
+  %add203 = add i64 %add202, 1
+  %a31204 = load float, ptr %a31, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add203, float %a31204)
+  %mul205 = mul i64 %parfor.iv, 4
+  %add206 = add i64 %mul205, 3
+  %mul207 = mul i64 %add206, %n
+  %j208 = load i64, ptr %j, align 8
+  %add209 = add i64 %mul207, %j208
+  %add210 = add i64 %add209, 2
+  %a32211 = load float, ptr %a32, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add210, float %a32211)
+  %mul212 = mul i64 %parfor.iv, 4
+  %add213 = add i64 %mul212, 3
+  %mul214 = mul i64 %add213, %n
+  %j215 = load i64, ptr %j, align 8
+  %add216 = add i64 %mul214, %j215
+  %add217 = add i64 %add216, 3
+  %a33218 = load float, ptr %a33, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %c, i64 %add217, float %a33218)
+  %j219 = load i64, ptr %j, align 8
+  %add220 = add i64 %j219, 4
+  store i64 %add220, ptr %j, align 1
   br label %while.cond
 }
 
@@ -53379,7 +53398,8 @@ parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
 
 while.cond:                                       ; preds = %while.exit9, %parfor.chunk.body
   %xt6 = load i64, ptr %xt, align 8
-  %lt = icmp slt i64 %xt6, %kk
+  %add = add i64 %xt6, 3
+  %lt = icmp slt i64 %add, %kk
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -53412,406 +53432,406 @@ while.cond7:                                      ; preds = %while.body8, %while
 
 while.body8:                                      ; preds = %while.cond7
   %mul = mul i64 %parfor.iv, 4
-  %add = add i64 %mul, 0
-  %mul12 = mul i64 %add, %n
-  %j13 = load i64, ptr %j, align 8
-  %add14 = add i64 %mul12, %j13
-  %ptr.add = getelementptr inbounds float, ptr %gcp, i64 %add14
+  %add12 = add i64 %mul, 0
+  %mul13 = mul i64 %add12, %n
+  %j14 = load i64, ptr %j, align 8
+  %add15 = add i64 %mul13, %j14
+  %ptr.add = getelementptr inbounds float, ptr %gcp, i64 %add15
   %deref = load float, ptr %ptr.add, align 4
-  %mul15 = mul i64 %parfor.iv, 4
-  %add16 = add i64 %mul15, 1
-  %mul17 = mul i64 %add16, %n
-  %j18 = load i64, ptr %j, align 8
-  %add19 = add i64 %mul17, %j18
-  %ptr.add20 = getelementptr inbounds float, ptr %gcp, i64 %add19
-  %deref21 = load float, ptr %ptr.add20, align 4
-  %mul22 = mul i64 %parfor.iv, 4
-  %add23 = add i64 %mul22, 2
-  %mul24 = mul i64 %add23, %n
-  %j25 = load i64, ptr %j, align 8
-  %add26 = add i64 %mul24, %j25
-  %ptr.add27 = getelementptr inbounds float, ptr %gcp, i64 %add26
-  %deref28 = load float, ptr %ptr.add27, align 4
-  %mul29 = mul i64 %parfor.iv, 4
-  %add30 = add i64 %mul29, 3
-  %mul31 = mul i64 %add30, %n
-  %j32 = load i64, ptr %j, align 8
-  %add33 = add i64 %mul31, %j32
-  %ptr.add34 = getelementptr inbounds float, ptr %gcp, i64 %add33
-  %deref35 = load float, ptr %ptr.add34, align 4
-  %xt36 = load i64, ptr %xt, align 8
-  %add37 = add i64 %xt36, 0
-  %mul38 = mul i64 %add37, %n
-  %j39 = load i64, ptr %j, align 8
-  %add40 = add i64 %mul38, %j39
-  %ptr.add41 = getelementptr inbounds float, ptr %bp, i64 %add40
-  %deref42 = load float, ptr %ptr.add41, align 4
-  %xt43 = load i64, ptr %xt, align 8
-  %add44 = add i64 %xt43, 1
-  %mul45 = mul i64 %add44, %n
-  %j46 = load i64, ptr %j, align 8
-  %add47 = add i64 %mul45, %j46
-  %ptr.add48 = getelementptr inbounds float, ptr %bp, i64 %add47
-  %deref49 = load float, ptr %ptr.add48, align 4
-  %xt50 = load i64, ptr %xt, align 8
-  %add51 = add i64 %xt50, 2
-  %mul52 = mul i64 %add51, %n
-  %j53 = load i64, ptr %j, align 8
-  %add54 = add i64 %mul52, %j53
-  %ptr.add55 = getelementptr inbounds float, ptr %bp, i64 %add54
-  %deref56 = load float, ptr %ptr.add55, align 4
-  %xt57 = load i64, ptr %xt, align 8
-  %add58 = add i64 %xt57, 3
-  %mul59 = mul i64 %add58, %n
-  %j60 = load i64, ptr %j, align 8
-  %add61 = add i64 %mul59, %j60
-  %ptr.add62 = getelementptr inbounds float, ptr %bp, i64 %add61
-  %deref63 = load float, ptr %ptr.add62, align 4
-  %a0064 = load float, ptr %a00, align 4
-  %fmul = fmul float %deref, %deref42
-  %fadd = fadd float %a0064, %fmul
+  %mul16 = mul i64 %parfor.iv, 4
+  %add17 = add i64 %mul16, 1
+  %mul18 = mul i64 %add17, %n
+  %j19 = load i64, ptr %j, align 8
+  %add20 = add i64 %mul18, %j19
+  %ptr.add21 = getelementptr inbounds float, ptr %gcp, i64 %add20
+  %deref22 = load float, ptr %ptr.add21, align 4
+  %mul23 = mul i64 %parfor.iv, 4
+  %add24 = add i64 %mul23, 2
+  %mul25 = mul i64 %add24, %n
+  %j26 = load i64, ptr %j, align 8
+  %add27 = add i64 %mul25, %j26
+  %ptr.add28 = getelementptr inbounds float, ptr %gcp, i64 %add27
+  %deref29 = load float, ptr %ptr.add28, align 4
+  %mul30 = mul i64 %parfor.iv, 4
+  %add31 = add i64 %mul30, 3
+  %mul32 = mul i64 %add31, %n
+  %j33 = load i64, ptr %j, align 8
+  %add34 = add i64 %mul32, %j33
+  %ptr.add35 = getelementptr inbounds float, ptr %gcp, i64 %add34
+  %deref36 = load float, ptr %ptr.add35, align 4
+  %xt37 = load i64, ptr %xt, align 8
+  %add38 = add i64 %xt37, 0
+  %mul39 = mul i64 %add38, %n
+  %j40 = load i64, ptr %j, align 8
+  %add41 = add i64 %mul39, %j40
+  %ptr.add42 = getelementptr inbounds float, ptr %bp, i64 %add41
+  %deref43 = load float, ptr %ptr.add42, align 4
+  %xt44 = load i64, ptr %xt, align 8
+  %add45 = add i64 %xt44, 1
+  %mul46 = mul i64 %add45, %n
+  %j47 = load i64, ptr %j, align 8
+  %add48 = add i64 %mul46, %j47
+  %ptr.add49 = getelementptr inbounds float, ptr %bp, i64 %add48
+  %deref50 = load float, ptr %ptr.add49, align 4
+  %xt51 = load i64, ptr %xt, align 8
+  %add52 = add i64 %xt51, 2
+  %mul53 = mul i64 %add52, %n
+  %j54 = load i64, ptr %j, align 8
+  %add55 = add i64 %mul53, %j54
+  %ptr.add56 = getelementptr inbounds float, ptr %bp, i64 %add55
+  %deref57 = load float, ptr %ptr.add56, align 4
+  %xt58 = load i64, ptr %xt, align 8
+  %add59 = add i64 %xt58, 3
+  %mul60 = mul i64 %add59, %n
+  %j61 = load i64, ptr %j, align 8
+  %add62 = add i64 %mul60, %j61
+  %ptr.add63 = getelementptr inbounds float, ptr %bp, i64 %add62
+  %deref64 = load float, ptr %ptr.add63, align 4
+  %a0065 = load float, ptr %a00, align 4
+  %fmul = fmul float %deref, %deref43
+  %fadd = fadd float %a0065, %fmul
   store float %fadd, ptr %a00, align 1
-  %a0165 = load float, ptr %a01, align 4
-  %fmul66 = fmul float %deref, %deref49
-  %fadd67 = fadd float %a0165, %fmul66
-  store float %fadd67, ptr %a01, align 1
-  %a0268 = load float, ptr %a02, align 4
-  %fmul69 = fmul float %deref, %deref56
-  %fadd70 = fadd float %a0268, %fmul69
-  store float %fadd70, ptr %a02, align 1
-  %a0371 = load float, ptr %a03, align 4
-  %fmul72 = fmul float %deref, %deref63
-  %fadd73 = fadd float %a0371, %fmul72
-  store float %fadd73, ptr %a03, align 1
-  %a1074 = load float, ptr %a10, align 4
-  %fmul75 = fmul float %deref21, %deref42
-  %fadd76 = fadd float %a1074, %fmul75
-  store float %fadd76, ptr %a10, align 1
-  %a1177 = load float, ptr %a11, align 4
-  %fmul78 = fmul float %deref21, %deref49
-  %fadd79 = fadd float %a1177, %fmul78
-  store float %fadd79, ptr %a11, align 1
-  %a1280 = load float, ptr %a12, align 4
-  %fmul81 = fmul float %deref21, %deref56
-  %fadd82 = fadd float %a1280, %fmul81
-  store float %fadd82, ptr %a12, align 1
-  %a1383 = load float, ptr %a13, align 4
-  %fmul84 = fmul float %deref21, %deref63
-  %fadd85 = fadd float %a1383, %fmul84
-  store float %fadd85, ptr %a13, align 1
-  %a2086 = load float, ptr %a20, align 4
-  %fmul87 = fmul float %deref28, %deref42
-  %fadd88 = fadd float %a2086, %fmul87
-  store float %fadd88, ptr %a20, align 1
-  %a2189 = load float, ptr %a21, align 4
-  %fmul90 = fmul float %deref28, %deref49
-  %fadd91 = fadd float %a2189, %fmul90
-  store float %fadd91, ptr %a21, align 1
-  %a2292 = load float, ptr %a22, align 4
-  %fmul93 = fmul float %deref28, %deref56
-  %fadd94 = fadd float %a2292, %fmul93
-  store float %fadd94, ptr %a22, align 1
-  %a2395 = load float, ptr %a23, align 4
-  %fmul96 = fmul float %deref28, %deref63
-  %fadd97 = fadd float %a2395, %fmul96
-  store float %fadd97, ptr %a23, align 1
-  %a3098 = load float, ptr %a30, align 4
-  %fmul99 = fmul float %deref35, %deref42
-  %fadd100 = fadd float %a3098, %fmul99
-  store float %fadd100, ptr %a30, align 1
-  %a31101 = load float, ptr %a31, align 4
-  %fmul102 = fmul float %deref35, %deref49
-  %fadd103 = fadd float %a31101, %fmul102
-  store float %fadd103, ptr %a31, align 1
-  %a32104 = load float, ptr %a32, align 4
-  %fmul105 = fmul float %deref35, %deref56
-  %fadd106 = fadd float %a32104, %fmul105
-  store float %fadd106, ptr %a32, align 1
-  %a33107 = load float, ptr %a33, align 4
-  %fmul108 = fmul float %deref35, %deref63
-  %fadd109 = fadd float %a33107, %fmul108
-  store float %fadd109, ptr %a33, align 1
-  %j110 = load i64, ptr %j, align 8
-  %add111 = add i64 %j110, 1
-  store i64 %add111, ptr %j, align 1
+  %a0166 = load float, ptr %a01, align 4
+  %fmul67 = fmul float %deref, %deref50
+  %fadd68 = fadd float %a0166, %fmul67
+  store float %fadd68, ptr %a01, align 1
+  %a0269 = load float, ptr %a02, align 4
+  %fmul70 = fmul float %deref, %deref57
+  %fadd71 = fadd float %a0269, %fmul70
+  store float %fadd71, ptr %a02, align 1
+  %a0372 = load float, ptr %a03, align 4
+  %fmul73 = fmul float %deref, %deref64
+  %fadd74 = fadd float %a0372, %fmul73
+  store float %fadd74, ptr %a03, align 1
+  %a1075 = load float, ptr %a10, align 4
+  %fmul76 = fmul float %deref22, %deref43
+  %fadd77 = fadd float %a1075, %fmul76
+  store float %fadd77, ptr %a10, align 1
+  %a1178 = load float, ptr %a11, align 4
+  %fmul79 = fmul float %deref22, %deref50
+  %fadd80 = fadd float %a1178, %fmul79
+  store float %fadd80, ptr %a11, align 1
+  %a1281 = load float, ptr %a12, align 4
+  %fmul82 = fmul float %deref22, %deref57
+  %fadd83 = fadd float %a1281, %fmul82
+  store float %fadd83, ptr %a12, align 1
+  %a1384 = load float, ptr %a13, align 4
+  %fmul85 = fmul float %deref22, %deref64
+  %fadd86 = fadd float %a1384, %fmul85
+  store float %fadd86, ptr %a13, align 1
+  %a2087 = load float, ptr %a20, align 4
+  %fmul88 = fmul float %deref29, %deref43
+  %fadd89 = fadd float %a2087, %fmul88
+  store float %fadd89, ptr %a20, align 1
+  %a2190 = load float, ptr %a21, align 4
+  %fmul91 = fmul float %deref29, %deref50
+  %fadd92 = fadd float %a2190, %fmul91
+  store float %fadd92, ptr %a21, align 1
+  %a2293 = load float, ptr %a22, align 4
+  %fmul94 = fmul float %deref29, %deref57
+  %fadd95 = fadd float %a2293, %fmul94
+  store float %fadd95, ptr %a22, align 1
+  %a2396 = load float, ptr %a23, align 4
+  %fmul97 = fmul float %deref29, %deref64
+  %fadd98 = fadd float %a2396, %fmul97
+  store float %fadd98, ptr %a23, align 1
+  %a3099 = load float, ptr %a30, align 4
+  %fmul100 = fmul float %deref36, %deref43
+  %fadd101 = fadd float %a3099, %fmul100
+  store float %fadd101, ptr %a30, align 1
+  %a31102 = load float, ptr %a31, align 4
+  %fmul103 = fmul float %deref36, %deref50
+  %fadd104 = fadd float %a31102, %fmul103
+  store float %fadd104, ptr %a31, align 1
+  %a32105 = load float, ptr %a32, align 4
+  %fmul106 = fmul float %deref36, %deref57
+  %fadd107 = fadd float %a32105, %fmul106
+  store float %fadd107, ptr %a32, align 1
+  %a33108 = load float, ptr %a33, align 4
+  %fmul109 = fmul float %deref36, %deref64
+  %fadd110 = fadd float %a33108, %fmul109
+  store float %fadd110, ptr %a33, align 1
+  %j111 = load i64, ptr %j, align 8
+  %add112 = add i64 %j111, 1
+  store i64 %add112, ptr %j, align 1
   br label %while.cond7
 
 while.exit9:                                      ; preds = %while.cond7
-  %mul112 = mul i64 %parfor.iv, 4
-  %add113 = add i64 %mul112, 0
-  %mul114 = mul i64 %add113, %kk
-  %xt115 = load i64, ptr %xt, align 8
-  %add116 = add i64 %mul114, %xt115
-  %add117 = add i64 %add116, 0
-  %mul118 = mul i64 %parfor.iv, 4
-  %add119 = add i64 %mul118, 0
-  %mul120 = mul i64 %add119, %kk
-  %xt121 = load i64, ptr %xt, align 8
-  %add122 = add i64 %mul120, %xt121
-  %add123 = add i64 %add122, 0
-  %ptr.add124 = getelementptr inbounds float, ptr %gap, i64 %add123
-  %deref125 = load float, ptr %ptr.add124, align 4
-  %a00126 = load float, ptr %a00, align 4
-  %fadd127 = fadd float %deref125, %a00126
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add117, float %fadd127)
-  %mul128 = mul i64 %parfor.iv, 4
-  %add129 = add i64 %mul128, 0
-  %mul130 = mul i64 %add129, %kk
-  %xt131 = load i64, ptr %xt, align 8
-  %add132 = add i64 %mul130, %xt131
-  %add133 = add i64 %add132, 1
-  %mul134 = mul i64 %parfor.iv, 4
-  %add135 = add i64 %mul134, 0
-  %mul136 = mul i64 %add135, %kk
-  %xt137 = load i64, ptr %xt, align 8
-  %add138 = add i64 %mul136, %xt137
-  %add139 = add i64 %add138, 1
-  %ptr.add140 = getelementptr inbounds float, ptr %gap, i64 %add139
-  %deref141 = load float, ptr %ptr.add140, align 4
-  %a01142 = load float, ptr %a01, align 4
-  %fadd143 = fadd float %deref141, %a01142
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add133, float %fadd143)
-  %mul144 = mul i64 %parfor.iv, 4
-  %add145 = add i64 %mul144, 0
-  %mul146 = mul i64 %add145, %kk
-  %xt147 = load i64, ptr %xt, align 8
-  %add148 = add i64 %mul146, %xt147
-  %add149 = add i64 %add148, 2
-  %mul150 = mul i64 %parfor.iv, 4
-  %add151 = add i64 %mul150, 0
-  %mul152 = mul i64 %add151, %kk
-  %xt153 = load i64, ptr %xt, align 8
-  %add154 = add i64 %mul152, %xt153
-  %add155 = add i64 %add154, 2
-  %ptr.add156 = getelementptr inbounds float, ptr %gap, i64 %add155
-  %deref157 = load float, ptr %ptr.add156, align 4
-  %a02158 = load float, ptr %a02, align 4
-  %fadd159 = fadd float %deref157, %a02158
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add149, float %fadd159)
-  %mul160 = mul i64 %parfor.iv, 4
-  %add161 = add i64 %mul160, 0
-  %mul162 = mul i64 %add161, %kk
-  %xt163 = load i64, ptr %xt, align 8
-  %add164 = add i64 %mul162, %xt163
-  %add165 = add i64 %add164, 3
-  %mul166 = mul i64 %parfor.iv, 4
-  %add167 = add i64 %mul166, 0
-  %mul168 = mul i64 %add167, %kk
-  %xt169 = load i64, ptr %xt, align 8
-  %add170 = add i64 %mul168, %xt169
-  %add171 = add i64 %add170, 3
-  %ptr.add172 = getelementptr inbounds float, ptr %gap, i64 %add171
-  %deref173 = load float, ptr %ptr.add172, align 4
-  %a03174 = load float, ptr %a03, align 4
-  %fadd175 = fadd float %deref173, %a03174
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add165, float %fadd175)
-  %mul176 = mul i64 %parfor.iv, 4
-  %add177 = add i64 %mul176, 1
-  %mul178 = mul i64 %add177, %kk
-  %xt179 = load i64, ptr %xt, align 8
-  %add180 = add i64 %mul178, %xt179
-  %add181 = add i64 %add180, 0
-  %mul182 = mul i64 %parfor.iv, 4
-  %add183 = add i64 %mul182, 1
-  %mul184 = mul i64 %add183, %kk
-  %xt185 = load i64, ptr %xt, align 8
-  %add186 = add i64 %mul184, %xt185
-  %add187 = add i64 %add186, 0
-  %ptr.add188 = getelementptr inbounds float, ptr %gap, i64 %add187
-  %deref189 = load float, ptr %ptr.add188, align 4
-  %a10190 = load float, ptr %a10, align 4
-  %fadd191 = fadd float %deref189, %a10190
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add181, float %fadd191)
-  %mul192 = mul i64 %parfor.iv, 4
-  %add193 = add i64 %mul192, 1
-  %mul194 = mul i64 %add193, %kk
-  %xt195 = load i64, ptr %xt, align 8
-  %add196 = add i64 %mul194, %xt195
-  %add197 = add i64 %add196, 1
-  %mul198 = mul i64 %parfor.iv, 4
-  %add199 = add i64 %mul198, 1
-  %mul200 = mul i64 %add199, %kk
-  %xt201 = load i64, ptr %xt, align 8
-  %add202 = add i64 %mul200, %xt201
-  %add203 = add i64 %add202, 1
-  %ptr.add204 = getelementptr inbounds float, ptr %gap, i64 %add203
-  %deref205 = load float, ptr %ptr.add204, align 4
-  %a11206 = load float, ptr %a11, align 4
-  %fadd207 = fadd float %deref205, %a11206
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add197, float %fadd207)
-  %mul208 = mul i64 %parfor.iv, 4
-  %add209 = add i64 %mul208, 1
-  %mul210 = mul i64 %add209, %kk
-  %xt211 = load i64, ptr %xt, align 8
-  %add212 = add i64 %mul210, %xt211
-  %add213 = add i64 %add212, 2
-  %mul214 = mul i64 %parfor.iv, 4
-  %add215 = add i64 %mul214, 1
-  %mul216 = mul i64 %add215, %kk
-  %xt217 = load i64, ptr %xt, align 8
-  %add218 = add i64 %mul216, %xt217
-  %add219 = add i64 %add218, 2
-  %ptr.add220 = getelementptr inbounds float, ptr %gap, i64 %add219
-  %deref221 = load float, ptr %ptr.add220, align 4
-  %a12222 = load float, ptr %a12, align 4
-  %fadd223 = fadd float %deref221, %a12222
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add213, float %fadd223)
-  %mul224 = mul i64 %parfor.iv, 4
-  %add225 = add i64 %mul224, 1
-  %mul226 = mul i64 %add225, %kk
-  %xt227 = load i64, ptr %xt, align 8
-  %add228 = add i64 %mul226, %xt227
-  %add229 = add i64 %add228, 3
-  %mul230 = mul i64 %parfor.iv, 4
-  %add231 = add i64 %mul230, 1
-  %mul232 = mul i64 %add231, %kk
-  %xt233 = load i64, ptr %xt, align 8
-  %add234 = add i64 %mul232, %xt233
-  %add235 = add i64 %add234, 3
-  %ptr.add236 = getelementptr inbounds float, ptr %gap, i64 %add235
-  %deref237 = load float, ptr %ptr.add236, align 4
-  %a13238 = load float, ptr %a13, align 4
-  %fadd239 = fadd float %deref237, %a13238
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add229, float %fadd239)
-  %mul240 = mul i64 %parfor.iv, 4
-  %add241 = add i64 %mul240, 2
-  %mul242 = mul i64 %add241, %kk
-  %xt243 = load i64, ptr %xt, align 8
-  %add244 = add i64 %mul242, %xt243
-  %add245 = add i64 %add244, 0
-  %mul246 = mul i64 %parfor.iv, 4
-  %add247 = add i64 %mul246, 2
-  %mul248 = mul i64 %add247, %kk
-  %xt249 = load i64, ptr %xt, align 8
-  %add250 = add i64 %mul248, %xt249
-  %add251 = add i64 %add250, 0
-  %ptr.add252 = getelementptr inbounds float, ptr %gap, i64 %add251
-  %deref253 = load float, ptr %ptr.add252, align 4
-  %a20254 = load float, ptr %a20, align 4
-  %fadd255 = fadd float %deref253, %a20254
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add245, float %fadd255)
-  %mul256 = mul i64 %parfor.iv, 4
-  %add257 = add i64 %mul256, 2
-  %mul258 = mul i64 %add257, %kk
-  %xt259 = load i64, ptr %xt, align 8
-  %add260 = add i64 %mul258, %xt259
-  %add261 = add i64 %add260, 1
-  %mul262 = mul i64 %parfor.iv, 4
-  %add263 = add i64 %mul262, 2
-  %mul264 = mul i64 %add263, %kk
-  %xt265 = load i64, ptr %xt, align 8
-  %add266 = add i64 %mul264, %xt265
-  %add267 = add i64 %add266, 1
-  %ptr.add268 = getelementptr inbounds float, ptr %gap, i64 %add267
-  %deref269 = load float, ptr %ptr.add268, align 4
-  %a21270 = load float, ptr %a21, align 4
-  %fadd271 = fadd float %deref269, %a21270
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add261, float %fadd271)
-  %mul272 = mul i64 %parfor.iv, 4
-  %add273 = add i64 %mul272, 2
-  %mul274 = mul i64 %add273, %kk
-  %xt275 = load i64, ptr %xt, align 8
-  %add276 = add i64 %mul274, %xt275
-  %add277 = add i64 %add276, 2
-  %mul278 = mul i64 %parfor.iv, 4
-  %add279 = add i64 %mul278, 2
-  %mul280 = mul i64 %add279, %kk
-  %xt281 = load i64, ptr %xt, align 8
-  %add282 = add i64 %mul280, %xt281
-  %add283 = add i64 %add282, 2
-  %ptr.add284 = getelementptr inbounds float, ptr %gap, i64 %add283
-  %deref285 = load float, ptr %ptr.add284, align 4
-  %a22286 = load float, ptr %a22, align 4
-  %fadd287 = fadd float %deref285, %a22286
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add277, float %fadd287)
-  %mul288 = mul i64 %parfor.iv, 4
-  %add289 = add i64 %mul288, 2
-  %mul290 = mul i64 %add289, %kk
-  %xt291 = load i64, ptr %xt, align 8
-  %add292 = add i64 %mul290, %xt291
-  %add293 = add i64 %add292, 3
-  %mul294 = mul i64 %parfor.iv, 4
-  %add295 = add i64 %mul294, 2
-  %mul296 = mul i64 %add295, %kk
-  %xt297 = load i64, ptr %xt, align 8
-  %add298 = add i64 %mul296, %xt297
-  %add299 = add i64 %add298, 3
-  %ptr.add300 = getelementptr inbounds float, ptr %gap, i64 %add299
-  %deref301 = load float, ptr %ptr.add300, align 4
-  %a23302 = load float, ptr %a23, align 4
-  %fadd303 = fadd float %deref301, %a23302
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add293, float %fadd303)
-  %mul304 = mul i64 %parfor.iv, 4
-  %add305 = add i64 %mul304, 3
-  %mul306 = mul i64 %add305, %kk
-  %xt307 = load i64, ptr %xt, align 8
-  %add308 = add i64 %mul306, %xt307
-  %add309 = add i64 %add308, 0
-  %mul310 = mul i64 %parfor.iv, 4
-  %add311 = add i64 %mul310, 3
-  %mul312 = mul i64 %add311, %kk
-  %xt313 = load i64, ptr %xt, align 8
-  %add314 = add i64 %mul312, %xt313
-  %add315 = add i64 %add314, 0
-  %ptr.add316 = getelementptr inbounds float, ptr %gap, i64 %add315
-  %deref317 = load float, ptr %ptr.add316, align 4
-  %a30318 = load float, ptr %a30, align 4
-  %fadd319 = fadd float %deref317, %a30318
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add309, float %fadd319)
-  %mul320 = mul i64 %parfor.iv, 4
-  %add321 = add i64 %mul320, 3
-  %mul322 = mul i64 %add321, %kk
-  %xt323 = load i64, ptr %xt, align 8
-  %add324 = add i64 %mul322, %xt323
-  %add325 = add i64 %add324, 1
-  %mul326 = mul i64 %parfor.iv, 4
-  %add327 = add i64 %mul326, 3
-  %mul328 = mul i64 %add327, %kk
-  %xt329 = load i64, ptr %xt, align 8
-  %add330 = add i64 %mul328, %xt329
-  %add331 = add i64 %add330, 1
-  %ptr.add332 = getelementptr inbounds float, ptr %gap, i64 %add331
-  %deref333 = load float, ptr %ptr.add332, align 4
-  %a31334 = load float, ptr %a31, align 4
-  %fadd335 = fadd float %deref333, %a31334
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add325, float %fadd335)
-  %mul336 = mul i64 %parfor.iv, 4
-  %add337 = add i64 %mul336, 3
-  %mul338 = mul i64 %add337, %kk
-  %xt339 = load i64, ptr %xt, align 8
-  %add340 = add i64 %mul338, %xt339
-  %add341 = add i64 %add340, 2
-  %mul342 = mul i64 %parfor.iv, 4
-  %add343 = add i64 %mul342, 3
-  %mul344 = mul i64 %add343, %kk
-  %xt345 = load i64, ptr %xt, align 8
-  %add346 = add i64 %mul344, %xt345
-  %add347 = add i64 %add346, 2
-  %ptr.add348 = getelementptr inbounds float, ptr %gap, i64 %add347
-  %deref349 = load float, ptr %ptr.add348, align 4
-  %a32350 = load float, ptr %a32, align 4
-  %fadd351 = fadd float %deref349, %a32350
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add341, float %fadd351)
-  %mul352 = mul i64 %parfor.iv, 4
-  %add353 = add i64 %mul352, 3
-  %mul354 = mul i64 %add353, %kk
-  %xt355 = load i64, ptr %xt, align 8
-  %add356 = add i64 %mul354, %xt355
-  %add357 = add i64 %add356, 3
-  %mul358 = mul i64 %parfor.iv, 4
-  %add359 = add i64 %mul358, 3
-  %mul360 = mul i64 %add359, %kk
-  %xt361 = load i64, ptr %xt, align 8
-  %add362 = add i64 %mul360, %xt361
-  %add363 = add i64 %add362, 3
-  %ptr.add364 = getelementptr inbounds float, ptr %gap, i64 %add363
-  %deref365 = load float, ptr %ptr.add364, align 4
-  %a33366 = load float, ptr %a33, align 4
-  %fadd367 = fadd float %deref365, %a33366
-  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add357, float %fadd367)
-  %xt368 = load i64, ptr %xt, align 8
-  %add369 = add i64 %xt368, 4
-  store i64 %add369, ptr %xt, align 1
+  %mul113 = mul i64 %parfor.iv, 4
+  %add114 = add i64 %mul113, 0
+  %mul115 = mul i64 %add114, %kk
+  %xt116 = load i64, ptr %xt, align 8
+  %add117 = add i64 %mul115, %xt116
+  %add118 = add i64 %add117, 0
+  %mul119 = mul i64 %parfor.iv, 4
+  %add120 = add i64 %mul119, 0
+  %mul121 = mul i64 %add120, %kk
+  %xt122 = load i64, ptr %xt, align 8
+  %add123 = add i64 %mul121, %xt122
+  %add124 = add i64 %add123, 0
+  %ptr.add125 = getelementptr inbounds float, ptr %gap, i64 %add124
+  %deref126 = load float, ptr %ptr.add125, align 4
+  %a00127 = load float, ptr %a00, align 4
+  %fadd128 = fadd float %deref126, %a00127
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add118, float %fadd128)
+  %mul129 = mul i64 %parfor.iv, 4
+  %add130 = add i64 %mul129, 0
+  %mul131 = mul i64 %add130, %kk
+  %xt132 = load i64, ptr %xt, align 8
+  %add133 = add i64 %mul131, %xt132
+  %add134 = add i64 %add133, 1
+  %mul135 = mul i64 %parfor.iv, 4
+  %add136 = add i64 %mul135, 0
+  %mul137 = mul i64 %add136, %kk
+  %xt138 = load i64, ptr %xt, align 8
+  %add139 = add i64 %mul137, %xt138
+  %add140 = add i64 %add139, 1
+  %ptr.add141 = getelementptr inbounds float, ptr %gap, i64 %add140
+  %deref142 = load float, ptr %ptr.add141, align 4
+  %a01143 = load float, ptr %a01, align 4
+  %fadd144 = fadd float %deref142, %a01143
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add134, float %fadd144)
+  %mul145 = mul i64 %parfor.iv, 4
+  %add146 = add i64 %mul145, 0
+  %mul147 = mul i64 %add146, %kk
+  %xt148 = load i64, ptr %xt, align 8
+  %add149 = add i64 %mul147, %xt148
+  %add150 = add i64 %add149, 2
+  %mul151 = mul i64 %parfor.iv, 4
+  %add152 = add i64 %mul151, 0
+  %mul153 = mul i64 %add152, %kk
+  %xt154 = load i64, ptr %xt, align 8
+  %add155 = add i64 %mul153, %xt154
+  %add156 = add i64 %add155, 2
+  %ptr.add157 = getelementptr inbounds float, ptr %gap, i64 %add156
+  %deref158 = load float, ptr %ptr.add157, align 4
+  %a02159 = load float, ptr %a02, align 4
+  %fadd160 = fadd float %deref158, %a02159
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add150, float %fadd160)
+  %mul161 = mul i64 %parfor.iv, 4
+  %add162 = add i64 %mul161, 0
+  %mul163 = mul i64 %add162, %kk
+  %xt164 = load i64, ptr %xt, align 8
+  %add165 = add i64 %mul163, %xt164
+  %add166 = add i64 %add165, 3
+  %mul167 = mul i64 %parfor.iv, 4
+  %add168 = add i64 %mul167, 0
+  %mul169 = mul i64 %add168, %kk
+  %xt170 = load i64, ptr %xt, align 8
+  %add171 = add i64 %mul169, %xt170
+  %add172 = add i64 %add171, 3
+  %ptr.add173 = getelementptr inbounds float, ptr %gap, i64 %add172
+  %deref174 = load float, ptr %ptr.add173, align 4
+  %a03175 = load float, ptr %a03, align 4
+  %fadd176 = fadd float %deref174, %a03175
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add166, float %fadd176)
+  %mul177 = mul i64 %parfor.iv, 4
+  %add178 = add i64 %mul177, 1
+  %mul179 = mul i64 %add178, %kk
+  %xt180 = load i64, ptr %xt, align 8
+  %add181 = add i64 %mul179, %xt180
+  %add182 = add i64 %add181, 0
+  %mul183 = mul i64 %parfor.iv, 4
+  %add184 = add i64 %mul183, 1
+  %mul185 = mul i64 %add184, %kk
+  %xt186 = load i64, ptr %xt, align 8
+  %add187 = add i64 %mul185, %xt186
+  %add188 = add i64 %add187, 0
+  %ptr.add189 = getelementptr inbounds float, ptr %gap, i64 %add188
+  %deref190 = load float, ptr %ptr.add189, align 4
+  %a10191 = load float, ptr %a10, align 4
+  %fadd192 = fadd float %deref190, %a10191
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add182, float %fadd192)
+  %mul193 = mul i64 %parfor.iv, 4
+  %add194 = add i64 %mul193, 1
+  %mul195 = mul i64 %add194, %kk
+  %xt196 = load i64, ptr %xt, align 8
+  %add197 = add i64 %mul195, %xt196
+  %add198 = add i64 %add197, 1
+  %mul199 = mul i64 %parfor.iv, 4
+  %add200 = add i64 %mul199, 1
+  %mul201 = mul i64 %add200, %kk
+  %xt202 = load i64, ptr %xt, align 8
+  %add203 = add i64 %mul201, %xt202
+  %add204 = add i64 %add203, 1
+  %ptr.add205 = getelementptr inbounds float, ptr %gap, i64 %add204
+  %deref206 = load float, ptr %ptr.add205, align 4
+  %a11207 = load float, ptr %a11, align 4
+  %fadd208 = fadd float %deref206, %a11207
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add198, float %fadd208)
+  %mul209 = mul i64 %parfor.iv, 4
+  %add210 = add i64 %mul209, 1
+  %mul211 = mul i64 %add210, %kk
+  %xt212 = load i64, ptr %xt, align 8
+  %add213 = add i64 %mul211, %xt212
+  %add214 = add i64 %add213, 2
+  %mul215 = mul i64 %parfor.iv, 4
+  %add216 = add i64 %mul215, 1
+  %mul217 = mul i64 %add216, %kk
+  %xt218 = load i64, ptr %xt, align 8
+  %add219 = add i64 %mul217, %xt218
+  %add220 = add i64 %add219, 2
+  %ptr.add221 = getelementptr inbounds float, ptr %gap, i64 %add220
+  %deref222 = load float, ptr %ptr.add221, align 4
+  %a12223 = load float, ptr %a12, align 4
+  %fadd224 = fadd float %deref222, %a12223
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add214, float %fadd224)
+  %mul225 = mul i64 %parfor.iv, 4
+  %add226 = add i64 %mul225, 1
+  %mul227 = mul i64 %add226, %kk
+  %xt228 = load i64, ptr %xt, align 8
+  %add229 = add i64 %mul227, %xt228
+  %add230 = add i64 %add229, 3
+  %mul231 = mul i64 %parfor.iv, 4
+  %add232 = add i64 %mul231, 1
+  %mul233 = mul i64 %add232, %kk
+  %xt234 = load i64, ptr %xt, align 8
+  %add235 = add i64 %mul233, %xt234
+  %add236 = add i64 %add235, 3
+  %ptr.add237 = getelementptr inbounds float, ptr %gap, i64 %add236
+  %deref238 = load float, ptr %ptr.add237, align 4
+  %a13239 = load float, ptr %a13, align 4
+  %fadd240 = fadd float %deref238, %a13239
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add230, float %fadd240)
+  %mul241 = mul i64 %parfor.iv, 4
+  %add242 = add i64 %mul241, 2
+  %mul243 = mul i64 %add242, %kk
+  %xt244 = load i64, ptr %xt, align 8
+  %add245 = add i64 %mul243, %xt244
+  %add246 = add i64 %add245, 0
+  %mul247 = mul i64 %parfor.iv, 4
+  %add248 = add i64 %mul247, 2
+  %mul249 = mul i64 %add248, %kk
+  %xt250 = load i64, ptr %xt, align 8
+  %add251 = add i64 %mul249, %xt250
+  %add252 = add i64 %add251, 0
+  %ptr.add253 = getelementptr inbounds float, ptr %gap, i64 %add252
+  %deref254 = load float, ptr %ptr.add253, align 4
+  %a20255 = load float, ptr %a20, align 4
+  %fadd256 = fadd float %deref254, %a20255
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add246, float %fadd256)
+  %mul257 = mul i64 %parfor.iv, 4
+  %add258 = add i64 %mul257, 2
+  %mul259 = mul i64 %add258, %kk
+  %xt260 = load i64, ptr %xt, align 8
+  %add261 = add i64 %mul259, %xt260
+  %add262 = add i64 %add261, 1
+  %mul263 = mul i64 %parfor.iv, 4
+  %add264 = add i64 %mul263, 2
+  %mul265 = mul i64 %add264, %kk
+  %xt266 = load i64, ptr %xt, align 8
+  %add267 = add i64 %mul265, %xt266
+  %add268 = add i64 %add267, 1
+  %ptr.add269 = getelementptr inbounds float, ptr %gap, i64 %add268
+  %deref270 = load float, ptr %ptr.add269, align 4
+  %a21271 = load float, ptr %a21, align 4
+  %fadd272 = fadd float %deref270, %a21271
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add262, float %fadd272)
+  %mul273 = mul i64 %parfor.iv, 4
+  %add274 = add i64 %mul273, 2
+  %mul275 = mul i64 %add274, %kk
+  %xt276 = load i64, ptr %xt, align 8
+  %add277 = add i64 %mul275, %xt276
+  %add278 = add i64 %add277, 2
+  %mul279 = mul i64 %parfor.iv, 4
+  %add280 = add i64 %mul279, 2
+  %mul281 = mul i64 %add280, %kk
+  %xt282 = load i64, ptr %xt, align 8
+  %add283 = add i64 %mul281, %xt282
+  %add284 = add i64 %add283, 2
+  %ptr.add285 = getelementptr inbounds float, ptr %gap, i64 %add284
+  %deref286 = load float, ptr %ptr.add285, align 4
+  %a22287 = load float, ptr %a22, align 4
+  %fadd288 = fadd float %deref286, %a22287
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add278, float %fadd288)
+  %mul289 = mul i64 %parfor.iv, 4
+  %add290 = add i64 %mul289, 2
+  %mul291 = mul i64 %add290, %kk
+  %xt292 = load i64, ptr %xt, align 8
+  %add293 = add i64 %mul291, %xt292
+  %add294 = add i64 %add293, 3
+  %mul295 = mul i64 %parfor.iv, 4
+  %add296 = add i64 %mul295, 2
+  %mul297 = mul i64 %add296, %kk
+  %xt298 = load i64, ptr %xt, align 8
+  %add299 = add i64 %mul297, %xt298
+  %add300 = add i64 %add299, 3
+  %ptr.add301 = getelementptr inbounds float, ptr %gap, i64 %add300
+  %deref302 = load float, ptr %ptr.add301, align 4
+  %a23303 = load float, ptr %a23, align 4
+  %fadd304 = fadd float %deref302, %a23303
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add294, float %fadd304)
+  %mul305 = mul i64 %parfor.iv, 4
+  %add306 = add i64 %mul305, 3
+  %mul307 = mul i64 %add306, %kk
+  %xt308 = load i64, ptr %xt, align 8
+  %add309 = add i64 %mul307, %xt308
+  %add310 = add i64 %add309, 0
+  %mul311 = mul i64 %parfor.iv, 4
+  %add312 = add i64 %mul311, 3
+  %mul313 = mul i64 %add312, %kk
+  %xt314 = load i64, ptr %xt, align 8
+  %add315 = add i64 %mul313, %xt314
+  %add316 = add i64 %add315, 0
+  %ptr.add317 = getelementptr inbounds float, ptr %gap, i64 %add316
+  %deref318 = load float, ptr %ptr.add317, align 4
+  %a30319 = load float, ptr %a30, align 4
+  %fadd320 = fadd float %deref318, %a30319
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add310, float %fadd320)
+  %mul321 = mul i64 %parfor.iv, 4
+  %add322 = add i64 %mul321, 3
+  %mul323 = mul i64 %add322, %kk
+  %xt324 = load i64, ptr %xt, align 8
+  %add325 = add i64 %mul323, %xt324
+  %add326 = add i64 %add325, 1
+  %mul327 = mul i64 %parfor.iv, 4
+  %add328 = add i64 %mul327, 3
+  %mul329 = mul i64 %add328, %kk
+  %xt330 = load i64, ptr %xt, align 8
+  %add331 = add i64 %mul329, %xt330
+  %add332 = add i64 %add331, 1
+  %ptr.add333 = getelementptr inbounds float, ptr %gap, i64 %add332
+  %deref334 = load float, ptr %ptr.add333, align 4
+  %a31335 = load float, ptr %a31, align 4
+  %fadd336 = fadd float %deref334, %a31335
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add326, float %fadd336)
+  %mul337 = mul i64 %parfor.iv, 4
+  %add338 = add i64 %mul337, 3
+  %mul339 = mul i64 %add338, %kk
+  %xt340 = load i64, ptr %xt, align 8
+  %add341 = add i64 %mul339, %xt340
+  %add342 = add i64 %add341, 2
+  %mul343 = mul i64 %parfor.iv, 4
+  %add344 = add i64 %mul343, 3
+  %mul345 = mul i64 %add344, %kk
+  %xt346 = load i64, ptr %xt, align 8
+  %add347 = add i64 %mul345, %xt346
+  %add348 = add i64 %add347, 2
+  %ptr.add349 = getelementptr inbounds float, ptr %gap, i64 %add348
+  %deref350 = load float, ptr %ptr.add349, align 4
+  %a32351 = load float, ptr %a32, align 4
+  %fadd352 = fadd float %deref350, %a32351
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add342, float %fadd352)
+  %mul353 = mul i64 %parfor.iv, 4
+  %add354 = add i64 %mul353, 3
+  %mul355 = mul i64 %add354, %kk
+  %xt356 = load i64, ptr %xt, align 8
+  %add357 = add i64 %mul355, %xt356
+  %add358 = add i64 %add357, 3
+  %mul359 = mul i64 %parfor.iv, 4
+  %add360 = add i64 %mul359, 3
+  %mul361 = mul i64 %add360, %kk
+  %xt362 = load i64, ptr %xt, align 8
+  %add363 = add i64 %mul361, %xt362
+  %add364 = add i64 %add363, 3
+  %ptr.add365 = getelementptr inbounds float, ptr %gap, i64 %add364
+  %deref366 = load float, ptr %ptr.add365, align 4
+  %a33367 = load float, ptr %a33, align 4
+  %fadd368 = fadd float %deref366, %a33367
+  call void @_ZN6VectorIfE3putEmf(ptr %ga, i64 %add358, float %fadd368)
+  %xt369 = load i64, ptr %xt, align 8
+  %add370 = add i64 %xt369, 4
+  store i64 %add370, ptr %xt, align 1
   br label %while.cond
 }
 
@@ -53888,7 +53908,8 @@ parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
 
 while.cond:                                       ; preds = %while.exit10, %parfor.chunk.body
   %j7 = load i64, ptr %j, align 8
-  %lt = icmp slt i64 %j7, %n
+  %add = add i64 %j7, 3
+  %lt = icmp slt i64 %add, %n
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -53923,395 +53944,395 @@ while.body9:                                      ; preds = %while.cond8
   %i13 = load i64, ptr %i, align 8
   %mul = mul i64 %i13, %kk
   %mul14 = mul i64 %parfor.iv, 4
-  %add = add i64 %mul, %mul14
-  %add15 = add i64 %add, 0
-  %ptr.add = getelementptr inbounds float, ptr %ap, i64 %add15
+  %add15 = add i64 %mul, %mul14
+  %add16 = add i64 %add15, 0
+  %ptr.add = getelementptr inbounds float, ptr %ap, i64 %add16
   %deref = load float, ptr %ptr.add, align 4
-  %i16 = load i64, ptr %i, align 8
-  %mul17 = mul i64 %i16, %kk
-  %mul18 = mul i64 %parfor.iv, 4
-  %add19 = add i64 %mul17, %mul18
-  %add20 = add i64 %add19, 1
-  %ptr.add21 = getelementptr inbounds float, ptr %ap, i64 %add20
-  %deref22 = load float, ptr %ptr.add21, align 4
-  %i23 = load i64, ptr %i, align 8
-  %mul24 = mul i64 %i23, %kk
-  %mul25 = mul i64 %parfor.iv, 4
-  %add26 = add i64 %mul24, %mul25
-  %add27 = add i64 %add26, 2
-  %ptr.add28 = getelementptr inbounds float, ptr %ap, i64 %add27
-  %deref29 = load float, ptr %ptr.add28, align 4
-  %i30 = load i64, ptr %i, align 8
-  %mul31 = mul i64 %i30, %kk
-  %mul32 = mul i64 %parfor.iv, 4
-  %add33 = add i64 %mul31, %mul32
-  %add34 = add i64 %add33, 3
-  %ptr.add35 = getelementptr inbounds float, ptr %ap, i64 %add34
-  %deref36 = load float, ptr %ptr.add35, align 4
-  %i37 = load i64, ptr %i, align 8
-  %mul38 = mul i64 %i37, %n
-  %j39 = load i64, ptr %j, align 8
-  %add40 = add i64 %mul38, %j39
-  %ptr.add41 = getelementptr inbounds float, ptr %gcp, i64 %add40
-  %deref42 = load float, ptr %ptr.add41, align 4
-  %i43 = load i64, ptr %i, align 8
-  %mul44 = mul i64 %i43, %n
-  %j45 = load i64, ptr %j, align 8
-  %add46 = add i64 %mul44, %j45
-  %add47 = add i64 %add46, 1
-  %ptr.add48 = getelementptr inbounds float, ptr %gcp, i64 %add47
-  %deref49 = load float, ptr %ptr.add48, align 4
-  %i50 = load i64, ptr %i, align 8
-  %mul51 = mul i64 %i50, %n
-  %j52 = load i64, ptr %j, align 8
-  %add53 = add i64 %mul51, %j52
-  %add54 = add i64 %add53, 2
-  %ptr.add55 = getelementptr inbounds float, ptr %gcp, i64 %add54
-  %deref56 = load float, ptr %ptr.add55, align 4
-  %i57 = load i64, ptr %i, align 8
-  %mul58 = mul i64 %i57, %n
-  %j59 = load i64, ptr %j, align 8
-  %add60 = add i64 %mul58, %j59
-  %add61 = add i64 %add60, 3
-  %ptr.add62 = getelementptr inbounds float, ptr %gcp, i64 %add61
-  %deref63 = load float, ptr %ptr.add62, align 4
-  %a0064 = load float, ptr %a00, align 4
-  %fmul = fmul float %deref, %deref42
-  %fadd = fadd float %a0064, %fmul
+  %i17 = load i64, ptr %i, align 8
+  %mul18 = mul i64 %i17, %kk
+  %mul19 = mul i64 %parfor.iv, 4
+  %add20 = add i64 %mul18, %mul19
+  %add21 = add i64 %add20, 1
+  %ptr.add22 = getelementptr inbounds float, ptr %ap, i64 %add21
+  %deref23 = load float, ptr %ptr.add22, align 4
+  %i24 = load i64, ptr %i, align 8
+  %mul25 = mul i64 %i24, %kk
+  %mul26 = mul i64 %parfor.iv, 4
+  %add27 = add i64 %mul25, %mul26
+  %add28 = add i64 %add27, 2
+  %ptr.add29 = getelementptr inbounds float, ptr %ap, i64 %add28
+  %deref30 = load float, ptr %ptr.add29, align 4
+  %i31 = load i64, ptr %i, align 8
+  %mul32 = mul i64 %i31, %kk
+  %mul33 = mul i64 %parfor.iv, 4
+  %add34 = add i64 %mul32, %mul33
+  %add35 = add i64 %add34, 3
+  %ptr.add36 = getelementptr inbounds float, ptr %ap, i64 %add35
+  %deref37 = load float, ptr %ptr.add36, align 4
+  %i38 = load i64, ptr %i, align 8
+  %mul39 = mul i64 %i38, %n
+  %j40 = load i64, ptr %j, align 8
+  %add41 = add i64 %mul39, %j40
+  %ptr.add42 = getelementptr inbounds float, ptr %gcp, i64 %add41
+  %deref43 = load float, ptr %ptr.add42, align 4
+  %i44 = load i64, ptr %i, align 8
+  %mul45 = mul i64 %i44, %n
+  %j46 = load i64, ptr %j, align 8
+  %add47 = add i64 %mul45, %j46
+  %add48 = add i64 %add47, 1
+  %ptr.add49 = getelementptr inbounds float, ptr %gcp, i64 %add48
+  %deref50 = load float, ptr %ptr.add49, align 4
+  %i51 = load i64, ptr %i, align 8
+  %mul52 = mul i64 %i51, %n
+  %j53 = load i64, ptr %j, align 8
+  %add54 = add i64 %mul52, %j53
+  %add55 = add i64 %add54, 2
+  %ptr.add56 = getelementptr inbounds float, ptr %gcp, i64 %add55
+  %deref57 = load float, ptr %ptr.add56, align 4
+  %i58 = load i64, ptr %i, align 8
+  %mul59 = mul i64 %i58, %n
+  %j60 = load i64, ptr %j, align 8
+  %add61 = add i64 %mul59, %j60
+  %add62 = add i64 %add61, 3
+  %ptr.add63 = getelementptr inbounds float, ptr %gcp, i64 %add62
+  %deref64 = load float, ptr %ptr.add63, align 4
+  %a0065 = load float, ptr %a00, align 4
+  %fmul = fmul float %deref, %deref43
+  %fadd = fadd float %a0065, %fmul
   store float %fadd, ptr %a00, align 1
-  %a0165 = load float, ptr %a01, align 4
-  %fmul66 = fmul float %deref, %deref49
-  %fadd67 = fadd float %a0165, %fmul66
-  store float %fadd67, ptr %a01, align 1
-  %a0268 = load float, ptr %a02, align 4
-  %fmul69 = fmul float %deref, %deref56
-  %fadd70 = fadd float %a0268, %fmul69
-  store float %fadd70, ptr %a02, align 1
-  %a0371 = load float, ptr %a03, align 4
-  %fmul72 = fmul float %deref, %deref63
-  %fadd73 = fadd float %a0371, %fmul72
-  store float %fadd73, ptr %a03, align 1
-  %a1074 = load float, ptr %a10, align 4
-  %fmul75 = fmul float %deref22, %deref42
-  %fadd76 = fadd float %a1074, %fmul75
-  store float %fadd76, ptr %a10, align 1
-  %a1177 = load float, ptr %a11, align 4
-  %fmul78 = fmul float %deref22, %deref49
-  %fadd79 = fadd float %a1177, %fmul78
-  store float %fadd79, ptr %a11, align 1
-  %a1280 = load float, ptr %a12, align 4
-  %fmul81 = fmul float %deref22, %deref56
-  %fadd82 = fadd float %a1280, %fmul81
-  store float %fadd82, ptr %a12, align 1
-  %a1383 = load float, ptr %a13, align 4
-  %fmul84 = fmul float %deref22, %deref63
-  %fadd85 = fadd float %a1383, %fmul84
-  store float %fadd85, ptr %a13, align 1
-  %a2086 = load float, ptr %a20, align 4
-  %fmul87 = fmul float %deref29, %deref42
-  %fadd88 = fadd float %a2086, %fmul87
-  store float %fadd88, ptr %a20, align 1
-  %a2189 = load float, ptr %a21, align 4
-  %fmul90 = fmul float %deref29, %deref49
-  %fadd91 = fadd float %a2189, %fmul90
-  store float %fadd91, ptr %a21, align 1
-  %a2292 = load float, ptr %a22, align 4
-  %fmul93 = fmul float %deref29, %deref56
-  %fadd94 = fadd float %a2292, %fmul93
-  store float %fadd94, ptr %a22, align 1
-  %a2395 = load float, ptr %a23, align 4
-  %fmul96 = fmul float %deref29, %deref63
-  %fadd97 = fadd float %a2395, %fmul96
-  store float %fadd97, ptr %a23, align 1
-  %a3098 = load float, ptr %a30, align 4
-  %fmul99 = fmul float %deref36, %deref42
-  %fadd100 = fadd float %a3098, %fmul99
-  store float %fadd100, ptr %a30, align 1
-  %a31101 = load float, ptr %a31, align 4
-  %fmul102 = fmul float %deref36, %deref49
-  %fadd103 = fadd float %a31101, %fmul102
-  store float %fadd103, ptr %a31, align 1
-  %a32104 = load float, ptr %a32, align 4
-  %fmul105 = fmul float %deref36, %deref56
-  %fadd106 = fadd float %a32104, %fmul105
-  store float %fadd106, ptr %a32, align 1
-  %a33107 = load float, ptr %a33, align 4
-  %fmul108 = fmul float %deref36, %deref63
-  %fadd109 = fadd float %a33107, %fmul108
-  store float %fadd109, ptr %a33, align 1
-  %i110 = load i64, ptr %i, align 8
-  %add111 = add i64 %i110, 1
-  store i64 %add111, ptr %i, align 1
+  %a0166 = load float, ptr %a01, align 4
+  %fmul67 = fmul float %deref, %deref50
+  %fadd68 = fadd float %a0166, %fmul67
+  store float %fadd68, ptr %a01, align 1
+  %a0269 = load float, ptr %a02, align 4
+  %fmul70 = fmul float %deref, %deref57
+  %fadd71 = fadd float %a0269, %fmul70
+  store float %fadd71, ptr %a02, align 1
+  %a0372 = load float, ptr %a03, align 4
+  %fmul73 = fmul float %deref, %deref64
+  %fadd74 = fadd float %a0372, %fmul73
+  store float %fadd74, ptr %a03, align 1
+  %a1075 = load float, ptr %a10, align 4
+  %fmul76 = fmul float %deref23, %deref43
+  %fadd77 = fadd float %a1075, %fmul76
+  store float %fadd77, ptr %a10, align 1
+  %a1178 = load float, ptr %a11, align 4
+  %fmul79 = fmul float %deref23, %deref50
+  %fadd80 = fadd float %a1178, %fmul79
+  store float %fadd80, ptr %a11, align 1
+  %a1281 = load float, ptr %a12, align 4
+  %fmul82 = fmul float %deref23, %deref57
+  %fadd83 = fadd float %a1281, %fmul82
+  store float %fadd83, ptr %a12, align 1
+  %a1384 = load float, ptr %a13, align 4
+  %fmul85 = fmul float %deref23, %deref64
+  %fadd86 = fadd float %a1384, %fmul85
+  store float %fadd86, ptr %a13, align 1
+  %a2087 = load float, ptr %a20, align 4
+  %fmul88 = fmul float %deref30, %deref43
+  %fadd89 = fadd float %a2087, %fmul88
+  store float %fadd89, ptr %a20, align 1
+  %a2190 = load float, ptr %a21, align 4
+  %fmul91 = fmul float %deref30, %deref50
+  %fadd92 = fadd float %a2190, %fmul91
+  store float %fadd92, ptr %a21, align 1
+  %a2293 = load float, ptr %a22, align 4
+  %fmul94 = fmul float %deref30, %deref57
+  %fadd95 = fadd float %a2293, %fmul94
+  store float %fadd95, ptr %a22, align 1
+  %a2396 = load float, ptr %a23, align 4
+  %fmul97 = fmul float %deref30, %deref64
+  %fadd98 = fadd float %a2396, %fmul97
+  store float %fadd98, ptr %a23, align 1
+  %a3099 = load float, ptr %a30, align 4
+  %fmul100 = fmul float %deref37, %deref43
+  %fadd101 = fadd float %a3099, %fmul100
+  store float %fadd101, ptr %a30, align 1
+  %a31102 = load float, ptr %a31, align 4
+  %fmul103 = fmul float %deref37, %deref50
+  %fadd104 = fadd float %a31102, %fmul103
+  store float %fadd104, ptr %a31, align 1
+  %a32105 = load float, ptr %a32, align 4
+  %fmul106 = fmul float %deref37, %deref57
+  %fadd107 = fadd float %a32105, %fmul106
+  store float %fadd107, ptr %a32, align 1
+  %a33108 = load float, ptr %a33, align 4
+  %fmul109 = fmul float %deref37, %deref64
+  %fadd110 = fadd float %a33108, %fmul109
+  store float %fadd110, ptr %a33, align 1
+  %i111 = load i64, ptr %i, align 8
+  %add112 = add i64 %i111, 1
+  store i64 %add112, ptr %i, align 1
   br label %while.cond8
 
 while.exit10:                                     ; preds = %while.cond8
-  %mul112 = mul i64 %parfor.iv, 4
-  %add113 = add i64 %mul112, 0
-  %mul114 = mul i64 %add113, %n
-  %j115 = load i64, ptr %j, align 8
-  %add116 = add i64 %mul114, %j115
-  %mul117 = mul i64 %parfor.iv, 4
-  %add118 = add i64 %mul117, 0
-  %mul119 = mul i64 %add118, %n
-  %j120 = load i64, ptr %j, align 8
-  %add121 = add i64 %mul119, %j120
-  %ptr.add122 = getelementptr inbounds float, ptr %gbp, i64 %add121
-  %deref123 = load float, ptr %ptr.add122, align 4
-  %a00124 = load float, ptr %a00, align 4
-  %fadd125 = fadd float %deref123, %a00124
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add116, float %fadd125)
-  %mul126 = mul i64 %parfor.iv, 4
-  %add127 = add i64 %mul126, 0
-  %mul128 = mul i64 %add127, %n
-  %j129 = load i64, ptr %j, align 8
-  %add130 = add i64 %mul128, %j129
-  %add131 = add i64 %add130, 1
-  %mul132 = mul i64 %parfor.iv, 4
-  %add133 = add i64 %mul132, 0
-  %mul134 = mul i64 %add133, %n
-  %j135 = load i64, ptr %j, align 8
-  %add136 = add i64 %mul134, %j135
-  %add137 = add i64 %add136, 1
-  %ptr.add138 = getelementptr inbounds float, ptr %gbp, i64 %add137
-  %deref139 = load float, ptr %ptr.add138, align 4
-  %a01140 = load float, ptr %a01, align 4
-  %fadd141 = fadd float %deref139, %a01140
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add131, float %fadd141)
-  %mul142 = mul i64 %parfor.iv, 4
-  %add143 = add i64 %mul142, 0
-  %mul144 = mul i64 %add143, %n
-  %j145 = load i64, ptr %j, align 8
-  %add146 = add i64 %mul144, %j145
-  %add147 = add i64 %add146, 2
-  %mul148 = mul i64 %parfor.iv, 4
-  %add149 = add i64 %mul148, 0
-  %mul150 = mul i64 %add149, %n
-  %j151 = load i64, ptr %j, align 8
-  %add152 = add i64 %mul150, %j151
-  %add153 = add i64 %add152, 2
-  %ptr.add154 = getelementptr inbounds float, ptr %gbp, i64 %add153
-  %deref155 = load float, ptr %ptr.add154, align 4
-  %a02156 = load float, ptr %a02, align 4
-  %fadd157 = fadd float %deref155, %a02156
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add147, float %fadd157)
-  %mul158 = mul i64 %parfor.iv, 4
-  %add159 = add i64 %mul158, 0
-  %mul160 = mul i64 %add159, %n
-  %j161 = load i64, ptr %j, align 8
-  %add162 = add i64 %mul160, %j161
-  %add163 = add i64 %add162, 3
-  %mul164 = mul i64 %parfor.iv, 4
-  %add165 = add i64 %mul164, 0
-  %mul166 = mul i64 %add165, %n
-  %j167 = load i64, ptr %j, align 8
-  %add168 = add i64 %mul166, %j167
-  %add169 = add i64 %add168, 3
-  %ptr.add170 = getelementptr inbounds float, ptr %gbp, i64 %add169
-  %deref171 = load float, ptr %ptr.add170, align 4
-  %a03172 = load float, ptr %a03, align 4
-  %fadd173 = fadd float %deref171, %a03172
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add163, float %fadd173)
-  %mul174 = mul i64 %parfor.iv, 4
-  %add175 = add i64 %mul174, 1
-  %mul176 = mul i64 %add175, %n
-  %j177 = load i64, ptr %j, align 8
-  %add178 = add i64 %mul176, %j177
-  %mul179 = mul i64 %parfor.iv, 4
-  %add180 = add i64 %mul179, 1
-  %mul181 = mul i64 %add180, %n
-  %j182 = load i64, ptr %j, align 8
-  %add183 = add i64 %mul181, %j182
-  %ptr.add184 = getelementptr inbounds float, ptr %gbp, i64 %add183
-  %deref185 = load float, ptr %ptr.add184, align 4
-  %a10186 = load float, ptr %a10, align 4
-  %fadd187 = fadd float %deref185, %a10186
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add178, float %fadd187)
-  %mul188 = mul i64 %parfor.iv, 4
-  %add189 = add i64 %mul188, 1
-  %mul190 = mul i64 %add189, %n
-  %j191 = load i64, ptr %j, align 8
-  %add192 = add i64 %mul190, %j191
-  %add193 = add i64 %add192, 1
-  %mul194 = mul i64 %parfor.iv, 4
-  %add195 = add i64 %mul194, 1
-  %mul196 = mul i64 %add195, %n
-  %j197 = load i64, ptr %j, align 8
-  %add198 = add i64 %mul196, %j197
-  %add199 = add i64 %add198, 1
-  %ptr.add200 = getelementptr inbounds float, ptr %gbp, i64 %add199
-  %deref201 = load float, ptr %ptr.add200, align 4
-  %a11202 = load float, ptr %a11, align 4
-  %fadd203 = fadd float %deref201, %a11202
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add193, float %fadd203)
-  %mul204 = mul i64 %parfor.iv, 4
-  %add205 = add i64 %mul204, 1
-  %mul206 = mul i64 %add205, %n
-  %j207 = load i64, ptr %j, align 8
-  %add208 = add i64 %mul206, %j207
-  %add209 = add i64 %add208, 2
-  %mul210 = mul i64 %parfor.iv, 4
-  %add211 = add i64 %mul210, 1
-  %mul212 = mul i64 %add211, %n
-  %j213 = load i64, ptr %j, align 8
-  %add214 = add i64 %mul212, %j213
-  %add215 = add i64 %add214, 2
-  %ptr.add216 = getelementptr inbounds float, ptr %gbp, i64 %add215
-  %deref217 = load float, ptr %ptr.add216, align 4
-  %a12218 = load float, ptr %a12, align 4
-  %fadd219 = fadd float %deref217, %a12218
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add209, float %fadd219)
-  %mul220 = mul i64 %parfor.iv, 4
-  %add221 = add i64 %mul220, 1
-  %mul222 = mul i64 %add221, %n
-  %j223 = load i64, ptr %j, align 8
-  %add224 = add i64 %mul222, %j223
-  %add225 = add i64 %add224, 3
-  %mul226 = mul i64 %parfor.iv, 4
-  %add227 = add i64 %mul226, 1
-  %mul228 = mul i64 %add227, %n
-  %j229 = load i64, ptr %j, align 8
-  %add230 = add i64 %mul228, %j229
-  %add231 = add i64 %add230, 3
-  %ptr.add232 = getelementptr inbounds float, ptr %gbp, i64 %add231
-  %deref233 = load float, ptr %ptr.add232, align 4
-  %a13234 = load float, ptr %a13, align 4
-  %fadd235 = fadd float %deref233, %a13234
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add225, float %fadd235)
-  %mul236 = mul i64 %parfor.iv, 4
-  %add237 = add i64 %mul236, 2
-  %mul238 = mul i64 %add237, %n
-  %j239 = load i64, ptr %j, align 8
-  %add240 = add i64 %mul238, %j239
-  %mul241 = mul i64 %parfor.iv, 4
-  %add242 = add i64 %mul241, 2
-  %mul243 = mul i64 %add242, %n
-  %j244 = load i64, ptr %j, align 8
-  %add245 = add i64 %mul243, %j244
-  %ptr.add246 = getelementptr inbounds float, ptr %gbp, i64 %add245
-  %deref247 = load float, ptr %ptr.add246, align 4
-  %a20248 = load float, ptr %a20, align 4
-  %fadd249 = fadd float %deref247, %a20248
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add240, float %fadd249)
-  %mul250 = mul i64 %parfor.iv, 4
-  %add251 = add i64 %mul250, 2
-  %mul252 = mul i64 %add251, %n
-  %j253 = load i64, ptr %j, align 8
-  %add254 = add i64 %mul252, %j253
-  %add255 = add i64 %add254, 1
-  %mul256 = mul i64 %parfor.iv, 4
-  %add257 = add i64 %mul256, 2
-  %mul258 = mul i64 %add257, %n
-  %j259 = load i64, ptr %j, align 8
-  %add260 = add i64 %mul258, %j259
-  %add261 = add i64 %add260, 1
-  %ptr.add262 = getelementptr inbounds float, ptr %gbp, i64 %add261
-  %deref263 = load float, ptr %ptr.add262, align 4
-  %a21264 = load float, ptr %a21, align 4
-  %fadd265 = fadd float %deref263, %a21264
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add255, float %fadd265)
-  %mul266 = mul i64 %parfor.iv, 4
-  %add267 = add i64 %mul266, 2
-  %mul268 = mul i64 %add267, %n
-  %j269 = load i64, ptr %j, align 8
-  %add270 = add i64 %mul268, %j269
-  %add271 = add i64 %add270, 2
-  %mul272 = mul i64 %parfor.iv, 4
-  %add273 = add i64 %mul272, 2
-  %mul274 = mul i64 %add273, %n
-  %j275 = load i64, ptr %j, align 8
-  %add276 = add i64 %mul274, %j275
-  %add277 = add i64 %add276, 2
-  %ptr.add278 = getelementptr inbounds float, ptr %gbp, i64 %add277
-  %deref279 = load float, ptr %ptr.add278, align 4
-  %a22280 = load float, ptr %a22, align 4
-  %fadd281 = fadd float %deref279, %a22280
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add271, float %fadd281)
-  %mul282 = mul i64 %parfor.iv, 4
-  %add283 = add i64 %mul282, 2
-  %mul284 = mul i64 %add283, %n
-  %j285 = load i64, ptr %j, align 8
-  %add286 = add i64 %mul284, %j285
-  %add287 = add i64 %add286, 3
-  %mul288 = mul i64 %parfor.iv, 4
-  %add289 = add i64 %mul288, 2
-  %mul290 = mul i64 %add289, %n
-  %j291 = load i64, ptr %j, align 8
-  %add292 = add i64 %mul290, %j291
-  %add293 = add i64 %add292, 3
-  %ptr.add294 = getelementptr inbounds float, ptr %gbp, i64 %add293
-  %deref295 = load float, ptr %ptr.add294, align 4
-  %a23296 = load float, ptr %a23, align 4
-  %fadd297 = fadd float %deref295, %a23296
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add287, float %fadd297)
-  %mul298 = mul i64 %parfor.iv, 4
-  %add299 = add i64 %mul298, 3
-  %mul300 = mul i64 %add299, %n
-  %j301 = load i64, ptr %j, align 8
-  %add302 = add i64 %mul300, %j301
-  %mul303 = mul i64 %parfor.iv, 4
-  %add304 = add i64 %mul303, 3
-  %mul305 = mul i64 %add304, %n
-  %j306 = load i64, ptr %j, align 8
-  %add307 = add i64 %mul305, %j306
-  %ptr.add308 = getelementptr inbounds float, ptr %gbp, i64 %add307
-  %deref309 = load float, ptr %ptr.add308, align 4
-  %a30310 = load float, ptr %a30, align 4
-  %fadd311 = fadd float %deref309, %a30310
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add302, float %fadd311)
-  %mul312 = mul i64 %parfor.iv, 4
-  %add313 = add i64 %mul312, 3
-  %mul314 = mul i64 %add313, %n
-  %j315 = load i64, ptr %j, align 8
-  %add316 = add i64 %mul314, %j315
-  %add317 = add i64 %add316, 1
-  %mul318 = mul i64 %parfor.iv, 4
-  %add319 = add i64 %mul318, 3
-  %mul320 = mul i64 %add319, %n
-  %j321 = load i64, ptr %j, align 8
-  %add322 = add i64 %mul320, %j321
-  %add323 = add i64 %add322, 1
-  %ptr.add324 = getelementptr inbounds float, ptr %gbp, i64 %add323
-  %deref325 = load float, ptr %ptr.add324, align 4
-  %a31326 = load float, ptr %a31, align 4
-  %fadd327 = fadd float %deref325, %a31326
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add317, float %fadd327)
-  %mul328 = mul i64 %parfor.iv, 4
-  %add329 = add i64 %mul328, 3
-  %mul330 = mul i64 %add329, %n
-  %j331 = load i64, ptr %j, align 8
-  %add332 = add i64 %mul330, %j331
-  %add333 = add i64 %add332, 2
-  %mul334 = mul i64 %parfor.iv, 4
-  %add335 = add i64 %mul334, 3
-  %mul336 = mul i64 %add335, %n
-  %j337 = load i64, ptr %j, align 8
-  %add338 = add i64 %mul336, %j337
-  %add339 = add i64 %add338, 2
-  %ptr.add340 = getelementptr inbounds float, ptr %gbp, i64 %add339
-  %deref341 = load float, ptr %ptr.add340, align 4
-  %a32342 = load float, ptr %a32, align 4
-  %fadd343 = fadd float %deref341, %a32342
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add333, float %fadd343)
-  %mul344 = mul i64 %parfor.iv, 4
-  %add345 = add i64 %mul344, 3
-  %mul346 = mul i64 %add345, %n
-  %j347 = load i64, ptr %j, align 8
-  %add348 = add i64 %mul346, %j347
-  %add349 = add i64 %add348, 3
-  %mul350 = mul i64 %parfor.iv, 4
-  %add351 = add i64 %mul350, 3
-  %mul352 = mul i64 %add351, %n
-  %j353 = load i64, ptr %j, align 8
-  %add354 = add i64 %mul352, %j353
-  %add355 = add i64 %add354, 3
-  %ptr.add356 = getelementptr inbounds float, ptr %gbp, i64 %add355
-  %deref357 = load float, ptr %ptr.add356, align 4
-  %a33358 = load float, ptr %a33, align 4
-  %fadd359 = fadd float %deref357, %a33358
-  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add349, float %fadd359)
-  %j360 = load i64, ptr %j, align 8
-  %add361 = add i64 %j360, 4
-  store i64 %add361, ptr %j, align 1
+  %mul113 = mul i64 %parfor.iv, 4
+  %add114 = add i64 %mul113, 0
+  %mul115 = mul i64 %add114, %n
+  %j116 = load i64, ptr %j, align 8
+  %add117 = add i64 %mul115, %j116
+  %mul118 = mul i64 %parfor.iv, 4
+  %add119 = add i64 %mul118, 0
+  %mul120 = mul i64 %add119, %n
+  %j121 = load i64, ptr %j, align 8
+  %add122 = add i64 %mul120, %j121
+  %ptr.add123 = getelementptr inbounds float, ptr %gbp, i64 %add122
+  %deref124 = load float, ptr %ptr.add123, align 4
+  %a00125 = load float, ptr %a00, align 4
+  %fadd126 = fadd float %deref124, %a00125
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add117, float %fadd126)
+  %mul127 = mul i64 %parfor.iv, 4
+  %add128 = add i64 %mul127, 0
+  %mul129 = mul i64 %add128, %n
+  %j130 = load i64, ptr %j, align 8
+  %add131 = add i64 %mul129, %j130
+  %add132 = add i64 %add131, 1
+  %mul133 = mul i64 %parfor.iv, 4
+  %add134 = add i64 %mul133, 0
+  %mul135 = mul i64 %add134, %n
+  %j136 = load i64, ptr %j, align 8
+  %add137 = add i64 %mul135, %j136
+  %add138 = add i64 %add137, 1
+  %ptr.add139 = getelementptr inbounds float, ptr %gbp, i64 %add138
+  %deref140 = load float, ptr %ptr.add139, align 4
+  %a01141 = load float, ptr %a01, align 4
+  %fadd142 = fadd float %deref140, %a01141
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add132, float %fadd142)
+  %mul143 = mul i64 %parfor.iv, 4
+  %add144 = add i64 %mul143, 0
+  %mul145 = mul i64 %add144, %n
+  %j146 = load i64, ptr %j, align 8
+  %add147 = add i64 %mul145, %j146
+  %add148 = add i64 %add147, 2
+  %mul149 = mul i64 %parfor.iv, 4
+  %add150 = add i64 %mul149, 0
+  %mul151 = mul i64 %add150, %n
+  %j152 = load i64, ptr %j, align 8
+  %add153 = add i64 %mul151, %j152
+  %add154 = add i64 %add153, 2
+  %ptr.add155 = getelementptr inbounds float, ptr %gbp, i64 %add154
+  %deref156 = load float, ptr %ptr.add155, align 4
+  %a02157 = load float, ptr %a02, align 4
+  %fadd158 = fadd float %deref156, %a02157
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add148, float %fadd158)
+  %mul159 = mul i64 %parfor.iv, 4
+  %add160 = add i64 %mul159, 0
+  %mul161 = mul i64 %add160, %n
+  %j162 = load i64, ptr %j, align 8
+  %add163 = add i64 %mul161, %j162
+  %add164 = add i64 %add163, 3
+  %mul165 = mul i64 %parfor.iv, 4
+  %add166 = add i64 %mul165, 0
+  %mul167 = mul i64 %add166, %n
+  %j168 = load i64, ptr %j, align 8
+  %add169 = add i64 %mul167, %j168
+  %add170 = add i64 %add169, 3
+  %ptr.add171 = getelementptr inbounds float, ptr %gbp, i64 %add170
+  %deref172 = load float, ptr %ptr.add171, align 4
+  %a03173 = load float, ptr %a03, align 4
+  %fadd174 = fadd float %deref172, %a03173
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add164, float %fadd174)
+  %mul175 = mul i64 %parfor.iv, 4
+  %add176 = add i64 %mul175, 1
+  %mul177 = mul i64 %add176, %n
+  %j178 = load i64, ptr %j, align 8
+  %add179 = add i64 %mul177, %j178
+  %mul180 = mul i64 %parfor.iv, 4
+  %add181 = add i64 %mul180, 1
+  %mul182 = mul i64 %add181, %n
+  %j183 = load i64, ptr %j, align 8
+  %add184 = add i64 %mul182, %j183
+  %ptr.add185 = getelementptr inbounds float, ptr %gbp, i64 %add184
+  %deref186 = load float, ptr %ptr.add185, align 4
+  %a10187 = load float, ptr %a10, align 4
+  %fadd188 = fadd float %deref186, %a10187
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add179, float %fadd188)
+  %mul189 = mul i64 %parfor.iv, 4
+  %add190 = add i64 %mul189, 1
+  %mul191 = mul i64 %add190, %n
+  %j192 = load i64, ptr %j, align 8
+  %add193 = add i64 %mul191, %j192
+  %add194 = add i64 %add193, 1
+  %mul195 = mul i64 %parfor.iv, 4
+  %add196 = add i64 %mul195, 1
+  %mul197 = mul i64 %add196, %n
+  %j198 = load i64, ptr %j, align 8
+  %add199 = add i64 %mul197, %j198
+  %add200 = add i64 %add199, 1
+  %ptr.add201 = getelementptr inbounds float, ptr %gbp, i64 %add200
+  %deref202 = load float, ptr %ptr.add201, align 4
+  %a11203 = load float, ptr %a11, align 4
+  %fadd204 = fadd float %deref202, %a11203
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add194, float %fadd204)
+  %mul205 = mul i64 %parfor.iv, 4
+  %add206 = add i64 %mul205, 1
+  %mul207 = mul i64 %add206, %n
+  %j208 = load i64, ptr %j, align 8
+  %add209 = add i64 %mul207, %j208
+  %add210 = add i64 %add209, 2
+  %mul211 = mul i64 %parfor.iv, 4
+  %add212 = add i64 %mul211, 1
+  %mul213 = mul i64 %add212, %n
+  %j214 = load i64, ptr %j, align 8
+  %add215 = add i64 %mul213, %j214
+  %add216 = add i64 %add215, 2
+  %ptr.add217 = getelementptr inbounds float, ptr %gbp, i64 %add216
+  %deref218 = load float, ptr %ptr.add217, align 4
+  %a12219 = load float, ptr %a12, align 4
+  %fadd220 = fadd float %deref218, %a12219
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add210, float %fadd220)
+  %mul221 = mul i64 %parfor.iv, 4
+  %add222 = add i64 %mul221, 1
+  %mul223 = mul i64 %add222, %n
+  %j224 = load i64, ptr %j, align 8
+  %add225 = add i64 %mul223, %j224
+  %add226 = add i64 %add225, 3
+  %mul227 = mul i64 %parfor.iv, 4
+  %add228 = add i64 %mul227, 1
+  %mul229 = mul i64 %add228, %n
+  %j230 = load i64, ptr %j, align 8
+  %add231 = add i64 %mul229, %j230
+  %add232 = add i64 %add231, 3
+  %ptr.add233 = getelementptr inbounds float, ptr %gbp, i64 %add232
+  %deref234 = load float, ptr %ptr.add233, align 4
+  %a13235 = load float, ptr %a13, align 4
+  %fadd236 = fadd float %deref234, %a13235
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add226, float %fadd236)
+  %mul237 = mul i64 %parfor.iv, 4
+  %add238 = add i64 %mul237, 2
+  %mul239 = mul i64 %add238, %n
+  %j240 = load i64, ptr %j, align 8
+  %add241 = add i64 %mul239, %j240
+  %mul242 = mul i64 %parfor.iv, 4
+  %add243 = add i64 %mul242, 2
+  %mul244 = mul i64 %add243, %n
+  %j245 = load i64, ptr %j, align 8
+  %add246 = add i64 %mul244, %j245
+  %ptr.add247 = getelementptr inbounds float, ptr %gbp, i64 %add246
+  %deref248 = load float, ptr %ptr.add247, align 4
+  %a20249 = load float, ptr %a20, align 4
+  %fadd250 = fadd float %deref248, %a20249
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add241, float %fadd250)
+  %mul251 = mul i64 %parfor.iv, 4
+  %add252 = add i64 %mul251, 2
+  %mul253 = mul i64 %add252, %n
+  %j254 = load i64, ptr %j, align 8
+  %add255 = add i64 %mul253, %j254
+  %add256 = add i64 %add255, 1
+  %mul257 = mul i64 %parfor.iv, 4
+  %add258 = add i64 %mul257, 2
+  %mul259 = mul i64 %add258, %n
+  %j260 = load i64, ptr %j, align 8
+  %add261 = add i64 %mul259, %j260
+  %add262 = add i64 %add261, 1
+  %ptr.add263 = getelementptr inbounds float, ptr %gbp, i64 %add262
+  %deref264 = load float, ptr %ptr.add263, align 4
+  %a21265 = load float, ptr %a21, align 4
+  %fadd266 = fadd float %deref264, %a21265
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add256, float %fadd266)
+  %mul267 = mul i64 %parfor.iv, 4
+  %add268 = add i64 %mul267, 2
+  %mul269 = mul i64 %add268, %n
+  %j270 = load i64, ptr %j, align 8
+  %add271 = add i64 %mul269, %j270
+  %add272 = add i64 %add271, 2
+  %mul273 = mul i64 %parfor.iv, 4
+  %add274 = add i64 %mul273, 2
+  %mul275 = mul i64 %add274, %n
+  %j276 = load i64, ptr %j, align 8
+  %add277 = add i64 %mul275, %j276
+  %add278 = add i64 %add277, 2
+  %ptr.add279 = getelementptr inbounds float, ptr %gbp, i64 %add278
+  %deref280 = load float, ptr %ptr.add279, align 4
+  %a22281 = load float, ptr %a22, align 4
+  %fadd282 = fadd float %deref280, %a22281
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add272, float %fadd282)
+  %mul283 = mul i64 %parfor.iv, 4
+  %add284 = add i64 %mul283, 2
+  %mul285 = mul i64 %add284, %n
+  %j286 = load i64, ptr %j, align 8
+  %add287 = add i64 %mul285, %j286
+  %add288 = add i64 %add287, 3
+  %mul289 = mul i64 %parfor.iv, 4
+  %add290 = add i64 %mul289, 2
+  %mul291 = mul i64 %add290, %n
+  %j292 = load i64, ptr %j, align 8
+  %add293 = add i64 %mul291, %j292
+  %add294 = add i64 %add293, 3
+  %ptr.add295 = getelementptr inbounds float, ptr %gbp, i64 %add294
+  %deref296 = load float, ptr %ptr.add295, align 4
+  %a23297 = load float, ptr %a23, align 4
+  %fadd298 = fadd float %deref296, %a23297
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add288, float %fadd298)
+  %mul299 = mul i64 %parfor.iv, 4
+  %add300 = add i64 %mul299, 3
+  %mul301 = mul i64 %add300, %n
+  %j302 = load i64, ptr %j, align 8
+  %add303 = add i64 %mul301, %j302
+  %mul304 = mul i64 %parfor.iv, 4
+  %add305 = add i64 %mul304, 3
+  %mul306 = mul i64 %add305, %n
+  %j307 = load i64, ptr %j, align 8
+  %add308 = add i64 %mul306, %j307
+  %ptr.add309 = getelementptr inbounds float, ptr %gbp, i64 %add308
+  %deref310 = load float, ptr %ptr.add309, align 4
+  %a30311 = load float, ptr %a30, align 4
+  %fadd312 = fadd float %deref310, %a30311
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add303, float %fadd312)
+  %mul313 = mul i64 %parfor.iv, 4
+  %add314 = add i64 %mul313, 3
+  %mul315 = mul i64 %add314, %n
+  %j316 = load i64, ptr %j, align 8
+  %add317 = add i64 %mul315, %j316
+  %add318 = add i64 %add317, 1
+  %mul319 = mul i64 %parfor.iv, 4
+  %add320 = add i64 %mul319, 3
+  %mul321 = mul i64 %add320, %n
+  %j322 = load i64, ptr %j, align 8
+  %add323 = add i64 %mul321, %j322
+  %add324 = add i64 %add323, 1
+  %ptr.add325 = getelementptr inbounds float, ptr %gbp, i64 %add324
+  %deref326 = load float, ptr %ptr.add325, align 4
+  %a31327 = load float, ptr %a31, align 4
+  %fadd328 = fadd float %deref326, %a31327
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add318, float %fadd328)
+  %mul329 = mul i64 %parfor.iv, 4
+  %add330 = add i64 %mul329, 3
+  %mul331 = mul i64 %add330, %n
+  %j332 = load i64, ptr %j, align 8
+  %add333 = add i64 %mul331, %j332
+  %add334 = add i64 %add333, 2
+  %mul335 = mul i64 %parfor.iv, 4
+  %add336 = add i64 %mul335, 3
+  %mul337 = mul i64 %add336, %n
+  %j338 = load i64, ptr %j, align 8
+  %add339 = add i64 %mul337, %j338
+  %add340 = add i64 %add339, 2
+  %ptr.add341 = getelementptr inbounds float, ptr %gbp, i64 %add340
+  %deref342 = load float, ptr %ptr.add341, align 4
+  %a32343 = load float, ptr %a32, align 4
+  %fadd344 = fadd float %deref342, %a32343
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add334, float %fadd344)
+  %mul345 = mul i64 %parfor.iv, 4
+  %add346 = add i64 %mul345, 3
+  %mul347 = mul i64 %add346, %n
+  %j348 = load i64, ptr %j, align 8
+  %add349 = add i64 %mul347, %j348
+  %add350 = add i64 %add349, 3
+  %mul351 = mul i64 %parfor.iv, 4
+  %add352 = add i64 %mul351, 3
+  %mul353 = mul i64 %add352, %n
+  %j354 = load i64, ptr %j, align 8
+  %add355 = add i64 %mul353, %j354
+  %add356 = add i64 %add355, 3
+  %ptr.add357 = getelementptr inbounds float, ptr %gbp, i64 %add356
+  %deref358 = load float, ptr %ptr.add357, align 4
+  %a33359 = load float, ptr %a33, align 4
+  %fadd360 = fadd float %deref358, %a33359
+  call void @_ZN6VectorIfE3putEmf(ptr %gb, i64 %add350, float %fadd360)
+  %j361 = load i64, ptr %j, align 8
+  %add362 = add i64 %j361, 4
+  store i64 %add362, ptr %j, align 1
   br label %while.cond
 }
 
@@ -55669,17 +55690,17 @@ while.exit:                                       ; preds = %while.cond
 
 define private ptr @parfor.350(ptr %0) {
 entry:
-  %arg.tmp143 = alloca %_Z6VectorIfE, align 8
+  %arg.tmp146 = alloca %_Z6VectorIfE, align 8
   %j4 = alloca i64, align 8
   %acc2 = alloca float, align 4
   %c2 = alloca i64, align 8
-  %arg.tmp98 = alloca %_Z6VectorIfE, align 8
-  %j3 = alloca i64, align 8
-  %arg.tmp69 = alloca %_Z6VectorIfE, align 8
+  %arg.tmp106 = alloca %_Z6VectorIfE, align 8
+  %jw3 = alloca i64, align 8
+  %arg.tmp76 = alloca %_Z6VectorIfE, align 8
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %c = alloca i64, align 8
   %acc = alloca float, align 4
-  %j = alloca i64, align 8
+  %jw = alloca i64, align 8
   %mx = alloca float, align 4
   %h = alloca i64, align 8
   %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
@@ -55745,245 +55766,260 @@ parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
   %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
   br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
-while.cond:                                       ; preds = %while.exit111, %parfor.chunk.body
+while.cond:                                       ; preds = %while.exit117, %parfor.chunk.body
   %h12 = load i64, ptr %h, align 8
   %lt = icmp slt i64 %h12, %hs
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   store float 0.000000e+00, ptr %mx, align 1
-  store i64 %mul, ptr %j, align 1
+  store i64 0, ptr %jw, align 1
   br label %while.cond13
 
 while.exit:                                       ; preds = %while.cond
   br label %parfor.chunk.inc
 
-while.cond13:                                     ; preds = %if.end51, %while.body
-  %j16 = load i64, ptr %j, align 8
-  %le = icmp sle i64 %j16, %parfor.iv
-  br i1 %le, label %while.body14, label %while.exit15
+while.cond13:                                     ; preds = %if.end55, %while.body
+  %jw16 = load i64, ptr %jw, align 8
+  %lt17 = icmp slt i64 %jw16, %w
+  br i1 %lt17, label %while.body14, label %while.exit15
 
 while.body14:                                     ; preds = %while.cond13
+  %jw18 = load i64, ptr %jw, align 8
+  %add = add i64 %mul, %jw18
+  %gt = icmp sgt i64 %add, %parfor.iv
+  br i1 %gt, label %if.then, label %if.end
+
+while.exit15:                                     ; preds = %if.then, %while.cond13
   store float 0.000000e+00, ptr %acc, align 1
   store i64 0, ptr %c, align 1
-  br label %while.cond17
+  br label %while.cond58
 
-while.exit15:                                     ; preds = %while.cond13
+if.then:                                          ; preds = %while.body14
+  br label %while.exit15
+
+if.end:                                           ; preds = %while.body14
   store float 0.000000e+00, ptr %acc, align 1
-  store i64 %mul, ptr %c, align 1
-  br label %while.cond54
+  store i64 0, ptr %c, align 1
+  br label %while.cond19
 
-while.cond17:                                     ; preds = %while.body18, %while.body14
-  %c20 = load i64, ptr %c, align 8
-  %lt21 = icmp slt i64 %c20, %dh
-  br i1 %lt21, label %while.body18, label %while.exit19
+while.cond19:                                     ; preds = %while.body20, %if.end
+  %c22 = load i64, ptr %c, align 8
+  %lt23 = icmp slt i64 %c22, %dh
+  br i1 %lt23, label %while.body20, label %while.exit21
 
-while.body18:                                     ; preds = %while.cond17
-  %acc22 = load float, ptr %acc, align 4
-  %mul23 = mul i64 %parfor.iv, %d
-  %h24 = load i64, ptr %h, align 8
-  %mul25 = mul i64 %h24, %dh
-  %add = add i64 %mul23, %mul25
-  %c26 = load i64, ptr %c, align 8
-  %add27 = add i64 %add, %c26
-  %ptr.add = getelementptr inbounds float, ptr %qp, i64 %add27
+while.body20:                                     ; preds = %while.cond19
+  %acc24 = load float, ptr %acc, align 4
+  %mul25 = mul i64 %parfor.iv, %d
+  %h26 = load i64, ptr %h, align 8
+  %mul27 = mul i64 %h26, %dh
+  %add28 = add i64 %mul25, %mul27
+  %c29 = load i64, ptr %c, align 8
+  %add30 = add i64 %add28, %c29
+  %ptr.add = getelementptr inbounds float, ptr %qp, i64 %add30
   %deref = load float, ptr %ptr.add, align 4
-  %j28 = load i64, ptr %j, align 8
-  %mul29 = mul i64 %j28, %d
-  %h30 = load i64, ptr %h, align 8
-  %mul31 = mul i64 %h30, %dh
-  %add32 = add i64 %mul29, %mul31
-  %c33 = load i64, ptr %c, align 8
-  %add34 = add i64 %add32, %c33
-  %ptr.add35 = getelementptr inbounds float, ptr %kp, i64 %add34
-  %deref36 = load float, ptr %ptr.add35, align 4
-  %fmul = fmul float %deref, %deref36
-  %fadd = fadd float %acc22, %fmul
+  %mul31 = mul i64 %add, %d
+  %h32 = load i64, ptr %h, align 8
+  %mul33 = mul i64 %h32, %dh
+  %add34 = add i64 %mul31, %mul33
+  %c35 = load i64, ptr %c, align 8
+  %add36 = add i64 %add34, %c35
+  %ptr.add37 = getelementptr inbounds float, ptr %kp, i64 %add36
+  %deref38 = load float, ptr %ptr.add37, align 4
+  %fmul = fmul float %deref, %deref38
+  %fadd = fadd float %acc24, %fmul
   store float %fadd, ptr %acc, align 1
-  %c37 = load i64, ptr %c, align 8
-  %add38 = add i64 %c37, 1
-  store i64 %add38, ptr %c, align 1
-  br label %while.cond17
+  %c39 = load i64, ptr %c, align 8
+  %add40 = add i64 %c39, 1
+  store i64 %add40, ptr %c, align 1
+  br label %while.cond19
 
-while.exit19:                                     ; preds = %while.cond17
-  %acc39 = load float, ptr %acc, align 4
-  %fmul40 = fmul float %acc39, %scale
+while.exit21:                                     ; preds = %while.cond19
+  %acc41 = load float, ptr %acc, align 4
+  %fmul42 = fmul float %acc41, %scale
   store %_Z6VectorIfE %px, ptr %arg.tmp, align 1
-  %h41 = load i64, ptr %h, align 8
-  %mul42 = mul i64 %h41, %t
-  %mul43 = mul i64 %mul42, %w
-  %mul44 = mul i64 %parfor.iv, %w
-  %add45 = add i64 %mul43, %mul44
-  %j46 = load i64, ptr %j, align 8
-  %sub = sub i64 %j46, %mul
-  %add47 = add i64 %add45, %sub
-  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp, i64 %add47, float %fmul40)
-  %j48 = load i64, ptr %j, align 8
-  %eq = icmp eq i64 %j48, %mul
-  br i1 %eq, label %if.then, label %if.end
+  %h43 = load i64, ptr %h, align 8
+  %mul44 = mul i64 %h43, %t
+  %add45 = add i64 %mul44, %parfor.iv
+  %mul46 = mul i64 %add45, %w
+  %jw47 = load i64, ptr %jw, align 8
+  %add48 = add i64 %mul46, %jw47
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp, i64 %add48, float %fmul42)
+  %jw49 = load i64, ptr %jw, align 8
+  %eq = icmp eq i64 %jw49, 0
+  br i1 %eq, label %if.then50, label %if.end51
 
-if.then:                                          ; preds = %while.exit19
-  store float %fmul40, ptr %mx, align 1
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %while.exit19
-  %mx49 = load float, ptr %mx, align 4
-  %gt = fcmp ogt float %fmul40, %mx49
-  br i1 %gt, label %if.then50, label %if.end51
-
-if.then50:                                        ; preds = %if.end
-  store float %fmul40, ptr %mx, align 1
+if.then50:                                        ; preds = %while.exit21
+  store float %fmul42, ptr %mx, align 1
   br label %if.end51
 
-if.end51:                                         ; preds = %if.then50, %if.end
-  %j52 = load i64, ptr %j, align 8
-  %add53 = add i64 %j52, 1
-  store i64 %add53, ptr %j, align 1
+if.end51:                                         ; preds = %if.then50, %while.exit21
+  %mx52 = load float, ptr %mx, align 4
+  %gt53 = fcmp ogt float %fmul42, %mx52
+  br i1 %gt53, label %if.then54, label %if.end55
+
+if.then54:                                        ; preds = %if.end51
+  store float %fmul42, ptr %mx, align 1
+  br label %if.end55
+
+if.end55:                                         ; preds = %if.then54, %if.end51
+  %jw56 = load i64, ptr %jw, align 8
+  %add57 = add i64 %jw56, 1
+  store i64 %add57, ptr %jw, align 1
   br label %while.cond13
 
-while.cond54:                                     ; preds = %while.body55, %while.exit15
-  %j2 = load i64, ptr %c, align 8
-  %le57 = icmp sle i64 %j2, %parfor.iv
-  br i1 %le57, label %while.body55, label %while.exit56
+while.cond58:                                     ; preds = %if.end66, %while.exit15
+  %jw2 = load i64, ptr %c, align 8
+  %lt61 = icmp slt i64 %jw2, %w
+  br i1 %lt61, label %while.body59, label %while.exit60
 
-while.body55:                                     ; preds = %while.cond54
-  %h58 = load i64, ptr %h, align 8
-  %mul59 = mul i64 %h58, %t
-  %mul60 = mul i64 %mul59, %w
-  %mul61 = mul i64 %parfor.iv, %w
-  %add62 = add i64 %mul60, %mul61
-  %j263 = load i64, ptr %c, align 8
-  %sub64 = sub i64 %j263, %mul
-  %add65 = add i64 %add62, %sub64
-  %ptr.add66 = getelementptr inbounds float, ptr %pp, i64 %add65
-  %deref67 = load float, ptr %ptr.add66, align 4
-  %mx68 = load float, ptr %mx, align 4
-  %fsub = fsub float %deref67, %mx68
+while.body59:                                     ; preds = %while.cond58
+  %jw262 = load i64, ptr %c, align 8
+  %add63 = add i64 %mul, %jw262
+  %gt64 = icmp sgt i64 %add63, %parfor.iv
+  br i1 %gt64, label %if.then65, label %if.end66
+
+while.exit60:                                     ; preds = %if.then65, %while.cond58
+  %sum86 = load float, ptr %acc, align 4
+  %fdiv = fdiv float 1.000000e+00, %sum86
+  store i64 0, ptr %jw3, align 1
+  br label %while.cond87
+
+if.then65:                                        ; preds = %while.body59
+  br label %while.exit60
+
+if.end66:                                         ; preds = %while.body59
+  %h67 = load i64, ptr %h, align 8
+  %mul68 = mul i64 %h67, %t
+  %add69 = add i64 %mul68, %parfor.iv
+  %mul70 = mul i64 %add69, %w
+  %jw271 = load i64, ptr %c, align 8
+  %add72 = add i64 %mul70, %jw271
+  %ptr.add73 = getelementptr inbounds float, ptr %pp, i64 %add72
+  %deref74 = load float, ptr %ptr.add73, align 4
+  %mx75 = load float, ptr %mx, align 4
+  %fsub = fsub float %deref74, %mx75
   %call = call float @expf(float %fsub)
-  store %_Z6VectorIfE %px, ptr %arg.tmp69, align 1
-  %h70 = load i64, ptr %h, align 8
-  %mul71 = mul i64 %h70, %t
-  %mul72 = mul i64 %mul71, %w
-  %mul73 = mul i64 %parfor.iv, %w
-  %add74 = add i64 %mul72, %mul73
-  %j275 = load i64, ptr %c, align 8
-  %sub76 = sub i64 %j275, %mul
-  %add77 = add i64 %add74, %sub76
-  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp69, i64 %add77, float %call)
+  store %_Z6VectorIfE %px, ptr %arg.tmp76, align 1
+  %h77 = load i64, ptr %h, align 8
+  %mul78 = mul i64 %h77, %t
+  %add79 = add i64 %mul78, %parfor.iv
+  %mul80 = mul i64 %add79, %w
+  %jw281 = load i64, ptr %c, align 8
+  %add82 = add i64 %mul80, %jw281
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp76, i64 %add82, float %call)
   %sum = load float, ptr %acc, align 4
-  %fadd78 = fadd float %sum, %call
-  store float %fadd78, ptr %acc, align 1
-  %j279 = load i64, ptr %c, align 8
-  %add80 = add i64 %j279, 1
-  store i64 %add80, ptr %c, align 1
-  br label %while.cond54
+  %fadd83 = fadd float %sum, %call
+  store float %fadd83, ptr %acc, align 1
+  %jw284 = load i64, ptr %c, align 8
+  %add85 = add i64 %jw284, 1
+  store i64 %add85, ptr %c, align 1
+  br label %while.cond58
 
-while.exit56:                                     ; preds = %while.cond54
-  %sum81 = load float, ptr %acc, align 4
-  %fdiv = fdiv float 1.000000e+00, %sum81
-  store i64 %mul, ptr %j3, align 1
-  br label %while.cond82
+while.cond87:                                     ; preds = %if.end96, %while.exit60
+  %jw390 = load i64, ptr %jw3, align 8
+  %lt91 = icmp slt i64 %jw390, %w
+  br i1 %lt91, label %while.body88, label %while.exit89
 
-while.cond82:                                     ; preds = %while.body83, %while.exit56
-  %j385 = load i64, ptr %j3, align 8
-  %le86 = icmp sle i64 %j385, %parfor.iv
-  br i1 %le86, label %while.body83, label %while.exit84
+while.body88:                                     ; preds = %while.cond87
+  %jw392 = load i64, ptr %jw3, align 8
+  %add93 = add i64 %mul, %jw392
+  %gt94 = icmp sgt i64 %add93, %parfor.iv
+  br i1 %gt94, label %if.then95, label %if.end96
 
-while.body83:                                     ; preds = %while.cond82
-  %h87 = load i64, ptr %h, align 8
-  %mul88 = mul i64 %h87, %t
-  %mul89 = mul i64 %mul88, %w
-  %mul90 = mul i64 %parfor.iv, %w
-  %add91 = add i64 %mul89, %mul90
-  %j392 = load i64, ptr %j3, align 8
-  %sub93 = sub i64 %j392, %mul
-  %add94 = add i64 %add91, %sub93
-  %ptr.add95 = getelementptr inbounds float, ptr %pp, i64 %add94
-  %deref96 = load float, ptr %ptr.add95, align 4
-  %fmul97 = fmul float %deref96, %fdiv
-  store %_Z6VectorIfE %px, ptr %arg.tmp98, align 1
-  %h99 = load i64, ptr %h, align 8
-  %mul100 = mul i64 %h99, %t
-  %mul101 = mul i64 %mul100, %w
-  %mul102 = mul i64 %parfor.iv, %w
-  %add103 = add i64 %mul101, %mul102
-  %j3104 = load i64, ptr %j3, align 8
-  %sub105 = sub i64 %j3104, %mul
-  %add106 = add i64 %add103, %sub105
-  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp98, i64 %add106, float %fmul97)
-  %j3107 = load i64, ptr %j3, align 8
-  %add108 = add i64 %j3107, 1
-  store i64 %add108, ptr %j3, align 1
-  br label %while.cond82
-
-while.exit84:                                     ; preds = %while.cond82
+while.exit89:                                     ; preds = %if.then95, %while.cond87
   store i64 0, ptr %c2, align 1
-  br label %while.cond109
+  br label %while.cond115
 
-while.cond109:                                    ; preds = %while.exit116, %while.exit84
-  %c2112 = load i64, ptr %c2, align 8
-  %lt113 = icmp slt i64 %c2112, %dh
-  br i1 %lt113, label %while.body110, label %while.exit111
+if.then95:                                        ; preds = %while.body88
+  br label %while.exit89
 
-while.body110:                                    ; preds = %while.cond109
+if.end96:                                         ; preds = %while.body88
+  %h97 = load i64, ptr %h, align 8
+  %mul98 = mul i64 %h97, %t
+  %add99 = add i64 %mul98, %parfor.iv
+  %mul100 = mul i64 %add99, %w
+  %jw3101 = load i64, ptr %jw3, align 8
+  %add102 = add i64 %mul100, %jw3101
+  %ptr.add103 = getelementptr inbounds float, ptr %pp, i64 %add102
+  %deref104 = load float, ptr %ptr.add103, align 4
+  %fmul105 = fmul float %deref104, %fdiv
+  store %_Z6VectorIfE %px, ptr %arg.tmp106, align 1
+  %h107 = load i64, ptr %h, align 8
+  %mul108 = mul i64 %h107, %t
+  %add109 = add i64 %mul108, %parfor.iv
+  %mul110 = mul i64 %add109, %w
+  %jw3111 = load i64, ptr %jw3, align 8
+  %add112 = add i64 %mul110, %jw3111
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp106, i64 %add112, float %fmul105)
+  %jw3113 = load i64, ptr %jw3, align 8
+  %add114 = add i64 %jw3113, 1
+  store i64 %add114, ptr %jw3, align 1
+  br label %while.cond87
+
+while.cond115:                                    ; preds = %while.exit122, %while.exit89
+  %c2118 = load i64, ptr %c2, align 8
+  %lt119 = icmp slt i64 %c2118, %dh
+  br i1 %lt119, label %while.body116, label %while.exit117
+
+while.body116:                                    ; preds = %while.cond115
   store float 0.000000e+00, ptr %acc2, align 1
   store i64 %mul, ptr %j4, align 1
-  br label %while.cond114
+  br label %while.cond120
 
-while.exit111:                                    ; preds = %while.cond109
-  %h153 = load i64, ptr %h, align 8
-  %add154 = add i64 %h153, 1
-  store i64 %add154, ptr %h, align 1
+while.exit117:                                    ; preds = %while.cond115
+  %h156 = load i64, ptr %h, align 8
+  %add157 = add i64 %h156, 1
+  store i64 %add157, ptr %h, align 1
   br label %while.cond
 
-while.cond114:                                    ; preds = %while.body115, %while.body110
-  %j4117 = load i64, ptr %j4, align 8
-  %le118 = icmp sle i64 %j4117, %parfor.iv
-  br i1 %le118, label %while.body115, label %while.exit116
+while.cond120:                                    ; preds = %while.body121, %while.body116
+  %j4123 = load i64, ptr %j4, align 8
+  %le = icmp sle i64 %j4123, %parfor.iv
+  br i1 %le, label %while.body121, label %while.exit122
 
-while.body115:                                    ; preds = %while.cond114
-  %acc2119 = load float, ptr %acc2, align 4
-  %h120 = load i64, ptr %h, align 8
-  %mul121 = mul i64 %h120, %t
-  %mul122 = mul i64 %mul121, %w
-  %mul123 = mul i64 %parfor.iv, %w
-  %add124 = add i64 %mul122, %mul123
-  %j4125 = load i64, ptr %j4, align 8
-  %sub126 = sub i64 %j4125, %mul
-  %add127 = add i64 %add124, %sub126
-  %ptr.add128 = getelementptr inbounds float, ptr %pp, i64 %add127
-  %deref129 = load float, ptr %ptr.add128, align 4
-  %j4130 = load i64, ptr %j4, align 8
-  %mul131 = mul i64 %j4130, %d
-  %h132 = load i64, ptr %h, align 8
-  %mul133 = mul i64 %h132, %dh
-  %add134 = add i64 %mul131, %mul133
-  %c2135 = load i64, ptr %c2, align 8
-  %add136 = add i64 %add134, %c2135
-  %ptr.add137 = getelementptr inbounds float, ptr %vp, i64 %add136
-  %deref138 = load float, ptr %ptr.add137, align 4
-  %fmul139 = fmul float %deref129, %deref138
-  %fadd140 = fadd float %acc2119, %fmul139
-  store float %fadd140, ptr %acc2, align 1
-  %j4141 = load i64, ptr %j4, align 8
-  %add142 = add i64 %j4141, 1
-  store i64 %add142, ptr %j4, align 1
-  br label %while.cond114
+while.body121:                                    ; preds = %while.cond120
+  %acc2124 = load float, ptr %acc2, align 4
+  %h125 = load i64, ptr %h, align 8
+  %mul126 = mul i64 %h125, %t
+  %add127 = add i64 %mul126, %parfor.iv
+  %mul128 = mul i64 %add127, %w
+  %j4129 = load i64, ptr %j4, align 8
+  %sub = sub i64 %j4129, %mul
+  %add130 = add i64 %mul128, %sub
+  %ptr.add131 = getelementptr inbounds float, ptr %pp, i64 %add130
+  %deref132 = load float, ptr %ptr.add131, align 4
+  %j4133 = load i64, ptr %j4, align 8
+  %mul134 = mul i64 %j4133, %d
+  %h135 = load i64, ptr %h, align 8
+  %mul136 = mul i64 %h135, %dh
+  %add137 = add i64 %mul134, %mul136
+  %c2138 = load i64, ptr %c2, align 8
+  %add139 = add i64 %add137, %c2138
+  %ptr.add140 = getelementptr inbounds float, ptr %vp, i64 %add139
+  %deref141 = load float, ptr %ptr.add140, align 4
+  %fmul142 = fmul float %deref132, %deref141
+  %fadd143 = fadd float %acc2124, %fmul142
+  store float %fadd143, ptr %acc2, align 1
+  %j4144 = load i64, ptr %j4, align 8
+  %add145 = add i64 %j4144, 1
+  store i64 %add145, ptr %j4, align 1
+  br label %while.cond120
 
-while.exit116:                                    ; preds = %while.cond114
-  store %_Z6VectorIfE %out, ptr %arg.tmp143, align 1
-  %mul144 = mul i64 %parfor.iv, %d
-  %h145 = load i64, ptr %h, align 8
-  %mul146 = mul i64 %h145, %dh
-  %add147 = add i64 %mul144, %mul146
-  %c2148 = load i64, ptr %c2, align 8
-  %add149 = add i64 %add147, %c2148
-  %acc2150 = load float, ptr %acc2, align 4
-  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp143, i64 %add149, float %acc2150)
+while.exit122:                                    ; preds = %while.cond120
+  store %_Z6VectorIfE %out, ptr %arg.tmp146, align 1
+  %mul147 = mul i64 %parfor.iv, %hs
+  %h148 = load i64, ptr %h, align 8
+  %add149 = add i64 %mul147, %h148
+  %mul150 = mul i64 %add149, %dh
   %c2151 = load i64, ptr %c2, align 8
-  %add152 = add i64 %c2151, 1
-  store i64 %add152, ptr %c2, align 1
-  br label %while.cond109
+  %add152 = add i64 %mul150, %c2151
+  %acc2153 = load float, ptr %acc2, align 4
+  call void @_ZN6VectorIfE3putEmf(ptr %arg.tmp146, i64 %add152, float %acc2153)
+  %c2154 = load i64, ptr %c2, align 8
+  %add155 = add i64 %c2154, 1
+  store i64 %add155, ptr %c2, align 1
+  br label %while.cond115
 }
 
 attributes #0 = { noreturn }
