@@ -10,14 +10,17 @@
  * The contract with the compiler:
  *
  *   int scaly_gpu_run(source, count, uniforms, uniform_words,
- *                     buffers, sizes, n_inputs, n_outputs)
+ *                     buffers, sizes, n_inputs, n_outputs,
+ *                     where, per1k, done, workers)
+ *   int scaly_gpu_forced(void)
  *
  * `source` is the kernel's text in the Metal Shading Language, a constant of
- * the program (its ADDRESS is the key of the compiled pipeline). `count` is
+ * the program (with `where` the key of the loop's site here). `count` is
  * the number of rounds. `uniforms` are `uniform_words` 32-bit words; the host
  * appends two words (low, high) per input buffer, its element count. `buffers`
  * holds the inputs, then the outputs; `sizes[2*i]` is the element count of
- * buffer i and `sizes[2*i + 1]` the bytes of one element.
+ * buffer i and `sizes[2*i + 1]` the bytes of one element. `where` names the
+ * loop, file and line.
  *
  * Bindings: 0 the uniform words, 1 the fault word, 2.. the inputs, then the
  * outputs. The kernel's entry is `k`.
@@ -29,21 +32,40 @@
  * zero): the kernel sets the fault word, the results are thrown away and the
  * processor's loop traps as it always did.
  *
- * SCALY_GPU=off keeps every loop on the processor. SCALY_GPU_TRACE=1 writes
- * one line per call to standard error, what ran or why not.
+ * WHO DECIDES. The loop asks at two places. At its head, where
+ * scaly_gpu_forced() says so: per1k is 0 and the card is simply tried. And
+ * where the processor's driver is about to hand rounds to the other cores --
+ * it has measured a round by then: per1k is that time in nanoseconds times
+ * 1024, `done` the rounds already run (the card runs them again; they come
+ * out the same), `workers` the cores it would use. There the card takes the
+ * loop where it pays: its time for `count` rounds, as measured at this loop
+ * before, against the processor's for what is left. A loop the card has not
+ * run yet is tried where the work left outweighs a compilation; that first
+ * run is the measurement. What the card would do with little work is never
+ * asked: such a loop does not reach the driver's gate.
+ *
+ * SCALY_GPU=on tries the card at every loop's head and nowhere else, =off
+ * keeps every loop on the processor; anything else leaves it to the gate.
+ * SCALY_GPU_TRACE=1 writes one line per run or refusal to standard error,
+ * SCALY_GPU_REPORT=1 one line per loop when the program ends: how often it
+ * went where, and what the card's runs cost.
  */
 #include <dlfcn.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 typedef void *id;
 typedef void *SEL;
 typedef struct { unsigned long width, height, depth; } gpu_size;
 
-static pthread_mutex_t gpu_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t gpu_lock = PTHREAD_MUTEX_INITIALIZER;        /* the device */
+static pthread_mutex_t gpu_sites_lock = PTHREAD_MUTEX_INITIALIZER;  /* the sites */
+static pthread_once_t gpu_once = PTHREAD_ONCE_INIT;
 static int gpu_state;                 /* 0 untried, 1 ready, 2 unavailable */
+static int gpu_mode;                  /* 0 the gate decides, 1 on, 2 off */
 static int gpu_trace;
 static void *gpu_msg;                 /* objc_msgSend */
 static SEL (*gpu_sel)(const char *);
@@ -53,8 +75,100 @@ static void (*gpu_pool_pop)(void *);
 static id gpu_device;
 static id gpu_queue;
 
-struct gpu_pipeline { const char *source; id state; struct gpu_pipeline *next; };
-static struct gpu_pipeline *gpu_pipelines;
+/* One loop of the program. Under gpu_sites_lock, but `state`/`compiled`,
+ * which the device's lock guards. */
+struct gpu_site
+{
+    const char *source;               /* the key: the address of the kernel's text */
+    const char *where;
+    id state;                         /* the compiled kernel */
+    int compiled;                     /* 0 not tried, 1 compiled, 2 does not compile */
+    int stopped;                      /* a round stopped: not taken at the gate again */
+    double compile_ns;
+    double fixed_ns, round_ns;        /* the card's time for n rounds: fixed + n * round */
+    int measured;
+    unsigned long long cards, card_rounds, kept, stops;
+    double card_ns, in_ns, run_ns, out_ns;
+    struct gpu_site *next;
+};
+static struct gpu_site *gpu_sites;
+
+/* What the card is believed to cost before it ran a loop: a kernel's
+ * compilation and one call. Its rounds count as nothing until measured. */
+#define GPU_COMPILE_NS 30000000.0
+#define GPU_CALL_NS      700000.0
+/* the card must win by a quarter */
+#define GPU_MARGIN 1.25
+/* The shortest run seen in this process: what a call costs whatever it
+ * computes. Of a measured run this much is the call, the rest its rounds. */
+static double gpu_least_ns = GPU_CALL_NS;
+
+static double gpu_now(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (double)t.tv_sec * 1e9 + (double)t.tv_nsec;
+}
+
+static void gpu_report(void)
+{
+    pthread_mutex_lock(&gpu_sites_lock);
+    for (struct gpu_site *s = gpu_sites; s; s = s->next)
+    {
+        fprintf(stderr, "gpu: %s: %llu on the card, %llu on the processor",
+                s->where, s->cards, s->kept + s->stops);
+        if (s->cards)
+            fprintf(stderr, "; the card %.3f ms for %llu rounds (%.3f in, %.3f running, %.3f out), its kernel compiled in %.3f ms",
+                    s->card_ns / 1e6, s->card_rounds, s->in_ns / 1e6, s->run_ns / 1e6, s->out_ns / 1e6, s->compile_ns / 1e6);
+        if (s->stops)
+            fprintf(stderr, "; %llu stopped at a round", s->stops);
+        fprintf(stderr, "\n");
+    }
+    pthread_mutex_unlock(&gpu_sites_lock);
+}
+
+static void gpu_read_environment(void)
+{
+    const char *trace = getenv("SCALY_GPU_TRACE");
+    gpu_trace = trace && *trace && strcmp(trace, "0") != 0;
+    const char *mode = getenv("SCALY_GPU");
+    if (mode && strcmp(mode, "off") == 0)
+        gpu_mode = 2;
+    else if (mode && strcmp(mode, "on") == 0)
+        gpu_mode = 1;
+    const char *report = getenv("SCALY_GPU_REPORT");
+    if (report && *report && strcmp(report, "0") != 0)
+        atexit(gpu_report);
+}
+
+/* under gpu_sites_lock: the site of this kernel, made where it is new */
+static struct gpu_site *gpu_site_of(const char *source, const char *where)
+{
+    struct gpu_site *s = gpu_sites;
+    if (!where)
+        where = "?";
+    /* The same loop can stand in a program twice (its body run in place and
+     * handed to the other cores), and two loops can share one text: a site
+     * is a text at a place, whatever the addresses. */
+    while (s)
+    {
+        if ((s->source == source && s->where == where)
+            || (strcmp(s->where, where) == 0 && strcmp(s->source, source) == 0))
+            return s;
+        s = s->next;
+    }
+    s = (struct gpu_site *)calloc(1, sizeof(struct gpu_site));
+    if (!s)
+        return 0;
+    s->source = source;
+    s->where = where;
+    /* at the end: the report lists the loops in the order they came */
+    struct gpu_site **last = &gpu_sites;
+    while (*last)
+        last = &(*last)->next;
+    *last = s;
+    return s;
+}
 
 #define SEND0(o, s)             ((id (*)(id, SEL))gpu_msg)((o), gpu_sel(s))
 #define SEND1(o, s, a)          ((id (*)(id, SEL, id))gpu_msg)((o), gpu_sel(s), (a))
@@ -84,11 +198,6 @@ static const char *gpu_error_text(id error)
 static void gpu_start(void)
 {
     gpu_state = 2;
-    const char *trace = getenv("SCALY_GPU_TRACE");
-    gpu_trace = trace && *trace && strcmp(trace, "0") != 0;
-    const char *mode = getenv("SCALY_GPU");
-    if (mode && strcmp(mode, "off") == 0)
-        return;
     void *objc = dlopen("/usr/lib/libobjc.A.dylib", RTLD_LAZY);
     void *metal = dlopen("/System/Library/Frameworks/Metal.framework/Metal", RTLD_LAZY);
     if (!objc || !metal)
@@ -110,16 +219,15 @@ static void gpu_start(void)
     gpu_state = 1;
 }
 
-/* under the lock, inside a pool: the compiled kernel of this source */
-static id gpu_pipeline_of(const char *source)
+/* under the device's lock, inside a pool: the compiled kernel of this site.
+ * A source that does not compile is remembered too: it will not compile the
+ * next time either. */
+static id gpu_pipeline_of(struct gpu_site *site)
 {
-    struct gpu_pipeline *p = gpu_pipelines;
-    while (p)
-    {
-        if (p->source == source)
-            return p->state;
-        p = p->next;
-    }
+    if (site->compiled)
+        return site->state;
+    const char *source = site->source;
+    double began = gpu_now();
     id state = 0;
     id options = SEND0(SEND0(gpu_class("MTLCompileOptions"), "alloc"), "init");
     /* The processor's arithmetic, not the card's: no reordering, no fused
@@ -156,16 +264,9 @@ static id gpu_pipeline_of(const char *source)
         }
         SENDV0(library, "release");
     }
-    /* A source that does not compile is remembered too: it will not compile
-     * the next time either. */
-    p = (struct gpu_pipeline *)malloc(sizeof(struct gpu_pipeline));
-    if (p)
-    {
-        p->source = source;
-        p->state = state;
-        p->next = gpu_pipelines;
-        gpu_pipelines = p;
-    }
+    site->state = state;
+    site->compile_ns = gpu_now() - began;
+    site->compiled = state ? 1 : 2;
     return state;
 }
 
@@ -183,7 +284,7 @@ static id gpu_buffer(const void *bytes, unsigned long length)
 
 #define GPU_MAX_BUFFERS 29            /* 31 bindings, two are the host's */
 
-static int gpu_run_locked(const char *source, long long count,
+static int gpu_run_locked(struct gpu_site *site, long long count,
                           const unsigned int *uniforms, unsigned long long uniform_words,
                           void **buffers, const unsigned long long *sizes,
                           unsigned long long n_inputs, unsigned long long n_outputs)
@@ -220,9 +321,10 @@ static int gpu_run_locked(const char *source, long long count,
                 return gpu_no("an output overlaps another buffer");
         }
     }
-    id pipeline = gpu_pipeline_of(source);
+    id pipeline = gpu_pipeline_of(site);
     if (!pipeline)
         return gpu_no("no kernel");
+    double t_begin = gpu_now(), t_in = t_begin, t_run = t_begin, t_out = t_begin;
 
     unsigned long long words = uniform_words + 2 * n_inputs;
     unsigned int *u = (unsigned int *)malloc((size_t)(words ? words : 1) * sizeof(unsigned int));
@@ -257,7 +359,9 @@ static int gpu_run_locked(const char *source, long long count,
         made++;
     }
     int ran = 0;
+    int stopped = 0;
     const char *why = "no buffer";
+    t_in = gpu_now();
     if (ok)
     {
         id commands = SEND0(gpu_queue, "commandBuffer");
@@ -279,11 +383,13 @@ static int gpu_run_locked(const char *source, long long count,
             SENDV0(encoder, "endEncoding");
             SENDV0(commands, "commit");
             SENDV0(commands, "waitUntilCompleted");
+            t_run = gpu_now();
             why = "the card did not finish";
             if (SENDU0(commands, "status") == 4)        /* completed */
             {
                 const unsigned int *flag = (const unsigned int *)SEND0(held[1], "contents");
                 why = "a round stopped";
+                stopped = flag && *flag != 0;
                 if (flag && *flag == 0)
                 {
                     ran = 1;
@@ -303,9 +409,42 @@ static int gpu_run_locked(const char *source, long long count,
             }
         }
     }
+    t_out = gpu_now();
     for (i = 0; i < made; i++)
         if (held[i])
             SENDV0(held[i], "release");
+    pthread_mutex_lock(&gpu_sites_lock);
+    if (ran)
+    {
+        /* what this run says the card costs here: a part for the call, the
+         * rest by the round; halfway between this run and the ones before */
+        double all = t_out - t_begin;
+        if (all < gpu_least_ns)
+            gpu_least_ns = all;
+        double fixed = gpu_least_ns;
+        double round = (all - fixed) / (double)count;
+        if (site->measured)
+        {
+            fixed = (fixed + site->fixed_ns) / 2;
+            round = (round + site->round_ns) / 2;
+        }
+        site->fixed_ns = fixed;
+        site->round_ns = round;
+        site->measured = 1;
+        site->cards++;
+        site->card_rounds += (unsigned long long)count;
+        site->card_ns += all;
+        site->in_ns += t_in - t_begin;
+        site->run_ns += t_run - t_in;
+        site->out_ns += t_out - t_run;
+    }
+    else
+    {
+        site->stops++;
+        if (stopped)
+            site->stopped = 1;
+    }
+    pthread_mutex_unlock(&gpu_sites_lock);
     if (!ran)
         return gpu_no(why);
     if (gpu_trace)
@@ -318,7 +457,7 @@ static int gpu_run_locked(const char *source, long long count,
  * a round of an enclosing parallel loop). The caller waits for it. */
 struct gpu_call
 {
-    const char *source;
+    struct gpu_site *site;
     long long count;
     const unsigned int *uniforms;
     unsigned long long uniform_words;
@@ -337,7 +476,7 @@ static void *gpu_call_run(void *arg)
     if (gpu_state == 1)
     {
         void *pool = gpu_pool_push();
-        c->ran = gpu_run_locked(c->source, c->count, c->uniforms, c->uniform_words,
+        c->ran = gpu_run_locked(c->site, c->count, c->uniforms, c->uniform_words,
                                 c->buffers, c->sizes, c->n_inputs, c->n_outputs);
         gpu_pool_pop(pool);
     }
@@ -347,12 +486,54 @@ static void *gpu_call_run(void *arg)
     return 0;
 }
 
+/* Is the card to be tried at every loop's head (SCALY_GPU=on)? */
+int scaly_gpu_forced(void)
+{
+    pthread_once(&gpu_once, gpu_read_environment);
+    return gpu_mode == 1;
+}
+
+/* under gpu_sites_lock: does the card pay for this loop, as far as is known? */
+static int gpu_pays(const struct gpu_site *site, long long count, long long per1k, long long done, long long workers)
+{
+    if (site->compiled == 2 || site->stopped)
+        return 0;
+    double left = (double)(count - done);
+    double cpu_ns = left * ((double)per1k / 1024.0) / (double)(workers > 0 ? workers : 1);
+    double gpu_ns;
+    if (site->measured)
+        gpu_ns = site->fixed_ns + site->round_ns * (double)count;
+    else
+        gpu_ns = (site->compiled ? 0.0 : GPU_COMPILE_NS) + GPU_CALL_NS;
+    return gpu_ns * GPU_MARGIN < cpu_ns;
+}
+
 int scaly_gpu_run(const char *source, long long count,
                   const unsigned int *uniforms, unsigned long long uniform_words,
                   void **buffers, const unsigned long long *sizes,
-                  unsigned long long n_inputs, unsigned long long n_outputs)
+                  unsigned long long n_inputs, unsigned long long n_outputs,
+                  const char *where, long long per1k, long long done, long long workers)
 {
-    struct gpu_call call = { source, count, uniforms, uniform_words, buffers, sizes, n_inputs, n_outputs, 0 };
+    pthread_once(&gpu_once, gpu_read_environment);
+    int at_gate = per1k > 0;
+    /* off: nowhere. on: at the head, which has asked already where this is
+     * the gate. Otherwise: at the gate. */
+    if (gpu_mode == 2 || (gpu_mode == 1) == at_gate)
+        return 0;
+    pthread_mutex_lock(&gpu_sites_lock);
+    struct gpu_site *site = gpu_site_of(source, where);
+    int take = site != 0;
+    if (take && at_gate && !gpu_pays(site, count, per1k, done, workers))
+    {
+        site->kept++;
+        take = 0;
+        if (gpu_trace)
+            fprintf(stderr, "gpu: processor (the card would not pay)\n");
+    }
+    pthread_mutex_unlock(&gpu_sites_lock);
+    if (!take)
+        return 0;
+    struct gpu_call call = { site, count, uniforms, uniform_words, buffers, sizes, n_inputs, n_outputs, 0 };
     pthread_attr_t attr;
     pthread_t thread;
     if (pthread_attr_init(&attr) != 0)
