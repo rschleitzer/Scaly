@@ -14,6 +14,7 @@
  *                     buffers, sizes, n_inputs, n_outputs,
  *                     where, per1k, done, workers)
  *   int scaly_gpu_forced(void)
+ *   void scaly_gpu_kept(source, wgsl, where, rounds, ns)
  *
  * `source` is the kernel's text in the Metal Shading Language, a constant of
  * the program (with `where` the key of the loop's site here). `wgsl` is the
@@ -48,6 +49,16 @@
  * time's, or everything the loop has brought to the gate so far; that first
  * run is the measurement. What the card would do with little work is never
  * asked: such a loop does not reach the driver's gate.
+ *
+ * The processor's side of that scale is MEASURED too. A loop the gate kept
+ * tells, when it is through, how long the rounds left at the gate took
+ * (scaly_gpu_kept): from then on that is what the card is weighed against
+ * at this loop, in place of the estimate `rounds * time of one / cores`,
+ * which is too good where the cores are not alike. And no verdict stands
+ * for ever: a loop the card lost is given to it again after a number of
+ * runs that grows with how clearly it lost, so that one slow run -- a
+ * kernel's first runs are slower than its later ones -- does not settle
+ * the question.
  *
  * SCALY_GPU=on tries the card at every loop's head and nowhere else, =off
  * keeps every loop on the processor; anything else leaves it to the gate.
@@ -106,6 +117,8 @@ struct gpu_site
     int measured;                     /* runs that count: 0 none, 1 the first (a kernel's first run is slow), 2 measured */
     unsigned long long cards, card_rounds, kept, stops;
     double kept_ns;                   /* the processor's time for what was kept here */
+    double cpu_round_ns;              /* the processor's time for a round, as it took (0: not told yet) */
+    unsigned long long kept_since;    /* runs kept since the card last ran */
     double card_ns, in_ns, run_ns, out_ns;
     struct gpu_site *next;
 };
@@ -117,9 +130,15 @@ static struct gpu_site *gpu_sites;
 #define GPU_CALL_NS      700000.0
 /* the card must win by a quarter */
 #define GPU_MARGIN 1.25
+/* a card that lost is asked again after this many runs, times how far behind */
+#define GPU_AGAIN 32.0
 /* The shortest run seen in this process: what a call costs whatever it
  * computes. Of a measured run this much is the call, the rest its rounds. */
 static double gpu_least_ns = GPU_CALL_NS;
+/* What compiling a kernel is believed to cost: the last one compiled in
+ * this process, once there was one (a system that has kept a kernel from an
+ * earlier run compiles it in a millisecond). */
+static double gpu_compile_ns = GPU_COMPILE_NS;
 
 static double gpu_now(void)
 {
@@ -287,6 +306,8 @@ static id gpu_pipeline_of(struct gpu_site *site)
     }
     site->state = state;
     site->compile_ns = gpu_now() - began;
+    if (site->state)
+        gpu_compile_ns = site->compile_ns;
     site->compiled = state ? 1 : 2;
     return state;
 }
@@ -373,6 +394,7 @@ static void gpu_account(struct gpu_site *site, int ran, int stopped, long long c
         if (site->measured < 2)
             site->measured++;
         site->cards++;
+        site->kept_since = 0;
         site->card_rounds += (unsigned long long)count;
         site->card_ns += all;
         site->in_ns += t_in - t_begin;
@@ -705,6 +727,8 @@ static void *wg_pipeline_of(struct gpu_site *site)
         pipeline = 0;
     site->state = pipeline;
     site->compile_ns = gpu_now() - began;
+    if (site->state)
+        gpu_compile_ns = site->compile_ns;
     site->compiled = pipeline ? 1 : 2;
     return pipeline;
 }
@@ -949,6 +973,9 @@ static int gpu_pays(struct gpu_site *site, long long count, long long per1k, lon
         return 0;
     double left = (double)(count - done);
     double cpu_ns = left * ((double)per1k / 1024.0) / (double)(workers > 0 ? workers : 1);
+    /* what the processor took for a round the last times it was kept */
+    if (site->cpu_round_ns > 0)
+        cpu_ns = left * site->cpu_round_ns;
     double gpu_ns;
     if (site->measured == 1)
         return 1;                     /* tried once: the run that measures comes now */
@@ -956,14 +983,43 @@ static int gpu_pays(struct gpu_site *site, long long count, long long per1k, lon
         gpu_ns = site->fixed_ns + site->round_ns * (double)count;
     else
     {
-        gpu_ns = (site->compiled ? 0.0 : GPU_COMPILE_NS) + GPU_CALL_NS;
+        gpu_ns = (site->compiled ? 0.0 : gpu_compile_ns) + GPU_CALL_NS;
         if (gpu_ns * GPU_MARGIN < cpu_ns + site->kept_ns)
             return 1;
     }
     if (gpu_ns * GPU_MARGIN < cpu_ns)
         return 1;
     site->kept_ns += cpu_ns;
+    /* lost, as measured -- and asked again after 32 runs for a card just
+     * behind, 320 for one ten times slower: what that costs stays a few
+     * hundredths of the loop's time */
+    if (site->measured && cpu_ns > 0)
+    {
+        site->kept_since++;
+        if ((double)site->kept_since >= GPU_AGAIN * gpu_ns / cpu_ns)
+            return 1;
+    }
     return 0;
+}
+
+/* A loop a gate kept is through: `rounds` of it took the processor `ns`. */
+void scaly_gpu_kept(const char *source, const char *wgsl, const char *where, long long rounds, long long ns)
+{
+    pthread_once(&gpu_once, gpu_read_environment);
+    if (gpu_mode != 0 || rounds <= 0 || ns <= 0)
+        return;
+    if (gpu_backend == 1)
+        source = wgsl;
+    if (!source)
+        return;
+    pthread_mutex_lock(&gpu_sites_lock);
+    struct gpu_site *site = gpu_site_of(source, where);
+    if (site)
+    {
+        double round = (double)ns / (double)rounds;
+        site->cpu_round_ns = site->cpu_round_ns > 0 ? (site->cpu_round_ns + round) / 2 : round;
+    }
+    pthread_mutex_unlock(&gpu_sites_lock);
 }
 
 int scaly_gpu_run(const char *source, const char *wgsl, long long count,
