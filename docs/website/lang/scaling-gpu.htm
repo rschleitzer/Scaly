@@ -1567,7 +1567,12 @@ class="userinput"
       0.52 on all ten, and 0.06 where the card counted the rows — 0.02
       of them for the rows themselves.</p
 ><p
->The card is reached through Metal, on a Mac. On another system
+>The card is reached through Metal, on a Mac, and — for the
+      loops that allow it — through WebGPU
+      (<a
+href="#scaling-gpu-numbers"
+>The Numbers a Card Computes</a
+>). On a system without either,
       <code
 class="option"
 >--gpu</code
@@ -1905,10 +1910,29 @@ href="#scaling-gpu-numbers"
 ></li
 ></ul
 ><pre
-class="listing fragment"
+class="listing"
 ><code
->relaxed for y in n
-    counts.put(y as size_t, row_count(y, n))</code
+>function half(x: f32) returns f32
+    x * 0.5
+
+let n 1000
+var exact Vector[f32](n as size_t)
+var loose Vector[f32](n as size_t)
+for i in n
+    exact.put(i as size_t, half(i as f32) / 3.0)
+relaxed for i in n
+    loose.put(i as size_t, half(i as f32) / 3.0)
+print "`exact[999] as f64` `loose[999] as f64`"</code
+></pre
+><pre
+class="screen"
+><code
+>$ scaly run relaxed.scaly
+166.5 166.5
+$ scalyc --gpu-plan relaxed.scaly
+gpu-plan: 2 for-loops, 2 parallel, 2 kernels
+gpu-plan: relaxed.scaly:7:1: kernel (metal): out exact; calls half; not webgpu: floating point, and the loop is not relaxed
+gpu-plan: relaxed.scaly:9:9: kernel (metal, webgpu): out loose; calls half</code
 ></pre
 ><p
 ><code
@@ -1916,17 +1940,40 @@ class="listing fragment"
 > stands before a loop or before a block, and
       holds for everything the loop's rounds compute, including the
       functions they call. It allows, it does not require: on the
-      processor a relaxed loop computes exactly as before, so it prints the
-      same with <code
+      processor a relaxed loop computes exactly as before, and so it does
+      under Metal, which rounds as the processor does whether it has to
+      or not. Where a card of the looser kind computed it, a point on the
+      edge of the Mandelbrot set may come out the other way — one
+      whose iteration ends within a rounding error of 4.0. That is what
+      the last words of the report at the head of this chapter say: the
+      rows are a kernel for Metal as they stand, and would be one for
+      WebGPU if the loop were relaxed. Counted there, the 2000 rows came
+      to 1588048 points, four more than everywhere else.</p
+><p
+>A program built with <code
+class="option"
+>--gpu</code
+> carries a kernel in
+      both languages where both may run it, Metal's and WebGPU's, and
+      uses Metal unless told otherwise.
+      <code
 class="userinput"
->SCALY_GPU=off</code
-> on every run. Where a
-      card of the looser kind computed it, a point on the edge of the
-      Mandelbrot set may come out the other way — one whose iteration
-      ends within a rounding error of 4.0. That is what the last words of
-      the report at the head of this chapter say: the rows are a kernel
-      for Metal as they stand, and would be one for WebGPU if the loop
-      were relaxed.</p
+>SCALY_GPU_BACKEND=webgpu</code
+> sends the loops that
+      have a kernel for WebGPU there instead — through wgpu-native,
+      the library that also sits under browsers, which the program opens
+      when it first needs it and does without where it is not installed
+      — and leaves the others on the processor. Whole numbers come
+      back from that card exactly as from any other; a call takes two to
+      three times as long as one through Metal.
+      <code
+class="option"
+>--gpu-msl</code
+> and <code
+class="option"
+>--gpu-wgsl</code
+> print
+      the kernels as the compiler writes them.</p
 ></section
 ></article
 ><nav
