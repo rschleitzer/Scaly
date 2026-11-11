@@ -44,7 +44,8 @@
  * out the same), `workers` the cores it would use. There the card takes the
  * loop where it pays: its time for `count` rounds, as measured at this loop
  * before, against the processor's for what is left. A loop the card has not
- * run yet is tried where the work left outweighs a compilation; that first
+ * run yet is tried where the work left outweighs a compilation -- this
+ * time's, or everything the loop has brought to the gate so far; that first
  * run is the measurement. What the card would do with little work is never
  * asked: such a loop does not reach the driver's gate.
  *
@@ -102,8 +103,9 @@ struct gpu_site
     int stopped;                      /* a round stopped: not taken at the gate again */
     double compile_ns;
     double fixed_ns, round_ns;        /* the card's time for n rounds: fixed + n * round */
-    int measured;
+    int measured;                     /* runs that count: 0 none, 1 the first (a kernel's first run is slow), 2 measured */
     unsigned long long cards, card_rounds, kept, stops;
+    double kept_ns;                   /* the processor's time for what was kept here */
     double card_ns, in_ns, run_ns, out_ns;
     struct gpu_site *next;
 };
@@ -319,6 +321,8 @@ static const char *gpu_refusal(long long count, void **buffers, const unsigned l
     {
         if (sizes[2 * i + 1] == 0 || sizes[2 * i] > 0x7fffffffffffULL / sizes[2 * i + 1])
             return "a buffer without a size";
+        if (!buffers[i] && (i >= n_inputs || sizes[2 * i]))
+            return "a buffer without memory";
         if (i >= n_inputs && sizes[2 * i] < (unsigned long long)count)
             return "an output shorter than the rounds";
     }
@@ -357,14 +361,17 @@ static void gpu_account(struct gpu_site *site, int ran, int stopped, long long c
             gpu_least_ns = all;
         double fixed = gpu_least_ns;
         double round = (all - fixed) / (double)count;
-        if (site->measured)
+        /* a kernel's first run pays what no later one does: the second run
+         * is the first measurement, and stands alone */
+        if (site->measured >= 2)
         {
             fixed = (fixed + site->fixed_ns) / 2;
             round = (round + site->round_ns) / 2;
         }
         site->fixed_ns = fixed;
         site->round_ns = round;
-        site->measured = 1;
+        if (site->measured < 2)
+            site->measured++;
         site->cards++;
         site->card_rounds += (unsigned long long)count;
         site->card_ns += all;
@@ -930,19 +937,33 @@ int scaly_gpu_forced(void)
     return gpu_mode == 1;
 }
 
-/* under gpu_sites_lock: does the card pay for this loop, as far as is known? */
-static int gpu_pays(const struct gpu_site *site, long long count, long long per1k, long long done, long long workers)
+/* under gpu_sites_lock: does the card pay for this loop, as far as is known?
+ * A loop the card never ran is weighed against a compilation and a call --
+ * this time's work alone, or all the work this loop has brought to the gate
+ * and kept: a loop that comes back often enough is tried, at a price the
+ * processor has already paid there. It is tried twice -- a kernel's first
+ * run pays what no later one does --, and the second run is its measure. */
+static int gpu_pays(struct gpu_site *site, long long count, long long per1k, long long done, long long workers)
 {
     if (site->compiled == 2 || site->stopped)
         return 0;
     double left = (double)(count - done);
     double cpu_ns = left * ((double)per1k / 1024.0) / (double)(workers > 0 ? workers : 1);
     double gpu_ns;
+    if (site->measured == 1)
+        return 1;                     /* tried once: the run that measures comes now */
     if (site->measured)
         gpu_ns = site->fixed_ns + site->round_ns * (double)count;
     else
+    {
         gpu_ns = (site->compiled ? 0.0 : GPU_COMPILE_NS) + GPU_CALL_NS;
-    return gpu_ns * GPU_MARGIN < cpu_ns;
+        if (gpu_ns * GPU_MARGIN < cpu_ns + site->kept_ns)
+            return 1;
+    }
+    if (gpu_ns * GPU_MARGIN < cpu_ns)
+        return 1;
+    site->kept_ns += cpu_ns;
+    return 0;
 }
 
 int scaly_gpu_run(const char *source, const char *wgsl, long long count,
