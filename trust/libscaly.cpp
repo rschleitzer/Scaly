@@ -2638,6 +2638,7 @@ void TaskPool_shutdown(TaskPool*) asm("_ZN8TaskPool8shutdownER8TaskPool");
 int64_t TaskPool_ncpu() asm("_ZN8TaskPool4ncpuEv");
 TaskPool* TaskPool_default_pool() asm("_ZN8TaskPool12default_poolEv");
 void ForkJoin_retire(TaskPool*) asm("_ZN8ForkJoin6retireEP8TaskPool");
+int64_t task_guarded_body(void*) asm("_Z17task_guarded_bodyPv");
 bool ForkJoin_serves(TaskPool*) asm("_ZN8ForkJoin6servesEP8TaskPool");
 void ForkJoin_note_blocked(uint64_t) asm("_ZN8ForkJoin12note_blockedE3u64");
 bool ForkJoin_claim_credit() asm("_ZN8ForkJoin12claim_creditEv");
@@ -10596,6 +10597,16 @@ __attribute__((weak)) void TaskPool_drain_default()
 }
 
 // packages/scaly/0.2.1/scaly/fiber.scaly
+__attribute__((weak)) int64_t task_guarded_body(void* cell)
+{
+    uint64_t* c = ((uint64_t*)(cell));
+    void* fn = ((void*)(((*(c)))));
+    void* arg = ((void*)(((*(((uint64_t*)((((((uint64_t)(c))) + 8ULL)))))))));
+    void* res = ((void*(*)(void*))(fn))((void*)(arg));
+    return 0LL;
+}
+
+// packages/scaly/0.2.1/scaly/fiber.scaly
 __attribute__((weak)) void* task_worker(void* arg)
 {
     scaly_frame_guard scaly_local{{nullptr, nullptr}};
@@ -10629,7 +10640,11 @@ __attribute__((weak)) void* task_worker(void* arg)
                 if (TaskGroup_is_guarded(g))
                 {
                     int32_t caught = (int32_t)0ULL;
-                    int64_t res = Region_run_guarded(w->fn, w->arg, (&(caught)));
+                    uint8_t cell_2[16] {};
+                    uint64_t* cp = ((uint64_t*)(cell_2));
+                    (*(cp)) = ((uint64_t)(w->fn));
+                    (*(((uint64_t*)((((((uint64_t)(cp))) + 8ULL)))))) = ((uint64_t)(w->arg));
+                    int64_t res = Region_run_guarded(((void*)&task_guarded_body), ((void*)(cell_2)), (&(caught)));
                     if ((caught != (int32_t)0ULL))
                     {
                         TaskGroup_record_fault(g);

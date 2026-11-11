@@ -32119,6 +32119,19 @@ if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
+define linkonce_odr i64 @_Z17task_guarded_bodyPv(ptr %0) {
+entry:
+  %deref = load i64, ptr %0, align 8
+  %as.inttoptr = inttoptr i64 %deref to ptr
+  %as.ptrtoint = ptrtoint ptr %0 to i64
+  %add = add i64 %as.ptrtoint, 8
+  %as.inttoptr1 = inttoptr i64 %add to ptr
+  %deref2 = load i64, ptr %as.inttoptr1, align 8
+  %as.inttoptr3 = inttoptr i64 %deref2 to ptr
+  %1 = call ptr %as.inttoptr(ptr %as.inttoptr3)
+  ret i64 0
+}
+
 define linkonce_odr i1 @_ZN8ForkJoin6servesEP8TaskPool(ptr %0) {
 entry:
   %atomic.load = load atomic i64, ptr @fj_state seq_cst, align 8
@@ -32307,6 +32320,8 @@ if.end36:                                         ; preds = %if.else, %if.then35
 
 define linkonce_odr ptr @_Z11task_workerPv(ptr %0) {
 entry:
+  %cell20 = alloca ptr, align 8
+  %cell = alloca [16 x i8], align 1
   %caught = alloca i32, align 4
   %byte3 = alloca ptr, align 8
   %byte = alloca [1 x i8], align 1
@@ -32352,12 +32367,12 @@ if.then8:                                         ; preds = %if.end7
 if.end9:                                          ; preds = %if.end7
   br label %repeat.body10
 
-repeat.body10:                                    ; preds = %if.end31, %if.end9
+repeat.body10:                                    ; preds = %if.end41, %if.end9
   %call12 = call ptr @_ZN8TaskPool8try_takeEPN4scaly6memory4PageEP8TaskPool3i64(ptr null, ptr %as.inttoptr, i64 %deref2)
   %ne13 = icmp ne ptr %call12, null
   br i1 %ne13, label %if.then14, label %if.end15
 
-repeat.exit11:                                    ; preds = %if.then30, %if.end18
+repeat.exit11:                                    ; preds = %if.then40, %if.end18
   br label %repeat.body
 
 if.then14:                                        ; preds = %repeat.body10
@@ -32365,8 +32380,8 @@ if.then14:                                        ; preds = %repeat.body10
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 if.end15:                                         ; preds = %repeat.body10
-  %call29 = call i1 @_ZN8ForkJoin12claim_creditEv()
-  br i1 %call29, label %if.then30, label %if.end31
+  %call39 = call i1 @_ZN8ForkJoin12claim_creditEv()
+  br i1 %call39, label %if.then40, label %if.end41
 
 unwrap.trap:                                      ; preds = %if.then14
   call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.206)
@@ -32380,39 +32395,50 @@ unwrap.ok:                                        ; preds = %if.then14
 
 if.then17:                                        ; preds = %unwrap.ok
   store i32 0, ptr %caught, align 1
-  %field.inplace19 = getelementptr inbounds nuw %_Z8TaskItem, ptr %call12, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace19, align 8
-  %field.inplace20 = getelementptr inbounds nuw %_Z8TaskItem, ptr %call12, i32 0, i32 2
-  %deref.recv21 = load ptr, ptr %field.inplace20, align 8
-  %call22 = call i64 @_ZN6Region11run_guardedEPvPvP3i32(ptr %deref.recv, ptr %deref.recv21, ptr %caught)
-  %caught23 = load i32, ptr %caught, align 4
-  %ne24 = icmp ne i32 %caught23, 0
-  br i1 %ne24, label %if.then25, label %if.end26
+  %arr.ptr19 = getelementptr inbounds [16 x i8], ptr %cell, i64 0, i64 0
+  store ptr %arr.ptr19, ptr %cell20, align 8
+  %cell21 = load ptr, ptr %cell20, align 8
+  %load.struct22 = load %_Z8TaskItem, ptr %call12, align 8
+  %fn = extractvalue %_Z8TaskItem %load.struct22, 1
+  %as.ptrtoint23 = ptrtoint ptr %fn to i64
+  store i64 %as.ptrtoint23, ptr %cell21, align 8
+  %load.struct24 = load %_Z8TaskItem, ptr %call12, align 8
+  %arg = extractvalue %_Z8TaskItem %load.struct24, 2
+  %as.ptrtoint25 = ptrtoint ptr %arg to i64
+  %as.ptrtoint26 = ptrtoint ptr %cell21 to i64
+  %add27 = add i64 %as.ptrtoint26, 8
+  %as.inttoptr28 = inttoptr i64 %add27 to ptr
+  store i64 %as.ptrtoint25, ptr %as.inttoptr28, align 8
+  %cell29 = load ptr, ptr %cell20, align 8
+  %call30 = call i64 @_ZN6Region11run_guardedEPvPvP3i32(ptr @_Z17task_guarded_bodyPv, ptr %cell29, ptr %caught)
+  %caught31 = load i32, ptr %caught, align 4
+  %ne32 = icmp ne i32 %caught31, 0
+  br i1 %ne32, label %if.then33, label %if.end34
 
 if.else:                                          ; preds = %unwrap.ok
-  %load.struct27 = load %_Z8TaskItem, ptr %call12, align 8
-  %fn = extractvalue %_Z8TaskItem %load.struct27, 1
-  %load.struct28 = load %_Z8TaskItem, ptr %call12, align 8
-  %arg = extractvalue %_Z8TaskItem %load.struct28, 2
-  %1 = call ptr %fn(ptr %arg)
+  %load.struct35 = load %_Z8TaskItem, ptr %call12, align 8
+  %fn36 = extractvalue %_Z8TaskItem %load.struct35, 1
+  %load.struct37 = load %_Z8TaskItem, ptr %call12, align 8
+  %arg38 = extractvalue %_Z8TaskItem %load.struct37, 2
+  %1 = call ptr %fn36(ptr %arg38)
   br label %if.end18
 
-if.end18:                                         ; preds = %if.else, %if.end26
+if.end18:                                         ; preds = %if.else, %if.end34
   call void @_ZN9TaskGroup10finish_oneEP9TaskGroup(ptr %group)
   br label %repeat.exit11
 
-if.then25:                                        ; preds = %if.then17
+if.then33:                                        ; preds = %if.then17
   call void @_ZN9TaskGroup12record_faultEP9TaskGroup(ptr %group)
-  br label %if.end26
+  br label %if.end34
 
-if.end26:                                         ; preds = %if.then25, %if.then17
+if.end34:                                         ; preds = %if.then33, %if.then17
   br label %if.end18
 
-if.then30:                                        ; preds = %if.end15
+if.then40:                                        ; preds = %if.end15
   call void @_ZN8ForkJoin4workEv()
   br label %repeat.exit11
 
-if.end31:                                         ; preds = %if.end15
+if.end41:                                         ; preds = %if.end15
   br label %repeat.body10
 }
 

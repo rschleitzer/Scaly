@@ -136865,8 +136865,14 @@ __attribute__((weak)) void Parts_enable_wasm_sjlj()
 // packages/scalyc/0.2.1/scalyc/compiler/Parts.scaly
 __attribute__((weak)) LLVMOpaqueTargetMachine* Parts_wasm_target_machine(LLVMTarget* target, const char* triple, int64_t level, int32_t reloc)
 {
+    scaly_frame_guard scaly_local{{nullptr, nullptr}};
     Parts_enable_wasm_sjlj();
-    LLVMOpaqueTargetMachine* tm = LLVMCreateTargetMachine(target, triple, ((const char*)"generic"), ((const char*)"+exception-handling"), ((int32_t)(level)), reloc, (int32_t)0ULL);
+    String features = String{(uint8_t*)"\023+exception-handling"};
+    if (String_ends_with(scaly_lvalue((*({ String* scaly_t1 = (String*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(String), alignof(String)); *scaly_t1 = String{}; String_init4((*scaly_t1), triple); scaly_t1; }))), scaly_lvalue(String{(uint8_t*)"\010-threads"})))
+    {
+        features = String{(uint8_t*)"\051+exception-handling,+atomics,+bulk-memory"};
+    }
+    LLVMOpaqueTargetMachine* tm = LLVMCreateTargetMachine(target, triple, ((const char*)"generic"), String_to_c_string(&scaly_local.f, features), ((int32_t)(level)), reloc, (int32_t)0ULL);
     if (((tm) != (nullptr)))
     {
         scalyc_target_machine_wasm_eh(tm);
@@ -180981,6 +180987,10 @@ __attribute__((weak)) int64_t cli_run(Options& opts)
     if (wasm)
     {
         StringBuilder_append2((*cmd_builder), scaly_lvalue(String{(uint8_t*)"\106 -lsetjmp -lwasi-emulated-mman -Wl,--stack-first,-z,stack-size=8388608"}));
+    }
+    if ((wasm ? String_ends_with((opts).target_triple, scaly_lvalue(String{(uint8_t*)"\010-threads"})) : false))
+    {
+        StringBuilder_append2((*cmd_builder), scaly_lvalue(String{(uint8_t*)"\111 -Wl,--import-memory,--export-memory,--max-memory=4294967296,--wrap=close"}));
     }
     if ((((opts).tool_build ? (String_get_length((opts).target_triple) > 0ULL) : false) ? ((msvc) == (false)) : false))
     {
