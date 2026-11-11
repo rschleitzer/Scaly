@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>A Tour of Scaly</title>
+<title>Scaly Playground</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -25,7 +25,8 @@
          font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
   header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 12px 16px;
            border-bottom: 1px solid var(--line); background: var(--panel); }
-  header h1 { font-size: 18px; margin: 0; }
+  header h1 { font-size: 18px; margin: 0; display: flex; align-items: center; gap: 8px; }
+  header h1 img { width: 32px; height: 32px; }
   header .spacer { flex: 1; }
   .steps { display: flex; gap: 6px; align-items: center; }
   .steps button { padding: 4px 10px; }
@@ -39,6 +40,10 @@
   section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
   .lesson { display: flex; flex-direction: column; overflow: auto; }
   .lesson h2 { font-size: 20px; margin: 0 0 8px; }
+  .lesson .chapter { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  #drawings img { display: block; max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line);
+                  background: #fff; margin-bottom: 8px; }
+  #drawings:empty { display: none; }
   .lesson .prose { flex: 1; }
   .lesson .prose p { margin: 0 0 12px; }
   .lesson a { color: var(--accent); }
@@ -87,10 +92,10 @@
 </head>
 <body>
 <header>
-  <h1>A Tour of Scaly</h1>
+  <h1><img src="lizard.svg" alt="">Scaly Playground</h1>
   <span class="steps">
     <button id="prev" aria-label="Previous step">‹</button>
-    <select id="toc" aria-label="Steps of the tour"></select>
+    <select id="toc" aria-label="Steps of the playground"></select>
     <button id="fwd" aria-label="Next step">›</button>
   </span>
   <span class="spacer"></span>
@@ -102,8 +107,9 @@
 </header>
 <main id="main">
   <section class="lesson">
-    <h2 id="title">A Tour of Scaly</h2>
-    <div class="prose" id="prose"><p>Loading the tour…</p></div>
+    <div class="chapter" id="chapter"></div>
+    <h2 id="title">Scaly Playground</h2>
+    <div class="prose" id="prose"><p>Loading the playground…</p></div>
     <div class="nav">
       <button id="back">‹ Back</button>
       <span class="count" id="count"></span>
@@ -115,8 +121,9 @@
       <button class="primary" id="run" disabled>Run</button>
       <button id="reset">Reset</button>
       <select id="where" aria-label="Where the loops run" hidden>
-        <option value="off">On the processor</option>
-        <option value="on">On the graphics card</option>
+        <option value="one">On one core</option>
+        <option value="all">On all cores</option>
+        <option value="card">On the graphics card</option>
         <option value="auto" selected>Where it pays</option>
       </select>
       <span id="status">Loading…</span>
@@ -127,6 +134,7 @@
       The compiler and the program run in this browser tab.</div>
     <div class="results">
       <div class="runs" id="runs" aria-label="The runs of this program"></div>
+      <div id="drawings"></div>
       <div id="pictures"></div>
       <pre id="output" aria-live="polite"></pre>
     </div>
@@ -174,6 +182,7 @@ function show(i, push = true) {
   at = Math.max(0, Math.min(i, steps.length - 1));
   const step = steps[at];
   $('title').textContent = step.title;
+  $('chapter').textContent = step.chapter;
   $('prose').innerHTML = step.prose;
   $('count').textContent = `${at + 1} / ${steps.length}`;
   $('back').disabled = $('prev').disabled = at === 0;
@@ -184,6 +193,7 @@ function show(i, push = true) {
   editor.value = step.program === null ? '' : (edited(at) ?? step.program);
   output.textContent = '';
   $('pictures').textContent = '';
+  showDrawings([]);
   $('where').hidden = !step.gpu;
   document.querySelector('.work').classList.toggle('card', step.gpu);
   showRuns();
@@ -203,7 +213,9 @@ function stop() {
 
 // A picture the program wrote (a file `<name>.<width>x<height>.rgba`, which
 // the worker hands back): onto a canvas, as it is.
+let lastPictures = [];
 function showPictures(pictures) {
+  lastPictures = pictures ?? [];
   const box = $('pictures');
   box.textContent = '';
   for (const p of pictures ?? []) {
@@ -217,6 +229,25 @@ function showPictures(pictures) {
     figure.append(canvas, caption);
     box.appendChild(figure);
   }
+}
+
+// The drawings the program showed (scaly/draw.scaly: drawing-<n>.svg), each
+// as an image -- an SVG in an image runs no script.
+const drawingUrls = [];
+function showDrawings(drawings) {
+  for (const url of drawingUrls.splice(0)) URL.revokeObjectURL(url);
+  const box = $('drawings');
+  box.textContent = '';
+  for (const d of drawings ?? []) {
+    const url = URL.createObjectURL(new Blob([d.text], { type: 'image/svg+xml' }));
+    drawingUrls.push(url);
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = d.name;
+    box.appendChild(img);
+  }
+  // a drawing takes room: the results get the share a card's step has
+  document.querySelector('.work').classList.toggle('card', (drawings ?? []).length > 0 || (steps[at]?.gpu ?? false));
 }
 
 // The runs of this step, one bar each, as long as the program ran: the same
@@ -242,33 +273,126 @@ function showRuns() {
   }
 }
 
-// what one run's loops did, from the host's report of the card
-function account(mode, has, report, ran, before) {
-  const cards = (report ?? []).reduce((sum, site) => sum + site.card, 0);
-  const there = (report ?? []).reduce((sum, site) => sum + site.card_ms, 0);
-  const where = !has ? 'No card' : mode === 'off' ? 'Processor' : mode === 'on' ? 'Card' : 'Where it pays';
-  let what = `compiled in ${Math.round(before)} ms; `;
-  if (!has) what += 'this browser gives the page no graphics card, the processor ran every loop';
-  else if (cards === 0) what += 'every loop ran on the processor';
-  else what += `${cards} ${cards === 1 ? 'loop' : 'loops'} on the card, ${there < 10 ? there.toFixed(1) : Math.round(there)} ms there`;
-  return { where, cards, ran, what };
-}
-
 // the program in a worker of its own: `scaly run main.scaly`, the compiler
 // and the program in one memory (worker.mjs, side.mjs); no standard input.
 // A step for the card runs with --gpu, over the page's card as the reader
 // chose: on the processor, on the card, or where it pays.
+// --- a step for the cores and the card -------------------------------------
+// Such a step's program is BUILT here for wasm32-wasip1-threads with --gpu
+// (worker.mjs running `scaly build`, over playground.json: the standard
+// library compiled for it), then run by runner.mjs on as many cores as the
+// reader chose, the page the coordinator of its threads (threads.mjs), the
+// card beside them. `scaly run` in the page has one core: its program lives
+// in the compiler's own memory.
+const cpus = navigator.hardwareConcurrency || 1;
+let runner = null, runnerCard = false, building = null, threadsLib = null;
+
+async function prepareCores() {
+  if (!building) building = (async () => {
+    status('Loading what a build for the cores needs…');
+    const listing = await (await fetch('playground.json')).json();
+    for (const [path, b64] of Object.entries(listing))
+      compiler.files[path] = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    threadsLib = await import('./threads.mjs');
+    runner = new Worker('runner.mjs', { type: 'module' });
+    runnerCard = await new Promise(resolve => {
+      runner.onmessage = ({ data }) => { if (data.type === 'ready') resolve(data.card); };
+      runner.postMessage({ type: 'hello' });
+    });
+  })();
+  return building;
+}
+
+function buildForCores(text) {
+  return new Promise(resolve => {
+    const w = new Worker('worker.mjs', { type: 'module' });
+    worker = w;
+    const said = [], decoder = new TextDecoder();
+    w.onmessage = ({ data }) => {
+      if (data.type === 'out' || data.type === 'err') said.push(decoder.decode(data.bytes));
+      else if (data.type === 'exit' || data.type === 'crash') {
+        w.terminate();
+        resolve({ status: data.type === 'exit' ? data.status : 'crash', bytes: data.collected?.['/work/main.wasm'] ?? null,
+                  said: said.join('') + (data.text ?? '') });
+      }
+    };
+    w.onerror = e => { w.terminate(); resolve({ status: 'crash', bytes: null, said: e.message }); };
+    w.postMessage({ module: compiler.module, files: { ...compiler.files, '/work/main.scaly': text },
+                    args: ['scaly', 'build', '--target', 'wasm32-wasip1-threads', '--gpu', 'main.scaly', '-o', 'main.wasm'],
+                    env: { SCALY_CACHE: '/cache' }, collect: ['/work/main.wasm'] });
+  });
+}
+
+async function runOnCores() {
+  const choice = $('where').value, step = at;
+  const workers = choice === 'one' ? 1 : cpus;
+  const gpu = choice === 'card' ? 'on' : choice === 'auto' ? 'auto' : 'off';
+  output.textContent = '';
+  $('pictures').textContent = '';
+  showDrawings([]);
+  runButton.textContent = 'Stop';
+  try {
+    await prepareCores();
+    status('Building…');
+    const t0 = performance.now();
+    const built = await buildForCores(editor.value);
+    worker = null;
+    if (built.status !== 0 || !built.bytes) {
+      append(built.said || `the compiler ended with ${built.status}\n`, 'err');
+      status('It did not build.', 'bad');
+      return;
+    }
+    const compiled = performance.now() - t0;
+    await new Promise(resolve => {
+      runner.onmessage = ({ data }) => { if (data.type === 'loaded') resolve(); };
+      runner.postMessage({ type: 'load', bytes: built.bytes }, [built.bytes.buffer]);
+    });
+    status('Running…');
+    const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
+    let resolve;
+    const done = new Promise(r => { resolve = r; });
+    const threads = await threadsLib.Threads.create({
+      out: b => append(new TextDecoder().decode(b)), err: b => append(new TextDecoder().decode(b), 'err'),
+      exit: s => resolve({ status: String(s), stdout: '', stderr: '', ms: 0, pictures: [], drawings: [], cards: 0 }),
+      env,
+    });
+    runner.onmessage = ({ data }) => { if (threads.handle(data)) return; if (data.type === 'done') resolve(data); };
+    runner.postMessage({ type: 'run', args: [], env, gpu });
+    const r = await done;
+    threads.end();
+    append(r.stdout);
+    if (r.stderr) append(r.stderr, 'err');
+    showPictures(r.pictures);
+    showDrawings(r.drawings);
+    if (r.status !== '0') { status(`The program ended with ${r.status}.`, 'bad'); return; }
+    const where = choice === 'one' ? 'One core' : choice === 'all' ? `${cpus} cores`
+      : choice === 'card' ? (runnerCard ? 'The card' : 'No card') : 'Where it pays';
+    let what = `built in ${Math.round(compiled)} ms; `;
+    if ((choice === 'card' || choice === 'auto') && !runnerCard) what += 'this browser gives the page no graphics card, the cores ran it';
+    else if (r.cards > 0) what += `the card ran ${r.cards} ${r.cards === 1 ? 'loop' : 'loops'}`;
+    else what += workers > 1 ? `the loops ran on up to ${workers} cores` : 'the loops ran on one core';
+    const list = runs.get(step) ?? [];
+    list.push({ where, cards: r.cards, ran: r.ms, what });
+    runs.set(step, list.slice(-6));
+    showRuns();
+    status(`Done in ${Math.round(r.ms)} ms.`, 'ok');
+  } finally {
+    worker = null;
+    runButton.textContent = 'Run';
+  }
+}
+
 function run() {
   if (!compiler) return;
   if (worker) { stop(); append('\n[stopped]\n', 'note'); return; }
+  if (steps[at].gpu) { runOnCores(); return; }
   output.textContent = '';
   const stdin = new SharedArrayBuffer(16);
   const state = new Int32Array(stdin, 0, 2);
   const decoders = { out: new TextDecoder(), err: new TextDecoder() };
   const t0 = performance.now();
-  const card = steps[at].gpu, mode = $('where').value, step = at;
-  let began = null, has = false;
   $('pictures').textContent = '';
+  showDrawings([]);
   const files = { ...compiler.files, '/work/main.scaly': editor.value };
   worker = new Worker('worker.mjs', { type: 'module' });
   runButton.textContent = 'Stop';
@@ -283,22 +407,10 @@ function run() {
         Atomics.store(state, 0, 2);
         Atomics.notify(state, 0);
         break;
-      case 'card':
-        has = data.has;
-        break;
-      case 'began':
-        began ??= performance.now();
-        break;
       case 'exit': {
-        const now = performance.now();
-        const ms = Math.round(now - t0);
+        const ms = Math.round(performance.now() - t0);
         showPictures(data.pictures);
-        if (card && began !== null && data.status === 0) {
-          const list = runs.get(step) ?? [];
-          list.push(account(mode, has, data.report, now - began, began - t0));
-          runs.set(step, list.slice(-6));
-          showRuns();
-        }
+        showDrawings(data.drawings);
         stop();
         if (data.status !== 0) append(`\n[the program ended with status ${data.status}]\n`, 'note');
         status(`Done in ${ms} ms.`, data.status === 0 ? 'ok' : 'bad');
@@ -315,10 +427,7 @@ function run() {
     stop();
     append(`\n[the worker failed: ${e.message}]\n`, 'err');
   };
-  if (card)
-    worker.postMessage({ module: compiler.module, files, stdin, args: ['scaly', 'run', '--gpu', 'main.scaly'], gpu: mode });
-  else
-    worker.postMessage({ module: compiler.module, files, stdin, args: ['scaly', 'run', 'main.scaly'] });
+  worker.postMessage({ module: compiler.module, files, stdin, args: ['scaly', 'run', 'main.scaly'] });
 }
 
 runButton.onclick = run;
@@ -349,29 +458,41 @@ addEventListener('hashchange', () => {
   if (n >= 1 && n - 1 !== at) show(n - 1, false);
 });
 
-// the steps, set from the tutorial by the DSSSL engine (tour-steps.htm,
-// docs/dsssl/scaly-tour.dsl)
+// the steps, set by the DSSSL engine: the book's tour first, as the
+// tutorial has it (tour-steps.htm, docs/dsssl/scaly-tour.dsl), then the
+// playground's own chapters (playground-steps.htm, docs/scaly-playground.xml)
 async function loadSteps() {
-  const html = await (await fetch('tour-steps.htm')).text();
-  const doc = new DOMParser().parseFromString(html, 'text/html');
   const seen = {};
-  steps = [...doc.querySelectorAll('section.step')].map(s => {
-    const section = s.dataset.section;
-    seen[section] = (seen[section] ?? 0) + 1;
-    const program = s.querySelector('pre.program');
-    return {
-      section, ordinal: seen[section],
-      title: s.querySelector('h2').textContent,
-      prose: s.querySelector('.prose').innerHTML,
-      program: program ? program.textContent : null,
-      gpu: program ? program.classList.contains('gpu') : false,
-    };
-  });
+  steps = [];
+  for (const [file, chapter] of [['tour-steps.htm', 'A Tour of Scaly'], ['playground-steps.htm', null]]) {
+    const response = await fetch(file);
+    if (!response.ok) continue;
+    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+    for (const s of doc.querySelectorAll('section.step')) {
+      const section = s.dataset.section;
+      seen[section] = (seen[section] ?? 0) + 1;
+      const program = s.querySelector('pre.program');
+      steps.push({
+        section, ordinal: seen[section],
+        chapter: chapter ?? s.dataset.chapter ?? '',
+        title: s.querySelector('h2').textContent,
+        prose: s.querySelector('.prose').innerHTML,
+        program: program ? program.textContent : null,
+        gpu: program ? program.classList.contains('gpu') : false,
+      });
+    }
+  }
+  let group = null;
   steps.forEach((s, i) => {
+    if (!group || group.label !== s.chapter) {
+      group = document.createElement('optgroup');
+      group.label = s.chapter;
+      $('toc').appendChild(group);
+    }
     const option = document.createElement('option');
     option.value = String(i);
     option.textContent = `${i + 1}. ${s.title}`;
-    $('toc').appendChild(option);
+    group.appendChild(option);
   });
   const n = Number(location.hash.slice(1));
   show(n >= 1 ? n - 1 : 0, false);
@@ -384,6 +505,29 @@ try {
   status('Ready.', 'ok');
 } catch (e) {
   status(`Could not load the compiler: ${e.message}`, 'bad');
+}
+
+// ?selftest (tests/gpu/web/run.sh): every step of the playground's own
+// chapters run once -- a step for the cores on one core and on all of them,
+// whose pictures must agree --, and what each showed posted to /result
+if (new URLSearchParams(location.search).has('selftest') && compiler) {
+  const report = [];
+  const idle = async () => { while (worker !== null || /…$/.test($('status').textContent)) await new Promise(r => setTimeout(r, 50)); };
+  for (let i = 0; i < steps.length; i++) {
+    if (steps[i].chapter === 'A Tour of Scaly' || steps[i].program === null) continue;
+    show(i, false);
+    const modes = steps[i].gpu ? ['one', 'all'] : [null];
+    const seen = [];
+    for (const mode of modes) {
+      if (mode) $('where').value = mode;
+      if (steps[i].gpu) await runOnCores(); else { run(); await idle(); }
+      seen.push({ mode, status: $('status').textContent, ok: $('status').className === 'ok',
+                  output: output.textContent.trim().slice(0, 200), drawings: $('drawings').children.length,
+                  pictures: lastPictures.map(p => ({ name: p.name, width: p.width, height: p.height, bytes: Array.from(p.bytes.slice(0, 0)).length, hash: Array.from(p.bytes).reduce((h, b) => Math.imul(h ^ b, 16777619) >>> 0, 2166136261) })) });
+    }
+    report.push({ title: steps[i].title, chapter: steps[i].chapter, gpu: steps[i].gpu, runs: seen });
+  }
+  await fetch('/result', { method: 'POST', body: JSON.stringify({ steps: steps.length, report }) });
 }
 </script>
 </body>

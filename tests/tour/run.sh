@@ -8,6 +8,11 @@
 # line -- and is not run. Found when it was written: the tour's procedure
 # example had not compiled since the write rules (R1, R2), and its other
 # programs printed nothing.
+#
+# Then the Scaly Playground's own chapters (docs/scaly-playground.xml, its
+# chapters under docs/playground/), whose programs may also draw instead of
+# printing: each runs in a scratch directory (a drawing is a file), and must
+# end with rc 0 and print or draw.
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
@@ -22,11 +27,18 @@ trap 'rm -rf "$TMP"' EXIT
 export SCALY_CACHE="$TMP/cache"
 
 python3 "$HERE/listings.py" docs/scaly/chapters/tutorial.xml tut-tour "$TMP/steps" || exit 1
+for chapter in docs/playground/*.xml; do
+  for section in $(sed -n 's/^  <section xml:id="\([^"]*\)">.*/\1/p' "$chapter"); do
+    python3 "$HERE/listings.py" "$chapter" "$section" "$TMP/steps/pg-$section" || exit 1
+  done
+done
 pass=0; fail=0
-for f in "$TMP"/steps/*.scaly; do
+for f in "$TMP"/steps/*.scaly "$TMP"/steps/pg-*/*.scaly; do
   name=$(basename "$f" .scaly)
-  out=$(SCALY_HOME="$ROOT" "$SCALY" run "$f" < /dev/null 2>&1); rc=$?
-  if [ "$rc" = 0 ] && [ -n "$out" ]; then
+  rm -rf "$TMP/cwd"; mkdir -p "$TMP/cwd"
+  out=$(cd "$TMP/cwd" && SCALY_HOME="$ROOT" "$SCALY" run "$f" < /dev/null 2>&1); rc=$?
+  drew=$(ls "$TMP/cwd" 2>/dev/null)
+  if [ "$rc" = 0 ] && { [ -n "$out" ] || [ -n "$drew" ]; }; then
     pass=$((pass+1))
   else
     fail=$((fail+1))

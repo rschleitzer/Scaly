@@ -1,6 +1,7 @@
 #!/bin/bash
-# web/repl/build.sh [out-dir] -- the REPL's page and the tour: index.html,
-# tour.html, worker.mjs, side.mjs and load.mjs of this directory, and beside
+# web/repl/build.sh [out-dir] -- the REPL's page and the Scaly Playground:
+# index.html, playground.html (tour.html, the tour's old address, leads
+# there), worker.mjs, side.mjs and load.mjs of this directory, and beside
 # them in out-dir (default: this directory) what is built or taken from the
 # tree --
 #   scaly.wasm    the tool built for WebAssembly (tools/wasm/repl.sh build;
@@ -20,7 +21,11 @@
 #                 which also builds and runs a program with it
 #   tour-steps.htm  the tour's steps, set from the tutorial's "A Tour of
 #                 Scaly" by the DSSSL engine (docs/dsssl/scaly-tour.dsl; the
-#                 engine ./mkp builds, scalyc/build/dazzle, or DAZZLE)
+#                 engine ./mkp builds, scalyc/build/dazzle, or DAZZLE): the
+#                 playground's first chapter
+#   playground-steps.htm  the playground's own chapters, set from
+#                 docs/scaly-playground.xml (docs/dsssl/scaly-playground.dsl)
+#   lizard.svg    Scaly's lizard (docs/website/scaly-lizard.svg)
 # and these compressed beside them (compress.mjs; scaly.wasm.br is 6.4 MB),
 # which serve.mjs sends where the browser accepts it. Needs a
 # wasi-sdk ($WASI_SDK, else ~/opt/wasi-sdk-*) for its llvm-strip.
@@ -44,11 +49,12 @@ if [ ! -f "$L/scaly.wasm" ]; then
 fi
 mkdir -p "$OUT"
 if [ "$OUT" != "$HERE" ]; then
-  cp "$HERE/index.html" "$HERE/tour.html" "$HERE/worker.mjs" "$HERE/side.mjs" "$HERE/load.mjs" \
+  cp "$HERE/index.html" "$HERE/playground.html" "$HERE/tour.html" "$HERE/worker.mjs" "$HERE/runner.mjs" "$HERE/side.mjs" "$HERE/load.mjs" \
      "$HERE/serve.mjs" "$HERE/compress.mjs" "$OUT/"
 fi
 "$W/bin/llvm-strip" -o "$OUT/scaly.wasm" "$L/scaly.wasm"
-cp "$STDLIB/web/wasi.mjs" "$STDLIB/web/gpu.mjs" "$STDLIB/web/gpu-host.mjs" "$STDLIB/web/gpu-worker.mjs" "$OUT/"
+cp "$STDLIB/web/wasi.mjs" "$STDLIB/web/gpu.mjs" "$STDLIB/web/gpu-host.mjs" "$STDLIB/web/gpu-worker.mjs" \
+   "$STDLIB/web/threads.mjs" "$STDLIB/web/thread.mjs" "$OUT/"
 # a node that STARTS (tools/node.sh): one that is merely there can abort in the loader
 NODE=$(tools/node.sh) || { echo "web/repl/build.sh: no node that starts" >&2; exit 3; }
 "$NODE" "$HERE/stdlib.mjs" "$TREE" "$STDLIB" > "$OUT/stdlib.json"
@@ -62,5 +68,8 @@ fi
 # in docs/, as docs/html.sh runs it (the catalog there), the file moved out
 (cd "$TREE/docs" && rm -f tour-steps.htm && SP_ENCODING=utf-8 "$DAZZLE" -t sgml -d dsssl/scaly-tour.dsl scaly-spec.xml)
 mv "$TREE/docs/tour-steps.htm" "$OUT/tour-steps.htm"
+(cd "$TREE/docs" && rm -f playground-steps.htm && SP_ENCODING=utf-8 "$DAZZLE" -t sgml -d dsssl/scaly-playground.dsl scaly-playground.xml)
+mv "$TREE/docs/playground-steps.htm" "$OUT/playground-steps.htm"
+cp "$TREE/docs/website/scaly-lizard.svg" "$OUT/lizard.svg"
 size() { du -sh "$1" | cut -f1; }
 echo "web/repl/build.sh: $OUT -- the compiler $(size "$OUT/scaly.wasm") ($(size "$OUT/scaly.wasm.br") brotli), the standard library $(size "$OUT/stdlib.json") ($(size "$OUT/stdlib.json.br")), for a build $(size "$OUT/playground.json") ($(size "$OUT/playground.json.br"))"

@@ -34,7 +34,11 @@
 #    BUILDS the showcase's program for wasm32-wasip1-threads with that
 #    compiler (playground.json, tools/wasm/precache.mjs) and runs it on all
 #    cores -- its picture must be the prebuilt program's --, and a version
-#    that does not compile must show the compiler's message. One of them
+#    that does not compile must show the compiler's message. And the Scaly
+#    Playground's own chapters (playground.html?selftest): every step runs,
+#    a drawing step shows its drawing, and the step for the cores draws on
+#    one core what it draws on all of them -- and what the program draws
+#    natively. One of them
 #    (canvas.scaly) writes a picture, which the page's worker must hand
 #    back: the same but for a hundredth of its points at most -- its loop is
 #    `relaxed`.
@@ -407,6 +411,48 @@ elif b and 'unknown identifier' not in b.get('broken_said', ''):
 for f in fails:
     print('  FAIL ' + f)
 print('gpu-web: editor %s — %s' % ('FAIL' if fails else 'PASS', b and b.get('buildstatus')))
+sys.exit(1 if fails else 0)
+PY
+[ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
+
+# the playground's own chapters; the picture of its step for the cores,
+# drawn natively to compare with
+python3 tests/tour/listings.py docs/playground/scaling.xml pg-mandelbrot "$T/pgnative" > /dev/null || failed=1
+rm -rf "$T/pgcwd"; mkdir -p "$T/pgcwd"
+home=$(pwd)
+case "$TOOL" in /*) tool_abs=$TOOL ;; *) tool_abs="$home/$TOOL" ;; esac
+(cd "$T/pgcwd" && SCALY_HOME="$home" "$tool_abs" run "$(ls "$T"/pgnative/*.scaly | head -1)" > /dev/null 2>&1)
+page "$T/repl" "playground.html?selftest" 300
+python3 - "$T/result" "$T/pgcwd/mandelbrot.600x400.rgba" <<'PY' || failed=1
+import json, os, sys
+result, native = sys.argv[1], sys.argv[2]
+try:
+    r = json.load(open(result))
+except Exception:
+    print('  FAIL the playground did not answer (%s)' % (open(result).read()[:200] if os.path.exists(result) else 'nothing'))
+    sys.exit(1)
+fails = []
+h = 2166136261
+for b in (open(native, 'rb').read() if os.path.exists(native) else b''):
+    h = ((h ^ b) * 16777619) & 0xffffffff
+if not r['report']:
+    fails.append('no step of its own chapters ran')
+for step in r['report']:
+    for run in step['runs']:
+        what = step['title'] + (' (%s)' % run['mode'] if run['mode'] else '')
+        if not run['ok']:
+            fails.append('%s: %s %s' % (what, run['status'], run['output'][:120]))
+        if step['chapter'] == 'Drawing' and run['drawings'] < 1:
+            fails.append('%s: no drawing shown' % what)
+    if step['gpu']:
+        hashes = {p['hash'] for run in step['runs'] for p in run['pictures']}
+        if len(hashes) != 1:
+            fails.append('%s: the pictures on one core and on all differ (%s)' % (step['title'], hashes))
+        elif hashes != {h}:
+            fails.append('%s: the picture is not the one the program draws natively' % step['title'])
+for f in fails:
+    print('  FAIL ' + f)
+print('gpu-web: playground %s — %d steps of its own chapters ran, %d steps in all' % ('FAIL' if fails else 'PASS', len(r['report']), r['steps']))
 sys.exit(1 if fails else 0)
 PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }

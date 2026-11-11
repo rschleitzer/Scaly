@@ -1,0 +1,48 @@
+<chapter xml:id="pg-scaling">
+  <title>Many Cores, and the Card</title>
+
+  <section xml:id="pg-mandelbrot">
+    <title>A Picture That Takes Work</title>
+    <para>Some pictures take a lot of computing. This one asks every point of
+      the picture how soon it runs away when a little sum is repeated on it —
+      the Mandelbrot set. The work is one <code>for</code> over the points, and
+      the rounds of that loop do not depend on each other.</para>
+    <para>So nothing in the program says how it runs, and below the program
+      you can choose: on one core of your computer, on all of them, or on the
+      graphics card. The picture is the same; the time is not.
+      <code>relaxed</code> lets the card compute a little less strictly.</para>
+    <programlisting role="gpu">function colour(x: i32, y: i32, w: i32, h: i32) returns u32
+{
+    let cr (x as f32) * 3.0 / (w as f32) - 2.1
+    let ci (y as f32) * 2.0 / (h as f32) - 1.0
+    var zr: f32 0.0
+    var zi: f32 0.0
+    var k: i32 0
+    while k &lt; 200 and zr * zr + zi * zi &lt;= 4.0
+    {
+        let t zr * zr - zi * zi + cr
+        zi := zr * 2.0 * zi + ci
+        zr := t
+        k := k + 1
+    }
+    if k = 200
+        return 0xFF000000
+    let shade ((k % 32) * 8) as u32
+    0xFF000000 | ((255 - shade) &lt;&lt; 16) | ((shade / 2) &lt;&lt; 8) | shade
+}
+
+let w: i32 600
+let h: i32 400
+var picture Vector[u32]((w * h) as size_t)
+relaxed for p in w * h
+    picture.put(p as size_t, colour(p % w, p / w, w, h))
+File.write_bytes("mandelbrot.`w`x`h`.rgba", picture.as_bytes())
+print "`w * h` points"</programlisting>
+    <para>The colour of a point is a number with four bytes — red, green, blue
+      and how opaque it is — and the picture goes into a file whose name says
+      its size; the playground shows such a file. The
+      <link xlink:href="https://scaly.io/play/mandelbrot/">Mandelbrot
+      showcase</link> lets you zoom into it and race the cores against the
+      card.</para>
+  </section>
+</chapter>

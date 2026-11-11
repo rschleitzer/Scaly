@@ -12,7 +12,7 @@ const root = resolve(process.argv[2] ?? fileURLToPath(new URL('.', import.meta.u
 const port = Number(process.argv[3] ?? 8765);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
                 '.js': 'text/javascript; charset=utf-8', '.json': 'application/json',
-                '.wasm': 'application/wasm' };
+                '.wasm': 'application/wasm', '.svg': 'image/svg+xml' };
 
 createServer(async (request, response) => {
   let path = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);

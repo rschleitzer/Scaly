@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book SYSTEM "docbook.dtd" [
+  <!ENTITY drawing SYSTEM "playground/drawing.xml">
+  <!ENTITY scaling SYSTEM "playground/scaling.xml">
+]>
+<!-- The Scaly Playground's own chapters (web/repl/playground.html). NOT part
+     of the specification: the playground's first chapter is the tour of the
+     book (scaly/chapters/tutorial.xml, tut-tour), taken as it is; these
+     follow it. Set into playground-steps.htm by the DSSSL engine
+     (dsssl/scaly-playground.dsl); tests/tour/run.sh runs every program. -->
+<book xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+  <title>The Scaly Playground</title>
+&drawing;
+&scaling;
+</book>

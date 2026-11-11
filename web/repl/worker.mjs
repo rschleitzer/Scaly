@@ -28,7 +28,9 @@
 // `pictures` the program wrote under /work: a file whose name ends in
 // `.<width>x<height>.rgba` and holds four bytes per point -- red, green,
 // blue, opacity, row by row, what a canvas takes (`File.write_bytes` of a
-// Vector[u32]'s `as_bytes()`).
+// Vector[u32]'s `as_bytes()`). And the `drawings` it showed: every SVG file
+// it wrote under /work (scaly/draw.scaly's drawing-<n>.svg), name and text,
+// in the order it wrote them.
 //
 // `env` adds to the environment (SCALY_CACHE, where a page keeps the build
 // cache it carries: `scaly build` in a page, web/mandelbrot), and `collect`
@@ -85,12 +87,16 @@ onmessage = async ({ data }) => {
       if (bytes && bytes.length === Number(size[1]) * Number(size[2]) * 4)
         pictures.push({ name: path.slice(6), width: Number(size[1]), height: Number(size[2]), bytes: bytes.slice() });
     }
+    const drawings = [];
+    for (const path of files.written)
+      if (path.startsWith('/work/') && path.endsWith('.svg') && files.read(path))
+        drawings.push({ name: path.slice(6), text: new TextDecoder().decode(files.read(path)) });
     const collected = {};
     for (const path of collect) {
       const bytes = files.read(path);
       if (bytes) collected[path] = bytes.slice();
     }
-    postMessage({ type: 'exit', status, report: gpu ? gpu.report() : null, pictures, collected },
+    postMessage({ type: 'exit', status, report: gpu ? gpu.report() : null, pictures, drawings, collected },
                 [...pictures.map(p => p.bytes.buffer), ...Object.values(collected).map(b => b.buffer)]);
   } catch (e) {
     postMessage({ type: 'crash', text: String(e) });

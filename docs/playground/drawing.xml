@@ -1,0 +1,66 @@
+<chapter xml:id="pg-drawing">
+  <title>Drawing</title>
+
+  <section xml:id="pg-sheet">
+    <title>A Sheet to Draw On</title>
+    <para>A <code>Drawing</code> is a sheet of paper: you say how wide and how
+      high it is, in points, and then draw on it. The point (0, 0) is the top
+      left corner; x grows to the right and y grows downwards. Whatever you
+      draw later lies on top of what you drew before.</para>
+    <para><code>show()</code> puts the sheet beside the program. A colour is a
+      name like <code>"gold"</code>, or <code>"#2a5db0"</code> for an exact
+      shade.</para>
+    <programlisting>var sheet Drawing(400, 300)
+sheet.rect(0, 0, 400, 300, "midnightblue")     ; the sky
+sheet.circle(300, 80, 40, "gold")              ; the sun
+sheet.rect(0, 220, 400, 80, "forestgreen")     ; the meadow
+sheet.line(60, 220, 120, 120, "white")         ; a mountain
+sheet.line(120, 120, 180, 220, "white")
+sheet.text(20, 40, "Hello from Scaly", "white")
+sheet.show()</programlisting>
+    <para>Move the sun, make it bigger, paint the meadow another colour — and
+      run it again.</para>
+  </section>
+
+  <section xml:id="pg-loop-drawing">
+    <title>Drawing in a Loop</title>
+    <para>A loop draws many things at once. Here <code>i</code> counts from 0
+      to 9, and every round draws one circle a little further to the right
+      and a little bigger. <code>`i`</code> inside a text puts the number
+      in.</para>
+    <programlisting>var sheet Drawing(500, 200)
+sheet.rect(0, 0, 500, 200, "white")
+for i in 10
+{
+    let x 30 + i * 48
+    sheet.circle(x, 100, 6 + i * 2, "#2a5db0")
+    sheet.text(x - 5, 180, "`i`", "black")
+}
+sheet.show()</programlisting>
+    <para>Try <code>for i in 20</code>, or let every second circle be red:
+      <code>if i % 2 = 0</code> chooses the even ones.</para>
+  </section>
+
+  <section xml:id="pg-chart">
+    <title>A Chart of Numbers</title>
+    <para>A <code>Chart</code> draws numbers as a line: <code>add</code> one
+      value after another, and <code>show()</code> draws them with their axes.
+      <code>series</code> begins another line, so two rows of numbers can be
+      compared.</para>
+    <programlisting>var chart Chart("How fast numbers grow")
+chart.series("doubling")
+var d 1
+for i in 10
+{
+    chart.add(d)
+    d := d * 2
+}
+chart.series("squares")
+for i in 10
+    chart.add(i * i)
+chart.show()</programlisting>
+    <para>For a while the two lines run close together — at 2 and at 4 they
+      meet, at 3 the squares are even ahead — and then doubling leaves the
+      squares far behind. Make the loops longer: how far behind?</para>
+  </section>
+</chapter>
