@@ -21,7 +21,9 @@ self.onmessage = async event => {
       gpu.mode = mode;
       said.length = 0;
       const before = gpu.report().reduce((sum, site) => sum + site.card, 0);
-      const wasi = new Wasi({ args: ['program'], files: new MemoryFiles(), gpu });
+      const files = new MemoryFiles();
+      files.dirs.add('/tmp');
+      const wasi = new Wasi({ args: ['program'], files, gpu });
       let status;
       try {
         status = String(wasi.start(await WebAssembly.instantiate(module, wasi.imports())));

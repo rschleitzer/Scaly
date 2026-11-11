@@ -860,8 +860,10 @@ define GpuMsl
 
         ; A count of rounds the processor can compute twice without a
         ; difference: a constant or a name, a field read off it, under casts
-        ; and groupings. The emitter computes it for the card and, where the
-        ; card declines, the processor's loop computes it again.
+        ; and groupings, and a sum, a difference or a product of such whole
+        ; numbers (`for p in w * h`). The emitter computes it for the card
+        ; and, where the card declines, the processor's loop computes it
+        ; again.
         function is_plain_count(op: PlannedOperand) returns bool
         {
             choose op.expr
@@ -899,6 +901,29 @@ define GpuMsl
                         return false
                     let comp c_ptr.unwrap()
                     return GpuMsl.is_plain_count((*comp.value)[0])
+                }
+                when call: Call
+                {
+                    ; the compiler's own arithmetic on two whole numbers
+                    if GpuKernel.GpuKernel.has_members(op) or call.is_indirect
+                        return false
+                    if call.is_operator = false and call.is_intrinsic = false
+                        return false
+                    if call.args = null or call.args.length <> 2
+                        return false
+                    if call.name <> "*" and call.name <> "+" and call.name <> "-"
+                        return false
+                    let a_ptr call.args.get 0
+                    let b_ptr call.args.get 1
+                    if a_ptr = null or b_ptr = null
+                        return false
+                    let a a_ptr.unwrap()
+                    let b b_ptr.unwrap()
+                    if GpuKernel.GpuKernel.kind_is_integer(GpuKernel.GpuKernel.scalar_kind(a.result_type)) = false
+                        return false
+                    if GpuKernel.GpuKernel.kind_is_integer(GpuKernel.GpuKernel.scalar_kind(b.result_type)) = false
+                        return false
+                    return GpuMsl.is_plain_count(a) and GpuMsl.is_plain_count(b)
                 }
                 else
                     0

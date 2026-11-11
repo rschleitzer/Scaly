@@ -1,0 +1,54 @@
+; A picture: one round per point, the count of rounds a product
+; (`for p in w * h`), each round's result a colour as a 32-bit number, and
+; the whole Vector into a file as it lies in memory (`as_bytes`,
+; `File.write_bytes`). The card must write the file the processor writes.
+; cards: 1
+
+function colour(x: i32, y: i32, w: i32, h: i32, turns: i32) returns u32
+{
+    let cr (x as f32) * 3.0 / (w as f32) - 2.1
+    let ci (y as f32) * 2.0 / (h as f32) - 1.0
+    var zr: f32 0.0
+    var zi: f32 0.0
+    var k: i32 0
+    while k < turns and zr * zr + zi * zi <= 4.0
+    {
+        let t zr * zr - zi * zi + cr
+        zi := zr * 2.0 * zi + ci
+        zr := t
+        k := k + 1
+    }
+    if k = turns
+        return 0xFF000000
+    let shade (k * 255 / turns) as u32
+    0xFF000000 | (shade << 16) | ((shade * 2 % 256) << 8) | (255 - shade)
+}
+
+let w: i32 300
+let h: i32 200
+let turns: i32 64
+var picture Vector[u32]((w * h) as size_t)
+for p in w * h
+    picture.put(p as size_t, colour(p % w, p / w, w, h, turns))
+
+let path "/tmp/scaly_gpu_picture.rgba"
+if File.write_bytes(path, picture.as_bytes()) = false
+    print "no picture written"
+let back File.read_to_string(path)
+let bytes back.as_slice()
+var hash: u32 2166136261
+var i: size_t 0
+while i < bytes.length
+{
+    hash := (hash xor ((bytes[i] as u8) as u32)) * 16777619
+    i := i + 1
+}
+var inside 0
+i := 0
+while i < picture.length
+{
+    if picture[i] = 0xFF000000
+        inside := inside + 1
+    i := i + 1
+}
+print "`w` x `h`: `bytes.length as int` bytes, `inside` points inside, `hash as int`"
