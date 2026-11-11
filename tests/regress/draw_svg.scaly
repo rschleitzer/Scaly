@@ -1,0 +1,40 @@
+; The standard library's drawings (scaly/draw.scaly): a Drawing writes SVG,
+; text in it is escaped, a Chart draws its lines with their axes. The
+; colours and words go through svg_text -- as a STATIC function of Drawing
+; they came back as garbage from inside the standard library's methods
+; (2026-11-11, not isolated), so this holds what the page shows.
+
+function has(text: String, part: String) returns bool
+    text.contains(part)
+
+procedure main() returns int
+{
+    var sheet Drawing(40, 30)
+    sheet.rect(0, 0, 40, 30, "midnightblue")
+    sheet.circle(20, 15, 8, "gold")
+    sheet.line(0, 30, 40, 0, "white")
+    sheet.text(2, 12, "a<b & \"c\"", "red")
+    let svg sheet.svg()
+    if has(svg, String("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"30\"")) = false
+        return 1
+    if has(svg, String("<circle cx=\"20\" cy=\"15\" r=\"8\" fill=\"gold\"/>")) = false
+        return 2
+    if has(svg, String("stroke=\"white\"")) = false
+        return 3
+    if has(svg, String(">a&lt;b &amp; &quot;c&quot;</text>")) = false
+        return 4
+
+    var chart Chart("Squares")
+    for i in 5
+        chart.add(i * i)
+    chart.series("half")
+    chart.add(0.5)
+    chart.add(8.0)
+    let c chart.drawing().svg()
+    if has(c, String(">Squares</text>")) = false or has(c, String(">16</text>")) = false
+        return 5
+    if has(c, String("stroke=\"#b0532a\"")) = false or has(c, String(">half</text>")) = false
+        return 6
+    print "PASS"
+    0
+}

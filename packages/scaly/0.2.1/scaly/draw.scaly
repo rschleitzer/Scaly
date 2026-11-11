@@ -1,0 +1,250 @@
+; Drawing: pictures and charts a program makes, as SVG.
+;
+; A Drawing is a sheet of width x height points, (0, 0) at the top left; what
+; is drawn on it goes on top of what was drawn before. `show()` writes it as
+; an SVG file -- drawing-1.svg, drawing-2.svg, ... in the working directory
+; --, which a browser opens, and which the Scaly Playground shows beside the
+; program. A Chart is a line chart of numbers: `add` one value after another,
+; `series` begins another line, `show()` draws it with its axes.
+;
+;   var sheet Drawing(400, 300)
+;   sheet.rect(0, 0, 400, 300, "midnightblue")
+;   sheet.circle(200, 150, 80, "gold")
+;   sheet.line(0, 300, 400, 0, "white")
+;   sheet.text(20, 40, "Hello", "white")
+;   sheet.show()
+;
+;   var chart Chart("Squares")
+;   for i in 10
+;       chart.add(i * i)
+;   chart.show()
+;
+; A colour is anything SVG understands: a name ("red", "gold"), "#2a5db0",
+; "rgb(255, 128, 0)". Coordinates and sizes are whole numbers of points.
+
+; how many drawings this thread has shown: the number in the next file's name
+mutable drawings_shown: int 0
+
+; text as an attribute or an element's content takes it: the three
+; characters that would end it, written as entities
+function svg_text(text: String) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < text.get_length()
+    {
+        let c text.get(i)
+        match c
+            case 38
+                sb.append "&amp;"
+            case 60
+                sb.append "&lt;"
+            case 34
+                sb.append "&quot;"
+            else
+                sb.append(c as char)
+        i := i + 1
+    }
+    sb.to_string()
+}
+
+define Drawing
+(
+    width: int
+    height: int
+    var parts: StringBuilder
+)
+{
+    init(width: int, height: int)
+    {
+        this.width := width
+        this.height := height
+        this.parts := StringBuilder()
+    }
+
+    ; a line from (x1, y1) to (x2, y2), two points wide
+    procedure line(mutable this, x1: int, y1: int, x2: int, y2: int, colour: String)
+        this.parts.append "<line x1=\"`x1`\" y1=\"`y1`\" x2=\"`x2`\" y2=\"`y2`\" stroke=\"`svg_text(colour)`\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n"
+
+    ; a filled circle around (x, y)
+    procedure circle(mutable this, x: int, y: int, radius: int, colour: String)
+        this.parts.append "<circle cx=\"`x`\" cy=\"`y`\" r=\"`radius`\" fill=\"`svg_text(colour)`\"/>\n"
+
+    ; a filled rectangle, its top left corner at (x, y)
+    procedure rect(mutable this, x: int, y: int, width: int, height: int, colour: String)
+        this.parts.append "<rect x=\"`x`\" y=\"`y`\" width=\"`width`\" height=\"`height`\" fill=\"`svg_text(colour)`\"/>\n"
+
+    ; words, their line beginning at (x, y)
+    procedure text(mutable this, x: int, y: int, words: String, colour: String)
+        this.parts.append "<text x=\"`x`\" y=\"`y`\" fill=\"`svg_text(colour)`\" font-family=\"system-ui, sans-serif\" font-size=\"16\">`svg_text(words)`</text>\n"
+
+    ; the drawing as SVG text
+    function svg(this) returns String
+    {
+        var sb StringBuilder()
+        sb.append "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"`this.width`\" height=\"`this.height`\" viewBox=\"0 0 `this.width` `this.height`\">\n"
+        sb.append(this.parts.to_string())
+        sb.append "</svg>\n"
+        sb.to_string()
+    }
+
+    ; the drawing into its file, drawing-<n>.svg; false where it could not be
+    ; written
+    procedure show(this) returns bool mutable drawings_shown
+    {
+        drawings_shown := drawings_shown + 1
+        File.write_from_string("drawing-`drawings_shown`.svg", this.svg())
+    }
+
+}
+
+define Chart
+(
+    title: String
+    var values: Array[f64]
+    var starts: Array[size_t]
+    var names: Array[String]
+)
+{
+    init(title: String)
+    {
+        this.title := title
+        this.values := Array[f64]()
+        this.starts := Array[size_t]()
+        this.names := Array[String]()
+    }
+
+    ; the next value of the current line
+    procedure add(mutable this, value: f64)
+    {
+        if this.starts.length = 0
+        {
+            this.starts.add(0)
+            this.names.add(String())
+        }
+        this.values.add(value)
+    }
+
+    procedure add(mutable this, value: int)
+        this.add(value as f64)
+
+    ; another line from here on, under its name
+    procedure series(mutable this, name: String)
+    {
+        if this.starts.length = 1 and this.values.length = 0
+        {
+            this.names.put(0, name)
+            return
+        }
+        this.starts.add(this.values.length)
+        this.names.add(name)
+    }
+
+    ; the chart as a Drawing of 480 x 300 points: each line over its values,
+    ; the first value at the left, the smallest and the largest written on
+    ; the axis
+    function drawing(this) returns Drawing
+    {
+        let w 480
+        let h 300
+        let left 56
+        let top 36
+        let right 16
+        let bottom 28
+        var sheet Drawing(w, h)
+        sheet.rect(0, 0, w, h, "white")
+        sheet.text(left, 22, this.title, "#1d1d1f")
+        var low 0.0
+        var high 0.0
+        var longest: size_t 0
+        var i: size_t 0
+        while i < this.values.length
+        {
+            let v this.values[i]
+            if i = 0 or v < low
+                low := v
+            if i = 0 or v > high
+                high := v
+            i := i + 1
+        }
+        if high = low
+            high := low + 1.0
+        var s: size_t 0
+        while s < this.starts.length
+        {
+            let n this.end_of(s) - this.starts[s]
+            if n > longest
+                longest := n
+            s := s + 1
+        }
+        let pw w - left - right
+        let ph h - top - bottom
+        sheet.line(left, top, left, top + ph, "#9a9aa2")
+        sheet.line(left, top + ph, left + pw, top + ph, "#9a9aa2")
+        sheet.text(4, top + 6, Chart.number(high), "#6b6b70")
+        sheet.text(4, top + ph, Chart.number(low), "#6b6b70")
+        s := 0
+        while s < this.starts.length
+        {
+            let colour Chart.colour(s)
+            let from this.starts[s]
+            let to this.end_of(s)
+            var k from
+            var px 0
+            var py 0
+            while k < to
+            {
+                var x left
+                if longest > 1
+                    x := left + ((((k - from) as f64) * (pw as f64) / ((longest - 1) as f64)) as int)
+                let y top + ph - ((((this.values[k] - low) / (high - low)) * (ph as f64)) as int)
+                if k > from
+                    sheet.line(px, py, x, y, colour)
+                if to - from < 40
+                    sheet.circle(x, y, 3, colour)
+                px := x
+                py := y
+                k := k + 1
+            }
+            if this.names[s].get_length() > 0
+                sheet.text(left + pw - 140, top + 16 + (s as int) * 18, this.names[s], colour)
+            s := s + 1
+        }
+        sheet
+    }
+
+    ; into its file, as a Drawing is
+    procedure show(this) returns bool mutable drawings_shown
+        this.drawing().show()
+
+    ; the colour of line s
+    function colour(s: size_t) returns String
+    {
+        match s % 5
+            case 0
+                return String("#2a5db0")
+            case 1
+                return String("#b0532a")
+            case 2
+                return String("#1f7a3a")
+            case 3
+                return String("#8a3ab0")
+        String("#b09a2a")
+    }
+
+    ; where series s ends
+    function end_of(this, s: size_t) returns size_t
+    {
+        if s + 1 < this.starts.length
+            return this.starts[s + 1]
+        this.values.length
+    }
+
+    ; a value for the axis: whole where it is whole
+    function number(v: f64) returns String
+    {
+        if v = ((v as i64) as f64)
+            return "`v as i64`"
+        "`v`"
+    }
+}
