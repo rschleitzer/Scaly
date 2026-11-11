@@ -1631,8 +1631,13 @@ href="#scaling-gpu-numbers"
 >, at exactly the
         loop's counter, into a <code
 >Vector</code
-> of such numbers, and
-        nothing else;</p
+> of such numbers, add to
+        a sum, a product or a largest of such numbers
+        (<a
+href="scaling-loops.htm#scaling-loops-reductions"
+>Sums, Products and the Largest</a
+>), and write nothing
+        else;</p
 ></li
 ><li
 ><p
@@ -1705,16 +1710,16 @@ class="screen"
 >$ scaly run kernels.scaly
 40 998001 499.5 row 999 24937
 $ scalyc --gpu-plan kernels.scaly
-gpu-plan: 6 for-loops, 6 parallel, 3 kernels
+gpu-plan: 6 for-loops, 6 parallel, 4 kernels
 gpu-plan: kernels.scaly:10:1: kernel (metal, webgpu): out src
 gpu-plan: kernels.scaly:14:1: kernel (metal, webgpu): out out; in k, src; calls scaled
 gpu-plan: kernels.scaly:18:1: kernel (metal): out wide; not webgpu: the counter i, used outside a cast, is a 64-bit integer
 gpu-plan: kernels.scaly:22:1: no kernel: halves is a Vector[double]
 gpu-plan: kernels.scaly:26:1: no kernel: names is a Vector[String]
-gpu-plan: kernels.scaly:30:1: no kernel: reduces into sum</code
+gpu-plan: kernels.scaly:30:1: kernel (metal, webgpu): reduces sum; in out</code
 ></pre
 ><p
->All six loops run on all cores; three of them could run on a
+>All six loops run on all cores; four of them could run on a
       card. The first two compute in 32 bits — the counter
       <code
 >i</code
@@ -1726,12 +1731,13 @@ gpu-plan: kernels.scaly:30:1: no kernel: reduces into sum</code
       <code
 >double</code
 >, which no card of today's backends has; the
-      fifth builds a string in every round. The last is a sum: the cores
-      add it up (<a
-href="scaling-loops.htm#scaling-loops-reductions"
->Sums, Products and the Largest</a
->), a card does
-      not yet.</p
+      fifth builds a string in every round. The last is a sum, and a
+      kernel all the same: the card computes what each round adds, and the
+      adding is done where the order of it can be kept
+      (<a
+href="#scaling-gpu-exact"
+>The Same Numbers</a
+>).</p
 ></section
 ><section
 id="scaling-gpu-exact"
@@ -1763,6 +1769,22 @@ href="#scaling-gpu-exact"
       — which stops in the round it always stopped in, with the exit
       code it always had. Nothing a card computed is ever kept from a loop
       the processor would not have finished.</p
+><p
+>A sum is where a card would most naturally break the promise.
+      Thousands of small cores add up thousands of numbers as a tree, in
+      whatever order their work falls, and a floating-point sum depends on
+      its order: the last digits of a tree are not those of a loop. So a
+      card never adds up a loop's sum. It computes, for each round, what
+      that round contributes, and hands back one number per round; the
+      processor then folds those numbers into the variable one by one, in
+      the rounds' order — which is what it does with the rounds it
+      runs itself (<a
+href="scaling-loops.htm#scaling-loops-reductions"
+>Sums, Products and the Largest</a
+>). The folding
+      is a pass over memory and costs next to nothing beside the rounds.
+      A product and a largest go the same way, and so do the sums of whole
+      numbers, which no order could change.</p
 ><p
 >The card works on copies. It gets the vectors a loop reads as
       they are when the loop begins, and the vectors it writes come back
@@ -1801,7 +1823,10 @@ href="scaling-loops.htm#scaling-loops-when"
       last time this loop ran there, or, the first time, the price of a
       translation and one call — and the card gets the loop if it wins
       by a clear margin. A loop that ran on the card is asked at its very
-      first round the next time.</p
+      first round the next time. And a loop that is too small to be worth
+      a translation, but comes back again and again, is tried on the card
+      once the work it has brought adds up to one: from then on it is
+      measured like any other, and goes where it is faster.</p
 ><p
 ><code
 class="envar"

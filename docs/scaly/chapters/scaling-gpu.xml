@@ -109,8 +109,10 @@ mandelbrot 2000: 1588044 points inside</screen>
         elements of a <code>Vector</code>, <code>Slice</code> or
         <code>Array</code> of such numbers, at any index;</para></listitem>
       <listitem><para>they write with <code>put</code>, at exactly the
-        loop's counter, into a <code>Vector</code> of such numbers, and
-        nothing else;</para></listitem>
+        loop's counter, into a <code>Vector</code> of such numbers, add to
+        a sum, a product or a largest of such numbers
+        (<xref linkend="scaling-loops-reductions"/>), and write nothing
+        else;</para></listitem>
       <listitem><para>the functions they call take and answer such numbers,
         do not call themselves, and are made of the same
         stuff;</para></listitem>
@@ -157,22 +159,23 @@ print "`out[999]` `wide[999]` `halves[999]` `names[999]` `sum`"</programlisting>
     <screen>$ scaly run kernels.scaly
 40 998001 499.5 row 999 24937
 $ scalyc --gpu-plan kernels.scaly
-gpu-plan: 6 for-loops, 6 parallel, 3 kernels
+gpu-plan: 6 for-loops, 6 parallel, 4 kernels
 gpu-plan: kernels.scaly:10:1: kernel (metal, webgpu): out src
 gpu-plan: kernels.scaly:14:1: kernel (metal, webgpu): out out; in k, src; calls scaled
 gpu-plan: kernels.scaly:18:1: kernel (metal): out wide; not webgpu: the counter i, used outside a cast, is a 64-bit integer
 gpu-plan: kernels.scaly:22:1: no kernel: halves is a Vector[double]
 gpu-plan: kernels.scaly:26:1: no kernel: names is a Vector[String]
-gpu-plan: kernels.scaly:30:1: no kernel: reduces into sum</screen>
-    <para>All six loops run on all cores; three of them could run on a
+gpu-plan: kernels.scaly:30:1: kernel (metal, webgpu): reduces sum; in out</screen>
+    <para>All six loops run on all cores; four of them could run on a
       card. The first two compute in 32 bits — the counter
       <code>i</code> is an <code>int</code>, but it is cast or used as an
       index on the spot, and the number of rounds fits into 32 bits. The
       third squares the counter itself, in 64 bits. The fourth wants
       <code>double</code>, which no card of today's backends has; the
-      fifth builds a string in every round. The last is a sum: the cores
-      add it up (<xref linkend="scaling-loops-reductions"/>), a card does
-      not yet.</para>
+      fifth builds a string in every round. The last is a sum, and a
+      kernel all the same: the card computes what each round adds, and the
+      adding is done where the order of it can be kept
+      (<xref linkend="scaling-gpu-exact"/>).</para>
   </section>
 
   <section xml:id="scaling-gpu-exact">
@@ -197,6 +200,18 @@ gpu-plan: kernels.scaly:30:1: no kernel: reduces into sum</screen>
       — which stops in the round it always stopped in, with the exit
       code it always had. Nothing a card computed is ever kept from a loop
       the processor would not have finished.</para>
+    <para>A sum is where a card would most naturally break the promise.
+      Thousands of small cores add up thousands of numbers as a tree, in
+      whatever order their work falls, and a floating-point sum depends on
+      its order: the last digits of a tree are not those of a loop. So a
+      card never adds up a loop's sum. It computes, for each round, what
+      that round contributes, and hands back one number per round; the
+      processor then folds those numbers into the variable one by one, in
+      the rounds' order — which is what it does with the rounds it
+      runs itself (<xref linkend="scaling-loops-reductions"/>). The folding
+      is a pass over memory and costs next to nothing beside the rounds.
+      A product and a largest go the same way, and so do the sums of whole
+      numbers, which no order could change.</para>
     <para>The card works on copies. It gets the vectors a loop reads as
       they are when the loop begins, and the vectors it writes come back
       whole when it is done. For a loop the compiler calls parallel that is
@@ -224,7 +239,10 @@ gpu-plan: kernels.scaly:30:1: no kernel: reduces into sum</screen>
       last time this loop ran there, or, the first time, the price of a
       translation and one call — and the card gets the loop if it wins
       by a clear margin. A loop that ran on the card is asked at its very
-      first round the next time.</para>
+      first round the next time. And a loop that is too small to be worth
+      a translation, but comes back again and again, is tried on the card
+      once the work it has brought adds up to one: from then on it is
+      measured like any other, and goes where it is faster.</para>
     <para><envar>SCALY_GPU_REPORT</envar> makes a program say at its end
       where each loop went. The program of this chapter with its 2000
       rows, and then with 8000:</para>
