@@ -74,6 +74,7 @@ struct WhenSyntax;
 struct ChooseSyntax;
 struct TrySyntax;
 struct RepeatSyntax;
+struct RelaxedSyntax;
 struct OperationSyntax;
 struct VarSyntax;
 struct MutableSyntax;
@@ -84,6 +85,7 @@ struct ThrowSyntax;
 struct BlockSyntax;
 struct BecomesSyntax;
 struct OperationSyntax;
+struct RelaxedSyntax;
 struct RepeatSyntax;
 struct LabelSyntax;
 struct ForSyntax;
@@ -1515,6 +1517,16 @@ struct RepeatSyntax
 };
 #endif
 
+#ifndef SCALY_TYPE__Z13RelaxedSyntaxB6scalycB4v0_2
+#define SCALY_TYPE__Z13RelaxedSyntaxB6scalycB4v0_2
+struct RelaxedSyntax
+{
+    uint64_t start;
+    uint64_t end;
+    ActionSyntax action;
+};
+#endif
+
 #ifndef SCALY_TYPE__Z14LifetimeSyntaxB6scalycB4v0_2
 #define SCALY_TYPE__Z14LifetimeSyntaxB6scalycB4v0_2
 struct LifetimeSyntax
@@ -1529,7 +1541,7 @@ struct LifetimeSyntax
 struct ExpressionSyntax
 {
     uint8_t tag;
-    uint8_t data[scaly_max_size<LiteralSyntax, NameSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, SizeOfSyntax, AlignOfSyntax, IsSyntax, AsSyntax, LifetimeSyntax>()];
+    uint8_t data[scaly_max_size<LiteralSyntax, NameSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, RelaxedSyntax, SizeOfSyntax, AlignOfSyntax, IsSyntax, AsSyntax, LifetimeSyntax>()];
 };
 #endif
 
@@ -5195,6 +5207,7 @@ struct Block
 {
     Span span;
     Vector<Statement> statements;
+    bool is_relaxed;
 };
 #endif
 
@@ -8626,6 +8639,7 @@ struct PlannedFor
     String get_iterator_method;
     String next_method;
     String loop_label;
+    bool is_relaxed;
     bool element_is_scalar;
 };
 #endif
@@ -13518,6 +13532,7 @@ struct GpuKernel
     bool k_wide;
     String k_wide_reason;
     bool k_float;
+    bool k_relaxed;
     Array<String> k_locals;
     Array<int64_t> k_kinds;
     uint64_t k_base;
@@ -15611,6 +15626,7 @@ scaly_result<scaly_max_size<LambdaSyntax, parser_ParserError, uint64_t>()> parse
 scaly_result<scaly_max_size<ForSyntax, parser_ParserError, uint64_t>()> parser_Parser_parse_for(scaly_frame*, parser_Parser&) asm("_ZN6parser6ParserB6scalycB4v0_29parse_forEPN4scaly6memory4PageE");
 scaly_result<scaly_max_size<LabelSyntax, parser_ParserError, uint64_t>()> parser_Parser_parse_label(scaly_frame*, parser_Parser&) asm("_ZN6parser6ParserB6scalycB4v0_211parse_labelEPN4scaly6memory4PageE");
 scaly_result<scaly_max_size<RepeatSyntax, parser_ParserError, uint64_t>()> parser_Parser_parse_repeat(scaly_frame*, parser_Parser&) asm("_ZN6parser6ParserB6scalycB4v0_212parse_repeatEPN4scaly6memory4PageE");
+scaly_result<scaly_max_size<RelaxedSyntax, parser_ParserError, uint64_t>()> parser_Parser_parse_relaxed(scaly_frame*, parser_Parser&) asm("_ZN6parser6ParserB6scalycB4v0_213parse_relaxedEPN4scaly6memory4PageE");
 scaly_result<scaly_max_size<Vector<ActionSyntax>*, parser_ParserError, uint64_t>()> parser_Parser_parse_action_list(scaly_frame*, parser_Parser&) asm("_ZN6parser6ParserB6scalycB4v0_217parse_action_listEPN4scaly6memory4PageE");
 scaly_result<scaly_max_size<ActionSyntax, parser_ParserError, uint64_t>()> parser_Parser_parse_action(scaly_frame*, parser_Parser&) asm("_ZN6parser6ParserB6scalycB4v0_212parse_actionEPN4scaly6memory4PageE");
 scaly_result<scaly_max_size<OperationSyntax, parser_ParserError, uint64_t>()> parser_Parser_parse_operation(scaly_frame*, parser_Parser&) asm("_ZN6parser6ParserB6scalycB4v0_215parse_operationEPN4scaly6memory4PageE");
@@ -15662,6 +15678,7 @@ Component Modeler_handle_component(scaly_frame*, ComponentSyntax&) asm("_ZN7Mode
 Vector<Operand> Modeler_wrap_row_in_option(scaly_frame*, Vector<Operand>&, Span&) asm("_ZN7ModelerB6scalycB4v0_218wrap_row_in_optionEPN4scaly6memory4PageE6VectorI7OperandB6scalycB4v0_2E4SpanB6scalycB4v0_2");
 Matrix Modeler_handle_vector(scaly_frame*, VectorSyntax&) asm("_ZN7ModelerB6scalycB4v0_213handle_vectorEPN4scaly6memory4PageE12VectorSyntaxB6scalycB4v0_2");
 Block Modeler_handle_block(scaly_frame*, BlockSyntax&) asm("_ZN7ModelerB6scalycB4v0_212handle_blockEPN4scaly6memory4PageE11BlockSyntaxB6scalycB4v0_2");
+Block Modeler_handle_relaxed(scaly_frame*, RelaxedSyntax&) asm("_ZN7ModelerB6scalycB4v0_214handle_relaxedEPN4scaly6memory4PageE13RelaxedSyntaxB6scalycB4v0_2");
 bool Modeler_string_has_interpolation(String&) asm("_ZN7ModelerB6scalycB4v0_224string_has_interpolationE6String");
 void Modeler_interpolation_mark(scaly_frame*, Array<uint64_t>*, uint64_t, uint64_t) asm("_ZN7ModelerB6scalycB4v0_218interpolation_markEPN4scaly6memory4PageER5ArrayImEmm");
 void StringBuilder_append2(StringBuilder&, String&) asm("_ZN13StringBuilder6appendE6String");
@@ -21010,6 +21027,7 @@ __attribute__((weak)) Vector<String> parser_Parser_initialize_keywords_index(sca
     Array_add<String>((*keywords_builder), scaly_lvalue(String{(uint8_t*)"\007private"}));
     Array_add<String>((*keywords_builder), scaly_lvalue(String{(uint8_t*)"\011procedure"}));
     Array_add<String>((*keywords_builder), scaly_lvalue(String{(uint8_t*)"\005reads"}));
+    Array_add<String>((*keywords_builder), scaly_lvalue(String{(uint8_t*)"\007relaxed"}));
     Array_add<String>((*keywords_builder), scaly_lvalue(String{(uint8_t*)"\006repeat"}));
     Array_add<String>((*keywords_builder), scaly_lvalue(String{(uint8_t*)"\006return"}));
     Array_add<String>((*keywords_builder), scaly_lvalue(String{(uint8_t*)"\007returns"}));
@@ -26020,7 +26038,7 @@ __attribute__((weak)) scaly_result<scaly_max_size<ExpressionSyntax, parser_Parse
         }
     }
     {
-        auto&& scaly_t27 = parser_Parser_parse_sizeof(scaly_rp, *(this_));
+        auto&& scaly_t27 = parser_Parser_parse_relaxed(scaly_rp, *(this_));
         if (scaly_t27.status != 0)
         {
             parser_ParserError err = scaly_result_at<parser_ParserError>(scaly_t27, 0);
@@ -26039,12 +26057,12 @@ __attribute__((weak)) scaly_result<scaly_max_size<ExpressionSyntax, parser_Parse
         }
         else if (scaly_t27.status == 0)
         {
-            SizeOfSyntax node = scaly_result_at<SizeOfSyntax>(scaly_t27, 0);
+            RelaxedSyntax node = scaly_result_at<RelaxedSyntax>(scaly_t27, 0);
             return scaly_ok<scaly_result<scaly_max_size<ExpressionSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<ExpressionSyntax>(13, node));
         }
     }
     {
-        auto&& scaly_t29 = parser_Parser_parse_alignof(scaly_rp, *(this_));
+        auto&& scaly_t29 = parser_Parser_parse_sizeof(scaly_rp, *(this_));
         if (scaly_t29.status != 0)
         {
             parser_ParserError err = scaly_result_at<parser_ParserError>(scaly_t29, 0);
@@ -26063,12 +26081,12 @@ __attribute__((weak)) scaly_result<scaly_max_size<ExpressionSyntax, parser_Parse
         }
         else if (scaly_t29.status == 0)
         {
-            AlignOfSyntax node = scaly_result_at<AlignOfSyntax>(scaly_t29, 0);
+            SizeOfSyntax node = scaly_result_at<SizeOfSyntax>(scaly_t29, 0);
             return scaly_ok<scaly_result<scaly_max_size<ExpressionSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<ExpressionSyntax>(14, node));
         }
     }
     {
-        auto&& scaly_t31 = parser_Parser_parse_is(scaly_rp, *(this_));
+        auto&& scaly_t31 = parser_Parser_parse_alignof(scaly_rp, *(this_));
         if (scaly_t31.status != 0)
         {
             parser_ParserError err = scaly_result_at<parser_ParserError>(scaly_t31, 0);
@@ -26087,12 +26105,12 @@ __attribute__((weak)) scaly_result<scaly_max_size<ExpressionSyntax, parser_Parse
         }
         else if (scaly_t31.status == 0)
         {
-            IsSyntax node = scaly_result_at<IsSyntax>(scaly_t31, 0);
+            AlignOfSyntax node = scaly_result_at<AlignOfSyntax>(scaly_t31, 0);
             return scaly_ok<scaly_result<scaly_max_size<ExpressionSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<ExpressionSyntax>(15, node));
         }
     }
     {
-        auto&& scaly_t33 = parser_Parser_parse_as(scaly_rp, *(this_));
+        auto&& scaly_t33 = parser_Parser_parse_is(scaly_rp, *(this_));
         if (scaly_t33.status != 0)
         {
             parser_ParserError err = scaly_result_at<parser_ParserError>(scaly_t33, 0);
@@ -26111,12 +26129,12 @@ __attribute__((weak)) scaly_result<scaly_max_size<ExpressionSyntax, parser_Parse
         }
         else if (scaly_t33.status == 0)
         {
-            AsSyntax node = scaly_result_at<AsSyntax>(scaly_t33, 0);
+            IsSyntax node = scaly_result_at<IsSyntax>(scaly_t33, 0);
             return scaly_ok<scaly_result<scaly_max_size<ExpressionSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<ExpressionSyntax>(16, node));
         }
     }
     {
-        auto&& scaly_t35 = parser_Parser_parse_lifetime(scaly_rp, *(this_));
+        auto&& scaly_t35 = parser_Parser_parse_as(scaly_rp, *(this_));
         if (scaly_t35.status != 0)
         {
             parser_ParserError err = scaly_result_at<parser_ParserError>(scaly_t35, 0);
@@ -26135,8 +26153,32 @@ __attribute__((weak)) scaly_result<scaly_max_size<ExpressionSyntax, parser_Parse
         }
         else if (scaly_t35.status == 0)
         {
-            LifetimeSyntax node = scaly_result_at<LifetimeSyntax>(scaly_t35, 0);
+            AsSyntax node = scaly_result_at<AsSyntax>(scaly_t35, 0);
             return scaly_ok<scaly_result<scaly_max_size<ExpressionSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<ExpressionSyntax>(17, node));
+        }
+    }
+    {
+        auto&& scaly_t37 = parser_Parser_parse_lifetime(scaly_rp, *(this_));
+        if (scaly_t37.status != 0)
+        {
+            parser_ParserError err = scaly_result_at<parser_ParserError>(scaly_t37, 0);
+            {
+                auto&& scaly_t38 = err;
+                if (scaly_t38.tag == 1)
+                {
+                    parser_InvalidSyntax i = scaly_payload<parser_InvalidSyntax>(scaly_t38);
+                    return scaly_thrown<scaly_result<scaly_max_size<ExpressionSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<parser_ParserError>(1, i));
+                }
+                else if (scaly_t38.tag == 0)
+                {
+                    parser_DifferentSyntax d = scaly_payload<parser_DifferentSyntax>(scaly_t38);
+                }
+            }
+        }
+        else if (scaly_t37.status == 0)
+        {
+            LifetimeSyntax node = scaly_result_at<LifetimeSyntax>(scaly_t37, 0);
+            return scaly_ok<scaly_result<scaly_max_size<ExpressionSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<ExpressionSyntax>(18, node));
         }
     }
     return scaly_thrown<scaly_result<scaly_max_size<ExpressionSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<parser_ParserError>(0, parser_DifferentSyntax{}));
@@ -29550,6 +29592,48 @@ __attribute__((weak)) scaly_result<scaly_max_size<RepeatSyntax, parser_ParserErr
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/parser.scaly
+__attribute__((weak)) scaly_result<scaly_max_size<RelaxedSyntax, parser_ParserError, uint64_t>()> parser_Parser_parse_relaxed(scaly_frame* scaly_rp, parser_Parser& scaly_self)
+{
+    parser_Parser* this_ = &scaly_self;
+    uint64_t start = (this_->lexer).previous_position;
+    if ((!(lexer_Lexer_parse_keyword(this_->lexer, scaly_lvalue(String{(uint8_t*)"\007relaxed"})))))
+    {
+        return scaly_thrown<scaly_result<scaly_max_size<RelaxedSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<parser_ParserError>(0, parser_DifferentSyntax{}));
+    }
+    lexer_Lexer_parse_colon(this_->lexer);
+    uint64_t action_start = (this_->lexer).position;
+    ActionSyntax action {};
+    {
+        auto&& scaly_t1 = parser_Parser_parse_action(scaly_rp, *(this_));
+        if (scaly_t1.status != 0)
+        {
+            parser_ParserError err = scaly_result_at<parser_ParserError>(scaly_t1, 0);
+            {
+                auto&& scaly_t2 = err;
+                if (scaly_t2.tag == 0)
+                {
+                    parser_DifferentSyntax d = scaly_payload<parser_DifferentSyntax>(scaly_t2);
+                    return scaly_thrown<scaly_result<scaly_max_size<RelaxedSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<parser_ParserError>(1, parser_InvalidSyntax{action_start, (this_->lexer).position, String{(uint8_t*)"\017expected Action"}}));
+                }
+                else if (scaly_t2.tag == 1)
+                {
+                    parser_InvalidSyntax i = scaly_payload<parser_InvalidSyntax>(scaly_t2);
+                    return scaly_thrown<scaly_result<scaly_max_size<RelaxedSyntax, parser_ParserError, uint64_t>()>>(scaly_variant<parser_ParserError>(1, i));
+                }
+            }
+        }
+        else if (scaly_t1.status == 0)
+        {
+            ActionSyntax success = scaly_result_at<ActionSyntax>(scaly_t1, 0);
+            action = success;
+        }
+    }
+    uint64_t end = (this_->lexer).position;
+    return scaly_ok<scaly_result<scaly_max_size<RelaxedSyntax, parser_ParserError, uint64_t>()>>(RelaxedSyntax{start, end, action});
+    return scaly_result<scaly_max_size<RelaxedSyntax, parser_ParserError, uint64_t>()>{};
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/parser.scaly
 __attribute__((weak)) scaly_result<scaly_max_size<Vector<ActionSyntax>*, parser_ParserError, uint64_t>()> parser_Parser_parse_action_list(scaly_frame* scaly_rp, parser_Parser& scaly_self)
 {
     parser_Parser* this_ = &scaly_self;
@@ -31596,7 +31680,16 @@ __attribute__((weak)) Matrix Modeler_handle_vector(scaly_frame* scaly_rp, Vector
 __attribute__((weak)) Block Modeler_handle_block(scaly_frame* scaly_rp, BlockSyntax& syntax)
 {
     Vector<Statement> statements = Modeler_handle_statements(scaly_rp, (syntax).statements);
-    return Block{(*({ Span* scaly_t2 = (Span*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Span), alignof(Span)); *scaly_t2 = Span{(syntax).start, (syntax).end}; scaly_t2; })), statements};
+    return Block{(*({ Span* scaly_t2 = (Span*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Span), alignof(Span)); *scaly_t2 = Span{(syntax).start, (syntax).end}; scaly_t2; })), statements, false};
+}
+
+// packages/scalyc/0.2.1/scalyc/compiler/Modeler.scaly
+__attribute__((weak)) Block Modeler_handle_relaxed(scaly_frame* scaly_rp, RelaxedSyntax& syntax)
+{
+    Action action = Modeler_handle_action(scaly_rp, (syntax).action);
+    Vector<Statement>* statements = ({ Vector<Statement>* scaly_t1 = (Vector<Statement>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<Statement>), alignof(Vector<Statement>)); *scaly_t1 = Vector<Statement>{}; Vector_init3<Statement>((*scaly_t1), 1ULL); scaly_t1; });
+    Vector_put<Statement>((*statements), 0ULL, scaly_lvalue(scaly_variant<Statement>(0, action)));
+    return Block{(*({ Span* scaly_t3 = (Span*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Span), alignof(Span)); *scaly_t3 = Span{(syntax).start, (syntax).end}; scaly_t3; })), (*statements), true};
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Modeler.scaly
@@ -32017,22 +32110,22 @@ __attribute__((weak)) Expression Modeler_handle_expression(scaly_frame* scaly_rp
             TrySyntax try_syntax = scaly_payload<TrySyntax>(scaly_t1);
             return scaly_variant<Expression>(10, Modeler_handle_try(scaly_rp, try_syntax));
         }
-        else if (scaly_t1.tag == 13)
+        else if (scaly_t1.tag == 14)
         {
             SizeOfSyntax sizeof_syntax = scaly_payload<SizeOfSyntax>(scaly_t1);
             return scaly_variant<Expression>(11, Modeler_handle_sizeof(scaly_rp, sizeof_syntax));
         }
-        else if (scaly_t1.tag == 14)
+        else if (scaly_t1.tag == 15)
         {
             AlignOfSyntax alignof_syntax = scaly_payload<AlignOfSyntax>(scaly_t1);
             return scaly_variant<Expression>(12, Modeler_handle_alignof(scaly_rp, alignof_syntax));
         }
-        else if (scaly_t1.tag == 15)
+        else if (scaly_t1.tag == 16)
         {
             IsSyntax is_syntax = scaly_payload<IsSyntax>(scaly_t1);
             return scaly_variant<Expression>(13, Modeler_handle_is(scaly_rp, is_syntax));
         }
-        else if (scaly_t1.tag == 16)
+        else if (scaly_t1.tag == 17)
         {
             AsSyntax as_syntax = scaly_payload<AsSyntax>(scaly_t1);
             return scaly_variant<Expression>(14, Modeler_handle_as(scaly_rp, as_syntax));
@@ -32047,7 +32140,12 @@ __attribute__((weak)) Expression Modeler_handle_expression(scaly_frame* scaly_rp
             RepeatSyntax rep_syntax = scaly_payload<RepeatSyntax>(scaly_t1);
             return scaly_variant<Expression>(17, Modeler_handle_repeat(scaly_rp, rep_syntax));
         }
-        else if (scaly_t1.tag == 17)
+        else if (scaly_t1.tag == 13)
+        {
+            RelaxedSyntax rel_syntax = scaly_payload<RelaxedSyntax>(scaly_t1);
+            return scaly_variant<Expression>(4, Modeler_handle_relaxed(scaly_rp, rel_syntax));
+        }
+        else if (scaly_t1.tag == 18)
         {
             LifetimeSyntax life_syntax = scaly_payload<LifetimeSyntax>(scaly_t1);
             Vector<LifetimeSyntax>* life_holder = ({ Vector<LifetimeSyntax>* scaly_t9 = (Vector<LifetimeSyntax>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<LifetimeSyntax>), alignof(Vector<LifetimeSyntax>)); *scaly_t9 = Vector<LifetimeSyntax>{}; Vector_init3<LifetimeSyntax>((*scaly_t9), 1ULL); scaly_t9; });
@@ -32937,6 +33035,11 @@ __attribute__((weak)) bool Modeler_is_statement_like_expression(ExpressionSyntax
         else if (scaly_t1.tag == 4)
         {
             BlockSyntax b = scaly_payload<BlockSyntax>(scaly_t1);
+            return true;
+        }
+        else if (scaly_t1.tag == 13)
+        {
+            RelaxedSyntax x = scaly_payload<RelaxedSyntax>(scaly_t1);
             return true;
         }
         else
@@ -62064,7 +62167,7 @@ __attribute__((weak)) PlannedFor Planner_plan_for(scaly_frame* scaly_rp, Planner
     Planner_pop_scope(*(this_));
     Vector<PlannedOperand>* expr_holder = ({ Vector<PlannedOperand>* scaly_t13 = (Vector<PlannedOperand>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedOperand>), alignof(Vector<PlannedOperand>)); *scaly_t13 = Vector<PlannedOperand>{}; Vector_init3<PlannedOperand>((*scaly_t13), 1ULL); scaly_t13; });
     Vector_put<PlannedOperand>((*expr_holder), 0ULL, collapsed_expr);
-    return PlannedFor{(f).span, (f).identifier, (&((*expr_holder))), planned_body, is_iterator_loop, coll_type, iterator_type, element_type, get_iter_name, next_name, (f).loop_label, element_is_scalar};
+    return PlannedFor{(f).span, (f).identifier, (&((*expr_holder))), planned_body, is_iterator_loop, coll_type, iterator_type, element_type, get_iter_name, next_name, (f).loop_label, ((Planner_lookup_local_binding(*(this_), scaly_lvalue(String{(uint8_t*)"\010 relaxed"}))) != (nullptr)), element_is_scalar};
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -67555,7 +67658,7 @@ __attribute__((weak)) PlannedOperand Planner_plan_lazy_computed_receiver(scaly_f
     Vector<Statement>* stmts = ({ Vector<Statement>* scaly_t13 = (Vector<Statement>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Vector<Statement>), alignof(Vector<Statement>)); *scaly_t13 = Vector<Statement>{}; Vector_init3<Statement>((*scaly_t13), 2ULL); scaly_t13; });
     Vector_put<Statement>((*stmts), 0ULL, scaly_lvalue(scaly_variant<Statement>(1, Binding{(*span), String{(uint8_t*)"\005const"}, Item{(*span), false, Vector_get<String>((*name_h), 0ULL), (Type*)(nullptr), (*({ Vector<Attribute>* scaly_t14 = (Vector<Attribute>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<Attribute>), alignof(Vector<Attribute>)); *scaly_t14 = Vector<Attribute>{}; Vector_init3<Attribute>((*scaly_t14), 0ULL); scaly_t14; }))}, (*recv)})));
     Vector_put<Statement>((*stmts), 1ULL, scaly_lvalue(scaly_variant<Statement>(0, Action{(*call), (*({ Vector<Operand>* scaly_t15 = (Vector<Operand>*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(Vector<Operand>), alignof(Vector<Operand>)); *scaly_t15 = Vector<Operand>{}; Vector_init3<Operand>((*scaly_t15), 0ULL); scaly_t15; }))})));
-    return Planner_plan_operand(scaly_rp, *(this_), scaly_lvalue((*({ Operand* scaly_t17 = (Operand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Operand), alignof(Operand)); *scaly_t17 = Operand{(*span), scaly_variant<Expression>(4, Block{(*span), (*stmts)}), (Vector<String>*)(nullptr)}; scaly_t17; }))));
+    return Planner_plan_operand(scaly_rp, *(this_), scaly_lvalue((*({ Operand* scaly_t17 = (Operand*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Operand), alignof(Operand)); *scaly_t17 = Operand{(*span), scaly_variant<Expression>(4, Block{(*span), (*stmts), false}), (Vector<String>*)(nullptr)}; scaly_t17; }))));
 }
 
 // packages/scalyc/0.2.1/scalyc/compiler/Planner.scaly
@@ -92047,6 +92150,10 @@ __attribute__((weak)) PlannedBlock Planner_plan_block(scaly_frame* scaly_rp, Pla
 {
     Planner* this_ = &scaly_self;
     Planner_push_scope(*(this_));
+    if ((b).is_relaxed)
+    {
+        Planner_define_local(*(this_), scaly_lvalue(String{(uint8_t*)"\010 relaxed"}), scaly_lvalue(Planner_make_void_type(scaly_rp)), false, false);
+    }
     Vector<PlannedStatement> planned_stmts = Planner_plan_statements(scaly_rp, *(this_), (b).statements);
     Planner_pop_scope(*(this_));
     Vector<PlannedStatement>* stmts_holder = ({ Vector<PlannedStatement>* scaly_t1 = (Vector<PlannedStatement>*)scaly_rt_allocate(scaly_rt_force_frame(scaly_rp), sizeof(Vector<PlannedStatement>), alignof(Vector<PlannedStatement>)); *scaly_t1 = Vector<PlannedStatement>{}; Vector_init5<PlannedStatement>((*scaly_t1), planned_stmts); scaly_t1; });
@@ -116991,6 +117098,7 @@ __attribute__((weak)) void GpuKernel_classify_loop(GpuKernel& scaly_self, Planne
     this_->k_wide = false;
     this_->k_wide_reason = (*({ String* scaly_t2 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t2 = String{}; String_init2((*scaly_t2), scaly_lvalue(String{nullptr})); scaly_t2; }));
     this_->k_float = false;
+    this_->k_relaxed = (fr).is_relaxed;
     (this_->k_locals).length = 0ULL;
     (this_->k_kinds).length = 0ULL;
     this_->k_base = 0ULL;
@@ -117058,7 +117166,7 @@ __attribute__((weak)) String GpuKernel_verdict(scaly_frame* scaly_rp, GpuKernel&
     });
     }
     StringBuilder* sb = ({ StringBuilder* scaly_t3 = (StringBuilder*)scaly_rt_allocate(scaly_rt_force_frame(&scaly_local.f), sizeof(StringBuilder), alignof(StringBuilder)); *scaly_t3 = StringBuilder{}; StringBuilder_init((*scaly_t3)); scaly_t3; });
-    if ((this_->k_wide ? true : this_->k_float))
+    if ((this_->k_wide ? true : ((this_->k_float ? ((this_->k_relaxed) == (false)) : false))))
     {
         StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\020kernel (metal): "}));
     }
@@ -117088,7 +117196,7 @@ __attribute__((weak)) String GpuKernel_verdict(scaly_frame* scaly_rp, GpuKernel&
         StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\016; not webgpu: "}));
         StringBuilder_append2((*sb), this_->k_wide_reason);
     }
-    if ((((this_->k_wide) == (false)) ? this_->k_float : false))
+    if (((((this_->k_wide) == (false)) ? this_->k_float : false) ? ((this_->k_relaxed) == (false)) : false))
     {
         StringBuilder_append2((*sb), scaly_lvalue(String{(uint8_t*)"\071; not webgpu: floating point, and the loop is not relaxed"}));
     }
@@ -117118,7 +117226,11 @@ __attribute__((weak)) void GpuKernel_append_names(StringBuilder* sb, Array<Strin
 __attribute__((weak)) bool GpuKernel_portable(GpuKernel& scaly_self)
 {
     GpuKernel* this_ = &scaly_self;
-    if (((this_->k_blocked ? true : this_->k_wide) ? true : this_->k_float))
+    if ((this_->k_blocked ? true : this_->k_wide))
+    {
+        return false;
+    }
+    if ((this_->k_float ? ((this_->k_relaxed) == (false)) : false))
     {
         return false;
     }
@@ -118838,6 +118950,7 @@ __attribute__((weak)) void GpuKernel_init(GpuKernel& scaly_self)
     this_->k_wide = false;
     this_->k_wide_reason = (*({ String* scaly_t5 = (String*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(String), alignof(String)); *scaly_t5 = String{}; String_init2((*scaly_t5), scaly_lvalue(String{nullptr})); scaly_t5; }));
     this_->k_float = false;
+    this_->k_relaxed = false;
     this_->k_locals = (*({ Array<String>* scaly_t6 = (Array<String>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<String>), alignof(Array<String>)); *scaly_t6 = Array<String>{}; (void)0; scaly_t6; }));
     this_->k_kinds = (*({ Array<int64_t>* scaly_t7 = (Array<int64_t>*)scaly_rt_allocate(scaly_rt_page_get((void*)this_), sizeof(Array<int64_t>), alignof(Array<int64_t>)); *scaly_t7 = Array<int64_t>{}; (void)0; scaly_t7; }));
     this_->k_base = 0ULL;
