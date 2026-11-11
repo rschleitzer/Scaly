@@ -314,6 +314,11 @@ if scaly_jit_available 2>/dev/null; then
   [ "$out" = "hello three" ] && ok || bad "run: got '$out'"
   out=$("$SCALY" run tests/tool/arguments.scaly one "two words" three 2>&1)
   [ "$out" = "3: one|two words|three" ] && ok || bad "run arguments: got '$out'"
+  # --gpu before the file is the tool's word, not the program's: the program
+  # gets its own arguments, and here -- a JIT has no card to give -- it runs
+  # as without the word
+  out=$("$SCALY" run --gpu tests/tool/arguments.scaly one "two words" three 2>&1)
+  [ "$out" = "3: one|two words|three" ] && ok || bad "run --gpu: got '$out'"
   out=$("$SCALY" run tests/tool/globals.scaly 2>&1)
   [ "$out" = "18 7 5" ] && ok || bad "run globals: got '$(echo "$out" | tail -1)'"
   out=$("$SCALY" run tests/tool/delegates.scaly 2>&1)

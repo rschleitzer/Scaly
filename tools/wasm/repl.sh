@@ -28,5 +28,7 @@ if [ "${1:-}" = build ]; then
     scalyc/build/scaly build --target wasm32-wasip1 "$SCALYC_PKG/scaly_main.scaly" -o "$L/scaly.wasm")
   shift
 fi
+# a node that STARTS (tools/node.sh): one that is merely there can abort in the loader
+NODE=$(tools/node.sh) || { echo "repl.sh: no node that starts" >&2; exit 1; }
 SCALY_HOME="$TREE" SCALY_CACHE="$L/repl-cache" \
-  exec node --no-warnings --stack-size=65500 "$HERE/repl-node.mjs" "$L/scaly.wasm" "$@"
+  exec "$NODE" --no-warnings --stack-size=65500 "$HERE/repl-node.mjs" "$L/scaly.wasm" "$@"

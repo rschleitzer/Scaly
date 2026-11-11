@@ -6,7 +6,10 @@
 #   scaly.wasm    the tool built for WebAssembly (tools/wasm/repl.sh build;
 #                 SCALY_WASM_LLVM, default ~/scaly-wasm) without its names
 #                 and the C library's DWARF: 54 MB become 31 (llvm-strip)
-#   wasi.mjs      the page's WASI host, web/wasi.mjs of the standard library
+#   wasi.mjs      the page's WASI host, web/wasi.mjs of the standard library,
+#                 and beside it the host of the page's graphics card
+#                 (gpu-host.mjs, gpu-worker.mjs, gpu.mjs), for a program
+#                 run with `scaly run --gpu`
 #   stdlib.json   the standard library's files, which the REPL compiles every
 #                 entry against: path under /scaly (SCALY_HOME) -> base64
 #   tour-steps.htm  the tour's steps, set from the tutorial's "A Tour of
@@ -39,9 +42,11 @@ if [ "$OUT" != "$HERE" ]; then
      "$HERE/serve.mjs" "$HERE/compress.mjs" "$OUT/"
 fi
 "$W/bin/llvm-strip" -o "$OUT/scaly.wasm" "$L/scaly.wasm"
-cp "$STDLIB/web/wasi.mjs" "$OUT/wasi.mjs"
-node "$HERE/stdlib.mjs" "$TREE" "$STDLIB" > "$OUT/stdlib.json"
-node "$HERE/compress.mjs" "$OUT/scaly.wasm" "$OUT/stdlib.json"
+cp "$STDLIB/web/wasi.mjs" "$STDLIB/web/gpu.mjs" "$STDLIB/web/gpu-host.mjs" "$STDLIB/web/gpu-worker.mjs" "$OUT/"
+# a node that STARTS (tools/node.sh): one that is merely there can abort in the loader
+NODE=$(tools/node.sh) || { echo "web/repl/build.sh: no node that starts" >&2; exit 3; }
+"$NODE" "$HERE/stdlib.mjs" "$TREE" "$STDLIB" > "$OUT/stdlib.json"
+"$NODE" "$HERE/compress.mjs" "$OUT/scaly.wasm" "$OUT/stdlib.json"
 DAZZLE="${DAZZLE:-$TREE/scalyc/build/dazzle}"
 if [ ! -x "$DAZZLE" ]; then
   echo "web/repl/build.sh: no DSSSL engine at $DAZZLE for the tour -- run ./mkp with the dazzle checkout beside this one" >&2

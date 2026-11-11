@@ -24,10 +24,18 @@
 #    the gate's own decision in gate.scaly. Before the page, each module runs
 #    once on the command line under a host without a card.
 #
+# 3. THE COMPILER IN THE PAGE. The compiler built for WebAssembly
+#    (tools/wasm/repl.sh build, web/repl/build.sh) compiles three of the
+#    programs IN the page (compiler.html), as the tour runs a step --
+#    `scaly run --gpu main.scaly`, the program a side module of the compiler
+#    -- and each must write what it writes natively, with the card and
+#    without, the card having run its loops where it is on.
+#
 # NOT in the bar: it needs a Chrome with WebGPU, wgpu-native and node (part 2
-# a wasi-sdk too), and is SKIPPED by name without one of them. Run it after a
-# change to the WGSL the compiler prints, to the page's hosts or to the wasm
-# side of the runtime's host (scaly/gpu/gpu_wasm.c).
+# a wasi-sdk too, part 3 libLLVM built for wasm, tools/wasm/build-llvm.sh),
+# and is SKIPPED by name without one of them. Run it after a change to the
+# WGSL the compiler prints, to the page's hosts or to the wasm side of the
+# runtime's host (scaly/gpu/gpu_wasm.c).
 #
 # Usage: tests/gpu/web/run.sh [stage-binary]   (default /tmp/scalyc_stage2; the
 #        tool beside it, tools/scaly-of.sh)
@@ -171,6 +179,67 @@ for f in fails:
     print('  FAIL ' + f)
 print('gpu-web: programs %s — %d programs in a page, three runs each; the card ran %d loops forced, %d by the gate'
       % ('FAIL' if fails else 'PASS', len(by), cards['on'], cards['auto']))
+sys.exit(1 if fails else 0)
+PY
+[ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
+
+# --- 3. the compiler in the page ------------------------------------------
+L="${SCALY_WASM_LLVM:-$HOME/scaly-wasm}"
+if [ ! -d "$L/wasm-build/lib" ]; then
+  echo "gpu-web: compiler SKIP (no libLLVM for wasm at $L: tools/wasm/build-llvm.sh)"
+  echo "gpu-web: PASS"; exit 0
+fi
+# the compiler for the page, from the sources as they are (the tree's own
+# tool builds it; its cache makes a second build short), then the page
+if ! echo ':quit' | tools/wasm/repl.sh build > "$T/compiler.build" 2>&1 || ! web/repl/build.sh "$T/repl" > "$T/repl.build" 2>&1; then
+  echo "gpu-web: FAIL — the compiler for the page does not build ($(tail -1 "$T/compiler.build" | cut -c1-120); $(tail -1 "$T/repl.build" 2>/dev/null | cut -c1-120))"; exit 1
+fi
+python3 - "$T/repl/sources.json" <<'PY'
+import json, sys
+wanted = [('integers32', 'tests/gpu/webgpu/integers32.scaly', ['off', 'on']),
+          ('reductions', 'tests/gpu/reductions.scaly', ['off', 'on']),
+          ('gate', 'tests/gpu/web/gate.scaly', ['off', 'auto'])]
+json.dump([{'name': n, 'text': open(p).read(), 'modes': m} for n, p, m in wanted], open(sys.argv[1], 'w'))
+PY
+cp tests/gpu/web/compiler.html "$T/repl/"
+page "$T/repl" compiler.html 300
+
+if grep -q '^SKIP' "$T/result" 2>/dev/null; then
+  echo "gpu-web: compiler SKIP (no card for a worker of the page)"
+  echo "gpu-web: PASS"; exit 0
+fi
+python3 - "$T/result" "$T/page" <<'PY' || failed=1
+import json, os, sys
+result, page = sys.argv[1], sys.argv[2]
+lines = open(result).read().splitlines() if os.path.exists(result) else []
+fails = [l[:300] for l in lines if l.startswith('FAILED')]
+if not any(l.startswith('compiled: ') for l in lines):
+    fails.append('the page did not answer (%s)' % (lines[-1][:200] if lines else 'nothing'))
+by = {}
+for l in lines:
+    if l.startswith('RUN '):
+        r = json.loads(l[4:])
+        by.setdefault(r['name'], {})[r['mode']] = r
+cards = 0
+for name, modes in sorted(by.items()):
+    off = modes['off']
+    native = open(os.path.join(page, name + '.native')).read()
+    if off['status'] != '0' or off['stdout'] != native:
+        fails.append('%s: compiled in the page it writes other than natively (%s; %s)' % (name, off['status'], off['stderr'][-200:]))
+    if off['cards'] != 0:
+        fails.append('%s: the card ran %d loops while off' % (name, off['cards']))
+    for mode, r in modes.items():
+        if mode == 'off':
+            continue
+        cards += r['cards']
+        if r['stdout'] != off['stdout'] or r['status'] != off['status']:
+            fails.append('%s: %s, the card changed what the program writes (%s; %s)' % (name, mode, r['status'], r['stderr'][-200:]))
+        if r['cards'] < (2 if mode == 'auto' else 1):
+            fails.append('%s: %s, the card ran %d loops' % (name, mode, r['cards']))
+for f in fails:
+    print('  FAIL ' + f)
+print('gpu-web: compiler %s — %d programs compiled in the page and run with --gpu; the card ran %d loops'
+      % ('FAIL' if fails else 'PASS', len(by), cards))
 sys.exit(1 if fails else 0)
 PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }

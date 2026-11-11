@@ -485,7 +485,7 @@ define cli
     procedure print_tool_usage()
     {
         Console.println "Usage: scaly                            the REPL"
-        Console.println "       scaly run <file> [arguments]     compile and run a program"
+        Console.println "       scaly run [--gpu] <file> [arguments]   compile and run a program"
         Console.println "       scaly build <file> [-o <out>] [--release]   build an executable"
         Console.println "             --pgo-train          ... instrumented: its run writes default.profraw ($LLVM_PROFILE_FILE)"
         Console.println "             --pgo <profile>      ... optimised with that profile"
@@ -1397,6 +1397,11 @@ define cli
         {
             var prog_config EmitterConfig()
             prog_config.emit_debug_info := false
+            ; `scaly run --gpu`: the compiler built for WebAssembly is linked
+            ; with the card's host (the page it runs in), and a program it
+            ; runs is a side module of its own -- there the loops may go to
+            ; the card. A JIT's code runs in this process, which has no host.
+            prog_config.gpu := opts.gpu and scalyc_has_jit() = 0
             var prog_emitter Emitter.Emitter(prog_config)
             var prog_dep_objs Array[String]()
             var prog_dep_syms Array[String]()
@@ -2877,21 +2882,33 @@ define cli
         let command String(*(argv + 1))
         if command.equals("run")
         {
-            if argc < 3
+            ; --gpu before the file: the program's loops may go to the
+            ; graphics card where this tool has one to give -- built for
+            ; WebAssembly, in a page that hands it its card; anywhere else
+            ; the program runs as without the word
+            var file_at 2
+            var run_gpu false
+            if argc >= 3 and String(*(argv + 2)).equals("--gpu")
             {
-                Console.println "Usage: scaly run <file> [arguments]"
+                run_gpu := true
+                file_at := 3
+            }
+            if argc < file_at + 1
+            {
+                Console.println "Usage: scaly run [--gpu] <file> [arguments]"
                 return 1
             }
             var run_seen Array[String]()
-            if tool.fetch_declared(String(*(argv + 2)), &run_seen) = false
+            if tool.fetch_declared(String(*(argv + file_at)), &run_seen) = false
                 return 1
-            tool.prepare_interfaces(String(*(argv + 2)))
+            tool.prepare_interfaces(String(*(argv + file_at)))
             var run_opts Options()
-            run_opts.input_file := String(*(argv + 2))
+            run_opts.input_file := String(*(argv + file_at))
             run_opts.jit_program := true
+            run_opts.gpu := run_gpu
             ; the program's argv[0] is its file, as a shell would give it
-            run_opts.program_argc := argc - 2
-            run_opts.program_argv := argv + 2
+            run_opts.program_argc := argc - file_at
+            run_opts.program_argv := argv + file_at
             return cli.run(run_opts)
         }
         if command.equals("test")
