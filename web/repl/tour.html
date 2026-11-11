@@ -64,11 +64,23 @@
             white-space: pre-wrap; overflow-wrap: anywhere; min-height: 80px; }
   #output .err { color: var(--bad); }
   #output .note { color: var(--muted); font-style: italic; }
+  .results { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; }
+  #pictures canvas { display: block; max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); }
+  #pictures figcaption, .runs .what { font-size: 12px; color: var(--muted); }
+  #pictures figure { margin: 0; }
+  .runs { display: grid; grid-template-columns: max-content minmax(60px, 1fr) max-content; gap: 4px 10px;
+          align-items: center; font-size: 13px; }
+  .runs:empty, #pictures:empty { display: none; }
+  .runs .bar { height: 10px; border-radius: 5px; background: var(--muted); min-width: 2px; }
+  .runs .bar.card { background: var(--accent); }
+  .runs .time { font-variant-numeric: tabular-nums; }
+  .runs .what { grid-column: 1 / -1; margin: -2px 0 4px; }
   /* last: the wide layout overrides the base rules above */
   @media (min-width: 900px) {
     main { grid-template-columns: minmax(300px, 2fr) 3fr; height: calc(100vh - 58px); }
     .lesson, .work { min-height: 0; }
     .work { display: grid; grid-template-rows: auto minmax(0, 1fr) auto minmax(80px, 30%); }
+    .work.card { grid-template-rows: auto minmax(0, 1fr) auto minmax(80px, 55%); }
     #editor { height: 100%; min-height: 0; resize: none; }
   }
 </style>
@@ -102,13 +114,22 @@
     <div class="toolbar">
       <button class="primary" id="run" disabled>Run</button>
       <button id="reset">Reset</button>
+      <select id="where" aria-label="Where the loops run" hidden>
+        <option value="off">On the processor</option>
+        <option value="on">On the graphics card</option>
+        <option value="auto" selected>Where it pays</option>
+      </select>
       <span id="status">Loading…</span>
     </div>
     <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
               aria-label="The program"></textarea>
     <div class="hint">Change the program and run it again — Ctrl+Enter or ⌘+Enter runs it.
       The compiler and the program run in this browser tab.</div>
-    <pre id="output" aria-live="polite"></pre>
+    <div class="results">
+      <div class="runs" id="runs" aria-label="The runs of this program"></div>
+      <div id="pictures"></div>
+      <pre id="output" aria-live="polite"></pre>
+    </div>
   </section>
 </main>
 
@@ -118,6 +139,9 @@ import { loadCompiler } from './load.mjs';
 const $ = id => document.getElementById(id);
 const editor = $('editor'), output = $('output'), runButton = $('run');
 let steps = [], at = 0, compiler = null, worker = null;
+// a step whose program may run on the graphics card (its listing is marked
+// role="gpu"): per step the runs so far, each with where its loops went
+const runs = new Map();
 
 function status(text, kind = '') {
   $('status').textContent = text;
@@ -159,6 +183,10 @@ function show(i, push = true) {
   $('main').classList.toggle('prose-only', step.program === null);
   editor.value = step.program === null ? '' : (edited(at) ?? step.program);
   output.textContent = '';
+  $('pictures').textContent = '';
+  $('where').hidden = !step.gpu;
+  document.querySelector('.work').classList.toggle('card', step.gpu);
+  showRuns();
   if (location.hash !== `#${at + 1}`) {
     if (push) history.pushState(null, '', `#${at + 1}`);
     else history.replaceState(null, '', `#${at + 1}`);
@@ -173,8 +201,63 @@ function stop() {
   if (compiler) status('Ready.', 'ok');
 }
 
+// A picture the program wrote (a file `<name>.<width>x<height>.rgba`, which
+// the worker hands back): onto a canvas, as it is.
+function showPictures(pictures) {
+  const box = $('pictures');
+  box.textContent = '';
+  for (const p of pictures ?? []) {
+    const figure = document.createElement('figure');
+    const canvas = document.createElement('canvas');
+    canvas.width = p.width;
+    canvas.height = p.height;
+    canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(p.bytes.buffer), p.width, p.height), 0, 0);
+    const caption = document.createElement('figcaption');
+    caption.textContent = `${p.name} — ${p.width} × ${p.height} points`;
+    figure.append(canvas, caption);
+    box.appendChild(figure);
+  }
+}
+
+// The runs of this step, one bar each, as long as the program ran: the same
+// program on the processor and on the card, side by side.
+function showRuns() {
+  const box = $('runs');
+  box.textContent = '';
+  const list = runs.get(at) ?? [];
+  const longest = Math.max(1, ...list.map(r => r.ran));
+  for (const r of list) {
+    const label = document.createElement('span');
+    label.textContent = r.where;
+    const bar = document.createElement('span');
+    bar.className = r.cards > 0 ? 'bar card' : 'bar';
+    bar.style.width = `${Math.max(1, 100 * r.ran / longest)}%`;
+    const time = document.createElement('span');
+    time.className = 'time';
+    time.textContent = `${r.ran < 10 ? r.ran.toFixed(1) : Math.round(r.ran)} ms`;
+    const what = document.createElement('span');
+    what.className = 'what';
+    what.textContent = r.what;
+    box.append(label, bar, time, what);
+  }
+}
+
+// what one run's loops did, from the host's report of the card
+function account(mode, has, report, ran, before) {
+  const cards = (report ?? []).reduce((sum, site) => sum + site.card, 0);
+  const there = (report ?? []).reduce((sum, site) => sum + site.card_ms, 0);
+  const where = !has ? 'No card' : mode === 'off' ? 'Processor' : mode === 'on' ? 'Card' : 'Where it pays';
+  let what = `compiled in ${Math.round(before)} ms; `;
+  if (!has) what += 'this browser gives the page no graphics card, the processor ran every loop';
+  else if (cards === 0) what += 'every loop ran on the processor';
+  else what += `${cards} ${cards === 1 ? 'loop' : 'loops'} on the card, ${there < 10 ? there.toFixed(1) : Math.round(there)} ms there`;
+  return { where, cards, ran, what };
+}
+
 // the program in a worker of its own: `scaly run main.scaly`, the compiler
-// and the program in one memory (worker.mjs, side.mjs); no standard input
+// and the program in one memory (worker.mjs, side.mjs); no standard input.
+// A step for the card runs with --gpu, over the page's card as the reader
+// chose: on the processor, on the card, or where it pays.
 function run() {
   if (!compiler) return;
   if (worker) { stop(); append('\n[stopped]\n', 'note'); return; }
@@ -183,6 +266,9 @@ function run() {
   const state = new Int32Array(stdin, 0, 2);
   const decoders = { out: new TextDecoder(), err: new TextDecoder() };
   const t0 = performance.now();
+  const card = steps[at].gpu, mode = $('where').value, step = at;
+  let began = null, has = false;
+  $('pictures').textContent = '';
   const files = { ...compiler.files, '/work/main.scaly': editor.value };
   worker = new Worker('worker.mjs', { type: 'module' });
   runButton.textContent = 'Stop';
@@ -197,8 +283,22 @@ function run() {
         Atomics.store(state, 0, 2);
         Atomics.notify(state, 0);
         break;
+      case 'card':
+        has = data.has;
+        break;
+      case 'began':
+        began ??= performance.now();
+        break;
       case 'exit': {
-        const ms = Math.round(performance.now() - t0);
+        const now = performance.now();
+        const ms = Math.round(now - t0);
+        showPictures(data.pictures);
+        if (card && began !== null && data.status === 0) {
+          const list = runs.get(step) ?? [];
+          list.push(account(mode, has, data.report, now - began, began - t0));
+          runs.set(step, list.slice(-6));
+          showRuns();
+        }
         stop();
         if (data.status !== 0) append(`\n[the program ended with status ${data.status}]\n`, 'note');
         status(`Done in ${ms} ms.`, data.status === 0 ? 'ok' : 'bad');
@@ -215,7 +315,10 @@ function run() {
     stop();
     append(`\n[the worker failed: ${e.message}]\n`, 'err');
   };
-  worker.postMessage({ module: compiler.module, files, stdin, args: ['scaly', 'run', 'main.scaly'] });
+  if (card)
+    worker.postMessage({ module: compiler.module, files, stdin, args: ['scaly', 'run', '--gpu', 'main.scaly'], gpu: mode });
+  else
+    worker.postMessage({ module: compiler.module, files, stdin, args: ['scaly', 'run', 'main.scaly'] });
 }
 
 runButton.onclick = run;
@@ -261,6 +364,7 @@ async function loadSteps() {
       title: s.querySelector('h2').textContent,
       prose: s.querySelector('.prose').innerHTML,
       program: program ? program.textContent : null,
+      gpu: program ? program.classList.contains('gpu') : false,
     };
   });
   steps.forEach((s, i) => {

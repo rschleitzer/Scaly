@@ -11,13 +11,14 @@
 import { loadCompiler } from './load.mjs';
 
 const lines = [];
-function run(compiler, text, mode) {
+const first = new Map();     // a picture as the first run of its program wrote it
+function run(compiler, name, text, mode) {
   return new Promise(resolve => {
     const worker = new Worker('worker.mjs', { type: 'module' });
     const stdin = new SharedArrayBuffer(16);
     const state = new Int32Array(stdin, 0, 2);
     const decoders = { out: new TextDecoder(), err: new TextDecoder() };
-    const answer = { mode, card: null, stdout: '', stderr: '', status: null, cards: 0 };
+    const answer = { mode, card: null, stdout: '', stderr: '', status: null, cards: 0, began: false, pictures: [] };
     const done = () => { worker.terminate(); resolve(answer); };
     worker.onmessage = ({ data }) => {
       switch (data.type) {
@@ -25,9 +26,20 @@ function run(compiler, text, mode) {
         case 'out': answer.stdout += decoders.out.decode(data.bytes, { stream: true }); break;
         case 'err': answer.stderr += decoders.err.decode(data.bytes, { stream: true }); break;
         case 'wants': Atomics.store(state, 0, 2); Atomics.notify(state, 0); break;
+        case 'began': answer.began = true; break;
         case 'exit':
           answer.status = String(data.status);
           answer.cards = (data.report || []).reduce((sum, site) => sum + site.card, 0);
+          for (const p of data.pictures || []) {
+            // against the first run's: how many points are other
+            const words = new Uint32Array(p.bytes.buffer, p.bytes.byteOffset, p.width * p.height);
+            const key = name + '/' + p.name;
+            if (!first.has(key)) first.set(key, words);
+            const was = first.get(key);
+            let differ = 0;
+            for (let i = 0; i < words.length; i++) if (words[i] !== was[i]) differ++;
+            answer.pictures.push({ name: p.name, width: p.width, height: p.height, differ });
+          }
           done();
           break;
         case 'crash': answer.status = 'ended: ' + data.text; done(); break;
@@ -45,7 +57,7 @@ try {
   let card = true;
   for (const { name, text, modes } of sources) {
     for (const mode of modes) {
-      const answer = await run(compiler, text, mode);
+      const answer = await run(compiler, name, text, mode);
       if (answer.card === false) card = false;
       lines.push('RUN ' + JSON.stringify({ name, ...answer }));
     }

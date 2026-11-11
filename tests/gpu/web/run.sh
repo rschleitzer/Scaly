@@ -29,7 +29,10 @@
 #    programs IN the page (compiler.html), as the tour runs a step --
 #    `scaly run --gpu main.scaly`, the program a side module of the compiler
 #    -- and each must write what it writes natively, with the card and
-#    without, the card having run its loops where it is on.
+#    without, the card having run its loops where it is on. One of them
+#    (canvas.scaly) writes a picture, which the page's worker must hand
+#    back: the same but for a hundredth of its points at most -- its loop is
+#    `relaxed`.
 #
 # NOT in the bar: it needs a Chrome with WebGPU, wgpu-native and node (part 2
 # a wasi-sdk too, part 3 libLLVM built for wasm, tools/wasm/build-llvm.sh),
@@ -47,7 +50,7 @@ CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 NODE=$(tools/node.sh) || { echo "gpu-web: SKIP (no node that starts)"; exit 0; }
 
 # the programs whose loops the card must run where it is forced
-ON="nested reductions shapes integers32 relaxed gate"
+ON="nested reductions shapes integers32 relaxed gate canvas"
 # the programs that do not end under wasm as they end natively: fault_soft
 # divides by zero, which has no result -- this machine's processor answers
 # 0, wasm stops the program. With and without the card it must end alike.
@@ -55,7 +58,7 @@ UNLIKE="fault_soft"
 
 T=$(mktemp -d "${TMPDIR:-/tmp}/scaly_gpu_web.XXXXXX") || exit 1
 trap 'rm -rf "${T:?}"' EXIT
-mkdir -p "$T/site" "$T/bin" "$T/page"
+mkdir -p "$T/site" "$T/bin" "$T/page" "$T/cwd"
 WEB=$(ls -d packages/scaly/*/web | tail -1)
 PORT=${PORT:-8377}
 
@@ -72,11 +75,14 @@ page() {  # page <directory> <file> <seconds>
 
 # --- 1. the kernels -----------------------------------------------------
 built=0; names=()
-for src in tests/gpu/*.scaly tests/gpu/webgpu/*.scaly tests/gpu/web/gate.scaly; do
+for src in tests/gpu/*.scaly tests/gpu/webgpu/*.scaly tests/gpu/web/gate.scaly tests/gpu/web/canvas.scaly; do
   name=$(basename "$src" .scaly)
+  # a program is known here by its name: two of one name would be compared with each other
+  [ ! -e "$T/bin/$name.build" ] || { echo "gpu-web: FAIL — two programs are called $name"; exit 1; }
   "$STAGE" --gpu -o "$T/bin/$name" "$src" >"$T/bin/$name.build" 2>&1 || continue
   mkdir -p "$T/site/$name"
-  SCALY_GPU=on SCALY_GPU_BACKEND=webgpu SCALY_GPU_DUMP="$T/site/$name" "$T/bin/$name" >/dev/null 2>&1
+  # in a directory of its own: a program may write a file where it stands
+  (cd "$T/cwd" && SCALY_GPU=on SCALY_GPU_BACKEND=webgpu SCALY_GPU_DUMP="$T/site/$name" "$T/bin/$name" >/dev/null 2>&1)
   built=$((built+1)); names+=("$name:$src")
 done
 runs=$(cd "$T/site" && ls */*.json 2>/dev/null)
@@ -116,12 +122,12 @@ chmod 755 "$T/cc"
 failed=0; programs=()
 for entry in "${names[@]}"; do
   name=${entry%%:*}; src=${entry#*:}
-  SCALY_GPU=off "$T/bin/$name" > "$T/page/$name.native" 2>/dev/null; native_rc=$?
+  (cd "$T/cwd" && SCALY_GPU=off "$T/bin/$name" > "$T/page/$name.native" 2>/dev/null); native_rc=$?
   if ! SCALY_CC="$T/cc" SCALY_CACHE="$T/cache" "$TOOL" build --target wasm32-wasip1 --gpu "$src" -o "$T/page/$name.wasm" > "$T/page/$name.build" 2>&1; then
     echo "  FAIL $name: no wasm build ($(grep -m1 -i error "$T/page/$name.build" | cut -c1-120))"; failed=1; continue
   fi
   # a host without a card: the command line
-  "$NODE" --no-warnings "$WEB/run.mjs" "$T/page/$name.wasm" > "$T/page/$name.nocard" 2>/dev/null; nocard_rc=$?
+  (cd "$T/cwd" && "$NODE" --no-warnings "$OLDPWD/$WEB/run.mjs" "$T/page/$name.wasm" > "$T/page/$name.nocard" 2>/dev/null); nocard_rc=$?
   case " $UNLIKE " in *" $name "*) native_rc=unlike ;; esac
   echo "$native_rc" > "$T/page/$name.rc"
   if [ "$native_rc" = unlike ]; then
@@ -198,7 +204,8 @@ python3 - "$T/repl/sources.json" <<'PY'
 import json, sys
 wanted = [('integers32', 'tests/gpu/webgpu/integers32.scaly', ['off', 'on']),
           ('reductions', 'tests/gpu/reductions.scaly', ['off', 'on']),
-          ('gate', 'tests/gpu/web/gate.scaly', ['off', 'auto'])]
+          ('gate', 'tests/gpu/web/gate.scaly', ['off', 'auto']),
+          ('canvas', 'tests/gpu/web/canvas.scaly', ['off', 'on'])]
 json.dump([{'name': n, 'text': open(p).read(), 'modes': m} for n, p, m in wanted], open(sys.argv[1], 'w'))
 PY
 cp tests/gpu/web/compiler.html "$T/repl/"
@@ -236,6 +243,16 @@ for name, modes in sorted(by.items()):
             fails.append('%s: %s, the card changed what the program writes (%s; %s)' % (name, mode, r['status'], r['stderr'][-200:]))
         if r['cards'] < (2 if mode == 'auto' else 1):
             fails.append('%s: %s, the card ran %d loops' % (name, mode, r['cards']))
+    for mode, r in modes.items():
+        if not r['began']:
+            fails.append('%s: %s, the worker did not say when the program began' % (name, mode))
+        if name == 'canvas':
+            p = r['pictures']
+            if len(p) != 1 or (p[0]['width'], p[0]['height']) != (300, 200):
+                fails.append('canvas: %s, the worker handed back %s, not one picture of 300 x 200' % (mode, p))
+            elif p[0]['differ'] > 600:
+                # relaxed: a card's floating point may put a point on the other side of the edge
+                fails.append('canvas: %s, %d of 60000 points other than without the card' % (mode, p[0]['differ']))
 for f in fails:
     print('  FAIL ' + f)
 print('gpu-web: compiler %s — %d programs compiled in the page and run with --gpu; the card ran %d loops'

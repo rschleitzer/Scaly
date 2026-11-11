@@ -15,7 +15,9 @@
 ;; the section, with its title, its prose -- every paragraph and fragment
 ;; since the program before, and after the last program of a subsection what
 ;; follows it --, and the program in a pre element of class "program". A listing marked
-;; role="fragment" (part of a program, two files, a package line) is prose.
+;; role="fragment" (part of a program, two files, a package line) is prose;
+;; one marked role="gpu" is a program for the graphics card too (class
+;; "program gpu": the page runs it with --gpu and lets the reader choose).
 ;; A paragraph marked role="spec-only" -- the pointer to this very page -- is
 ;; left out. A subsection without a program is one step of prose alone.
 ;; tests/tour/run.sh runs every program.
@@ -67,7 +69,11 @@
             out
             (loop (cdr nodes) (sosofo-append out (process-node-list (car nodes)))))))
     (if (cdr step)
-        (make element gi: "pre" attributes: '(("class" "program"))
+        (make element gi: "pre"
+              attributes: (list (list "class"
+                                      (if (equal? (attribute-string "role" (cdr step)) "gpu")
+                                          "program gpu"
+                                          "program")))
           (process-node-list (children (cdr step))))
         (empty-sosofo))))
 

@@ -22,6 +22,13 @@
 // kernels there. `card` comes back before anything else, with whether the
 // page has one (`has`), and with `exit` the host's `report`, per loop how
 // often it went where. Without a card every loop stays on the processor.
+//
+// `began` comes when a compiled program (or an entry of the REPL) starts to
+// run: what lies before it is the compiler's time. And with `exit` come the
+// `pictures` the program wrote under /work: a file whose name ends in
+// `.<width>x<height>.rgba` and holds four bytes per point -- red, green,
+// blue, opacity, row by row, what a canvas takes (`File.write_bytes` of a
+// Vector[u32]'s `as_bytes()`).
 import { MemoryFiles, Wasi } from './wasi.mjs';
 import { SideModules } from './side.mjs';
 import { GpuHost } from './gpu-host.mjs';
@@ -56,11 +63,25 @@ onmessage = async ({ data }) => {
   });
   const side = new SideModules(path => files.read(path),
                                text => postMessage({ type: 'err', bytes: encoder.encode(text + '\n') }));
+  const side_imports = side.imports();
+  const run_side = side_imports.scaly.run;
+  side_imports.scaly.run = (...call) => {
+    postMessage({ type: 'began' });
+    return run_side(...call);
+  };
   try {
-    const repl = new WebAssembly.Instance(module, { ...wasi.imports(), ...side.imports() });
+    const repl = new WebAssembly.Instance(module, { ...wasi.imports(), ...side_imports });
     side.attach(repl);
     const status = wasi.start(repl);
-    postMessage({ type: 'exit', status, report: gpu ? gpu.report() : null });
+    const pictures = [];
+    for (const path of new Set(files.written)) {
+      const size = /\.(\d+)x(\d+)\.rgba$/.exec(path);
+      const bytes = size && path.startsWith('/work/') ? files.read(path) : null;
+      if (bytes && bytes.length === Number(size[1]) * Number(size[2]) * 4)
+        pictures.push({ name: path.slice(6), width: Number(size[1]), height: Number(size[2]), bytes: bytes.slice() });
+    }
+    postMessage({ type: 'exit', status, report: gpu ? gpu.report() : null, pictures },
+                pictures.map(p => p.bytes.buffer));
   } catch (e) {
     postMessage({ type: 'crash', text: String(e) });
   }
