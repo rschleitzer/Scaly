@@ -68,13 +68,14 @@ procedure wave_range(mutable r: Vector[i64], n: int, bias: i64)
     }
 }
 
-procedure wave_iter(mutable r: Vector[i64], items: Vector[Item], bias: i64)
+; (a sum, not a put at item.idx: two elements could name one slot, and
+; such a loop runs on one core)
+procedure wave_iter(items: Vector[Item], bias: i64) returns i64
 {
+    var s 0 as i64
     for item in items
-    {
-        let v spin_big(item.val) + bias
-        r.put(item.idx, v)
-    }
+        s := s + (spin_big(item.val) + bias)
+    s
 }
 
 function vsum(r: Vector[i64], n: size_t) returns i64
@@ -159,7 +160,8 @@ if vsum(r3b, 16 as size_t) <> (12799680232 as i64)
     Console.println "wave3b-sum-bad"
     exit 1
 }
-if TaskPool.submit_count(pool) = subs3
+let subs3b TaskPool.submit_count(pool)
+if subs3b = subs3
 {
     Console.println "wave3b-no-fork"
     exit 1
@@ -175,15 +177,13 @@ while j < (512 as size_t)
     items.put(j, Item(j, j as i64))
     j := j + 1
 }
-var r4 Vector[i64](512)
-wave_iter(r4, items, bias)
-if vsum(r4, 512 as size_t) <> (409589894400 as i64)
+if wave_iter(items, bias) <> (409589894400 as i64)
 {
     Console.println "wave4-sum-bad"
     exit 1
 }
 let subs4 TaskPool.submit_count(pool)
-if subs4 = subs3
+if subs4 = subs3b
 {
     Console.println "wave4-no-fork"
     exit 1
@@ -195,9 +195,7 @@ while j < (16 as size_t)
     items2.put(j, Item(j, j as i64))
     j := j + 1
 }
-var r4b Vector[i64](16)
-wave_iter(r4b, items2, bias)
-if vsum(r4b, 16 as size_t) <> (12799680232 as i64)
+if wave_iter(items2, bias) <> (12799680232 as i64)
 {
     Console.println "wave4b-sum-bad"
     exit 1

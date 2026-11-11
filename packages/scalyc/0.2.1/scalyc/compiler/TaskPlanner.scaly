@@ -171,6 +171,44 @@ define TaskPlanner
         ; had made the inner loop promotable, 2026-09-26).
         var cls_own_label: String
         cls_inner_labels: Array[String]
+        ; DISJOINT SLOTS (put_is_disjoint#, check_puts#).
+        ; cls_var_counter: the loop variable counts the rounds (an element
+        ; of a sequence can repeat) and no binding of the body hides it;
+        ; cls_bound: the bound of the classified `for`, if it has one.
+        ; The ACCESSES to loop-external buffers, one slot each in five
+        ; lists: the receiver, the base of the index's form, where its
+        ; levels begin in cls_levels and how many, and the kind -- 0 a put,
+        ; 1 an indexed read, 2 one whose index has no form. cls_occs: every
+        ; other occurrence of a loop-external name that is not a scalar
+        ; read through its fields. The COUNTED LOOPS the walk stands in,
+        ; innermost last: the counter (emptied where a binding hides it),
+        ; the bound, for a `while j + k < bound` the k, and where its step
+        ; is written (0 for a `for`). cls_nonneg: the body's names bound as
+        ; `var j <literal>`; cls_bad: those bound or written any other way;
+        ; cls_relied: the while counters a put's form stood on. cls_site:
+        ; where the index being judged is written, and whether it is a
+        ; put's. cls_terms: the addends of the sum being taken apart.
+        var cls_var_counter: bool
+        var cls_has_put: bool
+        var cls_site: size_t
+        var cls_site_put: bool
+        cls_bound: Array[PlannedOperand]
+        cls_acc_recvs: Array[PlannedOperand]
+        cls_acc_bases: Array[PlannedOperand]
+        cls_acc_from: Array[size_t]
+        cls_acc_count: Array[size_t]
+        cls_acc_kind: Array[int]
+        cls_levels: Array[PlannedOperand]
+        cls_level_kinds: Array[int]
+        cls_occs: Array[PlannedOperand]
+        cls_inner_names: Array[String]
+        cls_inner_bounds: Array[PlannedOperand]
+        cls_inner_slack: Array[size_t]
+        cls_inner_steps: Array[size_t]
+        cls_nonneg: Array[String]
+        cls_bad: Array[String]
+        cls_relied: Array[String]
+        cls_terms: Array[PlannedOperand]
     )
     {
         init()
@@ -221,6 +259,27 @@ define TaskPlanner
             red_counts := Array[size_t]^this()
             cls_own_label := String^this("")
             cls_inner_labels := Array[String]^this()
+            cls_var_counter := false
+            cls_has_put := false
+            cls_site := 0
+            cls_site_put := false
+            cls_bound := Array[PlannedOperand]^this()
+            cls_acc_recvs := Array[PlannedOperand]^this()
+            cls_acc_bases := Array[PlannedOperand]^this()
+            cls_acc_from := Array[size_t]^this()
+            cls_acc_count := Array[size_t]^this()
+            cls_acc_kind := Array[int]^this()
+            cls_levels := Array[PlannedOperand]^this()
+            cls_level_kinds := Array[int]^this()
+            cls_occs := Array[PlannedOperand]^this()
+            cls_inner_names := Array[String]^this()
+            cls_inner_bounds := Array[PlannedOperand]^this()
+            cls_inner_slack := Array[size_t]^this()
+            cls_inner_steps := Array[size_t]^this()
+            cls_nonneg := Array[String]^this()
+            cls_bad := Array[String]^this()
+            cls_relied := Array[String]^this()
+            cls_terms := Array[PlannedOperand]^this()
         }
 
         ; ================================================================
@@ -531,12 +590,21 @@ define TaskPlanner
             cls_keeps := false
             cls_takes_address := false
             this.reset_reductions()
+            this.reset_puts()
+            cls_var_counter := fr.is_iterator_loop = false
+            if cls_var_counter and fr.expr <> null and fr.expr.length = 1
+            {
+                let b_ptr fr.expr.get 0
+                if b_ptr <> null
+                    cls_bound.add(b_ptr.unwrap())
+            }
             if file_is_foundation(current_file)
                 this.block("engine foundation module")
             if cls_blocked = false
                 this.cls_action(fr.body)
             this.check_kept_values()
             this.check_reductions(fr.body, null)
+            this.check_puts()
         }
 
         ; ================================================================
@@ -1362,6 +1430,8 @@ define TaskPlanner
             cls_keeps := false
             cls_takes_address := false
             this.reset_reductions()
+            this.reset_puts()
+            cls_var_counter := true
             if file_is_foundation(current_file)
                 this.block("engine foundation module")
             this.cls_operands(wh.cond.operation)
@@ -1369,6 +1439,7 @@ define TaskPlanner
                 this.cls_action(wh.body)
             this.check_kept_values()
             this.check_reductions(wh.body, wh.cond.operation)
+            this.check_puts()
             cls_counter_mode := false
             if cls_counter_writes > cls_counter_steps
                 this.block("counter written besides its step")
@@ -1732,6 +1803,9 @@ define TaskPlanner
         ; itself (the laundering counterexample: `let r outer` + `r.add i`).
         procedure add_body_name(mutable this: TaskPlanner, name: String, aliases_external: bool)
         {
+            this.hide_counter(name)
+            let b_copy String^this(name)
+            cls_bad.add b_copy
             let n_copy String^this(name)
             if aliases_external
             {
@@ -1852,79 +1926,6 @@ define TaskPlanner
             true
         }
 
-        ; Does the operand tree read the given name? Used to accept a
-        ; Vector.put whose index is derived from the loop variable
-        ; (disjoint-slot write). Conservative: unknown shapes read nothing,
-        ; so an index that hides the loop variable behind them stays a
-        ; blocker (never a false "parallel").
-        function operands_read_name(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?, name: String) returns bool
-        {
-            if ops = null
-                return false
-            var i: size_t 0
-            while i < ops.length
-            {
-                let op_ptr ops.get i
-                if op_ptr <> null and this.operand_reads_name(op_ptr.unwrap(), name)
-                    return true
-                i := i + 1
-            }
-            false
-        }
-
-        function operand_reads_name(this: TaskPlanner, op: PlannedOperand, name: String) returns bool
-        {
-            choose op.expr
-                when v: Variable
-                {
-                    if v.name = name
-                        return true
-                }
-                when call: Call
-                {
-                    if call.args <> null
-                    {
-                        var i: size_t 0
-                        while i < call.args.length
-                        {
-                            let ap call.args.get i
-                            if ap <> null and this.operand_reads_name(ap.unwrap(), name)
-                                return true
-                            i := i + 1
-                        }
-                    }
-                }
-                when as_expr: As
-                {
-                    if as_expr.value <> null
-                    {
-                        let r as_expr.value
-                        if this.operand_reads_name((*r), name)
-                            return true
-                    }
-                }
-                when tp: Tuple
-                {
-                    ; A parenthesized expression plans as a one-component
-                    ; Tuple — `(i * n + j) as size_t` must still count as
-                    ; reading the loop variable.
-                    if tp.components <> null
-                    {
-                        var i: size_t 0
-                        while i < tp.components.length
-                        {
-                            let c_ptr tp.components.get i
-                            if c_ptr <> null and this.operands_read_name(c_ptr.value, name)
-                                return true
-                            i := i + 1
-                        }
-                    }
-                }
-                else
-                    0
-            false
-        }
-
         procedure cls_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
         {
             if cls_blocked
@@ -1971,6 +1972,7 @@ define TaskPlanner
                 if cls_counter_mode
                     this.note_counter_step(act)
                 this.cls_write_target((*act.target))
+                this.note_local_write(act)
                 if cls_blocked
                     return
                 ; Alias soundness: a `set LOCAL: <expr reaching
@@ -2044,7 +2046,10 @@ define TaskPlanner
                     if binding.binding_item.name <> null
                     {
                         let bn_alias this.ops_alias_external(binding.operation)
-                        this.add_body_name((*binding.binding_item.name), bn_alias)
+                        if bn_alias = false and TaskPlanner.starts_counter(binding)
+                            this.add_counter_start((*binding.binding_item.name))
+                        else
+                            this.add_body_name((*binding.binding_item.name), bn_alias)
                     }
                 }
                 when ret: Return
@@ -2090,7 +2095,7 @@ define TaskPlanner
                 when call: Call
                     this.cls_call(call)
                 when v: Variable
-                    0
+                    this.note_occurrence(op, v.name)
                 when g: GlobalRef
                     this.check_global_read(g)
                 when tp: Tuple
@@ -2202,9 +2207,12 @@ define TaskPlanner
                     let fe_alias this.ops_alias_external(fr.expr)
                     this.add_body_name(fr.identifier, fe_alias)
                     this.note_inner_label(fr.loop_label)
+                    let inner_mark cls_inner_names.length
+                    this.enter_counted(fr)
                     cls_depth := cls_depth + 1
                     this.cls_action(fr.body)
                     cls_depth := cls_depth - 1
+                    this.leave_counted(inner_mark)
                 }
                 when wh: While
                 {
@@ -2215,9 +2223,12 @@ define TaskPlanner
                         this.add_body_name((*wh.cond.binding_item.name), wc_alias)
                     }
                     this.note_inner_label(wh.loop_label)
+                    let inner_mark cls_inner_names.length
+                    this.enter_while(wh)
                     cls_depth := cls_depth + 1
                     this.cls_action(wh.body)
                     cls_depth := cls_depth - 1
+                    this.leave_counted(inner_mark)
                 }
                 when rp: Repeat
                 {
@@ -2243,6 +2254,9 @@ define TaskPlanner
                             if w_ptr <> null
                             {
                                 let w (*w_ptr)
+                                this.hide_counter(w.name)
+                                let cb_copy String^this(w.name)
+                                cls_bad.add cb_copy
                                 let cn_copy String^this(w.name)
                                 cls_locals.add cn_copy
                                 this.cls_statement_ref(w.consequent)
@@ -2881,6 +2895,7 @@ define TaskPlanner
             }
             if call.is_operator and call.name = "&" and call.args <> null and call.args.length = 1
                 cls_takes_address := true
+            this.note_indexed_read(call)
             ; a SIMD store's lanes are not proven disjoint across iterations
             if call.is_intrinsic and TaskPlanner.is_simd_store(call.name)
             {
@@ -2906,13 +2921,11 @@ define TaskPlanner
             }
             ; The canonical disjoint result target: `results.put(i, v)` on a
             ; Vector. A body-local receiver may be written freely; an
-            ; external receiver qualifies only when the index reads the
-            ; loop variable (disjoint slots per iteration).
-            if call.name = "put"
+            ; external receiver qualifies only where two rounds provably
+            ; never write one slot (put_is_disjoint#).
+            if TaskPlanner.is_slot_store(call)
             {
-                if this.put_is_disjoint(call)
-                    return
-                this.block("put into an external vector: loop-invariant index or non-scalar value")
+                this.put_is_disjoint(call)
                 return
             }
             this.callee_verdict(call)
@@ -2944,58 +2957,1157 @@ define TaskPlanner
             false
         }
 
-        ; put(receiver, index, element): receiver = args[0], index = args[1].
-        procedure put_is_disjoint(mutable this: TaskPlanner, call: PlannedCall) returns bool
+        ; ================================================================
+        ; Disjoint slots. `out.put(index, value)` into a buffer that lives
+        ; outside the loop is the one write a parallel body may make to
+        ; outside state, and it holds on three things, each PROVEN here:
+        ;   - two rounds never compute the same index (index_form#),
+        ;   - every put of the body into one buffer has the same FORM --
+        ;     two indices that each differ per round can still meet (`i`
+        ;     and `i + 1`),
+        ;   - the buffer is otherwise only read inside that form
+        ;     (check_puts#).
+        ; What cannot be shown blocks. A buffer is known by its NAME, the
+        ; outside variable and the fields it is reached through. Not
+        ; followed: one buffer under two unrelated outside names (a second
+        ; Vector value over the same memory, its `data` pointer).
+        ;
+        ; The FORM of an index is a base and levels. The base is one value
+        ; per round: the counter, plus or minus what stays the same, times a
+        ; literal. A level `x * m + r` with 0 <= r < m gives every value of x
+        ; a row of m slots of its own, so rows of two rounds do not meet --
+        ; r a literal below a literal m, the counter of a `for r in m`, or
+        ; the counter of a `while r < m` before its step. The other level,
+        ; `z * m + i` with i the counter of the classified `for i in m`,
+        ; holds for any z: the value's remainder by m names the round.
+        ; Products count only in 64 bits: there one that wraps lies outside
+        ; every buffer a round earlier, and the put has trapped.
+        ; ================================================================
+
+        ; `put` of a Vector, a Slice or an Array: the store into exactly the
+        ; slot its index names. Any other routine called `put` is a callee
+        ; like every other one.
+        function is_slot_store(call: PlannedCall) returns bool
         {
-            if call.args = null
+            if call.name <> "put"
                 return false
-            if call.args.length < 3
+            if call.args = null or call.args.length <> 3
                 return false
-            let recv_ptr call.args.get 0
-            if recv_ptr <> null
+            TaskPlanner.is_buffer_symbol(call.mangled_name)
+        }
+
+        ; a member of the standard library's Vector, Slice or Array
+        function is_buffer_symbol(m: String) returns bool
+        {
+            if m.starts_with(String("_ZN6VectorI"))
+                return true
+            if m.starts_with(String("_ZN5SliceI"))
+                return true
+            m.starts_with(String("_ZN5ArrayI"))
+        }
+
+        procedure reset_puts(mutable this: TaskPlanner)
+        {
+            cls_has_put := false
+            cls_site := 0
+            cls_site_put := false
+            cls_acc_recvs.length := 0
+            cls_acc_bases.length := 0
+            cls_acc_from.length := 0
+            cls_acc_count.length := 0
+            cls_acc_kind.length := 0
+            cls_levels.length := 0
+            cls_level_kinds.length := 0
+            cls_occs.length := 0
+            cls_inner_names.length := 0
+            cls_inner_bounds.length := 0
+            cls_inner_slack.length := 0
+            cls_inner_steps.length := 0
+            cls_bound.length := 0
+            cls_nonneg.length := 0
+            cls_bad.length := 0
+            cls_relied.length := 0
+            cls_terms.length := 0
+        }
+
+        function has_hops(op: PlannedOperand) returns bool
+        {
+            if op.member_access = null
+                return false
+            op.member_access.length > 0
+        }
+
+        ; no hop, or fields only
+        function field_hops(op: PlannedOperand) returns bool
+        {
+            if op.member_access = null
+                return true
+            let hops (*op.member_access)
+            var i: size_t 0
+            while i < hops.length
             {
-                let recv recv_ptr.unwrap()
-                var recv_bare true
-                if recv.member_access <> null
+                let h hops.get i
+                if h = null
+                    return false
+                if h.is_method
+                    return false
+                i := i + 1
+            }
+            true
+        }
+
+        ; the variable an operand begins at; empty for a computed value
+        function root_name(op: PlannedOperand) returns String
+        {
+            choose op.expr
+                when v: Variable
+                    return String(v.name)
+                else
+                    0
+            ""
+        }
+
+        ; Two operands of one root: 0 the same field path, 1 two different
+        ; fields (their memory does not meet), 2 one contains the other.
+        function hop_relation(a: PlannedOperand, b: PlannedOperand) returns int
+        {
+            var al: size_t 0
+            if a.member_access <> null
+                al := a.member_access.length
+            var bl: size_t 0
+            if b.member_access <> null
+                bl := b.member_access.length
+            var i: size_t 0
+            while i < al and i < bl
+            {
+                let ah a.member_access.get i
+                let bh b.member_access.get i
+                if ah = null or bh = null
+                    return 2
+                if ah.is_method or bh.is_method
+                    return 2
+                if ah.name <> bh.name
+                    return 1
+                i := i + 1
+            }
+            if al = bl
+                return 0
+            2
+        }
+
+        function name_in(names: Array[String], name: String) returns bool
+        {
+            var i: size_t 0
+            while i < names.length
+            {
+                if names[i] = name
+                    return true
+                i := i + 1
+            }
+            false
+        }
+
+        ; bound by the body, or the loop variable itself
+        function is_body_name(this: TaskPlanner, name: String) returns bool
+        {
+            if name = cls_loop_var
+                return true
+            if TaskPlanner.name_in(cls_locals, name)
+                return true
+            TaskPlanner.name_in(cls_aliased, name)
+        }
+
+        ; A binding of the body takes a counter's name: from here on the
+        ; name no longer counts.
+        procedure hide_counter(mutable this: TaskPlanner, name: String)
+        {
+            if name = cls_loop_var
+                cls_var_counter := false
+            var i: size_t 0
+            while i < cls_inner_names.length
+            {
+                if cls_inner_names[i] = name
                 {
-                    let ma (*recv.member_access)
-                    if ma.length > 0
-                        recv_bare := false
+                    let hidden String^this("")
+                    cls_inner_names.put(i, hidden)
                 }
-                if recv_bare
-                    choose recv.expr
-                        when v: Variable
+                i := i + 1
+            }
+        }
+
+        ; `var j 0`: where a while's counter can begin
+        function starts_counter(binding: PlannedBinding) returns bool
+        {
+            if binding.binding_type <> "var"
+                return false
+            if binding.operation = null or binding.operation.length <> 1
+                return false
+            let op_ptr binding.operation.get 0
+            if op_ptr = null
+                return false
+            TaskPlanner.small_literal(op_ptr.unwrap()) >= 0
+        }
+
+        ; add_body_name# for such a binding: the one way a body's name
+        ; does not come to cls_bad
+        procedure add_counter_start(mutable this: TaskPlanner, name: String)
+        {
+            this.hide_counter(name)
+            let n_copy String^this(name)
+            cls_locals.add n_copy
+            let c_copy String^this(name)
+            cls_nonneg.add c_copy
+        }
+
+        procedure leave_counted(mutable this: TaskPlanner, mark: size_t)
+        {
+            cls_inner_names.length := mark
+            cls_inner_bounds.length := mark
+            cls_inner_slack.length := mark
+            cls_inner_steps.length := mark
+        }
+
+        ; A write of a body's variable: the step of the while that counts
+        ; with it, or the end of its counting.
+        procedure note_local_write(mutable this: TaskPlanner, act: PlannedAction)
+        {
+            if act.target = null
+                return
+            let t (*act.target)
+            if t.length <> 1
+                return
+            let tp_ t.get 0
+            if tp_ = null
+                return
+            let name this.bare_variable_name(tp_.unwrap())
+            if name.get_length() = 0
+                return
+            var s cls_inner_names.length
+            while s > 0
+            {
+                s := s - 1
+                if cls_inner_names[s] = name
+                {
+                    if cls_inner_steps[s] <> 0 and cls_inner_steps[s] = act.loc.start
+                        return
+                    s := 0
+                }
+            }
+            let n_copy String^this(name)
+            cls_bad.add n_copy
+        }
+
+        ; `for j in bound` inside the body: j counts from 0 below bound.
+        procedure enter_counted(mutable this: TaskPlanner, fr: PlannedFor)
+        {
+            if fr.is_iterator_loop
+                return
+            let ops fr.expr
+            if ops = null
+                return
+            if ops.length <> 1
+                return
+            let b_ptr ops.get 0
+            if b_ptr = null
+                return
+            let n_copy String^this(fr.identifier)
+            cls_inner_names.add n_copy
+            cls_inner_bounds.add(b_ptr.unwrap())
+            cls_inner_slack.add 0
+            cls_inner_steps.add 0
+        }
+
+        ; `while j < bound` or `while j + k < bound` inside the body, with
+        ; `j := j + step` among the body's own statements: before that step
+        ; j + k is below bound. That j never falls is the walk's to show
+        ; (note_binding#, note_local_write#).
+        procedure enter_while(mutable this: TaskPlanner, wh: PlannedWhile)
+        {
+            if wh.cond.binding_item.name <> null
+                return
+            let ops wh.cond.operation
+            if ops = null
+                return
+            if ops.length <> 1
+                return
+            let op_ptr ops.get 0
+            if op_ptr = null
+                return
+            let op op_ptr.unwrap()
+            choose op.expr
+                when call: Call
+                {
+                    if call.name <> "<" or TaskPlanner.is_integer_binary(call) = false
+                        return
+                    let l_ptr call.args.get 0
+                    let r_ptr call.args.get 1
+                    let left l_ptr.unwrap()
+                    var name TaskPlanner.counter_name(left)
+                    var slack: size_t 0
+                    if name.get_length() = 0
+                    {
+                        choose left.expr
+                            when sum: Call
+                            {
+                                if sum.name <> "+" or TaskPlanner.is_integer_binary(sum) = false
+                                    return
+                                let a_ptr sum.args.get 0
+                                let b_ptr sum.args.get 1
+                                let k TaskPlanner.small_literal(b_ptr.unwrap())
+                                if k < 0
+                                    return
+                                name := TaskPlanner.counter_name(a_ptr.unwrap())
+                                slack := k as size_t
+                            }
+                            else
+                                return
+                    }
+                    if name.get_length() = 0
+                        return
+                    let step this.step_offset(wh.body, name)
+                    if step = 0
+                        return
+                    let n_copy String^this(name)
+                    cls_inner_names.add n_copy
+                    cls_inner_bounds.add(r_ptr.unwrap())
+                    cls_inner_slack.add slack
+                    cls_inner_steps.add step
+                }
+                else
+                    0
+        }
+
+        ; Where the body's own statements first write `name`, if that write
+        ; is `name := name + literal` above zero; 0 otherwise.
+        function step_offset(this: TaskPlanner, body: PlannedAction, name: String) returns size_t
+        {
+            let stmts this.body_statements(body)
+            if stmts = null
+                return 0
+            var i: size_t 0
+            while i < stmts.length
+            {
+                let s_ptr stmts.get i
+                if s_ptr <> null
+                {
+                    let st s_ptr.unwrap()
+                    choose st
+                        when action: Action
                         {
-                            if this.is_local(v.name)
-                                return true
+                            if action.target <> null
+                            {
+                                let t (*action.target)
+                                if t.length = 1
+                                {
+                                    let tp_ t.get 0
+                                    if tp_ <> null and this.bare_variable_name(tp_.unwrap()) = name
+                                    {
+                                        if TaskPlanner.is_rising_step(action.source, name)
+                                            return action.loc.start
+                                        return 0
+                                    }
+                                }
+                            }
                         }
                         else
                             0
+                }
+                i := i + 1
             }
+            0
+        }
+
+        ; `name + literal`, the literal above zero
+        function is_rising_step(src: ref[Vector[PlannedOperand]]?, name: String) returns bool
+        {
+            if src = null
+                return false
+            if src.length <> 1
+                return false
+            let op_ptr src.get 0
+            if op_ptr = null
+                return false
+            let op op_ptr.unwrap()
+            choose op.expr
+                when call: Call
+                {
+                    if call.name <> "+" or TaskPlanner.is_integer_binary(call) = false
+                        return false
+                    let a_ptr call.args.get 0
+                    let b_ptr call.args.get 1
+                    if TaskPlanner.counter_name(a_ptr.unwrap()) <> name
+                        return false
+                    return TaskPlanner.small_literal(b_ptr.unwrap()) > 0
+                }
+                else
+                    0
+            false
+        }
+
+        ; An occurrence of a loop-external name a put could matter to:
+        ; every one but a scalar read through its fields (`v.length`,
+        ; `this.width`, a plain number).
+        procedure note_occurrence(mutable this: TaskPlanner, op: PlannedOperand, name: String)
+        {
+            if this.is_body_name(name)
+                return
+            if this.value_can_alias(op.result_type) = false and TaskPlanner.field_hops(op)
+                return
+            cls_occs.add op
+        }
+
+        ; `xs[i]`, `xs.get(i)`, `xs.at(i)` on a loop-external name: a read
+        ; of one slot, kept with the form of its index.
+        procedure note_indexed_read(mutable this: TaskPlanner, call: PlannedCall)
+        {
+            if call.args = null or call.args.length <> 2
+                return
+            if call.name <> "[]" and call.name <> "get" and call.name <> "at"
+                return
+            let recv_ptr call.args.get 0
             let idx_ptr call.args.get 1
-            if idx_ptr = null
+            if recv_ptr = null or idx_ptr = null
+                return
+            let recv recv_ptr.unwrap()
+            let root TaskPlanner.root_name(recv)
+            if root.get_length() = 0 or this.is_body_name(root)
+                return
+            let idx idx_ptr.unwrap()
+            cls_site := idx.loc.start
+            cls_site_put := false
+            let lv cls_levels.length
+            let bs cls_acc_bases.length
+            var kind 1
+            if this.index_form(idx) = false
+            {
+                cls_levels.length := lv
+                cls_level_kinds.length := lv
+                cls_acc_bases.length := bs
+                cls_acc_bases.add idx
+                kind := 2
+            }
+            cls_acc_recvs.add recv
+            cls_acc_from.add lv
+            cls_acc_count.add(cls_levels.length - lv)
+            cls_acc_kind.add kind
+        }
+
+        ; bits of an integer type whose width is the same on every target;
+        ; 0 for anything else
+        function int_bits(t: PlannedType) returns int
+        {
+            let nm t.name
+            match nm
+                case "int" case "uint" case "i64" case "u64" case "size_t": return 64
+                case "i32" case "u32": return 32
+                case "i16" case "u16": return 16
+                case "i8" case "u8": return 8
+            0
+        }
+
+        ; a cast between integers that loses no bit: two values stay two
+        function cast_keeps(inner: PlannedOperand, target: PlannedType) returns bool
+        {
+            let from TaskPlanner.int_bits(inner.result_type)
+            let to TaskPlanner.int_bits(target)
+            if from = 0 or to = 0
                 return false
-            if this.operand_reads_name(idx_ptr.unwrap(), cls_loop_var) = false
+            to >= from
+        }
+
+        ; a cast from 64 bits to 64 bits: the same number in a sum
+        function cast_same(inner: PlannedOperand, target: PlannedType) returns bool
+        {
+            if TaskPlanner.int_bits(inner.result_type) <> 64
                 return false
+            TaskPlanner.int_bits(target) = 64
+        }
+
+        ; `(a)`: one unnamed component of one operand, built nowhere
+        function is_grouping(tp: PlannedTuple) returns bool
+        {
+            if tp.is_region_alloc
+                return false
+            if tp.components = null
+                return false
+            if tp.components.length <> 1
+                return false
+            let c_ptr tp.components.get 0
+            if c_ptr = null
+                return false
+            let c c_ptr.unwrap()
+            if c.name <> null
+                return false
+            if c.value = null
+                return false
+            c.value.length = 1
+        }
+
+        ; the compiler's own arithmetic on two integers
+        function is_integer_binary(call: PlannedCall) returns bool
+        {
+            if call.is_indirect
+                return false
+            if call.is_operator = false and call.is_intrinsic = false
+                return false
+            if call.args = null or call.args.length <> 2
+                return false
+            let a_ptr call.args.get 0
+            let b_ptr call.args.get 1
+            if a_ptr = null or b_ptr = null
+                return false
+            if TaskPlanner.int_bits(a_ptr.unwrap().result_type) = 0
+                return false
+            TaskPlanner.int_bits(b_ptr.unwrap().result_type) > 0
+        }
+
+        ; An integer literal below 2^31, under groupings and casts that
+        ; keep every bit: its value. -1 for anything else.
+        function small_literal(op: PlannedOperand) returns int
+        {
+            if TaskPlanner.has_hops(op)
+                return 0 - 1
+            choose op.expr
+                when c: Constant
+                {
+                    choose c.value
+                        when iv: Integer
+                        {
+                            if iv.value < 0x7fffffff
+                                return iv.value as int
+                            return 0 - 1
+                        }
+                        else
+                            return 0 - 1
+                }
+                when as_expr: As
+                {
+                    if as_expr.value = null
+                        return 0 - 1
+                    let r as_expr.value
+                    if TaskPlanner.cast_keeps((*r), as_expr.target_type) = false
+                        return 0 - 1
+                    return TaskPlanner.small_literal((*r))
+                }
+                when tp: Tuple
+                {
+                    if TaskPlanner.is_grouping(tp) = false
+                        return 0 - 1
+                    let c_ptr tp.components.get 0
+                    let c c_ptr.unwrap()
+                    let in_ptr c.value.get 0
+                    if in_ptr = null
+                        return 0 - 1
+                    return TaskPlanner.small_literal(in_ptr.unwrap())
+                }
+                else
+                    0
+            0 - 1
+        }
+
+        ; A plain variable under groupings and casts that keep every bit:
+        ; its name. Empty for anything else.
+        function counter_name(op: PlannedOperand) returns String
+        {
+            if TaskPlanner.has_hops(op)
+                return ""
+            choose op.expr
+                when v: Variable
+                    return String(v.name)
+                when as_expr: As
+                {
+                    if as_expr.value = null
+                        return ""
+                    let r as_expr.value
+                    if TaskPlanner.cast_keeps((*r), as_expr.target_type) = false
+                        return ""
+                    return TaskPlanner.counter_name((*r))
+                }
+                when tp: Tuple
+                {
+                    if TaskPlanner.is_grouping(tp) = false
+                        return ""
+                    let c_ptr tp.components.get 0
+                    let c c_ptr.unwrap()
+                    let in_ptr c.value.get 0
+                    if in_ptr = null
+                        return ""
+                    return TaskPlanner.counter_name(in_ptr.unwrap())
+                }
+                else
+                    0
+            ""
+        }
+
+        ; Is the value the same in every round? A literal, a name from
+        ; outside the loop (the body writes none but through a reduction,
+        ; whose name it may not read) and its fields, a constant, and the
+        ; compiler's arithmetic and casts over such.
+        function round_invariant(this: TaskPlanner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when c: Constant
+                    return TaskPlanner.has_hops(op) = false
+                when v: Variable
+                {
+                    if this.is_body_name(v.name)
+                        return false
+                    return TaskPlanner.field_hops(op)
+                }
+                when g: GlobalRef
+                    return TaskPlanner.field_hops(op)
+                when as_expr: As
+                {
+                    if TaskPlanner.has_hops(op) or as_expr.value = null
+                        return false
+                    let r as_expr.value
+                    return this.round_invariant((*r))
+                }
+                when tp: Tuple
+                {
+                    if TaskPlanner.has_hops(op) or TaskPlanner.is_grouping(tp) = false
+                        return false
+                    let c_ptr tp.components.get 0
+                    let c c_ptr.unwrap()
+                    let in_ptr c.value.get 0
+                    if in_ptr = null
+                        return false
+                    return this.round_invariant(in_ptr.unwrap())
+                }
+                when call: Call
+                {
+                    if TaskPlanner.has_hops(op) or TaskPlanner.is_integer_binary(call) = false
+                        return false
+                    let a_ptr call.args.get 0
+                    let b_ptr call.args.get 1
+                    return this.round_invariant(a_ptr.unwrap()) and this.round_invariant(b_ptr.unwrap())
+                }
+                else
+                    0
+            false
+        }
+
+        ; One value per round without a level: the counter, under casts
+        ; that keep every bit, plus or minus what stays the same, times a
+        ; literal other than zero.
+        function plain_slot(this: TaskPlanner, op: PlannedOperand) returns bool
+        {
+            if TaskPlanner.has_hops(op)
+                return false
+            choose op.expr
+                when v: Variable
+                    return cls_var_counter and v.name = cls_loop_var
+                when as_expr: As
+                {
+                    if as_expr.value = null
+                        return false
+                    let r as_expr.value
+                    if TaskPlanner.cast_keeps((*r), as_expr.target_type) = false
+                        return false
+                    return this.plain_slot((*r))
+                }
+                when tp: Tuple
+                {
+                    if TaskPlanner.is_grouping(tp) = false
+                        return false
+                    let c_ptr tp.components.get 0
+                    let c c_ptr.unwrap()
+                    let in_ptr c.value.get 0
+                    if in_ptr = null
+                        return false
+                    return this.plain_slot(in_ptr.unwrap())
+                }
+                when call: Call
+                {
+                    if TaskPlanner.is_integer_binary(call) = false
+                        return false
+                    let a_ptr call.args.get 0
+                    let b_ptr call.args.get 1
+                    let a a_ptr.unwrap()
+                    let b b_ptr.unwrap()
+                    if call.name = "+" or call.name = "-"
+                    {
+                        if this.plain_slot(a) and this.round_invariant(b)
+                            return true
+                        return this.round_invariant(a) and this.plain_slot(b)
+                    }
+                    if call.name = "*" and TaskPlanner.int_bits(op.result_type) = 64
+                    {
+                        if this.plain_slot(a) and TaskPlanner.small_literal(b) > 0
+                            return true
+                        return TaskPlanner.small_literal(a) > 0 and this.plain_slot(b)
+                    }
+                    return false
+                }
+                else
+                    0
+            false
+        }
+
+        ; The addends of a sum in 64 bits onto cls_terms, groupings and
+        ; casts from 64 to 64 bits set aside.
+        procedure addends_of(mutable this: TaskPlanner, op: PlannedOperand)
+        {
+            if TaskPlanner.has_hops(op) = false
+            {
+                choose op.expr
+                    when as_expr: As
+                    {
+                        if as_expr.value <> null
+                        {
+                            let r as_expr.value
+                            if TaskPlanner.cast_same((*r), as_expr.target_type)
+                            {
+                                this.addends_of((*r))
+                                return
+                            }
+                        }
+                    }
+                    when tp: Tuple
+                    {
+                        if TaskPlanner.is_grouping(tp)
+                        {
+                            let c_ptr tp.components.get 0
+                            let c c_ptr.unwrap()
+                            let in_ptr c.value.get 0
+                            if in_ptr <> null
+                            {
+                                this.addends_of(in_ptr.unwrap())
+                                return
+                            }
+                        }
+                    }
+                    when call: Call
+                    {
+                        if call.name = "+" and TaskPlanner.is_integer_binary(call) and TaskPlanner.int_bits(op.result_type) = 64
+                        {
+                            let a_ptr call.args.get 0
+                            let b_ptr call.args.get 1
+                            this.addends_of(a_ptr.unwrap())
+                            this.addends_of(b_ptr.unwrap())
+                            return
+                        }
+                    }
+                    else
+                        0
+            }
+            cls_terms.add op
+        }
+
+        ; The form of an index: its base onto cls_acc_bases, its levels
+        ; onto cls_levels, innermost first. False where two rounds are not
+        ; shown to differ; the caller then takes back what was pushed.
+        procedure index_form(mutable this: TaskPlanner, op: PlannedOperand) returns bool
+        {
+            let t0 cls_terms.length
+            this.addends_of(op)
+            let t1 cls_terms.length
+            var found false
+            var k t0
+            while k < t1 and found = false
+            {
+                let term cls_terms[k]
+                choose term.expr
+                    when call: Call
+                    {
+                        if call.name = "*" and TaskPlanner.is_integer_binary(call) and TaskPlanner.int_bits(term.result_type) = 64 and TaskPlanner.has_hops(term) = false
+                        {
+                            let a_ptr call.args.get 0
+                            let b_ptr call.args.get 1
+                            let a a_ptr.unwrap()
+                            let b b_ptr.unwrap()
+                            if this.level_of(a, b, t0, t1, k)
+                                found := true
+                            else if this.level_of(b, a, t0, t1, k)
+                                found := true
+                        }
+                    }
+                    else
+                        0
+                k := k + 1
+            }
+            if found = false and t1 - t0 = 2
+                found := this.residue_form(t0)
+            if found = false and this.plain_slot(op)
+            {
+                cls_acc_bases.add op
+                found := true
+            }
+            cls_terms.length := t0
+            found
+        }
+
+        ; `x * m + rest`: a level, where the rest stays below m and x has a
+        ; form itself.
+        procedure level_of(mutable this: TaskPlanner, x: PlannedOperand, m: PlannedOperand, t0: size_t, t1: size_t, skip: size_t) returns bool
+        {
+            let m_literal TaskPlanner.small_literal(m)
+            if m_literal = 0
+                return false
+            if m_literal < 0 and this.round_invariant(m) = false
+                return false
+            let relied cls_relied.length
+            if this.rest_fits(m, m_literal, t0, t1, skip) = false
+            {
+                cls_relied.length := relied
+                return false
+            }
+            let lv cls_levels.length
+            let bs cls_acc_bases.length
+            if this.index_form(x) = false
+            {
+                cls_levels.length := lv
+                cls_level_kinds.length := lv
+                cls_acc_bases.length := bs
+                cls_relied.length := relied
+                return false
+            }
+            cls_levels.add m
+            cls_level_kinds.add 0
+            true
+        }
+
+        ; Is the sum of the terms t0 .. t1 without `skip` at least 0 and
+        ; below m? Literals, and at most one counter of a loop over m that
+        ; the walk stands in.
+        procedure rest_fits(mutable this: TaskPlanner, m: PlannedOperand, m_literal: int, t0: size_t, t1: size_t, skip: size_t) returns bool
+        {
+            var literals: size_t 0
+            var counter t1
+            var i t0
+            while i < t1
+            {
+                if i <> skip
+                {
+                    let v TaskPlanner.small_literal(cls_terms[i])
+                    if v >= 0
+                        literals := literals + (v as size_t)
+                    else
+                    {
+                        if counter <> t1
+                            return false
+                        counter := i
+                    }
+                }
+                i := i + 1
+            }
+            if counter = t1
+            {
+                if m_literal < 0
+                    return false
+                return literals < (m_literal as size_t)
+            }
+            let name TaskPlanner.counter_name(cls_terms[counter])
+            if name.get_length() = 0
+                return false
+            var s cls_inner_names.length
+            while s > 0
+            {
+                s := s - 1
+                if cls_inner_names[s] = name
+                {
+                    if this.same_bare(cls_inner_bounds[s], m) = false
+                        return false
+                    if literals > cls_inner_slack[s]
+                        return false
+                    ; a for: its counter is below the bound in every round
+                    if cls_inner_steps[s] = 0
+                        return true
+                    ; a while: below the bound before its step, and only
+                    ; a put is held to that
+                    if cls_site_put = false or cls_site >= cls_inner_steps[s]
+                        return false
+                    if TaskPlanner.name_in(cls_nonneg, name) = false
+                        return false
+                    let n_copy String^this(name)
+                    cls_relied.add n_copy
+                    return true
+                }
+            }
+            false
+        }
+
+        ; `z * m + i`, i the counter of the classified `for i in m`.
+        procedure residue_form(mutable this: TaskPlanner, t0: size_t) returns bool
+        {
+            if cls_bound.length <> 1 or cls_var_counter = false
+                return false
+            var ci t0
+            var pi t0 + 1
+            if TaskPlanner.counter_name(cls_terms[ci]) <> cls_loop_var
+            {
+                ci := t0 + 1
+                pi := t0
+            }
+            if TaskPlanner.counter_name(cls_terms[ci]) <> cls_loop_var
+                return false
+            let product cls_terms[pi]
+            if TaskPlanner.has_hops(product) or TaskPlanner.int_bits(product.result_type) <> 64
+                return false
+            choose product.expr
+                when call: Call
+                {
+                    if call.name <> "*" or TaskPlanner.is_integer_binary(call) = false
+                        return false
+                    let a_ptr call.args.get 0
+                    let b_ptr call.args.get 1
+                    let a a_ptr.unwrap()
+                    let b b_ptr.unwrap()
+                    let bound cls_bound[0]
+                    if this.round_invariant(bound) = false
+                        return false
+                    if this.same_bare(a, bound) or this.same_bare(b, bound)
+                    {
+                        cls_acc_bases.add(cls_terms[ci])
+                        cls_levels.add bound
+                        cls_level_kinds.add 1
+                        return true
+                    }
+                }
+                else
+                    0
+            false
+        }
+
+        ; the same value, groupings and casts that keep every bit set aside
+        function same_bare(this: TaskPlanner, a: PlannedOperand, b: PlannedOperand) returns bool
+        {
+            if TaskPlanner.has_hops(a) = false
+            {
+                choose a.expr
+                    when as_expr: As
+                    {
+                        if as_expr.value <> null
+                        {
+                            let r as_expr.value
+                            if TaskPlanner.cast_keeps((*r), as_expr.target_type)
+                                return this.same_bare((*r), b)
+                        }
+                    }
+                    when tp: Tuple
+                    {
+                        if TaskPlanner.is_grouping(tp)
+                        {
+                            let c_ptr tp.components.get 0
+                            let c c_ptr.unwrap()
+                            let in_ptr c.value.get 0
+                            if in_ptr <> null
+                                return this.same_bare(in_ptr.unwrap(), b)
+                        }
+                    }
+                    else
+                        0
+            }
+            if TaskPlanner.has_hops(b) = false
+            {
+                choose b.expr
+                    when as_expr: As
+                    {
+                        if as_expr.value <> null
+                        {
+                            let r as_expr.value
+                            if TaskPlanner.cast_keeps((*r), as_expr.target_type)
+                                return this.same_bare(a, (*r))
+                        }
+                    }
+                    when tp: Tuple
+                    {
+                        if TaskPlanner.is_grouping(tp)
+                        {
+                            let c_ptr tp.components.get 0
+                            let c c_ptr.unwrap()
+                            let in_ptr c.value.get 0
+                            if in_ptr <> null
+                                return this.same_bare(a, in_ptr.unwrap())
+                        }
+                    }
+                    else
+                        0
+            }
+            this.same_value(a, b)
+        }
+
+        ; two recorded accesses: the same base and the same levels
+        function same_form(this: TaskPlanner, x: size_t, y: size_t) returns bool
+        {
+            if cls_acc_count[x] <> cls_acc_count[y]
+                return false
+            if this.same_bare(cls_acc_bases[x], cls_acc_bases[y]) = false
+                return false
+            var i: size_t 0
+            while i < cls_acc_count[x]
+            {
+                let lx cls_acc_from[x] + i
+                let ly cls_acc_from[y] + i
+                if cls_level_kinds[lx] <> cls_level_kinds[ly]
+                    return false
+                if this.same_bare(cls_levels[lx], cls_levels[ly]) = false
+                    return false
+                i := i + 1
+            }
+            true
+        }
+
+        ; the first put into the buffer that access `at` names
+        function first_put(this: TaskPlanner, at: size_t) returns size_t
+        {
+            let recv cls_acc_recvs[at]
+            let root TaskPlanner.root_name(recv)
+            var q: size_t 0
+            while q < at
+            {
+                if cls_acc_kind[q] = 0
+                {
+                    let other cls_acc_recvs[q]
+                    if TaskPlanner.root_name(other) = root and TaskPlanner.hop_relation(other, recv) = 0
+                        return q
+                }
+                q := q + 1
+            }
+            at
+        }
+
+        ; out.put(index, value): receiver = args[0], index = args[1].
+        ; Blocks with the reason, or records the put for check_puts#.
+        procedure put_is_disjoint(mutable this: TaskPlanner, call: PlannedCall)
+        {
+            let recv_ptr call.args.get 0
+            let idx_ptr call.args.get 1
+            let val_ptr call.args.get 2
+            if recv_ptr = null or idx_ptr = null or val_ptr = null
+            {
+                this.block("put into an external vector")
+                return
+            }
+            let recv recv_ptr.unwrap()
+            let root TaskPlanner.root_name(recv)
+            if root.get_length() = 0 or TaskPlanner.field_hops(recv) = false
+            {
+                this.block("put into an external vector: a computed receiver")
+                return
+            }
+            ; what the body built is this round's own: written freely
+            if this.is_local(root)
+                return
+            ; a name the body bound to outside state: the buffer has a
+            ; second name out there, and check_puts# counts by name
+            if this.is_body_name(root)
+            {
+                this.block_named("put into an external vector: through the alias ", root)
+                return
+            }
+            let idx idx_ptr.unwrap()
+            cls_site := idx.loc.start
+            cls_site_put := true
+            let lv cls_levels.length
+            if this.index_form(idx) = false
+            {
+                this.block("put into an external vector: its index is not one slot per round")
+                return
+            }
+            let at cls_acc_recvs.length
+            cls_acc_recvs.add recv
+            cls_acc_from.add lv
+            cls_acc_count.add(cls_levels.length - lv)
+            cls_acc_kind.add 0
+            cls_has_put := true
+            let first this.first_put(at)
+            if first < at
+            {
+                if this.same_form(at, first) = false
+                {
+                    this.block("put into an external vector: a second index")
+                    return
+                }
+            }
             ; The slot is disjoint; the VALUE must not carry this
             ; iteration's allocations out of it. A promoted body runs on a
             ; task region released at the end of its chunk, so a String
             ; built by `mk(i)` and kept in `out.put(i, mk(i))` dangled --
-            ; 306 of 400 slots overwritten at rc 0. Only a value that
-            ; cannot point anywhere is admitted into a loop-external vector.
-            let val_ptr call.args.get 2
-            if val_ptr = null
-                return false
+            ; 306 of 400 slots overwritten at rc 0. A value that cannot
+            ; point anywhere is admitted as it is; a VALUE that can (a
+            ; String, a record) is kept, its allocations adopted with the
+            ; chunk's region -- never a reference, which could point
+            ; anywhere, the chunk's stack included.
             let vt val_ptr.unwrap().result_type
-            if this.value_can_alias(vt) = false
-                return true
-            ; A kept value: admitted when it is a VALUE (a String, a record),
-            ; its allocations then adopted with the chunk's region -- never a
-            ; reference, which could point anywhere, the chunk's stack included.
-            if TaskPlanner.type_is_reference_shaped(vt)
-                return false
-            cls_keeps := true
-            true
+            if this.value_can_alias(vt)
+            {
+                if TaskPlanner.type_is_reference_shaped(vt)
+                {
+                    this.block("put into an external vector: a reference as its value")
+                    return
+                }
+                cls_keeps := true
+            }
+        }
+
+        ; The net under put_is_disjoint#. A counter the proof stood on must
+        ; have counted the whole body long; and a buffer the body puts into
+        ; is otherwise only read inside the puts' form. Any other
+        ; occurrence of its name -- another slot read, the buffer handed to
+        ; a callee or bound to a name, the record it is a field of passed
+        ; whole -- could see a slot another round writes.
+        procedure check_puts(mutable this: TaskPlanner)
+        {
+            if cls_blocked or cls_has_put = false
+                return
+            var c: size_t 0
+            while c < cls_relied.length
+            {
+                if TaskPlanner.name_in(cls_bad, cls_relied[c])
+                {
+                    this.block_named("put into an external vector: its index counts with ", cls_relied[c])
+                    return
+                }
+                c := c + 1
+            }
+            var p: size_t 0
+            while p < cls_acc_recvs.length
+            {
+                if cls_acc_kind[p] = 0
+                {
+                    let recv cls_acc_recvs[p]
+                    let root TaskPlanner.root_name(recv)
+                    var seen: size_t 0
+                    var o: size_t 0
+                    while o < cls_occs.length
+                    {
+                        let occ cls_occs[o]
+                        if TaskPlanner.root_name(occ) = root
+                        {
+                            let rel TaskPlanner.hop_relation(occ, recv)
+                            if rel = 2
+                            {
+                                this.block_named("reads beside the slot it puts into: ", root)
+                                return
+                            }
+                            if rel = 0
+                                seen := seen + 1
+                        }
+                        o := o + 1
+                    }
+                    var accounted: size_t 0
+                    var q: size_t 0
+                    while q < cls_acc_recvs.length
+                    {
+                        let other cls_acc_recvs[q]
+                        if TaskPlanner.root_name(other) = root and TaskPlanner.hop_relation(other, recv) = 0
+                        {
+                            if cls_acc_kind[q] = 0
+                                accounted := accounted + 1
+                            else if cls_acc_kind[q] = 1 and this.same_form(q, p)
+                                accounted := accounted + 1
+                        }
+                        q := q + 1
+                    }
+                    if seen <> accounted
+                    {
+                        this.block_named("reads beside the slot it puts into: ", root)
+                        return
+                    }
+                }
+                p := p + 1
+            }
         }
 
         ; ref / pointer / an Option over one / a delegate or function pointer

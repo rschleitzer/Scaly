@@ -1,25 +1,17 @@
 ; `for x in vec` over a SCALAR-element Vector: the outlined task
 ; function must LOAD the element value from the cell's element pointer (the
-; same scalar-element fix as the sequential path). Each iteration writes a
-; disjoint slot indexed by the element itself.
+; same scalar-element fix as the sequential path). The rounds add into one
+; sum: a put at the element itself would run on one core, since two
+; elements could name one slot.
 
 let idxs Vector[size_t](4)
 idxs.put(0 as size_t, 0 as size_t)
 idxs.put(1 as size_t, 1 as size_t)
 idxs.put(2 as size_t, 2 as size_t)
 idxs.put(3 as size_t, 3 as size_t)
-var results Vector[i64](4)
-for x in idxs
-    results.put(x, (x as i64) * 10)
 var sum 0
-var i 0
-while i < 4
-{
-    let v results.get(i as size_t)
-    if v <> null
-        sum := sum + ((*v) as int)
-    i := i + 1
-}
+for x in idxs
+    sum := sum + (x as int) * 10
 if sum = 60
     print "PASS"
 else

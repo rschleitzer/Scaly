@@ -15,7 +15,8 @@
 #
 # Phase 2 runs in lanes, all at once; inside a lane the steps are in order:
 #   compiler  regress, selfhosted, target, wasm, fiber, escape, pointer-report,
-#             write-report, gpu-plan, gpu, abi, published, debuginfo, trust
+#             write-report, task-plan, gpu-plan, gpu, abi, published,
+#             debuginfo, trust
 #             (trust/check.sh)
 #   lsp       tests/lsp/run.sh — once the tscaly lane has compiled its package
 #   ports     likewise; dazzle and opensp from THEIR repository (../dazzle or
@@ -158,6 +159,7 @@ lane_compiler() {
   step escape tests/escape/run.sh "$BIN" || rc=1
   step pointer-report tests/pointer-report/run.sh "$BIN" || rc=1
   step write-report tests/write-report/run.sh "$BIN" || rc=1
+  step task-plan tests/task-plan/run.sh "$BIN" || rc=1
   step gpu-plan tests/gpu-plan/run.sh "$BIN" || rc=1
   step gpu tests/gpu/run.sh "$BIN" || rc=1
   step abi tests/abi/run.sh || rc=1

@@ -88,21 +88,13 @@ while j < (16 as size_t)
     items.put(j, Item(j, j as i64))
     j := j + 1
 }
-var results2 Vector[i64](16)
+; (a sum, not a put at item.idx: two elements could name one slot, and
+; such a loop runs on one core)
+var sum2 0 as i64
 for item in items
 {
     let n item.val
-    results2.put(item.idx, n * n * n)
-}
-
-var sum2 0 as i64
-j := 0 as size_t
-while j < (16 as size_t)
-{
-    let v results2.get j
-    if v <> null
-        sum2 := sum2 + (*v)
-    j := j + 1
+    sum2 := sum2 + n * n * n
 }
 if sum2 <> (14400 as i64)
 {

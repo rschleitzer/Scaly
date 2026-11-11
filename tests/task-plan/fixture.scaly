@@ -1,0 +1,207 @@
+; One loop per verdict of the rule for `put` into a vector made before the
+; loop: two rounds must provably never write one slot, and the vector is
+; otherwise only read at the slots the round writes. tests/task-plan/run.sh
+; pins the report line by line.
+
+function work(i: int) returns int
+{
+    i * 3 + 1
+}
+
+define Grid
+(
+    w: int
+    var cells: Vector[int]
+)
+{
+    procedure fill(mutable this: Grid, n: int)
+    {
+        ; a field of the receiver, and a scalar field read beside it
+        for i in n
+            this.cells.put(i, this.w * i)
+    }
+}
+
+define Slots
+(
+    var seen: int
+)
+{
+    ; a put of its own: no slot store, a callee like any other
+    procedure put(mutable this: Slots, at: int, value: int)
+    {
+        seen := seen + value
+    }
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let n 64
+    let m 16
+    var v Vector[int](n)
+    var w Vector[int](n + 1)
+    var g Vector[int]((n + 1) * m)
+    var h Vector[int](n * 4)
+
+    ; the counter
+    for i in n
+        v.put(i, 0)
+    ; half the counter: two rounds, one slot
+    for i in n
+        v.put((i / 2) as size_t, work(i))
+    ; the neighbour's slot read
+    for i in n - 1
+        v.put(i, v[i + 1] + 1)
+    ; its own slot read, and the length
+    for i in n
+        v.put(i, v[i] + v.length as int)
+    ; two puts, the second one slot further
+    for i in n
+    {
+        w.put(i, i)
+        w.put(i + 1, work(i))
+    }
+    ; mirrored
+    for i in n
+        w.put(n - 1 - i, work(i))
+    ; a cast that narrows
+    for i in n
+        w.put((i as u8) as size_t, work(i))
+    ; a stride and an offset inside it
+    for i in n
+        h.put((i * 4 + 2) as size_t, 7)
+    ; times a name alone: the name could be zero
+    for i in 4
+        h.put((i * n) as size_t, 7)
+
+    ; an element, which can repeat
+    var idx Vector[int](4)
+    for i in 4
+        idx.put(i, i / 2)
+    for x in idx
+        w.put(x, work(x))
+
+    ; a row: the counter of a `for` over the row's width
+    for y in n
+        for x in m
+            g.put(y * m + x, work(x))
+    ; a counter over another bound than the row's width
+    for y in n
+        for x in 8
+            g.put(y * m + x, 1)
+    ; a row: the counter of a `while` below the row's width
+    for i in n
+    {
+        var j 0
+        while j < m
+        {
+            g.put((i * m + j) as size_t, work(j))
+            j := j + 1
+        }
+    }
+    ; the put after the counter's step
+    for i in n
+    {
+        var j 0
+        while j < m
+        {
+            j := j + 1
+            g.put((i * m + j) as size_t, work(j))
+        }
+    }
+    ; the counter written a second time
+    for i in n
+    {
+        var j 0
+        while j < m
+        {
+            g.put((i * m + j) as size_t, work(j))
+            if j = 3
+                j := j + 2
+            j := j + 1
+        }
+    }
+    ; the counter begun at a name
+    for i in n
+    {
+        var j i
+        while j < m
+        {
+            g.put((i * m + j) as size_t, work(j))
+            j := j + 1
+        }
+    }
+    ; tiles of four rows: the condition leaves room for three columns
+    for it in n / 4
+    {
+        var j 0
+        while j + 3 < m
+        {
+            g.put(((it * 4 + 0) * m + j) as size_t, 1)
+            g.put(((it * 4 + 1) * m + j + 1) as size_t, 2)
+            g.put(((it * 4 + 3) * m + j + 3) as size_t, 3)
+            j := j + 4
+        }
+    }
+    ; tiles whose condition leaves no room
+    for it in n / 4
+    {
+        var j 0
+        while j < m
+        {
+            g.put(((it * 4 + 0) * m + j + 1) as size_t, 1)
+            j := j + 4
+        }
+    }
+    ; two loops in the round, one row; a read inside the row
+    for i in n
+    {
+        var j 0
+        while j < m
+        {
+            g.put((i * m + j) as size_t, work(j))
+            j := j + 1
+        }
+        for k in m
+            g.put((i * m + k) as size_t, g[(i * m + k) as size_t] + 1)
+    }
+    ; the counter as the column: its bound is the stride
+    for i in n
+    {
+        var z 0
+        while z < 4
+        {
+            h.put((z * n + i) as size_t, work(z))
+            z := z + 1
+        }
+    }
+    ; two vectors, each with a form of its own
+    for i in n
+    {
+        v.put(i, 1)
+        h.put((i * 4 + 1) as size_t, 2)
+    }
+    ; through a name the body bound to the vector
+    for i in n
+    {
+        let alias v
+        alias.put(i, 1)
+    }
+    ; a vector the round made
+    for i in n
+    {
+        var own Vector[int](4)
+        own.put(0, i)
+        own.put(1, i)
+        v.put(i, own[0] + own[1])
+    }
+    ; a put that is no slot store
+    var slots Slots(0)
+    for i in n
+        slots.put(i, 1)
+
+    var grid Grid(3, Vector[int](n))
+    grid.fill(n)
+    print "`v[0]` `w[1]` `g[5]` `h[2]` `grid.cells[2]` `slots.seen`"
+    0
+}

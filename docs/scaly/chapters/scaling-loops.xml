@@ -85,8 +85,11 @@ mandelbrot 2000: 1588053 points inside</screen>
         strings, records — which are gone when the round
         ends unless the round keeps them;</para></listitem>
       <listitem><para>write a slot of a vector made before the loop with
-        <code>put</code>, at an index computed from the loop variable, so
-        that no two rounds write the same slot;</para></listitem>
+        <code>put</code>, at an index of which the compiler can see that
+        no two rounds compute the same one: the loop's counter, the
+        counter plus or minus a value that stays the same, or a row of a
+        table, <code>y * width + x</code> with <code>x</code> counted
+        below <code>width</code> inside the round;</para></listitem>
       <listitem><para>add to a sum, a product or a maximum that the loop
         accumulates (<xref linkend="scaling-loops-reductions"/>).</para></listitem>
     </itemizedlist>
@@ -141,7 +144,8 @@ task-plan: order.scaly:13:1: blocked: writes loop-external first</screen>
       when a round reads a global that can change
       (<code>mutable</code> or <code>shared</code>), writes one, reaches
       the world outside the program, writes a slot of a vector at an index
-      that does not depend on the loop variable, calls a routine the
+      two rounds could share (<code>i / 2</code>, an element of another
+      vector), reads the vector it writes at any other slot, calls a routine the
       compiler cannot see into (a delegate, a C function it does not know),
       or leaves the loop early with <code>break</code>,
       <code>return</code> or a throw. A <code>while</code> or a

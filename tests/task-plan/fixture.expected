@@ -1,0 +1,30 @@
+task-plan: 29 for-loops, 16 parallelizable
+task-plan: tests/task-plan/fixture.scaly:20:9: parallel
+task-plan: tests/task-plan/fixture.scaly:47:5: parallel
+task-plan: tests/task-plan/fixture.scaly:50:5: blocked: put into an external vector: its index is not one slot per round
+task-plan: tests/task-plan/fixture.scaly:53:5: blocked: reads beside the slot it puts into: v
+task-plan: tests/task-plan/fixture.scaly:56:5: parallel
+task-plan: tests/task-plan/fixture.scaly:59:5: blocked: put into an external vector: a second index
+task-plan: tests/task-plan/fixture.scaly:65:5: parallel
+task-plan: tests/task-plan/fixture.scaly:68:5: blocked: put into an external vector: its index is not one slot per round
+task-plan: tests/task-plan/fixture.scaly:71:5: parallel
+task-plan: tests/task-plan/fixture.scaly:74:5: blocked: put into an external vector: its index is not one slot per round
+task-plan: tests/task-plan/fixture.scaly:79:5: parallel
+task-plan: tests/task-plan/fixture.scaly:81:5: blocked: put into an external vector: its index is not one slot per round
+task-plan: tests/task-plan/fixture.scaly:85:5: parallel
+task-plan: tests/task-plan/fixture.scaly:86:9: parallel
+task-plan: tests/task-plan/fixture.scaly:89:5: blocked: put into an external vector: its index is not one slot per round
+task-plan: tests/task-plan/fixture.scaly:90:9: parallel
+task-plan: tests/task-plan/fixture.scaly:93:5: parallel
+task-plan: tests/task-plan/fixture.scaly:103:5: blocked: put into an external vector: its index is not one slot per round
+task-plan: tests/task-plan/fixture.scaly:113:5: blocked: put into an external vector: its index counts with j
+task-plan: tests/task-plan/fixture.scaly:125:5: blocked: put into an external vector: its index is not one slot per round
+task-plan: tests/task-plan/fixture.scaly:135:5: parallel
+task-plan: tests/task-plan/fixture.scaly:147:5: blocked: put into an external vector: its index is not one slot per round
+task-plan: tests/task-plan/fixture.scaly:157:5: parallel
+task-plan: tests/task-plan/fixture.scaly:165:9: parallel
+task-plan: tests/task-plan/fixture.scaly:169:5: parallel
+task-plan: tests/task-plan/fixture.scaly:179:5: parallel
+task-plan: tests/task-plan/fixture.scaly:185:5: blocked: put into an external vector: through the alias alias
+task-plan: tests/task-plan/fixture.scaly:191:5: parallel
+task-plan: tests/task-plan/fixture.scaly:200:5: blocked: mutating call on loop-external state: put
