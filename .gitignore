@@ -48,5 +48,5 @@ docs/scaly-spec.rtf
 /web/repl/*.br
 /web/repl/*.gz
 
-# the Mandelbrot showcase, built (web/mandelbrot/build.sh)
-/web/mandelbrot/site/
+# the fractal showcase, built (web/fractals/build.sh)
+/web/fractals/site/

@@ -1,4 +1,4 @@
-// The showcase's program worker (web/mandelbrot/index.html): mandelbrot.wasm,
+// The showcase's program worker (web/fractals/index.html): fractals.wasm,
 // built for wasm32-wasip1-threads with --gpu, runs here once per message --
 // a new instance each time, over one memory, wiped (threads.mjs, runMemory)
 // --, its threads in the page's
@@ -13,6 +13,9 @@
 //   { type: 'run', args, env, gpu }      -> { type: 'watch', memory, address, width, height }, then
 //                                           { type: 'done', status, stdout, stderr, picture, cards, compiled, parts }
 //
+// `args` are the program's (fractals.scaly says them): the picture's size,
+// the turns, the view, the samples and which fractal.
+//
 // `gpu`, where given, is what the page's own card worker (gpu-worker.mjs)
 // answered first, { card, why }: the card's runs then go to the page as
 // `scaly-gpu` messages, and the page passes them on to that worker -- the
@@ -25,12 +28,12 @@
 // worker it makes after this one -- a page that made a memory per run ran
 // out of them in Safari.
 //
-// `load` puts another module in the place of mandelbrot.wasm: the reader's
+// `load` puts another module in the place of fractals.wasm: the reader's
 // own version, built in the page (index.html). `threads` says whether it
 // was built for them.
 //
 // `gpu` is the card's mode for the run: 'off', 'on' or 'auto'. `picture`
-// holds the bytes the program wrote (mandelbrot.<w>x<h>.rgba), `cards` how
+// holds the bytes the program wrote (fractal.<w>x<h>.rgba), `cards` how
 // many loops the card took in this run.
 //
 // `watch` comes while the program runs, where it says where its picture
@@ -53,7 +56,7 @@ let card;               // the GpuHost, or null where the page has no card
 
 async function prepare(hello) {
   if (!program) {
-    const bytes = new Uint8Array(await (await fetch('mandelbrot.wasm')).arrayBuffer());
+    const bytes = new Uint8Array(await (await fetch('fractals.wasm')).arrayBuffer());
     program = { bytes, module: await WebAssembly.compile(bytes) };
   }
   if (card === undefined)
@@ -113,7 +116,7 @@ async function answer(data) {
     }
   };
   const wasi = new Wasi({
-    args: ['mandelbrot', ...data.args], env: data.env, files, gpu: card, stdout,
+    args: ['fractals', ...data.args], env: data.env, files, gpu: card, stdout,
     threads: memory ? new ThreadHost({ memory, post: m => self.postMessage(m) }) : null,
   });
   let status;
@@ -123,7 +126,7 @@ async function answer(data) {
     status = 'ended: ' + (e && e.message || e);
   }
   // the picture: the first file the program wrote whose name says its size
-  // (mandelbrot.<w>x<h>.rgba) and that holds four bytes per point
+  // (fractal.<w>x<h>.rgba) and that holds four bytes per point
   let picture = null, width = 0, height = 0;
   for (const path of files.written) {
     const size = /\.(\d+)x(\d+)\.rgba$/.exec(path);

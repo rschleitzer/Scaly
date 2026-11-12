@@ -41,8 +41,8 @@ print "`w * h` points"</programlisting>
     <para>The colour of a point is a number with four bytes — red, green, blue
       and how opaque it is — and the picture goes into a file whose name says
       its size; the playground shows such a file. The
-      <link xlink:href="https://scaly.io/play/mandelbrot/">Mandelbrot
-      showcase</link> lets you zoom into it and race the cores against the
-      card.</para>
+      <link xlink:href="https://scaly.io/play/fractals/">fractal
+      showcase</link> lets you zoom into it and ten more fractals, and race
+      the cores against the card.</para>
   </section>
 </chapter>

@@ -30,7 +30,7 @@
 #    `scaly run --gpu main.scaly`, the program a side module of the compiler
 #    -- and each must write what it writes natively, with the card and
 #    without, the card having run its loops where it is on. Then the
-#    showcase's editor (web/mandelbrot, index.html?selftest=build): the page
+#    showcase's editor (web/fractals, index.html?selftest=build): the page
 #    BUILDS the showcase's program for wasm32-wasip1-threads with that
 #    compiler (playground.json, tools/wasm/precache.mjs) and runs it on all
 #    cores -- its picture must be the prebuilt program's --, and a version
@@ -55,11 +55,16 @@
 #    run has the card beside the cores.
 #    The times are printed, not judged.
 #
-# 5. THE SHOWCASE (web/mandelbrot): built by its build.sh, its page's
-#    self-test (index.html?selftest) runs the program on one core, on all,
-#    on the card and as the runtime decides. The one-core picture must be
-#    the native program's byte for byte, all cores' the same, the card's
-#    other in at most one point in a hundred (`relaxed`).
+# 5. THE SHOWCASE (web/fractals): built by its build.sh, its page's
+#    self-test (index.html?selftest) runs the program -- the Mandelbrot set
+#    -- on one core, on all, on the card and as the runtime decides. The
+#    one-core picture must be the native program's byte for byte, all
+#    cores' the same, the card's other in at most one point in a hundred
+#    (`relaxed`). Then every other fractal, small, from its first view, on
+#    one core -- the native program's picture again -- and on the card,
+#    which must have taken the loop; how many of its points differ is
+#    printed (the card's floating point, `relaxed`, and chaos: the Lyapunov
+#    fractal is made of places where a last digit decides).
 #
 # NOT in the bar: it needs a Chrome with WebGPU, wgpu-native and node (part 2
 # a wasi-sdk too, part 3 libLLVM built for wasm, tools/wasm/build-llvm.sh),
@@ -274,26 +279,29 @@ PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
 
 # --- 5. the showcase ------------------------------------------------------
-if ! web/mandelbrot/build.sh "$T/show" "$STAGE" > "$T/show.build" 2>&1; then
+if ! web/fractals/build.sh "$T/show" "$STAGE" > "$T/show.build" 2>&1; then
   echo "gpu-web: FAIL — the showcase does not build ($(tail -1 "$T/show.build" | cut -c1-160))"; exit 1
 fi
-"$STAGE" --gpu -o "$T/bin/showcase" web/mandelbrot/mandelbrot.scaly > "$T/bin/showcase.build" 2>&1 ||
+"$STAGE" --gpu -o "$T/bin/showcase" web/fractals/fractals.scaly > "$T/bin/showcase.build" 2>&1 ||
   { echo "gpu-web: FAIL — the showcase's program does not build natively"; exit 1; }
-(cd "$T/cwd" && SCALY_GPU=off SCALY_WORKERS=1 "$T/bin/showcase" 600 400 250 -500000000 0 3000000000 1 > /dev/null 2>&1)
-page "$T/show" "index.html?selftest" 300
-python3 - "$T/result" "$T/cwd/mandelbrot.600x400.rgba" <<'PY' || failed=1
-import json, os, sys
-result, native = sys.argv[1], sys.argv[2]
+(cd "$T/cwd" && SCALY_GPU=off SCALY_WORKERS=1 "$T/bin/showcase" 600 400 250 -500000000 0 3000000000 1 0 > /dev/null 2>&1)
+page "$T/show" "index.html?selftest" 600
+python3 - "$T/result" "$T/cwd/fractal.600x400.rgba" "$T/bin/showcase" "$T/cwd" <<'PY' || failed=1
+import json, os, subprocess, sys
+result, native, program, cwd = sys.argv[1:5]
 fails = []
 try:
     r = json.load(open(result))
 except Exception as e:
     print('  FAIL the page did not answer (%s)' % (open(result).read()[:200] if os.path.exists(result) else 'nothing'))
     sys.exit(1)
-h = 2166136261
-for b in open(native, 'rb').read():
-    h = ((h ^ b) * 16777619) & 0xffffffff
-if r['args'] != ['600', '400', '250', '-500000000', '0', '3000000000', '1']:
+def fnv(path):
+    h = 2166136261
+    for b in open(path, 'rb').read():
+        h = ((h ^ b) * 16777619) & 0xffffffff
+    return h
+h = fnv(native)
+if r['args'] != ['600', '400', '250', '-500000000', '0', '3000000000', '1', '0']:
     fails.append('the self-test ran %s, not what was compared natively' % r['args'])
 if r['hash'] != h:
     fails.append('one core: the picture is not the native program\'s')
@@ -309,10 +317,32 @@ for x in r['runs']:
 want = 4 if r['card'] else 2
 if len(r['runs']) != want:
     fails.append('%d runs, not %d' % (len(r['runs']), want))
+gallery = r.get('gallery') or []
+if len(gallery) != 10:
+    fails.append('%d other fractals in the self-test, not 10' % len(gallery))
+said = []
+for g in gallery:
+    picture = os.path.join(cwd, 'fractal.%sx%s.rgba' % (g['args'][0], g['args'][1]))
+    if os.path.exists(picture):
+        os.remove(picture)
+    env = dict(os.environ, SCALY_GPU='off', SCALY_WORKERS='1')
+    subprocess.run([program] + g['args'], cwd=cwd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if g['status'] != '0':
+        fails.append('%s: ended with %s' % (g['slug'], g['status']))
+    elif not os.path.exists(picture) or g['hash'] != fnv(picture):
+        fails.append('%s, one core: the picture is not the native program\'s' % g['slug'])
+    c = g.get('card')
+    if r['card']:
+        if not c or c['status'] != '0' or c['cards'] < 1:
+            fails.append('%s: the card did not take the loop (%s)' % (g['slug'], c))
+        else:
+            said.append('%s %s' % (g['slug'], c['differ']))
 for f in fails:
     print('  FAIL ' + f)
 print('gpu-web: showcase %s — %s' % ('FAIL' if fails else 'PASS',
       ', '.join('%s %.0f ms' % (x['label'], x['ms'] or 0) for x in r['runs'])))
+if said:
+    print('gpu-web: showcase — of 24000 points the card drew otherwise: ' + ', '.join(said))
 sys.exit(1 if fails else 0)
 PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
@@ -390,10 +420,10 @@ PY
 [ $failed -eq 0 ] || { echo "gpu-web: FAIL"; exit 1; }
 
 # the showcase's editor: a build in the page
-if ! web/mandelbrot/build.sh "$T/repl/mandelbrot" "$STAGE" > "$T/show2.build" 2>&1; then
+if ! web/fractals/build.sh "$T/repl/fractals" "$STAGE" > "$T/show2.build" 2>&1; then
   echo "gpu-web: FAIL — the showcase does not build ($(tail -1 "$T/show2.build" | cut -c1-160))"; exit 1
 fi
-page "$T/repl" "mandelbrot/index.html?selftest=build" 300
+page "$T/repl" "fractals/index.html?selftest=build" 300
 python3 - "$T/result" <<'PY' || failed=1
 import json, os, sys
 result = sys.argv[1]

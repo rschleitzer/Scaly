@@ -14,7 +14,7 @@
 #   stdlib.json   the standard library's files, which the REPL compiles every
 #                 entry against: path under /scaly (SCALY_HOME) -> base64
 #   playground.json  what the compiler in a page needs to BUILD a program for
-#                 wasm32-wasip1-threads (web/mandelbrot's editor): the
+#                 wasm32-wasip1-threads (web/fractals's editor): the
 #                 standard library compiled for it, as the compiler's own
 #                 cache holds it, its C files compiled, and the C library --
 #                 made by running that compiler (tools/wasm/precache.mjs),

@@ -1,0 +1,426 @@
+; Fractals for the showcase page (web/fractals/index.html): ONE program,
+; which the page runs on one core, on all of them and on the graphics card
+; -- what changes is not the program but what its host gives it. The work
+; is one `for` over the points of the picture: its rounds are independent,
+; so the runtime may hand them to other cores, and its body is arithmetic on
+; 32-bit numbers, so it may go to a card. `relaxed` lets a card under WebGPU
+; take it, whose floating point is rounded less strictly than the
+; processor's: a point on the very edge of a set may come out the other way
+; there.
+;
+;   fractals <width> <height> <turns> <cx> <cy> <span> [<samples> [<fractal>]]
+;
+; cx and cy, the picture's centre, and span, its width in the plane, are
+; whole numbers of billionths. samples, 1 if not given, says how finely a
+; point is looked at: samples x samples places within it, whose colours are
+; averaged -- smooth edges, and samples * samples times the work. fractal,
+; 0 if not given, says which one:
+;
+;    0  the Mandelbrot set        z := z^2 + c over the plane of c
+;    1  a Julia set, spirals      z := z^2 + c over the plane of z, c fixed
+;    2  a Julia set, the rabbit   the same with another c
+;    3  the Burning Ship          z := (|re z| + i |im z|)^2 + c
+;    4  the Tricorn               z := conj(z)^2 + c
+;    5  a Multibrot set           z := z^3 + c
+;    6  Newton's fractal          Newton's method for z^3 = 1: which root a
+;                                 place goes to, and how soon
+;    7  the Nova fractal          Newton's step plus c, over the plane of c
+;    8  the Phoenix               z := z^2 + p + q * (the z before)
+;    9  the Magnet                z := ((z^2 + c - 1) / (2z + c - 2))^2
+;   10  Lyapunov's Zircon City    the logistic map, its growth rate switched
+;                                 between a and b in the pattern BBBBBBAAAAAA
+;
+; Before the loop the program says where the picture lies in its memory, so
+; that the page can watch it grow. The picture goes into the file
+; fractal.<width>x<height>.rgba, four bytes per point -- red, green, blue,
+; opacity, what a canvas takes --, and the program writes how long the loop
+; took.
+;
+; A card has no logarithm here, no absolute value and no colour table: what
+; the loop needs of them is written below in the four operations.
+
+; A whole number from an argument, a minus sign in front allowed.
+function whole(text: Slice[u8]) returns int
+{
+    var n 0
+    var sign 1
+    var i: size_t 0
+    if text.length > 0 and text[0] = 45
+    {
+        sign := 0 - 1
+        i := 1
+    }
+    while i < text.length
+    {
+        let digit text[i] as int
+        if digit >= 48 and digit <= 57
+            n := n * 10 + (digit - 48)
+        i := i + 1
+    }
+    n * sign
+}
+
+; --- numbers -----------------------------------------------------------------
+
+; |x|
+function magnitude(x: f32) returns f32
+{
+    if x < 0.0: 0.0 - x else x
+}
+
+; The fraction of x beyond the whole number below it, for x from 0 on; 0
+; for anything else (a place whose numbers ran away).
+function fraction(x: f32) returns f32
+{
+    if x >= 0.0 and x < 1000000.0: x - ((x as i32) as f32) else 0.0
+}
+
+; The logarithm to the base 2, to about five digits: x halved or doubled
+; into [1, 2) -- every halving one more, sixteen at a time first --, and
+; the rest from the series
+; ln m = 2 (y + y^3/3 + y^5/5 + y^7/7), y = (m - 1) / (m + 1). Very small
+; and not positive at all is -128, very large (infinity too) 100.
+function log2(x: f32) returns f32
+{
+    var m x
+    var e: f32 0.0
+    if m < 0.000000000000000000000000000001
+        m := 0.0
+    if m <= 0.0
+        e := e - 128.0
+    if m > 1000000000000000000000000000000.0
+        m := 1000000000000000000000000000000.0
+    while m >= 65536.0
+    {
+        m := m * 0.0000152587890625
+        e := e + 16.0
+    }
+    while m >= 2.0
+    {
+        m := m * 0.5
+        e := e + 1.0
+    }
+    while m > 0.0 and m < 0.0000152587890625
+    {
+        m := m * 65536.0
+        e := e - 16.0
+    }
+    while m > 0.0 and m < 1.0
+    {
+        m := m * 2.0
+        e := e - 1.0
+    }
+    if m <= 0.0
+        m := 1.0
+    let y (m - 1.0) / (m + 1.0)
+    let y2 y * y
+    e + 2.8853900817779268 * y * (1.0 + y2 * (0.33333334 + y2 * (0.2 + y2 * 0.14285715)))
+}
+
+; --- colours -----------------------------------------------------------------
+
+; A colour as the canvas reads a word of the picture: red in the lowest byte.
+function rgb(r: u32, g: u32, b: u32) returns u32
+{
+    (b << 16) | (g << 8) | r
+}
+
+; The colour f of the way from a to b (a for an f that is not a number, b
+; beyond the end).
+function blend(a: u32, b: u32, along: f32) returns u32
+{
+    let f if along > 1.0: 1.0 as f32 else if along >= 0.0: along else 0.0 as f32
+    let ar (a & 255) as f32
+    let ag ((a >> 8) & 255) as f32
+    let ab ((a >> 16) & 255) as f32
+    let br (b & 255) as f32
+    let bg ((b >> 8) & 255) as f32
+    let bb ((b >> 16) & 255) as f32
+    rgb((ar + (br - ar) * f + 0.5) as u32, (ag + (bg - ag) * f + 0.5) as u32, (ab + (bb - ab) * f + 0.5) as u32)
+}
+
+; A palette of five colours that runs round: t from 0 to 1 goes from c0 to
+; c1 … to c4 and back to c0; beyond 1 it begins again.
+function ramp(t: f32, c0: u32, c1: u32, c2: u32, c3: u32, c4: u32) returns u32
+{
+    let s fraction(t) * 5.0
+    let i s as i32
+    let f s - (i as f32)
+    if i = 0: blend(c0, c1, f)
+    else if i = 1: blend(c1, c2, f)
+    else if i = 2: blend(c2, c3, f)
+    else if i = 3: blend(c3, c4, f)
+    else blend(c4, c0, f)
+}
+
+; The palettes, one for each fractal and two for the Magnet's two ways.
+function palette(t: f32, which: i32) returns u32
+{
+    ; deep blue, sky, white, gold, black: the classic one
+    if which = 0: ramp(t, rgb(0, 7, 100), rgb(32, 107, 203), rgb(237, 255, 255), rgb(255, 170, 0), rgb(0, 2, 0))
+    ; ice
+    else if which = 1: ramp(t, rgb(2, 8, 40), rgb(20, 90, 160), rgb(120, 230, 255), rgb(250, 250, 255), rgb(90, 40, 160))
+    ; sunset
+    else if which = 2: ramp(t, rgb(25, 5, 45), rgb(150, 20, 90), rgb(255, 110, 60), rgb(255, 220, 120), rgb(70, 20, 110))
+    ; fire
+    else if which = 3: ramp(t, rgb(10, 0, 0), rgb(130, 15, 0), rgb(240, 90, 0), rgb(255, 210, 70), rgb(255, 255, 220))
+    ; emerald
+    else if which = 4: ramp(t, rgb(0, 20, 15), rgb(0, 110, 80), rgb(140, 240, 170), rgb(250, 255, 230), rgb(20, 70, 110))
+    ; violet
+    else if which = 5: ramp(t, rgb(10, 0, 30), rgb(90, 30, 170), rgb(220, 120, 255), rgb(255, 230, 250), rgb(40, 60, 160))
+    ; the Nova: copper and teal
+    else if which = 7: ramp(t, rgb(5, 15, 25), rgb(0, 120, 130), rgb(220, 250, 240), rgb(230, 140, 50), rgb(90, 25, 10))
+    ; the Phoenix: gold on deep red
+    else if which = 8: ramp(t, rgb(40, 0, 10), rgb(170, 30, 20), rgb(255, 160, 30), rgb(255, 250, 200), rgb(110, 60, 0))
+    ; the Magnet, run away: steel blue
+    else if which = 9: ramp(t, rgb(5, 10, 30), rgb(40, 80, 150), rgb(170, 210, 250), rgb(255, 255, 255), rgb(60, 50, 120))
+    ; the Magnet, come to rest at 1: rose
+    else ramp(t, rgb(40, 0, 20), rgb(200, 40, 90), rgb(255, 190, 200), rgb(255, 245, 235), rgb(120, 20, 60))
+}
+
+; --- the fractals --------------------------------------------------------------
+
+; How soon z, started at (zr, zi), ran away under the map of the fractal
+; `kind` with the constant (cr, ci): smooth -- the whole turns, and how far
+; the last one went beyond the bound, so that the colours flow instead of
+; standing in bands --; -1 where it never did.
+function escape(kind: i32, zr0: f32, zi0: f32, cr: f32, ci: f32, turns: i32) returns f32
+{
+    var zr zr0
+    var zi zi0
+    var yr: f32 0.0         ; the z before, for the Phoenix
+    var yi: f32 0.0
+    var k: i32 0
+    while k < turns and zr * zr + zi * zi <= 256.0
+    {
+        ; the Burning Ship folds z into the first quadrant, the Tricorn
+        ; mirrors it
+        let xr if kind = 3: magnitude(zr) else zr
+        let xi if kind = 3: magnitude(zi) else if kind = 4: 0.0 - zi else zi
+        var nr xr * xr - xi * xi
+        var ni xr * 2.0 * xi
+        if kind = 5
+        {
+            let tr nr * xr - ni * xi
+            ni := nr * xi + ni * xr
+            nr := tr
+        }
+        if kind = 8
+        {
+            nr := nr - 0.5 * yr
+            ni := ni - 0.5 * yi
+            yr := zr
+            yi := zi
+        }
+        zr := nr + cr
+        zi := ni + ci
+        k := k + 1
+    }
+    if k >= turns
+        return 0.0 - (1.0 as f32)
+    ; |z| = 2^(log2 |z|^2 / 2); a power d multiplies that by d a turn
+    let d if kind = 5: 1.5849625 as f32 else 1.0 as f32
+    (k as f32) + 1.0 - log2(log2(zr * zr + zi * zi) * 0.5) / d
+}
+
+; How soon a place came to rest, smooth: the turns it took, less how far
+; the last distance went below `near` -- on the scale of the logarithms,
+; between the distance before it and the last.
+function settled(k: i32, before: f32, last: f32, near: f32) returns f32
+{
+    let a log2(before)
+    let b log2(last)
+    if a - b > 0.0: (k as f32) - (log2(near) - b) / (a - b) else k as f32
+}
+
+; Newton's method for z^3 = 1 from (zr, zi), the step moved by (cr, ci) --
+; 0 for Newton's fractal, the place for the Nova. Where it comes to rest,
+; Newton's fractal is coloured by the root it found, darker the longer it
+; took; the Nova by how long it took. Black where it never does.
+function newton(zr0: f32, zi0: f32, cr: f32, ci: f32, turns: i32, nova: bool) returns u32
+{
+    var zr zr0
+    var zi zi0
+    var k: i32 0
+    var d: f32 1.0          ; how far the last step went, squared
+    var before: f32 1.0     ; and the one before
+    while k < turns and d > 0.000001
+    {
+        let ar zr * zr - zi * zi        ; z^2
+        let ai 2.0 * zr * zi
+        let br ar * zr - ai * zi        ; z^3
+        let bi ar * zi + ai * zr
+        let qr 3.0 * ar                 ; 3 z^2
+        let qi 3.0 * ai
+        let q qr * qr + qi * qi
+        let pr br - 1.0                 ; z^3 - 1
+        let sr (pr * qr + bi * qi) / q  ; (z^3 - 1) / 3 z^2
+        let si (bi * qr - pr * qi) / q
+        let mr cr - sr
+        let mi ci - si
+        zr := zr + mr
+        zi := zi + mi
+        before := d
+        d := mr * mr + mi * mi
+        k := k + 1
+    }
+    if k >= turns or not (d <= 0.000001)
+        return rgb(0, 0, 0)
+    let v settled(k, before, d, 0.000001)
+    if nova
+        return palette(v * 0.045, 7)
+    let root if zr > 0.0: rgb(235, 60, 80) else if zi > 0.0: rgb(255, 200, 60) else rgb(40, 130, 235)
+    let dark 1.0 / (1.0 + 0.2 * magnitude(v))
+    blend(rgb(8, 6, 20), root, dark)
+}
+
+; The Magnet: z from 0, c the place. It runs away or comes to rest at 1;
+; each way has its colours, and a place that does neither is black.
+function magnet(cr: f32, ci: f32, turns: i32) returns u32
+{
+    var zr: f32 0.0
+    var zi: f32 0.0
+    var k: i32 0
+    var way: i32 0
+    var near: f32 1.0       ; |z - 1|^2
+    var before: f32 1.0     ; the one before
+    while k < turns and way = 0
+    {
+        let nr zr * zr - zi * zi + cr - 1.0     ; z^2 + c - 1
+        let ni 2.0 * zr * zi + ci
+        let dr 2.0 * zr + cr - 2.0              ; 2z + c - 2
+        let di 2.0 * zi + ci
+        let q dr * dr + di * di
+        let wr (nr * dr + ni * di) / q
+        let wi (ni * dr - nr * di) / q
+        zr := wr * wr - wi * wi
+        zi := 2.0 * wr * wi
+        k := k + 1
+        before := near
+        near := (zr - 1.0) * (zr - 1.0) + zi * zi
+        if zr * zr + zi * zi > 10000.0
+            way := 1
+        else if near < 0.000001
+            way := 2
+    }
+    if way = 1: palette(((k as f32) + 1.0 - log2(log2(zr * zr + zi * zi) * 0.5)) * 0.06, 9)
+    else if way = 2: palette(settled(k, before, near, 0.000001) * 0.05, 10)
+    else rgb(0, 0, 0)
+}
+
+; Lyapunov's fractal: the logistic map x := r x (1 - x) from x = 1/2, its
+; rate r taken from a and b in turn. The exponent -- the mean of
+; log2 |r (1 - 2x)| -- says whether x settles (below zero: gold, the
+; brighter the more firmly) or runs in chaos (above: deep blue).
+function lyapunov(a: f32, b: f32, turns: i32) returns u32
+{
+    var x: f32 0.5
+    var sum: f32 0.0
+    var i: i32 0
+    while i < turns + 40
+    {
+        let r if (i % 12) < 6: b else a
+        if i >= 40
+            sum := sum + log2(magnitude(r * (1.0 - 2.0 * x)))
+        x := r * x * (1.0 - x)
+        i := i + 1
+    }
+    let l sum / (turns as f32)
+    if l < 0.0
+    {
+        let t 0.0 - l * 0.45
+        let s: f32 if t > 0.999: 0.999 else t
+        ramp(s * 0.8, rgb(20, 10, 0), rgb(120, 60, 0), rgb(240, 180, 30), rgb(255, 245, 190), rgb(255, 255, 250))
+    }
+    else
+    {
+        blend(rgb(0, 30, 70), rgb(0, 0, 0), l * 0.9)
+    }
+}
+
+; The colour of one place of the plane in the fractal `kind`.
+function place(kind: i32, re: f32, im: f32, turns: i32) returns u32
+{
+    if kind = 6: newton(re, im, 0.0 as f32, 0.0 as f32, turns, false)
+    else if kind = 7: newton(1.0 as f32, 0.0 as f32, re, im, turns, true)
+    else if kind = 9: magnet(re, im, turns)
+    else if kind = 10: lyapunov(im, re, turns)
+    else
+    {
+        ; a Julia set and the Phoenix move z over the plane, the others c;
+        ; the Phoenix and the Multibrot lie across
+        let v if kind = 1: escape(kind, re, im, 0.0 - (0.7269 as f32), 0.1889 as f32, turns)
+            else if kind = 2: escape(kind, re, im, 0.0 - (0.123 as f32), 0.745 as f32, turns)
+            else if kind = 8: escape(kind, im, re, 0.5667 as f32, 0.0 as f32, turns)
+            else if kind = 5: escape(kind, 0.0 as f32, 0.0 as f32, im, re, turns)
+            else escape(kind, 0.0 as f32, 0.0 as f32, re, im, turns)
+        if v < 0.0: rgb(0, 0, 0)
+        else
+        {
+            ; how many turns a palette spans
+            let density if kind = 0: 0.025 as f32 else if kind = 3: 0.04 as f32 else if kind = 8: 0.05 as f32 else 0.03 as f32
+            palette(v * density, kind)
+        }
+    }
+}
+
+; The colour of one point: the average over samples x samples places in it.
+function colour(x: i32, y: i32, turns: i32, samples: i32, kind: i32, x0: f32, y0: f32, step: f32) returns u32
+{
+    let sub step / (samples as f32)
+    var r: u32 0
+    var g: u32 0
+    var b: u32 0
+    var s: i32 0
+    while s < samples * samples
+    {
+        let re x0 + (x as f32) * step + (((s % samples) as f32) + 0.5) * sub
+        let im y0 + (y as f32) * step + (((s / samples) as f32) + 0.5) * sub
+        let c place(kind, re, im, turns)
+        r := r + (c & 255)
+        g := g + ((c >> 8) & 255)
+        b := b + ((c >> 16) & 255)
+        s := s + 1
+    }
+    let n (samples * samples) as u32
+    0xFF000000 | ((b / n) << 16) | ((g / n) << 8) | (r / n)
+}
+
+let args os.arguments()
+var w: i32 600
+var h: i32 400
+var turns: i32 200
+var cx -0.5
+var cy 0.0
+var span 3.0
+var samples: i32 1
+var kind: i32 0
+if args.length >= 6
+{
+    w := whole(args[0]) as i32
+    h := whole(args[1]) as i32
+    turns := whole(args[2]) as i32
+    cx := (whole(args[3]) as f64) / 1000000000.0
+    cy := (whole(args[4]) as f64) / 1000000000.0
+    span := (whole(args[5]) as f64) / 1000000000.0
+}
+if args.length >= 7
+    samples := whole(args[6]) as i32
+if args.length >= 8
+    kind := whole(args[7]) as i32
+if samples < 1
+    samples := 1
+let step span / (w as f64)
+let x0 (cx - span / 2.0) as f32
+let y0 (cy - step * (h as f64) / 2.0) as f32
+let st step as f32
+
+var picture Vector[u32]((w * h) as size_t)
+print "picture at `picture.as_bytes().data as size_t`"
+let begun scaly_eio_now_ns()
+relaxed for p in w * h
+    picture.put(p as size_t, colour(p % w, p / w, turns, samples, kind, x0, y0, st))
+let took scaly_eio_now_ns() - begun
+if File.write_bytes("fractal.`w`x`h`.rgba", picture.as_bytes()) = false
+    print "no picture written"
+print "ms `(took as f64) / 1000000.0`"

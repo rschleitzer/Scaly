@@ -33,7 +33,7 @@
 // in the order it wrote them.
 //
 // `env` adds to the environment (SCALY_CACHE, where a page keeps the build
-// cache it carries: `scaly build` in a page, web/mandelbrot), and `collect`
+// cache it carries: `scaly build` in a page, web/fractals), and `collect`
 // names files whose bytes come back with `exit` (`collected`, path -> bytes;
 // a file that is not there is left out) -- the program `scaly build` made.
 import { MemoryFiles, Wasi } from './wasi.mjs';
