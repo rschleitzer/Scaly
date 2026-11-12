@@ -16356,6 +16356,41 @@ define Emitter
                 }
             }
 
+            ; ... and past the deref, which loads its value (s160 above): a
+            ; single anonymous component whose value IS of the tuple's own
+            ; type is a GROUPING: a record cannot hold itself by value, so it
+            ; can never be its own one-field construction. The cache lookup
+            ; above says construction for every record, and the struct was
+            ; built from the component's VALUE -- for a call answering through
+            ; sret, the address of its result slot. In the standard library
+            ; `Drawing.attribute(colour)` inside an interpolation came here as
+            ; such a tuple: a String whose data was the stack address of the
+            ; String the call returned, read back as text -- bytes of the
+            ; stack, the environment among them, at rc 0 (2026-11-11).
+            if is_struct_construction
+                if tuple.components.length = 1 and tuple.tuple_type.mangled_name.get_length() > 0
+                {
+                    let same_first tuple.components.get 0
+                    if same_first <> null
+                    {
+                        let sf (*same_first)
+                        if sf.name = null and sf.value <> null
+                        {
+                            let sops (*sf.value)
+                            if sops.length = 1
+                            {
+                                let s0 sops.get 0
+                                if s0 <> null and (*s0).member_access = null and (*s0).result_type.mangled_name = tuple.tuple_type.mangled_name
+                                    choose (*s0).expr
+                                        when same_call: PlannedCall
+                                            return emit_operands sf.value
+                                        else
+                                            0
+                            }
+                        }
+                    }
+                }
+
             ; If single component with no name and not struct construction, just emit the value
             if tuple.components.length = 1
             {

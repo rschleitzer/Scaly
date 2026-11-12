@@ -62,13 +62,22 @@ define Drawing
         this.parts := StringBuilder()
     }
 
+    ; svg_text# as a STATIC of this concept, which circle calls on purpose:
+    ; called inside an interpolation in a method here, the compiler once
+    ; built a String around the ADDRESS of the String it answered, and the
+    ; drawing showed bytes of the stack (Emitter.emit_tuple#, a grouping of
+    ; one component of the tuple's own type). tests/regress/draw_svg.scaly
+    ; sees a return; outside the standard library the shape never came.
+    function attribute(text: String) returns String
+        svg_text(text)
+
     ; a line from (x1, y1) to (x2, y2), two points wide
     procedure line(mutable this, x1: int, y1: int, x2: int, y2: int, colour: String)
         this.parts.append "<line x1=\"`x1`\" y1=\"`y1`\" x2=\"`x2`\" y2=\"`y2`\" stroke=\"`svg_text(colour)`\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n"
 
     ; a filled circle around (x, y)
     procedure circle(mutable this, x: int, y: int, radius: int, colour: String)
-        this.parts.append "<circle cx=\"`x`\" cy=\"`y`\" r=\"`radius`\" fill=\"`svg_text(colour)`\"/>\n"
+        this.parts.append "<circle cx=\"`x`\" cy=\"`y`\" r=\"`radius`\" fill=\"`Drawing.attribute(colour)`\"/>\n"
 
     ; a filled rectangle, its top left corner at (x, y)
     procedure rect(mutable this, x: int, y: int, width: int, height: int, colour: String)
