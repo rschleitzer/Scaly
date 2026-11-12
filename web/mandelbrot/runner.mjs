@@ -7,7 +7,7 @@
 //
 //   { type: 'hello' }                    -> { type: 'ready', card }
 //   { type: 'load', bytes }              -> { type: 'loaded', threads }
-//   { type: 'run', args, env, gpu }      -> { type: 'done', status, stdout, stderr, picture, cards }
+//   { type: 'run', args, env, gpu }      -> { type: 'done', status, stdout, stderr, picture, cards, compiled }
 //
 // `load` puts another module in the place of mandelbrot.wasm: the reader's
 // own version, built in the page (index.html). `threads` says whether it
@@ -45,7 +45,8 @@ self.onmessage = async ({ data }) => {
   }
   const memory = threadMemory(program.bytes);
   if (card) card.mode = data.gpu;
-  const before = card ? card.report().reduce((sum, site) => sum + site.card, 0) : 0;
+  const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
+  const before = sum('card'), compiledBefore = sum('compile_ms');
   const files = new MemoryFiles();
   const wasi = new Wasi({
     args: ['mandelbrot', ...data.args], env: data.env, files, gpu: card,
@@ -70,7 +71,9 @@ self.onmessage = async ({ data }) => {
       break;
     }
   }
-  const cards = card ? card.report().reduce((sum, site) => sum + site.card, 0) - before : 0;
-  self.postMessage({ type: 'done', status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), picture, width, height, cards },
+  const cards = sum('card') - before;
+  // of the run: compiling the card's kernels, which only a kernel's first run pays
+  const compiled = sum('compile_ms') - compiledBefore;
+  self.postMessage({ type: 'done', status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), picture, width, height, cards, compiled },
                    picture ? [picture.buffer] : []);
 };

@@ -13,8 +13,9 @@
 //
 //   word 0   0 while the run is under way; then 1 the card ran every round,
 //            2 it did not, 3 a round stopped
-//   word 1   where it did not run: the bytes of the reason that follow the
-//            outputs
+//   word 1   where it ran: how long compiling its kernel took, in
+//            microseconds (0: compiled before); where it did not: the bytes
+//            of the reason that follow the outputs
 //   byte 8   the outputs, one after the other, `count` words each
 //
 // The first message this worker posts says whether the page has a card:
@@ -38,6 +39,7 @@ self.onmessage = async event => {
   }
   const data = 8 + outputs.length * count * 4;
   if (answer.ran) {
+    state[1] = Math.round((answer.compile_ms ?? 0) * 1000);
     outputs.forEach((o, i) =>
       new Uint32Array(shared, 8 + i * count * 4, count).set(new Uint32Array(o.buffer, o.byteOffset, count)));
   } else {

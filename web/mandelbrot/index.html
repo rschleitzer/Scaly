@@ -162,8 +162,10 @@
       may fall to the other side. The table says how many.</p>
     <p>“Let Scaly decide” gives the program both: the runtime measures the first rounds on the processor and
       sends the loop to the card where that pays — a small picture with few iterations may stay on the cores.
-      The times are those of the loop alone, measured by the program; the first run on the card includes
-      compiling its kernel, and the first on the cores starting their threads.</p>
+      The times are those of the loop alone, measured by the program. The card needs its kernel compiled once —
+      a browser translates it into the card's own language, and Safari takes far longer for that than for a
+      run —, so the page does that in the background as soon as a program is loaded; where you are quicker, the
+      table says how much of a time it was. The first run on the cores includes starting their threads.</p>
   </section>
 
   <section class="code">
@@ -227,7 +229,7 @@ function describe() {
 }
 
 // One run of the program: the page is the coordinator of its threads.
-async function runOnce(label, workers, gpu) {
+async function runOnce(label, workers, gpu, given = args()) {
   const env = { SCALY_CPUS: String(cpus), SCALY_WORKERS: String(workers) };
   let resolve;
   const done = new Promise(r => { resolve = r; });
@@ -241,7 +243,7 @@ async function runOnce(label, workers, gpu) {
     if (data.type === 'done') resolve(data);
   };
   const t0 = performance.now();
-  runner.postMessage({ type: 'run', args: args(), env, gpu });
+  runner.postMessage({ type: 'run', args: given, env, gpu });
   const answer = await done;
   threads.end();
   const ms = Number((/ms ([0-9.]+)/.exec(answer.stdout) || [])[1]);
@@ -280,6 +282,12 @@ function table() {
     const td = (text, cls = '') => { const c = document.createElement('td'); c.className = cls; c.textContent = text; tr.appendChild(c); return c; };
     td(r.label);
     td(Number.isFinite(r.ms) ? `${r.ms < 10 ? r.ms.toFixed(1) : Math.round(r.ms)} ms` : r.status, 'num');
+    if (r.compiled >= 1) {
+      const note = document.createElement('small');
+      note.className = 'note';
+      note.textContent = ` (${Math.round(r.compiled)} of it compiling the kernel, once)`;
+      tr.lastChild.appendChild(note);
+    }
     const bar = td('', 'bar');
     const span = document.createElement('span');
     if (r.cards > 0) span.className = 'card';
@@ -471,6 +479,20 @@ function buildInPage(text) {
   });
 }
 
+// The card compiles a program's kernel at its first run there and keeps it --
+// Safari takes much longer for that than for a run. So as soon as a program
+// is loaded, it runs once on the card, on a picture of 16 x 16 points that
+// nobody sees: the kernel is the same at every size. (The cores need no such
+// thing; the threads start with every run.)
+async function warm() {
+  if (!hasCard) return;
+  const was = $('status').textContent;
+  status('Preparing the graphics card…');
+  const [, , turns, cx, cy, span] = args();
+  await runOnce('warm', 1, 'on', ['16', '16', turns, cx, cy, span]).catch(() => null);
+  status(was);
+}
+
 // the module to run, into the runner: the reader's, or the original's
 function load(bytes) {
   return new Promise(resolve => {
@@ -495,6 +517,7 @@ async function buildMine(then = [ALL]) {
       return false;
     }
     const loaded = await load(built.bytes);
+    await warm();
     version++;
     $('which').innerHTML = '— <span class="yours">your version</span>';
     buildStatus(`Built in ${Math.round(performance.now() - t0)} ms${loaded.threads ? '' : ' (without threads)'}.`);
@@ -511,9 +534,17 @@ async function buildMine(then = [ALL]) {
 $('build').onclick = () => buildMine();
 $('original').onclick = async () => {
   if (busy) return;
-  $('editor').value = original;
-  const bytes = new Uint8Array(await (await fetch('mandelbrot.wasm')).arrayBuffer());
-  await load(bytes);
+  // one run at a time: the runner runs one program, and a second would take
+  // over its messages
+  setBusy(true);
+  try {
+    $('editor').value = original;
+    const bytes = new Uint8Array(await (await fetch('mandelbrot.wasm')).arrayBuffer());
+    await load(bytes);
+    await warm();
+  } finally {
+    setBusy(false);
+  }
   version = 0;
   $('which').textContent = '— the original';
   $('diagnostics').hidden = true;
@@ -544,6 +575,7 @@ if (!crossOriginIsolated) {
   } else {
     hasCard = ready.card;
     if (!hasCard) $('card').title = $('auto').title = 'This browser gives the page no graphics card (WebGPU).';
+    await warm();
     setBusy(false);
     if (selftest) await selfTest();
     else await go([ALL]);

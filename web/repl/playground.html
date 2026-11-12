@@ -76,8 +76,14 @@
   .runs { display: grid; grid-template-columns: max-content minmax(60px, 1fr) max-content; gap: 4px 10px;
           align-items: center; font-size: 13px; }
   .runs:empty, #pictures:empty { display: none; }
-  .runs .bar { height: 10px; border-radius: 5px; background: var(--muted); min-width: 2px; }
-  .runs .bar.card { background: var(--accent); }
+  .runs .bar { height: 10px; display: flex; min-width: 2px; }
+  .runs .bar span { height: 100%; background: var(--muted); }
+  .runs .bar span:first-child { border-radius: 5px 0 0 5px; }
+  .runs .bar span:last-child { border-radius: 0 5px 5px 0; }
+  .runs .bar span:only-child { border-radius: 5px; }
+  .runs .bar.card span { background: var(--accent); }
+  /* compiling the card's kernel, once: the lighter part of its bar */
+  .runs .bar span.compile { background: repeating-linear-gradient(135deg, var(--accent) 0 3px, transparent 3px 6px); opacity: .55; }
   .runs .time { font-variant-numeric: tabular-nums; }
   .runs .what { grid-column: 1 / -1; margin: -2px 0 4px; }
   /* last: the wide layout overrides the base rules above */
@@ -177,6 +183,7 @@ const TEXT = {
     builtIn: ms => `built in ${ms} ms; `, noCardGiven: 'this browser gives the page no graphics card, the cores ran it',
     cardRan: n => `the card ran ${n} ${n === 1 ? 'loop' : 'loops'}`,
     upTo: n => `the loops ran on up to ${n} cores`, onOne: 'the loops ran on one core',
+    compiledOnce: ms => `; of the time, ${ms} ms went into compiling its kernel for the card — once: the next run keeps it`,
     points: (w, h) => `${w} × ${h} points`,
   },
   de: {
@@ -196,6 +203,7 @@ const TEXT = {
     builtIn: ms => `gebaut in ${ms} ms; `, noCardGiven: 'dieser Browser gibt der Seite keine Grafikkarte, die Kerne haben gerechnet',
     cardRan: n => `die Karte hat ${n} ${n === 1 ? 'Schleife' : 'Schleifen'} gerechnet`,
     upTo: n => `die Schleifen liefen auf bis zu ${n} Kernen`, onOne: 'die Schleifen liefen auf einem Kern',
+    compiledOnce: ms => `; davon ${ms} ms, um ihren Kernel für die Karte zu übersetzen — nur einmal: der nächste Lauf hat ihn schon`,
     points: (w, h) => `${w} × ${h} Punkte`,
   },
 };
@@ -337,9 +345,20 @@ function showRuns() {
   for (const r of list) {
     const label = document.createElement('span');
     label.textContent = r.where;
+    // the run, and before it the part that compiled the card's kernel
     const bar = document.createElement('span');
     bar.className = r.cards > 0 ? 'bar card' : 'bar';
     bar.style.width = `${Math.max(1, 100 * r.ran / longest)}%`;
+    const compiled = Math.min(r.compiled ?? 0, r.ran);
+    if (compiled > 0) {
+      const part = document.createElement('span');
+      part.className = 'compile';
+      part.style.width = `${100 * compiled / r.ran}%`;
+      bar.appendChild(part);
+    }
+    const rest = document.createElement('span');
+    rest.style.flex = '1';
+    bar.appendChild(rest);
     const time = document.createElement('span');
     time.className = 'time';
     time.textContent = `${r.ran < 10 ? r.ran.toFixed(1) : Math.round(r.ran)} ms`;
@@ -446,10 +465,10 @@ async function runOnCores() {
       : choice === 'card' ? (runnerCard ? t('theCard') : t('noCard')) : t('auto');
     let what = t('builtIn')(Math.round(compiled));
     if ((choice === 'card' || choice === 'auto') && !runnerCard) what += t('noCardGiven');
-    else if (r.cards > 0) what += t('cardRan')(r.cards);
+    else if (r.cards > 0) what += t('cardRan')(r.cards) + (r.compiled >= 1 ? t('compiledOnce')(Math.round(r.compiled)) : '');
     else what += workers > 1 ? t('upTo')(workers) : t('onOne');
     const list = runs.get(step) ?? [];
-    list.push({ where, cards: r.cards, ran: r.ms, what });
+    list.push({ where, cards: r.cards, ran: r.ms, compiled: r.compiled ?? 0, what });
     runs.set(step, list.slice(-6));
     showRuns();
     status(t('done')(Math.round(r.ms)), 'ok');

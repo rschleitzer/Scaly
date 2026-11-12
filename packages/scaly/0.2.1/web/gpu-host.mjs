@@ -118,6 +118,7 @@ export class GpuHost {
         measured: 0,               // card runs that count: 0, 1 (the first, which pays the compilation), 2
         fixed_ns: 0, round_ns: 0,  // the card's time: per call, per round
         cards: 0, card_rounds: 0, card_ns: 0,
+        compile_ns: 0,             // of card_ns: compiling the kernel, once
         kept: 0, stops: 0,
         kept_ns: 0,                // the processor's work this loop brought to the gate and kept
         cpu_round_ns: 0,           // the processor's time for a round, as it took (0: not told yet)
@@ -234,6 +235,7 @@ export class GpuHost {
     site.kept_since = 0;
     site.card_rounds += count;
     site.card_ns += all_ns;
+    site.compile_ns += state[1] * 1000;
     this.say('card (' + count + ' rounds)');
     return 1;
   }
@@ -243,6 +245,7 @@ export class GpuHost {
   report() {
     return [...this.sites.values()].map(s => ({
       where: s.where, card: s.cards, card_rounds: s.card_rounds, card_ms: s.card_ns / 1e6,
+      compile_ms: s.compile_ns / 1e6,
       processor: s.kept, given_back: s.stops,
     }));
   }

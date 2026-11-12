@@ -50,9 +50,14 @@ export class Card {
     this.said = [];            // what the card said of a kernel it did not take
   }
 
-  // The compiled kernel of a text, or null.
+  // The compiled kernel of a text, or null. `compile_ms` is how long the
+  // last call took to compile one: 0 where the text was compiled before. (A
+  // browser compiles WGSL into its card's own language here -- Safari into
+  // Metal, which takes it far longer than any run after.)
   async kernel(wgsl) {
+    this.compile_ms = 0;
     if (this.kernels.has(wgsl)) return this.kernels.get(wgsl);
+    const begun = performance.now();
     this.device.pushErrorScope('validation');
     let pipeline = null;
     try {
@@ -65,6 +70,7 @@ export class Card {
     const error = await this.device.popErrorScope();
     if (error) { this.said.push(error.message); pipeline = null; }
     this.kernels.set(wgsl, pipeline);
+    this.compile_ms = performance.now() - begun;
     return pipeline;
   }
 
@@ -132,7 +138,7 @@ export class Card {
       } else {
         // all or nothing: every output is here
         outputs.forEach((o, i) => new Uint32Array(o.buffer, o.byteOffset, count).set(new Uint32Array(result, 4 + i * count * 4, count)));
-        answer = { ran: true, stopped: false, why: '' };
+        answer = { ran: true, stopped: false, why: '', compile_ms: this.compile_ms };
       }
       reader.unmap();
     }

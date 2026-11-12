@@ -9,10 +9,12 @@
 //   { type: 'hello' }                    -> { type: 'ready', card }
 //   { type: 'load', bytes }              -> { type: 'loaded', threads }
 //   { type: 'run', args, env, gpu }      -> { type: 'done', status, stdout, stderr, ms,
-//                                              pictures, drawings, cards }
+//                                              pictures, drawings, cards, compiled }
 //
 // `gpu` is the card's mode for the run: 'off', 'on' or 'auto'. `ms` is how
-// long the program ran, `cards` how many loops the card took. `pictures` and
+// long the program ran, `cards` how many loops the card took, `compiled`
+// how much of `ms` compiling the card's kernels took (a kernel is compiled
+// once, at its first run, and kept). `pictures` and
 // `drawings` are what worker.mjs hands back for a program `scaly run` ran:
 // the `.<w>x<h>.rgba` files and the SVG files it wrote.
 import { MemoryFiles, Wasi } from './wasi.mjs';
@@ -36,7 +38,8 @@ self.onmessage = async ({ data }) => {
   }
   const memory = threadMemory(program.bytes);
   if (card) card.mode = data.gpu;
-  const before = card ? card.report().reduce((sum, site) => sum + site.card, 0) : 0;
+  const sum = what => card ? card.report().reduce((all, site) => all + site[what], 0) : 0;
+  const before = sum('card'), compiledBefore = sum('compile_ms');
   const files = new MemoryFiles();
   for (const dir of ['/tmp', '/work']) files.dirs.add(dir);
   const wasi = new Wasi({
@@ -61,7 +64,9 @@ self.onmessage = async ({ data }) => {
     else if (path.endsWith('.svg'))
       drawings.push({ name: path.slice(6), text: new TextDecoder().decode(bytes) });
   }
-  const cards = card ? card.report().reduce((sum, site) => sum + site.card, 0) - before : 0;
+  const cards = sum('card') - before;
+  // of the run: compiling the card's kernels, which only a kernel's first run pays
+  const compiled = sum('compile_ms') - compiledBefore;
   self.postMessage({ type: 'done', status, stdout: wasi.stdout_text(), stderr: wasi.stderr_text(), ms,
-                     pictures, drawings, cards }, pictures.map(p => p.bytes.buffer));
+                     pictures, drawings, cards, compiled }, pictures.map(p => p.bytes.buffer));
 };
