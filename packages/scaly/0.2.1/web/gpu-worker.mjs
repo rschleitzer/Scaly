@@ -19,7 +19,8 @@
 //   byte 8   the outputs, one after the other, `count` words each
 //
 // The first message this worker posts says whether the page has a card:
-// { card: true | false }.
+// { card: true | false, why } -- `why`, where it has none, the reason
+// (Card.why).
 //
 // A page that keeps its card while a program's worker is ended and made
 // again -- a run broken off -- makes this worker itself and hands each
@@ -28,7 +29,8 @@
 // worker's own messages do; the kernels compiled so far stay.
 import { Card } from './gpu.mjs';
 
-const opened = Card.open().catch(() => null);
+const opened = Card.open().catch(e => { Card.why = String(e && e.message || e); return null; });
+const hello = card => ({ card: card !== null, why: card ? '' : Card.why });
 
 async function serve(event) {
   const { wgsl, count, words, inputs, outputs, shared } = event.data;
@@ -61,7 +63,7 @@ self.onmessage = event => {
   const port = event.data && event.data.port;
   if (!port) return serve(event);
   port.onmessage = serve;
-  opened.then(card => port.postMessage({ card: card !== null }));
+  opened.then(card => port.postMessage(hello(card)));
 };
 
-opened.then(card => self.postMessage({ card: card !== null }));
+opened.then(card => self.postMessage(hello(card)));

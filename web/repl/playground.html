@@ -220,7 +220,7 @@ const TEXT = {
     done: ms => `Done in ${ms} ms.`, runFailed: 'The run failed.', stopped: '\n[stopped]\n',
     stoppedBy: t => `\n[stopped: ${t}]\n`, workerFailed: m => `\n[the worker failed: ${m}]\n`,
     oneCore: 'One core', cores: n => `${n} cores`, theCard: 'The card', noCard: 'No card',
-    builtIn: ms => `built in ${ms} ms; `, noCardGiven: 'this browser gives the page no graphics card, the cores ran it',
+    builtIn: ms => `built in ${ms} ms; `, noCardGiven: why => `this browser gives the page no graphics card, the cores ran it (${why})`,
     cardRan: n => `the card ran ${n} ${n === 1 ? 'loop' : 'loops'}`,
     upTo: n => `the loops ran on up to ${n} cores`, onOne: 'the loops ran on one core',
     compiledOnce: ms => `; of the time, ${ms} ms went into compiling its kernel for the card — once: the next run keeps it`,
@@ -245,7 +245,7 @@ const TEXT = {
     done: ms => `Fertig in ${ms} ms.`, runFailed: 'Der Lauf ist fehlgeschlagen.', stopped: '\n[angehalten]\n',
     stoppedBy: t => `\n[angehalten: ${t}]\n`, workerFailed: m => `\n[der Worker ist fehlgeschlagen: ${m}]\n`,
     oneCore: 'Ein Kern', cores: n => `${n} Kerne`, theCard: 'Die Karte', noCard: 'Keine Karte',
-    builtIn: ms => `gebaut in ${ms} ms; `, noCardGiven: 'dieser Browser gibt der Seite keine Grafikkarte, die Kerne haben gerechnet',
+    builtIn: ms => `gebaut in ${ms} ms; `, noCardGiven: why => `dieser Browser gibt der Seite keine Grafikkarte, die Kerne haben gerechnet (${why})`,
     cardRan: n => `die Karte hat ${n} ${n === 1 ? 'Schleife' : 'Schleifen'} gerechnet`,
     upTo: n => `die Schleifen liefen auf bis zu ${n} Kernen`, onOne: 'die Schleifen liefen auf einem Kern',
     compiledOnce: ms => `; davon ${ms} ms, um ihren Kernel für die Karte zu übersetzen — nur einmal: der nächste Lauf hat ihn schon`,
@@ -544,7 +544,7 @@ function showRuns() {
 // card beside them. `scaly run` in the page has one core: its program lives
 // in the compiler's own memory.
 const cpus = navigator.hardwareConcurrency || 1;
-let runner = null, runnerCard = false, building = null, threadsLib = null;
+let runner = null, runnerCard = false, noCardWhy = '', building = null, threadsLib = null;
 
 async function prepareCores() {
   if (!building) building = (async () => {
@@ -555,7 +555,12 @@ async function prepareCores() {
     threadsLib = await import('./threads.mjs');
     runner = new Worker('runner.mjs', { type: 'module' });
     runnerCard = await new Promise(resolve => {
-      runner.onmessage = ({ data }) => { if (data.type === 'ready') resolve(data.card); };
+      runner.onmessage = ({ data }) => {
+        if (data.type !== 'ready') return;
+        // why not: the page itself without WebGPU, or what the card's worker said
+        noCardWhy = navigator.gpu ? data.why || 'unknown' : 'no WebGPU in this browser (navigator.gpu)';
+        resolve(data.card);
+      };
       runner.postMessage({ type: 'hello' });
     });
   })();
@@ -627,7 +632,7 @@ async function runOnCores() {
     const where = choice === 'one' ? t('oneCore') : choice === 'all' ? t('cores')(cpus)
       : choice === 'card' ? (runnerCard ? t('theCard') : t('noCard')) : t('auto');
     let what = t('builtIn')(Math.round(compiled));
-    if ((choice === 'card' || choice === 'auto') && !runnerCard) what += t('noCardGiven');
+    if ((choice === 'card' || choice === 'auto') && !runnerCard) what += t('noCardGiven')(noCardWhy);
     else if (r.cards > 0) what += t('cardRan')(r.cards) + (r.compiled >= 1 ? t('compiledOnce')(Math.round(r.compiled)) : '');
     else what += workers > 1 ? t('upTo')(workers) : t('onOne');
     const list = runs.get(step) ?? [];

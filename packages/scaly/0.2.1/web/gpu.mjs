@@ -32,14 +32,26 @@ const GROUP = 64;
 const ROW = 65535;
 
 export class Card {
+  // The card, or null -- and then `Card.why` says why: where a page has no
+  // card, that is what a reader can tell the author (an iPhone, a browser
+  // whose WebGPU is off, one that has it on the page but not in a worker).
   static async open() {
-    if (typeof navigator === 'undefined' || !navigator.gpu) return null;
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) return null;
+    Card.why = '';
+    if (typeof navigator === 'undefined' || !navigator.gpu) {
+      Card.why = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
+        ? 'no WebGPU in a worker (navigator.gpu)' : 'no WebGPU (navigator.gpu)';
+      return null;
+    }
+    let adapter;
+    try { adapter = await navigator.gpu.requestAdapter(); }
+    catch (e) { Card.why = `requestAdapter failed: ${e && e.message || e}`; return null; }
+    if (!adapter) { Card.why = 'WebGPU gave no adapter (requestAdapter answered null)'; return null; }
     // every storage buffer the card allows: the default is eight, and a
     // kernel binds two of its own beside the program's
     const most = adapter.limits.maxStorageBuffersPerShaderStage;
-    const device = await adapter.requestDevice({ requiredLimits: { maxStorageBuffersPerShaderStage: most } });
+    let device;
+    try { device = await adapter.requestDevice({ requiredLimits: { maxStorageBuffersPerShaderStage: most } }); }
+    catch (e) { Card.why = `requestDevice failed: ${e && e.message || e}`; return null; }
     return new Card(device, most);
   }
 

@@ -6,7 +6,7 @@
 // worker of its own (gpu-host.mjs, gpu-worker.mjs), opened once and kept, so
 // that a kernel is compiled once.
 //
-//   { type: 'hello' }                    -> { type: 'ready', card }
+//   { type: 'hello' }                    -> { type: 'ready', card, why }
 //   { type: 'load', bytes }              -> { type: 'loaded', threads }
 //   { type: 'run', args, env, gpu }      -> { type: 'done', status, stdout, stderr, ms,
 //                                              pictures, drawings, cards, compiled }
@@ -28,7 +28,7 @@ self.onmessage = async ({ data }) => {
   if (card === undefined)
     card = await GpuHost.open(new URL('./gpu-worker.mjs', import.meta.url), { mode: 'off' }).catch(() => null);
   if (data.type === 'hello') {
-    self.postMessage({ type: 'ready', card: card !== null });
+    self.postMessage({ type: 'ready', card: card !== null, why: card ? '' : (GpuHost.why || 'the card did not open') });
     return;
   }
   if (data.type === 'load') {

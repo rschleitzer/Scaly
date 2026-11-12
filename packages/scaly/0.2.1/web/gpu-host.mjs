@@ -66,17 +66,28 @@ const PATIENCE_MS = 120000;
 const decoder = new TextDecoder();
 
 export class GpuHost {
+  // Where it answers null, GpuHost.why says why.
   static async open(source, options = {}) {
-    if (typeof SharedArrayBuffer === 'undefined' || typeof Atomics === 'undefined') return null;
-    if (typeof WorkerGlobalScope === 'undefined' || !(self instanceof WorkerGlobalScope)) return null;
+    GpuHost.why = '';
+    if (typeof SharedArrayBuffer === 'undefined' || typeof Atomics === 'undefined') {
+      GpuHost.why = 'no SharedArrayBuffer (the page is not cross-origin isolated)';
+      return null;
+    }
+    if (typeof WorkerGlobalScope === 'undefined' || !(self instanceof WorkerGlobalScope)) {
+      GpuHost.why = 'not in a worker';
+      return null;
+    }
     let worker = source;
     if (typeof source === 'string' || source instanceof URL) {
-      if (typeof Worker === 'undefined') return null;
+      if (typeof Worker === 'undefined') { GpuHost.why = 'no worker can be made from a worker here'; return null; }
       worker = new Worker(source, { type: 'module' });
     }
     const has = await new Promise(resolve => {
-      worker.onmessage = event => resolve(event.data && event.data.card === true);
-      worker.onerror = () => resolve(false);
+      worker.onmessage = event => {
+        GpuHost.why = event.data && event.data.why || '';
+        resolve(event.data && event.data.card === true);
+      };
+      worker.onerror = e => { GpuHost.why = `the card's worker failed: ${e && e.message || e}`; resolve(false); };
     });
     worker.onmessage = null;
     if (!has) {

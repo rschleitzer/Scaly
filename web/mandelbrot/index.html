@@ -212,7 +212,7 @@ const canvas = $('canvas');
 const cpus = navigator.hardwareConcurrency || 1;
 const HOME = { cx: -0.5, cy: 0, span: 3 };
 let view = { ...HOME };
-let runner = null, busy = false, hasCard = false;
+let runner = null, busy = false, hasCard = false, noCardWhy = '';
 let version = 0;          // 0: the original program; n: the reader's n-th build
 let original = '';        // its source
 let compiler = null;      // the compiler for the page, once loaded: { module, files }
@@ -260,8 +260,8 @@ const TEXT = {
     cannotBuild: m => `Could not build: ${m}`,
     isolation: 'This page needs a cross-origin isolated server (COOP and COEP): it shares memory between its threads.',
     cannotStart: m => `Could not start the program: ${m}`,
-    noCard: 'This browser gives the page no graphics card (WebGPU).',
-    readyNoCard: 'Ready. This browser gives the page no graphics card (WebGPU): the card buttons rest.',
+    noCard: why => `This browser gives the page no graphics card (WebGPU): ${why}.`,
+    readyNoCard: why => `Ready. This browser gives the page no graphics card (WebGPU), the card buttons rest — ${why}.`,
   },
   de: {
     oneButton: "Auf einem Kern<small>wie ein gewöhnliches Programm</small>",
@@ -297,8 +297,8 @@ const TEXT = {
     cannotBuild: m => `Bauen ging nicht: ${m}`,
     isolation: 'Diese Seite braucht einen Server mit Cross-Origin-Isolation (COOP und COEP): Sie teilt Speicher zwischen ihren Threads.',
     cannotStart: m => `Das Programm ließ sich nicht starten: ${m}`,
-    noCard: 'Dieser Browser gibt der Seite keine Grafikkarte (WebGPU).',
-    readyNoCard: 'Bereit. Dieser Browser gibt der Seite keine Grafikkarte (WebGPU): Die Knöpfe der Karte ruhen.',
+    noCard: why => `Dieser Browser gibt der Seite keine Grafikkarte (WebGPU): ${why}.`,
+    readyNoCard: why => `Bereit. Dieser Browser gibt der Seite keine Grafikkarte (WebGPU), die Knöpfe der Karte ruhen — ${why}.`,
   },
 };
 function storedLang() {
@@ -324,7 +324,7 @@ function translatePage() {
   for (const e of document.querySelectorAll('[data-t-label]')) e.setAttribute('aria-label', t(e.dataset.tLabel));
   for (const e of document.querySelectorAll('[data-t-title]')) e.title = t(e.dataset.tTitle);
   for (const e of document.querySelectorAll('.cpus')) e.textContent = String(cpus);
-  if (!hasCard && runner) $('card').title = $('auto').title = t('noCard');
+  if (!hasCard && runner) $('card').title = $('auto').title = t('noCard')(noCardWhy);
   which();
   describe();
   table();
@@ -808,7 +808,7 @@ async function selfTest() {
     built.broken_ok = await buildMine([]);
     built.broken_said = $('diagnostics').hidden ? '' : $('diagnostics').textContent;
   }
-  const report = { cpus, card: hasCard, args: args(), hash, built,
+  const report = { cpus, card: hasCard, why: noCardWhy, args: args(), hash, built,
                    runs: runs.map(r => ({ label: label(r), workers: r.workers, gpu: r.gpu, ms: r.ms, status: r.status, cards: r.cards, differ: r.differ })) };
   await fetch('/result', { method: 'POST', body: JSON.stringify(report) });
 }
@@ -955,12 +955,14 @@ if (!crossOriginIsolated) {
     status(() => t('cannotStart')(ready.failed), true);
   } else {
     hasCard = ready.card;
-    if (!hasCard) $('card').title = $('auto').title = t('noCard');
+    // why not: the page itself without WebGPU, or what the card's worker said
+    noCardWhy = navigator.gpu ? ready.why || 'unknown' : 'no WebGPU in this browser (navigator.gpu)';
+    if (!hasCard) $('card').title = $('auto').title = t('noCard')(noCardWhy);
     await warm();
     setBusy(false);
     if (selftest) await selfTest();
     else await go([ALL]);
-    if (!hasCard) status('readyNoCard');
+    if (!hasCard) status(() => t('readyNoCard')(noCardWhy));
   }
 }
 </script>
